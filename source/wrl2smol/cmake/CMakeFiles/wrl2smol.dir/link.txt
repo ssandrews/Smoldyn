@@ -1,0 +1,3 @@
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/wrl2smol.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/wrl2smol.dir/objects.a @CMakeFiles/wrl2smol.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc  -O2 -Wall   -Wl,--whole-archive CMakeFiles/wrl2smol.dir/objects.a -Wl,--no-whole-archive  -o wrl2smol.exe -Wl,--out-implib,libwrl2smol.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/wrl2smol.dir/linklibs.rsp

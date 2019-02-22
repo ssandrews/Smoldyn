@@ -1,0 +1,578 @@
+The target system is: Windows -  - 
+The host system is: Darwin - 16.7.0 - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/local/bin/x86_64-w64-mingw32-gcc 
+Build flags: 
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.exe"
+
+The C compiler identification is GNU, found in "/Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/3.6.0/CompilerIdC/a.exe"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/local/bin/x86_64-w64-mingw32-g++ 
+Build flags: 
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.exe"
+
+The CXX compiler identification is GNU, found in "/Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/3.6.0/CompilerIdCXX/a.exe"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_a11bd/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_a11bd.dir/build.make CMakeFiles/cmTC_a11bd.dir/build
+Building C object CMakeFiles/cmTC_a11bd.dir/testCCompiler.c.obj
+/opt/local/bin/x86_64-w64-mingw32-gcc     -o CMakeFiles/cmTC_a11bd.dir/testCCompiler.c.obj   -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_a11bd.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a11bd.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_a11bd.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_a11bd.dir/objects.a @CMakeFiles/cmTC_a11bd.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc       -Wl,--whole-archive CMakeFiles/cmTC_a11bd.dir/objects.a -Wl,--no-whole-archive  -o cmTC_a11bd.exe -Wl,--out-implib,libcmTC_a11bd.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_a11bd.dir/linklibs.rsp
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_1a83b/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_1a83b.dir/build.make CMakeFiles/cmTC_1a83b.dir/build
+Building C object CMakeFiles/cmTC_1a83b.dir/CMakeCCompilerABI.c.obj
+/opt/local/bin/x86_64-w64-mingw32-gcc     -o CMakeFiles/cmTC_1a83b.dir/CMakeCCompilerABI.c.obj   -c /Applications/CMake.app/Contents/share/cmake-3.6/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_1a83b.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1a83b.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_1a83b.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_1a83b.dir/objects.a @CMakeFiles/cmTC_1a83b.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc      -v -Wl,--whole-archive CMakeFiles/cmTC_1a83b.dir/objects.a -Wl,--no-whole-archive  -o cmTC_1a83b.exe -Wl,--out-implib,libcmTC_1a83b.dll.a -Wl,--major-image-version,0,--minor-image-version,0   
+Using built-in specs.
+COLLECT_GCC=/opt/local/bin/x86_64-w64-mingw32-gcc
+COLLECT_LTO_WRAPPER=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper
+Target: x86_64-w64-mingw32
+Configured with: /opt/local/var/macports/build/_opt_bblocal_var_buildworker_ports_build_ports_cross_x86_64-w64-mingw32-gcc/x86_64-w64-mingw32-gcc/work/gcc-8.2.0/configure --prefix=/opt/local --target=x86_64-w64-mingw32 --infodir=/opt/local/share/info --mandir=/opt/local/share/man --datarootdir=/opt/local/share/x86_64-w64-mingw32-gcc --with-system-zlib --with-gmp=/opt/local --with-mpfr=/opt/local --with-mpc=/opt/local --enable-stage1-checking --disable-multilib --enable-shared --with-dwarf --enable-fully-dynamic-string --enable-libssp --enable-lto --disable-libcc1 --enable-threads=posix --enable-libgomp --enable-languages='c c++ fortran objc obj-c++'
+Thread model: posix
+gcc version 8.2.0 (GCC) 
+COMPILER_PATH=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/bin/
+LIBRARY_PATH=/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_1a83b.exe' '-mtune=generic' '-march=x86-64'
+ /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/collect2 -plugin /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/liblto_plugin.so -plugin-opt=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper -plugin-opt=-fresolution=/var/folders/mf/0kklv67x5_jfbm_phx5k315r0000gp/T//ccyiZGIJ.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -m i386pep -Bdynamic -o cmTC_1a83b.exe /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtbegin.o -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0 -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib --whole-archive CMakeFiles/cmTC_1a83b.dir/objects.a --no-whole-archive --out-implib libcmTC_1a83b.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtend.o
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_1a83b.exe' '-mtune=generic' '-march=x86-64'
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(x86_64-w64-mingw32-ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_1a83b/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_1a83b.dir/build.make CMakeFiles/cmTC_1a83b.dir/build]
+  ignore line: [Building C object CMakeFiles/cmTC_1a83b.dir/CMakeCCompilerABI.c.obj]
+  ignore line: [/opt/local/bin/x86_64-w64-mingw32-gcc     -o CMakeFiles/cmTC_1a83b.dir/CMakeCCompilerABI.c.obj   -c /Applications/CMake.app/Contents/share/cmake-3.6/Modules/CMakeCCompilerABI.c]
+  ignore line: [Linking C executable cmTC_1a83b.exe]
+  ignore line: [/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1a83b.dir/link.txt --verbose=1]
+  ignore line: [/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_1a83b.dir/objects.a]
+  ignore line: [/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_1a83b.dir/objects.a @CMakeFiles/cmTC_1a83b.dir/objects1.rsp]
+  ignore line: [/opt/local/bin/x86_64-w64-mingw32-gcc      -v -Wl,--whole-archive CMakeFiles/cmTC_1a83b.dir/objects.a -Wl,--no-whole-archive  -o cmTC_1a83b.exe -Wl,--out-implib,libcmTC_1a83b.dll.a -Wl,--major-image-version,0,--minor-image-version,0   ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/opt/local/bin/x86_64-w64-mingw32-gcc]
+  ignore line: [COLLECT_LTO_WRAPPER=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper]
+  ignore line: [Target: x86_64-w64-mingw32]
+  ignore line: [Configured with: /opt/local/var/macports/build/_opt_bblocal_var_buildworker_ports_build_ports_cross_x86_64-w64-mingw32-gcc/x86_64-w64-mingw32-gcc/work/gcc-8.2.0/configure --prefix=/opt/local --target=x86_64-w64-mingw32 --infodir=/opt/local/share/info --mandir=/opt/local/share/man --datarootdir=/opt/local/share/x86_64-w64-mingw32-gcc --with-system-zlib --with-gmp=/opt/local --with-mpfr=/opt/local --with-mpc=/opt/local --enable-stage1-checking --disable-multilib --enable-shared --with-dwarf --enable-fully-dynamic-string --enable-libssp --enable-lto --disable-libcc1 --enable-threads=posix --enable-libgomp --enable-languages='c c++ fortran objc obj-c++']
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 8.2.0 (GCC) ]
+  ignore line: [COMPILER_PATH=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/bin/]
+  ignore line: [LIBRARY_PATH=/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_1a83b.exe' '-mtune=generic' '-march=x86-64']
+  link line: [ /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/collect2 -plugin /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/liblto_plugin.so -plugin-opt=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper -plugin-opt=-fresolution=/var/folders/mf/0kklv67x5_jfbm_phx5k315r0000gp/T//ccyiZGIJ.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_eh -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -m i386pep -Bdynamic -o cmTC_1a83b.exe /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtbegin.o -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0 -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib --whole-archive CMakeFiles/cmTC_1a83b.dir/objects.a --no-whole-archive --out-implib libcmTC_1a83b.dll.a --major-image-version 0 --minor-image-version 0 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc -lgcc_eh -lmoldname -lmingwex -lmsvcrt /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtend.o]
+    arg [/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/collect2] ==> ignore
+    arg [-plugin] ==> ignore
+    arg [/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/liblto_plugin.so] ==> ignore
+    arg [-plugin-opt=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper] ==> ignore
+    arg [-plugin-opt=-fresolution=/var/folders/mf/0kklv67x5_jfbm_phx5k315r0000gp/T//ccyiZGIJ.res] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingw32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc_eh] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmoldname] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingwex] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmsvcrt] ==> ignore
+    arg [-plugin-opt=-pass-through=-lpthread] ==> ignore
+    arg [-plugin-opt=-pass-through=-ladvapi32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lshell32] ==> ignore
+    arg [-plugin-opt=-pass-through=-luser32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lkernel32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingw32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc_eh] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmoldname] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingwex] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmsvcrt] ==> ignore
+    arg [-m] ==> ignore
+    arg [i386pep] ==> ignore
+    arg [-Bdynamic] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_1a83b.exe] ==> ignore
+    arg [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o] ==> ignore
+    arg [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtbegin.o] ==> ignore
+    arg [-L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0] ==> dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0]
+    arg [-L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib] ==> dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib]
+    arg [-L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib] ==> dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib]
+    arg [--whole-archive] ==> ignore
+    arg [CMakeFiles/cmTC_1a83b.dir/objects.a] ==> ignore
+    arg [--no-whole-archive] ==> ignore
+    arg [--out-implib] ==> ignore
+    arg [libcmTC_1a83b.dll.a] ==> ignore
+    arg [--major-image-version] ==> ignore
+    arg [0] ==> ignore
+    arg [--minor-image-version] ==> ignore
+    arg [0] ==> ignore
+    arg [-lmingw32] ==> lib [mingw32]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lgcc_eh] ==> lib [gcc_eh]
+    arg [-lmoldname] ==> lib [moldname]
+    arg [-lmingwex] ==> lib [mingwex]
+    arg [-lmsvcrt] ==> lib [msvcrt]
+    arg [-lpthread] ==> lib [pthread]
+    arg [-ladvapi32] ==> lib [advapi32]
+    arg [-lshell32] ==> lib [shell32]
+    arg [-luser32] ==> lib [user32]
+    arg [-lkernel32] ==> lib [kernel32]
+    arg [-lmingw32] ==> lib [mingw32]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lgcc_eh] ==> lib [gcc_eh]
+    arg [-lmoldname] ==> lib [moldname]
+    arg [-lmingwex] ==> lib [mingwex]
+    arg [-lmsvcrt] ==> lib [msvcrt]
+    arg [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtend.o] ==> ignore
+  remove lib [gcc]
+  remove lib [gcc_eh]
+  remove lib [gcc]
+  remove lib [gcc_eh]
+  collapse library dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0] ==> [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0]
+  collapse library dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib] ==> [/opt/local/x86_64-w64-mingw32/lib]
+  collapse library dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib] ==> [/opt/local/x86_64-w64-mingw32/lib]
+  implicit libs: [mingw32;moldname;mingwex;msvcrt;pthread;advapi32;shell32;user32;kernel32;mingw32;moldname;mingwex;msvcrt]
+  implicit dirs: [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0;/opt/local/x86_64-w64-mingw32/lib]
+  implicit fwks: []
+
+
+
+
+Detecting C [-std=c11] compiler features compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_36d5b/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_36d5b.dir/build.make CMakeFiles/cmTC_36d5b.dir/build
+Building C object CMakeFiles/cmTC_36d5b.dir/feature_tests.c.obj
+/opt/local/bin/x86_64-w64-mingw32-gcc    -std=c11 -o CMakeFiles/cmTC_36d5b.dir/feature_tests.c.obj   -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/feature_tests.c
+Linking C executable cmTC_36d5b.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_36d5b.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_36d5b.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_36d5b.dir/objects.a @CMakeFiles/cmTC_36d5b.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc       -Wl,--whole-archive CMakeFiles/cmTC_36d5b.dir/objects.a -Wl,--no-whole-archive  -o cmTC_36d5b.exe -Wl,--out-implib,libcmTC_36d5b.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_36d5b.dir/linklibs.rsp
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_restrict
+    Feature record: C_FEATURE:1c_static_assert
+    Feature record: C_FEATURE:1c_variadic_macros
+
+
+Detecting C [-std=c99] compiler features compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_8ef0a/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_8ef0a.dir/build.make CMakeFiles/cmTC_8ef0a.dir/build
+Building C object CMakeFiles/cmTC_8ef0a.dir/feature_tests.c.obj
+/opt/local/bin/x86_64-w64-mingw32-gcc    -std=c99 -o CMakeFiles/cmTC_8ef0a.dir/feature_tests.c.obj   -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/feature_tests.c
+Linking C executable cmTC_8ef0a.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_8ef0a.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_8ef0a.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_8ef0a.dir/objects.a @CMakeFiles/cmTC_8ef0a.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc       -Wl,--whole-archive CMakeFiles/cmTC_8ef0a.dir/objects.a -Wl,--no-whole-archive  -o cmTC_8ef0a.exe -Wl,--out-implib,libcmTC_8ef0a.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_8ef0a.dir/linklibs.rsp
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_restrict
+    Feature record: C_FEATURE:0c_static_assert
+    Feature record: C_FEATURE:1c_variadic_macros
+
+
+Detecting C [-std=c90] compiler features compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_89333/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_89333.dir/build.make CMakeFiles/cmTC_89333.dir/build
+Building C object CMakeFiles/cmTC_89333.dir/feature_tests.c.obj
+/opt/local/bin/x86_64-w64-mingw32-gcc    -std=c90 -o CMakeFiles/cmTC_89333.dir/feature_tests.c.obj   -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/feature_tests.c
+Linking C executable cmTC_89333.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_89333.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_89333.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_89333.dir/objects.a @CMakeFiles/cmTC_89333.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc       -Wl,--whole-archive CMakeFiles/cmTC_89333.dir/objects.a -Wl,--no-whole-archive  -o cmTC_89333.exe -Wl,--out-implib,libcmTC_89333.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_89333.dir/linklibs.rsp
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:0c_restrict
+    Feature record: C_FEATURE:0c_static_assert
+    Feature record: C_FEATURE:0c_variadic_macros
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_422c1/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_422c1.dir/build.make CMakeFiles/cmTC_422c1.dir/build
+Building CXX object CMakeFiles/cmTC_422c1.dir/testCXXCompiler.cxx.obj
+/opt/local/bin/x86_64-w64-mingw32-g++      -o CMakeFiles/cmTC_422c1.dir/testCXXCompiler.cxx.obj -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_422c1.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_422c1.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_422c1.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_422c1.dir/objects.a @CMakeFiles/cmTC_422c1.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-g++       -Wl,--whole-archive CMakeFiles/cmTC_422c1.dir/objects.a -Wl,--no-whole-archive  -o cmTC_422c1.exe -Wl,--out-implib,libcmTC_422c1.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_422c1.dir/linklibs.rsp
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_6f465/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_6f465.dir/build.make CMakeFiles/cmTC_6f465.dir/build
+Building CXX object CMakeFiles/cmTC_6f465.dir/CMakeCXXCompilerABI.cpp.obj
+/opt/local/bin/x86_64-w64-mingw32-g++      -o CMakeFiles/cmTC_6f465.dir/CMakeCXXCompilerABI.cpp.obj -c /Applications/CMake.app/Contents/share/cmake-3.6/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_6f465.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6f465.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_6f465.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_6f465.dir/objects.a @CMakeFiles/cmTC_6f465.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-g++      -v -Wl,--whole-archive CMakeFiles/cmTC_6f465.dir/objects.a -Wl,--no-whole-archive  -o cmTC_6f465.exe -Wl,--out-implib,libcmTC_6f465.dll.a -Wl,--major-image-version,0,--minor-image-version,0   
+Using built-in specs.
+COLLECT_GCC=/opt/local/bin/x86_64-w64-mingw32-g++
+COLLECT_LTO_WRAPPER=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper
+Target: x86_64-w64-mingw32
+Configured with: /opt/local/var/macports/build/_opt_bblocal_var_buildworker_ports_build_ports_cross_x86_64-w64-mingw32-gcc/x86_64-w64-mingw32-gcc/work/gcc-8.2.0/configure --prefix=/opt/local --target=x86_64-w64-mingw32 --infodir=/opt/local/share/info --mandir=/opt/local/share/man --datarootdir=/opt/local/share/x86_64-w64-mingw32-gcc --with-system-zlib --with-gmp=/opt/local --with-mpfr=/opt/local --with-mpc=/opt/local --enable-stage1-checking --disable-multilib --enable-shared --with-dwarf --enable-fully-dynamic-string --enable-libssp --enable-lto --disable-libcc1 --enable-threads=posix --enable-libgomp --enable-languages='c c++ fortran objc obj-c++'
+Thread model: posix
+gcc version 8.2.0 (GCC) 
+COMPILER_PATH=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/bin/
+LIBRARY_PATH=/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_6f465.exe' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+ /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/collect2 -plugin /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/liblto_plugin.so -plugin-opt=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper -plugin-opt=-fresolution=/var/folders/mf/0kklv67x5_jfbm_phx5k315r0000gp/T//ccGIo8I8.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -m i386pep -Bdynamic -o cmTC_6f465.exe /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtbegin.o -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0 -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib --whole-archive CMakeFiles/cmTC_6f465.dir/objects.a --no-whole-archive --out-implib libcmTC_6f465.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtend.o
+COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_6f465.exe' '-shared-libgcc' '-mtune=generic' '-march=x86-64'
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(x86_64-w64-mingw32-ld|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command:"/usr/bin/make" "cmTC_6f465/fast"]
+  ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_6f465.dir/build.make CMakeFiles/cmTC_6f465.dir/build]
+  ignore line: [Building CXX object CMakeFiles/cmTC_6f465.dir/CMakeCXXCompilerABI.cpp.obj]
+  ignore line: [/opt/local/bin/x86_64-w64-mingw32-g++      -o CMakeFiles/cmTC_6f465.dir/CMakeCXXCompilerABI.cpp.obj -c /Applications/CMake.app/Contents/share/cmake-3.6/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [Linking CXX executable cmTC_6f465.exe]
+  ignore line: [/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6f465.dir/link.txt --verbose=1]
+  ignore line: [/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_6f465.dir/objects.a]
+  ignore line: [/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_6f465.dir/objects.a @CMakeFiles/cmTC_6f465.dir/objects1.rsp]
+  ignore line: [/opt/local/bin/x86_64-w64-mingw32-g++      -v -Wl,--whole-archive CMakeFiles/cmTC_6f465.dir/objects.a -Wl,--no-whole-archive  -o cmTC_6f465.exe -Wl,--out-implib,libcmTC_6f465.dll.a -Wl,--major-image-version,0,--minor-image-version,0   ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/opt/local/bin/x86_64-w64-mingw32-g++]
+  ignore line: [COLLECT_LTO_WRAPPER=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper]
+  ignore line: [Target: x86_64-w64-mingw32]
+  ignore line: [Configured with: /opt/local/var/macports/build/_opt_bblocal_var_buildworker_ports_build_ports_cross_x86_64-w64-mingw32-gcc/x86_64-w64-mingw32-gcc/work/gcc-8.2.0/configure --prefix=/opt/local --target=x86_64-w64-mingw32 --infodir=/opt/local/share/info --mandir=/opt/local/share/man --datarootdir=/opt/local/share/x86_64-w64-mingw32-gcc --with-system-zlib --with-gmp=/opt/local --with-mpfr=/opt/local --with-mpc=/opt/local --enable-stage1-checking --disable-multilib --enable-shared --with-dwarf --enable-fully-dynamic-string --enable-libssp --enable-lto --disable-libcc1 --enable-threads=posix --enable-libgomp --enable-languages='c c++ fortran objc obj-c++']
+  ignore line: [Thread model: posix]
+  ignore line: [gcc version 8.2.0 (GCC) ]
+  ignore line: [COMPILER_PATH=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/libexec/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/bin/]
+  ignore line: [LIBRARY_PATH=/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/:/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-v' '-o' 'cmTC_6f465.exe' '-shared-libgcc' '-mtune=generic' '-march=x86-64']
+  link line: [ /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/collect2 -plugin /opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/liblto_plugin.so -plugin-opt=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper -plugin-opt=-fresolution=/var/folders/mf/0kklv67x5_jfbm_phx5k315r0000gp/T//ccGIo8I8.res -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -plugin-opt=-pass-through=-lpthread -plugin-opt=-pass-through=-ladvapi32 -plugin-opt=-pass-through=-lshell32 -plugin-opt=-pass-through=-luser32 -plugin-opt=-pass-through=-lkernel32 -plugin-opt=-pass-through=-lmingw32 -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lmoldname -plugin-opt=-pass-through=-lmingwex -plugin-opt=-pass-through=-lmsvcrt -m i386pep -Bdynamic -o cmTC_6f465.exe /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtbegin.o -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0 -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib -L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib --whole-archive CMakeFiles/cmTC_6f465.dir/objects.a --no-whole-archive --out-implib libcmTC_6f465.dll.a --major-image-version 0 --minor-image-version 0 -lstdc++ -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt -lpthread -ladvapi32 -lshell32 -luser32 -lkernel32 -lmingw32 -lgcc_s -lgcc -lmoldname -lmingwex -lmsvcrt /opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtend.o]
+    arg [/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/collect2] ==> ignore
+    arg [-plugin] ==> ignore
+    arg [/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/liblto_plugin.so] ==> ignore
+    arg [-plugin-opt=/opt/local/libexec/gcc/x86_64-w64-mingw32/8.2.0/lto-wrapper] ==> ignore
+    arg [-plugin-opt=-fresolution=/var/folders/mf/0kklv67x5_jfbm_phx5k315r0000gp/T//ccGIo8I8.res] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingw32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmoldname] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingwex] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmsvcrt] ==> ignore
+    arg [-plugin-opt=-pass-through=-lpthread] ==> ignore
+    arg [-plugin-opt=-pass-through=-ladvapi32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lshell32] ==> ignore
+    arg [-plugin-opt=-pass-through=-luser32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lkernel32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingw32] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+    arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmoldname] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmingwex] ==> ignore
+    arg [-plugin-opt=-pass-through=-lmsvcrt] ==> ignore
+    arg [-m] ==> ignore
+    arg [i386pep] ==> ignore
+    arg [-Bdynamic] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_6f465.exe] ==> ignore
+    arg [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib/crt2.o] ==> ignore
+    arg [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtbegin.o] ==> ignore
+    arg [-L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0] ==> dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0]
+    arg [-L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib] ==> dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib]
+    arg [-L/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib] ==> dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib]
+    arg [--whole-archive] ==> ignore
+    arg [CMakeFiles/cmTC_6f465.dir/objects.a] ==> ignore
+    arg [--no-whole-archive] ==> ignore
+    arg [--out-implib] ==> ignore
+    arg [libcmTC_6f465.dll.a] ==> ignore
+    arg [--major-image-version] ==> ignore
+    arg [0] ==> ignore
+    arg [--minor-image-version] ==> ignore
+    arg [0] ==> ignore
+    arg [-lstdc++] ==> lib [stdc++]
+    arg [-lmingw32] ==> lib [mingw32]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lmoldname] ==> lib [moldname]
+    arg [-lmingwex] ==> lib [mingwex]
+    arg [-lmsvcrt] ==> lib [msvcrt]
+    arg [-lpthread] ==> lib [pthread]
+    arg [-ladvapi32] ==> lib [advapi32]
+    arg [-lshell32] ==> lib [shell32]
+    arg [-luser32] ==> lib [user32]
+    arg [-lkernel32] ==> lib [kernel32]
+    arg [-lmingw32] ==> lib [mingw32]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lmoldname] ==> lib [moldname]
+    arg [-lmingwex] ==> lib [mingwex]
+    arg [-lmsvcrt] ==> lib [msvcrt]
+    arg [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/crtend.o] ==> ignore
+  remove lib [gcc_s]
+  remove lib [gcc]
+  remove lib [gcc_s]
+  remove lib [gcc]
+  collapse library dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0] ==> [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0]
+  collapse library dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib/../lib] ==> [/opt/local/x86_64-w64-mingw32/lib]
+  collapse library dir [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0/../../../../x86_64-w64-mingw32/lib] ==> [/opt/local/x86_64-w64-mingw32/lib]
+  implicit libs: [stdc++;mingw32;moldname;mingwex;msvcrt;pthread;advapi32;shell32;user32;kernel32;mingw32;moldname;mingwex;msvcrt]
+  implicit dirs: [/opt/local/lib/gcc/x86_64-w64-mingw32/8.2.0;/opt/local/x86_64-w64-mingw32/lib]
+  implicit fwks: []
+
+
+
+
+Detecting CXX [-std=c++14] compiler features compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_349fc/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_349fc.dir/build.make CMakeFiles/cmTC_349fc.dir/build
+Building CXX object CMakeFiles/cmTC_349fc.dir/feature_tests.cxx.obj
+/opt/local/bin/x86_64-w64-mingw32-g++     -std=c++14 -o CMakeFiles/cmTC_349fc.dir/feature_tests.cxx.obj -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_349fc.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_349fc.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_349fc.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_349fc.dir/objects.a @CMakeFiles/cmTC_349fc.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-g++       -Wl,--whole-archive CMakeFiles/cmTC_349fc.dir/objects.a -Wl,--no-whole-archive  -o cmTC_349fc.exe -Wl,--out-implib,libcmTC_349fc.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_349fc.dir/linklibs.rsp
+
+
+    Feature record: CXX_FEATURE:1cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:1cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:1cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:1cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:1cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:1cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:1cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:1cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:1cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:1cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:1cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++11] compiler features compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_c4339/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_c4339.dir/build.make CMakeFiles/cmTC_c4339.dir/build
+Building CXX object CMakeFiles/cmTC_c4339.dir/feature_tests.cxx.obj
+/opt/local/bin/x86_64-w64-mingw32-g++     -std=c++11 -o CMakeFiles/cmTC_c4339.dir/feature_tests.cxx.obj -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_c4339.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c4339.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_c4339.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_c4339.dir/objects.a @CMakeFiles/cmTC_c4339.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-g++       -Wl,--whole-archive CMakeFiles/cmTC_c4339.dir/objects.a -Wl,--no-whole-archive  -o cmTC_c4339.exe -Wl,--out-implib,libcmTC_c4339.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_c4339.dir/linklibs.rsp
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:1cxx_alias_templates
+    Feature record: CXX_FEATURE:1cxx_alignas
+    Feature record: CXX_FEATURE:1cxx_alignof
+    Feature record: CXX_FEATURE:1cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:1cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:1cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:1cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:1cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:1cxx_default_function_template_args
+    Feature record: CXX_FEATURE:1cxx_defaulted_functions
+    Feature record: CXX_FEATURE:1cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:1cxx_delegating_constructors
+    Feature record: CXX_FEATURE:1cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:1cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:1cxx_explicit_conversions
+    Feature record: CXX_FEATURE:1cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:1cxx_extern_templates
+    Feature record: CXX_FEATURE:1cxx_final
+    Feature record: CXX_FEATURE:1cxx_func_identifier
+    Feature record: CXX_FEATURE:1cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:1cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:1cxx_inline_namespaces
+    Feature record: CXX_FEATURE:1cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:1cxx_local_type_template_args
+    Feature record: CXX_FEATURE:1cxx_long_long_type
+    Feature record: CXX_FEATURE:1cxx_noexcept
+    Feature record: CXX_FEATURE:1cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:1cxx_nullptr
+    Feature record: CXX_FEATURE:1cxx_override
+    Feature record: CXX_FEATURE:1cxx_range_for
+    Feature record: CXX_FEATURE:1cxx_raw_string_literals
+    Feature record: CXX_FEATURE:1cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:1cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:1cxx_rvalue_references
+    Feature record: CXX_FEATURE:1cxx_sizeof_member
+    Feature record: CXX_FEATURE:1cxx_static_assert
+    Feature record: CXX_FEATURE:1cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:1cxx_thread_local
+    Feature record: CXX_FEATURE:1cxx_trailing_return_types
+    Feature record: CXX_FEATURE:1cxx_unicode_literals
+    Feature record: CXX_FEATURE:1cxx_uniform_initialization
+    Feature record: CXX_FEATURE:1cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:1cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:1cxx_variadic_macros
+    Feature record: CXX_FEATURE:1cxx_variadic_templates
+
+
+Detecting CXX [-std=c++98] compiler features compiled with the following output:
+Change Dir: /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_79e3a/fast"
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/cmTC_79e3a.dir/build.make CMakeFiles/cmTC_79e3a.dir/build
+Building CXX object CMakeFiles/cmTC_79e3a.dir/feature_tests.cxx.obj
+/opt/local/bin/x86_64-w64-mingw32-g++     -std=c++98 -o CMakeFiles/cmTC_79e3a.dir/feature_tests.cxx.obj -c /Users/sandrews/SSA/software/Smoldyn/trunk/source/SmolCrowd/cmake/CMakeFiles/feature_tests.cxx
+Linking CXX executable cmTC_79e3a.exe
+/Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_79e3a.dir/link.txt --verbose=1
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/cmTC_79e3a.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/cmTC_79e3a.dir/objects.a @CMakeFiles/cmTC_79e3a.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-g++       -Wl,--whole-archive CMakeFiles/cmTC_79e3a.dir/objects.a -Wl,--no-whole-archive  -o cmTC_79e3a.exe -Wl,--out-implib,libcmTC_79e3a.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/cmTC_79e3a.dir/linklibs.rsp
+
+
+    Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
+    Feature record: CXX_FEATURE:0cxx_alias_templates
+    Feature record: CXX_FEATURE:0cxx_alignas
+    Feature record: CXX_FEATURE:0cxx_alignof
+    Feature record: CXX_FEATURE:0cxx_attributes
+    Feature record: CXX_FEATURE:0cxx_attribute_deprecated
+    Feature record: CXX_FEATURE:0cxx_auto_type
+    Feature record: CXX_FEATURE:0cxx_binary_literals
+    Feature record: CXX_FEATURE:0cxx_constexpr
+    Feature record: CXX_FEATURE:0cxx_contextual_conversions
+    Feature record: CXX_FEATURE:0cxx_decltype
+    Feature record: CXX_FEATURE:0cxx_decltype_auto
+    Feature record: CXX_FEATURE:0cxx_decltype_incomplete_return_types
+    Feature record: CXX_FEATURE:0cxx_default_function_template_args
+    Feature record: CXX_FEATURE:0cxx_defaulted_functions
+    Feature record: CXX_FEATURE:0cxx_defaulted_move_initializers
+    Feature record: CXX_FEATURE:0cxx_delegating_constructors
+    Feature record: CXX_FEATURE:0cxx_deleted_functions
+    Feature record: CXX_FEATURE:0cxx_digit_separators
+    Feature record: CXX_FEATURE:0cxx_enum_forward_declarations
+    Feature record: CXX_FEATURE:0cxx_explicit_conversions
+    Feature record: CXX_FEATURE:0cxx_extended_friend_declarations
+    Feature record: CXX_FEATURE:0cxx_extern_templates
+    Feature record: CXX_FEATURE:0cxx_final
+    Feature record: CXX_FEATURE:0cxx_func_identifier
+    Feature record: CXX_FEATURE:0cxx_generalized_initializers
+    Feature record: CXX_FEATURE:0cxx_generic_lambdas
+    Feature record: CXX_FEATURE:0cxx_inheriting_constructors
+    Feature record: CXX_FEATURE:0cxx_inline_namespaces
+    Feature record: CXX_FEATURE:0cxx_lambdas
+    Feature record: CXX_FEATURE:0cxx_lambda_init_captures
+    Feature record: CXX_FEATURE:0cxx_local_type_template_args
+    Feature record: CXX_FEATURE:0cxx_long_long_type
+    Feature record: CXX_FEATURE:0cxx_noexcept
+    Feature record: CXX_FEATURE:0cxx_nonstatic_member_init
+    Feature record: CXX_FEATURE:0cxx_nullptr
+    Feature record: CXX_FEATURE:0cxx_override
+    Feature record: CXX_FEATURE:0cxx_range_for
+    Feature record: CXX_FEATURE:0cxx_raw_string_literals
+    Feature record: CXX_FEATURE:0cxx_reference_qualified_functions
+    Feature record: CXX_FEATURE:0cxx_relaxed_constexpr
+    Feature record: CXX_FEATURE:0cxx_return_type_deduction
+    Feature record: CXX_FEATURE:0cxx_right_angle_brackets
+    Feature record: CXX_FEATURE:0cxx_rvalue_references
+    Feature record: CXX_FEATURE:0cxx_sizeof_member
+    Feature record: CXX_FEATURE:0cxx_static_assert
+    Feature record: CXX_FEATURE:0cxx_strong_enums
+    Feature record: CXX_FEATURE:1cxx_template_template_parameters
+    Feature record: CXX_FEATURE:0cxx_thread_local
+    Feature record: CXX_FEATURE:0cxx_trailing_return_types
+    Feature record: CXX_FEATURE:0cxx_unicode_literals
+    Feature record: CXX_FEATURE:0cxx_uniform_initialization
+    Feature record: CXX_FEATURE:0cxx_unrestricted_unions
+    Feature record: CXX_FEATURE:0cxx_user_literals
+    Feature record: CXX_FEATURE:0cxx_variable_templates
+    Feature record: CXX_FEATURE:0cxx_variadic_macros
+    Feature record: CXX_FEATURE:0cxx_variadic_templates

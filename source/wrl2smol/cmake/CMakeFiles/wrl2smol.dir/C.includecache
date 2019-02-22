@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/wrl2smol.c
+stdio.h
+-
+stdlib.h
+-
+math.h
+-
+string.h
+-
+

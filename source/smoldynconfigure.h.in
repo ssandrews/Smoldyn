@@ -1,0 +1,68 @@
+/* Smoldyn configuration file for input to CMake.  */
+/* Written by Steve Andrews, 4/12/12.  */
+
+/* Define to 1 if this build is for Apple */
+#cmakedefine APPLE_BUILD
+
+/* Define to 1 if this build is for Unix/Linux */
+#cmakedefine NIX_BUILD
+
+/* Define to 1 if this build is for Windows */
+#cmakedefine WINDOWS_BUILD
+
+/* Define to 1 if you have the <GL/gl.h> header file. */
+#cmakedefine HAVE_GL_GL_H
+
+/* Define to 1 if you have the <OpenGL/gl.h> header file. */
+#cmakedefine HAVE_OPENGL_GL_H
+
+/* Define to 1 if you have the <GL/glu.h> header file. */
+#cmakedefine HAVE_GL_GLU_H
+
+/* Define to 1 if you have the <OpenGL/glu.h> header file. */
+#cmakedefine HAVE_OPENGL_GLU_H
+
+/* Define to 1 if you have the <GL/glut.h> header file. */
+#cmakedefine HAVE_GL_GLUT_H
+
+/* Define to 1 if you have the <GLUT/glut.h> header file. */
+#cmakedefine HAVE_GLUT_GLUT_H
+
+/* Define to 1 if you have the <GL/freeglut.h> header file. */
+#cmakedefine HAVE_GL_FREEGLUT_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#cmakedefine HAVE_MEMORY_H
+
+/* Whether to compile Smoldyn with OpenGL support */
+#cmakedefine HAVE_OPENGL
+
+/* Whether to compile Smoldyn with LibTiff support */
+#cmakedefine HAVE_LIBTIFF
+
+/* Whether to compile Smoldyn with Zlib support */
+#cmakedefine HAVE_ZLIB
+
+/* Whether to compile Smoldyn with lattice support */
+#cmakedefine OPTION_LATTICE
+
+/* Whether to compile Smoldyn with vtk support */
+#cmakedefine HAVE_VTK
+
+/* Whether to compile Smoldyn with nsv support */
+#cmakedefine OPTION_NSV
+
+/* Whether to compile Smoldyn with pde support */
+#cmakedefine OPTION_PDE
+
+/* Whether to compile Smoldyn with vtk support */
+#cmakedefine OPTION_VTK
+
+/* Define to the version of this package. */
+#define VERSION "${SMOLDYN_VERSION}"
+
+/* Define the path for the BNG2.pl program */
+#cmakedefine BNG2_PATH "${BNG2_PATH}"
+
+/* Whether to compile Smoldyn for VCell */
+#cmakedefine OPTION_VCELL

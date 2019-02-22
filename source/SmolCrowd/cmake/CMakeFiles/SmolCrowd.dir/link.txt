@@ -1,0 +1,3 @@
+/Applications/CMake.app/Contents/bin/cmake -E remove -f CMakeFiles/SmolCrowd.dir/objects.a
+/opt/local/bin/x86_64-w64-mingw32-ar cr CMakeFiles/SmolCrowd.dir/objects.a @CMakeFiles/SmolCrowd.dir/objects1.rsp
+/opt/local/bin/x86_64-w64-mingw32-gcc  -O2 -Wall   -Wl,--whole-archive CMakeFiles/SmolCrowd.dir/objects.a -Wl,--no-whole-archive  -o SmolCrowd.exe -Wl,--out-implib,libSmolCrowd.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles/SmolCrowd.dir/linklibs.rsp
