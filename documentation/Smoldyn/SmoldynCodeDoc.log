@@ -1,0 +1,1381 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2017.5.23)  19 FEB 2019 15:46
+entering extended mode
+ \write18 enabled.
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**SmoldynCodeDoc.tex
+(./SmoldynCodeDoc.tex
+LaTeX2e <2017-04-15>
+Babel <3.10> and hyphenation patterns for 84 language(s) loaded.
+(/usr/local/texlive/2017/texmf-dist/tex/latex/base/book.cls
+Document Class: book 2014/09/29 v1.4h Standard LaTeX document class
+(/usr/local/texlive/2017/texmf-dist/tex/latex/base/bk10.clo
+File: bk10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@chapter=\count80
+\c@section=\count81
+\c@subsection=\count82
+\c@subsubsection=\count83
+\c@paragraph=\count84
+\c@subparagraph=\count85
+\c@figure=\count86
+\c@table=\count87
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/local/texlive/2017/texmf-dist/tex/latex/tools/longtable.sty
+Package: longtable 2014/10/28 v4.11 Multi-page Table package (DPC)
+\LTleft=\skip43
+\LTright=\skip44
+\LTpre=\skip45
+\LTpost=\skip46
+\LTchunksize=\count88
+\LTcapwidth=\dimen103
+\LT@head=\box26
+\LT@firsthead=\box27
+\LT@foot=\box28
+\LT@lastfoot=\box29
+\LT@cols=\count89
+\LT@rows=\count90
+\c@LT@tables=\count91
+\c@LT@chunks=\count92
+\LT@p@ftn=\toks14
+)
+(/usr/local/texlive/2017/texmf-dist/tex/latex/listings/listings.sty
+(/usr/local/texlive/2017/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2014/10/28 v1.15 key=value parser (DPC)
+\KV@toks@=\toks15
+)
+\lst@mode=\count93
+\lst@gtempboxa=\box30
+\lst@token=\toks16
+\lst@length=\count94
+\lst@currlwidth=\dimen104
+\lst@column=\count95
+\lst@pos=\count96
+\lst@lostspace=\dimen105
+\lst@width=\dimen106
+\lst@newlines=\count97
+\lst@lineno=\count98
+\lst@maxwidth=\dimen107
+
+(/usr/local/texlive/2017/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2015/06/04 1.6 (Carsten Heinz)
+\c@lstnumber=\count99
+\lst@skipnumbers=\count100
+\lst@framebox=\box31
+)
+(/usr/local/texlive/2017/texmf-dist/tex/latex/listings/listings.cfg
+File: listings.cfg 2015/06/04 1.6 listings configuration
+))
+Package: listings 2015/06/04 1.6 (Carsten Heinz)
+
+(/usr/local/texlive/2017/texmf-dist/tex/latex/url/url.sty
+\Urlmuskip=\muskip10
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+)
+(/usr/local/texlive/2017/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
+(/usr/local/texlive/2017/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2015/06/04 1.6 (Carsten Heinz)
+)
+(./SmoldynCodeDoc.aux)
+\openout1 = `SmoldynCodeDoc.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 38.
+LaTeX Font Info:    ... okay on input line 38.
+\c@lstlisting=\count101
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 49.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 49.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 49.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 49.
+
+(/usr/local/texlive/2017/texmf-dist/tex/latex/base/omscmr.fd
+File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 49.
+ [1
+
+
+{/usr/local/texlive/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[2
+
+] (./SmoldynCodeDoc.toc
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 2.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 2.
+ [3])
+\tf@toc=\write3
+\openout3 = `SmoldynCodeDoc.toc'.
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[4]
+Chapter 1.
+[5
+
+]
+Overfull \vbox (6.94444pt too high) has occurred while \output is active []
+
+
+[6]
+Chapter 2.
+
+Underfull \hbox (badness 10000) in paragraph at lines 85--86
+
+ []
+
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <10> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 105.
+[7
+
+]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[8]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [9]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[10]
+Chapter 3.
+
+Underfull \hbox (badness 10000) in paragraph at lines 244--245
+
+ []
+
+[11
+
+]
+LaTeX Font Info:    Try loading font information for OMS+cmtt on input line 258
+.
+LaTeX Font Info:    No file OMScmtt.fd. on input line 258.
+
+
+LaTeX Font Warning: Font shape `OMS/cmtt/bx/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 258.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 263--264
+
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[12]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[13]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[14]
+Chapter 4.
+LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <9> not available
+(Font)              Font shape `OT1/cmtt/m/n' tried instead on input line 410.
+[15
+
+]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[16]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [17]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[18]
+Missing character: There is no ³ in font cmr10!
+
+Underfull \hbox (badness 10000) in paragraph at lines 527--528
+
+ []
+
+
+LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
+(Font)              using `OMS/cmsy/m/n' instead
+(Font)              for symbol `textbraceleft' on input line 553.
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [19]
+Underfull \hbox (badness 10000) in paragraph at lines 564--566
+[]\OT1/cmtt/m/n/10 molpatternindex(simptr sim,const char *pattern,const char *r
+name,int isrule,int
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[20]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [21]
+Underfull \hbox (badness 10000) in paragraph at lines 610--612
+[]\OT1/cmtt/m/n/10 molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int 
+i,enum MolecState
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 632--635
+[]\OT1/cmtt/m/n/10 molsetsurfdrift(simptr sim,int ident,int *index,enum MolecSt
+ate ms,int surface,enum
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[22]
+Underfull \hbox (badness 10000) in paragraph at lines 659--662
+[]\OT1/cmtt/m/n/10 molscancmd(simptr sim,int i,int *index,enum MolecState ms,cm
+dptr cmd,enum
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 664--667
+[]\OT1/cmtt/m/n/10 molscanfn(simptr sim,int i,int *index,enum MolecState ms,cha
+r
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [23]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[24]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [25]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[26]
+Underfull \hbox (badness 10000) in paragraph at lines 801--803
+[]\OT1/cmtt/m/n/10 addsurfmol(simptr sim,int nmol,int ident,enum MolecState ms,
+double *pos,panelptr
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [27]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[28]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [29]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[30]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [31]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[32]
+Underfull \hbox (badness 10000) in paragraph at lines 1067--1070
+[]\OT1/cmtt/m/n/10 readrxnname(simptr sim,const char *rname,int *orderptr,rxnpt
+r *rxnpt,listptrv
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [33]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[34]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [35]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[36]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [37]
+Underfull \hbox (badness 10000) in paragraph at lines 1213--1215
+[]\OT1/cmtt/m/n/10 RxnSetValuePattern(simptr sim,const char *option,const char 
+*pattern,const enum
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1213--1215
+\OT1/cmtt/m/n/10 MolecState *rctstate,const enum MolecState *prdstate,double va
+lue,int
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1217--1219
+[]\OT1/cmtt/m/n/10 RxnSetRevparam(simptr sim,rxnptr rxn,enum RevParam rparamt,d
+ouble rparam,int
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[38]
+Underfull \hbox (badness 10000) in paragraph at lines 1266--1269
+[]\OT1/cmtt/m/n/10 RxnSetRepresentationRules(rxnptr rxn,int order,const enum Sp
+eciesRepresentation
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [39]
+Underfull \hbox (badness 10000) in paragraph at lines 1275--1277
+[]\OT1/cmtt/m/n/10 RxnAddReaction(simptr sim,char *rname,int order,int *rctiden
+t,enum MolecState
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1275--1277
+\OT1/cmtt/m/n/10 *rctstate,int nprod,int *prdident,enum MolecState *prdstate,co
+mpartptr
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1279--1281
+[]\OT1/cmtt/m/n/10 RxnTestRxnExist(simptr sim,int order,const char *rname,const
+ int *rctident,const
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1279--1281
+\OT1/cmtt/m/n/10 enum MolecState *rctstate,int nprod,const int *prdident,const 
+enum MolecState
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1285
+[]\OT1/cmtt/m/n/10 RxnAddReactionPattern(simptr sim,const char *rname,const cha
+r *pattern,int
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1283--1285
+\OT1/cmtt/m/n/10 oldnresults,enum MolecState *rctstate,enum MolecState *prdstat
+e,compartptr
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1291--1293
+[]\OT1/cmtt/m/n/10 RxnAddReactionCheck(simptr sim,char *rname,int order,int *rc
+tident,enum MolecState
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1291--1293
+\OT1/cmtt/m/n/10 *rctstate,int nprod,int *prdident,enum MolecState *prdstate,co
+mpartptr
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[40]
+Underfull \hbox (badness 10000) in paragraph at lines 1319--1321
+[]\OT1/cmtt/m/n/10 doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr 
+mptr2,int ll1,int m1,int
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [41]
+Underfull \hbox (badness 10000) in paragraph at lines 1337--1339
+[]\OT1/cmtt/m/n/10 morebireact(simptr sim,rxnptr rxn,moleculeptr mptr1,molecule
+ptr mptr2,int ll1,int
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[42]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [43]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[44]
+Underfull \hbox (badness 10000) in paragraph at lines 1466--1469
+[]\OT1/cmtt/m/n/10 RuleAddRule(simptr sim,enum RuleType type,const char *rname,
+const char *pattern,const
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1466--1469
+\OT1/cmtt/m/n/10 enum MolecState *rctstate,const enum MolecState *prdstate,doub
+le rate,const int
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [45]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[46]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [47]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[48]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [49]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[50]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [51]
+Underfull \hbox (badness 10000) in paragraph at lines 1759--1760
+
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[52]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [53]
+Underfull \hbox (badness 10000) in paragraph at lines 1885--1888
+[]\OT1/cmtt/m/n/10 surfacearea2(simptr sim,int surface,enum PanelShape ps,char 
+*pname,int
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[54]
+Underfull \hbox (badness 10000) in paragraph at lines 1902--1905
+[]\OT1/cmtt/m/n/10 srfsamestate(enum MolecState ms1,enum PanelFace face1,enum M
+olecState ms2,enum
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1933--1936
+[]\OT1/cmtt/m/n/10 srfreverseaction(enum MolecState ms1,enum PanelFace face1,en
+um MolecState ms2,enum
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [55]
+Underfull \hbox (badness 10000) in paragraph at lines 1965--1968
+[]\OT1/cmtt/m/n/10 srftristate2index(enum MolecState ms,enum MolecState ms1,enu
+m MolecState ms2,enum
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[56]
+Underfull \hbox (badness 10000) in paragraph at lines 2003--2006
+[]\OT1/cmtt/m/n/10 srfindex2tristate(enum MolecState ms3,enum PanelFace face,en
+um MolecState ms4,enum
+ []
+
+
+Underfull \hbox (badness 1515) in paragraph at lines 2003--2006
+\OT1/cmr/m/n/10 Inverse function as \OT1/cmtt/m/n/10 srftristate2index\OT1/cmr/
+m/n/10 . This function uses the same table as shown for
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2008--2011
+[]\OT1/cmtt/m/n/10 srfcompareaction(enum SrfAction act1,surfactionptr details1,
+enum SrfAction
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [57]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[58]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [59]
+Underfull \hbox (badness 10000) in paragraph at lines 2135--2138
+[]\OT1/cmtt/m/n/10 surfsetaction(surfaceptr srf,int ident,const int *index,enum
+ MolecState ms,enum
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2140--2143
+[]\OT1/cmtt/m/n/10 surfsetrate(surfaceptr srf,int ident,const int *index,enum M
+olecState ms,enum
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2149--2152
+[]\OT1/cmtt/m/n/10 surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,char 
+*string,double
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[60]
+Underfull \hbox (badness 10000) in paragraph at lines 2158--2161
+[]\OT1/cmtt/m/n/10 void surftransformpanel(panelptr pnl,int dim,double *transla
+te,double *origin,double
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2181--2184
+[]\OT1/cmtt/m/n/10 surfsetjumppanel(surfaceptr srf,panelptr pnl1,enum PanelFace
+ face1,int
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [61]
+Underfull \hbox (badness 10000) in paragraph at lines 2186--2189
+[]\OT1/cmtt/m/n/10 srfcalcrate(simptr sim,surfaceptr srf,int i,enum MolecState 
+ms1,enum PanelFace
+ []
+
+
+Underfull \hbox (badness 3612) in paragraph at lines 2186--2189
+\OT1/cmr/m/n/10 Calculates the actual rate for the interaction of a molecule of
+ type \OT1/cmtt/m/n/10 i \OT1/cmr/m/n/10 and state \OT1/cmtt/m/n/10 ms1
+ []
+
+
+Underfull \hbox (badness 1910) in paragraph at lines 2186--2189
+\OT1/cmr/m/n/10 interacting with face \OT1/cmtt/m/n/10 face \OT1/cmr/m/n/10 of 
+surface \OT1/cmtt/m/n/10 srf\OT1/cmr/m/n/10 , and ending up in state \OT1/cmtt/
+m/n/10 ms2\OT1/cmr/m/n/10 . This uses the
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2191--2194
+[]\OT1/cmtt/m/n/10 srfcalcprob(simptr sim,surfaceptr srf,int i,enum MolecState 
+ms1,enum PanelFace
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2200--2203
+[]\OT1/cmtt/m/n/10 surfaddemitter(surfaceptr srf,enum PanelFace face,int i,doub
+le amount,double *pos,int
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[62]
+Underfull \hbox (badness 10000) in paragraph at lines 2227--2230
+[]\OT1/cmtt/m/n/10 panelside(double* pt,panelptr pnl,int dim,double *distptr,in
+t strict,int
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2236--2239
+[]\OT1/cmtt/m/n/10 lineXpanel(double *pt1,double *pt2,panelptr pnl,int dim,doub
+le *crsspt,enum PanelFace
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2236--2239
+\OT1/cmtt/m/n/10 *face1ptr,enum PanelFace *face2ptr,double *crossptr,double *cr
+oss2ptr,int
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [63]
+Underfull \hbox (badness 10000) in paragraph at lines 2249--2252
+[]\OT1/cmtt/m/n/10 lineexitpanel(double *pt1,double *pt2,panelptr pnl,int dim,d
+ouble *pnledgept,int
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[64]
+Underfull \hbox (badness 10000) in paragraph at lines 2301--2304
+[]\OT1/cmtt/m/n/10 SrfAction surfaction(surfaceptr srf,enum PanelFace face,int 
+ident,enum MolecState
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [65]
+Underfull \hbox (badness 10000) in paragraph at lines 2319--2322
+[]\OT1/cmtt/m/n/10 fixpt2panelnocross(simptr sim,double *pt,panelptr pnl,int di
+m,enum PanelFace
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2334--2337
+[]\OT1/cmtt/m/n/10 closestsurfacept(surfaceptr srf,int dim,double *testpt,doubl
+e *pnlpt,panelptr
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2339--2342
+[]\OT1/cmtt/m/n/10 movemol2closepanel(simptr sim,moleculeptr mptr,int dim,doubl
+e epsilon,double
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[66]
+Underfull \hbox (badness 10000) in paragraph at lines 2346--2349
+[]\OT1/cmtt/m/n/10 surfacereflect(moleculeptr mptr,panelptr pnl,double *crsspt,
+int dim,enum PanelFace
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2351--2354
+[]\OT1/cmtt/m/n/10 surfacejump(moleculeptr mptr,panelptr pnl,double *crsspt,enu
+m PanelFace face,int
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2358--2361
+[]\OT1/cmtt/m/n/10 dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,pane
+lptr pnl,enum PanelFace
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [67]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[68]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [69]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[70]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [71]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[72]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [73]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[74]
+Overfull \vbox (9.91441pt too high) has occurred while \output is active []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [75]
+Underfull \hbox (badness 10000) in paragraph at lines 2718--2721
+[]\OT1/cmtt/m/n/10 compartreadstring(simptr sim,compartptr cmpt,char *word,char
+ *line2,char
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[76]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [77]
+Underfull \hbox (badness 10000) in paragraph at lines 2855--2858
+[]\OT1/cmtt/m/n/10 portputmols(simptr sim,portptr port,int nmol,int ident,int *
+species,double
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[78]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [79]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[80]
+Underfull \hbox (badness 10000) in paragraph at lines 2979--2982
+[]\OT1/cmtt/m/n/10 latticeaddlattice(simptr sim,latticeptr *latptr,const char *
+latticename,const
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2979--2982
+\OT1/cmtt/m/n/10 double *min,const double *max,const double *dx,const char *bty
+pe,enum LatticeType
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2992--2995
+[]\OT1/cmtt/m/n/10 latticeaddmols(latticeptr lattice,int nmol,int i,double *pos
+lo,double *poshi,int
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [81]
+Underfull \hbox (badness 10000) in paragraph at lines 3001--3004
+[]\OT1/cmtt/m/n/10 latticeaddconvert(latticeptr lattice,int ident,int *index,en
+um PanelFace face,int
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3006--3008
+[]\OT1/cmtt/m/n/10 latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lat
+tice,const
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[82]
+Underfull \hbox (badness 10000) in paragraph at lines 3049--3052
+[]\OT1/cmtt/m/n/10 nsv[]add[]interface(NextSubvolumeMethod* nsv,int id,double d
+t, double *start,double
+ []
+
+
+Overfull \hbox (43.02057pt too wide) in paragraph at lines 3066--3068
+[]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3066--3068
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3074--3077
+[]\OT1/cmtt/m/n/10 nsv[]get[]species[]copy[]numbers(NextSubvolumeMethod* nsv, i
+nt id,const int
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [83]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[84]
+Underfull \hbox (badness 2781) in paragraph at lines 3204--3205
+[]\OT1/cmr/m/n/10 Local. Converts filament dynamics string to
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [85]
+Overfull \hbox (39.24062pt too wide) in paragraph at lines 3213--3215
+[]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3213--3215
+
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[86]
+Underfull \hbox (badness 10000) in paragraph at lines 3306--3309
+[]\OT1/cmtt/m/n/10 filAddSegment(filamentptr fil,double *x,double length,double
+ *angle,double
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [87]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[88]
+Underfull \hbox (badness 10000) in paragraph at lines 3389--3392
+[]\OT1/cmtt/m/n/10 filAddRandomSegments(filamentptr fil,int number,const char *
+xstr,const char
+ []
+
+
+Overfull \hbox (60.24043pt too wide) in paragraph at lines 3394--3396
+[]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3394--3396
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3410--3411
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3415--3416
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3418--3419
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3421--3422
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3424--3425
+
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [89]
+Underfull \vbox (badness 7722) has occurred while \output is active []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[90]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [91]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[92]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [93]
+Underfull \hbox (badness 10000) in paragraph at lines 3620--3623
+[]\OT1/cmtt/m/n/10 bngmakesurfaction(bngptr bng,int index,int totalmn,enum SrfA
+ction
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[94]
+Overfull \hbox (70.74034pt too wide) in paragraph at lines 3639--3641
+[]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3639--3641
+
+ []
+
+
+Overfull \hbox (7.74089pt too wide) in paragraph at lines 3655--3657
+[]
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3655--3657
+
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [95]
+Underfull \hbox (badness 10000) in paragraph at lines 3675--3676
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3684--3688
+
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[96]
+Underfull \hbox (badness 10000) in paragraph at lines 3746--3750
+
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [97]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[98]
+Underfull \hbox (badness 10000) in paragraph at lines 3868--3871
+[]\OT1/cmtt/m/n/10 graphicssetlight(simptr sim,graphicsssptr graphss,int lt,enu
+m LightParam
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [99]
+Underfull \hbox (badness 1052) in paragraph at lines 3875--3877
+\OT1/cmr/m/n/10 Performs basic graphics initialization. This calls \OT1/cmtt/m/
+n/10 gl2glutInit \OT1/cmr/m/n/10 to initialize things and then
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[100]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [101]
+Underfull \hbox (badness 10000) in paragraph at lines 4009--4011
+
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[102]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [103]
+Underfull \hbox (badness 10000) in paragraph at lines 4097--4098
+
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[104]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [105]
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 4170.
+
+Missing character: There is no Õ in font cmr10!
+Missing character: There is no É in font cmtt10!
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[106]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [107]
+Underfull \hbox (badness 3323) in paragraph at lines 4258--4259
+[]\OT1/cmtt/m/n/10 docommand \OT1/cmr/m/n/10 is given the simulation
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[108]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [109]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[110]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [111]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[112]
+Missing character: There is no Ð in font cmr10!
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [113]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[114]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [115]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[116]
+Chapter 5.
+
+Overfull \hbox (11.02116pt too wide) in alignment at lines 4662--4684
+ [] [] [] 
+ []
+
+
+Overfull \hbox (11.02116pt too wide) in alignment at lines 4684--4704
+ [] [] [] 
+ []
+
+
+Overfull \hbox (11.02116pt too wide) in alignment at lines 4704--4724
+ [] [] [] 
+ []
+
+[117
+
+]
+Overfull \hbox (11.02116pt too wide) in alignment at lines 4724--4744
+ [] [] [] 
+ []
+
+
+Overfull \hbox (11.02116pt too wide) in alignment at lines 4744--4764
+ [] [] [] 
+ []
+
+
+Overfull \hbox (11.02116pt too wide) in alignment at lines 4764--4768
+ [] [] [] 
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[118]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[119]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[120]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[121]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[122]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[123]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[124]
+Chapter 6.
+[125
+
+]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[126]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[127]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[128]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[129]
+Underfull \hbox (badness 1024) in paragraph at lines 5129--5130
+[]\OT1/cmr/m/n/10 Replaced the surface statements \OT1/cmtt/m/n/10 action[]fron
+t\OT1/cmr/m/n/10 , \OT1/cmtt/m/n/10 action[]back\OT1/cmr/m/n/10 , and \OT1/cmtt
+/m/n/10 action[]both \OT1/cmr/m/n/10 with \OT1/cmtt/m/n/10 action\OT1/cmr/m/n/1
+0 ;
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[130]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[131]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[132]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[133]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[134]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[135]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[136]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[137]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[138]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[139]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[140]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[141]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[142]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[143]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[144]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[145]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[146]
+Underfull \hbox (badness 1052) in paragraph at lines 5657--5658
+\OT1/cmr/m/n/10 in string2.c, addition of pattern data structure components in 
+the sim->mols superstructure,
+ []
+
+
+Underfull \hbox (badness 7595) in paragraph at lines 5658--5659
+\OT1/cmr/m/n/10 smolGetLatticeIndexNT, smolGetLatticeName, smolAddLatticeMolecu
+les, smolAddLatticePort,
+ []
+
+
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[147]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[148]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[149]
+Underfull \hbox (badness 10000) in paragraph at lines 5715--5716
+[]\OT1/cmr/m/n/10 Added intersurface reactions, including the reaction[]intersu
+rface statement, the
+ []
+
+
+Underfull \hbox (badness 1565) in paragraph at lines 5725--5726
+[]\OT1/cmr/m/n/10 Fixed minor bugs in \OT1/cmtt/m/n/10 meansqrdisp\OT1/cmr/m/n/
+10 , \OT1/cmtt/m/n/10 meansqrdisp2\OT1/cmr/m/n/10 , and \OT1/cmtt/m/n/10 meansq
+rdisp3 \OT1/cmr/m/n/10 which did not allow
+ []
+
+
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[150]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[151]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[152]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[153]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[154]
+Overfull \vbox (6.44444pt too high) has occurred while \output is active []
+
+
+[155]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[156]
+Chapter 7.
+[157
+
+]
+Underfull \hbox (badness 10000) in paragraph at lines 5878--5879
+[]\OT1/cmr/m/n/10 Libsmoldyn needs functions such as: smolGetMolCount, smolGetM
+olCountCmpt,
+ []
+
+
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [158]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[159]
+Overfull \vbox (7.5pt too high) has occurred while \output is active []
+
+ [160]
+Overfull \vbox (6.83331pt too high) has occurred while \output is active []
+
+
+[161] (./SmoldynCodeDoc.aux)
+
+LaTeX Font Warning: Some font shapes were not available, defaults substituted.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 3104 strings out of 492995
+ 41473 string characters out of 6132704
+ 340467 words of memory out of 5000000
+ 6685 multiletter control sequences out of 15000+600000
+ 11534 words of font info for 41 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 26i,6n,49p,1905b,1540s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
+></usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
+</usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><
+/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmitt10.pfb><
+/usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></
+usr/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></us
+r/local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/
+local/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/lo
+cal/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local
+/texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsl10.pfb></usr/local/
+texlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/t
+exlive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/tex
+live/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texl
+ive/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texli
+ve/2017/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
+Output written on SmoldynCodeDoc.pdf (161 pages, 735285 bytes).
+PDF statistics:
+ 584 PDF objects out of 1000 (max. 8388607)
+ 401 compressed objects within 5 object streams
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+
