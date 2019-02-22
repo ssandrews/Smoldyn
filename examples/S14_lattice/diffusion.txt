@@ -1,0 +1,99 @@
+# Simple bouncing molecules in a 3D system, used to illustrate basic
+# use of lattices.  This file create adjacent lattice and particle regions.
+# The right half is for particles and the left for lattice.
+
+graphics opengl
+tiff_name diffusionimages/image
+tiff_iter 5
+tiff_max 200
+#random_seed 1
+
+dim 3
+species red
+
+difc red 30
+
+color red red
+
+time_start 0
+time_stop 1
+time_step 0.00001 
+
+boundaries x 0 1	# system is (0,0,0) to (1,1,1)
+boundaries y 0 1	# of this, x=0 to 0.5 is particle, x=0.5 to 1 is lattice
+boundaries z 0 1
+
+molperbox 10
+
+mol 100 red 0.0-0.01 u u
+
+/*
+start_surface jump_walls	# used for periodic boundaries on y and z
+action both all jump
+polygon both edge
+panel rect +1 0 0 0 1 1 rect0
+panel rect -1 0 1 0 1 1 rect1
+panel rect +2 0 0 0 1 1 rect2
+panel rect -2 0 0 1 1 1 rect3
+jump rect0 front <-> rect1 front
+jump rect2 front <-> rect3 front
+end_surface
+
+start_surface reflect_walls
+action both all reflect
+polygon both edge
+panel rect +0 0 0 0 1 1
+end_surface
+*/
+
+#reaction transfer red -> red 100
+#reaction_representation transfer lattice -> particle
+
+start_surface walls		# walls at system boundaries
+action both all reflect
+polygon both edge
+panel rect +0 0 0 0 1 1
+panel rect -0 1 0 0 1 1
+panel rect +1 0 0 0 1 1
+panel rect -1 0 1 0 1 1
+panel rect +2 0 0 0 1 1
+panel rect -2 0 0 1 1 1
+end_surface
+
+
+start_surface portsurf		# port is at x=0.5
+action front all port
+color front 0.2 0 0 0.5
+color back 0 0 0
+polygon both face
+panel rect -0 0.5 0 0 1 1
+end_surface
+
+start_port testport		#?? this will be removed
+surface portsurf
+face front
+end_port
+
+start_lattice testlattice	# lattice is also (0,0,0) to (1,1,1)
+type nsv			# due to port location, lattice is right half of system
+port testport
+species all
+make_particle back red
+boundaries 0 0 1
+boundaries 1 0 1
+boundaries 2 0 1
+lengthscale 0.05 0.05 0.05
+reactions all
+#mol 1000 red 0.5-1.0 0.0-1.0 0.0-1.0	
+end_lattice
+
+
+output_files stdout
+
+#cmd B pause
+#cmd n 10 molcountspace red 0 0 1 2 0 1 0 1 100 stdout
+cmd n 1 molcountspace red 0 0 1 20 0 1 0 1 100 stdout
+#cmd n 1000 writeVTK output
+
+end_file
+

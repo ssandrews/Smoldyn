@@ -1,0 +1,37 @@
+# Test of isotropic diffusion rate
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+species a1 a2 a3 b1 b2 b3 a1b2
+
+difc a? 10
+difc b* 1
+difc ??b* 20
+
+color *1 red
+color *2 green
+color *3 blue
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+mol 100 a1	0	0	0
+mol 100 a2	0	100	0
+mol 100 a3	100	0	0
+mol 100 b1	0	0	100
+mol 100 b2	0	100	100
+mol 100 b3	100	0	100
+mol 100 a1b2	50	50	50
+
+text_display time {a|b}? ?2 *
+
+end_file
+

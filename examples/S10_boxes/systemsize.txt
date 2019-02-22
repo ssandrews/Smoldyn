@@ -1,0 +1,55 @@
+# Michaelis-Menten reaction
+# units: 100 nm and second
+
+graphics none
+graphic_iter 100
+
+dim 3
+boundaries x 0 1 p
+boundaries y 0 1 p
+boundaries z 0 1 p
+
+species E S ES P
+molperbox 4
+accuracy 10
+
+difc E 1
+difc S 1
+difc ES 1
+difc P 1
+
+color E 1 0 0
+color S 0 1 0
+color ES 1 1 0
+color P 0 0 1
+
+time_start 0
+time_stop 10
+time_step 0.001
+
+/*
+molecule_lists onlylist
+mol_list all onlylist
+*/
+
+molecule_lists Elist Slist ESlist Plist
+mol_list E Elist
+mol_list S Slist
+mol_list ES ESlist
+mol_list P Plist
+
+
+#output_files systemsizeout.txt
+#cmd i 0 100 0.01 molcount systemsizeout.txt
+
+# density: 10 E/vol and 100 S/vol
+mol 10 E u u u
+mol 100 S u u u
+
+reaction fwd E + S -> ES 0.1
+reaction back ES -> E + S 1
+reaction prod ES -> E + P 1
+product_placement back pgemmax 0.2
+
+end_file
+

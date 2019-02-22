@@ -1,0 +1,112 @@
+# Test of compartment translation
+
+graphics opengl
+#tiff_name diffusecmptimages/image
+#tiff_iter 10
+#tiff_max 400
+
+#random_seed 4
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+frame_thickness 0
+
+species red green blue purple pink1 pink2
+#random_seed 1
+
+difc red 3
+difc green 1
+difc blue(all) 1
+difc purple(all) 1
+#difc pink*(up) 0.1
+
+color red darkred
+color green green
+color blue(all) blue
+color purple(all) purple
+color pink*(all) pink
+display_size all(all) 4
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+
+start_surface outersurf
+action both all reflect
+color both black
+thickness 1
+panel sphere 50 50 50 30 outer
+end_surface
+
+start_surface innersurf1
+action both all reflect
+color both grey
+thickness 1
+panel sphere 50 50 10 30 sphere1
+end_surface
+
+start_surface innersurf2
+action both all reflect
+color both grey
+thickness 1
+panel sphere 50 20 10 30 sphere2
+end_surface
+
+start_surface stickysurf
+action both all reflect
+color both darkgreen
+thickness 1
+panel sphere 80 50 10 30 sticky
+end_surface
+
+
+
+start_compartment inside1
+surface innersurf1
+point 50 50
+end_compartment
+
+start_compartment inside2
+surface innersurf2
+point 50 20
+end_compartment
+
+start_compartment sticky
+surface stickysurf
+point 80 50
+end_compartment
+
+start_compartment outside
+surface outersurf
+point 50 50
+compartment andnot inside1
+compartment andnot inside2
+compartment andnot sticky
+end_compartment
+
+
+reaction stick blue(up) + purple(up) -> pink1(up) + pink2(up)
+binding_radius stick 1
+reaction_intersurface stick r1 r2
+product_placement stick irrev		# ?? this should not be required
+
+reaction unstick pink1 + pink2 -> blue + purple 10
+confspread_radius unstick 1
+
+
+compartment_mol 100 red outside
+compartment_mol 20 green inside1
+compartment_mol 20 green inside2
+surface_mol 20 blue(up) innersurf1 all all
+surface_mol 20 blue(up) innersurf2 all all
+surface_mol 20 purple(up) stickysurf all all
+
+cmd E if molcountonsurf(pink1(up),innersurf1) = 0 diffusecmpt inside1 15 0.2 0.2  outside 11 20
+cmd E if molcountonsurf(pink1(up),innersurf2) = 0 diffusecmpt inside2 15 0.2 0.2  outside 11 20
+#cmd E diffusecmpt inside1 15 0.2 0.2  outside 11 20
+#cmd E diffusecmpt inside2 15 0.2 0.2  outside 11 20
+
+end_file
+

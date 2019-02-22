@@ -1,0 +1,102 @@
+# Simple bouncing molecules with surfaces
+
+random_seed 1
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+species red green blue
+
+difc red 3
+difc green 1
+difc blue 1
+
+color red red
+color green green
+color blue blue
+display_size red 3
+display_size green 3
+display_size blue 3
+background_color 0 0 0
+frame_thickness 0
+
+time_start 0
+time_stop 50
+time_step 0.02
+
+boundaries 0 0 100
+boundaries 1 0 100
+boundaries 2 0 100
+
+mol 100 red 50 50 50
+mol 100 red 70 20 77
+mol 100 red 20 20 20
+mol 100 red 30 75 30
+mol 100 red 20 40 70
+mol 100 red 80 30 30
+mol 200 green 80 50 50
+mol 200 blue 10 40 60
+
+start_surface walls
+action both all reflect
+color both 1 1 1
+polygon both edge
+panel rect +0 0 0 0 100 100
+panel rect -0 100 0 0 100 100
+panel rect +1 0 0 0 100 100
+panel rect -1 0 100 0 100 100
+panel rect +2 0 0 0 100 100
+panel rect -2 0 0 100 100 100
+end_surface
+
+start_surface surf
+action both red reflect
+action both green absorb
+action both blue transmit
+color both 0.6 0 0.6 0.5
+thickness 2
+polygon front face
+polygon back edge
+panel rect +0 40 40 40 20 20
+panel rect -0 60 40 40 20 20
+panel rect +1 40 40 40 20 20
+panel rect -1 40 60 40 20 20
+panel rect +2 40 40 40 20 20
+panel rect -2 40 40 60 20 20
+panel tri 60 15 70 80 15 70 70 15 86  # 1 2 3
+panel tri 60 15 70 70 15 86 70 31 77  # 1 3 4
+panel tri 70 15 86 80 15 70 70 31 77  # 3 2 4
+panel tri 80 15 70 60 15 70 70 31 77  # 2 1 4
+panel sph 20 20 20 8 20 20
+panel cyl 20 75 20 80 75 80 5 20 20
+panel cyl 20 30 70 20 50 70 4 20 20
+panel cyl 80 30 30 80 50 30 4 20 20
+panel hemi 20 75 20 5 1 0 1 20 20
+panel hemi 80 75 80 5 -1 0 -1 20 20
+panel hemi 80 30 30 4 0 1 0 20 20
+panel disk 20 30 70 4 0 -1 0 20
+panel disk 20 50 70 4 0 1 0 20
+panel disk 80 40 30 4 0 1 0 20
+panel disk 80 50 30 4 0 1 0 20
+end_surface
+
+start_surface jump
+action front all jump
+action back all transmit
+color both 0.5 0.5 0.5 0.5
+thickness 2
+polygon front face
+polygon back edge
+panel disk 80 35 30 4 0 -1 0 20
+panel disk 80 45 30 4 0 1 0 20
+jump disk0 f <-> disk1 f
+end_surface
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

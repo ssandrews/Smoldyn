@@ -1,0 +1,52 @@
+# Simple A+B <-> C equilibrium
+# Output is text to stdout with numbers of A, B, and C molecules.
+# This runs with either 1 or 3 molecule lists; comment and uncomment code below as required.
+# I found runtime was 7.37 s with 3 lists and 10.47 s with 1 list.
+
+graphics none
+graphic_iter 10
+
+dim 3
+
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+
+species A B C
+boxsize 4
+accuracy 10
+
+# For 1 list, use following code:
+/*
+molecule_lists onlylist
+mol_list all onlylist
+*/
+# For 3 lists, use following code:
+molecule_lists Alist Blist Clist
+mol_list A Alist
+mol_list B Blist
+mol_list C Clist
+
+difc A 1
+difc B 1
+difc C 1
+
+color A red
+color B green
+color C blue
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+cmd i 0 100 10 molcount
+
+mol 1000 A u u u
+mol 1000 B u u u
+
+reaction revrxn C -> A + B 0.1
+product_placement revrxn pgemmax 0.2
+reaction fwdrxn A + B -> C 100
+
+end_file
+

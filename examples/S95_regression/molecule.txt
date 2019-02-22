@@ -1,0 +1,49 @@
+# Demonstration of a few molecule statements
+# This starts in pause mode; press space to unpause
+
+random_seed 1
+
+graphics opengl
+
+dim 3
+
+species red
+species green
+species blue
+species yellow
+species magenta
+species cyan
+
+color red red
+color green green
+color blue blue
+color yellow yellow
+color magenta magenta
+color cyan cyan
+
+difc all 3
+
+time_start 0
+time_stop 10
+time_step 0.01
+
+boundaries 0 -50 50 r
+boundaries 1 -50 50 r
+boundaries 2 -50 50 r
+
+mol 50 red 0 0 0
+mol 50 green -50--40 -50-0 -50-50
+mol 50 blue 30-40 50 u
+mol 50 yellow u 10--10 u
+mol 50 magenta 20-20 u 40
+mol 50 cyan 40 40 -40
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+
+
+

@@ -1,0 +1,54 @@
+# Bimolecular reactions between molecules on different surfaces
+
+graphics opengl_good
+
+dim 2
+species A B C
+
+difc all(all) 1
+
+color A(all) red
+color B(all) green
+color C(all) blue
+display_size all(all) 1
+
+time_start 0
+time_stop 1000
+time_step 0.1
+
+boundaries x 0 100
+boundaries y 0 100
+
+start_surface walls
+action both all reflect
+panel rectangle +x 0 0  100
+panel rectangle -x 100 0  100
+panel rectangle +y 0 0  100
+panel rectangle -y 0 100  100
+end_surface
+
+start_surface left
+action both all reflect
+panel rectangle +x 49 30  20 r1
+panel triangle 49 50  29 70 t1
+neighbors r1 t1
+neighbors t1 r1
+end_surface
+
+start_surface right
+action both all reflect
+panel rectangle +x 50 30  20 r1
+panel triangle 50 30  70 10 t1
+neighbors r1 t1
+neighbors t1 r1
+end_surface
+
+surface_mol 20 A(up) left all all
+surface_mol 20 B(up) right all all
+
+reaction rxn1 A(up) + B(up) -> A(up) + C(bsoln)
+binding_radius rxn1 2
+reaction_intersurface rxn1 r1 r1
+
+end_file
+

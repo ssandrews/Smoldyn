@@ -1,0 +1,56 @@
+# File to test jump boundaries with surfaces
+
+graphics opengl
+
+dim 1
+boundaries x 0 100
+
+species red green
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+display_size red 5
+display_size green 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 5 red 15
+mol 5 red 45
+mol 5 red 75
+mol 25 green 5
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +0 0
+panel rect -0 100
+end_surface
+
+start_surface surf
+action both all jump
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 2
+panel rect +x 10 r0
+panel rect -x 20 r1
+panel tri 40 t0
+panel tri 50 t1
+panel sph 75 5 s0
+panel sph 75 7 s1
+jump r0 front <-> r1 front
+jump r0 back <-> r1 back
+jump t0 front <-> t1 back
+jump t0 back <-> t1 front
+jump s0 front <-> s1 back
+jump s0 back <-> s1 front
+end_surface
+
+cmd b pause
+
+end_file
+

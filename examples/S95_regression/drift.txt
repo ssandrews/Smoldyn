@@ -1,0 +1,42 @@
+# Test of diffusion + drift
+
+random_seed 1
+
+graphics opengl
+graphic_iter 10
+
+dim 3
+species red green blue
+boxsize 200
+
+difc red 10
+difc green 10
+difc blue 10
+
+drift red 0 0 0
+drift green 1 0 0
+drift blue -1 2 0
+
+color red red
+color green green
+color blue blue
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+boundaries 0 -100 100 t
+boundaries 1 -100 100 t
+boundaries 2 -100 100 t
+
+mol 1000 red 0 0 0
+mol 1000 green 0 0 0
+mol 1000 blue 0 0 0
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

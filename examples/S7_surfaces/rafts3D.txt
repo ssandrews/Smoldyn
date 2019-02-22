@@ -1,0 +1,61 @@
+# File to test species changes at surfaces
+
+graphics opengl
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 20
+
+species red green
+
+difc red(all) 5		# outside raft
+difc green(all) 1	# inside raft
+
+color red(all) red
+color green(all) green
+display_size red(all) 3
+display_size green(all) 3
+
+time_start 0
+time_stop 200
+time_step 0.01
+
+start_surface walls
+polygon both edge
+action all(all) both reflect
+color both green
+panel rect +x 0 0 0 100 20
+panel rect -x 100 0 0 100 20
+panel rect +y 0 0 0 100 20
+panel rect -y 0 100 0 100 20
+panel rect +z 0 0 0 100 100
+panel rect -z 0 0 20 100 100
+end_surface
+
+
+start_surface membrane
+color both grey 0.5
+thickness 1
+panel rect +z -5 -5 10 110 110 rect0
+end_surface
+
+
+start_surface raftedge
+rate red(front) fsoln bsoln 5 green
+rate green(front) bsoln fsoln 1 red
+# The concentration ratio equals the transmission coefficient ratio,
+# so the latter must depend on the diffusion coefficients (i.e. the
+# transmission coefficients differ because of different diffusion
+# coefficients, not to make this active transport; this model is for
+# passive transport).
+color both cyan 0.5
+polygon both face
+thickness 1
+panel cyl 50 50 0 50 50 20 25 20 10
+end_surface
+
+surface_mol 200 red(front) membrane rect rect0 90 50 10
+
+end_file
+

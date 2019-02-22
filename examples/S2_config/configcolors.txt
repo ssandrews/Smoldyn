@@ -1,0 +1,10 @@
+# This file of Smoldyn statements is designed to be read by configmolecs.txt.
+# It will not run on its own.
+
+color red red
+color green green
+
+end_file
+
+
+

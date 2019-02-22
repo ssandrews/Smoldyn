@@ -1,0 +1,52 @@
+# Simple bouncing molecules
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+boundaries x 640 770
+boundaries y -1 15
+boundaries z 0 130
+
+species red green
+molperbox 2
+rand_seed 0
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+display_size red 2
+display_size green 2
+background_color 0 0 0
+frame_thickness 0
+
+time_start 0
+time_stop 10000
+time_step 0.1
+
+mol 2000 red 710 1 40
+mol 2000 green 730 1 100
+
+start_surface back
+action both all r
+color both 0.8 0.8 0.8 0.2
+polygon front face
+polygon back face
+panel rect +y 640 0.1 0 130 130
+panel rect +z 640 0 1 130 20
+end_surface
+
+start_surface surface
+action front all r
+action back all r
+color both 1 1 1 0.3
+polygon front edge
+polygon back edge
+thickness 0.5
+read_file cellmeshfile.txt
+end_surface
+
+end_file
+

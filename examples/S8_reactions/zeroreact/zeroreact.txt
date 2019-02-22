@@ -1,0 +1,29 @@
+# Zeroth order reactions
+
+graphics opengl
+
+dim 3
+species red green blue
+
+difc all 1
+color red 1 0 0
+color green 0 1 0
+color blue 0 0 1
+
+time_start 0
+time_stop 10
+time_step 0.1
+
+boundaries 0 0 10 r
+boundaries 1 0 10 r
+boundaries 2 0 10 r
+
+reaction slow 0 -> red 0.001
+reaction med  0 -> green 0.01
+reaction fast 0 -> blue 0.1
+
+output_files zeroreactout.txt
+cmd e molcount zeroreactout.txt
+
+end_file
+

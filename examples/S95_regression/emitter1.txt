@@ -1,0 +1,42 @@
+# Simple bouncing molecules with surfaces
+# units microns and seconds
+
+random_seed 1
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+species red
+boxsize 1
+
+difc red 3
+
+color red 1 0 0
+display_size red 1
+frame_thickness 0
+
+time_start 0
+time_stop 10
+time_step 0.1
+
+boundaries 0 -10 10
+boundaries 1 -10 10
+boundaries 2 -10 10
+
+start_surface bounds
+unbounded_emitter front red 1 -4.5 0 0
+color both 0.5 0.5 0.5
+polygon both edge
+read_file sphere.txt
+end_surface
+
+cmd e pointsource red 50 -4.5 0 0
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

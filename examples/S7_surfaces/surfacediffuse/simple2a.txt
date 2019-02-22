@@ -1,0 +1,47 @@
+# Quantitative test of diffusion on 2D surfaces
+
+define SEED 1
+
+graphics opengl
+random_seed SEED
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red
+
+difc red(all) 10
+
+color red(all) red
+display_size red(all) 5
+
+time_start 0
+time_stop 9.99
+time_step 10
+
+frame_thickness 0
+
+start_surface surf1
+color both black
+#panel rect +y 0 50 100 r2
+
+panel rect +y 0 50 30 r0
+panel rect +y 30 50 10 r1
+panel rect +y 40 50 20 r2
+panel rect +y 60 50 40 r3
+neighbors r0 r1
+neighbors r1 r0 r2
+neighbors r2 r1 r3
+neighbors r3 r2
+end_surface
+
+surface_mol 1000000 red(up) surf1 rect r2 50 50
+
+text_display red(all)
+
+output_files simple2aout.txt
+cmd A molcountspace red(all) x 0 100 200 0 100 0 simple2aout.txt
+
+end_file
+

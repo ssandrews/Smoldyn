@@ -1,0 +1,38 @@
+# Simulation file of basic diffusion and reaction
+# This file is used to test output files
+
+graphics opengl
+graphic_iter 1
+accuracy 5
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+species red blue
+molperbox 4
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+output_root cmdfileoutput/
+output_files cmdfileout.txt
+output_file_number cmdfileout.txt 1
+
+cmd n 100 incrementfile cmdfileout.txt
+cmd e molcount cmdfileout.txt
+
+difc red 1
+difc blue 1
+color red red
+color blue blue
+
+mol 100 red u u u
+mol 1 blue 50 50 50
+
+reaction rxn red -> 0 0.1
+
+end_file
+

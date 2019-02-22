@@ -1,0 +1,41 @@
+# File to illustrate parameter scans using Python scripts
+# This file is intended to be run using pyscript.py
+
+ifundefine RXNRATE
+  define RXNRATE 0.1
+  define SIMNUM 1
+endif
+
+graphics opengl
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+species red green
+
+difc red 3
+difc green 0
+
+color red red
+color green green
+
+time_start 0
+time_stop 10
+time_step 0.01
+
+reaction rxn red -> green RXNRATE
+
+mol 100 red u u u
+
+output_files FILEROOT_SIMNUMout.txt stdout
+cmd n 10 molcount FILEROOT_SIMNUMout.txt
+cmd a echo stdout "result of run SIMNUM with rate RXNRATE: "
+cmd a molcount stdout
+
+
+end_file
+
+
+

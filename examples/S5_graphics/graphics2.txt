@@ -1,0 +1,46 @@
+# Simple bouncing molecules in a 2-D system
+
+graphics opengl_good
+graphic_iter 10
+
+dim 2
+boundaries x 0 100 r
+boundaries y 0 100 r
+
+species red green
+boxsize 10
+
+frame_thickness 3
+frame_color 0.8 0.9 0
+grid_thickness 1
+grid_color white
+background_color black
+
+# To save a snapshot, uncomment following line and comment out movie lines
+tiff_name graphics2
+
+# To save a movie, comment out above tiff_name and uncomment following
+/*
+tiff_name moviefolder/movie
+tiff_iter 100
+tiff_min 5
+tiff_max 15
+*/
+
+display_size red 1
+display_size green(all) 2
+color red red
+color green(all) green
+
+difc red 3
+difc green 1
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 20 red u u
+mol 8 green 80 40
+
+end_file
+

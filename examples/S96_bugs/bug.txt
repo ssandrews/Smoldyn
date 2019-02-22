@@ -1,0 +1,45 @@
+# Simple bouncing molecules in a 2-D system
+
+# BUG: causes seg fault due to failing wildcard parsing
+
+graphics opengl
+
+dim 2
+species PON
+species POFF
+species Pol
+species Xist_RNA
+
+difc all 0 
+
+color PON(all) green
+color POFF(all) red
+color Pol(all) blue
+#color Pol_Tsix(all) orange
+color Xist_RNA(all) yellow
+display_size all(all) 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+boundaries 0 0 100 
+boundaries 1 0 100 
+
+start_surface DNA
+panel rect +1 20 50 60 r1
+end_surface
+
+surface_drift Pol[(front)] DNA rect 2 0
+surface_drift Pol[(back)] DNA rect -2 0
+
+reaction Pactivate POFF(all) -> PON 10
+reaction Pinactivate PON(all) -> POFF 20
+#reaction translation Pol(front) -> Xist_RNA
+
+surface_mol 1 PON(front) DNA rect r1 30 50
+surface_mol 1 POFF(back) DNA rect r1 60 50
+surface_mol 1 Pol(front) DNA rect r1 30 50
+surface_mol 1 Pol(back) DNA rect r1 60 50
+
+end_file

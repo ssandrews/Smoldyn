@@ -1,0 +1,36 @@
+# Bimolecular reaction using lambda-rho algorithm
+
+graphics none
+
+dim 3
+species A
+species B
+species C
+
+difc all 1
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+
+mol 1000 A u u u
+mol 1000 B u u u
+
+reaction rxn1 A + B -> C
+binding_radius rxn1 0.76
+reaction_probability rxn1 0.5
+
+#reaction rxn1 A + B <-> C 10 1
+#reaction_difflimit rxn1 0.1
+
+
+
+#output_files bireactLRout.txt
+#cmd e molcount bireactLRout.txt
+
+end_file
+

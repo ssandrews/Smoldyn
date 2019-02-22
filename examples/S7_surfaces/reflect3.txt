@@ -1,0 +1,72 @@
+# Test of reflection in 3 dimensions
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red green
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+display_size red 3
+display_size green 3
+
+time_start 0
+time_stop 200
+time_step 0.01
+
+mol 100 red 50 50 50
+mol 100 red 70 20 77
+mol 100 red 20 20 20
+mol 100 red 30 75 30
+mol 100 red 20 40 70
+mol 200 green 80 50 50
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+polygon both edge
+panel rect +x 0 0 0 100 100
+panel rect -x 100 0 0 100 100
+panel rect +y 0 0 0 100 100
+panel rect -y 0 100 0 100 100
+panel rect +z 0 0 0 100 100
+panel rect -z 0 0 100 100 100
+end_surface
+
+start_surface surf
+action all both reflect
+color both purple 0.5
+thickness 2
+polygon front face
+polygon back edge
+panel rect +x 40 40 40 20 20
+panel rect -x 60 40 40 20 20
+panel rect +y 40 40 40 20 20
+panel rect -y 40 60 40 20 20
+panel rect +z 40 40 40 20 20
+panel rect -z 40 40 60 20 20
+panel tri 60 15 70 80 15 70 70 15 86     # 1 2 3
+panel tri 60 15 70 70 15 86 70 31 77     # 1 3 4
+panel tri 70 15 86 80 15 70 70 31 77     # 3 2 4
+panel tri 80 15 70 60 15 70 70 31 77     # 2 1 4
+panel sph 20 20 20 8 20 20
+panel cyl 20 75 20 80 75 80 5 20 20
+panel cyl 20 30 70 20 50 70 4 20 20
+panel hemi 20 75 20 5 1 0 1 20 20
+panel hemi 80 75 80 5 -1 0 -1 20 20
+panel disk 20 30 70 4 0 -1 0 20
+panel disk 20 50 70 4 0 1 0 20
+end_surface
+
+cmd b pause
+
+end_file
+

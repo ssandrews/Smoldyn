@@ -1,0 +1,55 @@
+# Test of surface drift, in 2 dimensions
+
+graphics opengl
+
+dim 3
+
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red green blue
+
+#difc red(all) 0.1
+
+color red(all) red
+color green(all) green
+color blue(all) blue
+
+display_size all(all) 4
+
+time_start 0
+time_stop 10000
+time_step 0.1
+
+start_surface surf1
+color front violet
+color back green
+polygon both edge
+panel rect +0   20 20 20   60 60 r1
+panel tri 10 40 10   15 45 70   60 90 50 t1
+panel sph 45 50 50   20   10 20 s1
+panel cyl 80 20 30   70 80 60   5   10 10 c1
+panel hemi 70 80 60   5  10 -60 -30 10 10 h1
+panel hemi 80 20 30   5  -10 60 30  10 10 h2
+neighbors r1 t1
+neighbors t1 r1 s1
+#neighbors s1 t1
+#neighbors c1 h1 h2
+#neighbors h1 c1
+#neighbors h2 c1
+end_surface
+
+surface_mol 100 red(up) all all all
+surface_mol 100 green(front) all all all
+
+surface_drift red(up) surf1 all 0.1 0.3
+surface_drift green(front) surf1 all -0.1 0
+
+reaction rxn1 red(up) -> green(front) 0.001
+reaction rxn2 green(front) -> red(up) 0.001
+
+cmd b pause
+
+end_file
+

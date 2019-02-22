@@ -1,0 +1,55 @@
+# Simulation file for Lotka-Voltera reaction
+# This file is used to test and demonstrate continuous-time command timing
+
+graphics opengl
+graphic_iter 5
+accuracy 5
+
+dim 3
+low_wall x -100 p
+high_wall x 100 p
+low_wall y -100 p
+high_wall y 100 p
+low_wall z -10 p
+high_wall z 10 p
+
+species R F
+molperbox 1
+random_seed 0
+
+time_start 0
+time_stop 10
+time_step 0.001
+
+output_files stdout
+
+cmd b echo stdout "... before: b ...\n"
+cmd b molcount
+cmd @ 0.5 echo stdout "... at: @ 0.5 ...\n"
+cmd @ 0.5 molcount
+cmd @ 1 echo stdout "... interval: i 1 2 0.1 ...\n"
+cmd i 1 2 0.1 molcount
+cmd @ 3 echo stdout "... geometric: x 3 8 0.02 1.2 ...\n"
+cmd x 3 8 0.02 1.2 molcount
+cmd a echo stdout "... after: a ...\n"
+cmd a molcount
+
+cmd e ifno R stop
+cmd e ifno F stop
+
+difc R 100
+difc F 100
+color R 1 0 0
+color F 0 1 0
+display_size R 2
+display_size F 3
+
+mol 1000 R u u u
+mol 1000 F u u u
+
+reaction Rmultiply R -> R + R 10
+reaction Fdie F -> 0 10
+reaction Feat R + F -> F + F 8000
+
+end_file
+

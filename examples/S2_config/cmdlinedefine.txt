@@ -1,0 +1,33 @@
+# Test of including definitions on the command line.
+# To run this file with diffusion, add the text "--define RDIFC=5" to
+# the smoldyn call on the command line.  Other diffusion coefficients
+# can be used as well, of course.
+
+define RDIFC 0
+
+graphics opengl
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+species red green
+
+difc red RDIFC
+difc green 1
+
+color red red
+color green green
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+mol 100 red 20 30 20
+mol 30 green u u u
+
+end_file
+
+
+

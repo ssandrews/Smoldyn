@@ -1,0 +1,26 @@
+# BioNetGen file
+
+setOption("SpeciesLabel","HNauty")
+
+begin model
+begin parameters
+	kfwd	10
+	krev	0.01
+end parameters
+
+begin molecule types
+	A(left,right)
+end molecule types
+
+begin seed species
+	A(left,right)	0
+end seed species
+
+begin reaction rules
+	A(right) + A(left) <-> A(right!1).A(left!1)	kfwd,krev
+end reaction rules
+
+end model
+
+## actions ##
+generate_network({overwrite=>1,max_agg=>6})

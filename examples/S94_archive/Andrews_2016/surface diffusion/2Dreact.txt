@@ -1,0 +1,46 @@
+# test of reactions on an E. coli shaped surface
+
+graphics opengl
+
+dim 3
+names red green blue
+
+difc all(all) 0.1
+color red(all) red
+color green(all) green
+color blue(all) blue
+
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+boundaries 0 -5 5
+boundaries 1 -5 5
+boundaries 2 -5 5
+
+start_surface ecoli
+polygon both edge
+color both black
+
+#panel sphere 0 0 0 5  10 10
+
+panel hemi -3 0 0  2  1 0 0  10 5 h1
+panel hemi 3 0 0  2  -1 0 0  10 5 h2
+panel cyl -3 0 0  3 0 0  2  10 5 c1
+neighbors h1 c1
+neighbors h2 c1
+neighbors c1 h1 h2
+
+end_surface
+
+reaction rxn red(up) + green(up) -> blue(up) 0.1
+
+surface_mol 1000 red(up) ecoli all all
+surface_mol 1000 green(up) ecoli all all
+
+output_files 2Dreactout.txt
+cmd i 0 100 0.1 molcount 2Dreactout.txt
+
+end_file
+

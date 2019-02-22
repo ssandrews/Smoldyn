@@ -1,0 +1,151 @@
+# Xist - Tsix Allele in 2D
+# Written by Verena Mutzel, Oct. 2015, during Porquerolles course on cell modeling
+#front: Xist, back: Tsix
+
+ifundefine RATE_X
+define RATE_X 0.8
+endif
+
+graphics opengl
+frame_thickness 0
+
+dim 3
+species PON
+species POFF
+species Pol
+species Pol_complex
+species Xist_RNA
+species Tsix_RNA
+species STOP
+species XA
+species G_XA_ON
+species G_XA_OFF
+
+difc all(all) 0.000000000000000000001
+difc STOP(all) 0
+difc PON(all) 0
+difc POFF(all) 0
+difc G_XA_ON(all) 0
+difc G_XA_OFF(all) 0
+difc Xist_RNA 20
+difc Tsix_RNA 20
+difc XA 20
+
+color PON(all) green
+color POFF(all) red
+color Pol(front) blue
+color Pol(back) orange
+color STOP(all) black
+#color Pol_Tsix(all) orange
+color Xist_RNA(all) black
+color Tsix_RNA(all) pink
+color XA(all) white
+color G_XA_OFF(all) red
+color G_XA_ON(all) green
+display_size all(all) 5
+display_size XA 0
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+boundaries 0 0 1000 
+boundaries 1 0 1000
+boundaries 2 0 1000
+
+start_surface nucleus
+thickness 0
+color both white
+action both all reflect
+polygon both edge
+# coordinates x y z radius # of lines name
+panel sphere 500 500 500 500 10 10 s1
+end_surface
+
+start_surface DNA
+#Tsix C1
+panel rect +1 200 500 500 373 1 r1
+#Xist C1
+panel rect +1 328 500 500 228 1 r2
+#XA
+panel rect +1 700 500 500 1 1 r5
+#Tsix C2
+panel rect +1 200 700 500 373 1 r3
+#Xist C2
+panel rect +1 328 700 500 228 1 r4
+#XA
+panel rect +1 700 700 500 1 1 r6
+end_surface
+
+start_compartment nucleus
+surface nucleus
+point 500 500 500
+end_compartment
+
+
+surface_drift Pol(front) DNA rect 0 1
+surface_drift Pol(back) DNA rect 0 -1
+
+#promoter state switches Xist
+reaction Pactivate_X POFF(front) + XA -> PON(front) + XA 100
+reaction repression_X PON(front) + Pol(back) -> POFF(front) + Pol(back) 0.4
+confspread_radius repression_X 1
+#promoter state switches Tsix
+reaction Pactivate_T POFF(back) -> PON(back) 100
+reaction repression_T PON(back) + Xist_RNA -> POFF(back) + Xist_RNA 50
+#Repression of XA through Xist_RNA
+#reaction repress_XA XA + Xist_RNA -> Xist_RNA 10
+reaction repress_XA G_XA_ON + Xist_RNA -> G_XA_OFF + Xist_RNA 100
+#intitiation
+reaction initiation_X PON(front) -> PON(front) + Pol(front) RATE_X
+reaction initiation_T PON(back) -> PON(back) + Pol(back) 0.2
+#transcription
+reaction t_X Pol(front) + STOP(front) -> Xist_RNA + STOP(front)
+reaction t_T Pol(back) + STOP(back) -> Tsix_RNA + STOP(back) 
+#collision
+reaction collision_complex Pol(back) + Pol(front) -> Pol_complex(front)
+reaction collision_1 Pol_complex(front) -> Pol(front) 1000
+reaction collision_2 Pol_complex(front) -> Pol(back) 1000 
+#degradation
+reaction decay_X Xist_RNA -> 0 0.00001
+reaction decay_T Tsix_RNA -> 0 0.0001
+#XA
+reaction produce_XA G_XA_ON -> G_XA_ON + XA 1
+reaction inhibit_XA Xist_RNA + G_XA_ON -> G_XA_OFF 10
+reaction activate_XA G_XA_OFF -> G_XA_ON 1
+
+binding_radius t_X 1
+binding_radius t_T 1
+binding_radius collision_complex 1
+
+surface_mol 1 POFF(front) DNA rect r1 328 500 500
+surface_mol 1 PON(back) DNA rect r1 573 500 500 
+surface_mol 0 Pol(front) DNA rect r2
+surface_mol 100 Pol(back) DNA rect r1
+surface_mol 1 PON(front) DNA rect r3 328 500 500
+surface_mol 1 POFF(back) DNA rect r3 573 500 500
+surface_mol 0 Pol(front) DNA rect r4
+surface_mol 100 Pol(back) DNA rect r3
+#surface_mol Ini_Pol_X Pol(front) DNA rect r2
+#surface_mol Ini_Pol_T Pol(back) DNA rect r1
+surface_mol 1 STOP(front) DNA rect r1 556 500 500
+surface_mol 1 STOP(back) DNA rect r1 200 500 500
+surface_mol 1 STOP(front) DNA rect r3 556 500 500
+surface_mol 1 STOP(back) DNA rect r3 200 500 500
+#mol Ini_RNA_X Xist_RNA 
+compartment_mol 1000 XA nucleus 
+surface_mol 1 G_XA_ON(front) DNA rect r5
+surface_mol 1 G_XA_ON(front) DNA rect r6
+
+#output in command window
+#cmd n 10 molcount stdout
+#output_files Xist.txt
+#cmd n 100 molcount Xist.txt
+#cmd N 1 molcountspace Xist_RNA 0 0 1000 1 0 1000 100000 Xist.txt
+#cmd N 1 molcountspace Tsix_RNA 0 0 1000 1 0 1000 100000 Xist.txt
+#molcount Xist_RNA 0 0 1000 0 1000 average
+
+#change reaction rate at time x to y
+#cmd @ 500 set reaction_rate initiation_X 0.2
+
+end_file

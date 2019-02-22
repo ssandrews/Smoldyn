@@ -1,0 +1,47 @@
+#VRML V2.0 utf8
+#
+#  tetrahedron.wrl  10 August 1999
+#
+#  Rikk Carey and Gavin Bell,
+#  The Annotated VRML 2.0 Reference Manual,
+#  pages 198-199
+#
+
+Viewpoint { description "Initial view" position 0 0 9 }
+
+NavigationInfo { type "EXAMINE" }
+
+#
+#  A tetrahedron, with 4 vertices and 4 faces and a color at each vertex.
+#
+Transform {
+  translation 1.5 -1.5 0.0
+  children Shape {
+    appearance DEF A Appearance { material Material { } }
+    geometry IndexedFaceSet {
+      coord Coordinate {
+        point [
+           1.0  1.0  1.0,
+           1.0 -1.0 -1.0,
+          -1.0  1.0 -1.0,
+          -1.0 -1.0  1.0,
+        ]
+      }
+      coordIndex [
+        3, 2, 1, -1,
+        2, 3, 0, -1,
+        1, 0, 3, -1,
+        0, 1, 2, -1,
+      ]
+      color Color {
+        color [ 
+          0.0 1.0 0.0, 
+          1.0 1.0 1.0, 
+          0.0 0.0 1.0, 
+          1.0 0.0 0.0 
+        ]
+      }
+      colorPerVertex TRUE
+    }
+  }
+}

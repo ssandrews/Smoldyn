@@ -1,0 +1,61 @@
+# Simulation file of basic diffusion and reaction
+# This file is used to test and demonstrate the movesurfacemol command
+# See modif Pascal Bochet at lines around 42 
+
+graphics opengl_good
+graphic_iter 1
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red
+
+time_start 0
+time_stop 5000
+time_step 0.1
+
+
+difc red(all) 1
+color red(all) 1 0 0
+display_size all(all) 2
+
+start_surface walls
+action both all reflect
+polygon both none
+panel rect +x 0 0 0 100 100
+panel rect -x 100 0 0 100 100
+panel rect +y 0 0 0 100 100
+panel rect -y 0 100 0 100 100
+panel rect +z 0 0 0 100 100
+panel rect -z 0 0 100 100 100
+end_surface
+
+start_surface surf
+action both all reflect
+polygon both edge
+panel sph 30 30 30 20 10 10 sph1
+#panel sph 70 70 70 20 10 10 sph2 # original file (of course it works) 
+panel sph 70 70 70 20 10 10 sph1 # this fails, I understand it should 
+                                 # move panel sph1  
+end_surface
+
+surface_mol 20 red(front) surf sphere sph1
+
+#cmd E movesurfacemol red(front) 0.0002 surf:sph1 surf:sph2
+#cmd E movesurfacemol all(all) 0.00001 surf walls up
+
+cmd @ 10 set surface surf panel sph 70 70 70 20 10 10 sph1
+cmd @ 20 set surface surf panel sph 65 70 70 20 10 10 sph1
+cmd @ 30 set surface surf panel sph 60 70 70 20 10 10 sph1
+cmd @ 40 set surface surf panel sph 55 70 70 20 10 10 sph1
+cmd @ 50 set surface surf panel sph 50 70 70 20 10 10 sph1
+cmd @ 60 set surface surf panel sph 45 70 70 20 10 10 sph1
+cmd @ 70 set surface surf panel sph 40 70 70 20 10 10 sph1
+cmd @ 80 set surface surf panel sph 35 70 70 20 10 10 sph1
+cmd @ 90 set surface surf panel sph 30 70 70 20 10 10 sph1
+cmd @ 100 set surface surf panel sph 25 70 70 20 10 10 sph1
+
+end_file
+

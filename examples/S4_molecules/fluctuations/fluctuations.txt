@@ -1,0 +1,53 @@
+# Demonstration of using Smoldyn to analyze concentration fluctuations
+# units are microns and seconds
+
+define NMOL 20
+define DIFC 20
+define LENGTH 1
+
+graphics opengl
+
+dim 3
+
+boundaries x -2 2
+boundaries y -2 2
+boundaries z -2 2
+frame_thickness 0
+
+species red
+
+color red red
+display_size red 3
+
+difc red DIFC
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+start_surface cell
+  action red both reflect
+  polygon both edge
+  color both black
+  panel cylinder -LENGTH 0 0  LENGTH 0 0  0.5  10 5
+#  panel hemi  -1 0 0  0.5  1 0 0  10 3
+#  panel hemi  1 0 0  0.5  -1 0 0  10 3
+  panel disk  -LENGTH 0 0  0.5  1 0 0  10
+  panel disk  LENGTH 0 0  0.5  -1 0 0  10
+end_surface
+
+start_compartment inside
+  point 0 0 0
+  surface cell
+end_compartment
+
+compartment_mol NMOL red inside
+
+
+output_files FILEROOTout.txt
+cmd E molcountspace red x -LENGTH LENGTH  2  -2 2  -2 2  0  FILEROOTout.txt
+
+end_file
+
+
+

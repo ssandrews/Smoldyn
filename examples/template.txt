@@ -1,0 +1,78 @@
+# Smoldyn configuration file template.
+# List basic file information here, including your name, the development date,
+# what this file does, the model name if you want one, the file version, distribution
+# terms, etc.  Also, importantly, list the units used in this file, e.g. microns and
+# milliseconds.  This template file is here to be edited.  There is no need to maintain
+# any of the current text, or to keep any references to Steve Andrews, or the history
+# of this file.
+
+# Enzymatic reactions on a surface, by Steve Andrews, October 2009.
+# This model is in the public domain.  Units are microns and seconds.
+# The model was published in Andrews (2012) Methods for Molecular Biology, 804:519.
+# It executes a Michaelis-Menten reaction within and on the surface of a 2D circle.
+
+
+# Model parameters
+define K_FWD 0.001		# substrate-enzyme association reaction rate
+define K_BACK 1			# complex dissociation reaction rate
+define K_PROD 1			# complex reaction rate to product
+#define TEXTOUTPUT		# uncomment this line for text output
+
+# Graphical output
+graphics opengl_good		# level of graphics quality (or none)
+frame_thickness 0		# turns off display of the system boundaries
+
+# System space and time definitions
+dim 2				# 2D system
+boundaries x -1 1		# outermost system boundaries on x axis
+boundaries y -1 1		# outermost system boundaries on y axis
+time_start 0			# simulation starting time
+time_stop 10			# simulation stopping time
+time_step 0.01			# simulation time step
+
+# Molecular species and their properties
+species S E ES P		# species. S=substrate, E=enzyme, ES=complex, P=product
+difc S 3			# diffusion coefficients
+difc P 3
+color S(all) green		# colors for graphical output
+color E(all) darkred
+color ES(all) orange
+color P(all) darkblue
+display_size all(all) 0.02	# display sizes for graphical output
+display_size E(all) 0.03
+display_size ES(all) 0.03
+
+# Surfaces in the system and their properties
+start_surface membrane		# start definition of surface
+  action all both reflect	# all molecules reflect at both surface faces
+  color both black		# surface color for graphical output
+  thickness 1			# surface display thickness for graphics
+  panel sphere 0 0 1 50		# definition of the surface panel
+end_surface
+
+# Compartment definitions
+start_compartment inside	# the area within the circle is a compartment
+  surface membrane		# a surface that defines the compartmet bounds
+  point 0 0			# a point that is within the compartment
+end_compartment
+
+# Chemical reactions
+reaction fwd E(front) + S(bsoln) -> ES(front) K_FWD	# association reaction
+reaction back ES(front) -> E(front) + S(bsoln) K_BACK 	# dissociation reaction
+product_placement back pgemmax 0.2			# for reversible reactions
+reaction prod ES(front) -> E(front) + P(bsoln) K_PROD	# product formation reaction
+
+# Place molecules for initial condition
+compartment_mol 500 S inside	# puts 500 S molecules in the compartment
+surface_mol 100 E(front) membrane all all	# puts 100 E molecules on surface
+
+# Output and other run-time commands
+text_display time S E(front) ES(front) P	# displays species counts to graphics
+ifdefine TEXTOUTPUT				# only run this if needed
+  output_files templateout.txt			# file names for text output
+  cmd B molcountheader templateout.txt		# text output run at beginning
+  cmd N 10 molcount templateout.txt		# text output run every 10 time steps
+endif
+
+end_file			# end of this file
+

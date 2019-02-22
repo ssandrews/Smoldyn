@@ -1,0 +1,130 @@
+### Simulation of double fork stalling
+# Written by Jamie Carrington, Oct. 2015, during a Porquerolles course on cell modeling
+
+# ‘_good’ after OpenGL required for circles
+graphics opengl_good
+
+# 1D DNA in a two frame
+# RO = replication origin (used to place origins on DNA, then become fork homodimer)
+# F5 = replication fork that replicates sense strand
+# F3 = replication fork that replicates anti-sense strand
+# T  = Invisible species at telomeres to simulate dissociation of forks at telomeres
+# FS = Stalled fork, replication forks irreversibly decay into this unmoving state
+# R  = tracer, indicates regions of DNA that have been replicated and causes replication forks to dissociate at unreplicated to replicated DNA boundary (cyan from F5 and orange from F3)
+dim 2
+species RO
+species F5
+species F3
+species T
+species FS
+species R
+
+colour RO(up) green
+colour F5(front) blue
+colour F3(front) blue
+colour T(up) white
+colour FS(up) red
+colour FS(down) red
+colour R(up) cyan
+colour R(down) orange
+
+# meaningless ordering of molecules for aesthetic rendering of species
+# F5 ‘mol_list’ is missing due to bug, seems to work fine anyway
+molecule_lists telomeres tracers forks
+mol_list T(all) telomeres
+mol_list R(all) tracers
+mol_list F3(all) forks
+mol_list FS(all) forks
+
+# All replicative protein molecules the same size (all purely graphical except RO,  # which has a ‘soft exclusion zone’-like distribution function). All other species  # and boundaries are default
+display_size RO(up) 30
+display_size F5(front) 15
+display_size F3(front) 15
+display_size FS(up) 15
+display_size FS(down) 15
+display_size R(up) 15
+display_size R(down) 15
+display_size T(up) 0
+
+# 100 unit berth around 1D DNA rectangle
+boundaries 0 0 5200
+boundaries 1 0 200
+frame_colour white
+
+# Arbitrary total time and step, more than enough to complete replication (in small # strands)
+time_start 0
+time_stop 100
+time_step 0.001
+
+# 1D rectangle modelling DNA
+start_surface DNA
+colour front black
+colour back black
+panel rect +1 100 100 5000 r1
+end_surface
+
+# describes number and randomness of RO distribution (default u = uniform = random  # along DNA)
+surface_mol 20 RO(up) DNA rect r1
+surface_mol 1 T(up) DNA rect r1 100 100
+surface_mol 1 T(up) DNA rect r1 5100 100
+
+# meaningless reaction so that the initial distribution of ROs don’t overlap
+reaction RO_EZ RO(up) + RO(up) -> RO(up) + RO(up)
+binding_radius RO_EZ 59.9
+#product_placement RO_EZ fixed RO 60 0
+product_placement RO_EZ bounce 60
+#product_placement RO_EZ fixed product_1 -30 0
+#product_placement RO_EZ fixed product_2 30 0
+
+# Each RO becomes a sense fork and an antisense fork
+reaction RO_2F RO(up) -> F5(front) + F3(front) 0
+product_placement RO_2F irrev
+product_placement RO_2F fixed F5 15 0
+product_placement RO_2F fixed F3 -15 0
+
+# Commands that pause the simulation at the beginning, placement of ROs and and the # reaction where ROs become forks
+cmd @ 0.01 set reaction_rate RO_EZ 0
+cmd @ 0.01 set reaction_rate RO_2F 10000
+cmd b pause
+cmd @ 0.009 pause
+cmd @ 0.011 pause
+
+# describes rate of replication forks (arbitrary units per second)
+surface_drift F5(front) DNA rect 50
+surface_drift F3(front) DNA rect -50
+
+# reaction that leaves a tracer where a replication fork has drifted
+reaction F5_R F5(front) -> F5(front) + R(up) 15
+reaction F3_R F3(front) -> F3(front) + R(down) 15
+
+# reaction that causes replication forks to dissociate from DNA when they encounter already replicated DNA (tracer immediately above)
+#reaction F5_R(down) F5(front) + R(down) -> R(down)
+#binding_radius F5_R(down) 1
+#reaction F3_R(up) F3(front) + R(up) -> R(up)
+#binding_radius F3_R(up) 1
+
+# reaction that causes replication forks to ‘fall off the end’ at the telomere (as  # they just hang at the telomere normally)
+reaction F5_T F5(front) + T(up) -> T(up)
+binding_radius F5_T 1
+reaction F3_T F3(front) + T(up) -> T(up)
+binding_radius F3_T 1
+
+# reaction that describes termination of replication forks
+reaction F5_Fb F5(front) + F3(front) -> 0
+binding_radius F5_Fb 1
+reaction F5_FSd F5(front) + FS(down) -> 0
+binding_radius F5_FSd 1
+reaction F3_FSu F3(front) + FS(up) -> 0
+binding_radius F3_FSu 1
+
+# reaction where replication forks decay into stalled forks at arbitrary reaction    # rate
+reaction F5_FS F5(front) -> FS(up) 0.05
+reaction F3_FS F3(front) -> FS(down) 0.05
+
+# reaction where functioning replication forks displace stalled forks
+reaction F5_FS_F5 F5(front) + FS(up) -> F5(front)
+binding_radius F5_FS_F5 1
+reaction F3_FS_F3 F3(front) + FS(up) -> F3(front)
+binding_radius F3_FS_F3 1
+
+end_file

@@ -1,0 +1,65 @@
+# Bimolecular reactions
+
+graphics opengl
+graphic_iter 10
+
+dim 3
+species A B C
+
+difc A 0
+difc B 2
+difc C 0
+
+color A red
+color B green
+color C blue
+
+time_start 0
+time_stop 1000
+time_step 0.1
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+/*
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+*/
+
+mol 167 A 5 u u
+mol 167 A 95 u u
+mol 167 A u 5 u
+mol 167 A u 95 u
+mol 167 A u u 5
+mol 167 A u u 95
+mol 1000 B u u u
+
+/*
+mol 167 A 1 u u
+mol 167 A 99 u u
+mol 167 A u 1 u
+mol 167 A u 99 u
+mol 167 A u u 1
+mol 167 A u u 99
+mol 1000 B u u u
+*/
+
+/*
+mol 167 A 0 u u
+mol 167 A 100 u u
+mol 167 A u 0 u
+mol 167 A u 100 u
+mol 167 A u u 0
+mol 167 A u u 100
+mol 1000 B u u u
+*/
+
+reaction rxn A + B -> C 10
+
+output_files wallreactout.txt
+cmd n 10 molcount wallreactout.txt
+
+end_file
+

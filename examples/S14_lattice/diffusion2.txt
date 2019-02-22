@@ -1,0 +1,102 @@
+# Simple bouncing molecules in a 3-D system, used to illustrate basic lattice use.
+# This file creates a middle lattice region and a surrounding particle region.
+
+graphics opengl
+
+dim 3
+species red
+#random_seed 0
+
+difc red 3
+
+color red red
+
+time_start 0
+time_stop 100
+time_step 0.0001
+
+boundaries 0 0 1	# particle space boundaries are (0,0,0) to (1,1,1)
+boundaries 1 0 1
+boundaries 2 0 1
+
+mol 500 red 0.5 0.5 0.5		# 500 molecules start at the centre
+
+#reaction testreaction red + green -> red 1
+
+start_surface walls	# particle space walls are the same as the boundaries and are reflective
+action both all reflect
+polygon both edge
+panel rect +0 0 0 0 1 1
+panel rect -0 1 0 0 1 1
+panel rect +1 0 0 0 1 1
+panel rect -1 0 1 0 1 1
+panel rect +2 0 0 0 1 1
+panel rect -2 0 0 1 1 1
+end_surface
+
+start_surface portsurf		# the port is a 0.5x0.5x0.5 box in the middle of the particle space
+action front all port
+color front 0.2 0 0 0.5
+color back 0 0 0
+polygon both face
+panel rect -0 0.75 0.25 0.25 0.50 0.50
+panel rect +0 0.25 0.25 0.25 0.50 0.50
+panel rect -1 0.25 0.75 0.25 0.50 0.50
+panel rect +1 0.25 0.25 0.25 0.50 0.50
+panel rect -2 0.25 0.25 0.75 0.50 0.50
+panel rect +2 0.25 0.25 0.25 0.50 0.50
+end_surface
+
+start_port testport
+surface portsurf
+face front
+end_port
+
+start_lattice testlattice	# lattice boundaries are the same as the particle space boundaries
+type nsv
+port testport
+boundaries 0 0 1
+boundaries 1 0 1
+boundaries 2 0 1
+lengthscale 0.05 0.05 0.05
+species all
+reactions all
+end_lattice
+
+
+output_files stdout 
+
+#cmd e porttransport testport testport
+#cmd e warnescapee all
+
+/*
+cmd n 1 molcountspace red 0 0 1 20 0 0.05 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.05 0.1 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.1 0.15 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.15 0.2 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.2 0.25 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.25 0.3 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.3 0.35 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.35 0.4 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.4 0.45 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.45 0.5 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.5 0.55 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.55 0.6 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.6 0.65 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.65 0.7 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.7 0.75 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.75 0.8 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.8 0.85 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.85 0.9 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.9 0.95 0 1 0 stdout
+cmd n 1 molcountspace red 0 0 1 20 0.95 1.0 0 1 0 stdout
+cmd n 1 printLattice stdout
+*/
+
+#cmd n 1000 writeVTK vtkout/output
+
+cmd n 10 molcountspace red 0 0 1 20 0.25 0.75 0.25 0.75 100 stdout
+#cmd n 100 molcount
+
+end_file
+

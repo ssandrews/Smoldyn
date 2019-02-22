@@ -1,0 +1,45 @@
+# Simulation file for Lotka-Voltera reaction
+
+random_seed 1
+
+graphics opengl
+graphic_iter 5
+
+dim 3
+species rabbit fox
+
+boundaries 0 -100 100 p
+boundaries 1 -100 100 p
+boundaries 2 -10 10 p
+
+time_start 0
+time_stop 1
+time_step 0.001
+
+color rabbit red
+color fox green
+display_size rabbit 2
+display_size fox 3
+
+molecule_lists rlist flist
+mol_list rabbit rlist
+mol_list fox flist
+molperbox 1
+
+difc all 100
+reaction r1 rabbit -> rabbit + rabbit 10
+reaction r2 rabbit + fox -> fox + fox 8000
+reaction r3 fox -> 0 10
+
+mol 1000 rabbit u u u
+mol 1000 fox u u u
+
+text_display time rabbit fox
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

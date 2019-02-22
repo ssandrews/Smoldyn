@@ -1,0 +1,42 @@
+# Smoldyn configuration file
+# Simulates Lotka-Voltera system
+
+
+graphics opengl
+graphic_iter 5
+
+dim 3
+species A B
+
+difc all 100
+color A 1 0 0
+color B 0 1 0
+display_size A 2
+display_size B 3
+
+time_start 0
+time_stop 10
+time_step 0.001
+
+boundaries 0 0 100 p
+boundaries 1 0 100 p
+boundaries 2 0 10 p
+
+mol 500 A u u u
+mol 500 B u u u
+
+reaction r1 A -> A + A 10
+reaction r2 A + B -> B + B 2000
+reaction r3 B -> 0 10
+
+cmd B pause
+output_files lotvoltout.txt
+cmd i 0 5 0.01 molcount lotvoltout.txt
+
+tiff_iter 20
+tiff_name movie/lotvolt
+tiff_min 1
+tiff_max 200
+
+end_file
+

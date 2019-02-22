@@ -1,0 +1,73 @@
+*** TIME INFORMATION ***
+Total time: 1.00E-5
+dt: 1.00E-10
+dt_spring: 1.00E-9
+dt_data: 1.00E-6
+dt_image: 1.00E-6
+
+*** SYSTEM INFORMATION ***
+L_x: 0.1
+L_y: 0.1
+L_z_out: 0.001
+L_z_in: 0.1
+Partition Nx: 10
+Partition Ny: 10
+Partition Nz: 10
+
+*** MOLECULES ***
+
+MOLECULE: "A" Intracellular Number 6112 Site_Types 1 Total_Sites 1 Total_Links 0 is2D false
+{
+     TYPE: Name "A" Radius 2.500 D 65.000 Color RED STATES "State0" 
+
+     SITE 0 : Intracellular : Initial State 'State0'
+          TYPE: Name "A" Radius 2.500 D 65.000 Color RED STATES "State0" 
+          x 0.000 y 6.000 z 6.000 
+
+
+     Initial_Positions: Random
+}
+
+*** CREATION/DECAY REACTIONS ***
+
+'A' : kcreate 0.0 kdecay 0.0
+
+*** STATE TRANSITION REACTIONS ***
+
+
+*** ALLOSTERIC REACTIONS ***
+
+
+*** BIMOLECULAR BINDING REACTIONS ***
+
+
+*** MOLECULE COUNTERS ***
+
+'A' : Measure Total Free Bound 
+
+*** STATE COUNTERS ***
+
+'A' : 'A' : 'State0' : Measure Total Free Bound 
+
+*** BOND COUNTERS ***
+
+
+*** SITE PROPERTY COUNTERS ***
+
+'A' Site 0 :  Track Properties true
+
+*** CLUSTER COUNTERS ***
+
+Track_Clusters: false
+
+*** SYSTEM ANNOTATIONS ***
+
+
+*** MOLECULE ANNOTATIONS ***
+
+Annotation: 'A'
+{
+}
+
+*** REACTION ANNOTATIONS ***
+

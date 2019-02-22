@@ -1,0 +1,89 @@
+neighbors tri1385 e:tri1317 e:tri1413 n:tri1408 n:tri1375 e:tri1316 e:tri1319 n:tri1384 n:tri1360 n:tri1374 e:tri1414 n:tri1407
+neighbors tri1408 e:tri1413 n:tri1385 n:tri1375 n:tri1367 n:tri1384 n:tri1360 n:tri1374 e:tri1414 n:tri1407 n:tri1369 n:tri1366
+neighbors tri1375 n:tri1385 n:tri1408 n:tri1367 n:tri1324 n:tri1384 n:tri1360 n:tri1374 n:tri1325 n:tri1407 n:tri1369 n:tri1366
+neighbors tri1367 n:tri1408 n:tri1375 n:tri1324 n:tri1300 n:tri1295 n:tri1374 n:tri1325 n:tri1407 n:tri1369 n:tri1366 n:tri1357 n:tri1296
+neighbors tri1324 n:tri1375 n:tri1367 n:tri1300 n:tri1295 n:tri1374 n:tri1325 n:tri1320 n:tri1301 n:tri1366 n:tri1357 n:tri1296
+neighbors tri1300 n:tri1367 n:tri1324 n:tri1295 n:tri1257 n:tri1244 n:tri1325 n:tri1320 n:tri1301 n:tri1291 n:tri1248 n:tri1245 n:tri1366 n:tri1357 n:tri1296
+neighbors tri1295 n:tri1367 n:tri1324 n:tri1300 n:tri1257 n:tri1244 n:tri1301 n:tri1291 n:tri1248 n:tri1245 n:tri1366 n:tri1357 n:tri1296 n:tri1272 n:tri1256
+neighbors tri1257 n:tri1300 n:tri1295 n:tri1244 t:tri1220 n:tri1301 n:tri1291 n:tri1248 n:tri1245 n:tri1296 n:tri1272 n:tri1256 n:tri1231 t:tri1219
+neighbors tri1244 n:tri1300 n:tri1295 n:tri1257 t:tri1220 t:tri1201 n:tri1301 n:tri1291 n:tri1248 n:tri1245 t:tri1206 t:tri1200 n:tri1256 n:tri1231 t:tri1219
+neighbors tri1161 t:tri1020 t:tri1111 n:tri1204 n:tri1240 n:tri1274 t:tri1019 t:tri1139 n:tri1160 n:tri1197 n:tri1273 t:tri1112 n:tri1202 n:tri1203
+neighbors tri1204 t:tri1111 n:tri1161 n:tri1240 n:tri1274 n:tri1160 n:tri1197 n:tri1273 t:tri1112 n:tri1202 n:tri1203 n:tri1236 n:tri1241
+neighbors tri1240 n:tri1161 n:tri1204 n:tri1274 n:tri1306 n:tri1312 n:tri1160 n:tri1197 n:tri1273 n:tri1203 n:tri1236 n:tri1241 n:tri1304 n:tri1313
+neighbors tri1274 n:tri1161 n:tri1204 n:tri1240 n:tri1306 n:tri1312 n:tri1160 n:tri1197 n:tri1273 n:tri1261 n:tri1307 n:tri1241 n:tri1304 n:tri1313
+neighbors tri1306 n:tri1240 n:tri1274 n:tri1312 n:tri1349 n:tri1273 n:tri1261 n:tri1307 n:tri1348 n:tri1241 n:tri1304 n:tri1313
+neighbors tri1312 n:tri1240 n:tri1274 n:tri1306 n:tri1349 n:tri1395 n:tri1307 n:tri1348 n:tri1241 n:tri1304 n:tri1313 n:tri1354 n:tri1396
+neighbors tri1349 n:tri1306 n:tri1312 n:tri1395 e:tri1412 n:tri1307 n:tri1348 n:tri1383 e:tri1411 n:tri1313 n:tri1354 n:tri1396
+neighbors tri1395 n:tri1312 n:tri1349 e:tri1412 e:tri1465 e:tri1448 n:tri1348 n:tri1383 e:tri1411 n:tri1313 n:tri1354 n:tri1396 e:tri1417 e:tri1470 e:tri1449
+neighbors tri1384 e:tri1317 e:tri1413 n:tri1385 n:tri1408 n:tri1375 e:tri1316 e:tri1319 n:tri1360 n:tri1374 e:tri1318 n:tri1361
+neighbors tri1360 n:tri1385 n:tri1408 n:tri1375 e:tri1319 n:tri1384 n:tri1374 n:tri1325 n:tri1320 e:tri1318 n:tri1361 n:tri1352 n:tri1346 n:tri1321
+neighbors tri1374 n:tri1385 n:tri1408 n:tri1375 n:tri1367 n:tri1324 n:tri1384 n:tri1360 n:tri1325 n:tri1320 n:tri1361 n:tri1352 n:tri1346 n:tri1321
+neighbors tri1325 n:tri1375 n:tri1367 n:tri1324 n:tri1300 n:tri1360 n:tri1374 n:tri1320 n:tri1301 n:tri1361 n:tri1352 n:tri1346 n:tri1321
+neighbors tri1320 n:tri1324 n:tri1300 n:tri1360 n:tri1374 n:tri1325 n:tri1301 n:tri1291 n:tri1361 n:tri1352 n:tri1346 n:tri1321 n:tri1292
+neighbors tri1301 n:tri1324 n:tri1300 n:tri1295 n:tri1257 n:tri1244 n:tri1325 n:tri1320 n:tri1291 n:tri1248 n:tri1245 n:tri1321 n:tri1292
+neighbors tri1291 n:tri1300 n:tri1295 n:tri1257 n:tri1244 n:tri1320 n:tri1301 n:tri1248 n:tri1245 n:tri1249 n:tri1253 n:tri1321 n:tri1292 n:tri1250
+neighbors tri1248 n:tri1300 n:tri1295 n:tri1257 n:tri1244 n:tri1301 n:tri1291 n:tri1245 t:tri1206 t:tri1207 t:tri1208 n:tri1249 n:tri1253 n:tri1292 n:tri1250
+neighbors tri1245 n:tri1300 n:tri1295 n:tri1257 n:tri1244 t:tri1220 t:tri1201 n:tri1301 n:tri1291 n:tri1248 t:tri1206 t:tri1200 t:tri1207 t:tri1208 n:tri1249
+neighbors tri1160 t:tri1020 t:tri1111 n:tri1161 n:tri1204 n:tri1240 n:tri1274 t:tri1019 t:tri1139 n:tri1197 n:tri1273 n:tri1196 t:tri1195 t:tri1138
+neighbors tri1197 n:tri1161 n:tri1204 n:tri1240 n:tri1274 t:tri1139 n:tri1160 n:tri1273 n:tri1261 n:tri1259 n:tri1258 n:tri1196 t:tri1195 t:tri1138 n:tri1255 n:tri1260
+neighbors tri1273 n:tri1161 n:tri1204 n:tri1240 n:tri1274 n:tri1306 n:tri1160 n:tri1197 n:tri1261 n:tri1307 n:tri1259 n:tri1258 n:tri1196 n:tri1255 n:tri1260
+neighbors tri1261 n:tri1274 n:tri1306 n:tri1197 n:tri1273 n:tri1307 n:tri1348 n:tri1383 n:tri1259 n:tri1258 n:tri1196 n:tri1255 n:tri1260 n:tri1322 n:tri1382
+neighbors tri1307 n:tri1274 n:tri1306 n:tri1312 n:tri1349 n:tri1273 n:tri1261 n:tri1348 n:tri1383 n:tri1260 n:tri1322 n:tri1382
+neighbors tri1348 n:tri1306 n:tri1312 n:tri1349 n:tri1395 e:tri1412 n:tri1261 n:tri1307 n:tri1383 e:tri1411 n:tri1260 n:tri1322 n:tri1382
+neighbors tri1383 n:tri1349 n:tri1395 e:tri1412 n:tri1261 n:tri1307 n:tri1348 e:tri1411 e:tri1432 n:tri1260 n:tri1322 n:tri1382 n:tri1379 e:tri1431
+neighbors tri1249 n:tri1291 n:tri1248 n:tri1245 t:tri1206 t:tri1207 t:tri1208 n:tri1253 n:tri1254 n:tri1292 n:tri1250 t:tri1213 t:tri1218
+neighbors tri1253 n:tri1291 n:tri1248 t:tri1208 n:tri1249 n:tri1254 n:tri1259 n:tri1292 n:tri1250 n:tri1255 t:tri1213 t:tri1218
+neighbors tri1254 t:tri1208 n:tri1249 n:tri1253 n:tri1259 n:tri1258 n:tri1250 n:tri1255 t:tri1213 t:tri1218 t:tri1212
+neighbors tri1259 n:tri1197 n:tri1273 n:tri1261 n:tri1253 n:tri1254 n:tri1258 n:tri1196 n:tri1250 n:tri1255 n:tri1260 t:tri1218 t:tri1212
+neighbors tri1258 n:tri1197 n:tri1273 n:tri1261 n:tri1254 n:tri1259 n:tri1196 t:tri1195 n:tri1255 n:tri1260 t:tri1218 t:tri1212 t:tri1211 t:tri1085
+neighbors tri1196 t:tri1139 n:tri1160 n:tri1197 n:tri1273 n:tri1261 n:tri1259 n:tri1258 t:tri1195 t:tri1138 n:tri1255 n:tri1260 t:tri1212 t:tri1211 t:tri1085
+neighbors tri1361 e:tri1319 n:tri1384 n:tri1360 n:tri1374 n:tri1325 n:tri1320 e:tri1328 e:tri1318 n:tri1352 n:tri1346 n:tri1321 e:tri1329 n:tri1353
+neighbors tri1352 n:tri1360 n:tri1374 n:tri1325 n:tri1320 e:tri1328 e:tri1318 n:tri1361 n:tri1346 n:tri1321 e:tri1329 n:tri1353 n:tri1399 n:tri1347
+neighbors tri1346 n:tri1360 n:tri1374 n:tri1325 n:tri1320 n:tri1361 n:tri1352 n:tri1321 n:tri1292 n:tri1250 n:tri1255 n:tri1260 n:tri1322 n:tri1353 n:tri1399 n:tri1347 n:tri1323
+neighbors tri1321 n:tri1360 n:tri1374 n:tri1325 n:tri1320 n:tri1301 n:tri1291 n:tri1361 n:tri1352 n:tri1346 n:tri1292 n:tri1250 n:tri1255 n:tri1260 n:tri1322 n:tri1347 n:tri1323
+neighbors tri1292 n:tri1320 n:tri1301 n:tri1291 n:tri1248 n:tri1249 n:tri1253 n:tri1346 n:tri1321 n:tri1250 n:tri1255 n:tri1260 n:tri1322 n:tri1347 n:tri1323
+neighbors tri1250 n:tri1291 n:tri1248 n:tri1249 n:tri1253 n:tri1254 n:tri1259 n:tri1346 n:tri1321 n:tri1292 n:tri1255 n:tri1260 n:tri1322 n:tri1347 n:tri1323
+neighbors tri1255 n:tri1197 n:tri1273 n:tri1261 n:tri1253 n:tri1254 n:tri1259 n:tri1258 n:tri1196 n:tri1346 n:tri1321 n:tri1292 n:tri1250 n:tri1260 n:tri1322 n:tri1347 n:tri1323
+neighbors tri1260 n:tri1197 n:tri1273 n:tri1261 n:tri1307 n:tri1348 n:tri1383 n:tri1259 n:tri1258 n:tri1196 n:tri1346 n:tri1321 n:tri1292 n:tri1250 n:tri1255 n:tri1322 n:tri1382 n:tri1347 n:tri1323
+neighbors tri1322 n:tri1261 n:tri1307 n:tri1348 n:tri1383 n:tri1346 n:tri1321 n:tri1292 n:tri1250 n:tri1255 n:tri1260 n:tri1382 n:tri1379 n:tri1347 n:tri1323 n:tri1378
+neighbors tri1382 n:tri1261 n:tri1307 n:tri1348 n:tri1383 e:tri1411 e:tri1432 n:tri1260 n:tri1322 n:tri1379 e:tri1431 n:tri1323 n:tri1378
+neighbors tri1379 n:tri1383 e:tri1411 e:tri1432 n:tri1322 n:tri1382 e:tri1431 e:tri1468 n:tri1323 n:tri1378 e:tri1428 e:tri1469
+neighbors tri1353 e:tri1328 e:tri1318 n:tri1361 n:tri1352 n:tri1346 e:tri1331 e:tri1329 n:tri1399 n:tri1347 e:tri1330 e:tri1350 e:tri1400
+neighbors tri1399 n:tri1352 n:tri1346 e:tri1331 e:tri1329 n:tri1353 n:tri1347 n:tri1323 n:tri1378 e:tri1428 e:tri1330 e:tri1350 e:tri1400 e:tri1436 e:tri1427
+neighbors tri1347 n:tri1352 n:tri1346 n:tri1321 n:tri1292 n:tri1250 n:tri1255 n:tri1260 n:tri1322 n:tri1353 n:tri1399 n:tri1323 n:tri1378 e:tri1428 e:tri1400 e:tri1436 e:tri1427
+neighbors tri1323 n:tri1346 n:tri1321 n:tri1292 n:tri1250 n:tri1255 n:tri1260 n:tri1322 n:tri1382 n:tri1379 n:tri1399 n:tri1347 n:tri1378 e:tri1428 e:tri1400 e:tri1436 e:tri1427
+neighbors tri1378 n:tri1322 n:tri1382 n:tri1379 e:tri1431 e:tri1468 n:tri1399 n:tri1347 n:tri1323 e:tri1428 e:tri1469 e:tri1400 e:tri1436 e:tri1427
+neighbors tri1407 e:tri1413 n:tri1385 n:tri1408 n:tri1375 n:tri1367 e:tri1371 e:tri1414 n:tri1369 n:tri1366 e:tri1370 n:tri1362 n:tri1368
+neighbors tri1369 n:tri1408 n:tri1375 n:tri1367 e:tri1371 e:tri1414 n:tri1407 n:tri1366 n:tri1357 e:tri1370 n:tri1362 n:tri1368 n:tri1356
+neighbors tri1366 n:tri1408 n:tri1375 n:tri1367 n:tri1324 n:tri1300 n:tri1295 n:tri1407 n:tri1369 n:tri1357 n:tri1296 n:tri1368 n:tri1356
+neighbors tri1357 n:tri1367 n:tri1324 n:tri1300 n:tri1295 n:tri1369 n:tri1366 n:tri1296 n:tri1272 n:tri1368 n:tri1356 n:tri1271
+neighbors tri1296 n:tri1367 n:tri1324 n:tri1300 n:tri1295 n:tri1257 n:tri1366 n:tri1357 n:tri1272 n:tri1256 n:tri1356 n:tri1271
+neighbors tri1272 n:tri1295 n:tri1257 n:tri1357 n:tri1296 n:tri1256 n:tri1231 n:tri1227 n:tri1228 n:tri1356 n:tri1271 n:tri1232
+neighbors tri1256 n:tri1295 n:tri1257 n:tri1244 t:tri1220 n:tri1296 n:tri1272 n:tri1231 t:tri1219 n:tri1227 n:tri1228 n:tri1271 n:tri1232
+neighbors tri1231 n:tri1257 n:tri1244 t:tri1220 n:tri1272 n:tri1256 t:tri1219 t:tri1162 t:tri1194 t:tri990 t:tri1134 t:tri1171 t:tri1226 n:tri1227 n:tri1228 n:tri1271 n:tri1232
+neighbors tri1202 t:tri1111 n:tri1161 n:tri1204 t:tri1086 t:tri1112 n:tri1203 n:tri1236 n:tri1225 n:tri1223 t:tri1118 t:tri1117 n:tri1233 n:tri1237
+neighbors tri1203 t:tri1111 n:tri1161 n:tri1204 n:tri1240 t:tri1112 n:tri1202 n:tri1236 n:tri1241 n:tri1225 n:tri1223 n:tri1233 n:tri1237
+neighbors tri1236 n:tri1204 n:tri1240 n:tri1202 n:tri1203 n:tri1241 n:tri1304 n:tri1225 n:tri1223 n:tri1233 n:tri1237 n:tri1305
+neighbors tri1241 n:tri1204 n:tri1240 n:tri1274 n:tri1306 n:tri1312 n:tri1203 n:tri1236 n:tri1304 n:tri1313 n:tri1237 n:tri1305
+neighbors tri1304 n:tri1240 n:tri1274 n:tri1306 n:tri1312 n:tri1236 n:tri1241 n:tri1313 n:tri1354 n:tri1237 n:tri1305 n:tri1355
+neighbors tri1313 n:tri1240 n:tri1274 n:tri1306 n:tri1312 n:tri1349 n:tri1395 n:tri1241 n:tri1304 n:tri1354 n:tri1396 n:tri1305 n:tri1355
+neighbors tri1354 n:tri1312 n:tri1349 n:tri1395 n:tri1304 n:tri1313 n:tri1396 e:tri1417 n:tri1305 n:tri1355 n:tri1372 e:tri1418
+neighbors tri1396 n:tri1312 n:tri1349 n:tri1395 e:tri1412 e:tri1465 e:tri1448 n:tri1313 n:tri1354 e:tri1417 e:tri1470 e:tri1449 n:tri1355 n:tri1372 e:tri1418
+neighbors tri1227 n:tri1272 n:tri1256 n:tri1231 t:tri1219 t:tri1162 t:tri1194 t:tri990 t:tri1134 t:tri1171 t:tri1226 n:tri1228 n:tri1224 n:tri1271 n:tri1232 t:tri1157 t:tri1185 t:tri1184
+neighbors tri1228 n:tri1272 n:tri1256 n:tri1231 t:tri1226 n:tri1227 n:tri1224 n:tri1225 n:tri1271 n:tri1232 n:tri1233 t:tri1157 t:tri1185 t:tri1184
+neighbors tri1224 t:tri1226 n:tri1227 n:tri1228 n:tri1225 n:tri1223 t:tri1118 n:tri1232 n:tri1233 t:tri1157 t:tri1185 t:tri1184 t:tri1181 t:tri1180
+neighbors tri1225 n:tri1202 n:tri1203 n:tri1236 n:tri1228 n:tri1224 n:tri1223 t:tri1118 n:tri1232 n:tri1233 n:tri1237 t:tri1184 t:tri1181 t:tri1180
+neighbors tri1223 t:tri1086 t:tri1112 n:tri1202 n:tri1203 n:tri1236 n:tri1224 n:tri1225 t:tri1118 t:tri1117 n:tri1233 n:tri1237 t:tri1184 t:tri1181 t:tri1180
+neighbors tri1362 e:tri1371 e:tri1414 n:tri1407 n:tri1369 e:tri1308 e:tri1332 e:tri1370 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 e:tri1309 e:tri1334 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1368 e:tri1371 e:tri1414 n:tri1407 n:tri1369 n:tri1366 n:tri1357 e:tri1370 n:tri1362 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1356 n:tri1369 n:tri1366 n:tri1357 n:tri1296 n:tri1272 n:tri1362 n:tri1368 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1271 n:tri1357 n:tri1296 n:tri1272 n:tri1256 n:tri1231 n:tri1227 n:tri1228 n:tri1362 n:tri1368 n:tri1356 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1232 n:tri1272 n:tri1256 n:tri1231 n:tri1227 n:tri1228 n:tri1224 n:tri1225 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1233 n:tri1202 n:tri1203 n:tri1236 n:tri1228 n:tri1224 n:tri1225 n:tri1223 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1237 n:tri1305 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1237 n:tri1202 n:tri1203 n:tri1236 n:tri1241 n:tri1304 n:tri1225 n:tri1223 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1305 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1305 n:tri1236 n:tri1241 n:tri1304 n:tri1313 n:tri1354 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1355 n:tri1372 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1355 n:tri1304 n:tri1313 n:tri1354 n:tri1396 e:tri1417 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1372 e:tri1418 n:tri1363 n:tri1380 n:tri1373
+neighbors tri1372 n:tri1354 n:tri1396 e:tri1417 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 e:tri1418 e:tri1471 e:tri1462 n:tri1363 n:tri1380 n:tri1373 e:tri1409 e:tri1463
+neighbors tri1363 e:tri1308 e:tri1332 e:tri1370 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 e:tri1309 e:tri1334 n:tri1380 n:tri1373 e:tri1335 e:tri1401 e:tri1381
+neighbors tri1380 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 e:tri1334 n:tri1363 n:tri1373 e:tri1409 e:tri1335 e:tri1401 e:tri1381 e:tri1410
+neighbors tri1373 n:tri1362 n:tri1368 n:tri1356 n:tri1271 n:tri1232 n:tri1233 n:tri1237 n:tri1305 n:tri1355 n:tri1372 e:tri1418 e:tri1471 e:tri1462 n:tri1363 n:tri1380 e:tri1409 e:tri1463 e:tri1381 e:tri1410

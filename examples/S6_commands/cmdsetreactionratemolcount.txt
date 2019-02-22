@@ -1,0 +1,73 @@
+# Simulation file for Smoldyn
+# This file is used to test and demonstrate the setreactionratemolcount command
+
+graphics opengl
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species redL redR greenL greenR redport greenport
+
+text_display redL redR greenL greenR
+
+time_start 0
+time_stop 10000
+time_step 0.5
+
+difc all 1
+color red* red
+color green* green
+display_size all 2
+color redport(all) red
+color greenport(all) green
+display_size *port 4
+
+start_surface walls
+action both all reflect
+polygon both none
+panel rect +0 0 0 0 100 100
+panel rect -0 100 0 0 100 100
+panel rect +1 0 0 0 100 100
+panel rect -1 0 100 0 100 100
+panel rect +2 0 0 0 100 100
+panel rect -2 0 0 100 100 100
+end_surface
+
+start_surface surf
+action both all reflect
+polygon both face
+color both lightblue
+panel rect +0 50 0 0 100 100 rect1
+end_surface
+
+surface_mol 20 redport(up) surf all all
+surface_mol 20 greenport(up) surf all all
+
+mol 50 redL 0-50 u u
+mol 50 redR 50-100 u u
+mol 50 greenL 0-50 u u
+mol 50 greenR 50-100 u u
+
+reaction redlr redL(bsoln) + redport(up) -> redR(fsoln) + redport(up) 20
+reaction redrl redR(fsoln) + redport(up) -> redL(bsoln) + redport(up) 20
+product_placement redlr pgemmax 0.1
+product_placement redrl pgemmax 0.1
+reaction greenlr greenL(bsoln) + greenport(up) -> greenR(fsoln) + greenport(up) 20
+reaction greenrl greenR(fsoln) + greenport(up) -> greenL(bsoln) + greenport(up) 20
+product_placement greenlr pgemmax 0.1
+product_placement greenrl pgemmax 0.1
+
+# red will have positive feedback so they will all go to one side or the other
+cmd N 10 setreactionratemolcount redlr 10 -1 redL 1 redR
+cmd N 10 setreactionratemolcount redrl 10 1 redL -1 redR
+
+# green will have negative feedback so they will exhibit reduced variation
+cmd N 10 setreactionratemolcount greenlr 10 1 greenL -1 greenR
+cmd N 10 setreactionratemolcount greenrl 10 -1 greenL 1 greenR
+
+#cmd @ 1000 diagnostics reaction
+
+end_file
+

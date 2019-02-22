@@ -1,0 +1,42 @@
+# Bistable reaction system
+
+graphics opengl
+
+dim 2
+species X A B A2 B2
+
+difc all 1
+difc X 0
+
+color A* red
+color B* blue
+color X green
+
+display_size all 3
+display_size *2 5
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+boundaries x 0 10 p
+boundaries y 0 10 p
+
+mol 1 X 5 5
+
+reaction express X -> X + A + B 1
+reaction Adimer  A + A <-> A2  1 1
+reaction Bdimer  B + B <-> B2  1 1
+
+reaction AxB   A2 + B -> A2  1
+reaction BxA   B2 + A -> B2  1
+
+reaction Adegrade A -> 0  0.01
+reaction Bdegrade B -> 0  0.01
+
+output_files bistableout.txt
+cmd B molcountheader bistableout.txt
+cmd N 10 molcount bistableout.txt
+
+end_file
+

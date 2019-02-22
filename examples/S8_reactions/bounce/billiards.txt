@@ -1,0 +1,51 @@
+# Crowding test, low density
+
+graphics opengl_good
+#random_seed 4
+
+dim 2
+
+boundaries 0 0 20 p
+boundaries 1 0 20 p
+
+time_start 0
+time_stop 1000
+time_step 0.004
+
+species red green
+
+difc all(all) 1
+
+display_size all(all) 0.5
+color red(all) red
+color green(all) green
+
+reaction rxn1 red + red -> red + red
+binding_radius rxn1 1
+product_placement rxn1 bounce
+#product_placement rxn1 bounce -1
+#product_placement rxn1 bounce 1.2
+#product_placement rxn1 irrev
+
+reaction rxn2 red + green -> red + green
+binding_radius rxn2 1
+product_placement rxn2 bounce
+#product_placement rxn2 bounce -1
+#product_placement rxn2 bounce 1.2
+#product_placement rxn2 irrev
+
+reaction rxn3 green + green -> green + green
+binding_radius rxn3 1
+product_placement rxn3 bounce
+#product_placement rxn3 bounce -1
+#product_placement rxn3 bounce 1.2
+#product_placement rxn3 irrev
+
+mol 70 red u u
+mol 10 green u u
+
+#output_files stdout
+#cmd N 1000 listmols4 green stdout
+
+end_file
+

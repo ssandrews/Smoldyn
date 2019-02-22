@@ -1,0 +1,28 @@
+# Demonstration of absorbing, periodic, and reflective boundaries
+
+graphics opengl
+
+dim 2
+low_wall x 0 a
+high_wall x 100 r
+boundaries y 0 100 p
+
+species red green
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+
+time_start 0
+time_stop 200
+time_step 0.01
+
+mol 300 red u u
+mol 30 green 50 5
+
+end_file
+
+
+

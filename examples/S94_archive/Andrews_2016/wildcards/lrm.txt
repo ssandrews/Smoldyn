@@ -1,0 +1,66 @@
+# Smoldyn configuration file to test wildcards in reactions
+# This file simulates second messenger signaling with ligand (L), receptor (R),
+# and messenger (M).  R is membrane-bound and can bind L and/or M.  If it binds
+# both, then M gets phosphorylated to Mp.
+
+define krl_on	20
+define krl_off	0.005
+define krm_on	10
+define krm_off	0.1
+define k_phos	1
+define k_unphos	0.01
+
+# Graphical output
+graphics opengl_good
+
+# System space and time definitions
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+time_start 0
+time_stop 1000
+time_step 0.05
+
+# Molecular species and their properties
+species L R M Mp
+difc L(all) 3
+difc R(up) 0.2
+difc M(all) 2
+difc Mp(all) 1.5
+color L(all) green
+color R(all) grey
+color M(all) blue
+color Mp(all) red
+display_size all(all) 2
+
+# Reactions
+reaction_rule rxnlr	L(fsoln) + R*(up) <-> LR*(up)	krl_on krl_off
+reaction_rule rxnrm	*R(up) + M*(bsoln) <-> *RM*(up)	krm_on krm_off
+reaction_rule rxnphos	LRM(up) -> LRMp(up)		k_phos
+reaction_rule rxnunphos	*Mp(soln) -> *M(soln)		k_unphos
+
+expand_rules all
+
+# Surface parameters
+start_surface membrane
+action all(all) both reflect
+panel rect +1 0 50 100
+end_surface
+
+start_surface outsides
+action all(all) both reflect
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+# initial molecules
+surface_mol 20 R(up) membrane all all
+mol 20 L 50 80
+mol 20 M 50 20
+
+#text_display time Mp M* LR*(all)
+
+end_file
+

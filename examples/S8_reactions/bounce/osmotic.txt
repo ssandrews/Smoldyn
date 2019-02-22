@@ -1,0 +1,38 @@
+# A simulation that alternates reflection and diffusion steps, which
+# may be useful for computing osmotic pressure.
+
+graphics opengl_good
+
+dim 2
+
+boundaries 0 0 20 p
+boundaries 1 0 20 p
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+species red
+
+difc red 1
+
+display_size red 0.5
+color red red
+
+reaction rxn1 red + red -> red + red
+binding_radius rxn1 1
+product_placement rxn1 bounce 1
+
+
+mol 200 red u u
+
+cmd I 1 1000 2 reaction_probability rxn1 1
+cmd I 1 1000 2 set difc red 0
+
+cmd I 2 1000 2 reaction_probability rxn1 0
+cmd I 2 1000 2 set difc red 1
+
+cmd E pause
+
+end_file
+

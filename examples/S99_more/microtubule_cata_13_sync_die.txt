@@ -1,0 +1,1594 @@
+# Microtubule
+# Written by Lukas Widmer, Oct. 2015, during a Porquerolles course on cell modeling
+
+graphics opengl_better
+
+light room ambient 0 0 0
+light 0 position 0 0 0
+light 0 diffuse 1 0.5 0.5
+light 0 ambient 0 0 0
+light 0 specular 1 1 1
+
+background_color black
+
+dim 3
+
+# Boundaries in nanometers
+boundaries 0 0 3000 r
+boundaries 1 -200 200 r
+boundaries 2 -200 200 r
+
+# 600 seconds = 10 minutes
+time_start 0
+time_stop 600
+time_step 0.001
+
+#Species
+species GTPtubulin
+species GDPtubulin
+species mtGTPtubulinBound0
+species mtGTPtubulinSeed0
+species mtGTPtubulinOccupiedSeed0
+species mtGDPtubulinBound0
+species mtGDPtubulinTip0
+species mtGTPtubulinTip0
+species mtGTPtubulinFallingOffTipA0
+species mtGTPtubulinFallingOffTipB0
+species mtGDPtubulinDie0
+species mtGTPtubulinBound1
+species mtGTPtubulinSeed1
+species mtGTPtubulinOccupiedSeed1
+species mtGDPtubulinBound1
+species mtGDPtubulinTip1
+species mtGTPtubulinTip1
+species mtGTPtubulinFallingOffTipA1
+species mtGTPtubulinFallingOffTipB1
+species mtGDPtubulinDie1
+species mtGTPtubulinBound2
+species mtGTPtubulinSeed2
+species mtGTPtubulinOccupiedSeed2
+species mtGDPtubulinBound2
+species mtGDPtubulinTip2
+species mtGTPtubulinTip2
+species mtGTPtubulinFallingOffTipA2
+species mtGTPtubulinFallingOffTipB2
+species mtGDPtubulinDie2
+species mtGTPtubulinBound3
+species mtGTPtubulinSeed3
+species mtGTPtubulinOccupiedSeed3
+species mtGDPtubulinBound3
+species mtGDPtubulinTip3
+species mtGTPtubulinTip3
+species mtGTPtubulinFallingOffTipA3
+species mtGTPtubulinFallingOffTipB3
+species mtGDPtubulinDie3
+species mtGTPtubulinBound4
+species mtGTPtubulinSeed4
+species mtGTPtubulinOccupiedSeed4
+species mtGDPtubulinBound4
+species mtGDPtubulinTip4
+species mtGTPtubulinTip4
+species mtGTPtubulinFallingOffTipA4
+species mtGTPtubulinFallingOffTipB4
+species mtGDPtubulinDie4
+species mtGTPtubulinBound5
+species mtGTPtubulinSeed5
+species mtGTPtubulinOccupiedSeed5
+species mtGDPtubulinBound5
+species mtGDPtubulinTip5
+species mtGTPtubulinTip5
+species mtGTPtubulinFallingOffTipA5
+species mtGTPtubulinFallingOffTipB5
+species mtGDPtubulinDie5
+species mtGTPtubulinBound6
+species mtGTPtubulinSeed6
+species mtGTPtubulinOccupiedSeed6
+species mtGDPtubulinBound6
+species mtGDPtubulinTip6
+species mtGTPtubulinTip6
+species mtGTPtubulinFallingOffTipA6
+species mtGTPtubulinFallingOffTipB6
+species mtGDPtubulinDie6
+species mtGTPtubulinBound7
+species mtGTPtubulinSeed7
+species mtGTPtubulinOccupiedSeed7
+species mtGDPtubulinBound7
+species mtGDPtubulinTip7
+species mtGTPtubulinTip7
+species mtGTPtubulinFallingOffTipA7
+species mtGTPtubulinFallingOffTipB7
+species mtGDPtubulinDie7
+species mtGTPtubulinBound8
+species mtGTPtubulinSeed8
+species mtGTPtubulinOccupiedSeed8
+species mtGDPtubulinBound8
+species mtGDPtubulinTip8
+species mtGTPtubulinTip8
+species mtGTPtubulinFallingOffTipA8
+species mtGTPtubulinFallingOffTipB8
+species mtGDPtubulinDie8
+species mtGTPtubulinBound9
+species mtGTPtubulinSeed9
+species mtGTPtubulinOccupiedSeed9
+species mtGDPtubulinBound9
+species mtGDPtubulinTip9
+species mtGTPtubulinTip9
+species mtGTPtubulinFallingOffTipA9
+species mtGTPtubulinFallingOffTipB9
+species mtGDPtubulinDie9
+species mtGTPtubulinBound10
+species mtGTPtubulinSeed10
+species mtGTPtubulinOccupiedSeed10
+species mtGDPtubulinBound10
+species mtGDPtubulinTip10
+species mtGTPtubulinTip10
+species mtGTPtubulinFallingOffTipA10
+species mtGTPtubulinFallingOffTipB10
+species mtGDPtubulinDie10
+species mtGTPtubulinBound11
+species mtGTPtubulinSeed11
+species mtGTPtubulinOccupiedSeed11
+species mtGDPtubulinBound11
+species mtGDPtubulinTip11
+species mtGTPtubulinTip11
+species mtGTPtubulinFallingOffTipA11
+species mtGTPtubulinFallingOffTipB11
+species mtGDPtubulinDie11
+species mtGTPtubulinBound12
+species mtGTPtubulinSeed12
+species mtGTPtubulinOccupiedSeed12
+species mtGDPtubulinBound12
+species mtGDPtubulinTip12
+species mtGTPtubulinTip12
+species mtGTPtubulinFallingOffTipA12
+species mtGTPtubulinFallingOffTipB12
+species mtGDPtubulinDie12
+
+
+display_size * 3
+
+difc GTPtubulin 5900000
+difc GDPtubulin 5900000
+difc mtGTPtubulinBound* 0
+difc mtGTPtubulinSeed* 0
+difc mtGTPtubulinOccupiedSeed* 0
+difc mtGDPtubulinBound* 0
+difc mtGDPtubulinTip* .000000001
+difc mtGTPtubulinTip* 0
+difc mtGTPtubulinFallingOffTipA* 0
+difc mtGTPtubulinFallingOffTipB* .000000001
+difc mtGDPtubulinDie* 0
+
+color GTPtubulin 0 1 0
+color GDPtubulin 1 0 0
+color mtGTPtubulinBound* 0 1 1
+color mtGTPtubulinSeed* 0.5 0.5 0.5
+color mtGTPtubulinOccupiedSeed* 0.7 0.7 0.7
+color mtGDPtubulinBound* 1 0 1
+color mtGDPtubulinTip* 1 0.5 1
+color mtGTPtubulinTip* 0 1 0.5
+color mtGTPtubulinFallingOffTipA* 0 1 0.5
+color mtGTPtubulinFallingOffTipB* 0 0.8 0.2
+color mtGDPtubulinDie* 1 1 1
+
+#Initial MT Configuration
+mol 1 mtGTPtubulinSeed0 0.0 8.357162937720755 -0.0
+mol 1 mtGTPtubulinSeed1 1.0 7.399900280570524 -3.883767269704208
+mol 1 mtGTPtubulinSeed2 2.0 4.747409647607344 -6.877810262388613
+mol 1 mtGTPtubulinSeed3 3.0 1.0073446768656826 -8.296229810558756
+mol 1 mtGTPtubulinSeed4 4.0 -2.963490819526532 -7.814083089537464
+mol 1 mtGTPtubulinSeed5 5.0 -6.25542628310116 -5.54182410261284
+mol 1 mtGTPtubulinSeed6 6.0 -8.114318971276234 -1.9999999999999996
+mol 1 mtGTPtubulinSeed7 7.0 -8.114318971276235 1.9999999999999976
+mol 1 mtGTPtubulinSeed8 8.0 -6.255426283101161 5.541824102612838
+mol 1 mtGTPtubulinSeed9 9.0 -2.9634908195265357 7.814083089537463
+mol 1 mtGTPtubulinSeed10 10.0 1.0073446768656842 8.296229810558756
+mol 1 mtGTPtubulinSeed11 11.0 4.747409647607334 6.877810262388619
+mol 1 mtGTPtubulinSeed12 12.0 7.399900280570525 3.883767269704207
+
+
+#Reactions
+reaction seedBinding0 mtGTPtubulinSeed0 + GTPtubulin -> mtGTPtubulinTip0 + mtGTPtubulinOccupiedSeed0 5440000 
+product_placement seedBinding0 fixed mtGTPtubulinTip0 8 0 0
+reaction binding0 mtGTPtubulinTip0 + GTPtubulin -> mtGTPtubulinTip0 + mtGTPtubulinBound0 5440000 
+product_placement binding0 fixed mtGTPtubulinTip0 8 0 0
+reaction hydrolysis0 mtGTPtubulinBound0 -> mtGDPtubulinBound0 0.06
+reaction unbindingGTPpartA0 mtGTPtubulinTip0 -> mtGTPtubulinFallingOffTipA0 10
+reaction unbindingGTPpartArev0 mtGTPtubulinFallingOffTipA0 -> mtGTPtubulinTip0 10
+reaction unbindingGTPpartB0 mtGTPtubulinFallingOffTipA0 -> mtGTPtubulinFallingOffTipB0 1.0
+reaction unbindingGTPpartC0 mtGTPtubulinBound0 + mtGTPtubulinFallingOffTipB0 -> mtGTPtubulinTip0 + GTPtubulin
+binding_radius unbindingGTPpartC0 8.08
+product_placement unbindingGTPpartC0 fixed mtGTPtubulinTip0 0 0 0
+reaction unbindingGDP0 mtGDPtubulinBound0 + mtGTPtubulinFallingOffTipB0 -> mtGDPtubulinTip0 + GTPtubulin
+binding_radius unbindingGDP0 8.08
+product_placement unbindingGDP0 fixed mtGDPtubulinTip0 0 0 0
+reaction unbindingSeed0 mtGTPtubulinOccupiedSeed0 + mtGTPtubulinFallingOffTipB0 -> mtGTPtubulinSeed0 + GTPtubulin
+binding_radius unbindingSeed0 8.08
+product_placement unbindingSeed0 fixed mtGTPtubulinSeed0 0 0 0
+reaction catastropheGDP0 mtGDPtubulinBound0 + mtGDPtubulinTip0 -> mtGDPtubulinTip0 + GDPtubulin
+binding_radius catastropheGDP0 8.08
+product_placement catastropheGDP0 fixed mtGDPtubulinTip0 0 0 0
+reaction catastropheGTP0 mtGTPtubulinBound0 + mtGDPtubulinTip0 -> mtGDPtubulinTip0 + GTPtubulin
+binding_radius catastropheGTP0 8.08
+product_placement catastropheGTP0 fixed mtGDPtubulinTip0 0 0 0
+reaction catastropheSeed0 mtGTPtubulinOccupiedSeed0 + mtGDPtubulinTip0 -> mtGTPtubulinSeed0 + GDPtubulin
+binding_radius catastropheSeed0 8.08
+product_placement catastropheSeed0 fixed mtGTPtubulinSeed0 0 0 0
+reaction seedBinding1 mtGTPtubulinSeed1 + GTPtubulin -> mtGTPtubulinTip1 + mtGTPtubulinOccupiedSeed1 5440000 
+product_placement seedBinding1 fixed mtGTPtubulinTip1 8 0 0
+reaction binding1 mtGTPtubulinTip1 + GTPtubulin -> mtGTPtubulinTip1 + mtGTPtubulinBound1 5440000 
+product_placement binding1 fixed mtGTPtubulinTip1 8 0 0
+reaction hydrolysis1 mtGTPtubulinBound1 -> mtGDPtubulinBound1 0.06
+reaction unbindingGTPpartA1 mtGTPtubulinTip1 -> mtGTPtubulinFallingOffTipA1 10
+reaction unbindingGTPpartArev1 mtGTPtubulinFallingOffTipA1 -> mtGTPtubulinTip1 10
+reaction unbindingGTPpartB1 mtGTPtubulinFallingOffTipA1 -> mtGTPtubulinFallingOffTipB1 1.0
+reaction unbindingGTPpartC1 mtGTPtubulinBound1 + mtGTPtubulinFallingOffTipB1 -> mtGTPtubulinTip1 + GTPtubulin
+binding_radius unbindingGTPpartC1 8.08
+product_placement unbindingGTPpartC1 fixed mtGTPtubulinTip1 0 0 0
+reaction unbindingGDP1 mtGDPtubulinBound1 + mtGTPtubulinFallingOffTipB1 -> mtGDPtubulinTip1 + GTPtubulin
+binding_radius unbindingGDP1 8.08
+product_placement unbindingGDP1 fixed mtGDPtubulinTip1 0 0 0
+reaction unbindingSeed1 mtGTPtubulinOccupiedSeed1 + mtGTPtubulinFallingOffTipB1 -> mtGTPtubulinSeed1 + GTPtubulin
+binding_radius unbindingSeed1 8.08
+product_placement unbindingSeed1 fixed mtGTPtubulinSeed1 0 0 0
+reaction catastropheGDP1 mtGDPtubulinBound1 + mtGDPtubulinTip1 -> mtGDPtubulinTip1 + GDPtubulin
+binding_radius catastropheGDP1 8.08
+product_placement catastropheGDP1 fixed mtGDPtubulinTip1 0 0 0
+reaction catastropheGTP1 mtGTPtubulinBound1 + mtGDPtubulinTip1 -> mtGDPtubulinTip1 + GTPtubulin
+binding_radius catastropheGTP1 8.08
+product_placement catastropheGTP1 fixed mtGDPtubulinTip1 0 0 0
+reaction catastropheSeed1 mtGTPtubulinOccupiedSeed1 + mtGDPtubulinTip1 -> mtGTPtubulinSeed1 + GDPtubulin
+binding_radius catastropheSeed1 8.08
+product_placement catastropheSeed1 fixed mtGTPtubulinSeed1 0 0 0
+reaction seedBinding2 mtGTPtubulinSeed2 + GTPtubulin -> mtGTPtubulinTip2 + mtGTPtubulinOccupiedSeed2 5440000 
+product_placement seedBinding2 fixed mtGTPtubulinTip2 8 0 0
+reaction binding2 mtGTPtubulinTip2 + GTPtubulin -> mtGTPtubulinTip2 + mtGTPtubulinBound2 5440000 
+product_placement binding2 fixed mtGTPtubulinTip2 8 0 0
+reaction hydrolysis2 mtGTPtubulinBound2 -> mtGDPtubulinBound2 0.06
+reaction unbindingGTPpartA2 mtGTPtubulinTip2 -> mtGTPtubulinFallingOffTipA2 10
+reaction unbindingGTPpartArev2 mtGTPtubulinFallingOffTipA2 -> mtGTPtubulinTip2 10
+reaction unbindingGTPpartB2 mtGTPtubulinFallingOffTipA2 -> mtGTPtubulinFallingOffTipB2 1.0
+reaction unbindingGTPpartC2 mtGTPtubulinBound2 + mtGTPtubulinFallingOffTipB2 -> mtGTPtubulinTip2 + GTPtubulin
+binding_radius unbindingGTPpartC2 8.08
+product_placement unbindingGTPpartC2 fixed mtGTPtubulinTip2 0 0 0
+reaction unbindingGDP2 mtGDPtubulinBound2 + mtGTPtubulinFallingOffTipB2 -> mtGDPtubulinTip2 + GTPtubulin
+binding_radius unbindingGDP2 8.08
+product_placement unbindingGDP2 fixed mtGDPtubulinTip2 0 0 0
+reaction unbindingSeed2 mtGTPtubulinOccupiedSeed2 + mtGTPtubulinFallingOffTipB2 -> mtGTPtubulinSeed2 + GTPtubulin
+binding_radius unbindingSeed2 8.08
+product_placement unbindingSeed2 fixed mtGTPtubulinSeed2 0 0 0
+reaction catastropheGDP2 mtGDPtubulinBound2 + mtGDPtubulinTip2 -> mtGDPtubulinTip2 + GDPtubulin
+binding_radius catastropheGDP2 8.08
+product_placement catastropheGDP2 fixed mtGDPtubulinTip2 0 0 0
+reaction catastropheGTP2 mtGTPtubulinBound2 + mtGDPtubulinTip2 -> mtGDPtubulinTip2 + GTPtubulin
+binding_radius catastropheGTP2 8.08
+product_placement catastropheGTP2 fixed mtGDPtubulinTip2 0 0 0
+reaction catastropheSeed2 mtGTPtubulinOccupiedSeed2 + mtGDPtubulinTip2 -> mtGTPtubulinSeed2 + GDPtubulin
+binding_radius catastropheSeed2 8.08
+product_placement catastropheSeed2 fixed mtGTPtubulinSeed2 0 0 0
+reaction seedBinding3 mtGTPtubulinSeed3 + GTPtubulin -> mtGTPtubulinTip3 + mtGTPtubulinOccupiedSeed3 5440000 
+product_placement seedBinding3 fixed mtGTPtubulinTip3 8 0 0
+reaction binding3 mtGTPtubulinTip3 + GTPtubulin -> mtGTPtubulinTip3 + mtGTPtubulinBound3 5440000 
+product_placement binding3 fixed mtGTPtubulinTip3 8 0 0
+reaction hydrolysis3 mtGTPtubulinBound3 -> mtGDPtubulinBound3 0.06
+reaction unbindingGTPpartA3 mtGTPtubulinTip3 -> mtGTPtubulinFallingOffTipA3 10
+reaction unbindingGTPpartArev3 mtGTPtubulinFallingOffTipA3 -> mtGTPtubulinTip3 10
+reaction unbindingGTPpartB3 mtGTPtubulinFallingOffTipA3 -> mtGTPtubulinFallingOffTipB3 1.0
+reaction unbindingGTPpartC3 mtGTPtubulinBound3 + mtGTPtubulinFallingOffTipB3 -> mtGTPtubulinTip3 + GTPtubulin
+binding_radius unbindingGTPpartC3 8.08
+product_placement unbindingGTPpartC3 fixed mtGTPtubulinTip3 0 0 0
+reaction unbindingGDP3 mtGDPtubulinBound3 + mtGTPtubulinFallingOffTipB3 -> mtGDPtubulinTip3 + GTPtubulin
+binding_radius unbindingGDP3 8.08
+product_placement unbindingGDP3 fixed mtGDPtubulinTip3 0 0 0
+reaction unbindingSeed3 mtGTPtubulinOccupiedSeed3 + mtGTPtubulinFallingOffTipB3 -> mtGTPtubulinSeed3 + GTPtubulin
+binding_radius unbindingSeed3 8.08
+product_placement unbindingSeed3 fixed mtGTPtubulinSeed3 0 0 0
+reaction catastropheGDP3 mtGDPtubulinBound3 + mtGDPtubulinTip3 -> mtGDPtubulinTip3 + GDPtubulin
+binding_radius catastropheGDP3 8.08
+product_placement catastropheGDP3 fixed mtGDPtubulinTip3 0 0 0
+reaction catastropheGTP3 mtGTPtubulinBound3 + mtGDPtubulinTip3 -> mtGDPtubulinTip3 + GTPtubulin
+binding_radius catastropheGTP3 8.08
+product_placement catastropheGTP3 fixed mtGDPtubulinTip3 0 0 0
+reaction catastropheSeed3 mtGTPtubulinOccupiedSeed3 + mtGDPtubulinTip3 -> mtGTPtubulinSeed3 + GDPtubulin
+binding_radius catastropheSeed3 8.08
+product_placement catastropheSeed3 fixed mtGTPtubulinSeed3 0 0 0
+reaction seedBinding4 mtGTPtubulinSeed4 + GTPtubulin -> mtGTPtubulinTip4 + mtGTPtubulinOccupiedSeed4 5440000 
+product_placement seedBinding4 fixed mtGTPtubulinTip4 8 0 0
+reaction binding4 mtGTPtubulinTip4 + GTPtubulin -> mtGTPtubulinTip4 + mtGTPtubulinBound4 5440000 
+product_placement binding4 fixed mtGTPtubulinTip4 8 0 0
+reaction hydrolysis4 mtGTPtubulinBound4 -> mtGDPtubulinBound4 0.06
+reaction unbindingGTPpartA4 mtGTPtubulinTip4 -> mtGTPtubulinFallingOffTipA4 10
+reaction unbindingGTPpartArev4 mtGTPtubulinFallingOffTipA4 -> mtGTPtubulinTip4 10
+reaction unbindingGTPpartB4 mtGTPtubulinFallingOffTipA4 -> mtGTPtubulinFallingOffTipB4 1.0
+reaction unbindingGTPpartC4 mtGTPtubulinBound4 + mtGTPtubulinFallingOffTipB4 -> mtGTPtubulinTip4 + GTPtubulin
+binding_radius unbindingGTPpartC4 8.08
+product_placement unbindingGTPpartC4 fixed mtGTPtubulinTip4 0 0 0
+reaction unbindingGDP4 mtGDPtubulinBound4 + mtGTPtubulinFallingOffTipB4 -> mtGDPtubulinTip4 + GTPtubulin
+binding_radius unbindingGDP4 8.08
+product_placement unbindingGDP4 fixed mtGDPtubulinTip4 0 0 0
+reaction unbindingSeed4 mtGTPtubulinOccupiedSeed4 + mtGTPtubulinFallingOffTipB4 -> mtGTPtubulinSeed4 + GTPtubulin
+binding_radius unbindingSeed4 8.08
+product_placement unbindingSeed4 fixed mtGTPtubulinSeed4 0 0 0
+reaction catastropheGDP4 mtGDPtubulinBound4 + mtGDPtubulinTip4 -> mtGDPtubulinTip4 + GDPtubulin
+binding_radius catastropheGDP4 8.08
+product_placement catastropheGDP4 fixed mtGDPtubulinTip4 0 0 0
+reaction catastropheGTP4 mtGTPtubulinBound4 + mtGDPtubulinTip4 -> mtGDPtubulinTip4 + GTPtubulin
+binding_radius catastropheGTP4 8.08
+product_placement catastropheGTP4 fixed mtGDPtubulinTip4 0 0 0
+reaction catastropheSeed4 mtGTPtubulinOccupiedSeed4 + mtGDPtubulinTip4 -> mtGTPtubulinSeed4 + GDPtubulin
+binding_radius catastropheSeed4 8.08
+product_placement catastropheSeed4 fixed mtGTPtubulinSeed4 0 0 0
+reaction seedBinding5 mtGTPtubulinSeed5 + GTPtubulin -> mtGTPtubulinTip5 + mtGTPtubulinOccupiedSeed5 5440000 
+product_placement seedBinding5 fixed mtGTPtubulinTip5 8 0 0
+reaction binding5 mtGTPtubulinTip5 + GTPtubulin -> mtGTPtubulinTip5 + mtGTPtubulinBound5 5440000 
+product_placement binding5 fixed mtGTPtubulinTip5 8 0 0
+reaction hydrolysis5 mtGTPtubulinBound5 -> mtGDPtubulinBound5 0.06
+reaction unbindingGTPpartA5 mtGTPtubulinTip5 -> mtGTPtubulinFallingOffTipA5 10
+reaction unbindingGTPpartArev5 mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinTip5 10
+reaction unbindingGTPpartB5 mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinFallingOffTipB5 1.0
+reaction unbindingGTPpartC5 mtGTPtubulinBound5 + mtGTPtubulinFallingOffTipB5 -> mtGTPtubulinTip5 + GTPtubulin
+binding_radius unbindingGTPpartC5 8.08
+product_placement unbindingGTPpartC5 fixed mtGTPtubulinTip5 0 0 0
+reaction unbindingGDP5 mtGDPtubulinBound5 + mtGTPtubulinFallingOffTipB5 -> mtGDPtubulinTip5 + GTPtubulin
+binding_radius unbindingGDP5 8.08
+product_placement unbindingGDP5 fixed mtGDPtubulinTip5 0 0 0
+reaction unbindingSeed5 mtGTPtubulinOccupiedSeed5 + mtGTPtubulinFallingOffTipB5 -> mtGTPtubulinSeed5 + GTPtubulin
+binding_radius unbindingSeed5 8.08
+product_placement unbindingSeed5 fixed mtGTPtubulinSeed5 0 0 0
+reaction catastropheGDP5 mtGDPtubulinBound5 + mtGDPtubulinTip5 -> mtGDPtubulinTip5 + GDPtubulin
+binding_radius catastropheGDP5 8.08
+product_placement catastropheGDP5 fixed mtGDPtubulinTip5 0 0 0
+reaction catastropheGTP5 mtGTPtubulinBound5 + mtGDPtubulinTip5 -> mtGDPtubulinTip5 + GTPtubulin
+binding_radius catastropheGTP5 8.08
+product_placement catastropheGTP5 fixed mtGDPtubulinTip5 0 0 0
+reaction catastropheSeed5 mtGTPtubulinOccupiedSeed5 + mtGDPtubulinTip5 -> mtGTPtubulinSeed5 + GDPtubulin
+binding_radius catastropheSeed5 8.08
+product_placement catastropheSeed5 fixed mtGTPtubulinSeed5 0 0 0
+reaction seedBinding6 mtGTPtubulinSeed6 + GTPtubulin -> mtGTPtubulinTip6 + mtGTPtubulinOccupiedSeed6 5440000 
+product_placement seedBinding6 fixed mtGTPtubulinTip6 8 0 0
+reaction binding6 mtGTPtubulinTip6 + GTPtubulin -> mtGTPtubulinTip6 + mtGTPtubulinBound6 5440000 
+product_placement binding6 fixed mtGTPtubulinTip6 8 0 0
+reaction hydrolysis6 mtGTPtubulinBound6 -> mtGDPtubulinBound6 0.06
+reaction unbindingGTPpartA6 mtGTPtubulinTip6 -> mtGTPtubulinFallingOffTipA6 10
+reaction unbindingGTPpartArev6 mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip6 10
+reaction unbindingGTPpartB6 mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinFallingOffTipB6 1.0
+reaction unbindingGTPpartC6 mtGTPtubulinBound6 + mtGTPtubulinFallingOffTipB6 -> mtGTPtubulinTip6 + GTPtubulin
+binding_radius unbindingGTPpartC6 8.08
+product_placement unbindingGTPpartC6 fixed mtGTPtubulinTip6 0 0 0
+reaction unbindingGDP6 mtGDPtubulinBound6 + mtGTPtubulinFallingOffTipB6 -> mtGDPtubulinTip6 + GTPtubulin
+binding_radius unbindingGDP6 8.08
+product_placement unbindingGDP6 fixed mtGDPtubulinTip6 0 0 0
+reaction unbindingSeed6 mtGTPtubulinOccupiedSeed6 + mtGTPtubulinFallingOffTipB6 -> mtGTPtubulinSeed6 + GTPtubulin
+binding_radius unbindingSeed6 8.08
+product_placement unbindingSeed6 fixed mtGTPtubulinSeed6 0 0 0
+reaction catastropheGDP6 mtGDPtubulinBound6 + mtGDPtubulinTip6 -> mtGDPtubulinTip6 + GDPtubulin
+binding_radius catastropheGDP6 8.08
+product_placement catastropheGDP6 fixed mtGDPtubulinTip6 0 0 0
+reaction catastropheGTP6 mtGTPtubulinBound6 + mtGDPtubulinTip6 -> mtGDPtubulinTip6 + GTPtubulin
+binding_radius catastropheGTP6 8.08
+product_placement catastropheGTP6 fixed mtGDPtubulinTip6 0 0 0
+reaction catastropheSeed6 mtGTPtubulinOccupiedSeed6 + mtGDPtubulinTip6 -> mtGTPtubulinSeed6 + GDPtubulin
+binding_radius catastropheSeed6 8.08
+product_placement catastropheSeed6 fixed mtGTPtubulinSeed6 0 0 0
+reaction seedBinding7 mtGTPtubulinSeed7 + GTPtubulin -> mtGTPtubulinTip7 + mtGTPtubulinOccupiedSeed7 5440000 
+product_placement seedBinding7 fixed mtGTPtubulinTip7 8 0 0
+reaction binding7 mtGTPtubulinTip7 + GTPtubulin -> mtGTPtubulinTip7 + mtGTPtubulinBound7 5440000 
+product_placement binding7 fixed mtGTPtubulinTip7 8 0 0
+reaction hydrolysis7 mtGTPtubulinBound7 -> mtGDPtubulinBound7 0.06
+reaction unbindingGTPpartA7 mtGTPtubulinTip7 -> mtGTPtubulinFallingOffTipA7 10
+reaction unbindingGTPpartArev7 mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip7 10
+reaction unbindingGTPpartB7 mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinFallingOffTipB7 1.0
+reaction unbindingGTPpartC7 mtGTPtubulinBound7 + mtGTPtubulinFallingOffTipB7 -> mtGTPtubulinTip7 + GTPtubulin
+binding_radius unbindingGTPpartC7 8.08
+product_placement unbindingGTPpartC7 fixed mtGTPtubulinTip7 0 0 0
+reaction unbindingGDP7 mtGDPtubulinBound7 + mtGTPtubulinFallingOffTipB7 -> mtGDPtubulinTip7 + GTPtubulin
+binding_radius unbindingGDP7 8.08
+product_placement unbindingGDP7 fixed mtGDPtubulinTip7 0 0 0
+reaction unbindingSeed7 mtGTPtubulinOccupiedSeed7 + mtGTPtubulinFallingOffTipB7 -> mtGTPtubulinSeed7 + GTPtubulin
+binding_radius unbindingSeed7 8.08
+product_placement unbindingSeed7 fixed mtGTPtubulinSeed7 0 0 0
+reaction catastropheGDP7 mtGDPtubulinBound7 + mtGDPtubulinTip7 -> mtGDPtubulinTip7 + GDPtubulin
+binding_radius catastropheGDP7 8.08
+product_placement catastropheGDP7 fixed mtGDPtubulinTip7 0 0 0
+reaction catastropheGTP7 mtGTPtubulinBound7 + mtGDPtubulinTip7 -> mtGDPtubulinTip7 + GTPtubulin
+binding_radius catastropheGTP7 8.08
+product_placement catastropheGTP7 fixed mtGDPtubulinTip7 0 0 0
+reaction catastropheSeed7 mtGTPtubulinOccupiedSeed7 + mtGDPtubulinTip7 -> mtGTPtubulinSeed7 + GDPtubulin
+binding_radius catastropheSeed7 8.08
+product_placement catastropheSeed7 fixed mtGTPtubulinSeed7 0 0 0
+reaction seedBinding8 mtGTPtubulinSeed8 + GTPtubulin -> mtGTPtubulinTip8 + mtGTPtubulinOccupiedSeed8 5440000 
+product_placement seedBinding8 fixed mtGTPtubulinTip8 8 0 0
+reaction binding8 mtGTPtubulinTip8 + GTPtubulin -> mtGTPtubulinTip8 + mtGTPtubulinBound8 5440000 
+product_placement binding8 fixed mtGTPtubulinTip8 8 0 0
+reaction hydrolysis8 mtGTPtubulinBound8 -> mtGDPtubulinBound8 0.06
+reaction unbindingGTPpartA8 mtGTPtubulinTip8 -> mtGTPtubulinFallingOffTipA8 10
+reaction unbindingGTPpartArev8 mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip8 10
+reaction unbindingGTPpartB8 mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinFallingOffTipB8 1.0
+reaction unbindingGTPpartC8 mtGTPtubulinBound8 + mtGTPtubulinFallingOffTipB8 -> mtGTPtubulinTip8 + GTPtubulin
+binding_radius unbindingGTPpartC8 8.08
+product_placement unbindingGTPpartC8 fixed mtGTPtubulinTip8 0 0 0
+reaction unbindingGDP8 mtGDPtubulinBound8 + mtGTPtubulinFallingOffTipB8 -> mtGDPtubulinTip8 + GTPtubulin
+binding_radius unbindingGDP8 8.08
+product_placement unbindingGDP8 fixed mtGDPtubulinTip8 0 0 0
+reaction unbindingSeed8 mtGTPtubulinOccupiedSeed8 + mtGTPtubulinFallingOffTipB8 -> mtGTPtubulinSeed8 + GTPtubulin
+binding_radius unbindingSeed8 8.08
+product_placement unbindingSeed8 fixed mtGTPtubulinSeed8 0 0 0
+reaction catastropheGDP8 mtGDPtubulinBound8 + mtGDPtubulinTip8 -> mtGDPtubulinTip8 + GDPtubulin
+binding_radius catastropheGDP8 8.08
+product_placement catastropheGDP8 fixed mtGDPtubulinTip8 0 0 0
+reaction catastropheGTP8 mtGTPtubulinBound8 + mtGDPtubulinTip8 -> mtGDPtubulinTip8 + GTPtubulin
+binding_radius catastropheGTP8 8.08
+product_placement catastropheGTP8 fixed mtGDPtubulinTip8 0 0 0
+reaction catastropheSeed8 mtGTPtubulinOccupiedSeed8 + mtGDPtubulinTip8 -> mtGTPtubulinSeed8 + GDPtubulin
+binding_radius catastropheSeed8 8.08
+product_placement catastropheSeed8 fixed mtGTPtubulinSeed8 0 0 0
+reaction seedBinding9 mtGTPtubulinSeed9 + GTPtubulin -> mtGTPtubulinTip9 + mtGTPtubulinOccupiedSeed9 5440000 
+product_placement seedBinding9 fixed mtGTPtubulinTip9 8 0 0
+reaction binding9 mtGTPtubulinTip9 + GTPtubulin -> mtGTPtubulinTip9 + mtGTPtubulinBound9 5440000 
+product_placement binding9 fixed mtGTPtubulinTip9 8 0 0
+reaction hydrolysis9 mtGTPtubulinBound9 -> mtGDPtubulinBound9 0.06
+reaction unbindingGTPpartA9 mtGTPtubulinTip9 -> mtGTPtubulinFallingOffTipA9 10
+reaction unbindingGTPpartArev9 mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip9 10
+reaction unbindingGTPpartB9 mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinFallingOffTipB9 1.0
+reaction unbindingGTPpartC9 mtGTPtubulinBound9 + mtGTPtubulinFallingOffTipB9 -> mtGTPtubulinTip9 + GTPtubulin
+binding_radius unbindingGTPpartC9 8.08
+product_placement unbindingGTPpartC9 fixed mtGTPtubulinTip9 0 0 0
+reaction unbindingGDP9 mtGDPtubulinBound9 + mtGTPtubulinFallingOffTipB9 -> mtGDPtubulinTip9 + GTPtubulin
+binding_radius unbindingGDP9 8.08
+product_placement unbindingGDP9 fixed mtGDPtubulinTip9 0 0 0
+reaction unbindingSeed9 mtGTPtubulinOccupiedSeed9 + mtGTPtubulinFallingOffTipB9 -> mtGTPtubulinSeed9 + GTPtubulin
+binding_radius unbindingSeed9 8.08
+product_placement unbindingSeed9 fixed mtGTPtubulinSeed9 0 0 0
+reaction catastropheGDP9 mtGDPtubulinBound9 + mtGDPtubulinTip9 -> mtGDPtubulinTip9 + GDPtubulin
+binding_radius catastropheGDP9 8.08
+product_placement catastropheGDP9 fixed mtGDPtubulinTip9 0 0 0
+reaction catastropheGTP9 mtGTPtubulinBound9 + mtGDPtubulinTip9 -> mtGDPtubulinTip9 + GTPtubulin
+binding_radius catastropheGTP9 8.08
+product_placement catastropheGTP9 fixed mtGDPtubulinTip9 0 0 0
+reaction catastropheSeed9 mtGTPtubulinOccupiedSeed9 + mtGDPtubulinTip9 -> mtGTPtubulinSeed9 + GDPtubulin
+binding_radius catastropheSeed9 8.08
+product_placement catastropheSeed9 fixed mtGTPtubulinSeed9 0 0 0
+reaction seedBinding10 mtGTPtubulinSeed10 + GTPtubulin -> mtGTPtubulinTip10 + mtGTPtubulinOccupiedSeed10 5440000 
+product_placement seedBinding10 fixed mtGTPtubulinTip10 8 0 0
+reaction binding10 mtGTPtubulinTip10 + GTPtubulin -> mtGTPtubulinTip10 + mtGTPtubulinBound10 5440000 
+product_placement binding10 fixed mtGTPtubulinTip10 8 0 0
+reaction hydrolysis10 mtGTPtubulinBound10 -> mtGDPtubulinBound10 0.06
+reaction unbindingGTPpartA10 mtGTPtubulinTip10 -> mtGTPtubulinFallingOffTipA10 10
+reaction unbindingGTPpartArev10 mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip10 10
+reaction unbindingGTPpartB10 mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinFallingOffTipB10 1.0
+reaction unbindingGTPpartC10 mtGTPtubulinBound10 + mtGTPtubulinFallingOffTipB10 -> mtGTPtubulinTip10 + GTPtubulin
+binding_radius unbindingGTPpartC10 8.08
+product_placement unbindingGTPpartC10 fixed mtGTPtubulinTip10 0 0 0
+reaction unbindingGDP10 mtGDPtubulinBound10 + mtGTPtubulinFallingOffTipB10 -> mtGDPtubulinTip10 + GTPtubulin
+binding_radius unbindingGDP10 8.08
+product_placement unbindingGDP10 fixed mtGDPtubulinTip10 0 0 0
+reaction unbindingSeed10 mtGTPtubulinOccupiedSeed10 + mtGTPtubulinFallingOffTipB10 -> mtGTPtubulinSeed10 + GTPtubulin
+binding_radius unbindingSeed10 8.08
+product_placement unbindingSeed10 fixed mtGTPtubulinSeed10 0 0 0
+reaction catastropheGDP10 mtGDPtubulinBound10 + mtGDPtubulinTip10 -> mtGDPtubulinTip10 + GDPtubulin
+binding_radius catastropheGDP10 8.08
+product_placement catastropheGDP10 fixed mtGDPtubulinTip10 0 0 0
+reaction catastropheGTP10 mtGTPtubulinBound10 + mtGDPtubulinTip10 -> mtGDPtubulinTip10 + GTPtubulin
+binding_radius catastropheGTP10 8.08
+product_placement catastropheGTP10 fixed mtGDPtubulinTip10 0 0 0
+reaction catastropheSeed10 mtGTPtubulinOccupiedSeed10 + mtGDPtubulinTip10 -> mtGTPtubulinSeed10 + GDPtubulin
+binding_radius catastropheSeed10 8.08
+product_placement catastropheSeed10 fixed mtGTPtubulinSeed10 0 0 0
+reaction seedBinding11 mtGTPtubulinSeed11 + GTPtubulin -> mtGTPtubulinTip11 + mtGTPtubulinOccupiedSeed11 5440000 
+product_placement seedBinding11 fixed mtGTPtubulinTip11 8 0 0
+reaction binding11 mtGTPtubulinTip11 + GTPtubulin -> mtGTPtubulinTip11 + mtGTPtubulinBound11 5440000 
+product_placement binding11 fixed mtGTPtubulinTip11 8 0 0
+reaction hydrolysis11 mtGTPtubulinBound11 -> mtGDPtubulinBound11 0.06
+reaction unbindingGTPpartA11 mtGTPtubulinTip11 -> mtGTPtubulinFallingOffTipA11 10
+reaction unbindingGTPpartArev11 mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip11 10
+reaction unbindingGTPpartB11 mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinFallingOffTipB11 1.0
+reaction unbindingGTPpartC11 mtGTPtubulinBound11 + mtGTPtubulinFallingOffTipB11 -> mtGTPtubulinTip11 + GTPtubulin
+binding_radius unbindingGTPpartC11 8.08
+product_placement unbindingGTPpartC11 fixed mtGTPtubulinTip11 0 0 0
+reaction unbindingGDP11 mtGDPtubulinBound11 + mtGTPtubulinFallingOffTipB11 -> mtGDPtubulinTip11 + GTPtubulin
+binding_radius unbindingGDP11 8.08
+product_placement unbindingGDP11 fixed mtGDPtubulinTip11 0 0 0
+reaction unbindingSeed11 mtGTPtubulinOccupiedSeed11 + mtGTPtubulinFallingOffTipB11 -> mtGTPtubulinSeed11 + GTPtubulin
+binding_radius unbindingSeed11 8.08
+product_placement unbindingSeed11 fixed mtGTPtubulinSeed11 0 0 0
+reaction catastropheGDP11 mtGDPtubulinBound11 + mtGDPtubulinTip11 -> mtGDPtubulinTip11 + GDPtubulin
+binding_radius catastropheGDP11 8.08
+product_placement catastropheGDP11 fixed mtGDPtubulinTip11 0 0 0
+reaction catastropheGTP11 mtGTPtubulinBound11 + mtGDPtubulinTip11 -> mtGDPtubulinTip11 + GTPtubulin
+binding_radius catastropheGTP11 8.08
+product_placement catastropheGTP11 fixed mtGDPtubulinTip11 0 0 0
+reaction catastropheSeed11 mtGTPtubulinOccupiedSeed11 + mtGDPtubulinTip11 -> mtGTPtubulinSeed11 + GDPtubulin
+binding_radius catastropheSeed11 8.08
+product_placement catastropheSeed11 fixed mtGTPtubulinSeed11 0 0 0
+reaction seedBinding12 mtGTPtubulinSeed12 + GTPtubulin -> mtGTPtubulinTip12 + mtGTPtubulinOccupiedSeed12 5440000 
+product_placement seedBinding12 fixed mtGTPtubulinTip12 8 0 0
+reaction binding12 mtGTPtubulinTip12 + GTPtubulin -> mtGTPtubulinTip12 + mtGTPtubulinBound12 5440000 
+product_placement binding12 fixed mtGTPtubulinTip12 8 0 0
+reaction hydrolysis12 mtGTPtubulinBound12 -> mtGDPtubulinBound12 0.06
+reaction unbindingGTPpartA12 mtGTPtubulinTip12 -> mtGTPtubulinFallingOffTipA12 10
+reaction unbindingGTPpartArev12 mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip12 10
+reaction unbindingGTPpartB12 mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinFallingOffTipB12 1.0
+reaction unbindingGTPpartC12 mtGTPtubulinBound12 + mtGTPtubulinFallingOffTipB12 -> mtGTPtubulinTip12 + GTPtubulin
+binding_radius unbindingGTPpartC12 8.08
+product_placement unbindingGTPpartC12 fixed mtGTPtubulinTip12 0 0 0
+reaction unbindingGDP12 mtGDPtubulinBound12 + mtGTPtubulinFallingOffTipB12 -> mtGDPtubulinTip12 + GTPtubulin
+binding_radius unbindingGDP12 8.08
+product_placement unbindingGDP12 fixed mtGDPtubulinTip12 0 0 0
+reaction unbindingSeed12 mtGTPtubulinOccupiedSeed12 + mtGTPtubulinFallingOffTipB12 -> mtGTPtubulinSeed12 + GTPtubulin
+binding_radius unbindingSeed12 8.08
+product_placement unbindingSeed12 fixed mtGTPtubulinSeed12 0 0 0
+reaction catastropheGDP12 mtGDPtubulinBound12 + mtGDPtubulinTip12 -> mtGDPtubulinTip12 + GDPtubulin
+binding_radius catastropheGDP12 8.08
+product_placement catastropheGDP12 fixed mtGDPtubulinTip12 0 0 0
+reaction catastropheGTP12 mtGTPtubulinBound12 + mtGDPtubulinTip12 -> mtGDPtubulinTip12 + GTPtubulin
+binding_radius catastropheGTP12 8.08
+product_placement catastropheGTP12 fixed mtGDPtubulinTip12 0 0 0
+reaction catastropheSeed12 mtGTPtubulinOccupiedSeed12 + mtGDPtubulinTip12 -> mtGTPtubulinSeed12 + GDPtubulin
+binding_radius catastropheSeed12 8.08
+product_placement catastropheSeed12 fixed mtGTPtubulinSeed12 0 0 0
+reaction reverseStruct0_1 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound1 -> mtGTPtubulinTip0 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct0_1 127.75601747080253
+reaction reverseStruct1_0 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound0 -> mtGTPtubulinTip1 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct1_0 127.75601747080253
+reaction reverseStructTip0_1 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip1 -> mtGTPtubulinTip0 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip0_1 127.75601747080253
+reaction reverseStructTip1_0 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip0 -> mtGTPtubulinTip1 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip1_0 127.75601747080253
+reaction reverseStructUnstableTip0_1  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA1 -> mtGTPtubulinTip0 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructUnstableTip0_1 127.75601747080253
+reaction reverseStruct0_2 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound2 -> mtGTPtubulinTip0 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct0_2 127.75601747080253
+reaction reverseStruct2_0 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound0 -> mtGTPtubulinTip2 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct2_0 127.75601747080253
+reaction reverseStructTip0_2 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip2 -> mtGTPtubulinTip0 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip0_2 127.75601747080253
+reaction reverseStructTip2_0 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip0 -> mtGTPtubulinTip2 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip2_0 127.75601747080253
+reaction reverseStructUnstableTip0_2  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA2 -> mtGTPtubulinTip0 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructUnstableTip0_2 127.75601747080253
+reaction reverseStruct0_3 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound3 -> mtGTPtubulinTip0 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct0_3 127.75601747080253
+reaction reverseStruct3_0 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound0 -> mtGTPtubulinTip3 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct3_0 127.75601747080253
+reaction reverseStructTip0_3 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip3 -> mtGTPtubulinTip0 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip0_3 127.75601747080253
+reaction reverseStructTip3_0 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip0 -> mtGTPtubulinTip3 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip3_0 127.75601747080253
+reaction reverseStructUnstableTip0_3  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA3 -> mtGTPtubulinTip0 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructUnstableTip0_3 127.75601747080253
+reaction reverseStruct0_4 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound4 -> mtGTPtubulinTip0 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct0_4 127.75601747080253
+reaction reverseStruct4_0 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound0 -> mtGTPtubulinTip4 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct4_0 127.75601747080253
+reaction reverseStructTip0_4 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip4 -> mtGTPtubulinTip0 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip0_4 127.75601747080253
+reaction reverseStructTip4_0 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip0 -> mtGTPtubulinTip4 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip4_0 127.75601747080253
+reaction reverseStructUnstableTip0_4  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA4 -> mtGTPtubulinTip0 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructUnstableTip0_4 127.75601747080253
+reaction reverseStruct0_5 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound5 -> mtGTPtubulinTip0 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct0_5 127.75601747080253
+reaction reverseStruct5_0 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound0 -> mtGTPtubulinTip5 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct5_0 127.75601747080253
+reaction reverseStructTip0_5 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip5 -> mtGTPtubulinTip0 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip0_5 127.75601747080253
+reaction reverseStructTip5_0 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip0 -> mtGTPtubulinTip5 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip5_0 127.75601747080253
+reaction reverseStructUnstableTip0_5  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinTip0 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructUnstableTip0_5 127.75601747080253
+reaction reverseStruct0_6 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound6 -> mtGTPtubulinTip0 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct0_6 127.75601747080253
+reaction reverseStruct6_0 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound0 -> mtGTPtubulinTip6 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct6_0 127.75601747080253
+reaction reverseStructTip0_6 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip6 -> mtGTPtubulinTip0 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip0_6 127.75601747080253
+reaction reverseStructTip6_0 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip0 -> mtGTPtubulinTip6 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip6_0 127.75601747080253
+reaction reverseStructUnstableTip0_6  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip0 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructUnstableTip0_6 127.75601747080253
+reaction reverseStruct0_7 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound7 -> mtGTPtubulinTip0 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct0_7 127.75601747080253
+reaction reverseStruct7_0 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound0 -> mtGTPtubulinTip7 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct7_0 127.75601747080253
+reaction reverseStructTip0_7 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip7 -> mtGTPtubulinTip0 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip0_7 127.75601747080253
+reaction reverseStructTip7_0 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip0 -> mtGTPtubulinTip7 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip7_0 127.75601747080253
+reaction reverseStructUnstableTip0_7  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip0 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip0_7 127.75601747080253
+reaction reverseStruct0_8 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound8 -> mtGTPtubulinTip0 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct0_8 127.75601747080253
+reaction reverseStruct8_0 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound0 -> mtGTPtubulinTip8 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct8_0 127.75601747080253
+reaction reverseStructTip0_8 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip8 -> mtGTPtubulinTip0 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip0_8 127.75601747080253
+reaction reverseStructTip8_0 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip0 -> mtGTPtubulinTip8 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip8_0 127.75601747080253
+reaction reverseStructUnstableTip0_8  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip0 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip0_8 127.75601747080253
+reaction reverseStruct0_9 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound9 -> mtGTPtubulinTip0 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct0_9 127.75601747080253
+reaction reverseStruct9_0 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound0 -> mtGTPtubulinTip9 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct9_0 127.75601747080253
+reaction reverseStructTip0_9 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip9 -> mtGTPtubulinTip0 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip0_9 127.75601747080253
+reaction reverseStructTip9_0 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip0 -> mtGTPtubulinTip9 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip9_0 127.75601747080253
+reaction reverseStructUnstableTip0_9  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip0 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip0_9 127.75601747080253
+reaction reverseStruct0_10 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound10 -> mtGTPtubulinTip0 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct0_10 127.75601747080253
+reaction reverseStruct10_0 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound0 -> mtGTPtubulinTip10 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct10_0 127.75601747080253
+reaction reverseStructTip0_10 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip10 -> mtGTPtubulinTip0 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip0_10 127.75601747080253
+reaction reverseStructTip10_0 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip0 -> mtGTPtubulinTip10 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip10_0 127.75601747080253
+reaction reverseStructUnstableTip0_10  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip0 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip0_10 127.75601747080253
+reaction reverseStruct0_11 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound11 -> mtGTPtubulinTip0 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct0_11 127.75601747080253
+reaction reverseStruct11_0 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound0 -> mtGTPtubulinTip11 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct11_0 127.75601747080253
+reaction reverseStructTip0_11 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip11 -> mtGTPtubulinTip0 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip0_11 127.75601747080253
+reaction reverseStructTip11_0 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip0 -> mtGTPtubulinTip11 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip11_0 127.75601747080253
+reaction reverseStructUnstableTip0_11  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip0 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip0_11 127.75601747080253
+reaction reverseStruct0_12 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinBound12 -> mtGTPtubulinTip0 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct0_12 127.75601747080253
+reaction reverseStruct12_0 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound0 -> mtGTPtubulinTip12 + mtGTPtubulinBound0 0.01
+confspread_radius reverseStruct12_0 127.75601747080253
+reaction reverseStructTip0_12 mtGTPtubulinFallingOffTipA0 + mtGTPtubulinTip12 -> mtGTPtubulinTip0 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip0_12 127.75601747080253
+reaction reverseStructTip12_0 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip0 -> mtGTPtubulinTip12 + mtGTPtubulinTip0 0.01
+confspread_radius reverseStructTip12_0 127.75601747080253
+reaction reverseStructUnstableTip0_12  mtGTPtubulinFallingOffTipA0 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip0 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip0_12 127.75601747080253
+reaction reverseStruct1_2 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound2 -> mtGTPtubulinTip1 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct1_2 127.75601747080253
+reaction reverseStruct2_1 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound1 -> mtGTPtubulinTip2 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct2_1 127.75601747080253
+reaction reverseStructTip1_2 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip2 -> mtGTPtubulinTip1 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip1_2 127.75601747080253
+reaction reverseStructTip2_1 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip1 -> mtGTPtubulinTip2 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip2_1 127.75601747080253
+reaction reverseStructUnstableTip1_2  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA2 -> mtGTPtubulinTip1 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructUnstableTip1_2 127.75601747080253
+reaction reverseStruct1_3 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound3 -> mtGTPtubulinTip1 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct1_3 127.75601747080253
+reaction reverseStruct3_1 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound1 -> mtGTPtubulinTip3 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct3_1 127.75601747080253
+reaction reverseStructTip1_3 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip3 -> mtGTPtubulinTip1 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip1_3 127.75601747080253
+reaction reverseStructTip3_1 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip1 -> mtGTPtubulinTip3 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip3_1 127.75601747080253
+reaction reverseStructUnstableTip1_3  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA3 -> mtGTPtubulinTip1 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructUnstableTip1_3 127.75601747080253
+reaction reverseStruct1_4 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound4 -> mtGTPtubulinTip1 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct1_4 127.75601747080253
+reaction reverseStruct4_1 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound1 -> mtGTPtubulinTip4 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct4_1 127.75601747080253
+reaction reverseStructTip1_4 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip4 -> mtGTPtubulinTip1 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip1_4 127.75601747080253
+reaction reverseStructTip4_1 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip1 -> mtGTPtubulinTip4 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip4_1 127.75601747080253
+reaction reverseStructUnstableTip1_4  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA4 -> mtGTPtubulinTip1 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructUnstableTip1_4 127.75601747080253
+reaction reverseStruct1_5 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound5 -> mtGTPtubulinTip1 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct1_5 127.75601747080253
+reaction reverseStruct5_1 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound1 -> mtGTPtubulinTip5 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct5_1 127.75601747080253
+reaction reverseStructTip1_5 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip5 -> mtGTPtubulinTip1 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip1_5 127.75601747080253
+reaction reverseStructTip5_1 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip1 -> mtGTPtubulinTip5 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip5_1 127.75601747080253
+reaction reverseStructUnstableTip1_5  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinTip1 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructUnstableTip1_5 127.75601747080253
+reaction reverseStruct1_6 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound6 -> mtGTPtubulinTip1 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct1_6 127.75601747080253
+reaction reverseStruct6_1 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound1 -> mtGTPtubulinTip6 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct6_1 127.75601747080253
+reaction reverseStructTip1_6 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip6 -> mtGTPtubulinTip1 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip1_6 127.75601747080253
+reaction reverseStructTip6_1 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip1 -> mtGTPtubulinTip6 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip6_1 127.75601747080253
+reaction reverseStructUnstableTip1_6  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip1 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructUnstableTip1_6 127.75601747080253
+reaction reverseStruct1_7 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound7 -> mtGTPtubulinTip1 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct1_7 127.75601747080253
+reaction reverseStruct7_1 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound1 -> mtGTPtubulinTip7 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct7_1 127.75601747080253
+reaction reverseStructTip1_7 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip7 -> mtGTPtubulinTip1 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip1_7 127.75601747080253
+reaction reverseStructTip7_1 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip1 -> mtGTPtubulinTip7 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip7_1 127.75601747080253
+reaction reverseStructUnstableTip1_7  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip1 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip1_7 127.75601747080253
+reaction reverseStruct1_8 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound8 -> mtGTPtubulinTip1 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct1_8 127.75601747080253
+reaction reverseStruct8_1 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound1 -> mtGTPtubulinTip8 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct8_1 127.75601747080253
+reaction reverseStructTip1_8 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip8 -> mtGTPtubulinTip1 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip1_8 127.75601747080253
+reaction reverseStructTip8_1 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip1 -> mtGTPtubulinTip8 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip8_1 127.75601747080253
+reaction reverseStructUnstableTip1_8  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip1 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip1_8 127.75601747080253
+reaction reverseStruct1_9 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound9 -> mtGTPtubulinTip1 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct1_9 127.75601747080253
+reaction reverseStruct9_1 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound1 -> mtGTPtubulinTip9 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct9_1 127.75601747080253
+reaction reverseStructTip1_9 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip9 -> mtGTPtubulinTip1 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip1_9 127.75601747080253
+reaction reverseStructTip9_1 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip1 -> mtGTPtubulinTip9 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip9_1 127.75601747080253
+reaction reverseStructUnstableTip1_9  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip1 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip1_9 127.75601747080253
+reaction reverseStruct1_10 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound10 -> mtGTPtubulinTip1 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct1_10 127.75601747080253
+reaction reverseStruct10_1 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound1 -> mtGTPtubulinTip10 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct10_1 127.75601747080253
+reaction reverseStructTip1_10 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip10 -> mtGTPtubulinTip1 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip1_10 127.75601747080253
+reaction reverseStructTip10_1 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip1 -> mtGTPtubulinTip10 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip10_1 127.75601747080253
+reaction reverseStructUnstableTip1_10  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip1 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip1_10 127.75601747080253
+reaction reverseStruct1_11 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound11 -> mtGTPtubulinTip1 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct1_11 127.75601747080253
+reaction reverseStruct11_1 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound1 -> mtGTPtubulinTip11 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct11_1 127.75601747080253
+reaction reverseStructTip1_11 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip11 -> mtGTPtubulinTip1 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip1_11 127.75601747080253
+reaction reverseStructTip11_1 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip1 -> mtGTPtubulinTip11 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip11_1 127.75601747080253
+reaction reverseStructUnstableTip1_11  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip1 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip1_11 127.75601747080253
+reaction reverseStruct1_12 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinBound12 -> mtGTPtubulinTip1 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct1_12 127.75601747080253
+reaction reverseStruct12_1 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound1 -> mtGTPtubulinTip12 + mtGTPtubulinBound1 0.01
+confspread_radius reverseStruct12_1 127.75601747080253
+reaction reverseStructTip1_12 mtGTPtubulinFallingOffTipA1 + mtGTPtubulinTip12 -> mtGTPtubulinTip1 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip1_12 127.75601747080253
+reaction reverseStructTip12_1 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip1 -> mtGTPtubulinTip12 + mtGTPtubulinTip1 0.01
+confspread_radius reverseStructTip12_1 127.75601747080253
+reaction reverseStructUnstableTip1_12  mtGTPtubulinFallingOffTipA1 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip1 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip1_12 127.75601747080253
+reaction reverseStruct2_3 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound3 -> mtGTPtubulinTip2 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct2_3 127.75601747080253
+reaction reverseStruct3_2 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound2 -> mtGTPtubulinTip3 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct3_2 127.75601747080253
+reaction reverseStructTip2_3 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip3 -> mtGTPtubulinTip2 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip2_3 127.75601747080253
+reaction reverseStructTip3_2 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip2 -> mtGTPtubulinTip3 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip3_2 127.75601747080253
+reaction reverseStructUnstableTip2_3  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA3 -> mtGTPtubulinTip2 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructUnstableTip2_3 127.75601747080253
+reaction reverseStruct2_4 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound4 -> mtGTPtubulinTip2 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct2_4 127.75601747080253
+reaction reverseStruct4_2 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound2 -> mtGTPtubulinTip4 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct4_2 127.75601747080253
+reaction reverseStructTip2_4 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip4 -> mtGTPtubulinTip2 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip2_4 127.75601747080253
+reaction reverseStructTip4_2 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip2 -> mtGTPtubulinTip4 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip4_2 127.75601747080253
+reaction reverseStructUnstableTip2_4  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA4 -> mtGTPtubulinTip2 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructUnstableTip2_4 127.75601747080253
+reaction reverseStruct2_5 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound5 -> mtGTPtubulinTip2 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct2_5 127.75601747080253
+reaction reverseStruct5_2 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound2 -> mtGTPtubulinTip5 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct5_2 127.75601747080253
+reaction reverseStructTip2_5 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip5 -> mtGTPtubulinTip2 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip2_5 127.75601747080253
+reaction reverseStructTip5_2 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip2 -> mtGTPtubulinTip5 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip5_2 127.75601747080253
+reaction reverseStructUnstableTip2_5  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinTip2 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructUnstableTip2_5 127.75601747080253
+reaction reverseStruct2_6 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound6 -> mtGTPtubulinTip2 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct2_6 127.75601747080253
+reaction reverseStruct6_2 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound2 -> mtGTPtubulinTip6 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct6_2 127.75601747080253
+reaction reverseStructTip2_6 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip6 -> mtGTPtubulinTip2 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip2_6 127.75601747080253
+reaction reverseStructTip6_2 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip2 -> mtGTPtubulinTip6 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip6_2 127.75601747080253
+reaction reverseStructUnstableTip2_6  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip2 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructUnstableTip2_6 127.75601747080253
+reaction reverseStruct2_7 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound7 -> mtGTPtubulinTip2 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct2_7 127.75601747080253
+reaction reverseStruct7_2 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound2 -> mtGTPtubulinTip7 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct7_2 127.75601747080253
+reaction reverseStructTip2_7 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip7 -> mtGTPtubulinTip2 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip2_7 127.75601747080253
+reaction reverseStructTip7_2 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip2 -> mtGTPtubulinTip7 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip7_2 127.75601747080253
+reaction reverseStructUnstableTip2_7  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip2 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip2_7 127.75601747080253
+reaction reverseStruct2_8 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound8 -> mtGTPtubulinTip2 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct2_8 127.75601747080253
+reaction reverseStruct8_2 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound2 -> mtGTPtubulinTip8 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct8_2 127.75601747080253
+reaction reverseStructTip2_8 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip8 -> mtGTPtubulinTip2 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip2_8 127.75601747080253
+reaction reverseStructTip8_2 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip2 -> mtGTPtubulinTip8 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip8_2 127.75601747080253
+reaction reverseStructUnstableTip2_8  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip2 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip2_8 127.75601747080253
+reaction reverseStruct2_9 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound9 -> mtGTPtubulinTip2 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct2_9 127.75601747080253
+reaction reverseStruct9_2 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound2 -> mtGTPtubulinTip9 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct9_2 127.75601747080253
+reaction reverseStructTip2_9 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip9 -> mtGTPtubulinTip2 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip2_9 127.75601747080253
+reaction reverseStructTip9_2 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip2 -> mtGTPtubulinTip9 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip9_2 127.75601747080253
+reaction reverseStructUnstableTip2_9  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip2 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip2_9 127.75601747080253
+reaction reverseStruct2_10 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound10 -> mtGTPtubulinTip2 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct2_10 127.75601747080253
+reaction reverseStruct10_2 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound2 -> mtGTPtubulinTip10 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct10_2 127.75601747080253
+reaction reverseStructTip2_10 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip10 -> mtGTPtubulinTip2 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip2_10 127.75601747080253
+reaction reverseStructTip10_2 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip2 -> mtGTPtubulinTip10 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip10_2 127.75601747080253
+reaction reverseStructUnstableTip2_10  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip2 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip2_10 127.75601747080253
+reaction reverseStruct2_11 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound11 -> mtGTPtubulinTip2 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct2_11 127.75601747080253
+reaction reverseStruct11_2 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound2 -> mtGTPtubulinTip11 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct11_2 127.75601747080253
+reaction reverseStructTip2_11 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip11 -> mtGTPtubulinTip2 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip2_11 127.75601747080253
+reaction reverseStructTip11_2 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip2 -> mtGTPtubulinTip11 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip11_2 127.75601747080253
+reaction reverseStructUnstableTip2_11  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip2 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip2_11 127.75601747080253
+reaction reverseStruct2_12 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinBound12 -> mtGTPtubulinTip2 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct2_12 127.75601747080253
+reaction reverseStruct12_2 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound2 -> mtGTPtubulinTip12 + mtGTPtubulinBound2 0.01
+confspread_radius reverseStruct12_2 127.75601747080253
+reaction reverseStructTip2_12 mtGTPtubulinFallingOffTipA2 + mtGTPtubulinTip12 -> mtGTPtubulinTip2 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip2_12 127.75601747080253
+reaction reverseStructTip12_2 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip2 -> mtGTPtubulinTip12 + mtGTPtubulinTip2 0.01
+confspread_radius reverseStructTip12_2 127.75601747080253
+reaction reverseStructUnstableTip2_12  mtGTPtubulinFallingOffTipA2 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip2 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip2_12 127.75601747080253
+reaction reverseStruct3_4 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound4 -> mtGTPtubulinTip3 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct3_4 127.75601747080253
+reaction reverseStruct4_3 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound3 -> mtGTPtubulinTip4 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct4_3 127.75601747080253
+reaction reverseStructTip3_4 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip4 -> mtGTPtubulinTip3 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip3_4 127.75601747080253
+reaction reverseStructTip4_3 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip3 -> mtGTPtubulinTip4 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip4_3 127.75601747080253
+reaction reverseStructUnstableTip3_4  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA4 -> mtGTPtubulinTip3 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructUnstableTip3_4 127.75601747080253
+reaction reverseStruct3_5 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound5 -> mtGTPtubulinTip3 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct3_5 127.75601747080253
+reaction reverseStruct5_3 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound3 -> mtGTPtubulinTip5 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct5_3 127.75601747080253
+reaction reverseStructTip3_5 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip5 -> mtGTPtubulinTip3 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip3_5 127.75601747080253
+reaction reverseStructTip5_3 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip3 -> mtGTPtubulinTip5 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip5_3 127.75601747080253
+reaction reverseStructUnstableTip3_5  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinTip3 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructUnstableTip3_5 127.75601747080253
+reaction reverseStruct3_6 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound6 -> mtGTPtubulinTip3 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct3_6 127.75601747080253
+reaction reverseStruct6_3 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound3 -> mtGTPtubulinTip6 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct6_3 127.75601747080253
+reaction reverseStructTip3_6 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip6 -> mtGTPtubulinTip3 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip3_6 127.75601747080253
+reaction reverseStructTip6_3 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip3 -> mtGTPtubulinTip6 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip6_3 127.75601747080253
+reaction reverseStructUnstableTip3_6  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip3 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructUnstableTip3_6 127.75601747080253
+reaction reverseStruct3_7 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound7 -> mtGTPtubulinTip3 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct3_7 127.75601747080253
+reaction reverseStruct7_3 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound3 -> mtGTPtubulinTip7 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct7_3 127.75601747080253
+reaction reverseStructTip3_7 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip7 -> mtGTPtubulinTip3 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip3_7 127.75601747080253
+reaction reverseStructTip7_3 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip3 -> mtGTPtubulinTip7 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip7_3 127.75601747080253
+reaction reverseStructUnstableTip3_7  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip3 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip3_7 127.75601747080253
+reaction reverseStruct3_8 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound8 -> mtGTPtubulinTip3 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct3_8 127.75601747080253
+reaction reverseStruct8_3 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound3 -> mtGTPtubulinTip8 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct8_3 127.75601747080253
+reaction reverseStructTip3_8 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip8 -> mtGTPtubulinTip3 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip3_8 127.75601747080253
+reaction reverseStructTip8_3 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip3 -> mtGTPtubulinTip8 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip8_3 127.75601747080253
+reaction reverseStructUnstableTip3_8  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip3 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip3_8 127.75601747080253
+reaction reverseStruct3_9 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound9 -> mtGTPtubulinTip3 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct3_9 127.75601747080253
+reaction reverseStruct9_3 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound3 -> mtGTPtubulinTip9 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct9_3 127.75601747080253
+reaction reverseStructTip3_9 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip9 -> mtGTPtubulinTip3 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip3_9 127.75601747080253
+reaction reverseStructTip9_3 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip3 -> mtGTPtubulinTip9 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip9_3 127.75601747080253
+reaction reverseStructUnstableTip3_9  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip3 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip3_9 127.75601747080253
+reaction reverseStruct3_10 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound10 -> mtGTPtubulinTip3 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct3_10 127.75601747080253
+reaction reverseStruct10_3 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound3 -> mtGTPtubulinTip10 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct10_3 127.75601747080253
+reaction reverseStructTip3_10 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip10 -> mtGTPtubulinTip3 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip3_10 127.75601747080253
+reaction reverseStructTip10_3 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip3 -> mtGTPtubulinTip10 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip10_3 127.75601747080253
+reaction reverseStructUnstableTip3_10  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip3 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip3_10 127.75601747080253
+reaction reverseStruct3_11 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound11 -> mtGTPtubulinTip3 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct3_11 127.75601747080253
+reaction reverseStruct11_3 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound3 -> mtGTPtubulinTip11 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct11_3 127.75601747080253
+reaction reverseStructTip3_11 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip11 -> mtGTPtubulinTip3 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip3_11 127.75601747080253
+reaction reverseStructTip11_3 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip3 -> mtGTPtubulinTip11 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip11_3 127.75601747080253
+reaction reverseStructUnstableTip3_11  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip3 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip3_11 127.75601747080253
+reaction reverseStruct3_12 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinBound12 -> mtGTPtubulinTip3 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct3_12 127.75601747080253
+reaction reverseStruct12_3 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound3 -> mtGTPtubulinTip12 + mtGTPtubulinBound3 0.01
+confspread_radius reverseStruct12_3 127.75601747080253
+reaction reverseStructTip3_12 mtGTPtubulinFallingOffTipA3 + mtGTPtubulinTip12 -> mtGTPtubulinTip3 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip3_12 127.75601747080253
+reaction reverseStructTip12_3 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip3 -> mtGTPtubulinTip12 + mtGTPtubulinTip3 0.01
+confspread_radius reverseStructTip12_3 127.75601747080253
+reaction reverseStructUnstableTip3_12  mtGTPtubulinFallingOffTipA3 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip3 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip3_12 127.75601747080253
+reaction reverseStruct4_5 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound5 -> mtGTPtubulinTip4 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct4_5 127.75601747080253
+reaction reverseStruct5_4 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound4 -> mtGTPtubulinTip5 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct5_4 127.75601747080253
+reaction reverseStructTip4_5 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip5 -> mtGTPtubulinTip4 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip4_5 127.75601747080253
+reaction reverseStructTip5_4 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip4 -> mtGTPtubulinTip5 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip5_4 127.75601747080253
+reaction reverseStructUnstableTip4_5  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA5 -> mtGTPtubulinTip4 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructUnstableTip4_5 127.75601747080253
+reaction reverseStruct4_6 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound6 -> mtGTPtubulinTip4 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct4_6 127.75601747080253
+reaction reverseStruct6_4 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound4 -> mtGTPtubulinTip6 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct6_4 127.75601747080253
+reaction reverseStructTip4_6 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip6 -> mtGTPtubulinTip4 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip4_6 127.75601747080253
+reaction reverseStructTip6_4 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip4 -> mtGTPtubulinTip6 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip6_4 127.75601747080253
+reaction reverseStructUnstableTip4_6  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip4 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructUnstableTip4_6 127.75601747080253
+reaction reverseStruct4_7 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound7 -> mtGTPtubulinTip4 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct4_7 127.75601747080253
+reaction reverseStruct7_4 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound4 -> mtGTPtubulinTip7 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct7_4 127.75601747080253
+reaction reverseStructTip4_7 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip7 -> mtGTPtubulinTip4 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip4_7 127.75601747080253
+reaction reverseStructTip7_4 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip4 -> mtGTPtubulinTip7 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip7_4 127.75601747080253
+reaction reverseStructUnstableTip4_7  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip4 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip4_7 127.75601747080253
+reaction reverseStruct4_8 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound8 -> mtGTPtubulinTip4 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct4_8 127.75601747080253
+reaction reverseStruct8_4 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound4 -> mtGTPtubulinTip8 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct8_4 127.75601747080253
+reaction reverseStructTip4_8 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip8 -> mtGTPtubulinTip4 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip4_8 127.75601747080253
+reaction reverseStructTip8_4 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip4 -> mtGTPtubulinTip8 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip8_4 127.75601747080253
+reaction reverseStructUnstableTip4_8  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip4 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip4_8 127.75601747080253
+reaction reverseStruct4_9 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound9 -> mtGTPtubulinTip4 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct4_9 127.75601747080253
+reaction reverseStruct9_4 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound4 -> mtGTPtubulinTip9 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct9_4 127.75601747080253
+reaction reverseStructTip4_9 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip9 -> mtGTPtubulinTip4 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip4_9 127.75601747080253
+reaction reverseStructTip9_4 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip4 -> mtGTPtubulinTip9 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip9_4 127.75601747080253
+reaction reverseStructUnstableTip4_9  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip4 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip4_9 127.75601747080253
+reaction reverseStruct4_10 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound10 -> mtGTPtubulinTip4 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct4_10 127.75601747080253
+reaction reverseStruct10_4 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound4 -> mtGTPtubulinTip10 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct10_4 127.75601747080253
+reaction reverseStructTip4_10 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip10 -> mtGTPtubulinTip4 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip4_10 127.75601747080253
+reaction reverseStructTip10_4 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip4 -> mtGTPtubulinTip10 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip10_4 127.75601747080253
+reaction reverseStructUnstableTip4_10  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip4 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip4_10 127.75601747080253
+reaction reverseStruct4_11 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound11 -> mtGTPtubulinTip4 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct4_11 127.75601747080253
+reaction reverseStruct11_4 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound4 -> mtGTPtubulinTip11 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct11_4 127.75601747080253
+reaction reverseStructTip4_11 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip11 -> mtGTPtubulinTip4 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip4_11 127.75601747080253
+reaction reverseStructTip11_4 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip4 -> mtGTPtubulinTip11 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip11_4 127.75601747080253
+reaction reverseStructUnstableTip4_11  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip4 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip4_11 127.75601747080253
+reaction reverseStruct4_12 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinBound12 -> mtGTPtubulinTip4 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct4_12 127.75601747080253
+reaction reverseStruct12_4 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound4 -> mtGTPtubulinTip12 + mtGTPtubulinBound4 0.01
+confspread_radius reverseStruct12_4 127.75601747080253
+reaction reverseStructTip4_12 mtGTPtubulinFallingOffTipA4 + mtGTPtubulinTip12 -> mtGTPtubulinTip4 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip4_12 127.75601747080253
+reaction reverseStructTip12_4 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip4 -> mtGTPtubulinTip12 + mtGTPtubulinTip4 0.01
+confspread_radius reverseStructTip12_4 127.75601747080253
+reaction reverseStructUnstableTip4_12  mtGTPtubulinFallingOffTipA4 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip4 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip4_12 127.75601747080253
+reaction reverseStruct5_6 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound6 -> mtGTPtubulinTip5 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct5_6 127.75601747080253
+reaction reverseStruct6_5 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound5 -> mtGTPtubulinTip6 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct6_5 127.75601747080253
+reaction reverseStructTip5_6 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip6 -> mtGTPtubulinTip5 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip5_6 127.75601747080253
+reaction reverseStructTip6_5 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip5 -> mtGTPtubulinTip6 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip6_5 127.75601747080253
+reaction reverseStructUnstableTip5_6  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA6 -> mtGTPtubulinTip5 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructUnstableTip5_6 127.75601747080253
+reaction reverseStruct5_7 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound7 -> mtGTPtubulinTip5 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct5_7 127.75601747080253
+reaction reverseStruct7_5 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound5 -> mtGTPtubulinTip7 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct7_5 127.75601747080253
+reaction reverseStructTip5_7 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip7 -> mtGTPtubulinTip5 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip5_7 127.75601747080253
+reaction reverseStructTip7_5 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip5 -> mtGTPtubulinTip7 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip7_5 127.75601747080253
+reaction reverseStructUnstableTip5_7  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip5 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip5_7 127.75601747080253
+reaction reverseStruct5_8 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound8 -> mtGTPtubulinTip5 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct5_8 127.75601747080253
+reaction reverseStruct8_5 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound5 -> mtGTPtubulinTip8 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct8_5 127.75601747080253
+reaction reverseStructTip5_8 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip8 -> mtGTPtubulinTip5 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip5_8 127.75601747080253
+reaction reverseStructTip8_5 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip5 -> mtGTPtubulinTip8 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip8_5 127.75601747080253
+reaction reverseStructUnstableTip5_8  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip5 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip5_8 127.75601747080253
+reaction reverseStruct5_9 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound9 -> mtGTPtubulinTip5 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct5_9 127.75601747080253
+reaction reverseStruct9_5 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound5 -> mtGTPtubulinTip9 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct9_5 127.75601747080253
+reaction reverseStructTip5_9 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip9 -> mtGTPtubulinTip5 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip5_9 127.75601747080253
+reaction reverseStructTip9_5 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip5 -> mtGTPtubulinTip9 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip9_5 127.75601747080253
+reaction reverseStructUnstableTip5_9  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip5 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip5_9 127.75601747080253
+reaction reverseStruct5_10 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound10 -> mtGTPtubulinTip5 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct5_10 127.75601747080253
+reaction reverseStruct10_5 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound5 -> mtGTPtubulinTip10 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct10_5 127.75601747080253
+reaction reverseStructTip5_10 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip10 -> mtGTPtubulinTip5 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip5_10 127.75601747080253
+reaction reverseStructTip10_5 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip5 -> mtGTPtubulinTip10 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip10_5 127.75601747080253
+reaction reverseStructUnstableTip5_10  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip5 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip5_10 127.75601747080253
+reaction reverseStruct5_11 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound11 -> mtGTPtubulinTip5 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct5_11 127.75601747080253
+reaction reverseStruct11_5 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound5 -> mtGTPtubulinTip11 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct11_5 127.75601747080253
+reaction reverseStructTip5_11 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip11 -> mtGTPtubulinTip5 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip5_11 127.75601747080253
+reaction reverseStructTip11_5 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip5 -> mtGTPtubulinTip11 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip11_5 127.75601747080253
+reaction reverseStructUnstableTip5_11  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip5 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip5_11 127.75601747080253
+reaction reverseStruct5_12 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinBound12 -> mtGTPtubulinTip5 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct5_12 127.75601747080253
+reaction reverseStruct12_5 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound5 -> mtGTPtubulinTip12 + mtGTPtubulinBound5 0.01
+confspread_radius reverseStruct12_5 127.75601747080253
+reaction reverseStructTip5_12 mtGTPtubulinFallingOffTipA5 + mtGTPtubulinTip12 -> mtGTPtubulinTip5 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip5_12 127.75601747080253
+reaction reverseStructTip12_5 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip5 -> mtGTPtubulinTip12 + mtGTPtubulinTip5 0.01
+confspread_radius reverseStructTip12_5 127.75601747080253
+reaction reverseStructUnstableTip5_12  mtGTPtubulinFallingOffTipA5 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip5 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip5_12 127.75601747080253
+reaction reverseStruct6_7 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound7 -> mtGTPtubulinTip6 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct6_7 127.75601747080253
+reaction reverseStruct7_6 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound6 -> mtGTPtubulinTip7 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct7_6 127.75601747080253
+reaction reverseStructTip6_7 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip7 -> mtGTPtubulinTip6 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip6_7 127.75601747080253
+reaction reverseStructTip7_6 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip6 -> mtGTPtubulinTip7 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip7_6 127.75601747080253
+reaction reverseStructUnstableTip6_7  mtGTPtubulinFallingOffTipA6 + mtGTPtubulinFallingOffTipA7 -> mtGTPtubulinTip6 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructUnstableTip6_7 127.75601747080253
+reaction reverseStruct6_8 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound8 -> mtGTPtubulinTip6 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct6_8 127.75601747080253
+reaction reverseStruct8_6 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound6 -> mtGTPtubulinTip8 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct8_6 127.75601747080253
+reaction reverseStructTip6_8 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip8 -> mtGTPtubulinTip6 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip6_8 127.75601747080253
+reaction reverseStructTip8_6 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip6 -> mtGTPtubulinTip8 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip8_6 127.75601747080253
+reaction reverseStructUnstableTip6_8  mtGTPtubulinFallingOffTipA6 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip6 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip6_8 127.75601747080253
+reaction reverseStruct6_9 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound9 -> mtGTPtubulinTip6 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct6_9 127.75601747080253
+reaction reverseStruct9_6 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound6 -> mtGTPtubulinTip9 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct9_6 127.75601747080253
+reaction reverseStructTip6_9 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip9 -> mtGTPtubulinTip6 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip6_9 127.75601747080253
+reaction reverseStructTip9_6 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip6 -> mtGTPtubulinTip9 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip9_6 127.75601747080253
+reaction reverseStructUnstableTip6_9  mtGTPtubulinFallingOffTipA6 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip6 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip6_9 127.75601747080253
+reaction reverseStruct6_10 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound10 -> mtGTPtubulinTip6 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct6_10 127.75601747080253
+reaction reverseStruct10_6 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound6 -> mtGTPtubulinTip10 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct10_6 127.75601747080253
+reaction reverseStructTip6_10 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip10 -> mtGTPtubulinTip6 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip6_10 127.75601747080253
+reaction reverseStructTip10_6 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip6 -> mtGTPtubulinTip10 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip10_6 127.75601747080253
+reaction reverseStructUnstableTip6_10  mtGTPtubulinFallingOffTipA6 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip6 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip6_10 127.75601747080253
+reaction reverseStruct6_11 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound11 -> mtGTPtubulinTip6 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct6_11 127.75601747080253
+reaction reverseStruct11_6 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound6 -> mtGTPtubulinTip11 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct11_6 127.75601747080253
+reaction reverseStructTip6_11 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip11 -> mtGTPtubulinTip6 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip6_11 127.75601747080253
+reaction reverseStructTip11_6 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip6 -> mtGTPtubulinTip11 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip11_6 127.75601747080253
+reaction reverseStructUnstableTip6_11  mtGTPtubulinFallingOffTipA6 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip6 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip6_11 127.75601747080253
+reaction reverseStruct6_12 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinBound12 -> mtGTPtubulinTip6 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct6_12 127.75601747080253
+reaction reverseStruct12_6 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound6 -> mtGTPtubulinTip12 + mtGTPtubulinBound6 0.01
+confspread_radius reverseStruct12_6 127.75601747080253
+reaction reverseStructTip6_12 mtGTPtubulinFallingOffTipA6 + mtGTPtubulinTip12 -> mtGTPtubulinTip6 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip6_12 127.75601747080253
+reaction reverseStructTip12_6 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip6 -> mtGTPtubulinTip12 + mtGTPtubulinTip6 0.01
+confspread_radius reverseStructTip12_6 127.75601747080253
+reaction reverseStructUnstableTip6_12  mtGTPtubulinFallingOffTipA6 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip6 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip6_12 127.75601747080253
+reaction reverseStruct7_8 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound8 -> mtGTPtubulinTip7 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct7_8 127.75601747080253
+reaction reverseStruct8_7 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound7 -> mtGTPtubulinTip8 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct8_7 127.75601747080253
+reaction reverseStructTip7_8 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip8 -> mtGTPtubulinTip7 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip7_8 127.75601747080253
+reaction reverseStructTip8_7 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip7 -> mtGTPtubulinTip8 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip8_7 127.75601747080253
+reaction reverseStructUnstableTip7_8  mtGTPtubulinFallingOffTipA7 + mtGTPtubulinFallingOffTipA8 -> mtGTPtubulinTip7 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructUnstableTip7_8 127.75601747080253
+reaction reverseStruct7_9 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound9 -> mtGTPtubulinTip7 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct7_9 127.75601747080253
+reaction reverseStruct9_7 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound7 -> mtGTPtubulinTip9 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct9_7 127.75601747080253
+reaction reverseStructTip7_9 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip9 -> mtGTPtubulinTip7 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip7_9 127.75601747080253
+reaction reverseStructTip9_7 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip7 -> mtGTPtubulinTip9 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip9_7 127.75601747080253
+reaction reverseStructUnstableTip7_9  mtGTPtubulinFallingOffTipA7 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip7 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip7_9 127.75601747080253
+reaction reverseStruct7_10 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound10 -> mtGTPtubulinTip7 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct7_10 127.75601747080253
+reaction reverseStruct10_7 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound7 -> mtGTPtubulinTip10 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct10_7 127.75601747080253
+reaction reverseStructTip7_10 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip10 -> mtGTPtubulinTip7 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip7_10 127.75601747080253
+reaction reverseStructTip10_7 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip7 -> mtGTPtubulinTip10 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip10_7 127.75601747080253
+reaction reverseStructUnstableTip7_10  mtGTPtubulinFallingOffTipA7 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip7 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip7_10 127.75601747080253
+reaction reverseStruct7_11 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound11 -> mtGTPtubulinTip7 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct7_11 127.75601747080253
+reaction reverseStruct11_7 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound7 -> mtGTPtubulinTip11 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct11_7 127.75601747080253
+reaction reverseStructTip7_11 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip11 -> mtGTPtubulinTip7 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip7_11 127.75601747080253
+reaction reverseStructTip11_7 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip7 -> mtGTPtubulinTip11 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip11_7 127.75601747080253
+reaction reverseStructUnstableTip7_11  mtGTPtubulinFallingOffTipA7 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip7 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip7_11 127.75601747080253
+reaction reverseStruct7_12 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinBound12 -> mtGTPtubulinTip7 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct7_12 127.75601747080253
+reaction reverseStruct12_7 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound7 -> mtGTPtubulinTip12 + mtGTPtubulinBound7 0.01
+confspread_radius reverseStruct12_7 127.75601747080253
+reaction reverseStructTip7_12 mtGTPtubulinFallingOffTipA7 + mtGTPtubulinTip12 -> mtGTPtubulinTip7 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip7_12 127.75601747080253
+reaction reverseStructTip12_7 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip7 -> mtGTPtubulinTip12 + mtGTPtubulinTip7 0.01
+confspread_radius reverseStructTip12_7 127.75601747080253
+reaction reverseStructUnstableTip7_12  mtGTPtubulinFallingOffTipA7 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip7 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip7_12 127.75601747080253
+reaction reverseStruct8_9 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound9 -> mtGTPtubulinTip8 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct8_9 127.75601747080253
+reaction reverseStruct9_8 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound8 -> mtGTPtubulinTip9 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct9_8 127.75601747080253
+reaction reverseStructTip8_9 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip9 -> mtGTPtubulinTip8 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip8_9 127.75601747080253
+reaction reverseStructTip9_8 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip8 -> mtGTPtubulinTip9 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip9_8 127.75601747080253
+reaction reverseStructUnstableTip8_9  mtGTPtubulinFallingOffTipA8 + mtGTPtubulinFallingOffTipA9 -> mtGTPtubulinTip8 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructUnstableTip8_9 127.75601747080253
+reaction reverseStruct8_10 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound10 -> mtGTPtubulinTip8 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct8_10 127.75601747080253
+reaction reverseStruct10_8 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound8 -> mtGTPtubulinTip10 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct10_8 127.75601747080253
+reaction reverseStructTip8_10 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip10 -> mtGTPtubulinTip8 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip8_10 127.75601747080253
+reaction reverseStructTip10_8 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip8 -> mtGTPtubulinTip10 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip10_8 127.75601747080253
+reaction reverseStructUnstableTip8_10  mtGTPtubulinFallingOffTipA8 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip8 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip8_10 127.75601747080253
+reaction reverseStruct8_11 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound11 -> mtGTPtubulinTip8 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct8_11 127.75601747080253
+reaction reverseStruct11_8 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound8 -> mtGTPtubulinTip11 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct11_8 127.75601747080253
+reaction reverseStructTip8_11 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip11 -> mtGTPtubulinTip8 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip8_11 127.75601747080253
+reaction reverseStructTip11_8 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip8 -> mtGTPtubulinTip11 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip11_8 127.75601747080253
+reaction reverseStructUnstableTip8_11  mtGTPtubulinFallingOffTipA8 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip8 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip8_11 127.75601747080253
+reaction reverseStruct8_12 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinBound12 -> mtGTPtubulinTip8 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct8_12 127.75601747080253
+reaction reverseStruct12_8 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound8 -> mtGTPtubulinTip12 + mtGTPtubulinBound8 0.01
+confspread_radius reverseStruct12_8 127.75601747080253
+reaction reverseStructTip8_12 mtGTPtubulinFallingOffTipA8 + mtGTPtubulinTip12 -> mtGTPtubulinTip8 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip8_12 127.75601747080253
+reaction reverseStructTip12_8 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip8 -> mtGTPtubulinTip12 + mtGTPtubulinTip8 0.01
+confspread_radius reverseStructTip12_8 127.75601747080253
+reaction reverseStructUnstableTip8_12  mtGTPtubulinFallingOffTipA8 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip8 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip8_12 127.75601747080253
+reaction reverseStruct9_10 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound10 -> mtGTPtubulinTip9 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct9_10 127.75601747080253
+reaction reverseStruct10_9 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound9 -> mtGTPtubulinTip10 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct10_9 127.75601747080253
+reaction reverseStructTip9_10 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip10 -> mtGTPtubulinTip9 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip9_10 127.75601747080253
+reaction reverseStructTip10_9 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip9 -> mtGTPtubulinTip10 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip10_9 127.75601747080253
+reaction reverseStructUnstableTip9_10  mtGTPtubulinFallingOffTipA9 + mtGTPtubulinFallingOffTipA10 -> mtGTPtubulinTip9 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructUnstableTip9_10 127.75601747080253
+reaction reverseStruct9_11 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound11 -> mtGTPtubulinTip9 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct9_11 127.75601747080253
+reaction reverseStruct11_9 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound9 -> mtGTPtubulinTip11 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct11_9 127.75601747080253
+reaction reverseStructTip9_11 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip11 -> mtGTPtubulinTip9 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip9_11 127.75601747080253
+reaction reverseStructTip11_9 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip9 -> mtGTPtubulinTip11 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip11_9 127.75601747080253
+reaction reverseStructUnstableTip9_11  mtGTPtubulinFallingOffTipA9 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip9 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip9_11 127.75601747080253
+reaction reverseStruct9_12 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinBound12 -> mtGTPtubulinTip9 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct9_12 127.75601747080253
+reaction reverseStruct12_9 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound9 -> mtGTPtubulinTip12 + mtGTPtubulinBound9 0.01
+confspread_radius reverseStruct12_9 127.75601747080253
+reaction reverseStructTip9_12 mtGTPtubulinFallingOffTipA9 + mtGTPtubulinTip12 -> mtGTPtubulinTip9 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip9_12 127.75601747080253
+reaction reverseStructTip12_9 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip9 -> mtGTPtubulinTip12 + mtGTPtubulinTip9 0.01
+confspread_radius reverseStructTip12_9 127.75601747080253
+reaction reverseStructUnstableTip9_12  mtGTPtubulinFallingOffTipA9 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip9 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip9_12 127.75601747080253
+reaction reverseStruct10_11 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound11 -> mtGTPtubulinTip10 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct10_11 127.75601747080253
+reaction reverseStruct11_10 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound10 -> mtGTPtubulinTip11 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct11_10 127.75601747080253
+reaction reverseStructTip10_11 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip11 -> mtGTPtubulinTip10 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip10_11 127.75601747080253
+reaction reverseStructTip11_10 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip10 -> mtGTPtubulinTip11 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip11_10 127.75601747080253
+reaction reverseStructUnstableTip10_11  mtGTPtubulinFallingOffTipA10 + mtGTPtubulinFallingOffTipA11 -> mtGTPtubulinTip10 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructUnstableTip10_11 127.75601747080253
+reaction reverseStruct10_12 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinBound12 -> mtGTPtubulinTip10 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct10_12 127.75601747080253
+reaction reverseStruct12_10 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound10 -> mtGTPtubulinTip12 + mtGTPtubulinBound10 0.01
+confspread_radius reverseStruct12_10 127.75601747080253
+reaction reverseStructTip10_12 mtGTPtubulinFallingOffTipA10 + mtGTPtubulinTip12 -> mtGTPtubulinTip10 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip10_12 127.75601747080253
+reaction reverseStructTip12_10 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip10 -> mtGTPtubulinTip12 + mtGTPtubulinTip10 0.01
+confspread_radius reverseStructTip12_10 127.75601747080253
+reaction reverseStructUnstableTip10_12  mtGTPtubulinFallingOffTipA10 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip10 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip10_12 127.75601747080253
+reaction reverseStruct11_12 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinBound12 -> mtGTPtubulinTip11 + mtGTPtubulinBound12 0.01
+confspread_radius reverseStruct11_12 127.75601747080253
+reaction reverseStruct12_11 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinBound11 -> mtGTPtubulinTip12 + mtGTPtubulinBound11 0.01
+confspread_radius reverseStruct12_11 127.75601747080253
+reaction reverseStructTip11_12 mtGTPtubulinFallingOffTipA11 + mtGTPtubulinTip12 -> mtGTPtubulinTip11 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructTip11_12 127.75601747080253
+reaction reverseStructTip12_11 mtGTPtubulinFallingOffTipA12 + mtGTPtubulinTip11 -> mtGTPtubulinTip12 + mtGTPtubulinTip11 0.01
+confspread_radius reverseStructTip12_11 127.75601747080253
+reaction reverseStructUnstableTip11_12  mtGTPtubulinFallingOffTipA11 + mtGTPtubulinFallingOffTipA12 -> mtGTPtubulinTip11 + mtGTPtubulinTip12 0.01
+confspread_radius reverseStructUnstableTip11_12 127.75601747080253
+reaction dieGTP0 mtGDPtubulinDie0 + mtGTPtubulinBound0 -> mtGDPtubulinDie0 + mtGDPtubulinDie0 100000000 
+confspread_radius dieGTP0 8.08
+reaction dieGDP0 mtGDPtubulinDie0 + mtGDPtubulinBound0 -> mtGDPtubulinDie0 + mtGDPtubulinDie0 100000000 
+confspread_radius dieGDP0 8.08
+reaction dieGTPtip0 mtGDPtubulinDie0 + mtGTPtubulinTip0 -> mtGDPtubulinDie0 + mtGDPtubulinTip0 100000000 
+confspread_radius dieGTPtip0 8.08
+reaction dieGTPtipA0 mtGDPtubulinDie0 + mtGTPtubulinFallingOffTipA0 -> mtGDPtubulinDie0 + mtGDPtubulinTip0 100000000 
+confspread_radius dieGTPtipA0 8.08
+reaction dieGTPtipB0 mtGDPtubulinDie0 + mtGTPtubulinFallingOffTipB0 -> mtGDPtubulinDie0 + mtGDPtubulinTip0 100000000 
+confspread_radius dieGTPtipB0 8.08
+reaction tipDeathGDP0 mtGDPtubulinDie0 + mtGDPtubulinTip0 -> mtGDPtubulinTip0 + GDPtubulin
+binding_radius tipDeathGDP0 8.08
+product_placement tipDeathGDP0 fixed mtGDPtubulinTip0 0 0 0
+reaction dieLeftGTP0 mtGDPtubulinTip0 + mtGTPtubulinBound12 -> mtGDPtubulinTip0 + mtGDPtubulinDie12 100000000 
+confspread_radius dieLeftGTP0 26.563132345414388
+reaction dieLeftGDP0 mtGDPtubulinTip0 + mtGDPtubulinBound12 -> mtGDPtubulinTip0 + mtGDPtubulinDie12 100000000 
+confspread_radius dieLeftGDP0 26.563132345414388
+reaction dieRightGTP0 mtGDPtubulinTip0 + mtGTPtubulinBound1 -> mtGDPtubulinTip0 + mtGDPtubulinDie1 100000000 
+confspread_radius dieRightGTP0 26.563132345414388
+reaction dieRightGDP0 mtGDPtubulinTip0 + mtGDPtubulinBound1 -> mtGDPtubulinTip0 + mtGDPtubulinDie1 100000000 
+confspread_radius dieRightGDP0 26.563132345414388
+reaction dieGTP1 mtGDPtubulinDie1 + mtGTPtubulinBound1 -> mtGDPtubulinDie1 + mtGDPtubulinDie1 100000000 
+confspread_radius dieGTP1 8.08
+reaction dieGDP1 mtGDPtubulinDie1 + mtGDPtubulinBound1 -> mtGDPtubulinDie1 + mtGDPtubulinDie1 100000000 
+confspread_radius dieGDP1 8.08
+reaction dieGTPtip1 mtGDPtubulinDie1 + mtGTPtubulinTip1 -> mtGDPtubulinDie1 + mtGDPtubulinTip1 100000000 
+confspread_radius dieGTPtip1 8.08
+reaction dieGTPtipA1 mtGDPtubulinDie1 + mtGTPtubulinFallingOffTipA1 -> mtGDPtubulinDie1 + mtGDPtubulinTip1 100000000 
+confspread_radius dieGTPtipA1 8.08
+reaction dieGTPtipB1 mtGDPtubulinDie1 + mtGTPtubulinFallingOffTipB1 -> mtGDPtubulinDie1 + mtGDPtubulinTip1 100000000 
+confspread_radius dieGTPtipB1 8.08
+reaction tipDeathGDP1 mtGDPtubulinDie1 + mtGDPtubulinTip1 -> mtGDPtubulinTip1 + GDPtubulin
+binding_radius tipDeathGDP1 8.08
+product_placement tipDeathGDP1 fixed mtGDPtubulinTip1 0 0 0
+reaction dieLeftGTP1 mtGDPtubulinTip1 + mtGTPtubulinBound0 -> mtGDPtubulinTip1 + mtGDPtubulinDie0 100000000 
+confspread_radius dieLeftGTP1 26.563132345414388
+reaction dieLeftGDP1 mtGDPtubulinTip1 + mtGDPtubulinBound0 -> mtGDPtubulinTip1 + mtGDPtubulinDie0 100000000 
+confspread_radius dieLeftGDP1 26.563132345414388
+reaction dieRightGTP1 mtGDPtubulinTip1 + mtGTPtubulinBound2 -> mtGDPtubulinTip1 + mtGDPtubulinDie2 100000000 
+confspread_radius dieRightGTP1 26.563132345414388
+reaction dieRightGDP1 mtGDPtubulinTip1 + mtGDPtubulinBound2 -> mtGDPtubulinTip1 + mtGDPtubulinDie2 100000000 
+confspread_radius dieRightGDP1 26.563132345414388
+reaction dieGTP2 mtGDPtubulinDie2 + mtGTPtubulinBound2 -> mtGDPtubulinDie2 + mtGDPtubulinDie2 100000000 
+confspread_radius dieGTP2 8.08
+reaction dieGDP2 mtGDPtubulinDie2 + mtGDPtubulinBound2 -> mtGDPtubulinDie2 + mtGDPtubulinDie2 100000000 
+confspread_radius dieGDP2 8.08
+reaction dieGTPtip2 mtGDPtubulinDie2 + mtGTPtubulinTip2 -> mtGDPtubulinDie2 + mtGDPtubulinTip2 100000000 
+confspread_radius dieGTPtip2 8.08
+reaction dieGTPtipA2 mtGDPtubulinDie2 + mtGTPtubulinFallingOffTipA2 -> mtGDPtubulinDie2 + mtGDPtubulinTip2 100000000 
+confspread_radius dieGTPtipA2 8.08
+reaction dieGTPtipB2 mtGDPtubulinDie2 + mtGTPtubulinFallingOffTipB2 -> mtGDPtubulinDie2 + mtGDPtubulinTip2 100000000 
+confspread_radius dieGTPtipB2 8.08
+reaction tipDeathGDP2 mtGDPtubulinDie2 + mtGDPtubulinTip2 -> mtGDPtubulinTip2 + GDPtubulin
+binding_radius tipDeathGDP2 8.08
+product_placement tipDeathGDP2 fixed mtGDPtubulinTip2 0 0 0
+reaction dieLeftGTP2 mtGDPtubulinTip2 + mtGTPtubulinBound1 -> mtGDPtubulinTip2 + mtGDPtubulinDie1 100000000 
+confspread_radius dieLeftGTP2 26.563132345414388
+reaction dieLeftGDP2 mtGDPtubulinTip2 + mtGDPtubulinBound1 -> mtGDPtubulinTip2 + mtGDPtubulinDie1 100000000 
+confspread_radius dieLeftGDP2 26.563132345414388
+reaction dieRightGTP2 mtGDPtubulinTip2 + mtGTPtubulinBound3 -> mtGDPtubulinTip2 + mtGDPtubulinDie3 100000000 
+confspread_radius dieRightGTP2 26.563132345414388
+reaction dieRightGDP2 mtGDPtubulinTip2 + mtGDPtubulinBound3 -> mtGDPtubulinTip2 + mtGDPtubulinDie3 100000000 
+confspread_radius dieRightGDP2 26.563132345414388
+reaction dieGTP3 mtGDPtubulinDie3 + mtGTPtubulinBound3 -> mtGDPtubulinDie3 + mtGDPtubulinDie3 100000000 
+confspread_radius dieGTP3 8.08
+reaction dieGDP3 mtGDPtubulinDie3 + mtGDPtubulinBound3 -> mtGDPtubulinDie3 + mtGDPtubulinDie3 100000000 
+confspread_radius dieGDP3 8.08
+reaction dieGTPtip3 mtGDPtubulinDie3 + mtGTPtubulinTip3 -> mtGDPtubulinDie3 + mtGDPtubulinTip3 100000000 
+confspread_radius dieGTPtip3 8.08
+reaction dieGTPtipA3 mtGDPtubulinDie3 + mtGTPtubulinFallingOffTipA3 -> mtGDPtubulinDie3 + mtGDPtubulinTip3 100000000 
+confspread_radius dieGTPtipA3 8.08
+reaction dieGTPtipB3 mtGDPtubulinDie3 + mtGTPtubulinFallingOffTipB3 -> mtGDPtubulinDie3 + mtGDPtubulinTip3 100000000 
+confspread_radius dieGTPtipB3 8.08
+reaction tipDeathGDP3 mtGDPtubulinDie3 + mtGDPtubulinTip3 -> mtGDPtubulinTip3 + GDPtubulin
+binding_radius tipDeathGDP3 8.08
+product_placement tipDeathGDP3 fixed mtGDPtubulinTip3 0 0 0
+reaction dieLeftGTP3 mtGDPtubulinTip3 + mtGTPtubulinBound2 -> mtGDPtubulinTip3 + mtGDPtubulinDie2 100000000 
+confspread_radius dieLeftGTP3 26.563132345414388
+reaction dieLeftGDP3 mtGDPtubulinTip3 + mtGDPtubulinBound2 -> mtGDPtubulinTip3 + mtGDPtubulinDie2 100000000 
+confspread_radius dieLeftGDP3 26.563132345414388
+reaction dieRightGTP3 mtGDPtubulinTip3 + mtGTPtubulinBound4 -> mtGDPtubulinTip3 + mtGDPtubulinDie4 100000000 
+confspread_radius dieRightGTP3 26.563132345414388
+reaction dieRightGDP3 mtGDPtubulinTip3 + mtGDPtubulinBound4 -> mtGDPtubulinTip3 + mtGDPtubulinDie4 100000000 
+confspread_radius dieRightGDP3 26.563132345414388
+reaction dieGTP4 mtGDPtubulinDie4 + mtGTPtubulinBound4 -> mtGDPtubulinDie4 + mtGDPtubulinDie4 100000000 
+confspread_radius dieGTP4 8.08
+reaction dieGDP4 mtGDPtubulinDie4 + mtGDPtubulinBound4 -> mtGDPtubulinDie4 + mtGDPtubulinDie4 100000000 
+confspread_radius dieGDP4 8.08
+reaction dieGTPtip4 mtGDPtubulinDie4 + mtGTPtubulinTip4 -> mtGDPtubulinDie4 + mtGDPtubulinTip4 100000000 
+confspread_radius dieGTPtip4 8.08
+reaction dieGTPtipA4 mtGDPtubulinDie4 + mtGTPtubulinFallingOffTipA4 -> mtGDPtubulinDie4 + mtGDPtubulinTip4 100000000 
+confspread_radius dieGTPtipA4 8.08
+reaction dieGTPtipB4 mtGDPtubulinDie4 + mtGTPtubulinFallingOffTipB4 -> mtGDPtubulinDie4 + mtGDPtubulinTip4 100000000 
+confspread_radius dieGTPtipB4 8.08
+reaction tipDeathGDP4 mtGDPtubulinDie4 + mtGDPtubulinTip4 -> mtGDPtubulinTip4 + GDPtubulin
+binding_radius tipDeathGDP4 8.08
+product_placement tipDeathGDP4 fixed mtGDPtubulinTip4 0 0 0
+reaction dieLeftGTP4 mtGDPtubulinTip4 + mtGTPtubulinBound3 -> mtGDPtubulinTip4 + mtGDPtubulinDie3 100000000 
+confspread_radius dieLeftGTP4 26.563132345414388
+reaction dieLeftGDP4 mtGDPtubulinTip4 + mtGDPtubulinBound3 -> mtGDPtubulinTip4 + mtGDPtubulinDie3 100000000 
+confspread_radius dieLeftGDP4 26.563132345414388
+reaction dieRightGTP4 mtGDPtubulinTip4 + mtGTPtubulinBound5 -> mtGDPtubulinTip4 + mtGDPtubulinDie5 100000000 
+confspread_radius dieRightGTP4 26.563132345414388
+reaction dieRightGDP4 mtGDPtubulinTip4 + mtGDPtubulinBound5 -> mtGDPtubulinTip4 + mtGDPtubulinDie5 100000000 
+confspread_radius dieRightGDP4 26.563132345414388
+reaction dieGTP5 mtGDPtubulinDie5 + mtGTPtubulinBound5 -> mtGDPtubulinDie5 + mtGDPtubulinDie5 100000000 
+confspread_radius dieGTP5 8.08
+reaction dieGDP5 mtGDPtubulinDie5 + mtGDPtubulinBound5 -> mtGDPtubulinDie5 + mtGDPtubulinDie5 100000000 
+confspread_radius dieGDP5 8.08
+reaction dieGTPtip5 mtGDPtubulinDie5 + mtGTPtubulinTip5 -> mtGDPtubulinDie5 + mtGDPtubulinTip5 100000000 
+confspread_radius dieGTPtip5 8.08
+reaction dieGTPtipA5 mtGDPtubulinDie5 + mtGTPtubulinFallingOffTipA5 -> mtGDPtubulinDie5 + mtGDPtubulinTip5 100000000 
+confspread_radius dieGTPtipA5 8.08
+reaction dieGTPtipB5 mtGDPtubulinDie5 + mtGTPtubulinFallingOffTipB5 -> mtGDPtubulinDie5 + mtGDPtubulinTip5 100000000 
+confspread_radius dieGTPtipB5 8.08
+reaction tipDeathGDP5 mtGDPtubulinDie5 + mtGDPtubulinTip5 -> mtGDPtubulinTip5 + GDPtubulin
+binding_radius tipDeathGDP5 8.08
+product_placement tipDeathGDP5 fixed mtGDPtubulinTip5 0 0 0
+reaction dieLeftGTP5 mtGDPtubulinTip5 + mtGTPtubulinBound4 -> mtGDPtubulinTip5 + mtGDPtubulinDie4 100000000 
+confspread_radius dieLeftGTP5 26.563132345414388
+reaction dieLeftGDP5 mtGDPtubulinTip5 + mtGDPtubulinBound4 -> mtGDPtubulinTip5 + mtGDPtubulinDie4 100000000 
+confspread_radius dieLeftGDP5 26.563132345414388
+reaction dieRightGTP5 mtGDPtubulinTip5 + mtGTPtubulinBound6 -> mtGDPtubulinTip5 + mtGDPtubulinDie6 100000000 
+confspread_radius dieRightGTP5 26.563132345414388
+reaction dieRightGDP5 mtGDPtubulinTip5 + mtGDPtubulinBound6 -> mtGDPtubulinTip5 + mtGDPtubulinDie6 100000000 
+confspread_radius dieRightGDP5 26.563132345414388
+reaction dieGTP6 mtGDPtubulinDie6 + mtGTPtubulinBound6 -> mtGDPtubulinDie6 + mtGDPtubulinDie6 100000000 
+confspread_radius dieGTP6 8.08
+reaction dieGDP6 mtGDPtubulinDie6 + mtGDPtubulinBound6 -> mtGDPtubulinDie6 + mtGDPtubulinDie6 100000000 
+confspread_radius dieGDP6 8.08
+reaction dieGTPtip6 mtGDPtubulinDie6 + mtGTPtubulinTip6 -> mtGDPtubulinDie6 + mtGDPtubulinTip6 100000000 
+confspread_radius dieGTPtip6 8.08
+reaction dieGTPtipA6 mtGDPtubulinDie6 + mtGTPtubulinFallingOffTipA6 -> mtGDPtubulinDie6 + mtGDPtubulinTip6 100000000 
+confspread_radius dieGTPtipA6 8.08
+reaction dieGTPtipB6 mtGDPtubulinDie6 + mtGTPtubulinFallingOffTipB6 -> mtGDPtubulinDie6 + mtGDPtubulinTip6 100000000 
+confspread_radius dieGTPtipB6 8.08
+reaction tipDeathGDP6 mtGDPtubulinDie6 + mtGDPtubulinTip6 -> mtGDPtubulinTip6 + GDPtubulin
+binding_radius tipDeathGDP6 8.08
+product_placement tipDeathGDP6 fixed mtGDPtubulinTip6 0 0 0
+reaction dieLeftGTP6 mtGDPtubulinTip6 + mtGTPtubulinBound5 -> mtGDPtubulinTip6 + mtGDPtubulinDie5 100000000 
+confspread_radius dieLeftGTP6 26.563132345414388
+reaction dieLeftGDP6 mtGDPtubulinTip6 + mtGDPtubulinBound5 -> mtGDPtubulinTip6 + mtGDPtubulinDie5 100000000 
+confspread_radius dieLeftGDP6 26.563132345414388
+reaction dieRightGTP6 mtGDPtubulinTip6 + mtGTPtubulinBound7 -> mtGDPtubulinTip6 + mtGDPtubulinDie7 100000000 
+confspread_radius dieRightGTP6 26.563132345414388
+reaction dieRightGDP6 mtGDPtubulinTip6 + mtGDPtubulinBound7 -> mtGDPtubulinTip6 + mtGDPtubulinDie7 100000000 
+confspread_radius dieRightGDP6 26.563132345414388
+reaction dieGTP7 mtGDPtubulinDie7 + mtGTPtubulinBound7 -> mtGDPtubulinDie7 + mtGDPtubulinDie7 100000000 
+confspread_radius dieGTP7 8.08
+reaction dieGDP7 mtGDPtubulinDie7 + mtGDPtubulinBound7 -> mtGDPtubulinDie7 + mtGDPtubulinDie7 100000000 
+confspread_radius dieGDP7 8.08
+reaction dieGTPtip7 mtGDPtubulinDie7 + mtGTPtubulinTip7 -> mtGDPtubulinDie7 + mtGDPtubulinTip7 100000000 
+confspread_radius dieGTPtip7 8.08
+reaction dieGTPtipA7 mtGDPtubulinDie7 + mtGTPtubulinFallingOffTipA7 -> mtGDPtubulinDie7 + mtGDPtubulinTip7 100000000 
+confspread_radius dieGTPtipA7 8.08
+reaction dieGTPtipB7 mtGDPtubulinDie7 + mtGTPtubulinFallingOffTipB7 -> mtGDPtubulinDie7 + mtGDPtubulinTip7 100000000 
+confspread_radius dieGTPtipB7 8.08
+reaction tipDeathGDP7 mtGDPtubulinDie7 + mtGDPtubulinTip7 -> mtGDPtubulinTip7 + GDPtubulin
+binding_radius tipDeathGDP7 8.08
+product_placement tipDeathGDP7 fixed mtGDPtubulinTip7 0 0 0
+reaction dieLeftGTP7 mtGDPtubulinTip7 + mtGTPtubulinBound6 -> mtGDPtubulinTip7 + mtGDPtubulinDie6 100000000 
+confspread_radius dieLeftGTP7 26.563132345414388
+reaction dieLeftGDP7 mtGDPtubulinTip7 + mtGDPtubulinBound6 -> mtGDPtubulinTip7 + mtGDPtubulinDie6 100000000 
+confspread_radius dieLeftGDP7 26.563132345414388
+reaction dieRightGTP7 mtGDPtubulinTip7 + mtGTPtubulinBound8 -> mtGDPtubulinTip7 + mtGDPtubulinDie8 100000000 
+confspread_radius dieRightGTP7 26.563132345414388
+reaction dieRightGDP7 mtGDPtubulinTip7 + mtGDPtubulinBound8 -> mtGDPtubulinTip7 + mtGDPtubulinDie8 100000000 
+confspread_radius dieRightGDP7 26.563132345414388
+reaction dieGTP8 mtGDPtubulinDie8 + mtGTPtubulinBound8 -> mtGDPtubulinDie8 + mtGDPtubulinDie8 100000000 
+confspread_radius dieGTP8 8.08
+reaction dieGDP8 mtGDPtubulinDie8 + mtGDPtubulinBound8 -> mtGDPtubulinDie8 + mtGDPtubulinDie8 100000000 
+confspread_radius dieGDP8 8.08
+reaction dieGTPtip8 mtGDPtubulinDie8 + mtGTPtubulinTip8 -> mtGDPtubulinDie8 + mtGDPtubulinTip8 100000000 
+confspread_radius dieGTPtip8 8.08
+reaction dieGTPtipA8 mtGDPtubulinDie8 + mtGTPtubulinFallingOffTipA8 -> mtGDPtubulinDie8 + mtGDPtubulinTip8 100000000 
+confspread_radius dieGTPtipA8 8.08
+reaction dieGTPtipB8 mtGDPtubulinDie8 + mtGTPtubulinFallingOffTipB8 -> mtGDPtubulinDie8 + mtGDPtubulinTip8 100000000 
+confspread_radius dieGTPtipB8 8.08
+reaction tipDeathGDP8 mtGDPtubulinDie8 + mtGDPtubulinTip8 -> mtGDPtubulinTip8 + GDPtubulin
+binding_radius tipDeathGDP8 8.08
+product_placement tipDeathGDP8 fixed mtGDPtubulinTip8 0 0 0
+reaction dieLeftGTP8 mtGDPtubulinTip8 + mtGTPtubulinBound7 -> mtGDPtubulinTip8 + mtGDPtubulinDie7 100000000 
+confspread_radius dieLeftGTP8 26.563132345414388
+reaction dieLeftGDP8 mtGDPtubulinTip8 + mtGDPtubulinBound7 -> mtGDPtubulinTip8 + mtGDPtubulinDie7 100000000 
+confspread_radius dieLeftGDP8 26.563132345414388
+reaction dieRightGTP8 mtGDPtubulinTip8 + mtGTPtubulinBound9 -> mtGDPtubulinTip8 + mtGDPtubulinDie9 100000000 
+confspread_radius dieRightGTP8 26.563132345414388
+reaction dieRightGDP8 mtGDPtubulinTip8 + mtGDPtubulinBound9 -> mtGDPtubulinTip8 + mtGDPtubulinDie9 100000000 
+confspread_radius dieRightGDP8 26.563132345414388
+reaction dieGTP9 mtGDPtubulinDie9 + mtGTPtubulinBound9 -> mtGDPtubulinDie9 + mtGDPtubulinDie9 100000000 
+confspread_radius dieGTP9 8.08
+reaction dieGDP9 mtGDPtubulinDie9 + mtGDPtubulinBound9 -> mtGDPtubulinDie9 + mtGDPtubulinDie9 100000000 
+confspread_radius dieGDP9 8.08
+reaction dieGTPtip9 mtGDPtubulinDie9 + mtGTPtubulinTip9 -> mtGDPtubulinDie9 + mtGDPtubulinTip9 100000000 
+confspread_radius dieGTPtip9 8.08
+reaction dieGTPtipA9 mtGDPtubulinDie9 + mtGTPtubulinFallingOffTipA9 -> mtGDPtubulinDie9 + mtGDPtubulinTip9 100000000 
+confspread_radius dieGTPtipA9 8.08
+reaction dieGTPtipB9 mtGDPtubulinDie9 + mtGTPtubulinFallingOffTipB9 -> mtGDPtubulinDie9 + mtGDPtubulinTip9 100000000 
+confspread_radius dieGTPtipB9 8.08
+reaction tipDeathGDP9 mtGDPtubulinDie9 + mtGDPtubulinTip9 -> mtGDPtubulinTip9 + GDPtubulin
+binding_radius tipDeathGDP9 8.08
+product_placement tipDeathGDP9 fixed mtGDPtubulinTip9 0 0 0
+reaction dieLeftGTP9 mtGDPtubulinTip9 + mtGTPtubulinBound8 -> mtGDPtubulinTip9 + mtGDPtubulinDie8 100000000 
+confspread_radius dieLeftGTP9 26.563132345414388
+reaction dieLeftGDP9 mtGDPtubulinTip9 + mtGDPtubulinBound8 -> mtGDPtubulinTip9 + mtGDPtubulinDie8 100000000 
+confspread_radius dieLeftGDP9 26.563132345414388
+reaction dieRightGTP9 mtGDPtubulinTip9 + mtGTPtubulinBound10 -> mtGDPtubulinTip9 + mtGDPtubulinDie10 100000000 
+confspread_radius dieRightGTP9 26.563132345414388
+reaction dieRightGDP9 mtGDPtubulinTip9 + mtGDPtubulinBound10 -> mtGDPtubulinTip9 + mtGDPtubulinDie10 100000000 
+confspread_radius dieRightGDP9 26.563132345414388
+reaction dieGTP10 mtGDPtubulinDie10 + mtGTPtubulinBound10 -> mtGDPtubulinDie10 + mtGDPtubulinDie10 100000000 
+confspread_radius dieGTP10 8.08
+reaction dieGDP10 mtGDPtubulinDie10 + mtGDPtubulinBound10 -> mtGDPtubulinDie10 + mtGDPtubulinDie10 100000000 
+confspread_radius dieGDP10 8.08
+reaction dieGTPtip10 mtGDPtubulinDie10 + mtGTPtubulinTip10 -> mtGDPtubulinDie10 + mtGDPtubulinTip10 100000000 
+confspread_radius dieGTPtip10 8.08
+reaction dieGTPtipA10 mtGDPtubulinDie10 + mtGTPtubulinFallingOffTipA10 -> mtGDPtubulinDie10 + mtGDPtubulinTip10 100000000 
+confspread_radius dieGTPtipA10 8.08
+reaction dieGTPtipB10 mtGDPtubulinDie10 + mtGTPtubulinFallingOffTipB10 -> mtGDPtubulinDie10 + mtGDPtubulinTip10 100000000 
+confspread_radius dieGTPtipB10 8.08
+reaction tipDeathGDP10 mtGDPtubulinDie10 + mtGDPtubulinTip10 -> mtGDPtubulinTip10 + GDPtubulin
+binding_radius tipDeathGDP10 8.08
+product_placement tipDeathGDP10 fixed mtGDPtubulinTip10 0 0 0
+reaction dieLeftGTP10 mtGDPtubulinTip10 + mtGTPtubulinBound9 -> mtGDPtubulinTip10 + mtGDPtubulinDie9 100000000 
+confspread_radius dieLeftGTP10 26.563132345414388
+reaction dieLeftGDP10 mtGDPtubulinTip10 + mtGDPtubulinBound9 -> mtGDPtubulinTip10 + mtGDPtubulinDie9 100000000 
+confspread_radius dieLeftGDP10 26.563132345414388
+reaction dieRightGTP10 mtGDPtubulinTip10 + mtGTPtubulinBound11 -> mtGDPtubulinTip10 + mtGDPtubulinDie11 100000000 
+confspread_radius dieRightGTP10 26.563132345414388
+reaction dieRightGDP10 mtGDPtubulinTip10 + mtGDPtubulinBound11 -> mtGDPtubulinTip10 + mtGDPtubulinDie11 100000000 
+confspread_radius dieRightGDP10 26.563132345414388
+reaction dieGTP11 mtGDPtubulinDie11 + mtGTPtubulinBound11 -> mtGDPtubulinDie11 + mtGDPtubulinDie11 100000000 
+confspread_radius dieGTP11 8.08
+reaction dieGDP11 mtGDPtubulinDie11 + mtGDPtubulinBound11 -> mtGDPtubulinDie11 + mtGDPtubulinDie11 100000000 
+confspread_radius dieGDP11 8.08
+reaction dieGTPtip11 mtGDPtubulinDie11 + mtGTPtubulinTip11 -> mtGDPtubulinDie11 + mtGDPtubulinTip11 100000000 
+confspread_radius dieGTPtip11 8.08
+reaction dieGTPtipA11 mtGDPtubulinDie11 + mtGTPtubulinFallingOffTipA11 -> mtGDPtubulinDie11 + mtGDPtubulinTip11 100000000 
+confspread_radius dieGTPtipA11 8.08
+reaction dieGTPtipB11 mtGDPtubulinDie11 + mtGTPtubulinFallingOffTipB11 -> mtGDPtubulinDie11 + mtGDPtubulinTip11 100000000 
+confspread_radius dieGTPtipB11 8.08
+reaction tipDeathGDP11 mtGDPtubulinDie11 + mtGDPtubulinTip11 -> mtGDPtubulinTip11 + GDPtubulin
+binding_radius tipDeathGDP11 8.08
+product_placement tipDeathGDP11 fixed mtGDPtubulinTip11 0 0 0
+reaction dieLeftGTP11 mtGDPtubulinTip11 + mtGTPtubulinBound10 -> mtGDPtubulinTip11 + mtGDPtubulinDie10 100000000 
+confspread_radius dieLeftGTP11 26.563132345414388
+reaction dieLeftGDP11 mtGDPtubulinTip11 + mtGDPtubulinBound10 -> mtGDPtubulinTip11 + mtGDPtubulinDie10 100000000 
+confspread_radius dieLeftGDP11 26.563132345414388
+reaction dieRightGTP11 mtGDPtubulinTip11 + mtGTPtubulinBound12 -> mtGDPtubulinTip11 + mtGDPtubulinDie12 100000000 
+confspread_radius dieRightGTP11 26.563132345414388
+reaction dieRightGDP11 mtGDPtubulinTip11 + mtGDPtubulinBound12 -> mtGDPtubulinTip11 + mtGDPtubulinDie12 100000000 
+confspread_radius dieRightGDP11 26.563132345414388
+reaction dieGTP12 mtGDPtubulinDie12 + mtGTPtubulinBound12 -> mtGDPtubulinDie12 + mtGDPtubulinDie12 100000000 
+confspread_radius dieGTP12 8.08
+reaction dieGDP12 mtGDPtubulinDie12 + mtGDPtubulinBound12 -> mtGDPtubulinDie12 + mtGDPtubulinDie12 100000000 
+confspread_radius dieGDP12 8.08
+reaction dieGTPtip12 mtGDPtubulinDie12 + mtGTPtubulinTip12 -> mtGDPtubulinDie12 + mtGDPtubulinTip12 100000000 
+confspread_radius dieGTPtip12 8.08
+reaction dieGTPtipA12 mtGDPtubulinDie12 + mtGTPtubulinFallingOffTipA12 -> mtGDPtubulinDie12 + mtGDPtubulinTip12 100000000 
+confspread_radius dieGTPtipA12 8.08
+reaction dieGTPtipB12 mtGDPtubulinDie12 + mtGTPtubulinFallingOffTipB12 -> mtGDPtubulinDie12 + mtGDPtubulinTip12 100000000 
+confspread_radius dieGTPtipB12 8.08
+reaction tipDeathGDP12 mtGDPtubulinDie12 + mtGDPtubulinTip12 -> mtGDPtubulinTip12 + GDPtubulin
+binding_radius tipDeathGDP12 8.08
+product_placement tipDeathGDP12 fixed mtGDPtubulinTip12 0 0 0
+reaction dieLeftGTP12 mtGDPtubulinTip12 + mtGTPtubulinBound11 -> mtGDPtubulinTip12 + mtGDPtubulinDie11 100000000 
+confspread_radius dieLeftGTP12 26.563132345414388
+reaction dieLeftGDP12 mtGDPtubulinTip12 + mtGDPtubulinBound11 -> mtGDPtubulinTip12 + mtGDPtubulinDie11 100000000 
+confspread_radius dieLeftGDP12 26.563132345414388
+reaction dieRightGTP12 mtGDPtubulinTip12 + mtGTPtubulinBound0 -> mtGDPtubulinTip12 + mtGDPtubulinDie0 100000000 
+confspread_radius dieRightGTP12 26.563132345414388
+reaction dieRightGDP12 mtGDPtubulinTip12 + mtGDPtubulinBound0 -> mtGDPtubulinTip12 + mtGDPtubulinDie0 100000000 
+confspread_radius dieRightGDP12 26.563132345414388
+
+reaction tubulinEnergy GDPtubulin -> GTPtubulin 1
+
+#Initial Conditions
+mol 2023 GTPtubulin u u u
+
+#cmd A listmols molecules.txt
+#output_files molecules.txt
+#cmd N 10000 listmols2 molecules.txt
+end_file
+
+
+

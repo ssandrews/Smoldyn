@@ -1,0 +1,70 @@
+# Demonstration of compartments
+
+random_seed 1
+
+graphics opengl
+
+dim 2
+species red green blue
+
+difc red 3
+difc green 0
+difc blue 3
+
+color red 1 0 0
+color green 0 1 0
+color blue 0 0 1
+display_size red 3
+display_size green 5
+display_size blue 3
+
+time_start 0
+time_stop 10
+time_step 0.01
+
+boundaries 0 0 100
+boundaries 1 0 100
+frame_thickness 0
+
+
+start_surface walls
+action both all r
+color both 0 0 0
+panel r +0 0 0 100
+panel r -0 100 0 100
+panel r +1 0 0 100
+panel r -1 0 100 100
+end_surface
+
+start_surface surf
+action both red reflect
+action both blue transmit
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 1
+panel s 50 50 20 30
+panel s 50 50 30 30
+end_surface
+
+start_compartment middle
+surface surf
+point 50 75
+point 50 25
+point 75 50
+point 25 50
+end_compartment
+
+reaction compartment=middle r0 0 -> red 0.01
+reaction compartment=middle r1 blue -> 0 0.5
+reaction compartment=middle r2 blue + blue -> green 1
+reaction r3 red -> 0 0.1
+
+mol 500 blue u u
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

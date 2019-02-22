@@ -1,0 +1,54 @@
+# Smoldyn configuration file to test wildcards in reactions
+
+# Graphical output
+graphics opengl_good
+
+# System space and time definitions
+dim 2
+boundaries x 0 100 p
+boundaries y 0 100 p
+time_start 0
+time_stop 1000
+time_step 0.01
+
+# Molecular species and their properties
+species A
+difc A 1
+color A red
+display_size A 1
+
+# Surfaces
+
+start_surface walls
+action all both reflect
+color both black
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface circle
+action all both reflect
+color both black
+panel sphere 50 50 15 30
+end_surface
+
+# BioNetGen parameters
+start_bng polymer_end
+expand_rules polymer_end.bngl
+read_file polymer_end.net
+end_bng
+
+
+# initial molecules
+mol 1000 A u u
+
+text_display time A
+
+cmd B killmolinsphere all circle
+cmd N 5000 molcountheader stdout
+cmd N 5000 molcount stdout
+
+end_file
+

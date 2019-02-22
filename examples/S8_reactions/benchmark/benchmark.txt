@@ -1,0 +1,43 @@
+# Michaelis-Menten reaction
+# units: micron and second
+
+graphics none
+
+dim 3
+names E S ES P
+molperbox 3
+accuracy 10
+
+difc E 10
+difc S 10
+difc ES 10
+difc P 10
+
+time_start 0
+time_stop 10
+time_step 0.001
+
+boundaries 0 0 4.4964 p
+boundaries 1 0 4.4964 p
+boundaries 2 0 4.4964 p
+
+molecule_lists Elist Slist ESlist Plist
+mol_list E Elist
+mol_list S Slist
+mol_list ES ESlist
+mol_list P Plist
+
+output_files benchmarkout.txt
+cmd i 0 100 0.01 molcount benchmarkout.txt
+
+# 10 E/vol and 100 S/vol
+mol 909 E u u u
+mol 9091 S u u u
+
+reaction fwd E + S -> ES 0.01
+reaction back ES -> E + S 1
+reaction prod ES -> E + P 1
+product_placement back pgemmax 0.2
+
+end_file
+

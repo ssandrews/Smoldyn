@@ -1,0 +1,40 @@
+# Test of diffusion + drift
+
+graphics opengl
+graphic_iter 10
+
+dim 3
+boundaries x -100 100 t
+boundaries y -100 100 t
+boundaries z -100 100 t
+
+species red green blue
+boxsize 200
+
+difc red 10
+difc green 10
+difc blue 10
+
+drift red 0 0 0
+drift green 1 0 0
+drift blue -1 2 0
+
+color red red
+color green green
+color blue blue
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+mol 1000 red 0 0 0
+mol 1000 green 0 0 0
+mol 1000 blue 0 0 0
+
+output_files driftoutr.txt driftoutg.txt driftoutb.txt
+cmd e molmoments red driftoutr.txt
+cmd e molmoments green driftoutg.txt
+cmd e molmoments blue driftoutb.txt
+
+end_file
+

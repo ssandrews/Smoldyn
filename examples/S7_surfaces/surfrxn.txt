@@ -1,0 +1,58 @@
+# Surface-specific reaction
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red green blue
+random_seed 1
+
+difc red(all) 3
+difc green(all) 2
+difc blue 1
+
+color red(all) red
+color green(all) green
+color blue(all) blue
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+frame_thickness 0
+
+mol 100 red 40 50
+
+
+start_surface surf1
+action both green transmit
+action both blue transmit
+rate red fsoln up 1
+rate red bsoln up 1
+rate red up fsoln 0.02
+rate red up bsoln 0.02
+color front 0.5 0.5 0.5
+color back 0.5 0.5 0.5
+thickness 1
+panel sph 50 50 30 40
+end_surface
+
+start_surface surf2
+action both green reflect
+action both blue reflect
+rate red bsoln up 1
+rate red up bsoln 0.02
+color front 0 0 0
+color back 0 0 0
+thickness 1
+panel sph 50 50 50 40
+end_surface
+
+reaction surface=surf2 rb red(up) + red(up) -> blue(bsoln) 50
+reaction surface=surf1 g 0 -> green(front) 0.01
+
+
+end_file
+

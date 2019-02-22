@@ -1,0 +1,94 @@
+# Animated cartoon of signaling
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+boundaries x -10 10
+boundaries y -10 10
+boundaries z -10 10
+
+species Receptor ReceptorActive Pheromone Messenger MessengerActive DNA RNAActive GFPActive
+
+difc Receptor*(up) 1
+difc all(soln) 100
+
+color Receptor(up) maroon
+color ReceptorActive(up) fuchsia
+color Pheromone black
+color Messenger brown
+color MessengerActive orange
+color DNA blue
+color RNAActive violet
+color GFPActive green
+
+display_size all(all) 3
+display_size *Active(all) 7
+
+time_start 0
+time_stop 100
+time_step 0.0001
+
+frame_thickness 0
+
+start_surface bounds
+action both all transmit
+polygon both none
+panel sphere 0 0 0 10 20 20
+end_surface
+
+start_surface cell
+action both all reflect
+color both grey
+polygon both edge
+panel sph 0 0 0 5 30 30
+end_surface
+
+start_surface nucleus
+action both DNA reflect
+action both RNAActive transmit
+action both GFPActive transmit
+rate Messenger soln bsoln 10
+rate Messenger bsoln soln 10
+color both blue
+polygon both edge
+panel sphere 1 1 1 2 20 20
+end_surface
+
+reaction r1 Pheromone + Receptor(up) -> ReceptorActive(up) 100
+reaction r2 ReceptorActive(up) -> Receptor(up) 1
+
+reaction r3 ReceptorActive(up) + Messenger(bsoln) -> ReceptorActive(up) + MessengerActive(bsoln) 100
+reaction r4 MessengerActive + DNA -> Messenger + DNA + RNAActive 1000
+
+reaction r5 RNAActive -> 0 1
+reaction r6 RNAActive -> GFPActive 10
+
+
+
+
+start_compartment nucleus
+surface nucleus
+point 2 2 2
+end_compartment
+
+start_compartment cell
+surface cell
+point 0 0 0
+compartment andnot nucleus
+end_compartment
+
+compartment_mol 1 DNA nucleus
+compartment_mol 500 Messenger cell
+surface_mol 500 Receptor(up) cell all all
+
+mol 100 Pheromone 9.5 0 0
+
+cmd b pause
+
+text_display GFPActive
+
+end_file
+
+
+

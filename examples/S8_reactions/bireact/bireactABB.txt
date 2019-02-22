@@ -1,0 +1,36 @@
+/*
+Bimolecular reactions, uses exact same parameters as Figure 7 of Andrews and Bray, 2004.  Lengths are in nm, times in ns.
+*/
+
+graphics none
+
+dim 3
+species AH
+species B
+
+random_seed 0
+
+difc AH 1
+difc B 0
+
+time_start -0.002
+time_stop 5
+time_step 0.002
+
+boundaries 0 0 100 p
+boundaries 1 0 100 p
+boundaries 2 0 100 p
+
+mol 2468 AH u u u
+mol 120468 B u u u
+
+output_files stdout
+
+cmd @ 0 setrandseed -1
+cmd n 250 molcount stdout
+
+reaction rxn AH + B -> 0
+binding_radius rxn 0.73
+
+end_file
+

@@ -1,0 +1,56 @@
+# Test of species groups
+
+graphics opengl
+
+dim 3
+
+boundaries x -50 50 r
+boundaries y -50 50 r
+boundaries z -50 50 r
+
+species red
+species green
+species blue
+species yellow
+species magenta
+species cyan
+species black
+
+color red red
+color green green
+color blue blue
+color yellow yellow
+color magenta magenta
+color cyan cyan
+color black black
+
+species_group rgb red green blue
+species_group cmyk cyan magenta yellow black
+
+difc all 0
+difc cmyk 1
+difc rgb 2
+
+display_size rgb 3
+display_size cmyk 2
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 50 red 0 0 0
+mol 50 green 10 0 0
+mol 10 cyan u u u
+mol 10 magenta u u u
+mol 10 yellow u u u
+mol 10 black u u u
+
+reaction r1 red + green -> blue 10
+#reaction r2 cmyk -> red 10		# Smoldyn doesn't allow this at present
+
+text_display red rgb cmyk
+
+end_file
+
+
+

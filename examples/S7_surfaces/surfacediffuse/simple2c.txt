@@ -1,0 +1,57 @@
+# Quantitative test of diffusion on 2D surfaces
+/*
+Results are time-step dependent, at least for long time steps.  With dt = 10, profile
+is a perfect Gaussian, because no allowance is made for diffusion between t1l and t1u,
+which is the correct answer.  For shorter time steps, this diffusion occurs and the
+concentration on the sum of t1l and t1u increases.  This is physically correct.  So,
+Smoldyn appears to be working correctly here.
+*/
+
+
+define SEED 1
+
+graphics opengl
+random_seed SEED
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red
+
+difc red(all) 10
+
+color red(all) red
+display_size red(all) 5
+
+time_start 0
+time_stop 9.99
+time_step 10
+
+frame_thickness 0
+
+start_surface surf1
+color both black
+#panel rect +y 0 50 100 r2
+
+panel tri 15 24.0192  30 50  t1l
+panel tri 15 75.9808  30 50 t1u
+panel tri 30 50  60 50  t2
+panel tri 60 50  100 50  t3
+
+neighbors t1l t2 t1u
+neighbors t1u t2 t1l
+neighbors t2 t1u t3 t1l
+neighbors t3 t2
+end_surface
+
+surface_mol 1000000 red(up) surf1 tri t2 50 50
+
+text_display red(all)
+
+output_files FILEROOTout.txt
+cmd A molcountspace red(all) x 30.0001 100 140 0 100 0 FILEROOTout.txt
+cmd A molcountspace red(all) x 15 29.9999 60 0 100 0 FILEROOTout.txt
+
+end_file
+

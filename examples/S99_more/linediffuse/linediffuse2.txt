@@ -1,0 +1,114 @@
+# Smoldyn configuration file.
+
+random_seed 5
+
+# Model parameters
+define XMIN -1
+define XMAX 1
+define YMIN -1
+define YMAX 1
+
+# Graphical output
+graphics opengl
+
+# System space and time definitions
+dim 2
+boundaries x XMIN XMAX
+boundaries y YMIN YMAX
+
+time_start 0
+time_stop 100
+time_step 0.001
+
+# Molecular species and their properties
+species red
+difc red(all) 1
+color red(all) red
+display_size all(all) 5
+
+# Surfaces in the system and their properties
+start_surface lines
+color both black
+thickness 1
+#rate red(up) fsoln up 1
+#rate red(up) bsoln up 1 
+rate_internal red(up) fsoln up 2/3
+rate_internal red(up) bsoln up 2/3
+rate_internal red(up) fsoln bsoln 1/3
+rate_internal red(up) bsoln fsoln 1/3
+
+panel triangle    1.000    0.000   -1.000   -0.000 t1 
+panel triangle    0.977    0.213   -0.378    0.926 
+panel triangle    0.748    0.664   -0.393    0.919 
+panel triangle    0.998    0.059    0.490    0.871 
+panel triangle    0.366   -0.931   -0.741   -0.672 
+panel triangle    0.541   -0.841   -0.771   -0.636 
+panel triangle    1.000    0.015    0.603    0.798 
+panel triangle    0.998   -0.064    0.980    0.201 
+panel triangle    0.800   -0.600   -0.555    0.832 
+panel triangle    0.355   -0.935   -0.151    0.988 
+panel triangle    0.324    0.946   -0.251   -0.968 
+panel triangle   -0.131    0.991   -0.523   -0.853 
+panel triangle   -0.795   -0.607   -0.928    0.374 
+panel triangle    0.886   -0.464   -0.143    0.990 
+panel triangle   -0.020   -1.000   -0.833    0.554 
+panel triangle    0.999    0.045    0.211   -0.978 
+panel triangle    0.596    0.803   -0.946   -0.325 
+panel triangle    0.807    0.591   -0.946   -0.323 
+panel triangle    0.940   -0.342   -0.825   -0.565 
+panel triangle    0.467    0.884   -0.274   -0.962 
+panel triangle    0.893    0.451    0.505    0.863 
+panel triangle    0.812    0.583    0.366   -0.931 
+panel triangle    0.837   -0.547   -0.352    0.936 
+panel triangle    0.278   -0.961   -0.969    0.248 
+panel triangle   -0.819    0.574   -0.907   -0.422 
+panel triangle    0.727   -0.686   -0.670   -0.742 
+panel triangle    0.863   -0.506   -0.704    0.710 
+panel triangle    0.681   -0.732   -0.391    0.921 
+panel triangle    0.750    0.662   -0.154    0.988 
+panel triangle    0.470    0.883   -0.943   -0.334 
+panel triangle   -0.284    0.959   -0.592   -0.806 
+panel triangle    0.414    0.910   -0.836   -0.549 
+panel triangle    0.917   -0.399    0.121    0.993 
+panel triangle    0.879    0.478   -0.939    0.345 
+panel triangle    0.085   -0.996   -0.850   -0.527 
+panel triangle    0.911    0.412    0.637   -0.771 
+panel triangle    0.240    0.971   -0.551   -0.834 
+panel triangle    0.693    0.721    0.441   -0.897 
+panel triangle   -0.280    0.960   -0.419   -0.908 
+panel triangle    0.998    0.069   -0.468    0.884 
+panel triangle    0.897    0.441    0.298   -0.954 
+panel triangle    0.382    0.924    0.224    0.975 
+panel triangle    0.424    0.906   -0.936   -0.351 
+panel triangle    0.512    0.859   -0.257    0.966 
+panel triangle    0.982   -0.188   -0.936    0.352 
+panel triangle    0.516   -0.857   -0.976    0.218 
+panel triangle   -0.279   -0.960   -0.721    0.693 
+panel triangle    0.800   -0.600   -0.784    0.620 
+panel triangle    0.361   -0.933   -0.425    0.905 
+panel triangle    0.999   -0.043    0.560   -0.829 
+panel triangle    0.881    0.473    0.309    0.951 
+panel triangle    0.998    0.068   -0.935    0.354 
+panel triangle    0.713    0.701   -0.705   -0.709 
+panel triangle    0.801   -0.599    0.692    0.722 
+panel triangle    0.639   -0.769   -0.971   -0.238 
+panel triangle    0.776    0.630    0.009   -1.000 
+panel triangle    0.974   -0.229   -0.510    0.860 
+panel triangle   -0.184   -0.983   -0.843    0.538 
+panel triangle    0.953   -0.304    0.743   -0.669 
+panel triangle   -0.614   -0.790   -0.660    0.752 
+panel triangle    0.996   -0.085   -0.473    0.881 
+panel triangle    0.996    0.090   -0.029    1.000 
+panel triangle    0.998    0.064    0.605    0.796 
+panel triangle    0.677   -0.736   -0.650    0.760 
+panel triangle    0.993   -0.116   -0.082   -0.997 
+panel triangle    0.800    0.600   -0.736    0.677 
+panel triangle   -0.402    0.916   -0.620   -0.784 
+
+end_surface 
+
+# Place molecules for initial condition
+surface_mol 100 red(up) lines tri t1 (XMIN+XMAX)/2 (YMIN+YMAX)/2
+
+
+end_file

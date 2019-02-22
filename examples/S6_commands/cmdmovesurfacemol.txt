@@ -1,0 +1,47 @@
+# Simulation file of basic diffusion and reaction
+# This file is used to test and demonstrate the movesurfacemol command
+
+graphics opengl_good
+graphic_iter 1
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red
+
+time_start 0
+time_stop 5000
+time_step 0.1
+
+
+difc red(all) 1
+color red(all) red
+display_size all(all) 2
+
+start_surface walls
+action both all reflect
+polygon both none
+panel rect +0 0 0 0 100 100
+panel rect -0 100 0 0 100 100
+panel rect +1 0 0 0 100 100
+panel rect -1 0 100 0 100 100
+panel rect +2 0 0 0 100 100
+panel rect -2 0 0 100 100 100
+end_surface
+
+start_surface surf
+action both all reflect
+polygon both edge
+panel sph 30 30 30 20 10 10 sph1
+panel sph 70 70 70 20 10 10 sph2
+end_surface
+
+surface_mol 20 red(front) surf sphere sph1
+
+cmd E movesurfacemol red(front) 0.0002 surf:sph1 surf:sph2
+cmd E movesurfacemol all(all) 0.00001 surf walls up
+
+end_file
+

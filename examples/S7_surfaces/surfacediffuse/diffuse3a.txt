@@ -1,0 +1,42 @@
+# Test of diffusion on surfaces
+
+graphics opengl
+random_seed 2
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red
+
+difc red(all) 3
+
+color red(all) red
+display_size red(all) 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+frame_thickness 0
+
+start_surface surf1
+color both black
+polygon both edge
+panel rect +x 20 20 20 10 10 r1
+panel rect +y 40 20 20 10 10 r2
+panel tri 20 40 20 30 40 20 20 50 20 t1
+panel sphere 50 50 50 10 10 10 s1
+panel hemi 50 75 50 10 1 0 0 10 5
+panel hemi 75 40 50 10 -1 -1 -1 10 5
+panel disk 75 60 20 10 0 0 1 10
+
+end_surface
+
+surface_mol 50 red(up) surf1 all all
+
+text_display red(all)
+
+end_file
+

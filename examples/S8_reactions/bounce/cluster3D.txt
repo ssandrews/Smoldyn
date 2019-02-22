@@ -1,0 +1,42 @@
+# Cluster test
+
+define KOFF 0
+
+graphics opengl_good
+
+dim 3
+
+boundaries 0 0 40 r
+boundaries 1 0 40 r
+boundaries 2 0 40 r
+
+time_start 0
+time_stop 1000
+time_step 0.1
+
+species red green
+
+difc red 1
+difc green 0
+
+display_size all(all) 0.5
+color red(all) red
+color green(all) green
+
+#reaction rxn1 red + red -> red + red
+#binding_radius rxn1 1
+#product_placement rxn1 bounce -2
+
+reaction rxn2 red + green -> green + green
+binding_radius rxn2 1
+product_placement rxn2 bounce 1.1
+
+#reaction rxn3 green -> red KOFF
+
+mol 500 red u u u
+mol 1 green 20 20 20
+
+text_display time red green
+
+end_file
+

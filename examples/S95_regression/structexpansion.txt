@@ -1,0 +1,63 @@
+# Smoldyn configuration file to test wildcards in reactions
+
+random_seed 1
+
+# Graphical output
+graphics opengl
+
+# System space and time definitions
+dim 2
+boundaries x 0 100 p
+boundaries y 0 100 p
+time_start 0
+time_stop 3
+time_step 0.01
+boxsize 0.5
+
+# Molecular species and their properties
+species A B C
+difc all 1
+color A red
+color B green
+color C blue
+display_size all 2
+
+# Reactions
+reaction rxn1	0 -> A		1
+reaction rxn2	0 -> A|B	1
+reaction rxn3	0 -> A|B|C	1
+reaction rxn4	C -> 0		1
+reaction rxn5	A -> B		1
+reaction rxn6	A -> B|C	1
+reaction rxn7	A -> B|B|C	1
+reaction rxn8	A|B -> 0	1
+reaction rxn9	A|B -> C	1
+reaction rxn10	A|B -> A|C	1
+reaction rxn11	A|B|C -> 0	1
+reaction rxn12	A|B|B -> C	1
+reaction rxn13	B|C|C -> A|B|B	1
+
+reaction rxn14	A + C -> 0	1
+reaction rxn15	A + B -> C	1
+reaction rxn16	B + C -> A|B	1
+reaction rxn17	A|B + C -> 0	1
+reaction rxn18	B + A|C -> B	1
+reaction rxn19	A + B|B -> A|C	1
+reaction rxn20	A|B + B|C -> A	1
+
+#expand_rules all
+
+# initial molecules
+mol 100 A u u
+mol 100 B u u
+mol 100 C u u
+
+text_display time A B C
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

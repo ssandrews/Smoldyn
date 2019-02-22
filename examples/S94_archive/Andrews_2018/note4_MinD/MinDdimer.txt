@@ -1,0 +1,56 @@
+# Smoldyn configuration file for MinD dimerization and nucleotide dynamics
+# Units are microns and seconds
+
+define ATPC	930000
+define ADPC	116000
+
+define KAD	(0.37e-6)*ADPC
+define KDA	0.05
+define KAT	(1.1e-6)*ATPC
+define KTA	0.05
+define KDT	(1.1e-6)*ATPC
+define KTD	(0.37e-6)*ADPC
+define KDIMER	8.5e-4
+define KDISS	1
+define KHYDRO	1.2e-3
+
+# Graphical output
+graphics opengl
+graphic_iter 100
+
+# System space and time definitions
+dim 3
+boundaries x 0 1 p
+boundaries y 0 1 p
+boundaries z 0 1 p
+
+time_start 0
+time_stop 30
+time_step 0.001
+
+# Molecular species and their properties
+species A D T
+
+difc all 2.6
+color A blue
+color D green
+color T red
+
+display_size all 2
+
+# Reactions
+reaction_rule rxnAtoD	*A* <-> *D*	KAD KDAreaction_rule rxnAtoT	*A* <-> *T*	KAT KTAreaction_rule rxnDtoT	*D* <-> *T*	KDT KTDreaction_rule rxndimer	T + T -> TT	KDIMERreaction_rule rxndissoc	?? -> ? + ?	KDISSreaction_rule rxnhydro	?&T -> ?&D	KHYDRO
+
+#expand_rules on-the-fly
+expand_rules all
+
+# initial molecules
+mol 2000 A u u u
+
+output_files MinDdimerout.txt
+output_format CSV
+cmd B molcountheader MinDdimerout.txt
+cmd i 10 30 1 molcount MinDdimerout.txt
+
+end_file
+

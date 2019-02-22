@@ -1,0 +1,21 @@
+graphics opengl
+
+dim 3
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+species a  b
+
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+difc all 1
+
+mol 100 a u u u
+
+end_file
+
+

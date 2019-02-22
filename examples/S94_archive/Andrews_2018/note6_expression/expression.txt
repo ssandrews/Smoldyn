@@ -1,0 +1,120 @@
+# Smoldyn configuration file to test wildcards in reactions
+# Units are microns and seconds, numbers are approximately correct for a yeast cell
+
+
+define KTRANSC	0.01		# 100 seconds per transcript
+define KRIBBIND	0.1		# chosen to give ~1000 proteins
+define KTRANSL	2		# 2 amino acids per second, should be 20
+define KMUT	0.000002	# 0.02 mutations per ((10000 s)*basepair*option)
+define KRNADEG	0.01		# RNA lifetime of 100 seconds
+define KPROTDEG	0.01		# protein lifetime of 100 seconds
+
+define CELLRAD	2.5		# cell diameter of 5 um
+define NUCRAD	1		# nuclear diameter of 5 um
+
+random_seed 2
+
+# Graphical output
+graphics opengl
+graphic_iter 1000
+frame_thickness 0
+
+# System space and time definitions
+dim 3
+boundaries x -CELLRAD CELLRAD
+boundaries y -CELLRAD CELLRAD
+boundaries z -CELLRAD CELLRAD
+
+time_start 0
+time_stop 10000			# about 2.5 hours, which is 1-2 cell generations
+time_step 0.1
+
+# Molecular species and their properties
+species DnaATCAATATT Rib
+
+difc Rib 4			# from eq. in Andrews, 2012
+color Rib grey
+display_size Rib 2
+
+difc Dna* 0.1			# complete guess, assumes DNA is part of chromosome
+
+difc_rule Dna* 0.1
+difc_rule Rna* 8
+difc_rule Prot* 22		# GFP diffusion coefficient
+
+color_rule Dna* black
+color_rule Rna* red
+color_rule Prot* green
+color_rule Rna*Rib* lightgreen
+
+display_size_rule Dna*|Rna* 4
+display_size_rule Prot* 2
+display_size_rule Rna*Rib* 4
+
+# Surfaces
+
+start_surface cellmembrane
+color both black
+polygon both edge
+action_rule all both reflect
+panel sphere 0 0 0  CELLRAD 20 20
+end_surface
+
+start_surface nucmembrane
+color both purple
+polygon both edge
+action_rule Dna*|Rib both reflect
+action_rule Rna*|Prot* both transmit
+panel sphere 0 0 0  NUCRAD 10 10
+end_surface
+
+# Compartments
+
+start_compartment nucleus
+point 0 0 0
+surface nucmembrane
+end_compartment
+
+start_compartment cell
+point 0 0 0
+surface cellmembrane
+end_compartment
+
+start_compartment cytoplasm
+compartment equal cell
+compartment andnot nucleus
+end_compartment
+
+
+
+# Reactions
+reaction_rule rxnTransc		Dna* -> Dna$1 + Rna$1			KTRANSCreaction_rule rxnRibBind	Rna*[A,T,C,G] + Rib -> RnaRib*[A,T,C,G]Prot	KRIBBINDreaction_rule rxnTranslN	Rna*RibAA[T,C]* -> Rna*AA[T,C]Rib*n	KTRANSLreaction_rule rxnTranslF	Rna*RibTT[T,C]* -> Rna*TT[T,C]Rib*f	KTRANSLreaction_rule rxnTranslL	Rna*RibTT[A,G]* -> Rna*TT[A,G]Rib*l	KTRANSLreaction_rule rxnTranslS	Rna*RibTC?* -> Rna*TC?Rib*s		KTRANSLreaction_rule rxnTranslY	Rna*RibTA[T,C]* -> Rna*TA[T,C]Rib*y	KTRANSLreaction_rule rxnTranslW	Rna*RibTGG* -> Rna*TGGRib*w		KTRANSLreaction_rule rxnTranslL	Rna*RibCT?* -> Rna*CT?Rib*l		KTRANSLreaction_rule rxnTranslP	Rna*RibCC?* -> Rna*CC?Rib*p		KTRANSLreaction_rule rxnTranslH	Rna*RibCA[T,C]* -> Rna*CA[T,C]Rib*h	KTRANSLreaction_rule rxnTranslQ	Rna*RibCA[A,G]* -> Rna*CA[A,G]Rib*q	KTRANSLreaction_rule rxnTranslR	Rna*RibCG?* -> Rna*CG?Rib*r		KTRANSLreaction_rule rxnTranslI	Rna*RibAT[T,C,A]* -> Rna*AT[T,C,A]Rib*i	KTRANSLreaction_rule rxnTranslM	Rna*RibATG* -> Rna*ATGRib*m		KTRANSLreaction_rule rxnTranslT	Rna*RibAC?* -> Rna*AC?Rib*t		KTRANSLreaction_rule rxnTranslN	Rna*RibAA[T,C]* -> Rna*AA[T,C]Rib*n	KTRANSLreaction_rule rxnTranslK	Rna*RibAA[G,A]* -> Rna*AA[G,A]Rib*k	KTRANSLreaction_rule rxnTranslS	Rna*RibAG[T,C]* -> Rna*AG[T,C]Rib*s	KTRANSLreaction_rule rxnTranslR	Rna*RibAG[G,A]* -> Rna*AG[G,A]Rib*r	KTRANSLreaction_rule rxnTranslV	Rna*RibGT?* -> Rna*GT?Rib*v		KTRANSLreaction_rule rxnTranslA	Rna*RibGC?* -> Rna*GC?Rib*a		KTRANSLreaction_rule rxnTranslD	Rna*RibGA[T,C]* -> Rna*GA[T,C]Rib*d	KTRANSLreaction_rule rxnTranslE	Rna*RibGA[A,G]* -> Rna*GA[A,G]Rib*e	KTRANSLreaction_rule rxnTranslG	Rna*RibGG?* -> Rna*GG?Rib*g		KTRANSLreaction_rule rxnRibUnbind	Rna*RibProt* -> Rna* + Rib + Prot*	KTRANSL
+
+reaction_rule rxnRnaDeg		Rna*[A,T,C,G] -> 0			KRNADEG
+reaction_rule rxnProtDeg	Prot* -> 0				KPROTDEG
+
+reaction_rule rxnMut		Dna*?* -> Dna*{A|T|C|G}*		KMUT
+
+reaction_log stdout rxnMut all
+
+
+expand_rules on-the-fly
+
+# initial molecules
+compartment_mol 1 DnaATCAATATT nucleus
+compartment_mol 100 Rib cytoplasm		# a cell really has ~1000 to 10000
+
+output_file expressionout.txt stdout
+output_format CSV
+#cmd i 0 10000 10 molcountspecieslist expressionout.txt Rna* Prot*
+
+cmd i 0 10000 10 molcountspecieslist expressionout.txt Rna*AAT* Rna* Protini Protiyi
+cmd A molcountheader stdout
+cmd A molcount stdout
+
+#cmd @ 100 diagnostics all
+
+text_display time Dna* Rna* Prot*
+
+end_file
+

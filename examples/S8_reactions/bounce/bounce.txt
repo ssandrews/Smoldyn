@@ -1,0 +1,40 @@
+# Excluded volume test
+# Note that green and red molecules never exchange positions
+
+graphics opengl_good
+graphic_delay 2
+
+dim 2
+
+boundaries 0 0 20
+boundaries 1 0 20
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+species red
+species green
+
+difc all(all) 1
+
+display_size all(all) 0.5
+color red(all) 1 0 0
+color green(all) 0 1 0
+
+reaction rxn1 red(up) + green(up) -> red(up) + green(up)
+binding_radius rxn1 1
+#product_placement rxn1 bounce 1.1
+#product_placement rxn1 bounce -1
+product_placement rxn1 bounce
+
+start_surface line
+panel tri 1 1 19 19
+end_surface
+
+surface_mol 3 red(up) line all all
+surface_mol 3 green(up) line all all
+
+
+end_file
+

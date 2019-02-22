@@ -1,0 +1,56 @@
+# Crowding test
+
+graphics opengl_good
+#tiff_name crowdimages/image
+#tiff_iter 5
+#tiff_max 200
+
+dim 2
+
+boundaries x 0 20 r
+boundaries y 0 20 r
+
+time_start 0
+time_stop 100
+time_step 0.005
+
+species red green
+
+difc red(all) 1
+difc green(all) 0.5
+
+display_size red(all) 0.5
+color red(all) red
+display_size green(all) 1
+color green(all) green
+
+reaction rxn1 red + red -> red + red
+binding_radius rxn1 1
+product_placement rxn1 bounce
+
+reaction rxn2 red + green -> red + green
+binding_radius rxn2 1.5
+product_placement rxn2 bounce
+reaction_probability rxn2 0.99
+
+reaction rxn2a red + green -> green + green
+binding_radius rxn2a 1.5
+product_placement rxn2a bounce 2
+reaction_probability rxn2a 0.01
+
+reaction rxn3 green + green -> green + green
+binding_radius rxn3 2
+product_placement rxn3 bounce
+
+#mol 250 red u u
+mol 5 green u u
+
+text_display time red green
+
+#output_files crowding3out.txt
+cmd B gaussiansource red 250 10 5 10 5
+#cmd B pause
+#cmd A molcountspace2d red z 0 20  20  0 20  20  0 crowding3out.txt
+
+end_file
+

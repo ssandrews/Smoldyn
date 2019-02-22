@@ -1,0 +1,30 @@
+# Created by BioNetGen 2.2.6-stable
+setOption("SpeciesLabel","HNauty")
+begin parameters
+    1 kab_on   10  # Constant
+    2 kab_off  0.1  # Constant
+    3 kbb_on   8  # Constant
+    4 kbb_off  0.07  # Constant
+end parameters
+begin species
+    1 A(a2b) 0
+    2 B(b2a,b2b) 0
+    3 A(a2b!1).B(b2a!1,b2b) 0
+    4 B(b2a,b2b!1).B(b2a,b2b!1) 0
+    5 A(a2b!1).B(b2a!1,b2b!2).B(b2a,b2b!2) 0
+    6 A(a2b!1).A(a2b!2).B(b2a!2,b2b!3).B(b2a!1,b2b!3) 0
+end species
+begin reactions
+    1 1,2 3 kab_on #_R1
+    2 2,2 4 0.5*kbb_on #_R2
+    3 1,4 5 2*kab_on #_R1
+    4 3 1,2 kab_off #_reverse__R1
+    5 2,3 5 kbb_on #_R2
+    6 3,3 6 0.5*kbb_on #_R2
+    7 4 2,2 kbb_off #_reverse__R2
+    8 1,5 6 kab_on #_R1
+    9 5 1,4 kab_off #_reverse__R1
+   10 6 1,5 2*kab_off #_reverse__R1
+   11 5 2,3 kbb_off #_reverse__R2
+   12 6 3,3 kbb_off #_reverse__R2
+end reactions

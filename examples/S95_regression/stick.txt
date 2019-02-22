@@ -1,0 +1,120 @@
+# This file was sent to me from Abhishek Chaudhuri.  It had leaking molecules in Smoldyn 2.26, so I fixed the
+# bugs for Smoldyn 2.27.
+
+random_seed 1
+
+#output_files stdout
+#cmd e warnescapee all(soln) stdout
+
+
+graphics opengl_better
+graphic_iter 1
+
+light room ambient 0 0 0
+light 0 position 0 0 0
+light 0 diffuse 1 0.5 0.5
+light 0 ambient 0 0 0
+light 0 specular 1 1 1
+
+dim 3
+species green red blue black
+
+
+difc green 1.0
+difc red 1.0
+difc blue 100
+difc black 100
+
+color red(all) 1 0 0
+color green(all) 0 1 0
+color blue(all) 0 0 1
+color black(all) 0 1 1 
+display_size red(all) 0.5
+display_size green(all) 0.5
+display_size blue(all) 0.3
+display_size black(all) 0.3
+
+time_start 0
+time_stop 2
+time_step 0.01
+
+boundaries 0 0 20
+boundaries 1 0 16
+boundaries 2 0 20
+
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+polygon both edge
+panel rect +0 0 0 0 16 20
+panel rect -0 20 0 0 16 20
+panel rect +1 0 0 0 20 20
+panel rect -1 0 16 0 20 20
+panel rect +2 0 0 0 20 16
+panel rect -2 0 0 20 20 16
+end_surface
+
+start_surface surf1
+action green front reflect
+rate blue fsoln up 1.0
+rate blue bsoln up 0.0
+rate blue up fsoln 0.0
+rate blue up bsoln 1.00000
+rate blue fsoln bsoln 1.00000
+color both 0.6 0 0.6 0.5
+panel rect +1 0 1 0 20 20
+end_surface
+
+start_surface surf2
+action both all reflect
+color both 0.6 0 0.6 0.5
+panel rect +0 0 0 0 1 20
+panel rect -0 20 0 0 1 20
+panel rect +2 0 0 0 20 1
+panel rect -2 0 0 20 20 1
+end_surface
+
+start_surface surf3
+rate blue bsoln front 5.0
+#rate blue soln front 5.0
+color both 0.6 0 0.6 0.5
+panel rect -1 0 0 0 20 20
+#panel rect +1 0 0 0 20 20
+end_surface
+
+start_compartment main
+surface walls
+point 10 10 10
+end_compartment
+
+start_compartment inside
+surface surf1
+surface surf2
+surface surf3
+point 10 0.5 5
+end_compartment
+
+start_compartment outside
+compartment equalnot inside
+end_compartment
+
+compartment_mol 1000 green outside
+
+#cmd b pause
+
+reaction r1 green -> blue + blue + blue + blue + blue + blue + blue + blue + blue + blue 1.00000
+#reaction r2 red -> blue + blue + blue + blue + blue + blue + blue + blue + blue + blue 10.0
+#reaction r2 black -> blue + blue + blue + blue + blue + blue + blue + blue + blue 0.1
+
+#output_root Data/
+#output_files stickdrugoutcyto_ken_1.00000.txt nmolsdrugoutcyto_ken_1.00000.txt
+#cmd n 1000 molcountonsurf surf3 stickdrugoutcyto_ken_1.00000.txt
+#cmd n 1000 molcount nmolsdrugoutcyto_ken_1.00000.txt
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file

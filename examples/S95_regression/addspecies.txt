@@ -1,0 +1,39 @@
+# Simple bouncing molecules in a 2-D system
+
+random_seed 1
+
+graphics opengl
+
+dim 2
+species red
+
+difc red 3
+
+color red 1 0 0
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+boundaries 0 0 100 r
+boundaries 1 0 100 r
+
+mol 100 red u u
+
+cmd @ 10 set species green
+cmd @ 10 set color green 0 1 0
+cmd @ 10 set mol 100 green u u
+cmd @ 20 set difc green 5
+cmd @ 50 set reaction rxn red + green -> 0 10
+
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+
+end_file
+
+
+

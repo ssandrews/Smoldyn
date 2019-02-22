@@ -1,0 +1,63 @@
+# Test of reflection in 3 dimensions
+
+graphics opengl
+
+dim 3
+species red
+difc red 3
+color red 1 0 0
+
+
+time_start 0
+time_stop 1
+time_step 0.00001
+
+boundaries 0 0 1
+boundaries 1 0 1
+boundaries 2 0 1
+
+mol 1000 red 0.30 0.5 0.30
+
+start_surface surf
+action all both reflect
+color both purple 0.5
+thickness 2
+polygon front face
+polygon back edge
+panel cyl 0.20 0.5 0.20 0.80 0.5 0.80 0.2 20 20
+panel hemi 0.20 0.5 0.20 0.2 1 0 1 20 20
+panel hemi 0.80 0.5 0.80 0.2 -1 0 -1 20 20
+end_surface
+
+
+start_surface portsurf	
+action front all port
+color front 0.2 0 0 0.5
+color back 0 0 0
+polygon both face
+panel rect -0 0.50 0 0 1 1
+end_surface
+
+start_port testport
+surface portsurf
+face front
+end_port
+
+start_lattice testlattice	
+type nsv			
+port testport
+boundaries 0 0.45 1
+boundaries 1 0 1
+boundaries 2 0 1
+lengthscale 0.05 0.05 0.05
+species all
+reactions all
+surfaces surf
+end_lattice
+
+output_files stdout 
+
+cmd i 0.4 1 0.001 molcountspace red 0 0 1 20 0 1 0 1 600 stdout
+
+end_file
+

@@ -1,0 +1,43 @@
+# Simple bouncing molecules with surfaces
+# units microns and seconds
+
+define OUTFILE FILEROOTout.txt
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+species red
+boxsize 1
+
+difc red 3
+
+color red 1 0 0
+display_size red 1
+frame_thickness 0
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+boundaries 0 -10 10
+boundaries 1 -10 10
+boundaries 2 -10 10
+
+start_surface bounds
+unbounded_emitter front red 1 -4.5 0 0
+color both 0.5 0.5 0.5
+polygon both edge
+read_file sphere.txt
+end_surface
+
+output_files OUTFILE stdout
+
+cmd e pointsource red 500 -4.5 0 0
+cmd n 10 molcount stdout
+cmd @ 0.29 molcountspace red 0 -10 10 20 -1 1 -1 1 1 OUTFILE
+cmd @ 99.99 molcountspace red 0 -10 10 20 -1 1 -1 1 1 OUTFILE
+
+
+end_file
+

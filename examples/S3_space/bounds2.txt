@@ -1,0 +1,53 @@
+# Periodic boundaries with surfaces
+
+graphics opengl
+graphic_iter 10
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species A B C
+
+difc A 1
+difc B 1
+difc C 1
+
+color A red
+color B green
+color C blue
+
+time_start 0
+time_stop 2000
+time_step 0.01
+
+mol 200 A 10 50
+mol 200 B 90 50
+
+start_surface ball
+action both all reflect
+color both 0 0.5 0
+thickness 1
+panel sphere 50 50 20 50
+end_surface
+
+start_surface sides
+action front all jump
+action back all reflect
+color front 0.2 0 0
+color back 0 0 0.5
+thickness 1
+panel rect +0 0 0 100 r1
+panel rect -0 100 0 100 r2
+panel rect +1 0 0 100 r3
+panel rect -1 0 100 100 r4
+jump r1 front <-> r2 front
+jump r3 front <-> r4 front
+end_surface
+
+reaction revrxn C -> A + B 0.2
+product_placement revrxn x 0.2
+reaction fwdrxn A + B -> C 1
+
+end_file
+

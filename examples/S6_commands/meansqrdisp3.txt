@@ -1,0 +1,45 @@
+# This file just checks and illustrates the meansqrdisp3 command
+
+define MOLS 500
+graphics opengl_good
+
+dim 2
+boundaries x 0 100 p
+boundaries y 0 100 p
+
+species tracer crowder counter
+
+difc all 1
+
+color tracer red
+color crowder black
+color counter lightgreen
+
+display_size all 2
+display_size counter 0
+
+time_start 0
+time_stop 1000
+time_step 0.05
+
+mol 20 tracer u u
+mol 200 crowder u u
+
+reaction rxn1 tracer + crowder -> tracer + crowder
+reaction rxn2 crowder + crowder -> crowder + crowder
+reaction rxn3 tracer + tracer -> tracer + tracer
+binding_radius rxn1 3
+product_placement rxn1 bounce 4
+binding_radius rxn2 3
+product_placement rxn2 bounce 4
+binding_radius rxn3 3
+product_placement rxn3 bounce 4
+
+output_files stdout
+cmd n 5 meansqrdisp3 tracer all i e MOLS 0.001 stdout pointsource counter 1 0 0
+cmd i 20 1000 1 ifmore counter 50 stop
+
+end_file
+
+
+

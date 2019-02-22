@@ -1,0 +1,69 @@
+# test of expandsystem command
+
+
+graphics opengl
+
+
+dim 3
+boundaries x -10 10
+boundaries y -10 10
+boundaries z -10 10
+
+time_start 0
+time_stop 1000
+time_step 0.001
+
+
+species A B
+
+difc all(all) 1
+
+color A(all) red
+color B(all) blue
+
+start_surface membrane
+action both all reflect
+polygon both edge
+panel cylinder -3 0 0  3 0 0  2  20 10 cyl0
+#panel hemi -3 0 0  2  1 0 0  20 5 end0
+#panel hemi 3 0 0  2  -1 0 0  20 5 end1
+panel disk -3 0 0  2  1 0 0  20 end0
+panel disk 3 0 0  2  -1 0 0  20 end1
+neighbors cyl0 end0 end1
+neighbors end0 cyl0
+neighbors end1 cyl0
+end_surface
+
+start_compartment cell
+surface membrane
+point 0 0 0
+end_compartment
+
+start_compartment outside
+compartment equalnot cell
+end_compartment
+
+
+compartment_mol 50 A cell
+surface_mol 50 B(up) membrane all end0
+
+text_display time A B(up)
+
+#cmd @ 2 expandsystem -2 -2 -2
+#cmd @ 2 pause
+
+cmd i 5 15 0.1 expandsystem 1.01 1 1
+cmd i 5 15 0.1 killmolincmpt A(soln) outside
+
+cmd i 20 35 0.1 expandsystem 1 1.01 1.01
+cmd i 20 35 0.1 killmolincmpt A(soln) outside
+
+cmd i 40 55 0.1 expandsystem 0.99 1 1
+cmd i 40 55 0.1 killmolincmpt A(soln) outside
+
+cmd i 60 75 0.1 expandsystem 1 0.99 0.99
+cmd i 60 75 0.1 killmolincmpt A(soln) outside
+
+
+end_file
+

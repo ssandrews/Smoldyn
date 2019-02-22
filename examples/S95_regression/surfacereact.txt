@@ -1,0 +1,53 @@
+# Smoldyn file for testing reactions at surfaces
+
+# Graphical output
+graphics opengl
+
+random_seed 1
+
+# System space and time definitions
+dim 2
+boundaries x -10 10
+boundaries y -10 10
+time_start 0
+time_stop 50
+time_step 0.01
+
+species red green blue
+
+molecule_lists redlist greenlist bluelist
+mol_list red(all) redlist
+mol_list green(all) greenlist
+mol_list blue(all) bluelist
+
+color red(all) red
+color green(all) green
+color blue(all) blue
+display_size all(all) 5
+
+difc red 0
+difc green 0
+difc blue 1
+
+start_surface bounds
+action both all reflect
+panel sphere 0 0 10 50
+end_surface
+
+start_surface surf
+action both all reflect
+panel rect +y -10 0 20
+end_surface
+
+reaction r1 blue(fsoln) + green(up) -> blue(bsoln) + green(up) 10
+
+mol 1 red 0 5
+mol 10 blue 0 5
+surface_mol 10 green(up) surf all all
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file

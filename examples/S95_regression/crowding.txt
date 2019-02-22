@@ -1,0 +1,38 @@
+# Crowding test
+
+random_seed 1
+
+graphics opengl_good
+#tiff_name crowdimages/image
+#tiff_iter 5
+#tiff_max 200
+
+dim 2
+
+boundaries 0 0 20 p
+boundaries 1 0 20 p
+
+time_start 0
+time_stop 10
+time_step 0.005
+
+species red
+
+difc all(all) 1
+
+display_size all(all) 0.5
+color red(all) 1 0 0
+
+reaction rxn1 red + red -> red + red
+binding_radius rxn1 1
+product_placement rxn1 bounce 1.1
+
+mol 300 red u u
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

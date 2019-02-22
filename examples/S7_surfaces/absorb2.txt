@@ -1,0 +1,64 @@
+# File to test absorbing boundaries with surfaces
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red green
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+display_size red 5
+display_size green 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 20 red 20 20
+mol 20 red 50 20
+mol 20 red 80 20
+mol 20 red 35 50
+mol 20 red 75 65
+mol 40 green 65 35
+mol 40 green 30 70
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface surf
+action both all absorb
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 2
+panel rect +x 10 10 20
+panel rect -x 30 10 20
+panel rect +y 10 10 20
+panel rect -y 10 30 20
+panel tri 40 10 60 10
+panel tri 60 10 50 30
+panel tri 50 30 40 10
+panel sph 80 20 10 20
+panel cyl 20 50 50 50 10
+panel cyl 70 50 80 80 10
+panel hemi 20 50 10 1 0 20
+panel hemi 70 50 10 10 30 20
+panel disk 50 50 10 -1 0
+panel disk 80 80 10 -10 -30
+end_surface
+
+cmd b pause
+
+end_file
+

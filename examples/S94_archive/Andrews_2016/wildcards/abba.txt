@@ -1,0 +1,45 @@
+# Smoldyn configuration file to test wildcards in reactions
+# This file produces a multimeric complex with structure A-B-B-A
+
+define AB_ON	10
+define AB_OFF	0.1
+define BB_ON	8
+define BB_OFF	0.07
+
+# Graphical output
+graphics opengl_good
+
+# System space and time definitions
+dim 2
+boundaries x 0 100 p
+boundaries y 0 100 p
+time_start 0
+time_stop 1000
+time_step 0.01
+
+# Molecular species and their properties
+species A B
+difc A 2
+difc B 1
+color A red
+color B blue
+display_size A 1
+display_size B 1
+
+# Reactions
+reaction_rule ABon	A + B|BB|BB|ABB -> AB|ABB|ABB|ABBA	AB_ON
+reaction_rule ABoff	AB|ABB|ABBA|ABBA -> A + B|BB|ABB|ABB	AB_OFF
+reaction_rule BBon1	B + B|AB -> BB|ABB			BB_ON
+reaction_rule BBon2	AB + AB -> ABBA				BB_ON
+reaction_rule BBoff	*BB* -> *B + *B				BB_OFF
+
+expand_rules all
+
+# initial molecules
+mol 100 A u u
+mol 100 B u u
+
+text_display time A B AB BB ABB ABBA
+
+end_file
+

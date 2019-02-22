@@ -1,0 +1,87 @@
+# Quantitative test of diffusion on 3D surfaces
+# units are nanometer and milliseconds
+
+define SEED 1
+define NMOL 100		# use 100 for picture, 1000000 for validation
+
+define V0B -450 -200 0
+define V0F -450 -200 100
+define V1B -150 200 0
+define V1F -150 200 100
+define V2B 150 -200 0
+define V2F 150 -200 100
+define V3B 450 200 0
+define V3F 450 200 100
+
+graphics opengl_better
+light room ambient 0 0 0
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
+
+random_seed SEED
+gauss_table_size 65536
+
+dim 3
+boundaries x -500 500
+boundaries y -500 500
+boundaries z 0 100
+
+boxsize 1000
+
+species red green
+
+molecule_lists redlist greenlist
+mol_list red(all) redlist
+mol_list green(all) greenlist
+
+difc red(all) 100	# 100 nm^2/ms = 0.1 um^2/s
+difc green(all) 30000	# 300x faster than red to account for shorter time
+
+color red(all) red
+color green(all) green
+display_size red(all) 5
+display_size green(all) 0
+
+time_start 0
+time_stop 300
+time_step 1
+
+frame_thickness 0
+
+start_surface surf1
+color both lightgrey
+polygon both fe
+shininess both 10
+thickness 2
+
+panel tri V0F V0B V1F t1
+panel tri V0B V1B V1F t2
+panel tri V1F V1B V2F t3
+panel tri V1B V2B V2F t4
+panel tri V2F V2B V3F t5
+panel tri V2B V3B V3F t6
+
+neighbors t1 t2 t3
+neighbors t2 t1 t3 t4
+neighbors t3 t1 t2 t4 t5
+neighbors t4 t2 t3 t5 t6
+neighbors t5 t3 t4 t6
+neighbors t6 t4 t5
+
+end_surface
+
+
+surface_mol NMOL red(up) surf1 tri t3  0 0 55
+surface_mol NMOL green(up) surf1 tri t3  0 0 55
+
+output_files FILEROOTout.txt stdout
+output_format csv
+cmd @ 1 set difc green(all) 0
+
+cmd A molcountspace red(all) x -450 450 90 -500 500 0 100 0 FILEROOTout.txt
+cmd A molcountspace green(all) x -450 450 90 -500 500 0 100 0 FILEROOTout.txt
+
+end_file
+

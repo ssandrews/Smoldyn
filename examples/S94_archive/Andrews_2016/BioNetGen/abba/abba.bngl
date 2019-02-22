@@ -1,0 +1,27 @@
+# BioNetGen file, run in Smoldyn with abbasim.txt
+
+setOption("SpeciesLabel","HNauty")
+
+begin model
+begin parameters
+	kab_on	10
+	kab_off	0.1
+	kbb_on	8
+	kbb_off	0.07
+end parameters
+
+begin seed species
+	A(a2b)		0
+	B(b2a,b2b)	0
+end seed species
+
+begin reaction rules
+	# A bind to B
+	A(a2b) + B(b2a) <-> A(a2b!1).B(b2a!1) kab_on,kab_off
+	# B bind to B
+	B(b2b) + B(b2b) <-> B(b2b!1).B(b2b!1) kbb_on,kbb_off
+end reaction rules
+end model
+
+## actions ##
+generate_network({overwrite=>1})

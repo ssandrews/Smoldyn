@@ -1,0 +1,107 @@
+# Filaments
+
+graphics opengl
+random_seed 2
+
+dim 3
+species red
+
+difc red 3
+
+color red white
+
+time_start 0
+time_stop 10000
+time_step 0.01
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 2 r
+
+frame_thickness 0
+
+mol 1 red u u u
+
+start_filament red
+color red
+thickness 4
+polygon edge
+kT 1
+standard_length 2
+standard_angle 0 0 0
+force_length 0
+force_angle 100 80 0
+end_filament
+
+filament red copy red2
+filament red copy red3
+filament red copy red4
+filament red copy red5
+filament red copy red6
+filament red copy red7
+filament red copy red8
+filament red copy red9
+
+filament red first_segment	46.19222236	50.60101155	1	5	4.656180038	0	0
+filament red2 first_segment	76.90132296	26.70912275	1	5	4.351468544	0	0
+filament red3 first_segment	14.89023336	26.50034642	1	5	3.441148613	0	0
+filament red4 first_segment	6.539792795	25.22324169	1	5	4.820311179	0	0
+filament red5 first_segment	9.71197974	91.93590986	1	5	3.612409222	0	0
+filament red6 first_segment	60.51817887	83.9496474	1	5	4.687458285	0	0
+filament red7 first_segment	89.08916243	32.233739	1	5	3.546227169	0	0
+filament red8 first_segment	75.78409173	17.66594918	1	5	0.185272562	0	0
+filament red9 first_segment	76.10217957	84.20461675	1	5	0.730662573	0	0
+
+filament red random_segments 20
+filament red2 random_segments 20
+filament red3 random_segments 20
+filament red4 random_segments 20
+filament red5 random_segments 20
+filament red6 random_segments 20
+filament red7 random_segments 20
+filament red8 random_segments 20
+filament red9 random_segments 20
+
+start_filament green
+color green
+thickness 2
+polygon edge
+kT 1
+standard_length 2
+standard_angle 0 0.5 0.5
+force_length 0
+force_angle 10 0 0
+end_filament
+
+filament green copy green2
+filament green copy green3
+filament green copy green4
+filament green copy green5
+filament green copy green6
+filament green copy green7
+filament green copy green8
+filament green copy green9
+filament green first_segment	68.21505086	46.64608437	1	2	1.691868734	0	0
+filament green2 first_segment	51.732133	55.70341596	1	2	0.764343705	0	0
+filament green3 first_segment	99.77730256	10.79488604	1	2	1.517531223	0	0
+filament green4 first_segment	38.15836432	42.46765614	1	2	2.900687324	0	0
+filament green5 first_segment	44.72956948	20.23398636	1	2	3.640537978	0	0
+filament green6 first_segment	51.06147137	38.56147227	1	2	1.622628482	0	0
+filament green7 first_segment	51.78898054	19.27746835	1	2	3.934631731	0	0
+filament green8 first_segment	54.00703915	12.72020259	1	2	6.087089738	0	0
+filament green9 first_segment	74.0564449	57.76232228	1	2	3.257372706	0	0
+
+filament green random_segments 80
+filament green2 random_segments 80
+filament green3 random_segments 80
+filament green4 random_segments 80
+filament green5 random_segments 80
+filament green6 random_segments 80
+filament green7 random_segments 80
+filament green8 random_segments 80
+filament green9 random_segments 80
+
+end_file
+
+
+

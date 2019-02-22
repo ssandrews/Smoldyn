@@ -1,0 +1,56 @@
+# Allostery test
+
+graphics opengl_good
+graphic_iter 10
+graphic_delay 0
+
+dim 2
+
+boundaries 0 -10 10
+boundaries 1 0 30
+
+time_start 0
+time_stop 10
+time_step 0.001
+
+name red
+name green
+name blue
+
+difc all 0
+
+display_size all 0.8
+color red 1 0 0
+color green 0 1 0
+color blue 0 0 1
+
+reaction back green -> red 10
+reaction fwd red + blue -> green + blue 10
+confspread_radius fwd 5
+
+mol 1 blue -2 5
+mol 1 blue -2 10
+mol 1 blue -2 15
+mol 1 blue -2 20
+mol 1 blue -2 25
+mol 1 red 0 5
+mol 1 red 0 10
+mol 1 red 0 15
+mol 1 red 0 20
+mol 1 red 0 25
+mol 1 green 2 5
+mol 1 green 2 10
+mol 1 green 2 15
+mol 1 green 2 20
+mol 1 green 2 25
+mol 1 blue 4 5
+mol 1 blue 4 10
+mol 1 blue 4 15
+mol 1 blue 4 20
+mol 1 blue 4 25
+
+output_files allosteryout.txt
+cmd i 0 1000 1 molcount allosteryout.txt
+
+end_file
+

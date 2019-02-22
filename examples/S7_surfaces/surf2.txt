@@ -1,0 +1,116 @@
+# Simple bouncing molecules with surfaces
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red green blue
+
+difc red 3
+difc green 2
+difc blue 3
+
+color red red
+color green green
+color blue blue
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+frame_thickness 0
+
+mol 100 red 40 80
+mol 10 red 12 12
+mol 10 red 25 25
+mol 100 green 30 50
+mol 100 blue 30 50
+
+mol 50 red 70 40
+mol 50 green 62 25
+mol 50 blue 78 25
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface surf
+action both red reflect
+action both green absorb
+action both blue transmit
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 2
+panel rect +x 10 10 30
+panel rect +y 10 10 30
+panel tri 20 20 30 37
+panel tri 30 37 40 20
+panel tri 40 20 20 20
+panel cyl 30 80 60 80 10
+panel hemi 30 80 10 1 0 20
+panel hemi 60 80 10 -1 0 20
+panel sph 10 10 8 15
+end_surface
+
+start_surface tunnel
+action both all reflect
+color both 0 0 0
+thickness 2
+panel cyl 10 60 30 60 4
+panel disk 20 60 4 1 0
+end_surface
+
+start_surface jump
+action front all jump
+action back all reflect
+color front 0.6 0 0.5
+color back 0.2 0.6 0.3
+thickness 2
+panel disk 15 60 4 -1 0
+panel disk 25 60 4 1 0
+jump disk0 f <-> disk1 f
+end_surface
+
+start_surface vennout
+action both all reflect
+color both 0 0 0
+panel sph 70 30 25 20
+end_surface
+
+start_surface vennred
+action back all transmit
+action front red reflect
+action front green transmit
+action front blue transmit
+color both red
+panel sph 70 40 -12 15
+end_surface
+
+start_surface venngreen
+action back all transmit
+action front red transmit
+action front green reflect
+action front blue transmit
+color both green
+panel sph 62 25 -12 15
+end_surface
+
+start_surface vennblue
+action back all transmit
+action front red transmit
+action front green transmit
+action front blue reflect
+color both blue
+panel sph 78 25 -12 15
+end_surface
+
+
+end_file
+

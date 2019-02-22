@@ -1,0 +1,40 @@
+# BioNetGen file, run in Smoldyn with surfacestatessim.txt
+
+setOption("SpeciesLabel","HNauty")
+
+begin model
+begin parameters
+	krl_on	20
+	krl_off	0.005
+	krm_on	10
+	krm_off	0.1
+	k_phos	1
+	k_unphos 0.01
+end parameters
+
+begin molecule types
+	L(l2r)
+	R(r2l,r2m)
+	M(m2r,psite~u~p)
+end molecule types
+
+begin seed species
+	L(l2r)		0
+	R(r2l,r2m)	0
+	M(m2r,psite~u)	0
+end seed species
+
+begin reaction rules
+	L(l2r) + R(r2l) <-> L(l2r!1).R(r2l!1)		krl_on,krl_off
+	R(r2m) + M(m2r) <-> R(r2m!1).M(m2r!1)		krm_on,krm_off
+	R(r2l!+,r2m!1).M(m2r!1,psite~u) -> R(r2l!+,r2m!1).M(m2r!1,psite~p)	k_phos
+	M(psite~p) -> M(psite~u)		k_unphos
+end reaction rules
+
+begin observables
+	Species Rbound R(r2l!+)
+end observables
+end model
+
+## actions ##
+generate_network({overwrite=>1})

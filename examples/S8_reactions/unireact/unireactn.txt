@@ -1,0 +1,33 @@
+# Unimolecular reactions, multiple mechanisms
+
+graphics opengl
+
+dim 3
+species A B C D
+
+difc A 1
+
+color A 1 0 0
+color B 0 1 0
+color C 0 0 1
+color D 0.7 0.7 0.2
+
+time_start 0
+time_stop 50
+time_step 1
+
+boundaries 0 0 100 r
+boundaries 1 0 100 r
+boundaries 2 0 100 r
+
+mol 10000 A u u u
+
+output_files unireactnout.txt
+cmd e molcount unireactnout.txt
+
+reaction r1 A -> B 0.1
+reaction r2 A -> C 0.05
+reaction r3 A -> D 0.01
+
+end_file
+

@@ -1,0 +1,58 @@
+# Quantitative test of diffusion on 3D surfaces
+
+define SEED 1
+
+graphics opengl
+random_seed SEED
+
+dim 3
+boundaries x -50 50
+boundaries y -50 50
+boundaries z -50 50
+
+species red
+
+difc red(all) 6
+
+color red(all) red
+display_size red(all) 2
+
+time_start 0
+time_stop 9.99
+time_step 1
+
+frame_thickness 0
+
+start_surface surf1
+color both black
+polygon both edge
+
+panel tri  0 0 0   50  0 0   50 50 0  t1
+panel tri  0 0 0   50 50 0    0 50 0  t2
+panel tri  0 0 0    0 50 0  -50 50 0  t3
+panel tri  0 0 0  -50 50 0  -50  0 0  t4
+panel tri  0 0 0  -50  0 0  -50 -50 0  t5
+panel tri  0 0 0  -50 -50 0   0 -50 0  t6
+panel tri  0 0 0    0 -50 0  50 -50 0  t7
+panel tri  0 0 0   50 -50 0  50  0 0  t8
+
+neighbors t1 t2 t3 t4 t5 t6 t7 t8
+neighbors t2 t1 t3 t4 t5 t6 t7 t8
+neighbors t3 t1 t2 t4 t5 t6 t7 t8
+neighbors t4 t1 t2 t3 t5 t6 t7 t8
+neighbors t5 t1 t2 t3 t4 t6 t7 t8
+neighbors t6 t1 t2 t3 t4 t5 t7 t8
+neighbors t7 t1 t2 t3 t4 t5 t6 t8
+neighbors t8 t1 t2 t3 t4 t5 t6 t7
+
+end_surface
+
+surface_mol 1000000 red(up) surf1 tri t1  2 1 0
+
+text_display red(all)
+
+output_files FILEROOTout.txt
+cmd A molcountspaceradial red(all) 2 1 0  50 100 0 FILEROOTout.txt
+
+end_file
+

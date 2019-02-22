@@ -1,0 +1,55 @@
+# Simple bouncing molecules in a 3-D system
+
+graphics opengl
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red green
+random_seed 0
+
+difc red 3
+difc green 1
+
+color red red
+color green green
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+mol 20 red 10 50 50
+mol 10 green u u u
+
+
+start_surface walls
+action both all reflect
+polygon both edge
+panel rect -x 100 0 0 100 100
+panel rect +y 0 0 0 100 100
+panel rect -y 0 100 0 100 100
+panel rect +z 0 0 0 100 100
+panel rect -z 0 0 100 100 100
+end_surface
+
+start_surface portsurf
+action front all port
+action back all reflect
+color front 0.2 0 0 0.5
+color back black
+polygon both face
+panel rect +x 0 0 0 100 100
+end_surface
+
+start_port testport
+surface portsurf
+face front
+end_port
+
+cmd e porttransport testport testport
+cmd e warnescapee all 
+
+end_file
+

@@ -1,0 +1,67 @@
+# Smoldyn configuration file to run abba.bngl BioNetGen network.
+
+random_seed 1
+
+# Graphical output
+graphics opengl_good
+
+# System space and time definitions
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+time_start 0
+time_stop 500
+time_step 0.05
+
+# Molecular species and their properties
+species L R M.1.0 M.1.1
+difc L 3
+difc R(up) 0.2
+difc M.1.0 2
+difc M.1.1 1.5
+color L(all) green
+color R(all) blue
+color M.1.0(all) orange
+color M.1.1(all) red
+display_size all(all) 2
+
+# BioNetGen parameters
+start_bng lrm
+multiply unimolecular_rate 1
+multiply bimolecular_rate 1
+#BNG2_path ../../../source/BioNetGen/BNG2.pl
+monomer_state L fsoln
+monomer_state R up
+monomer_state M bsoln
+expand_rules lrm.bngl
+read_file lrm.net
+end_bng
+
+# Surface parameters
+start_surface membrane
+action both all(all) reflect
+panel rect +1 0 50 100
+end_surface
+
+start_surface outsides
+action both all(all) reflect
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+# initial molecules
+surface_mol 20 R(up) membrane all all
+mol 20 L 50 80
+mol 20 M.1.0 50 20
+
+text_display time M.1.1 M* Rbound(all)
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

@@ -1,0 +1,32 @@
+# Reversible bimolecular reaction
+
+graphics opengl
+
+dim 3
+species A B C
+
+color A 1 0 0
+color B 0 1 0
+color C 0 0 1
+
+difc all 1
+
+time_start 0
+time_stop 200
+time_step 1
+
+boundaries 0 0 100 p
+boundaries 1 0 100 p
+boundaries 2 0 100 p
+
+mol 1000 A u u u
+mol 1000 B u u u
+
+output_files equilout.txt
+cmd e molcount equilout.txt
+
+reaction fwd  A + B -> C 20
+reaction back C -> A + B 0.05
+
+end_file
+

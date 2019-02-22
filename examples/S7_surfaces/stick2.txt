@@ -1,0 +1,59 @@
+# File to test molecule sticking, unsticking, and partial transmission
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red green blue
+
+difc red 3
+difc red(front) 0
+difc green 3
+difc green(back) 1
+difc blue 3
+
+color red(all) 1 0 0
+color green(all) 0 1 0
+color blue(all) 0 0 1
+display_size red(all) 5
+display_size green(all) 5
+display_size blue(all) 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+cmd b killmolinsphere red all
+cmd b pause
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface stick
+rate red fsoln front 1
+rate red front fsoln 0.1
+rate green bsoln back 1
+rate green back bsoln 0.1
+rate blue fsoln bsoln 1		# net pumping of blue inward
+rate blue bsoln fsoln 0.1
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 1
+panel sph 50 50 20 20
+end_surface
+
+mol 100 red u u
+mol 50 green 50 50
+mol 50 blue 20 20
+surface_mol 100 red(front) stick all all
+
+end_file
+

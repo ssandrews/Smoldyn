@@ -1,0 +1,43 @@
+# This file just checks and illustrates the meansqrdisp2 command
+
+define MOLS 500
+
+graphics opengl
+random_seed 1
+
+dim 2
+boundaries x 0 100 r
+boundaries y 0 100 r
+
+species kinase phosphatase protein proteinp
+
+difc kinase 0
+difc phosphatase 0
+difc protein 10
+difc proteinp 10
+
+color kinase red
+color phosphatase orange
+color protein darkblue
+color proteinp lightblue
+
+display_size all 2
+
+time_start 0
+time_stop 1000
+time_step 0.02
+
+mol 1 kinase 20 50
+mol 1 phosphatase 70 50
+mol MOLS protein u u
+
+reaction rk kinase + protein -> kinase + proteinp 500
+reaction rp phosphatase + proteinp -> phosphatase + protein 500
+
+output_files stdout
+cmd e meansqrdisp2 proteinp 0 c r MOLS 4 stdout
+
+end_file
+
+
+

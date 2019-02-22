@@ -1,0 +1,38 @@
+# Created by BioNetGen 2.2.6-stable
+setOption("SpeciesLabel","HNauty")
+begin parameters
+    1 kfwd  20  # Constant
+    2 krev  0.1  # Constant
+end parameters
+begin species
+    1 A(left,right) 0
+    2 A(left!1,right).A(left,right!1) 0
+    3 A(left!1,right!2).A(left,right!1).A(left!2,right) 0
+    4 A(left!1,right!2).A(left!2,right!3).A(left,right!1).A(left!3,right) 0
+    5 A(left!1,right!2).A(left!3,right!1).A(left!2,right!4).A(left,right!3).A(left!4,right) 0
+    6 A(left!1,right!2).A(left!2,right!3).A(left!4,right!1).A(left!3,right!5).A(left,right!4).A(left!5,right) 0
+    7 A(left!1,right!2).A(left!3,right!1).A(left!2,right!4).A(left!5,right!3).A(left!4,right!6).A(left,right!5).A(left!6,right) 0
+    8 A(left!1,right!2).A(left!2,right!3).A(left!4,right!1).A(left!3,right!5).A(left!6,right!4).A(left!5,right!7).A(left,right!6).A(left!7,right) 0
+    9 A(left!1,right!2).A(left!3,right!1).A(left!2,right!4).A(left!5,right!3).A(left!4,right!6).A(left!7,right!5).A(left!6,right!8).A(left,right!7).A(left!8,right) 0
+   10 A(left!1,right!2).A(left!2,right!3).A(left!4,right!1).A(left!3,right!5).A(left!6,right!4).A(left!5,right!7).A(left!8,right!6).A(left!7,right!9).A(left,right!8).A(left!9,right) 0
+end species
+begin reactions
+    1 1,1 2 kfwd #_R1
+    2 1,2 3 kfwd #_R1
+    3 2 1,1 krev #_reverse__R1
+    4 1,3 4 kfwd #_R1
+    5 3 1,2 krev #_reverse__R1
+    6 1,4 5 kfwd #_R1
+    7 4 1,3 krev #_reverse__R1
+    8 1,5 6 kfwd #_R1
+    9 5 1,4 krev #_reverse__R1
+   10 1,6 7 kfwd #_R1
+   11 6 1,5 krev #_reverse__R1
+   12 1,7 8 kfwd #_R1
+   13 7 1,6 krev #_reverse__R1
+   14 1,8 9 kfwd #_R1
+   15 8 1,7 krev #_reverse__R1
+   16 1,9 10 kfwd #_R1
+   17 9 1,8 krev #_reverse__R1
+   18 10 1,9 krev #_reverse__R1
+end reactions

@@ -1,0 +1,86 @@
+# Demonstration of jumping surfaces, used to create holes in spheres
+# File was written by Alexandra Jilkine and modified by Steve Andrews
+
+random_seed 1
+
+graphics opengl
+graphic_iter 10
+
+dim 3
+species U
+
+difc U(back) 1
+difc U(soln) 100
+color U(back) 1 0 0
+color U(soln) 0 1 0.5
+
+molecule_lists list1 list2
+mol_list U(soln) list1
+mol_list U(back) list2 
+
+display_size U(all) 5
+
+time_start 0
+time_stop 10
+time_step 0.002
+
+boundaries 0 -20 20
+boundaries 1 -10 10
+boundaries 2 -10 10
+
+frame_thickness 0
+
+start_surface dumbbell
+action both U reflect
+color both 0.5 0.5 0.5
+polygon both edge
+rate U bsoln back 0		# enable to see surface diffusion
+rate U back bsoln 10
+panel cyl -5.1 0 0  5.1 0 0  1 30 30 c1
+panel sph -10 0 0 5 30 30 s1
+panel sph 10 0 0 5 30 30 s2
+neighbors c1 s1
+neighbors c1 s2
+end_surface
+
+
+start_surface jumpsurface
+action both all jump
+color both 0 0 1
+polygon both edge
+panel disk -5.2 0 0 1  1 0 0  10 d1a
+panel disk -4.9 0 0 1  1 0 0  10 d1b
+panel disk 4.9 0 0 1  -1 0 0  10 d2a
+panel disk 5.2 0 0 1  -1 0 0  10 d2b
+jump d1a back <-> d1b front
+jump d2a front <-> d2b back
+end_surface
+
+
+start_compartment left
+surface dumbbell
+point -10 0 0
+end_compartment
+
+start_compartment middle
+surface dumbbell
+point 0 0.5 0.5
+end_compartment
+
+start_compartment right
+surface dumbbell
+point 10 0 0
+end_compartment
+
+
+compartment_mol 500 U(solution) left
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+
+
+

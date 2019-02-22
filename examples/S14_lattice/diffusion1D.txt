@@ -1,0 +1,53 @@
+# Simple bouncing molecules in a 1D system, used to illustrate basic
+# use of lattices.  This file creates adjacent lattice and particle regions.
+# The right half is for particles and the left for lattice.
+
+graphics opengl_good
+
+dim 1
+species red
+
+difc red 1
+
+color red red
+display_size red 0.01
+
+time_start 0
+time_stop 1
+time_step 0.00001 
+
+boundaries x 0 1		# system is x-axis from 0 to 1
+
+mol 1 red 0.1
+
+start_surface walls		# walls at system boundaries
+action both all reflect
+panel rect +x 0
+panel rect -x 1
+end_surface
+
+start_surface portsurf		# port is at x=0.5
+action front all port
+color front 0.2 0 0 0.5
+color back 0 0 0
+panel rect -x 0.5
+end_surface
+
+start_port testport
+surface portsurf
+face front
+end_port
+
+start_lattice testlattice	# lattice is also (0,0,0) to (1,1,1)
+type nsv			# lattice is right half of system
+port testport
+boundaries x 0 1
+lengthscale 0.05
+species all
+make_particle back all
+reactions all
+end_lattice
+
+
+end_file
+

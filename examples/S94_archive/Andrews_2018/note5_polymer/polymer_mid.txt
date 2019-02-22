@@ -1,0 +1,47 @@
+# Smoldyn configuration file to test wildcards in reactions
+# This file simulates polymerization, where any two polymers can join end-to-end,
+# or any polymer can divide at any place.
+
+define FWDRATE	0.1
+define REVRATE	0.1
+
+# Graphical output
+graphics opengl
+graphic_iter 1000
+
+# System space and time definitions
+dim 3
+boundaries x 0 10 p
+boundaries y 0 10 p
+boundaries z 0 10 p
+time_start 0
+time_stop 1000
+time_step 0.01
+
+# Molecular species and their properties
+species A
+difc A 1
+color A red
+display_size A(all) 2
+
+# Reactions
+reaction_rule rxn * + * <-> **	2*FWDRATE REVRATE
+
+# the forward reaction rate is multiplied by 2 because the wildcards only consider a
+# single possible bond with a reaction, whereas the reaction allows two possible bonds,
+# which are on the left and right sides of the first reactant.
+
+expand_rules on-the-fly
+
+# initial molecules
+mol 20000 A u u u
+
+output_files polymer_midout.txt stdout
+output_format csv
+cmd N 1000 molcount polymer_midout.txt
+cmd N 1000 molcount stdout
+
+cmd A diagnostics all
+
+end_file
+

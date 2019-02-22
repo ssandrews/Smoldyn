@@ -1,0 +1,38 @@
+# Simple bouncing molecules in a 3-D system
+# test of ifdefine statements
+
+define SHOWBLUE
+#undefine SHOWBLUE
+
+graphics opengl
+
+dim 3
+species red green blue
+
+difc red 3
+difc green 1
+difc blue 2
+
+color red red
+color green green
+color blue blue
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+ifdefine SHOWBLUE
+  mol 50 blue u 90-100 u
+else
+  mol 30 green u u u
+endif
+mol 100 red 20 30 20
+
+end_file
+
+
+

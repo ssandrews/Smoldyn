@@ -1,0 +1,34 @@
+# Test of append files
+
+graphics opengl
+
+dim 3
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+
+species A B C
+
+color A red
+color B lime
+color C blue
+
+difc all 1
+
+time_start 0
+time_stop 200
+time_step 1
+
+mol 1000 A u u u
+mol 1000 B u u u
+
+output_files stdout
+append_files appendfileout.txt
+cmd N 10 molcount stdout
+cmd N 10 molcount appendfileout.txt
+
+reaction fwd  A + B -> C 20
+reaction back C -> A + B 0.05
+
+end_file
+

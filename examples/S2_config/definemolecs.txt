@@ -1,0 +1,21 @@
+# This file of Smoldyn statements is designed to be read by config.txt.
+# It will not run on its own.
+
+define 20+10 30
+define TWENTY 20
+
+species red
+species green
+
+difc red 3
+difc green 1
+
+read_file ROOTcolors.txt
+
+mol 100 red TWENTY TWENTY+10 TWENTY
+mol 30 green u u u
+
+end_file
+
+
+

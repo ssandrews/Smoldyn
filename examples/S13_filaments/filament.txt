@@ -1,0 +1,264 @@
+# Filaments
+
+#graphics opengl
+#random_seed 2
+graphics opengl_better
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 2 r
+
+species red
+
+difc red 3
+
+color red white
+
+time_start 0
+time_stop 10000
+time_step 0.01
+
+frame_thickness 0
+
+mol 1 red u u u
+
+start_filament template
+color black
+thickness 2
+polygon edge
+kT 1
+treadmill_rate 1
+standard_length 5
+standard_angle 0 0 0
+force_length 0
+force_angle 100 0 0
+random_segments 5 10 50 1
+end_filament
+
+
+filament template copy fil2
+
+/*
+filament template copy fil3
+filament template copy fil4
+filament template copy fil5
+filament template copy fil6
+filament template copy fil7
+filament template copy fil8
+filament template copy fil9
+*/
+
+/*
+filament template copy fil10
+filament template copy fil11
+filament template copy fil12
+filament template copy fil13
+filament template copy fil14
+filament template copy fil15
+filament template copy fil16
+filament template copy fil17
+filament template copy fil18
+filament template copy fil19
+filament template copy fil20
+filament template copy fil21
+filament template copy fil22
+filament template copy fil23
+filament template copy fil24
+filament template copy fil25
+filament template copy fil26
+filament template copy fil27
+filament template copy fil28
+filament template copy fil29
+filament template copy fil30
+filament template copy fil31
+filament template copy fil32
+filament template copy fil33
+filament template copy fil34
+filament template copy fil35
+filament template copy fil36
+filament template copy fil37
+filament template copy fil38
+filament template copy fil39
+filament template copy fil40
+filament template copy fil41
+filament template copy fil42
+filament template copy fil43
+filament template copy fil44
+filament template copy fil45
+filament template copy fil46
+filament template copy fil47
+filament template copy fil48
+filament template copy fil49
+filament template copy fil50
+filament template copy fil51
+filament template copy fil52
+filament template copy fil53
+filament template copy fil54
+filament template copy fil55
+filament template copy fil56
+filament template copy fil57
+filament template copy fil58
+filament template copy fil59
+filament template copy fil60
+filament template copy fil61
+filament template copy fil62
+filament template copy fil63
+filament template copy fil64
+filament template copy fil65
+filament template copy fil66
+filament template copy fil67
+filament template copy fil68
+filament template copy fil69
+filament template copy fil70
+filament template copy fil71
+filament template copy fil72
+filament template copy fil73
+filament template copy fil74
+filament template copy fil75
+filament template copy fil76
+filament template copy fil77
+filament template copy fil78
+filament template copy fil79
+filament template copy fil80
+filament template copy fil81
+filament template copy fil82
+filament template copy fil83
+filament template copy fil84
+filament template copy fil85
+filament template copy fil86
+filament template copy fil87
+filament template copy fil88
+filament template copy fil89
+filament template copy fil90
+filament template copy fil91
+filament template copy fil92
+filament template copy fil93
+filament template copy fil94
+filament template copy fil95
+filament template copy fil96
+filament template copy fil97
+filament template copy fil98
+filament template copy fil99
+*/
+
+/*
+filament template copy fil102
+filament template copy fil103
+filament template copy fil104
+filament template copy fil105
+filament template copy fil106
+filament template copy fil107
+filament template copy fil108
+filament template copy fil109
+filament template copy fil110
+filament template copy fil111
+filament template copy fil112
+filament template copy fil113
+filament template copy fil114
+filament template copy fil115
+filament template copy fil116
+filament template copy fil117
+filament template copy fil118
+filament template copy fil119
+filament template copy fil120
+filament template copy fil121
+filament template copy fil122
+filament template copy fil123
+filament template copy fil124
+filament template copy fil125
+filament template copy fil126
+filament template copy fil127
+filament template copy fil128
+filament template copy fil129
+filament template copy fil130
+filament template copy fil131
+filament template copy fil132
+filament template copy fil133
+filament template copy fil134
+filament template copy fil135
+filament template copy fil136
+filament template copy fil137
+filament template copy fil138
+filament template copy fil139
+filament template copy fil140
+filament template copy fil141
+filament template copy fil142
+filament template copy fil143
+filament template copy fil144
+filament template copy fil145
+filament template copy fil146
+filament template copy fil147
+filament template copy fil148
+filament template copy fil149
+filament template copy fil150
+filament template copy fil151
+filament template copy fil152
+filament template copy fil153
+filament template copy fil154
+filament template copy fil155
+filament template copy fil156
+filament template copy fil157
+filament template copy fil158
+filament template copy fil159
+filament template copy fil160
+filament template copy fil161
+filament template copy fil162
+filament template copy fil163
+filament template copy fil164
+filament template copy fil165
+filament template copy fil166
+filament template copy fil167
+filament template copy fil168
+filament template copy fil169
+filament template copy fil170
+filament template copy fil171
+filament template copy fil172
+filament template copy fil173
+filament template copy fil174
+filament template copy fil175
+filament template copy fil176
+filament template copy fil177
+filament template copy fil178
+filament template copy fil179
+filament template copy fil180
+filament template copy fil181
+filament template copy fil182
+filament template copy fil183
+filament template copy fil184
+filament template copy fil185
+filament template copy fil186
+filament template copy fil187
+filament template copy fil188
+filament template copy fil189
+filament template copy fil190
+filament template copy fil191
+filament template copy fil192
+filament template copy fil193
+filament template copy fil194
+filament template copy fil195
+filament template copy fil196
+filament template copy fil197
+filament template copy fil198
+filament template copy fil199
+*/
+
+filament fil2 color red
+
+start_surface bounds
+action both all reflect
+polygon both edge
+thickness 1
+panel cyl 50 50 0 50 50 2 50 50 1
+#panel rect +0	0 0 0		100 2
+#panel rect -0	100 0 0		100 2
+#panel rect +1	0 0 0		100 2
+#panel rect -1	0 100 0		100 2
+#panel rect +2	0 0 0		100 100
+#panel rect -2	0 0 2		100 100
+end_surface
+
+end_file
+
+
+

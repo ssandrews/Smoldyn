@@ -1,0 +1,66 @@
+# Crowding test
+# This tests excluded volume with reactions for surface-bound molecules
+
+graphics opengl_better
+
+light room ambient 0 0 0
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
+
+
+dim 3
+
+boundaries x 0 20
+boundaries y 0 20
+boundaries z 0 20
+
+frame_thickness 0
+
+time_start 0
+time_stop 100
+time_step 0.005
+
+species red green
+
+difc red(all) 1
+difc green(all) 0.5
+
+display_size red(all) 0.5
+color red(all) red
+display_size green(all) 1
+color green(all) green
+
+reaction rxn1 red(up) + red(up) -> red(up) + red(up)
+binding_radius rxn1 1
+product_placement rxn1 bounce
+
+reaction rxn2 red(up) + green(up) -> red(up) + green(up)
+binding_radius rxn2 1.5
+product_placement rxn2 bounce
+reaction_probability rxn2 0.99
+
+reaction rxn2a red(up) + green(up) -> green(up) + green(up)
+binding_radius rxn2a 1.5
+product_placement rxn2a bounce 2
+reaction_probability rxn2a 0.1
+
+reaction rxn3 green(up) + green(up) -> green(up) + green(up)
+binding_radius rxn3 2
+product_placement rxn3 bounce
+
+start_surface ball
+polygon both face
+color both darkgrey
+panel sphere 10 10 10  10  20 20
+end_surface
+
+surface_mol 250 red(up) ball sphere all
+surface_mol 5 green(up) ball sphere all
+
+text_display time red(up) green(up)
+
+
+end_file
+

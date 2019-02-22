@@ -1,0 +1,47 @@
+# Simple A+B <-> C equilibrium
+# Box sizes were varied from 1 to 10 to see how it affected runtime.
+
+graphics none
+graphic_iter 10
+
+dim 3
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+
+species A B C
+boxsize 10
+accuracy 10
+
+difc A 1
+difc B 1
+difc C 1
+
+color A red
+color B green
+color C blue
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+/*
+molecule_lists onlylist
+mol_list all onlylist
+*/
+
+molecule_lists Alist Blist Clist
+mol_list A Alist
+mol_list B Blist
+mol_list C Clist
+
+cmd i 0 100 10 molcount
+
+mol 1000 A u u u
+mol 1000 B u u u
+
+reaction revrxn C -> A + B 0.1
+reaction fwdrxn A + B -> C 100
+
+end_file
+

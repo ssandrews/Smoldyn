@@ -1,0 +1,73 @@
+# Simulation file of basic diffusion and reaction
+# This file is used to test and demonstrate manipulation commands
+
+graphics opengl_good
+graphic_iter 1
+graphic_delay 10
+accuracy 5
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red green blue black pink
+
+time_start 0
+time_stop 300
+time_step 0.1
+
+output_files stdout
+
+cmd @ 10 pointsource red 100 30 50 50
+cmd @ 20 pointsource green 100 60 60 50
+cmd @ 30 volumesource blue 100 10 100 10 100 20 20
+cmd @ 40 killmol red
+cmd @ 50 pointsource black 1 50 50 50
+cmd @ 60 killmolprob green 0.7
+cmd @ 70 equilmol blue red 0.9
+cmd @ 80 replacexyzmol pink 50 50 50
+cmd @ 90 replacevolmol red black 0.9 0 100 50 100 0 100
+cmd i 100 110 0.1 modulatemol black red 1 0
+cmd @ 120 react1 red rxn
+cmd @ 130 react1 black rxn
+cmd @ 140 killmol all
+cmd @ 150 volumesource red 200 0 100 0 100 0 100
+cmd @ 160 fixmolcount red 250
+cmd @ 170 fixmolcountonsurf blue(up) 50 sphere
+cmd @ 180 fixmolcountonsurf blue(up) 20 sphere
+cmd @ 190 settimestep 0.5
+
+difc red 1
+difc green 1
+difc blue 1
+color red(all) 1 0 0
+color green 0 1 0
+color blue(all) 0 0 1
+color black 0 0 0
+color pink 1 0.5 0.5
+display_size all(all) 2
+display_size black 5
+display_size pink 5
+
+start_surface walls
+action both all reflect
+polygon both none
+panel rect +0 0 0 0 100 100
+panel rect -0 100 0 0 100 100
+panel rect +1 0 0 0 100 100
+panel rect -1 0 100 0 100 100
+panel rect +2 0 0 0 100 100
+panel rect -2 0 0 100 100 100
+end_surface
+
+start_surface sphere
+action both all reflect
+polygon both edge
+panel sph 30 30 30 20 10 10
+end_surface
+
+reaction rxn red -> 0 0.02
+
+end_file
+

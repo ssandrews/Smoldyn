@@ -1,0 +1,36 @@
+# Simple bouncing molecules in a 2-D system
+
+graphics opengl
+graphic_iter 10000000
+
+quit_at_end yes
+
+dim 2
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+
+species red
+species green
+
+difc red 3
+difc green 1
+
+color red red
+color green green
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 20 red u u
+mol 8 green 80 40
+
+cmd @ 200 updategraphics
+cmd @ 200 echo stdout "update\n"
+
+
+end_file
+
+
+

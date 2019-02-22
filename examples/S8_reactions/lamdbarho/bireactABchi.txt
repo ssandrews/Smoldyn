@@ -1,0 +1,35 @@
+# Bimolecular reactions
+
+graphics none
+
+dim 3
+species A
+species B
+species C
+
+difc all 1
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+boundaries 0 0 100 p
+boundaries 1 0 100 p
+boundaries 2 0 100 p
+
+mol 1000 A u u u
+mol 1000 B u u u
+
+reaction rxn A + B <-> C 10 2
+reaction_probability rxnfwd 0.5
+#reaction_chi rxnfwd 0.1
+
+#product_placement rxnrev unbindrad 1
+#product_placement rxnrev ratio 2
+#product_placement rxnrev pgem 0.2
+#product_placement rxnrev pgemmax 0.2
+
+
+
+end_file
+

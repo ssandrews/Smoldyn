@@ -1,0 +1,91 @@
+# File to test jumping boundaries with surfaces
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red green
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+display_size red 5
+display_size green 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 50 red 20 20
+mol 40 green 65 35
+mol 40 green 30 70
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface surf
+action both all reflect
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 2
+panel rect +x 10 10 20
+panel rect -x 30 10 20
+panel rect +y 10 10 20
+panel rect -y 10 30 20
+panel tri 40 10 60 10
+panel tri 60 10 50 30
+panel tri 50 30 40 10
+panel sph 80 20 10 20
+panel cyl 20 50 50 50 10
+panel cyl 70 50 80 80 10
+panel hemi 20 50 10 1 0 20
+panel hemi 70 50 10 10 30 20
+panel disk 50 50 10 -1 0
+panel disk 80 80 10 -10 -30
+end_surface
+
+start_surface
+name jump
+action front all jump
+action back all reflect
+color front 0 0.5 1
+color back 0 0 0
+thickness 2
+panel rect -x 28 15 10
+panel rect +x 48 11 10
+panel tri 53 22 55 18
+panel tri 71 22 73 18
+panel sph 85 20 3 20
+panel sph 20 50 5 20
+panel hemi 40 50 6 1 0 20
+panel hemi 70 50 -4 1 0 20
+panel disk 80 79 5 -1 -3
+panel disk 80 81 5 1 3
+panel cyl 30 65 30 75 -5
+panel cyl 30 65 30 75 10
+panel disk 30 65 10 0 1
+panel disk 30 75 10 0 -1
+jump rect0 f <-> rect1 f
+jump tri0 f <-> tri1 f
+jump sph0 f <-> sph1 f
+jump hemi0 f <-> hemi1 f
+jump disk0 f <-> disk1 f
+jump cyl0 f <-> cyl1 f
+jump disk2 f <-> disk2 f
+jump disk3 f <-> disk3 f
+end_surface
+
+cmd b pause
+
+end_file
+

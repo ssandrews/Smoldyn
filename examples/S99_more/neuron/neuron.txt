@@ -1,0 +1,123 @@
+# An attempt at a neuron simulation
+
+# ---------- General parameters ---------
+
+graphics opengl
+graphic_iter 1000
+
+dim 3
+accuracy 5
+
+boundaries 0 0 100
+boundaries 1 0 100
+boundaries 2 0 100
+
+time_start 0
+time_stop 10000
+time_step 0.02
+
+# ----------- Molecules -------------
+
+species protein
+species Na
+species K
+species protein_K
+species protein_Na
+species Ach
+species channel
+species channel_Ach
+
+difc protein 0
+difc Na 10
+difc K 10
+difc protein_K 0
+difc protein_Na 0
+difc Ach 5
+difc channel 0
+difc channel_Ach 0
+
+color protein 0.8 0.8 0.8
+color Na 1 0 0
+color K 0 1 0
+color protein_K 0.2 0.8 0.2
+color protein_Na 1 0.5 0.5
+color Ach 0 0 0.5
+color channel 0 0 0
+color channel_Ach 0 0 1
+
+display_size protein 5
+display_size Na 3
+display_size K 3
+display_size protein_Na 5
+display_size protein_K 5
+display_size Ach 3
+display_size channel 5
+display_size channel_Ach 5
+
+# ------------- surfaces --------------
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+thickness 1
+polygon both edge
+panel rect +0 0 0 0 100 100
+panel rect -0 100 0 0 100 100
+panel rect +1 0 0 0 100 100
+panel rect -1 0 100 0 100 100
+panel rect +2 0 0 0 100 100
+panel rect -2 0 0 100 100 100
+end_surface
+
+start_surface membrane
+action both protein reflect
+rate K fsoln bsoln 0.02
+rate K bsoln fsoln 0.02
+action front Na reflect
+rate Na bsoln fsoln 0.05
+color both 0 0 1 0.5
+thickness 1
+polygon both face
+panel rect +0 20 0 0 100 100 panel1
+end_surface
+
+# -------------- reactions ---------------
+
+reaction NaPbind    Na + protein -> protein_Na 1000
+reaction NaPunbind  protein_Na -> Na + protein 0.0002
+product_placement NaPunbind pgemmax 0.2
+
+reaction KPbind     K + protein -> protein_K 1000
+reaction KPunbind   protein_K -> K + protein 0.01
+product_placement KPunbind pgemmax 0.2
+
+reaction AchCbind   Ach + channel(up) -> channel_Ach(up) 500
+reaction AchCunbind channel_Ach(up) -> Ach + channel(up) 0.0002
+reaction Achuptake  Ach -> 0 0.002
+product_placement AchCunbind pgemmax 0.2
+
+reaction Nain       channel_Ach(up) + Na(fsoln) -> channel_Ach(up) + Na(bsoln) 100
+reaction Naout      channel_Ach(up) + Na(bsoln) -> channel_Ach(up) + Na(fsoln) 100
+product_placement Nain pgemmax 0.2
+product_placement Naout pgemmax 0.2
+
+
+# ------------- individual molecules --------------
+
+mol 25 protein 0-20 u u
+mol 75 protein_K 0-20 u u
+mol 100 Na 20-100 u u
+mol 10 K u u u
+surface_mol 100 channel(up) membrane rect panel1
+
+# ----------- commands --------------------
+
+output_files neuroninside.txt neuronoutside.txt
+cmd n 50 molcountinbox 0 20 0 100 0 100 neuroninside.txt
+cmd n 50 molcountinbox 20 100 0 100 0 100 neuronoutside.txt
+cmd @ 3000 pointsource Ach 400 99 50 50
+
+end_file
+
+
+

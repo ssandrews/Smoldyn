@@ -1,0 +1,35 @@
+# Demonstration of absorbing, periodic, and reflective boundaries
+
+random_seed 1
+
+graphics opengl
+
+dim 2
+species red green
+
+difc red 3
+difc green 3
+
+color red red
+color green green
+
+time_start 0
+time_stop 20
+time_step 0.01
+
+low_wall 0 0 a
+high_wall 0 100 r
+boundaries 1 0 100 p
+
+mol 300 red u u
+mol 30 green 50 5
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+
+
+

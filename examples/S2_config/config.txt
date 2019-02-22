@@ -1,0 +1,26 @@
+# Simple bouncing molecules in a 3-D system
+
+/*
+This file illustrates comments and multiple source files.
+The prior comment, started with a #, was single line, whereas
+this one is multiline.
+*/
+
+graphics opengl
+
+dim 3
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+read_file configmolecs.txt	# molecule information
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+end_file
+
+
+

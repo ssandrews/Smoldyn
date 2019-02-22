@@ -1,0 +1,44 @@
+# File to illustrate variables and formulas
+
+
+graphics opengl
+
+dim 3
+
+variable min = 0
+variable max = 100
+
+boundaries x min max r
+boundaries y min max r
+boundaries z min max r
+
+variable w = 8%3
+variable x = 5^2-3
+variable y = ((x-2)/5)^(1/2)
+variable z = -2^(-3^2)
+variable a = 1e5/2e3
+variable b = sin(5)+1
+variable c = pow(2,5)
+
+species red green
+
+difc red x
+difc green 2*y
+
+color red red
+color green green
+
+time_start 0
+time_stop 10
+time_step 0.01
+
+reaction rxn red -> green 1/10
+
+mol 101 red u u u
+
+cmd B evaluate stdout molcount(red)
+
+end_file
+
+
+

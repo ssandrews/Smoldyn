@@ -1,0 +1,33 @@
+# Bimolecular reactions
+
+graphics opengl_good
+
+dim 2
+species A B C
+
+color A red
+color B green
+color C blue
+
+display_size all 2
+
+difc all 1
+
+time_start 0
+time_stop 1000
+time_step 0.1
+
+boundaries 0 0 100 p
+boundaries 1 0 100 p
+
+mol 50 A u u
+mol 50 B u u
+
+reaction fwd A + B -> C 50
+reaction rev C -> A + B 0.2
+product_placement rev pgem 0.1
+
+text_display A B C
+
+end_file
+

@@ -1,0 +1,52 @@
+# File to test transmission boundaries with surfaces
+
+graphics opengl
+
+dim 1
+boundaries x 0 100
+
+species red green
+
+difc red 3
+difc green 3
+
+color red 1 0 0
+color green 0 1 0
+display_size red 5
+display_size green 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+mol 5 red 15
+mol 5 red 45
+mol 5 red 75
+mol 5 green 5
+mol 5 green 25
+mol 5 green 60
+mol 5 green 90
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +x 0
+panel rect -x 100
+end_surface
+
+start_surface surf
+action both all transmit
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 2
+panel rect +x 10
+panel rect -x 20
+panel tri 40
+panel tri 50
+panel sph 75 5
+end_surface
+
+cmd b pause
+
+end_file
+

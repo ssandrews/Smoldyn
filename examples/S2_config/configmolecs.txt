@@ -1,0 +1,18 @@
+# This file of Smoldyn statements is designed to be read by config.txt.
+# It will not run on its own.
+
+species red
+species green
+
+difc red 3
+difc green 1
+
+read_file configcolors.txt
+
+mol 100 red 20 30 20
+mol 30 green u u u
+
+end_file
+
+
+

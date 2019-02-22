@@ -1,0 +1,134 @@
+#graphics none
+graphics opengl_good
+background_color 1 1 1
+
+random_seed 1
+dim 3
+# units are pixel (px) and millisecond (ms); 
+
+boundaries 0 580 660   
+boundaries 1 890 950   
+boundaries 2 90 140   
+
+max_species 1
+species X
+max_mol 500
+
+# diffusion coefficient
+difc X(up) 117.3652  #roughly 0.6 microns^2/sec   
+difc X(down) 23.473  #roughly 0.12 microns^2/sec   
+
+color X(up) grey
+color X(down) black  
+
+display_size X 3.5 #estimated radius of the molecule   
+
+frame_thickness 0
+time_start 0
+time_stop  20     #ms
+time_step  0.005
+
+max_surface 4
+
+start_surface b   
+color back green .1
+color front green .1 
+polygon front efv
+polygon back efv
+thickness .1
+read_file profile3_b.txt
+
+name t  
+color back blue .1
+color front blue .1 
+polygon front efv
+polygon back efv
+thickness .1
+read_file profile3_t.txt
+
+name n   
+color back red .1
+color front red .1 
+polygon front efv
+polygon back efv
+thickness .1
+read_file profile3_n.txt
+
+name e  
+color back black .1
+color front black .1 
+polygon front efv
+polygon back efv
+thickness .1
+read_file profile3_e.txt
+
+name b
+read_file profile3_b_nb.txt
+name t
+read_file profile3_t_nb.txt
+name n
+read_file profile3_n_nb.txt
+name e
+read_file profile3_e_nb.txt
+
+end_surface
+
+
+start_surface barrier1
+rate_internal X(up) bsoln fsoln 0.0 X
+rate_internal X(up) fsoln bsoln 0.0 X
+rate_internal X(down) bsoln fsoln 0.0 X
+rate_internal X(down) fsoln bsoln 0.0 X
+
+panel disk 633 906 124 12 20 1 1 100
+polygon front ef
+polygon back ef
+color back  coral	 1
+color front coral	 1 
+end_surface
+
+
+#at the exit X is quickly “degraded”
+reaction_surface e re1 X(up) -> 0 100000
+
+#X comes from the neck, where it is “down” (lower difc), to the exit; so, we turn it “up”
+reaction_surface e re2 X(down) -> X(up) 100000
+#slow-down at the neck - X goes from up to down (lower difc)
+reaction_surface n rn1 X(up) -> X(down) 100000
+#X comes from the neck, where it is “down”(lower difc), to the top of the vesicle; so, we turn to “up”
+reaction_surface t rt1 X(down) -> X(up) 100000
+
+
+##Volume exclusion: Bouncing reactions (on surfaces) - Version 2 (not clear if all these reactions are needed but it probably won’t hurt)
+reaction_surface b rb X(up) + X(up) -> X(up) + X(up)
+binding_radius rb 7
+product_placement rb bounce -1
+reaction_surface t rt2 X(up) + X(up) -> X(up) + X(up)
+binding_radius rt2 7
+product_placement rt2 bounce -1
+reaction_surface t rt3 X(up) + X(down) -> X(up) + X(down)
+binding_radius rt3 7
+product_placement rt3 bounce -1
+reaction_surface n rn2 X(down) + X(down) -> X(down) + X(down)
+binding_radius rn2 7
+product_placement rn2 bounce -1
+reaction_surface n rn3 X(down) + X(up) -> X(down) + X(up)
+binding_radius rn3 7
+product_placement rn3 bounce -1
+reaction_intersurface rb  r1 r2 
+reaction_intersurface rt2 r1 r2 
+reaction_intersurface rt3 r1 r2 
+reaction_intersurface rn3 r1 r2 
+
+
+surface_mol 40 X(up) b all all
+
+cmd e ifless X(all) 40 echo stdout "Escaped molecule!"
+
+
+
+
+end_file
+
+
+

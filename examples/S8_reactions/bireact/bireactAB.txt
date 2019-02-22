@@ -1,0 +1,41 @@
+# Bimolecular reactions
+
+graphics none
+
+dim 3
+species As
+species Bs
+species Cs
+species Am
+species Bm
+species Cm
+species Af
+species Bf
+species Cf
+
+difc all 1
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+boundaries 0 0 100 p
+boundaries 1 0 100 p
+boundaries 2 0 100 p
+
+mol 1000 As u u u
+mol 1000 Bs u u u
+mol 1000 Am u u u
+mol 1000 Bm u u u
+mol 1000 Af u u u
+mol 1000 Bf u u u
+
+output_files bireactABout.txt
+cmd e molcount bireactABout.txt
+
+reaction slow As + Bs -> Cs 1
+reaction med  Am + Bm -> Cm 10
+reaction fast Af + Bf -> Cf 100
+
+end_file
+

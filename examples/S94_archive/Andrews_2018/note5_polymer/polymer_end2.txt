@@ -1,0 +1,53 @@
+# Smoldyn configuration file to test wildcards in reactions
+# This file simulates polymerization, one unit at a time
+# This file uses more complex reaction rules, which is slightly less simple to analyze
+# but correctly accounts for multiplicity in the monomer reaction rate.
+
+define FWDRATE	0.1
+define REVRATE	0.1
+
+# Graphical output
+graphics opengl
+graphic_iter 1000
+
+# System space and time definitions
+dim 3
+boundaries x 0 10 p
+boundaries y 0 10 p
+boundaries y 0 10 p
+
+time_start 0
+time_stop 4000
+# polymers are longer here than in polymer_end1, so equilibration takes longer
+time_step 0.01
+
+# Molecular species and their properties
+species A
+difc A 1
+color A red
+display_size A 2
+
+# Reactions
+
+reaction_rule rxn1 A + A <-> AA		2*FWDRATE REVRATE
+reaction_rule rxn2 *AA + A <-> *AAA	FWDRATE REVRATE
+
+expand_rules on-the-fly
+
+# This could also be represented with the sole rule * + A <-> *A.  However, that has
+# the same reaction rate for all reactions.  Here, the monomer association reaction
+# is twice as fast, working on the assumption that its association can happen in either
+# of two ways, which makes it consistent with tbe BioNetGen model of the same name.
+
+# initial molecules
+mol 20000 A u u u
+
+cmd A diagnostics all
+
+output_files polymer_end2out.txt stdout
+output_format csv
+cmd N 1000 molcount polymer_end2out.txt
+cmd N 1000 molcount stdout
+
+end_file
+

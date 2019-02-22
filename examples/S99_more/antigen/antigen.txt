@@ -1,0 +1,78 @@
+# This file simulates antigen binding to receptor.  Each antigen can bind up
+# to 3 receptors
+
+define LENGTH 100
+define HEIGHT 10
+
+define ON1 1
+define ON2 1
+define ON3 1
+define OFF1 0
+define OFF2 0
+define OFF3 0
+
+define NUMA 5000
+define NUMR 1000
+
+
+dim 3
+boundaries x 0 LENGTH
+boundaries y 0 HEIGHT
+boundaries z 0 LENGTH
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+species A R AR ARR ARRR
+difc A(soln) 10
+difc *R(up) 0.1
+
+graphics opengl_good
+frame_thickness 0
+
+color A(soln) black
+color R(up) green
+color AR(up) blue
+color ARR(up) magenta
+color ARRR(up) red
+display_size A(all) 0.1
+display_size R(all) 0.1
+display_size AR(all) 0.15
+display_size ARR(all) 0.2
+display_size ARRR(all) 0.25
+
+start_surface box
+  action all both reflect
+  color both black
+  thickness 1
+  polygon both edge
+  panel rect +x  0 0 0   HEIGHT LENGTH
+  panel rect -x  LENGTH 0 0  HEIGHT LENGTH
+  panel rect +y  0 0 0   LENGTH LENGTH
+  panel rect -y  0 HEIGHT 0  LENGTH LENGTH
+  panel rect +z  0 0 0   LENGTH HEIGHT
+  panel rect -z  0 0 LENGTH  LENGTH HEIGHT
+end_surface
+
+start_surface membrane
+  action both all reflect
+  color both cyan
+  thickness 1
+  polygon both face
+  panel rect +y  0 1 0  LENGTH LENGTH
+end_surface
+
+
+reaction rxn1 A(soln) + R(up) <-> AR(up)  ON1 OFF1
+reaction rxn2 AR(up) + R(up) <-> ARR(up)  ON2 OFF2
+reaction rxn3 ARR(up) + R(up) <-> ARRR(up) ON3 OFF3
+
+mol NUMA A(soln) u 1-HEIGHT u
+surface_mol NUMR R(up) membrane all all
+
+output_files antigenout.txt
+output_format csv
+cmd N 100 molcount antigenout.txt
+
+end_file

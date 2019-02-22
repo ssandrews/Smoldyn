@@ -1,0 +1,78 @@
+# Test of jump panels in 3 dimensions
+
+random_seed 1
+
+# enable following define for front -> back and vice versa
+define SWAP
+
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+species red green
+
+difc all(all) 2
+
+color red(all) 1 0 0
+color green(all) 0 1 0
+display_size all(all) 3
+display_size all(solution) 1
+
+time_start 0
+time_stop 20
+time_step 0.05
+
+boundaries 0 0 100
+boundaries 1 0 100
+boundaries 2 0 100
+
+start_surface walls
+polygon both edge
+panel rect +0 0 0 0 100 100
+panel rect -0 100 0 0 100 100
+panel rect +1 0 0 0 100 100
+panel rect -1 0 100 0 100 100
+panel rect +2 0 0 0 100 100
+panel rect -2 0 0 100 100 100
+#panel rect +0 60 0 0 100 100
+end_surface
+
+start_surface surf1
+color both 0.2 0.2 0.2
+polygon both face
+rate red fsoln front 2
+rate green bsoln back 2
+panel rect +2 10 30 50 20 40 surf1panel
+end_surface
+
+start_surface surf2
+color both 0.4 0.4 0.4
+polygon both face
+action both all jump
+panel rect +2 30 30 50 20 40 frompanel
+panel rect +2 70 30 50 20 40 topanel
+ifdefine SWAP
+  jump frompanel front -> topanel back
+  jump frompanel back -> topanel front
+else
+  jump frompanel front -> topanel front
+  jump frompanel back -> topanel back
+endif
+end_surface
+
+surface surf1 neighbors surf1panel surf2:frompanel
+surface surf2 neighbors frompanel surf1:surf1panel
+
+neighbor_dist 0.001
+
+mol 100 red 0-50 u u
+mol 100 green 0-50 u u
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+

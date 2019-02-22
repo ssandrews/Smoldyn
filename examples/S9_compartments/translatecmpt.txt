@@ -1,0 +1,70 @@
+# Test of compartment translation
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+frame_thickness 0
+
+species red green blue
+random_seed 1
+
+difc red 3
+difc green 1
+difc blue(all) 1
+
+color red red
+color green green
+color blue(all) blue
+display_size all(all) 4
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+start_surface walls
+action both all r
+color both 0 0 0
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface outersurf
+action both all reflect
+color both black
+thickness 1
+panel sphere 50 50 50 30
+end_surface
+
+start_surface innersurf
+action both all reflect
+color both grey
+thickness 1
+#panel sphere 50 50 20 30
+panel triangle 30 30  30 70
+panel triangle 30 70  70 50
+panel triangle 70 50  30 30
+end_surface
+
+start_compartment inside
+surface innersurf
+point 50 50
+end_compartment
+
+start_compartment outside
+surface outersurf
+point 50 50
+compartment andnot inside
+end_compartment
+
+compartment_mol 100 red outside
+compartment_mol 50 green inside
+surface_mol 20 blue(up) innersurf all all
+
+cmd E translatecmpt inside 15 0.01 0
+
+end_file
+

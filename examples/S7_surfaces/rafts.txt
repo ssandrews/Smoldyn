@@ -1,0 +1,64 @@
+# File to test species changes at surfaces
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species red green
+
+difc red 5	# outside raft
+difc green 1	# inside raft
+
+color red red
+color green green
+display_size red 3
+display_size green 3
+
+time_start 0
+time_stop 200
+time_step 0.01
+
+mol 200 red u u
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface surf
+rate red fsoln bsoln 5 green
+rate green bsoln fsoln 1 red
+# The concentration ratio equals the transmission coefficient ratio,
+# so the latter must depend on the diffusion coefficients (i.e. the
+# transmission coefficients differ because of different diffusion
+# coefficients, not to make this active transport; this model is for
+# passive transport).
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 2
+panel sph 80 20 10 50
+panel sph 30 50 20 50
+panel sph 70 70 15 50
+end_surface
+
+start_compartment raft
+surface surf
+point 80 20
+point 30 50
+point 70 70
+end_compartment
+
+cmd B killmolinsphere red surf
+
+output_files stdout
+cmd B molcountheader stdout
+cmd N 10000 molcount stdout
+
+end_file
+

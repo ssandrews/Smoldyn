@@ -1,0 +1,55 @@
+# Simple crowded system simulation.  This file was used to create Figure 3E,F
+# in Andrews, 2016.
+# Values are roughly right for hemoglobin
+# Units are nm and us
+
+define SEED 1
+define NMOL 6112	# 40% volume occupancy
+define HGRADIUS 2.5
+#define BETTERGRAPHICS
+
+ifdefine BETTERGRAPHICS
+  graphics opengl_better
+  light room ambient 0 0 0
+  light 0 position -1 1 1 0
+  light 0 diffuse 0.5 0.5 0.5
+  light 0 ambient 0.5 0.5 0.5
+  light 0 specular 0.5 0.5 0.5
+else
+  graphics opengl
+  graphic_iter 1000
+endif
+
+#random_seed SEED
+
+dim 3
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+
+species Hg
+
+difc Hg 65
+
+color Hg lightred
+display_size Hg HGRADIUS
+
+time_start 0
+time_stop 6.1
+time_step 0.0001
+
+frame_thickness 2
+
+mol NMOL Hg u u u
+
+reaction r1 Hg + Hg -> Hg + Hg
+binding_radius r1 2*HGRADIUS
+product_placement r1 bounce
+
+output_files crowdingout.txt crowdingmsdout.txt
+output_format csv
+cmd i 1 20 0.5 radialdistribution Hg Hg 20 100 10 crowdingout.txt
+cmd i 1 20 0.5 meansqrdisp Hg all crowdingmsdout.txt
+
+end_file
+

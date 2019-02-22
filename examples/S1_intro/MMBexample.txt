@@ -1,0 +1,54 @@
+# Enzymatic reactions on a surface, by Steve Andrews, October 2009.
+# This model is in the public domain.  Units are microns and seconds.
+
+define K_FWD 0.001
+define K_BACK 1
+define K_PROD 1
+
+dim 2
+boundaries x -1 1
+boundaries y -1 1
+time_start 0
+time_stop 10
+time_step 0.01
+
+species S E ES P
+difc S 3
+difc P 3
+color S(all) green
+color E(all) darkred
+color ES(all) orange
+color P(all) darkblue
+display_size all(all) 0.02
+display_size E(all) 0.03
+display_size ES(all) 0.03
+
+graphics opengl_good
+frame_thickness 0
+
+start_surface membrane
+  action both all reflect
+  color both black
+  thickness 1
+  panel sphere 0 0 1 50
+end_surface
+
+reaction fwd E(front) + S(bsoln) -> ES(front) K_FWD
+reaction back ES(front) -> E(front) + S(bsoln) K_BACK 
+product_placement back pgemmax 0.2
+reaction prod ES(front) -> E(front) + P(bsoln) K_PROD
+
+start_compartment inside
+  surface membrane
+  point 0 0
+end_compartment
+
+compartment_mol 500 S inside
+surface_mol 100 E(front) membrane all all
+
+text_display time S E(front) ES(front) P
+output_files MMBexampleout.txt
+cmd B molcountheader MMBexampleout.txt
+cmd N 10 molcount MMBexampleout.txt
+
+end_file

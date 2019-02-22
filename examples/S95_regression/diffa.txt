@@ -1,0 +1,37 @@
+# Test of anisotropic diffusion rate
+
+random_seed 1
+
+graphics opengl
+graphic_iter 10
+
+dim 3
+species red green
+boxsize 200
+
+difm red 1 0 0 0 0 0 0 0 2
+difm green 1 2 3 2 0 4 3 4 1
+
+color red 1 0 0
+color green 0 1 0
+
+time_start 0
+time_stop 10
+time_step 0.1
+
+boundaries 0 -100 100 t
+boundaries 1 -100 100 t
+boundaries 2 -100 100 t
+
+mol 1000 red 0 0 0
+mol 1000 green 0 0 0
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+end_file
+
+
+

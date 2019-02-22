@@ -1,0 +1,42 @@
+# Crowding test
+
+graphics opengl_good
+#tiff_name crowdimages/image
+#tiff_iter 5
+#tiff_max 200
+
+dim 2
+
+boundaries x 0 20 r
+boundaries y 0 20 r
+
+time_start 0
+time_stop 1000
+time_step 0.001
+
+species R O Y G B I V
+
+difc * 1
+display_size * 0.5
+color R red
+color O orange
+color Y yellow
+color G green
+color B blue
+color I indigo
+color V violet
+
+reaction rxn1 ? + ? -> ? + ?
+binding_radius rxn1 1
+product_placement rxn1 bounce
+
+mol 30 R u u
+mol 30 O u u
+mol 30 Y u u
+mol 30 G u u
+mol 30 B u u
+mol 30 I u u
+mol 30 V u u
+
+end_file
+

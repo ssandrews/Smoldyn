@@ -1,0 +1,54 @@
+# Test of diffusion on surfaces
+# This requires Smoldyn version 2.01 to run
+
+graphics opengl
+random_seed 1
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red
+
+difc red(all) 3
+
+color red(all) 1 0 0
+display_size red(all) 5
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+frame_thickness 0
+
+start_surface surf1
+color both 0.5 0.5 0.5 0.5
+panel rect +x 20 20 20 50 50 r1
+panel sphere 60 40 50 20 20 20 s1
+panel hemi 40 80 20  10  1 0 0 20 20 h1
+panel disk 50 80 20  10  -1 0 0 20 d1
+
+name surf2
+color both 0.1 0.8 0.1 0.5
+panel tri 20 20 20  20 20 70  50 30 50 t1
+panel cyl 40 80 20  50 80 20  10 20 20 c1
+
+name surf1
+neighbors r1 surf2:t1
+neighbors s1 surf2:t1
+neighbors h1 surf2:c1
+neighbors d1 surf2:c1
+
+name surf2
+neighbors t1 surf1:r1 surf1:s1
+neighbors c1 surf1:h1 surf1:d1
+
+end_surface
+
+surface_mol 50 red(up) surf1 rect r1
+#surface_mol 100 red(up) surf1 sphere s1
+surface_mol 20 red(down) surf1 hemi h1
+
+end_file
+

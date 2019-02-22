@@ -1,0 +1,274 @@
+# units mks concentration(molecules/m^3) Diffusion_coefficient(m2s-1)
+# 1M-1s-1 = 1.7*10-27 m3s-1
+graphics opengl 
+
+dim 3
+boundaries x -5 5 r
+boundaries y -5 5 r
+boundaries z -5 5 r
+
+frame_thickness 2
+
+species AC1 calcium CaM0 CaMN1C0 CaMN0C1 CaMN1C1 CaMN0C2 CaMN2C0 CaMN1C2 CaMN2C1 CaMN2C2 AC1CaMN2C2 AC1CaMN2C2_ATP cAMP pmca pmca_calcium  calcium_ex ncx ncx_calcium  calbindin calbindin_calcium 
+
+random_seed 0
+
+difc calcium 174.3*10^-12
+difc CaM0 11*10^-12
+difc CaMN1C0 11*10^-12
+difc CaMN0C1 11*10^-12
+difc CaMN1C1 11*10^-12
+difc CaMN2C0 11*10^-12
+difc CaMN0C2 11*10^-12
+difc CaMN1C2 11*10^-12
+difc CaMN2C1 11*10^-12
+difc CaMN2C2 11*10^-12
+difc cAMP 86.4*10^-12
+difc calbindin 9.3*10^-12
+difc calbindin_calcium 9.3*10^-12
+
+
+color AC1 red
+color calcium blue
+
+display_size AC1 1
+display_size calcium 1
+
+time_start 0
+time_stop 1
+time_step 0.01
+
+start_surface cube_surfaces
+action both all reflect
+color all black 0.1
+panel rect +z  -5 -5  5 10 10 top
+panel rect -z  -5 -5 -5 10 10 # corner(-5,-5,5) side-lengths 10 and 10
+panel rect -y  -5 -5 -5 10 10 
+panel rect +y  -5  5 -5 10 10 
+panel rect +x   5 -5 -5 10 10 
+panel rect -x  -5 -5 -5 10 10 
+end_surface
+
+start_surface inner_cube_surfaces
+#action front all port
+color all black 0.1
+panel rect +z  -4.95 -4.95  4.8   9.9 9.9
+panel rect -z  -4.95 -4.95 -4.95  9.9 9.9
+panel rect -y  -4.95 -4.95 -4.95  9.9 9.75 
+panel rect +y  -4.95  4.95 -4.95  9.9 9.75  
+panel rect +x   4.95 -4.95 -4.95  9.9 9.75  
+panel rect -x  -4.95 -4.95 -4.95  9.9 9.75  
+end_surface
+
+start_surface nano_domain_200nm
+action both all transmit
+color all green
+panel rect +z  -.1 -.1  4.999 .2 .2 top
+panel rect -z  -.1 -.1  4.801 .2 .2
+panel rect +y  -.1  .1  4.801 .2 .198
+panel rect -y  -.1 -.1  4.801 .2 .198
+panel rect +x   .1 -.1  4.801 .2 .198
+panel rect -x  -.1 -.1  4.801 .2 .198
+end_surface
+
+
+/*  ?? commented out for faster runtime
+start_compartment cube_10um
+surface cube_surfaces
+point 0 0 0
+end_compartment
+
+start_compartment inner_cube
+surface inner_cube_surfaces
+point 0 0 0
+end_compartment
+
+
+start_compartment nanodomain
+surface nano_domain_200nm 
+point 0 0 4.9
+end_compartment
+
+start_compartment particle_region
+compartment equal cube_10um 
+compartment andnot inner_cube
+end_compartment
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+#compartment_mol 6*10^6 CaM0 cube_10um 
+#compartment_mol 9*10^6 calbindin cube_10um 
+
+surface_mol 1 AC1(back) cube_surfaces rect top 0 0 5
+surface_mol 18000 pmca(back) cube_surfaces rect all 
+surface_mol 811800 ncx(back) cube_surfaces rect all 
+
+reaction r1 CaM0 + calcium -> CaMN1C0 7.7*10^8*1.7*10-27
+reaction r2 CaMN1C0 -> CaM0 + calcium 1.6*10^5 
+
+reaction r3 CaM0 + calcium -> CaMN0C1 8.4*10^7*1.7*10-27 
+reaction r4 CaMN0C1 -> CaM0 + calcium  2.6*10^3  
+
+reaction r5 CaMN1C0 + calcium -> CaMN2C0 3.2*10^10*1.7*10-27
+reaction r6 CaMN2C0 -> CaMN1C0 + calcium  2.2*10^4  
+
+reaction r7 CaMN1C0 + calcium -> CaMN1C1 8.4*10^7*1.7*10-27
+reaction r8 CaMN1C1 -> CaMN1C0 + calcium 2.6*10^3  
+
+reaction r9 CaMN0C1 + calcium -> CaMN1C1 7.7*10^8*1.7*10-27
+reaction r10 CaMN1C1 -> CaMN0C1 + calcium 1.6*10^5 
+
+reaction r11 CaMN0C1 + calcium -> CaMN0C2 2.5*10^7*1.7*10-27 
+reaction r12 CaMN0C2 -> CaMN0C1 + calcium  6.5 
+
+reaction r13 CaMN0C2 + calcium -> CaMN1C2 7.7*10^8*1.7*10-27
+reaction r14 CaMN1C2 -> CaMN0C2 + calcium 1.6*10^5 
+
+reaction r15 CaMN2C0 + calcium -> CaMN2C1 8.4*10^7*1.7*10-27
+reaction r16 CaMN2C1 -> CaMN2C0 + calcium   2.6*10^3  
+
+reaction r17 CaMN1C1 + calcium -> CaMN1C2 2.5*10^7*1.7*10-27  
+reaction r18 CaMN1C2 -> CaMN1C1 + calcium 6.5 
+
+reaction r19 CaMN1C1 + calcium -> CaMN2C1 3.2*10^10*1.7*10-27
+reaction r20 CaMN2C1 -> CaMN1C1 + calcium  2.2*10^4  
+
+reaction r21 CaMN2C1 + calcium -> CaMN2C2 2.5*10^7*1.7*10-27 
+reaction r22 CaMN2C2 -> CaMN2C1 + calcium  6.5 
+
+reaction r23 CaMN1C2 + calcium -> CaMN2C2 3.2*10^10*1.7*10-27
+reaction r24 CaMN2C2 -> CaMN1C2 + calcium   2.2*10^4  
+
+reaction a1 AC1(back) + CaMN2C2(soln) -> AC1CaMN2C2(back) 0.006*10^9*1.7*10-27
+reaction a2 AC1CaMN2C2(back) -> AC1(back) + CaMN2C2(soln) 0.9 
+
+reaction a3 AC1CaMN2C2(back) -> AC1CaMN2C2_ATP(back) 0.02*10^6 
+# ATP concentration is fixed at 2mM and included in the reaction rate
+reaction a4 AC1CaMN2C2_ATP(back) -> AC1CaMN2C2(back) 2273
+reaction a5 AC1CaMN2C2_ATP(back) -> AC1CaMN2C2(back) + cAMP(soln) 2.84
+
+/*
+#PDE1 reactions
+PDE1 + CaMN2C2 -> PDE1CaM 10^8 *1.7*10-27
+
+PDE1CaM -> PDE1 + CaMN2C2 1
+
+PDE1CaM + cAMP ->  PDE1CaM_cAMP 4.6* 10^6 *1.7*10-27
+PDE1CaM_cAMP -> PDE1CaM + cAMP 44
+PDE1CaM_cAMP ->  PDE1CaM + AMP 11
+
+#PDE4 reactions
+PDE4 + cAMP ->  PDE4_cAMP 3*10^7 *1.7*10-27
+PDE4_cAMP -> PDE4 + cAMP   77
+PDE4_cAMP ->  PDE4 + AMP 19
+
+PKAc + PDE4 ->  PKAcPDE4  4*10^6 *1.7*10-27
+PKAcPDE4 -> PKAc + PDE4  5.6
+PKAcPDE4 -> PKAc + pPDE4 1.2
+
+pPDE4 -> PDE4 0.25 
+
+pPDE4 + cAMP -> pPDE4cAMP 3*10^7 *1.7*10-27
+pPDE4cAMP -> pPDE4 + cAMP   77
+pPDE4cAMP -> pPDE4 + AMP 38
+
+#PKA reactions
+PKA + cAMP -> PKAcAMP 54*10^6 * 1.7*10-27 
+PKAcAMP -> PKA + cAMP 33 
+
+PKAcAMP + cAMP -> PKAcAMP2 54*10^6 *1.7*10-27
+PKAcAMP2 -> PKAcAMP + cAMP 33 
+
+PKAcAMP2 + cAMP ->  PKAcAMP3 75*10^6 *1.7*10-27 
+PKAcAMP3 -> PKAcAMP2 + cAMP  110 
+
+PKAcAMP3 + cAMP ->  PKAcAMP4 75*10^6 *1.7*10-27
+PKAcAMP4 ->PKAcAMP3 + cAMP     32.5 
+
+PKAcAMP4 ->  PKAc + PKAr_PKAc  60.0 
+PKAc + PKAr_PKAc -> PKAcAMP4   18.0*10^6 *1.7*10-27
+
+PKAr_PKAc ->  PKAc + PKAr  60.0 
+PKAc + PKAr  ->PKAr_PKAc  18.0*10^6 *1.7*10-27
+*/
+
+reaction c1 calcium(soln) + pmca(back) -> pmca_calcium(back)  50*10^6*1.7*10-27
+reaction c2 pmca_calcium(back)  -> calcium(soln) + pmca(back)  7 
+reaction c3 pmca_calcium(back)  -> pmca(back) + calcium_ex(soln) 3.5 
+
+reaction c4 calcium(soln) + ncx(back) -> ncx_calcium(back) 16.8*10^6*1.7*10-27
+reaction c5 ncx_calcium(back) -> calcium(soln)  + ncx(back)   0.0112 
+reaction c6 ncx_calcium(back) -> ncx(back)  + calcium_ex(soln)  0.0056 
+
+reaction c7 calbindin + calcium -> calbindin_calcium  28*10^6*1.7*10-27
+reaction c8 calbindin + calcium -> calbindin_calcium 19.6
+
+
+start_port inner_cube
+surface inner_cube_surfaces 
+face front
+end_port
+
+start_lattice restofcell
+#type nsv
+port inner_cube
+#boundaries x -4.95 4.95 	#?? replaced these boundaries by bigger ones to prevent round-off error bug
+#boundaries y -4.95 4.95 
+#boundaries z -4.95 4.8
+boundaries x -6 6 
+boundaries y -6 6 
+boundaries z -6 6
+lengthscale 1 1 1
+species calcium CaM0 CaMN1C0 CaMN0C1 CaMN1C1 CaMN0C2 CaMN2C0 CaMN1C2 CaMN2C1 CaMN2C2 cAMP calcium_ex calbindin calbindin_calcium
+reactions all
+mol 6*10^6 CaM0 u u u 
+mol 9*10^6 calbindin u u u
+make_particle back calcium
+make_particle back CaM0
+make_particle back CaMN1C0
+make_particle back CaMN0C1
+make_particle back CaMN1C1
+make_particle back CaMN0C2
+make_particle back CaMN2C0
+make_particle back CaMN1C2
+make_particle back CaMN2C1
+make_particle back CaMN2C2
+make_particle back cAMP
+make_particle back calcium_ex
+make_particle back calbindin
+make_particle back calbindin_calcium
+end_lattice
+
+
+cmd i 0 1 0.1 pointsource calcium 1000 0 0 4.9999 
+# release 1000 from time 0 to 1sec in time steps of 0.1sec at location .05 0 4.9999
+
+output_root simulation_results/
+output_files count_output.txt 
+output_files nanodomain_output.txt 
+output_files cube_output.txt 
+
+#cmd N 1 molcountspecies calcium test_output.txt 
+# measure at every 1 timestep
+
+/* ?? removed because compartments are removed
+cmd N 1 molcount count_output.txt 
+cmd N 1 molcountincmpt nanodomain nanodomain_output.txt 
+cmd N 1 molcountincmpt cube_10um cube_output.txt 
+/*
+
+end_file
+
+
+
+

@@ -1,0 +1,75 @@
+# Smoldyn configuration file.
+
+# Model parameters
+define XMIN 0
+define XMAX 1
+define YMIN 0
+define YMAX 1
+
+# Graphical output
+graphics opengl
+
+# System space and time definitions
+dim 2
+boundaries x XMIN XMAX
+boundaries y YMIN YMAX
+
+time_start 0
+time_stop 10
+time_step 0.01
+
+# Molecular species and their properties
+species red
+difc red(all) 1
+color red(all) red
+display_size all(all) 5
+
+# Surfaces in the system and their properties
+start_surface lines
+color both black
+thickness 1
+rate red(up) fsoln up 1
+rate red(up) bsoln up 1
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX) t1
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+panel triangle rand(XMIN,XMAX) rand(YMIN,YMAX) rand(XMIN,XMAX) rand(YMIN,YMAX)
+
+end_surface
+
+# Place molecules for initial condition
+surface_mol 100 red(up) lines tri t1 (XMIN+XMAX)/2 (YMIN+YMAX)/2
+
+
+end_file			# end of this file
+

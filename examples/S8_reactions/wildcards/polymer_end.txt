@@ -1,0 +1,64 @@
+# Smoldyn configuration file to test wildcards in reactions
+# This file simulates polymerization, one unit at a time
+
+define FWDRATE	20
+define REVRATE	0.1
+
+# Graphical output
+graphics opengl_good
+
+# System space and time definitions
+dim 2
+boundaries x 0 100 p
+boundaries y 0 100 p
+time_start 0
+time_stop 1000
+time_step 0.01
+
+# Molecular species and their properties
+species A
+difc A 1
+color A red
+display_size A 1
+
+# Surfaces
+start_surface walls
+action all both reflect
+color both black
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface circle
+action all both reflect
+color both black
+panel sphere 50 50 15 30
+end_surface
+
+# Reactions
+
+reaction_rule rxn1 A + A <-> AA		2*FWDRATE REVRATE
+reaction_rule rxn2 *AA + A <-> *AAA	FWDRATE REVRATE
+
+expand_rules on-the-fly
+
+# This could also be represented with the sole rule * + A <-> *A.  However, that has
+# the same reaction rate for all reactions.  Here, the monomer association reaction
+# is twice as fast, working on the assumption that its association can happen in either
+# of two ways, which makes it consistent with tbe BioNetGen model of the same name.
+
+# initial molecules
+mol 1000 A u u
+
+text_display time A
+
+cmd B killmolinsphere all circle
+cmd N 1000 molcountheader stdout
+cmd N 1000 molcount stdout
+
+cmd @ 100 diagnostics all
+
+end_file
+

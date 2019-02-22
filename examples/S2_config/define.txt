@@ -1,0 +1,30 @@
+# Simple bouncing molecules in a 3-D system
+
+/*
+This file is identical to config.txt, except that define statements
+are used to test both local and global defines.
+*/
+
+define_global ROOT define
+define_global GREEN 0 1 0
+
+graphics opengl
+
+dim 3
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+read_file ROOTmolecs.txt	# molecule information
+
+define STEPINFO time_step 0.01
+
+time_start 0
+time_stop 100
+STEPINFO
+
+end_file
+
+
+

@@ -1,0 +1,74 @@
+# Quantitative test of diffusion on 3D surfaces
+# units are nanometer and milliseconds
+
+random_seed 1
+define NMOL 2000
+
+define VMOL 60 10 445
+#define VMOL 0 0 450
+
+graphics opengl_better
+light room ambient 0 0 0
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
+
+gauss_table_size 65536
+
+dim 3
+boundaries x -500 500
+boundaries y -500 500
+boundaries z -500 500
+
+boxsize 1000
+
+species red green
+
+molecule_lists redlist greenlist
+mol_list red(all) redlist
+mol_list green(all) greenlist
+
+difc red(all) 100	# 100 nm^2/ms = 0.1 um^2/s
+difc green(all) 30000	# 300x faster than red to account for shorter time
+
+color red(all) red
+color green(all) green
+display_size red(all) 5
+display_size green(all) 4
+
+time_start 0
+time_stop 300
+time_step 1
+
+frame_thickness 0
+
+start_surface surf1
+color both lightgrey
+polygon both fe
+shininess both 10
+thickness 2
+panel hemisphere 0 0 0  450  0 0 -1  20 10 hemi1
+#panel cylinder 0 0 0  0 0 -1  450  20 1 cyl1
+panel hemisphere 0 0 0  450  0 0 1 20 10 hemi2
+neighbors hemi1 hemi2
+neighbors hemi2 hemi1
+
+#neighbors hemi1 cyl1
+#neighbors cyl1 hemi1 hemi2
+#neighbors hemi2 cyl1
+end_surface
+
+surface_mol NMOL red(up) surf1 hemisphere hemi1  VMOL
+surface_mol NMOL green(up) surf1 hemisphere hemi1  VMOL
+
+cmd @ 1 set difc green(all) 0
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+
+end_file
+

@@ -1,0 +1,88 @@
+# Simple bouncing molecules in a 3-D system
+
+graphics opengl
+
+dim 3
+species red
+random_seed 0
+
+difc red 0.1
+
+color red 1 0 0
+
+time_start 0
+time_stop 50
+time_step 0.001
+
+boundaries 0 0 1
+boundaries 1 0 1 p
+boundaries 2 0 1 p
+
+mol 1 red 0.5 0.5 0.5	
+
+
+start_surface periodic_surface
+action both all jump
+polygon both edge
+panel rect +1 0 0 0 5 1
+panel rect -1 0 1 0 5 1
+panel rect +2 0 0 0 5 1
+panel rect -2 0 0 1 5 1
+jump rect0 front <-> rect1 front
+jump rect2 front <-> rect3 front
+end_surface
+
+start_surface portsurf
+action front all port
+color front 0.2 0 0 0.5
+color back 0 0 0
+polygon both face
+panel rect +0 0.5 0 0 1 1
+end_surface
+
+start_surface reflective_surface
+action front all reflect
+color front 0.2 0 0 0.5
+color back 0 0 0
+polygon both face
+panel rect +0 0.0000001 0 0 1 1
+end_surface
+
+start_surface portsurf
+action front all port
+color front 0.2 0 0 0.5
+color back 0 0 0
+polygon both face
+
+end_surface
+
+reaction destruction red -> 0 1
+reaction surface=reflective_surface production 0 -> red 10000
+
+start_port testport
+surface portsurf
+face front
+end_port
+
+start_lattice testlattice
+type nsv
+port testport
+boundaries 0 0 1
+boundaries 1 0 1 p
+boundaries 2 0 1 p
+lengthscale 0.05 0.05 0.05
+species all
+make_particle back all
+reactions destruction
+reactions move production
+end_lattice
+
+
+output_files stdout
+
+#cmd n 1000 molcount stdout
+cmd i 5 50 0.1 molcountspace red 0 0 1 20 0 1 0 1 450 stdout
+#cmd n 1000 printLattice stdout
+#cmd n 1000 writeVTK output
+end_file
+

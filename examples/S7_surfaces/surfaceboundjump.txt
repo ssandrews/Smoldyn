@@ -1,0 +1,76 @@
+# Test of jump panels in 3 dimensions
+
+# enable following define for front -> back and vice versa
+define SWAP
+
+graphics opengl
+graphic_iter 1
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species red green
+
+difc all(all) 2
+
+color red(all) red
+color green(all) green
+display_size all(all) 3
+display_size all(solution) 1
+
+time_start 0
+time_stop 200
+time_step 0.05
+
+start_surface walls
+polygon both edge
+panel rect +x 0 0 0 100 100
+panel rect -x 100 0 0 100 100
+panel rect +y 0 0 0 100 100
+panel rect -y 0 100 0 100 100
+panel rect +z 0 0 0 100 100
+panel rect -z 0 0 100 100 100
+#panel rect +0 60 0 0 100 100
+end_surface
+
+start_surface surf1
+color both 0.2 0.2 0.2
+polygon both face
+rate red fsoln front 2
+rate green bsoln back 2
+panel rect +2 10 30 50 20 40 surf1panel
+end_surface
+
+start_surface surf2
+color both 0.4 0.4 0.4
+polygon both face
+action both all jump
+panel rect +2 30 30 50 20 40 frompanel
+panel rect +2 70 30 50 20 40 topanel
+ifdefine SWAP
+  jump frompanel front -> topanel back
+  jump frompanel back -> topanel front
+else
+  jump frompanel front -> topanel front
+  jump frompanel back -> topanel back
+endif
+end_surface
+
+surface surf1 neighbors surf1panel surf2:frompanel
+surface surf2 neighbors frompanel surf1:surf1panel
+
+neighbor_dist 0.001
+
+mol 100 red 0-50 u u
+mol 100 green 0-50 u u
+
+output_files stdout
+cmd A echo stdout "front:\n"
+cmd A listmols3 all(front) stdout
+cmd A echo stdout "back:\n"
+cmd A listmols3 all(back) stdout
+
+end_file
+

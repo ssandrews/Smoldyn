@@ -1,0 +1,56 @@
+# Test of some commands
+
+graphics opengl
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+species A B C
+
+time_start 0
+time_stop 5000
+time_step 0.1
+
+difc all(all) 1
+
+color A(all) red
+color B(all) green
+color C(all) blue
+
+start_surface walls
+action both all reflect
+polygon both none
+panel rect +x 0 0 100
+panel rect -x 100 0 100
+panel rect +y 0 0 100
+panel rect -y 0 100 100
+end_surface
+
+start_surface sphere
+action both all reflect
+polygon both edge
+panel sph 30 30  20  20
+end_surface
+
+start_compartment inside
+surface sphere
+point 30 30
+end_compartment
+
+compartment_mol 100 A inside
+surface_mol 100 B(up) sphere all all
+mol 100 C u u
+
+reaction r1 A -> 0 0.01
+reaction r2 B(up) -> B(up) + A(bsoln) + C(soln) + B(up) 0.01
+
+text_display time A B(all) C
+
+cmd N 10 fixmolcountrange A 50 200
+cmd N 10 fixmolcountrangeincmpt A 30 80 inside
+cmd N 10 fixmolcountrangeonsurf B(up) 0 200 sphere
+cmd N 10 fixmolcountrange C 0 400
+
+end_file
+

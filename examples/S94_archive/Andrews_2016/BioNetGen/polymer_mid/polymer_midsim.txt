@@ -1,0 +1,30 @@
+# Smoldyn configuration file to test wildcards in reactions
+
+# Graphical output
+graphics opengl_good
+
+# System space and time definitions
+dim 2
+boundaries x 0 100 p
+boundaries y 0 100 p
+time_start 0
+time_stop 1000
+time_step 0.01
+
+# Molecular species and their properties
+species A
+difc A 1
+color A red
+display_size A 1
+
+# BioNetGen parameters
+start_bng polymer_mid
+expand_rules polymer_mid.bngl
+read_file polymer_mid.net
+end_bng
+
+# initial molecules
+mol 200 A u u
+
+end_file
+

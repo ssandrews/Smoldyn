@@ -1,0 +1,68 @@
+# Crowded system simulation, two sizes
+# Units are nm and us
+
+define SEED 1
+define NMOL1 6000
+define NMOL2 500
+define RADIUS1 2.2
+define RADIUS2 4
+#define BETTERGRAPHICS
+
+ifdefine BETTERGRAPHICS
+  graphics opengl_better
+  light room ambient 0 0 0
+  light 0 position -1 1 1 0
+  light 0 diffuse 0.5 0.5 0.5
+  light 0 ambient 0.5 0.5 0.5
+  light 0 specular 0.5 0.5 0.5
+else
+  graphics opengl
+  graphic_iter 1000
+endif
+
+#random_seed SEED
+
+dim 3
+boundaries x 0 100 p
+boundaries y 0 100 p
+boundaries z 0 100 p
+
+species A1 A2
+
+difc A1 65
+difc A2 20
+
+color A1 lightred
+color A2 green
+display_size A1 RADIUS1
+display_size A2 RADIUS2
+
+time_start 0
+time_stop 10
+time_step 0.0001
+
+frame_thickness 2
+
+mol NMOL1 A1 u u u
+mol NMOL2 A2 u u u
+
+reaction r1 A1 + A1 -> A1 + A1
+binding_radius r1 2*RADIUS1
+product_placement r1 bounce
+
+reaction r2 A2 + A2 -> A2 + A2
+binding_radius r2 2*RADIUS2
+product_placement r2 bounce
+
+reaction r3 A1 + A2 -> A1 + A2
+binding_radius r3 RADIUS1+RADIUS2
+product_placement r3 bounce
+
+output_files crowding2sizeout.txt
+output_format csv
+cmd i 1 20 0.5 radialdistribution A2 A1 20 100 10 crowding2sizeout.txt
+#cmd A radialdistribution A2 A1 20 100 0 crowding2sizeout.txt
+#cmd A radialdistribution2 A2 A1 20 80 20 80 20 80 20 100 0 crowding2sizeout.txt
+
+end_file
+

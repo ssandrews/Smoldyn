@@ -1,0 +1,54 @@
+# Smoldyn configuration file for transposon dynamics
+# Units are microns and seconds
+
+define k0f	1e5
+define k0r	139
+define k1f	0.32
+define k1r	1.2e2
+define k2f	4.3e-4
+define k2r	1e-10
+define k3	1.4e-3
+define Dp	15
+define Ds	5e-4
+
+define LEN	500^(1/3)
+
+# Graphical output
+graphics opengl
+graphic_iter 100
+
+# System space and time definitions
+dim 3
+boundaries x 0 LEN p
+boundaries y 0 LEN p
+boundaries z 0 LEN p
+
+time_start 0
+time_stop 100
+time_step 0.0001
+
+# Molecular species and their properties
+species A-B T2 T2nsb
+
+difc A-B	Ds
+difc T2		Dp
+color A-B	blue
+color T2	red
+color T2nsb	green
+
+display_size all 2
+
+# Reactions
+reaction 	rxnT2nsb	T2 <-> T2nsb	k0f k0r	reaction_rule	rxnABbind	A-B*|*A-B + T2 <-> T2A-B*|*A-BT2	k1f k1rreaction_rule	rxnassemble	T2&A-B <-> AT2B	k2f k2rreaction_rule	rxnexcise	AT2B -> A-B + T2 + X	k3expand_rules all
+
+# initial molecules
+mol 1 A-B LEN/2 LEN/2 LEN/2
+mol 10 T2 u u u
+
+#output_files transposaseout.txt
+#output_format CSV
+#cmd B molcountheader transposaseout.txt
+#cmd N 100 molcount transposaseout.txt
+
+end_file
+

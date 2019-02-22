@@ -1,0 +1,88 @@
+# Smoldyn configuration file template.
+# Steve, Nov. 25, 2014
+# units are nm, us
+
+# This file fails because bounce reactions don't work with periodic boundaries.
+
+
+# Model parameters
+define SYSLENGTH 50		# system length
+define KRATE 20			# reaction rate
+define AMOL 2000
+define BMOL 2000
+define TMOL 1000
+define CMOL 100
+define CROWD 20
+define ITER 1
+
+
+# Graphical output
+graphics opengl_good		# level of graphics quality (or none)
+frame_thickness 0		# turns off display of the system boundaries
+
+# System space and time definitions
+dim 3				# 3D system
+boundaries 0 0 SYSLENGTH p
+boundaries 1 0 SYSLENGTH p
+boundaries 2 0 1 p
+
+time_start 0			# simulation starting time
+time_stop 10			# simulation stopping time
+time_step 0.01			# simulation time step
+
+# Molecular species and their properties
+#species A B T C
+species C
+#difc A 10
+#difc B 10
+#difc T 10
+difc C 1
+#color A red
+#color B green
+#color T blue
+color C magenta
+#display_size all(all) 0.1
+display_size C 1
+
+
+#molecule_lists Alist Blist Tlist Clist
+#mol_list A Alist
+#mol_list B Blist
+#mol_list T Tlist
+#mol_list C Clist
+
+boxsize 50
+
+# Chemical reactions
+#reaction fwd A + B -> B KRATE
+#reaction ac A + C -> A + C
+#reaction bc B + C -> B + C
+#reaction tc T + C -> T + C
+reaction cc C + C -> C + C
+#binding_radius ac 1
+#binding_radius bc 1
+#binding_radius tc 1
+binding_radius cc 1
+#product_placement ac bounce -1
+#product_placement bc bounce -1
+#product_placement tc bounce -1
+product_placement cc bounce -1
+
+# Place molecules for initial condition
+#mol AMOL A u u u
+#mol BMOL B u u u
+#mol TMOL T u u u
+mol 2 C u u u
+
+# Output and other run-time commands
+#text_display time A B C
+#output_root bounce1/
+#output_files reactionITER_CROWDout.txt msdITER_CROWDout.txt
+#cmd B molcountheader reactionITER_CROWDout.txt
+#cmd i 0 50 0.02 molcount reactionITER_CROWDout.txt
+#cmd i 0 50 0.02 meansqrdisp T all msdITER_CROWDout.txt
+output_files stdout
+cmd E molcount stdout
+
+end_file			# end of this file
+

@@ -1,0 +1,56 @@
+# File to test molecule sticking rate
+
+graphics opengl
+graphic_iter 100
+
+dim 3
+boundaries x 0 100
+boundaries y 0 100
+boundaries z 0 100
+
+species A B C
+
+difc all(solution) 1
+
+color A(solution) red
+color B(solution) green
+color C(solution) blue
+color A(front) 1 0.5 0.5
+color B(front) 0.5 1 0.5
+color C(front) 0.5 0.5 1
+display_size all 5
+
+time_start 0
+time_stop 200
+time_step 0.05
+
+start_surface walls
+action both all reflect
+color both 0 0 0
+polygon both edge
+panel rect -x 100 0 0 100 100
+panel rect +y 0 0 0 100 100
+panel rect -y 0 100 0 100 100
+panel rect +z 0 0 0 100 100
+panel rect -z 0 0 100 100 100
+end_surface
+
+start_surface stick
+rate A fsoln front 5
+rate B fsoln front 0.25
+rate C fsoln front 0.01
+color front 1 0.7 0
+color back 0.6 0 0.6
+thickness 1
+panel rect +x 0 0 0 100 100
+end_surface
+
+mol 10000 A u u u
+mol 10000 B u u u
+mol 10000 C u u u
+
+output_files stickrateout.txt
+cmd n 2 molcountonsurf stick stickrateout.txt
+
+end_file
+
