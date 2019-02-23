@@ -15,7 +15,8 @@ matrix:
 notifications:
   email:
     recipients:
-    - dilawar.s.rajput@gmail.com
+        - dilawar.s.rajput@gmail.com
+        - steven.s.andrews@gmail.com
     on_success: change
     on_failure: always
 
