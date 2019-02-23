@@ -1,0 +1,43 @@
+language: cpp
+sudo: required
+group: travis_lts
+dist: xenial
+
+os:
+    - linux
+    - osx
+
+matrix:
+    include:
+        - os : osx
+          osx_image: xcode10
+
+notifications:
+  email:
+    recipients:
+    - dilawar.s.rajput@gmail.com
+    on_success: change
+    on_failure: always
+
+addons:
+    apt:
+      update: true
+
+before_script:
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then nvm get head || true; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/travis_prepare_osx.sh; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ./.travis/travis_prepare_linux.sh; fi
+
+
+before_script:
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then nvm get head || true; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/travis_prepare_osx.sh; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo ./.travis/travis_prepare_linux.sh; fi
+
+script:
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/travis_build_osx.sh; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/travis_build_linux.sh; fi
+
+addons:
+  apt:
+    update: true
