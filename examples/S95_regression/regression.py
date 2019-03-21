@@ -7,10 +7,10 @@ filelist=['addspecies','abba','allostery','bimolecularlattice','bounce2','bounds
 					'cmdmanipulate','compartlogic','compartrxn','crowding',
 					'diffa','diffuse2b','diffuse2c','diffuse3b','drift','dumbbell',
 					'emitter1','hemisphere','lrm','lrmsim','lotvolt','molecule',
-					'polymer_end','polymer_mid','rafts','rafts3D',
+					'polymer_end','polymer_mid','rafts','rafts3D','ReflectToNewSpecies',
 					'structexpansion','surf1','surf2','surf3','surfaceboundjump','surfacedrift2',
 					'surfacedrift3','surfacereact','stick',
-					'surfacediffuse','tracking','trisphere']
+					'surfacediffuse','tracking','tracking2','trisphere']
 
 suffix=input('Enter suffix for new simulations: ')
 reference=input('Enter suffix for reference simulations or "none": ')

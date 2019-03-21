@@ -241,6 +241,7 @@ int boxdebug(simptr sim) {
 	boxssptr boxs;
 	moleculeptr mptr;
 	boxptr bptr;
+	char string[STRCHAR];
 
 	er=0;
 	mols=sim->mols;
@@ -251,7 +252,7 @@ int boxdebug(simptr sim) {
 		for(ll=0;ll<mols->nlist;ll++) {
 			printf("Box %p list %i:",bptr,ll);
 			for(mb=0;mb<bptr->nmol[ll];mb++)
-				printf(" %li",bptr->mol[ll][mb]->serno);
+				printf(" %s",molserno2string(bptr->mol[ll][mb]->serno,string));
 			printf("\n"); }}
 
 
@@ -259,17 +260,17 @@ int boxdebug(simptr sim) {
 		for(m=0;m<mols->nl[ll];m++) {
 			mptr=mols->live[ll][m];
 			bptr=mptr->box;
-			if(!bptr) {er++;printf("BUG: molecule %li has box value set to NULL\n",mptr->serno); }
+			if(!bptr) {er++;printf("BUG: molecule %s has box value set to NULL\n",molserno2string(mptr->serno,string)); }
 			else {
 				for(mb=0;mb<bptr->nmol[ll] && bptr->mol[ll][mb]!=mptr;mb++);
-				if(mb==bptr->nmol[ll]) {er++;printf("BUG: molecule %li thinks it's in box %p but isn't\n",mptr->serno,bptr); } }}
+				if(mb==bptr->nmol[ll]) {er++;printf("BUG: molecule %s thinks it's in box %p but isn't\n",molserno2string(mptr->serno,string),bptr); } }}
 
 	for(b=0;b<boxs->nbox;b++) {
 		bptr=boxs->blist[b];
 		for(ll=0;ll<mols->nlist;ll++)
 			for(mb=0;mb<bptr->nmol[ll];mb++) {
 				mptr=bptr->mol[ll][mb];
-				if(mptr->box!=bptr) {er++;printf("BUG: molecule %li thinks it's in box %p but is really in box %p\n",mptr->serno,mptr->box,bptr);} }}
+				if(mptr->box!=bptr) {er++;printf("BUG: molecule %s thinks it's in box %p but is really in box %p\n",molserno2string(mptr->serno,string),mptr->box,bptr);} }}
 
 	return er; }
 

@@ -1133,7 +1133,7 @@ int bngparsespecies(bngptr bng,int index) {
 		for(s=0;s<bng->bngmaxsurface;s++) {
 			srf=sim->srfss->srflist[s];
 			for(face=(enum PanelFace)0;face<=PFnone;face=(enum PanelFace)(face+1)) {
-				surfsetaction(srf,i1,NULL,ms,face,action[s][face]);
+				surfsetaction(srf,i1,NULL,ms,face,action[s][face],-1);
 				if(action[s][face]==SAmult) {
 					for(ms4=(enum MolecState)0;ms4<(enum MolecState)MSMAX1;ms4=(enum MolecState)(ms4+1)) {
 						srfindex2tristate(ms,face,ms4,&ms0,&ms1,&ms2);

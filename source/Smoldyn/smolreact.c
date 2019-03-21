@@ -401,6 +401,90 @@ int rxnisprod(simptr sim,int i,enum MolecState ms,int code) {
 	return 0; }
 
 
+/* rxnstring2sernocode */
+long int rxnstring2sernocode(char *pattern,int prd) {
+	long int pserno,bitcode;
+	char *dotptr;
+	int itct;
+
+	pserno=0;
+	bitcode=0;
+	if((dotptr=strchr(pattern,'.'))) {
+		*dotptr='\0';																				// there is a dot
+		bitcode|=0x10;																			// store that there is a dot
+		if(!pattern[0]);																		// before the dot pattern
+		else if(!strcmp(pattern,"new")) bitcode|=0x100;
+		else if(!strcmp(pattern,"r1")) bitcode|=0x400;
+		else if(!strcmp(pattern,"r2")) bitcode|=0x500;
+		else if(!strcmp(pattern,"p1") && prd>0) bitcode|=0x800;
+		else if(!strcmp(pattern,"p2") && prd>1) bitcode|=0x900;
+		else if(!strcmp(pattern,"p3") && prd>2) bitcode|=0xA00;
+		else if(!strcmp(pattern,"p4") && prd>3) bitcode|=0xB00;
+		else return 0;
+		*dotptr='.';
+		dotptr++;
+		if(!dotptr[0]);																			// after the dot pattern
+		else if(!strcmp(dotptr,"new")) bitcode|=0x1;
+		else if(!strcmp(dotptr,"r1")) bitcode|=0x4;
+		else if(!strcmp(dotptr,"r2")) bitcode|=0x5;
+		else if(!strcmp(dotptr,"p1") && prd>0) bitcode|=0x8;
+		else if(!strcmp(dotptr,"p2") && prd>1) bitcode|=0x9;
+		else if(!strcmp(dotptr,"p3") && prd>2) bitcode|=0xA;
+		else if(!strcmp(dotptr,"p4") && prd>3) bitcode|=0xB;
+		else return 0; }
+
+	else if(!strcmp(pattern,"new")) bitcode=0x1;						// no dot
+	else if(!strcmp(pattern,"r1")) bitcode=0x4;
+	else if(!strcmp(pattern,"r2")) bitcode=0x5;
+	else if(!strcmp(pattern,"p1") && prd>0) bitcode=0x8;
+	else if(!strcmp(pattern,"p2") && prd>1) bitcode=0x9;
+	else if(!strcmp(pattern,"p3") && prd>2) bitcode=0xA;
+	else if(!strcmp(pattern,"p4") && prd>3) bitcode=0xB;
+	else {
+		itct=sscanf(pattern,"%li",&pserno);
+		if(itct!=1 || pserno<=0) return 0; }
+	if(pserno==0)
+		pserno=~bitcode;
+
+	return pserno; }
+
+
+/* rxnsernocode2string */
+char *rxnsernocode2string(long int pserno,char *pattern) {
+	long int bitcode;
+	int rpflag;
+
+	if(pserno>=0) {
+		sprintf(pattern,"%li",pserno);
+		return pattern; }
+
+	pattern[0]='\0';
+	bitcode=~pserno;
+
+	rpflag=0;
+	if(bitcode&0x800) {strcat(pattern,"p");rpflag=1;}
+	else if(bitcode&0x400) {strcat(pattern,"r");rpflag=1;}
+	if(!rpflag && (bitcode&0x300)==1) strcat(pattern,"new");
+	else if(rpflag && (bitcode&0x300)==0) strcat(pattern,"1");
+	else if(rpflag && (bitcode&0x300)==1) strcat(pattern,"2");
+	else if(rpflag && (bitcode&0x300)==2) strcat(pattern,"3");
+	else if(rpflag && (bitcode&0x300)==3) strcat(pattern,"4");
+
+	if(bitcode&0x10) strcat(pattern,".");
+
+	rpflag=0;
+	if(bitcode&0x8) {strcat(pattern,"p");rpflag=1;}
+	else if(bitcode&0x4) {strcat(pattern,"r");rpflag=1;}
+	if(!rpflag && (bitcode&0x3)==1) strcat(pattern,"new");
+	else if(rpflag && (bitcode&0x3)==0) strcat(pattern,"1");
+	else if(rpflag && (bitcode&0x3)==1) strcat(pattern,"2");
+	else if(rpflag && (bitcode&0x3)==2) strcat(pattern,"3");
+	else if(rpflag && (bitcode&0x3)==3) strcat(pattern,"4");
+
+	return pattern; }
+
+
+
 /******************************************************************************/
 /****************************** memory management *****************************/
 /******************************************************************************/
@@ -580,7 +664,6 @@ int rxnexpandmaxspecies(simptr sim,int maxspecies) {
 void rxnoutput(simptr sim,int order) {
 	rxnssptr rxnss;
 	int d,dim,maxlist,maxll2o,ll,ord,ni2o,i,j,r,rct,prd,rev,identlist[MAXORDER],orderr,rr,i1,i2,o2,r2;
-	long int serno;
 	rxnptr rxn,revrxn;
 	enum MolecState ms,ms1,ms2,nms2o,statelist[MAXORDER];
 	double dsum,step,pgem,rate3,bindrad,ratio,smolmodelrate,actualrate,revunbindrad,chi,lambdap;
@@ -666,13 +749,8 @@ void rxnoutput(simptr sim,int order) {
 
 		if(rxn->prdserno) {											// product serial number rules
 			simLog(sim,2,"   serial number rules:");
-			for(prd=0;prd<rxn->nprod;prd++) {
-				serno=rxn->prdserno[prd];
-				if(serno==0) simLog(sim,2," new");
-				else if(serno==-1) simLog(sim,2," r1");
-				else if(serno==-2) simLog(sim,2," r2");
-				else if(serno<=-10) simLog(sim,2," p%i",(int)(-9-serno));
-				else simLog(sim,2," %li",serno); }
+			for(prd=0;prd<rxn->nprod;prd++)
+				simLog(sim,2," %s",rxnsernocode2string(rxn->prdserno[prd],string));
 			simLog(sim,2,"\n"); }
 
 		if(rxn->prdintersurf) {									// product intersurface rules
@@ -805,8 +883,8 @@ void rxnoutput(simptr sim,int order) {
 
 /* writereactions */
 void writereactions(simptr sim,FILE *fptr) {
-	int order,r,prd,d,rct,i,i1;
-	long int serno;
+	int order,r,prd,d,rct,i;
+	long int pserno;
 	rxnptr rxn;
 	rxnssptr rxnss;
 	char string[STRCHAR],string2[STRCHAR];
@@ -871,13 +949,8 @@ void writereactions(simptr sim,FILE *fptr) {
 
 				if(rxn->prdserno) {
 					fprintf(fptr,"reaction_serialnum %s",rxn->rname);
-					for(prd=0;prd<rxn->nprod;prd++) {
-						serno=rxn->prdserno[prd];
-						if(serno==0) fprintf(fptr," new");
-						else if(serno==-1) fprintf(fptr," r1");
-						else if(serno==-2) fprintf(fptr," r2");
-						else if(serno<=-10) fprintf(fptr," p%i",(int)(-9-serno));
-						else fprintf(fptr," %li",serno); }
+					for(prd=0;prd<rxn->nprod;prd++)
+						fprintf(fptr," %s",rxnsernocode2string(rxn->prdserno[prd],string));
 					fprintf(fptr,"\n"); }
 
 				if(rxn->prdintersurf) {
@@ -886,8 +959,8 @@ void writereactions(simptr sim,FILE *fptr) {
 						fprintf(fptr," on");
 					else {
 						for(prd=0;prd<rxn->nprod;prd++) {
-							i1=rxn->prdserno[prd];
-							if(i1==1) fprintf(fptr," r1");
+							pserno=rxn->prdserno[prd];
+							if(pserno==1) fprintf(fptr," r1");
 							else fprintf(fptr," r2"); }}
 					fprintf(fptr,"\n"); }
 
@@ -906,9 +979,9 @@ void writereactions(simptr sim,FILE *fptr) {
 
 /* checkrxnparams */
 int checkrxnparams(simptr sim,int *warnptr) {
-	int d,dim,warn,error,i1,i2,j,nspecies,r,i,ct,j1,j2,order,prd,prd2,vflag,prdparamflag;
+	int d,dim,warn,error,i1,i2,j,nspecies,r,i,ct,j1,j2,order,prd,vflag,prdparamflag;
 	int rev,o2,r2;
-	long int serno;
+	long int pserno,bitcode;
 	molssptr mols;
 	double minboxsize,vol,amax,vol2,vol3,actualrate,smolmodelrate,revunbindrad,chi,dsum;
 	rxnptr rxn,rxn1,rxn2,revrxn;
@@ -1052,12 +1125,11 @@ int checkrxnparams(simptr sim,int *warnptr) {
 				if(rxn->prdserno) {
 					j=0;
 					for(prd=0;prd<rxn->nprod;prd++) {
-						serno=rxn->prdserno[prd];
-						if(serno<=-10) j=1;
-						else if(serno>0) j=1;
-						else if(serno==-1 || serno==-2)
-							for(prd2=prd+1;prd2<rxn->nprod;prd2++)
-								if(rxn->prdserno[prd2]==serno) j=1; }
+						pserno=rxn->prdserno[prd];
+						bitcode=~pserno;
+						if(pserno>0) j=1;
+						else if((bitcode&0x8) || (bitcode&0x800)) j=1;
+						else if((bitcode&0x4) && (bitcode&0x400) && (bitcode&0x3)==(bitcode&0x300)>>8) j=1; }
 					if(j) {
 						simLog(sim,5," WARNING: multiple molecules might have the same serial number due to reaction %s\n",rxn->rname);
 						warn++; }}}}
@@ -2509,7 +2581,8 @@ failure:
 /* doreact */
 int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,int m1,int ll2,int m2,double *pos,panelptr rxnpnl) {
 	int order,prd,d,nprod,dim,calc,dorxnlog,prd2;
-	long int serno,sernolist[MAXPRODUCT];
+	long int pserno;
+	unsigned long long sernolist[MAXPRODUCT];
 	double dc1,dc2,x,dist,pvalue;
 	molssptr mols;
 	moleculeptr mptr,mptrfrom;
@@ -2517,6 +2590,7 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 	double v1[DIMMAX],v2[DIMMAX],rxnpos[DIMMAX],m3[DIMMAX*DIMMAX];
 	enum MolecState ms;
 	FILE *fptr;
+	char string[STRCHAR];
 
 	mols=sim->mols;
 	dim=sim->dim;
@@ -2553,8 +2627,10 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 // determine if reaction needs to be logged
 	if(rxn->logserno) {
 		if(rxn->logserno->n==1 && rxn->logserno->xs[0]==-1) dorxnlog=1;
-		else if(mptr1 && ListMemberLI(rxn->logserno,mptr1->serno)) dorxnlog=1;
-		else if(mptr2 && ListMemberLI(rxn->logserno,mptr2->serno)) dorxnlog=1;
+		else if(mptr1 && ListMemberLI(rxn->logserno,mptr1->serno&0xFFFFFFFF)) dorxnlog=1;
+		else if(mptr1 && ListMemberLI(rxn->logserno,(~(mptr1->serno)>>32))) dorxnlog=1;
+		else if(mptr2 && ListMemberLI(rxn->logserno,mptr2->serno&0xFFFFFFFF)) dorxnlog=1;
+		else if(mptr2 && ListMemberLI(rxn->logserno,(~(mptr2->serno)>>32))) dorxnlog=1;
 		else dorxnlog=0; }
 
 // place products
@@ -2703,16 +2779,13 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 				movemol2closepanel(sim,mptr);
 
 			if(rxn->prdserno) {												// set product serial numbers
-				serno=rxn->prdserno[prd];
-				if(serno==0);
-				else if(serno==-1) mptr->serno=mptr1->serno;
-				else if(serno==-2) mptr->serno=mptr2->serno;
-				else if(serno<=-10) mptr->serno=sernolist[(int)(-9-serno)];
-				else mptr->serno=serno;
+				pserno=rxn->prdserno[prd];
+				mptr->serno=molfindserno(sim,mptr->serno,pserno,mptr1?mptr1->serno:0,mptr2?mptr2->serno:0,sernolist);
 				sernolist[prd]=mptr->serno; }}
 
 		if(rxn->logserno) {													// log reaction if needed
-			if(dorxnlog==0 && ListMemberLI(rxn->logserno,mptr->serno)) dorxnlog=1;
+			if(dorxnlog==0 && (ListMemberLI(rxn->logserno,mptr->serno&0xFFFFFFFF) || (mptr->serno>0xFFFFFFF && ListMemberLI(rxn->logserno,(~mptr->serno)>>32))))
+				dorxnlog=1;
 			if(dorxnlog==1) {
 				fptr=scmdgetfptr(sim->cmds,rxn->logfile);
 				if(!fptr) {
@@ -2721,12 +2794,12 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 				else {
 					scmdfprintf(sim->cmds,fptr,"%g %s",sim->time,rxn->rname);
 					for(d=0;d<dim;d++) scmdfprintf(sim->cmds,fptr," %g",rxnpos[d]);
-					if(mptr1) scmdfprintf(sim->cmds,fptr," %li",mptr1->serno);
-					if(mptr2) scmdfprintf(sim->cmds,fptr," %li",mptr2->serno);
+					if(mptr1) scmdfprintf(sim->cmds,fptr," %s",molserno2string(mptr1->serno,string));
+					if(mptr2) scmdfprintf(sim->cmds,fptr," %s",molserno2string(mptr2->serno,string));
 					for(prd2=0;prd2<prd;prd2++) scmdfprintf(sim->cmds,fptr," ?");
 					dorxnlog=2; }}
 			if(dorxnlog==2) {
-				scmdfprintf(sim->cmds,fptr," %li",mptr->serno);
+				scmdfprintf(sim->cmds,fptr," %s",molserno2string(mptr->serno,string));
 				if(prd==nprod-1) scmdfprintf(sim->cmds,fptr,"\n"); }}}
 
 	if(mptr1) molkill(sim,mptr1,ll1,m1);					// kill reactants

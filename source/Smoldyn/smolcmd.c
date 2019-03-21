@@ -649,6 +649,7 @@ enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2) {
 	moleculeptr mptr;
 	double *pos,*posx,*via;
 	static int inscan=0;
+	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -679,9 +680,9 @@ enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2) {
 		escape=!posinsystem(sim,posx);
 		if(!escape) {
 			via=mptr->via;
-			if(sim->dim==1) scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%li %g to %g via %g\n",sim->time,mptr->serno,posx[0],pos[0],via[0]);
-			else if(sim->dim==2) scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%li (%g,%g) to (%g,%g) via (%g,%g)\n",sim->time,mptr->serno,posx[0],posx[1],pos[0],pos[1],via[0],via[1]);
-			else scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%li (%g,%g,%g) to (%g,%g,%g) via (%g,%g,%g)\n",sim->time,mptr->serno,posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]); }}
+			if(sim->dim==1) scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s %g to %g via %g\n",sim->time,molserno2string(mptr->serno,string),posx[0],pos[0],via[0]);
+			else if(sim->dim==2) scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g) to (%g,%g) via (%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],pos[0],pos[1],via[0],via[1]);
+			else scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g,%g) to (%g,%g,%g) via (%g,%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]); }}
 	return CMDok; }
 
 
@@ -1914,7 +1915,7 @@ enum CMDcode cmdlistmols(simptr sim,cmdptr cmd,char *line2) {
 	scmdfprintf(cmd->cmds,fptr,"%s(%s)",sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string));
 	for(d=0;d<sim->dim;d++)
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
-	scmdfprintf(cmd->cmds,fptr,"%,%li\n",mptr->serno);
+	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
 	return CMDok; }
 
 
@@ -1924,6 +1925,7 @@ enum CMDcode cmdlistmols2(simptr sim,cmdptr cmd,char *line2) {
 	moleculeptr mptr;
 	static FILE *fptr;
 	static int inscan=0,invk;
+	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -1945,7 +1947,7 @@ enum CMDcode cmdlistmols2(simptr sim,cmdptr cmd,char *line2) {
 	scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
 	for(d=0;d<sim->dim;d++)
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
-	scmdfprintf(cmd->cmds,fptr,"%,%li\n",mptr->serno);
+	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
 	return CMDok; }
 
 
@@ -1956,6 +1958,7 @@ enum CMDcode cmdlistmols3(simptr sim,cmdptr cmd,char *line2) {
 	enum MolecState ms;
 	static FILE *fptr;
 	static int inscan=0,invk;
+	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -1984,7 +1987,7 @@ enum CMDcode cmdlistmols3(simptr sim,cmdptr cmd,char *line2) {
 	scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
 	for(d=0;d<sim->dim;d++)
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
-	scmdfprintf(cmd->cmds,fptr,"%,%li\n",mptr->serno);
+	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
 	return CMDok; }
 
 
@@ -1995,6 +1998,7 @@ enum CMDcode cmdlistmols4(simptr sim,cmdptr cmd,char *line2) {
 	enum MolecState ms;
 	static FILE *fptr;
 	static int inscan=0,invk;
+	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -2023,7 +2027,7 @@ enum CMDcode cmdlistmols4(simptr sim,cmdptr cmd,char *line2) {
 	scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
 	for(d=0;d<sim->dim;d++)
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]+mptr->posoffset[d]);
-	scmdfprintf(cmd->cmds,fptr,"%,%li\n",mptr->serno);
+	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
 	return CMDok; }
 
 
@@ -2032,7 +2036,7 @@ enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2) {
 	int i,*index,c,itct,d;
 	moleculeptr mptr;
 	enum MolecState ms;
-	char cname[STRCHAR];
+	char cname[STRCHAR],string[STRCHAR];
 	compartssptr cmptss;
 	static FILE *fptr;
 	static compartptr cmpt;
@@ -2075,7 +2079,7 @@ enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2) {
 		scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
 		for(d=0;d<sim->dim;d++)
 			scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
-		scmdfprintf(cmd->cmds,fptr,"%,%li\n",mptr->serno); }
+		scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string)); }
 	return CMDok; }
 
 
@@ -2123,14 +2127,16 @@ enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2) {
 	moleculeptr mptr;
 	char string[STRCHAR];
 	static FILE *fptr;
-	static long int serno;
+	static unsigned long long serno;
 	static int inscan=0;
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 
-	itct=sscanf(line2,"%li",&serno);
+	itct=sscanf(line2,"%s",string);
 	SCMDCHECK(itct==1,"cannot read molecule serial number");
+	serno=molstring2serno(string);
+	SCMDCHECK(serno>0,"cannot read molecule serial number");
 	line2=strnword(line2,2);
 	fptr=scmdgetfptr(sim->cmds,line2);
 	SCMDCHECK(fptr,"file name not recognized");
@@ -2144,8 +2150,10 @@ enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2) {
 
  scanportion:
 	mptr=(moleculeptr) line2;
-	if(mptr->serno!=serno) return CMDok;
+	if(!(mptr->serno==serno || (serno<0xFFFFFFFF && (mptr->serno&0xFFFFFFFF)==serno) || (serno<0xFFFFFFFF && mptr->serno>0xFFFFFFFF && (~mptr->serno)>>32==serno)))
+		return CMDok;
 	scmdfprintf(cmd->cmds,fptr,"%g%,%s%,%s",sim->time,sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string));
+	scmdfprintf(cmd->cmds,fptr,"%,%s",molserno2string(mptr->serno,string));
 	for(d=0;d<sim->dim;d++)
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
 	if(sim->cmptss)
@@ -2332,14 +2340,14 @@ enum CMDcode cmdmeansqrdisp(simptr sim,cmdptr cmd,char *line2) {
  scanportion:
 	mptr=(moleculeptr) line2;
 	if(inscan==1) {
-		((long int*)cmd->v1)[ctr]=mptr->serno;
+		((long int*)cmd->v1)[ctr]=(long int)(mptr->serno&0xFFFFFFFF);
 		for(d=0;d<sim->dim;d++)
 			((double**)cmd->v2)[ctr][d]=mptr->posoffset[d]+mptr->pos[d];
 		ctr++; }
 	else {
 		v1=(long int*)cmd->v1;
 		v2=(double**)cmd->v2;
-		j=locateVli(v1,mptr->serno,cmd->i1);
+		j=locateVli(v1,(long int)(mptr->serno&0xFFFFFFFF),cmd->i1);
 		if(j>=0) {
 			ctr++;
 			if(msddim<0) {
@@ -2487,14 +2495,14 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 	v2=(double**)cmd->v2;
 	if(inscan==1) {
 		if(ctr==maxmol) return CMDstop;
-			v1[ctr]=mptr->serno;
+			v1[ctr]=(long int)(mptr->serno&0xFFFFFFFF);
 			if(startchar=='c') v2[ctr][0]=0;
 			else v2[ctr][0]=2.0;
 			for(d=0;d<sim->dim;d++)
 				v2[ctr][1+d]=v2[ctr][sim->dim+1+d]=mptr->posoffset[d]+mptr->pos[d];
 			ctr++; }
 	else {
-		j=locateVli(v1,mptr->serno,cmd->i3);
+		j=locateVli(v1,(long int)(mptr->serno&0xFFFFFFFF),cmd->i3);
 		if(j>=0) {										// molecule was found
 			v2[j][0]+=1.0;
 			if(v2[j][0]==3.0) {					// molecule is being tracked and exists, so record current positions
@@ -2503,7 +2511,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 		else if(startchar!='i') {			// molecule was not found but should be tracked
 			if(cmd->i3==cmd->i1) return CMDstop;
 			j=cmd->i3++;					// find empty spot
-			v1[j]=mptr->serno;
+			v1[j]=(long int)(mptr->serno&0xFFFFFFFF);
 			v2[j][0]=3.0;
 			for(d=0;d<sim->dim;d++)
 				v2[j][1+d]=v2[j][sim->dim+1+d]=mptr->posoffset[d]+mptr->pos[d]; }}
@@ -2645,7 +2653,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 	v2=(double**)cmd->v2;
 	if(inscan==1) {
 		if(ctr==maxmol) return CMDstop;
-		v1[ctr]=mptr->serno;
+		v1[ctr]=(long int)(mptr->serno&0xFFFFFFFF);
 		if(startchar=='c') v2[ctr][0]=0;
 		else v2[ctr][0]=2.0;
 		for(d=0;d<sim->dim;d++)
@@ -2653,7 +2661,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 		v2[ctr][2*sim->dim+1]=sim->time;
 		ctr++; }
 	else {
-		j=locateVli(v1,mptr->serno,cmd->i3);
+		j=locateVli(v1,(long int)(mptr->serno&0xFFFFFFFF),cmd->i3);
 		if(j>=0) {										// molecule was found
 			v2[j][0]+=1.0;
 			if(v2[j][0]==3.0) {					// molecule is being tracked and exists, so record current positions
@@ -2662,7 +2670,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 		else if(startchar!='i') {			// molecule was not found but should be tracked
 			if(cmd->i3==cmd->i1) return CMDstop;
 			j=cmd->i3++;					// find empty spot
-			v1[j]=mptr->serno;
+			v1[j]=(long int)(mptr->serno&0xFFFFFFFF);
 			v2[j][0]=3.0;
 			for(d=0;d<sim->dim;d++)
 				v2[j][1+d]=v2[j][sim->dim+1+d]=mptr->posoffset[d]+mptr->pos[d];
@@ -2776,19 +2784,19 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
 	v2=(double**)cmd->v2;
 	if(inscan==1) {
 		if(ctr==maxmol) return CMDstop;
-		v1[ctr]=mptr->serno;
+		v1[ctr]=(long int)(mptr->serno&0xFFFFFFFF);
 		if(startchar=='c') v2[ctr][0]=0;
 		else v2[ctr][0]=2.0;
 		v2[ctr][1]=sim->time;
 		ctr++; }
 	else {
-		j=locateVli(v1,mptr->serno,cmd->i3);
+		j=locateVli(v1,(long int)(mptr->serno&0xFFFFFFFF),cmd->i3);
 		if(j>=0) {										// molecule was found
 			v2[j][0]+=1.0; }
 		else if(startchar!='i') {			// molecule was not found but should be tracked
 			if(cmd->i3==cmd->i1) return CMDstop;
 			j=cmd->i3++;                // find empty spot
-			v1[j]=mptr->serno;
+			v1[j]=(long int)(mptr->serno&0xFFFFFFFF);
 			v2[j][0]=3.0;
 			v2[j][1]=sim->time; }}
 	return CMDok; }
@@ -2912,7 +2920,7 @@ enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
 
  scanportion:
 	mptr=(moleculeptr) line2;
-	vtkAddPoint(grid,mptr->pos[0],mptr->pos[1],mptr->pos[2],mptr->serno,mptr->ident);
+	vtkAddPoint(grid,mptr->pos[0],mptr->pos[1],mptr->pos[2],(long int)(mptr->serno&0xFFFFFFFF),mptr->ident);
 #endif
 	return CMDok; }
 

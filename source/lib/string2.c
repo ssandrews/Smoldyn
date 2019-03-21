@@ -1374,7 +1374,7 @@ double strmatheval(char *expression,char **varnames,const double *varvalues,int 
   double answer,term;
   char *ptr,*ptr2,ptrchar,ptr2char;
 
-//	printf("strmatheval expression: '%s'",expression);	// DEBUG
+//	printf("strmatheval expression: '%s'\n",expression);	// DEBUG
 
   MathParseError=0;
   length=strlen(expression);
@@ -1396,22 +1396,22 @@ double strmatheval(char *expression,char **varnames,const double *varvalues,int 
     answer=strmatheval(expression+1,varnames,varvalues,nvar);
     *ptr=ptrchar; }
 
-	else if(strisfunctionform(expression,&ptr)) {										// function	?? to be written
+	else if(strisfunctionform(expression,&ptr)) {										// function
 		unarysymbol=0;
-		expression[length-1]='\0';																		//?? ptr will point to open parenthesis. Send function name and parameters to strevalfunction for processing. Beforehand, it will have been called with a list of function names and function pointers for call-back use.
+		expression[length-1]='\0';
 		*ptr='\0';
 		ptr++;
 		answer=strevalfunction(expression,ptr,NULL,NULL,varnames,varvalues,nvar);
 		CHECK(answer>=0 || answer<0); }
 
-  else if((i1=strPbrkBrackets(expression,length-1,"+-","([{",1))>0 && !strchr("^*/",expression[i1-1])) {  // binary + -
+  else if((i1=strPbrkBrackets(expression,length-1,"+-","([{",1))>0 && !strchr("^*/",expression[i1-1]) && !(strchr("Ee",expression[i1-1]) && i1>1 && strchr("0123456789",expression[i1-2]))) {  // binary + -
     unarysymbol=0;
     ptr=expression+i1;
     ptrchar=*ptr;
     *ptr='\0';
     answer=strmatheval(expression,varnames,varvalues,nvar);        // first term
     *ptr=ptrchar;
-    while((i2=strPbrkBrackets(ptr+1,strlen(ptr+1)-1,"+-","([{",1))>0) {
+    while((i2=strPbrkBrackets(ptr+1,strlen(ptr+1)-1,"+-","([{",1))>0 && !strchr("^*/",ptr[i2]) && !(strchr("Ee",ptr[i2]) && strchr("0123456789",ptr[i2-1]))) {
       ptr2=ptr+1+i2;
       ptr2char=*ptr2;
       *ptr2='\0';

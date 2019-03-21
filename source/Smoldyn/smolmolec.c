@@ -621,6 +621,81 @@ int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol) {
 /******************************************************************************/
 
 
+/* molserno2string */
+char *molserno2string(unsigned long long serno,char *string) {
+	if(serno<0xFFFFFFFF)
+		sprintf(string,"%llu",serno);
+	else
+		sprintf(string,"%llu.%llu",(~serno)>>32,serno&0xFFFFFFFF);
+	return string; }
+
+
+/* molstring2serno */
+unsigned long long molstring2serno(char *string) {
+	char *dotptr;
+	unsigned long long i1,i2,answer;
+
+	answer=0;
+	if((dotptr=strchr(string,'.'))) {
+		i1=i2=0;
+		*dotptr='\0';
+		sscanf(string,"%llu",&i1);
+		sscanf(dotptr+1,"%llu",&i2);
+		*dotptr='.';
+		if(i1==0 || i2==0) return 0;
+		answer=(~i1)<<32 | i2; }
+	else
+		sscanf(string,"%llu",&answer);
+
+	return answer; }
+
+
+/* molfindserno */
+unsigned long long molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist) {
+	unsigned long long answer,i1,i2;
+	long int bitcode;
+
+	if(pserno>0) return (unsigned long long)pserno;
+	bitcode=~pserno;
+	i1=i2=0;
+
+	if(bitcode&0xF00) {
+		if(bitcode&0x800) {																// p
+			if((bitcode&0x300)==0) i1=sernolist[0];					// p1
+			else if((bitcode&0x300)==1) i1=sernolist[1];		// p2
+			else if((bitcode&0x300)==2) i1=sernolist[2];		// p3
+			else if((bitcode&0x300)==3) i1=sernolist[3]; }	// p4
+		else if(bitcode&0x400) {													// r
+			if((bitcode&0x300)==0) i1=r1serno;							// r1
+			else if((bitcode&0x300)==1) i1=r2serno; }				// r2
+		else if(bitcode&0x100)														// new
+			i1=def; }
+
+	if(bitcode&0xF) {
+		if(bitcode&0x8) {																	// p
+			if((bitcode&0x3)==0) i2=sernolist[0];						// p1
+			else if((bitcode&0x3)==1) i2=sernolist[1];			// p2
+			else if((bitcode&0x3)==2) i2=sernolist[2];			// p3
+			else if((bitcode&0x3)==3) i2=sernolist[3]; }		// p4
+		else if(bitcode&0x4) {														// r
+			if((bitcode&0x3)==0) i2=r1serno;								// r1
+			else if((bitcode&0x3)==1) i2=r2serno; }					// r2
+		else if(bitcode&0x1) {														// new
+			if((bitcode&0xF00)==0x100) i2=sim->mols->serno++;	// new.new
+			else i2=def; }}
+
+	if(!(bitcode&0x10))																// no dot
+		answer=i2;
+	else if((bitcode&0xF00) && (bitcode&0xF))					// format is x.y
+		answer=((~i1)<<32)|i2;
+	else if(bitcode&0xF00)														// format is x.
+		answer=(~i1)>>32;
+	else																							// format is .y
+		answer=i2&0xFFFFFFFF;
+
+	return answer; }
+
+
 /* molismobile */
 int molismobile(simptr sim,int species,enum MolecState ms) {
 	molssptr mols;
@@ -739,6 +814,11 @@ void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecSta
 	sim->mols->touch++;
 
 	return; }
+
+
+/******************************************************************************/
+/***************************** set structure values ***************************/
+/******************************************************************************/
 
 
 /* molssetgausstable */
@@ -2034,7 +2114,7 @@ void molssoutput(simptr sim) {
 
 	if(mols->condition!=SCok)
 		simLog(sim,7," Molecule superstructure condition: %s\n",simsc2string(mols->condition,string));
-	simLog(sim,1," Next molecule serial number: %li\n",mols->serno);
+	simLog(sim,1," Next molecule serial number: %lu\n",mols->serno);
 	if(mols->gausstbl) simLog(sim,1," Table for Gaussian distributed random numbers has %i values\n",mols->ngausstbl);
 	else simLog(sim,1," Table for Gaussian distributed random numbers has not been set up\n");
 
@@ -2289,7 +2369,7 @@ int checkmolparams(simptr sim,int *warnptr) {
 	for(m=0;m<mols->topd;m++) {
 		mptr=mols->dead[m];
 		if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in dead list at %i\n",m);}
-		else if(mptr->list!=-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in dead list at %i (species %i, serno %li)\n",m,mptr->ident,mptr->serno);}
+		else if(mptr->list!=-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in dead list at %i (species %i, serno %s)\n",m,mptr->ident,molserno2string(mptr->serno,string));}
 		else if(mptr->ident) {error++;simLog(sim,10," SMOLDYN BUG: live molecule in dead list at %i\n",m);} }
 	for(;m<mols->nd;m++) {
 		mptr=mols->dead[m];
@@ -2304,7 +2384,7 @@ int checkmolparams(simptr sim,int *warnptr) {
 		for(m=0;m<mols->nl[ll];m++)	{									// check for molecules outside system
 			mptr=mols->live[ll][m];
 			if(!posinsystem(sim,mptr->pos)) {
-				simLog(sim,5," WARNING: molecule #%li, of type '%s', is outside system volume\n",mptr->serno,spname[mptr->ident]);
+				simLog(sim,5," WARNING: molecule #%s, of type '%s', is outside system volume\n",molserno2string(mptr->serno,string),spname[mptr->ident]);
 				warn++; }}
 
 	for(i=1;i<nspecies;i++)														// check for asymmetric diffusion matrices
@@ -2480,7 +2560,7 @@ int molgeneratespecies(simptr sim,const char *name,int nparents,int parent1,int 
 				for(s=0;s<sim->srfss->nsrf;s++) {
 					srf=sim->srfss->srflist[s];
 					for(face=(enum PanelFace)0;face<=PFnone;face=(PanelFace)(face+1)) {
-						surfsetaction(srf,i,NULL,ms,face,srf->action[parent1][ms][face]);
+						surfsetaction(srf,i,NULL,ms,face,srf->action[parent1][ms][face],-1);
 						if(srf->action[parent1][ms][face]==SAmult) {
 							for(ms4=(enum MolecState)0;ms4<(enum MolecState)MSMAX1;ms4=(enum MolecState)(ms4+1)) {
 								srfindex2tristate(ms,face,ms4,&ms0,&ms1,&ms2);
@@ -2518,7 +2598,7 @@ int molgeneratespecies(simptr sim,const char *name,int nparents,int parent1,int 
 						if(srfcompareaction(act1,det1,act2,det2)>0) {
 							act1=act2;
 							det1=det2; }
-						surfsetaction(srf,i,NULL,ms,face,act1);
+						surfsetaction(srf,i,NULL,ms,face,act1,-1);
 						if(act1==SAmult) {
 							for(ms4=(enum MolecState)0;ms4<(enum MolecState)MSMAX1;ms4=(enum MolecState)(ms4+1)) {
 								srfindex2tristate(ms,face,ms4,&ms0,&ms1,&ms2);
@@ -2666,7 +2746,7 @@ moleculeptr getnextmol(molssptr mols) {
 		er=molexpandlist(mols,mols->sim->dim,-1,nmol,nmol);
 		if(er) return NULL; }
 	mptr=mols->dead[--mols->topd];
-	mptr->serno=mols->serno++;
+	mptr->serno=(unsigned long long)(mols->serno++);
 
 	mols->touch++;
 	return mptr; }
