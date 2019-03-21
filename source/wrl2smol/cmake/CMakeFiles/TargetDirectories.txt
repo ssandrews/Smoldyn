@@ -1,7 +1,0 @@
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/install/strip.dir
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/edit_cache.dir
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/rebuild_cache.dir
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/install.dir
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/wrl2smol.dir
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/list_install_components.dir
-/Users/sandrews/SSA/software/Smoldyn/trunk/source/wrl2smol/cmake/CMakeFiles/install/local.dir
