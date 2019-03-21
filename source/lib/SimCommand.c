@@ -42,7 +42,7 @@ void scmdcatfname(cmdssptr cmds,int fid,char *str) {
 		min=STRCHAR-strlen(str)<(unsigned int)(dot-cmds->fname[fid])?STRCHAR-strlen(str):dot-cmds->fname[fid];
 		strncat(str,cmds->fname[fid],min); }
 	else strncat(str,cmds->fname[fid],STRCHAR);
-	if(cmds->fsuffix[fid] && STRCHAR-strlen(str)>4) sprintf(str+strlen(str),"_%03i",cmds->fsuffix[fid]);
+	if(cmds->fsuffix[fid] && STRCHAR-strlen(str)>4) snprintf(str+strlen(str),sizeof(str)-strlen(str),"_%03i",cmds->fsuffix[fid]);
 	if(dot) strncat(str,dot,STRCHAR-strlen(str));
 	return; }
 
@@ -108,7 +108,9 @@ cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *cmdfnarg,co
 	cmds->iter=0;
 	cmds->maxfile=0;
 	cmds->nfile=0;
-	if(root) strncpy(cmds->root,root,STRCHAR);
+	if(root) {
+		strncpy(cmds->root,root,STRCHAR-1);
+		cmds->root[STRCHAR-1]='\0'; }
 	else cmds->root[0]='\0';
 	cmds->froot[0]='\0';
 	cmds->fname=NULL;
@@ -499,10 +501,10 @@ void scmdoutput(cmdssptr cmds) {
 		while((i=q_next(i,NULL,NULL,NULL,NULL,&voidptr,cmdq))>=0) {
 			cmd=(cmdptr)voidptr;
 			if(cmd->offi!=Q_LLONG_MAX) {
-				sprintf(string2,"  %s %s %s '%%s' (%%s)\n",Q_LLI,Q_LLI,Q_LLI);
+				snprintf(string2,STRCHAR,"  %s %s %s '%%s' (%%s)\n",Q_LLI,Q_LLI,Q_LLI);
 				SCMDPRINTF(2,string2,cmd->oni,cmd->offi,cmd->dti,cmd->str,scmdcode2string(scmdcmdtype(cmds,cmd),string)); }
 			else {
-				sprintf(string2,"  %s end %s '%%s' (%%s)\n",Q_LLI,Q_LLI);
+				snprintf(string2,STRCHAR,"  %s end %s '%%s' (%%s)\n",Q_LLI,Q_LLI);
 				SCMDPRINTF(2,string2,cmd->oni,cmd->dti,cmd->str,scmdcode2string(scmdcmdtype(cmds,cmd),string)); }}}
 	SCMDPRINTF(2,"\n");
 	return; }
@@ -533,7 +535,7 @@ void scmdwritecommands(cmdssptr cmds,FILE *fptr,char *filename) {
 	if(cmds->cmdi)
 		while((i=q_next(i,NULL,NULL,NULL,NULL,&voidptr,cmds->cmdi))>=0) {
 			cmd=(cmdptr)voidptr;
-			sprintf(string2,"cmd I %s %s %s %%s\n",Q_LLI,Q_LLI,Q_LLI);
+			snprintf(string2,STRCHAR,"cmd I %s %s %s %%s\n",Q_LLI,Q_LLI,Q_LLI);
 			fprintf(fptr,string2,cmd->oni,cmd->offi,cmd->dti,cmd->str); }
 	if(cmds->cmd)
 		while((i=q_next(i,NULL,NULL,NULL,NULL,&voidptr,cmds->cmd))>=0) {
@@ -574,7 +576,8 @@ int scmdsetoutputformat(cmdssptr cmds,char *format) {
 /* scmdsetfroot */
 int scmdsetfroot(cmdssptr cmds,const char *root) {
 	if(!cmds || !root) return 1;
-	strncpy(cmds->froot,root,STRCHAR);
+	strncpy(cmds->froot,root,STRCHAR-1);
+	cmds->froot[STRCHAR-1]='\0';
 	return 0; }
 
 
@@ -746,19 +749,20 @@ int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...) {
 	va_list arguments;
 	int code;
 	
-	strncpy(newformat,format,STRCHAR);
+	strncpy(newformat,format,STRCHAR-1);
+	newformat[STRCHAR-1]='\0';
 	if(!cmds) {
 		strstrreplace(newformat,"%,"," ",STRCHAR); }
 	else {
 		if(cmds->precision>=0) {
-			sprintf(replacestr,"%%.%ig",cmds->precision);
+			snprintf(replacestr,STRCHAR,"%%.%ig",cmds->precision);
 			strstrreplace(newformat,"%g",replacestr,STRCHAR); }
 		if(cmds->outformat=='c')
 			strstrreplace(newformat,"%,",",",STRCHAR);
 		else
 			strstrreplace(newformat,"%,"," ",STRCHAR); }
 	va_start(arguments,format);
-	vsprintf(message,newformat,arguments);
+	vsnprintf(message,STRCHARLONG,newformat,arguments);
 	va_end(arguments);
 	code=fprintf(fptr,"%s",message);	
 	return code; }

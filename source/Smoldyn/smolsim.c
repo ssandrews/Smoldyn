@@ -1249,7 +1249,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"tiff_name needs to be a string");
 		strcpy(nm1,sim->filepath);
-		strncat(nm1,nm,STRCHAR-1-strlen(nm1));
+		CHECKS(strlen(nm)<STRCHAR-strlen(nm1),"tiff name is too long");
+		strcat(nm1,nm);
 		gl2SetOptionStr("TiffName",nm1);
 		CHECKS(!strnword(line2,2),"unexpected text following tiff_name"); }
 

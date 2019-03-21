@@ -32,9 +32,9 @@ extern int ErrorType;
 extern char SimFlags[];
 
 #define CHECK(A)				if(!(A)) {ErrorType=1;goto failure;} else (void)0
-#define CHECKMEM(A)			if(!(A)) {ErrorType=3;sprintf(ErrorString,"Cannot allocate memory"); goto failure;} else (void)0
-#define CHECKS(A,...)		if(!(A)) {ErrorType=2;sprintf(ErrorString,__VA_ARGS__); goto failure;} else (void)0
-#define CHECKBUG(A,...)	if(!(A)) {ErrorType=4;sprintf(ErrorString,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKMEM(A)			if(!(A)) {ErrorType=3;snprintf(ErrorString,STRCHARLONG,"Cannot allocate memory"); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {ErrorType=2;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKBUG(A,...)	if(!(A)) {ErrorType=4;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
 
 extern int VCellDefined;
 

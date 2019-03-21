@@ -22,7 +22,7 @@ of the Gnu Lesser General Public License (LGPL). */
 /************ Declarations for internal functions ****************/
 /******************************************************************/
 
-#define CHECKS(A,...)		if(!(A)) {sprintf(StrErrorString,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {snprintf(StrErrorString,sizeof(StrErrorString),__VA_ARGS__); goto failure;} else (void)0
 #define CHECK(A)		if(!(A)) {goto failure;} else (void)0
 
 char StrErrorString[STRCHAR];
@@ -1539,12 +1539,12 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 			valueint=strmathevalint(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%i ");
-			sprintf(newstr+strlen(newstr),"%i ",valueint); }
+			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%i ",valueint); }
 		else {
 			value=strmatheval(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%lg ");
-			sprintf(newstr+strlen(newstr),"%lg ",value); }
+			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%lg ",value); }
 
 		fmtpos1=strnwordc(fmtpos2,2);
 		strpos1=strnwordc(strpos2,2);

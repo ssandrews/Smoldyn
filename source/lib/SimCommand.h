@@ -10,8 +10,8 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "stdio.h"
 #include "string2.h"
 
-#define SFNCHECK(A,...) if(!(A)) {if(erstr) sprintf(erstr,__VA_ARGS__);return dblnan();} else (void)0
-#define SCMDCHECK(A,...) if(!(A)) {if(cmd) sprintf(cmd->erstr,__VA_ARGS__);return CMDwarn;} else (void)0
+#define SFNCHECK(A,...) if(!(A)) {if(erstr) snprintf(erstr,sizeof(erstr),__VA_ARGS__);return dblnan();} else (void)0
+#define SCMDCHECK(A,...) if(!(A)) {if(cmd) snprintf(cmd->erstr,sizeof(cmd->erstr),__VA_ARGS__);return CMDwarn;} else (void)0
 
 enum CMDcode {CMDok,CMDwarn,CMDpause,CMDstop,CMDabort,CMDnone,CMDcontrol,CMDobserve,CMDmanipulate,CMDctrlORobs,CMDall};
 

@@ -857,8 +857,9 @@ int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods) {
 	else {																			// multiple monomers or 1 monomer and possible modifications
 		for(mn=0;mn<bng->nmonomer && length>0;mn++)
 			if(bng->monomercount[mn]>0) {
-				sprintf(string,"%s.%i.",bng->monomernames[mn],bng->monomercount[mn]);
-				strncat(shortname,string,length);
+				snprintf(string,STRCHAR,"%s.%i.",bng->monomernames[mn],bng->monomercount[mn]);
+				string[length-1]='\0';
+				strcat(shortname,string);
 				length-=strlen(string); }
 
 		i2=0;																			// append the short name isomer number
@@ -869,7 +870,7 @@ int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods) {
 			if(lastdot) {
 				cmplength=lastdot-cmpname;
 				if(!strncmp(shortname,cmpname,cmplength>snlength?cmplength:snlength)) i2++; }}
-		sprintf(string,"%i",i2);
+		snprintf(string,STRCHAR,"%i",i2);
 		strcat(shortname,string); }
 
 	return 0; }
@@ -1239,7 +1240,7 @@ int bngparsereaction(bngptr bng,int index) {
 		rctstate[0]=rctstate[1]=MSsoln;
 		prdstate[0]=prdstate[1]=MSsoln; }
 
-  sprintf(string,"%s_%i",bng->bngname,index);     // reaction name
+  snprintf(string,STRCHAR,"%s_%i",bng->bngname,index);     // reaction name
 
   rxn=RxnAddReaction(sim,string,order,react,rctstate,nprod,prod,prdstate,NULL,NULL);
   if(!rxn) return 1;
@@ -1328,7 +1329,7 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 	strcpy(dot,".net");
 	remove(outname);						// delete output file
 
-	sprintf(string,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
+	snprintf(string,STRCHAR,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
 	simLog(bng->bngss->sim,2," Running BNG2.pl on %s\n",filename);
 	system(string);							// generate network
 

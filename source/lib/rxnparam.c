@@ -610,7 +610,7 @@ double bindingradiusprob(double rate,double dt,double difc,double b,int rel,doub
 		return a; }
 
 	if(chi<0) {																							// unknown chi but known probability
-		prob=*probptr;
+		prob=pbest=*probptr;
 		step=sqrt(2*difc*dt);
 		xtry[0]=abest=step;																		// binding radius is being searched
 		xmult[0]=0.1;

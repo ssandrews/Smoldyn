@@ -1256,15 +1256,16 @@ void RenderText(simptr sim) {
 	for(item=0;item<graphss->ntextitems;item++) {
 		itemname=graphss->textitems[item];
 		if(!strcmp(itemname,"time"))
-			 sprintf(string,"time: %g",sim->time);
+			 snprintf(string,STRCHAR,"time: %g",sim->time);
 		else if((i=molstring2index1(sim,itemname,&ms,&index))>=0 || i==-5)
-			sprintf(string,"%s: %i",itemname,molcount(sim,i,index,ms,-1));
+			snprintf(string,STRCHAR,"%s: %i",itemname,molcount(sim,i,index,ms,-1));
 		else if(sim->ruless)
-			sprintf(string,"%s: 0",itemname);
+			snprintf(string,STRCHAR,"%s: 0",itemname);
 		else
-			sprintf(string,"syntax error");
+			snprintf(string,STRCHAR,"syntax error");
 
-		strncat(string2,string,STRCHAR-strlen(string2)-1);
+		if(STRCHAR-strlen(string2)>strlen(string))
+			strcat(string2,string);
 		if(item+1<graphss->ntextitems)
 			strncat(string2,", ",STRCHAR-3); }
 	gl2DrawTextD(5,95,graphss->textcolor,GLUT_BITMAP_HELVETICA_12,string2,-1);

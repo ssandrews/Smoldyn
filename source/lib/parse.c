@@ -10,7 +10,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "string2.h"
 
 #define CHECK(A) if(!(A)) {goto failure;} else (void)0
-#define CHECKS(A,...)		if(!(A)) {sprintf(erstr,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {snprintf(erstr,sizeof(erstr),__VA_ARGS__); goto failure;} else (void)0
 
 
 /******************************************************************************/
@@ -310,7 +310,7 @@ ParseFilePtr Parse_Start(const char *fileroot,const char *filename,char *erstr) 
 	CHECKS(pfp,"Unable to allocate memory for reading configuration file");
 	pfp->fptr=fopen(pfp->fname,"r");
 	if(!pfp->fptr) {
-		sprintf(string,"File '%s' not found\n",pfp->fname);
+		snprintf(string,STRCHAR,"File '%s' not found\n",pfp->fname);
 		Parse_FreeFilePtr(pfp);
 		CHECKS(0,"%s",string); }
 	return pfp;
@@ -486,7 +486,7 @@ int Parse_ReadFailure(ParseFilePtr pfp,char *erstr) {
 	if(!pfp) i1=0;
 	else {
 		i1=pfp->lctr;
-		sprintf(erstr,"Error reading file in line %i",i1);
+		snprintf(erstr,sizeof(erstr),"Error reading file in line %i",i1);
 		if(pfp->linecopy[0]) {
 			strncat(erstr,"\nline: ",STRCHAR-1-strlen(erstr));
 			if(strchr(pfp->linecopy,'\n')) *(strchr(pfp->linecopy,'\n'))='\0';

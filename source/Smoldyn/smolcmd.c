@@ -2904,7 +2904,7 @@ enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
 	if (sim->latticess) {
 		for (ll = 0; ll < sim->latticess->nlattice; ++ll) {
 			lattice = sim->latticess->latticelist[ll];
-			sprintf(nm2,"Lattice%02d_",ll);
+			snprintf(nm2,STRCHAR,"Lattice%02d_",ll);
 			switch(lattice->type) {
         case LATTICEnsv:
           if (lattice->nsv) vtkWriteGrid(nm,nm2,cmd->invoke,nsv_get_grid(lattice->nsv));

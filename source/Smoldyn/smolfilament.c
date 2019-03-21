@@ -931,9 +931,9 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,const char
 			CHECKS(itct==3,"random_segments format: number [x y z] [thickness]");
 			line2=strnword(line2,4); }
 		else {
-			sprintf(str1,"%i",0);
-			sprintf(str2,"%i",0);
-			sprintf(str3,"%i",0); }
+			snprintf(str1,STRCHAR,"%i",0);
+			snprintf(str2,STRCHAR,"%i",0);
+			snprintf(str3,STRCHAR,"%i",0); }
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);

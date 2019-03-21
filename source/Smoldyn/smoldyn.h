@@ -16,6 +16,14 @@
 //  #include "nsvc.h"
 //#endif
 
+
+#ifdef WINDOWS_BUILD
+  #define LLUFORMAT "%I64u"				// MinGW doesn't use standard printf formatting
+#else
+  #define LLUFORMAT "%llu"
+#endif
+
+
 #ifdef OPTION_VTK
   #include "vtkwrapper.h"
 #endif

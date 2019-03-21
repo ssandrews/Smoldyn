@@ -265,7 +265,7 @@ panelptr readpanelname(simptr sim,surfaceptr srf,const char *str) {
 	int s,p;
 
 	if(strchr(str,':')) strcpy(name,str);
-	else if(srf) sprintf(name,"%s:%s",srf->sname,str);
+	else if(srf) snprintf(name,STRCHAR,"%s:%s",srf->sname,str);
 	else return NULL;
 	s=readsurfacename(sim,name,&ps,&p);
 	if(s<0 || p<0) return NULL;
@@ -801,7 +801,7 @@ int panelsalloc(surfaceptr srf,int dim,int maxpanel,int maxspecies,enum PanelSha
 		newpname[p]=srf->pname[ps][p];
 	for(;p<maxpanel;p++) {
 		CHECKMEM(newpname[p]=EmptyString());
-		sprintf(newpname[p],"%s%i",surfps2string(ps,string),p); }
+		snprintf(newpname[p],STRCHAR,"%s%i",surfps2string(ps,string),p); }
 
 	CHECKMEM(newpnls=(panelptr*) calloc(maxpanel,sizeof(panelptr)));
 	for(p=0;p<maxpanel;p++) newpnls[p]=NULL;

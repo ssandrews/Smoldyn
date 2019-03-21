@@ -176,7 +176,8 @@ float *sprintM(float *a,int m,int n,char s[],char *t,int tn)	{
 	ti=0;
 	for(i=0;i<m;i++) {
 		for(j=0;j<n;j++)
-			if(sprintf(s2,s,a[n*i+j])<tn-ti-1)	ti+=sprintf(t+ti,s,a[n*i+j]);
+			if(snprintf(s2,255,s,a[n*i+j])<tn-ti-1)
+				ti+=sprintf(t+ti,s,a[n*i+j]);
 		if(tn-ti>1) ti+=sprintf(t+ti,"\n"); }
 	return a;	}
 

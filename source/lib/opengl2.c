@@ -111,8 +111,10 @@ void KeyPush(unsigned char key,int x,int y) {
 		glGetIntegerv(GL_VIEWPORT,viewport);
 		w=viewport[2];
 		h=viewport[3];
-		sprintf(str,"%s%%0%ii.tif",TiffName,(int)log10((double)TiffNumMax)+1);
-		sprintf(name,str,TiffNumber);
+		snprintf(str,STRCHAR,"%s%%0%ii.tif",TiffName,(int)log10((double)TiffNumMax)+1);
+		str[STRCHAR-1]='\0';
+		snprintf(name,STRCHAR,str,TiffNumber);
+		name[STRCHAR-1]='\0';
 		WriteTIFF(name,"OpenGL picture",0,0,w,h,-1);
 		TiffNumber++; }
 	else if(key=='z' && Dimension==3) glRotatef(RotateAngle,0,0,1);
@@ -485,8 +487,9 @@ float gl2SetOptionFlt(const char *option,float value) {
 /* gl2SetOptionStr */
 void gl2SetOptionStr(const char *option,const char *value) {
 	if(!strcmp(option,"TiffName")) {
-		if(value) strncpy(TiffName,value,STRCHAR);
-		else strncpy(TiffName,TiffNameDefault,STRCHAR); }
+		if(value) strncpy(TiffName,value,STRCHAR-1);
+		else strncpy(TiffName,TiffNameDefault,STRCHAR-1);
+		TiffName[STRCHAR-1]='\0'; }
 	return; }
 
 

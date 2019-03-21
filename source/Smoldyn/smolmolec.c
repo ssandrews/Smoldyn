@@ -513,7 +513,7 @@ int molpatternindex(simptr sim,const char *pattern,const char *rname,int isrule,
 						if(matchindex2[PDMAX+i]==i1) keepgoing=0; }}
 
 			if(keepgoing) {
-				sprintf(teststring,"%s %s",mols->spname[i1],mols->spname[i2]);
+				snprintf(teststring,STRCHAR,"%s %s",mols->spname[i1],mols->spname[i2]);
 				while((ismatch=strEnhWildcardMatchAndSub(matchstr,teststring,substr,deststring))>0) {
 					if(index[PDalloc]<PDMAX+totalwords*(j+1)) {
 						er=molpatternindexalloc(&patindex[pat],PDMAX+2*totalwords*(j+1));
@@ -624,9 +624,9 @@ int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol) {
 /* molserno2string */
 char *molserno2string(unsigned long long serno,char *string) {
 	if(serno<0xFFFFFFFF)
-		sprintf(string,"%llu",serno);
+		snprintf(string,sizeof(string),LLUFORMAT,serno);
 	else
-		sprintf(string,"%llu.%llu",(~serno)>>32,serno&0xFFFFFFFF);
+		snprintf(string,sizeof(string),LLUFORMAT "." LLUFORMAT,(~serno)>>32,serno&0xFFFFFFFF);
 	return string; }
 
 
@@ -639,13 +639,13 @@ unsigned long long molstring2serno(char *string) {
 	if((dotptr=strchr(string,'.'))) {
 		i1=i2=0;
 		*dotptr='\0';
-		sscanf(string,"%llu",&i1);
-		sscanf(dotptr+1,"%llu",&i2);
+		sscanf(string,LLUFORMAT,&i1);
+		sscanf(dotptr+1,LLUFORMAT,&i2);
 		*dotptr='.';
 		if(i1==0 || i2==0) return 0;
 		answer=(~i1)<<32 | i2; }
 	else
-		sscanf(string,"%llu",&answer);
+		sscanf(string,LLUFORMAT,&answer);
 
 	return answer; }
 
@@ -660,37 +660,37 @@ unsigned long long molfindserno(simptr sim,unsigned long long def,long int psern
 	i1=i2=0;
 
 	if(bitcode&0xF00) {
-		if(bitcode&0x800) {																// p
-			if((bitcode&0x300)==0) i1=sernolist[0];					// p1
-			else if((bitcode&0x300)==1) i1=sernolist[1];		// p2
-			else if((bitcode&0x300)==2) i1=sernolist[2];		// p3
-			else if((bitcode&0x300)==3) i1=sernolist[3]; }	// p4
-		else if(bitcode&0x400) {													// r
-			if((bitcode&0x300)==0) i1=r1serno;							// r1
-			else if((bitcode&0x300)==1) i1=r2serno; }				// r2
-		else if(bitcode&0x100)														// new
+		if(bitcode&0x800) {																			// p
+			if((bitcode&0x300)==0) i1=sernolist[0];								// p1
+			else if((bitcode&0x300)==0x100) i1=sernolist[1];			// p2
+			else if((bitcode&0x300)==0x200) i1=sernolist[2];			// p3
+			else if((bitcode&0x300)==0x300) i1=sernolist[3]; }		// p4
+		else if(bitcode&0x400) {																// r
+			if((bitcode&0x300)==0) i1=r1serno;										// r1
+			else if((bitcode&0x300)==0x100) i1=r2serno; }					// r2
+		else if(bitcode&0x100)																	// new
 			i1=def; }
 
 	if(bitcode&0xF) {
-		if(bitcode&0x8) {																	// p
-			if((bitcode&0x3)==0) i2=sernolist[0];						// p1
-			else if((bitcode&0x3)==1) i2=sernolist[1];			// p2
-			else if((bitcode&0x3)==2) i2=sernolist[2];			// p3
-			else if((bitcode&0x3)==3) i2=sernolist[3]; }		// p4
-		else if(bitcode&0x4) {														// r
-			if((bitcode&0x3)==0) i2=r1serno;								// r1
-			else if((bitcode&0x3)==1) i2=r2serno; }					// r2
-		else if(bitcode&0x1) {														// new
-			if((bitcode&0xF00)==0x100) i2=sim->mols->serno++;	// new.new
+		if(bitcode&0x8) {																				// p
+			if((bitcode&0x3)==0) i2=sernolist[0];									// p1
+			else if((bitcode&0x3)==1) i2=sernolist[1];						// p2
+			else if((bitcode&0x3)==2) i2=sernolist[2];						// p3
+			else if((bitcode&0x3)==3) i2=sernolist[3]; }					// p4
+		else if(bitcode&0x4) {																	// r
+			if((bitcode&0x3)==0) i2=r1serno;											// r1
+			else if((bitcode&0x3)==1) i2=r2serno; }								// r2
+		else if(bitcode&0x1) {																	// new
+			if((bitcode&0xF00)==0x100) i2=sim->mols->serno++;			// new.new
 			else i2=def; }}
 
-	if(!(bitcode&0x10))																// no dot
+	if(!(bitcode&0x10))																				// no dot
 		answer=i2;
-	else if((bitcode&0xF00) && (bitcode&0xF))					// format is x.y
+	else if((bitcode&0xF00) && (bitcode&0xF))									// format is x.y
 		answer=((~i1)<<32)|i2;
-	else if(bitcode&0xF00)														// format is x.
+	else if(bitcode&0xF00)																		// format is x.
 		answer=(~i1)>>32;
-	else																							// format is .y
+	else																											// format is .y
 		answer=i2&0xFFFFFFFF;
 
 	return answer; }
@@ -738,7 +738,7 @@ char *molpos2string(simptr sim,moleculeptr mptr,char *string) {
 
 	line2=string;												// write position to string
 	for(d=0;d<dim;d++) {
-		sprintf(line2," %g",mptr->pos[d]);
+		snprintf(line2,sizeof(line2)," %g",mptr->pos[d]);
 		line2+=strlen(line2); }
 
 	if(!sim->srfss) done=1;
@@ -767,7 +767,7 @@ char *molpos2string(simptr sim,moleculeptr mptr,char *string) {
 
 			line2=string;												// write position to string
 			for(d=0;d<dim;d++) {
-				sprintf(line2," %g",mptr->pos[d]+unirandCCD(-dist,dist));
+				snprintf(line2,sizeof(line2)," %g",mptr->pos[d]+unirandCCD(-dist,dist));
 				line2+=strlen(line2); }}}
 		
 		return string; }
