@@ -488,6 +488,7 @@ int checksimparams(simptr sim);
 
 // structure set up
 void simsetcondition(simptr sim,enum StructCond cond,int upgrade);
+int simsetvariable(simptr sim,const char *name,double value);
 int simsetdim(simptr sim,int dim);
 int simsettime(simptr sim,double time,int code);
 int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2);

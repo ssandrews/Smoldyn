@@ -4,7 +4,7 @@ import filecmp
 import sys
 
 filelist=['addspecies','abba','allostery','bimolecularlattice','bounce2','bounds1','bounds2','branch',
-					'cmdmanipulate','compartlogic','compartrxn','crowding',
+					'cmdmanipulate','cmdprobability','compartlogic','compartrxn','crowding',
 					'diffa','diffuse2b','diffuse2c','diffuse3b','drift','dumbbell',
 					'emitter1','hemisphere','lrm','lrmsim','lotvolt','molecule',
 					'polymer_end','polymer_mid','rafts','rafts3D','ReflectToNewSpecies',

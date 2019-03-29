@@ -25,7 +25,7 @@ reaction rxn1 receptor + ligand -> bound 3
 reaction_serialnum rxn1 r1.r2
 
 reaction rxn2 bound -> receptor + ligand 1
-reaction_serialnum rxn2 r1. + .r1
+reaction_serialnum rxn2 r1L + r1R
 
 
 mol 5 ligand u u

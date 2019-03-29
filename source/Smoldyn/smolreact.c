@@ -411,38 +411,62 @@ long int rxnstring2sernocode(char *pattern,int prd) {
 	bitcode=0;
 	if((dotptr=strchr(pattern,'.'))) {
 		*dotptr='\0';																				// there is a dot
-		bitcode|=0x10;																			// store that there is a dot
-		if(!pattern[0]);																		// before the dot pattern
-		else if(!strcmp(pattern,"new")) bitcode|=0x100;
-		else if(!strcmp(pattern,"r1")) bitcode|=0x400;
-		else if(!strcmp(pattern,"r2")) bitcode|=0x500;
-		else if(!strcmp(pattern,"p1") && prd>0) bitcode|=0x800;
-		else if(!strcmp(pattern,"p2") && prd>1) bitcode|=0x900;
-		else if(!strcmp(pattern,"p3") && prd>2) bitcode|=0xA00;
-		else if(!strcmp(pattern,"p4") && prd>3) bitcode|=0xB00;
+		if(!pattern[0]) return 0;														// before the dot pattern
+		else if(!strcmp(pattern,"new")) bitcode=0x0100;
+		else if(!strcmp(pattern,"r1") || !strcmp(pattern,"r1R")) bitcode=0x0400;
+		else if(!strcmp(pattern,"r2") || !strcmp(pattern,"r2R")) bitcode=0x0500;
+		else if((!strcmp(pattern,"p1") || !strcmp(pattern,"p1R")) && prd>0) bitcode=0x0800;
+		else if((!strcmp(pattern,"p2") || !strcmp(pattern,"p2R")) && prd>1) bitcode=0x0900;
+		else if((!strcmp(pattern,"p3") || !strcmp(pattern,"p3R")) && prd>2) bitcode=0x0A00;
+		else if((!strcmp(pattern,"p4") || !strcmp(pattern,"p4R")) && prd>3) bitcode=0x0B00;
+		else if(!strcmp(pattern,"r1L")) bitcode=0x1400;
+		else if(!strcmp(pattern,"r2L")) bitcode=0x1500;
+		else if(!strcmp(pattern,"p1L") && prd>0) bitcode=0x1800;
+		else if(!strcmp(pattern,"p2L") && prd>1) bitcode=0x1900;
+		else if(!strcmp(pattern,"p3L") && prd>2) bitcode=0x1A00;
+		else if(!strcmp(pattern,"p4L") && prd>3) bitcode=0x1B00;
 		else return 0;
 		*dotptr='.';
 		dotptr++;
-		if(!dotptr[0]);																			// after the dot pattern
-		else if(!strcmp(dotptr,"new")) bitcode|=0x1;
-		else if(!strcmp(dotptr,"r1")) bitcode|=0x4;
-		else if(!strcmp(dotptr,"r2")) bitcode|=0x5;
-		else if(!strcmp(dotptr,"p1") && prd>0) bitcode|=0x8;
-		else if(!strcmp(dotptr,"p2") && prd>1) bitcode|=0x9;
-		else if(!strcmp(dotptr,"p3") && prd>2) bitcode|=0xA;
-		else if(!strcmp(dotptr,"p4") && prd>3) bitcode|=0xB;
+		if(!dotptr[0]) return 0;															// after the dot pattern
+		else if(!strcmp(dotptr,"new")) bitcode|=0x0001;
+		else if(!strcmp(dotptr,"r1") || !strcmp(dotptr,"r1R")) bitcode|=0x0004;
+		else if(!strcmp(dotptr,"r2") || !strcmp(dotptr,"r2R")) bitcode|=0x0005;
+		else if((!strcmp(dotptr,"p1") || !strcmp(dotptr,"p1R")) && prd>0) bitcode|=0x0008;
+		else if((!strcmp(dotptr,"p2") || !strcmp(dotptr,"p2R")) && prd>1) bitcode|=0x0009;
+		else if((!strcmp(dotptr,"p3") || !strcmp(dotptr,"p3R")) && prd>2) bitcode|=0x000A;
+		else if((!strcmp(dotptr,"p4") || !strcmp(dotptr,"p4R")) && prd>3) bitcode|=0x000B;
+		else if(!strcmp(dotptr,"r1L")) bitcode|=0x0014;
+		else if(!strcmp(dotptr,"r2L")) bitcode|=0x0015;
+		else if(!strcmp(dotptr,"p1L") && prd>0) bitcode|=0x0018;
+		else if(!strcmp(dotptr,"p2L") && prd>1) bitcode|=0x0019;
+		else if(!strcmp(dotptr,"p3L") && prd>2) bitcode|=0x001A;
+		else if(!strcmp(dotptr,"p4L") && prd>3) bitcode|=0x001B;
 		else return 0; }
 
-	else if(!strcmp(pattern,"new")) bitcode=0x1;						// no dot
-	else if(!strcmp(pattern,"r1")) bitcode=0x4;
-	else if(!strcmp(pattern,"r2")) bitcode=0x5;
-	else if(!strcmp(pattern,"p1") && prd>0) bitcode=0x8;
-	else if(!strcmp(pattern,"p2") && prd>1) bitcode=0x9;
-	else if(!strcmp(pattern,"p3") && prd>2) bitcode=0xA;
-	else if(!strcmp(pattern,"p4") && prd>3) bitcode=0xB;
+	else if(!strcmp(pattern,"new")) bitcode=0x0001;					// no dot
+	else if(!strcmp(pattern,"r1")) bitcode=0x1404;
+	else if(!strcmp(pattern,"r2")) bitcode=0x1505;
+	else if(!strcmp(pattern,"p1") && prd>0) bitcode=0x1808;
+	else if(!strcmp(pattern,"p2") && prd>1) bitcode=0x1909;
+	else if(!strcmp(pattern,"p3") && prd>2) bitcode=0x1A0A;
+	else if(!strcmp(pattern,"p4") && prd>3) bitcode=0x1B0B;
+	else if(!strcmp(pattern,"r1L")) bitcode=0x0014;
+	else if(!strcmp(pattern,"r2L")) bitcode=0x0015;
+	else if(!strcmp(pattern,"p1L") && prd>0) bitcode=0x0018;
+	else if(!strcmp(pattern,"p2L") && prd>1) bitcode=0x0019;
+	else if(!strcmp(pattern,"p3L") && prd>2) bitcode=0x001A;
+	else if(!strcmp(pattern,"p4L") && prd>3) bitcode=0x001B;
+	else if(!strcmp(pattern,"r1R")) bitcode=0x0004;
+	else if(!strcmp(pattern,"r2R")) bitcode=0x0005;
+	else if(!strcmp(pattern,"p1R") && prd>0) bitcode=0x0008;
+	else if(!strcmp(pattern,"p2R") && prd>1) bitcode=0x0009;
+	else if(!strcmp(pattern,"p3R") && prd>2) bitcode=0x000A;
+	else if(!strcmp(pattern,"p4R") && prd>3) bitcode=0x000B;
 	else {
 		itct=sscanf(pattern,"%li",&pserno);
 		if(itct!=1 || pserno<=0) return 0; }
+
 	if(pserno==0)
 		pserno=~bitcode;
 
@@ -452,7 +476,6 @@ long int rxnstring2sernocode(char *pattern,int prd) {
 /* rxnsernocode2string */
 char *rxnsernocode2string(long int pserno,char *pattern) {
 	long int bitcode;
-	int rpflag;
 
 	if(pserno>=0) {
 		snprintf(pattern,sizeof(pattern),"%li",pserno);
@@ -461,25 +484,43 @@ char *rxnsernocode2string(long int pserno,char *pattern) {
 	pattern[0]='\0';
 	bitcode=~pserno;
 
-	rpflag=0;
-	if(bitcode&0x800) {strcat(pattern,"p");rpflag=1;}
-	else if(bitcode&0x400) {strcat(pattern,"r");rpflag=1;}
-	if(!rpflag && (bitcode&0x300)==0x100) strcat(pattern,"new");
-	else if(rpflag && (bitcode&0x300)==0) strcat(pattern,"1");
-	else if(rpflag && (bitcode&0x300)==0x100) strcat(pattern,"2");
-	else if(rpflag && (bitcode&0x300)==0x200) strcat(pattern,"3");
-	else if(rpflag && (bitcode&0x300)==0x300) strcat(pattern,"4");
+	if(bitcode==0x0001) strcat(pattern,"new");				// 0001 = new
+	else if((bitcode&0x0F00)>>8==(bitcode&0x00F) && bitcode&0x1000 && !(bitcode&0x0010)) {	// 1x0x = r1, r2, p1, p2, p3, p4
+		if(bitcode&0x8) strcat(pattern,"p");
+		else strcat(pattern,"r");
+		if((bitcode&0x3)==0x0) strcat(pattern,"1");
+		else if((bitcode&0x3)==0x1) strcat(pattern,"2");
+		else if((bitcode&0x3)==0x2) strcat(pattern,"3");
+		else strcat(pattern,"4"); }
+	else {																						// everything else
+		if(bitcode&0xFF00) {
+			if((bitcode&0xFF00)==0x0100) strcat(pattern,"new");
+			else if(bitcode&0x0800) strcat(pattern,"p");
+			else strcat(pattern,"r");
+			if((bitcode&0xFF00)==0x0100);
+			else if((bitcode&0x0300)==0x0000) strcat(pattern,"1");
+			else if((bitcode&0x0300)==0x0100) strcat(pattern,"2");
+			else if((bitcode&0x0300)==0x0200) strcat(pattern,"3");
+			else strcat(pattern,"4");
+			if((bitcode&0xFF00)==0x0100);
+			else if(bitcode&0x1000) strcat(pattern,"L");
+			else strcat(pattern,"R"); }
 
-	if(bitcode&0x10) strcat(pattern,".");
+		if(bitcode&0xFF00 && bitcode&0xFF)
+			strcat(pattern,".");
 
-	rpflag=0;
-	if(bitcode&0x8) {strcat(pattern,"p");rpflag=1;}
-	else if(bitcode&0x4) {strcat(pattern,"r");rpflag=1;}
-	if(!rpflag && (bitcode&0x3)==1) strcat(pattern,"new");
-	else if(rpflag && (bitcode&0x3)==0) strcat(pattern,"1");
-	else if(rpflag && (bitcode&0x3)==1) strcat(pattern,"2");
-	else if(rpflag && (bitcode&0x3)==2) strcat(pattern,"3");
-	else if(rpflag && (bitcode&0x3)==3) strcat(pattern,"4");
+		if(bitcode&0xFF) {
+			if((bitcode&0xFF)==0x01) strcat(pattern,"new");
+			else if(bitcode&0x08) strcat(pattern,"p");
+			else strcat(pattern,"r");
+			if((bitcode&0xFF)==0x01);
+			else if((bitcode&0x03)==0x00) strcat(pattern,"1");
+			else if((bitcode&0x03)==0x01) strcat(pattern,"2");
+			else if((bitcode&0x03)==0x02) strcat(pattern,"3");
+			else strcat(pattern,"4");
+			if((bitcode&0xFF)==0x01);
+			else if(bitcode&0x10) strcat(pattern,"L");
+			else strcat(pattern,"R"); }}
 
 	return pattern; }
 
@@ -1129,8 +1170,7 @@ int checkrxnparams(simptr sim,int *warnptr) {
 						pserno=rxn->prdserno[prd];
 						bitcode=~pserno;
 						if(pserno>0) j=1;
-						else if((bitcode&0x8) || (bitcode&0x800)) j=1;
-						else if((bitcode&0x4) && (bitcode&0x400) && (bitcode&0x3)==(bitcode&0x300)>>8) j=1; }
+						else if((bitcode&0x8) || (bitcode&0x800)) j=1; }
 					if(j) {
 						simLog(sim,5," WARNING: multiple molecules might have the same serial number due to reaction %s\n",rxn->rname);
 						warn++; }}}}
@@ -2629,9 +2669,9 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 	if(rxn->logserno) {
 		if(rxn->logserno->n==1 && rxn->logserno->xs[0]==-1) dorxnlog=1;
 		else if(mptr1 && ListMemberLI(rxn->logserno,mptr1->serno&0xFFFFFFFF)) dorxnlog=1;
-		else if(mptr1 && ListMemberLI(rxn->logserno,(~(mptr1->serno)>>32))) dorxnlog=1;
+		else if(mptr1 && ListMemberLI(rxn->logserno,(mptr1->serno>>32))) dorxnlog=1;
 		else if(mptr2 && ListMemberLI(rxn->logserno,mptr2->serno&0xFFFFFFFF)) dorxnlog=1;
-		else if(mptr2 && ListMemberLI(rxn->logserno,(~(mptr2->serno)>>32))) dorxnlog=1;
+		else if(mptr2 && ListMemberLI(rxn->logserno,(mptr2->serno>>32))) dorxnlog=1;
 		else dorxnlog=0; }
 
 // place products
@@ -2785,7 +2825,7 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 				sernolist[prd]=mptr->serno; }}
 
 		if(rxn->logserno) {													// log reaction if needed
-			if(dorxnlog==0 && (ListMemberLI(rxn->logserno,mptr->serno&0xFFFFFFFF) || (mptr->serno>0xFFFFFFF && ListMemberLI(rxn->logserno,(~mptr->serno)>>32))))
+			if(dorxnlog==0 && (ListMemberLI(rxn->logserno,mptr->serno&0xFFFFFFFF) || (mptr->serno>0xFFFFFFF && ListMemberLI(rxn->logserno,mptr->serno>>32))))
 				dorxnlog=1;
 			if(dorxnlog==1) {
 				fptr=scmdgetfptr(sim->cmds,rxn->logfile);

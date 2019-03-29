@@ -125,6 +125,7 @@ enum CMDcode cmdfixmolcountrangeonsurf(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdfixmolcountincmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdfixmolcountrangeincmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdreplacexyzmol(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2);
@@ -260,6 +261,7 @@ enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"fixmolcountincmpt")) return cmdfixmolcountincmpt(sim,cmd,line2);
 	else if(!strcmp(word,"fixmolcountrangeincmpt")) return cmdfixmolcountrangeincmpt(sim,cmd,line2);
 	else if(!strcmp(word,"equilmol")) return cmdequilmol(sim,cmd,line2);
+	else if(!strcmp(word,"replacemol")) return cmdreplacemol(sim,cmd,line2);
 	else if(!strcmp(word,"replacexyzmol")) return cmdreplacexyzmol(sim,cmd,line2);
 	else if(!strcmp(word,"replacevolmol")) return cmdreplacevolmol(sim,cmd,line2);
 	else if(!strcmp(word,"replacecmptmol")) return cmdreplacecmptmol(sim,cmd,line2);
@@ -2150,7 +2152,7 @@ enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2) {
 
  scanportion:
 	mptr=(moleculeptr) line2;
-	if(!(mptr->serno==serno || (serno<0xFFFFFFFF && (mptr->serno&0xFFFFFFFF)==serno) || (serno<0xFFFFFFFF && mptr->serno>0xFFFFFFFF && (~mptr->serno)>>32==serno)))
+	if(!(mptr->serno==serno || (serno<0xFFFFFFFF && (mptr->serno&0xFFFFFFFF)==serno) || (serno<0xFFFFFFFF && mptr->serno>0xFFFFFFFF && (mptr->serno)>>32==serno)))
 		return CMDok;
 	scmdfprintf(cmd->cmds,fptr,"%g%,%s%,%s",sim->time,sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string));
 	scmdfprintf(cmd->cmds,fptr,"%,%s",molserno2string(mptr->serno,string));
@@ -3140,6 +3142,8 @@ enum CMDcode cmdkillmolprob(simptr sim,cmdptr cmd,char *line2) {
 	moleculeptr mptr;
 	enum MolecState ms;
 	static double prob;
+	static char probstr[STRCHAR];
+	static int xyzvar;
 	static int inscan=0;
 
 	if(inscan) goto scanportion;
@@ -3153,18 +3157,29 @@ enum CMDcode cmdkillmolprob(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing probability value");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
-	SCMDCHECK(itct==1,"killmolprob format: name[(state)] probability");
-	SCMDCHECK(prob>=0 && prob<=1,"probability needs to be between 0 and 1");
+	if(strhasname(line2,"x") || strhasname(line2,"y") || strhasname(line2,"z")) {
+		xyzvar=1;
+		strcpy(probstr,line2); }
+	else {
+		xyzvar=0;
+		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
+		SCMDCHECK(itct==1,"killmolprob format: name[(state)] probability");
+		SCMDCHECK(prob>=0 && prob<=1,"probability needs to be between 0 and 1"); }
 
 	if(i!=-4) {
 		inscan=1;
 		molscancmd(sim,i,index,ms,cmd,cmdkillmolprob);
 		inscan=0; }
+
 	return CMDok;
 
  scanportion:
 	mptr=(moleculeptr) line2;
+	if(xyzvar) {
+		simsetvariable(sim,"x",mptr->pos[0]);
+		if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
+		if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
+		strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
 	if(coinrandD(prob)) molkill(sim,mptr,mptr->list,-1);
 	return CMDok; }
 
@@ -3556,6 +3571,8 @@ enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2) {
 	moleculeptr mptr;
 	static enum MolecState ms1,ms2;
 	static double prob;
+	static int xyzvar;
+	static char probstr[STRCHAR];
 	static int inscan=0,i1,i2;
 
 	if(inscan) goto scanportion;
@@ -3581,9 +3598,14 @@ enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK((ms1==MSsoln && ms2==MSsoln) || (ms1!=MSsoln && ms2!=MSsoln),"cannot equilibrate between solution and surface-bound");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing probability argument");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
-	SCMDCHECK(itct==1,"failed to read probability");
-	SCMDCHECK(prob>=0 && prob<=1,"probability is out of bounds");
+	if(strhasname(line2,"x") || strhasname(line2,"y") || strhasname(line2,"z")) {
+		xyzvar=1;
+		strcpy(probstr,line2); }
+	else {
+		xyzvar=0;
+		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
+		SCMDCHECK(itct==1,"failed to read probability");
+		SCMDCHECK(prob>=0 && prob<=1,"probability is out of bounds"); }
 
 	inscan=1;
 	molscancmd(sim,-1,index,MSall,cmd,cmdequilmol);
@@ -3593,10 +3615,76 @@ enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2) {
  scanportion:
 	mptr=(moleculeptr) line2;
 	if((mptr->ident==i1 && mptr->mstate==ms1) || (mptr->ident==i2 && mptr->mstate==ms2)) {
+		if(xyzvar) {
+			simsetvariable(sim,"x",mptr->pos[0]);
+			if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
+			if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
+			strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
 		if(coinrandD(prob))
 			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl);
 		else
 			molchangeident(sim,mptr,-1,-1,i1,ms1,mptr->pnl); }
+	return CMDok; }
+
+
+/* cmdreplacemol */
+enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2) {
+	int itct,i1,*index1,*index2;
+	enum MolecState ms1;
+	moleculeptr mptr;
+	static enum MolecState ms2;
+	static double prob;
+	static char probstr[STRCHAR];
+	static int xyzvar;
+	static int inscan=0,i2;
+
+	if(inscan) goto scanportion;
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
+
+	i1=molstring2index1(sim,line2,&ms1,&index1);
+	SCMDCHECK(i1!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i1!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i1!=-3,"cannot read molecule state value");
+	SCMDCHECK(i1!=-4,"molecule name not recognized");
+	SCMDCHECK(i1!=-7,"error allocating memory");
+	SCMDCHECK(ms1!=MSall,"molecule state cannot be 'all'");
+	line2=strnword(line2,2);
+	SCMDCHECK(line2,"missing second species name");
+	i2=molstring2index1(sim,line2,&ms2,&index2);
+	SCMDCHECK(i2!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i2!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i2!=-3,"cannot read molecule state value");
+	SCMDCHECK(i2!=-4,"molecule name not recognized");
+	SCMDCHECK(i2!=-7,"error allocating memory");
+	SCMDCHECK(i2>0,"molecule name has to be for a single species");
+	SCMDCHECK(ms2!=MSall,"molecule state cannot be 'all'");
+	SCMDCHECK((ms1==MSsoln && ms2==MSsoln) || (ms1!=MSsoln && ms2!=MSsoln),"cannot equilibrate between solution and surface-bound");
+	line2=strnword(line2,2);
+	SCMDCHECK(line2,"missing probability information");
+	itct=sscanf(line2,"%s",probstr);
+	SCMDCHECK(itct==1,"missing probability information");
+	if(strhasname(probstr,"x") || strhasname(probstr,"y") || strhasname(probstr,"z"))
+		xyzvar=1;
+	else {
+		xyzvar=0;
+		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
+		SCMDCHECK(itct==1,"cannot read fraction");
+		SCMDCHECK(prob>=0 && prob<=1,"fraction out of bounds"); }
+
+	inscan=1;
+	molscancmd(sim,i1,index1,ms1,cmd,cmdreplacemol);
+	inscan=0;
+	return CMDok;
+
+ scanportion:
+	mptr=(moleculeptr) line2;
+	if(xyzvar) {
+		simsetvariable(sim,"x",mptr->pos[0]);
+		if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
+		if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
+		strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
+	if(coinrandD(prob))
+		molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl);
 	return CMDok; }
 
 
@@ -3642,8 +3730,10 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 	double *pos,poslo[DIMMAX],poshi[DIMMAX],frac;
 	boxptr bptr1,bptr2,bptr;
 	boxssptr boxs;
-	moleculeptr *mlist;
+	moleculeptr *mlist,mptr;
 	enum MolecState ms1,ms2;
+	char probstr[STRCHAR];
+	int xyzvar;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
@@ -3667,9 +3757,15 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK((ms1==MSsoln && ms2==MSsoln) || (ms1!=MSsoln && ms2!=MSsoln),"cannot equilibrate between solution and surface-bound");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing fraction information");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&frac);
+	itct=sscanf(line2,"%s",probstr);
 	SCMDCHECK(itct==1,"cannot read fraction");
-	SCMDCHECK(frac>=0 && frac<=1,"fraction out of bounds");
+	if(strhasname(probstr,"x") || strhasname(probstr,"y") || strhasname(probstr,"z"))
+		xyzvar=1;
+	else {
+		xyzvar=0;
+		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&frac);
+		SCMDCHECK(itct==1,"cannot read fraction");
+		SCMDCHECK(frac>=0 && frac<=1,"fraction out of bounds"); }
 	line2=strnword(line2,2);
 	dim=sim->dim;
 	boxs=sim->boxs;
@@ -3688,11 +3784,18 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 		bptr=boxs->blist[b];
 		mlist=bptr->mol[ll];
 		for(m=0;m<bptr->nmol[ll];m++) {
-			if(mlist[m]->ident==i1 && mlist[m]->mstate==ms1) {
-				pos=mlist[m]->pos;
+			mptr=mlist[m];
+			if(mptr->ident==i1 && mptr->mstate==ms1) {
+				pos=mptr->pos;
 				for(d=0;d<dim;d++) if(pos[d]<poslo[d] || pos[d]>poshi[d]) d=dim+1;
-				if(d==dim && coinrandD(frac)) {
-					molchangeident(sim,mlist[m],ll,-1,i2,ms2,mlist[m]->pnl); }}}}
+				if(d==dim) {
+					if(xyzvar) {
+						simsetvariable(sim,"x",mptr->pos[0]);
+						if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
+						if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
+						strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&frac); }
+				 	if(coinrandD(frac)) {
+						molchangeident(sim,mptr,ll,-1,i2,ms2,mptr->pnl); }}}}}
 	return CMDok; }
 
 
@@ -3705,6 +3808,8 @@ enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2) {
 	static enum MolecState ms2;
 	static compartptr cmpt;
 	static double frac;
+	static char probstr[STRCHAR];
+	static int xyzvar;
 	static int inscan=0,i2;
 
 	if(inscan) goto scanportion;
@@ -3730,9 +3835,15 @@ enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK((ms1==MSsoln && ms2==MSsoln) || (ms1!=MSsoln && ms2!=MSsoln),"cannot equilibrate between solution and surface-bound");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing fraction information");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&frac);
-	SCMDCHECK(itct==1,"cannot read fraction");
-	SCMDCHECK(frac>=0 && frac<=1,"fraction out of bounds");
+	itct=sscanf(line2,"%s",probstr);
+	SCMDCHECK(itct==1,"missing fraction information");
+	if(strhasname(probstr,"x") || strhasname(probstr,"y") || strhasname(probstr,"z"))
+		xyzvar=1;
+	else {
+		xyzvar=0;
+		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&frac);
+		SCMDCHECK(itct==1,"cannot read fraction");
+		SCMDCHECK(frac>=0 && frac<=1,"fraction out of bounds"); }
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"compartment name missing");
 	itct=sscanf(line2,"%s",nm);
@@ -3747,8 +3858,14 @@ enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2) {
 
  scanportion:
 	mptr=(moleculeptr) line2;
-	if(posincompart(sim,mptr->pos,cmpt,0) && coinrandD(frac))
-		molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl);
+	if(posincompart(sim,mptr->pos,cmpt,0)) {
+		if(xyzvar) {
+			simsetvariable(sim,"x",mptr->pos[0]);
+			if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
+			if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
+			strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&frac); }
+	 	if(coinrandD(frac))
+			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl); }
 	return CMDok; }
 
 

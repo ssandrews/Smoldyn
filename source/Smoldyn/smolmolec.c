@@ -626,7 +626,7 @@ char *molserno2string(unsigned long long serno,char *string) {
 	if(serno<0xFFFFFFFF)
 		snprintf(string,sizeof(string),LLUFORMAT,serno);
 	else
-		snprintf(string,sizeof(string),LLUFORMAT "." LLUFORMAT,(~serno)>>32,serno&0xFFFFFFFF);
+		snprintf(string,sizeof(string),LLUFORMAT "." LLUFORMAT,serno>>32,serno&0xFFFFFFFF);
 	return string; }
 
 
@@ -643,7 +643,7 @@ unsigned long long molstring2serno(char *string) {
 		sscanf(dotptr+1,LLUFORMAT,&i2);
 		*dotptr='.';
 		if(i1==0 || i2==0) return 0;
-		answer=(~i1)<<32 | i2; }
+		answer= i1<<32 | i2; }
 	else
 		sscanf(string,LLUFORMAT,&answer);
 
@@ -659,40 +659,38 @@ unsigned long long molfindserno(simptr sim,unsigned long long def,long int psern
 	bitcode=~pserno;
 	i1=i2=0;
 
-	if(bitcode&0xF00) {
+	if(bitcode&0xFF00) {
 		if(bitcode&0x800) {																			// p
 			if((bitcode&0x300)==0) i1=sernolist[0];								// p1
 			else if((bitcode&0x300)==0x100) i1=sernolist[1];			// p2
 			else if((bitcode&0x300)==0x200) i1=sernolist[2];			// p3
-			else if((bitcode&0x300)==0x300) i1=sernolist[3]; }		// p4
+			else i1=sernolist[3]; }																// p4
 		else if(bitcode&0x400) {																// r
 			if((bitcode&0x300)==0) i1=r1serno;										// r1
-			else if((bitcode&0x300)==0x100) i1=r2serno; }					// r2
-		else if(bitcode&0x100)																	// new
-			i1=def; }
+			else i1=r2serno; }																		// r2
+		else i1=def;																						// new
+		if(bitcode&0x1000) i1>>=32;															// left
+		else i1&=0xFFFFFFFF; }																	// right
+	else
+		i1=0;
 
-	if(bitcode&0xF) {
-		if(bitcode&0x8) {																				// p
-			if((bitcode&0x3)==0) i2=sernolist[0];									// p1
-			else if((bitcode&0x3)==1) i2=sernolist[1];						// p2
-			else if((bitcode&0x3)==2) i2=sernolist[2];						// p3
-			else if((bitcode&0x3)==3) i2=sernolist[3]; }					// p4
-		else if(bitcode&0x4) {																	// r
-			if((bitcode&0x3)==0) i2=r1serno;											// r1
-			else if((bitcode&0x3)==1) i2=r2serno; }								// r2
-		else if(bitcode&0x1) {																	// new
-			if((bitcode&0xF00)==0x100) i2=sim->mols->serno++;			// new.new
-			else i2=def; }}
+	if(bitcode&0xFF) {
+		if(bitcode&0x8) {																						// p
+			if((bitcode&0x3)==0) i2=sernolist[0];											// p1
+			else if((bitcode&0x3)==0x1) i2=sernolist[1];							// p2
+			else if((bitcode&0x3)==0x2) i2=sernolist[2];							// p3
+			else i2=sernolist[3]; }																		// p4
+		else if(bitcode&0x4) {																			// r
+			if((bitcode&0x3)==0) i2=r1serno;													// r1
+			else i2=r2serno; }																				// r2
+		else if((bitcode&0xFF00)==0x100) i2=sim->mols->serno++;			// new.new
+		else i2=def;																								// new
+		if(bitcode&0x10) i2>>=32;																		// left
+		else i2&=0xFFFFFFFF; }																			// right
+	else
+		i2=0;
 
-	if(!(bitcode&0x10))																				// no dot
-		answer=i2;
-	else if((bitcode&0xF00) && (bitcode&0xF))									// format is x.y
-		answer=((~i1)<<32)|i2;
-	else if(bitcode&0xF00)																		// format is x.
-		answer=(~i1)>>32;
-	else																											// format is .y
-		answer=i2&0xFFFFFFFF;
-
+	answer=(i1<<32)|i2;
 	return answer; }
 
 
@@ -1268,16 +1266,23 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 	else if(i>0 && ms==MSall) {															// one species, all states
 		for(ll=0;ll<mols->nlist;ll++) {
 			mlist=mols->live[ll];
+			nmol=mols->nl[ll];
 			top=mols->sortl[ll];
 			uselist=0;
 			for(msval=(enum MolecState)0;msval<MSMAX && !uselist;msval=(enum MolecState)(msval+1))
 				if(mols->listlookup[i][msval]==ll) uselist=1;
-			if(uselist)
-				for(m=0;m<top;m++) {
+			if(uselist) {
+				for(m=0;m<nmol;m++) {
 					mptr=mlist[m];
 					if(mptr->ident==i) {
 						code=(*fn)(sim,cmd,(char*)mptr);
 						if(code!=CMDok) return; }}}
+			else {
+				for(m=top;m<nmol;m++) {
+					mptr=mlist[m];
+					if(mptr->ident==i) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}}
 		mlist=mols->dead;
 		nmol=mols->nd;
 		top=mols->topd;
@@ -1285,26 +1290,26 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 			mptr=mlist[m];
 			if(mptr->ident==i) {
 				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
-		for(ll=0;ll<mols->nlist;ll++) {
-			mlist=mols->live[ll];
-			top=mols->sortl[ll];
-			nmol=mols->nl[ll];
-			for(m=top;m<nmol;m++) {
-				mptr=mlist[m];
-				if(mptr->ident==i) {
-					code=(*fn)(sim,cmd,(char*)mptr);
-					if(code!=CMDok) return; }}}}
+				if(code!=CMDok) return; }}}
 
 	else if(i>0) {																					// single species, single state
-		ll=mols->listlookup[i][ms];
-		mlist=mols->live[ll];
-		top=mols->sortl[ll];
-		for(m=0;m<top;m++) {
-			mptr=mlist[m];
-			if(mptr->ident==i && mptr->mstate==ms) {
-				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
+		for(ll=0;ll<mols->nlist;ll++) {
+			mlist=mols->live[ll];
+			nmol=mols->nl[ll];
+			top=mols->sortl[ll];
+			uselist=(mols->listlookup[i][ms]==ll)?1:0;
+			if(uselist) {
+				for(m=0;m<nmol;m++) {
+					mptr=mlist[m];
+					if(mptr->ident==i && mptr->mstate==ms) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}
+			else {
+				for(m=top;m<nmol;m++) {
+					mptr=mlist[m];
+					if(mptr->ident==i && mptr->mstate==ms) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}}
 		mlist=mols->dead;
 		nmol=mols->nd;
 		top=mols->topd;
@@ -1312,21 +1317,13 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 			mptr=mlist[m];
 			if(mptr->ident==i && mptr->mstate==ms) {
 				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
-		for(ll=0;ll<mols->nlist;ll++) {
-			mlist=mols->live[ll];
-			top=mols->sortl[ll];
-			nmol=mols->nl[ll];
-			for(m=top;m<nmol;m++) {
-				mptr=mlist[m];
-				if(mptr->ident==i && mptr->mstate==ms) {
-					code=(*fn)(sim,cmd,(char*)mptr);
-					if(code!=CMDok) return; }}}}
+				if(code!=CMDok) return; }}}
 
 	else if(index) {																				// list of molecules in index
 		nresults=index[PDnresults];
 		for(ll=0;ll<mols->nlist;ll++) {
 			mlist=mols->live[ll];
+			nmol=mols->nl[ll];
 			top=mols->sortl[ll];
 			uselist=0;
 			if(ms==MSall) {
@@ -1337,7 +1334,13 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 				for(j=0;j<nresults;j++)
 					if(mols->listlookup[index[PDMAX+j]][ms]==ll) uselist=1; }
 			if(uselist) {
-				for(m=0;m<top;m++) {
+				for(m=0;m<nmol;m++) {
+					mptr=mlist[m];
+					if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}
+			else {
+				for(m=top;m<nmol;m++) {
 					mptr=mlist[m];
 					if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
 						code=(*fn)(sim,cmd,(char*)mptr);
@@ -1349,16 +1352,7 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 			mptr=mlist[m];
 			if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
 				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
-		for(ll=0;ll<mols->nlist;ll++) {
-			mlist=mols->live[ll];
-			nmol=mols->nl[ll];
-			top=mols->sortl[ll];
-			for(m=top;m<nmol;m++) {
-				mptr=mlist[m];
-				if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
-					code=(*fn)(sim,cmd,(char*)mptr);
-					if(code!=CMDok) return; }}}}
+				if(code!=CMDok) return; }}}
 
 	return; }
 

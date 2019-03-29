@@ -26,7 +26,7 @@ reaction_serialnum rxn1 r1.r2
 reaction_log stdout rxn1 all
 
 reaction rxn2 bound -> receptor + ligand 1
-reaction_serialnum rxn2 r1. + .r1
+reaction_serialnum rxn2 r1L + r1R
 reaction_log stdout rxn2 all
 
 

@@ -58,6 +58,18 @@ int strokname(const char *name) {
 	return ok; }
 
 
+/* strhasname */
+int strhasname(const char *string,const char *name) {
+	int i,len;
+
+	len=strlen(name);
+	while(*string) {
+		for(i=0;i<len && *string==name[i];i++) string++;
+		if(i==len && (*string=='\0' || !(isalnum(*string) || *string=='_'))) return 1;
+		while(*string && (*string!=name[0] || isalnum(*(string-1)) || *(string-1)=='_')) string++; }
+	return 0; }
+
+
 /* strbegin */
 int strbegin(const char *strshort,const char *strlong,int casesensitive) {
 	int i;
@@ -1518,10 +1530,10 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 
 	newformat[0]='\0';
 	newstr[0]='\0';
-	fmtpos1=format;
-	strpos1=str;
+	fmtpos1=format;														// position in original format string
+	strpos1=str;															// position in original str string
 
-	fmtpos2=strstr(fmtpos1,"%m");
+	fmtpos2=strstr(fmtpos1,"%m");							// location of math operation to deal with
 
 	while(fmtpos2) {
 		if(*(fmtpos2+2)=='i') readint=1;
@@ -1529,7 +1541,7 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 		else CHECKS(0,"BUG: illegal string formatting argument");
 
 		word=strwhichword(fmtpos1,fmtpos2);
-		strpos2=strnwordc(strpos1,word);
+		strpos2=strnwordc(strpos1,word);				// position in string with math for parsing
 		if(!strpos2) break;
 
 		strncat(newformat,fmtpos1,fmtpos2-fmtpos1);
@@ -1544,7 +1556,7 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 			value=strmatheval(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%lg ");
-			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%lg ",value); }
+			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%.17g ",value); }
 
 		fmtpos1=strnwordc(fmtpos2,2);
 		strpos1=strnwordc(strpos2,2);

@@ -267,6 +267,11 @@ simptr simalloc(const char *fileroot) {
 	CHECKMEM(sim->filename=EmptyString());
 	CHECKMEM(sim->flags=EmptyString());
 	CHECKMEM(sim->cmds=scmdssalloc(&docommand,(void*)sim,fileroot));
+
+	simsetvariable(sim,"time",sim->time);
+	simsetvariable(sim,"x",dblnan());
+	simsetvariable(sim,"y",dblnan());
+	simsetvariable(sim,"z",dblnan());
 	return sim;
 
  failure:
@@ -503,7 +508,9 @@ int simsettime(simptr sim,double time,int code) {
 	else if(code==4) timedefined|=16;
 
 	er=0;
-	if(code==0) sim->time=time;
+	if(code==0) {
+		sim->time=time;
+		simsetvariable(sim,"time",time); }
 	else if(code==1) sim->tmin=time;
 	else if(code==2) sim->tmax=time;
 	else if(code==3) {
@@ -554,6 +561,9 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	if(!strcmp(word,"variable")) {								// variable
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"variable format: name = value");
+		CHECKS(strcmp(nm,"time"),"'time' cannot be used as a variable name; it is pre-defined as the simulation time");
+		CHECKS(strcmp(nm,"x") && strcmp(nm,"y") && strcmp(nm,"z"),"x, y, and z are reserved variable names");
+		CHECKS(strokname(nm),"variable name has to start with a letter and then be alphanumeric with optional underscores");
 		line2=strnword(line2,2);
 		CHECKS(line2,"variable format: name = value");
 		if(line2[0]=='=') {
@@ -2426,6 +2436,7 @@ int simulatetimestep(simptr sim) {
 	if(er) return 11;
 
 	sim->time+=sim->dt;													// --- end of time step ---
+	simsetvariable(sim,"time",sim->time);
 
 	er=simdocommands(sim);
 	if(er) return er;

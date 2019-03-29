@@ -43,7 +43,7 @@ breakatwhitespace=false
 
 
 
-\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.57}
+\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.58}
 \date{\copyright March, 2019}
 \author{Steve Andrews}
 \maketitle
@@ -418,7 +418,19 @@ typedef struct moleculestruct {
 	} *moleculeptr;
 \end{lstlisting}
 
-\texttt{moleculestruct} is a structure used for each molecule.  \texttt{serno} is the unique serial number that each live molecule is given; it is assigned by the utility function \texttt{getnextmol}, which should be used to add new live molecules to the system.  If a molecule is being imported from elsewhere, it is legitimate to overwrite the serial number with the previous value.  The serial number should normally never exceed a long int, except when using single molecule tracking when two serial numbers are concatenated into one, which then requires an unsigned long long int.  \texttt{list} is the master list number that the molecule should be listed in (-1 for dead, other values for live lists); this is modified with \texttt{molkill}, \texttt{molchange}, or one of the \texttt{addmol} functions.  \texttt{pos} and \texttt{posx}, both of which are owned by the structure, are always valid positions, although not necessarily within the system volume.  \texttt{posx} is the position from the previous time step, used to determine if a molecule crossed a wall or surface.  \texttt{posoffset} is the cumulative position offset  that should be added to the position to correct for jumps and periodic boundaries (it replaced the \texttt{wrap} element).  \texttt{via} is the location of the most recent surface interaction.  \texttt{ident} should always be between 0 and \texttt{nident-1}, inclusive.  A molecule type of 0 is an empty molecule for transfer to the dead list (and should also have \texttt{list} equal to -1).  Except during set up, \texttt{box} should always point to a valid box.  \texttt{mstate} is the physical state of the molecule, which might be solvated or any of several surface-bound positions.
+\texttt{moleculestruct} is a structure used for each molecule.
+
+\texttt{serno} is the unique serial number that each live molecule is given; it is assigned by the utility function \texttt{getnextmol}, which should be used to add new live molecules to the system.  If a molecule is being imported from elsewhere, it is legitimate to overwrite the serial number with the previous value.  The serial number should normally never exceed a long int, except when using single molecule tracking when two serial numbers are concatenated into one, which then requires an unsigned long long int.
+
+\texttt{list} is the master list number that the molecule should be listed in (-1 for dead, other values for live lists); this is modified with \texttt{molkill}, \texttt{molchange}, or one of the \texttt{addmol} functions.
+
+\texttt{pos} and \texttt{posx}, both of which are owned by the structure, are always valid positions, although not necessarily within the system volume.  \texttt{posx} is the position from the previous time step, used to determine if a molecule crossed a wall or surface.  \texttt{posoffset} is the cumulative position offset  that should be added to the position to correct for jumps and periodic boundaries (it replaced the \texttt{wrap} element).  \texttt{via} is the location of the most recent surface interaction. It is work space and so should not be assumed to represent anything, unless it was just set to that value.
+
+\texttt{ident} should always be between 0 and \texttt{nident-1}, inclusive. A molecule type of 0 is an empty molecule for transfer to the dead list (and should also have \texttt{list} equal to -1).
+
+Except during set up, \texttt{box} should always point to a valid box.
+
+\texttt{mstate} is the physical state of the molecule, which might be solvated or any of several surface-bound positions.
 
 If this molecule is bound to a surface, \texttt{pnl} points to that surface panel.  Also, \texttt{pnlx} points to the panel that \texttt{posx} was on.
 
@@ -527,16 +539,28 @@ Returns the string that corresponds to the enumerated molecule list type \texttt
 
 \item[\texttt{char *molserno2string(unsigned long long serno,char *string);}]
 \hfill \\
-Writes the molecule serial number to a pre-allocated string, returning the pointer to that string. If the serial number is not a concatenated number, then just writes that number to the string. If the serial number has been concatenated, then this writes the left portion, a period, and then the right portion.
+Writes the molecule serial number to a pre-allocated string, returning the pointer to that string. If the serial number is not a concatenated number, then just writes that number to the string. If the serial number has been concatenated, then this writes the left portion, a period, and then the right portion. Note that this uses the defined string \texttt{LLUFORMAT} because Windows doesn't use the standard \%llu format specifier for some reason.
 
 \item[\texttt{unsigned long long molstring2serno(char *string);}]
 \hfill
-Converts a string with a serial number value to a serial number. If the string is simply a number, then this reads the number and returns it. If the string has two numbers separated by a period, then this takes the left number, bitwise inverts it, shifts it left 32 places, and adds the right number, to create a concatenated serial number. Returns 0 on failure (serial numbers equal to 0 are not allowed).
+Converts a string with a serial number value to a serial number. If the string is simply a number, then this reads the number and returns it. If the string has two numbers separated by a period, then this takes the left number, shifts it left 32 places, and adds the right number, to create a concatenated serial number. Returns 0 on failure (serial numbers equal to 0 are not allowed).
 
 \item[\texttt{unsigned long long}]
 \texttt{molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist);}
 \hfill
-Computes a molecule serial number based upon coded instructions in \texttt{pserno}, a default value in \texttt{def}, reactant serial numbers in \texttt{r1serno} and \texttt{r2serno}, and previously assigned product serial numbers in \texttt{sernolist}. This does not use \texttt{sim} at all, except if the coded instructions are for a serial number with the format ``new.new'', in which case this uses the default value as the first new value and then gets the next one off of \texttt{sim->mols->serno} and also increments the value. This function does no checking to make sure that inputs are valid.
+Computes a serial number for a new molecule, based upon coded instructions in \texttt{pserno}, a default value in \texttt{def}, reactant serial numbers in \texttt{r1serno} and \texttt{r2serno}, and previously assigned product serial numbers in \texttt{sernolist}. This does not use \texttt{sim} at all, except if the coded instructions are for a serial number with the format ``new.new'', in which case this uses the default value as the first new value and then gets the next one off of \texttt{sim->mols->serno} and also increments the value. This function does no checking to make sure that inputs are valid.
+
+A positive value of \texttt{pserno} indicates that it is an actual serial number and a negative value indicates that it is a bit-inverted code, labeled the bitcode here. The bitcode is 4 hex numbers, with the first two for the left half of the serial number and the second two for the right half of the serial number. The other functions that deal with bitcodes are \texttt{rxnstring2sernocode} and \texttt{rxnsernocode2string}.
+
+\begin{longtable}[c]{ccl}
+bits & mask & use\\
+\hline
+1,2,3 & 0xE0 & not used\\
+4 & 0x10 & 0 for right side, 1 for left side\\
+5 & 0x08 & 1 for p, 0 for r or new\\
+6 & 0x04 & 1 for r, 0 for p or new\\
+7,8 & 0x03 & which p or r, or 1 for new
+\end{longtable}
 
 \item[\texttt{int molismobile(simptr sim,int species,enum MolecState ms);}]
 \hfill \\
@@ -654,7 +678,7 @@ This function is essentially the same exact thing several times in a row, for th
 \item[\texttt{void}]
 \texttt{molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum CMDcode(*fn)(simptr,cmdptr,char*));}
 \hfill \\
-Scans over all molecules that meet the criteria listed and calls the function \texttt{fn} for each one. This function is very similar to \texttt{molcount}, except that it calls a function for each molecule rather than just counting them.  As with \texttt{molcount}, this checks all molecule lists and the dead list; it also works whether molecules have been sorted or not.  Send in \texttt{i} as the species number, which should be less than 0 for all species, 0 to indicate that \texttt{i} should be ignored and \texttt{index} should be used instead, or as a positive number for that specific species.  Enter \texttt{index} as a sorted list of species, using the standard index pattern header and format; it is only used if \texttt{i} equals zero.  Enter \texttt{ms} as \texttt{MSall} for all species and as a specific species otherwise.  The function entry is designed for a Smoldyn command function and so has the same format, despite the fact that this format isn't really ideal in this case.  The function gets passed the simulation pointer in the first argument, \texttt{cmd} in the second argument, and a pointer to the current molecule in the third parameter (cast to a \texttt{char*} due to the non-ideal formatting).  The function should return \texttt{CMDok} to indicate that the scan should continue or \texttt{CMDstop} to indicate that the scan should stop.  See the commands section of the manual to see how this function can be used.
+Scans over all molecules that meet the criteria listed and calls the function \texttt{fn} for each one. This function is similar to \texttt{molcount}, except that it calls a function for each molecule rather than just counting them.  As with \texttt{molcount}, this checks all molecule lists and the dead list; it also works whether molecules have been sorted or not.  Send in \texttt{i} as the species number, which should be less than 0 for all species, 0 to indicate that \texttt{i} should be ignored and \texttt{index} should be used instead, or as a positive number for that specific species.  Enter \texttt{index} as a sorted list of species, using the standard index pattern header and format; it is only used if \texttt{i} equals zero.  Enter \texttt{ms} as \texttt{MSall} for all species and as a specific species otherwise.  The function entry is designed for a Smoldyn command function and so has the same format, despite the fact that this format isn't really ideal in this case.  The function gets passed the simulation pointer in the first argument, \texttt{cmd} in the second argument, and a pointer to the current molecule in the third parameter (cast to a \texttt{char*} due to the non-ideal formatting).  The function should return \texttt{CMDok} to indicate that the scan should continue or \texttt{CMDstop} to indicate that the scan should stop.  See the commands section of the manual to see how this function can be used.
 
 \item[\texttt{void}]
 \texttt{molscanfn(simptr sim,int i,int *index,enum MolecState ms,char *erstr,double(*fn)(void*,char*,char*);}
@@ -986,7 +1010,7 @@ Each individual reaction, of any order, is is stored in a reaction structure, \t
 
 \texttt{nprod} is the number of products for the listed reaction, which may be any non-negative number.  \texttt{prdident} and \texttt{prdstate}, which are arrays that are indexed from 0 to \texttt{rxn->nprod-1}, list the product identities and states; in this case, only single states are allowed (i.e. not \texttt{MSall} or \texttt{MSnone}, although \texttt{MSbsoln} is allowed).
 
-\texttt{prdserno} is a list of serial number rules for products.  The default is that this list is \texttt{NULL}, meaning not used.  If it is used, then it lists a rule for each product. If it is a positive value, then it is the actual number that should be used as the product serial number. Otherwise, the value is bitwise inverted and interpreted using bits. See \texttt{rxnstring2sernocode}.
+\texttt{prdserno} is a list of serial number rules for products.  The default is that this list is \texttt{NULL}, meaning not used.  If it is used, then it lists a rule for each product. If it is a positive value, then it is the actual number that should be used as the product serial number. Otherwise, the value is bitwise inverted and interpreted using bits. See \texttt{rxnstring2sernocode} and \texttt{molfiindserno}.
 
 \texttt{prdintersurf} is a list of product placement rules for intersurface reactions, meaning bimolecular reactions in which the two reactants are on two different surfaces.  These are not allowed typically.  However, they are allowed if this vector is allocated.  Each value corresponds to a product.  The rules are: 1 implies that this product should be placed on the surface, or relative to the surface, of the first reactant, and 2 implies that this product should be placed on the surface, or relative to the surface, of the second reactant.  If the reaction has no products, then the vector can be allocated for a single element, which is supposed to have value 0 to indicate that intersurface reactions are allowed.
 
@@ -1098,11 +1122,11 @@ Determines if a molecule with identity \texttt{i} and state \texttt{ms} is the p
 
 \item[\texttt{long int rxnstring2sernocode(char *pattern,int prd);}]
 \hfill \\
-Converts a string pattern to a serial number code. If the pattern is a positive number, then this is the serial number code. Otherwise, a bitcode is computed from the pattern, the bitcode is bitwise inverted, and that value is returned as the serial number code, which is then a negative number. For the bitcode, if the pattern does not have a dot in it, then the options are ``new'' (bitcode is 0x1), ``r1'' to ``r4'' (bitcodes of 0x4 to 0x7), or ``p1'' to ``p4'' (bitcodes of 0x8 to 0xB). If there is a dot, then the fifth bit is turned on, meaning the bitcode get or'ed with 0x10. In that case, the pattern after the dot produces the same bitcode as if there's no dot, but now with the dot bit turned on. Also, if there's a pattern before the dot, then it follows the same system but shifted left by two hex digits, so ``new'' has a bitcode of 0x100, ``r1'' to ``r4'' have bitcodes from 0x400 to 0x700, and ``p1'' to ``p4'' have bitcodes from 0x800 to 0xB00. Returns 0 for failure and a valid serial number code otherwise.
+Converts a string pattern to a serial number code. If the pattern is a positive number, then this is the serial number code. Otherwise, a bitcode is computed from the pattern, the bitcode is bitwise inverted, and that value is returned as the serial number code, which is then a negative number. See \texttt{molfindserno} for a description of the bitcode. This function is written in a brute force fashion because it was simpler to write and to read, but could have been written more cleverly. Returns 0 for failure, a negative value if a bitcode is used, or a positive number for an actual serial number.
 
 \item[\texttt{char *rxnsernocode2string(long int pserno,char *pattern);}]
 \hfill \\
-Converts a serial number code to a pattern string. This assumes that \texttt{pattern} is allocated and is large enough for the result (maximum of 7 characters for codes or the number of characters for a long int, which is probably a few more than 7). See the description for \texttt{rxnstring2sernocode}.
+Converts a serial number code to a pattern string. This assumes that \texttt{pattern} is allocated and is large enough for the result (maximum of 7 characters for codes or the number of characters for a long int, which is probably a few more than 7). See the descriptions for \texttt{rxnstring2sernocode} and \texttt{molfindserno}.
 
 \item[\underline{memory management}]
 
@@ -4547,6 +4571,10 @@ Fixes the copy number of molecules in a compartment so that it is within the spe
 \hfill \\
 Equilibrates a pair of molecular species, allowing the efficient simulation of rapid reactions.  It reads two molecule names from \texttt{line2}, followed by a probability value.  Then, it looks for all molecules in the live lists with either of the two types and replaces them with the second type using the listed probability or with the first type using 1Ð the listed probability.
 
+\item[\texttt{enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2);}]
+\hfill \\
+Replaces one molecule species with another, with some replacement probability.  Modified from \texttt{cmdreplacecmptmol}.
+
 \item[\texttt{enum CMDcode cmdreplacexyzmol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
 Reads the name of a molecule following by a \texttt{dim} dimensional point in space from \texttt{line2}.  Then, it searches the fixed live list for any molecule that is exactly at the designated point.  If it encounters one, it is replaced by the listed molecule, and then the live lists are sorted if appropriate.  This routine stops searching after one molecule has been found, and so will miss additional molecules that are at the same point.
@@ -5856,6 +5884,12 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Added support for scientific notation in string math parsing.
 \item Added option for species change upon surface action. Example is \texttt{s7\_surfaces/ReflectToNewSpecies.txt}.
 \item Major change with serial numbers to enable single molecule tracking where two molecules can bind together and retain both serial numbers and then dissociate and have their original serial numbers. Changed molecule serial numbers to \texttt{unsigned long long}, but left most other serial number values as \texttt{long int}.
+
+\subsection*{Modifications for version 2.58 (released 3/29/19)}
+\item Fixed minor bug in string2.c that caused loss of numerical precision when using \texttt{strmathsscanf}.
+\item Changed the serial number coding for single-molecule tracking some, which also had some effects on the user's input format.
+\item Fixed important bug in \texttt{molscancmd} which caused it to scan over some molecules twice in some cases. For example, if called from \texttt{cmdkillmolprob}, this would test molecules twice to see if they should be killed, leading to incorrect kill probabilities. The problem was that some commands change the \texttt{sortl} elements, making them bad things to assume aren't changing.
+\item Added replacemol command.
 
 \end{itemize}
 
