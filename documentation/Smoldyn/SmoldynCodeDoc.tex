@@ -5890,6 +5890,9 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Changed the serial number coding for single-molecule tracking some, which also had some effects on the user's input format.
 \item Fixed important bug in \texttt{molscancmd} which caused it to scan over some molecules twice in some cases. For example, if called from \texttt{cmdkillmolprob}, this would test molecules twice to see if they should be killed, leading to incorrect kill probabilities. The problem was that some commands change the \texttt{sortl} elements, making them bad things to assume aren't changing.
 \item Added replacemol command.
+\item Re-released 4/2/19 with following changes:
+\item In CMakeLists.txt, I changed the minimum deployment for Mac from OS 10.5 to 10.9. This removed a compiling warning about libstdc++ being discontinued.
+\item Copied libstdc++-6.dll from /opt/local/x86\_64-w64-mingw32 to Smoldyn-official/windows. Also, edited the windows install.bat file so that this dll is copied when Smoldyn is installed. This will hopefully fix an error that Kevin Chen told me about.
 
 \end{itemize}
 

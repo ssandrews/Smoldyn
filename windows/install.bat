@@ -5,6 +5,7 @@ echo "Installing Smoldyn"
 if not exist "%DESTDIR%" mkdir "%DESTDIR%"
 copy "%FROMDIR%\smoldyn.exe" "%DESTDIR%"
 copy "%FROMDIR%\freeglut.dll" "%DESTDIR%"
+copy "%FROMDIR%\libstdc++-6.dll" "%DESTDIR%"
 xcopy "%FROMDIR%\BioNetGen" "%DESTDIR%" /s /e
 
 echo "Installing SmolCrowd"
