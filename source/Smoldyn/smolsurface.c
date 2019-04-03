@@ -3459,8 +3459,9 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		CHECKS(p2>=0,"second panel name listed in jump is not recognized, or not same shape as first panel");
 		face2=surfstring2face(facenm);
 		CHECKS(face2<=PFback,"second face listed in jump needs to be 'front' or 'back'");
+		CHECKS(p2!=p,"two different panels need to be listed in a jump statement");
 		er=surfsetjumppanel(srf,srf->panels[ps][p],face,i1,srf->panels[ps][p2],face2);
-		CHECKS(!er,"BUG: error in surfsetjumppanel");
+		CHECKS(!er,"BUG: error #%i in surfsetjumppanel",er);
 		CHECKS(!strnword(line2,3),"unexpected text following jump"); }
 
 	else if(!strcmp(word,"neighbors") || !strcmp(word,"neighbours")) {					// neighbors
@@ -4722,8 +4723,8 @@ void surfacereflect(moleculeptr mptr,panelptr pnl,double *crsspt,int dim,enum Pa
 int surfacejump(moleculeptr mptr,panelptr pnl,double *crsspt,enum PanelFace face,int dim) {
 	double **point,**point2,*front,*front2,dot,cent[3],delta[3];
 	panelptr pnl2;
-	enum PanelFace face2;
-	int d,dir,ps;
+	enum PanelFace face2;				//?? function would be better if it accounted for
+	int d,dir,ps;								//?? orientation effects
 
 	pnl2=pnl->jumpp[face];
 	face2=pnl->jumpf[face];

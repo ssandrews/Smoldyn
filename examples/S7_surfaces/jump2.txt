@@ -81,8 +81,7 @@ jump sph0 f <-> sph1 f
 jump hemi0 f <-> hemi1 f
 jump disk0 f <-> disk1 f
 jump cyl0 f <-> cyl1 f
-jump disk2 f <-> disk2 f
-jump disk3 f <-> disk3 f
+jump disk2 f <-> disk3 f
 end_surface
 
 cmd b pause
