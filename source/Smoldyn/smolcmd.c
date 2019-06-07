@@ -1175,7 +1175,7 @@ enum CMDcode cmdmolcountonsurf(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspace */
 enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int dim,i,itct,ax2,d,bin,average,*ctlat,ilat,*index,j,i2;
+	int dim,i,itct,ax2,d,bin,average,*ctlat,ilat,*index,j;
 	enum MolecState ms;
 	char axisstr[STRCHAR];
 	moleculeptr mptr;
@@ -1257,8 +1257,7 @@ enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 				lat=sim->latticess->latticelist[ilat];
 				if(lat->type==LATTICEnsv) {
 					for(j=0;j<index[PDnresults];j++) {
-						i2=index[PDMAX+j];
-						NSV_CALL(nsv_molcountspace(lat->nsv,i2,low,high,dim,nbin,axis,ctlat));
+						NSV_CALL(nsv_molcountspace(lat->nsv,index[PDMAX+j],low,high,dim,nbin,axis,ctlat));
 						for(bin=0;bin<nbin;++bin)
 							ct[bin]+=ctlat[bin]; }}
 				else if(lat->type==LATTICEpde) {			//not implemented

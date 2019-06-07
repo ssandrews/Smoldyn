@@ -51,7 +51,7 @@ int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods);
 enum MolecState bngmakedefaultstate(bngptr bng,int index,int totalmn);
 double bngmakedifc(bngptr bng,int index,int totalmn);
 
-int bngaddspecies(bngptr bng,int index,const char *name,double count);
+int bngaddspecies(bngptr bng,int bindex,const char *longname,const char *countstr);
 int bngaddreaction(bngptr bng,int bindex,const char *reactants,const char *products,const char *rate);
 int bngaddgroup(bngptr bng,int gindex,const char *gname,const char *specieslist);
 bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,char *line2);
@@ -1026,7 +1026,7 @@ void bngmakesurfaction(bngptr bng,int index,int totalmn,enum SrfAction **srfacti
 	if(j>0) {
 		for(s=0;s<bng->bngmaxsurface;s++) {
 			srf=sim->srfss->srflist[s];
-			for(face=PFfront;face<=PFnone;face=(PanelFace)(face+1)) {
+			for(face=PFfront;face<=PFnone;face=(enum PanelFace)(face+1)) {
 				srfaction[s][face]=srf->action[j][ms][face];
 				actdetails[s][face]=srf->actdetails[j][ms][face]; }}}
 
@@ -1034,7 +1034,7 @@ void bngmakesurfaction(bngptr bng,int index,int totalmn,enum SrfAction **srfacti
 		for(mn=0;mn<bng->nmonomer;mn++) {
 			if(bng->monomercount[mn]>0) {
 				for(s=0;s<bng->bngmaxsurface;s++) {
-					for(face=PFfront;face<=PFnone;face=(PanelFace)(face+1)) {
+					for(face=PFfront;face<=PFnone;face=(enum PanelFace)(face+1)) {
 						srfaction[s][face]=bng->monomeraction[mn][s][face];
 						actdetails[s][face]=bng->monomeractdetails[mn][s][face]; }}
 				mn=bng->nmonomer; }}}
@@ -1415,10 +1415,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 		CHECKS(!strnword(line2,2),"unexpected text following name"); }
 
 	else if(!strcmp(word,"BNG2_path")) {					// BNG2_path
-		itct=sscanf(line2,"%s",str1);
-		if(!itct) str1[0]='\0';
-		bngsetBNG2path(bng,str1);
-		CHECKS(!strnword(line2,2),"unexpected text following BNG2_path"); }
+		bngsetBNG2path(bng,line2); }
 
 	else if(!strcmp(word,"multiply")) {						// multiply
 		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,str1,&f1);

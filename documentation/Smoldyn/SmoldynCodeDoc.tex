@@ -43,8 +43,8 @@ breakatwhitespace=false
 
 
 
-\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.58}
-\date{\copyright March, 2019}
+\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.60}
+\date{\copyright June, 2019}
 \author{Steve Andrews}
 \maketitle
 
@@ -170,9 +170,13 @@ CMake option & default & function\\
 \multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
 \end{longtable}
 
-\section{Cross-compiling with MinGW}
+\section{Building Windows versions}
 
-Smoldyn is cross-compiled for Windows from Mac using MinGW. Getting this set up can be a major challenge, but I'll describe what worked for me here. First of all, I got MinGW from MacPorts using ``port install mingw-w64''. This installed the meta-package mingw-w64, along with two sets of other packages: i686-w64-mingw32-... and x86\_64-w64-mingw32-..., where the ... refers to the following 5 endings: binutils, crt, gcc, headers, and winpthreads.
+\subsection{Cross-compiling with MinGW}
+
+Smoldyn was cross-compiled for Windows from Mac using MinGW up to version 2.58, although it didn't work well for the last several of those versions; version 2.59 used a different build system; see below. The following text was written to describe this cross-compiling and has not been updated since then.
+
+Getting cross-compiling set up can be a major challenge, but I'll describe what worked for me here. First of all, I got MinGW from MacPorts using ``port install mingw-w64''. This installed the meta-package mingw-w64, along with two sets of other packages: i686-w64-mingw32-... and x86\_64-w64-mingw32-..., where the ... refers to the following 5 endings: binutils, crt, gcc, headers, and winpthreads.
 
 I initially thought that the i686-w64-mingw32-gcc was the compiler that I was supposed to use. In fact, it sort of works, but not really. I wrote the standard hello.c, which compiled nicely on my Mac with ``gcc -Wall hello.c -o hello''. To cross-compile, I tried to compile with ``i686-w64-mingw32-gcc -Wall hello.c -o hello.exe'' but this returned the error message ``i686-w64-mingw32-gcc: error trying to exec 'cc1': execvp: No such file or directory''. However, this did work when I prefaced the instruction with ``sudo'' and then entered my password. This clearly implied that the issue had to do with permissions, but I was never able to figure out what was wrong and my query to Stack Overflow about this was useless.
 
@@ -181,6 +185,12 @@ When I finally switched to compiling with the x86\_64-w64-mingw32-gcc compiler, 
 Part of the MacPorts MinGW download is a lot of library code that's pre-compiled for MinGW. The useful portions seem to be in /opt/local/x86\_64-w64-mingw32/include/ for the header files and /opt/local/x86\_64-w64-mingw32/lib/ for the source files. These include most of the libraries that Smoldyn uses. However, it doesn't include GLUT. I downloaded the ``freeglut 3.0.0 MinGW Package'' from https://www.transmissionzero.co.uk/software/freeglut-devel/. The download is in the Smoldyn source directory, from which I copied the include and lib directory contents to the /opt/local/x86\_64-w64-mingw32 directories.
 
 I copied the i386 tiff*.h files from MinGW directory to /opt/local/x86...include directory. They seem ok, but they're clearly for a different architecture. I also tried the i386 libtiff.a static libtiff library, but Smoldyn building complained that it wasn't compatible. I also tried downloading libtiff.a from many different websites, but got the same result every time, that they weren't compatible. I'm giving up for now on offering tiff support for Windows.
+
+... The cross-compiled Smoldyn version wasn't working during 2018 and into 2019, so I put major effort into fixing it during May, 2019, starting at version 2.58. The effort failed badly. At first, I was able to successfully cross-compile Hello World, a similar minimalist file that included OpenGL calls, and Smoldyn without graphics, but I couldn't compile Smoldyn with graphics. In the process, I discovered that the freeglut website listed above at www.transmissionzero.co.uk had good advice for compiling with OpenGL. After quite a lot of failed attempts, I decided to update my mingw compiler on my Mac, in case that was the problem. However, updating it just ruined everything totally, so cross-compiling no longer worked at all for anything. The i686 version of MinGW was broken and the x86 version returned ``dyld: Library not loaded: /opt/local/lib/libisl.19.dylib; Referenced from: /opt/local/libexec/gcc/x86\_64-w64-mingw32/8.3.0/cc1; Reason: image not found'', even for Hello World. I gave up.
+
+\subsection{Building Windows version on a Windows computer with MinGW}
+
+As of version 2.59, I am building Windows versions on a Windows computer with MinGW. I haven't figured out CMake there yet, so I copy the smoldynconfigure.h file and all of the source files to the Windows computer, compile, copy the .exe file back to the Mac, and continue with the build process. I'm distributing old version of SmolCrowd and wrl2smol in the Windows package (they only change very rarely, so the old ones are also the current ones).
 
 \section{Unit and regression testing}
 
@@ -5893,6 +5903,15 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Re-released 4/2/19 with following changes:
 \item In CMakeLists.txt, I changed the minimum deployment for Mac from OS 10.5 to 10.9. This removed a compiling warning about libstdc++ being discontinued.
 \item Copied libstdc++-6.dll from /opt/local/x86\_64-w64-mingw32 to Smoldyn-official/windows. Also, edited the windows install.bat file so that this dll is copied when Smoldyn is installed. This will hopefully fix an error that Kevin Chen told me about.
+
+\subsection*{Modifications for version 2.59 (released 5/15/19)}
+\item Trivial changes to the code to remove compiler errors and warnings.
+\item Major effort to compile for Windows. I failed at getting cross-compiling working and actually made it worse by replacing a cross-compiler that worked for non-graphics Smoldyn to one that didn't work at all. Instead, I now compile by hand on a Windows computer. This still doesn't support LibTiff or NSV but at least it does work.
+
+\subsection*{Modifications for version 2.60 (released 6/7/19)}
+\item Further improvements on Windows support. This release now builds SmolCrowd and wrl2smol on a Windows computer. It also uses static linking so that dll files aren't needed.  I also improved the Windows install script.
+\item Modified the BNG2\_path statement so that it now reads the entire line of text after the statement word rather than just the first word in the line, thus allowing for spaces in file names.
+\item Fixed a trivial bug for the ``stipple'' statement, which was trying to read hex code with the math parser.
 
 \end{itemize}
 

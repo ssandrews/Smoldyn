@@ -43,6 +43,7 @@ of the Gnu Lesser General Public License (LGPL). */
 
 #else
 	#define GLfloat float
+	#undef __gl_h			//?? I think this is a good thing
 
 #endif
 

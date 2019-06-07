@@ -170,7 +170,6 @@ int RxnSetRepresentationRules(rxnptr rxn,int order,const enum SpeciesRepresentat
 int RxnSetLog(simptr sim,char *filename,rxnptr rxn,listptrli list,int turnon);
 int RxnAddReactionPattern(simptr sim,const char *rname,const char *pattern,int oldnresults,enum MolecState *rctstate,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf,int isrule,rxnptr *rxnpt);
 rxnptr RxnAddReaction(simptr sim,const char *rname,int order,int *rctident,enum MolecState *rctstate,int nprod,int *prdident,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf);
-int RxnAddReactionPattern(simptr sim,const char *rname,const char *pattern,enum MolecState *rctstate,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf,int isrule,rxnptr *rxnpt);
 rxnptr RxnAddReactionCheck(simptr sim,char *rname,int order,int *rctident,enum MolecState *rctstate,int nprod,int *prdident,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf);
 int rxnsupdate(simptr sim);
 

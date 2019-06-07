@@ -1066,7 +1066,7 @@ int filSegmentXSurface(simptr sim,filamentptr fil,char endchar) {
 	mxs=0;
 	for(s=0;s<sim->srfss->nsrf && !mxs;s++) {
 		srf=sim->srfss->srflist[s];
-		for(ps=(PanelShape)0;ps<PSMAX && !mxs;ps=(PanelShape)(ps+1))
+		for(ps=(enum PanelShape)0;ps<PSMAX && !mxs;ps=(enum PanelShape)(ps+1))
 			for(p=0;p<srf->npanel[ps] && !mxs;p++) {
 				pnl=srf->panels[ps][p];
 				mxs=lineXpanel(pt1,pt2,pnl,3,crosspt,NULL,NULL,NULL,NULL,NULL,0); }}

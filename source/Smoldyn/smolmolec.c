@@ -713,7 +713,7 @@ int molismobile(simptr sim,int species,enum MolecState ms) {
 	if(mols->surfdrift && mols->surfdrift[species] && mols->surfdrift[species][ms])
 		for(s=0;s<sim->srfss->nsrf;s++)
 			if(mols->surfdrift[species][ms][s])
-				for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+				for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 					if(mols->surfdrift[species][ms][s][ps])
 						for(d=0;d<dim-1;d++)
 							if(mols->surfdrift[species][ms][s][ps][d]!=0) return 1;
@@ -966,8 +966,8 @@ int molsetsurfdrift(simptr sim,int ident,int *index,enum MolecState ms,int surfa
 	if(surface!=-1) shi=(slo=surface)+1;
 	else {slo=0;shi=sim->srfss->nsrf;}
 
-	if(ps!=PSall) pshi=(PanelShape)((pslo=ps)+1);
-	else {pslo=PanelShape(0);pshi=PanelShape(PSMAX);}
+	if(ps!=PSall) pshi=(enum PanelShape)((pslo=ps)+1);
+	else {pslo=(enum PanelShape)(0);pshi=(enum PanelShape)(PSMAX);}
 
 	if(!mols->surfdrift) {
 		CHECKMEM(mols->surfdrift=(double*****) calloc(mols->maxspecies,sizeof(double****)));
@@ -983,7 +983,7 @@ int molsetsurfdrift(simptr sim,int ident,int *index,enum MolecState ms,int surfa
 		for(s1=slo;s1<shi;s1++) {
 			if(!mols->surfdrift[ident][ms1][s1]) {
 				CHECKMEM(mols->surfdrift[ident][ms1][s1]=(double**) calloc(PSMAX,sizeof(double*)));
-				for(ps1=(PanelShape)0;ps1<PSMAX;ps1=(PanelShape)(ps1+1)) mols->surfdrift[ident][ms1][s1][ps1]=NULL; }
+				for(ps1=(enum PanelShape)0;ps1<PSMAX;ps1=(enum PanelShape)(ps1+1)) mols->surfdrift[ident][ms1][s1][ps1]=NULL; }
 			for(ps1=pslo;ps1<pshi;ps1=(PanelShape)(ps1+1)) {
 				if(!mols->surfdrift[ident][ms1][s1][ps1]) {
 					CHECKMEM(mols->surfdrift[ident][ms1][s1][ps1]=(double*) calloc(dim-1,sizeof(double)));
@@ -1589,7 +1589,7 @@ int molexpandsurfdrift(simptr sim,int oldmaxspec,int oldmaxsrf) {	//?? needs to 
 				if(oldsurfdrift[i][ms])
 					for(s=0;s<oldmaxsrf;s++)
 						if(oldsurfdrift[i][ms][s])
-							for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+							for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 								if(oldsurfdrift[i][ms][s][ps]) {
 									CHECK(molsetsurfdrift(sim,i,NULL,ms,s,ps,oldsurfdrift[i][ms][s][ps])==0); }
 	
@@ -1612,7 +1612,7 @@ void molfreesurfdrift(double *****surfdrift,int maxspec,int maxsrf) {
 					if(surfdrift[i][ms]) {
 						for(s=0;s<maxsrf;s++)
 							if(surfdrift[i][ms][s]) {
-								for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+								for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 									free(surfdrift[i][ms][s][ps]);
 								free(surfdrift[i][ms][s]); }
 						free(surfdrift[i][ms]); }
@@ -2184,7 +2184,7 @@ void molssoutput(simptr sim) {
 					simLog(sim,2,"   %s:",molms2string(ms,string));
 					for(s=0;s<sim->srfss->nsrf;s++)
 						if(mols->surfdrift[i][ms][s])
-							for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+							for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 								if(mols->surfdrift[i][ms][s][ps]) {
 									simLog(sim,2," %s,%s",sim->srfss->snames[s],surfps2string(ps,string));
 									if(sim->dim==2) simLog(sim,2,"=%g",mols->surfdrift[i][ms][s][ps][0]);

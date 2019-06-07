@@ -10,7 +10,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "string2.h"
 
 #define CHECK(A) if(!(A)) {goto failure;} else (void)0
-#define CHECKS(A,...)		if(!(A)) {snprintf(erstr,sizeof(erstr),__VA_ARGS__); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {snprintf(erstr,STRCHAR,__VA_ARGS__); goto failure;} else (void)0
 
 
 /******************************************************************************/
@@ -486,7 +486,7 @@ int Parse_ReadFailure(ParseFilePtr pfp,char *erstr) {
 	if(!pfp) i1=0;
 	else {
 		i1=pfp->lctr;
-		snprintf(erstr,sizeof(erstr),"Error reading file in line %i",i1);
+		snprintf(erstr,STRCHAR,"Error reading file in line %i",i1);
 		if(pfp->linecopy[0]) {
 			strncat(erstr,"\nline: ",STRCHAR-1-strlen(erstr));
 			if(strchr(pfp->linecopy,'\n')) *(strchr(pfp->linecopy,'\n'))='\0';

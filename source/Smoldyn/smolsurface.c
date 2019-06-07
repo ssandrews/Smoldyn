@@ -3353,7 +3353,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 
 	else if(!strcmp(word,"stipple")) {					// stipple
 		CHECKS(srf,"need to enter surface name before stipple");
-		itct=strmathsscanf(line2,"%mi %mi",varnames,varvalues,nvar,&i1,&i2);
+		itct=strmathsscanf(line2,"%mi %x",varnames,varvalues,nvar,&i1,&i2);
 		CHECKS(itct==2,"stipple format: factor pattern");
 		CHECKS(i1>=1,"stipple factor needs to be >=1");
 		CHECKS(i2>=0 && i2 <=0xFFFF,"stipple pattern needs to be between 0x00 and 0xFFFF");
