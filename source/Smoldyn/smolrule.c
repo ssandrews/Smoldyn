@@ -604,7 +604,7 @@ int RuleExpandRules(simptr sim,int iterations) {
 				ms=(enum MolecState) detailsi[0];
 				srf=sim->srfss->srflist[detailsi[1]];
 				for(i=oldnresults;i<index[PDnresults];i++)
-					surfsetaction(srf,index[PDMAX+i],NULL,ms,(enum PanelFace)detailsi[2],(enum SrfAction)detailsi[3]); }
+					surfsetaction(srf,index[PDMAX+i],NULL,ms,(enum PanelFace)detailsi[2],(enum SrfAction)detailsi[3],-1); }
 
 			else if(ruletype==RTsurfrate) {
 				molpatternindex(sim,pattern,rname,1,2,&index);

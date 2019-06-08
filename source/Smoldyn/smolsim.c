@@ -267,6 +267,11 @@ simptr simalloc(const char *fileroot) {
 	CHECKMEM(sim->filename=EmptyString());
 	CHECKMEM(sim->flags=EmptyString());
 	CHECKMEM(sim->cmds=scmdssalloc(&docommand,(void*)sim,fileroot));
+
+	simsetvariable(sim,"time",sim->time);
+	simsetvariable(sim,"x",dblnan());
+	simsetvariable(sim,"y",dblnan());
+	simsetvariable(sim,"z",dblnan());
 	return sim;
 
  failure:
@@ -503,7 +508,9 @@ int simsettime(simptr sim,double time,int code) {
 	else if(code==4) timedefined|=16;
 
 	er=0;
-	if(code==0) sim->time=time;
+	if(code==0) {
+		sim->time=time;
+		simsetvariable(sim,"time",time); }
 	else if(code==1) sim->tmin=time;
 	else if(code==2) sim->tmax=time;
 	else if(code==3) {
@@ -524,7 +531,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char errstr[STRCHARLONG];
 	int er,i,nmol,d,i1,s,c,ll,order,*index;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,f,detailsi[8];
-	long int sernolist[MAXPRODUCT];
+	long int pserno,sernolist[MAXPRODUCT];
 	double flt1,flt2,v1[DIMMAX*DIMMAX],v2[4],poslo[DIMMAX],poshi[DIMMAX];
 	enum MolecState ms,rctstate[MAXORDER];
 	enum PanelShape ps;
@@ -554,6 +561,9 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	if(!strcmp(word,"variable")) {								// variable
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"variable format: name = value");
+		CHECKS(strcmp(nm,"time"),"'time' cannot be used as a variable name; it is pre-defined as the simulation time");
+		CHECKS(strcmp(nm,"x") && strcmp(nm,"y") && strcmp(nm,"z"),"x, y, and z are reserved variable names");
+		CHECKS(strokname(nm),"variable name has to start with a letter and then be alphanumeric with optional underscores");
 		line2=strnword(line2,2);
 		CHECKS(line2,"variable format: name = value");
 		if(line2[0]=='=') {
@@ -1249,7 +1259,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"tiff_name needs to be a string");
 		strcpy(nm1,sim->filepath);
-		strncat(nm1,nm,STRCHAR-1-strlen(nm1));
+		CHECKS(strlen(nm)<STRCHAR-strlen(nm1),"tiff name is too long");
+		strcat(nm1,nm);
 		gl2SetOptionStr("TiffName",nm1);
 		CHECKS(!strnword(line2,2),"unexpected text following tiff_name"); }
 
@@ -1664,20 +1675,13 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			sernolist[prd]=0;
 			line2=strnword(line2,2);
 			CHECKS(line2,"not enough product codes entered");
-			if(line2[0]=='n') sernolist[prd]=0;
-			else if(line2[0]=='+') prd--;
-			else if(line2[0]=='r') {
-				if(line2[1]=='1' && order>0) sernolist[prd]=-1;
-				else if(line2[1]=='2' && order>1) sernolist[prd]=-2;
-				else CHECKS(0,"error reading a reactant code"); }
-			else if(line2[0]=='p') {
-				itct=strmathsscanf(line2+1,"%mi",varnames,varvalues,nvar,&i);
-				CHECKS(itct==1 && i>0 && i<prd+1,"error reading a product code");
-				sernolist[prd]=-9-i; }
+			itct=sscanf(line2,"%s",pattern);
+			CHECKS(itct==1,"error reading a product code");
+			if(!strcmp(pattern,"+")) prd--;
 			else {
-				itct=sscanf(line2,"%li",&(sernolist[prd]));
-				CHECKS(itct==1,"error reading serial number value"); }}
-
+				pserno=rxnstring2sernocode(pattern,prd);
+				CHECKS(pserno!=0,"error reading a product code");
+				sernolist[prd]=pserno; }}
 		rxn=NULL;
 		r=readrxnname(sim,rname,NULL,&rxn,NULL,1);
 		if(r>=0) {
@@ -2354,7 +2358,7 @@ void debugcode(simptr sim,const char *prefix) {
 	for(m=0;m<sim->mols->nl[0];m++) {
 		mptr=sim->mols->live[0][m];
 		if(mptr->serno==1377166 || mptr->serno==1374858) {
-			printf("%s: time=%g serno=%li",prefix,sim->time,mptr->serno);
+			printf("%s: time=%g serno=%s",prefix,sim->time,molserno2string(mptr->serno,string));
 			printf(" posx=(%g,%g,%g)",mptr->posx[0],mptr->posx[1],mptr->posx[2]);
 			printf(" pos=(%g,%g,%g)",mptr->pos[0],mptr->pos[1],mptr->pos[2]);
 			printf(" pnl=%s",mptr->pnl?mptr->pnl->pname:"NULL");
@@ -2432,6 +2436,7 @@ int simulatetimestep(simptr sim) {
 	if(er) return 11;
 
 	sim->time+=sim->dt;													// --- end of time step ---
+	simsetvariable(sim,"time",sim->time);
 
 	er=simdocommands(sim);
 	if(er) return er;

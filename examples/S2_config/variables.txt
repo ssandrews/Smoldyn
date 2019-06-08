@@ -13,17 +13,17 @@ boundaries y min max r
 boundaries z min max r
 
 variable w = 8%3
-variable x = 5^2-3
-variable y = ((x-2)/5)^(1/2)
-variable z = -2^(-3^2)
+variable xx = 5^2-3
+variable yy = ((xx-2)/5)^(1/2)
+variable zz = -2^(-3^2)
 variable a = 1e5/2e3
 variable b = sin(5)+1
 variable c = pow(2,5)
 
 species red green
 
-difc red x
-difc green 2*y
+difc red xx
+difc green 2*yy
 
 color red red
 color green green

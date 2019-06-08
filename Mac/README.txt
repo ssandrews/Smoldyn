@@ -1,8 +1,8 @@
-This README file pertains to the Smoldyn distribution for Mac OS X.
+This README file is for the Smoldyn distribution for Mac OS X.
 
 This distribution contains pre-compiled Smoldyn software for running on standard Macs.  It assumes that you have an Intel Mac running OS 10.6 or higher, that your system is configured in a typical way, and that you want the default Smoldyn installation.
 
-To install Smoldyn, open your "Terminal" application, which is in your Applications/Utilities directory.  Change directories to this download directory (probably type "cd Desktop/smoldyn-2.40-mac", or something similar).  Then type "sudo ./install.sh", and enter your computer password when prompted.  If you are asked whether you want the installer to update your environment PATH variable, you should generally say yes (enter 'y').  This will add the directory /usr/local/bin to the list of places where your computer will look for executable files, which means that it will find Smoldyn correctly.  Next, test Smoldyn by typing "smoldyn examples/S1_intro/bounce3.txt".  If it runs, congratulations, you have a successful Smoldyn installation!  If not, see below.
+To install Smoldyn, open your "Terminal" application, which is in your Applications/Utilities directory.  Change directories to this download directory (probably type "cd Desktop/smoldyn-2.xx-mac", or something similar).  Then type "sudo ./install.sh", and enter your computer password when prompted.  If you are asked whether you want the installer to update your environment PATH variable, you should generally say yes (enter 'y').  This will add the directory /usr/local/bin to the list of places where your computer will look for executable files, which means that it will find Smoldyn correctly.  Next, test Smoldyn by typing "smoldyn examples/S1_intro/bounce3.txt".  If it runs, congratulations, you have a successful Smoldyn installation!  If not, see below.
 
 Particularly useful files in the download directory:
 SmoldynQuickGuide.pdf - a 2 page Smoldyn quick reference guide, in documentation directory
@@ -26,7 +26,7 @@ A default Smoldyn installation installs the following files:
 
 --------------- Uninstalling Smoldyn -------------
 
-To completely remove all of the Smoldyn files that the installer installed, run the uninstall.sh script.  This is a very simple script that deletes the installed files.  This will not delete the download package from your computer.
+To completely remove all of the Smoldyn files that the installer installed, run the uninstall.sh script.  This is a very simple script that deletes the installed files.  This will not delete the download package from your computer and it doesn't reset the environment PATH variable.
 
 
 -------- If installation failed ------

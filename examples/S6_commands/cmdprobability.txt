@@ -1,0 +1,31 @@
+# Simulation file of basic diffusion and reaction
+# This file is used to test and demonstrate manipulation commands
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 100 r
+boundaries y 0 100 r
+
+species red blue
+
+time_start 0
+time_stop 150
+time_step 0.05
+
+output_files stdout
+
+
+difc red 1
+color red red
+color blue blue
+display_size all 1
+
+mol 1000 red u u
+
+cmd i 0 100 10 molcount
+cmd @ 50 killmolprob red (x+y)/200
+cmd @ 100 replacemol red blue (100-y)/100
+
+end_file
+

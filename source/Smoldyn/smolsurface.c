@@ -265,7 +265,7 @@ panelptr readpanelname(simptr sim,surfaceptr srf,const char *str) {
 	int s,p;
 
 	if(strchr(str,':')) strcpy(name,str);
-	else if(srf) sprintf(name,"%s:%s",srf->sname,str);
+	else if(srf) snprintf(name,STRCHAR,"%s:%s",srf->sname,str);
 	else return NULL;
 	s=readsurfacename(sim,name,&ps,&p);
 	if(s<0 || p<0) return NULL;
@@ -565,7 +565,7 @@ int issurfprod(simptr sim,int i,enum MolecState ms) {
 			for(face=(PanelFace)0;face<3;face=(PanelFace)(face+1)) {
 				actdetails=srf->actdetails[i1][ms1][face];
 				if(actdetails)
-					if(actdetails->srfrate[ms]>0 || actdetails->srfprob[ms]>0)
+					if(actdetails->srfrate[ms]>0 || actdetails->srfprob[ms]>0 || actdetails->srfdatasrc[ms]==3)
 						if(actdetails->srfnewspec[ms]==i)
 							return 1; }
 		for(i1=0;i1<srfss->maxspecies;i1++)	// failed, so try with species change at surface
@@ -573,7 +573,7 @@ int issurfprod(simptr sim,int i,enum MolecState ms) {
 				for(face=(PanelFace)0;face<3;face=(PanelFace)(face+1)) {
 					actdetails=srf->actdetails[i1][ms1][face];
 					if(actdetails)
-						if(actdetails->srfrate[ms]>0 || actdetails->srfprob[ms]>0)
+						if(actdetails->srfrate[ms]>0 || actdetails->srfprob[ms]>0 || actdetails->srfdatasrc[ms]==3)
 							if(actdetails->srfnewspec[ms]==i)
 								return 1; }}
 		return 0; }
@@ -801,7 +801,7 @@ int panelsalloc(surfaceptr srf,int dim,int maxpanel,int maxspecies,enum PanelSha
 		newpname[p]=srf->pname[ps][p];
 	for(;p<maxpanel;p++) {
 		CHECKMEM(newpname[p]=EmptyString());
-		sprintf(newpname[p],"%s%i",surfps2string(ps,string),p); }
+		snprintf(newpname[p],STRCHAR,"%s%i",surfps2string(ps,string),p); }
 
 	CHECKMEM(newpnls=(panelptr*) calloc(maxpanel,sizeof(panelptr)));
 	for(p=0;p<maxpanel;p++) newpnls[p]=NULL;
@@ -1244,7 +1244,7 @@ void surfacessfree(surfacessptr srfss) {
 
 /* surfaceoutput */
 void surfaceoutput(simptr sim) {
-	int s,p,i,dim,nspecies,jumpfrnt,jumpback,ll,p2,emit,d,same,none;
+	int s,p,i,dim,nspecies,jumpfrnt,jumpback,ll,p2,emit,d,same,none,newident;
 	surfacessptr srfss;
 	surfaceptr srf;
 	double **point,*front,prob;
@@ -1295,17 +1295,24 @@ void surfaceoutput(simptr sim) {
 				for(face=(PanelFace)0;face<2;face=(PanelFace)(face+1)) {
 					same=1;
 					act=action[i][MSsoln][face];
-					for(ms=(MolecState)0;ms<MSMAX;ms=(MolecState)(ms+1))
+					newident=((actdetails=srf->actdetails[i][MSsoln][face]) && actdetails->srfdatasrc[MSsoln]==3) ? actdetails->srfnewspec[MSsoln] : 0;
+					for(ms=(MolecState)0;ms<MSMAX;ms=(MolecState)(ms+1)) {
 						if(action[i][ms][face]!=act) same=0;
+						if(newident && !((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3 && actdetails->srfnewspec[ms]==newident)) same=0; }
 					if(same) {
-						if(act!=SAmult)
-							simLog(sim,2,"   %s(all) at %s: %s\n",sim->mols->spname[i],face==PFfront?"front":"back",surfact2string(act,string)); }
+						if(act!=SAmult) {
+							simLog(sim,2,"   %s(all) at %s: %s",sim->mols->spname[i],face==PFfront?"front":"back",surfact2string(act,string));
+							if(newident) simLog(sim,2," (convert to %s)",sim->mols->spname[newident]);
+							simLog(sim,2,"\n"); }}
 					else {
 						for(ms=(MolecState)0;ms<MSMAX;ms=(MolecState)(ms+1)) {
 							act=action[i][ms][face];
 							if(sim->mols->exist[i][ms] && act!=SAmult) {
 								simLog(sim,2,"   %s(%s)",sim->mols->spname[i],molms2string(ms,string));
-								simLog(sim,2," at %s: %s\n",face==PFfront?"front":"back",surfact2string(act,string)); }}}}}
+								simLog(sim,2," at %s: %s",face==PFfront?"front":"back",surfact2string(act,string));
+								if((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3)
+									simLog(sim,2," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms]]);
+								simLog(sim,2,"\n"); }}}}}
 
 			simLog(sim,2,"  rates for molecules:");
 			none=1;
@@ -1564,7 +1571,10 @@ void writesurfaces(simptr sim,FILE *fptr) {
 						act=srf->action[i][ms1][face];
 						if(act!=SAtrans && act!=SAmult) {
 							fprintf(fptr,"action %s(%s)",sim->mols->spname[i],molms2string(ms1,string));
-							fprintf(fptr," %s %s\n",face==PFfront?"front":"back",surfact2string(act,string)); }}}}
+							fprintf(fptr," %s %s",face==PFfront?"front":"back",surfact2string(act,string));
+							if(srf->actdetails[i][ms1][face] && srf->actdetails[i][ms1][face]->srfdatasrc[ms1]==3)
+								fprintf(fptr," %s",sim->mols->spname[srf->actdetails[i][ms1][face]->srfnewspec[ms1]]);
+							fprintf(fptr,"\n"); }}}}
 
 		if(srf->action && srf->actdetails) {
 			for(i=1;i<nspecies;i++) {
@@ -2039,10 +2049,11 @@ int surfsetshiny(surfaceptr srf,enum PanelFace face,double shiny) {
 
 
 /* surfsetaction */
-int surfsetaction(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act) {
+int surfsetaction(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act,int newident) {
 	int i,j;
 	enum MolecState ms1,mslo,mshi;
 	simptr sim;
+	surfactionptr actdetails;
 
 	sim=srf->srfss->sim;
 	if(ms==MSbsoln || ms==MSnone) return 2;
@@ -2092,6 +2103,66 @@ int surfsetaction(surfaceptr srf,int ident,const int *index,enum MolecState ms,e
 				i=index[PDMAX+j];
 				for(ms1=mslo;ms1<=mshi;ms1=MolecState(ms1+1))
 					srf->action[i][ms1][face]=act; }}}
+
+	if(newident>0) {
+		if(ident>0) {
+			i=ident;
+			for(ms1=mslo;ms1<=mshi;ms1=MolecState(ms1+1)) {
+				if(face==PFfront || face==PFboth) {
+					actdetails=srf->actdetails[i][ms1][PFfront];
+					if(!actdetails) {
+						actdetails=surfaceactionalloc(i);				// allocate action details
+						srf->actdetails[i][ms1][PFfront]=actdetails; }
+					if(!actdetails) return -1;
+					actdetails->srfdatasrc[ms1]=3;
+					actdetails->srfnewspec[ms1]=newident; }
+				if(face==PFback || face==PFboth) {
+					actdetails=srf->actdetails[i][ms1][PFback];
+					if(!actdetails) {
+						actdetails=surfaceactionalloc(i);				// allocate action details
+						srf->actdetails[i][ms1][PFback]=actdetails; }
+					if(!actdetails) return -1;
+					actdetails->srfdatasrc[ms1]=3;
+					actdetails->srfnewspec[ms1]=newident;	}}}
+		else if(ident==-5) {
+			for(i=1;i<sim->mols->nspecies;i++)
+				for(ms1=mslo;ms1<=mshi;ms1=MolecState(ms1+1)) {
+					if(face==PFfront || face==PFboth) {
+						actdetails=srf->actdetails[i][ms1][PFfront];
+						if(!actdetails) {
+							actdetails=surfaceactionalloc(i);				// allocate action details
+							srf->actdetails[i][ms1][PFfront]=actdetails; }
+						if(!actdetails) return -1;
+						actdetails->srfdatasrc[ms1]=3;
+						actdetails->srfnewspec[ms1]=newident; }
+					if(face==PFback || face==PFboth) {
+						actdetails=srf->actdetails[i][ms1][PFback];
+						if(!actdetails) {
+							actdetails=surfaceactionalloc(i);				// allocate action details
+							srf->actdetails[i][ms1][PFback]=actdetails; }
+						if(!actdetails) return -1;
+						actdetails->srfdatasrc[ms1]=3;
+						actdetails->srfnewspec[ms1]=newident; }}}
+		else if(ident==0) {
+			for(j=0;j<index[PDnresults];j++) {
+				i=index[PDMAX+j];
+				for(ms1=mslo;ms1<=mshi;ms1=MolecState(ms1+1)) {
+					if(face==PFfront || face==PFboth) {
+						actdetails=srf->actdetails[i][ms1][PFfront];
+						if(!actdetails) {
+							actdetails=surfaceactionalloc(i);				// allocate action details
+							srf->actdetails[i][ms1][PFfront]=actdetails; }
+						if(!actdetails) return -1;
+						actdetails->srfdatasrc[ms1]=3;
+						actdetails->srfnewspec[ms1]=newident; }
+					if(face==PFback || face==PFboth) {
+						actdetails=srf->actdetails[i][ms1][PFback];
+						if(!actdetails) {
+							actdetails=surfaceactionalloc(i);				// allocate action details
+							srf->actdetails[i][ms1][PFback]=actdetails; }
+						if(!actdetails) return -1;
+						actdetails->srfdatasrc[ms1]=3;
+						actdetails->srfnewspec[ms1]=newident; }}}}}
 
 	surfsetcondition(srf->srfss,SCparams,0);
 	return 0; }
@@ -3075,9 +3146,18 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 			CHECKS(i>=0 || i==-5,"in action, molecule name not recognized"); }
 		act=surfstring2act(actnm);
 		CHECKS(act<=SAmult || act==SAadsorb,"in action statement, action not recognized or not permitted");
-		er=surfsetaction(srf,i,index,ms1,face,act);
+		line2=strnword(line2,4);
+		i2=i;
+		if(line2) {
+			itct=sscanf(line2,"%s",nm);
+			CHECKS(itct==1,"final word appears to be new species but cannot read it");
+			i2=molstring2index1(sim,nm,&ms2,NULL);
+			CHECKS(i2>0,"final word of line is not an individual species name");
+			CHECKS(ms2==MSsoln,"new species name cannot have a state given with it");
+			line2=strnword(line2,2); }
+		er=surfsetaction(srf,i,index,ms1,face,act,i2);
 		CHECKS(!er,"BUG: error with surfsetaction statement");
-		CHECKS(!strnword(line2,4),"unexpected text following action"); }
+		CHECKS(!line2,"unexpected text following action"); }
 
 	else if(!strcmp(word,"action_rule")) {					// action_rule
 		CHECKS(srf,"need to enter surface name before action_rule");
@@ -3273,7 +3353,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 
 	else if(!strcmp(word,"stipple")) {					// stipple
 		CHECKS(srf,"need to enter surface name before stipple");
-		itct=strmathsscanf(line2,"%mi %mi",varnames,varvalues,nvar,&i1,&i2);
+		itct=strmathsscanf(line2,"%mi %x",varnames,varvalues,nvar,&i1,&i2);
 		CHECKS(itct==2,"stipple format: factor pattern");
 		CHECKS(i1>=1,"stipple factor needs to be >=1");
 		CHECKS(i2>=0 && i2 <=0xFFFF,"stipple pattern needs to be between 0x00 and 0xFFFF");
@@ -3379,8 +3459,9 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		CHECKS(p2>=0,"second panel name listed in jump is not recognized, or not same shape as first panel");
 		face2=surfstring2face(facenm);
 		CHECKS(face2<=PFback,"second face listed in jump needs to be 'front' or 'back'");
+		CHECKS(p2!=p,"two different panels need to be listed in a jump statement");
 		er=surfsetjumppanel(srf,srf->panels[ps][p],face,i1,srf->panels[ps][p2],face2);
-		CHECKS(!er,"BUG: error in surfsetjumppanel");
+		CHECKS(!er,"BUG: error #%i in surfsetjumppanel",er);
 		CHECKS(!strnword(line2,3),"unexpected text following jump"); }
 
 	else if(!strcmp(word,"neighbors") || !strcmp(word,"neighbours")) {					// neighbors
@@ -4142,6 +4223,11 @@ enum SrfAction surfaction(surfaceptr srf,enum PanelFace face,int ident,enum Mole
 				if(ms2==MSsoln) act=SAtrans;
 				else if(ms2==MSbsoln) act=SAreflect;
 				else act=SAadsorb; }}}
+	else {
+		ms2=(ms==MSbsoln)?MSsoln:ms;
+	 	actdetails=srf->actdetails[ident][ms2][face];
+	 	if(actdetails && actdetails->srfdatasrc[ms2]==3)
+			i2=actdetails->srfnewspec[ms2]; }
 
 	if(i2ptr) *i2ptr=i2;
 	if(ms2ptr) *ms2ptr=ms2;
@@ -4637,8 +4723,8 @@ void surfacereflect(moleculeptr mptr,panelptr pnl,double *crsspt,int dim,enum Pa
 int surfacejump(moleculeptr mptr,panelptr pnl,double *crsspt,enum PanelFace face,int dim) {
 	double **point,**point2,*front,*front2,dot,cent[3],delta[3];
 	panelptr pnl2;
-	enum PanelFace face2;
-	int d,dir,ps;
+	enum PanelFace face2;				//?? function would be better if it accounted for
+	int d,dir,ps;								//?? orientation effects
 
 	pnl2=pnl->jumpp[face];
 	face2=pnl->jumpf[face];
@@ -4707,22 +4793,22 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 	epsilon=sim->srfss->epsilon;
 	margin=sim->srfss->margin;
 
-	isneigh=0;																		// check for neighbor
+	isneigh=0;																		// if surface-bound, check for neighbor
 	if(face!=PFnone && mptr->pnl && pnl->nneigh>0)
 		for(p=0;p<mptr->pnl->nneigh;p++)
 			if(mptr->pnl->neigh[p]==pnl) isneigh=1;
 
-	if(isneigh) {																	// find action, new identity, and new state
+	if(isneigh) {																	// if surface-bound && neighbor, find action, new identity, and new state
 		if(mptr->pnl->srf->neighhop==0) act=SAtrans;
 		else act=coinrandD(0.5)?SAadsorb:SAtrans;
 		i2=i;
 		ms2=ms; }
-	else if((face==PFfront || face==PFback) && pnl->emitterabsorb[face] && pnl->emitterabsorb[face][i]>0) {
+	else if((face==PFfront || face==PFback) && pnl->emitterabsorb[face] && pnl->emitterabsorb[face][i]>0) {	// emitter stuff
 		if(randCCD()<pnl->emitterabsorb[face][i]) act=SAabsorb;
 		else act=SAreflect;
 		i2=i;
 		ms2=MSsoln; }
-	else
+	else																					// other options, including non-surface bound
 		act=surfaction(pnl->srf,face,i,ms,&i2,&ms2);
 
 	if(act==SAno);																// no action
@@ -4751,11 +4837,13 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 		jump=surfacejump(mptr,pnl,crsspt,face,dim);
 		if(!jump) {				// transmit
 			newface=(face==PFfront)?PFback:PFfront;
-			fixpt2panel(crsspt,pnl,dim,newface,epsilon); }}
+			fixpt2panel(crsspt,pnl,dim,newface,epsilon); }
+		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl); }
 
 	else if(act==SAport) {												// port
 		newface=(face==PFfront)?PFback:PFfront;
     fixpt2panel(crsspt,pnl,dim,newface,epsilon);
+		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl);
 		mptr->list=pnl->srf->port[face]->llport;
 		if(ll>=0 && m<sim->mols->sortl[ll]) sim->mols->sortl[ll]=m;
 		done=1; }

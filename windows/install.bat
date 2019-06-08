@@ -1,28 +1,35 @@
+@echo off
 set FROMDIR=%~dp0%
-set DESTDIR=%PROGRAMFILES%\Smoldyn
+set DESTDIR=%PROGRAMFILES%\Smoldyn\
 
-echo "Installing Smoldyn"
+echo Installing from '%FROMDIR%' to '%DESTDIR%'
+echo Installing Smoldyn
 if not exist "%DESTDIR%" mkdir "%DESTDIR%"
-copy "%FROMDIR%\smoldyn.exe" "%DESTDIR%"
-copy "%FROMDIR%\freeglut.dll" "%DESTDIR%"
-xcopy "%FROMDIR%\BioNetGen" "%DESTDIR%" /s /e
+copy "%FROMDIR%smoldyn.exe" "%DESTDIR%"
 
-echo "Installing SmolCrowd"
-copy "%FROMDIR%\SmolCrowd.exe" "%DESTDIR%"
+echo Installing BioNetGen
+if not exist "%DESTDIR%\BioNetGen\" mkdir "%DESTDIR%\BioNetGen\"
+xcopy "%FROMDIR%BioNetGen" "%DESTDIR%\BioNetGen" /s /e /q
 
-echo "Installing wrl2smol"
-copy "%FROMDIR%\wrl2smol.exe" "%DESTDIR%"
+echo Installing SmolCrowd
+copy "%FROMDIR%SmolCrowd.exe" "%DESTDIR%"
 
-echo "Installing Libsmoldyn"
-if not exist "%DESTDIR%\include" mkdir "%DESTDIR%\include"
-if not exist "%DESTDIR%\lib" mkdir "%DESTDIR%\lib"
-copy "%FROMDIR%\include\libsmoldyn.h" "%DESTDIR%\include"
-copy "%FROMDIR%\include\smoldyn.h" "%DESTDIR%\include"
-copy "%FROMDIR%\include\smoldynconfigure.h" "%DESTDIR%\include"
-copy "%FROMDIR%\lib\libsmoldyn_static.a" "%DESTDIR%\lib"
-copy "%FROMDIR%\lib\libsmoldyn_shared.dll" "%DESTDIR%\lib"
-copy "%FROMDIR%\lib\libsmoldyn_shared.dll.a" "%DESTDIR%\lib"
+echo Installing wrl2smol
+copy "%FROMDIR%wrl2smol.exe" "%DESTDIR%"
 
-echo "Installation complete"
+echo Installing Libsmoldyn
+if not exist "%DESTDIR%include" mkdir "%DESTDIR%include"
+if not exist "%DESTDIR%lib" mkdir "%DESTDIR%lib"
+copy "%FROMDIR%include\libsmoldyn.h" "%DESTDIR%include"
+copy "%FROMDIR%include\smoldyn.h" "%DESTDIR%include"
+copy "%FROMDIR%include\smoldynconfigure.h" "%DESTDIR%include"
+copy "%FROMDIR%lib\libsmoldyn_static.lib" "%DESTDIR%lib"
+copy "%FROMDIR%lib\libsmoldyn_shared.dll" "%DESTDIR%lib"
+
+echo Adding Smoldyn directory to local and system path
+echo.%PATH% > "%DESTDIR%PATH_old.txt"
+echo.%PATH% | find /I "Smoldyn">Nul && (echo.already in PATH) || (setx /m PATH "%PATH%;%DESTDIR%;" & set PATH=%PATH%;%DESTDIR%;)
+
+echo Installation complete
 
 

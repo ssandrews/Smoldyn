@@ -21,11 +21,13 @@ color bound yellow
 display_size all(all) 0.3
 
 reaction rxn1 receptor + ligand -> bound 3
-reaction rxn2 bound -> receptor + ligand 1
 reaction_serialnum rxn1 r2
+reaction_log stdout rxn1 1
+
+reaction rxn2 bound -> receptor + ligand 1
 reaction_serialnum rxn2 new + r1
 reaction_log stdout rxn2 1
-reaction_log stdout rxn1 1
+
 
 mol 1 ligand u u
 mol 50 receptor u u

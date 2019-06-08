@@ -513,7 +513,7 @@ int molpatternindex(simptr sim,const char *pattern,const char *rname,int isrule,
 						if(matchindex2[PDMAX+i]==i1) keepgoing=0; }}
 
 			if(keepgoing) {
-				sprintf(teststring,"%s %s",mols->spname[i1],mols->spname[i2]);
+				snprintf(teststring,STRCHAR,"%s %s",mols->spname[i1],mols->spname[i2]);
 				while((ismatch=strEnhWildcardMatchAndSub(matchstr,teststring,substr,deststring))>0) {
 					if(index[PDalloc]<PDMAX+totalwords*(j+1)) {
 						er=molpatternindexalloc(&patindex[pat],PDMAX+2*totalwords*(j+1));
@@ -621,6 +621,79 @@ int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol) {
 /******************************************************************************/
 
 
+/* molserno2string */
+char *molserno2string(unsigned long long serno,char *string) {
+	if(serno<0xFFFFFFFF)
+		snprintf(string,sizeof(string),LLUFORMAT,serno);
+	else
+		snprintf(string,sizeof(string),LLUFORMAT "." LLUFORMAT,serno>>32,serno&0xFFFFFFFF);
+	return string; }
+
+
+/* molstring2serno */
+unsigned long long molstring2serno(char *string) {
+	char *dotptr;
+	unsigned long long i1,i2,answer;
+
+	answer=0;
+	if((dotptr=strchr(string,'.'))) {
+		i1=i2=0;
+		*dotptr='\0';
+		sscanf(string,LLUFORMAT,&i1);
+		sscanf(dotptr+1,LLUFORMAT,&i2);
+		*dotptr='.';
+		if(i1==0 || i2==0) return 0;
+		answer= i1<<32 | i2; }
+	else
+		sscanf(string,LLUFORMAT,&answer);
+
+	return answer; }
+
+
+/* molfindserno */
+unsigned long long molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist) {
+	unsigned long long answer,i1,i2;
+	long int bitcode;
+
+	if(pserno>0) return (unsigned long long)pserno;
+	bitcode=~pserno;
+	i1=i2=0;
+
+	if(bitcode&0xFF00) {
+		if(bitcode&0x800) {																			// p
+			if((bitcode&0x300)==0) i1=sernolist[0];								// p1
+			else if((bitcode&0x300)==0x100) i1=sernolist[1];			// p2
+			else if((bitcode&0x300)==0x200) i1=sernolist[2];			// p3
+			else i1=sernolist[3]; }																// p4
+		else if(bitcode&0x400) {																// r
+			if((bitcode&0x300)==0) i1=r1serno;										// r1
+			else i1=r2serno; }																		// r2
+		else i1=def;																						// new
+		if(bitcode&0x1000) i1>>=32;															// left
+		else i1&=0xFFFFFFFF; }																	// right
+	else
+		i1=0;
+
+	if(bitcode&0xFF) {
+		if(bitcode&0x8) {																						// p
+			if((bitcode&0x3)==0) i2=sernolist[0];											// p1
+			else if((bitcode&0x3)==0x1) i2=sernolist[1];							// p2
+			else if((bitcode&0x3)==0x2) i2=sernolist[2];							// p3
+			else i2=sernolist[3]; }																		// p4
+		else if(bitcode&0x4) {																			// r
+			if((bitcode&0x3)==0) i2=r1serno;													// r1
+			else i2=r2serno; }																				// r2
+		else if((bitcode&0xFF00)==0x100) i2=sim->mols->serno++;			// new.new
+		else i2=def;																								// new
+		if(bitcode&0x10) i2>>=32;																		// left
+		else i2&=0xFFFFFFFF; }																			// right
+	else
+		i2=0;
+
+	answer=(i1<<32)|i2;
+	return answer; }
+
+
 /* molismobile */
 int molismobile(simptr sim,int species,enum MolecState ms) {
 	molssptr mols;
@@ -640,7 +713,7 @@ int molismobile(simptr sim,int species,enum MolecState ms) {
 	if(mols->surfdrift && mols->surfdrift[species] && mols->surfdrift[species][ms])
 		for(s=0;s<sim->srfss->nsrf;s++)
 			if(mols->surfdrift[species][ms][s])
-				for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+				for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 					if(mols->surfdrift[species][ms][s][ps])
 						for(d=0;d<dim-1;d++)
 							if(mols->surfdrift[species][ms][s][ps][d]!=0) return 1;
@@ -663,7 +736,7 @@ char *molpos2string(simptr sim,moleculeptr mptr,char *string) {
 
 	line2=string;												// write position to string
 	for(d=0;d<dim;d++) {
-		sprintf(line2," %g",mptr->pos[d]);
+		snprintf(line2,sizeof(line2)," %g",mptr->pos[d]);
 		line2+=strlen(line2); }
 
 	if(!sim->srfss) done=1;
@@ -692,7 +765,7 @@ char *molpos2string(simptr sim,moleculeptr mptr,char *string) {
 
 			line2=string;												// write position to string
 			for(d=0;d<dim;d++) {
-				sprintf(line2," %g",mptr->pos[d]+unirandCCD(-dist,dist));
+				snprintf(line2,sizeof(line2)," %g",mptr->pos[d]+unirandCCD(-dist,dist));
 				line2+=strlen(line2); }}}
 		
 		return string; }
@@ -739,6 +812,11 @@ void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecSta
 	sim->mols->touch++;
 
 	return; }
+
+
+/******************************************************************************/
+/***************************** set structure values ***************************/
+/******************************************************************************/
 
 
 /* molssetgausstable */
@@ -888,8 +966,8 @@ int molsetsurfdrift(simptr sim,int ident,int *index,enum MolecState ms,int surfa
 	if(surface!=-1) shi=(slo=surface)+1;
 	else {slo=0;shi=sim->srfss->nsrf;}
 
-	if(ps!=PSall) pshi=(PanelShape)((pslo=ps)+1);
-	else {pslo=PanelShape(0);pshi=PanelShape(PSMAX);}
+	if(ps!=PSall) pshi=(enum PanelShape)((pslo=ps)+1);
+	else {pslo=(enum PanelShape)(0);pshi=(enum PanelShape)(PSMAX);}
 
 	if(!mols->surfdrift) {
 		CHECKMEM(mols->surfdrift=(double*****) calloc(mols->maxspecies,sizeof(double****)));
@@ -905,7 +983,7 @@ int molsetsurfdrift(simptr sim,int ident,int *index,enum MolecState ms,int surfa
 		for(s1=slo;s1<shi;s1++) {
 			if(!mols->surfdrift[ident][ms1][s1]) {
 				CHECKMEM(mols->surfdrift[ident][ms1][s1]=(double**) calloc(PSMAX,sizeof(double*)));
-				for(ps1=(PanelShape)0;ps1<PSMAX;ps1=(PanelShape)(ps1+1)) mols->surfdrift[ident][ms1][s1][ps1]=NULL; }
+				for(ps1=(enum PanelShape)0;ps1<PSMAX;ps1=(enum PanelShape)(ps1+1)) mols->surfdrift[ident][ms1][s1][ps1]=NULL; }
 			for(ps1=pslo;ps1<pshi;ps1=(PanelShape)(ps1+1)) {
 				if(!mols->surfdrift[ident][ms1][s1][ps1]) {
 					CHECKMEM(mols->surfdrift[ident][ms1][s1][ps1]=(double*) calloc(dim-1,sizeof(double)));
@@ -1188,16 +1266,23 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 	else if(i>0 && ms==MSall) {															// one species, all states
 		for(ll=0;ll<mols->nlist;ll++) {
 			mlist=mols->live[ll];
+			nmol=mols->nl[ll];
 			top=mols->sortl[ll];
 			uselist=0;
 			for(msval=(enum MolecState)0;msval<MSMAX && !uselist;msval=(enum MolecState)(msval+1))
 				if(mols->listlookup[i][msval]==ll) uselist=1;
-			if(uselist)
-				for(m=0;m<top;m++) {
+			if(uselist) {
+				for(m=0;m<nmol;m++) {
 					mptr=mlist[m];
 					if(mptr->ident==i) {
 						code=(*fn)(sim,cmd,(char*)mptr);
 						if(code!=CMDok) return; }}}
+			else {
+				for(m=top;m<nmol;m++) {
+					mptr=mlist[m];
+					if(mptr->ident==i) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}}
 		mlist=mols->dead;
 		nmol=mols->nd;
 		top=mols->topd;
@@ -1205,26 +1290,26 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 			mptr=mlist[m];
 			if(mptr->ident==i) {
 				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
-		for(ll=0;ll<mols->nlist;ll++) {
-			mlist=mols->live[ll];
-			top=mols->sortl[ll];
-			nmol=mols->nl[ll];
-			for(m=top;m<nmol;m++) {
-				mptr=mlist[m];
-				if(mptr->ident==i) {
-					code=(*fn)(sim,cmd,(char*)mptr);
-					if(code!=CMDok) return; }}}}
+				if(code!=CMDok) return; }}}
 
 	else if(i>0) {																					// single species, single state
-		ll=mols->listlookup[i][ms];
-		mlist=mols->live[ll];
-		top=mols->sortl[ll];
-		for(m=0;m<top;m++) {
-			mptr=mlist[m];
-			if(mptr->ident==i && mptr->mstate==ms) {
-				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
+		for(ll=0;ll<mols->nlist;ll++) {
+			mlist=mols->live[ll];
+			nmol=mols->nl[ll];
+			top=mols->sortl[ll];
+			uselist=(mols->listlookup[i][ms]==ll)?1:0;
+			if(uselist) {
+				for(m=0;m<nmol;m++) {
+					mptr=mlist[m];
+					if(mptr->ident==i && mptr->mstate==ms) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}
+			else {
+				for(m=top;m<nmol;m++) {
+					mptr=mlist[m];
+					if(mptr->ident==i && mptr->mstate==ms) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}}
 		mlist=mols->dead;
 		nmol=mols->nd;
 		top=mols->topd;
@@ -1232,21 +1317,13 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 			mptr=mlist[m];
 			if(mptr->ident==i && mptr->mstate==ms) {
 				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
-		for(ll=0;ll<mols->nlist;ll++) {
-			mlist=mols->live[ll];
-			top=mols->sortl[ll];
-			nmol=mols->nl[ll];
-			for(m=top;m<nmol;m++) {
-				mptr=mlist[m];
-				if(mptr->ident==i && mptr->mstate==ms) {
-					code=(*fn)(sim,cmd,(char*)mptr);
-					if(code!=CMDok) return; }}}}
+				if(code!=CMDok) return; }}}
 
 	else if(index) {																				// list of molecules in index
 		nresults=index[PDnresults];
 		for(ll=0;ll<mols->nlist;ll++) {
 			mlist=mols->live[ll];
+			nmol=mols->nl[ll];
 			top=mols->sortl[ll];
 			uselist=0;
 			if(ms==MSall) {
@@ -1257,7 +1334,13 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 				for(j=0;j<nresults;j++)
 					if(mols->listlookup[index[PDMAX+j]][ms]==ll) uselist=1; }
 			if(uselist) {
-				for(m=0;m<top;m++) {
+				for(m=0;m<nmol;m++) {
+					mptr=mlist[m];
+					if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
+						code=(*fn)(sim,cmd,(char*)mptr);
+						if(code!=CMDok) return; }}}
+			else {
+				for(m=top;m<nmol;m++) {
 					mptr=mlist[m];
 					if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
 						code=(*fn)(sim,cmd,(char*)mptr);
@@ -1269,16 +1352,7 @@ void molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum C
 			mptr=mlist[m];
 			if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
 				code=(*fn)(sim,cmd,(char*)mptr);
-				if(code!=CMDok) return; }}
-		for(ll=0;ll<mols->nlist;ll++) {
-			mlist=mols->live[ll];
-			nmol=mols->nl[ll];
-			top=mols->sortl[ll];
-			for(m=top;m<nmol;m++) {
-				mptr=mlist[m];
-				if(locateVi(index+PDMAX,mptr->ident,nresults,0)>=0 && (ms==MSall || mptr->mstate==ms)) {
-					code=(*fn)(sim,cmd,(char*)mptr);
-					if(code!=CMDok) return; }}}}
+				if(code!=CMDok) return; }}}
 
 	return; }
 
@@ -1515,7 +1589,7 @@ int molexpandsurfdrift(simptr sim,int oldmaxspec,int oldmaxsrf) {	//?? needs to 
 				if(oldsurfdrift[i][ms])
 					for(s=0;s<oldmaxsrf;s++)
 						if(oldsurfdrift[i][ms][s])
-							for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+							for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 								if(oldsurfdrift[i][ms][s][ps]) {
 									CHECK(molsetsurfdrift(sim,i,NULL,ms,s,ps,oldsurfdrift[i][ms][s][ps])==0); }
 	
@@ -1538,7 +1612,7 @@ void molfreesurfdrift(double *****surfdrift,int maxspec,int maxsrf) {
 					if(surfdrift[i][ms]) {
 						for(s=0;s<maxsrf;s++)
 							if(surfdrift[i][ms][s]) {
-								for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+								for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 									free(surfdrift[i][ms][s][ps]);
 								free(surfdrift[i][ms][s]); }
 						free(surfdrift[i][ms]); }
@@ -2034,7 +2108,7 @@ void molssoutput(simptr sim) {
 
 	if(mols->condition!=SCok)
 		simLog(sim,7," Molecule superstructure condition: %s\n",simsc2string(mols->condition,string));
-	simLog(sim,1," Next molecule serial number: %li\n",mols->serno);
+	simLog(sim,1," Next molecule serial number: %lu\n",mols->serno);
 	if(mols->gausstbl) simLog(sim,1," Table for Gaussian distributed random numbers has %i values\n",mols->ngausstbl);
 	else simLog(sim,1," Table for Gaussian distributed random numbers has not been set up\n");
 
@@ -2110,7 +2184,7 @@ void molssoutput(simptr sim) {
 					simLog(sim,2,"   %s:",molms2string(ms,string));
 					for(s=0;s<sim->srfss->nsrf;s++)
 						if(mols->surfdrift[i][ms][s])
-							for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+							for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 								if(mols->surfdrift[i][ms][s][ps]) {
 									simLog(sim,2," %s,%s",sim->srfss->snames[s],surfps2string(ps,string));
 									if(sim->dim==2) simLog(sim,2,"=%g",mols->surfdrift[i][ms][s][ps][0]);
@@ -2289,7 +2363,7 @@ int checkmolparams(simptr sim,int *warnptr) {
 	for(m=0;m<mols->topd;m++) {
 		mptr=mols->dead[m];
 		if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in dead list at %i\n",m);}
-		else if(mptr->list!=-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in dead list at %i (species %i, serno %li)\n",m,mptr->ident,mptr->serno);}
+		else if(mptr->list!=-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in dead list at %i (species %i, serno %s)\n",m,mptr->ident,molserno2string(mptr->serno,string));}
 		else if(mptr->ident) {error++;simLog(sim,10," SMOLDYN BUG: live molecule in dead list at %i\n",m);} }
 	for(;m<mols->nd;m++) {
 		mptr=mols->dead[m];
@@ -2304,7 +2378,7 @@ int checkmolparams(simptr sim,int *warnptr) {
 		for(m=0;m<mols->nl[ll];m++)	{									// check for molecules outside system
 			mptr=mols->live[ll][m];
 			if(!posinsystem(sim,mptr->pos)) {
-				simLog(sim,5," WARNING: molecule #%li, of type '%s', is outside system volume\n",mptr->serno,spname[mptr->ident]);
+				simLog(sim,5," WARNING: molecule #%s, of type '%s', is outside system volume\n",molserno2string(mptr->serno,string),spname[mptr->ident]);
 				warn++; }}
 
 	for(i=1;i<nspecies;i++)														// check for asymmetric diffusion matrices
@@ -2480,7 +2554,7 @@ int molgeneratespecies(simptr sim,const char *name,int nparents,int parent1,int 
 				for(s=0;s<sim->srfss->nsrf;s++) {
 					srf=sim->srfss->srflist[s];
 					for(face=(enum PanelFace)0;face<=PFnone;face=(PanelFace)(face+1)) {
-						surfsetaction(srf,i,NULL,ms,face,srf->action[parent1][ms][face]);
+						surfsetaction(srf,i,NULL,ms,face,srf->action[parent1][ms][face],-1);
 						if(srf->action[parent1][ms][face]==SAmult) {
 							for(ms4=(enum MolecState)0;ms4<(enum MolecState)MSMAX1;ms4=(enum MolecState)(ms4+1)) {
 								srfindex2tristate(ms,face,ms4,&ms0,&ms1,&ms2);
@@ -2518,7 +2592,7 @@ int molgeneratespecies(simptr sim,const char *name,int nparents,int parent1,int 
 						if(srfcompareaction(act1,det1,act2,det2)>0) {
 							act1=act2;
 							det1=det2; }
-						surfsetaction(srf,i,NULL,ms,face,act1);
+						surfsetaction(srf,i,NULL,ms,face,act1,-1);
 						if(act1==SAmult) {
 							for(ms4=(enum MolecState)0;ms4<(enum MolecState)MSMAX1;ms4=(enum MolecState)(ms4+1)) {
 								srfindex2tristate(ms,face,ms4,&ms0,&ms1,&ms2);
@@ -2666,7 +2740,7 @@ moleculeptr getnextmol(molssptr mols) {
 		er=molexpandlist(mols,mols->sim->dim,-1,nmol,nmol);
 		if(er) return NULL; }
 	mptr=mols->dead[--mols->topd];
-	mptr->serno=mols->serno++;
+	mptr->serno=(unsigned long long)(mols->serno++);
 
 	mols->touch++;
 	return mptr; }

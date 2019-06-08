@@ -1,0 +1,40 @@
+# Single molecule tracking test
+
+graphics opengl_good
+random_seed 1
+
+dim 2
+
+boundaries 0 0 20 r
+boundaries 1 0 20 r
+
+time_start 0
+time_stop 100
+time_step 0.001
+
+species receptor ligand bound
+
+difc ligand 1
+
+color receptor red
+color ligand green
+color bound yellow
+display_size all(all) 0.3
+
+reaction rxn1 receptor + ligand -> bound 3
+reaction_serialnum rxn1 r1.r2
+reaction_log stdout rxn1 all
+
+reaction rxn2 bound -> receptor + ligand 1
+reaction_serialnum rxn2 r1L + r1R
+reaction_log stdout rxn2 all
+
+
+mol 5 ligand u u
+mol 50 receptor u u
+
+cmd N 100 trackmol 1 stdout
+
+
+end_file
+

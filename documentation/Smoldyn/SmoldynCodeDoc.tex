@@ -43,8 +43,8 @@ breakatwhitespace=false
 
 
 
-\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.56}
-\date{\copyright September, 2018}
+\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.60}
+\date{\copyright June, 2019}
 \author{Steve Andrews}
 \maketitle
 
@@ -76,28 +76,13 @@ The Smoldyn software represents a balance between algorithms that are exact for 
 % New chapter
 \chapter{Smoldyn code and build system}
 
-\section{Subversion server}
+\section{github}
 
-The Smoldyn code is hosted on a subversion server at the Fred Hutchinson Cancer Research Center (FHCRC), called \url{hedgehog.fhcrc.org}.  Smoldyn is also hosted at SourceForge, but that site is only barely active, and thus is not recommended. Instead, most code development is done using the FHCRC server. Before you can check out code from the FHCRC server, you will need a login and password. Get those by e-mailing me (sandrews@fhcrc.org). Then, check out a copy of Smoldyn for working on with:
-\begin{quote}
-\texttt{svn checkout \url{https://hedgehog.fhcrc.org/users/sandrews/Smoldyn/trunk newdir}}
-\end{quote}
-Here, \texttt{newdir} is the new local directory; it's optional, and I don't actually use it usually. You will need to enter a user name and a password. Your new directory will include the following files:\\
-
-\begin{longtable}[c]{lll}
-file & author/origin & description\\
-\hline
-README & Steve & quick summary of what's in the directory\\
-documentation & Steve & (directory) Smoldyn code documentation\\
-examples & Steve & (directory) Smoldyn configuration files\\
-Mac & Steve & (directory) Mac binaries and library files\\
-source & Steve, Nathan & (directory) all source code\\
-windows & Steve & (directory) Windows dlls, executables, and libraries\\
-\end{longtable}
+As of version 2.57, Smoldyn's official code respository is github at ssandrews/Smoldyn\_Official (github has several other versions of Smoldyn as well). I am still new to github, so there are many features there that I don't understand yet.
 
 \section{Code merging}
 
-Some of the subversion tools merge code reasonably well. However, they aren't particularly informative. Here are some better options.
+Here are some options for merging code.
 
 \subsection*{Minimalist text based merging}
 
@@ -120,10 +105,6 @@ finds all lines of Smoldyn source code that call Geo\_Sphere\_Normal.
 XCode offers FileMerge.app, which is at /Developer/Applications/Utilities/FileMerge.app.  It's very easy to use.
 
 Alternatively, Eclipse, at \url{www.eclipse.org} works well.
-
-\subsection*{svn merging}
-
-To keep two branches synchronized, they need to be merged periodically.  For example, to merge the trunk changes into the nsv branch, one would normally change to the nsv root directory and then enter \texttt{svn merge https://hedgehog.fhcrc.org/users/sandrews/Smoldyn/trunk}.  However, this won't acutally work because the FHCRC subversion server software is old.  Thus, one has to specify version numbers.  For example, enter \texttt{svn merge -r2043:2194 https://hedgehog.fhcrc.org/users/sandrews/Smoldyn/trunk}.
 
 \section{Source code dependencies}
 
@@ -189,9 +170,13 @@ CMake option & default & function\\
 \multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
 \end{longtable}
 
-\section{Cross-compiling with MinGW}
+\section{Building Windows versions}
 
-Smoldyn is cross-compiled for Windows from Mac using MinGW. Getting this set up can be a major challenge, but I'll describe what worked for me here. First of all, I got MinGW from MacPorts using ``port install mingw-w64''. This installed the meta-package mingw-w64, along with two sets of other packages: i686-w64-mingw32-... and x86\_64-w64-mingw32-..., where the ... refers to the following 5 endings: binutils, crt, gcc, headers, and winpthreads.
+\subsection{Cross-compiling with MinGW}
+
+Smoldyn was cross-compiled for Windows from Mac using MinGW up to version 2.58, although it didn't work well for the last several of those versions; version 2.59 used a different build system; see below. The following text was written to describe this cross-compiling and has not been updated since then.
+
+Getting cross-compiling set up can be a major challenge, but I'll describe what worked for me here. First of all, I got MinGW from MacPorts using ``port install mingw-w64''. This installed the meta-package mingw-w64, along with two sets of other packages: i686-w64-mingw32-... and x86\_64-w64-mingw32-..., where the ... refers to the following 5 endings: binutils, crt, gcc, headers, and winpthreads.
 
 I initially thought that the i686-w64-mingw32-gcc was the compiler that I was supposed to use. In fact, it sort of works, but not really. I wrote the standard hello.c, which compiled nicely on my Mac with ``gcc -Wall hello.c -o hello''. To cross-compile, I tried to compile with ``i686-w64-mingw32-gcc -Wall hello.c -o hello.exe'' but this returned the error message ``i686-w64-mingw32-gcc: error trying to exec 'cc1': execvp: No such file or directory''. However, this did work when I prefaced the instruction with ``sudo'' and then entered my password. This clearly implied that the issue had to do with permissions, but I was never able to figure out what was wrong and my query to Stack Overflow about this was useless.
 
@@ -200,6 +185,12 @@ When I finally switched to compiling with the x86\_64-w64-mingw32-gcc compiler, 
 Part of the MacPorts MinGW download is a lot of library code that's pre-compiled for MinGW. The useful portions seem to be in /opt/local/x86\_64-w64-mingw32/include/ for the header files and /opt/local/x86\_64-w64-mingw32/lib/ for the source files. These include most of the libraries that Smoldyn uses. However, it doesn't include GLUT. I downloaded the ``freeglut 3.0.0 MinGW Package'' from https://www.transmissionzero.co.uk/software/freeglut-devel/. The download is in the Smoldyn source directory, from which I copied the include and lib directory contents to the /opt/local/x86\_64-w64-mingw32 directories.
 
 I copied the i386 tiff*.h files from MinGW directory to /opt/local/x86...include directory. They seem ok, but they're clearly for a different architecture. I also tried the i386 libtiff.a static libtiff library, but Smoldyn building complained that it wasn't compatible. I also tried downloading libtiff.a from many different websites, but got the same result every time, that they weren't compatible. I'm giving up for now on offering tiff support for Windows.
+
+... The cross-compiled Smoldyn version wasn't working during 2018 and into 2019, so I put major effort into fixing it during May, 2019, starting at version 2.58. The effort failed badly. At first, I was able to successfully cross-compile Hello World, a similar minimalist file that included OpenGL calls, and Smoldyn without graphics, but I couldn't compile Smoldyn with graphics. In the process, I discovered that the freeglut website listed above at www.transmissionzero.co.uk had good advice for compiling with OpenGL. After quite a lot of failed attempts, I decided to update my mingw compiler on my Mac, in case that was the problem. However, updating it just ruined everything totally, so cross-compiling no longer worked at all for anything. The i686 version of MinGW was broken and the x86 version returned ``dyld: Library not loaded: /opt/local/lib/libisl.19.dylib; Referenced from: /opt/local/libexec/gcc/x86\_64-w64-mingw32/8.3.0/cc1; Reason: image not found'', even for Hello World. I gave up.
+
+\subsection{Building Windows version on a Windows computer with MinGW}
+
+As of version 2.59, I am building Windows versions on a Windows computer with MinGW. I haven't figured out CMake there yet, so I copy the smoldynconfigure.h file and all of the source files to the Windows computer, compile, copy the .exe file back to the Mac, and continue with the build process. I'm distributing old version of SmolCrowd and wrl2smol in the Windows package (they only change very rarely, so the old ones are also the current ones).
 
 \section{Unit and regression testing}
 
@@ -423,7 +414,7 @@ The \texttt{PatternData} enumeration, of which there are \texttt{PDMAX} options,
 
 \begin{lstlisting}
 typedef struct moleculestruct {
-	long int serno;							// serial number
+	unsigned long long serno;				// serial number
 	int list;										// destination list number (ll)
 	double *pos;								// dim dimensional vector for position [d]
 	double *posx;								// dim dimensional vector for old position[d]
@@ -437,7 +428,19 @@ typedef struct moleculestruct {
 	} *moleculeptr;
 \end{lstlisting}
 
-\texttt{moleculestruct} is a structure used for each molecule.  \texttt{serno} is the unique serial number that each live molecule is given; it is assigned by the utility function \texttt{getnextmol}, which should be used to add new live molecules to the system.  If a molecule is being imported from elsewhere, it is legitimate to overwrite the serial number with the previous value.  \texttt{list} is the master list number that the molecule should be listed in (-1 for dead, other values for live lists); this is modified with \texttt{molkill}, \texttt{molchange}, or one of the \texttt{addmol} functions.  \texttt{pos} and \texttt{posx}, both of which are owned by the structure, are always valid positions, although not necessarily within the system volume.  \texttt{posx} is the position from the previous time step, used to determine if a molecule crossed a wall or surface.  \texttt{posoffset} is the cumulative position offset  that should be added to the position to correct for jumps and periodic boundaries (it replaced the \texttt{wrap} element).  \texttt{via} is the location of the most recent surface interaction.  \texttt{ident} should always be between 0 and \texttt{nident-1}, inclusive.  A molecule type of 0 is an empty molecule for transfer to the dead list (and should also have \texttt{list} equal to -1).  Except during set up, \texttt{box} should always point to a valid box.  \texttt{mstate} is the physical state of the molecule, which might be solvated or any of several surface-bound positions.
+\texttt{moleculestruct} is a structure used for each molecule.
+
+\texttt{serno} is the unique serial number that each live molecule is given; it is assigned by the utility function \texttt{getnextmol}, which should be used to add new live molecules to the system.  If a molecule is being imported from elsewhere, it is legitimate to overwrite the serial number with the previous value.  The serial number should normally never exceed a long int, except when using single molecule tracking when two serial numbers are concatenated into one, which then requires an unsigned long long int.
+
+\texttt{list} is the master list number that the molecule should be listed in (-1 for dead, other values for live lists); this is modified with \texttt{molkill}, \texttt{molchange}, or one of the \texttt{addmol} functions.
+
+\texttt{pos} and \texttt{posx}, both of which are owned by the structure, are always valid positions, although not necessarily within the system volume.  \texttt{posx} is the position from the previous time step, used to determine if a molecule crossed a wall or surface.  \texttt{posoffset} is the cumulative position offset  that should be added to the position to correct for jumps and periodic boundaries (it replaced the \texttt{wrap} element).  \texttt{via} is the location of the most recent surface interaction. It is work space and so should not be assumed to represent anything, unless it was just set to that value.
+
+\texttt{ident} should always be between 0 and \texttt{nident-1}, inclusive. A molecule type of 0 is an empty molecule for transfer to the dead list (and should also have \texttt{list} equal to -1).
+
+Except during set up, \texttt{box} should always point to a valid box.
+
+\texttt{mstate} is the physical state of the molecule, which might be solvated or any of several surface-bound positions.
 
 If this molecule is bound to a surface, \texttt{pnl} points to that surface panel.  Also, \texttt{pnlx} points to the panel that \texttt{posx} was on.
 
@@ -477,7 +480,7 @@ typedef struct molsuperstruct {
 	int *topl;									// live list index; above are reborn [ll]
 	int *sortl;									// live list index; above need sorting [ll]
 	int *diffuselist;						// 1 if any listed molecs diffuse [ll]
-	long int serno;							// serial number for next resurrected molec.
+	unsigned long serno;						// serial number for next resurrected molec.
 	int ngausstbl;							// number of elements in gausstbl
 	double *gausstbl;						// random numbers for diffusion
 	int *expand;								// whether species expand with libmzr [i]
@@ -543,6 +546,31 @@ Returns the enumerated molecule list type, given a string input.  Permitted inpu
 Returns the string that corresponds to the enumerated molecule list type \texttt{mlt}.  The string needs to be pre-allocaed; it is returned to allow function nesting.
 
 \item[\underline{low level utilities}]
+
+\item[\texttt{char *molserno2string(unsigned long long serno,char *string);}]
+\hfill \\
+Writes the molecule serial number to a pre-allocated string, returning the pointer to that string. If the serial number is not a concatenated number, then just writes that number to the string. If the serial number has been concatenated, then this writes the left portion, a period, and then the right portion. Note that this uses the defined string \texttt{LLUFORMAT} because Windows doesn't use the standard \%llu format specifier for some reason.
+
+\item[\texttt{unsigned long long molstring2serno(char *string);}]
+\hfill
+Converts a string with a serial number value to a serial number. If the string is simply a number, then this reads the number and returns it. If the string has two numbers separated by a period, then this takes the left number, shifts it left 32 places, and adds the right number, to create a concatenated serial number. Returns 0 on failure (serial numbers equal to 0 are not allowed).
+
+\item[\texttt{unsigned long long}]
+\texttt{molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist);}
+\hfill
+Computes a serial number for a new molecule, based upon coded instructions in \texttt{pserno}, a default value in \texttt{def}, reactant serial numbers in \texttt{r1serno} and \texttt{r2serno}, and previously assigned product serial numbers in \texttt{sernolist}. This does not use \texttt{sim} at all, except if the coded instructions are for a serial number with the format ``new.new'', in which case this uses the default value as the first new value and then gets the next one off of \texttt{sim->mols->serno} and also increments the value. This function does no checking to make sure that inputs are valid.
+
+A positive value of \texttt{pserno} indicates that it is an actual serial number and a negative value indicates that it is a bit-inverted code, labeled the bitcode here. The bitcode is 4 hex numbers, with the first two for the left half of the serial number and the second two for the right half of the serial number. The other functions that deal with bitcodes are \texttt{rxnstring2sernocode} and \texttt{rxnsernocode2string}.
+
+\begin{longtable}[c]{ccl}
+bits & mask & use\\
+\hline
+1,2,3 & 0xE0 & not used\\
+4 & 0x10 & 0 for right side, 1 for left side\\
+5 & 0x08 & 1 for p, 0 for r or new\\
+6 & 0x04 & 1 for r, 0 for p or new\\
+7,8 & 0x03 & which p or r, or 1 for new
+\end{longtable}
 
 \item[\texttt{int molismobile(simptr sim,int species,enum MolecState ms);}]
 \hfill \\
@@ -612,6 +640,8 @@ Changes the identity or state of a molecule that is currently in the system to s
 
 This function sets some parameters of the molecule structure, fixes the location as needed, and, if appropriate, updates \texttt{sortl} to indicate to \texttt{molsort} that sorting is needed.  This also increments the molecule \texttt{touch} value to show that molecules have been touched.
 
+\item[\underline{set structure values}]
+
 \item[\texttt{int molssetgausstable(simptr sim,int size);}]
 \hfill \\
 Sets the size of the Gaussian look-up table to \texttt{size} and also allocates the table, if needed.  Setting \texttt{size} to 0 or a negative number keeps the current size if it has already been allocated, or creates a table with the default size (4096) if not.  Otherwise, \texttt{size} is required to be an integer power of two.  This will replace an existing table if the new size if different from the previous one.  Returns 0 for success, 1 for insufficient memory, or 3 if the size is not an integer power of two.
@@ -658,7 +688,7 @@ This function is essentially the same exact thing several times in a row, for th
 \item[\texttt{void}]
 \texttt{molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum CMDcode(*fn)(simptr,cmdptr,char*));}
 \hfill \\
-Scans over all molecules that meet the criteria listed and calls the function \texttt{fn} for each one. This function is very similar to \texttt{molcount}, except that it calls a function for each molecule rather than just counting them.  As with \texttt{molcount}, this checks all molecule lists and the dead list; it also works whether molecules have been sorted or not.  Send in \texttt{i} as the species number, which should be less than 0 for all species, 0 to indicate that \texttt{i} should be ignored and \texttt{index} should be used instead, or as a positive number for that specific species.  Enter \texttt{index} as a sorted list of species, using the standard index pattern header and format; it is only used if \texttt{i} equals zero.  Enter \texttt{ms} as \texttt{MSall} for all species and as a specific species otherwise.  The function entry is designed for a Smoldyn command function and so has the same format, despite the fact that this format isn't really ideal in this case.  The function gets passed the simulation pointer in the first argument, \texttt{cmd} in the second argument, and a pointer to the current molecule in the third parameter (cast to a \texttt{char*} due to the non-ideal formatting).  The function should return \texttt{CMDok} to indicate that the scan should continue or \texttt{CMDstop} to indicate that the scan should stop.  See the commands section of the manual to see how this function can be used.
+Scans over all molecules that meet the criteria listed and calls the function \texttt{fn} for each one. This function is similar to \texttt{molcount}, except that it calls a function for each molecule rather than just counting them.  As with \texttt{molcount}, this checks all molecule lists and the dead list; it also works whether molecules have been sorted or not.  Send in \texttt{i} as the species number, which should be less than 0 for all species, 0 to indicate that \texttt{i} should be ignored and \texttt{index} should be used instead, or as a positive number for that specific species.  Enter \texttt{index} as a sorted list of species, using the standard index pattern header and format; it is only used if \texttt{i} equals zero.  Enter \texttt{ms} as \texttt{MSall} for all species and as a specific species otherwise.  The function entry is designed for a Smoldyn command function and so has the same format, despite the fact that this format isn't really ideal in this case.  The function gets passed the simulation pointer in the first argument, \texttt{cmd} in the second argument, and a pointer to the current molecule in the third parameter (cast to a \texttt{char*} due to the non-ideal formatting).  The function should return \texttt{CMDok} to indicate that the scan should continue or \texttt{CMDstop} to indicate that the scan should stop.  See the commands section of the manual to see how this function can be used.
 
 \item[\texttt{void}]
 \texttt{molscanfn(simptr sim,int i,int *index,enum MolecState ms,char *erstr,double(*fn)(void*,char*,char*);}
@@ -787,7 +817,7 @@ Kills a molecule from one of the live lists.  \texttt{mptr} is a pointer to the 
 
 \item[\texttt{moleculeptr getnextmol(molssptr mols);}]
 \hfill \\
-Returns a pointer to the next molecule on the dead list so that its data can be filled in and it can be added to the system.  The molecule serial number is assigned.  This updates the \texttt{topd} element of the molecule superstructure.  Returns \texttt{NULL} if there are no more available molecules.  The intention is that this function should be called anytime that molecules are to be added to the system.
+Returns a pointer to the next molecule on the dead list so that its data can be filled in and it can be added to the system.  The molecule serial number is assigned.  In the process, this increments the \texttt{serno} element of the molecule superstructure, which is an unsigned long int and wraps around when it reaches all 1 values.  This updates the \texttt{topd} element of the molecule superstructure.  Returns \texttt{NULL} if there are no more available molecules.  The intention is that this function should be called anytime that molecules are to be added to the system.
 
 \item[\texttt{moleculeptr newestmol(molssptr mols);}]
 \hfill \\
@@ -990,7 +1020,7 @@ Each individual reaction, of any order, is is stored in a reaction structure, \t
 
 \texttt{nprod} is the number of products for the listed reaction, which may be any non-negative number.  \texttt{prdident} and \texttt{prdstate}, which are arrays that are indexed from 0 to \texttt{rxn->nprod-1}, list the product identities and states; in this case, only single states are allowed (i.e. not \texttt{MSall} or \texttt{MSnone}, although \texttt{MSbsoln} is allowed).
 
-\texttt{prdserno} is a list of serial number rules for products.  The default is that this list is \texttt{NULL}, meaning not used.  If it is used, then it lists a rule for each product.  The rules are: -1 and -2 imply that the first and second reactant serial numbers should be used, respectively; -10 implies that the first product serial number should be used again, -11 is for the second product serial number, etc.; 0 implies that a new serial number should be used; and a positive number implies that that number should be used as the serial number.
+\texttt{prdserno} is a list of serial number rules for products.  The default is that this list is \texttt{NULL}, meaning not used.  If it is used, then it lists a rule for each product. If it is a positive value, then it is the actual number that should be used as the product serial number. Otherwise, the value is bitwise inverted and interpreted using bits. See \texttt{rxnstring2sernocode} and \texttt{molfiindserno}.
 
 \texttt{prdintersurf} is a list of product placement rules for intersurface reactions, meaning bimolecular reactions in which the two reactants are on two different surfaces.  These are not allowed typically.  However, they are allowed if this vector is allocated.  Each value corresponds to a product.  The rules are: 1 implies that this product should be placed on the surface, or relative to the surface, of the first reactant, and 2 implies that this product should be placed on the surface, or relative to the surface, of the second reactant.  If the reaction has no products, then the vector can be allocated for a single element, which is supposed to have value 0 to indicate that intersurface reactions are allowed.
 
@@ -1099,6 +1129,14 @@ Inputs the reaction defined by order \texttt{order} and reaction number \texttt{
 \item[\texttt{int rxnisprod(simptr sim,int i,enum MolecState ms,int code);}]
 \hfill \\
 Determines if a molecule with identity \texttt{i} and state \texttt{ms} is the product of any reaction, of any order, returning 1 if so and 0 if not.  \texttt{ms} can include \texttt{MSbsoln}.  If \texttt{code} is 0, there are no additional conditions.  If \texttt{code} is 1, the molecule also has to be displaced from the reaction position (i.e. either \texttt{confspread} or the unbinding radius is non-zero) in order to qualify.
+
+\item[\texttt{long int rxnstring2sernocode(char *pattern,int prd);}]
+\hfill \\
+Converts a string pattern to a serial number code. If the pattern is a positive number, then this is the serial number code. Otherwise, a bitcode is computed from the pattern, the bitcode is bitwise inverted, and that value is returned as the serial number code, which is then a negative number. See \texttt{molfindserno} for a description of the bitcode. This function is written in a brute force fashion because it was simpler to write and to read, but could have been written more cleverly. Returns 0 for failure, a negative value if a bitcode is used, or a positive number for an actual serial number.
+
+\item[\texttt{char *rxnsernocode2string(long int pserno,char *pattern);}]
+\hfill \\
+Converts a serial number code to a pattern string. This assumes that \texttt{pattern} is allocated and is large enough for the result (maximum of 7 characters for codes or the number of characters for a long int, which is probably a few more than 7). See the descriptions for \texttt{rxnstring2sernocode} and \texttt{molfindserno}.
 
 \item[\underline{memory management}]
 
@@ -1664,7 +1702,9 @@ typedef struct surfactionstruct {
 	} *surfactionptr;
 \end{lstlisting}
 
-The surface action structure collects together details for surface actions.  It is generally only allocated if a surface action for a specific molecular species, molecular state, and surface interaction face is of type \texttt{SAmult}, meaning that multiple possible outcomes are possible.  In that case, it records the rate at which conversion can take place to each of the possible output states, the probability of each of these transitions for each time step, the cumulative probabilities (used for efficient simulation), the new species that should be created upon transition (usually the same as the current species, but not necessarily), and the source of the interaction rate data.  Each of the vectors in the surface action structure is allocated to size \texttt{MSMAX1}, meaning that \texttt{MSbsoln} is an allowed outcome state.  The \texttt{srfdatasrc} value is initialized to 0, is set to 1 if the user entered an interaction rate, or is set to 2 if the user entered an interaction probability.
+The surface action structure collects together details for surface actions.  It is typically only allocated if a surface action for a specific molecular species, molecular state, and surface interaction face is of type \texttt{SAmult}, meaning that multiple possible outcomes are possible. This arises for the ``rate'' Smoldyn statement, and not for the ``action'' statement.  In that case, this structure records the rate at which conversion can take place to each of the possible output states, the probability of each of these transitions for each time step, the cumulative probabilities (used for efficient simulation), the new species that should be created upon transition (usually the same as the current species, but not necessarily), and the source of the interaction rate data.  Each of the vectors in the surface action structure is allocated to size \texttt{MSMAX1}, meaning that \texttt{MSbsoln} is an allowed outcome state.  The \texttt{srfdatasrc} value is initialized to 0, is set to 1 if the user entered an interaction rate, is set to 2 if the user entered an interaction probability, or is set to 3 if the user entered a certain action (see next paragraph) with the ``action'' statement. Note that each of these vectors refers to the new state so, for example, \texttt{srfnewspec}, lists the new species that should happen upon changing to each of the possible new states.
+
+This data structure is also allocated for simple surface actions, arising for the Smoldyn ``action'' statement if there is a new species. In this case, the entire data structure is ignored, except only for one element of the \texttt{srfnewspec} vector. The element is not the new state, as it is normally, but the originating state.
 
 \begin{lstlisting}
 typedef struct panelstruct {
@@ -2132,9 +2172,9 @@ Sets the surface drawing mode of face \texttt{face} of surface \texttt{srf} to \
 Sets the shininess of face \texttt{face} of surface \texttt{srf} to \texttt{shiny}.  Any face value is allowed.  The shininess needs to be between 0 and 128, inclusive.  Returns 0 for success, 1 if the surface is undefined, or 2 if the shininess is out of range.
 
 \item[\texttt{int}]
-\texttt{surfsetaction(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act);}
+\texttt{surfsetaction(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act,int newident);}
 \hfill \\
-Sets the \texttt{action} element of surface \texttt{srf}.  \texttt{ident} is the molecule species, which should be a valid species index, -5 to indicate all species, or 0 to indicate a group of species, perhaps with a wildcard.  If value 0 is used, then \texttt{index} should be sent in as the \texttt{index} element that gets returned by \texttt{molstring2index1}.  \texttt{ms} is the species state, which should be a regular species state (not \texttt{MSbsoln}) or should be \texttt{MSall} to indicate all states.  \texttt{face} is the interaction face of the surface, if any; it is allowed to adopt any value, including \texttt{PFfront}, \texttt{PFback}, \texttt{PFboth} (to indicate both front and back), or \texttt{PFnone} to indicate actions for surface-bound species that do not collide with other surfaces.  \texttt{act} is the desired action.  Returns 0 for success, 1 if \texttt{ident} is out of range, 2 if \texttt{ms} is out of range, or 3 if the requested action is not permitted for the indicated interaction face.
+Sets the \texttt{action} element of surface \texttt{srf}.  \texttt{ident} is the molecule species, which should be a valid species index, -5 to indicate all species, or 0 to indicate a group of species, perhaps with a wildcard.  If value 0 is used, then \texttt{index} should be sent in as the \texttt{index} element that gets returned by \texttt{molstring2index1}.  \texttt{ms} is the species state, which should be a regular species state (not \texttt{MSbsoln}) or should be \texttt{MSall} to indicate all states.  \texttt{face} is the interaction face of the surface, if any; it is allowed to adopt any value, including \texttt{PFfront}, \texttt{PFback}, \texttt{PFboth} (to indicate both front and back), or \texttt{PFnone} to indicate actions for surface-bound species that do not collide with other surfaces.  \texttt{act} is the desired action. \texttt{newident} is the new identity of the molecule; set it to -1 for no new identity.  Returns 0 for success, 1 if \texttt{ident} is out of range, 2 if \texttt{ms} is out of range, or 3 if the requested action is not permitted for the indicated interaction face.
 
 \item[\texttt{int}]
 \texttt{surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum MolecState ms1,enum MolecState ms2,int newident,double value,int which);}
@@ -4433,7 +4473,7 @@ Reads a molecule name and then the output file name from \texttt{line2}.  To thi
 
 \item[\texttt{enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
-Reads a molecule serial number and an output file name from \texttt{line2}.  If the given serial number is large enough to have been assigned to a molecule, this searches all molecule lists for a molecule with that serial number.  If it is found, this prints out the time, molecule species name, molecule state, and whether this molecule is inside or outside of each compartment sequentially.  This function is primarily designed for debugging, but could be useful for single molecule tracking too.  This routine does not affect any simulation parameters.
+Reads a molecule serial number and an output file name from \texttt{line2}.  This searches all molecule lists for a molecule with that serial number, meaning an exact match or one part of the two-part molecule serial number is equal to the input value. If it is found, this prints out the time, molecule species name, molecule state, molecule serial number, and whether this molecule is inside or outside of each compartment sequentially. This function is primarily designed for debugging, but could be useful for single molecule tracking too. This routine does not affect any simulation parameters.
 
 \item[\texttt{enum CMDcode cmdmolmoments(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
@@ -4540,6 +4580,10 @@ Fixes the copy number of molecules in a compartment so that it is within the spe
 \item[\texttt{enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
 Equilibrates a pair of molecular species, allowing the efficient simulation of rapid reactions.  It reads two molecule names from \texttt{line2}, followed by a probability value.  Then, it looks for all molecules in the live lists with either of the two types and replaces them with the second type using the listed probability or with the first type using 1Ð the listed probability.
+
+\item[\texttt{enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2);}]
+\hfill \\
+Replaces one molecule species with another, with some replacement probability.  Modified from \texttt{cmdreplacecmptmol}.
 
 \item[\texttt{enum CMDcode cmdreplacexyzmol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
@@ -5844,8 +5888,30 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Implemented most of lambda-rho algorithm. As part of this, I did a lot of work on the SmolEmulate utility, computed reaction rate lookup tables for non-unit reaction probabilities, debugged the numrxnrateprob and bindingradiusprob functions, and then updated all calls to numrxnrate and bindingradius to these probabilistic functions. These updated functions call the original functions in the usual case that the reaction probability is 1. The functions in rxnparam.c are generally good now, but still not quite perfect.
 \item An another part of lambda-rho, added the input file statement ``reaction\_chi'' and implemented it. This addition seems to work reasonably well, but Smoldyn isn't always able to align the simulated and requested reaction rates yet. In particular, it has trouble with the pgem, pgemmax, and pgemmaxw reverse parameters.
 
-\subsection*{Modifications for version 2.57 (not released yet)}
+\subsection*{Modifications for version 2.57 (released 3/21/19)}
+\item Moved Smoldyn source from the Fred Hutchinson Center's ``hedgehog'' subversion server to github, where it is called ``Smoldyn\_Official''.
 \item Fixed minor bugs in cmdwriteVTK that caused compiling errors when compiling with OPTION\_VTK turned on.
+\item Added support for scientific notation in string math parsing.
+\item Added option for species change upon surface action. Example is \texttt{s7\_surfaces/ReflectToNewSpecies.txt}.
+\item Major change with serial numbers to enable single molecule tracking where two molecules can bind together and retain both serial numbers and then dissociate and have their original serial numbers. Changed molecule serial numbers to \texttt{unsigned long long}, but left most other serial number values as \texttt{long int}.
+
+\subsection*{Modifications for version 2.58 (released 3/29/19)}
+\item Fixed minor bug in string2.c that caused loss of numerical precision when using \texttt{strmathsscanf}.
+\item Changed the serial number coding for single-molecule tracking some, which also had some effects on the user's input format.
+\item Fixed important bug in \texttt{molscancmd} which caused it to scan over some molecules twice in some cases. For example, if called from \texttt{cmdkillmolprob}, this would test molecules twice to see if they should be killed, leading to incorrect kill probabilities. The problem was that some commands change the \texttt{sortl} elements, making them bad things to assume aren't changing.
+\item Added replacemol command.
+\item Re-released 4/2/19 with following changes:
+\item In CMakeLists.txt, I changed the minimum deployment for Mac from OS 10.5 to 10.9. This removed a compiling warning about libstdc++ being discontinued.
+\item Copied libstdc++-6.dll from /opt/local/x86\_64-w64-mingw32 to Smoldyn-official/windows. Also, edited the windows install.bat file so that this dll is copied when Smoldyn is installed. This will hopefully fix an error that Kevin Chen told me about.
+
+\subsection*{Modifications for version 2.59 (released 5/15/19)}
+\item Trivial changes to the code to remove compiler errors and warnings.
+\item Major effort to compile for Windows. I failed at getting cross-compiling working and actually made it worse by replacing a cross-compiler that worked for non-graphics Smoldyn to one that didn't work at all. Instead, I now compile by hand on a Windows computer. This still doesn't support LibTiff or NSV but at least it does work.
+
+\subsection*{Modifications for version 2.60 (released 6/7/19)}
+\item Further improvements on Windows support. This release now builds SmolCrowd and wrl2smol on a Windows computer. It also uses static linking so that dll files aren't needed.  I also improved the Windows install script.
+\item Modified the BNG2\_path statement so that it now reads the entire line of text after the statement word rather than just the first word in the line, thus allowing for spaces in file names.
+\item Fixed a trivial bug for the ``stipple'' statement, which was trying to read hex code with the math parser.
 
 \end{itemize}
 

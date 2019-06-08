@@ -1,5 +1,5 @@
 echo "Uninstalling Smoldyn ..."
-rm -r "%PROGRAMFILES%\Smoldyn"
+rmdir "%PROGRAMFILES%\Smoldyn" /s
 
 echo "Uninstallation complete"
 

@@ -102,7 +102,6 @@ double rdf2Dabsorbprob(double *r,double *rdf,int n,double prob) {
 void rdf2Ddiffuse(double *r,double *rdfa,double *rdfd,int n,double step) {
 	int i,j;
 	double grn,sum,f0,f1,rr,r0,r1;
-	double grnapp;
 
 	for(i=0;i<n;i++) {											// loop over r values
 		rr=r[i]/step;

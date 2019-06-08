@@ -22,7 +22,7 @@ of the Gnu Lesser General Public License (LGPL). */
 /************ Declarations for internal functions ****************/
 /******************************************************************/
 
-#define CHECKS(A,...)		if(!(A)) {sprintf(StrErrorString,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {snprintf(StrErrorString,sizeof(StrErrorString),__VA_ARGS__); goto failure;} else (void)0
 #define CHECK(A)		if(!(A)) {goto failure;} else (void)0
 
 char StrErrorString[STRCHAR];
@@ -56,6 +56,18 @@ int strokname(const char *name) {
 	for(name++;*name && ok;name++)
 		ok=ok && (isalnum(*name) || *name=='_');
 	return ok; }
+
+
+/* strhasname */
+int strhasname(const char *string,const char *name) {
+	int i,len;
+
+	len=strlen(name);
+	while(*string) {
+		for(i=0;i<len && *string==name[i];i++) string++;
+		if(i==len && (*string=='\0' || !(isalnum(*string) || *string=='_'))) return 1;
+		while(*string && (*string!=name[0] || isalnum(*(string-1)) || *(string-1)=='_')) string++; }
+	return 0; }
 
 
 /* strbegin */
@@ -1374,7 +1386,7 @@ double strmatheval(char *expression,char **varnames,const double *varvalues,int 
   double answer,term;
   char *ptr,*ptr2,ptrchar,ptr2char;
 
-//	printf("strmatheval expression: '%s'",expression);	// DEBUG
+//	printf("strmatheval expression: '%s'\n",expression);	// DEBUG
 
   MathParseError=0;
   length=strlen(expression);
@@ -1396,22 +1408,22 @@ double strmatheval(char *expression,char **varnames,const double *varvalues,int 
     answer=strmatheval(expression+1,varnames,varvalues,nvar);
     *ptr=ptrchar; }
 
-	else if(strisfunctionform(expression,&ptr)) {										// function	?? to be written
+	else if(strisfunctionform(expression,&ptr)) {										// function
 		unarysymbol=0;
-		expression[length-1]='\0';																		//?? ptr will point to open parenthesis. Send function name and parameters to strevalfunction for processing. Beforehand, it will have been called with a list of function names and function pointers for call-back use.
+		expression[length-1]='\0';
 		*ptr='\0';
 		ptr++;
 		answer=strevalfunction(expression,ptr,NULL,NULL,varnames,varvalues,nvar);
 		CHECK(answer>=0 || answer<0); }
 
-  else if((i1=strPbrkBrackets(expression,length-1,"+-","([{",1))>0 && !strchr("^*/",expression[i1-1])) {  // binary + -
+  else if((i1=strPbrkBrackets(expression,length-1,"+-","([{",1))>0 && !strchr("^*/",expression[i1-1]) && !(strchr("Ee",expression[i1-1]) && i1>1 && strchr("0123456789",expression[i1-2]))) {  // binary + -
     unarysymbol=0;
     ptr=expression+i1;
     ptrchar=*ptr;
     *ptr='\0';
     answer=strmatheval(expression,varnames,varvalues,nvar);        // first term
     *ptr=ptrchar;
-    while((i2=strPbrkBrackets(ptr+1,strlen(ptr+1)-1,"+-","([{",1))>0) {
+    while((i2=strPbrkBrackets(ptr+1,strlen(ptr+1)-1,"+-","([{",1))>0 && !strchr("^*/",ptr[i2]) && !(strchr("Ee",ptr[i2]) && strchr("0123456789",ptr[i2-1]))) {
       ptr2=ptr+1+i2;
       ptr2char=*ptr2;
       *ptr2='\0';
@@ -1518,10 +1530,10 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 
 	newformat[0]='\0';
 	newstr[0]='\0';
-	fmtpos1=format;
-	strpos1=str;
+	fmtpos1=format;														// position in original format string
+	strpos1=str;															// position in original str string
 
-	fmtpos2=strstr(fmtpos1,"%m");
+	fmtpos2=strstr(fmtpos1,"%m");							// location of math operation to deal with
 
 	while(fmtpos2) {
 		if(*(fmtpos2+2)=='i') readint=1;
@@ -1529,7 +1541,7 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 		else CHECKS(0,"BUG: illegal string formatting argument");
 
 		word=strwhichword(fmtpos1,fmtpos2);
-		strpos2=strnwordc(strpos1,word);
+		strpos2=strnwordc(strpos1,word);				// position in string with math for parsing
 		if(!strpos2) break;
 
 		strncat(newformat,fmtpos1,fmtpos2-fmtpos1);
@@ -1539,12 +1551,12 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 			valueint=strmathevalint(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%i ");
-			sprintf(newstr+strlen(newstr),"%i ",valueint); }
+			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%i ",valueint); }
 		else {
 			value=strmatheval(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%lg ");
-			sprintf(newstr+strlen(newstr),"%lg ",value); }
+			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%.17g ",value); }
 
 		fmtpos1=strnwordc(fmtpos2,2);
 		strpos1=strnwordc(strpos2,2);

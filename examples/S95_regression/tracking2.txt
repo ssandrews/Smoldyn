@@ -1,0 +1,44 @@
+# Single molecule tracking test. This version tests two-part serial numbers
+
+graphics opengl_good
+random_seed 1
+
+dim 2
+
+boundaries 0 0 20 r
+boundaries 1 0 20 r
+
+time_start 0
+time_stop 10
+time_step 0.001
+
+species receptor ligand bound
+
+difc ligand 1
+
+color receptor red
+color ligand green
+color bound yellow
+display_size all(all) 0.3
+
+reaction rxn1 receptor + ligand -> bound 3
+reaction_serialnum rxn1 r1.r2
+
+reaction rxn2 bound -> receptor + ligand 1
+reaction_serialnum rxn2 r1L + r1R
+
+
+mol 5 ligand u u
+mol 50 receptor u u
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  reaction_log OUTFILE rxn1 all
+  reaction_log OUTFILE rxn2 all
+  cmd a listmols OUTFILE
+  cmd N 100 trackmol 1 OUTFILE
+endif
+
+
+end_file
+

@@ -1,6 +1,6 @@
-This README file pertains to the Smoldyn source distribution.
+This README file is for the Smoldyn source distribution.
 
-This distribution contains the Smoldyn source code, which should be able to compile and run on Mac, Linux, or Windows.  Building uses the CMake build system.  If you don't have CMake installed, you'll need to get it.
+This distribution contains the Smoldyn source code, which should be able to compile and run on Mac or Linux, and possibly Windows.  Building uses the CMake build system.  If you don't have CMake installed, you'll need to get it.
 
 Hopefully, you can build as follows.  Change to the cmake directory (which is empty).  Enter "cmake ..", then "make", and then "sudo make install".  If this works, congratulations!
 

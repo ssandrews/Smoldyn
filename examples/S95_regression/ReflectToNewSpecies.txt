@@ -1,0 +1,41 @@
+# File to test species change at surface action
+
+define TIMESTEP 1e-4
+
+graphics opengl
+random_seed 1
+
+dim 2
+boundaries x -5 5 p
+boundaries y -5 5 p
+time_start 0
+time_stop 1
+time_step TIMESTEP
+
+species A B C
+difc all 5
+display_size all 8
+color A red
+color B green
+color C blue
+
+start_surface srf
+  action both all reflect B
+  color both magenta
+  panel sphere 0 0  4 20
+end_surface
+
+reaction rxn A + B -> C 10
+
+mol 20 A -2-2 -2-2
+mol 20 B -2-2 -2-2
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
+
+
+end_file
+
+

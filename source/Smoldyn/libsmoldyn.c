@@ -59,19 +59,19 @@ extern "C" void smolSetThrowing(int corethreshold,int libthreshold) {
 /* smolSetError */
 extern "C" void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring) {
 	char string[STRCHAR];
-	int severity;
+//	int severity;
 
 	if(errorcode!=ECsame) {
 		Liberrorcode=errorcode;
 		Libwarncode=(errorcode>=ECwarning)?errorcode:ECok;
 		if(errorstring)
-			strncpy(Liberrorstring,errorstring,STRCHAR);
+			strncpy(Liberrorstring,errorstring,STRCHAR-1);
 		else Liberrorstring[0]='\0'; }
 	if(errorfunction)
-		strncpy(Liberrorfunction,errorfunction,STRCHAR);
+		strncpy(Liberrorfunction,errorfunction,STRCHAR-1);
 	else Liberrorfunction[0]='\0';
 
-	severity=-(int)errorcode;
+//	severity=-(int)errorcode;
 //??	if(LibThrowThreshold<severity) throw;	//?? This is disabled for now because I can't link libsmoldyn statically if not
 
 	if(Libdebugmode && Liberrorfunction[0]!='\0') {
@@ -90,10 +90,10 @@ extern "C" void smolSetErrorNT(const char *errorfunction,enum ErrorCode errorcod
 		Liberrorcode=errorcode;
 		Libwarncode=(errorcode>=ECwarning)?errorcode:ECok;
 		if(errorstring)
-			strncpy(Liberrorstring,errorstring,STRCHAR);
+			strncpy(Liberrorstring,errorstring,STRCHAR-1);
 		else Liberrorstring[0]='\0'; }
 	if(errorfunction)
-		strncpy(Liberrorfunction,errorfunction,STRCHAR);
+		strncpy(Liberrorfunction,errorfunction,STRCHAR-1);
 	else Liberrorfunction[0]='\0';
 	return; }
 
@@ -1124,12 +1124,12 @@ extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surface,en
 	LCHECK(action>=0 && action<=SAmult,funcname,ECbounds,"invalid action");
 	if(s>=0) {
 		srf=sim->srfss->srflist[s];
-		er=surfsetaction(srf,i,NULL,state,face,action);
+		er=surfsetaction(srf,i,NULL,state,face,action,0);
 		LCHECK(!er,funcname,ECbug,"bug in surfsetaction"); }
 	else {
 		for(s=0;s<sim->srfss->nsrf;s++) {
 			srf=sim->srfss->srflist[s];
-			er=surfsetaction(srf,i,NULL,state,face,action);
+			er=surfsetaction(srf,i,NULL,state,face,action,0);
 			LCHECK(!er,funcname,ECbug,"bug in surfsetaction"); }}
 	return ECok;
  failure:
@@ -1764,7 +1764,7 @@ extern "C" enum ErrorCode smolAddPort(simptr sim,const char *port,const char *su
 	s=smolGetSurfaceIndexNT(sim,surface);
 	if(s==(int)ECmissing) smolClearError();
 	else LCHECK(s>=0,funcname,ECsame,NULL);
-	LCHECK(face==PFfront || face==PFback || PFnone,funcname,ECsyntax,"invalid face");
+	LCHECK(face==PFfront || face==PFback || face==PFnone,funcname,ECsyntax,"invalid face");
 	simport=portaddport(sim,port,sim->srfss->srflist[s],face);
 	LCHECK(simport,funcname,ECmemory,"out of memory adding port");
 

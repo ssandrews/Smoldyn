@@ -16,6 +16,14 @@
 //  #include "nsvc.h"
 //#endif
 
+
+#ifdef WINDOWS_BUILD
+  #define LLUFORMAT "%I64u"				// MinGW doesn't use standard printf formatting
+#else
+  #define LLUFORMAT "%llu"
+#endif
+
+
 #ifdef OPTION_VTK
   #include "vtkwrapper.h"
 #endif
@@ -182,7 +190,7 @@ enum MolListType {MLTsystem,MLTport,MLTnone};
 enum PatternData {PDalloc,PDnresults,PDnspecies,PDmatch,PDsubst,PDrule};
 
 typedef struct moleculestruct {
-	long int serno;							// serial number
+	unsigned long long serno;		// serial number
 	int list;										// destination list number (ll)
 	double *pos;								// dim dimensional vector for position [d]
 	double *posx;								// dim dimensional vector for old position [d]
@@ -230,7 +238,7 @@ typedef struct molsuperstruct {
 	int *topl;									// live list index; above are reborn [ll]
 	int *sortl;									// live list index; above need sorting [ll]
 	int *diffuselist;						// 1 if any listed molecs diffuse [ll]
-	long int serno;							// serial number for next resurrected molec.
+	unsigned long serno;				// serial number for next resurrected molec.
 	int ngausstbl;							// number of elements in gausstbl
 	double *gausstbl;						// random numbers for diffusion
 	int *expand;								// expansion with rule-based modeling [i]

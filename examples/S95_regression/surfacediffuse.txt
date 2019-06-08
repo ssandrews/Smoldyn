@@ -125,8 +125,10 @@ surface_mol 40 X(up) b all all
 
 cmd e ifless X(all) 40 echo stdout "Escaped molecule!"
 
-
-
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd a listmols OUTFILE
+endif
 
 end_file
 

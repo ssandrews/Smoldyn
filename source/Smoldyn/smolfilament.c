@@ -931,9 +931,9 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,const char
 			CHECKS(itct==3,"random_segments format: number [x y z] [thickness]");
 			line2=strnword(line2,4); }
 		else {
-			sprintf(str1,"%i",0);
-			sprintf(str2,"%i",0);
-			sprintf(str3,"%i",0); }
+			snprintf(str1,STRCHAR,"%i",0);
+			snprintf(str2,STRCHAR,"%i",0);
+			snprintf(str3,STRCHAR,"%i",0); }
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);
@@ -1066,7 +1066,7 @@ int filSegmentXSurface(simptr sim,filamentptr fil,char endchar) {
 	mxs=0;
 	for(s=0;s<sim->srfss->nsrf && !mxs;s++) {
 		srf=sim->srfss->srflist[s];
-		for(ps=(PanelShape)0;ps<PSMAX && !mxs;ps=(PanelShape)(ps+1))
+		for(ps=(enum PanelShape)0;ps<PSMAX && !mxs;ps=(enum PanelShape)(ps+1))
 			for(p=0;p<srf->npanel[ps] && !mxs;p++) {
 				pnl=srf->panels[ps][p];
 				mxs=lineXpanel(pt1,pt2,pnl,3,crosspt,NULL,NULL,NULL,NULL,NULL,0); }}

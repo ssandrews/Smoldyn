@@ -1265,7 +1265,7 @@ void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate) {
 						for(s=0;s<cmpt->nsrf;s++) {
 							srf=cmpt->surflist[s];
 							if(srf->action[mptr->ident][MSsoln][PFfront]!=SAtrans || srf->action[mptr->ident][MSsoln][PFback]!=SAtrans) {
-								for(ps=(PanelShape)0;ps<PSMAX;ps=(PanelShape)(ps+1))
+								for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 									for(p=0;p<srf->npanel[ps];p++) {
 										pnl=srf->panels[ps][p];
 										lxp=lineXpanel(mptr->pos,newpos,pnl,dim,crsspt,&face1,&face2,&cross,NULL,NULL,1);

@@ -26,9 +26,12 @@
 /* ********************** main() segment *************************** */
 /* ***************************************************************** */
 
+
+
 /* main */
 int main(int argc,char **argv) {
 	int exitCode = 0;
+
 	try {
 	  simptr sim;
 	  int i,er,pflag,wflag,tflag,Vflag,oflag;

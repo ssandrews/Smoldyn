@@ -32,9 +32,9 @@ extern int ErrorType;
 extern char SimFlags[];
 
 #define CHECK(A)				if(!(A)) {ErrorType=1;goto failure;} else (void)0
-#define CHECKMEM(A)			if(!(A)) {ErrorType=3;sprintf(ErrorString,"Cannot allocate memory"); goto failure;} else (void)0
-#define CHECKS(A,...)		if(!(A)) {ErrorType=2;sprintf(ErrorString,__VA_ARGS__); goto failure;} else (void)0
-#define CHECKBUG(A,...)	if(!(A)) {ErrorType=4;sprintf(ErrorString,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKMEM(A)			if(!(A)) {ErrorType=3;snprintf(ErrorString,STRCHARLONG,"Cannot allocate memory"); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {ErrorType=2;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKBUG(A,...)	if(!(A)) {ErrorType=4;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
 
 extern int VCellDefined;
 
@@ -46,6 +46,9 @@ enum MolecState molstring2ms(char *string);
 char *molms2string(enum MolecState ms,char *string);
 
 // low level utilities
+char *molserno2string(unsigned long long serno,char *string);
+unsigned long long molstring2serno(char *string);
+unsigned long long molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist);
 int molismobile(simptr sim,int species,enum MolecState ms);
 int molstring2pattern(const char *str,enum MolecState *msptr,char *pat,int mode);
 int molreversepattern(simptr sim,const char *pattern,char *patternrev);
@@ -53,6 +56,8 @@ int molpatternindex(simptr sim,const char *pattern,const char *rname,int isrule,
 int molstring2index1(simptr sim,const char *str,enum MolecState *msptr,int **indexptr);
 int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol);
 void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);
+
+// set structure values
 int molssetgausstable(simptr sim,int size);
 void molsetdifc(simptr sim,int ident,int *index,enum MolecState ms,double difc);
 int molsetdifm(simptr sim,int ident,int *index,enum MolecState ms,double *difm);
@@ -135,6 +140,8 @@ enum SpeciesRepresentation rxnstring2sr(const char *string);
 // low level utilities
 int readrxnname(simptr sim,const char *rname,int *orderptr,rxnptr *rxnpt,listptrv *vlistptr,int rxntype);
 int rxnisprod(simptr sim,int i,enum MolecState ms,int code);
+long int rxnstring2sernocode(char *pattern,int prd);
+char *rxnsernocode2string(long int pserno,char *pattern);
 
 // memory management
 void rxnfree(rxnptr rxn);
@@ -163,7 +170,6 @@ int RxnSetRepresentationRules(rxnptr rxn,int order,const enum SpeciesRepresentat
 int RxnSetLog(simptr sim,char *filename,rxnptr rxn,listptrli list,int turnon);
 int RxnAddReactionPattern(simptr sim,const char *rname,const char *pattern,int oldnresults,enum MolecState *rctstate,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf,int isrule,rxnptr *rxnpt);
 rxnptr RxnAddReaction(simptr sim,const char *rname,int order,int *rctident,enum MolecState *rctstate,int nprod,int *prdident,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf);
-int RxnAddReactionPattern(simptr sim,const char *rname,const char *pattern,enum MolecState *rctstate,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf,int isrule,rxnptr *rxnpt);
 rxnptr RxnAddReactionCheck(simptr sim,char *rname,int order,int *rctident,enum MolecState *rctstate,int nprod,int *prdident,enum MolecState *prdstate,compartptr cmpt,surfaceptr srf);
 int rxnsupdate(simptr sim);
 
@@ -236,7 +242,7 @@ int surfsetedgepts(surfaceptr srf,double value);
 int surfsetstipple(surfaceptr srf,int factor,int pattern);
 int surfsetdrawmode(surfaceptr srf,enum PanelFace face,enum DrawMode dm);
 int surfsetshiny(surfaceptr srf,enum PanelFace face,double shiny);
-int surfsetaction(surfaceptr srf,int i,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act);
+int surfsetaction(surfaceptr srf,int i,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act,int newident);
 int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum MolecState ms1,enum MolecState ms2,int newident,double value,int which);
 int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,double *params,const char *name);
 void surftransformpanel(panelptr pnl,int dim,double *translate,double *origin,double *expand); //?? not documented
@@ -481,6 +487,7 @@ int checksimparams(simptr sim);
 
 // structure set up
 void simsetcondition(simptr sim,enum StructCond cond,int upgrade);
+int simsetvariable(simptr sim,const char *name,double value);
 int simsetdim(simptr sim,int dim);
 int simsettime(simptr sim,double time,int code);
 int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2);

@@ -1,0 +1,32 @@
+define TIMESTEP 1e-4
+
+graphics opengl
+
+dim 2
+boundaries x -5 5 p
+boundaries y -5 5 p
+time_start 0
+time_stop 100
+time_step TIMESTEP
+
+species A B C
+difc all 5
+display_size all 8
+color A red
+color B green
+color C blue
+
+start_surface srf
+  action both all reflect B
+  color both magenta
+  panel sphere 0 0  4 20
+end_surface
+
+reaction rxn A + B -> C 10
+
+mol 20 A -2-2 -2-2
+mol 20 B -2-2 -2-2
+
+end_file
+
+

@@ -51,7 +51,7 @@ int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods);
 enum MolecState bngmakedefaultstate(bngptr bng,int index,int totalmn);
 double bngmakedifc(bngptr bng,int index,int totalmn);
 
-int bngaddspecies(bngptr bng,int index,const char *name,double count);
+int bngaddspecies(bngptr bng,int bindex,const char *longname,const char *countstr);
 int bngaddreaction(bngptr bng,int bindex,const char *reactants,const char *products,const char *rate);
 int bngaddgroup(bngptr bng,int gindex,const char *gname,const char *specieslist);
 bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,char *line2);
@@ -857,8 +857,9 @@ int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods) {
 	else {																			// multiple monomers or 1 monomer and possible modifications
 		for(mn=0;mn<bng->nmonomer && length>0;mn++)
 			if(bng->monomercount[mn]>0) {
-				sprintf(string,"%s.%i.",bng->monomernames[mn],bng->monomercount[mn]);
-				strncat(shortname,string,length);
+				snprintf(string,STRCHAR,"%s.%i.",bng->monomernames[mn],bng->monomercount[mn]);
+				string[length-1]='\0';
+				strcat(shortname,string);
 				length-=strlen(string); }
 
 		i2=0;																			// append the short name isomer number
@@ -869,7 +870,7 @@ int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods) {
 			if(lastdot) {
 				cmplength=lastdot-cmpname;
 				if(!strncmp(shortname,cmpname,cmplength>snlength?cmplength:snlength)) i2++; }}
-		sprintf(string,"%i",i2);
+		snprintf(string,STRCHAR,"%i",i2);
 		strcat(shortname,string); }
 
 	return 0; }
@@ -1025,7 +1026,7 @@ void bngmakesurfaction(bngptr bng,int index,int totalmn,enum SrfAction **srfacti
 	if(j>0) {
 		for(s=0;s<bng->bngmaxsurface;s++) {
 			srf=sim->srfss->srflist[s];
-			for(face=PFfront;face<=PFnone;face=(PanelFace)(face+1)) {
+			for(face=PFfront;face<=PFnone;face=(enum PanelFace)(face+1)) {
 				srfaction[s][face]=srf->action[j][ms][face];
 				actdetails[s][face]=srf->actdetails[j][ms][face]; }}}
 
@@ -1033,7 +1034,7 @@ void bngmakesurfaction(bngptr bng,int index,int totalmn,enum SrfAction **srfacti
 		for(mn=0;mn<bng->nmonomer;mn++) {
 			if(bng->monomercount[mn]>0) {
 				for(s=0;s<bng->bngmaxsurface;s++) {
-					for(face=PFfront;face<=PFnone;face=(PanelFace)(face+1)) {
+					for(face=PFfront;face<=PFnone;face=(enum PanelFace)(face+1)) {
 						srfaction[s][face]=bng->monomeraction[mn][s][face];
 						actdetails[s][face]=bng->monomeractdetails[mn][s][face]; }}
 				mn=bng->nmonomer; }}}
@@ -1133,7 +1134,7 @@ int bngparsespecies(bngptr bng,int index) {
 		for(s=0;s<bng->bngmaxsurface;s++) {
 			srf=sim->srfss->srflist[s];
 			for(face=(enum PanelFace)0;face<=PFnone;face=(enum PanelFace)(face+1)) {
-				surfsetaction(srf,i1,NULL,ms,face,action[s][face]);
+				surfsetaction(srf,i1,NULL,ms,face,action[s][face],-1);
 				if(action[s][face]==SAmult) {
 					for(ms4=(enum MolecState)0;ms4<(enum MolecState)MSMAX1;ms4=(enum MolecState)(ms4+1)) {
 						srfindex2tristate(ms,face,ms4,&ms0,&ms1,&ms2);
@@ -1239,7 +1240,7 @@ int bngparsereaction(bngptr bng,int index) {
 		rctstate[0]=rctstate[1]=MSsoln;
 		prdstate[0]=prdstate[1]=MSsoln; }
 
-  sprintf(string,"%s_%i",bng->bngname,index);     // reaction name
+  snprintf(string,STRCHAR,"%s_%i",bng->bngname,index);     // reaction name
 
   rxn=RxnAddReaction(sim,string,order,react,rctstate,nprod,prod,prdstate,NULL,NULL);
   if(!rxn) return 1;
@@ -1328,7 +1329,7 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 	strcpy(dot,".net");
 	remove(outname);						// delete output file
 
-	sprintf(string,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
+	snprintf(string,STRCHAR,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
 	simLog(bng->bngss->sim,2," Running BNG2.pl on %s\n",filename);
 	system(string);							// generate network
 
@@ -1414,10 +1415,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 		CHECKS(!strnword(line2,2),"unexpected text following name"); }
 
 	else if(!strcmp(word,"BNG2_path")) {					// BNG2_path
-		itct=sscanf(line2,"%s",str1);
-		if(!itct) str1[0]='\0';
-		bngsetBNG2path(bng,str1);
-		CHECKS(!strnword(line2,2),"unexpected text following BNG2_path"); }
+		bngsetBNG2path(bng,line2); }
 
 	else if(!strcmp(word,"multiply")) {						// multiply
 		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,str1,&f1);
