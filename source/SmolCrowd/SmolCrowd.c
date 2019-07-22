@@ -9,11 +9,11 @@
 #include "random2.h"
 #include "RnSort.h"
 
-#define VERSION 1.0
+#define VERSION 2.0
 
 int Sphereintsct(int i,int j,double *spheres,int dim);
-double measurephi(double *low,double *high,double *spheres,int n,int dim,double radextra,int itmax);
-double calcphi(double *low,double *high,double *spheres,int n,int dim);
+double measurephi(double *low,double *high,double *spheres,int n,int dim,double radextra,int itmax,double originradmin,double originradmax);
+double calcphi(double *low,double *high,double *spheres,int n,int dim,double originradmin,double originradmax);
 int makeradhist(double *spheres,int n,int dim,double factor,double **histptr,double **scaleptr);
 void freeradhist(double *hist,double *scale);
 void fillradhist(double *spheres,int n,int dim,double *hist,double *scale,int hn);
@@ -25,7 +25,7 @@ int compactspheres(double *spheres,int n,int dim);
 int wraplastsphere(double *low,double *high,double *spheres,int n,int nmax,int dim);
 int wrapspheres(int d,double *low,double *high,double *spheres,int n,int nmax,int dim);
 int unwrapsphere(int i,double *low,double *high,double *spheres,int n,int dim);
-int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,double *spheres,int n,int nmax,int dim);
+int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,double *spheres,int n,int nmax,int dim,double originradmin,double originradmax);
 
 void write2Dlines(void);
 
@@ -47,27 +47,36 @@ int Sphereintsct(int i,int j,double *spheres,int dim) {
 
 
 /* Measures actual sphere coverage with random points. */
-double measurephi(double *low,double *high,double *spheres,int n,int dim,double radextra,int itmax) {
-	double phi,x[3],dist;
-	int it,d,hit,i,count;
+double measurephi(double *low,double *high,double *spheres,int n,int dim,double radextra,int itmax,double originradmin,double originradmax) {
+	double phi,x[3],dist,rad;
+	int it,d,hit,i,count,ignore;
 
 	count=0;
 	for(it=0;it<itmax;it++) {
 		for(d=0;d<dim;d++) x[d]=unirandCOD(low[d],high[d]);
-		hit=0;
-		for(i=0;i<n && !hit;i++) {
-			dist=0;
-			for(d=0;d<dim;d++) dist+=(x[d]-spheres[4*i+d])*(x[d]-spheres[4*i+d]);
-			if(dist<=(spheres[4*i+dim]+radextra)*(spheres[4*i+dim]+radextra)) hit=1; }
-		count+=hit; }
+		ignore=0;
+		if(originradmin>0 || originradmax>0) {
+			rad=0;
+			for(d=0;d<dim;d++) rad+=x[d]*x[d];
+			rad=sqrt(rad);
+			if(originradmin>0 && rad<originradmin) ignore=1;
+			if(originradmax>0 && rad>originradmax) ignore=1; }
+		if(ignore) it--;
+		else {
+			hit=0;
+			for(i=0;i<n && !hit;i++) {
+				dist=0;
+				for(d=0;d<dim;d++) dist+=(x[d]-spheres[4*i+d])*(x[d]-spheres[4*i+d]);
+				if(dist<=(spheres[4*i+dim]+radextra)*(spheres[4*i+dim]+radextra)) hit=1; }
+			count+=hit; }}
 	phi=(double)count/(double)it;
 	return phi; }
 
 
 /* Calculates phi, assuming no spheres overlap each other */
-double calcphi(double *low,double *high,double *spheres,int n,int dim) {
+double calcphi(double *low,double *high,double *spheres,int n,int dim,double originradmin,double originradmax) {
 	int i,d;
-	double vol;
+	double vol,voltot;
 
 	vol=0;
 	if(dim==1) {
@@ -85,8 +94,19 @@ double calcphi(double *low,double *high,double *spheres,int n,int dim) {
 			if(spheres[4*i+dim]>0)
 				if(spheres[4*i+0]+spheres[4*i+dim]<high[0] && spheres[4*i+1]+spheres[4*i+dim]<high[1] && spheres[4*i+2]+spheres[4*i+dim]<high[2])
 					vol+=4.0/3.0*PI*spheres[4*i+dim]*spheres[4*i+dim]*spheres[4*i+dim]; }
-	for(d=0;d<dim;d++) vol/=(high[d]-low[d]);
-	return vol; }
+
+	voltot=1;
+	for(d=0;d<dim;d++) voltot*=(high[d]-low[d]);
+	if(originradmax>0) {
+		if(dim==1) voltot=2*originradmax;
+		else if(dim==2) voltot=PI*originradmax*originradmax;
+		else voltot=4*PI/3*originradmax*originradmax*originradmax; }
+	if(originradmin>0) {
+		if(dim==1) voltot-=2*originradmin;
+		else if(dim==2) voltot-=PI*originradmin*originradmin;
+		else voltot-=4*PI/3*originradmin*originradmin*originradmin; }
+
+	return vol/voltot; }
 
 
 /*************** HISTOGRAM STUFF ********************/
@@ -205,6 +225,19 @@ void writespheres(double*spheres,int n,int dim,char *comment,double radextra) {
 				for(d=0;d<dim;d++) fprintf(fptr," %lf",spheres[4*i+d]);
 				fprintf(fptr,"\n"); }}
 		fprintf(fptr,"end_compartment\n\n"); }
+
+	printf("Do you want a molecule in the middle of each sphere? ");
+	scanf("%s",yn);
+	if(yn[0]=='Y' || yn[0]=='y') {
+		printf("Enter molecule species name: ");
+		scanf("%s",yn);
+		fprintf(fptr,"species %s\n\n",yn);
+		for(i=0;i<n;i++) {
+			if(spheres[4*i+dim]>=0) {
+				fprintf(fptr,"mol 1 %s",yn);
+				for(d=0;d<dim;d++) fprintf(fptr," %lf",spheres[4*i+d]);
+				fprintf(fptr,"\n"); }}
+		fprintf(fptr,"\n"); }
 
 	fprintf(fptr,"end_file\n");
 	fclose(fptr);
@@ -373,9 +406,9 @@ int unwrapsphere(int i,double *low,double *high,double *spheres,int n,int dim) {
 
 
 /* Adds spheres that do not overlap prior spheres until density is phi */
-int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,double *spheres,int n,int nmax,int dim) {
+int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,double *spheres,int n,int nmax,int dim,double originradmin,double originradmax) {
 	int block,maxblock,rmvmax,rmv,j,d,intsct,i2,i,kill;
-	double vol;
+	double vol,originrad;
 
 	vol=1;
 	maxblock=0;
@@ -389,7 +422,7 @@ int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,dou
 	n=compactspheres(spheres,n,dim);
 
 	rmv=0;
-	while(calcphi(low,high,spheres,n,dim)<phi && n<nmax && rmv<rmvmax) {
+	while(calcphi(low,high,spheres,n,dim,originradmin,originradmax)<phi && n<nmax && rmv<rmvmax) {
 
 		for(block=0;block>=0 && block<maxblock;block++) {		// try adding until either success or maxblock times
 			j=n;
@@ -398,6 +431,12 @@ int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,dou
 			n++;
 			n=wraplastsphere(low,high,spheres,n,nmax,dim);
 			intsct=0;
+			if(originradmin>0 || originradmax>0) {
+				originrad=0;
+				for(d=0;d<dim;d++) originrad+=spheres[4*j+d]*spheres[4*j+d];
+				originrad=sqrt(originrad);
+				if(originradmin>0 && originrad-spheres[4*j+dim]<originradmin) intsct=1;
+				if(originradmax>0 && originrad+spheres[4*j+dim]>originradmax) intsct=1; }
 			for(i2=j;i2<n && !intsct;i2++)
 				for(i=0;i<n && !intsct;i++)
 					intsct=Sphereintsct(i,i2,spheres,dim);
@@ -463,7 +502,7 @@ void write2Dlines(void) {
 int main(void) {
 	int dim,d,nmax,n,i,done;
 	double low[3],high[3],vol,*spheres;
-	double rmin,gamma,phi,mphi,radextra;
+	double rmin,gamma,phi,mphi,radextra,originradmin,originradmax;
 	char str[256];
 
 	printf("----------------------------\n");
@@ -485,6 +524,10 @@ int main(void) {
 	scanf("%lf",&gamma);
 	printf("Enter crowder extra radius, which can overlap and is not part of phi: ");
 	scanf("%lf",&radextra);
+	printf("Enter smallest permitted crowder edge distance from the origin or 0 if none: ");
+	scanf("%lf",&originradmin);
+	printf("Enter largest permitted crowder edge distance from the origin or 0 if none: ");
+	scanf("%lf",&originradmax);
 
 	nmax=0;
 	if(dim==1) nmax=(int) (vol/(2*rmin));
@@ -496,15 +539,17 @@ int main(void) {
 	for(i=0;i<4*nmax;i++) spheres[i]=0;
 	n=0;
 	printf("Generating crowders...\n");
-	n=MakeSph2Phi(phi,rmin,gamma,low,high,spheres,n,nmax,dim);
+	n=MakeSph2Phi(phi,rmin,gamma,low,high,spheres,n,nmax,dim,originradmin,originradmax);
 
 	printf("Calulating statistics...\n");
-	phi=calcphi(low,high,spheres,n,dim);
-	mphi=measurephi(low,high,spheres,n,dim,radextra,100000);
+	phi=calcphi(low,high,spheres,n,dim,originradmin,originradmax);
+	mphi=measurephi(low,high,spheres,n,dim,radextra,100000,originradmin,originradmax);
 	printf("crowders: %i\n",n);
 	printf("phi calculated from volume ratio: %lf\n",phi);
 	printf("phi measured with random sampling: %lf\n",mphi);
 	sprintf(str,"dim=%i, rmin=%lf, gamma=%lf, calc. phi=%lf, measured phi=%lf\n",dim,rmin,gamma,phi,mphi);
+	if(originradmin>0) sprintf(str+strlen(str),"# minimum crowder edge radius=%lf\n",originradmin);
+	if(originradmax>0) sprintf(str+strlen(str),"# maximum crowder edge radius=%lf\n",originradmax);
 	for(d=0;d<dim;d++) sprintf(str+strlen(str),"# boundaries %i %lf %lf\n",d,low[d],high[d]);
 	writespheres(spheres,n,dim,str,radextra);
 

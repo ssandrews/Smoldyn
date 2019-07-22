@@ -1781,14 +1781,14 @@ int Geo_CylisXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2
 	v3[2]=pt2[2]-pt1[2];
 	nrm=sqrt(v3[0]*v3[0]+v3[1]*v3[1]+v3[2]*v3[2]);
 	if(!nrm) return 0;
-	v3[0]/=nrm;
+	v3[0]/=nrm;		// v3 is unit vector along cyl. axis, only used here
 	v3[1]/=nrm;
 	v3[2]/=nrm;
-	v2[0]=v3[1]*v1[2]-v3[2]*v1[1];
+	v2[0]=v3[1]*v1[2]-v3[2]*v1[1];	// v2 = v3 x v1
 	v2[1]=v3[2]*v1[0]-v3[0]*v1[2];
 	v2[2]=v3[0]*v1[1]-v3[1]*v1[0];
 
-	cent[0]=v1[0]*pt1[0]+v1[1]*pt1[1]+v1[2]*pt1[2];			// cent is the center of the circle
+	cent[0]=v1[0]*pt1[0]+v1[1]*pt1[1]+v1[2]*pt1[2];			// cent is the center of the circle on v1,v2 axes
 	cent[1]=v2[0]*pt1[0]+v2[1]*pt1[1]+v2[2]*pt1[2];
 
 	ab1[0]=v1[0]*bpt1[0]+v1[1]*bpt1[1]+v1[2]*bpt1[2];		// ab are box pts in 2-D
@@ -1811,56 +1811,59 @@ int Geo_CylisXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2
 	v1[0]=ab2[0]-ab1[0];									// Test1: do SAT on the three box axes
 	v1[1]=ab2[1]-ab1[1];
 	nrm=sqrt(v1[0]*v1[0]+v1[1]*v1[1]);
-	v1[0]/=nrm;
-	v1[1]/=nrm;
-	b1=v1[0]*ab1[0]+v1[1]*ab1[1];
-	b2=v1[0]*ab2[0]+v1[1]*ab2[1];
-	b3=v1[0]*ab3[0]+v1[1]*ab3[1];
-	b4=v1[0]*ab4[0]+v1[1]*ab4[1];
-	b5=v1[0]*ab5[0]+v1[1]*ab5[1];
-	b6=v1[0]*ab6[0]+v1[1]*ab6[1];
-	b7=v1[0]*ab7[0]+v1[1]*ab7[1];
-	b8=v1[0]*ab8[0]+v1[1]*ab8[1];
-	cmp=v1[0]*cent[0]+v1[1]*cent[1]-rad;
-	if(b1<cmp && b2<cmp && b3<cmp && b4<cmp && b5<cmp && b6<cmp && b7<cmp && b8<cmp) return 0;
-	cmp=v1[0]*cent[0]+v1[1]*cent[1]+rad;
-	if(b1>cmp && b2>cmp && b3>cmp && b4>cmp && b5>cmp && b6>cmp && b7>cmp && b8>cmp) return 0;
+	if(nrm>0) {
+		v1[0]/=nrm;
+		v1[1]/=nrm;
+		b1=v1[0]*ab1[0]+v1[1]*ab1[1];
+		b2=v1[0]*ab2[0]+v1[1]*ab2[1];
+		b3=v1[0]*ab3[0]+v1[1]*ab3[1];
+		b4=v1[0]*ab4[0]+v1[1]*ab4[1];
+		b5=v1[0]*ab5[0]+v1[1]*ab5[1];
+		b6=v1[0]*ab6[0]+v1[1]*ab6[1];
+		b7=v1[0]*ab7[0]+v1[1]*ab7[1];
+		b8=v1[0]*ab8[0]+v1[1]*ab8[1];
+		cmp=v1[0]*cent[0]+v1[1]*cent[1]-rad;
+		if(b1<cmp && b2<cmp && b3<cmp && b4<cmp && b5<cmp && b6<cmp && b7<cmp && b8<cmp) return 0;
+		cmp=v1[0]*cent[0]+v1[1]*cent[1]+rad;
+		if(b1>cmp && b2>cmp && b3>cmp && b4>cmp && b5>cmp && b6>cmp && b7>cmp && b8>cmp) return 0; }
 
 	v1[0]=ab3[0]-ab1[0];
 	v1[1]=ab3[1]-ab1[1];
 	nrm=sqrt(v1[0]*v1[0]+v1[1]*v1[1]);
-	v1[0]/=nrm;
-	v1[1]/=nrm;
-	b1=v1[0]*ab1[0]+v1[1]*ab1[1];
-	b2=v1[0]*ab2[0]+v1[1]*ab2[1];
-	b3=v1[0]*ab3[0]+v1[1]*ab3[1];
-	b4=v1[0]*ab4[0]+v1[1]*ab4[1];
-	b5=v1[0]*ab5[0]+v1[1]*ab5[1];
-	b6=v1[0]*ab6[0]+v1[1]*ab6[1];
-	b7=v1[0]*ab7[0]+v1[1]*ab7[1];
-	b8=v1[0]*ab8[0]+v1[1]*ab8[1];
-	cmp=v1[0]*cent[0]+v1[1]*cent[1]-rad;
-	if(b1<cmp && b2<cmp && b3<cmp && b4<cmp && b5<cmp && b6<cmp && b7<cmp && b8<cmp) return 0;
-	cmp=v1[0]*cent[0]+v1[1]*cent[1]+rad;
-	if(b1>cmp && b2>cmp && b3>cmp && b4>cmp && b5>cmp && b6>cmp && b7>cmp && b8>cmp) return 0;
+	if(nrm>0) {
+		v1[0]/=nrm;
+		v1[1]/=nrm;
+		b1=v1[0]*ab1[0]+v1[1]*ab1[1];
+		b2=v1[0]*ab2[0]+v1[1]*ab2[1];
+		b3=v1[0]*ab3[0]+v1[1]*ab3[1];
+		b4=v1[0]*ab4[0]+v1[1]*ab4[1];
+		b5=v1[0]*ab5[0]+v1[1]*ab5[1];
+		b6=v1[0]*ab6[0]+v1[1]*ab6[1];
+		b7=v1[0]*ab7[0]+v1[1]*ab7[1];
+		b8=v1[0]*ab8[0]+v1[1]*ab8[1];
+		cmp=v1[0]*cent[0]+v1[1]*cent[1]-rad;
+		if(b1<cmp && b2<cmp && b3<cmp && b4<cmp && b5<cmp && b6<cmp && b7<cmp && b8<cmp) return 0;
+		cmp=v1[0]*cent[0]+v1[1]*cent[1]+rad;
+		if(b1>cmp && b2>cmp && b3>cmp && b4>cmp && b5>cmp && b6>cmp && b7>cmp && b8>cmp) return 0; }
 
 	v1[0]=ab5[0]-ab1[0];
 	v1[1]=ab5[1]-ab1[1];
 	nrm=sqrt(v1[0]*v1[0]+v1[1]*v1[1]);
-	v1[0]/=nrm;
-	v1[1]/=nrm;
-	b1=v1[0]*ab1[0]+v1[1]*ab1[1];
-	b2=v1[0]*ab2[0]+v1[1]*ab2[1];
-	b3=v1[0]*ab3[0]+v1[1]*ab3[1];
-	b4=v1[0]*ab4[0]+v1[1]*ab4[1];
-	b5=v1[0]*ab5[0]+v1[1]*ab5[1];
-	b6=v1[0]*ab6[0]+v1[1]*ab6[1];
-	b7=v1[0]*ab7[0]+v1[1]*ab7[1];
-	b8=v1[0]*ab8[0]+v1[1]*ab8[1];
-	cmp=v1[0]*cent[0]+v1[1]*cent[1]-rad;
-	if(b1<cmp && b2<cmp && b3<cmp && b4<cmp && b5<cmp && b6<cmp && b7<cmp && b8<cmp) return 0;
-	cmp=v1[0]*cent[0]+v1[1]*cent[1]+rad;
-	if(b1>cmp && b2>cmp && b3>cmp && b4>cmp && b5>cmp && b6>cmp && b7>cmp && b8>cmp) return 0;
+	if(nrm>0) {
+		v1[0]/=nrm;
+		v1[1]/=nrm;
+		b1=v1[0]*ab1[0]+v1[1]*ab1[1];
+		b2=v1[0]*ab2[0]+v1[1]*ab2[1];
+		b3=v1[0]*ab3[0]+v1[1]*ab3[1];
+		b4=v1[0]*ab4[0]+v1[1]*ab4[1];
+		b5=v1[0]*ab5[0]+v1[1]*ab5[1];
+		b6=v1[0]*ab6[0]+v1[1]*ab6[1];
+		b7=v1[0]*ab7[0]+v1[1]*ab7[1];
+		b8=v1[0]*ab8[0]+v1[1]*ab8[1];
+		cmp=v1[0]*cent[0]+v1[1]*cent[1]-rad;
+		if(b1<cmp && b2<cmp && b3<cmp && b4<cmp && b5<cmp && b6<cmp && b7<cmp && b8<cmp) return 0;
+		cmp=v1[0]*cent[0]+v1[1]*cent[1]+rad;
+		if(b1>cmp && b2>cmp && b3>cmp && b4>cmp && b5>cmp && b6>cmp && b7>cmp && b8>cmp) return 0; }
 
 	r2=rad*rad;														// Tests 2,3: check corners inside circle
 	d2=(ab1[0]-cent[0])*(ab1[0]-cent[0])+(ab1[1]-cent[1])*(ab1[1]-cent[1]);

@@ -394,7 +394,8 @@ void simsystemoutput(simptr sim) {
 	scmdoutput(sim->cmds);
 	boxssoutput(sim);
 	if(vflag)
-		boxoutput(sim->boxs,0,20,sim->dim);
+		boxoutput(sim->boxs,0,sim->boxs->nbox,sim->dim);
+//		boxoutput(sim->boxs,0,20,sim->dim);
 	for(order=0;order<MAXORDER;order++)
 		rxnoutput(sim,order);
 	ruleoutput(sim);

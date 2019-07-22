@@ -28,7 +28,8 @@ copy "%FROMDIR%lib\libsmoldyn_shared.dll" "%DESTDIR%lib"
 
 echo Adding Smoldyn directory to local and system path
 echo.%PATH% > "%DESTDIR%PATH_old.txt"
-echo.%PATH% | find /I "Smoldyn">Nul && (echo.already in PATH) || (setx /m PATH "%PATH%;%DESTDIR%;" & set PATH=%PATH%;%DESTDIR%;)
+echo.%PATH% | find /I "Smoldyn">Nul && (echo.already in PATH) || (setx /m PATH "%PATH%;%DESTDIR%;")
+set PATH=%PATH%;%DESTDIR%;
 
 echo Installation complete
 

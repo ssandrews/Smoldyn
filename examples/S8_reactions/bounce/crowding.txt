@@ -1,5 +1,7 @@
 # Crowding test
 
+random_seed 1
+
 graphics opengl_good
 #tiff_name crowdimages/image
 #tiff_iter 5

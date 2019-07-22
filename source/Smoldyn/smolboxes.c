@@ -99,8 +99,8 @@ int panelinbox(simptr sim,panelptr pnl,boxptr bptr) {
 	dim=sim->dim;
 	box2pos(sim,bptr,v1,v2);							// v1 and v2 are set to corners of box
 	for(d=0;d<dim;d++) {
-		if(bptr->indx[d]==0) v1[d]=-DBL_MAX;
-		if(bptr->indx[d]==sim->boxs->side[d]-1) v2[d]=DBL_MAX; }
+		if(bptr->indx[d]==0) v1[d]=-VERYLARGE;
+		if(bptr->indx[d]==sim->boxs->side[d]-1) v2[d]=VERYLARGE; }
 	point=pnl->point;
 	front=pnl->front;
 
@@ -178,53 +178,52 @@ void boxremovemol(moleculeptr mptr,int ll) {
 /* boxscansphere */
 boxptr boxscansphere(simptr sim,const double *pos,double radius,boxptr bptr,int *wrap) {
 	boxssptr boxs;
-	double boxmin[DIMMAX],boxmax[DIMMAX],v1[DIMMAX];
-	int dim,d,b,index[DIMMAX],done,diam;
+	double boxmin[DIMMAX],boxmax[DIMMAX],v1[DIMMAX],dist;
+	int dim,d,b,index[DIMMAX],done,diam,keepgoing;
 	static int boxdiameter,startindex[DIMMAX],deltaindex[DIMMAX];
 
 	boxs=sim->boxs;
 	dim=sim->dim;
 
-	if(bptr==NULL) {
+	if(bptr==NULL) {		// first call
 		boxdiameter=0;
 		for(d=0;d<dim;d++) {
-			startindex[d]=(int) floor((pos[d]-radius)/boxs->size[d]);	// first box to consider
-			diam=(int) ceil((pos[d]+radius)/boxs->size[d])-startindex[d];		// diameter in boxes
-			if(diam>boxdiameter) boxdiameter=diam;
-			deltaindex[d]=0; }
-		}
-	else {
+			startindex[d]=(int) floor(((pos[d]-boxs->min[d])-radius)/boxs->size[d]);			// first box to consider
+			diam=(int) ceil(((pos[d]-boxs->min[d])+radius)/boxs->size[d])-startindex[d];
+			if(diam>boxdiameter) boxdiameter=diam;	// largest diameter in boxes, giving count range
+			deltaindex[d]=0; }}											// working index relative to startindex
+	else {							// subsequent calls
 		done=Zn_incrementcounter(deltaindex,dim,boxdiameter);
 		if(done) return NULL; }
 
-	for(d=0;d<dim;d++) {
-		index[d]=startindex[d]+deltaindex[d];			// index of box, ignoring edges and wrapping
-		boxmin[d]=boxs->min[d]+boxs->size[d]*index[d];		// min corner of box, ignoring edges and wrapping
-		boxmax[d]=boxs->min[d]+boxs->size[d]*(index[d]+1); }	// max corner of box, ignoring edges and wrapping
-	while(Geo_NearestAabbPt(boxmin,boxmax,dim,pos,v1)>radius) {
-		done=Zn_incrementcounter(deltaindex,dim,boxdiameter);
-		if(done) return NULL;
+	keepgoing=1;
+	while(keepgoing) {
+		keepgoing=0;	// expect a good box
 		for(d=0;d<dim;d++) {
-			index[d]=startindex[d]+deltaindex[d];
-			boxmin[d]=boxs->min[d]+boxs->size[d]*index[d];
-			boxmax[d]=boxs->min[d]+boxs->size[d]*(index[d]+1); }}
-
-	for(d=0;d<dim;d++) wrap[d]=0;
-	for(d=0;d<dim;d++) {												// fix index to account for edges and wrapping
-		if(index[d]<0) {
-			if(sim->wlist[2*d]->type=='p')
-				while(index[d]<0) {
-					index[d]+=boxs->side[d];
-					wrap[d]--; }
-			else
-				index[d]=0; }
-		else if(index[d]>=boxs->side[d]) {
-			if(sim->wlist[2*d+1]->type=='p')
-				while(index[d]>=boxs->side[d]) {
-					index[d]-=boxs->side[d];
-					wrap[d]++; }
-			else
-				index[d]=boxs->side[d]-1; }}
+			index[d]=startindex[d]+deltaindex[d];			// index of box, ignoring edges and wrapping
+			boxmin[d]=boxs->min[d]+boxs->size[d]*index[d];			// min corner of box, ignoring edges and wrapping
+			boxmax[d]=boxs->min[d]+boxs->size[d]*(index[d]+1);	// max corner of box, ignoring edges and wrapping
+			wrap[d]=0;
+			if(index[d]<0) {
+				if(sim->wlist[2*d]->type=='p')
+					while(index[d]<0) {
+						index[d]+=boxs->side[d];
+						wrap[d]--; }
+				else
+					keepgoing=1; }
+			else if(index[d]>=boxs->side[d]) {
+				if(sim->wlist[2*d+1]->type=='p')
+					while(index[d]>=boxs->side[d]) {
+						index[d]-=boxs->side[d];
+						wrap[d]++; }
+				else
+					keepgoing=1; }}
+		dist=Geo_NearestAabbPt(boxmin,boxmax,dim,pos,v1);
+		if(dist>radius)
+			keepgoing=1;
+		if(keepgoing) {
+			done=Zn_incrementcounter(deltaindex,dim,boxdiameter);
+			if(done) return NULL; }}
 
 	b=0;																				// compute the box number with this index
 	for(d=0;d<dim;d++)
