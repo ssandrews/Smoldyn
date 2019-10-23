@@ -16,9 +16,6 @@ of the Gnu Lesser General Public License (LGPL). */
 #include <vector>
 #include <type_traits>
 
-#include <fmt/core.h>
-#include <fmt/printf.h>
-
 extern std::vector<double> row_;
 
 #define SFNCHECK(A, ...)                                      \
@@ -168,7 +165,7 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, Args... args)
         else
             strstrreplace(newformat, "%,", " ", STRCHAR);
     }
-    int r = fmt::fprintf(fptr, newformat, args...);
+    auto r = fprintf(fptr, newformat, args...);
     collectdata(args...);
     return r;
 }

@@ -14,10 +14,6 @@ if(NOT SMOLDYN_VERSION)
    set(SMOLDYN_VERSION "3.0")
 endif()
 
-# Build internal dependencies 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/external/fmt-6.2.1/)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/external/fmt-6.2.1/include)
-
 ######### Targets to build ###########
 
 option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" ON)
@@ -482,8 +478,6 @@ endif(OPTION_NSV)
 ####### Option: Build with PDE ##########
 
 ####### Targets ##########
-list(APPEND DEP_LIBS fmt::fmt)
-
 if(OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
     target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})

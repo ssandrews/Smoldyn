@@ -43,8 +43,9 @@ int init_and_run(const string &filepath, const string &flags)
     int  er = 0, wflag = 0;
     auto p = splitPath(filepath);
 
-    // DO NOT USE global simptr
+    // DO NOT USE global simptr here.
     simptr psim;
+    psim->logfile = nullptr;
 
 #ifdef OPTION_VCELL
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str(),
