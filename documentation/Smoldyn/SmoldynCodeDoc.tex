@@ -5920,6 +5920,9 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Fixed a very minor bug in \texttt{Geo\_CylisXaabb3}, in which the code didn't check for a zero denominator, although I don't think this actually affected results at all.
 \item When boxes determine what panels are in them, the edge boxes used to extend to $\pm$\texttt{MAX\_DBL}. However, this caused problems in some geometry functions, so I defined a new global variable called \texttt{VERYLARGE}, which I set to $10^{20}$, which is now effectively the edge of simulated space, at least for determining what panels are in what boxes.
 
+\subsection*{Modifications for version 2.62 (not released yet)}
+\item Extended the pointsource, volumesource, and gaussiansource commands so that they now allow non-integer numbers of molecules to be requested. If a non-integer value is requested, these functions choose a Poisson-distributed random number of molecules.
+
 \end{itemize}
 
 

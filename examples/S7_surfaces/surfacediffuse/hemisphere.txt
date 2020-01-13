@@ -67,6 +67,7 @@ surface_mol NMOL green(up) surf1 hemisphere hemi1  VMOL
 #output_format csv
 cmd @ 1 set difc green(all) 0
 
+cmd B pause
 #cmd A molcountspacepolarangle red(all) 0 0 0 VMOL 400 500 90 0 FILEROOTout.txt
 #cmd A molcountspacepolarangle green(all) 0 0 0 VMOL 400 500 90 0 FILEROOTout.txt
 

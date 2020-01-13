@@ -11,7 +11,7 @@
 
 #define VERSION 2.0
 
-int Sphereintsct(int i,int j,double *spheres,int dim);
+int Sphereintsct(int i,int j,double *spheres,int dim,double radextra);
 double measurephi(double *low,double *high,double *spheres,int n,int dim,double radextra,int itmax,double originradmin,double originradmax);
 double calcphi(double *low,double *high,double *spheres,int n,int dim,double originradmin,double originradmax);
 int makeradhist(double *spheres,int n,int dim,double factor,double **histptr,double **scaleptr);
@@ -19,7 +19,7 @@ void freeradhist(double *hist,double *scale);
 void fillradhist(double *spheres,int n,int dim,double *hist,double *scale,int hn);
 int showradhist(double *spheres,int n,int dim);
 
-void writespheres(double*spheres,int n,int dim,char *comment,double radextra);
+void writespheres(double *spheres,int n,int dim,char *comment,double radextra,double *low,double *high);
 int makespheres(int nnew,double rmin,double gamma,double *low,double *high,double *spheres,int n,int dim);
 int compactspheres(double *spheres,int n,int dim);
 int wraplastsphere(double *low,double *high,double *spheres,int n,int nmax,int dim);
@@ -31,7 +31,7 @@ void write2Dlines(void);
 
 
 /* Returns 1 if spheres i and j intersect and 0 if not. */
-int Sphereintsct(int i,int j,double *spheres,int dim) {
+int Sphereintsct(int i,int j,double *spheres,int dim,double radextra) {
 	double *centi,*centj,ri,rj,dist2;
 	int d;
 
@@ -39,6 +39,8 @@ int Sphereintsct(int i,int j,double *spheres,int dim) {
 	ri=spheres[4*i+dim];
 	rj=spheres[4*j+dim];
 	if(ri<0 || rj<0) return 0;
+	ri+=radextra;
+	rj+=radextra;
 	centi=spheres+4*i;
 	centj=spheres+4*j;
 	dist2=0;
@@ -182,13 +184,48 @@ int showradhist(double *spheres,int n,int dim) {
 
 /********************* END OF HISTROGRAM STUFF *****************/
 
+/******************** cluster analysis **********************/
+
+int countclusters(double *spheres,int n,int dim,double radextra) {
+	int i,j,k,ncluster;
+	int *sphereid;
+
+	sphereid=(int*) calloc(n,sizeof(int));
+	if(!sphereid) return -1;
+	for(i=0;i<n;i++) sphereid[i]=i;		// sphereid is equal to sphere number
+
+	for(i=0;i<n;i++)				// for each, sphereid is equal to lowest sphereid of spheres in cluster
+		for(j=i+1;j<n;j++)
+			if(sphereid[i]!=sphereid[j] && Sphereintsct(i,j,spheres,dim,radextra))
+				for(k=0;k<n;k++)
+					if(sphereid[k]==sphereid[j])
+						sphereid[k]=sphereid[i];
+
+	for(i=0;i<n;i++)
+		printf("%i  %i (%lf,%lf) \n",i,sphereid[i],spheres[4*i],spheres[4*i+1]);
+
+	for(i=0;i<n;i++)					// replace all duplicate sphereid values with -1
+		for(j=0;j<i;j++)
+			if(sphereid[j]==sphereid[i]) {
+				sphereid[i]=-1;
+				j=i; }
+
+	ncluster=0;					// count number of clusters
+	for(i=0;i<n;i++)
+		if(sphereid[i]>=0) ncluster++;
+
+	free(sphereid);
+	return ncluster; }
+
+
+
 /* Writes spheres to a Smoldyn readable file.  The file name is gotten from the
 user.  An optional comment line is added to the file. */
-void writespheres(double*spheres,int n,int dim,char *comment,double radextra) {
-	int d,i;
-	double r;
+void writespheres(double*spheres,int n,int dim,char *comment,double radextra,double *low,double *high) {
+	int d,i,skip;
+	double r,radextra2;
 	FILE *fptr;
-	char fname[256],yn[256];
+	char fname[256],yn[256],spname[256];
 
 	printf("Enter output file name: ");
 	scanf("%s",fname);
@@ -208,9 +245,9 @@ void writespheres(double*spheres,int n,int dim,char *comment,double radextra) {
 		if(spheres[4*i+dim]>=0) {
 			fprintf(fptr,"panel sphere ");
 			for(d=0;d<dim;d++) fprintf(fptr,"%lf ",spheres[4*i+d]);
-			r=spheres[4*i+d];
-			fprintf(fptr,"%lf ",r+radextra);
-			if(dim==2) fprintf(fptr,"%i\n",(int)(10.0*sqrt(r)));
+			r=spheres[4*i+d]+radextra;
+			fprintf(fptr,"%lf ",r);
+			if(dim==2) fprintf(fptr,"%i\n",(int)(20.0*sqrt(r)));
 			else if(dim==3) fprintf(fptr,"%i %i\n",(int)(10.0*sqrt(r)),(int)(10.0*sqrt(r))); }}
 	fprintf(fptr,"end_surface\n\n");
 
@@ -229,15 +266,44 @@ void writespheres(double*spheres,int n,int dim,char *comment,double radextra) {
 	printf("Do you want a molecule in the middle of each sphere? ");
 	scanf("%s",yn);
 	if(yn[0]=='Y' || yn[0]=='y') {
-		printf("Enter molecule species name: ");
+		printf("Do you want to include locations that are outside of the system volume? ");
 		scanf("%s",yn);
-		fprintf(fptr,"species %s\n\n",yn);
+		printf("Enter molecule species name: ");
+		scanf("%s",spname);
+		fprintf(fptr,"species %s\n\n",spname);
 		for(i=0;i<n;i++) {
 			if(spheres[4*i+dim]>=0) {
-				fprintf(fptr,"mol 1 %s",yn);
-				for(d=0;d<dim;d++) fprintf(fptr," %lf",spheres[4*i+d]);
-				fprintf(fptr,"\n"); }}
+				skip=0;
+				if(!(yn[0]=='Y' || yn[0]=='y')) {
+					for(d=0;d<dim;d++)
+						if(spheres[4*i+d]<low[d] || spheres[4*i+d]>high[d]) skip=1; }
+				if(!skip) {
+					fprintf(fptr,"mol 1 %s",spname);
+					for(d=0;d<dim;d++) fprintf(fptr," %lf",spheres[4*i+d]);
+					fprintf(fptr,"\n"); }}}
 		fprintf(fptr,"\n"); }
+
+	printf("Do you want double spheres that are concentric with the originals? ");
+	scanf("%s",yn);
+	if(yn[0]=='y' || yn[0]=='Y') {
+		printf("Enter extra radius of double spheres: ");
+		scanf("%lf",&radextra2);
+		fprintf(fptr,"\n");
+		fprintf(fptr,"# double spheres, extra radius is %lf\n",radextra2);
+		fprintf(fptr,"start_surface smolcrowd2\n");
+		fprintf(fptr,"action all(all) both reflect\n");
+		fprintf(fptr,"color both green 0.4\n");
+		fprintf(fptr,"polygon both edge\n");
+		fprintf(fptr,"max_panels sphere %i\n",n);
+		for(i=0;i<n;i++) {
+			if(spheres[4*i+dim]>=0) {
+				fprintf(fptr,"panel sphere ");
+				for(d=0;d<dim;d++) fprintf(fptr,"%lf ",spheres[4*i+d]);
+				r=spheres[4*i+d]+radextra2;
+				fprintf(fptr,"%lf ",r);
+				if(dim==2) fprintf(fptr,"%i\n",(int)(20.0*sqrt(r)));
+				else if(dim==3) fprintf(fptr,"%i %i\n",(int)(10.0*sqrt(r)),(int)(10.0*sqrt(r))); }}
+		fprintf(fptr,"end_surface\n\n"); }
 
 	fprintf(fptr,"end_file\n");
 	fclose(fptr);
@@ -439,7 +505,7 @@ int MakeSph2Phi(double phi,double rmin,double gamma,double *low,double *high,dou
 				if(originradmax>0 && originrad+spheres[4*j+dim]>originradmax) intsct=1; }
 			for(i2=j;i2<n && !intsct;i2++)
 				for(i=0;i<n && !intsct;i++)
-					intsct=Sphereintsct(i,i2,spheres,dim);
+					intsct=Sphereintsct(i,i2,spheres,dim,0);
 			if(intsct) n=j;
 			else block=-5; }
 
@@ -501,6 +567,7 @@ void write2Dlines(void) {
 
 int main(void) {
 	int dim,d,nmax,n,i,done;
+//	int ncluster;
 	double low[3],high[3],vol,*spheres;
 	double rmin,gamma,phi,mphi,radextra,originradmin,originradmax;
 	char str[256];
@@ -544,14 +611,17 @@ int main(void) {
 	printf("Calulating statistics...\n");
 	phi=calcphi(low,high,spheres,n,dim,originradmin,originradmax);
 	mphi=measurephi(low,high,spheres,n,dim,radextra,100000,originradmin,originradmax);
+//	ncluster=countclusters(spheres,n,dim,radextra);
 	printf("crowders: %i\n",n);
 	printf("phi calculated from volume ratio: %lf\n",phi);
 	printf("phi measured with random sampling: %lf\n",mphi);
+//	printf("number of unconnected crowding clusters: %i\n",ncluster);
 	sprintf(str,"dim=%i, rmin=%lf, gamma=%lf, calc. phi=%lf, measured phi=%lf\n",dim,rmin,gamma,phi,mphi);
+//	sprintf(str+strlen(str),"# unconnected clusters=%i\n",ncluster);
 	if(originradmin>0) sprintf(str+strlen(str),"# minimum crowder edge radius=%lf\n",originradmin);
 	if(originradmax>0) sprintf(str+strlen(str),"# maximum crowder edge radius=%lf\n",originradmax);
 	for(d=0;d<dim;d++) sprintf(str+strlen(str),"# boundaries %i %lf %lf\n",d,low[d],high[d]);
-	writespheres(spheres,n,dim,str,radextra);
+	writespheres(spheres,n,dim,str,radextra,low,high);
 
 	if(gamma!=0) {
 		printf("Ready to calculate actual crowder size ratio\n");
