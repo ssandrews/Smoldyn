@@ -13,8 +13,8 @@ set(SMOLDYN_VERSION "2.61")
 
 ######### Targets to build ###########
 
-option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" ON)
-option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" OFF)
+option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" OFF)
+option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" ON)
 
 
 ####### Compiling options ##########
@@ -27,6 +27,7 @@ option(OPTION_STATIC "Compile Smoldyn with static libraries" OFF)
 option(OPTION_MINGW "Cross-compile for Windows using MinGW compiler" OFF)
 option(OPTION_USE_OPENGL "Build with OpenGL support" ON)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
+option(OPTION_PYTHON  "Build Python module" ON)
 
 if (OPTION_VCELL)
 	set(OPTION_USE_LIBTIFF OFF)
@@ -478,6 +479,11 @@ if(OPTION_TARGET_LIBSMOLDYN)
 		SET_TARGET_PROPERTIES(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
 	endif(APPLE)
 endif(OPTION_TARGET_LIBSMOLDYN)
+
+########## Python module #########
+if(OPTION_PYTHON)
+    add_subdirectory(source/py)
+endif()
 
 
 ########## install ###########
