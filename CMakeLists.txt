@@ -514,5 +514,4 @@ configure_file (
 
 include(CPack)
 
-
-
+enable_testing()
