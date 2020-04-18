@@ -7,7 +7,10 @@
 ########## Basic setup ##########
 
 project(smoldyn)
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
+
+cmake_policy(SET CMP0079 NEW)
+
 set(SMOLDYN_VERSION "2.61")
 
 
@@ -467,7 +470,7 @@ endif(OPTION_NSV)
 
 if(OPTION_TARGET_SMOLDYN)
 	add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-	target_link_libraries(smoldyn ${DEP_LIBS})
+        target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
 endif()
 
 if(OPTION_TARGET_LIBSMOLDYN)

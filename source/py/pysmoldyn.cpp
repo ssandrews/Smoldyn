@@ -24,7 +24,7 @@ int simulate(const string& filepath, const string& flags)
     return simInitAndLoad(filename.c_str(), fileroot.c_str(), &sim, flags.c_str());
 }
 
-PYBIND11_MODULE(smoldyn, m) {
+PYBIND11_MODULE(_smoldyn, m) {
     m.doc() = R"pbdoc(
         smoldyn
         -----------------------
