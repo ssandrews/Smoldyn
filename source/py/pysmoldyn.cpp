@@ -3,6 +3,7 @@
  * Author: Dilawar Singh <dilawar.s.rajput@gmail.com>
  */
 
+#include <iostream>
 #include <string>
 using namespace std;
 
@@ -17,12 +18,15 @@ int simulate(const string& filepath, const string& flags)
     string filename, fileroot;
     auto pos = filepath.find_last_of('/');
 
-    fileroot = filepath.substr(0, pos);
+    fileroot = filepath.substr(0, pos+1);
     filename = filepath.substr(pos+1);
 
     simptr sim;
-    return simInitAndLoad(filename.c_str(), fileroot.c_str(), &sim, flags.c_str());
+    cout << "root:" << fileroot << " name:"<<filename << " flags="<< flags<<endl;
+    auto er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &sim, flags.c_str());
+    er=simUpdateAndDisplay(sim); 
 }
+
 
 PYBIND11_MODULE(_smoldyn, m) {
     m.doc() = R"pbdoc(

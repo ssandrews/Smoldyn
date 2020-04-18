@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
 			return 0; }
 		sim=NULL;
 
+                printf("root=%s, fname=%s, flags=%s\n", root, fname, flags);
 #ifdef OPTION_VCELL
 		er=simInitAndLoad(root,fname, &sim,flags,new SimpleValueProviderFactory(), new SimpleMesh());
 #else
@@ -116,5 +117,6 @@ int main(int argc, char **argv) {
 	catch (...) {
 		fprintf(stderr, "unknown error\n");
 		exitCode = 1; }
-	return exitCode; }
+	return exitCode; 
+}
 
