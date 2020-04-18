@@ -29,7 +29,7 @@
 
 
 /* main */
-int main(int argc,char **argv) {
+int main(int argc, char **argv) {
 	int exitCode = 0;
 
 	try {
@@ -87,7 +87,7 @@ int main(int argc,char **argv) {
 		sim=NULL;
 
 #ifdef OPTION_VCELL
-		er=simInitAndLoad(root,fname,&sim,flags,new SimpleValueProviderFactory(), new SimpleMesh());
+		er=simInitAndLoad(root,fname, &sim,flags,new SimpleValueProviderFactory(), new SimpleMesh());
 #else
 		er=simInitAndLoad(root,fname,&sim,flags);
 #endif

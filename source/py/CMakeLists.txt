@@ -5,11 +5,11 @@ pybind11_add_module(smoldyn MODULE pysmoldyn.cpp)
 
 target_compile_options(smoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
 
-target_link_libraries(smoldyn PRIVATE smoldyn_static)
+target_link_libraries(smoldyn PRIVATE smoldyn_shared)
 
 set_target_properties(smoldyn PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-add_dependencies(smoldyn smoldyn_static)
+add_dependencies(smoldyn smoldyn_shared)
 
 enable_testing()
 file(GLOB TEST_SCRIPTS "${CMAKE_SOURCE_DIR}/tests/test_*.py")

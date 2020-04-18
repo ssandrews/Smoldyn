@@ -9,18 +9,20 @@
 
 namespace py = pybind11;
 
+int simulate(const char* filename, const char* fileroot, const char* flags) 
+{
+    simptr sim;
+    return simInitAndLoad(filename, fileroot, &sim, flags);
+}
+
 PYBIND11_MODULE(smoldyn, m) {
     m.doc() = R"pbdoc(
         smoldyn
         -----------------------
     )pbdoc";
 
-    py::class_<simstruct>(m, "simstruct")
-        .def(py::init<>())
-        ;
-
     /* Function */
-    m.def("simulate", &simInitAndLoad);
+    m.def("simulate", &simulate);
 
     m.attr("__version__") = SMOLDYN_VERSION;
 
