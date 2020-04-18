@@ -13,7 +13,7 @@ set(SMOLDYN_VERSION "2.61")
 
 ######### Targets to build ###########
 
-option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" OFF)
+option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" ON)
 option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" ON)
 
 
