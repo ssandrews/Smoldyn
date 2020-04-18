@@ -33,7 +33,7 @@ reaction_log stdout rxn2 all
 mol 5 ligand u u
 mol 50 receptor u u
 
-cmd N 100 trackmol 1 stdout
+cmd N 200 trackmol 1 stdout
 
 
 end_file

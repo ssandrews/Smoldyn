@@ -2951,14 +2951,16 @@ enum CMDcode cmdset(simptr sim,cmdptr cmd,char *line2) {
 enum CMDcode cmdpointsource(simptr sim,cmdptr cmd,char *line2) {
 	int itct,num,i;
 	char nm[STRCHAR];
-	double pos[DIMMAX];
+	double pos[DIMMAX],numdbl;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 	SCMDCHECK(line2,"missing argument");
 	SCMDCHECK(sim->mols,"molecules are undefined");
-	itct=strmathsscanf(line2,"%s %mi",Varnames,Varvalues,Nvar,nm,&num);
+	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm,&numdbl);
 	SCMDCHECK(itct==2,"read failure");
-	SCMDCHECK(num>=0,"number cannot be negative");
+	SCMDCHECK(numdbl>=0,"number cannot be negative");
+	num=(int)numdbl;
+	if(num!=numdbl) num=poisrandD(numdbl);
 	i=stringfind(sim->mols->spname,sim->mols->nspecies,nm);
 	SCMDCHECK(i>=1,"name not recognized");
 	line2=strnword(line2,3);
@@ -2975,14 +2977,16 @@ enum CMDcode cmdpointsource(simptr sim,cmdptr cmd,char *line2) {
 enum CMDcode cmdvolumesource(simptr sim,cmdptr cmd,char *line2) {
 	int itct,num,i,d;
 	char nm[STRCHAR];
-	double poslo[DIMMAX],poshi[DIMMAX];
+	double poslo[DIMMAX],poshi[DIMMAX],numdbl;
 	
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 	SCMDCHECK(line2,"missing argument");
 	SCMDCHECK(sim->mols,"molecules are undefined");
-	itct=strmathsscanf(line2,"%s %mi",Varnames,Varvalues,Nvar,nm,&num);
+	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm,&numdbl);
 	SCMDCHECK(itct==2,"read failure");
-	SCMDCHECK(num>=0,"number cannot be negative");
+	SCMDCHECK(numdbl>=0,"number cannot be negative");
+	num=(int)numdbl;
+	if(num!=numdbl) num=poisrandD(numdbl);
 	i=stringfind(sim->mols->spname,sim->mols->nspecies,nm);
 	SCMDCHECK(i>=1,"name not recognized");
 	line2=strnword(line2,3);
@@ -3000,16 +3004,18 @@ enum CMDcode cmdvolumesource(simptr sim,cmdptr cmd,char *line2) {
 enum CMDcode cmdgaussiansource(simptr sim,cmdptr cmd,char *line2) {
 	int itct,num,i,d,imol,dim;
 	char nm[STRCHAR];
-	double mean[DIMMAX],sigma[DIMMAX],pos[DIMMAX],lowcorner[DIMMAX],highcorner[DIMMAX];
+	double mean[DIMMAX],sigma[DIMMAX],pos[DIMMAX],lowcorner[DIMMAX],highcorner[DIMMAX],numdbl;
 	
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
 	dim=sim->dim;
 	SCMDCHECK(line2,"missing argument");
 	SCMDCHECK(sim->mols,"molecules are undefined");
-	itct=strmathsscanf(line2,"%s %mi",Varnames,Varvalues,Nvar,nm,&num);
+	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm,&numdbl);
 	SCMDCHECK(itct==2,"read failure");
-	SCMDCHECK(num>=0,"number cannot be negative");
+	SCMDCHECK(numdbl>=0,"number cannot be negative");
+	num=(int)numdbl;
+	if(num!=numdbl) num=poisrandD(numdbl);
 	i=stringfind(sim->mols->spname,sim->mols->nspecies,nm);
 	SCMDCHECK(i>=1,"name not recognized");
 	line2=strnword(line2,3);

@@ -28,7 +28,7 @@ reaction rxn2 red + green -> green + green
 binding_radius rxn2 1
 product_placement rxn2 bounce 1.1
 
-reaction rxn3 green -> red 0.5
+reaction rxn3 green -> red 0.3
 
 mol 200 red u u
 mol 1 green 20 20

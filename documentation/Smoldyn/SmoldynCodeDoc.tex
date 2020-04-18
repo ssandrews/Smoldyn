@@ -43,8 +43,8 @@ breakatwhitespace=false
 
 
 
-\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.60}
-\date{\copyright June, 2019}
+\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.61}
+\date{\copyright July, 2019}
 \author{Steve Andrews}
 \maketitle
 
@@ -2526,6 +2526,8 @@ Removes molecule \texttt{mptr} from the live list \texttt{ll} of the box that is
 Allows the calling function to scan over all of the boxes that are at least partially within \texttt{radius} distance of the point \texttt{pos}.  This accounts for system edges and periodic boundaries.  Call this at the first time in a scan with \texttt{bptr} equal to \texttt{NULL}, which instructs the function to set up internal static variables, and in subsequent scans with \texttt{bptr} not equal to \texttt{NULL}.  This returns boxes repeatedly for the scan, and then returns \texttt{NULL} when the scan is complete.  At present, it is not possible to skip ahead in the scan using the \texttt{bptr} input, although this could be implemented if it would be useful.
 
 If the system has periodic boundaries, this returns boxes that are found upon wrapping, possibly returning the same box multiple times if it is within \texttt{radius} of \texttt{pos} in multiple ways.  The amount of wrapping on each axis is returned in \texttt{wrap}, which needs to be entered as a non-\texttt{NULL} vector.
+
+This function was rewritten for version 2.61 because it didn't correctly account for system volumes that didn't start at (0,0,0) and/or that didn't use periodic boundary conditions.
 
 \item[\underline{memory management}]
 
@@ -5912,6 +5914,14 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Further improvements on Windows support. This release now builds SmolCrowd and wrl2smol on a Windows computer. It also uses static linking so that dll files aren't needed.  I also improved the Windows install script.
 \item Modified the BNG2\_path statement so that it now reads the entire line of text after the statement word rather than just the first word in the line, thus allowing for spaces in file names.
 \item Fixed a trivial bug for the ``stipple'' statement, which was trying to read hex code with the math parser.
+
+\subsection*{Modifications for version 2.61 (released 7/22/19)}
+\item Rewrote boxscansphere, which is called by the commands radialdistribution and radialdistribution2. This function only worked for systems that had their low corner of space at (0,0,0) and that used periodic boundaries. Now, it works for all systems.
+\item Fixed a very minor bug in \texttt{Geo\_CylisXaabb3}, in which the code didn't check for a zero denominator, although I don't think this actually affected results at all.
+\item When boxes determine what panels are in them, the edge boxes used to extend to $\pm$\texttt{MAX\_DBL}. However, this caused problems in some geometry functions, so I defined a new global variable called \texttt{VERYLARGE}, which I set to $10^{20}$, which is now effectively the edge of simulated space, at least for determining what panels are in what boxes.
+
+\subsection*{Modifications for version 2.62 (not released yet)}
+\item Extended the pointsource, volumesource, and gaussiansource commands so that they now allow non-integer numbers of molecules to be requested. If a non-integer value is requested, these functions choose a Poisson-distributed random number of molecules.
 
 \end{itemize}
 

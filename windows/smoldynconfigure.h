@@ -59,7 +59,7 @@
 /* #undef OPTION_VTK */
 
 /* Define to the version of this package. */
-#define VERSION "2.60"
+#define VERSION "2.61"
 
 /* Define the path for the BNG2.pl program */
 #define BNG2_PATH "C:\\Program Files\\Smoldyn\\BioNetGen\\BNG2.pl"

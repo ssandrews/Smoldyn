@@ -8,7 +8,7 @@
 
 project(smoldyn)
 cmake_minimum_required(VERSION 2.6)
-set(SMOLDYN_VERSION "2.60")
+set(SMOLDYN_VERSION "2.61")
 
 
 ######### Targets to build ###########

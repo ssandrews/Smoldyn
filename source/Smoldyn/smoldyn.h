@@ -43,6 +43,7 @@
 
 #define DIMMAX 3							// maximum system dimensionality
 #define VERYCLOSE 1.0e-12			// distance that's safe from round-off error
+#define VERYLARGE 1.0e+20			// distance that's large but safe from overflow error
 
 enum StructCond {SCinit,SClists,SCparams,SCok};
 
