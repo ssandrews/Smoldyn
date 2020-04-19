@@ -28,7 +28,7 @@ set -x
 echo "Currently in `pwd`"
 (
     mkdir -p _BUILD && cd _BUILD
-    cmake ..
+    cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 ..
     $MAKE && ctest --output-on-failure
     sudo make install && cd  /tmp
 )
