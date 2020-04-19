@@ -7,16 +7,10 @@ os:
     - linux
     - osx
 
-matrix:
-    include:
-        - os : osx
-          osx_image: xcode10
-
 notifications:
   email:
     recipients:
         - dilawar.s.rajput@gmail.com
-        - steven.s.andrews@gmail.com
     on_success: change
     on_failure: always
 
