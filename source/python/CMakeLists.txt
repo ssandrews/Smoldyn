@@ -12,10 +12,12 @@ set_target_properties(_smoldyn PROPERTIES
 
 add_dependencies(_smoldyn smoldyn_shared)
 
-target_link_libraries(_smoldyn PUBLIC 
-    -Wl,--whole-archive 
-    smoldyn_shared
-    -Wl,--no-whole-archive)
+if(APPLE)
+    target_link_libraries(_smoldyn PUBLIC -Wl,-all_load smoldyn_shared -Wl,-noall_load)
+else(APPLE)
+    target_link_libraries(_smoldyn PUBLIC 
+        -Wl,--whole-archive smoldyn_shared -Wl,--no-whole-archive) 
+endif()
 
 add_custom_command(TARGET _smoldyn POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist -v --bdist-base ${CMAKE_BINARY_DIR}
