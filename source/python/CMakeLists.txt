@@ -1,10 +1,8 @@
 # python bindings
 
-
 pybind11_add_module(_smoldyn smoldyn.cpp)
 
 target_compile_options(_smoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
-
 
 set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
@@ -50,6 +48,20 @@ foreach(_pyscript ${TEST_SCRIPTS})
     add_test(NAME ${_test_name} COMMAND 
         ${PYTHON_EXECUTABLE} ${_pyscript}
         WORKING_DIRECTORY ${_test_dir})
+    set_tests_properties(${_test_name} PROPERTIES 
+        ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}")
+endforeach()
+
+set(EXAMPLE_SCRIPTS ../../examples/S10_boxes/box.txt
+    ../../examples/S3_space/bounds2.txt)
+
+foreach(_example ${EXAMPLE_SCRIPTS})
+    message(STATUS "Adding example ${_example}") 
+    get_filename_component(_test_name ${_example} NAME_WE)
+    get_filename_component(_test_dir ${_example} DIRECTORY)
+    add_test(NAME ${_test_name} COMMAND 
+        ${PYTHON_EXECUTABLE} -m smoldyn ${_example}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
     set_tests_properties(${_test_name} PROPERTIES 
         ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
