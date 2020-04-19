@@ -524,8 +524,16 @@ include(CPack)
 ######### Testing #############
 enable_testing()
 
-# Run examples.
-file(GLOB_RECURSE EXAMPLE_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/*.txt)
-foreach(_example ${EXAMPLE_SCRIPTS})
-    message(STATUS "Adding text ${_example}")
-endforeach()
+## # Run examples.
+## file(GLOB_RECURSE EXAMPLE_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/S*/*.txt)
+## foreach(_example ${EXAMPLE_SCRIPTS})
+##     # message(STATUS "Adding text ${_example}")
+##     get_filename_component(_filename ${_example} NAME_WE)
+##     file(SHA1 ${_example} _testhash)
+##     set(_test_name "${_filename}_${_testhash}")
+##     add_test(NAME ${_test_name} 
+##         COMMAND ${PYTHON_EXECUTABLE} -m smoldyn ${_example}
+##         )
+##     set_tests_properties(${_test_name} PROPERTIES
+##         ENVIRONMENT "PYTHONPATH=${CMAKE_SOURCE_DIR}/source/python")
+## endforeach()
