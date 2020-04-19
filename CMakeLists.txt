@@ -124,6 +124,10 @@ if(OPTION_VCELL)
 		source/vcell/SimpleMesh.cpp
 		source/vcell/SimpleValueProvider.cpp )
 endif(OPTION_VCELL)
+
+if(OPTION_PYTHON)
+    set(OPTION_TARGET_LIBSMOLDYN ON)
+endif()
 		
 
 if(OPTION_TARGET_LIBSMOLDYN)
@@ -485,7 +489,8 @@ endif(OPTION_TARGET_LIBSMOLDYN)
 
 ########## Python module #########
 if(OPTION_PYTHON)
-    add_subdirectory(source/py)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
+    add_subdirectory(source/python)
 endif()
 
 
