@@ -1,3 +1,0 @@
-"""smoldyn
-Python bindings.
-"""

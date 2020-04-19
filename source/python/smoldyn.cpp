@@ -61,7 +61,7 @@ int simulate(const string& filepath, const string& flags)
 }
 
 
-PYBIND11_MODULE(smoldyn, m) {
+PYBIND11_MODULE(_smoldyn, m) {
     m.doc() = R"pbdoc(
         smoldyn
         -----------------------

@@ -7,7 +7,7 @@ __maintainer__ = "Dilawar Singh"
 __email__      = "dilawar.s.rajput@gmail.com"
 
 import os
-from distutils.core import setup
+from setuptools import setup
 
 sdir_ = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(sdir_, "../../README.md")) as f:
@@ -25,6 +25,6 @@ setup(
     author_email='dilawar.s.rajput@gmail.com',
     url='http://www.smoldyn.org/',
     packages=['smoldyn'],
-    package_dir = { 'smoldyn' : '.' },
+    package_dir = { 'smoldyn' : os.path.join(sdir_, 'smoldyn') },
     package_data={ 'smoldyn': [ 'smoldyn.so' ] },
 )

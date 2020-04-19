@@ -1,23 +1,35 @@
 # python bindings
 
 
-pybind11_add_module(pysmoldyn smoldyn.cpp)
+pybind11_add_module(_smoldyn smoldyn.cpp)
 
-target_compile_options(pysmoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
-target_link_libraries(pysmoldyn PRIVATE smoldyn_shared)
+target_compile_options(_smoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
+target_link_libraries(_smoldyn PRIVATE smoldyn_shared)
 
-set_target_properties(pysmoldyn PROPERTIES 
-    OUTPUT_NAME "smoldyn"
+set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/smoldyn)
 
-add_dependencies(pysmoldyn smoldyn_shared)
+add_dependencies(_smoldyn smoldyn_shared)
 
-add_custom_command(TARGET pysmoldyn POST_BUILD
+add_custom_command(TARGET _smoldyn POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist -v --bdist-base ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Generating bdist"
     VERBATIM)
+
+add_custom_target(pyinstall
+    DEPENDS pyuninstall _smoldyn
+    COMMAND ${PYTHON_EXECUTABLE} setup.py develop --user
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "python3 setup.py develop --user"
+    VERBATIM)
+
+add_custom_target(pyuninstall
+    COMMAND ${PYTHON_EXECUTABLE} -m pip uninstall pymoose
+    COMMENT "Uninstall develop"
+    VERBATIM)
+
 
 enable_testing()
 file(GLOB TEST_SCRIPTS "${CMAKE_SOURCE_DIR}/tests/test_*.py")
