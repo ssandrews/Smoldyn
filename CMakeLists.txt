@@ -519,7 +519,13 @@ configure_file (
 )
 
 ########## package #########
-
 include(CPack)
 
+######### Testing #############
 enable_testing()
+
+# Run examples.
+file(GLOB_RECURSE EXAMPLE_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/*.txt)
+foreach(_example ${EXAMPLE_SCRIPTS})
+    message(STATUS "Adding text ${_example}")
+endforeach()
