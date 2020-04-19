@@ -13,9 +13,21 @@ using namespace std;
 
 namespace py = pybind11;
 
-int simulate(const string& filepath, const string& flags) 
+/* --------------------------------------------------------------------------*/
+/**
+ * @Synopsis  Initialize and run the simulation. This function takes input file
+ * and run the simulation. This is more or less same as `main()` function in
+ * smoldyn.c file.
+ *
+ * @Param filepath
+ * @Param flags
+ *
+ * @Returns   
+ */
+/* ----------------------------------------------------------------------------*/
+int init_and_run(const string& filepath, const string& flags) 
 {
-    int i, er, pflag, wflag, tflag, Vflag, oflag;
+    int er = 0, wflag;
 
     string filename, fileroot;
     auto pos = filepath.find_last_of('/');
@@ -23,12 +35,7 @@ int simulate(const string& filepath, const string& flags)
     fileroot = filepath.substr(0, pos+1);
     filename = filepath.substr(pos+1);
 
-    simptr sim;
-    cout << "root:" << fileroot << " name:"<<filename << " flags="<< flags<<endl;
-
-    sim = NULL;
-    cout << "root="<< fileroot << " fname=" << filename << ", flags=" << flags 
-        << endl; 
+    simptr sim = nullptr;
 #ifdef OPTION_VCELL
     er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &sim, flags.c_str(),
             new SimpleValueProviderFactory(), new SimpleMesh());
@@ -37,18 +44,18 @@ int simulate(const string& filepath, const string& flags)
 #endif
     if (!er) {
         // if (!tflag && sim->graphss && sim->graphss->graphics != 0)
-        //     gl2glutInit(&argc, argv);
+            // gl2glutInit(0, "");
         er = simUpdateAndDisplay(sim);
     }
-    if (!oflag && !pflag && !er)
+    if(!er)
         er = scmdopenfiles((cmdssptr)sim->cmds, wflag);
-    if (pflag || er) {
+    if (er) {
         simLog(sim, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
     else {
         fflush(stdout);
         fflush(stderr);
-        if (tflag || !sim->graphss || sim->graphss->graphics == 0) {
+        if (!sim->graphss || sim->graphss->graphics == 0) {
             er = smolsimulate(sim);
             endsimulate(sim, er);
         }
@@ -58,6 +65,7 @@ int simulate(const string& filepath, const string& flags)
     }
     simfree(sim);
     simfuncfree();
+    return er;
 }
 
 
@@ -67,8 +75,11 @@ PYBIND11_MODULE(_smoldyn, m) {
         -----------------------
     )pbdoc";
 
+    /* simulation pointer */
+    unique_ptr<simstruct> simptr{new simstruct()};
+
     /* Function */
-    m.def("simulate", &simulate);
+    m.def("load_model", &init_and_run, "Load model from a txt file");
 
     m.attr("__version__") = SMOLDYN_VERSION;
 
