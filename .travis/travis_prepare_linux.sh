@@ -21,4 +21,4 @@ set -o nounset                              # Treat unset variables as an error
 set +e  # Let installation fail in some command
 
 apt-get install -qq make cmake
-apt-get install -qq libtiff-dev libzip-dev freeglut3-dev
+apt-get install -qq libtiff-dev libzip-dev freeglut3-dev python3-dev 
