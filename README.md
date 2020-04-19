@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ssandrews/Smoldyn-official.svg?branch=master)](https://travis-ci.org/ssandrews/Smoldyn-official)
+[![Build Status](https://travis-ci.org/dilawar/Smoldyn-official.svg?branch=master)](https://travis-ci.org/dilawar/Smoldyn-official)
 
 # Smoldyn-official
 Smoldyn is a particle-based biochemical simulator for modeling molecular diffusion, surface interactions, and chemical reactions.
