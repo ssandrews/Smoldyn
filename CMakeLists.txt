@@ -138,9 +138,13 @@ set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
 
 include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
 
+####### Compiler macros ######################
+add_definitions(-std=c++11)
 
 
 ####### Build for debugging or release ##########
+
+add_definitions(-std=c++14)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	set(COMPILER_IS_CLANGXX TRUE)

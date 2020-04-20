@@ -1,8 +1,9 @@
 # python bindings
 
-pybind11_add_module(_smoldyn Smoldyn.cpp module.cpp)
+pybind11_add_module(_smoldyn Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
 
 target_compile_options(_smoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
+target_include_directories(_smoldyn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
