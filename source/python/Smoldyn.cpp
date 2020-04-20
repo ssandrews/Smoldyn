@@ -4,7 +4,7 @@
 
 #include "Smoldyn.h"
 
-Smoldyn::Smoldyn()
+Smoldyn::Smoldyn(): dim_(1)
 {}
 
 Smoldyn::~Smoldyn()
@@ -16,3 +16,12 @@ SmoldynDefine& Smoldyn::getDefine()
 }
 
 
+size_t Smoldyn::getDim() const
+{
+    return dim_;
+}
+
+void Smoldyn::setDim(size_t dim)
+{
+    dim_ = dim;
+}

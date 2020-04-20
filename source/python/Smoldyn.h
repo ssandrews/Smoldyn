@@ -62,9 +62,13 @@ public:
 
     SmoldynDefine& getDefine();
 
+    size_t getDim() const;
+    void setDim(size_t dim);
+
 private:
     /* data */
     SmoldynDefine define_;
+    size_t dim_;
 };
 
 #endif /* end of include guard: SMOLDYN_H */

@@ -93,6 +93,7 @@ PYBIND11_MODULE(_smoldyn, m)
     py::class_<Smoldyn>(m, "Model")
         .def(py::init<>())
         .def_property_readonly("define", &Smoldyn::getDefine, py::return_value_policy::reference)
+        .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
         ;
 
     /* Function */
