@@ -37,7 +37,7 @@ double SmoldynSpecies::getDisplaySize() const
     return displaySize_;
 } 
 
-void SmoldynSpecies::setDisplaySize(double value)
+void SmoldynSpecies::setDisplaySize(const double value) 
 {
     displaySize_ = value;
     return;
@@ -48,9 +48,8 @@ string SmoldynSpecies::getColor() const
     return color_;
 }
 
-void SmoldynSpecies::setColor(string value)
+void SmoldynSpecies::setColor(const string& value)
 {
-    color = value;
+    color_ = value;
     return;
 } 
-
