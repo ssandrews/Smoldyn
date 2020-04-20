@@ -13,3 +13,5 @@ def load_model(path, arg=''):
 
     """
     return _smoldyn.load_model(path, arg)
+
+from smoldyn._smoldyn import *

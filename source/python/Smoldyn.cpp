@@ -1,13 +1,6 @@
-// =====================================================================================
-//
-//
 //    Description: 
-//
-//
 //         Author:  Dilawar Singh (), dilawar.s.rajput@gmail.com
 //   Organization:  NCBS Bangalore
-//
-// =====================================================================================
 
 #include "Smoldyn.h"
 
@@ -17,12 +10,9 @@ Smoldyn::Smoldyn()
 Smoldyn::~Smoldyn()
 {}
 
-void Smoldyn::setAttr(const string& name, const py::object& val)
+SmoldynDefine& Smoldyn::getDefine()
 {
-    attr_[name] = val;
+    return define_;
 }
 
-py::object Smoldyn::getAttr(const string& name) const
-{
-    return attr_.at(name);
-}
+
