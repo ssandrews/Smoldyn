@@ -142,6 +142,8 @@ include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume 
 
 ####### Build for debugging or release ##########
 
+add_definitions(-std=c++14)
+
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	set(COMPILER_IS_CLANGXX TRUE)
 endif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
