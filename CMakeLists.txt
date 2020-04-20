@@ -9,8 +9,6 @@
 project(smoldyn)
 cmake_minimum_required(VERSION 2.8)
 
-cmake_policy(SET CMP0079 NEW)
-
 set(SMOLDYN_VERSION "2.61")
 
 
