@@ -1,6 +1,6 @@
 # python bindings
 
-pybind11_add_module(_smoldyn smoldyn.cpp)
+pybind11_add_module(_smoldyn Smoldyn.cpp module.cpp)
 
 target_compile_options(_smoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
 

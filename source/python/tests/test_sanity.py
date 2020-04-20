@@ -6,6 +6,8 @@ print("Using smoldyn: %s, %s" % (smoldyn.__file__, smoldyn.__version__))
 def test_module():
     print(smoldyn.__version__)
     print(dir(smoldyn))
+    model = smoldyn.Model()
+    print(model)
 
 if __name__ == "__main__":
     test_module()

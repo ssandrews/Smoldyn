@@ -11,6 +11,8 @@ using namespace std;
 
 #include "../Smoldyn/smoldynfuncs.h"
 
+#include "Smoldyn.h"
+
 namespace py = pybind11;
 
 /* --------------------------------------------------------------------------*/
@@ -68,19 +70,21 @@ int init_and_run(const string& filepath, const string& flags)
     return er;
 }
 
-
 PYBIND11_MODULE(_smoldyn, m) {
     m.doc() = R"pbdoc(
         smoldyn
         -----------------------
     )pbdoc";
 
-    /* simulation pointer */
-    unique_ptr<simstruct> simptr{new simstruct()};
+    /* Main and only class */
+    py::class_<Smoldyn>(m, "Model")
+        .def(py::init<>())
+        .def("__getattr__", &Smoldyn::getAttr)
+        .def("__setattr__", &Smoldyn::setAttr)
+        ;
 
     /* Function */
     m.def("load_model", &init_and_run, "Load model from a txt file");
-
     m.attr("__version__") = SMOLDYN_VERSION;
 
 }
