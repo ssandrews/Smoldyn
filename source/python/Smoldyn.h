@@ -16,7 +16,7 @@
 #include <map>
 
 
-#include "../source/pybind11/include/pybind11/pybind11.h"
+#include "pybind11/pybind11.h"
 namespace py = pybind11;
 
 using namespace std;
