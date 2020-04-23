@@ -53,3 +53,8 @@ void SmoldynSpecies::setColor(const string& value)
     color_ = value;
     return;
 } 
+
+string SmoldynSpecies::getName() const
+{
+    return name_;
+}

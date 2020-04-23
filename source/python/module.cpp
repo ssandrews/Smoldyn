@@ -91,8 +91,11 @@ PYBIND11_MODULE(_smoldyn, m)
         ;
 
     /* Species */
-    py::class_<SmoldynSpecies>(m, "__Species__")
+    py::class_<SmoldynSpecies>(m, "Species")
         .def(py::init<const string&>())
+        .def("__repr__",[](const SmoldynSpecies& sp) {
+                return "<smoldyn.Species: name=" + sp.getName() + ">";
+                })
         .def_property("difc", &SmoldynSpecies::getDiffConst, &SmoldynSpecies::setDiffConst)
         .def_property("color", &SmoldynSpecies::getColor, &SmoldynSpecies::setColor)
         .def_property("display_size", &SmoldynSpecies::getDisplaySize, &SmoldynSpecies::setDisplaySize)
