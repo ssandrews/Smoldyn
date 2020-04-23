@@ -34,7 +34,7 @@ using namespace std;
 /* ----------------------------------------------------------------------------*/
 int init_and_run(const string& filepath, const string& flags)
 {
-    int er = 0, wflag;
+    int er = 0, wflag = 0;
 
     string filename, fileroot;
     auto pos = filepath.find_last_of('/');
