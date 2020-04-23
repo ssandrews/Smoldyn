@@ -17,6 +17,7 @@ using namespace std;
 #include "../Smoldyn/smoldynfuncs.h"
 
 #include "Smoldyn.h"
+#include "SmoldynSpecies.h"
 
 
 /* --------------------------------------------------------------------------*/
@@ -89,7 +90,15 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("__repr__", &SmoldynDefine::__repr__)
         ;
 
-    /* Main and only class */
+    /* Species */
+    py::class_<SmoldynSpecies>(m, "__Species__")
+        .def(py::init<const string&>())
+        .def_property("difc", &SmoldynSpecies::getDiffConst, &SmoldynSpecies::setDiffConst)
+        .def_property("color", &SmoldynSpecies::getColor, &SmoldynSpecies::setColor)
+        .def_property("display_size", &SmoldynSpecies::getDisplaySize, &SmoldynSpecies::setDisplaySize)
+        ;
+
+    /* Model */
     py::class_<Smoldyn>(m, "Model")
         .def(py::init<>())
         .def_property_readonly("define", &Smoldyn::getDefine, py::return_value_policy::reference)
