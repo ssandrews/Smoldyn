@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 #include <map>
+
 using namespace std;
 
 #include "pybind11/pybind11.h"
@@ -18,6 +19,9 @@ using namespace std;
 
 #include "Smoldyn.h"
 #include "SmoldynSpecies.h"
+
+using namespace pybind11::literals;   // for _a 
+
 
 
 /* --------------------------------------------------------------------------*/
@@ -101,14 +105,37 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_property("display_size", &SmoldynSpecies::getDisplaySize, &SmoldynSpecies::setDisplaySize)
         ;
 
+    py::enum_<MolecState>(m, "mState")
+        .value("MSsoln", MolecState::MSsoln)
+        .value("MSfront", MolecState::MSfront)
+        .value("MSback", MolecState::MSback)
+        .value("MSup", MolecState::MSup)
+        .value("MSdown", MolecState::MSdown)
+        .value("MSbsoln", MolecState::MSbsoln)
+        .value("MSall", MolecState::MSall)
+        .value("MSnone", MolecState::MSnone)
+        .value("MSsome", MolecState::MSsome)
+        ;
+
     /* Model */
     py::class_<Smoldyn>(m, "Model")
         .def(py::init<>())
         .def_property_readonly("define", &Smoldyn::getDefine, py::return_value_policy::reference)
         .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
+        .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
+        .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
+        .def("run", &Smoldyn::run, "stoptime"_a, "starttime"_a=0.0, "dt"_a=1e-5)
+        .def("setPartitions", &Smoldyn::setPartitions)
+        .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a="")
+        .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility
+                , "species"_a, "state"_a, "diffConst"_a, "drift"_a=0
+                , "difmatrix"_a=0)
         ;
 
     /* Function */
     m.def("load_model", &init_and_run, "Load model from a txt file");
+
+
+    /* attributes */
     m.attr("__version__") = SMOLDYN_VERSION;
 }
