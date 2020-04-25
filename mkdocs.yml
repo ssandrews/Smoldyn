@@ -6,7 +6,7 @@ nav:
     - Python Bindings: PythonBindings.md
 
 theme: 
-    name: material
+    name: readthedocs
     highlightjs: true
     features:
         - tabs
