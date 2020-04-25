@@ -1,4 +1,4 @@
-__These are unofficial documentation.__
+__These are unofficial documentations.__ You can find the official
+documentation at this site [https://smoldyn.org](https://smoldyn.org). 
 
-You can find the official documentation at this site
-[https://smoldyn.org](https://smoldyn.org)
+[TOC]
