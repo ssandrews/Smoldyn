@@ -35,12 +35,16 @@ add_custom_target(pyuninstall
     COMMENT "Uninstall develop"
     VERBATIM)
 
+add_custom_target(pytest
+    COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
+    COMMENT "Running pytest."
+    VERBATIM)
+
 
 enable_testing()
 
 ###  python tests ###
 file(GLOB TEST_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.py")
-message(STATUS "${TEST_SCRIPTS} xxx")
 foreach(_pyscript ${TEST_SCRIPTS})
     message(STATUS "Adding test ${_pyscript}") 
     get_filename_component(_test_name ${_pyscript} NAME_WE)
