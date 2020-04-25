@@ -788,29 +788,25 @@ constant is defined in `string2.h` to 256 characters.
 
 ## Molecules
 
-  - `enum ErrorCode`  
-    `smolAddSpecies(simptr sim,char *species,char *mollist);`  
+  - `enum ErrorCode smolAddSpecies(simptr sim,char *species,char *mollist);`  
     Adds a molecular species named `species` to the system. If you have
     already created species lists and want all states of this species to
     live in a specific list, then enter it in `mollist`; otherwise,
     enter `mollist` as `NULL` or an empty string to request default
     behavior.
 
-  - `int`  
-    `smolGetSpeciesIndex(simptr sim,char *species);`  
+  - `int smolGetSpeciesIndex(simptr sim,char *species);`  
     Returns the species index that corresponds to the species named
     `species`. Upon failure, this function returns an error code cast as
     an integer.
 
-  - `char*`  
-    `smolGetSpeciesName(simptr sim,int speciesindex,char *species);`  
+  - `char* smolGetSpeciesName(simptr sim,int speciesindex,char *species);`  
     Returns the species name that corresponds to the species index in
     `speciesindex`. The name is returned both in `species` and directly,
     where the latter simplifies function use. Upon failure, this
     function returns `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetSpeciesMobility(simptr sim,char *species,enum MolecState
+  - `enum ErrorCode smolSetSpeciesMobility(simptr sim,char *species,enum MolecState
     state,double difc,double *drift,double *difmatrix);`  
     Sets any or all of the mobility coefficients for species `species`
     (which may be “all") and state `state` (which may be `MSall`).
@@ -820,36 +816,29 @@ constant is defined in `string2.h` to 256 characters.
     negative number in `difc` and/or enter a `NULL` pointer in the other
     inputs, respectively.
 
-  - `int`  
-    `smolAddMolList(simptr sim,char *mollist);`  
+  - `int smolAddMolList(simptr sim,char *mollist);`  
     Adds a new molecule list, named `mollist`, to the system.
 
-  - `int`  
-    `smolGetMolListIndex(simptr sim,char *mollist);`  
+  - `int smolGetMolListIndex(simptr sim,char *mollist);`  
     Returns the list index that corresponds to the list named `mollist`.
 
-  - `char*`  
-    `smolGetMolListName(simptr sim,int mollistindex,char *mollist);`  
+  - `char* smolGetMolListName(simptr sim,int mollistindex,char *mollist);`  
     Returns the molecule list name that corresponds to the molecule list
     with index `mollistindex`. The name is returned both in `mollist`
     and directly. On error, this function `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetMolList(simptr sim,char *species,enum MolecState state,char
+  - `enum ErrorCode smolSetMolList(simptr sim,char *species,enum MolecState state,char
     *mollist);`  
     Sets the molecule list for species `species` (which may be “all")
     and state `state` (which may be `MSall`) to molecule list `mollist`.
 
-  - `enum ErrorCode`  
-    `  smolSetMaxMolecules(simptr sim,int maxmolecules); `  
+  - `enum ErrorCode smolSetMaxMolecules(simptr sim,int maxmolecules); `  
     Sets the maximum number of molecules that can simultaneously exist
     in a system to `maxmolecules`. At present, this function needs to be
     called for a simulation to run, although it will become optional
     once dynamic molecule memory allocation has been written.
 
-  - `enum ErrorCode`  
-    `smolAddSolutionMolecules(simptr sim,char *species,int number,double
-    *lowposition,double *highposition);`  
+  - `enum ErrorCode  smolAddSolutionMolecules(simptr sim,char *species,int number,double *lowposition,double *highposition);`  
     Adds `number` solution state molecules of species `species` to the
     system. They are randomly distributed within the box that has its
     opposite corners defined by `lowposition` and `highposition`. Any or
@@ -858,17 +847,12 @@ constant is defined in `string2.h` to 256 characters.
     `highposition` as `NULL` to indicate that the respective corner is
     equal to that corner of the entire system volume.
 
-  - `enum ErrorCode`  
-    `smolAddCompartmentMolecules(simptr sim,char *species,int
-    number,char *compartment);`  
+  - `enum ErrorCode smolAddCompartmentMolecules(simptr sim,char *species,int number,char *compartment);`  
     Adds `number` solution state molecules of species `species` to the
     compartment `compartment`. Molecules are randomly distributed within
     the compartment.
 
-  - `enum ErrorCode`  
-    `smolAddSurfaceMolecules(simptr sim,int speciesindex,enum MolecState
-    state,int number,int surface,enum PanelShape panelshape,int
-    panel,double *position);`  
+  - `enum ErrorCode smolAddSurfaceMolecules(simptr sim,int speciesindex,enum MolecState state,int number,int surface,enum PanelShape panelshape,int panel,double *position);`  
     Adds `number` molecules of species `species` and state `state` to
     surface(s) in the system. It is permissible for `surface` to be
     “all", `panelshape` to be PSall, and/or `panel` to be “all". If
@@ -876,17 +860,13 @@ constant is defined in `string2.h` to 256 characters.
     specific surface, panel shape, and panel, and then enter the
     position in `position`.
 
-  - `int`  
-    `smolGetMoleculeCount(simptr sim,char *species,enum MolecState
-    state);`  
+  - `int smolGetMoleculeCount(simptr sim,char *species,enum MolecState state);`  
     Returns the total number of molecules in the system that have
     species `species` (“all" is permitted) and state `state` (`MSall` is
     permitted). Any error is returned as the error code cast as an
     integer.
 
-  - `enum ErrorCode`  
-    `smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState
-    state,double size,double *color);`  
+  - `enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color);`  
     Sets the graphical display parameters for molecules of species
     `species` (“all" is permitted) and state `state` (`MSall` is
     permitted). Enter `size` with the drawing size (in pixels if
@@ -897,9 +877,7 @@ constant is defined in `string2.h` to 256 characters.
 
 ## Surfaces
 
-  - `enum ErrorCode`  
-    `smolSetBoundaryType(simptr sim,int dimension,int highside,char
-    type);`  
+  - `enum ErrorCode smolSetBoundaryType(simptr sim,int dimension,int highside,char type);`  
     Sets the molecule interaction properties for a system boundary that
     bounds the `dimension` axis. Enter `dimension` as -1 to indicate all
     dimensions. Set `highside` to 0 for the lower boundary, to 1 for the
@@ -909,34 +887,26 @@ constant is defined in `string2.h` to 256 characters.
     these properties if no surfaces are declared; otherwise all
     boundaries are transmitting regardless of what’s entered here.
 
-  - `int`  
-    `smolAddSurface(simptr sim,char *surface);`  
+  - `int smolAddSurface(simptr sim,char *surface);`  
     Adds a surface called `surface` to the system.
 
-  - `int`  
-    `smolGetSurfaceIndex(simptr sim,char *surface);`  
+  - `int smolGetSurfaceIndex(simptr sim,char *surface);`  
     Returns the surface index that corresponds to the surface named
     `surface`. The index is non-negative. On failure, this returns an
     error code cast as an integer.
 
-  - `char*`  
-    `smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);`  
+  - `char*  smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);`  
     Returns the surface name for surface number `surfaceindex` both
     directly and in the `surface` string. On failure, this returns
     `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetSurfaceAction(simptr sim,char *surface,enum PanelFace
-    face,char *species,enum MolecState state,enum SrfAction action);`  
+  - `enum ErrorCode smolSetSurfaceAction(simptr sim,char *surface,enum PanelFace face,char *species,enum MolecState state,enum SrfAction action);`  
     Sets the action that should happen when a molecule of species
     `species` (may be “all") and state `state` (may be `MSall`) diffuses
     into face `face` (may be `PFboth`) of surface `surface`. The action
     is set to `action`.
 
-  - `enum ErrorCode`  
-    `smolSetSurfaceRate(simptr sim,char *surface,char *species,enum
-    MolecState state,enum MolecState state1,enum MolecState
-    state2,double rate,char *newspecies,int isinternal);`  
+  - `enum ErrorCode smolSetSurfaceRate(simptr sim,char *surface,char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,char *newspecies,int isinternal);`  
     Sets the surface interaction rate(s) for surface `surface` (may be
     “all") and species `species` (may be “all") and state `state`. The
     transition being considered is from `state1` to `state2` (this
