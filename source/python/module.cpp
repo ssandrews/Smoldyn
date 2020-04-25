@@ -20,9 +20,7 @@ using namespace std;
 #include "Smoldyn.h"
 #include "SmoldynSpecies.h"
 
-using namespace pybind11::literals;   // for _a 
-
-
+using namespace pybind11::literals;  // for _a
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -91,50 +89,93 @@ PYBIND11_MODULE(_smoldyn, m)
         .def(py::init<>())
         .def("__setitem__", &SmoldynDefine::setDefine)
         .def("__getitem__", &SmoldynDefine::getDefine)
-        .def("__repr__", &SmoldynDefine::__repr__)
-        ;
+        .def("__repr__", &SmoldynDefine::__repr__);
 
     /* Species */
     py::class_<SmoldynSpecies>(m, "Species")
         .def(py::init<const string&>())
-        .def("__repr__",[](const SmoldynSpecies& sp) {
-                return "<smoldyn.Species: name=" + sp.getName() + ">";
-                })
-        .def_property("difc", &SmoldynSpecies::getDiffConst, &SmoldynSpecies::setDiffConst)
-        .def_property("color", &SmoldynSpecies::getColor, &SmoldynSpecies::setColor)
-        .def_property("display_size", &SmoldynSpecies::getDisplaySize, &SmoldynSpecies::setDisplaySize)
+        .def("__repr__",
+             [](const SmoldynSpecies& sp) {
+                 return "<smoldyn.Species: name=" + sp.getName() + ">";
+             })
+        .def_property("difc", &SmoldynSpecies::getDiffConst,
+                      &SmoldynSpecies::setDiffConst)
+        .def_property("color", &SmoldynSpecies::getColor,
+                      &SmoldynSpecies::setColor)
+        .def_property("display_size", &SmoldynSpecies::getDisplaySize,
+                      &SmoldynSpecies::setDisplaySize);
+
+    py::enum_<SrfAction>(m, "SA")
+        .value("reflect", SrfAction::SAreflect)
+        .value("trans", SrfAction::SAtrans)
+        .value("absorb", SrfAction::SAabsorb)
+        .value("jump", SrfAction::SAjump)
+        .value("port", SrfAction::SAport)
+        .value("mult", SrfAction::SAmult)
+        .value("no", SrfAction::SAno)
+        .value("none", SrfAction::SAnone)
+        .value("adsorb", SrfAction::SAadsorb)
+        .value("revdes", SrfAction::SArevdes)
+        .value("irrevdes", SrfAction::SAirrevdes)
+        .value("flip", SrfAction::SAflip);
+
+    py::enum_<MolecState>(m, "MS")
+        .value("soln", MolecState::MSsoln)
+        .value("front", MolecState::MSfront)
+        .value("back", MolecState::MSback)
+        .value("up", MolecState::MSup)
+        .value("down", MolecState::MSdown)
+        .value("bsoln", MolecState::MSbsoln)
+        .value("all", MolecState::MSall)
+        .value("none", MolecState::MSnone)
+        .value("some", MolecState::MSsome);
+
+    py::enum_<PanelFace>(m, "PF")
+        .value("front", PanelFace::PFfront)
+        .value("back", PanelFace::PFback)
+        .value("none", PanelFace::PFnone)
+        .value("both", PanelFace::PFboth)
         ;
 
-    py::enum_<MolecState>(m, "mState")
-        .value("MSsoln", MolecState::MSsoln)
-        .value("MSfront", MolecState::MSfront)
-        .value("MSback", MolecState::MSback)
-        .value("MSup", MolecState::MSup)
-        .value("MSdown", MolecState::MSdown)
-        .value("MSbsoln", MolecState::MSbsoln)
-        .value("MSall", MolecState::MSall)
-        .value("MSnone", MolecState::MSnone)
-        .value("MSsome", MolecState::MSsome)
+    py::enum_<PanelShape>(m, "PS")
+        .value("rect", PanelShape::PSrect)
+        .value("tri",  PanelShape::PStri)
+        .value("sph",  PanelShape::PSsph)
+        .value("cyl",  PanelShape::PScyl)
+        .value("hemi", PanelShape::PShemi)
+        .value("disk", PanelShape::PSdisk) 
+        .value("all",  PanelShape::PSall)
+        .value("none", PanelShape::PSnone)
         ;
 
     /* Model */
     py::class_<Smoldyn>(m, "Model")
         .def(py::init<>())
-        .def_property_readonly("define", &Smoldyn::getDefine, py::return_value_policy::reference)
+        .def_property_readonly("define", &Smoldyn::getDefine,
+                               py::return_value_policy::reference)
         .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
         .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
-        .def("run", &Smoldyn::run, "stoptime"_a, "starttime"_a=0.0, "dt"_a=1e-5)
+        .def("run", &Smoldyn::run, "stoptime"_a, "starttime"_a = 0.0,
+             "dt"_a = 1e-5)
         .def("setPartitions", &Smoldyn::setPartitions)
-        .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a="")
-        .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility
-                , "species"_a, "state"_a, "diffConst"_a, "drift"_a=0
-                , "difmatrix"_a=0)
+        .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
+        .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,
+             "state"_a, "diffConst"_a, "drift"_a = 0, "difmatrix"_a = 0)
+        .def("addSurface", &Smoldyn::addSurface, "name"_a)
+        .def("setSurfaceAction", &Smoldyn::setSurfaceAction)
+        .def("addSurfaceMolecules", &Smoldyn::addSurfaceMolecules)
+        .def("addPanel", &Smoldyn::addPanel)
+        .def("addCompartment", &Smoldyn::addCompartment)
+        .def("addCompartmentSurface", &Smoldyn::addCompartmentSurface)
+        .def("addCompartmentPoint", &Smoldyn::addCompartmentPoint)
+        .def("addComparmentMolecules", &Smoldyn::addCompartmentMolecules)
+        .def("addReaction", &Smoldyn::addReaction)
+        .def("setReactionRegion", &Smoldyn::setReactionRegion)
         ;
 
     /* Function */
     m.def("load_model", &init_and_run, "Load model from a txt file");
-
 
     /* attributes */
     m.attr("__version__") = SMOLDYN_VERSION;

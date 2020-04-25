@@ -132,7 +132,7 @@ vector<pair<double, double>> Smoldyn::getBounds() const
     return bounds;
 }
 
-void Smoldyn::setPartitions(const string& name, double val) 
+void Smoldyn::setPartitions(const string& name, double val)
 {
     initialize();
     smolSetPartitions(pSim_, name.c_str(), val);
@@ -143,8 +143,78 @@ void Smoldyn::addSpecies(const string& name, const string& param)
     smolAddSpecies(pSim_, name.c_str(), param.c_str());
 }
 
-void Smoldyn::setSpeciesMobility(const string& name, MolecState state, 
-        double difc, double* drift=nullptr, double *difmatrix=nullptr)
+void Smoldyn::setSpeciesMobility(const string& name, MolecState state,
+                                 double difc, double* drift = nullptr,
+                                 double* difmatrix = nullptr)
 {
     smolSetSpeciesMobility(pSim_, name.c_str(), state, difc, drift, difmatrix);
+}
+
+void Smoldyn::addSurface(const string& name)
+{
+    smolAddSurface(pSim_, name.c_str());
+}
+
+void Smoldyn::setSurfaceAction(const string& name, enum PanelFace face,
+                               const string& species, enum MolecState state,
+                               enum SrfAction action)
+{
+    smolSetSurfaceAction(pSim_, name.c_str(), face, species.c_str(), state,
+                         action);
+}
+
+void Smoldyn::addPanel(const string& surface, enum PanelShape panelShape,
+                       const string& panel, const string& axisstring,
+                       vector<double>& params)
+{
+    smolAddPanel(pSim_, surface.c_str(), panelShape, panel.c_str(),
+                 axisstring.c_str(), &params[0]);
+}
+
+void Smoldyn::addCompartment(const string& compartment)
+{
+    smolAddCompartment(pSim_, compartment.c_str());
+}
+
+void Smoldyn::addCompartmentSurface(const string& compt, const string& surface)
+{
+    smolAddCompartmentSurface(pSim_, compt.c_str(), surface.c_str());
+}
+
+void Smoldyn::addCompartmentPoint(const string& compt, vector<double> point)
+{
+    smolAddCompartmentPoint(pSim_, compt.c_str(), &point[0]);
+}
+
+void Smoldyn::addCompartmentMolecules(const string& species, size_t number,
+                                      const string& compt)
+{
+    smolAddCompartmentMolecules(pSim_, species.c_str(), number, compt.c_str());
+}
+
+void Smoldyn::addSurfaceMolecules(const string& species, enum MolecState state,
+                                  size_t number, const string& surface,
+                                  enum PanelShape panelShape,
+                                  const string& panel, vector<double>& position)
+{
+    smolAddSurfaceMolecules(pSim_, species.c_str(), state, number,
+                            surface.c_str(), panelShape, panel.c_str(),
+                            &position[0]);
+}
+
+void Smoldyn::addReaction(const string& reaction, const string& reactant1,
+                          enum MolecState rstate1, const string& reactant2,
+                          enum MolecState rstate2, size_t nproduct,
+                          vector<const char*>& productSpecies,
+                          vector<enum MolecState> productStates, double rate)
+{
+    smolAddReaction(pSim_, reaction.c_str(), reactant1.c_str(), rstate1,
+                    reactant2.c_str(), rstate2, nproduct, &productSpecies[0],
+                    &productStates[0], rate);
+}
+
+void Smoldyn::setReactionRegion(const string& reac, const string& compt,
+                                const string& surface)
+{
+    smolSetReactionRegion(pSim_, reac.c_str(), compt.c_str(), surface.c_str());
 }
