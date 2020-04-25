@@ -40,7 +40,7 @@ public:
 
     bool initialize();
 
-    bool run(double simtime, double starttime, double dt);
+    bool run(double simtime, double starttime, double dt, bool display);
 
     // Bounds.
     void setLowerBounds(const vector<double> bounds);

@@ -48,7 +48,7 @@ def test_library():
 
     s.setReactionRegion("r100", "Cell00", "");
 
-    s.run(10)
+    s.run(10, display=True)
 
 
 def main():

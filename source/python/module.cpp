@@ -154,7 +154,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
         .def("run", &Smoldyn::run, "stoptime"_a, "starttime"_a = 0.0,
-             "dt"_a = 1e-5)
+             "dt"_a = 1e-5, "display"_a=true)
         .def("setPartitions", &Smoldyn::setPartitions)
         .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
         .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,

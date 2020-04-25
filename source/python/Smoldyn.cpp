@@ -79,16 +79,18 @@ bool Smoldyn::initialize()
     return pSim_ ? true : false;
 }
 
-bool Smoldyn::run(double stoptime, double starttime, double dt)
+bool Smoldyn::run(double stoptime, double starttime, double dt,
+                       bool display = true)
 {
     if(!pSim_)
         if(!initialize())
             return false;
-    cout << "Running sim for " << starttime << "--> " << stoptime << " s "
-         << " dt=" << dt << "." << endl;
-    smolSetSimTimes(pSim_, starttime, stoptime, dt);
 
-    return true;
+    smolSetSimTimes(pSim_, starttime, stoptime, dt);
+    if(display)
+        smolDisplaySim(pSim_);
+    auto r = smolRunSim(pSim_);
+    return r == ErrorCode::ECok;
 }
 
 void Smoldyn::setLowerBounds(const vector<double> bounds)
