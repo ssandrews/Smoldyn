@@ -92,6 +92,11 @@ public:
     void setReactionRegion(const string& reac, const string& compt,
                            const string& surface);
 
+    inline simptr simPtr() const
+    {
+        return pSim_;
+    }
+
 private:
     /* data */
     SmoldynDefine define_;

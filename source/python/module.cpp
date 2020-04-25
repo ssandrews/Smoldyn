@@ -133,19 +133,17 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("front", PanelFace::PFfront)
         .value("back", PanelFace::PFback)
         .value("none", PanelFace::PFnone)
-        .value("both", PanelFace::PFboth)
-        ;
+        .value("both", PanelFace::PFboth);
 
     py::enum_<PanelShape>(m, "PS")
         .value("rect", PanelShape::PSrect)
-        .value("tri",  PanelShape::PStri)
-        .value("sph",  PanelShape::PSsph)
-        .value("cyl",  PanelShape::PScyl)
+        .value("tri", PanelShape::PStri)
+        .value("sph", PanelShape::PSsph)
+        .value("cyl", PanelShape::PScyl)
         .value("hemi", PanelShape::PShemi)
-        .value("disk", PanelShape::PSdisk) 
-        .value("all",  PanelShape::PSall)
-        .value("none", PanelShape::PSnone)
-        ;
+        .value("disk", PanelShape::PSdisk)
+        .value("all", PanelShape::PSall)
+        .value("none", PanelShape::PSnone);
 
     /* Model */
     py::class_<Smoldyn>(m, "Model")
@@ -171,7 +169,13 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("addComparmentMolecules", &Smoldyn::addCompartmentMolecules)
         .def("addReaction", &Smoldyn::addReaction)
         .def("setReactionRegion", &Smoldyn::setReactionRegion)
-        ;
+        .def("runSim", [](const Smoldyn& s) { return smolRunSim(s.simPtr()); })
+        .def("runSimUntil",
+             [](const Smoldyn& s, double breaktime) {
+                 return smolRunSimUntil(s.simPtr(), breaktime);
+             })
+        .def("displaySim",
+             [](const Smoldyn& s) { return smolDisplaySim(s.simPtr()); });
 
     /* Function */
     m.def("load_model", &init_and_run, "Load model from a txt file");
