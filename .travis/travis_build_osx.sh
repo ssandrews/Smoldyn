@@ -28,7 +28,8 @@ set -e
 
     mkdir -p _BUILD && cd _BUILD \
         && cmake ..
-    make && make pyinstall && ctest --output-on-failure
+    make && make pyinstall 
+    python3 -m pytest ..
 )
 set +e
 

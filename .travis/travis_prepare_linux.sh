@@ -24,3 +24,4 @@ apt-get install -qq make cmake
 apt-get install -qq libtiff-dev libzip-dev freeglut3-dev python3-dev 
 apt-get install -qq python3-numpy
 apt-get install -qq python3-setuptools
+apt-get install -qq python3-pytest

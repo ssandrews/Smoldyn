@@ -30,3 +30,4 @@ brew install python@3 || echo "Allready installed"
 PATH=/usr/local/bin:/usr/bin:$PATH
 
 python3 -m pip install setuptools --user
+python3 -m pip install pytest --user
