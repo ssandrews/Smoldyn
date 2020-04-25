@@ -17,9 +17,11 @@ def test_model():
     assert defines['K_PROD'] == 1
     defines['TEXTOUTPUT'] = True
     assert defines['TEXTOUTPUT'] == True
-    print(defines)
     print(model.define)
-    print(model)
+
+    # species
+    a = smoldyn.Species('a')
+    print(a)
 
 if __name__ == "__main__":
     test_module()

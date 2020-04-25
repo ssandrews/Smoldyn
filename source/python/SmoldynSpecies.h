@@ -26,6 +26,8 @@ public:
     void setDisplaySize(const double ds);
     double getDisplaySize() const;
 
+    string getName() const;
+
 private:
     /* data */
     string name_;

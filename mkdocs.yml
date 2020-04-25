@@ -1,0 +1,25 @@
+site_name: Smoldyn
+nav:
+    - Smoldyn User manual: SmoldynUsersManual.md
+    - SmolEmulate : SmolEmulateDoc.md 
+    - libsmoldyn Manual: LibsmoldynManual.md 
+    - Python Bindings: PythonBindings.md
+
+theme: 
+    name: material
+    highlightjs: true
+    features:
+        - tabs
+
+repo_url: https://github.com/dilawar/Smoldyn-official
+
+markdown_extensions:
+    - smarty
+    - sane_lists
+    - codehilite
+    - admonition
+    - toc:
+        permalink: true
+
+plugins:
+    - search

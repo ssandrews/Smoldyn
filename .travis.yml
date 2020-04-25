@@ -1,7 +1,5 @@
 language: cpp
 sudo: required
-group: travis_lts
-dist: xenial
 
 os:
     - linux
