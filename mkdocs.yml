@@ -1,0 +1,22 @@
+site_name: Smoldyn
+nav:
+    - Smoldyn User manual: SmoldynUsersManual.md
+    - SmolEmulate : SmolEmulateDoc.md 
+    - libsmoldyn Manual: LibsmoldynManual.md 
+
+theme: 
+    name: readthedocs
+    highlightjs: true
+    hljs_languages:
+        - yaml
+
+markdown_extensions:
+    - smarty
+    - sane_lists
+    - admonition
+    - toc:
+        permalink: "#"
+        baselevel: 2
+
+plugins:
+    - search
