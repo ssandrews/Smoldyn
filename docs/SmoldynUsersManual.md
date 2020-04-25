@@ -4,6 +4,10 @@ subtitle: Smoldyn version 2.61, © July 2019
 author: Steve Andrews
 ---
 
+__This html is generated from `documentation/Smoldyn/SmoldynUsersManual.docx`
+using pandoc. The conversion may not be correct. Please refer to official
+documentation at <https://smoldyn.org>.__
+
 # Using Smoldyn
 
 ## Introduction

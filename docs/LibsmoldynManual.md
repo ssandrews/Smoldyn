@@ -1,25 +1,31 @@
+---
+author: Steve Andrews
+---
+
 # About Libsmoldyn
 
-Libsmoldyn is a C and C++ interface to the Smoldyn simulator. Libsmoldyn
-is complementary to the stand-alone Smoldyn program in that it is a
-little more difficult to use, but it provides much more flexibility. In
-addition, Libsmoldyn provides: (*i*) an application programming
-interface that will be relatively stable, even as Smoldyn is updated and
-improved, (*ii*) function names that are relatively sensible and that
-shouldn’t collide with other function names in other software, and
-(*iii*) reasonably thorough error checking in every function which helps
-ensure that the user is using the function in a sensible way and in a
-way that won’t crash Smoldyn.
+Libsmoldyn is a C and C++ interface to the Smoldyn simulator. Libsmoldyn is
+complementary to the stand-alone Smoldyn program in that it is a little more
+difficult to use, but it provides much more flexibility. In addition,
+Libsmoldyn provides: 
 
-I initially planned to use SWIG to provide Libsmoldyn access from
-several languages but have not pursued this recently. Carlos Lopez’s
-group was adding Libsmoldyn to PySB for a while, to give it Python
-accessibility, although that project is not ongoing currently.
+1. an application programming interface that will be relatively stable, even as
+   Smoldyn is updated and improved, 
+2. function names that are relatively sensible and that shouldn’t collide with
+   other function names in other software, and 
+3. reasonably thorough error checking in every function which helps ensure that
+   the user is using the function in a sensible way and in a way that won’t
+   crash Smoldyn.
 
-Libsmoldyn only barely supports graphics at present due to constraints
-imposed by the glut code library. This will be improved in a future
-version (by changing to the freeglut library, which doesn’t insist on
-controlling the main event loop, as the glut library does).
+I initially planned to use SWIG to provide Libsmoldyn access from several
+languages but have not pursued this recently. Carlos Lopez’s group was adding
+Libsmoldyn to PySB for a while, to give it Python accessibility, although that
+project is not ongoing currently.
+
+Libsmoldyn only barely supports graphics at present due to constraints imposed
+by the glut code library. This will be improved in a future version (by
+changing to the freeglut library, which doesn’t insist on controlling the main
+event loop, as the glut library does).
 
 # Compiling and linking
 
@@ -28,31 +34,34 @@ controlling the main event loop, as the glut library does).
 ### Header files
 
 To enable a C or C++ program to call Libsmoldyn, it has to include the
-Libsmoldyn header file. Libsmoldyn comes with one header file,
-libsmoldyn.h, which has function declarations for all of the Libsmoldyn
-functions. For most Libsmoldyn applications, this is the only header
-file that you will need to include. For Mac and Linux, it is typically
-installed to /usr/local/include. This is one of the standard system
-paths, so include it with
+Libsmoldyn header file. Libsmoldyn comes with one header file, libsmoldyn.h,
+which has function declarations for all of the Libsmoldyn functions. For most
+Libsmoldyn applications, this is the only header file that you will need to
+include. For Mac and Linux, it is typically installed to /usr/local/include.
+This is one of the standard system paths, so include it with
 
-> `#include <libsmoldyn.h>`
+```
+#include <libsmoldyn.h>
+```
 
-If the libsmoldyn.h header file is in some other directory or if your
-system isn’t seeing its path as a system path, then include the file
-using double quotes rather than angle brackets and/or include more
-information about the path. For example, `#include
-"/user/local/include/libsmoldyn.h"`.
+If the `libsmoldyn.h` header file is in some other directory or if your system
+isn’t seeing its path as a system path, then include the file using double
+quotes rather than angle brackets and/or include more information about the
+path. For example, 
 
-Libsmoldyn.h calls a second header file, smoldyn.h, which is also
-typically installed to /usr/local/include/. If you plan to access the
-Smoldyn data structure directly, then you will also need to include it
-with `#include <smoldyn.h>`. In general, it is safe to read from this
-data structure but it can be dangerous to write to it unless you really
-know what you are doing. Also, working with this data structure directly
-bypasses one of the benefits of using Libsmoldyn, which is that the
-interface should be relatively immune to future Smoldyn developments,
-because different aspects of the internal data structure get changed
-once in a while.
+```
+#include "/user/local/include/libsmoldyn.h"
+```
+
+`libsmoldyn.h` calls a second header file, `smoldyn.h`, which is also typically
+installed to `/usr/local/include/`. If you plan to access the Smoldyn data
+structure directly, then you will also need to include it with `#include
+<smoldyn.h>`. In general, it is safe to read from this data structure but it
+can be dangerous to write to it unless you really know what you are doing.
+Also, working with this data structure directly bypasses one of the benefits of
+using Libsmoldyn, which is that the interface should be relatively immune to
+future Smoldyn developments, because different aspects of the internal data
+structure get changed once in a while.
 
 The smoldyn.h header calls yet another header file, smoldynconfigure.h,
 which is also installed by default in /usr/local/include/. That file is
@@ -65,12 +74,14 @@ for, etc. This might be helpful to include for some applications.
 In the `examples/S97_libsmoldyn/testcode/` directory, you’ll find the
 testcode.c program. To compile this source code to object code, enter:
 
-> `gcc -Wall -O0 -g -c testcode.c`
+```
+$ gcc -Wall -O0 -g -c testcode.c
+```
 
 The compile flags `-O0 -g` aren’t necessary but can be useful for
 debugging purposes. If compiling doesn’t work at this stage, it’s
 probably because you’re missing the header files. Make sure that you
-have libsmoldyn.h, smoldyn.h, and smoldyn\_config.h in the
+have libsmoldyn.h, smoldyn.h, and smoldyn_config.h in the
 `/usr/local/include` directory.
 
 ## Linking
@@ -91,8 +102,8 @@ library code along with your own software. Also, I can only get the gdb
 debugger to help find errors within Libsmoldyn if the library is
 statically linked.
 
-The Libsmoldyn static library is called libsmoldyn\_static.a and the
-Libsmoldyn dynamic library is called libsmoldyn\_shared.so (on Linux;
+The Libsmoldyn static library is called libsmoldyn_static.a and the
+Libsmoldyn dynamic library is called libsmoldyn_shared.so (on Linux;
 the .so suffix is replaced by .dylib on a Mac and by .dll on Windows).
 By default, these libraries are installed to /usr/local/lib/.
 
@@ -112,29 +123,37 @@ for this purpose.
 
 Static link, no OpenGL:
 
-> `gcc testcode.o /usr/local/lib/libsmoldyn_static.a -o testcode`
+```
+$ gcc testcode.o /usr/local/lib/libsmoldyn_static.a -o testcode
+```
 
 Static link, with OpenGL:
 
-> `gcc testcode.o /usr/local/lib/libsmoldyn_static.a
-> -I/System/Library/Frameworks/OpenGL.framework/Headers
-> -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT
-> -framework OpenGL -framework Cocoa
-> -L/System/Library/Frameworks/OpenGL.framework/Libraries -o testcode
-> -ltiff`
+```
+$ gcc testcode.o /usr/local/lib/libsmoldyn_static.a  \
+    -I/System/Library/Frameworks/OpenGL.framework/Headers \
+    -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT \
+    -framework OpenGL -framework Cocoa \
+     -L/System/Library/Frameworks/OpenGL.framework/Libraries -o testcode \
+    -ltiff
+```
 
 Dynamic link, no OpenGL:
 
-> `gcc testcode.o -o testcode -lsmoldyn_shared`
+```
+$ gcc testcode.o -o testcode -lsmoldyn_shared`
+```
 
 Dynamic link, with OpenGL:
 
-> `gcc test1.o -L/usr/local/lib
-> -I/System/Library/Frameworks/OpenGL.framework/Headers
-> -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT
-> -framework OpenGL -framework Cocoa
-> -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1
-> -lsmoldyn_shared -ltiff`
+```
+$ gcc test1.o -L/usr/local/lib \
+     -I/System/Library/Frameworks/OpenGL.framework/Headers \
+     -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT \
+     -framework OpenGL -framework Cocoa \
+     -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 \
+     -lsmoldyn_shared -ltiff
+```
 
 ## Using smaller versions of Libsmoldyn
 
@@ -147,14 +166,14 @@ but can also simplify linking.
 Following is a simple diagram for Smoldyn’s code dependencies. Each file
 depends on the files that are indented below it.
 
-̄̄̄̄̄ Smoldyn  
-OpenGL  
-libTiff  
-zlib  
-libiconv  
-NSV  
-boost  
-VTK  
+- Smoldyn  
+- OpenGL  
+- libTiff  
+- zlib  
+- libiconv  
+- NSV  
+- boost  
+- VTK  
 
 To build with fewer components, you will need to run CMake to compile
 Smoldyn. This is described in more detail in the Smoldyn Code
@@ -205,35 +224,37 @@ build options:
 For example, the following line builds Smoldyn and Libsmoldyn for
 debugging and without the hybrid simulation support:
 
-> `cmake .. -DCMAKE_BUILD_TYPE=Debug -DOPTION_TARGET_LIBSMOLDYN=ON
-> -DOPTION_NSV=OFF`
+```
+$ cmake .. -DCMAKE_BUILD_TYPE=Debug -DOPTION_TARGET_LIBSMOLDYN=ON -DOPTION_NSV=OFF
+```
 
 # Error trapping
 
-Every function in Libsmoldyn checks that its input values are acceptable
-and also that no errors arise in the function execution. These errors
-are returned to the host library in a number of ways. Most Libsmoldyn
-functions (e.g. `smolRunSim`) return any error codes directly, which
-makes it easy to see if an error arose. However, a few functions (e.g.
-`smolNewSim`) return other types of values and so return some other
-indication of success or failure (e.g. `NULL`). In addition, some
-functions can raise warnings, which indicate that behavior is unusual
-but not incorrect.
+Every function in Libsmoldyn checks that its input values are acceptable and
+also that no errors arise in the function execution. These errors are returned
+to the host library in a number of ways. Most Libsmoldyn functions (e.g.
+`smolRunSim`) return any error codes directly, which makes it easy to see if an
+error arose. However, a few functions (e.g.  `smolNewSim`) return other types
+of values and so return some other indication of success or failure (e.g.
+`NULL`). In addition, some functions can raise warnings, which indicate that
+behavior is unusual but not incorrect.
 
-For all of these errors and warnings, get the details of the problem
-using the function `smolGetError`, which will return the error code, the
-name of the function where the error arose, and a descriptive error
-string. This will also clear the error, if desired. If errors are not
-cleared, they are left until they are overwritten by subsequent errors.
-Warnings are also left until they are cleared or overwritten.
+For all of these errors and warnings, get the details of the problem using the
+function `smolGetError`, which will return the error code, the name of the
+function where the error arose, and a descriptive error string. This will also
+clear the error, if desired. If errors are not cleared, they are left until
+they are overwritten by subsequent errors.  Warnings are also left until they
+are cleared or overwritten.
 
-When writing code, it can be helpful to put Libsmoldyn into its
-debugging mode using the `smolSetDebugMode` function. Doing this causes
-any errors that arise to be displayed to stderr.
+When writing code, it can be helpful to put Libsmoldyn into its debugging mode
+using the `smolSetDebugMode` function. Doing this causes any errors that arise
+to be displayed to stderr.
 
 The possible error codes are declared in libsmoldyn.h with:
 
-    enum ErrorCode {ECok=0,ECnotify=-1,ECwarning=-2,ECnonexist=-3,ECall=-4,ECmissing=-5,ECbounds=-6,ECsyntax=-7,ECerror=-8,ECmemory=-9,ECbug=-10,ECsame=-11};
+```c
+enum ErrorCode {ECok=0,ECnotify=-1,ECwarning=-2,ECnonexist=-3,ECall=-4,ECmissing=-5,ECbounds=-6,ECsyntax=-7,ECerror=-8,ECmemory=-9,ECbug=-10,ECsame=-11};
+```
 
 Their interpretations are:
 
@@ -259,12 +280,12 @@ checking. While it is an essential part of all Libsmoldyn functions,
 these details are not important for most Libsmoldyn users.
 
 1.  The first line of every Libsmoldyn function should be `const char
-    *funcname="`*function\_name*`";`. This name will be returned with
+    *funcname="`*function_name*`";`. This name will be returned with
     any error message to tell the user where the error arose.
 
 2.  Within the function, check for warnings or errors with the `LCHECK`
     macro. The macro format is
-    `LCHECK(`*condition*`,funcname,`*error\_code*`,"`*message*`");`.
+    `LCHECK(`*condition*`,funcname,`*error_code*`,"`*message*`");`.
     This checks that the test *condition* is true, and issues a
     notification, warning, or error when this is not the case. The
     *message* should be a descriptive message that is under 256
@@ -287,17 +308,17 @@ these details are not important for most Libsmoldyn users.
 The `smolSetTimeStep` function provides an excellent and simple example
 of how Libsmoldyn functions typically address errors. It is:
 
-> 
-> 
->     enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
->         const char *funcname="smolSetTimeStep";
->     
->         LCHECK(sim,funcname,ECmissing,"missing sim");
->         LCHECK(timestep>0,funcname,ECbounds,"timestep is not > 0");
->         simsettime(sim,timestep,3);
->         return ECok;
->      failure:
->         return liberrorcode; }
+```c
+enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
+    const char *funcname="smolSetTimeStep";
+
+    LCHECK(sim,funcname,ECmissing,"missing sim");
+    LCHECK(timestep>0,funcname,ECbounds,"timestep is not > 0");
+    simsettime(sim,timestep,3);
+    return ECok;
+ failure:
+    return liberrorcode; }
+```
 
 The `smolGet...Index` functions are worth a comment. Each of these
 functions returns the index of an item, such as a species or a surface,
@@ -308,11 +329,11 @@ Also, if the name is “all", then these functions return the error code
 equivalent. A typical use of these functions is seen in
 `smolSetSpeciesMobility`, which includes the following code:
 
-> 
-> 
->     i=smolGetSpeciesIndex(sim,species);
->     if(i==(int)ECall) smolClearError();
->     else LCHECK(i>0,funcname,ECsame,NULL);
+```c
+      i=smolGetSpeciesIndex(sim,species);
+      if(i==(int)ECall) smolClearError();
+      else LCHECK(i>0,funcname,ECsame,NULL);
+```
 
 In this particular case, this function permits an input of “all", so it
 clears errors that arise from this return value, and leaves `i` as a
@@ -330,19 +351,18 @@ lists “N/A".
 
 | Statement                          | Libsmoldyn function                                  |
 | :--------------------------------- | :--------------------------------------------------- |
-|                                    |                                                      |
-| \#                                 | N/A                                                  |
-| /\* ... \*/                        | N/A                                                  |
-| read\_file                         | `smolLoadSimFromFile`, `smolReadConfigString`        |
-| end\_file                          | N/A                                                  |
+| `#`                                | N/A                                                  |
+| `/* ... */`                        | N/A                                                  |
+| read_file                         | `smolLoadSimFromFile`, `smolReadConfigString`        |
+| end_file                          | N/A                                                  |
 | define                             | N/A                                                  |
-| define\_global                     | N/A                                                  |
+| define_global                     | N/A                                                  |
 | undefine                           | N/A                                                  |
 | ifdefine                           | N/A                                                  |
 | ifundefine                         | N/A                                                  |
 | else                               | N/A                                                  |
 | endif                              | N/A                                                  |
-| display\_define                    | N/A                                                  |
+| display_define                    | N/A                                                  |
 | N/A                                | `smolSetError`                                       |
 | N/A                                | `smolGetError`                                       |
 | N/A                                | `smolClearError`                                     |
@@ -351,12 +371,12 @@ lists “N/A".
 |                                    |                                                      |
 | dim                                | `smolNewSim`                                         |
 | boundaries                         | `smolNewSim`, `smolSetBoundaryType`                  |
-| low\_wall                          | `smolNewSim`, `smolSetBoundaryType`                  |
-| high\_wall                         | `smolNewSim`, `smolSetBoundaryType`                  |
-| time\_start                        | `smolSetSimTimes`, `smolSetTimeStart`                |
-| time\_stop                         | `smolSetSimTimes`, `smolSetTimeStop`                 |
-| time\_step                         | `smolSetSimTimes`, `smolSetTimeStep`                 |
-| time\_now                          | `smolSetTimeNow`                                     |
+| low_wall                          | `smolNewSim`, `smolSetBoundaryType`                  |
+| high_wall                         | `smolNewSim`, `smolSetBoundaryType`                  |
+| time_start                        | `smolSetSimTimes`, `smolSetTimeStart`                |
+| time_stop                         | `smolSetSimTimes`, `smolSetTimeStop`                 |
+| time_step                         | `smolSetSimTimes`, `smolSetTimeStep`                 |
+| time_now                          | `smolSetTimeNow`                                     |
 |                                    |                                                      |
 | species                            | `smolAddSpecies`                                     |
 | N/A                                | `smolGetSpeciesIndex`                                |
@@ -365,106 +385,106 @@ lists “N/A".
 | difm                               | `smolSetSpeciesMobility`                             |
 | drift                              | `smolSetSpeciesMobility`                             |
 | mol                                | `smolAddSolutionMolecules`                           |
-| surface\_mol                       | `smolAddSurfaceMolecules`                            |
-| compartment\_mol                   | `smolAddCompartmentMolecules`                        |
-| molecule\_lists                    | `smolAddMolList`                                     |
-| mol\_list                          | `smolAddSpecies`, `smolSetMolList`                   |
+| surface_mol                       | `smolAddSurfaceMolecules`                            |
+| compartment_mol                   | `smolAddCompartmentMolecules`                        |
+| molecule_lists                    | `smolAddMolList`                                     |
+| mol_list                          | `smolAddSpecies`, `smolSetMolList`                   |
 | N/A                                | `smolGetMolListIndex`                                |
 | N/A                                | `smolGetMolListName`                                 |
-| max\_mol                           | `smolSetMaxMolecules`                                |
+| max_mol                           | `smolSetMaxMolecules`                                |
 | N/A                                | `smolGetMoleculeCount`                               |
 |                                    |                                                      |
 | graphics                           | `smolSetGraphicsParams`                              |
-| graphic\_iter                      | `smolSetGraphicsParams`                              |
-| graphic\_delay                     | `smolSetGraphicsParams`                              |
-| frame\_thickness                   | `smolSetFrameStyle`                                  |
-| frame\_color                       | `smolSetFrameStyle`                                  |
-| grid\_thickness                    | `smolSetGridStyle`                                   |
-| grid\_color                        | `smolSetGridStyle`                                   |
-| background\_color                  | `smolSetBackgroundStyle`                             |
-| display\_size                      | `smolSetMoleculeStyle`                               |
+| graphic_iter                      | `smolSetGraphicsParams`                              |
+| graphic_delay                     | `smolSetGraphicsParams`                              |
+| frame_thickness                   | `smolSetFrameStyle`                                  |
+| frame_color                       | `smolSetFrameStyle`                                  |
+| grid_thickness                    | `smolSetGridStyle`                                   |
+| grid_color                        | `smolSetGridStyle`                                   |
+| background_color                  | `smolSetBackgroundStyle`                             |
+| display_size                      | `smolSetMoleculeStyle`                               |
 | color                              | `smolSetMoleculeStyle`                               |
-| tiff\_iter                         | `smolSetTiffParams`                                  |
-| tiff\_name                         | `smolSetTiffParams`                                  |
-| tiff\_min                          | `smolSetTiffParams`                                  |
-| tiff\_max                          | `smolSetTiffParams`                                  |
+| tiff_iter                         | `smolSetTiffParams`                                  |
+| tiff_name                         | `smolSetTiffParams`                                  |
+| tiff_min                          | `smolSetTiffParams`                                  |
+| tiff_max                          | `smolSetTiffParams`                                  |
 | light                              | `smolSetLightParams`                                 |
-| text\_color                        | `smolSetTextStyle`                                   |
-| text\_display                      | `smolAddTextDisplay`                                 |
+| text_color                        | `smolSetTextStyle`                                   |
+| text_display                      | `smolAddTextDisplay`                                 |
 |                                    |                                                      |
-| output\_root                       | `smolSetOutputPath`                                  |
-| output\_files                      | `smolAddOutputFile`                                  |
-| append\_files                      | `smolAddOutputFile`                                  |
-| output\_file\_number               | `smolAddOutputFile`                                  |
+| output_root                       | `smolSetOutputPath`                                  |
+| output_files                      | `smolAddOutputFile`                                  |
+| append_files                      | `smolAddOutputFile`                                  |
+| output_file_number               | `smolAddOutputFile`                                  |
 | cmd                                | `smolAddCommand`, `smolAddCommandFromString`         |
 |                                    |                                                      |
-| start\_surface                     | `smolAddSurface`                                     |
-| new\_surface                       | `smolAddSurface`                                     |
+| start_surface                     | `smolAddSurface`                                     |
+| new_surface                       | `smolAddSurface`                                     |
 | <span>\*</span> name               | `smolAddSurface`                                     |
 | N/A                                | `smolGetSurfaceIndex`                                |
 | N/A                                | `smolGetSurfaceName`                                 |
-| <span>\*</span> action             | `smolSetSurfaceAction`                               |
-| <span>\*</span> rate               | `smolSetSurfaceRate`                                 |
-| <span>\*</span> rate\_internal     | `smolSetSurfaceRate`                                 |
-| <span>\*</span> color              | `smolSetSurfaceFaceStyle`, `smolSetSurfaceEdgeStyle` |
-| <span>\*</span> thickness          | `smolSetSurfaceEdgeStyle`                            |
-| <span>\*</span> stipple            | `smolSetSurfaceEdgeStyle`                            |
-| <span>\*</span> polygon            | `smolSetSurfaceFaceStyle`                            |
-| <span>\*</span> shininess          | `smolSetSurfaceFaceStyle`                            |
-| <span>\*</span> panel              | `smolAddPanel`                                       |
+| action                             | `smolSetSurfaceAction`                               |
+| rate                               | `smolSetSurfaceRate`                                 |
+| rate_internal                     | `smolSetSurfaceRate`                                 |
+| color                              | `smolSetSurfaceFaceStyle`, `smolSetSurfaceEdgeStyle` |
+| thickness                          | `smolSetSurfaceEdgeStyle`                            |
+| stipple                            | `smolSetSurfaceEdgeStyle`                            |
+| polygon                            | `smolSetSurfaceFaceStyle`                            |
+| shininess                          | `smolSetSurfaceFaceStyle`                            |
+| panel                              | `smolAddPanel`                                       |
 | N/A                                | `smolGetPanelIndex`                                  |
 | N/A                                | `smolGetPanelName`                                   |
-| <span>\*</span> jump               | `smolSetPanelJump`                                   |
-| <span>\*</span> neighbors          | `smolAddPanelNeighbor`                               |
-| <span>\*</span> unbounded\_emitter | `smolAddSurfaceUnboundedEmitter`                     |
-| <span>\*</span> end\_surface       | N/A                                                  |
+| jump                               | `smolSetPanelJump`                                   |
+| neighbors                          | `smolAddPanelNeighbor`                               |
+| unbounded_emitter                  | `smolAddSurfaceUnboundedEmitter`                     |
+| end_surface                        | N/A                                                  |
 | epsilon                            | `smolSetSurfaceSimParams`                            |
 | margin                             | `smolSetSurfaceSimParams`                            |
-| neighbor\_dist                     | `smolSetSurfaceSimParams`                            |
+| neighbor_dist                     | `smolSetSurfaceSimParams`                            |
 |                                    |                                                      |
-| start\_compartment                 | `smolAddCompartment`                                 |
-| new\_compartment                   | `smolAddCompartment`                                 |
+| start_compartment                 | `smolAddCompartment`                                 |
+| new_compartment                   | `smolAddCompartment`                                 |
 | <span>\*</span> name               | `smolAddCompartment`                                 |
 | N/A                                | `smolGetCompartmentIndex`                            |
 | N/A                                | `smolGetCompartmentName`                             |
-| <span>\*</span> surface            | `smolAddCompartmentSurface`                          |
-| <span>\*</span> point              | `smolAddCompartmentPoint`                            |
-| <span>\*</span> compartment        | `smolAddCompartmentLogic`                            |
-| <span>\*</span> end\_compartment   | N/A                                                  |
+|  surface                            | `smolAddCompartmentSurface`                          |
+|  point                              | `smolAddCompartmentPoint`                            |
+|  compartment                        | `smolAddCompartmentLogic`                            |
+|  end_compartment                   | N/A                                                  |
 |                                    |                                                      |
 | reaction                           | `smolAddReaction`                                    |
 | N/A                                | `smolGetReactionIndex`                               |
 | N/A                                | `smolGetReactionName`                                |
-| reaction\_cmpt                     | `smolSetReactionRegion`                              |
-| reaction\_surface                  | `smolSetReactionRegion`                              |
-| reaction\_rate                     | `smolAddReaction`, `smolSetReactionRate`             |
-| confspread\_radius                 | `smolSetReactionRate`                                |
-| binding\_radius                    | `smolSetReactionRate`                                |
-| reaction\_probability              | `smolSetReactionRate`                                |
-| reaction\_production               | `smolSetReactionRate`                                |
-| reaction\_permit                   | not supported                                        |
-| reaction\_forbid                   | not supported                                        |
-| product\_placement                 | `smolSetReactionProducts`                            |
+| reaction_cmpt                     | `smolSetReactionRegion`                              |
+| reaction_surface                  | `smolSetReactionRegion`                              |
+| reaction_rate                     | `smolAddReaction`, `smolSetReactionRate`             |
+| confspread_radius                 | `smolSetReactionRate`                                |
+| binding_radius                    | `smolSetReactionRate`                                |
+| reaction_probability              | `smolSetReactionRate`                                |
+| reaction_production               | `smolSetReactionRate`                                |
+| reaction_permit                   | not supported                                        |
+| reaction_forbid                   | not supported                                        |
+| product_placement                 | `smolSetReactionProducts`                            |
 |                                    |                                                      |
-| start\_port                        | `smolAddPort`                                        |
-| new\_port                          | `smolAddPort`                                        |
+| start_port                        | `smolAddPort`                                        |
+| new_port                          | `smolAddPort`                                        |
 | <span>\*</span> name               | `smolAddPort`                                        |
 | N/A                                | `smolGetPortIndex`                                   |
 | N/A                                | `smolGetPortName`                                    |
-| <span>\*</span> surface            | `smolAddPort`                                        |
-| <span>\*</span> face               | `smolAddPort`                                        |
-| <span>\*</span> end\_port          | N/A                                                  |
+| surface                           | `smolAddPort`                                        |
+| face                                | `smolAddPort`                                        |
+| end_port                            | N/A                                                  |
 | N/A                                | `smolAddPortMolecules`                               |
 | N/A                                | `smolGetPortMolecules`                               |
 |                                    |                                                      |
-| rand\_seed                         | `smolSetRandomSeed`                                  |
+| rand_seed                         | `smolSetRandomSeed`                                  |
 | accuracy                           | not supported                                        |
 | molperbox                          | `smolSetPartitions`                                  |
 | boxsize                            | `smolSetPartitions`                                  |
-| gauss\_table\_size                 | not supported                                        |
+| gauss_table_size                 | not supported                                        |
 | epsilon                            | `smolSetSurfaceSimParams`                            |
 | margin                             | `smolSetSurfaceSimParams`                            |
-| neighbor\_dist                     | `smolSetSurfaceSimParams`                            |
+| neighbor_dist                     | `smolSetSurfaceSimParams`                            |
 | pthreads                           | not supported                                        |
 |                                    |                                                      |
 | N/A                                | `smolUpdateSim`                                      |
@@ -474,6 +494,7 @@ lists “N/A".
 | N/A                                | `smolFreeSim`                                        |
 | N/A                                | `smolDisplaySim`                                     |
 | N/A                                | `smolPrepareSimFromFile`                             |
+
 
 # Libsmoldyn header file
 
@@ -486,14 +507,12 @@ and enumerated type definitions.
 
 If you compiled and installed Smoldyn using the default configuration,
 both files should be in your /usr/local/include/smoldyn directory. Also
-in this directory is the smoldyn\_config.h file. This file was used for
+in this directory is the smoldyn_config.h file. This file was used for
 compiling Smoldyn and Libsmoldyn but is not needed afterwards.
 Nevertheless, it’s copied to the /usr/local/include/smoldyn directory so
 that programs that call Libsmoldyn can know what options Libsmoldyn was
 built with.
 
-``` c
-```
 
 # Libsmoldyn functions
 
@@ -504,19 +523,15 @@ structure. This means, for example, that all functions that return
 strings do not allocate these strings themselves, but instead write the
 string text to memory that the library user allocated and gave to the
 function. All strings are fixed at `STRCHAR` characters, where this
-constant is defined in string2.h to 256 characters.
+constant is defined in `string2.h` to 256 characters.
 
 ## Miscellaneous
 
-  - `double smolGetVersion(void);`  
-      
-    Returns the Smoldyn version number.
+- `double smolGetVersion(void);` Returns the Smoldyn version number.
 
 ## Errors
 
-  - `void`  
-    `smolSetError(const char *errorfunction,enum ErrorCode
-    errorcode,const char *errorstring);`  
+  - `void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring);`  
     This function is probably not useful for most users. Sets the
     Libsmoldyn error code to `errorcode`, error function to
     `errorfunction`, and error string to `errorstring`. The sole
@@ -526,9 +541,7 @@ constant is defined in string2.h to 256 characters.
     `errorstring` is entered as `NULL`, this clears the current error
     string, and similarly for `errorfunction`.
 
-  - `enum ErrorCode`  
-    `smolGetError(char *errorfunction,char *errorstring,int
-    clearerror);`  
+  - `enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int clearerror);`  
     Returns the current LibSmoldyn error code directly, returns the
     function where the error occurred in `errorfunction` if it is not
     `NULL`, and returns the error string in `errorstring` if it is not
@@ -555,52 +568,43 @@ constant is defined in string2.h to 256 characters.
 
 ## Sim structure
 
-  - `simptr`  
-    `smolNewSim(int dim,double *lowbounds,double *highbounds);`  
+  - `simptr smolNewSim(int dim,double *lowbounds,double *highbounds);`  
     Creates and returns a new sim structure. The structure is
     initialized for a `dim` dimensional system that has boundaries
     defined by the points `lowbounds` and `highbounds`. Boundaries are
     transmitting (modify them with `smolSetBoundaryType`). Returns
     `NULL` upon failure.
 
-  - `enum ErrorCode`  
-    `smolUpdateSim(simptr sim);`  
+  - `enum ErrorCode smolUpdateSim(simptr sim);`  
     Updates the simulation structure. This calculates all simulation
     parameters from physical parameters, sorts lists, and generally does
     everything required to make a simulation ready to run. It may be
     called multiple times.
 
-  - `enum ErrorCode`  
-    `smolRunTimeStep(simptr sim);`  
+  - `enum ErrorCode smolRunTimeStep(simptr sim);`  
     Runs one time step of the simulation. Returns an error if the
     simulation terminates unexpectedly during this time step or a
     warning if it terminates normally.
 
-  - `enum ErrorCode`  
-    `smolRunSim(simptr sim);`  
+  - `enum ErrorCode smolRunSim(simptr sim);`  
     Runs the simulation until it terminates. Returns an error if the
     simulation terminates unexpectedly during this time step or a
     warning if it terminates normally.
 
-  - `enum ErrorCode`  
-    `smolRunSimUntil(simptr sim,double breaktime);`  
+  - `enum ErrorCode smolRunSimUntil(simptr sim,double breaktime);`  
     Runs the simulation either until it terminates or until the
     simulation time equals or exceeds `breaktime`.
 
-  - `enum ErrorCode`  
-    `smolFreeSim(simptr sim);`  
+  - `enum ErrorCode smolFreeSim(simptr sim);`  
     Frees the simulation data structure.
 
   - `enum ErrorCode smolDisplaySim(simptr sim);`  
-      
     Displays all relevant information about the simulation system to
     stdout.
 
 ## Read configuration file
 
-  - `simptr`  
-    `smolPrepareSimFromFile(char *filepath,char *filename,char
-    *flags);`  
+  - `simptr smolPrepareSimFromFile(char *filepath,char *filename,char *flags);`  
     Reads the Smoldyn configuration file that is at `filepath` and has
     file name `filename`, sets it up, and outputs simulation diagnostics
     to stdout. Returns the sim structure, or `NULL` if an error
@@ -610,9 +614,7 @@ constant is defined in string2.h to 256 characters.
     runs successfully, it should be possible to call `smolRunSim` or
     `smolRunTimeStep`.
 
-  - `enum ErrorCode`  
-    `smolLoadSimFromFile(char *filepath,char *filename,simptr
-    *simpointer,char *flags);`  
+  - `enum ErrorCode smolLoadSimFromFile(char *filepath,char *filename,simptr *simpointer,char *flags);`  
     Loads part or all of a sim structure from the file that is at
     `filepath` and has file name `filename`. Send in `simpointer` as a
     pointer to sim, where sim may be an existing simulation structure
@@ -623,9 +625,7 @@ constant is defined in string2.h to 256 characters.
     function runs successfully, call `smolUpdateSim` to calculate
     simulation parameters.
 
-  - `enum ErrorCode`  
-    `smolReadConfigString(simptr sim,char *statement,char
-    *parameters);`  
+  - `enum ErrorCode smolReadConfigString(simptr sim,char *statement,char *parameters);`  
     Reads and processes what would normally be a single line of a
     configuration file. The first word of the line is the statement
     name, entered here as `statement`, while the rest of the line is
@@ -639,36 +639,28 @@ constant is defined in string2.h to 256 characters.
 
 ## Simulation settings
 
-  - `enum ErrorCode`  
-    `smolSetSimTimes(simptr sim,double timestart,double timestop,double
-    timestep);`  
+  - `enum ErrorCode smolSetSimTimes(simptr sim,double timestart,double timestop,double timestep);`  
     Sets all of the simulation time parameters to the values entered
     here. In addition the simulation “time now" is set to `timestart`.
 
-  - `enum ErrorCode`  
-    `smolSetTimeStart(simptr sim,double timestart);`  
+  - `enum ErrorCode smolSetTimeStart(simptr sim,double timestart);`  
     Sets the simulation starting time.
 
-  - `enum ErrorCode`  
-    `smolSetTimeStop(simptr sim,double timestop);`  
+  - `enum ErrorCode smolSetTimeStop(simptr sim,double timestop);`  
     Sets the simulation stopping time.
 
-  - `enum ErrorCode`  
-    `smolSetTimeNow(simptr sim,double timenow);`  
+  - `enum ErrorCode `smolSetTimeNow(simptr sim,double timenow);`  
     Sets the simulation current time.
 
-  - `enum ErrorCode`  
-    `smolSetTimeStep(simptr sim,double timestep);`  
+  - `enum ErrorCode smolSetTimeStep(simptr sim,double timestep);`  
     Sets the simulation time step, which must be greater than 0.
 
-  - `enum ErrorCode`  
-    `smolSetRandomSeed(simptr sim,double seed);`  
+  - `enum ErrorCode smolSetRandomSeed(simptr sim,double seed);`  
     Sets the random number generator seed to `seed` if `seed` is at
     least 0, and sets it to the current time value if `seed` is less
     than 0.
 
-  - `enum ErrorCode`  
-    `smolSetPartitions(simptr sim,char *method,double value);`  
+  - `enum ErrorCode `smolSetPartitions(simptr sim,char *method,double value);`  
     Sets the virtual partitions in the simulation volume. Enter `method`
     as “molperbox" and then enter `value` with the requested number of
     molecules per partition volume; the default, which is used if this
@@ -681,13 +673,11 @@ constant is defined in string2.h to 256 characters.
 
 ## Graphics
 
-  - `enum ErrorCode`  
-    `smolSetGraphicsParams(simptr sim,char *method,int timesteps,double
-    delay);`  
+  - `enum ErrorCode smolSetGraphicsParams(simptr sim,char *method,int timesteps,double delay);`  
     Sets basic simulation graphics parameters. Enter `method` as “none"
     for no graphics (the default), “opengl" for fast but minimal OpenGL
-    graphics, “opengl\_good" for improved OpenGL graphics,
-    “opengl\_better" for fairly good OpenGL graphics, or as `NULL` to
+    graphics, “opengl_good" for improved OpenGL graphics,
+    “opengl_better" for fairly good OpenGL graphics, or as `NULL` to
     not set this parameter currently. Enter `timesteps` with a positive
     integer to set the number of simulation time steps between graphics
     renderings (1 is the default) or with a negative number to not set
@@ -697,9 +687,7 @@ constant is defined in string2.h to 256 characters.
     is the default) or as a negative number to not set this parameter
     currently.
 
-  - `enum ErrorCode`  
-    `smolSetTiffParams(simptr sim,int timesteps,char *tiffname,int
-    lowcount,int highcount);`  
+  - `enum ErrorCode smolSetTiffParams(simptr sim,int timesteps,char *tiffname,int lowcount,int highcount);`  
     Sets parameters for the automatic collection of TIFF format
     snapshots of the graphics window. `timesteps` is the number of
     simulation timesteps that should elapse between subsequent
@@ -711,11 +699,9 @@ constant is defined in string2.h to 256 characters.
     not set these parameters, and enter `NULL` for `tiffname` to not set
     the file name.
 
-  - `enum ErrorCode`  
-    `smolSetLightParams(simptr sim,int lightindex,double *ambient,double
-    *diffuse,double *specular,double *position);`  
+  - `enum ErrorCode smolSetLightParams(simptr sim,int lightindex,double *ambient,double *diffuse,double *specular,double *position);`  
     Sets the lighting parameters that are used for the rendering method
-    “opengl\_better". Enter `lightindex` as -1 for the global ambient
+    “opengl_better". Enter `lightindex` as -1 for the global ambient
     light (in which case `diffuse`, `specular`, and `position` should
     all be `NULL`) or as 0 to 8 for one of the 8 light sources. For each
     light source, you can specify the 4-value color vector for the
@@ -724,13 +710,11 @@ constant is defined in string2.h to 256 characters.
     position for the light. To not set a property, just enter the
     respective vector as `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetBackgroundStyle(simptr sim,double *color);`  
+  - `enum ErrorCode smolSetBackgroundStyle(simptr sim,double *color);`  
     Sets the color of the graphics display background. `color` is a
     4-value vector with red, green, blue, and alpha values.
 
-  - `enum ErrorCode`  
-    `smolSetFrameStyle(simptr sim,double thickness,double *color);`  
+  - `enum ErrorCode smolSetFrameStyle(simptr sim,double thickness,double *color);`  
     Sets the thickness and the color of the wire frame that outlines the
     simulation system in the graphics window. Enter `thickness` as 0 for
     no frame, as a positive number for the number of points in
@@ -738,8 +722,7 @@ constant is defined in string2.h to 256 characters.
     `color` as a 4-value vector with the frame color, or as `NULL` to
     not set it.
 
-  - `enum ErrorCode`  
-    `smolSetGridStyle(simptr sim,double thickness,double *color);`  
+  - `enum ErrorCode smolSetGridStyle(simptr sim,double thickness,double *color);`  
     Sets the thickness and the color of a grid that shows where the
     partitions are that separate Smoldyn’s virtual boxes. Enter
     `thickness` as 0 for no grid, as a positive number for the number of
@@ -747,13 +730,11 @@ constant is defined in string2.h to 256 characters.
     parameter. Enter `color` as a 4-value vector with the grid color, or
     as `NULL` to not set it.
 
-  - `enum ErrorCode`  
-    `smolSetTextStyle(simptr sim,double *color);`  
+  - `enum ErrorCode  smolSetTextStyle(simptr sim,double *color);`  
     Sets the color of any text that is displayed to the graphics window.
     `color` is a 4-value vector with red, green, blue, and alpha values.
 
-  - `enum ErrorCode`  
-    `smolAddTextDisplay(simptr sim,char *item);`  
+  - `enum ErrorCode smolAddTextDisplay(simptr sim,char *item);`  
     Adds `item` to the list of things that Smoldyn should display as
     text to the graphics window. Currently supported options are “time"
     and the names of species and, optionally, their states. For species
@@ -761,13 +742,10 @@ constant is defined in string2.h to 256 characters.
 
 ## Runtime commands
 
-  - `enum ErrorCode`  
-    `smolSetOutputPath(simptr sim,char *path);`  
+  - `enum ErrorCode smolSetOutputPath(simptr sim,char *path);`  
     Sets the file path for text output files to `path`.
 
-  - `enum ErrorCode`  
-    `smolAddOutputFile(simptr sim,char *filename,int suffix,int
-    append);`  
+  - `enum ErrorCode  smolAddOutputFile(simptr sim,char *filename,int suffix,int append);`  
     Declares the file called `filename` as a file for output by one or
     more runtime commands. Note that spaces are not permitted in the
     file name. If `suffix` is non-negative, then the file name is
@@ -775,9 +753,7 @@ constant is defined in string2.h to 256 characters.
     file stacks. Enter `append` as 1 if any current file should simply
     be appended, or to 0 if any current file should be overwritten.
 
-  - `enum ErrorCode`  
-    `smolAddCommand(simptr sim,char type,double on,double off,double
-    step,double multiplier,char *commandstring);`  
+  - `enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,char *commandstring);`  
     Adds a run-time command to the simulation, including its timing
     instructions. This function should generally be called after
     `smolSetSimTimes` to make sure that command times get set correctly.
@@ -812,29 +788,25 @@ constant is defined in string2.h to 256 characters.
 
 ## Molecules
 
-  - `enum ErrorCode`  
-    `smolAddSpecies(simptr sim,char *species,char *mollist);`  
+  - `enum ErrorCode smolAddSpecies(simptr sim,char *species,char *mollist);`  
     Adds a molecular species named `species` to the system. If you have
     already created species lists and want all states of this species to
     live in a specific list, then enter it in `mollist`; otherwise,
     enter `mollist` as `NULL` or an empty string to request default
     behavior.
 
-  - `int`  
-    `smolGetSpeciesIndex(simptr sim,char *species);`  
+  - `int smolGetSpeciesIndex(simptr sim,char *species);`  
     Returns the species index that corresponds to the species named
     `species`. Upon failure, this function returns an error code cast as
     an integer.
 
-  - `char*`  
-    `smolGetSpeciesName(simptr sim,int speciesindex,char *species);`  
+  - `char* smolGetSpeciesName(simptr sim,int speciesindex,char *species);`  
     Returns the species name that corresponds to the species index in
     `speciesindex`. The name is returned both in `species` and directly,
     where the latter simplifies function use. Upon failure, this
     function returns `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetSpeciesMobility(simptr sim,char *species,enum MolecState
+  - `enum ErrorCode smolSetSpeciesMobility(simptr sim,char *species,enum MolecState
     state,double difc,double *drift,double *difmatrix);`  
     Sets any or all of the mobility coefficients for species `species`
     (which may be “all") and state `state` (which may be `MSall`).
@@ -844,36 +816,29 @@ constant is defined in string2.h to 256 characters.
     negative number in `difc` and/or enter a `NULL` pointer in the other
     inputs, respectively.
 
-  - `int`  
-    `smolAddMolList(simptr sim,char *mollist);`  
+  - `int smolAddMolList(simptr sim,char *mollist);`  
     Adds a new molecule list, named `mollist`, to the system.
 
-  - `int`  
-    `smolGetMolListIndex(simptr sim,char *mollist);`  
+  - `int smolGetMolListIndex(simptr sim,char *mollist);`  
     Returns the list index that corresponds to the list named `mollist`.
 
-  - `char*`  
-    `smolGetMolListName(simptr sim,int mollistindex,char *mollist);`  
+  - `char* smolGetMolListName(simptr sim,int mollistindex,char *mollist);`  
     Returns the molecule list name that corresponds to the molecule list
     with index `mollistindex`. The name is returned both in `mollist`
     and directly. On error, this function `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetMolList(simptr sim,char *species,enum MolecState state,char
+  - `enum ErrorCode smolSetMolList(simptr sim,char *species,enum MolecState state,char
     *mollist);`  
     Sets the molecule list for species `species` (which may be “all")
     and state `state` (which may be `MSall`) to molecule list `mollist`.
 
-  - `enum ErrorCode`  
-    `  smolSetMaxMolecules(simptr sim,int maxmolecules); `  
+  - `enum ErrorCode smolSetMaxMolecules(simptr sim,int maxmolecules); `  
     Sets the maximum number of molecules that can simultaneously exist
     in a system to `maxmolecules`. At present, this function needs to be
     called for a simulation to run, although it will become optional
     once dynamic molecule memory allocation has been written.
 
-  - `enum ErrorCode`  
-    `smolAddSolutionMolecules(simptr sim,char *species,int number,double
-    *lowposition,double *highposition);`  
+  - `enum ErrorCode  smolAddSolutionMolecules(simptr sim,char *species,int number,double *lowposition,double *highposition);`  
     Adds `number` solution state molecules of species `species` to the
     system. They are randomly distributed within the box that has its
     opposite corners defined by `lowposition` and `highposition`. Any or
@@ -882,17 +847,12 @@ constant is defined in string2.h to 256 characters.
     `highposition` as `NULL` to indicate that the respective corner is
     equal to that corner of the entire system volume.
 
-  - `enum ErrorCode`  
-    `smolAddCompartmentMolecules(simptr sim,char *species,int
-    number,char *compartment);`  
+  - `enum ErrorCode smolAddCompartmentMolecules(simptr sim,char *species,int number,char *compartment);`  
     Adds `number` solution state molecules of species `species` to the
     compartment `compartment`. Molecules are randomly distributed within
     the compartment.
 
-  - `enum ErrorCode`  
-    `smolAddSurfaceMolecules(simptr sim,int speciesindex,enum MolecState
-    state,int number,int surface,enum PanelShape panelshape,int
-    panel,double *position);`  
+  - `enum ErrorCode smolAddSurfaceMolecules(simptr sim,int speciesindex,enum MolecState state,int number,int surface,enum PanelShape panelshape,int panel,double *position);`  
     Adds `number` molecules of species `species` and state `state` to
     surface(s) in the system. It is permissible for `surface` to be
     “all", `panelshape` to be PSall, and/or `panel` to be “all". If
@@ -900,17 +860,13 @@ constant is defined in string2.h to 256 characters.
     specific surface, panel shape, and panel, and then enter the
     position in `position`.
 
-  - `int`  
-    `smolGetMoleculeCount(simptr sim,char *species,enum MolecState
-    state);`  
+  - `int smolGetMoleculeCount(simptr sim,char *species,enum MolecState state);`  
     Returns the total number of molecules in the system that have
     species `species` (“all" is permitted) and state `state` (`MSall` is
     permitted). Any error is returned as the error code cast as an
     integer.
 
-  - `enum ErrorCode`  
-    `smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState
-    state,double size,double *color);`  
+  - `enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color);`  
     Sets the graphical display parameters for molecules of species
     `species` (“all" is permitted) and state `state` (`MSall` is
     permitted). Enter `size` with the drawing size (in pixels if
@@ -921,9 +877,7 @@ constant is defined in string2.h to 256 characters.
 
 ## Surfaces
 
-  - `enum ErrorCode`  
-    `smolSetBoundaryType(simptr sim,int dimension,int highside,char
-    type);`  
+  - `enum ErrorCode smolSetBoundaryType(simptr sim,int dimension,int highside,char type);`  
     Sets the molecule interaction properties for a system boundary that
     bounds the `dimension` axis. Enter `dimension` as -1 to indicate all
     dimensions. Set `highside` to 0 for the lower boundary, to 1 for the
@@ -933,34 +887,26 @@ constant is defined in string2.h to 256 characters.
     these properties if no surfaces are declared; otherwise all
     boundaries are transmitting regardless of what’s entered here.
 
-  - `int`  
-    `smolAddSurface(simptr sim,char *surface);`  
+  - `int smolAddSurface(simptr sim,char *surface);`  
     Adds a surface called `surface` to the system.
 
-  - `int`  
-    `smolGetSurfaceIndex(simptr sim,char *surface);`  
+  - `int smolGetSurfaceIndex(simptr sim,char *surface);`  
     Returns the surface index that corresponds to the surface named
     `surface`. The index is non-negative. On failure, this returns an
     error code cast as an integer.
 
-  - `char*`  
-    `smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);`  
+  - `char*  smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);`  
     Returns the surface name for surface number `surfaceindex` both
     directly and in the `surface` string. On failure, this returns
     `NULL`.
 
-  - `enum ErrorCode`  
-    `smolSetSurfaceAction(simptr sim,char *surface,enum PanelFace
-    face,char *species,enum MolecState state,enum SrfAction action);`  
+  - `enum ErrorCode smolSetSurfaceAction(simptr sim,char *surface,enum PanelFace face,char *species,enum MolecState state,enum SrfAction action);`  
     Sets the action that should happen when a molecule of species
     `species` (may be “all") and state `state` (may be `MSall`) diffuses
     into face `face` (may be `PFboth`) of surface `surface`. The action
     is set to `action`.
 
-  - `enum ErrorCode`  
-    `smolSetSurfaceRate(simptr sim,char *surface,char *species,enum
-    MolecState state,enum MolecState state1,enum MolecState
-    state2,double rate,char *newspecies,int isinternal);`  
+  - `enum ErrorCode smolSetSurfaceRate(simptr sim,char *surface,char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,char *newspecies,int isinternal);`  
     Sets the surface interaction rate(s) for surface `surface` (may be
     “all") and species `species` (may be “all") and state `state`. The
     transition being considered is from `state1` to `state2` (this
@@ -1111,7 +1057,7 @@ constant is defined in string2.h to 256 characters.
     `stipplepattern` is the edge stippling pattern, which needs to be
     between 0 and 0xFFFF, or can be entered as -1 to not set this
     parameter. And `shininess` is the surface shininess, for use with
-    lighting in the “opengl\_better" graphics display option, or can be
+    lighting in the “opengl_better" graphics display option, or can be
     entered as -1 to not set this parameter. The parameters `thickness`,
     `stipplefactor`, and `stipplepattern` only apply to edge style
     drawing modes and ignore any input in the `face` entry. The
