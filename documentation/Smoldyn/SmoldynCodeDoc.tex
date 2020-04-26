@@ -522,7 +522,7 @@ index & \texttt{live[0]} & \texttt{live[1]} & \texttt{dead}\\
 
 Here, each list has \texttt{max}=8, and so is indexed with \texttt{m} from 0 to 7.  A `?' is memory that is not part of that which was allocated, a `-' is a \texttt{NULL} value, a `0' is an empty molecule, and other numbers are other identities (`1' and `2' are mobile, whereas `3' is immobile).  The `0's in the the two live lists are to be transferred to the dead list during the next sort, while the `1' in the dead list has been resurrected and is to be moved to mobile live list.  Based on the \texttt{topl[0]} index, it can be seen that the `1' and `2' in the mobile live list were just put there during the last sorting, and so are reborn molecules.
 
-There is one dead list and there are \texttt{nlist} live lists.  The dead list has total size \texttt{maxd} and is filled to level \texttt{nd}.  The index \texttt{topd}, which is between 0 and \texttt{nd}, separates the dead molecules (list element is -1) with indices from 0 to \texttt{topd-1} from the resurrected molecules (list elements ≥ 0) that have indices between \texttt{topd} and \texttt{nd-1}.  The dead list is automatically expanded up to size \texttt{maxdlimit} if this value is positive, and is automatically expanded without limit if \texttt{maxdlimit} is negative (the default).  Live list \texttt{ll} has total size \texttt{maxl[ll]} and is filled to level \texttt{nl[ll]}.  The index \texttt{topl[ll]}, which is between 0 and \texttt{nl[ll]} separates the molecules that were there on the prior time step that have smaller indices from those that were created in the last time step, called the reborn molecules, which have higher indices.
+There is one dead list and there are \texttt{nlist} live lists.  The dead list has total size \texttt{maxd} and is filled to level \texttt{nd}.  The index \texttt{topd}, which is between 0 and \texttt{nd}, separates the dead molecules (list element is -1) with indices from 0 to \texttt{topd-1} from the resurrected molecules (list elements 0) that have indices between \texttt{topd} and \texttt{nd-1}.  The dead list is automatically expanded up to size \texttt{maxdlimit} if this value is positive, and is automatically expanded without limit if \texttt{maxdlimit} is negative (the default).  Live list \texttt{ll} has total size \texttt{maxl[ll]} and is filled to level \texttt{nl[ll]}.  The index \texttt{topl[ll]}, which is between 0 and \texttt{nl[ll]} separates the molecules that were there on the prior time step that have smaller indices from those that were created in the last time step, called the reborn molecules, which have higher indices.
 
 \begin{description}
 
@@ -4209,12 +4209,12 @@ Command strings are not parsed, checked, or even looked at during simulation ini
 To write a command, do the following steps, which can be done in any order:
 
 \begin{itemize}
-\item Write a description of the new command that will go into the reference section of the user’s manual.
+\item Write a description of the new command that will go into the reference section of the user's manual.
 \item In smolcmd.c, add a new declaration to the top of the file for the command, which looks like:
 \begin{lstlisting}
 enum CMDcode cmdname(simptr sim,cmdptr cmd,char *line2);
 \end{lstlisting}
-\item The first function of smolcmd.c is \texttt{docommand}.  In it, add an \texttt{else if(…)} line for the new command.  It looks like:
+\item The first function of smolcmd.c is \texttt{docommand}.  In it, add an \texttt{else if} line for the new command.  It looks like:
 \begin{lstlisting}
 else if(!strcmp(word,"name")) return cmdname(sim,cmd,line2);
 \end{lstlisting}
@@ -4581,7 +4581,7 @@ Fixes the copy number of molecules in a compartment so that it is within the spe
 
 \item[\texttt{enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
-Equilibrates a pair of molecular species, allowing the efficient simulation of rapid reactions.  It reads two molecule names from \texttt{line2}, followed by a probability value.  Then, it looks for all molecules in the live lists with either of the two types and replaces them with the second type using the listed probability or with the first type using 1– the listed probability.
+Equilibrates a pair of molecular species, allowing the efficient simulation of rapid reactions.  It reads two molecule names from \texttt{line2}, followed by a probability value.  Then, it looks for all molecules in the live lists with either of the two types and replaces them with the second type using the listed probability or with the first type using 1 the listed probability.
 
 \item[\texttt{enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
