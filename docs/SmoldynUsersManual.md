@@ -449,28 +449,17 @@ nanometer-microsecond tend to be preferable. The following table lists
 reasonably typical values for different processes in several different unit
 systems.
 
-Diffusion Unimolec. Bimolecular Adsorption
+<u>Diffusion Unimolec. Bimolecular Adsorption</u>
 
-<span class="underline">Concentration coefficient reactions reactions
-rates           </span>
+Concentration coefficient reactions reactions rates
 
-Typical value 10 μM 10 μm<sup>2</sup>s<sup>–1</sup> 1 s<sup>–1</sup>
-10<sup>5</sup> M<sup>–1</sup>s<sup>–1</sup> 1 μm s<sup>–1</sup>
-
-mks 6x10<sup>21</sup> m<sup>–3</sup> 10<sup>–11</sup>
-m<sup>2</sup>s<sup>–1</sup> 1 s<sup>–1</sup> 10<sup>2</sup>
-m<sup>3</sup>mol<sup>–1</sup>s<sup>–1</sup> 10<sup>–6</sup> m
-s<sup>–1</sup>
-
-1.7x10<sup>–22</sup> m<sup>3</sup>s<sup>–1</sup>
-
-cgs 6x10<sup>15</sup> cm<sup>–3</sup> 10<sup>–7</sup>
-cm<sup>2</sup>s<sup>–1</sup> 1 s<sup>–1</sup> 1.7x10<sup>–16</sup>
-cm<sup>3</sup>s<sup>–1</sup> 10<sup>–4</sup> cm s<sup>–1</sup>
-
-μm-ms 6000 μm<sup>–3</sup> 10<sup>–2</sup> μm<sup>2</sup>ms<sup>–1</sup>
-10<sup>–3</sup> ms<sup>–1</sup> 1.7x10<sup>–7</sup>
-μm<sup>3</sup>ms<sup>–1</sup> 10<sup>–3</sup> μm ms<sup>–1</sup>
+ 
+|       |         |          |           |          |         |
+|-------|---------|----------|-----------|------------|---------|
+| Typical value | 10 μM | 10 μm<sup>2</sup>s<sup>–1</sup> | 1 s<sup>–1</sup> | 10<sup>5</sup> | M<sup>–1</sup>s<sup>–1</sup> | 1 μm s<sup>–1</sup> |
+| mks | 6x10<sup>21</sup> | m<sup>–3</sup> | 10<sup>–11</sup> | m<sup>2</sup>s<sup>–1</sup> | 1 s<sup>–1</sup> | 10<sup>2</sup> |
+| cgs | 6x10<sup>15</sup> cm<sup>–3</sup> | 10<sup>–7</sup> cm<sup>2</sup>s<sup>–1</sup> | 1 s<sup>–1</sup> | 1.7x10<sup>–16</sup> cm<sup>3</sup>s<sup>–1</sup> | 10<sup>–4</sup> cm s<sup>–1</sup>
+| μm-ms | 6000 μm<sup>–3</sup> | 10<sup>–2</sup> μm<sup>2</sup>ms<sup>–1</sup> | 10<sup>–3</sup> ms<sup>–1</sup> | 1.7x10<sup>–7</sup> μm<sup>3</sup>ms<sup>–1</sup> | 10<sup>–3</sup> μm ms<sup>–1</sup> |
 
 μm-s 6000 μm<sup>–3</sup> 10 μm<sup>2</sup>s<sup>–1</sup> 1
 s<sup>–1</sup> 1.7x10<sup>–4</sup> μm<sup>3</sup>s<sup>–1</sup> 1 μm
@@ -486,8 +475,7 @@ nm-μs 6x10<sup>–6</sup> nm<sup>–3</sup> 10 nm<sup>2</sup>μs<sup>–1</sup>
 
 px-ms 6x10<sup>–3</sup> px<sup>–3</sup> 100
 px<sup>2</sup>ms<sup>–1</sup> 10<sup>–3</sup> ms<sup>–1</sup> 0.17
-px<sup>3</sup>ms<sup>–1</sup> 0.1 px ms<sup>–1</sup>
-
+px<sup>3</sup>ms<sup>–1</sup> 0.1 px ms<sup>–1</sup> 
 A pixel, abbreviated px, is defined as a length of 10 nm. In the
 concentration column, ‘6’ is short for 6.022045. In the bimolecular
 reactions column, 1.7 is short for 1.660565.
@@ -1662,7 +1650,8 @@ The following images show Smoldyn’s graphics for 1D, 2D, and 3D systems,
 made with the files graphics1.txt, graphics2.txt, and graphics3.txt. All
 of these use the `opengl\_good` graphics quality.
 
-![graphics1001](media/image16.png) ![](media/image17.emf)
+![graphics1001](media/image16.png) 
+![](media/image17.emf)
 ![](media/image18.emf)
 
 The following table lists the graphics statements
@@ -1670,39 +1659,25 @@ The following table lists the graphics statements
 <span class="underline">statement</span>
 <span class="underline">function</span>
 
+```
 graphics *str* graphical output method
-
-graphic\_iter *int* time steps run between renderings
-
-graphic\_delay *float* additional delay between renderings
-
-quit\_at\_end *yes/no* Smoldyn should quit when it’s done
-
-frame\_thickness *int* thickness of system frame
-
-frame\_color *red green blue* color of system frame
-
-grid\_thickness *int* thickness of virtual box grid
-
-grid\_color *red green blue* color of virtual box grid
-
-background\_color *red green blue* background color
-
-display\_size *name* *float* size of display for a molecule species
-
+graphic_iter *int* time steps run between renderings
+graphic_delay *float* additional delay between renderings
+quit_at_end *yes/no* Smoldyn should quit when it’s done
+frame_thickness *int* thickness of system frame
+frame_color *red green blue* color of system frame
+grid_thickness *int* thickness of virtual box grid
+grid_color *red green blue* color of virtual box grid
+background_color *red green blue* background color
+display_size *name* *float* size of display for a molecule species
 color *name* *red green blue* color for a molecule species
-
-text\_color *color* color for text display
-
-text\_display *item* item that should be displayed with text
-
-tiff\_iter *int* time steps between TIFF savings
-
-tiff\_name *name* root name of TIFF files
-
-tiff\_min *int* initial suffix for TIFF files
-
-tiff\_max *int* largest possible TIFF suffix
+text_color *color* color for text display
+text_display *item* item that should be displayed with text
+tiff_iter *int* time steps between TIFF savings
+tiff_name *name* root name of TIFF files
+tiff_min *int* initial suffix for TIFF files
+tiff_max *int* largest possible TIFF suffix
+```
 
 **Better graphics**
 

@@ -1,7 +1,9 @@
 site_name: Smoldyn
 nav:
-    - Smoldyn User manual: SmoldynUsersManual.md
+    - Home: index.md
+    - Smoldyn User Manual: SmoldynUsersManual.md
     - SmolEmulate : SmolEmulateDoc.md 
+    - Smoldyn Code Documentation: SmoldynCodeDoc.md
     - libsmoldyn Manual: LibsmoldynManual.md 
     - Python Bindings: PythonBindings.md
 
@@ -18,6 +20,7 @@ markdown_extensions:
     - sane_lists
     - codehilite
     - admonition
+    - tables
     - toc:
         permalink: true
 

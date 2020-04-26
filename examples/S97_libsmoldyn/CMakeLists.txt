@@ -1,9 +1,9 @@
-add_executable(test1 test1.c)
+add_executable(test1 test1.cpp)
 target_link_libraries(test1 smoldyn_shared)
 
-add_executable(testcode ./testcode/testcode.c)
+add_executable(testcode ./testcode/testcode.cpp)
 target_link_libraries(testcode smoldyn_shared)
 
-set(SRC_FILES test1.c testcode/testcode.c)
-set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
-
+enable_testing()
+add_test(NAME test_libsmodyn1 COMMAND $<TARGET_FILE:test1>)
+add_test(NAME test_libsmodyn2 COMMAND $<TARGET_FILE:testcode>)

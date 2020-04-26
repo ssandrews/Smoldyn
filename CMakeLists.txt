@@ -143,9 +143,6 @@ add_definitions(-std=c++11)
 
 
 ####### Build for debugging or release ##########
-
-add_definitions(-std=c++14)
-
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	set(COMPILER_IS_CLANGXX TRUE)
 endif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -208,52 +205,55 @@ endif()
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
 
+# see cmake --help-policy CMP0072"
+set(OpenGL_GL_PREFERENCE LEGACY)
+
 if (OPTION_USE_OPENGL AND OPTION_VCELL)
-	set(HAVE_OPENGL TRUE)
-	set(HAVE_GL_GLU_H TRUE)
-	set(HAVE_GL_GL_H TRUE)
+    set(HAVE_OPENGL TRUE)
+    set(HAVE_GL_GLU_H TRUE)
+    set(HAVE_GL_GL_H TRUE)
 elseif(OPTION_USE_OPENGL)
-	if(OPTION_MINGW)
-		list(APPEND DEP_LIBS opengl32 glu32 freeglut_static gdi32 winmm)
-		find_file(HAVE_GL_GL_H GL/gl.h PATHS ${MINGWDIR}/include)
-		find_file(HAVE_OPENGL_GL_H OpenGL/gl.h PATHS ${MINGWDIR}/include)
-		find_file(HAVE_GL_GLU_H GL/glu.h PATHS ${MINGWDIR}/include)
-		find_file(HAVE_OPENGL_GLU_H OpenGL/glu.h PATHS ${MINGWDIR}/include)
+    if(OPTION_MINGW)
+        list(APPEND DEP_LIBS opengl32 glu32 freeglut_static gdi32 winmm)
+        find_file(HAVE_GL_GL_H GL/gl.h PATHS ${MINGWDIR}/include)
+        find_file(HAVE_OPENGL_GL_H OpenGL/gl.h PATHS ${MINGWDIR}/include)
+        find_file(HAVE_GL_GLU_H GL/glu.h PATHS ${MINGWDIR}/include)
+        find_file(HAVE_OPENGL_GLU_H OpenGL/glu.h PATHS ${MINGWDIR}/include)
 
-		find_path(OPEN_GL_INCLUDE_DIR gl.h PATHS ${MINGWDIR}/include/GL)
-		get_filename_component(OPEN_GL_INCLUDE_DIR "${HAVE_GL_GL_H}" PATH)
-		find_library(OPEN_GL_LIBRARIES libopengl32.a PATHS ${MINGWDIR}/lib)
-		find_library(GLU32_LIBRARIES libglu32.a PATHS ${MINGWDIR}/lib)
-	else()
-		find_file(HAVE_GL_GL_H GL/gl.h)
-		find_file(HAVE_OPENGL_GL_H OpenGL/gl.h)
-		find_file(HAVE_GL_GLU_H GL/glu.h)
-		find_file(HAVE_OPENGL_GLU_H OpenGL/glu.h)
-		include(FindOpenGL)
-	endif()
+        find_path(OPEN_GL_INCLUDE_DIR gl.h PATHS ${MINGWDIR}/include/GL)
+        get_filename_component(OPEN_GL_INCLUDE_DIR "${HAVE_GL_GL_H}" PATH)
+        find_library(OPEN_GL_LIBRARIES libopengl32.a PATHS ${MINGWDIR}/lib)
+        find_library(GLU32_LIBRARIES libglu32.a PATHS ${MINGWDIR}/lib)
+    else()
+        find_file(HAVE_GL_GL_H GL/gl.h)
+        find_file(HAVE_OPENGL_GL_H OpenGL/gl.h)
+        find_file(HAVE_GL_GLU_H GL/glu.h)
+        find_file(HAVE_OPENGL_GLU_H OpenGL/glu.h)
+        include(FindOpenGL)
+    endif()
 
-	if(OPENGL_FOUND)
-		set(OPENGL_FOUND TRUE)
-		message(STATUS "OpenGL found: '${OPENGL_INCLUDE_DIR}', '${OPENGL_LIBRARIES}'")
-	elseif(OPEN_GL_INCLUDE_DIR AND OPEN_GL_LIBRARIES)
-		set(OPENGL_FOUND TRUE)
-		message(STATUS "OpenGL found: '${OPEN_GL_INCLUDE_DIR}', '${OPEN_GL_LIBRARIES}'")
-	else()
-		set(OPENGL_FOUND FALSE)
-		message(FATAL_ERROR "OpenGL not found.  Building without OpenGL is possible.")
-	endif()
+    if(OPENGL_FOUND)
+        set(OPENGL_FOUND TRUE)
+        message(STATUS "OpenGL found: '${OPENGL_INCLUDE_DIR}', '${OPENGL_LIBRARIES}'")
+    elseif(OPEN_GL_INCLUDE_DIR AND OPEN_GL_LIBRARIES)
+        set(OPENGL_FOUND TRUE)
+        message(STATUS "OpenGL found: '${OPEN_GL_INCLUDE_DIR}', '${OPEN_GL_LIBRARIES}'")
+    else()
+        set(OPENGL_FOUND FALSE)
+        message(FATAL_ERROR "OpenGL not found.  Building without OpenGL is possible.")
+    endif()
 
-	if(OPTION_MINGW)
-		if(GLU32_LIBRARIES)
-			message(STATUS "Glu32 found: '${GLU32_LIBRARIES}'")
-		else()
-			message(FATAL_ERROR "Glu32 not found.  Building without OpenGL is possible.")
-		endif()
-	endif(OPTION_MINGW)
+    if(OPTION_MINGW)
+        if(GLU32_LIBRARIES)
+            message(STATUS "Glu32 found: '${GLU32_LIBRARIES}'")
+        else()
+            message(FATAL_ERROR "Glu32 not found.  Building without OpenGL is possible.")
+        endif()
+    endif(OPTION_MINGW)
 
-	set(HAVE_OPENGL TRUE)
-	include_directories(${OPENGL_INCLUDE_DIR} ${OPEN_GL_INCLUDE_DIR})
-	list(APPEND DEP_LIBS ${OPENGL_LIBRARIES} ${OPEN_GL_LIBRARIES} ${GLU32_LIBRARIES})
+    set(HAVE_OPENGL TRUE)
+    include_directories(${OPENGL_INCLUDE_DIR} ${OPEN_GL_INCLUDE_DIR})
+    list(APPEND DEP_LIBS ${OPENGL_LIBRARIES} ${OPEN_GL_LIBRARIES} ${GLU32_LIBRARIES})
 endif()
 
 
@@ -480,20 +480,20 @@ if(OPTION_TARGET_SMOLDYN)
 endif()
 
 if(OPTION_TARGET_LIBSMOLDYN)
-	add_library(smoldyn_shared SHARED ${SRC_FILES} ${HEADER_FILES})
-	add_library(smoldyn_static STATIC ${SRC_FILES} ${HEADER_FILES})
-	target_link_libraries(smoldyn_shared ${DEP_LIBS})
-	target_link_libraries(smoldyn_static ${DEP_LIBS})
-	if(APPLE)
-		SET_TARGET_PROPERTIES(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
-	endif(APPLE)
+    add_library(smoldyn_shared SHARED ${SRC_FILES} ${HEADER_FILES})
+    add_library(smoldyn_static STATIC ${SRC_FILES} ${HEADER_FILES})
+    set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
+    target_link_libraries(smoldyn_shared ${DEP_LIBS})
+    target_link_libraries(smoldyn_static ${DEP_LIBS})
+    if(APPLE)
+        SET_TARGET_PROPERTIES(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
+    endif(APPLE)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 ########## Python module #########
 if(OPTION_PYTHON)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
     add_subdirectory(source/python)
-    add_subdirectory(examples)
 endif()
 
 
@@ -524,8 +524,31 @@ configure_file (
 ########## package #########
 include(CPack)
 
+########## docs #############
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_SOURCE_DIR}/docs/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
+
+    # note the option ALL which allows to build the docs together with the application
+    add_custom_target(doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+else (DOXYGEN_FOUND)
+    message("Doxygen need to be installed to generate the doxygen documentation")
+endif()
+
+
 ######### Testing #############
 enable_testing()
+add_subdirectory(examples)
 
 ## # Run examples.
 ## file(GLOB_RECURSE EXAMPLE_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/S*/*.txt)
