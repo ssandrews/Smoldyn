@@ -493,7 +493,6 @@ endif(OPTION_TARGET_LIBSMOLDYN)
 if(OPTION_PYTHON)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
     add_subdirectory(source/python)
-    add_subdirectory(examples)
 endif()
 
 
@@ -526,6 +525,7 @@ include(CPack)
 
 ######### Testing #############
 enable_testing()
+add_subdirectory(examples)
 
 ## # Run examples.
 ## file(GLOB_RECURSE EXAMPLE_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/examples/S*/*.txt)
