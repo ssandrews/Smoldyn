@@ -50,7 +50,6 @@ bool Smoldyn::initialize()
 {
     if(pSim_)
         return true;
-    cout << "Initializing sim struct " << endl;
     if(dim_ <= 0 || dim_ > 3) {
         cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << dim_
              << endl;

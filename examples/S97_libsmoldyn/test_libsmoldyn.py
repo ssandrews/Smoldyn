@@ -53,7 +53,6 @@ def test_library():
     s.addReaction("r100", "", MS.all, "", MS.all, ["ATP"], [MS.soln], 0.02)
     s.setReactionRegion("r100", "Cell00", "");
 
-    s.update()
     s.run(200, dt=0.01, display=True)
 
 
