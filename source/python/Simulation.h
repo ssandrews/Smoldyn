@@ -1,6 +1,6 @@
 // =====================================================================================
 //
-//       Filename:  Smoldyn.h
+//       Filename:  Simulation.h
 //
 //    Description: Header file.
 //
@@ -9,8 +9,8 @@
 //
 // =====================================================================================
 
-#ifndef SMOLDYN_H
-#define SMOLDYN_H
+#ifndef SIMULTION_H
+#define SIMULTION_H
 
 #include <sstream>
 #include <map>
@@ -24,11 +24,11 @@ namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"
 
-class Smoldyn {
+class Simulation {
 
 public:
-    Smoldyn();
-    ~Smoldyn();
+    Simulation(bool debug);
+    ~Simulation();
 
     SmoldynDefine& getDefine();
 
@@ -89,25 +89,53 @@ public:
         const char* reac, const char* compt, const char* surface);
 
     void setSimTimes(const double start, const double end, const double step);
+
+    // Inline functions.
     inline simptr simPtr() const
     {
         return pSim_;
     }
 
+    inline void setBoundaryType(int dim, int highside, char type)
+    {
+        smolSetBoundaryType(pSim_, dim, highside, type);
+    }
+
+    inline void addMolList(const char* mollist)
+    {
+        smolAddMolList(pSim_, mollist);
+    }
+
+    inline void addSolutionMolecules(const char* name, int nums,
+        vector<double>& lowposition, vector<double>& highposition)
+    {
+        smolAddSolutionMolecules(
+            pSim_, name, nums, &lowposition[0], &highposition[0]);
+    }
+
+    inline void setMoleculeStyle(const char* molecule, enum MolecState state,
+        double size, vector<double>& color)
+    {
+        smolSetMoleculeStyle(pSim_, molecule, state, size, &color[0]);
+    }
+
+    inline void setGraphicsParams(const char* method, int timestep, int delay)
+    {
+        smolSetGraphicsParams(pSim_, method, timestep, delay);
+    }
+
 private:
-    /* data */
-    SmoldynDefine define_;
-
-    // simstruct sim_;
     simptr pSim_;
-
-    size_t dim_;
+    bool   debug_;
+    size_t dim_;  // Dimention of the system.
 
     // As large as dims.
     vector<double> lowbounds_;
     vector<double> highbounds_;
 
     double curtime_;
+
+    SmoldynDefine define_;
 };
 
-#endif /* end of include guard: SMOLDYN_H */
+#endif /* end of include guard: SIMULTION_H */
