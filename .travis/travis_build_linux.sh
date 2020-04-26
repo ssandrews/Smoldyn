@@ -21,6 +21,8 @@
 set -e
 set -x
 
+python3 -m pip install pip --upgrade --user
+
 # Bug: `which python` returns /opt/bin/python* etc on travis. For which numpy
 # many not be available. Therefore, it is neccessary to use fixed path for
 # python executable.
