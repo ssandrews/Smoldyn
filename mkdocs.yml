@@ -20,8 +20,10 @@ markdown_extensions:
     - sane_lists
     - codehilite
     - admonition
+    - tables
     - toc:
         permalink: true
 
 plugins:
     - search
+    - macros
