@@ -1,6 +1,6 @@
 //#include <libsmoldyn.h>
 
-#include "/usr/local/include/libsmoldyn.h"
+#include "libsmoldyn.h"
 
 /**** Compiling and linking, for Macs ****
 
