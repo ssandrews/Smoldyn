@@ -33,9 +33,9 @@ public:
     SmoldynDefine& getDefine();
 
     size_t getDim() const;
-    void setDim(size_t dim);
+    void   setDim(size_t dim);
 
-    void setRandomSeed(size_t seed);
+    void   setRandomSeed(size_t seed);
     size_t getRandomSeed();
 
     bool initialize();
@@ -43,55 +43,52 @@ public:
     bool run(double simtime, double starttime, double dt, bool display);
 
     // Bounds.
-    void setLowerBounds(const vector<double> bounds);
+    void           setLowerBounds(const vector<double> bounds);
     vector<double> getLowerBounds() const;
 
-    void setHigherBounds(const vector<double> bounds);
+    void           setHigherBounds(const vector<double> bounds);
     vector<double> getHigherBounds() const;
 
     void setBounds(const vector<pair<double, double>>& bounds);
     std::vector<pair<double, double>> getBounds() const;
 
-    void setPartitions(const string& name, double val);
+    void setPartitions(const char* name, double val);
 
-    void addSpecies(const string& name, const string& param);
+    void addSpecies(const char* name, const char* param);
 
-    void setSpeciesMobility(const string& name, MolecState state, double difc,
-                            double* drift, double* difmatrix);
+    void setSpeciesMobility(const char* name, MolecState state, double difc,
+        vector<double>& drift, vector<double>& difmatrix);
 
-    void addSurface(const string& name);
+    void addSurface(const char* name);
 
-    void setSurfaceAction(const string& name, enum PanelFace face,
-                          const string& species, enum MolecState state,
-                          enum SrfAction action);
+    void setSurfaceAction(const char* name, enum PanelFace face,
+        const char* species, enum MolecState state, enum SrfAction action);
 
-    void addPanel(const string& surface, enum PanelShape panelShape,
-                  const string& panel, const string& axisstring,
-                  vector<double>& params);
+    void addPanel(const char* surface, enum PanelShape panelShape,
+        const char* panel, const char* axisstring, vector<double>& params);
 
-    void addCompartment(const string& compartment);
+    void addCompartment(const char* compartment);
 
-    void addCompartmentSurface(const string& compt, const string& surface);
+    void addCompartmentSurface(const char* compt, const char* surface);
 
-    void addCompartmentPoint(const string& compt, vector<double> point);
+    void addCompartmentPoint(const char* compt, vector<double> point);
 
-    void addCompartmentMolecules(const string& species, size_t number,
-                                 const string& compt);
+    void addCompartmentMolecules(
+        const char* species, size_t number, const char* compt);
 
-    void addSurfaceMolecules(const string& species, enum MolecState state,
-                             size_t number, const string& surface,
-                             enum PanelShape panelShape, const string& panel,
-                             vector<double>& position);
+    void addSurfaceMolecules(const char* species, enum MolecState state,
+        size_t number, const char* surface, enum PanelShape panelShape,
+        const char* panel, vector<double>& position);
 
-    void addReaction(const string& reaction, const string& reactant1,
-                     enum MolecState rstate1, const string& reactant2,
-                     enum MolecState rstate2, size_t nproduct,
-                     vector<const char*>& productSpecies,
-                     vector<enum MolecState> productStates, double rate);
+    void addReaction(const char* reaction, const char* reactant1,
+        enum MolecState rstate1, const char* reactant2, enum MolecState rstate2,
+        vector<string> productSpecies, vector<enum MolecState> productStates,
+        double rate);
 
-    void setReactionRegion(const string& reac, const string& compt,
-                           const string& surface);
+    void setReactionRegion(
+        const char* reac, const char* compt, const char* surface);
 
+    void setSimTimes(const double start, const double end, const double step);
     inline simptr simPtr() const
     {
         return pSim_;

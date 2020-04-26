@@ -4,7 +4,11 @@ SortIncludes: false
 ConstructorInitializerIndentWidth: 4
 AlignEscapedNewlinesLeft: true
 AlignTrailingComments: true
-AllowAllParametersOfDeclarationOnNextLine: false
+AlignAfterOpenBracket: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignEscapedNewlines: true
+AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false

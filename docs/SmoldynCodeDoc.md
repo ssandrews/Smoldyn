@@ -5738,7 +5738,7 @@ for compartments.
 
 ### Data structures
 
-```c
+``` C
     typedef struct portstruct {
         struct portsuperstruct *portss; // port superstructure
         char *portname;                         // port name (reference, not owned)
@@ -5933,7 +5933,7 @@ variable is undefined, then all calls to the nsv code are disabled.
 
 ### Data structures
 
-```c
+``` C
     enum LatticeType {LATTICEnone,LATTICEnsv,LATTICEpde};
     
     typedef struct latticestruct {
@@ -6309,14 +6309,14 @@ Filament support is in progress.
 
 ### Data structures declared in smoldyn.h
 
-```c
+``` C
 enum DynamicsType {DTnone,DTrouse,DTalberts};
 ```
 
 The `DynamicsType` enumerated type describes the filament simulation
 dynamics type.
 
-```c
+``` C
 typedef struct beadstruct {
     double xyz[3];                          // bead coordinates
     double xyzold[3];                       // bead coordinates for prior time
@@ -6328,7 +6328,7 @@ each bead is quite simple. A bead has its current position, in `xyz` and
 its old position, in `xyzold`. For 2D simulations, only the first two
 vales are used in each position vector.
 
-```c
+``` C
 typedef struct segmentstruct {
     double xyzfront[3];                 // Coords. for segment front
     double xyzback[3];                  // Coords. for segment back
@@ -6357,7 +6357,7 @@ At present, filaments are designed for all segments of the same length.
 This wasn’t what I had in mind initially, but may be sufficiently easier
 to program that it’s worth keeping this constraint.
 
-```c
+``` C
 typedef struct filamenttypestruct {
     struct filamentsuperstruct *filss;  // filament superstructure
     char *ftname;                               // filament type name
@@ -6409,7 +6409,7 @@ only applies to bead models. For 2D filaments, `stdypr` values 1 and 2
 should have value 0 and `kypr` values 1 and 2 should have value -1 (i.e.
 bending out of the \(x,y\) plane can’t happen).
 
-```c
+``` C
 typedef struct filamentstruct {
     struct filamentsuperstruct *filss;  // filament superstructure
     filamenttypeptr filtype;    // filament type structure
@@ -6439,7 +6439,7 @@ implemented so that `back` is always greater than `front`. I considered
 using a circular queue, but this is easier to use and runs faster in
 most algorithms.
 
-```c
+``` C
 typedef struct filamentsuperstruct {
     enum StructCond condition;  // structure condition
     struct simstruct *sim;          // simulation structure
@@ -6824,7 +6824,7 @@ automatically call BioNetGen, BioNetGen will expand the rules into a
 
 <span class="underline">Data structures declared in smoldyn.h</span>
 
-```c
+``` C
 typedef struct bngstruct {
     struct bngsuperstruct *bngss; // bng superstructure
     char *bngname;              // bng name
@@ -7403,7 +7403,7 @@ summary is: initialization is done in `smolsimulategl` and drawing is
 done by `RenderSim`. <span class="underline">Data structure</span>
 
 
-```c
+``` C
 #define MAXLIGHTS 8;
 enum LightParam {LPambient,LPdiffuse,LPspecular,LPposition,LPon,LPoff,LPauto,LPnone};
 
@@ -7734,7 +7734,7 @@ use as they wish.
 
 ### Data structures
 
-```c
+``` C
 #define ETMAX 10
 enum SmolStruct {SSmolec,SSwall,SSrxn,SSsurf,SSbox,SScmpt,SSport,SScmd,SSmzr,SSsim,SScheck,SSall,SSnone};
 enum EventType {ETwall,ETsurf,ETdesorb,ETrxn0,ETrxn1,ETrxn2intra,ETrxn2inter,ETrxn2wrap,ETimport,ETexport};
@@ -8158,14 +8158,14 @@ order:
   - In smolcmd.c, add a new declaration to the top of the file for the
     command, which looks like:
     
-    ```c
+    ``` C
     enum CMDcode cmdname(simptr sim,cmdptr cmd,char *line2);
     ```
 
   - The first function of smolcmd.c is `docommand`. In it, add an `else
     if` line for the new command. It looks like:
     
-    ```c
+    ``` C
     else if(!strcmp(word,"name")) return cmdname(sim,cmd,line2);
     ```
 
@@ -8182,7 +8182,7 @@ order:
 Each command is written with a similar structure. As an example, here is
 `cmdecho`:
 
-```c
+``` C
 enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2) {
     FILE *fptr;
     char *termqt,str[STRCHAR];
@@ -8265,7 +8265,7 @@ an example is in `cmdifincmpt`, which calls another command if there are
 some number of molecules in a specified compartment. Here is part of its
 listing:
 
-```c
+``` C
 enum CMDcode cmdifincmpt(simptr sim,cmdptr cmd,char *line2) {
     ... variable declarations ...
     moleculeptr mptr;

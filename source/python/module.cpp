@@ -38,7 +38,7 @@ int init_and_run(const string& filepath, const string& flags)
     int er = 0, wflag = 0;
 
     string filename, fileroot;
-    auto pos = filepath.find_last_of('/');
+    auto   pos = filepath.find_last_of('/');
 
     fileroot = filepath.substr(0, pos + 1);
     filename = filepath.substr(pos + 1);
@@ -46,7 +46,7 @@ int init_and_run(const string& filepath, const string& flags)
     simptr sim = nullptr;
 #ifdef OPTION_VCELL
     er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &sim, flags.c_str(),
-                        new SimpleValueProviderFactory(), new SimpleMesh());
+        new SimpleValueProviderFactory(), new SimpleMesh());
 #else
     er =
         simInitAndLoad(fileroot.c_str(), filename.c_str(), &sim, flags.c_str());
@@ -94,15 +94,15 @@ PYBIND11_MODULE(_smoldyn, m)
     py::class_<SmoldynSpecies>(m, "Species")
         .def(py::init<const string&>())
         .def("__repr__",
-             [](const SmoldynSpecies& sp) {
-                 return "<smoldyn.Species: name=" + sp.getName() + ">";
-             })
+            [](const SmoldynSpecies& sp) {
+                return "<smoldyn.Species: name=" + sp.getName() + ">";
+            })
         .def_property("difc", &SmoldynSpecies::getDiffConst,
-                      &SmoldynSpecies::setDiffConst)
-        .def_property("color", &SmoldynSpecies::getColor,
-                      &SmoldynSpecies::setColor)
+            &SmoldynSpecies::setDiffConst)
+        .def_property(
+            "color", &SmoldynSpecies::getColor, &SmoldynSpecies::setColor)
         .def_property("display_size", &SmoldynSpecies::getDisplaySize,
-                      &SmoldynSpecies::setDisplaySize);
+            &SmoldynSpecies::setDisplaySize);
 
     py::enum_<SrfAction>(m, "SA")
         .value("reflect", SrfAction::SAreflect)
@@ -145,20 +145,21 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("all", PanelShape::PSall)
         .value("none", PanelShape::PSnone);
 
-    /* Model */
-    py::class_<Smoldyn>(m, "Model")
+    /* Simulation class */
+    py::class_<Smoldyn>(m, "Simulation")
         .def(py::init<>())
-        .def_property_readonly("define", &Smoldyn::getDefine,
-                               py::return_value_policy::reference)
+        .def_property_readonly(
+            "define", &Smoldyn::getDefine, py::return_value_policy::reference)
         .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
         .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
         .def("run", &Smoldyn::run, "stoptime"_a, "starttime"_a = 0.0,
-             "dt"_a = 1e-5, "display"_a=true)
+            "dt"_a = 1e-5, "display"_a = true)
         .def("setPartitions", &Smoldyn::setPartitions)
         .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
         .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,
-             "state"_a, "diffConst"_a, "drift"_a = 0, "difmatrix"_a = 0)
+            "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
+            "difmatrix"_a = std::vector<double>())
         .def("addSurface", &Smoldyn::addSurface, "name"_a)
         .def("setSurfaceAction", &Smoldyn::setSurfaceAction)
         .def("addSurfaceMolecules", &Smoldyn::addSurfaceMolecules)
@@ -169,13 +170,15 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("addComparmentMolecules", &Smoldyn::addCompartmentMolecules)
         .def("addReaction", &Smoldyn::addReaction)
         .def("setReactionRegion", &Smoldyn::setReactionRegion)
+        .def("setSimTimes", &Smoldyn::setSimTimes)
         .def("runSim", [](const Smoldyn& s) { return smolRunSim(s.simPtr()); })
+        .def("update", [](const Smoldyn& s) { return simupdate(s.simPtr()); })
         .def("runSimUntil",
-             [](const Smoldyn& s, double breaktime) {
-                 return smolRunSimUntil(s.simPtr(), breaktime);
-             })
+            [](const Smoldyn& s, double breaktime) {
+                return smolRunSimUntil(s.simPtr(), breaktime);
+            })
         .def("displaySim",
-             [](const Smoldyn& s) { return smolDisplaySim(s.simPtr()); });
+            [](const Smoldyn& s) { return smolDisplaySim(s.simPtr()); });
 
     /* Function */
     m.def("load_model", &init_and_run, "Load model from a txt file");
