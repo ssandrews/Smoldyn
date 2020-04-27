@@ -39,7 +39,7 @@ for t in np.arange(0.1, 2.0, 0.1):
     ctf = s.getMoleculeCount("fox", MS.all)
     F.append(ctf)
     R.append(ctr)
-    #  print(f"t={t:.1f}, rabbit={ctr}, fox={ctf}")
+    print(f"t={t:.1f}, rabbit={ctr}, fox={ctf}")
 
 plt.plot(T, F, label='Fox')
 plt.plot(T, R, label='Rabbit')

@@ -188,7 +188,8 @@ PYBIND11_MODULE(_smoldyn, m)
             [](const Simulation& s) { return smolDisplaySim(s.simPtr()); });
 
     /* Function */
-    m.def("load_model", &init_and_run, "Load model from a txt file");
+    m.def("load_model", &init_and_run, "filepath"_a, "args"_a=""
+            , "Load model from a txt file");
 
     /* attributes */
     m.attr("__version__") = SMOLDYN_VERSION;
