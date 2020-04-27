@@ -1,6 +1,7 @@
 """smoldyn
 Python bindings.
 """
+
 import smoldyn._smoldyn as _smoldyn
 
 __version__ = _smoldyn.__version__

@@ -18,17 +18,24 @@ else(APPLE)
         -Wl,--whole-archive smoldyn_shared -Wl,--no-whole-archive) 
 endif()
 
-add_custom_command(TARGET _smoldyn POST_BUILD
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist -v --bdist-base ${CMAKE_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating bdist"
-    VERBATIM)
+# add_custom_command(TARGET _smoldyn POST_BUILD
+#     COMMAND ${PYTHON_EXECUTABLE} setup.py wheel -v --bdist-base ${CMAKE_BINARY_DIR}
+#     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#     COMMENT "Generating bdist"
+#     VERBATIM)
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
     COMMAND ${PYTHON_EXECUTABLE} setup.py install --user
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "RUNNING: python3 setup.py install --user"
+    VERBATIM)
+
+add_custom_target(pyinstall_venv
+    DEPENDS _smoldyn
+    COMMAND ${PYTHON_EXECUTABLE} setup.py install
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "RUNNING: python3 setup.py install"
     VERBATIM)
 
 add_custom_target(pyuninstall
