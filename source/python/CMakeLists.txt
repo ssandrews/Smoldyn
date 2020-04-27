@@ -22,17 +22,18 @@ endif()
 
 add_custom_command(TARGET _smoldyn POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
-        -d ${CMAKE_BINARY_DIR}
+        -d ${CMAKE_BINARY_DIR}/wheel
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating bdist"
+    COMMENT "Generating wheel"
     VERBATIM)
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} setup.py install --user
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "RUNNING: python3 setup.py install --user"
-    VERBATIM)
+    COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel/*
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "installing wheel")
+    #VERBATIM)
+    
 
 add_custom_target(pyinstall_venv
     DEPENDS _smoldyn
