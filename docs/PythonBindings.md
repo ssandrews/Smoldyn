@@ -215,7 +215,7 @@ int main()
 </td>
 <td>
 ```python 
-# (c) Dilawar Singh, 2020/April/27
+# Dilawar Singh, 2020-04-27
 import smoldyn
 import numpy as np
 import matplotlib.pyplot as plt

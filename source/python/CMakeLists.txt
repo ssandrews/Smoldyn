@@ -26,7 +26,7 @@ add_custom_command(TARGET _smoldyn POST_BUILD
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} setup.py develop 
+    COMMAND ${PYTHON_EXECUTABLE} setup.py install --user
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "python3 setup.py develop --user"
     VERBATIM)
@@ -34,6 +34,13 @@ add_custom_target(pyinstall
 add_custom_target(pyuninstall
     COMMAND ${PYTHON_EXECUTABLE} -m pip uninstall pymoose
     COMMENT "Uninstall develop"
+    VERBATIM)
+
+add_custom_target(pydevel
+    DEPENDS _smoldyn
+    COMMAND ${PYTHON_EXECUTABLE} setup.py devel --user
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "python3 setup.py develop --user"
     VERBATIM)
 
 add_custom_target(pytest
