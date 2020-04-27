@@ -10,7 +10,11 @@ using namespace std;
 #include "../lib/random2.h"
 #include "Simulation.h"
 
-Simulation::Simulation(bool debug = false)
+Simulation::Simulation() : pSim_(nullptr), debug_(false), dim_(0), curtime_(0.0)
+{
+}
+
+Simulation::Simulation(bool debug)
     : pSim_(nullptr), debug_(debug), dim_(0), curtime_(0.0)
 {
 }

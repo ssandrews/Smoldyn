@@ -27,6 +27,7 @@ namespace py = pybind11;
 class Simulation {
 
 public:
+    Simulation();
     Simulation(bool debug);
     ~Simulation();
 
