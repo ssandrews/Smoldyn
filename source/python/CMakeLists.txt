@@ -9,20 +9,23 @@ set_target_properties(_smoldyn PROPERTIES
     SUFFIX ".so"
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/smoldyn)
 
-add_dependencies(_smoldyn smoldyn_shared)
+add_dependencies(_smoldyn smoldyn_static)
 
 if(APPLE)
-    target_link_libraries(_smoldyn PUBLIC -Wl,-all_load smoldyn_shared -Wl,-noall_load)
+    target_link_libraries(_smoldyn PUBLIC -Wl,-all_load smoldyn_static -Wl,-noall_load)
 else(APPLE)
     target_link_libraries(_smoldyn PUBLIC 
-        -Wl,--whole-archive smoldyn_shared -Wl,--no-whole-archive) 
+        -Wl,--whole-archive 
+        smoldyn_static
+        -Wl,--no-whole-archive) 
 endif()
 
-# add_custom_command(TARGET _smoldyn POST_BUILD
-#     COMMAND ${PYTHON_EXECUTABLE} setup.py wheel -v --bdist-base ${CMAKE_BINARY_DIR}
-#     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-#     COMMENT "Generating bdist"
-#     VERBATIM)
+add_custom_command(TARGET _smoldyn POST_BUILD
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
+        -d ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating bdist"
+    VERBATIM)
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
