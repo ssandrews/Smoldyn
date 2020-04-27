@@ -1,2 +1,4 @@
-mkdocs-material
+mkdocs==1.0.4
+mkdocs-material==4.6.3
 mkdocs-macros-plugin
+pheasant
