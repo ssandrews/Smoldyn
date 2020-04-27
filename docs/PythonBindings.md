@@ -86,17 +86,12 @@ int main(int argc, char* argv[])
 ```
 </td><td>
 ```python
+# (c) Dilawar Singh, 2020/04/20
 import smoldyn
 s = smoldyn.Simulation()
 s.bounds = ([-50, 50], [-50, 50])
 assert s.dim == 2
 s.seed = 1
-
-# TODO:
-# s = smoldyn.Simulation(dim=2, bounds=([-50,50], [-50,50]))
-
-# This is handled by run( ) now.
-#  s.setSimTimes(0, 250.0, 0.01)
 
 s.setPartitions("molperbox", 4);
 s.setPartitions("boxsize", 12.5);
