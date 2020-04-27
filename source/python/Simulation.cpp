@@ -11,7 +11,7 @@ using namespace std;
 #include "Simulation.h"
 
 Simulation::Simulation(bool debug = false)
-    : pSim_(nullptr), debug_(debug), dim_(0)
+    : pSim_(nullptr), debug_(debug), dim_(0), curtime_(0.0)
 {
 }
 
@@ -83,8 +83,7 @@ bool Simulation::initialize()
     return pSim_ ? true : false;
 }
 
-bool Simulation::run(
-    double stoptime, double starttime, double dt, bool display = true)
+bool Simulation::run(double stoptime, double dt, bool display = true)
 {
     if(!pSim_) {
         if(!initialize()) {
@@ -93,12 +92,13 @@ bool Simulation::run(
         }
     }
 
-    smolSetSimTimes(pSim_, starttime, stoptime, dt);
+    smolSetSimTimes(pSim_, curtime_, stoptime, dt);
     smolUpdateSim(pSim_);
 
     if(display)
         smolDisplaySim(pSim_);
-    auto r = smolRunSim(pSim_);
+    auto r   = smolRunSimUntil(pSim_, stoptime);
+    curtime_ = stoptime;
     return r == ErrorCode::ECok;
 }
 
@@ -243,10 +243,14 @@ void Simulation::setReactionRegion(
     smolSetReactionRegion(pSim_, reac, compt, surface);
 }
 
-void Simulation::setSimTimes(
-    const double start, const double stop, const double dt)
+void Simulation::setSimTimes(const double start, const double stop, const double dt)
 {
     if(!pSim_)
         initialize();
     smolSetSimTimes(pSim_, start, stop, dt);
+}
+
+int Simulation::getMoleculeCount(const char* name, enum MolecState state)
+{
+    return smolGetMoleculeCount(pSim_, name, state);
 }

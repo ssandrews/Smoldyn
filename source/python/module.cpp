@@ -154,8 +154,6 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_property(
             "seed", &Simulation::getRandomSeed, &Simulation::setRandomSeed)
         .def_property("bounds", &Simulation::getBounds, &Simulation::setBounds)
-        .def("run", &Simulation::run, "stoptime"_a, "starttime"_a = 0.0,
-            "dt"_a = 1e-5, "display"_a = true)
         .def("setPartitions", &Simulation::setPartitions)
         .def("addSpecies", &Simulation::addSpecies, "name"_a, "mollist"_a = "")
         .def("setSpeciesMobility", &Simulation::setSpeciesMobility, "species"_a,
@@ -175,19 +173,16 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("setReactionRegion", &Simulation::setReactionRegion)
         .def("setBoundaryType", &Simulation::setBoundaryType)
         .def("addMolList", &Simulation::addMolList)
+        /* data */
+        .def("getMoleculeCount", &Simulation::getMoleculeCount)
         /* Graphics */
         .def("setGraphicsParams", &Simulation::setGraphicsParams)
         .def("setMoleculeStyle", &Simulation::setMoleculeStyle)
         /* Simulation */
-        .def("setSimTimes", &Simulation::setSimTimes)
-        .def("runSim",
-            [](const Simulation& s) { return smolRunSim(s.simPtr()); })
-        .def(
-            "update", [](const Simulation& s) { return simupdate(s.simPtr()); })
-        .def("runSimUntil",
-            [](const Simulation& s, double breaktime) {
-                return smolRunSimUntil(s.simPtr(), breaktime);
-            })
+        .def("setTimes", &Simulation::setSimTimes)
+        .def("update", [](const Simulation& s) { return simupdate(s.simPtr()); })
+        .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = true)
+        .def("runUntil", &Simulation::runUntil, "breaktime"_a, "dt"_a=0.0)
         .def("addSolutionMolecules", &Simulation::addSolutionMolecules)
         .def("displaySim",
             [](const Simulation& s) { return smolDisplaySim(s.simPtr()); });

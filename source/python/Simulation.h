@@ -40,7 +40,7 @@ public:
 
     bool initialize();
 
-    bool run(double simtime, double starttime, double dt, bool display);
+    bool run(double simtime, double dt, bool display);
 
     // Bounds.
     void           setLowerBounds(const vector<double> bounds);
@@ -90,6 +90,8 @@ public:
 
     void setSimTimes(const double start, const double end, const double step);
 
+    int getMoleculeCount(const char* name, enum MolecState state);
+
     // Inline functions.
     inline simptr simPtr() const
     {
@@ -122,6 +124,13 @@ public:
     inline void setGraphicsParams(const char* method, int timestep, int delay)
     {
         smolSetGraphicsParams(pSim_, method, timestep, delay);
+    }
+
+    inline void runUntil(const double breaktime, const double dt) 
+    {
+        if(dt > 0.0)
+            smolSetTimeStep(pSim_, dt);
+        smolRunSimUntil(pSim_, breaktime);
     }
 
 private:
