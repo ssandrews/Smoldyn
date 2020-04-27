@@ -182,10 +182,12 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("setTimes", &Simulation::setSimTimes)
         .def("update", [](const Simulation& s) { return simupdate(s.simPtr()); })
         .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = true)
-        .def("runUntil", &Simulation::runUntil, "breaktime"_a, "dt"_a=0.0)
+        .def("start", &Simulation::runUntil, "breaktime"_a, "dt"_a=0.0)
         .def("addSolutionMolecules", &Simulation::addSolutionMolecules)
-        .def("displaySim",
-            [](const Simulation& s) { return smolDisplaySim(s.simPtr()); });
+        .def("displaySim", [](const Simulation& s) { return smolDisplaySim(s.simPtr()); })
+        .def_property("dt", &Simulation::getDt, &Simulation::setDt)
+        ;
+    
 
     /* Function */
     m.def("load_model", &init_and_run, "filepath"_a, "args"_a=""

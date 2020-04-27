@@ -34,7 +34,7 @@ s.setMoleculeStyle("fox", MS.all, 3, [0, 1, 0])
 T, F, R = [], [], []
 for t in np.arange(0.1, 2.0, 0.1):
     T.append(t)
-    s.runUntil(t, dt=0.002)
+    s.start(t, dt=0.001)
     ctr = s.getMoleculeCount("rabbit", MS.all)
     ctf = s.getMoleculeCount("fox", MS.all)
     F.append(ctf)
@@ -43,4 +43,6 @@ for t in np.arange(0.1, 2.0, 0.1):
 
 plt.plot(T, F, label='Fox')
 plt.plot(T, R, label='Rabbit')
+plt.xlabel("Time (au)")
+plt.legend()
 plt.show()

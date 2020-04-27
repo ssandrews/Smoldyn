@@ -126,12 +126,10 @@ public:
         smolSetGraphicsParams(pSim_, method, timestep, delay);
     }
 
-    inline void runUntil(const double breaktime, const double dt) 
-    {
-        if(dt > 0.0)
-            smolSetTimeStep(pSim_, dt);
-        smolRunSimUntil(pSim_, breaktime);
-    }
+    void runUntil(const double breaktime, const double dt);
+
+    void setDt(double dt);
+    double getDt() const;
 
 private:
     simptr pSim_;

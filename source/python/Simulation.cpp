@@ -83,6 +83,13 @@ bool Simulation::initialize()
     return pSim_ ? true : false;
 }
 
+void Simulation::runUntil(const double breaktime, const double dt)
+{
+    if(dt > 0.0)
+        smolSetTimeStep(pSim_, dt);
+    smolRunSimUntil(pSim_, breaktime);
+}
+
 bool Simulation::run(double stoptime, double dt, bool display = true)
 {
     if(!pSim_) {
@@ -243,7 +250,8 @@ void Simulation::setReactionRegion(
     smolSetReactionRegion(pSim_, reac, compt, surface);
 }
 
-void Simulation::setSimTimes(const double start, const double stop, const double dt)
+void Simulation::setSimTimes(
+    const double start, const double stop, const double dt)
 {
     if(!pSim_)
         initialize();
@@ -253,4 +261,14 @@ void Simulation::setSimTimes(const double start, const double stop, const double
 int Simulation::getMoleculeCount(const char* name, enum MolecState state)
 {
     return smolGetMoleculeCount(pSim_, name, state);
+}
+
+void Simulation::setDt(double dt)
+{
+    smolSetTimeStep(pSim_, dt);
+}
+
+double Simulation::getDt() const
+{
+    return pSim_->dt;
 }
