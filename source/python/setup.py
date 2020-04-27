@@ -26,5 +26,5 @@ setup(
     url='http://www.smoldyn.org/',
     packages=['smoldyn'],
     package_dir = { 'smoldyn' : os.path.join(sdir_, 'smoldyn') },
-    package_data={ 'smoldyn': [ 'smoldyn.so' ] },
+    package_data={ 'smoldyn': [ '_smoldyn.so' ] },
 )
