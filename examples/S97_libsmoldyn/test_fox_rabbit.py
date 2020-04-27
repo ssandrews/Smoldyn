@@ -31,11 +31,23 @@ def test_testcase():
     s.setGraphicsParams("opengl", 5, 0)
     s.setMoleculeStyle("rabbit", MS.all, 2, [1,0,0,1])
     s.setMoleculeStyle("fox", MS.all, 3, [0, 1, 0])
+
+    F, R = [], []
     for t in np.arange(0.1, 2.0, 0.1):
         s.runUntil(t, dt=0.002)
         ctr = s.getMoleculeCount("rabbit", MS.all)
         ctf = s.getMoleculeCount("fox", MS.all)
-        print(f"t={t}, rabbit={ctr}, fox={ctf}")
+        F.append(ctf)
+        R.append(ctr)
+        print(f"t={t:.1f}, rabbit={ctr}, fox={ctf}")
+
+    F = np.array(F)
+    assert F.mean() >= 500.0
+    assert F.std() >= 300.0
+    R = np.array(R)
+    assert R.mean() >= 500.0
+    assert R.std() >= 300.0
+
 
 def main():
     test_testcase()
