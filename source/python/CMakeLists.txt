@@ -26,7 +26,7 @@ add_custom_command(TARGET _smoldyn POST_BUILD
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} setup.py develop --user
+    COMMAND ${PYTHON_EXECUTABLE} setup.py develop 
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "python3 setup.py develop --user"
     VERBATIM)
