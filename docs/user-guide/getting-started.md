@@ -1,10 +1,8 @@
-# Getting Started
-
 Smoldyn should be run from a command line interface. For Macs, use the
-application called Terminal, which you can find by searching for it, or
-it should be in your /Applications/Utilities directory. For Windows, use
-the application called Command Prompt, which is easiest to find by
-searching for it using the Start menu.
+application called `Terminal`, which you can find by searching for it, or it
+should be in your `/Applications/Utilities` directory. For Windows, use the
+application called `Command Prompt`, which is easiest to find by searching for
+it using the `Start Menu`.
 
 Open Smoldyn files in a text editor. For Macs, TextEdit works well,
 *except* that it does not let you start with a new file and then save it
@@ -20,7 +18,7 @@ name of your input file. For example, if you are in the Smoldyn parent
 directory, enter `smoldyn examples/template.txt` to run that file. You
 should see output that looks like this:
 
-![](media/image1.png)
+![](../media/image1.png)
 
 This file shows enzymatic catalysis, in which green dots are substrate, blue
 dots are product, enzyme is dark red, and enzyme-substrate complexes are
@@ -34,10 +32,12 @@ because this is a 2D simulation). Pressing ‘0’ returns to the default view. 
 can also press shift-‘T’ to take a snapshot of the output, the space bar to
 pause the simulation, or shift-‘Q’ to quit the simulation.
 
+## Smoldyn input file format
+
 Here is the complete Smoldyn input file for the template.txt simulation.
 This file includes most of Smoldyn’s core features.
 
-```
+```bash
 # Smoldyn configuration file template.
 # List basic file information here, including your name, the development date,
 # what this file does, the model name if you want one, the file version, distribution
@@ -173,47 +173,45 @@ A pixel, abbreviated px, is defined as a length of 10 nm. In the
 concentration column, ‘6’ is short for 6.022045. In the bimolecular
 reactions column, 1.7 is short for 1.660565.
 
-**Model parameters**
+### Model parameters
 
-It is easier to read and edit Smoldyn files if the model parameters that
-you might want to vary are not hard-coded into the model, but are
-collected at the top of the file in a collection of define statements.
-These statements instruct Smoldyn to perform simple text replacement,
-replacing every subsequent instance of the matching text with the
-following substitution text. The statement `define K\_FWD 0.001`, for
-example, tells Smoldyn to replace any subsequent `K\_FWD` text with
-`0.001`; in this case, this is a reaction rate constant. The
-substitution text can be a number, multiple numbers, a string, or even
-nothing at all.
+It is easier to read and edit Smoldyn files if the model parameters that you
+might want to vary are not hard-coded into the model, but are collected at the
+top of the file in a collection of define statements.  These statements
+instruct Smoldyn to perform simple text replacement, replacing every subsequent
+instance of the matching text with the following substitution text. The
+statement `define K_FWD 0.001`, for example, tells Smoldyn to replace any
+subsequent `K_FWD` text with 0.001; in this case, this is a reaction rate
+constant. The substitution text can be a number, multiple numbers, a string, or
+even nothing at all.
 
-**Graphical output**
+### Graphical output
 
-Graphical output can be displayed with several levels of quality. At the
-bottom end is no output at all, achieved with the `graphics none`
-statement or by using a `-t` flag on the command line (e.g. `smoldyn
-template.txt -t`). Next the `graphics opengl` level produces crude
-graphics, `graphics opengl\_good` is passable, and `opengl\_better` is
-reasonably good. Improving the graphics quality slows simulations down,
-so a good approach is to use the plain `opengl` level for model
-development, no graphics when generating simulation results, and
-`opengl\_better` when preparing publication figures.
+Graphical output can be displayed with several levels of quality. At the bottom
+end is no output at all, achieved with the `graphics none` statement or by
+using a `-t` flag on the command line (e.g. `smoldyn template.txt -t`). Next
+the `graphics opengl` level produces crude graphics, `graphics opengl_good` is
+passable, and `opengl_better` is reasonably good. Improving the graphics
+quality slows simulations down, so a good approach is to use the plain `opengl`
+level for model development, no graphics when generating simulation results,
+and `opengl_better` when preparing publication figures.
 
-As used here, the framethickness statement tells Smoldyn to not show a
+As used here, the `framethickness` statement tells Smoldyn to not show a
 frame around the entire simulation volume. There are also other
 statements for controlling the background color, the frame display, etc.
 
-**Space and time**
+### Space and time
 
 Smoldyn can run simulations in 1, 2, or 3 dimensions. Here, the `dim 2`
-statement says that this is a 2D simulation. The following two
-`boundaries` statements define the system volume, showing that it
-extends from -1 to 1 on the x axis, and then the same on the y axis.
-Smoldyn still tracks any molecules beyond these boundaries but it
-becomes less efficient if there are substantial dynamics there.
+statement says that this is a 2D simulation. The following two `boundaries`
+statements define the system volume, showing that it extends from -1 to 1 on
+the x axis, and then the same on the y axis.  Smoldyn still tracks any
+molecules beyond these boundaries but it becomes less efficient if there are
+substantial dynamics there.
 
 Simulations use fixed time steps. They start at the time given with
-`time\_start`, stop at the time given with `time\_stop` and have steps
-with the size given with `time\_step`. For typical simulations of
+`time_start`, stop at the time given with `time_stop` and have steps
+with the size given with `time_step`. For typical simulations of
 subcellular processes, 10 ms is often a reasonable time step. Longer
 time steps make the simulation run faster and shorter time steps produce
 more accurate results. Before starting a long series of simulations, it
@@ -221,55 +219,52 @@ is good practice to run several tests first to ensure that the time step
 is short enough to produce results of the desired accuracy but also long
 enough for adequate efficiency.
 
-**Molecules**
+### Molecules
 
 All of the chemical species in the simulation need to be declared with a
 `species` statement before they can be used in the simulation (except
 when using rule-based modeling, as explained later on).
 
-The following `difc`, `color`, and `display\_size` statements define the
-diffusion coefficients, graphical display colors, and graphical display
-sizes for these different species. These parameters can vary for
-different molecule states, meaning whether the molecule is in solution
-or bound to a surface; the latter case, it can be bound to a surface in
-any of the `front`, `back`, `up`, or `down` states. If no molecule state
-is listed, such as in the statement `difc S 3`, this applies to only the
-solution state; if one of these substrate molecules were to bind to a
-surface, it would not diffuse because the surface-bound diffusion
-coefficients are all still equal to 0. For convenience, these species
-parameters can be defined for all of the states at once by using `all`
-as the state, such as in the statement `color S(all) green`.
+The following `difc`, `color`, and `display_size` statements define the
+diffusion coefficients, graphical display colors, and graphical display sizes
+for these different species. These parameters can vary for different molecule
+states, meaning whether the molecule is in solution or bound to a surface; the
+latter case, it can be bound to a surface in any of the `front`, `back`, `up`,
+or `down` states. If no molecule state is listed, such as in the statement
+`difc S 3`, this applies to only the solution state; if one of these substrate
+molecules were to bind to a surface, it would not diffuse because the
+surface-bound diffusion coefficients are all still equal to 0. For convenience,
+these species parameters can be defined for all of the states at once by using
+`all` as the state, such as in the statement `color S(all) green`.
 
-The behavior of the display\_size statement depends on the graphical
+The behavior of the display_size statement depends on the graphical
 output style. For the `opengl` graphics level, the display size value is
 in pixels. Here, numbers from 2 to 4 are typically good choices. For the
 two better graphics options, the display size value is the radius with
 which the molecule is drawn, using the same units as elsewhere in the
 input file.
 
-**Surfaces**
+### Surfaces
 
 Smoldyn surfaces are infinitesimally thin structures that can be used to
-represent cell membranes, obstructions, system boundaries, or other
-things. They are 2D structures in 3D simulations, or 1D lines or curves
-in 2D simulations (or 0D points in 1D simulations). Each surface has a
-`front` and a `back` face, so molecules can interact differently with
-the two sides of a surface. Each surface is composed of one or more
-`panels`, where each panels can be a rectangle, triangle, sphere,
-hemisphere, cylinder, or a disk. Surfaces can be disjoint, with separate
-non-connected portions. However, all portions of a given surface type
-are displayed in the same way and interact with molecules in the same
-way.
+represent cell membranes, obstructions, system boundaries, or other things.
+They are 2D structures in 3D simulations, or 1D lines or curves in 2D
+simulations (or 0D points in 1D simulations). Each surface has a `front` and a
+`back` face, so molecules can interact differently with the two sides of a
+surface. Each surface is composed of one or more **panels**, where each panels
+can be a rectangle, triangle, sphere, hemisphere, cylinder, or a disk. Surfaces
+can be disjoint, with separate non-connected portions. However, all portions of
+a given surface type are displayed in the same way and interact with molecules
+in the same way.
 
-Surfaces get defined in `surface blocks,` which start with
-`start\_surface` and the surface name, and end with `end\_surface`.
-Within the surface block, define molecule interactions with this surface
-using the `action` or `rate` statements. In this case, the statement
-`action all both reflect` states that molecules of all species should
-reflect off of this surface upon collision with either of the two faces.
-Other action options are `absorb` and `transmit`, for absorption by the
-surface, and transmission through the surface, respectively. Use the
-`rate` statement, which is not used in this file, for adsorption,
+Surfaces get defined in `surface blocks,` which start with `start_surface` and
+the surface name, and end with `end_surface`.  Within the surface block, define
+molecule interactions with this surface using the `action` or `rate`
+statements. In this case, the statement `action all both reflect` states that
+molecules of all species should reflect off of this surface upon collision with
+either of the two faces.  Other action options are `absorb` and `transmit`, for
+absorption by the surface, and transmission through the surface, respectively.
+Use the `rate` statement, which is not used in this file, for adsorption,
 desorption, or partial transmission through a surface.
 
 Define surface graphics using the color and thickness statements. For 3D
@@ -288,17 +283,17 @@ and get drawn with 50 straight line segments. The front face of this
 circle is on the outside and the back face is on the inside (this can be
 reversed by giving the radius with a negative value).
 
-**Compartments**
+### Compartments
 
-Compartments are defined regions of space. They have essentially no role
-in the actual functioning of the simulation but can be useful for
-placing and observing molecules. Their only simulation role is that
-reactions can be qualified so that they only occur within specific
-compartments (which does not happen in this input file).
+Compartments are defined regions of space. They have essentially no role in the
+actual functioning of the simulation but can be useful for placing and
+observing molecules. Their only simulation role is that reactions can be
+qualified so that they only occur within specific compartments (which does not
+happen in this input file).
 
 As with surfaces, compartments are defined with blocks of text. Each
-block starts with `start\_compartment` and the compartment name and ends
-with `end\_compartment`. Within the block, list the surface or surfaces
+block starts with `start_compartment` and the compartment name and ends
+with `end_compartment`. Within the block, list the surface or surfaces
 that form the boundaries to this compartment. Also, list at least one
 `interior-defining point` (a set of coordinates) that is inside the
 compartment, so Smoldyn knows which region is the inside and which is
@@ -308,90 +303,86 @@ point, so the compartment represents the entire region within the
 circle.
 
 Intuitively, the region of a compartment should be defined as everywhere
-in space to which one can `walk` from the interior-defining point,
+in space to which one can `walk` from the `interior-defining` point,
 without crossing any of the bounding surfaces. However, for
 computational efficiency, Smoldyn uses a slightly different definition.
 In Smoldyn, the region of a compartment is everywhere in space from
-which one can `see` the interior-defining point using a straight line,
+which one can `see` the `interior-defining` point using a straight line,
 without crossing any of the bounding surfaces. The difference between
 the definitions is minimal is many cases, but can be important.
 
-**Reactions**
+### Reactions
 
-Smoldyn only simulates elementary chemical reactions, such as
-unimolecular conversions and bimolecular associations. Multistep
-reactions, like Michaelis-Menten reactions, need to be constructed from
-their elementary reactions. List each reaction with the `reaction`
-statement followed by: the reaction name, the reactants, a forward
-arrow, the products, and the reaction rate constant.
+Smoldyn only simulates elementary chemical reactions, such as unimolecular
+conversions and bimolecular associations. Multistep reactions, like
+Michaelis-Menten reactions, need to be constructed from their elementary
+reactions. List each reaction with the `reaction` statement followed by: the
+reaction name, the reactants, a forward arrow, the products, and the reaction
+rate constant.
 
-Both reactant and product names can be followed by their states, listed
-in parentheses. These states are essentially the same as those for the
-molecule diffusion coefficient and color statements. The difference is
-that the solution state now subdivides into the two pseudo-states
-`fsoln` and `bsoln`, where these indicate the solution state that is
-on the front or back, respectively, of the relevant surface. In this
-file, for example, the reaction `reaction fwd E(front) + S(bsoln) -\>
-ES(front) K\_FWD` occurs between enzyme molecules that are surface-bound
-in their front state and substrate molecules that are in the solution on
-the back side of the surface, meaning inside the circle. The product is
-in the front state. If any state is not listed, Smoldyn assumes the
+Both reactant and product names can be followed by their states, listed in
+parentheses. These states are essentially the same as those for the molecule
+diffusion coefficient and color statements. The difference is that the solution
+state now subdivides into the two pseudo-states `fsoln` and `bsoln`, where
+these indicate the solution state that is on the front or back, respectively,
+of the relevant surface. In this file, for example, the reaction `reaction fwd
+E(front) + S(bsoln) -> ES(front) K_FWD` occurs between enzyme molecules that
+are surface-bound in their front state and substrate molecules that are in the
+solution on the back side of the surface, meaning inside the circle. The
+product is in the front state. If any state is not listed, Smoldyn assumes the
 `fsoln` state (which is identical to the normal solution state).
 
-To simulate unimolecular reactions, Smoldyn computes a reaction
-probability per time step. Then, during the simulation, it reacts
-molecules of the given species with the computed probability at each
-time step. For bimolecular reactions, Smoldyn combines the reaction rate
-constant, the reactant diffusion coefficients, and the simulation time
-step to compute a `binding radius`. Larger reaction rate constants lead
-to larger binding radii. During the simulation, if two reactants end up
-within this binding radius of each other at the end of a time step, then
-Smoldyn performs the reaction. It is also possible to specify that these
-reactions should only happen with some probability, but this has very
-little benefit and so is not standard.
+To simulate unimolecular reactions, Smoldyn computes a reaction probability per
+time step. Then, during the simulation, it reacts molecules of the given
+species with the computed probability at each time step. For bimolecular
+reactions, Smoldyn combines the reaction rate constant, the reactant diffusion
+coefficients, and the simulation time step to compute a `binding radius`.
+Larger reaction rate constants lead to larger binding radii. During the
+simulation, if two reactants end up within this binding radius of each other at
+the end of a time step, then Smoldyn performs the reaction. It is also possible
+to specify that these reactions should only happen with some probability, but
+this has very little benefit and so is not standard.
 
-Reversible association/dissociation reactions have the additional
-complexity that the dissociation product molecules start out in close
-proximity and so have a high probability of rapidly reacting with each
-other in a so-called `geminate recombination`. Smoldyn controls the
-probability of geminate recombinations, as opposed to products diffusing
-apart and not re-reacting, by initially separating products by an
-`unbinding radius`. There is extremely little information in the
-scientific literature about what the probability of geminate
-recombinations should be. As a result, Smoldyn sets this probability to
-a maximum value of 0.2 by default. I chose this to balance the physical
-situation that product molecules should be produced reasonably close
-together with the simulation practicality that simulating geminate
-recombinations is computationally costly. Because this default value is
-a very rough guess, Smoldyn emits a warning if it is not over-ridden by
-the input file. The line `product\_placement back pgemmax 0.2` prevents
-this warning by explicitly specifying that the products of the reaction
-named back should be placed so that the maximum probability of geminate
-recombination is 0.2.
+Reversible association/dissociation reactions have the additional complexity
+that the dissociation product molecules start out in close proximity and so
+have a high probability of rapidly reacting with each other in a so-called
+`geminate recombination`. Smoldyn controls the probability of geminate
+recombinations, as opposed to products diffusing apart and not re-reacting, by
+initially separating products by an `unbinding radius`. There is extremely
+little information in the scientific literature about what the probability of
+geminate recombinations should be. As a result, Smoldyn sets this probability
+to a maximum value of 0.2 by default. I chose this to balance the physical
+situation that product molecules should be produced reasonably close together
+with the simulation practicality that simulating geminate recombinations is
+computationally costly. Because this default value is a very rough guess,
+Smoldyn emits a warning if it is not over-ridden by the input file. The line
+`product_placement back pgemmax 0.2` prevents this warning by explicitly
+specifying that the products of the reaction named back should be placed so
+that the maximum probability of geminate recombination is 0.2.
 
 Similar reaction statements can be used for other molecule-molecule
 interactions, such as excluded volume interactions and `conformational
 spread reactions`; in the latter case, the proximity of one molecule
 affects the unimolecular reactions of another molecule.
 
-**Initial molecule placement**
+### Initial molecule placement
 
 Place molecules in a simulation at the starting time using several `mol`
 statements. The plain `mol` statement place molecules with random or
-specific positions in the simulation volume, the `compartment\_mol`
+specific positions in the simulation volume, the `compartment_mol`
 statement places molecules randomly in a given compartment, and the
-`surface\_mol` statement places molecules with random or specific
+`surface_mol` statement places molecules with random or specific
 positions on a given surface. In the last case, the molecule state needs
-to be specified. In the example file, the statement `surface\_mol 100
+to be specified. In the example file, the statement `surface_mol 100
 E(front) membrane all all` instructs Smoldyn to place 100 enzyme
 molecules onto the membrane surface in their front state, and that these
 molecules should be placed randomly on all panel shapes and all panels
 of those shapes (which, in this case, was only one panel).
 
-**Output and Commands**
+### Output and Commands
 
 Smoldyn supports a few general output statements. One of those is
-`text\_display`, which can display the time and molecule counts to the
+`text_display`, which can display the time and molecule counts to the
 graphical output window. Other output statements can save TIFF files of
 the graphical output for recording snapshots of the simulation or
 complete movies.
@@ -404,7 +395,7 @@ physically accurate, there are no such restrictions for commands.
 
 If commands are used to output text to files, then Smoldyn needs to know
 what those files are beforehand, which is the purpose of the
-`output\_files` statement. If those files already exist, then Smoldyn
+`output_files` statement. If those files already exist, then Smoldyn
 checks with the user first before overwriting them. To suppress this
 warning, run Smoldyn with a `-w` option on the command line (e.g.
 `smoldyn template.txt -w`).
@@ -421,243 +412,213 @@ command should be run every 10 time steps, the command is molcount
 (which counts the molecules of each species), and the command should
 also send its output to templateout.txt.
 
-Smoldyn supports quite a lot of commands, all of which are listed in the
-second half of the reference section, at the back of this manual.
+Smoldyn supports quite a lot of commands, all of which are listed in the second
+half of the reference section, at the back of this manual.
 
-In this particular example file, note the use of the `ifdefine
-TEXTOUTPUT` statement. This is used to easily turn on or turn off text
-output by commenting the `define TEXTOUTPUT` statement at the top of the
-file.
+In this particular example file, note the use of the `ifdefine TEXTOUTPUT`
+statement. This is used to easily turn on or turn off text output by commenting
+the `define TEXTOUTPUT` statement at the top of the file.
 
-**Conclusions**
+### Conclusions
 
-This chapter has presented most of what you know to read and write
-Smoldyn input files. If you have not done so already, I recommend
-stopping here and experimenting with Smoldyn. At a minimum, it is
-helpful to edit and run some of the example files. Ideally, this is a
-good time to copy an example file into your own directory and then
-completely rewrite it to create your own model. As you go along, refer
-to the reference section for the details of how specific statements and
-commands work. Also, read other chapters in this manual as questions
-arise.
+This chapter has presented most of what you know to read and write Smoldyn
+input files. If you have not done so already, I recommend stopping here and
+experimenting with Smoldyn. At a minimum, it is helpful to edit and run some of
+the example files. Ideally, this is a good time to copy an example file into
+your own directory and then completely rewrite it to create your own model. As
+you go along, refer to the reference section for the details of how specific
+statements and commands work. Also, read other chapters in this manual as
+questions arise.
 
-If you start using Smoldyn for actual research, then it is important
-that you understand what the software is actually doing. It is also
-helpful to learn about Smoldyn’s more advanced features, how to automate
-simulations, and what makes simulations fast or slow. The rest of this
-manual addresses these topics.
+If you start using Smoldyn for actual research, then it is important that you
+understand what the software is actually doing. It is also helpful to learn
+about Smoldyn’s more advanced features, how to automate simulations, and what
+makes simulations fast or slow. The rest of this manual addresses these topics.
 
-**  
-2\. The Configuration File**
+## The Configuration File
 
-This is the first of the chapters that focuses on a specific aspect of
-Smoldyn, in this case the configuration or input file. These chapters
-are arranged with more elementary material first and more advanced
-material afterwards.
+This is the first of the chapters that focuses on a specific aspect of Smoldyn,
+in this case the configuration or input file. These chapters are arranged with
+more elementary material first and more advanced material afterwards.
 
-**Runtime flags**
+### Runtime flags
 
-When starting Smoldyn from the command line, you can follow the filename
-with runtime flags, of which the options are listed below. Any
-combination of flags may be used, and in any order.
+When starting Smoldyn from the command line, you can follow the filename with
+runtime flags, of which the options are listed below. Any combination of flags
+may be used, and in any order.
 
 command Smoldyn
 
 <span class="underline">line query result</span>
 
-\- normal: parameters displayed and simulation run
+| Command line | Smoldyn Query  |  Result |
+|------|-------|----------------------|
+|      | `-` | normal: parameters displayed and simulation run |
+| `-o` | `o` | suppress output: text output files are not opened |
+| `-p` | `p` | parameters only: simulation is not run |
+| `-q` | `q` | quiet: parameters are not displayed |
+| `-t` | `t` | text only: no graphics are displayed |
+| `-V` | `V` | display version number and quit |
+| `-v` | `v` | verbose: extra parameter information is displayed |
+| `-w` | `w` | suppress warnings: no warnings are shown |
+| `--define x=y` | | set a text macro definition |
 
-\-o o suppress output: text output files are not opened
+## Configuration file syntax
 
-\-p p parameters only: simulation is not run
-
-\-q q quiet: parameters are not displayed
-
-\-t t text only: no graphics are displayed
-
-\-V V display version number and quit
-
-\-v v verbose: extra parameter information is displayed
-
-\-w w suppress warnings: no warnings are shown
-
-\--define *x*=*y* set a text macro definition
-
-**Configuration file syntax**
-
-Configuration files, such as bounce3.txt, are simple text files. The
-format is a series of text lines, each of which needs to be less than
-256 characters long. On each line of input, the first word describes
-which parameters are being set, while the rest of the line lists those
-parameters, separated by spaces. If Smoldyn encounters a problem with a
-line, it displays an error message and terminates. Possible problems
-include missing parameters, illegal parameter values, too many
-parameters, unrecognized molecule, surface, or reaction names,
-unrecognized statements, or others.
+Configuration files, such as bounce3.txt, are simple text files. The format is
+a series of text lines, each of which needs to be less than 256 characters
+long. On each line of input, the first word describes which parameters are
+being set, while the rest of the line lists those parameters, separated by
+spaces. If Smoldyn encounters a problem with a line, it displays an error
+message and terminates. Possible problems include missing parameters, illegal
+parameter values, too many parameters, unrecognized molecule, surface, or
+reaction names, unrecognized statements, or others.
 
 In most cases, statements may be entered in any order, although some are
 required to be listed after others. The required sequence is not always
-obvious, so it is usually easiest to just try what seems most reasonable
-and then fix any errors that Smoldyn reports. Also, a few instructions
-can only be entered once, whereas others can be entered multiple times.
-If a parameter is entered more than once, the latter value overwrites
-the prior one. Parameters that are not defined in the configuration file
-are assigned default values.
+obvious, so it is usually easiest to just try what seems most reasonable and
+then fix any errors that Smoldyn reports. Also, a few instructions can only be
+entered once, whereas others can be entered multiple times.  If a parameter is
+entered more than once, the latter value overwrites the prior one. Parameters
+that are not defined in the configuration file are assigned default values.
 
-**Variables and formulas**
+### Variables and formulas
 
-Smoldyn supports numeric variables. Set them using the variable
-statement, such as `variable x = 100` (spaces are required here). Also,
-essentially all numeric inputs can be entered with a formula. For
-example, if you want a reaction rate to be two times the value of x,
-enter it as 2\*x (spaces are not allowed within formulas). Smoldyn’s
-formula processing supports arithmetic (+,-,\*,/), modulo division (%),
-powers (^), and all levels of parentheses. It also supports many
-standard functions, such as exp, sin, sqrt, etc.
+Smoldyn supports numeric variables. Set them using the variable statement, such
+as `variable x = 100` (spaces are required here). Also, essentially all numeric
+inputs can be entered with a formula. For example, if you want a reaction rate
+to be two times the value of x, enter it as `2*x` (spaces are not allowed
+within formulas). Smoldyn’s formula processing supports arithmetic
+(`+`,`-`,`*`,`/`), modulo division (`%`), powers (`^`), and all levels of
+parentheses. It also supports many standard functions, such as `exp`, `sin`,
+`sqrt`, etc.
 
-**Statements about the configuration file**
+### Statements about the configuration file
 
-A few statements control the reading of the configuration file, which
-are now described in more detail. The first, shown in the first line of
-bounce3.txt, is a comment. A \# symbol indicates that the remainder of
-the line should be ignored, whether it is the whole line as it is in
-bounce3.txt or just the end of the line. It is also possible to comment
-out entire blocks of the configuration file using /\* to start a
-block-comment and \*/ to end it. For these, the /\* or \*/ symbol
-combinations are each required to be at the beginning of configuration
-file lines. The remainder of those lines is ignored, along with any
-lines between them.
+A few statements control the reading of the configuration file, which are now
+described in more detail. The first, shown in the first line of `bounce3.txt`,
+is a comment. A `#` symbol indicates that the remainder of the line should be
+ignored, whether it is the whole line as it is in `bounce3.txt` or just the end
+of the line. It is also possible to comment out entire blocks of the
+configuration file using `/*` to start a block-comment and `*/` to end it. For
+these, the `/*` or `*/` symbol combinations are each required to be at the
+beginning of configuration file lines. The remainder of those lines is ignored,
+along with any lines between them.
 
-It is possible to separate configuration files into multiple text files.
-This is done with the statement read\_file, which simply instructs
-Smoldyn to continue reading from some other file until that one ends
-with end\_file, which is followed by more reading of the original file.
-The read\_file statement may be used anywhere in the configuration file,
-including within reaction definition and surface definition blocks
-(described below) and within files that were themselves called with a
-read\_file statement. The configuration file
-examples/S2\_config/config.txt illustrates these statements.
+It is possible to separate configuration files into multiple text files.  This
+is done with the statement read_file, which simply instructs Smoldyn to
+continue reading from some other file until that one ends with end_file, which
+is followed by more reading of the original file.  The read_file statement may
+be used anywhere in the configuration file, including within reaction
+definition and surface definition blocks (described below) and within files
+that were themselves called with a read_file statement. The configuration file
+`examples/S2_config/config.txt` illustrates these statements.
 
-**Text substitution macros**
+### Text substitution macros
 
 You can use define statements to instruct Smoldyn to perform simple text
 substitution as it reads in a configuration file. As a typical example,
 you might define your reaction rate constants at the top of a
-configuration file using define statements (e.g. define k1 100) and then
+configuration file using define statements (e.g. `define k1 100`) and then
 use the key later on in the file rather than the actual number. This
 leads to a file that is more readable and easier to modify. One
-definition is set automatically: FILEROOT is replaced by the current
+definition is set automatically: `FILEROOT` is replaced by the current
 file name, without path information and without any text that follows a
-‘.’. Prior definitions are overwritten with new ones without causing
+`.`. Prior definitions are overwritten with new ones without causing
 errors or warnings. These definitions have local scope, meaning that
 they only lead to text replacement within the current configuration
-file, and not to those that it reads with read\_file. To create a
-definition with broader scope, use define\_global; the scope of these
+file, and not to those that it reads with `read_file`. To create a
+definition with broader scope, use define_global; the scope of these
 definitions is throughout the current configuration file, as well as any
 file or sub-file that is called by the current file. A configuration
-file that calls the current one is not affected by a define\_global. To
-remove a definition, or all definitions, use undefine.
+file that calls the current one is not affected by a `define_global`. To
+remove a definition, or all definitions, use `undefine`.
 
-define statements can also be used for conditional configuration file
-reading. In this case, a definition is made as usual, although there is
-no need to specify any substitution text. Later on in the file, the
-ifdefine, else, and endif statements lead to reading of different
-portions of file, depending on whether the definition was made or not. A
-variant of the ifdefine statement is the ifundefine statement. These
-conditional statements should work as expected if they are used in a
-normal sort of manner (see any programming book for basic conditional
-syntax), which includes support for nested `if` statements. They can
-also be used successfully with highly abnormal syntaxes (for example, an
-else toggles reading on or off, regardless of the presence of any
-preceding ifdefine or ifundefine), although this use is discouraged
-since it will lead to confusing configuration files, as well as files
-that may not be compatible with future Smoldyn releases.
+`define` statements can also be used for conditional configuration file
+reading. In this case, a definition is made as usual, although there is no need
+to specify any substitution text. Later on in the file, the `ifdefine`, `else`,
+and `endif` statements lead to reading of different portions of file, depending
+on whether the definition was made or not. A variant of the `ifdefine`
+statement is the `ifundefine` statement. These conditional statements should
+work as expected if they are used in a normal sort of manner (see any
+programming book for basic conditional syntax), which includes support for
+nested `if` statements. They can also be used successfully with highly abnormal
+syntaxes (for example, an else toggles reading on or off, regardless of the
+presence of any preceding `ifdefine` or `ifundefine`), although this use is
+discouraged since it will lead to confusing configuration files, as well as
+files that may not be compatible with future Smoldyn releases.
 
-Text substitution can also be directed from the command line. If you
-include the command line option --define, followed by text of the form
-*key*=*replacement* (do not include spaces, although if you want spaces
-within the replacement text, then enclose it in double quotes), this is
-equivalent to declaring text substitution using the define\_global
-statement within a configuration file. For example, to the file
-cmdlinedefine.txt includes the macro key `RDIFC` but does not define it.
-To run this file, define the macro key on the command line like
+Text substitution can also be directed from the command line. If you include
+the command line option `--define`, followed by text of the form
+`key=replacement` (do not include spaces, although if you want spaces within
+the replacement text, then enclose it in double quotes), this is equivalent to
+declaring text substitution using the define_global statement within a
+configuration file. For example, to the file `cmdlinedefine.txt` includes the
+macro key `RDIFC` but does not define it.  To run this file, define the macro
+key on the command line like
 
-smoldyn examples/S2\_config/cmdlinedefine.txt --define RDIFC=5
+```bash
+$ smoldyn examples/S2_config/cmdlinedefine.txt --define RDIFC=5
+```
 
 This feature simplifies running multiple simulations through a shell
 script. Essentially any number of definitions can be made this way. If
 the same key text is defined both on the command line and in the
 configuration file, the former takes priority.
 
-**Running multiple simulations using scripts**
+### Running multiple simulations using scripts
 
-It is often useful to simulations over and over again, whether to
-collect statistics, to look for rare events, or to scan over parameter
-ranges. This is easily accomplished by writing a short Python script, or
-a script in some other high level language such as R, MatLab,
-Mathematica, etc. The following Python script is at
-S2\_config/pyscript.py. It runs the file paramscan.txt several times
-using different parameter values, with results sent to the standard
+It is often useful to simulations over and over again, whether to collect
+statistics, to look for rare events, or to scan over parameter ranges. This is
+easily accomplished by writing a short Python script, or a script in some other
+high level language such as R, MatLab, Mathematica, etc. The following Python
+script is at `S2_config/pyscript.py`. It runs the file `paramscan.txt` several
+times using different parameter values, with results sent to the standard
 output and also saved to different files.
 
-\# A python script for scanning a parameter
+```python
+# A python script for scanning a parameter
 
 import os
-
 simnum=0
+for rxnrate in [0.01,0.02,0.05,0.1,0.2,0.5,1]:
+    simnum+=1
+    string='smoldyn paramscan.txt --define RXNRATE=%f --define SIMNUM=%i -tqw' %(rxnrate,simnum)
+    print(string)
+    os.system(string)
+```
 
-for rxnrate in \[0.01,0.02,0.05,0.1,0.2,0.5,1\]:
-
-simnum+=1
-
-string='smoldyn paramscan.txt --define RXNRATE=%f --define SIMNUM=%i
--tqw' %(rxnrate,simnum)
-
-print(string)
-
-os.system(string)
-
-Run this script by entering `python pyscript.txt`.
+Run this script by entering `$ python pyscript.txt`.
 
 Another method for running batches of simulations is for your script to
 generate a Smoldyn-readable text file with the appropriate parameters,
 say with the file name myparams.txt. Then, in your master Smoldyn file,
 which might also be called from the same script, include the line
-`read\_file myparams.txt`, which reads in the necessary parameters.
+`read_file myparams.txt`, which reads in the necessary parameters.
 
-**Summary**
+### Summary
 
-The following table summarizes the statements that deal with the
-configuration file.
+The following table summarizes the statements that deal with the configuration
+file.
 
-<span class="underline">statement</span>
-<span class="underline">meaning</span>
+| statement | meaning  |
+|----------|-----------|
+|`#` | single-line comment |
+| `\* … \*` | multi-line comment |
+| `read_file filename` | read `filename`, and then return|
+| `end_file` | end of this file |
+| `define key substitution` | local macro replacement text |
+| `define_global key substitution` | global macro replacement text |
+| `undefine key` | undefine a macro substitution |
+| `ifdefine key` | start of conditional reading |
+| `ifundefine key` | start of conditional reading |
+| `else` | else condition for conditional reading |
+| `endif` | ends conditional reading |
 
-\# single-line comment
 
-/\* … \*/ multi-line comment
+## Space and Time
 
-read\_file *filename* read *filename*, and then return
-
-end\_file end of this file
-
-define *key* *substitution* local macro replacement text
-
-define\_global *key* *substitution* global macro replacement text
-
-undefine *key* undefine a macro substitution
-
-ifdefine *key* start of conditional reading
-
-ifundefine *key* start of conditional reading
-
-else else condition for conditional reading
-
-endif ends conditional reading
-
-**3. Space and Time**
-
-**Space**
+### Space
 
 Smoldyn simulations can be run in a system that is 1, 2, or
 3-dimensional. These can be useful for accurate simulations of systems
@@ -675,7 +636,7 @@ although this is not required. All simulation processes are performed
 outside of the system boundaries exactly as they are within the
 boundaries. Boundaries are used by Smoldyn to allow efficient simulation
 and for scaling the graphical display. They are typically defined with
-the boundaries statement, as seen in the example S1\_intro/bounce3.txt.
+the boundaries statement, as seen in the example `S1_intro/bounce3.txt`.
 Boundaries may be reflective, transparent, absorbing, or periodic.
 Reflective means that all molecules that diffuse into a boundary will be
 reflected back into the system. Transparent, which is the default type,
@@ -689,15 +650,15 @@ portion of a large system while avoiding edge effects.
 
 On rare occasion, it might be desirable to have asymmetric system
 boundary types. For example, one side of a system might be reflective
-while the other is absorbing. To accomplish this, use the low\_wall and
-high\_wall statements instead of a boundary statement. This is
-illustrated in the example file S3\_space/bounds1.txt.
+while the other is absorbing. To accomplish this, use the low_wall and
+high_wall statements instead of a boundary statement. This is
+illustrated in the example file `S3_space/bounds1.txt`.
 
 These boundaries of the entire system are different from surfaces, which
 are described below. However, they have enough in common that Smoldyn
-does not work well with both at once. Thus, *if any surfaces are used,
+does not work well with both at once. Thus, **if any surfaces are used,
 the system boundaries will always behave as though the types are
-transparent, whether they are defined that way or not*. Thus, if there
+transparent, whether they are defined that way or not**. Thus, if there
 are surfaces, it is usually best to use the boundaries statement without
 a type parameter, which will lead to the default transparent type. To
 account for the transparent boundaries, an outside surface may be needed
@@ -711,18 +672,18 @@ specifying that the boundaries are periodic is that they will then allow
 bimolecular reactions that occur with one molecule on each side of the
 system. This will probably yield a negligible improvement in results,
 but nevertheless removes a potential artifact. This is illustrated in
-the example S3\_space/bounds2.txt.
+the example `S3_space/bounds2.txt`.
 
-**Time**
+### Time
 
 A simulation runs for a fixed amount of simulated time, using constant
-length time steps. The simulation starting time is set with time\_start
-and the stopping time is set with time\_stop. For simulations that are
-interrupted and then continued, the time\_now statement allows the
+length time steps. The simulation starting time is set with time_start
+and the stopping time is set with time_stop. For simulations that are
+interrupted and then continued, the time_now statement allows the
 initial time to be set to a value that is intermediate between the
 starting and stopping times.
 
-The size of the time step is set easily enough with time\_step, although
+The size of the time step is set easily enough with time_step, although
 knowing what value to use is an art. Smoldyn always becomes more
 accurate, and runs more slowly, as shorter time steps are used. Thus, an
 important rule for picking a time step size is to compare the results
@@ -752,7 +713,7 @@ the characteristic time scale of any reaction. Using *k* as the reaction
 rate constants, unimolecular and bimolecular reactions lead to the
 respective time step constraints
 
-The latter equation is for the reaction A + B → products. These values
+The latter equation is for the reaction `A + B → products`. These values
 are displayed in the `reaction parameters` section of the configuration
 file diagnostics output. While the time scale for unimolecular reactions
 is independent of concentrations, the time scale for bimolecular
@@ -767,74 +728,56 @@ it is usually worth running several trial simulations with longer or
 shorter time steps to see what the longest time step is that still
 yields sufficiently accurate results.
 
-**Summary of statements that define space and time**
+### Summary of statements that define space and time
 
 The following table summarizes the statements for defining space and
 time.
 
-<span class="underline">statement</span>
-<span class="underline">function</span>
+| statement | function |
+|----------|-----------------------------------|
+| `dim dim` | system dimensionality: 1, 2, or 3 |
+| `boundaries dim pos1 pos2` | system boundaries on dimension dim |
+| `boundaries dim pos1 pos2 type` | same, for systems without surfaces |
+| `low_wall dim pos type` | specify single low-side boundary |
+| `high_wall dim pos type` | specify single high-side boundary |
+| `time_start time` | starting time of simulation |
+| `time_stop time` | stopping time of simulation |
+| `time_step time` | time step for the simulation |
+| `time_now time` | current time of the simulation |
 
-dim *dim* system dimensionality: 1, 2, or 3
 
-boundaries *dim pos1 pos2* system boundaries on dimension *dim*
+### Technical discussion of time steps
 
-boundaries *dim pos1 pos2 type* same, for systems without surfaces
-
-low\_wall *dim pos type* specify single low-side boundary
-
-high\_wall *dim pos type* specify single high-side boundary
-
-time\_start *time* starting time of simulation
-
-time\_stop *time* stopping time of simulation
-
-time\_step *time* time step for the simulation
-
-time\_now *time* current time of the simulation
-
-**Technical discussion of time steps**
-
-A major focus of the design of Smoldyn has been to make it so that
-results are indistinguishable from those that would be obtained if the
-simulated time increased continuously. This goal cannot be achieved
-perfectly. Instead, the algorithms are written so that the simulation
-approaches the Smoluchowski description of reaction-diffusion systems as
-the time step is reduced towards zero. Also, it maintains as much
-accuracy as possible for longer time steps. This topic is discussed in
-detail in the research paper `Stochastic simulation of chemical
-reactions with spatial resolution and single molecule detail` by Steven
-Andrews and Dennis Bray (*Physical Biology* 1:137-151, 2004).
+A major focus of the design of Smoldyn has been to make it so that results are
+indistinguishable from those that would be obtained if the simulated time
+increased continuously. This goal cannot be achieved perfectly. Instead, the
+algorithms are written so that the simulation approaches the Smoluchowski
+description of reaction-diffusion systems as the time step is reduced towards
+zero. Also, it maintains as much accuracy as possible for longer time steps.
+This topic is discussed in detail in the research paper [Stochastic simulation
+of chemical reactions with spatial resolution and single molecule
+detail](https://doi.org/10.1088/1478-3967/1/3/001) by *Steven Andrews* and
+*Dennis Bray* (*Physical Biology* 1:137-151, 2004).
 
 In concept, the system is observed at a fixed time, then it evolves to
 some new state, then it is observed again, and so forth. This leads to
 the following sequence of program operations:
 
-> \--------------- time = *t* ---------------
-> 
-> observe and manipulate system
-> 
-> graphics are drawn
-> 
-> molecules diffuse
-> 
-> desorption and surface-state transitions
-> 
-> surface or boundary interactions
-> 
-> reactions
-> 
-> 0th order reactions
-> 
-> 1st order reactions
-> 
-> 2nd order reactions
-> 
-> reaction products are added to system
-> 
-> surface interactions of reaction products
-> 
-> \------------- time = *t* + ∆*t* -------------
+```text
+--------------- time = *t* ---------------
+observe and manipulate system
+graphics are drawn
+molecules diffuse
+desorption and surface-state transitions
+surface or boundary interactions
+reactions
+0th order reactions
+1st order reactions
+2nd order reactions
+reaction products are added to system
+surface interactions of reaction products
+------------- time = *t* + ∆*t* -------------
+```
 
 After commands are run, graphics are displayed to OpenGL if that is
 enabled. The evolution over a finite time step starts by diffusing all
@@ -873,10 +816,10 @@ be interactions between reactions and there would be small errors. In
 this case, the error arises because Smoldyn does not allow a molecule to
 be in existence for less than the length of one time step.
 
-**  
-4\. Molecules**
 
-**About molecules**
+## Molecules
+
+### About molecules
 
 In Smoldyn, each individual molecule is represented as a separate
 point-like particle. These particles have no volume, so they do not
@@ -892,30 +835,32 @@ with the species statement. You can refer to these species by the same
 names afterwards, or you can refer to multiple species at a time using
 either wildcard symbols or by defining species groups.
 
-Each molecule is allowed to exist in any of five states: (1) not bound
-to any surface (called solution state), (2) bound to the front of a
-surface, (3) bound to the back of a surface, (4) bound across a surface
-in the `up` direction, or (5) bound across a surface in the `down`
-direction. While the surface-bound states are intended to represent
-specific molecule attachments to membranes, they can also be used for
-other purposes; for example, you can specify that a trans-membrane
-protein is normally in its `up` state, but that it’s in its `down` state
-when it is in a lipid raft.
+Each molecule is allowed to exist in any of five states: 
 
-Molecules that are not bound to surfaces are added with the mol
-statement. This is a reasonably versatile statement in that, on each
-axis, it allows molecules to be placed randomly within the simulation
-volume, randomly within some smaller region, or at a specific location.
-The surface\_mol statement is used to add molecules that are bound to
-surfaces, although it cannot be entered in the configuration file until
-the appropriate surface has been set up. Similarly, compart\_mol is used
-to add molecules to compartments, which are regions between surfaces,
-but it also cannot be entered until more things have been set up. The
-statements about molecules mentioned thus far, with the exception of the
-last two, are shown in either S1\_intro/bounce3.txt or
-S4\_molecules/molecule.txt.
+1. not bound to any surface (called solution state), 
+2. bound to the front of a surface, 
+3. bound to the back of a surface,
+4. bound across a surface in the `up` direction, or 
+5. bound across a surface in the `down` direction. 
 
-**Diffusion**
+While the surface-bound states are intended to represent specific molecule
+attachments to membranes, they can also be used for other purposes; for
+example, you can specify that a trans-membrane protein is normally in its `up`
+state, but that it’s in its `down` state when it is in a lipid raft.
+
+Molecules that are not bound to surfaces are added with the mol statement. This
+is a reasonably versatile statement in that, on each axis, it allows molecules
+to be placed randomly within the simulation volume, randomly within some
+smaller region, or at a specific location.  The surface_mol statement is used
+to add molecules that are bound to surfaces, although it cannot be entered in
+the configuration file until the appropriate surface has been set up.
+Similarly, compart_mol is used to add molecules to compartments, which are
+regions between surfaces, but it also cannot be entered until more things have
+been set up. The statements about molecules mentioned thus far, with the
+exception of the last two, are shown in either `S1_intro/bounce3.txt` or
+`S4_molecules/molecule.txt`.
+
+### Diffusion
 
 Molecules in Smoldyn diffuse according to the diffusion coefficient that
 is entered for the appropriate species and state. These coefficients are
@@ -932,11 +877,13 @@ completely freely, and red, green, and blue molecules diffuse with
 different diffusion coefficients. Using a runtime command in the
 configuration file, described below, Smoldyn outputs the moments of the
 molecular distributions to text files. They were analyzed with the Excel
-file diffi.xls, which is also in the S4\_molecules folder. From this
+file `diffi.xls`, which is also in the `S4_molecules` folder. From this
 Excel file, the graphical and numerical results are shown below, along
 with theoretical predictions.
 
-![](media/image5.emf)![](media/image6.emf)![](media/image7.emf)
+![](../media/image5.png)
+![](../media/image6.png)
+![](../media/image7.png)
 
 The middle panel of the figure shows that the mean position of the red
 molecules, on each of the three coordinates, stays near zero although
@@ -992,7 +939,7 @@ off-diagonal components. This matrix is interpreted to be
 
 Results are shown below
 
-![](media/image13.emf)![](media/image14.emf)![](media/image15.emf)
+![](media/image13.png)![](media/image14.png)![](media/image15.png)
 
 In the figure, it can be seen that the red molecules diffuse only on the
 *x*-*z*-plane, whereas the green molecules diffuse into an elliptical
@@ -1017,7 +964,7 @@ the local surface orientation).
 
 New in version 2.27, surface-bound molecules can also drift relative to
 the coordinates of their surface panel. Specify this with the
-surface\_drift statement. For a 2-D system, surfaces are 1-D objects, so
+surface_drift statement. For a 2-D system, surfaces are 1-D objects, so
 the surface-bound drift vector is a single number. It is the drift rate
 along `rectangles,` `triangles,` `spheres,` etc., all of which are
 really just different shape lines. For a 3-D system, surfaces are 2-D
@@ -1063,7 +1010,7 @@ molecule pair as well to look for more possible reactions. In this case,
 storing A, B, and C molecules in three separate lists means that
 potential A-B reactions can be checked without having to scan over all
 of the other combinations too. This is done in the example file
-S4\_molecules/mollist.txt, where it is found that using three molecule
+S4_molecules/mollist.txt, where it is found that using three molecule
 lists for A, B, and C leads to a simulation that runs 30% faster than
 using just one molecule list. With a Michaelis-Menten reaction, the
 difference was found to be closer to a 4-fold improvement.
@@ -1084,9 +1031,9 @@ not if most lists are nearly empty.
 At least for the present, Smoldyn does not automatically determine what
 set of molecule lists will lead to the most efficient simulation, so it
 is up to the user make his or her best guess. Molecule lists are defined
-with the statement molecule\_lists and molecule species are assigned to
-the lists with mol\_list. Any molecules that are unassigned with the
-mol\_list statement are automatically assigned to new a list called
+with the statement molecule_lists and molecule species are assigned to
+the lists with mol_list. Any molecules that are unassigned with the
+mol_list statement are automatically assigned to new a list called
 `unassignedlist`.
 
 **Statements about molecules**
@@ -1107,7 +1054,7 @@ difm *species* (*state*) *m*<sub>0</sub> *m*<sub>1</sub> …
 drift *species* (*state*) *v*<sub>0</sub> *v*<sub>1</sub> …
 *v<sub>dim</sub>*<sub>–1</sub> global drift vector
 
-surface\_drift *species* (*state*) *surface pshape* *v*<sub>0</sub>
+surface_drift *species* (*state*) *surface pshape* *v*<sub>0</sub>
 *v*<sub>1</sub>
 
 surface-relative drift vector
@@ -1115,19 +1062,19 @@ surface-relative drift vector
 mol *nmol* *species* *pos*<sub>0</sub> *pos*<sub>1</sub> …
 *pos<sub>dim</sub>*<sub>–1</sub> solution molecules placed in system
 
-surface\_mol *nmol* *species*(*state*) *surface pshape panel*
+surface_mol *nmol* *species*(*state*) *surface pshape panel*
 \[*pos*<sub>0</sub> *pos*<sub>1</sub> …
 *pos<sub>dim</sub>*<sub>–1</sub>\]
 
 surface-bound molecules placed in system
 
-compartment\_mol *nmol species compartment* molecules placed in
+compartment_mol *nmol species compartment* molecules placed in
 compartment
 
-molecule\_lists *listname<sub>1</sub>* *listname*<sub>2</sub> … names of
+molecule_lists *listname<sub>1</sub>* *listname*<sub>2</sub> … names of
 molecule lists
 
-mol\_list *species*(*state*) *listname* assignment of molecule to a list
+mol_list *species*(*state*) *listname* assignment of molecule to a list
 
 **Wildcards**
 
@@ -1136,15 +1083,15 @@ multiple species using wildcard characters, such as ‘?’ and ‘\*’. A
 question mark can represent exactly one character and an asterisk can
 represent zero or more characters. For example, if you want protein Fus3
 to have a different diffusion coefficient in the cytoplasm as in the
-nucleus, you might define it as two species, Fus3\_cyto and Fu3\_nucl.
+nucleus, you might define it as two species, Fus3_cyto and Fu3_nucl.
 Then, you could specify that they are both colored red using `color
-Fus3\_\* red`.
+Fus3_\* red`.
 
 Smoldyn supports many other wildcards as well. The logical operators are
 ‘|’ for OR and ‘&’ for AND, along with braces to enforce an order of
 operation. Use the former operator to enumerate a set of options.
 Continuing with the above example, you could specify that both species
-should be red with `Fus3\_{cyto|nucl}`, where this is now more specific
+should be red with `Fus3_{cyto|nucl}`, where this is now more specific
 than using the asterisk wildcard character. Use the ampersand to specify
 that multiple terms are in a species name but that the order of the
 terms is unimportant. For example, `a\&b\&c` represents any of the 6
@@ -1183,7 +1130,7 @@ also enables the results for multiple species to be added together for
 many of the observation commands. Species groups function essentially
 identically to groups of species that are designated using wildcard
 characters or using the BioNetGen module. Define a species group with
-the species\_group statement.  
+the species_group statement.  
 **5. Graphics**
 
 **Graphics display**
@@ -1195,24 +1142,24 @@ simulation results to others.
 Graphical output, and the overall type of graphics, is enabled with the
 graphics statement which is included at the beginning of most of the
 example files. Smoldyn supports the graphics options: `none`, `opengl`,
-`opengl\_good`, and `opengl\_better`. The `none` option means that no
+`opengl_good`, and `opengl_better`. The `none` option means that no
 graphics are displayed, which is convenient for running batches of
 quantitative simulations. The `opengl` option shows molecules as small
 squares that don’t account for which is in front of others. This is poor
-rendering quality but is fast to simulate. The `opengl\_good` option
+rendering quality but is fast to simulate. The `opengl_good` option
 replaces these squares with circles that are a little better looking,
 that account for depth-testing, and are much slower to render. Finally,
-the `opengl\_better` option allows for the placement of light sources,
+the `opengl_better` option allows for the placement of light sources,
 for molecules to be shiny spheres, and for surfaces to be shiny. This
 yields fairly good quality results.
 
 Graphical rendering can be as computationally intensive as the
 simulation itself, so it can be prudent to not display the system at
 every simulation time step, but only every *n*’th time step. This is
-done with the graphic\_iter statement. Alternatively, exactly the
+done with the graphic_iter statement. Alternatively, exactly the
 opposite may be wanted. It may be that the simulation runs too quickly
 for one to understand what’s being shown in the graphics window as it
-happens. To slow the simulation down, use the graphic\_delay statement.
+happens. To slow the simulation down, use the graphic_delay statement.
 
 If you use the graphical output, then Smoldyn does not stop when the
 simulation is complete, but it instead lets you continue manipulating
@@ -1221,7 +1168,7 @@ also stop using command-q, but that is less good because it forces
 Smoldyn to quit immediately rather than simply telling Smoldyn to finish
 its tasks (such as closing files and freeing memory) and then quit. If
 you want Smoldyn to stop as soon as the simulation is complete, use the
-quit\_at\_end statement.
+quit_at_end statement.
 
 The graphical display can be manipulated during the simulation using the
 keyboard. These keys and their actions are listed in the table shown
@@ -1254,18 +1201,18 @@ X,Y,Z 3 rotate clockwise about object axis
 **Drawing the system**
 
 Several statements control the drawing of the system. The background
-color is set with background\_color, the system boundaries are drawn
-with the line thickness that is set with frame\_thickness and the color
-that is set with frame\_color. Although the feature is usually turned
-off, the grid\_thickness and grid\_color statements can be used to
+color is set with background_color, the system boundaries are drawn
+with the line thickness that is set with frame_thickness and the color
+that is set with frame_color. Although the feature is usually turned
+off, the grid_thickness and grid_color statements can be used to
 display the virtual boxes into which the system is divided (see the
 optimization section). Molecules are drawn with a size that is set with
-display\_size and a color set with color. All of the statements that set
+display_size and a color set with color. All of the statements that set
 colors require either color words chosen from the table below, or
 numbers for the red, green, and blue color channels. Regarding the
 molecule display size, dimensions are in pixels if the output style is
 just `opengl` and are in the same length units are used in the rest of
-the configuration file if the output style is `opengl\_good`.
+the configuration file if the output style is `opengl_good`.
 
 **Colors**
 
@@ -1312,8 +1259,8 @@ gold turquoise white
 A few text items can be written to the graphics window during the
 simulation, all of which are displayed in the upper left corner of the
 graphics window. These are the simulation time and the numbers of
-different molecular species in the simulation. Use the text\_color and
-text\_display statements to control this output.
+different molecular species in the simulation. Use the text_color and
+text_display statements to control this output.
 
 **TIFF files and movies**
 
@@ -1323,29 +1270,29 @@ same as they are on the screen. A single snapshot can be saved during a
 simulation by pressing ‘T’ (uppercase). As a default it is saved as
 `OpenGL001.tiff`, which will be in the same file folder as the
 configuration file. Alternatively, the configuration file statements
-tiff\_name can be used to set the basic name of the file (a name of
+tiff_name can be used to set the basic name of the file (a name of
 `picture` will end up being saved as `picture001.tiff`). The numerical
-suffix of the name can be set with tiff\_min and tiff\_max. The
-tiff\_max value can be set to arbitrarily large numbers, although
+suffix of the name can be set with tiff_min and tiff_max. The
+tiff_max value can be set to arbitrarily large numbers, although
 reasonable values are recommended so that vast numbers of useless tiff
 files can’t be saved by accident.
 
-A sequence of TIFF files can be saved automatically with the tiff\_iter
+A sequence of TIFF files can be saved automatically with the tiff_iter
 statement, allowing one to save an image sequence for later compilation
 into a movie. TIFF files can also be saved automatically with the
 keypress T command, which allows more versatile timing than the
-tiff\_iter statement. Compiling an image sequence into a movie is easy
+tiff_iter statement. Compiling an image sequence into a movie is easy
 with Apple’s QuickTime Pro or with various other programs.
 
 **Summary of basic graphics statements**
 
 The following images show Smoldyn’s graphics for 1D, 2D, and 3D systems,
 made with the files graphics1.txt, graphics2.txt, and graphics3.txt. All
-of these use the `opengl\_good` graphics quality.
+of these use the `opengl_good` graphics quality.
 
 ![graphics1001](media/image16.png) 
-![](media/image17.emf)
-![](media/image18.emf)
+![](media/image17.png)
+![](media/image18.png)
 
 The following table lists the graphics statements
 
@@ -1374,7 +1321,7 @@ tiff_max *int* largest possible TIFF suffix
 
 **Better graphics**
 
-Smoldyn’s better graphics, selected with the graphics opengl\_better
+Smoldyn’s better graphics, selected with the graphics opengl_better
 statement, are intended to be adequate for publication-quality figures.
 With them, you can define a `room` light and up to 8 point lights. The
 room light is non-directional. Define its color with the ambient option.
@@ -1456,8 +1403,8 @@ the order from the one that was least recently performed to the one that
 was most recently performed. If both integer and continuous time queue
 commands are supposed to execute at the same time step, then all of
 integer queue commands are performed first. Command timing is
-demonstrated with the configuration files S6\_commands/cmdtime1.txt and
-S6\_commands/cmdtime2.txt.
+demonstrated with the configuration files S6_commands/cmdtime1.txt and
+S6_commands/cmdtime2.txt.
 
 The following table shows the command timing options.
 
@@ -1501,7 +1448,7 @@ simulation to act as though that key had been pressed by the user. This
 can be useful for modifying the display automatically. Observation
 commands read information from the simulation data structures, analyze
 the data some, and output results to text files. The precison of
-numerical output values can be set using the output\_precision
+numerical output values can be set using the output_precision
 statement. Neither control nor observation commands modify any aspect of
 the simulation. Manipulation commands modify the simulation parameters,
 such as the addition, removal, or replacement of molecules, or the
@@ -1518,51 +1465,51 @@ command.
 Most observation commands output a series of data values. The default
 format is `ssv`, which is space-separated vectors. These are easy for a
 person to read but are not as convenient when using most software. Thus,
-you can also use the output\_format statement to specify that you want
+you can also use the output_format statement to specify that you want
 `csv` output, which are comma-separated vectors.
 
 For observation commands to work, one typically needs to declare the
-output file names with the statements output\_files or append\_files.
+output file names with the statements output_files or append_files.
 The exception to this is if output should go to the standard output or
 standard error location, which are typically the terminal window. These
 are called `stdout` and `stderr`, respectively, exactly as in C or C++.
-These can be declared with the output\_files statement but don’t need to
+These can be declared with the output_files statement but don’t need to
 be.
 
 To save output files in a subdirectory, the subdirectory path is
-declared with the output\_root statement. Note that the path needs to
+declared with the output_root statement. Note that the path needs to
 end with a ‘/’, if you’re working on a Mac or Linux system, or ‘\\’ for
 Windows. This subdirectory path is concatenated on the end of the path
 that was used for the configuration file. It is possible to save a stack
 of files in which there is a separate file for each of many sequential
-observations. These are created with the output\_file\_number statement,
+observations. These are created with the output_file_number statement,
 which defines the starting suffix number for the file stack. Zero, which
 is the default, indicates no suffix number, whereas other numbers lead
 to a 3 digit suffix. The suffix number is incremented with the command
 incrementfile. The complete output filename is a concatenation of: the
-path for the configuration file, the string declared with output\_root,
-the file name declared with output\_files minus any suffix that starts
+path for the configuration file, the string declared with output_root,
+the file name declared with output_files minus any suffix that starts
 with a ‘.’, an underscore and the suffix number declared with
-output\_file\_number, and finally any suffix that starts with a ‘.’.
+output_file_number, and finally any suffix that starts with a ‘.’.
 Here is an example, using Mac and Linux path notation:
 
 working directory: theory
 
 configuration file: theory/expt1/myconfig.txt
 
-desired output files: theory/expt1/results/outfile\_001.txt
+desired output files: theory/expt1/results/outfile_001.txt
 
-theory/expt1/results/outfile\_002.txt
+theory/expt1/results/outfile_002.txt
 
 ...
 
 configuration file excerpt:
 
-output\_root results/
+output_root results/
 
-output\_files outfile.txt
+output_files outfile.txt
 
-output\_file\_number outfile.txt 1
+output_file_number outfile.txt 1
 
 cmd n 100 incrementfile outfile.txt
 
@@ -1575,9 +1522,9 @@ pathnames (relative to the working directory) are displayed at start-up
 with the simulation parameters.
 
 An example that is essentially identical to the one shown above is in
-given in the example file S6\_commands/cmdfile.txt. Upon running it and
+given in the example file S6_commands/cmdfile.txt. Upon running it and
 looking at the results, you will discover that the first output file,
-cmdfileout\_001.txt, is empty, whereas all of the others are full, as
+cmdfileout_001.txt, is empty, whereas all of the others are full, as
 expected. The empty file arises because the file number is incremented
 at the very beginning, before the molcount command is invoked for the
 first time. This could be remedied by using slightly more sophisticated
@@ -1587,8 +1534,8 @@ command timing with the ‘i’ or ‘j’ timing codes.
 
 All of the commands are listed below in the reference section, which is
 the definitive source of information about them. Most of the commands
-are also demonstrated in the example files S6\_commands/cmdobserve.txt
-and S6\_commands/cmdmanipulate.txt. Of the full list of commands, some
+are also demonstrated in the example files S6_commands/cmdobserve.txt
+and S6_commands/cmdmanipulate.txt. Of the full list of commands, some
 are quite useful, some are rarely used, and some have been superceded by
 newer code. The last category includes several that implement
 rudimentary reflecting surfaces, which were written before a good
@@ -1625,19 +1572,19 @@ The following table summarizes the statements used for commands.
 <span class="underline">statement</span>
 <span class="underline">function</span>
 
-output\_root *str* root of path for text output
+output_root *str* root of path for text output
 
-output\_files *str*<sub>1</sub> *str*<sub>2</sub> *… str*<sub>n</sub>
+output_files *str*<sub>1</sub> *str*<sub>2</sub> *… str*<sub>n</sub>
 file names for text output
 
-output\_precision *int* precision for numerical output
+output_precision *int* precision for numerical output
 
-append\_files *str*<sub>1</sub> *str*<sub>2</sub> *… str*<sub>n</sub>
+append_files *str*<sub>1</sub> *str*<sub>2</sub> *… str*<sub>n</sub>
 file names for text output
 
-output\_file\_number *int* starting suffix number for file name
+output_file_number *int* starting suffix number for file name
 
-output\_format *str* output format; either ssv or csv
+output_format *str* output format; either ssv or csv
 
 cmd b,a,e *string* command run times and strings
 
@@ -1689,17 +1636,17 @@ or ion channels.
 **Defining surfaces**
 
 Surfaces are typically entered with one or more blocks of statements
-that start with start\_surface and end with end\_surface. Between these,
+that start with start_surface and end with end_surface. Between these,
 only surface statements are recognized. A single surface may be broken
 up into multiple blocks of statements, and each block may describe
 multiple surfaces. The surface name may be given after the
-start\_surface statement, or it can be given afterwards with the name
+start_surface statement, or it can be given afterwards with the name
 statement; this specifies which surface is being defined, and starts a
 new one if required.
 
 As was mentioned before, Smoldyn surfaces do not work well in
 conjunction with the system boundaries that were defined with the
-boundaries, low\_wall, or high\_wall statements. If a configuration file
+boundaries, low_wall, or high_wall statements. If a configuration file
 includes any surface statement, even if no surfaces are actually
 defined, then all wall-type boundaries automatically behave as though
 they are transparent. To keep molecules within the system, an outermost
@@ -1707,7 +1654,7 @@ surface needs to be defined. It may be a set of rectangular panels that
 are coincident with the system walls, a sphere that encloses the system,
 or something else. Molecules could also be allowed to escape the system
 although that is usually undesirable and can slow the simulation down
-(see below for the unbounded\_emitter statement, which provides an
+(see below for the unbounded_emitter statement, which provides an
 efficient alternative to escaping molecules).
 
 The action or rate statements set the rules that molecules follow when
@@ -1742,7 +1689,7 @@ surface-bound molecules change species names when they cross the
 cylinder. An exception to the normal behavior arises when a
 surface-bound molecule collides with a panel that has been declared to
 be a neighbor of the molecule’s panel. In this case, there are two
-options, which are selected with the neighbor\_action statement. The
+options, which are selected with the neighbor_action statement. The
 default behavior is that the molecule simply ignores the panel and
 diffuses through it. Alternatively, the molecule can be allowed to hop
 onto the new panel, with a 50% probability of doing so. This latter
@@ -1759,7 +1706,7 @@ surrounds the portion of the system that is of interest, where these
 surface panels absorb molecules at a rate that causes the system to
 behave as though it were unbounded. Smoldyn calculates this absorption
 rate automatically, from information that the user specifies with the
-unbounded\_emitter statement. This statement declares the positions and
+unbounded_emitter statement. This statement declares the positions and
 the production rates for each emission source within the simulation
 volume. The new absorption coefficients completely replace any other
 actions that might be defined for interactions between this surface and
@@ -1800,13 +1747,13 @@ rarely good.
 
 Several configuration files were written to test the surface actions
 with all dimensions and all panel shapes. They are in the
-examples/S7\_surfaces directory and are called reflect\#.txt,
+examples/S7_surfaces directory and are called reflect\#.txt,
 transmit\#.txt, and absorb\#.txt, where the ‘\#’ is 1, 2, or 3 for the
 system dimensionality. Additionally, the three surf\#.txt files show the
 basic actions in single files. Following is an excerpt from
 reflect3.txt, which shows how a surface and its panels can be defined:
 
-start\_surface surf
+start_surface surf
 
 action all both reflect
 
@@ -1852,7 +1799,7 @@ panel disk 20 30 70 4 0 -1 0 20
 
 panel disk 20 50 70 4 0 1 0 20
 
-end\_surface
+end_surface
 
 Several statements control the drawing of surfaces to the graphics
 window. The color statement specifies the color of the front and/or back
@@ -1881,7 +1828,7 @@ that there is no way to cut holes in the spheres where the cylinder
 should be attached. The solution is to put small disk-shaped `jumping`
 panels on each side of the spot where the hole is wanted so that
 molecules can be transported across the barrier (see
-examples/S7\_surfaces/dumbbell.txt).
+examples/S7_surfaces/dumbbell.txt).
 
 To define a jumping surface, the action for each molecule that is to be
 jumped (usually set to all molecules, although fewer is permissible
@@ -1892,7 +1839,7 @@ required to be the same shape and to be parallel to each other although,
 for certain shapes, they may differ in size.
 
 Jumping surfaces are demonstrated with the files jump1.txt, jump2.txt,
-and jump3.txt, all in the S7\_surfaces directory.
+and jump3.txt, all in the S7_surfaces directory.
 
 Surface-bound molecules used to jump when they diffused onto panels that
 had surface-bound jump actions. However, this feature was removed in
@@ -1928,7 +1875,7 @@ pseudo-states `fsoln` (which is identical to `solution`) and `bsoln`
 specify that it is solution state and on the front or back of the
 relevant surface.
 
-The surface\_mol statement, which was mentioned in the section on
+The surface_mol statement, which was mentioned in the section on
 molecules, is used to specify that there are molecules bound to a
 surface at the start of a simulation. The statement is quite versatile,
 allowing one to specify that molecules are scattered randomly over an
@@ -1983,13 +1930,13 @@ diffuse off the edge of the initial panel. Thus, for example, a molecule
 can never diffuse off an edge of a sphere, with the result that
 molecules cannot diffuse from one sphere to another, even if these
 spheres intersect. If diffusion between panels is desired in these
-cases, then use the neighbor\_action statement, as described above.
+cases, then use the neighbor_action statement, as described above.
 However, be forewarned that diffusion between neighboring panels can
-interact badly with the neighbor\_action hopping, which is why this
+interact badly with the neighbor_action hopping, which is why this
 hopping is turned off as a default. For example, suppose several 2D
 panels (which are lines) meet at a single point. A molecule diffusing
 along one of the panels correctly transitions to a new randomly chosen
-panel when it gets to that point. However, if neighbor\_action is set to
+panel when it gets to that point. However, if neighbor_action is set to
 hopping, then the trajectory during this transition might be discovered
 to cross yet another one of the panels in the process, so the molecule
 would then get moved onto this new panel. The probability of this
@@ -1998,9 +1945,9 @@ errors, with the result that the molecule position statistics would be
 incorrect.
 
 Files that demonstrate surface-bound molecules are:
-S7\_surfaces/stick2.txt and cellmesh.txt (which reads cellmeshfile.txt).
+S7_surfaces/stick2.txt and cellmesh.txt (which reads cellmeshfile.txt).
 Surface diffusion is demonstrated with the files in
-S7\_surfaces/surfacediffuse/.
+S7_surfaces/surfacediffuse/.
 
 **Smoldyn bugs**
 
@@ -2025,20 +1972,20 @@ The following table summarizes the statements about surfaces.
 <span class="underline">statement</span>
 <span class="underline">function</span>
 
-max\_surface *int* (optional) maximum number of surfaces
+max_surface *int* (optional) maximum number of surfaces
 
-start\_surface *name* start of a surface block
+start_surface *name* start of a surface block
 
 name *name* optional statement for the surface name
 
-action *species(state) face action* \[*new\_spec*\] action for when a
+action *species(state) face action* \[*new_spec*\] action for when a
 molecule contacts surface
 
-rate *molec state1 state2 value* \[*new\_spec*\] transition rate
+rate *molec state1 state2 value* \[*new_spec*\] transition rate
 
-neighbor\_action *action*
+neighbor_action *action*
 
-rate\_internal *molec state1 state2 value* \[*new\_spec*\]
+rate_internal *molec state1 state2 value* \[*new_spec*\]
 
 color *face color* \[*alpha*\]
 
@@ -2050,7 +1997,7 @@ polygon *face drawmode*
 
 shininess *face value*
 
-max\_panels *char int* (optional)
+max_panels *char int* (optional)
 
 panel *char float* … *float*
 
@@ -2062,10 +2009,10 @@ jump *name face* \<-\> *name2 face2*
 
 neighbors *panel* *neigh1 neigh2 …*
 
-unbounded\_diffusion *face species amount pos<sub>0</sub>
+unbounded_diffusion *face species amount pos<sub>0</sub>
 pos<sub>1</sub> … pos<sub>dim</sub>*<sub>-1</sub>
 
-end\_surface
+end_surface
 
 **Rates of surface interactions**
 
@@ -2119,7 +2066,7 @@ with rate 0.5 on one side. This situation can be solved analytically as
 well from equations in Crank, allowing for a good comparison. Comparison
 between simulation and theory are shown in the figure below.
 
-![](media/image21.emf) ![](media/image22.emf)
+![](media/image21.png) ![](media/image22.png)
 
 Results from example stickrate.txt, shown in red, are compared with the
 analytic solution for the sticking rate. The left panel shows the total
@@ -2130,7 +2077,7 @@ the 1 standard deviation range shown with dashed lines.
 
 **Simulating effective unbounded diffusion**
 
-The example files in S7\_surfaces/unbounded\_diffusion illustrate and
+The example files in S7_surfaces/unbounded_diffusion illustrate and
 verify the use of a partially absorbing bounding surface to simulate
 effective unbounded diffusion. These files use the Smoldyn file
 sphere.txt, which describes a sphere; I created it by using Mathematica
@@ -2158,7 +2105,7 @@ has radius 10 microns. Absorption to this sphere was set to make the
 molecules diffuse as though the system were unbounded. Close agreement
 between simulation and theory show that the algorithm works well.
 
-![emitter1](media/image25.png) ![](media/image26.emf)
+![emitter1](media/image25.png) ![](media/image26.png)
 
 The left panel shows a snapshot from example emitter1.txt where it is
 seen that the emitter center is somewhat left of the sphere center and
@@ -2270,7 +2217,7 @@ volume reactions because the reactants and products are conceptually the
 same molecules, so these products have the same serial numbers as the
 reactants. It can also be helpful to maintain serial numbers in other
 situations, such as for single molecule tracking. In these situations,
-use the reaction\_serialnum statement to define rules for the product
+use the reaction_serialnum statement to define rules for the product
 serial number assignments.
 
 **Defining reactions**
@@ -2292,7 +2239,7 @@ reaction decay fluorophore(all) -\> 0 0.01
 For molecule states that are not specified, as in the first example
 above, it is assumed that the reaction only applies to molecules that
 are in solution. Reactions that only occur in specified compartments are
-entered in the same way, but with the reaction\_cmpt statement. Versions
+entered in the same way, but with the reaction_cmpt statement. Versions
 of Smoldyn prior to 1.82 allowed reactions to be entered in definition
 blocks; this is still permitted for backward compatibility, but is
 discouraged because this format is not being maintained and may be
@@ -2301,18 +2248,18 @@ eliminated in future versions.
 For most applications, the reaction statement is sufficient for entering
 the reaction rate. However, other methods are possible as well. It is
 possible to leave the rate constant off of the reaction line and enter
-it separately with the statement reaction\_rate. The reaction rate is
+it separately with the statement reaction_rate. The reaction rate is
 the macroscopic reaction rate, which is converted into parameters that
 Smoldyn can use for the simulation. For zeroth order reactions, the
 reaction rate is converted to the average number of molecules that
 should be added to the entire simulation volume at each time step. To
 enter this internal value directly, use the statement
-reaction\_production. For first order reactions, the reaction rate is
+reaction_production. For first order reactions, the reaction rate is
 converted to the probability that a reactant molecule will react during
 one time step. This can be entered directly with the statement
-reaction\_probability. For second order reactions, the reaction rate is
+reaction_probability. For second order reactions, the reaction rate is
 converted into a reaction binding radius, which can be entered directly
-with binding\_radius.
+with binding_radius.
 
 If a reaction has multiple products, they are usually placed at the
 location where the reaction was determined to have occurred. However,
@@ -2320,28 +2267,28 @@ offsets from the reaction location are possible as well, which are
 necessary for reversible reactions so as to avoid certain geminate
 recombinations. Offsets can be entered directly or can be calculated by
 Smoldyn in many different ways. All of them are entered with the
-product\_placement statement.
+product_placement statement.
 
 Conformational spread reactions are a special type of bimolecular
 reactions. For these, there is a domain of interaction, which is entered
-with the statement confspread\_radius; this also specifies that the
+with the statement confspread_radius; this also specifies that the
 reaction uses conformational spread. Reaction rate constants for
 conformational spread reactions have units of inverse time, like a first
 order reaction rate constant. They indicate the rate at which a reaction
 occurs, for reactants that are continuously closer to each other than
 the conformational spread radius. As with first order reactions, this
 rate value is converted to a reaction probability at each time step, and
-can be entered directly with the reaction\_probability statement. The
+can be entered directly with the reaction_probability statement. The
 two products of conformational spread reactions are placed at the exact
 same locations as the two reactants, using the same ordering of
 reactants and products as they are listed with the reaction statement.
 
 To simulate second order reactions with reaction probabilities that are
 not equal to one (called the lambda-rho algorithm), you can set the
-reaction probability with the reaction\_probability statement.
+reaction probability with the reaction_probability statement.
 Alternatively, you can set the reaction *χ* value, which is the ratio of
 the actual reaction rate constant to the diffusion-limited reaction rate
-constant, using reaction\_chi.
+constant, using reaction_chi.
 
 **Statements about reactions**
 
@@ -2364,46 +2311,46 @@ reaction surface=*sname* *rname* *reactant<sub>1</sub>* +
 *reactant<sub>2</sub>* -\> *product<sub>1</sub>* + *product<sub>2</sub>*
 *rate*
 
-reaction\_rate *rname rate*
+reaction_rate *rname rate*
 
-confspread\_radius *rname rad*
+confspread_radius *rname rad*
 
-binding\_radius *rname rad*
+binding_radius *rname rad*
 
-reaction\_probability *rname* *prob*
+reaction_probability *rname* *prob*
 
-reaction\_chi *rname* *chi*
+reaction_chi *rname* *chi*
 
-reaction\_production *rname* *value*
+reaction_production *rname* *value*
 
-reaction\_serialnum *rname* *rules\_list*
+reaction_serialnum *rname* *rules_list*
 
-product\_placement *rname* *type parameters*
+product_placement *rname* *type parameters*
 
 **Reactions with a block format**
 
 Although now discouraged and deprecated, the block format for entering
 reactions is similar. The block starts with the statement
-`start\_reaction` and ends with `end\_reaction`, between which only
+`start_reaction` and ends with `end_reaction`, between which only
 instructions that are relevant to reactions are allowed. The first
 statement within a reaction block is order to define the reaction order
-of this block. The max\_rxn statement used to be required next, but is
+of this block. The max_rxn statement used to be required next, but is
 no longer functional as of version 1.82. Basic reactions are entered
 with a reactant statement, a rate statement, and a product statement. It
 is also possible to enter the internal value that Smoldyn uses with
-rate\_internal. It is possible to turn states on or off with the permit
+rate_internal. It is possible to turn states on or off with the permit
 statement. If there are multiple products, and if these products can
 react with each other (most often a reversible reaction), then Smoldyn
 may need some information about the product unbinding radii, which is
-entered with the product\_param statement. It is discussed at length
+entered with the product_param statement. It is discussed at length
 below.
 
 Conformational spread reactions are slightly different. Enter the
-conformational spread radius with the confspread\_radius statement and
+conformational spread radius with the confspread_radius statement and
 the reaction rate (which is analogous to a first order rate) with rate.
 This rate value is converted to a reaction probability at each time
 step. To enter the latter value directly, do so with the probability
-statement. The rate\_internal statement is ignored.
+statement. The rate_internal statement is ignored.
 
 **Zeroth order reactions**
 
@@ -2444,10 +2391,10 @@ corresponding theoretical results, using a wide range of reaction rates.
 As expected, stochastic deviations from the deterministic theoretical
 predictions are seen.
 
-![](media/image29.emf)
+![](media/image29.png)
 
 This shows zeroth order reaction molecule production with data simulated
-from the example file S8\_reactions/zeroreact.txt. Shown are the numbers
+from the example file S8_reactions/zeroreact.txt. Shown are the numbers
 of molecules produced as a function of time with three different
 production rates along with the deterministic theory for how many
 molecules would be expected.
@@ -2465,7 +2412,7 @@ time,
 *n*(0) is the number of A molecules at time 0 and *n*(*t*) is the number
 at time *t*.
 
-The example file S8\_reactions/unireact1.txt was used to check
+The example file S8_reactions/unireact1.txt was used to check
 unimolecular reaction rates using a wide range of reaction rates. The
 reaction portion of the configuration file is
 
@@ -2500,7 +2447,7 @@ The number of B molecules as a function of time is
 Analogous equations hold for C and D. Simulation results closely matched
 these theoretical equations, as shown in the figure below.
 
-![](media/image34.emf) ![](media/image35.emf)
+![](media/image34.png) ![](media/image35.png)
 
 The panel on the left shows results from the configuration file
 unireact1.txt. First order reactions occur at rates that are in good
@@ -2558,7 +2505,7 @@ passed for a steady state reactant distribution to be formed, it is
 shown that the simulated results agree well with the analytical results
 (orange line in the figure).
 
-![](media/image38.emf) ![](media/image39.emf)
+![](media/image38.png) ![](media/image39.png)
 
 The panel on the left shows reactant numbers for the reaction A + B → C
 for three different reaction rates and with equal initial numbers of A
@@ -2587,7 +2534,7 @@ The analytical solution for the number of A molecules as a function of
 time is also slightly different from before,
 
 The reaction description portion of the configuration file
-S8\_reactions/bireactAA.txt is
+S8_reactions/bireactAA.txt is
 
 reaction slow As + As -\> C 1
 
@@ -2614,7 +2561,7 @@ is sufficiently short that the reaction simulates as though it is
 diffusion-limited. As is shown in the figure below, results conform
 closely to the Smoluchowski prediction for this reaction.
 
-![](media/image41.emf) ![](media/image42.emf)
+![](media/image41.png) ![](media/image42.png)
 
 This example shows diffusion-limited bimolecular reactions from the
 configuration file bireactABB.txt, which simulates the reaction that is
@@ -2631,7 +2578,7 @@ Reversible reactions, where at least one has multiple products, involve
 geminate recombination issues, as discussed below. The accuracy of
 reversible reaction rates using the default reverse parameter type and
 parameter was investigated with the configuration file
-S8\_reactions/equil/equil.txt. Here, an equilibrium is set up for the
+S8_reactions/equil/equil.txt. Here, an equilibrium is set up for the
 reaction A + B ↔ C.
 
 From standard chemistry, the equilibrium constant is related to the
@@ -2646,10 +2593,10 @@ number of A molecules is
 *n*<sub>A</sub>(0) is the initial number of A molecules. It was verified
 that the simulation result approached this value.
 
-![](media/image45.emf)
+![](media/image45.png)
 
 This figure shows the equilibrium result from example file
-S8\_reactions/equil/equil.txt.
+S8_reactions/equil/equil.txt.
 
 **Multi-step reactions**
 
@@ -2699,19 +2646,19 @@ in ecological predator-prey systems but is also analogous to many
 natural biochemical oscillators. The terminology used here borrows from
 the ecology application, although all numbers were chosen solely to make
 for an interesting simulation result. The complete file
-S8\_reactions/lotvolt/lotvolt.txt is:
+S8_reactions/lotvolt/lotvolt.txt is:
 
 \# Simulation file for Lotka-Voltera reaction
 
 graphics opengl
 
-graphic\_iter 5
+graphic_iter 5
 
 dim 3
 
 names rabbit fox
 
-max\_mol 20000
+max_mol 20000
 
 molperbox 1
 
@@ -2721,21 +2668,21 @@ color rabbit 1 0 0
 
 color fox 0 1 0
 
-display\_size rabbit 2
+display_size rabbit 2
 
-display\_size fox 3
+display_size fox 3
 
-molecule\_lists rlist flist
+molecule_lists rlist flist
 
-mol\_list rabbit rlist
+mol_list rabbit rlist
 
-mol\_list fox flist
+mol_list fox flist
 
-time\_start 0
+time_start 0
 
-time\_stop 100
+time_stop 100
 
-time\_step 0.001
+time_step 0.001
 
 boundaries x -100 100 p
 
@@ -2749,7 +2696,7 @@ mol 1000 fox u u u
 
 cmd b pause
 
-\#output\_files lotvoltout.txt
+\#output_files lotvoltout.txt
 
 \#cmd i 0 5 0.01 molcount lotvoltout.txt
 
@@ -2759,7 +2706,7 @@ reaction r2 rabbit + fox -\> fox + fox 8000
 
 reaction r3 fox -\> 0 10
 
-end\_file
+end_file
 
 This involves several statements that make the simulation run
 efficiently. Graphics are only displayed every 5 iterations, the
@@ -2767,8 +2714,8 @@ simulation is set up with only 1 molecule per virtual box, and the
 rabbit and fox molecules are stored in separate molecule lists. Results
 from this file are shown in the figure below.
 
-![lotvolt](media/image53.png) ![](media/image54.emf)
-![](media/image55.emf)
+![lotvolt](media/image53.png) ![](media/image54.png)
+![](media/image55.png)
 
 These figures show results from Lotka-Volterra simulation. The first
 panel shows of snapshot of the simulation after it has run for long
@@ -2785,7 +2732,7 @@ as the large diameter cycle.
 Currently, Smoldyn only allows second order reactions that have exactly
 two products to be declared a conformational spread reaction. Defining
 them as a conformational spread reaction, which is done with the
-confspread\_radius statement, implies a few things. Typically, the
+confspread_radius statement, implies a few things. Typically, the
 diffusion coefficients of both reactants are zero, although this is not
 required. The reaction rate constant that is entered is a *first order*
 rate constant, meaning that it has units of inverse time. It is
@@ -2799,7 +2746,7 @@ conformational spread reaction defined with the statements
 
 reaction rxn1 A + B -\> C + D 10
 
-confspread\_radius rxn1 5
+confspread_radius rxn1 5
 
 This states that a conformational spread reaction can occur between any
 A and B molecules that are closer than 5 distance units apart. At each
@@ -2819,9 +2766,9 @@ reaction rxna inactive + active -\> active + active 10
 
 reaction rxni active + inactive -\> inactive + inactive 10
 
-confspread\_radius rxna 5
+confspread_radius rxna 5
 
-confspread\_radius rxni 5
+confspread_radius rxni 5
 
 This will yield a warning in Smoldyn about there being multiple
 bimolecular reactions listed with the same reactants, but it is the
@@ -2855,7 +2802,7 @@ confspread.txt. It simulates two reactions:
 > 
 > reaction fwd red + blue -\> green + blue 10
 > 
-> confspread\_radius fwd 5
+> confspread_radius fwd 5
 
 While it is simplistic for most conformational spread situations, it
 leads to a simple equilibrium between red and green molecules which
@@ -2873,7 +2820,7 @@ conformational spread reaction rates that were observed to be slightly
 too low for the case in which each red molecule was within the
 conformational spread radius of two blue molecules.
 
-![OpenGL001](media/image56.png) ![](media/image57.emf)
+![OpenGL001](media/image56.png) ![](media/image57.png)
 
 This figure show output from confspread.txt configuration file. There
 are conformational spread reactions between blue molecules and red
@@ -2888,16 +2835,16 @@ doubling the red → green reaction rate.
 
 Smoldyn can treat molecules as though they have excluded volume using
 the same reaction concept that was developed for bimolecular reactions.
-The user specifies the collision radius (using the binding\_radius
+The user specifies the collision radius (using the binding_radius
 statement) for each pair of species that is supposed to respect each
 others’ excluded volume and then makes this an excluded volume reaction
-with the product\_placement statement, with the bounce option. If
+with the product_placement statement, with the bounce option. If
 molecules of those two species end up within their collision radius at
 the end of a time step, they are then moved apart. The reactants and
 products may be the same molecular species, in which case the molecules
 are simply pushed apart. They can also be different species. Molecules
 maintain their serial numbers. There are several options for the
-product\_placement parameter value. Setting it to a positive value
+product_placement parameter value. Setting it to a positive value
 (which should be larger than the binding radius) causes the two products
 to be placed at this distance apart, along the same vector as the
 molecules were on before they were moved apart. Setting it to -1 is
@@ -2919,16 +2866,16 @@ and Gaussians have long tails, it is likely to be very difficult to
 ensure that absolutely no molecules cross that should not.
 
 I illustrate excluded volume reactions with several examples, all of
-which are in the S8\_reactions/bounce directory. In one, bounce.txt,
+which are in the S8_reactions/bounce directory. In one, bounce.txt,
 molecules are confined to a line and maintain their ordering. The
 configuration file statements that declare the excluded volume reactions
 are:
 
 reaction rxn1 red(up) + green(up) -\> red(up) + green(up)
 
-binding\_radius rxn1 1
+binding_radius rxn1 1
 
-product\_placement rxn1 bounce -2
+product_placement rxn1 bounce -2
 
 A second example involves a crowded system and is in the same directory
 and the file crowding.txt.
@@ -3265,9 +3212,9 @@ that is not inside the cell.
 
 The definition style for compartments is much like it is for other
 portions of the code. Compartment statements for specific compartments
-are entered in blocks that start with start\_compartment and end with
-end\_compartment. The compartment name, which is given after
-start\_compartment, is used to start a new compartment definition, or to
+are entered in blocks that start with start_compartment and end with
+end_compartment. The compartment name, which is given after
+start_compartment, is used to start a new compartment definition, or to
 continue defining a previously started one. Bounding surfaces and
 interior-defining points are added with the surface and point
 statements, respectively. The compartment command, used within a
@@ -3275,7 +3222,7 @@ compartment block, is used to define one compartment in terms of others.
 Using this command one can, for example, define a compartment as the
 union or the intersection of two previously defined compartments.
 
-To state that molecules start in a compartment, use the compartment\_mol
+To state that molecules start in a compartment, use the compartment_mol
 statement that was listed in the molecules section. To read the numbers
 of molecules in a compartment, use the command molcountincmpt or
 molcountincmpt2.
@@ -3285,7 +3232,7 @@ Following are excerpts from configuration files that use compartments:
 <span class="underline">Compartment defined with surfaces and
 points</span>
 
-start\_compartment middle
+start_compartment middle
 
 surface surf
 
@@ -3297,44 +3244,44 @@ point 75 50
 
 point 25 50
 
-end\_compartment
+end_compartment
 
-compartment\_mol 500 red middle
+compartment_mol 500 red middle
 
 <span class="underline">Compartments defined with other
 compartments</span>
 
-start\_compartment intersection
+start_compartment intersection
 
 compartment equal left
 
 compartment and right
 
-end\_compartment
+end_compartment
 
-start\_compartment either
+start_compartment either
 
 compartment equal left
 
 compartment xor right
 
-end\_compartment
+end_compartment
 
-start\_compartment outside
+start_compartment outside
 
 compartment equalnot left
 
 compartment andnot right
 
-end\_compartment
+end_compartment
 
-compartment\_mol 500 red intersection
+compartment_mol 500 red intersection
 
-compartment\_mol 500 green either
+compartment_mol 500 green either
 
-compartment\_mol 500 blue outside
+compartment_mol 500 blue outside
 
-These files are in the examples folder in S9\_compartments. The first is
+These files are in the examples folder in S9_compartments. The first is
 called compart.txt and the second is compartlogic.txt. They yield the
 following results:
 
@@ -3366,7 +3313,7 @@ with one panel and one interior-defining point, but can become extremely
 slow for surfaces with many panels and/or many interior-defining points.
 As a result, it is helpful to design compartments for efficient
 simulation. Also, it’s best to avoid compartments if they aren’t needed.
-For example, don’t use the reaction\_compartment statement if you don’t
+For example, don’t use the reaction_compartment statement if you don’t
 actually need the compartment testing.
 
 **Statements about compartments**
@@ -3375,9 +3322,9 @@ The following table summarizes the statements about compartments.
 
 <span class="underline">statement</span>
 
-max\_compartment *int* (optional statement)
+max_compartment *int* (optional statement)
 
-start\_compartment *name*
+start_compartment *name*
 
 surface *surface*
 
@@ -3385,7 +3332,7 @@ point *pos<sub>0</sub> ... pos<sub>dim–1</sub>*
 
 compartment *logic compart*
 
-end\_compartment
+end_compartment
 
 **10. Simulation Settings**
 
@@ -3412,7 +3359,7 @@ As a default, the random number generator seed is set to the time at
 which the simulation is started. This is virtually certain to yield a
 unique random number sequence each time the simulation is run, so no two
 simulations will be identical. However, it can also be useful to set the
-random number generator seed, which can be done with the random\_seed
+random number generator seed, which can be done with the random_seed
 statement. This statement can also be used to set the random number seed
 to the current time.
 
@@ -3482,7 +3429,7 @@ When a surface-bound molecule diffuses off of one surface panel, it can
 sometimes diffuse onto the neighboring surface panel. It does so only if
 the neighboring panel is declared to be a neighbor, as described above
 in the surfaces section, and also the neighbor is within a distance that
-is set with the neighbor\_dist statement. This value is set to an
+is set with the neighbor_dist statement. This value is set to an
 extremely small value by default, just large enough to prevent round-off
 error, and generally should not need changing. In some cases, moving a
 molecule to a point that is exactly on a panel edge can cause problems
@@ -3494,7 +3441,7 @@ need changing.
 
 The following table summarizes the statements for simulation settings.
 
-random\_seed *int* random number seed
+random_seed *int* random number seed
 
 accuracy *float* accuracy code, from 0 to 10
 
@@ -3506,7 +3453,7 @@ epsilon *float* for surface-bound molecules
 
 margin *float* for diffusing surface-bound molecules
 
-neighbor\_dist *float* for diffusing surface-bound molecules
+neighbor_dist *float* for diffusing surface-bound molecules
 
 **11. Ports**
 
@@ -3527,8 +3474,8 @@ porting surface by other programs.
 **Defining ports**
 
 Using the standard format, port statements are given in blocks that
-start with start\_port and end with end\_port. A port name is declared
-after start\_port. The porting surface is specified with surface and the
+start with start_port and end with end_port. A port name is declared
+after start_port. The porting surface is specified with surface and the
 active face of that surface is specified with face.
 
 Also, in the definition of the surface that is to be used for porting
@@ -3539,13 +3486,13 @@ active face of the surface has action `port`.
 
 The following table lists statements about ports.
 
-start\_port *name*
+start_port *name*
 
 surface *surface*
 
 face *face*
 
-end\_port
+end_port
 
 **Porting rate**
 
@@ -3622,13 +3569,13 @@ of the complete complex (A-B-B-A).
 > 
 > Bnumber 100
 > 
-> kab\_on 200
+> kab_on 200
 > 
-> kab\_off 2
+> kab_off 2
 > 
-> kbb\_on 80
+> kbb_on 80
 > 
-> kbb\_off 1
+> kbb_off 1
 > 
 > end parameters
 > 
@@ -3644,11 +3591,11 @@ of the complete complex (A-B-B-A).
 > 
 > \# A bind to B
 > 
-> A(a2b) + B(b2a) \<-\> A(a2b\!1).B(b2a\!1) kab\_on,kab\_off
+> A(a2b) + B(b2a) \<-\> A(a2b\!1).B(b2a\!1) kab_on,kab_off
 > 
 > \# B bind to B
 > 
-> B(b2b) + B(b2b) \<-\> B(b2b\!1).B(b2b\!1) kbb\_on,kbb\_off
+> B(b2b) + B(b2b) \<-\> B(b2b\!1).B(b2b\!1) kbb_on,kbb_off
 > 
 > end reaction rules
 > 
@@ -3656,7 +3603,7 @@ of the complete complex (A-B-B-A).
 > 
 > \#\# actions \#\#
 > 
-> generate\_network({overwrite=\>1})
+> generate_network({overwrite=\>1})
 
 The setOption statement tells BioNetGen how to do graph isomorphism
 checking. The HNauty method, used here, is always a good approach. The
@@ -3677,7 +3624,7 @@ species are followed by the number of molecules to include in the
 simulation (which will be randomly placed within the simulation volume).
 Although not done here, it is typically easiest to set these molecule
 counts to 0 and to then add monomers to the simulation with mol,
-surface\_mol, or compartment\_mol statements in the Smoldyn input file.
+surface_mol, or compartment_mol statements in the Smoldyn input file.
 The reaction rules describe how things can bind together. In the first
 rule, for example, A can bind to B using the a2b site on A molecules and
 the b2a site on B molecules. The b2b site of B molecules does not affect
@@ -3702,7 +3649,7 @@ The following Smoldyn file reads and simulates the abba network.
 > 
 > \# Graphical output
 > 
-> graphics opengl\_good
+> graphics opengl_good
 > 
 > \# System space and time definitions
 > 
@@ -3712,11 +3659,11 @@ The following Smoldyn file reads and simulates the abba network.
 > 
 > boundaries y 0 100 p
 > 
-> time\_start 0
+> time_start 0
 > 
-> time\_stop 1000
+> time_stop 1000
 > 
-> time\_step 0.01
+> time_step 0.01
 > 
 > \# Molecular species and their properties
 > 
@@ -3730,25 +3677,25 @@ The following Smoldyn file reads and simulates the abba network.
 > 
 > color B red
 > 
-> display\_size all(all) 2
+> display_size all(all) 2
 > 
-> start\_bng abba
+> start_bng abba
 > 
-> multiply unimolecular\_rate 1
+> multiply unimolecular_rate 1
 > 
-> multiply bimolecular\_rate 1
+> multiply bimolecular_rate 1
 > 
-> \#BNG2\_path ../../../source/BioNetGen/BNG2.pl
+> \#BNG2_path ../../../source/BioNetGen/BNG2.pl
 > 
-> expand\_rules abba.bngl
+> expand_rules abba.bngl
 > 
-> read\_file abba.net
+> read_file abba.net
 > 
-> end\_bng
+> end_bng
 > 
-> text\_display time A B A.1.B.1.0 B.2.0 A.1.B.2.0 A.2.B.2.0
+> text_display time A B A.1.B.1.0 B.2.0 A.1.B.2.0 A.2.B.2.0
 > 
-> end\_file
+> end_file
 
 This file declares the A and B species with a species statement and then
 gives their diffusion coefficients and graphical display parameters.
@@ -3756,8 +3703,8 @@ Later on, while parsing the BioNetGen output, Smoldyn will assign these
 same values to the A and B monomers.
 
 The BioNetGen portion of this file is in the `bng` block. It starts with
-the start\_bng statement and the network name (you can also name the
-block using the name statement) and ends with end\_bng. Within this
+the start_bng statement and the network name (you can also name the
+block using the name statement) and ends with end_bng. Within this
 block, Smoldyn recognizes some statements that are specific to Smoldyn,
 as well as text from the BioNetGen .net file (i.e. you can just copy and
 paste the .net file into here if you like). The multiply statements
@@ -3765,15 +3712,15 @@ shown here enable you to enter factors with which Smoldyn will multiply
 the unimolecular or bimolecular reaction rates. This is useful to make
 unit conversions in case you used different units for reaction rates in
 the rules file and in the rest of the Smoldyn configuration file. The
-BNG2\_path statement, which is commented out here, specifies the
+BNG2_path statement, which is commented out here, specifies the
 directory path to the BNG2.pl software. Ideally, the default path (set
 to /usr/local/bin for Macs and Linux), will be correct and you won’t
 need to specify it here. However, if the default does not work
-correctly, then you can give it here instead. The expand\_rules
+correctly, then you can give it here instead. The expand_rules
 statement, with the filename of the rules file, tells Smoldyn to call
 BNG2.pl, which will then expand the reaction network and save the result
 as a .net file; Smoldyn does not parse the results at this point.
-Finally, read\_file is a standard Smoldyn statement, which in this case
+Finally, read_file is a standard Smoldyn statement, which in this case
 reads in the .net file, adding the species and reactions to the
 simulation in the process. The last line of this file tells Smoldyn to
 display the species counts to the display.
@@ -3865,21 +3812,21 @@ statements and commands.
 
 The following list summarizes the statements for rule-based modeling.
 
-start\_bng *name*
+start_bng *name*
 
-end\_bng
+end_bng
 
 name *name*
 
-multiply unimolecular\_rate *value*
+multiply unimolecular_rate *value*
 
-multiply bimolecular\_rate *value*
+multiply bimolecular_rate *value*
 
-monomer\_state *monomer state*
+monomer_state *monomer state*
 
-BNG2\_path *path*
+BNG2_path *path*
 
-bng\_file *filename*
+bng_file *filename*
 
 **A ligand-receptor-messenger system in BioNetGen**
 
@@ -3904,17 +3851,17 @@ files.
 > 
 > begin parameters
 > 
-> krl\_on 20
+> krl_on 20
 > 
-> krl\_off 0.01
+> krl_off 0.01
 > 
-> krm\_on 10
+> krm_on 10
 > 
-> krm\_off 0.02
+> krm_off 0.02
 > 
-> k\_phos 2
+> k_phos 2
 > 
-> k\_unphos 2
+> k_unphos 2
 > 
 > end parameters
 > 
@@ -3940,16 +3887,16 @@ files.
 > 
 > begin reaction rules
 > 
-> L(l2r) + R(r2l) \<-\> L(l2r\!1).R(r2l\!1) krl\_on,krl\_off
+> L(l2r) + R(r2l) \<-\> L(l2r\!1).R(r2l\!1) krl_on,krl_off
 > 
-> R(r2m) + M(m2r) \<-\> R(r2m\!1).M(m2r\!1) krm\_on,krm\_off
+> R(r2m) + M(m2r) \<-\> R(r2m\!1).M(m2r\!1) krm_on,krm_off
 > 
 > R(r2l\!+,r2m\!1).M(m2r\!1,psite\~u) -\>
 > R(r2l\!+,r2m\!1).M(m2r\!1,psite\~p)
 > 
-> k\_phos
+> k_phos
 > 
-> M(psite\~p) -\> M(psite\~u) k\_unphos
+> M(psite\~p) -\> M(psite\~u) k_unphos
 > 
 > end reaction rules
 > 
@@ -3963,7 +3910,7 @@ files.
 > 
 > \#\# actions \#\#
 > 
-> generate\_network({overwrite=\>1})
+> generate_network({overwrite=\>1})
 
 <span class="underline">Smoldyn file, saved as lrmsim.txt</span>
 
@@ -3971,7 +3918,7 @@ files.
 > 
 > \# Graphical output
 > 
-> graphics opengl\_good
+> graphics opengl_good
 > 
 > \# System space and time definitions
 > 
@@ -3981,11 +3928,11 @@ files.
 > 
 > boundaries y 0 100
 > 
-> time\_start 0
+> time_start 0
 > 
-> time\_stop 1000
+> time_stop 1000
 > 
-> time\_step 0.05
+> time_step 0.05
 > 
 > \# Molecular species and their properties
 > 
@@ -4007,41 +3954,41 @@ files.
 > 
 > color M.1.1(all) red
 > 
-> display\_size all(all) 2
+> display_size all(all) 2
 > 
 > \# BioNetGen parameters
 > 
-> start\_bng lrm
+> start_bng lrm
 > 
-> multiply unimolecular\_rate 1
+> multiply unimolecular_rate 1
 > 
-> multiply bimolecular\_rate 1
+> multiply bimolecular_rate 1
 > 
-> \#BNG2\_path ../../../source/BioNetGen/BNG2.pl
+> \#BNG2_path ../../../source/BioNetGen/BNG2.pl
 > 
-> monomer\_state L fsoln
+> monomer_state L fsoln
 > 
-> monomer\_state R up
+> monomer_state R up
 > 
-> monomer\_state M bsoln
+> monomer_state M bsoln
 > 
-> expand\_rules lrm.bngl
+> expand_rules lrm.bngl
 > 
-> read\_file lrm.net
+> read_file lrm.net
 > 
-> end\_bng
+> end_bng
 > 
 > \# Surface parameters
 > 
-> start\_surface membrane
+> start_surface membrane
 > 
 > action both all(all) reflect
 > 
 > panel rect +1 0 50 100
 > 
-> end\_surface
+> end_surface
 > 
-> start\_surface outsides
+> start_surface outsides
 > 
 > action both all(all) reflect
 > 
@@ -4053,17 +4000,17 @@ files.
 > 
 > panel rect -y 0 100 100
 > 
-> end\_surface
+> end_surface
 > 
 > \# initial molecules
 > 
-> surface\_mol 20 R(up) membrane all all
+> surface_mol 20 R(up) membrane all all
 > 
 > mol 20 L 50 80
 > 
 > mol 20 M.1.0 50 20
 > 
-> end\_file
+> end_file
 
 **Network expansion with monomer modifications**
 
@@ -4124,7 +4071,7 @@ in the BioNetGen file at all. Instead, they show up in the Smoldyn file
 in a couple of places. First, trivially, they are used in the diffusion
 coefficient and graphical display statements, where they ensure that the
 attributes get assigned to the correct states of the species. They also
-appear in the bng block, in the monomer\_state statement. This specifies
+appear in the bng block, in the monomer_state statement. This specifies
 the state (solution, `bsoln,` or a surface-bound state) in which each
 monomer is typically found. Smoldyn uses these to infer states for
 reaction products.
@@ -4171,8 +4118,8 @@ by reading the long name portion of the bng output.
 
 For each monomer, Smoldyn looks for information with which it can assign
 diffusion coefficients and graphical parameters. First, it sees whether
-the user assigned these using monomer\_difc, monomer\_color, or
-monomer\_display\_size statements (very similar to the monomer\_state
+the user assigned these using monomer_difc, monomer_color, or
+monomer_display_size statements (very similar to the monomer_state
 statement). If not, Smoldyn sees whether the user created a species that
 has the same name as the monomer, and then uses its attributes. If this
 fails, then Smoldyn sees whether there is a species that has the monomer
@@ -4224,7 +4171,7 @@ transmit, multiple actions, reflect, jump, absorb, and port. Multiple
 actions mean that there is some rate, such as for adsorption or
 desorption. If Smoldyn needs to choose between two monomers with
 multiple actions, then Smoldyn chooses the one with the faster rate
-constant. The polymer\_endsim.txt file illustrates this, although in a
+constant. The polymer_endsim.txt file illustrates this, although in a
 fairly minimal manner.
 
 **13. Filaments**
@@ -4235,7 +4182,7 @@ I am working on adding simulation support for filaments to Smoldyn, but
 have only just begun. At present, it is possible to define filaments and
 specify their geometries by adding monomers to them. These filaments can
 move by treadmilling, and they interact with surfaces. They do not
-exhibit Brownian motion. See the examples in the S13\_filaments
+exhibit Brownian motion. See the examples in the S13_filaments
 directory.
 
 **14. Hybrid Simulation**
@@ -4300,13 +4247,13 @@ region of space is created using a Smoldyn `port`, explained above.
 
 To include a lattice in a model, you need to add a lattice, obviously.
 This is entered using a block of statements that starts with
-start\_lattice and ends with end\_lattice, much like similar blocks for
+start_lattice and ends with end_lattice, much like similar blocks for
 surfaces, compartments, and other things. The definitions that can be
 entered within this block are discussed below. In addition to adding a
 lattice, you also need to define a port, which will form the junction
 between the particle space and the lattice space. And to create a port,
 you will need to define at least one surface. The
-examples/S14\_lattices/diffusion.txt file shows a very simple example of
+examples/S14_lattices/diffusion.txt file shows a very simple example of
 model that uses a lattice.
 
 First, it’s a good idea to define the lattice type using the type
@@ -4382,7 +4329,7 @@ include lattice molecules.
 Finally, writeVTK produces VTK output for both the particle and lattice
 regions of space. It does not include surface information. The output is
 saved as a stack of files that have names that follow the format
-*filename*Lattice00\_00001.vtu and *filename*Molecules00001.vtu, and
+*filename*Lattice00_00001.vtu and *filename*Molecules00001.vtu, and
 that have incremented numbers for subsequent snapshots. This output can
 be viewed using Paraview, Visit, or other VTK viewers. It doesn’t appear
 that any of them are trivial to use.
@@ -4391,7 +4338,7 @@ that any of them are trivial to use.
 
 The following table summarizes the statements about lattices.
 
-start\_lattice *name* start defining a lattice
+start_lattice *name* start defining a lattice
 
 type *type* type of the lattice (`nsv`)
 
@@ -4411,7 +4358,7 @@ should recognize
 mol *nmol* *name* *pos*<sub>0</sub> *pos*<sub>1</sub> …
 *pos<sub>dim</sub>*<sub>–1</sub> starting molecules in the lattice space
 
-end\_lattice end the lattice block
+end_lattice end the lattice block
 
 **  
 Part II. Reference**
@@ -4436,17 +4383,17 @@ ignored. These must be the first `words` on a line. Additional text on
 these lines is ignored as well. In future versions, the syntax of these
 may be changed so as to be identical to C-style block comments.
 
-read\_file *filename*
+read_file *filename*
 
 Read some other configuration file, returning to the present one when
 that one has been read.
 
-end\_file
+end_file
 
 End of configuration file. This line is optional (but good programming
 practice), as Smoldyn can also just read until the file ends.
 
-quit\_at\_end *value*
+quit_at_end *value*
 
 Use a value of `yes` to tell the simulator to quit the program at the
 end of the simulation, during simulations that use graphics. This has no
@@ -4461,7 +4408,7 @@ of the string *key* are replaced with the string *substitution* before
 further parsing is performed. It is permissible to not include any
 substitution text.
 
-define\_global *key* *substitution*
+define_global *key* *substitution*
 
 Definition of macro replacement text, which is identical to define,
 except that this definition applies throughout both this file and all
@@ -4478,7 +4425,7 @@ Entering *key* as `all` undefines all definitions.
 ifdefine *key*
 
 The following lines of the configuration file are read only if *key* is
-a term that was defined with define or define\_global (or was defined
+a term that was defined with define or define_global (or was defined
 automatically, which includes FILEROOT). Reading, or not reading,
 continues to any else statement. The end of the condition is given with
 the endif statement.
@@ -4498,7 +4445,7 @@ endif
 This ends a condition that is started by an ifdefine or ifundefine
 statement.
 
-display\_define
+display_define
 
 Causes all current definitions to be displayed to the standard output.
 This is only useful for debugging define issues in configuration files.
@@ -4531,10 +4478,10 @@ molecules. Surfaces need to be defined to keep molecules in the system.
 The second format is preferable for systems that do not include any
 surfaces. In this case, the boundary type can be ‘r’ for reflective, ‘t’
 for transparent, ‘a’ for absorbing, or ‘p’ for periodic. For most
-purposes, this statement replaces the low\_wall and high\_wall
+purposes, this statement replaces the low_wall and high_wall
 statements.
 
-low\_wall *dim pos type*
+low_wall *dim pos type*
 
 This statement has been largely superseded by boundaries. This creates a
 lower boundary for the simulation volume. This wall is perpendicular to
@@ -4551,34 +4498,34 @@ essentially non-functional (the sole exception is that reactions can
 occur across periodic walls). Additional surfaces need to be defined to
 serve as the system boundaries.*
 
-high\_wall *dim pos type*
+high_wall *dim pos type*
 
 This statement has been largely superseded by boundaries. This is
-identical to the definition for low\_wall, although this creates the
+identical to the definition for low_wall, although this creates the
 upper boundary for the simulation volume. See note about surfaces in
-low\_wall*.*
+low_wall*.*
 
-time\_start *time*
+time_start *time*
 
 Starting point for simulated time.
 
-time\_stop *time*
+time_stop *time*
 
 Stopping time of simulation, using simulated time. The simulation
-continues past the time\_stop value by less than one time step.
+continues past the time_stop value by less than one time step.
 
-time\_step *time*
+time_step *time*
 
 Time step for the simulation. Longer values lead to a faster runtime,
 while shorter values lead to higher accuracy. Also, longer values lead
 to bimolecular reactions that behave more as though they are activation
 limited, rather then diffusion limited.
 
-time\_now *time*
+time_now *time*
 
 Another starting time of simulation. Default value is equal to
-time\_start. If this time is before time\_start, the simulation starts
-at time\_start; otherwise, it starts at time\_now.
+time_start. If this time is before time_start, the simulation starts
+at time_start; otherwise, it starts at time_now.
 
 <span class="underline">Statements about molecules</span>
 
@@ -4588,7 +4535,7 @@ Names of one of more molecular species present in the system. Standard
 naming conventions are followed, in that the name should start with a
 letter and spaces are not permitted.
 
-species\_group *group species*<sub>1</sub> *species*<sub>2</sub> *...*
+species_group *group species*<sub>1</sub> *species*<sub>2</sub> *...*
 
 Defines a group of species called *group* and adds
 *species*<sub>1</sub>, *species*<sub>2</sub>, and potentially other
@@ -4602,7 +4549,7 @@ difc *species* *value*
 
 difc *species*(*state*) *value*
 
-difc\_rule *species*(*state*) *value*
+difc_rule *species*(*state*) *value*
 
 Isotropic diffusion coefficient of molecule type *species*. Default
 value is 0. The state, which is optional, refers to the surface-bound
@@ -4620,7 +4567,7 @@ difm *species* *float*<sub>0</sub> *float*<sub>1</sub> …
 difm *species*(*state*) *float*<sub>0</sub> *float*<sub>1</sub> …
 *float<sub>dim</sub>*<sub>\**dim*–1</sub>
 
-difm\_rule *species*(*state*) *float*<sub>0</sub> *float*<sub>1</sub> …
+difm_rule *species*(*state*) *float*<sub>0</sub> *float*<sub>1</sub> …
 *float<sub>dim</sub>*<sub>\**dim*–1</sub>
 
 Square root of diffusion matrix of *species* and maybe state *state*
@@ -4650,7 +4597,7 @@ drift *species* *float*<sub>0</sub> *float*<sub>1</sub> …
 drift *species*(*state*) *float*<sub>0</sub> *float*<sub>1</sub> …
 *float<sub>dim</sub>*<sub>–1</sub>
 
-drift\_rule *species*(*state*) *float*<sub>0</sub> *float*<sub>1</sub> …
+drift_rule *species*(*state*) *float*<sub>0</sub> *float*<sub>1</sub> …
 *float<sub>dim</sub>*<sub>–1</sub>
 
 Drift velocity vector for molecules of type *species* and maybe state
@@ -4662,10 +4609,10 @@ characters), then the statement is not applied immediately but is stored
 for use during rule expansion; during rule expansion, it is applied to
 all species that match the given species pattern.
 
-surface\_drift *species*(*state*) *surface panel-shape*
+surface_drift *species*(*state*) *surface panel-shape*
 *float*<sub>0</sub> … *float<sub>dim</sub>*<sub>–2</sub>
 
-surface\_drift\_rule *species*(*state*) *surface panel-shape*
+surface_drift_rule *species*(*state*) *surface panel-shape*
 *float*<sub>0</sub> … *float<sub>dim</sub>*<sub>–2</sub>
 
 Drift velocity vector for molecules of type *species* and state *state*,
@@ -4689,10 +4636,10 @@ indicate that the position for each molecule should be a random value
 between the bounding walls, chosen from a uniform density; or a position
 range which is given as two numbers separated with a hyphen.
 
-surface\_mol *nmol* *species*(*state*) *surface pshape panel*
+surface_mol *nmol* *species*(*state*) *surface pshape panel*
 *pos*<sub>0</sub> *pos*<sub>1</sub> … *pos<sub>dim</sub>*<sub>–1</sub>
 
-surface\_mol *nmol* *species*(*state*) *surface pshape panel*
+surface_mol *nmol* *species*(*state*) *surface pshape panel*
 
 Creates surface-bound molecules. *nmol* molecules of type *species* are
 created on the surface named *surface*, on the panel with shape *pshape*
@@ -4704,21 +4651,21 @@ given, the molecules are placed randomly on the surface with a constant
 density, on average. For randomly placed molecules, it is permissible to
 enter `all` for the panel, the *pshape*, and/or the surface.
 
-compartment\_mol *nmol species compartment*
+compartment_mol *nmol species compartment*
 
 Creates *nmol* solution-phase molecules of type *species* in the
 compartment named *compartment*.
 
-molecule\_lists *listname<sub>1</sub>* *listname*<sub>2</sub> …
+molecule_lists *listname<sub>1</sub>* *listname*<sub>2</sub> …
 
 Creates and names a set of molecule lists, for molecules that are in the
 system. This statement may be called multiple times.
 
-mol\_list *species listname*
+mol_list *species listname*
 
-mol\_list *species*(*state*) *listname*
+mol_list *species*(*state*) *listname*
 
-mol\_list\_rule *species*(*state*) *listname*
+mol_list_rule *species*(*state*) *listname*
 
 Assigns all molecules that are in the system and of type *species* and
 state *state* (if *state* is not specified, then only the solution state
@@ -4728,7 +4675,7 @@ immediately but is stored for use during rule expansion; during rule
 expansion, it is applied to all species that match the given species
 pattern.
 
-max\_mol *int*
+max_mol *int*
 
 Optional statement (it was required up to version 2.22). This tells
 Smoldyn to terminate if more than this many molecules end up being used
@@ -4740,64 +4687,64 @@ graphics *str*
 
 Type of graphics to use during the simulation. The options are ‘none’
 for no graphics, ‘opengl’ for basic and fast OpenGL graphics,
-‘opengl\_good’ for fair quality OpenGL graphics, and ‘opengl\_better’
+‘opengl_good’ for fair quality OpenGL graphics, and ‘opengl_better’
 for pretty good graphics. Runtime gets slower with better quality. If
 this line is not entered, no graphics are shown.
 
-graphic\_iter *int*
+graphic_iter *int*
 
 Number of time steps that should be run between each update of the
 graphics. Default value is 1.
 
-graphic\_delay *float*
+graphic_delay *float*
 
 Minimum amount of time in milliseconds that Smoldyn should pause between
 successive graphics updates. Default is 0.
 
-quit\_at\_end *yes/no*
+quit_at_end *yes/no*
 
 Whether Smoldyn should quit running as soon as the simulation is
 complete or not. Enter yes (or 1) if it should and no (or 0) if not.
 
-frame\_thickness *int*
+frame_thickness *int*
 
 Thickness of the frame that is drawn around the simulation volume, in
 points. Default value is 2.
 
-frame\_color *color* \[*alpha*\]
+frame_color *color* \[*alpha*\]
 
-frame\_color *red green blue* \[*alpha*\]
+frame_color *red green blue* \[*alpha*\]
 
 Color of the frame. All values should be between 0 and 1; use all 0s for
 black and all 1s for white (default). The *alpha* value is optional and
 also useless.
 
-grid\_thickness *int*
+grid_thickness *int*
 
 Thickness of the grid lines that can be drawn to show the virtual boxes.
 Default value is 0, so that the grid is not drawn.
 
-grid\_color *color* \[*alpha*\]
+grid_color *color* \[*alpha*\]
 
-grid\_color *red green blue* \[*alpha*\]
+grid_color *red green blue* \[*alpha*\]
 
 Color of the grid. All values should be between 0 and 1; use all 0s for
 black and all 1s for white (default). The *alpha* value is optional and
 also useless.
 
-background\_color *color* \[*alpha*\]
+background_color *color* \[*alpha*\]
 
-background\_color *red green blue* \[*alpha*\]
+background_color *red green blue* \[*alpha*\]
 
 Color of the background. All values should be between 0 and 1; use all
 0s for black and all 1s for white (default). The *alpha* value is
 optional and may not work anyhow.
 
-display\_size *name* *float*
+display_size *name* *float*
 
-display\_size *name*(*state*) *float*
+display_size *name*(*state*) *float*
 
-display\_size\_rule *name*(*state*) *float*
+display_size_rule *name*(*state*) *float*
 
 Size of molecule of type *name* for display to the graphical output. If
 the surface state is omitted, as in the first form shown, this display
@@ -4815,7 +4762,7 @@ color *name*(*state*) color \[*alpha*\]
 
 color *name*(*state*) *red green blue* \[*alpha*\]
 
-color\_rule *name*(*state*) *red green blue* \[*alpha*\]
+color_rule *name*(*state*) *red green blue* \[*alpha*\]
 
 Color for displaying molecules of type *name*. If the surface state is
 omitted, this color applies to just the solution state. States may be
@@ -4828,23 +4775,23 @@ not applied immediately but is stored for use during rule expansion;
 during rule expansion, it is applied to all species that match the given
 species pattern.
 
-tiff\_iter *int*
+tiff_iter *int*
 
 Number of time steps that should be run between each automatic saving of
 a TIFF file. Default value is 0, meaning that TIFFs should not be saved
 automatically.
 
-tiff\_name *name*
+tiff_name *name*
 
 Root filename for TIFF files, which may include path information if
 desired. Default is `OpenGL`, which leads to the first TIFF being saved
 as `OpenGL001.tif`.
 
-tiff\_min *int*
+tiff_min *int*
 
 Initial suffix number of TIFF files that are saved. Default value is 1.
 
-tiff\_max *int*
+tiff_max *int*
 
 Largest possible suffix number of TIFF files that are saved. Once this
 value has been reached, additional TIFFs cannot be saved. Default value
@@ -4855,7 +4802,7 @@ light *number parameter color* \[*value<sub>4</sub>*\]
 light *number parameter value<sub>1</sub> value<sub>2</sub>
 value<sub>3</sub>* \[*value<sub>4</sub>*\]
 
-Set the parameters for a light source, for use with opengl\_better
+Set the parameters for a light source, for use with opengl_better
 quality graphics. The light *number* should be between 0 and 7. The
 *parameter* may be one of four strings: `ambient`, `diffuse`,
 `specular`, or `position`. The first three parameters are for the
@@ -4865,13 +4812,13 @@ type is for the light’s 3-dimensional position, which is specified as
 *x*, *y*, and *z* in the *value*s. Lights specified this way are
 automatically enabled (turned on).
 
-text\_color *color*
+text_color *color*
 
-text\_color *red green blue*
+text_color *red green blue*
 
 Color for text displayed on the graphics window.
 
-text\_display *item<sub>1</sub>* *item<sub>2</sub>* ...
+text_display *item<sub>1</sub>* *item<sub>2</sub>* ...
 
 Turns on text display of the listed items, which are listed as strings.
 Possible items are `time`, which is the simulation time, and species
@@ -4881,30 +4828,30 @@ permitted.
 
 **Statements about run-time commands**
 
-output\_root *str*
+output_root *str*
 
 Root of path where text output should be saved. Spaces are permitted.
 Output files are saved in the same folder as the configuration file,
-modified by this string. See the description for output\_files. Make
+modified by this string. See the description for output_files. Make
 sure that the destination folder has been created and that the string is
 terminated with a colon (and started with a colon if needed).
 
-output\_files *str*<sub>1</sub> *str*<sub>2</sub> *… str*<sub>n</sub>
+output_files *str*<sub>1</sub> *str*<sub>2</sub> *… str*<sub>n</sub>
 
 Declaration of filenames that can be used for output of simulation
 results. Spaces are not permitted in these names. Any previous files
 with these names will be overwritten. The path for these filenames
 starts from the configuration file and may be modified by a root given
-with output\_root. For example, if the configuration file was called
-with folder/config.txt and output\_root was not used, then the output
+with output_root. For example, if the configuration file was called
+with folder/config.txt and output_root was not used, then the output
 file out.txt will appear in the folder folder too. If the configuration
 file was called with folder/config.txt and the output root was given as
 results/, then the output file goes to the results sub-folder of the
 folder folder. The filename `stdout` results in output being sent to the
 standard output (this does not need to be declared with the
-output\_files statement).
+output_files statement).
 
-output\_precision *int*
+output_precision *int*
 
 The precision that will be used for numerical output from commands,
 meaning the number of digits displayed after a decimal point. Enter a
@@ -4912,21 +4859,21 @@ negative number for the default and a positive number for fixed
 precision. For example, if you enter 5, then the output format string
 will be ‘%.5g’.
 
-append\_files *str*<sub>1</sub> *str*<sub>2</sub> ... *str<sub>n</sub>*
+append_files *str*<sub>1</sub> *str*<sub>2</sub> ... *str<sub>n</sub>*
 
-Identical to output\_file, except that the prior contents of these files
+Identical to output_file, except that the prior contents of these files
 are not overwritten, but are appended to.
 
-output\_file\_number *int*
+output_file_number *int*
 
 Starting number of output file name. The default is 0, meaning that no
 number is appended to a name (*e.g.* the file name out.txt is saved as
 out.txt). A value larger than 0 leads to an appended file name (if 1 is
-used, then out.txt is actually saved as out\_001.txt). Note that the
+used, then out.txt is actually saved as out_001.txt). Note that the
 command incrementfile increments the file number before it runs the rest
 of the command.
 
-output\_format *str*
+output_format *str*
 
 Set the output format for all observation commands. Options are the
 string `ssv`, which is the default, or the string `csv`.
@@ -4957,7 +4904,7 @@ simulation time steps). For type ‘x’, the command is executed at on,
 then on+dt, then on+dt\*xt, then on+dt\*xt<sup>2</sup>, and so forth.
 See section 2.4 for the commands that are available.
 
-max\_cmd *int* (obsolete statement)
+max_cmd *int* (obsolete statement)
 
 Maximum length of command queue. Default value is 10. As of version
 1.55, this statement is no longer needed in configuration files, because
@@ -4966,48 +4913,48 @@ the command queue is now expanded as needed.
 **Statements about surfaces**
 
 The statements shown below that are preceded by an asterisk need to be
-entered within surface blocks, which start with start\_surface and end
-with end\_surface. These statements can also be entered directly,
+entered within surface blocks, which start with start_surface and end
+with end_surface. These statements can also be entered directly,
 meaning not in a surface block, by preceding the statement with surface
 and then the surface name.
 
-max\_surface *int* (obsolete statement)
+max_surface *int* (obsolete statement)
 
 As of version 2.19, this statement is optional. If used, it specifies
 the maximum number of surfaces that will be defined. Each surface may
 have many panels, including disjoint panels.
 
-start\_surface \[*name*\]
+start_surface \[*name*\]
 
 Start of surface definition block. The surface name may be given with
 *name*, or it may be given afterwards with the name statement. If the
 name has not been used yet for a surface, then a new surface is started.
-Between this instruction and `end\_surface`, all lines need to pertain
+Between this instruction and `end_surface`, all lines need to pertain
 to surfaces. Parameters of one surface can be listed in multiple blocks,
 or parameters for many surfaces can be listed in one block.
 
-new\_surface *name*
+new_surface *name*
 
 Defines a new surface called *name*, but does not start a surface block.
-This statement is largely redundant with start\_surface.
+This statement is largely redundant with start_surface.
 
 \* name *name*
 
 Name of the surface for editing. This statement is not required because
-the surface name can also be given with start\_surface. This statement
+the surface name can also be given with start_surface. This statement
 gives the name of the current surface for editing, and creates a new
 surface if needed.
 
-\* action *species(state) face action* \[*new\_spec*\]
+\* action *species(state) face action* \[*new_spec*\]
 
-\* action\_rule *species(state) face action* \[*new\_spec*\]
+\* action_rule *species(state) face action* \[*new_spec*\]
 
 The behavior of molecules named *species* (and in state *state*, which
 is assumed to be solution if it’s not entered) when they collide with
 the *face* face of this surface. *face* can be `front`, `back`, or
 `both`. If *species* is `all`, then this action applies to all
 molecules. The action can be `reflect`, `absorb`, `transmit`, `jump`,
-`port`, or `periodic.` If *new\_spec* is entered, then the molecule
+`port`, or `periodic.` If *new_spec* is entered, then the molecule
 changes to this new species upon surface collision. In addition, it’s
 permissible to enter the action as `multiple,` in which case the rates
 need to be set with rate; alternatively, just setting the rates will
@@ -5017,9 +4964,9 @@ characters), then the statement is not applied immediately but is stored
 for use during rule expansion; during rule expansion, it is applied to
 all species that match the given species pattern.
 
-\* rate *species(state) state1 state2 value* \[*new\_spec*\]
+\* rate *species(state) state1 state2 value* \[*new_spec*\]
 
-\* rate\_rule *species(state) state1 state2 value* \[*new\_spec*\]
+\* rate_rule *species(state) state1 state2 value* \[*new_spec*\]
 
 The rate constant for transitions from *state1* to *state2* of molecules
 named *species* at this surface. For the species name, in *species*,
@@ -5027,7 +4974,7 @@ named *species* at this surface. For the species name, in *species*,
 Usually, *state* is omitted, but see below for where it is needed.
 *state1* and *state2* can be any of: fsoln, bsoln (in solution, hitting
 the front or back of the panel, respectively), front, back, up, or down.
-*value* is the rate constant or rate coefficient. If *new\_spec*, which
+*value* is the rate constant or rate coefficient. If *new_spec*, which
 is an optional parameter, is entered, then molecules change to the
 listed species at the same time as changing states. If the rule form is
 used (generally with wildcard characters), then the statement is not
@@ -5045,10 +4992,10 @@ and still bound to surface A (but cannot equal *state1*) or *state2* can
 be a surface-bound state to indicate that the molecule hops from surface
 A to surface-bound on surface B.
 
-\* rate\_internal *species(state) state1 state2 value* \[*new\_spec*\]
+\* rate_internal *species(state) state1 state2 value* \[*new_spec*\]
 
-\* rate\_internal\_rule *species(state) state1 state2 value*
-\[*new\_spec*\]
+\* rate_internal_rule *species(state) state1 state2 value*
+\[*new_spec*\]
 
 This is identical to rate, except that a slightly different value is
 entered. Instead of entering the surface action rate, enter the
@@ -5060,7 +5007,7 @@ applied immediately but is stored for use during rule expansion; during
 rule expansion, it is applied to all species that match the given
 species pattern.
 
-\*neighbor\_action *action*
+\*neighbor_action *action*
 
 Behavior of surface-bound molecules when they collide with a panel that
 is a neighbor of the panel that they are bound to. There are only two
@@ -5093,7 +5040,7 @@ surfaces are drawn with just vertices or edges and not faces.
 
 Stippling of the surface edges, for drawing purposes. This is only
 relevant for 3-D simulations in which surfaces are drawn with just edges
-and not faces, and with opengl\_good or better display method. In
+and not faces, and with opengl_good or better display method. In
 *factor*, which is an integer, enter the repeat distance for the entire
 stippling pattern (1 is a good choice). In *pattern*, which is a
 hexidecimal integer, enter the stippling pattern between 0x0000 and
@@ -5116,7 +5063,7 @@ Shininess of the surface for drawing purposes. This value can range from
 0 for visually flat surfaces to 128 for very shiny surfaces. This is
 only relevant for some simulations.
 
-\* max\_panels *shape int* (obsolete statement)
+\* max_panels *shape int* (obsolete statement)
 
 Optional statement. This can be used to allocate memory for *int* panels
 of shape *shape* for this surface, although it is usually best to let
@@ -5227,7 +5174,7 @@ in that it only sets, for example, *neigh1* as a neighbor of panel
 same surface as the origin panel, then specify the neighboring panel
 using *surface*:*panel*.
 
-\* unbounded\_emitter *face species amount pos<sub>0</sub>
+\* unbounded_emitter *face species amount pos<sub>0</sub>
 pos<sub>1</sub> … pos<sub>dim</sub>*<sub>-1</sub>
 
 Declares a molecular source for which this surface should absorb
@@ -5246,7 +5193,7 @@ strictly inside a closed surface and all of them with positive amount
 values; however, neither of these criteria are checked, so other options
 can be used although no promises are made regarding their behaviors.
 
-\* end\_surface
+\* end_surface
 
 End of a block of surface definitions. Surface statements are no longer
 recognized but other simulation statements are.
@@ -5261,7 +5208,7 @@ margin *float*
 See `simulation settings` section. This is not entered in a surface
 block.
 
-neighbor\_dist *float*
+neighbor_dist *float*
 
 See `simulation settings` section. This is not entered in a surface
 block.
@@ -5269,31 +5216,31 @@ block.
 **Statements about compartments**
 
 The statements shown below that are preceded by an asterisk need to be
-entered within compartment blocks, which start with start\_compartment
-and end with end\_compartment. Most of these statements can also be
+entered within compartment blocks, which start with start_compartment
+and end with end_compartment. Most of these statements can also be
 entered directly, preceded by the statement compartment and then the
 compartment name. Both forms are shown below.
 
-start\_compartment *name*
+start_compartment *name*
 
 Start of compartment definition block. The compartment name may be given
 with *name*, or it may be given afterwards with the name statement. If
 the name has not been used yet for a compartment, then a new compartment
-is started. Between this instruction and `end\_compartment`, all lines
+is started. Between this instruction and `end_compartment`, all lines
 need to pertain to compartments. Parameters of one compartment can be
 listed in multiple blocks, or parameters for many compartments can be
 listed in one block.
 
-new\_compartment *name*
+new_compartment *name*
 
 Defines a new compartment called *name*, but does not start a
 compartment block. This statement is largely redundant with
-start\_compartment.
+start_compartment.
 
 \* name *name*
 
 Name of the compartment for editing. This statement is not required
-because the compartment name can also be given with start\_compartment.
+because the compartment name can also be given with start_compartment.
 This statement gives the name of the current compartment for editing,
 and creates a new compartment if needed.
 
@@ -5317,7 +5264,7 @@ Logically combines the compartment being defined as it has been defined
 so far with the compartment that is listed in this statement. The logic
 options are: equal, equalnot, and, andnot, or, ornot, and xor.
 
-\* end\_compartment
+\* end_compartment
 
 End of a block of compartment definitions. Compartment statements are no
 longer recognized but other simulation statements are.
@@ -5362,7 +5309,7 @@ parameters. Likewise, if this reaction should only occur on a specific
 surface, enter it with the format `surface=*sname*` as one of the first
 parameters. These restrictions can be combined.
 
-reaction\_rule *rname* *reactant<sub>1</sub>* + *reactant<sub>2</sub>*
+reaction_rule *rname* *reactant<sub>1</sub>* + *reactant<sub>2</sub>*
 -\> *product<sub>1</sub>* + *product<sub>2</sub>* *rate*
 
 This is essentially identical to the reaction statement, including that
@@ -5372,11 +5319,11 @@ that have not been declared previously using the `species` statement,
 get created at this point. When used with wildcards, this statement
 enables rule-based modeling.
 
-reaction\_rate *rname rate*
+reaction_rate *rname rate*
 
 Sets the rate constant to *rate* for reaction named *rname*.
 
-reaction\_multiplicity *rname multiplicity*
+reaction_multiplicity *rname multiplicity*
 
 Sets the multiplicity value to *multiplicity* for reaction named
 *rname*. This value is set to 1 by default, but can be changed if there
@@ -5386,7 +5333,7 @@ total reaction rate. Internally, this is an important parameter for
 rule-based modeling, but the value should generally not be set using
 this statement.
 
-confspread\_radius *rname rad*
+confspread_radius *rname rad*
 
 Defines reaction *rname* as a conformational spread reaction. This
 reaction must have two reactants and up to two products. If it has two
@@ -5397,11 +5344,11 @@ radius that is listed here (this is effectively a binding radius). If
 this is entered, the reaction rate constant is interpreted as a first
 order rate constant.
 
-binding\_radius *rname rad*
+binding_radius *rname rad*
 
 Sets the binding radius of reaction *rname* to *rad*.
 
-reaction\_probability *rname* *prob*
+reaction_probability *rname* *prob*
 
 A fixed probability value for unimolecular or bimolecular reactions. For
 unimolecular reactions, this is the probability of a reaction during one
@@ -5415,20 +5362,20 @@ regular bimolecular reactions, this can be used to adjust the effective
 reaction activation energy, although the theory has not been derived for
 that yet.
 
-reaction\_chi *rname chi*
+reaction_chi *rname chi*
 
 The diffusion-limited fraction (*χ*) of a bimolecular reaction. This
 value is the ratio of the actual reaction rate constant to the
 diffusion-limited reaction rate constant.
 
-reaction\_production *rname* *value*
+reaction_production *rname* *value*
 
 Molecule production rate for zeroth order reactions. Instead of entering
-the reaction rate with reaction\_rate, this allows on to enter the
+the reaction rate with reaction_rate, this allows on to enter the
 expectation number of molecules per time step in the entire simulation
 volume.
 
-product\_placement *rname* *type parameters*
+product_placement *rname* *type parameters*
 
 Placement method and parameters for the products of reaction *rname*.
 This also affects the binding radius of the reverse reaction, as
@@ -5439,8 +5386,8 @@ product molecule name and then a *dim*-dimensional vector as the
 parameter list. If multiple products are identical, then this placement
 instruction will only be applied to the first of the identical products.
 For this reason, you can also specify that this statement applies to the
-*n*’th product by entering the product name as product\_*n* (e.g.
-product\_2 for the second product). The default placement method for
+*n*’th product by entering the product name as product_*n* (e.g.
+product_2 for the second product). The default placement method for
 reversible reactions is pgemmaxw (the terminal ‘w’ implies that a
 warning will be issued) with a parameter of 0.2. While it is suggested
 that placement types be entered with full words, single letter codes
@@ -5459,14 +5406,14 @@ separated to make the center-to-center distance equal to 2.4).
 Alternatively, you can use the parameter value to define the new
 separation, which should be larger than the binding radius.
 
-expand\_rules *iterations*
+expand_rules *iterations*
 
 Expands all of the current reaction rules by *iterations* times. Enter
 *iterations* as -1 for expansion to continue until all rules are fully
 up-to-date (which will run for a very long time and then cause a
 termination if the rules create an infinite list of species).
 
-reaction\_serialnum *rname rule\_list*
+reaction_serialnum *rname rule_list*
 
 Define rules for product molecule serial number assignments during
 reaction *rname*. There should be as many rule values as there are
@@ -5484,10 +5431,10 @@ for the left half. For example, r1L and r1R are the left and right
 halves of the serial number for reactant 1. Some of these options can
 lead to multiple molecules having the same serial numbers, which is
 allowed but may lead to unexpected behavior in some runtime commands.
-This statement cannot be used together with the reaction\_intersurface
+This statement cannot be used together with the reaction_intersurface
 statement for the same reaction.
 
-reaction\_intersurface *rname rule\_list*
+reaction_intersurface *rname rule_list*
 
 Define rules to allow bimolecular reaction named *rname* to operate when
 its reactants are on different surfaces. In general, there should be as
@@ -5498,17 +5445,17 @@ the second reactant’s surface or relative to that surface (the relative
 conditions are for `soln` or `bsoln` state products). The codes can be
 separated by ‘+’ symbols, as in the reaction definition, but this isn’t
 required. To turn off intersurface reactions, which is the default
-behavior, give *rule\_list* as `off`. To turn on intersurface reactions
-for reactions that have no products, give *rule\_list* as `on`. This
-statement cannot be used together with the reaction\_serialnum statement
+behavior, give *rule_list* as `off`. To turn on intersurface reactions
+for reactions that have no products, give *rule_list* as `on`. This
+statement cannot be used together with the reaction_serialnum statement
 for the same reaction.
 
-reaction\_log *filename rxnname serial\_numbers*
+reaction_log *filename rxnname serial_numbers*
 
 Turns on reaction logging for all occurrences of the reaction *rxnname*
 and for molecules with serial numbers that are in the serial number
 list. The logging is sent to the file called *filename*. If the file is
-not stdout, then it should be declared with the output\_files statement.
+not stdout, then it should be declared with the output_files statement.
 Enter *rxnname* as `all` if all reactions should be logged. Likewise,
 enter the serial number list as `all` if reactions with all molecules
 should be logged. In the logging file, the output will be a single line
@@ -5524,7 +5471,7 @@ are not recorded as they are generated). A specific reaction can only be
 logged to a single place (e.g. either standard output or some file, but
 not both at once).
 
-reaction\_log\_off *rxnname serial\_numbers*
+reaction_log_off *rxnname serial_numbers*
 
 Turns off reaction logging for the reaction *rxnname* and for molecules
 with serial numbers that are listed in the serial number list. Either or
@@ -5533,29 +5480,29 @@ both of *rxnname* and the serial number list can be `all`.
 **Statements about ports**
 
 The statements shown below that are preceded by an asterisk need to be
-entered within port blocks, which start with start\_port and end with
-end\_port. Most of these statements can also be entered directly,
+entered within port blocks, which start with start_port and end with
+end_port. Most of these statements can also be entered directly,
 preceded by the statement port and then the port name. Both forms are
 shown below.
 
-start\_port *name*
+start_port *name*
 
 Start of port definition block. The port name may be given with *name*,
 or it may be given afterwards with the name statement. If the name has
 not been used yet for a port, then a new port is started. Between this
-instruction and `end\_port`, all lines need to pertain to ports.
+instruction and `end_port`, all lines need to pertain to ports.
 Parameters of one port can be listed in multiple blocks, or parameters
 for many ports can be listed in one block.
 
-new\_port *name*
+new_port *name*
 
 Defines a new port called *name*, but does not start a port block. This
-statement is largely redundant with start\_port.
+statement is largely redundant with start_port.
 
 \* name *name*
 
 Name of the port for editing. This statement is not required because the
-port name can also be given with start\_port. This statement gives the
+port name can also be given with start_port. This statement gives the
 name of the current port for editing, and creates a new port if needed.
 
 \* surface *surface*
@@ -5571,33 +5518,33 @@ port *name* face *face*
 Face of the surface that is active for porting. Enter `front` or `back`
 for *face*.
 
-\* end\_port
+\* end_port
 
 End of a block of port definitions. Port statements are no longer
 recognized but other simulation statements are.
 
-*max\_port int* (optional)
+*max_port int* (optional)
 
 Maximum number of ports that may be defined.
 
 **Statements for rule-based modeling with BioNetGen**
 
 The statements shown below that are preceded by an asterisk need to be
-entered within bng blocks, which start with start\_bng and end with
-end\_bng. Most of these statements can also be entered directly,
+entered within bng blocks, which start with start_bng and end with
+end_bng. Most of these statements can also be entered directly,
 preceded by the statement bng and then the bng network name. Both forms
 are shown below.
 
-start\_bng *name*
+start_bng *name*
 
 Start of BioNetGen block. The *name* is the network name. It may be
 given here or it may be given afterwards with the name statement. If the
 name has not been used yet for a network, then a network is started.
-Between this instruction and `end\_bng`, all lines need to pertain to
+Between this instruction and `end_bng`, all lines need to pertain to
 BioNetGen complexes. Parameters of one network can be listed in multiple
 blocks, or parameters for many networks can be listed in one block.
 
-end\_bng
+end_bng
 
 End of a block of bng definitions. Bng statements are no longer
 recognized but other simulation statements are.
@@ -5605,20 +5552,20 @@ recognized but other simulation statements are.
 name *name*
 
 Name of the bng network for editing. This statement is not required
-because the network name can also be given with start\_bng. This
+because the network name can also be given with start_bng. This
 statement gives the name of the current network for editing, and creates
 a new network if needed.
 
-BNG2\_path *path*
+BNG2_path *path*
 
 Directory path and complete filename of BNG2.pl software. The default
 path for Mac and Linux systems is /usr/local/bin/BioNetGen/BNG2.pl and
 for Windows is C:\\Program Files\\Smoldyn\\BioNetGen\\BNG2.pl. The
 *path* parameter is allowed to have spaces in it.
 
-multiply unimolecular\_rate *value*
+multiply unimolecular_rate *value*
 
-multiply bimolecular\_rate *value*
+multiply bimolecular_rate *value*
 
 Factor that will be multiplied with unimolecular and bimolecular
 reaction rates that are listed in the current network. This statement is
@@ -5631,33 +5578,33 @@ monomers *monomer*<sub>1</sub> *monomer*<sub>2</sub> ...
 
 Declares one or more monomer names. This statement is optional because
 monomer names are also inferred from the species long names and can be
-given using monomer\_state or other monomer functions. This is primarily
+given using monomer_state or other monomer functions. This is primarily
 useful for enabling the use of the `all` designation for monomers in
 other monomer statements.
 
-monomer\_difc *monomer difc*
+monomer_difc *monomer difc*
 
 The diffusion coefficient for monomer called *monomer*. The monomer
 value can be a single monomer or can be `all` for all currently declared
 monomers. A monomer has a single diffusion coefficient, independent of
 its state.
 
-monomer\_display\_size *monomer size*
+monomer_display_size *monomer size*
 
 The display size for monomer called *monomer*. The monomer value can be
 a single monomer or can be `all` for all currently declared monomers. A
 monomer has a single display size, independent of its state.
 
-monomer\_color *monomer color*
+monomer_color *monomer color*
 
-monomer\_color *monomer red green blue*
+monomer_color *monomer red green blue*
 
 The color for monomer called *monomer*. The monomer value can be a
 single monomer or can be `all` for all currently declared monomers. The
 color can be either a color word or the red, green, and blue color
 values. A monomer has a single color, independent of its state.
 
-monomer\_state *monomer state*
+monomer_state *monomer state*
 
 The default state for a monomer. States can be any of: soln (same as
 fsoln), bsoln, front, back, up, and down (this list is ordered from
@@ -5665,12 +5612,12 @@ lowest to highest precedence). These states are used when Smoldyn
 assigns states to reaction products, which are often composed of many
 monomers.
 
-expand\_rules *filename*
+expand_rules *filename*
 
 Filename for a rules file written in the BNGL language, which should
 have a .bngl suffix. When Smoldyn encounters this statement, Smoldyn
 calls BNG2.pl to expand the file and save it as a .net file but does not
-then read the result. After this line, include a read\_file statement
+then read the result. After this line, include a read_file statement
 and list the filename, now with a .net suffix, so that Smoldyn reads in
 the expanded network. There is typically very little error reporting if
 BNG2.pl encounters an error in the .bngl file. To see the errors, run
@@ -5680,24 +5627,24 @@ Smoldyn will display all of the BNG2.pl output.
 **Statements for lattices**
 
 The statements shown below that are preceded by an asterisk need to be
-entered within lattice blocks, which start with start\_lattice and end
-with end\_lattice. Most of these statements can also be entered
+entered within lattice blocks, which start with start_lattice and end
+with end_lattice. Most of these statements can also be entered
 directly, preceded by the statement lattice and then the lattice name.
 Both forms are shown below.
 
-start\_lattice *name*
+start_lattice *name*
 
 Start of the lattice block. The lattice name may be given with *name*,
 or it may be given afterwards with the name statement. If the name has
 not been used yet for a lattice, then a new lattice is started. Between
-this statement and end\_lattice, all lines need to pertain to lattices.
+this statement and end_lattice, all lines need to pertain to lattices.
 Parameters of one lattice can be listed in multiple blocks, or
 parameters for many lattices can be listed in one block.
 
 \* name *name*
 
 Name of the lattice for editing. This statement is not required because
-the lattice name can also be given with start\_lattice. This statement
+the lattice name can also be given with start_lattice. This statement
 gives the name of the current lattice for editing, and creates a new
 lattice if needed.
 
@@ -5746,7 +5693,7 @@ listing all species, the `all` keyword can be used to state that all of
 the current particle-side species should also be used on the lattice
 side.
 
-\* make\_particle *face species1 species2* ...
+\* make_particle *face species1 species2* ...
 
 Causes all molecules of the listed species to be converted from lattice
 representation to particle representation if they diffuse across the
@@ -5781,19 +5728,19 @@ molecule should be a random value between the bounding walls, chosen
 from a uniform density; or a position range which is given as two
 numbers separated with a hyphen.
 
-\* end\_lattice
+\* end_lattice
 
 End of a block of lattice definitions. Lattice statements are no longer
 recognized but other simulation statements are.
 
 **Statements for simulation settings**
 
-random\_seed *seed*
+random_seed *seed*
 
 Seed for random number generator, which can be any integer. If this line
 is not entered (or if you set the *seed* value to `time`), the current
 time is used as a seed, producing different sequences for each run.
-(This statement was called rand\_seed through version 2.28.)
+(This statement was called rand_seed through version 2.28.)
 
 accuracy *float*
 
@@ -5818,7 +5765,7 @@ boxsize can be used to request the width of the boxes. The actual box
 volumes will be no larger than the volume calculated from the width
 given here.
 
-gauss\_table\_size *int*
+gauss_table_size *int*
 
 This sets the size of a lookup table that is used to generate
 Gaussian-distributed random numbers. It needs to be an integer power of
@@ -5837,7 +5784,7 @@ The distance inside of a panel edge to which Smoldyn moves surface-bound
 molecules that diffuse off of a panel. The default value, which is
 extremely small, is good for most applications.
 
-neighbor\_dist *float*
+neighbor_dist *float*
 
 Maximum distance that surface-bound molecules will jump across space to
 diffuse from one panel to a neighboring panel. In Smoldyn 2.37 and
@@ -5852,15 +5799,15 @@ different surface-bound molecule diffusion algorithm.
 The following statements are supported for backward compatibility and
 might be removed in future Smoldyn releases.
 
-*max\_species int*
+*max_species int*
 
 *This tells Smoldyn to allocate this many molecule species. As of
 version 2.23, new species are allocated as needed.*
 
-*max\_names int*
+*max_names int*
 
 *Maximum number of molecular species that will be used. Statement has
-been superseded by max\_species, which is now also obsolete.*
+been superseded by max_species, which is now also obsolete.*
 
 *name name*
 
@@ -5871,15 +5818,15 @@ been superseded by max\_species, which is now also obsolete.*
 *Names of all of the types of molecules present in the system. Statement
 has been superseded by species.*
 
-*max\_compartment int*
+*max_compartment int*
 
 *Maximum number of compartments that will be defined. New compartments
 are now allocated as needed.*
 
-*reaction\_cmpt cname rname reactant<sub>1</sub> + reactant<sub>2</sub>
+*reaction_cmpt cname rname reactant<sub>1</sub> + reactant<sub>2</sub>
 -\> product<sub>1</sub> + product<sub>2</sub>*
 
-*reaction\_cmpt cname rname reactant<sub>1</sub> + reactant<sub>2</sub>
+*reaction_cmpt cname rname reactant<sub>1</sub> + reactant<sub>2</sub>
 -\> product<sub>1</sub> + product<sub>2</sub> rate*
 
 *This is identical to the reaction statement except that this reaction
@@ -5888,10 +5835,10 @@ bimolecular reactions, both reactants need to be in the compartment for
 the reaction to occur. Statement has been superseded by `reaction
 compartment=cname` format.*
 
-*reaction\_surface sname rname reactant<sub>1</sub> +
+*reaction_surface sname rname reactant<sub>1</sub> +
 reactant<sub>2</sub> -\> product<sub>1</sub> + product<sub>2</sub>*
 
-*reaction\_surface sname rname reactant<sub>1</sub> +
+*reaction_surface sname rname reactant<sub>1</sub> +
 reactant<sub>2</sub> -\> product<sub>1</sub> + product<sub>2</sub> rate*
 
 *This is identical to the reaction statement except that this reaction
@@ -5900,9 +5847,9 @@ bimolecular reactions, at least one reactant needs to be bound to the
 named surface for the reaction to occur. Statement has been superseded
 by `reaction surface=sname` format.*
 
-*reaction\_permit rname state*
+*reaction_permit rname state*
 
-*reaction\_permit rname state<sub>1</sub> state<sub>2</sub>*
+*reaction_permit rname state<sub>1</sub> state<sub>2</sub>*
 
 *Allow reaction rname to happen for the specified reactant states, which
 need to be listed in the same order in which the reactants were entered.
@@ -5910,9 +5857,9 @@ This function has not proven to be useful; instead, it’s best to enter
 each reaction individually, rather than to have some reactions that
 operate on multiple states.*
 
-*reaction\_forbid rname state*
+*reaction_forbid rname state*
 
-*reaction\_forbid rname state<sub>1</sub> state<sub>2</sub>*
+*reaction_forbid rname state<sub>1</sub> state<sub>2</sub>*
 
 *Forbid reaction rname to happen for the specified reactant states,
 which need to be listed in the same order in which the reactants were
@@ -5931,21 +5878,21 @@ not generally recommended.*
 *The following reaction statements are for block-style input and are
 only supported for backward compatibility.*
 
-*start\_reaction*
+*start_reaction*
 
-*start\_reaction order*
+*start_reaction order*
 
 *Start of reaction definition. Between this instruction and
-`end\_reaction`, all lines need to pertain to this order of reaction.
+`end_reaction`, all lines need to pertain to this order of reaction.
 It is permissible to list reactions of the same order in multiple
-blocks, provided that only the first block includes a max\_rxn statement
+blocks, provided that only the first block includes a max_rxn statement
 and that sufficient reactions are declared with that statement.*
 
 *order int*
 
 *Order of the reactions being declared (0, 1, or 2).*
 
-*max\_rxn max\_rxn*
+*max_rxn max_rxn*
 
 *Maximum number of reactions that will be declared of the given order.*
 
@@ -5979,11 +5926,11 @@ reactant statement, if any.*
 *Reaction rate constant for reaction called r. Units for the reaction
 rate constant are (volume)<sup>order–1</sup> times inverse time. These
 rates are converted by the program into probabilities or binding radii.
-To enter the simulation parameters directly, use rate\_internal.
+To enter the simulation parameters directly, use rate_internal.
 Conformational spread reactions are entered with order 2, but this rate
 constant has units of inverse time.*
 
-*confspread\_radius r float*
+*confspread_radius r float*
 
 *Defines reaction r a a conformational spread reaction. This reaction
 must have two reactants and two products; upon reaction, the first
@@ -5991,7 +5938,7 @@ reactant is replaced by the first product, and the second with the
 second. The reaction domain extends over the radius that is listed here
 (this is effectively a binding radius).*
 
-*rate\_internal r float*
+*rate_internal r float*
 
 *Internal value for reaction rate information, which can be used to
 override the internal rates that are calculated from the rate entry. For
@@ -6021,11 +5968,11 @@ theory has not been derived for that yet.*
 which can be `solution`, `fsoln`, `bsoln`, `front`, `back`, `up`, or
 `down`; if no state is given, solution is assumed.*
 
-*product\_param r i*
+*product_param r i*
 
-*product\_param r p,x,X,r,b,q,y,s float*
+*product_param r p,x,X,r,b,q,y,s float*
 
-*product\_param r o,f prod\_name pos<sub>0</sub> pos<sub>1</sub>…
+*product_param r o,f prod_name pos<sub>0</sub> pos<sub>1</sub>…
 pos<sub>dim–1</sub>*
 
 *Parameters for the initial placement of products of reaction r. A
@@ -6041,10 +5988,10 @@ randomly rotated with ‘o’, or not rotated with ‘f’. In the absence of
 better information, a useful default parameter type is either ‘x’ or
 ‘y’, with a value of about 0.2. ‘X’ is identical to ‘x’, and is
 intended only as an internal code to indicate that the user didn’t enter
-a product\_param line, which will yield a default value of 0.2 and a
+a product_param line, which will yield a default value of 0.2 and a
 warning.*
 
-*end\_reaction*
+*end_reaction*
 
 *End of reaction definition. Reaction instructions are no longer
 recognized but other simulation instructions are.*
@@ -6132,9 +6079,9 @@ setgraphics *type*
 
 Sets the display graphics to type *type*. If graphics were not set up
 initially, using the graphics statement, this command does nothing.
-Otherwise, options for type are `opengl` or `opengl\_good`.
+Otherwise, options for type are `opengl` or `opengl_good`.
 
-setgraphic\_iter *timesteps*
+setgraphic_iter *timesteps*
 
 Sets the graphics update interval to *timesteps* time steps. This is
 only functional if graphics were set up initially, using the graphics
@@ -6154,8 +6101,8 @@ writing. (In versions 1.77 and earlier, this called another command.)
 incrementfile *filename*
 
 A new output file is created based upon the *filename*. The first time
-this is called the filename is appended with a `\_001`, which is then
-incremented with subsequent calls to `\_002`, and so on. These numbers
+this is called the filename is appended with a `_001`, which is then
+incremented with subsequent calls to `_002`, and so on. These numbers
 precede any suffix on the filename. (In versions 1.77 and earlier, this
 called another command.)
 
@@ -6516,7 +6463,7 @@ Outputs the time and the species, state, serial number, location, and
 inside vs. outside compartment status for each compartment of the single
 molecule with serial number *serno*. This stops after it finds the first
 molecule with the requested serial number. This supports two-part serial
-numbers (see reaction\_serialnum) in which a match occurs if *serno*
+numbers (see reaction_serialnum) in which a match occurs if *serno*
 exactly matches either the whole molecule serial number or either half
 of it.
 
@@ -6554,10 +6501,10 @@ neither *species* nor *state* can be `all`. As of version 1.84, this
 prints out three numbers in each line: time, 〈*r*<sup>2</sup>〉, and
 〈*r*<sup>4</sup>〉. This command does not work if multiple molecules
 have the same serial number (which can only happen if you use the
-reaction\_serialnum statement) and, for molecules with two-part serial
+reaction_serialnum statement) and, for molecules with two-part serial
 numbers, it determines molecule identity based on only the right part.
 
-meansqrdisp2 *species*(*state*) *dim start report max\_mol max\_moment*
+meansqrdisp2 *species*(*state*) *dim start report max_mol max_moment*
 *filename*
 
 This function is an expanded version of meansqrdisp. As above, it
@@ -6576,17 +6523,17 @@ tracked position, since it no longer exists. For example, if you want to
 see how far molecules diffuse between their creation in one reaction and
 their destruction in another reaction, set *start* to ‘c’ and *report*
 to ‘r’. Or, set *start* to ‘i’ and *report* to ‘e’ for this function to
-be identical to meansqrdisp. It can track up to *max\_mol* molecules.
+be identical to meansqrdisp. It can track up to *max_mol* molecules.
 This function prints out the time and then results for all moments, even
 and odd, from 〈*r*<sup>0</sup>〉 (the number of molecules being reported
-on) to 〈*r<sup>max\_moment</sup>*〉. This command accounts for periodic
+on) to 〈*r<sup>max_moment</sup>*〉. This command accounts for periodic
 boundaries. *state* is optional; neither *species* nor *state* can be
 `all`. This command does not work if multiple molecules have the same
-serial number (which can only happen if you use the reaction\_serialnum
+serial number (which can only happen if you use the reaction_serialnum
 statement) and, for molecules with two-part serial numbers, it
 determines molecule identity based on only the right part.
 
-meansqrdisp3 *species*(*state*) *dim start report max\_mol change*
+meansqrdisp3 *species*(*state*) *dim start report max_mol change*
 *filename command*
 
 This function is quite similar to meansqrdisp and meansqrdisp2. It
@@ -6606,7 +6553,7 @@ every molecule that is being tracked, or ‘r’ to report on only those
 that reacted since the command was last called. In this latter case, the
 position that is used for a reacted molecule is its most recently
 tracked position, since it no longer exists. It can track up to
-*max\_mol* molecules. This function prints out the time, the number of
+*max_mol* molecules. This function prints out the time, the number of
 molecules reported on, and the effective diffusion coefficient. Note
 that the first command run will always output an effective diffusion
 coefficient of NaN (or \#1.IND on Windows systems) due to a 0/0 division
@@ -6621,12 +6568,12 @@ The *species* cannot be `all`. The state is optional. If the state is
 the same molecule list. No warning is issued if this is not the case,
 but some molecules simply won’t be counted. This command does not work
 if multiple molecules have the same serial number (which can only happen
-if you use the reaction\_serialnum statement) and, for molecules with
+if you use the reaction_serialnum statement) and, for molecules with
 two-part serial numbers, it determines molecule identity based on only
 the right part.
 
-residencetime *species*(*state*) *start report summary\_out list\_out
-max\_mol filename*
+residencetime *species*(*state*) *start report summary_out list_out
+max_mol filename*
 
 This function computes residence times of individual molecules of type
 *species*, thus showing how long they have existed in the system. As
@@ -6638,18 +6585,18 @@ track those that are created after the first call, and enter ‘a’ (all)
 to track both sets of molecules. For *report*, enter ‘e’ to report on
 every molecule that is being tracked, or ‘r’ to report on only those
 that reacted since the command was last called. It can track up to
-*max\_mol* molecules. This function needs to be invoked at every time
+*max_mol* molecules. This function needs to be invoked at every time
 step so that molecules can be tracked accurately. However, output may
-not be wanted at every time step, so set *summary\_out* to the number of
+not be wanted at every time step, so set *summary_out* to the number of
 invocations between when this should print a summary output, with the
-time number of molecules, and mean residence time, and set *list\_out*
+time number of molecules, and mean residence time, and set *list_out*
 to the number of invocations between when this should print a list
 output, with a list of all molecules with their IDs and their current
 ages. In both cases, set values to 0 or less to not have this type of
 output. *state* is optional; neither *species* nor *state* can be `all`.
 See the residencetime.txt example file. This command does not work if
 multiple molecules have the same serial number (which can only happen if
-you use the reaction\_serialnum statement).
+you use the reaction_serialnum statement).
 
 diagnostics *type*
 
@@ -6674,10 +6621,10 @@ writeVTK *filepath/filename*
 Outputs VTK format data for viewing with applications such as Visit or
 Paraview. This creates a stack of files in the working directory, or
 somewhere else depending on the *filepath*, for which the names start
-with *filename*Lattice00\_00001.vtu and *filename*Molecules00001.vtu,
+with *filename*Lattice00_00001.vtu and *filename*Molecules00001.vtu,
 where *filename* is the entered file name. The *filepath* directory
 needs to have been created beforehand. In contrast to most filenames,
-this path and name should not be declared with the `output\_files`
+this path and name should not be declared with the `output_files`
 statement. The filename numbers are incremented for each snapshot. If
 molecules have two-part serial numbers, this only considers the right
 part.
@@ -6787,10 +6734,10 @@ are removed until *num* is reached. Otherwise, molecules are added to
 random positions in the system to achieve a total count of *num*. This
 function considers the entire system volume.
 
-fixmolcountrange *species low\_num high\_num*
+fixmolcountrange *species low_num high_num*
 
 Exactly like fixmolcount, except that the molecule count is unchanged if
-it is between *low\_num* and *high\_num*, and is otherwise modified to
+it is between *low_num* and *high_num*, and is otherwise modified to
 bring it to within the range.
 
 fixmolcountonsurf *species*(*state*) *num surface*
@@ -6801,10 +6748,10 @@ chosen at random, are removed until *num* is reached. Otherwise,
 molecules with the proper state are added to random positions on the
 surface to achieve a total count of *num*.
 
-fixmolcountrangeonsurf *species(state) low\_num high\_num surface*
+fixmolcountrangeonsurf *species(state) low_num high_num surface*
 
 Exactly like fixmolcountonsurf, except that the molecule count is
-unchanged if it is between *low\_num* and *high\_num*, and is otherwise
+unchanged if it is between *low_num* and *high_num*, and is otherwise
 modified to bring it to within the range.
 
 fixmolcountincmpt *species num compartment*
@@ -6815,10 +6762,10 @@ molecules of this type, chosen at random, are removed until *num* is
 reached. Otherwise, molecules are added to random positions in the
 compartment to achieve a total count of *num*.
 
-fixmolcountrangeincmpt *species low\_num high\_num compartment*
+fixmolcountrangeincmpt *species low_num high_num compartment*
 
 Exactly like fixmolcountincmpt, except that the molecule count is
-unchanged if it is between *low\_num* and *high\_num*, and is otherwise
+unchanged if it is between *low_num* and *high_num*, and is otherwise
 modified to bring it to within the range.
 
 equilmol *species<sub>1</sub>*(*state<sub>1</sub>*)
@@ -6891,7 +6838,7 @@ reaction *rxn*. The state is optional; *species* and/or *state* may be
 setrateint *rxn rate*
 
 Sets the internal reaction rate of the reaction named *rxn* to *rate*.
-See the description above for rate\_internal for the meanings of *rate*
+See the description above for rate_internal for the meanings of *rate*
 for the different reaction orders.
 
 shufflemollist *listname*
@@ -6910,10 +6857,10 @@ together). Either or both or reactant1 and reactant2 can be `all`.
 
 Deleted, starting with Smoldyn 2.19:
 
-*setsurfcoeff surface\_name species state1 state2 rate*
+*setsurfcoeff surface_name species state1 state2 rate*
 
 *Sets the rate coefficient for the conversion of species from state1 to
-state2 at surface surface\_name.*
+state2 at surface surface_name.*
 
 settimestep *dt*
 
@@ -7021,22 +6968,22 @@ surface would bump into get translated, unless their surface action is
 into by the moving compartment, but then gets bumped back due to some
 other surface, then that molecule will end up inside of the compartment.
 
-diffusecmpt *compartment code stddev<sub>x</sub>* \[*cmpt\_bound radius
+diffusecmpt *compartment code stddev<sub>x</sub>* \[*cmpt_bound radius
 nsample*\]
 
 diffusecmpt *compartment code stddev<sub>x</sub> stddev<sub>y</sub>*
-\[*cmpt\_bound radius nsample*\]
+\[*cmpt_bound radius nsample*\]
 
 diffusecmpt *compartment code stddev<sub>x</sub> stddev<sub>y</sub>
-stddev<sub>z</sub>* \[*cmpt\_bound radius nsample*\]
+stddev<sub>z</sub>* \[*cmpt_bound radius nsample*\]
 
 This is similar to translatecmpt, except that this translates the
 compartment by a Gaussian distributed random amount that has standard
 deviation on each axis of *stddev<sub>x</sub>*, *stddev<sub>y</sub>*,
 and *stddev<sub>z</sub>*. Also, this has three optional parameters:
-*cmpt\_bound*, *radius*, and *nsample*. If they are entered, then
+*cmpt_bound*, *radius*, and *nsample*. If they are entered, then
 Smoldyn keeps the diffusing compartment within the bounding compartment
-called *cmpt\_bound* (assuming it was inside initially). It does this by
+called *cmpt_bound* (assuming it was inside initially). It does this by
 computing *nsample* test points that are on a spherical shell of radius
 *radius* around each of the compartment’s interior-defining points, and
 determines if any of these test points are not within the bounding
