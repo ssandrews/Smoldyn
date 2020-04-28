@@ -3,3 +3,4 @@ mkdocs-material
 mkdocs-macros-plugin
 pheasant
 cldoc
+pymdown-extensions

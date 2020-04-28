@@ -2,7 +2,7 @@
 Python bindings.
 """
 
-from smoldyn._smoldyn import *
-
-from smoldyn import _smoldyn 
-__version__ = _smoldyn.__version__
+from ._smoldyn import *
+from .simulation import * 
+from .geometry import *
+from .smoldyn import *
