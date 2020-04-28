@@ -39,8 +39,8 @@ for whl in $WHEELHOUSE/*.whl; do
 done
 
 echo "Installing before testing ... "
-/opt/python/cp36-cp36m/bin/pip install $WHEELHOUSE/*-py3*.whl
-for PYV in 36; do
+/opt/python/cp37-cp37m/bin/pip install $WHEELHOUSE/*-py3*.whl
+for PYV in 37; do
     PYDIR=/opt/python/cp${PYV}-cp${PYV}m
     PYTHON=$(ls $PYDIR/bin/python?.?)
     echo " -- Installing for $PYTHON ... "
