@@ -7,9 +7,11 @@
 ########## Basic setup ##########
 
 project(smoldyn)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
-set(SMOLDYN_VERSION "2.61")
+if(NOT SMOLDYN_VERSION)
+   set(SMOLDYN_VERSION "3.0.0-dev${TIMESTAMP}")
+endif()
 
 
 ######### Targets to build ###########
