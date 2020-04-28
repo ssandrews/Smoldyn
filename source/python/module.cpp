@@ -16,7 +16,7 @@ using namespace std;
 
 #include "../Smoldyn/smoldynfuncs.h"
 
-#include "Simulation.h"
+#include "Smoldyn.h"
 #include "SmoldynSpecies.h"
 
 using namespace pybind11::literals;  // for _a
@@ -146,46 +146,45 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("none", PanelShape::PSnone);
 
     /* Simulation class */
-    py::class_<Simulation>(m, "Simulation")
+    py::class_<Smoldyn>(m, "Smoldyn")
         .def(py::init<bool>(), "debug"_a = false)
-        .def_property_readonly("define", &Simulation::getDefine,
+        .def_property_readonly("define", &Smoldyn::getDefine,
             py::return_value_policy::reference)
-        .def_property("dim", &Simulation::getDim, &Simulation::setDim)
+        .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
         .def_property(
-            "seed", &Simulation::getRandomSeed, &Simulation::setRandomSeed)
-        .def_property("bounds", &Simulation::getBounds, &Simulation::setBounds)
-        .def("setPartitions", &Simulation::setPartitions)
-        .def("addSpecies", &Simulation::addSpecies, "name"_a, "mollist"_a = "")
-        .def("setSpeciesMobility", &Simulation::setSpeciesMobility, "species"_a,
+            "seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
+        .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
+        .def("setPartitions", &Smoldyn::setPartitions)
+        .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
+        .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,
             "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
             "difmatrix"_a = std::vector<double>())
-        .def("addSurface", &Simulation::addSurface, "name"_a)
-        .def("setSurfaceAction", &Simulation::setSurfaceAction)
-        .def("addSurfaceMolecules", &Simulation::addSurfaceMolecules)
-        .def("addPanel", &Simulation::addPanel)
-        .def("addCompartment", &Simulation::addCompartment)
-        .def("addCompartmentSurface", &Simulation::addCompartmentSurface)
-        .def("addCompartmentPoint", &Simulation::addCompartmentPoint)
-        .def("addComparmentMolecules", &Simulation::addCompartmentMolecules)
-        .def("addReaction", &Simulation::addReaction, "reac"_a, "reactant1"_a,
+        .def("addSurface", &Smoldyn::addSurface, "name"_a)
+        .def("setSurfaceAction", &Smoldyn::setSurfaceAction)
+        .def("addSurfaceMolecules", &Smoldyn::addSurfaceMolecules)
+        .def("addPanel", &Smoldyn::addPanel)
+        .def("addCompartment", &Smoldyn::addCompartment)
+        .def("addCompartmentSurface", &Smoldyn::addCompartmentSurface)
+        .def("addCompartmentPoint", &Smoldyn::addCompartmentPoint)
+        .def("addComparmentMolecules", &Smoldyn::addCompartmentMolecules)
+        .def("addReaction", &Smoldyn::addReaction, "reac"_a, "reactant1"_a,
             "rstate1"_a, "reactant2"_a, "rstate2"_a, "products"_a,
             "productstates"_a, "rate"_a)
-        .def("setReactionRegion", &Simulation::setReactionRegion)
-        .def("setBoundaryType", &Simulation::setBoundaryType)
-        .def("addMolList", &Simulation::addMolList)
+        .def("setReactionRegion", &Smoldyn::setReactionRegion)
+        .def("setBoundaryType", &Smoldyn::setBoundaryType)
+        .def("addMolList", &Smoldyn::addMolList)
         /* data */
-        .def("getMoleculeCount", &Simulation::getMoleculeCount)
+        .def("getMoleculeCount", &Smoldyn::getMoleculeCount)
         /* Graphics */
-        .def("setGraphicsParams", &Simulation::setGraphicsParams)
-        .def("setMoleculeStyle", &Simulation::setMoleculeStyle)
+        .def("setGraphicsParams", &Smoldyn::setGraphicsParams)
+        .def("setMoleculeStyle", &Smoldyn::setMoleculeStyle)
         /* Simulation */
-        .def("setTimes", &Simulation::setSimTimes)
-        .def("update", [](const Simulation& s) { return simupdate(s.simPtr()); })
-        .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = true)
-        .def("start", &Simulation::runUntil, "breaktime"_a, "dt"_a=0.0)
-        .def("addSolutionMolecules", &Simulation::addSolutionMolecules)
-        .def("displaySim", [](const Simulation& s) { return smolDisplaySim(s.simPtr()); })
-        .def_property("dt", &Simulation::getDt, &Simulation::setDt)
+        .def("setTimes", &Smoldyn::setSimTimes)
+        .def("update", &Smoldyn::update) 
+        .def("run", &Smoldyn::run, "stoptime"_a, "dt"_a, "display"_a=true)
+        .def("runUntil", &Smoldyn::runUntil, "breaktime"_a, "dt"_a=0.0, "display"_a=true)
+        .def("addSolutionMolecules", &Smoldyn::addSolutionMolecules)
+        .def_property("dt", &Smoldyn::getDt, &Smoldyn::setDt)
         ;
     
 

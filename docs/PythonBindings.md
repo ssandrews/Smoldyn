@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 ```python
 # (c) Dilawar Singh, 2020/04/20
 import smoldyn
-s = smoldyn.Simulation()
+s = smoldyn.Smoldyn()
 s.bounds = ([-50, 50], [-50, 50])
 assert s.dim == 2
 s.seed = 1
@@ -223,7 +223,7 @@ import matplotlib.pyplot as plt
 # Getting enum MolecState
 MS = smoldyn.MS
 
-s = smoldyn.Simulation(debug=True)
+s = smoldyn.Smoldyn(debug=True)
 v1 = [-100.0, -100.0, -10.0]
 v2 = [100.0, 100, 10.0]
 s.bounds = list(zip(v1, v2))
