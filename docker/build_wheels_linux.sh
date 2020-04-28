@@ -25,7 +25,7 @@ for PYV in 37; do
         PYTHON=$(ls $PYDIR/bin/python?.?)
         $PYTHON -m pip install numpy matplotlib
         git pull || echo "Failed to pull $BRANCH"
-        cmake -DPYTHON_EXECUTABLE=$PYTHON  ${SOURCE_DIR}
+        cmake -DPYTHON_EXECUTABLE=$PYTHON -DSMOLDYN_VERSION=$(date +"%Y%m%d") ${SOURCE_DIR}
         make -j`nproc`
         # Now build bdist_wheel
         cd ../../source/python 
