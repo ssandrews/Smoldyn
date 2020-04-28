@@ -1,11 +1,29 @@
 # -*- coding: utf-8 -*-
 
 __author__           = "Dilawar Singh"
-__copyright__        = "Copyright 2019-, Dilawar Singh"
-__maintainer__       = "Dilawar Singh"
+__copyright__        = "Copyright 2020-, Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-from . import _smoldyn
+__all__ = ['Boundaries', 'Simulation']
+
+from dataclasses import dataclass, field
+from typing import List
+
+import smoldyn
+
+@dataclass
+class Boundaries:
+    low: List[float]
+    high: List[float]
+    types: List[str]
+    dim: field(init=False) = 0
+
+    def __post_init__(self):
+        assert len(self.low) == len(self.high), "Size mismatch"
+        if len(self.types) == 1:
+            self.types = self.types * len(self.low)
+        self.dim = len(self.low)
+        
 
 
 class Simulation(object):
@@ -14,8 +32,9 @@ class Simulation(object):
     for Simulation
     """
 
-    def __init__(self, arg):
-        super(Simulation, self).__init__()
-        self.arg = arg
-    
+    def __init__(self, bounds):
+        self.bounds = bounds
 
+
+    def run(self, stoptime, dt=1e-3):
+        smoldyn.obj().run(stoptime, dt)
