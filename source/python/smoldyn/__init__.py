@@ -4,12 +4,6 @@ Python bindings.
 
 from . import _smoldyn
 
-# And export other symbols as well.
-from .simulation import * 
-from .geometry import *
-from .kinetics import *
-from .smoldyn import *
-
 __version__ = _smoldyn.__version__
 
 # Instantiate object of 
@@ -20,3 +14,9 @@ def obj():
     """
     global __cppobj__
     return __cppobj__
+
+# And export other symbols as well.
+from .simulation import * 
+from .geometry import *
+from .kinetics import *
+from .utils import *
