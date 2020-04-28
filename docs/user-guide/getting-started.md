@@ -147,31 +147,20 @@ systems.
 Concentration coefficient reactions reactions rates
 
  
-|       |         |          |           |          |         |
-|-------|---------|----------|-----------|------------|---------|
-| Typical value | 10 μM | 10 μm<sup>2</sup>s<sup>–1</sup> | 1 s<sup>–1</sup> | 10<sup>5</sup> | M<sup>–1</sup>s<sup>–1</sup> | 1 μm s<sup>–1</sup> |
-| mks | 6x10<sup>21</sup> | m<sup>–3</sup> | 10<sup>–11</sup> | m<sup>2</sup>s<sup>–1</sup> | 1 s<sup>–1</sup> | 10<sup>2</sup> |
-| cgs | 6x10<sup>15</sup> cm<sup>–3</sup> | 10<sup>–7</sup> cm<sup>2</sup>s<sup>–1</sup> | 1 s<sup>–1</sup> | 1.7x10<sup>–16</sup> cm<sup>3</sup>s<sup>–1</sup> | 10<sup>–4</sup> cm s<sup>–1</sup>
-| μm-ms | 6000 μm<sup>–3</sup> | 10<sup>–2</sup> μm<sup>2</sup>ms<sup>–1</sup> | 10<sup>–3</sup> ms<sup>–1</sup> | 1.7x10<sup>–7</sup> μm<sup>3</sup>ms<sup>–1</sup> | 10<sup>–3</sup> μm ms<sup>–1</sup> |
+| | Concentration | Diffusion coefficient | Unimolecular reactions | Bimolecular reactions | Adsorption rates|
+|-|---------------|-----------------------|------------------------|-----------------------|-----------------|
+| Typical value|10 μM|10 μm^2^s^–1^|1 s^–1^|10^5^ M^–1^s^–1^|1 μm s^–1^|
+|mks|6x10^21^m^–3^|10^–11^ m^2^s^–1^|1 s^–1^|10^2^|10^-6^ s^-1^|
+|cgs|6x10^15^ cm^–3^|10^–7^ cm^2^s^–1^|1 s^–1^ |1.7x10^–16^ cm^3^s^–1^|10^–4^ cm s^–1^|
+|μm-ms|6000 μm^–3^ | 10^–2^ μm^2^ms^–1^ | 10^–3^ ms^–1^ | 1.7x10^–7^ μm^3^ms^–1^ | 10^–3^ μm ms^–1^ |
+|μm-s|6000 μm^–3^|10 μm^2^s^–1^ |1 s^–1^ |1.7x10^–4^ μm^3^s^–1^ |1 μm s^–1^|
+|nm-ms |6x10^–6^ nm^–3^ |10^4^ nm^2^ms^–1^ |10^–3^ ms^–1^ |170 nm^3^ms^–1^ |1 nm ms^–1^ |
+|nm-μs |6x10^–6^ nm^–3^ |10 nm^2^μs^–1^ |10^–6^ μs^–1^ |0.17 nm^3^μs^–1^ |10^–3^ nm μs^–1^|
+|px-ms |6x10^–3^ px^–3^ |100 px^2^ms^–1^ |10^–3^ ms^–1^ |0.17 px^3^ms^–1^ |0.1 px ms^–1^ |
 
-μm-s 6000 μm<sup>–3</sup> 10 μm<sup>2</sup>s<sup>–1</sup> 1
-s<sup>–1</sup> 1.7x10<sup>–4</sup> μm<sup>3</sup>s<sup>–1</sup> 1 μm
-s<sup>–1</sup>
-
-nm-ms 6x10<sup>–6</sup> nm<sup>–3</sup> 10<sup>4</sup>
-nm<sup>2</sup>ms<sup>–1</sup> 10<sup>–3</sup> ms<sup>–1</sup> 170
-nm<sup>3</sup>ms<sup>–1</sup> 1 nm ms<sup>–1</sup>
-
-nm-μs 6x10<sup>–6</sup> nm<sup>–3</sup> 10 nm<sup>2</sup>μs<sup>–1</sup>
-10<sup>–6</sup> μs<sup>–1</sup> 0.17 nm<sup>3</sup>μs<sup>–1</sup>
-10<sup>–3</sup> nm μs<sup>–1</sup>
-
-px-ms 6x10<sup>–3</sup> px<sup>–3</sup> 100
-px<sup>2</sup>ms<sup>–1</sup> 10<sup>–3</sup> ms<sup>–1</sup> 0.17
-px<sup>3</sup>ms<sup>–1</sup> 0.1 px ms<sup>–1</sup> 
-A pixel, abbreviated px, is defined as a length of 10 nm. In the
-concentration column, ‘6’ is short for 6.022045. In the bimolecular
-reactions column, 1.7 is short for 1.660565.
+> A pixel, abbreviated px, is defined as a length of 10 nm. In the
+> concentration column, ‘6’ is short for 6.022045. In the bimolecular
+> reactions column, 1.7 is short for 1.660565.
 
 ### Model parameters
 
@@ -189,7 +178,7 @@ even nothing at all.
 
 Graphical output can be displayed with several levels of quality. At the bottom
 end is no output at all, achieved with the `graphics none` statement or by
-using a `-t` flag on the command line (e.g. `smoldyn template.txt -t`). Next
+using a `-t` flag on the command line (e.g. `$ smoldyn template.txt -t`). Next
 the `graphics opengl` level produces crude graphics, `graphics opengl_good` is
 passable, and `opengl_better` is reasonably good. Improving the graphics
 quality slows simulations down, so a good approach is to use the plain `opengl`
@@ -214,10 +203,13 @@ Simulations use fixed time steps. They start at the time given with
 with the size given with `time_step`. For typical simulations of
 subcellular processes, 10 ms is often a reasonable time step. Longer
 time steps make the simulation run faster and shorter time steps produce
-more accurate results. Before starting a long series of simulations, it
-is good practice to run several tests first to ensure that the time step
-is short enough to produce results of the desired accuracy but also long
-enough for adequate efficiency.
+more accurate results. 
+
+!!! tip "Choosing time step"
+    Before starting a long series of simulations, it is good practice to run
+    several tests first to ensure that the time step is short enough to produce
+    results of the desired accuracy but also long enough for adequate
+    efficiency.
 
 ### Molecules
 
@@ -237,12 +229,11 @@ surface-bound diffusion coefficients are all still equal to 0. For convenience,
 these species parameters can be defined for all of the states at once by using
 `all` as the state, such as in the statement `color S(all) green`.
 
-The behavior of the display_size statement depends on the graphical
-output style. For the `opengl` graphics level, the display size value is
-in pixels. Here, numbers from 2 to 4 are typically good choices. For the
-two better graphics options, the display size value is the radius with
-which the molecule is drawn, using the same units as elsewhere in the
-input file.
+The behavior of the `display_size` statement depends on the graphical output
+style. For the `opengl` graphics level, the display size value is in pixels.
+Here, numbers from 2 to 4 are typically good choices. For the two better
+graphics options, the display size value is the radius with which the molecule
+is drawn, using the same units as elsewhere in the input file.
 
 ### Surfaces
 
@@ -251,13 +242,13 @@ represent cell membranes, obstructions, system boundaries, or other things.
 They are 2D structures in 3D simulations, or 1D lines or curves in 2D
 simulations (or 0D points in 1D simulations). Each surface has a `front` and a
 `back` face, so molecules can interact differently with the two sides of a
-surface. Each surface is composed of one or more **panels**, where each panels
+surface. Each surface is composed of one or more `panel`s, where each panel
 can be a rectangle, triangle, sphere, hemisphere, cylinder, or a disk. Surfaces
 can be disjoint, with separate non-connected portions. However, all portions of
 a given surface type are displayed in the same way and interact with molecules
 in the same way.
 
-Surfaces get defined in `surface blocks,` which start with `start_surface` and
+Surfaces get defined in `surface blocks`, which start with `start_surface` and
 the surface name, and end with `end_surface`.  Within the surface block, define
 molecule interactions with this surface using the `action` or `rate`
 statements. In this case, the statement `action all both reflect` states that
@@ -267,7 +258,7 @@ absorption by the surface, and transmission through the surface, respectively.
 Use the `rate` statement, which is not used in this file, for adsorption,
 desorption, or partial transmission through a surface.
 
-Define surface graphics using the color and thickness statements. For 3D
+Define surface graphics using the `color` and `thickness` statements. For 3D
 simulations, the `polygon` statement is useful as well. With it, you can
 specify whether you want Smoldyn to draw just the panel edges (typically
 the best choice), the entire panel face, or other options.
@@ -303,11 +294,11 @@ point, so the compartment represents the entire region within the
 circle.
 
 Intuitively, the region of a compartment should be defined as everywhere
-in space to which one can `walk` from the `interior-defining` point,
+in space to which one can "walk" from the interior-defining point,
 without crossing any of the bounding surfaces. However, for
 computational efficiency, Smoldyn uses a slightly different definition.
 In Smoldyn, the region of a compartment is everywhere in space from
-which one can `see` the `interior-defining` point using a straight line,
+which one can `see` the interior-defining point using a straight line,
 without crossing any of the bounding surfaces. The difference between
 the definitions is minimal is many cases, but can be important.
 
