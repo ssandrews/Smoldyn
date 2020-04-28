@@ -15,7 +15,7 @@ VERSION=$(cat ./VERSION)
 
 SOURCE_DIR=$SCRIPT_DIR/..
 
-for PYV in 36; do
+for PYV in 37; do
     PYDIR=/opt/python/cp${PYV}-cp${PYV}m
     PYVER=$(basename $PYDIR)
     mkdir -p $PYVER
@@ -24,8 +24,8 @@ for PYV in 36; do
         echo "Building using $PYDIR in $PYVER"
         PYTHON=$(ls $PYDIR/bin/python?.?)
         $PYTHON -m pip install numpy matplotlib
-	git pull || echo "Failed to pull $BRANCH"
-        $CMAKE -DPYTHON_EXECUTABLE=$PYTHON  ${SOURCE_DIR}
+        git pull || echo "Failed to pull $BRANCH"
+        cmake -DPYTHON_EXECUTABLE=$PYTHON  ${SOURCE_DIR}
         make -j`nproc`
         
         # Now build bdist_wheel
@@ -45,7 +45,7 @@ for PYV in 36; do
     PYDIR=/opt/python/cp${PYV}-cp${PYV}m
     PYTHON=$(ls $PYDIR/bin/python?.?)
     echo " -- Installing for $PYTHON ... "
-    $PYTHON -c 'import moose; print( moose.__version__ )'
+    $PYTHON -c 'import smoldyn; print(smoldyn.__version__ )'
 done
 	
 ls -lh $WHEELHOUSE/*.whl

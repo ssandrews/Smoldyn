@@ -34,7 +34,8 @@ s.setMoleculeStyle("fox", MS.all, 3, [0, 1, 0])
 T, F, R = [], [], []
 for t in np.arange(0.1, 2.0, 0.1):
     T.append(t)
-    s.start(t, dt=0.001)
+    continue
+    s.start(t, dt=0.001, opengl=False)
     ctr = s.getMoleculeCount("rabbit", MS.all)
     ctf = s.getMoleculeCount("fox", MS.all)
     F.append(ctf)
