@@ -9,5 +9,5 @@ RUN yum -y install freeglut-devel libtiff-devel libXmu-devel libXi-devel && yum 
 WORKDIR /root
 ADD . /root/
 RUN ls -ltrh
-# RUN cd docker && ./build_wheels_linux.sh 
-# RUN cd deploy-master && ./test_and_upload.sh $PYPI_PASSWORD
+RUN cd docker && ./build_wheels_linux.sh 
+RUN cd docker && ./test_and_upload.sh $PYPI_PASSWORD
