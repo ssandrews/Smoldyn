@@ -54,11 +54,6 @@ add_custom_target(pydevel
     COMMENT "RUNNING: python3 setup.py develop --user"
     VERBATIM)
 
-add_custom_target(pytest
-    COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
-    COMMENT "Running pytest."
-    VERBATIM)
-
 
 enable_testing()
 
@@ -75,3 +70,9 @@ foreach(_pyscript ${TEST_SCRIPTS})
         ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}")
 endforeach()
 
+# Run tests using pytest.
+add_custom_target(pytest 
+    DEPENDS pydevel
+    COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
+    COMMENT "Running pytest."
+    VERBATIM)
