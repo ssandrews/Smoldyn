@@ -8,4 +8,3 @@ __email__            = "dilawars@ncbs.res.in"
 from . import _smoldyn 
 
 
-# We have helper function here.

@@ -391,16 +391,15 @@ checks with the user first before overwriting them. To suppress this
 warning, run Smoldyn with a `-w` option on the command line (e.g.
 `smoldyn template.txt -w`).
 
-Each command is entered with the same general format. They start with
-`cmd`, list the times when the command should be executed, give the
-name of the specific command, and then give the parameters of that
-command. For example, `cmd B molcountheader templateout.txt` indicates
-that the command should be run before the simulation starts, the command
-is `molcountheader` (which writes out a list of the species names), and
-the command should send its output to the file templateout.txt.
-Similarly, `cmd N 10 molcount templateout.txt` indicates that the
-command should be run every 10 time steps, the command is molcount
-(which counts the molecules of each species), and the command should
+Each command is entered with the same general format. They start with `cmd`,
+list the times when the command should be executed, give the name of the
+specific command, and then give the parameters of that command. For example,
+`cmd B molcountheader templateout.txt` indicates that the command should be run
+before the simulation starts, the command is `molcountheader` (which writes out
+a list of the species names), and the command should send its output to the
+file `templateout.txt`.  Similarly, `cmd N 10 molcount templateout.txt`
+indicates that the command should be run every 10 time steps, the command is
+molcount (which counts the molecules of each species), and the command should
 also send its output to templateout.txt.
 
 Smoldyn supports quite a lot of commands, all of which are listed in the second
@@ -845,7 +844,7 @@ to be placed randomly within the simulation volume, randomly within some
 smaller region, or at a specific location.  The surface_mol statement is used
 to add molecules that are bound to surfaces, although it cannot be entered in
 the configuration file until the appropriate surface has been set up.
-Similarly, compart_mol is used to add molecules to compartments, which are
+Similarly, `compart_mol` is used to add molecules to compartments, which are
 regions between surfaces, but it also cannot be entered until more things have
 been set up. The statements about molecules mentioned thus far, with the
 exception of the last two, are shown in either `S1_intro/bounce3.txt` or
@@ -1047,7 +1046,7 @@ The following table summarizes the statements about molecules.
 
 | statement | function |
 |-------|------------|
-| species *name*<sub>1</sub> *name*<sub>2</sub> *… name*<sub>n</sub> | names of species |
+| species *name*~1~ name~2~ *… name~n~ | names of species |
 | difc *species*(*state*) *value* | diffusion coefficient |
 | difm *species* (*state*) *m*<sub>0</sub> *m*<sub>1</sub> … *m<sub>dim</sub>*<sub>\**dim*–1</sub> | diffusion matrix |
 | drift *species* (*state*) *v*<sub>0</sub> *v*<sub>1</sub> … *v<sub>dim</sub>*<sub>–1</sub> | global drift vector |
