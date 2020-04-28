@@ -28,7 +28,7 @@ for PYV in 37; do
         cmake -DPYTHON_EXECUTABLE=$PYTHON  ${SOURCE_DIR}
         make -j`nproc`
         # Now build bdist_wheel
-        cd source/python 
+        cd ../../source/python 
         $PYDIR/bin/pip wheel . -w $WHEELHOUSE 
     )
 done
