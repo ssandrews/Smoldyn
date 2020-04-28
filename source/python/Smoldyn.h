@@ -1,6 +1,6 @@
 // =====================================================================================
 //
-//       Filename:  Simulation.h
+//       Filename:  Smoldyn.h
 //
 //    Description: Header file.
 //
@@ -24,12 +24,12 @@ namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"
 
-class Simulation {
+class Smoldyn {
 
 public:
-    Simulation();
-    Simulation(bool debug);
-    ~Simulation();
+    Smoldyn();
+    Smoldyn(bool debug);
+    ~Smoldyn();
 
     SmoldynDefine& getDefine();
 
@@ -41,7 +41,9 @@ public:
 
     bool initialize();
 
+    // Smoldyn.
     bool run(double simtime, double dt, bool display);
+    void runUntil(const double breaktime, const double dt, bool display);
 
     // Bounds.
     void           setLowerBounds(const vector<double> bounds);
@@ -127,15 +129,21 @@ public:
         smolSetGraphicsParams(pSim_, method, timestep, delay);
     }
 
-    void runUntil(const double breaktime, const double dt);
+    inline void update()
+    {
+        smolUpdateSim(pSim_);
+    }
 
-    void setDt(double dt);
+    void   setDt(double dt);
     double getDt() const;
 
 private:
     simptr pSim_;
-    bool   debug_;
     size_t dim_;  // Dimention of the system.
+
+    bool debug_;
+
+    bool initDisplay_{false};
 
     // As large as dims.
     vector<double> lowbounds_;

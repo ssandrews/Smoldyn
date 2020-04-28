@@ -6,7 +6,7 @@ def test_module():
     print(smoldyn.__version__)
 
 def test_model():
-    model = smoldyn.Simulation()
+    model = smoldyn.Smoldyn()
     defines = model.define
     print(defines)
     defines['K_FWD'] = 0.001

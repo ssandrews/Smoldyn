@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 MS = smoldyn.MS
 
-s = smoldyn.Simulation(debug=True)
+s = smoldyn.Smoldyn(debug=True)
 v1 = [-100.0, -100.0, -10.0]
 v2 = [100.0, 100, 10.0]
 s.bounds = list(zip(v1, v2))
@@ -34,8 +34,7 @@ s.setMoleculeStyle("fox", MS.all, 3, [0, 1, 0])
 T, F, R = [], [], []
 for t in np.arange(0.1, 2.0, 0.1):
     T.append(t)
-    continue
-    s.start(t, dt=0.001, opengl=False)
+    s.runUntil(t, dt=0.001, display=False)
     ctr = s.getMoleculeCount("rabbit", MS.all)
     ctf = s.getMoleculeCount("fox", MS.all)
     F.append(ctf)

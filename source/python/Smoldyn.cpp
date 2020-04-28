@@ -8,50 +8,52 @@
 using namespace std;
 
 #include "../lib/random2.h"
-#include "Simulation.h"
+#include "Smoldyn.h"
 
-Simulation::Simulation() : pSim_(nullptr), debug_(false), dim_(0), curtime_(0.0)
+Smoldyn::Smoldyn()
+    : pSim_(nullptr), dim_(0), debug_(false), curtime_(0.0)
 {
 }
 
-Simulation::Simulation(bool debug)
-    : pSim_(nullptr), debug_(debug), dim_(0), curtime_(0.0)
+Smoldyn::Smoldyn(bool debug)
+    : pSim_(nullptr), dim_(0), debug_(false), curtime_(0.0)
 {
 }
 
-Simulation::~Simulation()
+Smoldyn::~Smoldyn()
 {
     smolFreeSim(pSim_);
 }
 
-SmoldynDefine& Simulation::getDefine()
+SmoldynDefine& Smoldyn::getDefine()
 {
     return define_;
 }
 
-size_t Simulation::getDim() const
+size_t Smoldyn::getDim() const
 {
     return dim_;
 }
 
-void Simulation::setDim(size_t dim)
+void Smoldyn::setDim(size_t dim)
 {
     dim_ = dim;
 }
 
-void Simulation::setRandomSeed(size_t seed)
+
+void Smoldyn::setRandomSeed(size_t seed)
 {
     if(!pSim_)
         return;
     pSim_->randseed = randomize(seed);
 }
 
-size_t Simulation::getRandomSeed(void)
+size_t Smoldyn::getRandomSeed(void)
 {
     return pSim_->randseed;
 }
 
-bool Simulation::initialize()
+bool Smoldyn::initialize()
 {
     if(pSim_)
         return true;
@@ -87,14 +89,20 @@ bool Simulation::initialize()
     return pSim_ ? true : false;
 }
 
-void Simulation::runUntil(const double breaktime, const double dt)
+void Smoldyn::runUntil(const double breaktime, const double dt, bool display)
 {
+    // If dt>0, reset dt else use the old one.
     if(dt > 0.0)
         smolSetTimeStep(pSim_, dt);
+
+    if(display and (! initDisplay_)) {
+        smolDisplaySim(pSim_);
+        initDisplay_ = true;
+    }
     smolRunSimUntil(pSim_, breaktime);
 }
 
-bool Simulation::run(double stoptime, double dt, bool display = true)
+bool Smoldyn::run(double stoptime, double dt, bool display)
 {
     if(!pSim_) {
         if(!initialize()) {
@@ -106,36 +114,38 @@ bool Simulation::run(double stoptime, double dt, bool display = true)
     smolSetSimTimes(pSim_, curtime_, stoptime, dt);
     smolUpdateSim(pSim_);
 
-    if(display)
+    if(display and ! initDisplay_) {
         smolDisplaySim(pSim_);
+        initDisplay_ = true;
+    }
     auto r   = smolRunSimUntil(pSim_, stoptime);
     curtime_ = stoptime;
     return r == ErrorCode::ECok;
 }
 
-void Simulation::setLowerBounds(const vector<double> bounds)
+void Smoldyn::setLowerBounds(const vector<double> bounds)
 {
     dim_       = bounds.size();
     lowbounds_ = bounds;
 }
 
-vector<double> Simulation::getLowerBounds(void) const
+vector<double> Smoldyn::getLowerBounds(void) const
 {
     return lowbounds_;
 }
 
-void Simulation::setHigherBounds(const vector<double> bounds)
+void Smoldyn::setHigherBounds(const vector<double> bounds)
 {
     dim_        = bounds.size();
     highbounds_ = bounds;
 }
 
-vector<double> Simulation::getHigherBounds(void) const
+vector<double> Smoldyn::getHigherBounds(void) const
 {
     return highbounds_;
 }
 
-void Simulation::setBounds(const vector<pair<double, double>>& bounds)
+void Smoldyn::setBounds(const vector<pair<double, double>>& bounds)
 {
     dim_ = bounds.size();
     lowbounds_.resize(dim_);
@@ -147,7 +157,7 @@ void Simulation::setBounds(const vector<pair<double, double>>& bounds)
     initialize();
 }
 
-vector<pair<double, double>> Simulation::getBounds() const
+vector<pair<double, double>> Smoldyn::getBounds() const
 {
     vector<pair<double, double>> bounds(dim_);
     for(size_t i = 0; i < dim_; i++)
@@ -155,62 +165,62 @@ vector<pair<double, double>> Simulation::getBounds() const
     return bounds;
 }
 
-void Simulation::setPartitions(const char* name, double val)
+void Smoldyn::setPartitions(const char* name, double val)
 {
     initialize();
     smolSetPartitions(pSim_, name, val);
 }
 
-void Simulation::addSpecies(const char* name, const char* param)
+void Smoldyn::addSpecies(const char* name, const char* param)
 {
     smolAddSpecies(pSim_, name, param);
 }
 
-void Simulation::setSpeciesMobility(const char* name, MolecState state,
+void Smoldyn::setSpeciesMobility(const char* name, MolecState state,
     double difc, vector<double>& drift, vector<double>& difmatrix)
 {
     smolSetSpeciesMobility(pSim_, name, state, difc, &drift[0], &difmatrix[0]);
 }
 
-void Simulation::addSurface(const char* name)
+void Smoldyn::addSurface(const char* name)
 {
     smolAddSurface(pSim_, name);
 }
 
-void Simulation::setSurfaceAction(const char* name, enum PanelFace face,
+void Smoldyn::setSurfaceAction(const char* name, enum PanelFace face,
     const char* species, enum MolecState state, enum SrfAction action)
 {
     smolSetSurfaceAction(pSim_, name, face, species, state, action);
 }
 
-void Simulation::addPanel(const char* surface, enum PanelShape panelShape,
+void Smoldyn::addPanel(const char* surface, enum PanelShape panelShape,
     const char* panel, const char* axisstring, vector<double>& params)
 {
     smolAddPanel(pSim_, surface, panelShape, panel, axisstring, &params[0]);
 }
 
-void Simulation::addCompartment(const char* compartment)
+void Smoldyn::addCompartment(const char* compartment)
 {
     smolAddCompartment(pSim_, compartment);
 }
 
-void Simulation::addCompartmentSurface(const char* compt, const char* surface)
+void Smoldyn::addCompartmentSurface(const char* compt, const char* surface)
 {
     smolAddCompartmentSurface(pSim_, compt, surface);
 }
 
-void Simulation::addCompartmentPoint(const char* compt, vector<double> point)
+void Smoldyn::addCompartmentPoint(const char* compt, vector<double> point)
 {
     smolAddCompartmentPoint(pSim_, compt, &point[0]);
 }
 
-void Simulation::addCompartmentMolecules(
+void Smoldyn::addCompartmentMolecules(
     const char* species, size_t number, const char* compt)
 {
     smolAddCompartmentMolecules(pSim_, species, number, compt);
 }
 
-void Simulation::addSurfaceMolecules(const char* species, enum MolecState state,
+void Smoldyn::addSurfaceMolecules(const char* species, enum MolecState state,
     size_t number, const char* surface, enum PanelShape panelShape,
     const char* panel, vector<double>& position)
 {
@@ -218,7 +228,7 @@ void Simulation::addSurfaceMolecules(const char* species, enum MolecState state,
         panel, &position[0]);
 }
 
-void Simulation::addReaction(const char* reaction,   // Name of the reaction.
+void Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
     const char*                          reactant1,  // First reactant
     enum MolecState                      rstate1,    // First reactant state
     const char*                          reactant2,  // Second reactant.
@@ -248,13 +258,13 @@ void Simulation::addReaction(const char* reaction,   // Name of the reaction.
         productSpecies.size(), &productSpecies[0], &productStates[0], rate);
 }
 
-void Simulation::setReactionRegion(
+void Smoldyn::setReactionRegion(
     const char* reac, const char* compt, const char* surface)
 {
     smolSetReactionRegion(pSim_, reac, compt, surface);
 }
 
-void Simulation::setSimTimes(
+void Smoldyn::setSimTimes(
     const double start, const double stop, const double dt)
 {
     if(!pSim_)
@@ -262,17 +272,17 @@ void Simulation::setSimTimes(
     smolSetSimTimes(pSim_, start, stop, dt);
 }
 
-int Simulation::getMoleculeCount(const char* name, enum MolecState state)
+int Smoldyn::getMoleculeCount(const char* name, enum MolecState state)
 {
     return smolGetMoleculeCount(pSim_, name, state);
 }
 
-void Simulation::setDt(double dt)
+void Smoldyn::setDt(double dt)
 {
     smolSetTimeStep(pSim_, dt);
 }
 
-double Simulation::getDt() const
+double Smoldyn::getDt() const
 {
     return pSim_->dt;
 }
