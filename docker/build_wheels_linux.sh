@@ -21,12 +21,14 @@ for PYV in 37; do
     mkdir -p $PYVER
     (
         cd $PYVER
+        SMOLDYN_VERSION=3.0.dev$(git rev-parse --short HEAD)
         echo "Building using $PYDIR in $PYVER"
         PYTHON=$(ls $PYDIR/bin/python?.?)
         $PYTHON -m pip install numpy matplotlib
         git pull || echo "Failed to pull $BRANCH"
-        cmake -DPYTHON_EXECUTABLE=$PYTHON -DSMOLDYN_VERSION=$(date +"%Y%m%d") ${SOURCE_DIR}
-        make -j`nproc`
+        cmake -DPYTHON_EXECUTABLE=$PYTHON \
+            -DSMOLDYN_VERSION=${SMOLDYN_VERSION} ${SOURCE_DIR}
+        make -j`nproc` VERBOSE=1
         # Now build bdist_wheel
         cd ../../source/python 
         $PYDIR/bin/pip wheel . -w $WHEELHOUSE 
