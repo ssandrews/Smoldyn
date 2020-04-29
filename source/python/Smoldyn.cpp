@@ -236,7 +236,8 @@ void Smoldyn::addSurfaceMolecules(const char* species, enum MolecState state,
         panel, &position[0]);
 }
 
-void Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
+v
+oid Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
     const char*                       reactant1,  // First reactant
     enum MolecState                   rstate1,    // First reactant state
     const char*                       reactant2,  // Second reactant.
