@@ -14,12 +14,15 @@ using namespace std;
 #include "pybind11/stl_bind.h"
 #include "pybind11/functional.h"
 
-#include "../Smoldyn/smoldynfuncs.h"
-
 #include "Smoldyn.h"
 #include "SmoldynSpecies.h"
 
+#include "../Smoldyn/smoldynfuncs.h"
+
 using namespace pybind11::literals;  // for _a
+
+// Defined in SimCommand.c file.
+extern int scmdopenfiles(cmdssptr cmds, int overwrite);
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -145,14 +148,31 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("all", PanelShape::PSall)
         .value("none", PanelShape::PSnone);
 
+    /**
+     * @Synopsis  Error codes.
+     */
+    py::enum_<ErrorCode>(m, "ErrorCode")
+        .value("ok", ErrorCode::ECok)
+        .value("notify", ErrorCode::ECnotify)
+        .value("warning", ErrorCode::ECwarning)
+        .value("nonexist", ErrorCode::ECnonexist)
+        .value("all", ErrorCode::ECall)
+        .value("missing", ErrorCode::ECmissing)
+        .value("bounds", ErrorCode::ECbounds)
+        .value("syntax", ErrorCode::ECsyntax)
+        .value("error", ErrorCode::ECerror)
+        .value("memory", ErrorCode::ECmemory)
+        .value("bug", ErrorCode::ECbug)
+        .value("same", ErrorCode::ECsame)
+        .value("wildcard", ErrorCode::ECwildcard);
+
     /* Simulation class */
     py::class_<Smoldyn>(m, "Smoldyn")
         .def(py::init<bool>(), "debug"_a = false)
-        .def_property_readonly("define", &Smoldyn::getDefine,
-            py::return_value_policy::reference)
+        .def_property_readonly(
+            "define", &Smoldyn::getDefine, py::return_value_policy::reference)
         .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
-        .def_property(
-            "seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
+        .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
         .def("setPartitions", &Smoldyn::setPartitions)
         .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
@@ -180,18 +200,17 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("setMoleculeStyle", &Smoldyn::setMoleculeStyle)
         /* Simulation */
         .def("setTimes", &Smoldyn::setSimTimes)
-        .def("update", &Smoldyn::update) 
-        .def("run", &Smoldyn::run, "stoptime"_a, "dt"_a, "display"_a=true)
-        .def("runUntil", &Smoldyn::runUntil, "breaktime"_a, "dt"_a=0.0, "display"_a=true)
+        .def("update", &Smoldyn::update)
+        .def("run", &Smoldyn::run, "stoptime"_a, "dt"_a, "display"_a = true)
+        .def("runUntil", &Smoldyn::runUntil, "breaktime"_a, "dt"_a = 0.0,
+            "display"_a = true)
         .def("addSolutionMolecules", &Smoldyn::addSolutionMolecules)
-        .def_property("dt", &Smoldyn::getDt, &Smoldyn::setDt)
-        ;
-    
+        .def_property("dt", &Smoldyn::getDt, &Smoldyn::setDt);
 
     /* Function */
-    m.def("load_model", &init_and_run, "filepath"_a, "args"_a=""
-            , "Load model from a txt file");
+    m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",
+        "Load model from a txt file");
 
     /* attributes */
-    m.attr("__version__") = VERSION; // Version is set by CMAKE 
+    m.attr("__version__") = VERSION;  // Version is set by CMAKE
 }
