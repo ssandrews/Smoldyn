@@ -1,6 +1,8 @@
 # python bindings
 
-pybind11_add_module(_smoldyn Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
+pybind11_add_module(_smoldyn 
+    SHARED THIN_LTO 
+    Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
 
 target_compile_options(_smoldyn PUBLIC -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
 target_include_directories(_smoldyn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
@@ -11,14 +13,7 @@ set_target_properties(_smoldyn PROPERTIES
 
 add_dependencies(_smoldyn smoldyn_static)
 
-if(APPLE)
-    target_link_libraries(_smoldyn PUBLIC -Wl,-all_load smoldyn_static -Wl,-noall_load)
-else(APPLE)
-    target_link_libraries(_smoldyn PUBLIC 
-        -Wl,--whole-archive 
-        smoldyn_static
-        -Wl,--no-whole-archive) 
-endif()
+target_link_libraries(_smoldyn PRIVATE smoldyn_static)
 
 # copy setup.py.in to setup.py
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
