@@ -1,8 +1,6 @@
-VERSION:=$(shell cat ./VERSION)
-
 all : wheels
 
-LABEL:="dilawar/smoldyn_$(USER):$(VERSION)"
+LABEL:="dilawars/smoldyn:latest"
 
 wheels : ./Dockerfile ./build_wheels_linux.sh 
 	mkdir -p $(HOME)/wheelhouse
@@ -10,4 +8,4 @@ wheels : ./Dockerfile ./build_wheels_linux.sh
 	(cd .. && docker build \
 	    -t $(LABEL) \
 	    -f docker/Dockerfile \
-	    --build-arg PYPY_PASSWORD=$(PYPY_PASSWORD) . | tee log ) 
+	    --build-arg PYPI_PASSWORD=$(PYPI_PASSWORD) . | tee log ) 
