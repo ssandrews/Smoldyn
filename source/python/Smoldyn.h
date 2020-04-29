@@ -90,7 +90,7 @@ public:
     void setReactionRegion(
         const char* reac, const char* compt, const char* surface);
 
-    void setSimTimes(const double start, const double end, const double step);
+    ErrorCode setSimTimes(const double start, const double end, const double step);
 
     int getMoleculeCount(const char* name, enum MolecState state);
 
@@ -100,40 +100,40 @@ public:
         return pSim_;
     }
 
-    inline void setBoundaryType(int dim, int highside, char type)
+    inline ErrorCode setBoundaryType(int dim, int highside, char type)
     {
-        smolSetBoundaryType(pSim_, dim, highside, type);
+        return smolSetBoundaryType(pSim_, dim, highside, type);
     }
 
-    inline void addMolList(const char* mollist)
+    inline ErrorCode addMolList(const char* mollist)
     {
-        smolAddMolList(pSim_, mollist);
+        return smolAddMolList(pSim_, mollist);
     }
 
-    inline void addSolutionMolecules(const char* name, int nums,
+    inline ErrorCode addSolutionMolecules(const char* name, int nums,
         vector<double>& lowposition, vector<double>& highposition)
     {
-        smolAddSolutionMolecules(
+        return smolAddSolutionMolecules(
             pSim_, name, nums, &lowposition[0], &highposition[0]);
     }
 
-    inline void setMoleculeStyle(const char* molecule, enum MolecState state,
+    inline ErrorCode setMoleculeStyle(const char* molecule, enum MolecState state,
         double size, vector<double>& color)
     {
-        smolSetMoleculeStyle(pSim_, molecule, state, size, &color[0]);
+        return smolSetMoleculeStyle(pSim_, molecule, state, size, &color[0]);
     }
 
-    inline void setGraphicsParams(const char* method, int timestep, int delay)
+    inline ErrorCode setGraphicsParams(const char* method, int timestep, int delay)
     {
-        smolSetGraphicsParams(pSim_, method, timestep, delay);
+        return smolSetGraphicsParams(pSim_, method, timestep, delay);
     }
 
-    inline void update()
+    inline ErrorCode update()
     {
-        smolUpdateSim(pSim_);
+        return smolUpdateSim(pSim_);
     }
 
-    void   setDt(double dt);
+    ErrorCode   setDt(double dt);
     double getDt() const;
 
 private:

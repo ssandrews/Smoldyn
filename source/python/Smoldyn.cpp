@@ -264,7 +264,7 @@ void Smoldyn::setReactionRegion(
     smolSetReactionRegion(pSim_, reac, compt, surface);
 }
 
-void Smoldyn::setSimTimes(
+ErrorCode Smoldyn::setSimTimes(
     const double start, const double stop, const double dt)
 {
     if(!pSim_)
@@ -277,9 +277,9 @@ int Smoldyn::getMoleculeCount(const char* name, enum MolecState state)
     return smolGetMoleculeCount(pSim_, name, state);
 }
 
-void Smoldyn::setDt(double dt)
+ErrorCode Smoldyn::setDt(double dt)
 {
-    smolSetTimeStep(pSim_, dt);
+    return smolSetTimeStep(pSim_, dt);
 }
 
 double Smoldyn::getDt() const
