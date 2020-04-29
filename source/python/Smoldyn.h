@@ -20,7 +20,6 @@ using namespace std;
 namespace py = pybind11;
 
 #include "SmoldynDefine.hh"
-#include "smoldyn.h"
 
 #include "../Smoldyn/libsmoldyn.h"
 
