@@ -169,9 +169,9 @@ void Smoldyn::setPartitions(const char* name, double val)
     smolSetPartitions(pSim_, name, val);
 }
 
-void Smoldyn::addSpecies(const char* name, const char* param)
+ErrorCode Smoldyn::addSpecies(const char* name, const char* mollist)
 {
-    smolAddSpecies(pSim_, name, param);
+    return smolAddSpecies(pSim_, name, mollist);
 }
 
 ErrorCode Smoldyn::setSpeciesMobility(const char* name, MolecState state,
@@ -181,10 +181,12 @@ ErrorCode Smoldyn::setSpeciesMobility(const char* name, MolecState state,
         pSim_, name, state, difc, &drift[0], &difmatrix[0]);
 }
 
-ErrorCode Smoldyn::setSpeciesStyle(
-    const char* name, enum MolecState state, double size, double* color)
+ErrorCode Smoldyn::setSpeciesStyle(const char* name, const MolecState state,
+    double size, char* color)
 {
-    return smolSetMoleculeStyle(pSim_, name, state, size, color);
+        array<double, 4> rgba = {0, 0, 0, 1.0};
+        graphicsreadcolor(&color, &rgba[0]);
+        return smolSetMoleculeStyle(pSim_, name, state, size, &rgba[0]);
 }
 
 ErrorCode Smoldyn::addSurface(const char* name)

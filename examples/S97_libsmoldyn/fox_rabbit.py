@@ -28,8 +28,8 @@ s.addSolutionMolecules("rabbit", 1000, v1, v2)
 s.addSolutionMolecules("fox", 1000, v1, v2)
 
 s.setGraphicsParams("opengl", 5, 0)
-s.setMoleculeStyle("rabbit", MS.all, 2, [1,0,0,1])
-s.setMoleculeStyle("fox", MS.all, 3, [0, 1, 0])
+s.setSpeciesStyle("rabbit", MS.all, 2, [1,0,0,1])
+s.setSpeciesStyle("fox", MS.all, 3, [0, 1, 0])
 
 T, F, R = [], [], []
 for t in np.arange(0.1, 2.0, 0.1):

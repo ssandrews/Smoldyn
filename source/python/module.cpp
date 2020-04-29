@@ -149,8 +149,6 @@ PYBIND11_MODULE(_smoldyn, m)
     /* Simulation class */
     py::class_<Smoldyn>(m, "Smoldyn")
         .def(py::init<bool>(), "debug"_a = false)
-        .def_property_readonly(
-            "define", &Smoldyn::getDefine, py::return_value_policy::reference)
         .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
         .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
@@ -161,14 +159,18 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,
             "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
             "difmatrix"_a = std::vector<double>())
+        /* Surface */
         .def("addSurface", &Smoldyn::addSurface, "name"_a)
         .def("setSurfaceAction", &Smoldyn::setSurfaceAction)
         .def("addSurfaceMolecules", &Smoldyn::addSurfaceMolecules)
+        /* Panel */
         .def("addPanel", &Smoldyn::addPanel)
+        /* Compartment */
         .def("addCompartment", &Smoldyn::addCompartment)
         .def("addCompartmentSurface", &Smoldyn::addCompartmentSurface)
         .def("addCompartmentPoint", &Smoldyn::addCompartmentPoint)
         .def("addComparmentMolecules", &Smoldyn::addCompartmentMolecules)
+        /* Reaction */
         .def("addReaction", &Smoldyn::addReaction, "reac"_a, "reactant1"_a,
             "rstate1"_a, "reactant2"_a, "rstate2"_a, "products"_a,
             "productstates"_a, "rate"_a)
@@ -179,7 +181,6 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("getMoleculeCount", &Smoldyn::getMoleculeCount)
         /* Graphics */
         .def("setGraphicsParams", &Smoldyn::setGraphicsParams)
-        .def("setMoleculeStyle", &Smoldyn::setMoleculeStyle)
         /* Simulation */
         .def("setTimes", &Smoldyn::setSimTimes)
         .def("update", &Smoldyn::update)

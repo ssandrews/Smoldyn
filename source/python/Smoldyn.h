@@ -23,6 +23,9 @@ namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"
 
+// defined in smolgraphics.c file.
+extern int graphicsreadcolor(char** stringptr, double* rgba);
+
 class Smoldyn {
 
 public:
@@ -56,13 +59,13 @@ public:
 
     void setPartitions(const char* name, double val);
 
-    void addSpecies(const char* name, const char* param);
-
-    ErrorCode setSpeciesStyle(
-        const char* name, MolecState state, double size, double* color);
+    ErrorCode addSpecies(const char* name, const char* mollist);
 
     ErrorCode setSpeciesMobility(const char* name, MolecState state,
         double difc, vector<double>& drift, vector<double>& difmatrix);
+
+    ErrorCode setSpeciesStyle(
+        const char* name, const MolecState state, double size, char* color);
 
     ErrorCode addSurface(const char* name);
 
@@ -119,12 +122,6 @@ public:
     {
         return smolAddSolutionMolecules(
             pSim_, name, nums, &lowposition[0], &highposition[0]);
-    }
-
-    inline ErrorCode setMoleculeStyle(const char* molecule,
-        enum MolecState state, double size, vector<double>& color)
-    {
-        return smolSetMoleculeStyle(pSim_, molecule, state, size, &color[0]);
     }
 
     inline ErrorCode setGraphicsParams(

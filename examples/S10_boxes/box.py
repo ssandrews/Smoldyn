@@ -9,8 +9,7 @@ b = sm.Boundaries(low=[0,0,0], high=[100,100,100], types='ppp')
 S = sm.Simulation(bounds=b)
 
 a = sm.Species('A', state='all', difc=1, color='red')
-b = sm.Species('B')
-b.state = 'all'
+b = sm.Species('B', state="all")
 b.difc = 1
 b.color = 'green'
 c = sm.Species('C', state='all', difc=1.0)
