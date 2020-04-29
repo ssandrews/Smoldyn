@@ -20,6 +20,10 @@ else(APPLE)
         -Wl,--no-whole-archive) 
 endif()
 
+# copy setup.py.in to setup.py
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/setup.py)
+
 add_custom_command(TARGET _smoldyn POST_BUILD
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
         -d ${CMAKE_BINARY_DIR}/wheel

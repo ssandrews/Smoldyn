@@ -7,5 +7,5 @@ wheels : ./Dockerfile ./build_wheels_linux.sh
 	# Generate version.
 	(cd .. && docker build \
 	    -t $(LABEL) \
-	    -f docker/Dockerfile \
+	    -f scripts/Dockerfile \
 	    --build-arg PYPI_PASSWORD=$(PYPI_PASSWORD) . | tee log ) 

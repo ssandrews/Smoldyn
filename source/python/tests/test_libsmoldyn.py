@@ -3,12 +3,13 @@ __copyright__        = "Copyright 2019-, Dilawar Singh"
 __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-import smoldyn
+# Test only extension module.
+from smoldyn import _smoldyn
 
 def test_library():
     """We test the C API here
     """
-    s = smoldyn.Smoldyn()
+    s = _smoldyn.Smoldyn()
     s.bounds = ([-50, 50], [-50, 50])
     assert s.dim == 2
     s.seed = 1
@@ -22,10 +23,10 @@ def test_library():
     s.addSpecies("cAMP")
     s.addSpecies("cAR1")
 
-    MS = smoldyn.MS     # enum MolcState
-    SA = smoldyn.SA     # enum SrfAction
-    PF = smoldyn.PF     # enum PanelFace
-    PS = smoldyn.PS     # enum PanelShape
+    MS = _smoldyn.MS     # enum MolcState
+    SA = _smoldyn.SA     # enum SrfAction
+    PF = _smoldyn.PF     # enum PanelFace
+    PS = _smoldyn.PS     # enum PanelShape
 
     s.setSpeciesMobility("ACA", MS.all, 1.0)
     s.setSpeciesMobility("ATP", MS.all, 1.0)
