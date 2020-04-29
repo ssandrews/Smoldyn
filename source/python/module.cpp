@@ -193,5 +193,5 @@ PYBIND11_MODULE(_smoldyn, m)
             , "Load model from a txt file");
 
     /* attributes */
-    m.attr("__version__") = SMOLDYN_VERSION;
+    m.attr("__version__") = "SMOLDYN_VERSION";
 }
