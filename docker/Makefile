@@ -6,6 +6,7 @@ LABEL:="dilawar/smoldyn_$(USER):$(VERSION)"
 
 wheels : ./Dockerfile ./build_wheels_linux.sh 
 	mkdir -p $(HOME)/wheelhouse
+	# Generate version.
 	(cd .. && docker build \
 	    -t $(LABEL) \
 	    -f docker/Dockerfile \
