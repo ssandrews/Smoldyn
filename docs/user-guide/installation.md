@@ -23,7 +23,7 @@ title: Installing Smoldyn
 
     Type `smoldyn -V`. This should run Smoldyn just enough to print out the
     version number. If this works, then you have Smoldyn and it runs, but
-    Smoldyn wasn’t finding the input file.
+    Smoldyn wasn't finding the input file.
 
     __Did the Smoldyn software get installed to the correct place?__
     Check by typing `ls /usr/local/bin` and see if smoldyn is in the directory.
@@ -252,3 +252,24 @@ Alternatively, I’ve found the free software TeamViewer to be a convenient
 method for working on computers remotely. An advantage of this method is that
 it works even if there are institutional firewalls that prohibit remote
 computer access.
+
+
+## Building on Linux 
+
+
+### Fedora/CentOS
+
+```bash
+$ sudo dnf install gcc-c++ cmake freeglut-devel libtiff-devel libXmu-devel libXi-devel
+```
+
+### OpenSUSE
+
+```bash
+$ sudo zypper install gcc-c++ cmake freeglut-devel libtiff-devel libXmu-devel libXi-devel
+```
+
+### Debian/Ubuntu and other derivatives
+
+```bash 
+$ sudo apt install g++ cmake libtiff-dev libjpeg-dev freeglut3-dev libxi-dev libxmu-dev
