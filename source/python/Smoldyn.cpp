@@ -10,8 +10,7 @@ using namespace std;
 #include "../lib/random2.h"
 #include "Smoldyn.h"
 
-Smoldyn::Smoldyn()
-    : pSim_(nullptr), dim_(0), debug_(false), curtime_(0.0)
+Smoldyn::Smoldyn() : pSim_(nullptr), dim_(0), debug_(false), curtime_(0.0)
 {
 }
 
@@ -39,7 +38,6 @@ void Smoldyn::setDim(size_t dim)
 {
     dim_ = dim;
 }
-
 
 void Smoldyn::setRandomSeed(size_t seed)
 {
@@ -95,7 +93,7 @@ void Smoldyn::runUntil(const double breaktime, const double dt, bool display)
     if(dt > 0.0)
         smolSetTimeStep(pSim_, dt);
 
-    if(display and (! initDisplay_)) {
+    if(display and (!initDisplay_)) {
         smolDisplaySim(pSim_);
         initDisplay_ = true;
     }
@@ -114,7 +112,7 @@ bool Smoldyn::run(double stoptime, double dt, bool display)
     smolSetSimTimes(pSim_, curtime_, stoptime, dt);
     smolUpdateSim(pSim_);
 
-    if(display and ! initDisplay_) {
+    if(display and !initDisplay_) {
         smolDisplaySim(pSim_);
         initDisplay_ = true;
     }
@@ -176,32 +174,40 @@ void Smoldyn::addSpecies(const char* name, const char* param)
     smolAddSpecies(pSim_, name, param);
 }
 
-void Smoldyn::setSpeciesMobility(const char* name, MolecState state,
+ErrorCode Smoldyn::setSpeciesMobility(const char* name, MolecState state,
     double difc, vector<double>& drift, vector<double>& difmatrix)
 {
-    smolSetSpeciesMobility(pSim_, name, state, difc, &drift[0], &difmatrix[0]);
+    return smolSetSpeciesMobility(
+        pSim_, name, state, difc, &drift[0], &difmatrix[0]);
 }
 
-void Smoldyn::addSurface(const char* name)
+ErrorCode Smoldyn::setSpeciesStyle(
+    const char* name, enum MolecState state, double size, double* color)
 {
-    smolAddSurface(pSim_, name);
+    return smolSetMoleculeStyle(pSim_, name, state, size, color);
 }
 
-void Smoldyn::setSurfaceAction(const char* name, enum PanelFace face,
+ErrorCode Smoldyn::addSurface(const char* name)
+{
+    return smolAddSurface(pSim_, name);
+}
+
+ErrorCode Smoldyn::setSurfaceAction(const char* name, enum PanelFace face,
     const char* species, enum MolecState state, enum SrfAction action)
 {
-    smolSetSurfaceAction(pSim_, name, face, species, state, action);
+    return smolSetSurfaceAction(pSim_, name, face, species, state, action);
 }
 
-void Smoldyn::addPanel(const char* surface, enum PanelShape panelShape,
+ErrorCode Smoldyn::addPanel(const char* surface, enum PanelShape panelShape,
     const char* panel, const char* axisstring, vector<double>& params)
 {
-    smolAddPanel(pSim_, surface, panelShape, panel, axisstring, &params[0]);
+    return smolAddPanel(
+        pSim_, surface, panelShape, panel, axisstring, &params[0]);
 }
 
-void Smoldyn::addCompartment(const char* compartment)
+ErrorCode Smoldyn::addCompartment(const char* compartment)
 {
-    smolAddCompartment(pSim_, compartment);
+    return smolAddCompartment(pSim_, compartment);
 }
 
 void Smoldyn::addCompartmentSurface(const char* compt, const char* surface)
@@ -229,13 +235,13 @@ void Smoldyn::addSurfaceMolecules(const char* species, enum MolecState state,
 }
 
 void Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
-    const char*                          reactant1,  // First reactant
-    enum MolecState                      rstate1,    // First reactant state
-    const char*                          reactant2,  // Second reactant.
-    enum MolecState                      rstate2,    // second reactant state.
-    vector<string>                       productSpeciesStr,  // product species.
-    vector<enum MolecState>              productStates,      // product state.
-    double                               rate                // rate
+    const char*                       reactant1,  // First reactant
+    enum MolecState                   rstate1,    // First reactant state
+    const char*                       reactant2,  // Second reactant.
+    enum MolecState                   rstate2,    // second reactant state.
+    vector<string>                    productSpeciesStr,  // product species.
+    vector<enum MolecState>           productStates,      // product state.
+    double                            rate                // rate
 )
 {
     // NOTE: Can't use vector<const char*> in the function argument. We'll
@@ -269,7 +275,7 @@ ErrorCode Smoldyn::setSimTimes(
 {
     if(!pSim_)
         initialize();
-    smolSetSimTimes(pSim_, start, stop, dt);
+    return smolSetSimTimes(pSim_, start, stop, dt);
 }
 
 int Smoldyn::getMoleculeCount(const char* name, enum MolecState state)

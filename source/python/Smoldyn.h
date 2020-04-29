@@ -58,18 +58,21 @@ public:
 
     void addSpecies(const char* name, const char* param);
 
-    void setSpeciesMobility(const char* name, MolecState state, double difc,
-        vector<double>& drift, vector<double>& difmatrix);
+    ErrorCode setSpeciesStyle(
+        const char* name, MolecState state, double size, double* color);
 
-    void addSurface(const char* name);
+    ErrorCode setSpeciesMobility(const char* name, MolecState state,
+        double difc, vector<double>& drift, vector<double>& difmatrix);
 
-    void setSurfaceAction(const char* name, enum PanelFace face,
+    ErrorCode addSurface(const char* name);
+
+    ErrorCode setSurfaceAction(const char* name, enum PanelFace face,
         const char* species, enum MolecState state, enum SrfAction action);
 
-    void addPanel(const char* surface, enum PanelShape panelShape,
+    ErrorCode addPanel(const char* surface, enum PanelShape panelShape,
         const char* panel, const char* axisstring, vector<double>& params);
 
-    void addCompartment(const char* compartment);
+    ErrorCode addCompartment(const char* compartment);
 
     void addCompartmentSurface(const char* compt, const char* surface);
 
@@ -90,7 +93,8 @@ public:
     void setReactionRegion(
         const char* reac, const char* compt, const char* surface);
 
-    ErrorCode setSimTimes(const double start, const double end, const double step);
+    ErrorCode setSimTimes(
+        const double start, const double end, const double step);
 
     int getMoleculeCount(const char* name, enum MolecState state);
 
@@ -117,13 +121,14 @@ public:
             pSim_, name, nums, &lowposition[0], &highposition[0]);
     }
 
-    inline ErrorCode setMoleculeStyle(const char* molecule, enum MolecState state,
-        double size, vector<double>& color)
+    inline ErrorCode setMoleculeStyle(const char* molecule,
+        enum MolecState state, double size, vector<double>& color)
     {
         return smolSetMoleculeStyle(pSim_, molecule, state, size, &color[0]);
     }
 
-    inline ErrorCode setGraphicsParams(const char* method, int timestep, int delay)
+    inline ErrorCode setGraphicsParams(
+        const char* method, int timestep, int delay)
     {
         return smolSetGraphicsParams(pSim_, method, timestep, delay);
     }
@@ -133,8 +138,8 @@ public:
         return smolUpdateSim(pSim_);
     }
 
-    ErrorCode   setDt(double dt);
-    double getDt() const;
+    ErrorCode setDt(double dt);
+    double    getDt() const;
 
 private:
     simptr pSim_;

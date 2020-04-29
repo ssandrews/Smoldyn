@@ -87,26 +87,6 @@ PYBIND11_MODULE(_smoldyn, m)
         -----------------------
     )pbdoc";
 
-    py::class_<SmoldynDefine>(m, "__Define__")
-        .def(py::init<>())
-        .def("__setitem__", &SmoldynDefine::setDefine)
-        .def("__getitem__", &SmoldynDefine::getDefine)
-        .def("__repr__", &SmoldynDefine::__repr__);
-
-    /* Species */
-    py::class_<SmoldynSpecies>(m, "Species")
-        .def(py::init<const string&>())
-        .def("__repr__",
-            [](const SmoldynSpecies& sp) {
-                return "<smoldyn.Species: name=" + sp.getName() + ">";
-            })
-        .def_property("difc", &SmoldynSpecies::getDiffConst,
-            &SmoldynSpecies::setDiffConst)
-        .def_property(
-            "color", &SmoldynSpecies::getColor, &SmoldynSpecies::setColor)
-        .def_property("display_size", &SmoldynSpecies::getDisplaySize,
-            &SmoldynSpecies::setDisplaySize);
-
     py::enum_<SrfAction>(m, "SA")
         .value("reflect", SrfAction::SAreflect)
         .value("trans", SrfAction::SAtrans)
@@ -175,7 +155,9 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
         .def("setPartitions", &Smoldyn::setPartitions)
+        /* Molecules */
         .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
+        .def("setSpeciesStyle", &Smoldyn::setSpeciesStyle)
         .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,
             "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
             "difmatrix"_a = std::vector<double>())
