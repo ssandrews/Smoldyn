@@ -23,7 +23,8 @@ class Boundaries:
         if len(self.types) == 1:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
-        
+        smoldyn.obj().bounds = list(zip(self.low, self.high))
+        assert smoldyn.obj().dim == self.dim
 
 
 class Simulation(object):
@@ -34,7 +35,6 @@ class Simulation(object):
 
     def __init__(self, bounds):
         self.bounds = bounds
-
 
     def run(self, stoptime, dt=1e-3):
         smoldyn.obj().run(stoptime, dt)

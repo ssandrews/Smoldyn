@@ -1,28 +1,18 @@
-__author__           = "Dilawar Singh"
-__copyright__        = "Copyright 2019-, Dilawar Singh"
-__maintainer__       = "Dilawar Singh"
-__email__            = "dilawars@ncbs.res.in"
+# -*- coding: utf-8 -*-
+# Dilawar Singh <dilawar.s.rajput@gmail.com>, 2020-04-29
 
 import smoldyn as sm
 
-# Every simulation starts with a Simualtion object.
+# Every simulation starts with a Simualtion object, and every Simulation has
+# boundaries
 b = sm.Boundaries(low=[0,0,0], high=[100,100,100], types='ppp')
-print(b)
 S = sm.Simulation(bounds=b)
 
-## Or,
-#S = sm.Simulation()
-#S.boundaries.low = [0,0,0]
-#S.boundaries.high = [100,100,100]
-#S.boundaries.types = ['p', 'p', 'p']
-
-a = sm.Species('A', diffc=1, color='red')
-b = sm.Species('B')
-
-b.diffc = 1
+a = sm.Species('A', state='all', difc=1, color='red')
+b = sm.Species('B', state="all")
+b.difc = 1
 b.color = 'green'
-
-c = sm.Species('C', diffc=1.0)
+c = sm.Species('C', state='all', difc=1.0)
 c.color = 'blue'
 
 box = sm.Box(size=10)

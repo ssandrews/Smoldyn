@@ -44,4 +44,3 @@ reaction revrxn C -> A + B 0.1
 reaction fwdrxn A + B -> C 100
 
 end_file
-

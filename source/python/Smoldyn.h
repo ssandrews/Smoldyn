@@ -23,6 +23,9 @@ namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"
 
+// defined in smolgraphics.c file.
+extern int graphicsreadcolor(char** stringptr, double* rgba);
+
 class Smoldyn {
 
 public:
@@ -56,20 +59,23 @@ public:
 
     void setPartitions(const char* name, double val);
 
-    void addSpecies(const char* name, const char* param);
+    ErrorCode addSpecies(const char* name, const char* mollist);
 
-    void setSpeciesMobility(const char* name, MolecState state, double difc,
-        vector<double>& drift, vector<double>& difmatrix);
+    ErrorCode setSpeciesMobility(const char* name, MolecState state,
+        double difc, vector<double>& drift, vector<double>& difmatrix);
 
-    void addSurface(const char* name);
+    ErrorCode setSpeciesStyle(
+        const char* name, const MolecState state, double size, char* color);
 
-    void setSurfaceAction(const char* name, enum PanelFace face,
+    ErrorCode addSurface(const char* name);
+
+    ErrorCode setSurfaceAction(const char* name, enum PanelFace face,
         const char* species, enum MolecState state, enum SrfAction action);
 
-    void addPanel(const char* surface, enum PanelShape panelShape,
+    ErrorCode addPanel(const char* surface, enum PanelShape panelShape,
         const char* panel, const char* axisstring, vector<double>& params);
 
-    void addCompartment(const char* compartment);
+    ErrorCode addCompartment(const char* compartment);
 
     void addCompartmentSurface(const char* compt, const char* surface);
 
@@ -82,7 +88,7 @@ public:
         size_t number, const char* surface, enum PanelShape panelShape,
         const char* panel, vector<double>& position);
 
-    void addReaction(const char* reaction, const char* reactant1,
+    ErrorCode addReaction(const char* reaction, const char* reactant1,
         enum MolecState rstate1, const char* reactant2, enum MolecState rstate2,
         vector<string> productSpecies, vector<enum MolecState> productStates,
         double rate);
@@ -90,7 +96,8 @@ public:
     void setReactionRegion(
         const char* reac, const char* compt, const char* surface);
 
-    void setSimTimes(const double start, const double end, const double step);
+    ErrorCode setSimTimes(
+        const double start, const double end, const double step);
 
     int getMoleculeCount(const char* name, enum MolecState state);
 
@@ -100,41 +107,36 @@ public:
         return pSim_;
     }
 
-    inline void setBoundaryType(int dim, int highside, char type)
+    inline ErrorCode setBoundaryType(int dim, int highside, char type)
     {
-        smolSetBoundaryType(pSim_, dim, highside, type);
+        return smolSetBoundaryType(pSim_, dim, highside, type);
     }
 
-    inline void addMolList(const char* mollist)
+    inline ErrorCode addMolList(const char* mollist)
     {
-        smolAddMolList(pSim_, mollist);
+        return smolAddMolList(pSim_, mollist);
     }
 
-    inline void addSolutionMolecules(const char* name, int nums,
+    inline ErrorCode addSolutionMolecules(const char* name, int nums,
         vector<double>& lowposition, vector<double>& highposition)
     {
-        smolAddSolutionMolecules(
+        return smolAddSolutionMolecules(
             pSim_, name, nums, &lowposition[0], &highposition[0]);
     }
 
-    inline void setMoleculeStyle(const char* molecule, enum MolecState state,
-        double size, vector<double>& color)
+    inline ErrorCode setGraphicsParams(
+        const char* method, int timestep, int delay)
     {
-        smolSetMoleculeStyle(pSim_, molecule, state, size, &color[0]);
+        return smolSetGraphicsParams(pSim_, method, timestep, delay);
     }
 
-    inline void setGraphicsParams(const char* method, int timestep, int delay)
+    inline ErrorCode update()
     {
-        smolSetGraphicsParams(pSim_, method, timestep, delay);
+        return smolUpdateSim(pSim_);
     }
 
-    inline void update()
-    {
-        smolUpdateSim(pSim_);
-    }
-
-    void   setDt(double dt);
-    double getDt() const;
+    ErrorCode setDt(double dt);
+    double    getDt() const;
 
 private:
     simptr pSim_;

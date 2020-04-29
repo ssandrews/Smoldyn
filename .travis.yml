@@ -13,6 +13,12 @@ matrix:
 services:
   - docker
 
+branches:
+    only:
+        - master
+        - pybind11
+        - devel
+
 
 notifications:
   email:
