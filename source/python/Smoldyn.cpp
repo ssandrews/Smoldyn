@@ -236,8 +236,7 @@ void Smoldyn::addSurfaceMolecules(const char* species, enum MolecState state,
         panel, &position[0]);
 }
 
-v
-oid Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
+ErrorCode Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
     const char*                       reactant1,  // First reactant
     enum MolecState                   rstate1,    // First reactant state
     const char*                       reactant2,  // Second reactant.
@@ -263,7 +262,7 @@ oid Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
         << " prd[0]=" << productSpecies[0] << " rate: " << rate << endl;
 #endif
 
-    smolAddReaction(pSim_, reaction, reactant1, rstate1, reactant2, rstate2,
+    return smolAddReaction(pSim_, reaction, reactant1, rstate1, reactant2, rstate2,
         productSpecies.size(), &productSpecies[0], &productStates[0], rate);
 }
 

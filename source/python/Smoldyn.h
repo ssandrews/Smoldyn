@@ -88,7 +88,7 @@ public:
         size_t number, const char* surface, enum PanelShape panelShape,
         const char* panel, vector<double>& position);
 
-    void addReaction(const char* reaction, const char* reactant1,
+    ErrorCode addReaction(const char* reaction, const char* reactant1,
         enum MolecState rstate1, const char* reactant2, enum MolecState rstate2,
         vector<string> productSpecies, vector<enum MolecState> productStates,
         double rate);
