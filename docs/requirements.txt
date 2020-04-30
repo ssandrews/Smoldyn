@@ -1,6 +1,5 @@
 mkdocs
-mkdocs-material
 mkdocs-macros-plugin
-pheasant
-cldoc
+mkdocs-material
+mkdocs-material-extensions
 pymdown-extensions

@@ -9,7 +9,7 @@ __all__ = ['Boundaries', 'Simulation']
 from dataclasses import dataclass, field
 from typing import List
 
-import smoldyn
+from smoldyn import _smoldyn, obj
 
 @dataclass
 class Boundaries:
@@ -23,8 +23,8 @@ class Boundaries:
         if len(self.types) == 1:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
-        smoldyn.obj().bounds = list(zip(self.low, self.high))
-        assert smoldyn.obj().dim == self.dim
+        obj().bounds = list(zip(self.low, self.high))
+        assert obj().dim == self.dim
 
 
 class Simulation(object):
@@ -37,4 +37,4 @@ class Simulation(object):
         self.bounds = bounds
 
     def run(self, stoptime, dt=1e-3):
-        smoldyn.obj().run(stoptime, dt)
+        obj().run(stoptime, dt)

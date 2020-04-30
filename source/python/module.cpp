@@ -152,6 +152,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
         .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
         .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
+        /* box/molperbox etc */
         .def("setPartitions", &Smoldyn::setPartitions)
         /* Molecules */
         .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
