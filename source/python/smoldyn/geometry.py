@@ -11,8 +11,6 @@ from . import _smoldyn
 
 class Geometry(object):
     """Geometry in smoldyn.
-
-
     """
     def __init__(self, dim):
         super().__init__()
@@ -41,6 +39,7 @@ class Box(Geometry):
         self.size : float = size
 
     def addMolecules(self, molecule, num, *args, **kwargs):
+        raise NotImplementedError
         print(f"[INFO ] Adding molecule {molecule}")
         
 
