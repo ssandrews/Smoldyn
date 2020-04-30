@@ -15,9 +15,10 @@ b.color = 'green'
 c = sm.Species('C', state='all', difc=1.0)
 c.color = 'blue'
 
-box = sm.Box(size=10)
-box.addMolecules(a, 1000, x='u', y='u', z='u')
-box.addMolecules(b, 1000, xyz='u')
+sm.Boxsize(10)
+
+S.addMolecules(a, 1000, x='u', y='u', z='u')
+S.addMolecules(b, 1000, xyz='u')
 
 # revrxn = Reaction(subs=[c], prds=[a, b], k=0.1)
 # fwdrxn = Reaction(subs=[a, b], prds=[c], k=100)
