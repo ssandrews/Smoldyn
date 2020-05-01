@@ -44,7 +44,7 @@ public:
     bool initialize();
 
     // Smoldyn.
-    bool run(double simtime, double dt, bool display);
+    bool runSim(double simtime, double dt, bool display);
     void runUntil(const double breaktime, const double dt, bool display);
 
     // Bounds.
@@ -130,7 +130,7 @@ public:
         return smolSetGraphicsParams(pSim_, method, timestep, delay);
     }
 
-    inline ErrorCode update()
+    inline ErrorCode updateSim()
     {
         return smolUpdateSim(pSim_);
     }

@@ -33,6 +33,6 @@ class MoleculePerBox(Partition):
         super().__init__("molperbox", size)
 
 
-class Boxsize(Partition):
+class Box(Partition):
     def __init__(self, size):
         super().__init__("boxsize", size)
