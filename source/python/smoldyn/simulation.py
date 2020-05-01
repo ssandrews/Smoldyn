@@ -4,12 +4,13 @@ __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2020-, Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-__all__ = ['Boundaries', 'Simulation']
+__all__ = ['Boundaries', 'Model']
 
 from dataclasses import dataclass, field
 from typing import List
 
 from smoldyn import _smoldyn, obj
+from .kinetics import Species
 
 @dataclass
 class Boundaries:
@@ -27,14 +28,26 @@ class Boundaries:
         assert obj().dim == self.dim
 
 
-class Simulation(object):
-    """Simulation class.
+class Model(object):
+    """Model class.
     
-    for Simulation
     """
 
     def __init__(self, bounds):
         self.bounds = bounds
 
+    @property
+    def dim(self):
+        return self.bound.dim
+
     def run(self, stoptime, dt=1e-3):
         obj().run(stoptime, dt)
+
+    def addMolecules(self, mol : Species, N, pos):
+        print(f"[INFO ] Adding {N} of {mol} with pos {pos}")
+        res = obj().addSolutionMolecules(mol.name, N
+                , self.bounds.low, self.bounds.high)
+        assert res == _smoldyn.ErrorCode.ok
+
+    def runSim(self, t, dt):
+        obj().runSim(t, dt)

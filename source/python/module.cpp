@@ -184,8 +184,8 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("setGraphicsParams", &Smoldyn::setGraphicsParams)
         /* Simulation */
         .def("setTimes", &Smoldyn::setSimTimes)
-        .def("update", &Smoldyn::update)
-        .def("run", &Smoldyn::run, "stoptime"_a, "dt"_a, "display"_a = true)
+        .def("updateSim", &Smoldyn::updateSim)
+        .def("runSim", &Smoldyn::runSim, "stoptime"_a, "dt"_a, "display"_a = true)
         .def("runUntil", &Smoldyn::runUntil, "breaktime"_a, "dt"_a = 0.0,
             "display"_a = true)
         .def("addSolutionMolecules", &Smoldyn::addSolutionMolecules)
