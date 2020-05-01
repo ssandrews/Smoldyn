@@ -8,7 +8,7 @@ __email__ = "dilawars@ncbs.res.in"
 from dataclasses import dataclass, field
 from typing import List
 
-from smoldyn import _smoldyn, obj
+from smoldyn import _smoldyn
 
 @dataclass
 class NullSpecies:
@@ -20,7 +20,7 @@ class Species:
     def __init__(self, name, state, color="", difc=0.0, size=1.0):
         self.name: str = name
         assert self.name
-        k = obj().addSpecies(self.name)
+        k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, k
         self.state = _smoldyn.MS.__members__[state]
 
@@ -36,7 +36,7 @@ class Species:
         return f"<Species: {self.name}, difc={self.difc}, color={self.color}, size={self.size}>"
 
     def setStyle(self):
-        k = obj().setSpeciesStyle(self.name, self.state, self.size, self.color)
+        k = _smoldyn.setSpeciesStyle(self.name, self.state, self.size, self.color)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}"
 
     @property
@@ -47,7 +47,7 @@ class Species:
     def difc(self, difc: float):
         assert self.state, "Please set 'state' first"
         self._difc = difc
-        k = obj().setSpeciesMobility(self.name, self.state, self.difc)
+        k = _smoldyn.setSpeciesMobility(self.name, self.state, self.difc)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set mobility: {k}"
 
     @property
@@ -79,7 +79,7 @@ class HalfReaction():
         assert rname
         print(f"[INFO ] Adding reaction {subs} -> {prds}")
         
-        obj().addReaction(rname, r1.name, r1.state, r2.name, r2.state
+        _smoldyn.addReaction(rname, r1.name, r1.state, r2.name, r2.state
                 , [x.name for x in prds]
                 , [x.state for x in prds]
                 , k)

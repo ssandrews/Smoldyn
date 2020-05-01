@@ -46,36 +46,35 @@ int init_and_run(const string& filepath, const string& flags)
     fileroot = filepath.substr(0, pos + 1);
     filename = filepath.substr(pos + 1);
 
-    simptr sim = nullptr;
 #ifdef OPTION_VCELL
-    er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &sim, flags.c_str(),
+    er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &pSim_, flags.c_str(),
         new SimpleValueProviderFactory(), new SimpleMesh());
 #else
     er =
-        simInitAndLoad(fileroot.c_str(), filename.c_str(), &sim, flags.c_str());
+        simInitAndLoad(fileroot.c_str(), filename.c_str(), &pSim_, flags.c_str());
 #endif
     if(!er) {
-        // if (!tflag && sim->graphss && sim->graphss->graphics != 0)
+        // if (!tflag && pSim_->graphss && pSim_->graphss->graphics != 0)
         // gl2glutInit(0, "");
-        er = simUpdateAndDisplay(sim);
+        er = simUpdateAndDisplay(pSim_);
     }
     if(!er)
-        er = scmdopenfiles((cmdssptr)sim->cmds, wflag);
+        er = scmdopenfiles((cmdssptr)pSim_->cmds, wflag);
     if(er) {
-        simLog(sim, 4, "%sSimulation skipped\n", er ? "\n" : "");
+        simLog(pSim_, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
     else {
         fflush(stdout);
         fflush(stderr);
-        if(!sim->graphss || sim->graphss->graphics == 0) {
-            er = smolsimulate(sim);
-            endsimulate(sim, er);
+        if(!pSim_->graphss || pSim_->graphss->graphics == 0) {
+            er = smolsimulate(pSim_);
+            endsimulate(pSim_, er);
         }
         else {
-            smolsimulategl(sim);
+            smolsimulategl(pSim_);
         }
     }
-    simfree(sim);
+    simfree(pSim_);
     simfuncfree();
     return er;
 }
@@ -146,50 +145,53 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("same", ErrorCode::ECsame)
         .value("wildcard", ErrorCode::ECwildcard);
 
-    /* Simulation class */
-    py::class_<Smoldyn>(m, "Smoldyn")
-        .def(py::init<bool>(), "debug"_a = false)
-        .def_property("dim", &Smoldyn::getDim, &Smoldyn::setDim)
-        .def_property("seed", &Smoldyn::getRandomSeed, &Smoldyn::setRandomSeed)
-        .def_property("bounds", &Smoldyn::getBounds, &Smoldyn::setBounds)
-        /* box/molperbox etc */
-        .def("setPartitions", &Smoldyn::setPartitions)
-        /* Molecules */
-        .def("addSpecies", &Smoldyn::addSpecies, "name"_a, "mollist"_a = "")
-        .def("setSpeciesStyle", &Smoldyn::setSpeciesStyle)
-        .def("setSpeciesMobility", &Smoldyn::setSpeciesMobility, "species"_a,
-            "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
-            "difmatrix"_a = std::vector<double>())
-        /* Surface */
-        .def("addSurface", &Smoldyn::addSurface, "name"_a)
-        .def("setSurfaceAction", &Smoldyn::setSurfaceAction)
-        .def("addSurfaceMolecules", &Smoldyn::addSurfaceMolecules)
-        /* Panel */
-        .def("addPanel", &Smoldyn::addPanel)
-        /* Compartment */
-        .def("addCompartment", &Smoldyn::addCompartment)
-        .def("addCompartmentSurface", &Smoldyn::addCompartmentSurface)
-        .def("addCompartmentPoint", &Smoldyn::addCompartmentPoint)
-        .def("addComparmentMolecules", &Smoldyn::addCompartmentMolecules)
-        /* Reaction */
-        .def("addReaction", &Smoldyn::addReaction, "reac"_a, "reactant1"_a,
-            "rstate1"_a, "reactant2"_a, "rstate2"_a, "products"_a,
-            "productstates"_a, "rate"_a)
-        .def("setReactionRegion", &Smoldyn::setReactionRegion)
-        .def("setBoundaryType", &Smoldyn::setBoundaryType)
-        .def("addMolList", &Smoldyn::addMolList)
-        /* data */
-        .def("getMoleculeCount", &Smoldyn::getMoleculeCount)
-        /* Graphics */
-        .def("setGraphicsParams", &Smoldyn::setGraphicsParams)
-        /* Simulation */
-        .def("setTimes", &Smoldyn::setSimTimes)
-        .def("updateSim", &Smoldyn::updateSim)
-        .def("runSim", &Smoldyn::runSim, "stoptime"_a, "dt"_a, "display"_a = true)
-        .def("runUntil", &Smoldyn::runUntil, "breaktime"_a, "dt"_a = 0.0,
-            "display"_a = true)
-        .def("addSolutionMolecules", &Smoldyn::addSolutionMolecules)
-        .def_property("dt", &Smoldyn::getDt, &Smoldyn::setDt);
+    /* Main function  */
+    m.def("getDim", &getDim);
+    m.def("setDim", &setDim);
+    m.def("getRandomSeed", &getRandomSeed);
+    m.def("setRandomSeed", &setRandomSeed);
+    m.def("getBoundaries", &getBounds);
+    m.def("setBoundaries", &setBounds);
+
+    /* box/molperbox etc */
+    m.def("setPartitions", &setPartitions);
+    /* Molecules */
+    m.def("addSpecies", &addSpecies, "name"_a, "mollist"_a = "");
+    m.def("setSpeciesStyle", &setSpeciesStyle);
+    m.def("setSpeciesMobility", &setSpeciesMobility, "species"_a,
+        "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
+        "difmatrix"_a = std::vector<double>());
+    /* Surface */
+    m.def("addSurface", &addSurface, "name"_a);
+    m.def("setSurfaceAction", &setSurfaceAction);
+    m.def("addSurfaceMolecules", &addSurfaceMolecules);
+    /* Panel */
+    m.def("addPanel", &addPanel);
+    /* Compartment */
+    m.def("addCompartment", &addCompartment);
+    m.def("addCompartmentSurface", &addCompartmentSurface);
+    m.def("addCompartmentPoint", &addCompartmentPoint);
+    m.def("addComparmentMolecules", &addCompartmentMolecules);
+    /* Reaction */
+    m.def("addReaction", &addReaction, "reac"_a, "reactant1"_a,
+        "rstate1"_a, "reactant2"_a, "rstate2"_a, "products"_a,
+        "productstates"_a, "rate"_a);
+    m.def("setReactionRegion", &setReactionRegion);
+    m.def("setBoundaryType", &setBoundaryType);
+    m.def("addMolList", &addMolList);
+    /* data */
+    m.def("getMoleculeCount", &getMoleculeCount);
+    /* Graphics */
+    m.def("setGraphicsParams", &setGraphicsParams);
+    /* Simulation */
+    m.def("setTimes", &setSimTimes);
+    m.def("updateSim", &updateSim);
+    m.def("runSim", &runSim, "stoptime"_a, "dt"_a, "display"_a = true);
+    m.def("runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0,
+        "display"_a = true);
+    m.def("addSolutionMolecules", &addSolutionMolecules);
+    m.def("getDt", &getDt);
+    m.def("setDt", &setDt);
 
     /* Function */
     m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",
