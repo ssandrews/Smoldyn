@@ -8,70 +8,60 @@
 using namespace std;
 
 #include "../lib/random2.h"
+
 #include "Smoldyn.h"
 
-Smoldyn::Smoldyn() : pSim_(nullptr), dim_(0), debug_(false), curtime_(0.0)
+// Global variables.
+simptr pSim_;
+vector<double> lowbounds_;
+vector<double> highbounds_;
+bool debug_ = false;
+double curtime_ = 0.0;
+bool initDisplay_ = false;
+
+size_t getDim()
 {
+    return pSim_->dim;
 }
 
-Smoldyn::Smoldyn(bool debug)
-    : pSim_(nullptr), dim_(0), debug_(false), curtime_(0.0)
+void setDim(size_t dim)
 {
+    pSim_->dim = dim;
 }
 
-Smoldyn::~Smoldyn()
-{
-    smolFreeSim(pSim_);
-}
-
-SmoldynDefine& Smoldyn::getDefine()
-{
-    return define_;
-}
-
-size_t Smoldyn::getDim() const
-{
-    return dim_;
-}
-
-void Smoldyn::setDim(size_t dim)
-{
-    dim_ = dim;
-}
-
-void Smoldyn::setRandomSeed(size_t seed)
+void setRandomSeed(size_t seed)
 {
     if(!pSim_)
         return;
     pSim_->randseed = randomize(seed);
 }
 
-size_t Smoldyn::getRandomSeed(void)
+size_t getRandomSeed(void)
 {
     return pSim_->randseed;
 }
 
-bool Smoldyn::initialize()
+bool initialize()
 {
     if(pSim_)
         return true;
-    if(dim_ <= 0 || dim_ > 3) {
-        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << dim_
+    if(getDim() <= 0 || getDim() > 3) {
+        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim()
              << endl;
         return false;
     }
 
-    if(lowbounds_.size() != dim_) {
+    if(lowbounds_.size() != getDim()) {
         cerr << __FUNCTION__ << ": missing lowbounds" << endl;
         return false;
     }
 
-    if(highbounds_.size() != dim_) {
+    if(highbounds_.size() != getDim()) {
         cerr << __FUNCTION__ << ": missing highbounds" << endl;
         return false;
     }
 
-    for(size_t d = 0; d < dim_; d++) {
+    for(size_t d = 0; d < getDim(); d++) {
         if(lowbounds_[d] >= highbounds_[d]) {
             cerr << __FUNCTION__ << ": lowbounds must be < highbounds"
                  << " which is not true at index " << d
@@ -81,13 +71,13 @@ bool Smoldyn::initialize()
         }
     }
 
-    pSim_ = smolNewSim(dim_, &lowbounds_[0], &highbounds_[0]);
+    pSim_ = smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]);
     if(debug_)
         smolSetDebugMode(1);
     return pSim_ ? true : false;
 }
 
-void Smoldyn::runUntil(const double breaktime, const double dt, bool display)
+void runUntil(const double breaktime, const double dt, bool display)
 {
     // If dt>0, reset dt else use the old one.
     if(dt > 0.0)
@@ -100,7 +90,7 @@ void Smoldyn::runUntil(const double breaktime, const double dt, bool display)
     smolRunSimUntil(pSim_, breaktime);
 }
 
-bool Smoldyn::runSim(double stoptime, double dt, bool display)
+bool runSim(double stoptime, double dt, bool display)
 {
     if(!pSim_) {
         if(!initialize()) {
@@ -121,67 +111,67 @@ bool Smoldyn::runSim(double stoptime, double dt, bool display)
     return r == ErrorCode::ECok;
 }
 
-void Smoldyn::setLowerBounds(const vector<double> bounds)
+void setLowerBounds(const vector<double> bounds)
 {
-    dim_       = bounds.size();
+    setDim(bounds.size());
     lowbounds_ = bounds;
 }
 
-vector<double> Smoldyn::getLowerBounds(void) const
+vector<double> getLowerBounds(void)
 {
     return lowbounds_;
 }
 
-void Smoldyn::setHigherBounds(const vector<double> bounds)
+void setHigherBounds(const vector<double> bounds)
 {
-    dim_        = bounds.size();
+    setDim(bounds.size());
     highbounds_ = bounds;
 }
 
-vector<double> Smoldyn::getHigherBounds(void) const
+vector<double> getHigherBounds(void)
 {
     return highbounds_;
 }
 
-void Smoldyn::setBounds(const vector<pair<double, double>>& bounds)
+void setBounds(const vector<pair<double, double>>& bounds)
 {
-    dim_ = bounds.size();
-    lowbounds_.resize(dim_);
-    highbounds_.resize(dim_);
-    for(size_t i = 0; i < dim_; i++) {
+    setDim(bounds.size());
+    lowbounds_.resize(getDim());
+    highbounds_.resize(getDim());
+    for(size_t i = 0; i < getDim(); i++) {
         lowbounds_[i]  = bounds[i].first;
         highbounds_[i] = bounds[i].second;
     }
     initialize();
 }
 
-vector<pair<double, double>> Smoldyn::getBounds() const
+vector<pair<double, double>> getBounds()
 {
-    vector<pair<double, double>> bounds(dim_);
-    for(size_t i = 0; i < dim_; i++)
+    vector<pair<double, double>> bounds(getDim());
+    for(size_t i = 0; i < getDim(); i++)
         bounds[i] = {lowbounds_[i], highbounds_[i]};
     return bounds;
 }
 
-void Smoldyn::setPartitions(const char* name, double val)
+void setPartitions(const char* name, double val)
 {
     initialize();
     smolSetPartitions(pSim_, name, val);
 }
 
-ErrorCode Smoldyn::addSpecies(const char* name, const char* mollist)
+ErrorCode addSpecies(const char* name, const char* mollist)
 {
     return smolAddSpecies(pSim_, name, mollist);
 }
 
-ErrorCode Smoldyn::setSpeciesMobility(const char* name, MolecState state,
+ErrorCode setSpeciesMobility(const char* name, MolecState state,
     double difc, vector<double>& drift, vector<double>& difmatrix)
 {
     return smolSetSpeciesMobility(
         pSim_, name, state, difc, &drift[0], &difmatrix[0]);
 }
 
-ErrorCode Smoldyn::setSpeciesStyle(const char* name, const MolecState state,
+ErrorCode setSpeciesStyle(const char* name, const MolecState state,
     double size, char* color)
 {
         array<double, 4> rgba = {0, 0, 0, 1.0};
@@ -189,46 +179,46 @@ ErrorCode Smoldyn::setSpeciesStyle(const char* name, const MolecState state,
         return smolSetMoleculeStyle(pSim_, name, state, size, &rgba[0]);
 }
 
-ErrorCode Smoldyn::addSurface(const char* name)
+ErrorCode addSurface(const char* name)
 {
     return smolAddSurface(pSim_, name);
 }
 
-ErrorCode Smoldyn::setSurfaceAction(const char* name, enum PanelFace face,
+ErrorCode setSurfaceAction(const char* name, enum PanelFace face,
     const char* species, enum MolecState state, enum SrfAction action)
 {
     return smolSetSurfaceAction(pSim_, name, face, species, state, action);
 }
 
-ErrorCode Smoldyn::addPanel(const char* surface, enum PanelShape panelShape,
+ErrorCode addPanel(const char* surface, enum PanelShape panelShape,
     const char* panel, const char* axisstring, vector<double>& params)
 {
     return smolAddPanel(
         pSim_, surface, panelShape, panel, axisstring, &params[0]);
 }
 
-ErrorCode Smoldyn::addCompartment(const char* compartment)
+ErrorCode addCompartment(const char* compartment)
 {
     return smolAddCompartment(pSim_, compartment);
 }
 
-void Smoldyn::addCompartmentSurface(const char* compt, const char* surface)
+void addCompartmentSurface(const char* compt, const char* surface)
 {
     smolAddCompartmentSurface(pSim_, compt, surface);
 }
 
-void Smoldyn::addCompartmentPoint(const char* compt, vector<double> point)
+void addCompartmentPoint(const char* compt, vector<double> point)
 {
     smolAddCompartmentPoint(pSim_, compt, &point[0]);
 }
 
-void Smoldyn::addCompartmentMolecules(
+void addCompartmentMolecules(
     const char* species, size_t number, const char* compt)
 {
     smolAddCompartmentMolecules(pSim_, species, number, compt);
 }
 
-void Smoldyn::addSurfaceMolecules(const char* species, enum MolecState state,
+void addSurfaceMolecules(const char* species, enum MolecState state,
     size_t number, const char* surface, enum PanelShape panelShape,
     const char* panel, vector<double>& position)
 {
@@ -236,7 +226,7 @@ void Smoldyn::addSurfaceMolecules(const char* species, enum MolecState state,
         panel, &position[0]);
 }
 
-ErrorCode Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
+ErrorCode addReaction(const char* reaction,   // Name of the reaction.
     const char*                       reactant1,  // First reactant
     enum MolecState                   rstate1,    // First reactant state
     const char*                       reactant2,  // Second reactant.
@@ -266,13 +256,13 @@ ErrorCode Smoldyn::addReaction(const char* reaction,   // Name of the reaction.
         productSpecies.size(), &productSpecies[0], &productStates[0], rate);
 }
 
-void Smoldyn::setReactionRegion(
+void setReactionRegion(
     const char* reac, const char* compt, const char* surface)
 {
     smolSetReactionRegion(pSim_, reac, compt, surface);
 }
 
-ErrorCode Smoldyn::setSimTimes(
+ErrorCode setSimTimes(
     const double start, const double stop, const double dt)
 {
     if(!pSim_)
@@ -280,17 +270,17 @@ ErrorCode Smoldyn::setSimTimes(
     return smolSetSimTimes(pSim_, start, stop, dt);
 }
 
-int Smoldyn::getMoleculeCount(const char* name, enum MolecState state)
+int getMoleculeCount(const char* name, enum MolecState state)
 {
     return smolGetMoleculeCount(pSim_, name, state);
 }
 
-ErrorCode Smoldyn::setDt(double dt)
+ErrorCode setDt(double dt)
 {
     return smolSetTimeStep(pSim_, dt);
 }
 
-double Smoldyn::getDt() const
+double getDt()
 {
     return pSim_->dt;
 }

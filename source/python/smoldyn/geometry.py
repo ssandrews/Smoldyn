@@ -6,7 +6,7 @@ __maintainer__ = "Dilawar Singh"
 __email__ = "dilawars@ncbs.res.in"
 
 
-from smoldyn import _smoldyn, obj
+from smoldyn import _smoldyn
 from dataclasses import dataclass
 
 
@@ -25,7 +25,7 @@ class Partition:
     value: float
 
     def __post_init__(self):
-        obj().setPartitions(self.name, self.value)
+        _smoldyn.setPartitions(self.name, self.value)
 
 
 class MoleculePerBox(Partition):

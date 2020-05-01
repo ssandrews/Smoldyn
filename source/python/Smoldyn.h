@@ -26,133 +26,114 @@ namespace py = pybind11;
 // defined in smolgraphics.c file.
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
-class Smoldyn {
+// Global variables for module.
+extern simptr pSim_;
+extern vector<double> lowbounds_;
+extern vector<double> highbounds_;
+extern bool debug_;
+extern double curtime_;
+extern bool initDisplay_;
 
-public:
-    Smoldyn();
-    Smoldyn(bool debug);
-    ~Smoldyn();
+size_t getDim();
+void   setDim(size_t dim);
 
-    SmoldynDefine& getDefine();
+void   setRandomSeed(size_t seed);
+size_t getRandomSeed();
 
-    size_t getDim() const;
-    void   setDim(size_t dim);
+bool initialize();
 
-    void   setRandomSeed(size_t seed);
-    size_t getRandomSeed();
+// Smoldyn.
+bool runSim(double simtime, double dt, bool display);
+void runUntil(const double breaktime, const double dt, bool display);
 
-    bool initialize();
+// Bounds.
+void           setLowerBounds(const vector<double> bounds);
+vector<double> getLowerBounds();
 
-    // Smoldyn.
-    bool runSim(double simtime, double dt, bool display);
-    void runUntil(const double breaktime, const double dt, bool display);
+void           setHigherBounds(const vector<double> bounds);
+vector<double> getHigherBounds();
 
-    // Bounds.
-    void           setLowerBounds(const vector<double> bounds);
-    vector<double> getLowerBounds() const;
+void setBounds(const vector<pair<double, double>>& bounds);
+std::vector<pair<double, double>> getBounds();
 
-    void           setHigherBounds(const vector<double> bounds);
-    vector<double> getHigherBounds() const;
+void setPartitions(const char* name, double val);
 
-    void setBounds(const vector<pair<double, double>>& bounds);
-    std::vector<pair<double, double>> getBounds() const;
+ErrorCode addSpecies(const char* name, const char* mollist);
 
-    void setPartitions(const char* name, double val);
+ErrorCode setSpeciesMobility(const char* name, MolecState state, double difc,
+    vector<double>& drift, vector<double>& difmatrix);
 
-    ErrorCode addSpecies(const char* name, const char* mollist);
+ErrorCode setSpeciesStyle(
+    const char* name, const MolecState state, double size, char* color);
 
-    ErrorCode setSpeciesMobility(const char* name, MolecState state,
-        double difc, vector<double>& drift, vector<double>& difmatrix);
+ErrorCode addSurface(const char* name);
 
-    ErrorCode setSpeciesStyle(
-        const char* name, const MolecState state, double size, char* color);
+ErrorCode setSurfaceAction(const char* name, enum PanelFace face,
+    const char* species, enum MolecState state, enum SrfAction action);
 
-    ErrorCode addSurface(const char* name);
+ErrorCode addPanel(const char* surface, enum PanelShape panelShape,
+    const char* panel, const char* axisstring, vector<double>& params);
 
-    ErrorCode setSurfaceAction(const char* name, enum PanelFace face,
-        const char* species, enum MolecState state, enum SrfAction action);
+ErrorCode addCompartment(const char* compartment);
 
-    ErrorCode addPanel(const char* surface, enum PanelShape panelShape,
-        const char* panel, const char* axisstring, vector<double>& params);
+void addCompartmentSurface(const char* compt, const char* surface);
 
-    ErrorCode addCompartment(const char* compartment);
+void addCompartmentPoint(const char* compt, vector<double> point);
 
-    void addCompartmentSurface(const char* compt, const char* surface);
+void addCompartmentMolecules(
+    const char* species, size_t number, const char* compt);
 
-    void addCompartmentPoint(const char* compt, vector<double> point);
+void addSurfaceMolecules(const char* species, enum MolecState state,
+    size_t number, const char* surface, enum PanelShape panelShape,
+    const char* panel, vector<double>& position);
 
-    void addCompartmentMolecules(
-        const char* species, size_t number, const char* compt);
+ErrorCode addReaction(const char* reaction, const char* reactant1,
+    enum MolecState rstate1, const char* reactant2, enum MolecState rstate2,
+    vector<string> productSpecies, vector<enum MolecState> productStates,
+    double rate);
 
-    void addSurfaceMolecules(const char* species, enum MolecState state,
-        size_t number, const char* surface, enum PanelShape panelShape,
-        const char* panel, vector<double>& position);
+void setReactionRegion(
+    const char* reac, const char* compt, const char* surface);
 
-    ErrorCode addReaction(const char* reaction, const char* reactant1,
-        enum MolecState rstate1, const char* reactant2, enum MolecState rstate2,
-        vector<string> productSpecies, vector<enum MolecState> productStates,
-        double rate);
+ErrorCode setSimTimes(const double start, const double end, const double step);
 
-    void setReactionRegion(
-        const char* reac, const char* compt, const char* surface);
+int getMoleculeCount(const char* name, enum MolecState state);
 
-    ErrorCode setSimTimes(
-        const double start, const double end, const double step);
+// Inline functions.
+inline simptr simPtr()
+{
+    return pSim_;
+}
 
-    int getMoleculeCount(const char* name, enum MolecState state);
+inline ErrorCode setBoundaryType(int dim, int highside, char type)
+{
+    return smolSetBoundaryType(pSim_, dim, highside, type);
+}
 
-    // Inline functions.
-    inline simptr simPtr() const
-    {
-        return pSim_;
-    }
+inline ErrorCode addMolList(const char* mollist)
+{
+    return smolAddMolList(pSim_, mollist);
+}
 
-    inline ErrorCode setBoundaryType(int dim, int highside, char type)
-    {
-        return smolSetBoundaryType(pSim_, dim, highside, type);
-    }
+inline ErrorCode addSolutionMolecules(const char* name, int nums,
+    vector<double>& lowposition, vector<double>& highposition)
+{
+    return smolAddSolutionMolecules(
+        pSim_, name, nums, &lowposition[0], &highposition[0]);
+}
 
-    inline ErrorCode addMolList(const char* mollist)
-    {
-        return smolAddMolList(pSim_, mollist);
-    }
+inline ErrorCode setGraphicsParams(const char* method, int timestep, int delay)
+{
+    return smolSetGraphicsParams(pSim_, method, timestep, delay);
+}
 
-    inline ErrorCode addSolutionMolecules(const char* name, int nums,
-        vector<double>& lowposition, vector<double>& highposition)
-    {
-        return smolAddSolutionMolecules(
-            pSim_, name, nums, &lowposition[0], &highposition[0]);
-    }
+inline ErrorCode updateSim()
+{
+    return smolUpdateSim(pSim_);
+}
 
-    inline ErrorCode setGraphicsParams(
-        const char* method, int timestep, int delay)
-    {
-        return smolSetGraphicsParams(pSim_, method, timestep, delay);
-    }
+ErrorCode setDt(double dt);
+double    getDt();
 
-    inline ErrorCode updateSim()
-    {
-        return smolUpdateSim(pSim_);
-    }
-
-    ErrorCode setDt(double dt);
-    double    getDt() const;
-
-private:
-    simptr pSim_;
-    size_t dim_;  // Dimention of the system.
-
-    bool debug_;
-
-    bool initDisplay_{false};
-
-    // As large as dims.
-    vector<double> lowbounds_;
-    vector<double> highbounds_;
-
-    double curtime_;
-
-    SmoldynDefine define_;
-};
 
 #endif /* end of include guard: SIMULTION_H */

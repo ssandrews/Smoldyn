@@ -9,7 +9,7 @@ __all__ = ['Boundaries', 'Model']
 from dataclasses import dataclass, field
 from typing import List
 
-from smoldyn import _smoldyn, obj
+from smoldyn import _smoldyn
 from .kinetics import Species
 
 @dataclass
@@ -24,8 +24,8 @@ class Boundaries:
         if len(self.types) == 1:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
-        obj().bounds = list(zip(self.low, self.high))
-        assert obj().dim == self.dim
+        _smoldyn.bounds = list(zip(self.low, self.high))
+        assert _smoldyn.dim == self.dim
 
 
 class Model(object):
@@ -41,13 +41,13 @@ class Model(object):
         return self.bound.dim
 
     def run(self, stoptime, dt=1e-3):
-        obj().run(stoptime, dt)
+        _smoldyn.run(stoptime, dt)
 
     def addMolecules(self, mol : Species, N, pos):
         print(f"[INFO ] Adding {N} of {mol} with pos {pos}")
-        res = obj().addSolutionMolecules(mol.name, N
+        res = _smoldyn.addSolutionMolecules(mol.name, N
                 , self.bounds.low, self.bounds.high)
         assert res == _smoldyn.ErrorCode.ok
 
     def runSim(self, t, dt):
-        obj().runSim(t, dt)
+        _smoldyn.runSim(t, dt)
