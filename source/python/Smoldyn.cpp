@@ -13,6 +13,7 @@ using namespace std;
 
 // Global variables.
 simptr pSim_;
+size_t dim_ = 0;
 vector<double> lowbounds_;
 vector<double> highbounds_;
 bool debug_ = false;
@@ -21,12 +22,14 @@ bool initDisplay_ = false;
 
 size_t getDim()
 {
-    return pSim_->dim;
+    return dim_;
 }
 
 void setDim(size_t dim)
 {
-    pSim_->dim = dim;
+    dim_ = dim;
+    if(pSim_)
+        pSim_->dim = dim;
 }
 
 void setRandomSeed(size_t seed)
@@ -133,19 +136,19 @@ vector<double> getHigherBounds(void)
     return highbounds_;
 }
 
-void setBounds(const vector<pair<double, double>>& bounds)
+void setBoundaries(const vector<pair<double, double>>& bounds)
 {
     setDim(bounds.size());
-    lowbounds_.resize(getDim());
-    highbounds_.resize(getDim());
-    for(size_t i = 0; i < getDim(); i++) {
+    lowbounds_.resize(dim_);
+    highbounds_.resize(dim_);
+    for(size_t i = 0; i < dim_; i++) {
         lowbounds_[i]  = bounds[i].first;
         highbounds_[i] = bounds[i].second;
     }
     initialize();
 }
 
-vector<pair<double, double>> getBounds()
+vector<pair<double, double>> getBoundaries()
 {
     vector<pair<double, double>> bounds(getDim());
     for(size_t i = 0; i < getDim(); i++)

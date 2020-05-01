@@ -28,6 +28,7 @@ extern int graphicsreadcolor(char** stringptr, double* rgba);
 
 // Global variables for module.
 extern simptr pSim_;
+extern size_t dim_;
 extern vector<double> lowbounds_;
 extern vector<double> highbounds_;
 extern bool debug_;
@@ -53,8 +54,8 @@ vector<double> getLowerBounds();
 void           setHigherBounds(const vector<double> bounds);
 vector<double> getHigherBounds();
 
-void setBounds(const vector<pair<double, double>>& bounds);
-std::vector<pair<double, double>> getBounds();
+void setBoundaries(const vector<pair<double, double>>& bounds);
+std::vector<pair<double, double>> getBoundaries();
 
 void setPartitions(const char* name, double val);
 
@@ -134,6 +135,12 @@ inline ErrorCode updateSim()
 
 ErrorCode setDt(double dt);
 double    getDt();
+
+inline void cleanup()
+{
+    if(pSim_)
+        smolFreeSim(pSim_);
+}
 
 
 #endif /* end of include guard: SIMULTION_H */
