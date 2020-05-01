@@ -3,40 +3,39 @@
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2019-, Dilawar Singh"
 
-import smoldyn
+import smoldyn._smoldyn as S
 import numpy as np
 import matplotlib.pyplot as plt
 
-MS = smoldyn.MS
+MS = S.MS
 
-s = smoldyn.Smoldyn(debug=True)
 v1 = [-100.0, -100.0, -10.0]
 v2 = [100.0, 100, 10.0]
-s.bounds = list(zip(v1, v2))
-s.setBoundaryType(-1, -1, 'p')
-s.addMolList("rlist")
-s.addMolList("flist")
-s.addSpecies("rabbit", "rlist")
-s.addSpecies("fox", "flist")
-s.setSpeciesMobility("all", MS.all, 100)
+S.setBoundaries(list(zip(v1, v2)))
+S.setBoundaryType(-1, -1, 'p')
+S.addMolList("rlist")
+S.addMolList("flist")
+S.addSpecies("rabbit", "rlist")
+S.addSpecies("fox", "flist")
+S.setSpeciesMobility("all", MS.all, 100)
 
 # We don't need numproducts anymore
-s.addReaction("r1", "rabbit", MS.soln, "", MS.none, ["rabbit"]*2, [MS.soln]*2, 10)
-s.addReaction("r2", "rabbit", MS.soln, "fox", MS.soln, ["fox"]*2, [MS.soln]*2, 8000)
-s.addReaction("r3", "fox", MS.soln, "", MS.none, [], [], 10)
-s.addSolutionMolecules("rabbit", 1000, v1, v2)
-s.addSolutionMolecules("fox", 1000, v1, v2)
+S.addReaction("r1", "rabbit", MS.soln, "", MS.none, ["rabbit"]*2, [MS.soln]*2, 10)
+S.addReaction("r2", "rabbit", MS.soln, "fox", MS.soln, ["fox"]*2, [MS.soln]*2, 8000)
+S.addReaction("r3", "fox", MS.soln, "", MS.none, [], [], 10)
+S.addSolutionMolecules("rabbit", 1000, v1, v2)
+S.addSolutionMolecules("fox", 1000, v1, v2)
 
-s.setGraphicsParams("opengl", 5, 0)
-s.setSpeciesStyle("rabbit", MS.all, 2, [1,0,0,1])
-s.setSpeciesStyle("fox", MS.all, 3, [0, 1, 0])
+S.setGraphicsParams("opengl", 5, 0)
+S.setSpeciesStyle("rabbit", MS.all, 2, 'red')
+S.setSpeciesStyle("fox", MS.all, 3, 'green')
 
 T, F, R = [], [], []
 for t in np.arange(0.1, 2.0, 0.1):
     T.append(t)
-    s.runUntil(t, dt=0.001, display=False)
-    ctr = s.getMoleculeCount("rabbit", MS.all)
-    ctf = s.getMoleculeCount("fox", MS.all)
+    S.runUntil(t, dt=0.001, display=False)
+    ctr = S.getMoleculeCount("rabbit", MS.all)
+    ctf = S.getMoleculeCount("fox", MS.all)
     F.append(ctf)
     R.append(ctr)
     print(f"t={t:.1f}, rabbit={ctr}, fox={ctf}")

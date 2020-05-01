@@ -148,10 +148,10 @@ PYBIND11_MODULE(_smoldyn, m)
     /* Main function  */
     m.def("getDim", &getDim);
     m.def("setDim", &setDim);
-    m.def("getRandomSeed", &getRandomSeed);
-    m.def("setRandomSeed", &setRandomSeed);
-    m.def("getBoundaries", &getBounds);
-    m.def("setBoundaries", &setBounds);
+    m.def("getSeed", &getRandomSeed);
+    m.def("setSeed", &setRandomSeed);
+    m.def("getBoundaries", &getBoundaries);
+    m.def("setBoundaries", &setBoundaries);
 
     /* box/molperbox etc */
     m.def("setPartitions", &setPartitions);
@@ -192,6 +192,11 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("addSolutionMolecules", &addSolutionMolecules);
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
+
+    // See
+    // https://pybind11.readthedocs.io/en/stable/advanced/misc.html#module-destructors
+    // for details.
+    m.add_object("_cleanup", py::capsule(cleanup));
 
     /* Function */
     m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",
