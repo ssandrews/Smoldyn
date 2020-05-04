@@ -286,10 +286,136 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetMoleculeStyle(pSim_, species, state, size, &rgba[0]);
         });
 
-    /* Surface */
+    /******************************* Surfaces ********************************/
     m.def("addSurface", &addSurface, "name"_a);
     m.def("setSurfaceAction", &setSurfaceAction);
     m.def("addSurfaceMolecules", &addSurfaceMolecules);
+
+    // enum ErrorCode smolSetBoundaryType(simptr sim, int dimension, int
+    // highside, char type);
+    m.def("setBoundaryType", [](int dimension, int highside, char type) {
+        return smolSetBoundaryType(pSim_, dimension, highside, type);
+    });
+
+    // enum ErrorCode smolAddSurface(simptr sim, const char *surface);
+    m.def("addSurface",
+        [](const char *surface) { return smolAddSurface(pSim_, surface); });
+
+    // int molGetSurfaceIndex(simptr sim, const char *surface);
+    m.def("getSurfaceIndex", [](const char *surface) {
+        return smolGetSurfaceIndex(pSim_, surface);
+    });
+
+    // int            smolGetSurfaceIndexNT(simptr sim, const char *surface);
+    m.def("getSurfaceIndexNT", [](const char *surface) {
+        return smolGetSurfaceIndexNT(pSim_, surface);
+    });
+
+    // char *smolGetSurfaceName(simptr sim, int surfaceindex, char *surface);
+    m.def("getSurfaceName", [](int surfaceindex, char *surface) {
+        return smolGetSurfaceName(pSim_, surfaceindex, surface);
+    });
+
+    // enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
+    //     enum PanelFace face, const char *species, enum MolecState state,
+    //     enum SrfAction action);
+    m.def("setSurfaceAction",
+        [](const char *surface, PanelFace face, const char *species,
+            MolecState state, SrfAction action) {
+            return smolSetSurfaceAction(
+                pSim_, surface, face, species, state, action);
+        });
+
+    // enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,
+    //     const char *species, enum MolecState state, enum MolecState state1,
+    //     enum MolecState state2, double rate, const char *newspecies,
+    //     int isinternal);
+    m.def("setSurfaceRate",
+        [](const char *surface, const char *species, MolecState state,
+            MolecState state1, MolecState state2, double rate,
+            const char *newspecies, bool isinternal) {
+            return smolSetSurfaceRate(pSim_, surface, species, state, state1,
+                state2, rate, newspecies, isinternal);
+        });
+    // enum ErrorCode smolAddPanel(simptr sim, const char *surface,
+    //     enum PanelShape panelshape, const char *panel, const char
+    //     *axisstring, double *params);
+    m.def("addPanel",
+        [](const char *surface, PanelShape panelshape, const char *panel,
+            const char *axisstring, vector<double> &params) {
+            return smolAddPanel(
+                pSim_, surface, panelshape, panel, axisstring, &params[0]);
+        });
+    // int            smolGetPanelIndex(simptr sim, const char *surface,
+    //                enum PanelShape *panelshapeptr, const char *panel);
+    m.def("getPanelIndex",
+        [](const char *surface, PanelShape *panelshape, const char *panel) {
+            return smolGetPanelIndex(pSim_, surface, panelshape, panel);
+        });
+
+    // int            smolGetPanelIndexNT(simptr sim, const char *surface,
+    //                enum PanelShape *panelshapeptr, const char *panel);
+    m.def("getPanelIndexNT",
+        [](const char *surface, PanelShape *panelshape, const char *panel) {
+            return smolGetPanelIndexNT(pSim_, surface, panelshape, panel);
+        });
+
+    // char*  smolGetPanelName(simptr sim, const char *surface, enum PanelShape
+    // panelshape, int panelindex, char *panel);
+    m.def("getPanelName", [](const char *surface, PanelShape panelshape,
+                              int panelindex, char *panel) {
+        return smolGetPanelName(pSim_, surface, panelshape, panelindex, panel);
+    });
+
+    // enum ErrorCode smolSetPanelJump(simptr sim, const char *surface,
+    //     const char *panel1, enum PanelFace face1, const char *panel2,
+    //     enum PanelFace face2, int isbidirectional);
+    m.def("setPanelJump",
+        [](const char *surface, const char *panel1, PanelFace face1,
+            const char *panel2, PanelFace face2, bool isbidirectional) {
+            return smolSetPanelJump(
+                pSim_, surface, panel1, face1, panel2, face2, isbidirectional);
+        });
+
+    // enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,
+    //     const char *surface, enum PanelFace face, const char *species,
+    //     double emitamount, double *emitposition);
+    m.def("addSurfaceUnboundedEmitter",
+        [](const char *surface, PanelFace face, const char *species,
+            double emitamount, vector<double> &emitposition) {
+            return smolAddSurfaceUnboundedEmitter(
+                pSim_, surface, face, species, emitamount, &emitposition[0]);
+        });
+
+    // enum ErrorCode smolSetSurfaceSimParams(
+    //     simptr sim, const char *parameter, double value);
+    m.def("setSurfaceSimParams", [](const char *parameter, double value) {
+        return smolSetSurfaceSimParams(pSim_, parameter, value);
+    });
+
+    // enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
+    //     const char *panel1, const char *surface2, const char *panel2,
+    //     int reciprocal);
+    m.def("addPanelNeighbhor",
+        [](const char *surface1, const char *panel1, const char *surface2,
+            const char *panel2, int reciprocal) {
+            return smolAddPanelNeighbor(
+                pSim_, surface1, panel1, surface2, panel2, reciprocal);
+        });
+
+    // enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface,
+    //     enum PanelFace face, enum DrawMode mode, double thickness,
+    //     double *color, int stipplefactor, int stipplepattern, double
+    //     shininess);
+    m.def("setSurfaceStyle",
+        [](const char *surface, PanelFace face, DrawMode mode, double thickness,
+            char *color, int stipplefactor, int stipplepattern,
+            double shininess) {
+            array<double, 4> rgba = {0, 0, 0, 1.0};
+            graphicsreadcolor(&color, &rgba[0]);
+            return smolSetSurfaceStyle(pSim_, surface, face, mode, thickness,
+                &rgba[0], stipplefactor, stipplepattern, shininess);
+        });
 
     /* Panel */
     m.def("addPanel", &addPanel);
