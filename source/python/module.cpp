@@ -36,7 +36,7 @@ extern int scmdopenfiles(cmdssptr cmds, int overwrite);
  * @Returns
  */
 /* ----------------------------------------------------------------------------*/
-int init_and_run(const string& filepath, const string& flags)
+int init_and_run(const string &filepath, const string &flags)
 {
     int er = 0, wflag = 0;
 
@@ -47,11 +47,11 @@ int init_and_run(const string& filepath, const string& flags)
     filename = filepath.substr(pos + 1);
 
 #ifdef OPTION_VCELL
-    er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &pSim_, flags.c_str(),
-        new SimpleValueProviderFactory(), new SimpleMesh());
+    er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &pSim_,
+        flags.c_str(), new SimpleValueProviderFactory(), new SimpleMesh());
 #else
-    er =
-        simInitAndLoad(fileroot.c_str(), filename.c_str(), &pSim_, flags.c_str());
+    er = simInitAndLoad(
+        fileroot.c_str(), filename.c_str(), &pSim_, flags.c_str());
 #endif
     if(!er) {
         // if (!tflag && pSim_->graphss && pSim_->graphss->graphics != 0)
@@ -81,6 +81,9 @@ int init_and_run(const string& filepath, const string& flags)
 
 PYBIND11_MODULE(_smoldyn, m)
 {
+    // py::options options;
+    // options.disable_function_signatures();
+
     m.doc() = R"pbdoc(
         Python interface of smoldyn simulation.
     )pbdoc";
@@ -126,9 +129,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("all", PanelShape::PSall)
         .value("none", PanelShape::PSnone);
 
-    /**
-     * @Synopsis  Error codes.
-     */
+    /* Error codes.  */
     py::enum_<ErrorCode>(m, "ErrorCode")
         .value("ok", ErrorCode::ECok)
         .value("notify", ErrorCode::ECnotify)
@@ -144,9 +145,35 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("same", ErrorCode::ECsame)
         .value("wildcard", ErrorCode::ECwildcard);
 
-    /* Main function  */
-    m.def("getDim", &getDim);
-    m.def("setDim", &setDim);
+    /**************************************************************************
+     * FUNCTIONS.
+     **************************************************************************
+     */
+
+    m.def("setDebugMode", &smolSetDebugMode);
+    m.def("errorCodeToString", &smolErrorCodeToString);
+
+    // Sim structure functions are not exposed to Python. They are for internal
+    // use only.
+
+    // Read configuration file.
+    m.def("loadSimFromFile",
+        [](const string &filepath, const char *flags) -> ErrorCode {
+            string filename, fileroot;
+            auto   pos = filepath.find_last_of('/');
+            fileroot   = filepath.substr(0, pos + 1);
+            filename   = filepath.substr(pos + 1);
+            assert(pSim_);
+            return smolLoadSimFromFile(
+                fileroot.c_str(), filename.c_str(), &pSim_, flags);
+        });
+    m.def("readConfigString",
+        [](const char *statement, char *params) -> ErrorCode {
+            return smolReadConfigString(pSim_, statement, params);
+        });
+
+    m.def("getDim", &getDim, "Dimention of the system");
+    m.def("setDim", &setDim, "Set the dimnetion of the system.");
     m.def("getSeed", &getRandomSeed);
     m.def("setSeed", &setRandomSeed);
     m.def("getBoundaries", &getBoundaries);
@@ -154,41 +181,118 @@ PYBIND11_MODULE(_smoldyn, m)
 
     /* box/molperbox etc */
     m.def("setPartitions", &setPartitions);
+
     /* Molecules */
     m.def("addSpecies", &addSpecies, "name"_a, "mollist"_a = "");
     m.def("setSpeciesStyle", &setSpeciesStyle);
-    m.def("setSpeciesMobility", &setSpeciesMobility, "species"_a,
-        "state"_a, "diffConst"_a, "drift"_a = std::vector<double>(),
+    m.def("setSpeciesMobility", &setSpeciesMobility, "species"_a, "state"_a,
+        "diffConst"_a, "drift"_a = std::vector<double>(),
         "difmatrix"_a = std::vector<double>());
+
     /* Surface */
     m.def("addSurface", &addSurface, "name"_a);
     m.def("setSurfaceAction", &setSurfaceAction);
     m.def("addSurfaceMolecules", &addSurfaceMolecules);
+
     /* Panel */
     m.def("addPanel", &addPanel);
+
     /* Compartment */
     m.def("addCompartment", &addCompartment);
     m.def("addCompartmentSurface", &addCompartmentSurface);
     m.def("addCompartmentPoint", &addCompartmentPoint);
     m.def("addComparmentMolecules", &addCompartmentMolecules);
+    m.def("addSolutionMolecules", &addSolutionMolecules);
+
     /* Reaction */
-    m.def("addReaction", &addReaction, "reac"_a, "reactant1"_a,
-        "rstate1"_a, "reactant2"_a, "rstate2"_a, "products"_a,
-        "productstates"_a, "rate"_a);
+    m.def("addReaction", &addReaction, "reac"_a, "reactant1"_a, "rstate1"_a,
+        "reactant2"_a, "rstate2"_a, "products"_a, "productstates"_a, "rate"_a);
     m.def("setReactionRegion", &setReactionRegion);
     m.def("setBoundaryType", &setBoundaryType);
     m.def("addMolList", &addMolList);
+
     /* data */
     m.def("getMoleculeCount", &getMoleculeCount);
+
     /* Graphics */
     m.def("setGraphicsParams", &setGraphicsParams);
+    m.def("setGraphicsParams",
+        [](const char *method, int timestep, int delay) -> ErrorCode {
+            return smolSetGraphicsParams(pSim_, method, timestep, delay);
+        });
+
+    m.def("setTiffParams",
+        [](int timesteps, const char *tiffname, int lowcount,
+            int highcount) -> ErrorCode {
+            return smolSetTiffParams(
+                pSim_, timesteps, tiffname, lowcount, highcount);
+        });
+
+    m.def("setLightParams",
+        [](int lightindex, vector<double> &ambient, vector<double> &diffuse,
+            vector<double> &specular, vector<double> &position) -> ErrorCode {
+            return smolSetLightParams(pSim_, lightindex, &ambient[0],
+                &diffuse[0], &specular[0], &position[0]);
+        });
+
+    m.def("setBackgroundStyle", [](const char *color) -> ErrorCode {
+        array<double, 4> rgba = {0, 0, 0, 1.0};
+        return smolSetBackgroundStyle(pSim_, &rgba[0]);
+    });
+
+    m.def(
+        "setFrameStyle", [](double thickness, char *color) -> ErrorCode {
+            array<double, 4> rgba = {0, 0, 0, 1.0};
+            graphicsreadcolor(&color, &rgba[0]);
+            return smolSetBackgroundStyle(pSim_, &rgba[0]);
+        });
+
+    m.def("setGridStyle", [](double thickness, char *color) {
+        array<double, 4> rgba = {0, 0, 0, 1.0};
+        graphicsreadcolor(&color, &rgba[0]);
+        return smolSetGridStyle(pSim_, thickness, &rgba[0]);
+    });
+
+    m.def("setTextStyle", [](char *color) -> ErrorCode {
+        array<double, 4> rgba = {0, 0, 0, 1.0};
+        graphicsreadcolor(&color, &rgba[0]);
+        return smolSetTextStyle(pSim_, &rgba[0]);
+    });
+
+    m.def("addTextDisplay", [](char *item) -> ErrorCode {
+        return smolAddTextDisplay(pSim_, item);
+    });
+
     /* Simulation */
-    m.def("setTimes", &setSimTimes);
+    m.def("setSimTimes",
+        [](double timestart, double timestop, double timestep) -> ErrorCode {
+            return smolSetSimTimes(pSim_, timestart, timestop, timestep);
+        });
+
+    m.def("setTimeStart",
+        [](double time) -> ErrorCode { return smolSetTimeStart(pSim_, time); });
+
+    m.def("setTimeStop", [](double timestop) -> ErrorCode {
+        return smolSetTimeStop(pSim_, timestop);
+    });
+
+    m.def("setTimeNow", [](double timenow) -> ErrorCode {
+        return smolSetTimeNow(pSim_, timenow);
+    });
+
+    m.def("setTimeStep", [](double timestep) -> ErrorCode {
+        return smolSetTimeStep(pSim_, timestep);
+    });
+
+    m.def("setRandomSeed", [](long int seed) -> ErrorCode {
+        return smolSetRandomSeed(pSim_, seed);
+    });
+
+    m.def("setSimTimes", &setSimTimes);
     m.def("updateSim", &updateSim);
     m.def("runSim", &runSim, "stoptime"_a, "dt"_a, "display"_a = true);
-    m.def("runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0,
-        "display"_a = true);
-    m.def("addSolutionMolecules", &addSolutionMolecules);
+    m.def(
+        "runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true);
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
 
