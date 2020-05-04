@@ -22,10 +22,10 @@ def test_library():
     S.addSpecies("cAMP")
     S.addSpecies("cAR1")
 
-    MS = S.MS     # enum MolcState
-    SA = S.SA     # enum SrfAction
-    PF = S.PF     # enum PanelFace
-    PS = S.PS     # enum PanelShape
+    MS = S.MolecState     # enum MolcState
+    SA = S.SrfAction      # enum SrfAction
+    PF = S.PanelFace      # enum PanelFace
+    PS = S.PanelShape     # enum PanelShape
 
     S.setSpeciesMobility("ACA", MS.all, 1.0)
     S.setSpeciesMobility("ATP", MS.all, 1.0)

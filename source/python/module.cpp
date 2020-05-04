@@ -85,7 +85,7 @@ PYBIND11_MODULE(_smoldyn, m)
         Python interface of smoldyn simulation.
     )pbdoc";
 
-    py::enum_<SrfAction>(m, "SA")
+    py::enum_<SrfAction>(m, "SrfAction")
         .value("reflect", SrfAction::SAreflect)
         .value("trans", SrfAction::SAtrans)
         .value("absorb", SrfAction::SAabsorb)
@@ -99,7 +99,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("irrevdes", SrfAction::SAirrevdes)
         .value("flip", SrfAction::SAflip);
 
-    py::enum_<MolecState>(m, "MS")
+    py::enum_<MolecState>(m, "MolecState")
         .value("soln", MolecState::MSsoln)
         .value("front", MolecState::MSfront)
         .value("back", MolecState::MSback)
@@ -110,13 +110,13 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("none", MolecState::MSnone)
         .value("some", MolecState::MSsome);
 
-    py::enum_<PanelFace>(m, "PF")
+    py::enum_<PanelFace>(m, "PanelFace")
         .value("front", PanelFace::PFfront)
         .value("back", PanelFace::PFback)
         .value("none", PanelFace::PFnone)
         .value("both", PanelFace::PFboth);
 
-    py::enum_<PanelShape>(m, "PS")
+    py::enum_<PanelShape>(m, "PanelShape")
         .value("rect", PanelShape::PSrect)
         .value("tri", PanelShape::PStri)
         .value("sph", PanelShape::PSsph)

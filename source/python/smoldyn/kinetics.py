@@ -13,7 +13,7 @@ from smoldyn import _smoldyn
 @dataclass
 class NullSpecies:
     name: str = ''
-    state: str = _smoldyn.MS.__members__['all']
+    state: str = _smoldyn.MolecState.__members__['all']
 
 
 class Species:
