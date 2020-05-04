@@ -172,6 +172,7 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolReadConfigString(pSim_, statement, params);
         });
 
+    // convenient wrappers.
     m.def("getDim", &getDim, "Dimention of the system");
     m.def("setDim", &setDim, "Set the dimnetion of the system.");
     m.def("getSeed", &getRandomSeed);
@@ -182,12 +183,108 @@ PYBIND11_MODULE(_smoldyn, m)
     /* box/molperbox etc */
     m.def("setPartitions", &setPartitions);
 
-    /* Molecules */
+    /********************************* Molecules
+     * **********************************/
     m.def("addSpecies", &addSpecies, "name"_a, "mollist"_a = "");
-    m.def("setSpeciesStyle", &setSpeciesStyle);
+
+    // int   smolGetSpeciesIndex(simptr sim, const char *species);
+    m.def("getSpeciesIndex", [](const char *species) -> int {
+        return smolGetSpeciesIndex(pSim_, species);
+    });
+
+    // int   smolGetSpeciesIndexNT(simptr sim, const char *species);
+    m.def("speciesIndexNT", [](const char *species) {
+        return smolGetSpeciesIndexNT(pSim_, species);
+    });
+
+    // char *smolGetSpeciesName(simptr sim, int speciesindex, char *species);
+    m.def("getSpeciesName", [](int speciesindex, char *species) {
+        return smolGetSpeciesName(pSim_, speciesindex, species);
+    });
+
+    // enum ErrorCode smolSetSpeciesMobility(simptr sim, const char *species,
+    //     enum MolecState state, double difc, double *drift, double
+    //     *difmatrix);
     m.def("setSpeciesMobility", &setSpeciesMobility, "species"_a, "state"_a,
         "diffConst"_a, "drift"_a = std::vector<double>(),
         "difmatrix"_a = std::vector<double>());
+
+    //?? needs function smolSetSpeciesSurfaceDrift
+    // enum ErrorCode smolAddMolList(simptr sim, const char *mollist);
+    m.def("getMolListIndex", [](const char *mollist) {
+        return smolGetMolListIndex(pSim_, mollist);
+    });
+
+    // int   smolGetMolListIndex(simptr sim, const char *mollist);
+    m.def("getMolListIndex", [](const char *mollist) {
+        return smolGetMolListIndex(pSim_, mollist);
+    });
+
+    // int   smolGetMolListIndexNT(simptr sim, const char *mollist);
+    m.def("molListIndexNT", [](const char *mollist) {
+        return smolGetMolListIndexNT(pSim_, mollist);
+    });
+
+    // char *smolGetMolListName(simptr sim, int mollistindex, char *mollist);
+    m.def("getMolListName", [](int mollistindex, char *species) {
+        return smolGetMolListName(pSim_, mollistindex, species);
+    });
+
+    // enum ErrorCode smolSetMolList(simptr sim, const char *species, enum
+    // MolecState state, const char *mollist);
+    m.def("setMolList",
+        [](const char *species, MolecState state, const char *mollist) {
+            return smolSetMolList(pSim_, species, state, mollist);
+        });
+
+    // enum ErrorCode smolSetMaxMolecules(simptr sim, int maxmolecules);
+    m.def("setMaxMolecules", [](int maxmolecules) {
+        return smolSetMaxMolecules(pSim_, maxmolecules);
+    });
+
+    // enum ErrorCode smolAddSolutionMolecules(simptr sim, const char *species,
+    //     int number, double *lowposition, double *highposition);
+    m.def("addSolutionMolecules",
+        [](const char *species, int number, vector<double> &lowposition,
+            vector<double> &highposition) {
+            return smolAddSolutionMolecules(
+                pSim_, species, number, &lowposition[0], &highposition[0]);
+        });
+
+    // enum ErrorCode smolAddCompartmentMolecules(
+    //     simptr sim, const char *species, int number, const char
+    //     *compartment);
+    m.def("addCompartmentMolecules", [](const char *species, int number,
+                                         const char *compartment) {
+        return smolAddCompartmentMolecules(pSim_, species, number, compartment);
+    });
+
+    // enum ErrorCode smolAddSurfaceMolecules(simptr sim, const char *species,
+    //     enum MolecState state, int number, const char *surface,
+    //     enum PanelShape panelshape, const char *panel, double *position);
+    m.def("addSurfaceMolecules",
+        [](const char *species, MolecState state, int number,
+            const char *surface, PanelShape panelshape, const char *panel,
+            vector<double> &position) -> ErrorCode {
+            return smolAddSurfaceMolecules(pSim_, species, state, number,
+                surface, panelshape, panel, &position[0]);
+        });
+
+    // int smolGetMoleculeCount(simptr sim, const char *species, enum MolecState
+    // state);
+    m.def("getMoleculeCount", [](const char *species, MolecState state) {
+        return smolGetMoleculeCount(pSim_, species, state);
+    });
+
+    // enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species,
+    //     enum MolecState state, double size, double *color);
+    m.def("setSpeciesStyle", &setSpeciesStyle);
+    m.def("setMoleculeStyle",
+        [](const char *species, MolecState state, double size, char *color) {
+            array<double, 4> rgba = {0, 0, 0, 1.0};
+            graphicsreadcolor(&color, &rgba[0]);
+            return smolSetMoleculeStyle(pSim_, species, state, size, &rgba[0]);
+        });
 
     /* Surface */
     m.def("addSurface", &addSurface, "name"_a);
@@ -235,17 +332,17 @@ PYBIND11_MODULE(_smoldyn, m)
                 &diffuse[0], &specular[0], &position[0]);
         });
 
-    m.def("setBackgroundStyle", [](const char *color) -> ErrorCode {
+    m.def("setBackgroundStyle", [](char *color) -> ErrorCode {
         array<double, 4> rgba = {0, 0, 0, 1.0};
+        graphicsreadcolor(&color, &rgba[0]);
         return smolSetBackgroundStyle(pSim_, &rgba[0]);
     });
 
-    m.def(
-        "setFrameStyle", [](double thickness, char *color) -> ErrorCode {
-            array<double, 4> rgba = {0, 0, 0, 1.0};
-            graphicsreadcolor(&color, &rgba[0]);
-            return smolSetBackgroundStyle(pSim_, &rgba[0]);
-        });
+    m.def("setFrameStyle", [](double thickness, char *color) -> ErrorCode {
+        array<double, 4> rgba = {0, 0, 0, 1.0};
+        graphicsreadcolor(&color, &rgba[0]);
+        return smolSetBackgroundStyle(pSim_, &rgba[0]);
+    });
 
     m.def("setGridStyle", [](double thickness, char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
