@@ -82,8 +82,7 @@ int init_and_run(const string& filepath, const string& flags)
 PYBIND11_MODULE(_smoldyn, m)
 {
     m.doc() = R"pbdoc(
-        smoldyn
-        -----------------------
+        Python interface of smoldyn simulation.
     )pbdoc";
 
     py::enum_<SrfAction>(m, "SA")
