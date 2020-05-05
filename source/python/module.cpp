@@ -286,9 +286,9 @@ PYBIND11_MODULE(_smoldyn, m)
         });
 
     /******************************* Surfaces ********************************/
-    m.def("addSurface", &addSurface, "name"_a);
-    m.def("setSurfaceAction", &setSurfaceAction);
-    m.def("addSurfaceMolecules", &addSurfaceMolecules);
+    // m.def("addSurface", &addSurface, "name"_a);
+    // m.def("setSurfaceAction", &setSurfaceAction);
+    // m.def("addSurfaceMolecules", &addSurfaceMolecules);
 
     // enum ErrorCode smolSetBoundaryType(simptr sim, int dimension, int
     // highside, char type);
@@ -416,7 +416,7 @@ PYBIND11_MODULE(_smoldyn, m)
                 &rgba[0], stipplefactor, stipplepattern, shininess);
         });
 
-    /*** Comparment functions. ***/
+    /*********************** Compartment ********************************/
     // enum ErrorCode smolAddCompartment(simptr sim, const char *compartment);
     m.def("addCompartment", [](const char *compartment) {
         return smolAddCompartment(pSim_, compartment);
@@ -461,25 +461,79 @@ PYBIND11_MODULE(_smoldyn, m)
     /* Panel */
     m.def("addPanel", &addPanel);
 
-    /* Compartment */
-    m.def("addCompartment", &addCompartment);
-    m.def("addCompartmentSurface", &addCompartmentSurface);
-    m.def("addCompartmentPoint", &addCompartmentPoint);
-    m.def("addComparmentMolecules", &addCompartmentMolecules);
-    m.def("addSolutionMolecules", &addSolutionMolecules);
+    /**************************** Reactions ******************************/
 
-    /* Reaction */
-    m.def("addReaction", &addReaction, "reac"_a, "reactant1"_a, "rstate1"_a,
-        "reactant2"_a, "rstate2"_a, "products"_a, "productstates"_a, "rate"_a);
-    m.def("setReactionRegion", &setReactionRegion);
-    m.def("setBoundaryType", &setBoundaryType);
-    m.def("addMolList", &addMolList);
+    // enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
+    //         const char *reactant1, enum MolecState rstate1, const char
+    //         *reactant2, enum MolecState rstate2, int nproduct, const char
+    //         **productspecies, enum MolecState *productstates, double rate);
+    m.def("adReaction",
+        [](const char *             reaction,   // Name of the reaction.
+            const char *            reactant1,  // First reactant
+            enum MolecState         rstate1,    // First reactant state
+            const char *            reactant2,  // Second reactant.
+            enum MolecState         rstate2,    // second reactant state.
+            vector<string>          productSpeciesStr,  // product species.
+            vector<enum MolecState> productStates,      // product state.
+            double                  rate                // rate
+        ) {
+            // NOTE: Can't use vector<const char*> in the function argument.
+            // We'll runinto wchar_t vs char* issue from python2/python3
+            // str/unicode fiasco. Be safe, use string and cast to const char*
+            // by ourselves.
+            vector<const char *> productSpecies;
+            for(auto s : productSpeciesStr)
+                productSpecies.push_back(s.c_str());
 
-    /* data */
-    m.def("getMoleculeCount", &getMoleculeCount);
+            assert(productSpecies.size() == productSpecies.size());
 
-    /* Graphics */
-    m.def("setGraphicsParams", &setGraphicsParams);
+            return smolAddReaction(pSim_, reaction, reactant1, rstate1,
+                reactant2, rstate2, productSpecies.size(), &productSpecies[0],
+                &productStates[0], rate);
+        });
+
+    // int smolGetReactionIndex(simptr sim, int *orderptr, const char
+    // *reaction);
+    m.def("getReactionIndex", [](vector<int> &order, const char *reaction) {
+        return smolGetReactionIndex(pSim_, &order[0], reaction);
+    });
+
+    // int smolGetReactionIndexNT(simptr sim, int *orderptr, const char
+    // *reaction);
+    m.def("getReactionIndexNT", [](vector<int> &order, const char *reaction) {
+        return smolGetReactionIndexNT(pSim_, &order[0], reaction);
+    });
+
+    // char *smolGetReactionName(simptr sim, int order, int reactionindex, char
+    // *reaction);
+    m.def("getReactionName", [](int order, int reactionindex, char *reaction) {
+        return smolGetReactionName(pSim_, order, reactionindex, reaction);
+    });
+
+    // enum ErrorCode smolSetReactionRate(simptr sim, const char *reaction,
+    // double rate, int type);
+    m.def("setReactionRate", [](const char *reaction, double rate, int type) {
+        return smolSetReactionRate(pSim_, reaction, rate, type);
+    });
+
+    // enum ErrorCode smolSetReactionRegion(simptr sim, const char *reaction,
+    // const char *compartment, const char *surface);
+    m.def("setReactionRegion",
+        [](const char *reaction, const char *compartment, const char *surface) {
+            return smolSetReactionRegion(pSim_, reaction, compartment, surface);
+        });
+
+    // enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction,
+    //     enum RevParam method, double parameter, const char *product,
+    //     double *position);
+    m.def("setReactionProducts",
+        [](const char *reaction, RevParam method, double parameter,
+            const char *product, vector<double> &position) {
+            return smolSetReactionProducts(
+                pSim_, reaction, method, parameter, product, &position[0]);
+        });
+
+    /************************* Graphics *************************************/
     m.def("setGraphicsParams",
         [](const char *method, int timestep, int delay) -> ErrorCode {
             return smolSetGraphicsParams(pSim_, method, timestep, delay);
@@ -527,7 +581,7 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddTextDisplay(pSim_, item);
     });
 
-    /* Simulation */
+    /********************** Simulation ********************************/
     m.def("setSimTimes",
         [](double timestart, double timestop, double timestep) -> ErrorCode {
             return smolSetSimTimes(pSim_, timestart, timestop, timestep);
