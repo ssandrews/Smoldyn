@@ -439,12 +439,24 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolAddCompartmentSurface(simptr sim, const char
     // *compartment, const char *surface);
+    m.def("addCompartmentSurface",
+        [](const char *compartment, const char *surface) {
+            return smolAddCompartmentSurface(pSim_, compartment, surface);
+        });
 
-    // enum ErrorCode smolAddCompartmentPoint(
-    //         simptr sim, const char *compartment, double *point);
+    // enum ErrorCode smolAddCompartmentPoint(simptr sim, const char
+    // *compartment, double *point);
+    m.def("addCompartmentPoint",
+        [](const char *compartment, vector<double> &point) {
+            return smolAddCompartmentPoint(pSim_, compartment, &point[0]);
+        });
+
     // enum ErrorCode smolAddCompartmentLogic(simptr sim, const char
-    // *compartment,
-    //         enum CmptLogic logic, const char *compartment2);
+    // *compartment, enum CmptLogic logic, const char *compartment2);
+    m.def("addCompartmetnLogic", [](const char *compartment, CmptLogic logic,
+                                     const char *compartment2) {
+        return smolAddCompartmentLogic(pSim_, compartment, logic, compartment2);
+    });
 
     /* Panel */
     m.def("addPanel", &addPanel);
