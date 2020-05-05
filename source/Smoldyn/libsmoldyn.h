@@ -36,8 +36,7 @@ enum ErrorCode {
     ECerror    = -8,
     ECmemory   = -9,
     ECbug      = -10,
-    ECsame     = -11,
-    ECwildcard = -12
+    ECsame     = -11, ECwildcard = -12
 };
 
 #ifdef __cplusplus
@@ -119,8 +118,7 @@ enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
 
 /********************************* Molecules **********************************/
 
-enum ErrorCode smolAddSpecies(
-    simptr sim, const char *species, const char *mollist);
+enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char *mollist);
 int            smolGetSpeciesIndex(simptr sim, const char *species);
 int            smolGetSpeciesIndexNT(simptr sim, const char *species);
 char *         smolGetSpeciesName(simptr sim, int speciesindex, char *species);
@@ -217,7 +215,7 @@ enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction,
     enum RevParam method, double parameter, const char *product,
     double *position);
 
-/************************************ Ports ***********************************/
+/********************************* Ports ***********************************/
 
 enum ErrorCode smolAddPort(
     simptr sim, const char *port, const char *surface, enum PanelFace face);
@@ -229,8 +227,7 @@ enum ErrorCode smolAddPortMolecules(simptr sim, const char *port, int nmolec,
 int smolGetPortMolecules(simptr sim, const char *port, const char *species,
     enum MolecState state, int remove);
 
-/************************************ Lattices
- * ***********************************/
+/******************************* Lattices ***********************************/
 
 enum ErrorCode smolAddLattice(simptr sim, const char *lattice,
     const double *min, const double *max, const double *dx, const char *btype);

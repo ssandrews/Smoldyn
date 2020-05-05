@@ -183,8 +183,40 @@ PYBIND11_MODULE(_smoldyn, m)
     /* box/molperbox etc */
     m.def("setPartitions", &setPartitions);
 
-    /***************************** Molecules *******************************/
-    m.def("addSpecies", &addSpecies, "name"_a, "mollist"_a = "");
+    //-----------------------------------------------------------------------------
+    // Runtime commands.
+    //-----------------------------------------------------------------------------
+    // enum ErrorCode smolSetOutputPath(simptr sim, const char *path);
+    m.def("setOutputPath",
+        [](const char *path) { return smolSetOutputPath(pSim_, path); });
+
+    // enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix,
+    // int append);
+    m.def("addOutputFile", [](const char *filename, bool suffix, bool append) {
+        return smolAddOutputFile(pSim_, filename, suffix, append);
+    });
+
+    // enum ErrorCode smolAddCommand(simptr sim, char type, double on, double
+    // off,
+    //     double step, double multiplier, const char *commandstring);
+    m.def("addCommand", [](char type, double on, double off, double step,
+                            double multiplier, const char *commandstring) {
+        return smolAddCommand(
+            pSim_, type, on, off, step, multiplier, commandstring);
+    });
+
+    // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
+    m.def("addCommmandFromString",
+        [](char *command) { return smolAddCommandFromString(pSim_, command); });
+
+    //-----------------------------------------------------------------------------
+    // Molecules.
+    //-----------------------------------------------------------------------------
+    // enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char
+    // *mollist);
+    m.def("addSpecies", [](const char *species, const char *mollist) {
+        return smolAddSpecies(pSim_, species, mollist);
+    });
 
     // int   smolGetSpeciesIndex(simptr sim, const char *species);
     m.def("getSpeciesIndex", [](const char *species) -> int {
@@ -285,10 +317,9 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetMoleculeStyle(pSim_, species, state, size, &rgba[0]);
         });
 
-    /******************************* Surfaces ********************************/
-    // m.def("addSurface", &addSurface, "name"_a);
-    // m.def("setSurfaceAction", &setSurfaceAction);
-    // m.def("addSurfaceMolecules", &addSurfaceMolecules);
+    //-----------------------------------------------------------------------------
+    // Surfaces.
+    //-----------------------------------------------------------------------------
 
     // enum ErrorCode smolSetBoundaryType(simptr sim, int dimension, int
     // highside, char type);
@@ -458,10 +489,9 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddCompartmentLogic(pSim_, compartment, logic, compartment2);
     });
 
-    /* Panel */
-    m.def("addPanel", &addPanel);
-
-    /**************************** Reactions ******************************/
+    //-----------------------------------------------------------------------------
+    // Reactions.
+    //-----------------------------------------------------------------------------
 
     // enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
     //         const char *reactant1, enum MolecState rstate1, const char
@@ -533,7 +563,9 @@ PYBIND11_MODULE(_smoldyn, m)
                 pSim_, reaction, method, parameter, product, &position[0]);
         });
 
-    /************************* Graphics *************************************/
+    //-----------------------------------------------------------------------------
+    // Graphics related functions.
+    //-----------------------------------------------------------------------------
     m.def("setGraphicsParams",
         [](const char *method, int timestep, int delay) -> ErrorCode {
             return smolSetGraphicsParams(pSim_, method, timestep, delay);
@@ -581,7 +613,108 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddTextDisplay(pSim_, item);
     });
 
-    /********************** Simulation ********************************/
+    //-----------------------------------------------------------------------------
+    // Ports.
+    //-----------------------------------------------------------------------------
+
+    // enum ErrorCode smolAddPort(simptr sim, const char *port, const char
+    // *surface, enum PanelFace face);
+    m.def("addPort", [](const char *port, const char *surface, PanelFace face) {
+        return smolAddPort(pSim_, port, surface, face);
+    });
+
+    // int smolGetPortIndex(simptr sim, const char *port);
+    m.def("getPortIndex",
+        [](const char *port) { return smolGetPortIndex(pSim_, port); });
+
+    // int smolGetPortIndexNT(simptr sim, const char *port);
+    m.def("getPortIndexNT",
+        [](const char *port) { return smolGetPortIndexNT(pSim_, port); });
+
+    // char * smolGetPortName(simptr sim, int portindex, char *port);
+    m.def("getPortName", [](int portindex, char *port) {
+        return smolGetPortName(pSim_, portindex, port);
+    });
+
+    // enum ErrorCode smolAddPortMolecules(simptr sim, const char *port,
+    //     int nmolec, const char *species, double **positions);
+    m.def("addPortMolecule", [](const char *port, int nmolec,
+                                 const char *            species,
+                                 vector<vector<double>> &pos) {
+        std::vector<double *> ptrs;
+        for(auto &vec : pos)
+            ptrs.push_back(vec.data());
+        return smolAddPortMolecules(pSim_, port, nmolec, species, ptrs.data());
+    });
+
+    // int smolGetPortMolecules(simptr sim, const char *port, const char
+    // *species, enum MolecState state, int remove);
+    m.def("getPortMolecules", [](const char *port, const char *species,
+                                  MolecState state, bool remove) {
+        return smolGetPortMolecules(pSim_, port, species, state, remove);
+    });
+
+    //-----------------------------------------------------------------------------
+    // Lattices
+    //-----------------------------------------------------------------------------
+
+    // enum ErrorCode smolAddLattice(simptr sim, const char *lattice,
+    //         const double *min, const double *max, const double *dx, const
+    //         char *btype);
+    m.def("addLattice", [](const char *lattice, const vector<double> &min,
+                            const std::vector<double> &max,
+                            const vector<double> dx, const char *btype) {
+        return smolAddLattice(pSim_, lattice, &min[0], &max[0], &dx[0], btype);
+    });
+
+    // enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const
+    // char *port);
+    m.def("addLatticePort", [](const char *lattice, const char *port) {
+        return smolAddLatticePort(pSim_, lattice, port);
+    });
+
+    // enum ErrorCode smolAddLatticeSpecies(simptr sim, const char *lattice,
+    // const char *species);
+    m.def("addLatticeSpecies", [](const char *lattice, const char *species) {
+        return smolAddLatticeSpecies(pSim_, lattice, species);
+    });
+
+    // int   smolGetLatticeIndex(simptr sim, const char *lattice);
+    m.def("getLatticeIndex", [](const char *lattice) {
+        return smolGetLatticeIndex(pSim_, lattice);
+    });
+
+    // int   smolGetLatticeIndexNT(simptr sim, const char *lattice);
+    m.def("getLatticeIndexNT", [](const char *lattice) {
+        return smolGetLatticeIndexNT(pSim_, lattice);
+    });
+
+    // char *smolGetLatticeName(simptr sim, int latticeindex, char *lattice);
+    m.def("getLatticeName", [](int latticeindex, char *lattice) {
+        return smolGetLatticeName(pSim_, latticeindex, lattice);
+    });
+
+    // enum ErrorCode smolAddLatticeMolecules(simptr sim, const char *lattice,
+    //     const char *species, int number, double *lowposition,
+    //     double *highposition);
+    m.def("addLatticeMolecules",
+        [](const char *lattice, const char *species, int number,
+            vector<double> &lowposition, vector<double> &highposition) {
+            return smolAddLatticeMolecules(pSim_, lattice, species, number,
+                &lowposition[0], &highposition[0]);
+        });
+
+    // enum ErrorCode smolAddLatticeReaction(
+    //     simptr sim, const char *lattice, const char *reaction, const int
+    //     move);
+    m.def("addLatticeReaction",
+        [](const char *lattice, const char *reaction, const int move) {
+            return smolAddLatticeReaction(pSim_, lattice, reaction, move);
+        });
+
+    //-----------------------------------------------------------------------------
+    // Simulation related functions.
+    //-----------------------------------------------------------------------------
     m.def("setSimTimes",
         [](double timestart, double timestop, double timestep) -> ErrorCode {
             return smolSetSimTimes(pSim_, timestart, timestop, timestep);
