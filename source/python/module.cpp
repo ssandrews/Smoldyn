@@ -183,8 +183,7 @@ PYBIND11_MODULE(_smoldyn, m)
     /* box/molperbox etc */
     m.def("setPartitions", &setPartitions);
 
-    /********************************* Molecules
-     * **********************************/
+    /***************************** Molecules *******************************/
     m.def("addSpecies", &addSpecies, "name"_a, "mollist"_a = "");
 
     // int   smolGetSpeciesIndex(simptr sim, const char *species);
@@ -416,6 +415,36 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetSurfaceStyle(pSim_, surface, face, mode, thickness,
                 &rgba[0], stipplefactor, stipplepattern, shininess);
         });
+
+    /*** Comparment functions. ***/
+    // enum ErrorCode smolAddCompartment(simptr sim, const char *compartment);
+    m.def("addCompartment", [](const char *compartment) {
+        return smolAddCompartment(pSim_, compartment);
+    });
+
+    // int smolGetCompartmentIndex(simptr sim, const char *compartment);
+    m.def("getCompartmentIndex", [](const char *compartment) {
+        return smolGetCompartmentIndex(pSim_, compartment);
+    });
+
+    // int smolGetCompartmentIndexNT(simptr sim, const char *compartment);
+    m.def("getCompartmentIndexNT", [](const char *compartment) {
+        return smolGetCompartmentIndexNT(pSim_, compartment);
+    });
+    // char * smolGetCompartmentName(simptr sim, int compartmentindex, char
+    // *compartment);
+    m.def("getCompartmentName", [](int compartmentindex, char *compartment) {
+        return smolGetCompartmentName(pSim_, compartmentindex, compartment);
+    });
+
+    // enum ErrorCode smolAddCompartmentSurface(simptr sim, const char
+    // *compartment, const char *surface);
+
+    // enum ErrorCode smolAddCompartmentPoint(
+    //         simptr sim, const char *compartment, double *point);
+    // enum ErrorCode smolAddCompartmentLogic(simptr sim, const char
+    // *compartment,
+    //         enum CmptLogic logic, const char *compartment2);
 
     /* Panel */
     m.def("addPanel", &addPanel);
