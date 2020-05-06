@@ -1,15 +1,16 @@
 # python bindings
 
-pybind11_add_module(_smoldyn MODULE Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
 
 if("${CMAKE_VERSION}" VERSION_LESS "3.12")
     find_package(PythonInterp REQUIRED)
     find_package(PythonLibs REQUIRED)
 else()
     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_EXECUTABLE Python3::Interpreter)
-    set(PYTHON_INCLUDE_DIRS ${Python_INCLUDE_DIRS})
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 endif()
+
+pybind11_add_module(_smoldyn MODULE Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
 
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
 target_include_directories(_smoldyn PRIVATE 
