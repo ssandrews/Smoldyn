@@ -172,7 +172,9 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolReadConfigString(pSim_, statement, params);
         });
 
-    // convenient wrappers.
+
+    //-----------------------------------------------------------------------------
+    // Extra functions not available in the C-API. 
     m.def("getDim", &getDim, "Dimention of the system");
     m.def("setDim", &setDim, "Set the dimnetion of the system.");
     m.def("getSeed", &getRandomSeed);

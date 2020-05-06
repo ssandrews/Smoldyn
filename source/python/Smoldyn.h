@@ -138,6 +138,7 @@ double    getDt();
 
 inline void cleanup()
 {
+    cout << "Cleaning up. " << endl;
     if(pSim_)
         smolFreeSim(pSim_);
 }

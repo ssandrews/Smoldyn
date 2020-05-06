@@ -24,8 +24,8 @@ class Boundaries:
         if len(self.types) == 1:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
-        _smoldyn.bounds = list(zip(self.low, self.high))
-        assert _smoldyn.dim == self.dim
+        _smoldyn.setBoundaries(list(zip(self.low, self.high)))
+        assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
 
 
 class Model(object):

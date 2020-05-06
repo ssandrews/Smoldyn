@@ -22,7 +22,7 @@ class Species:
         assert self.name
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, k
-        self.state = _smoldyn.MS.__members__[state]
+        self.state = _smoldyn.MolecState.__members__[state]
 
         self._difc: float = difc
         self._color = color
