@@ -27,13 +27,13 @@ namespace py = pybind11;
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
 // Global variables for module.
-extern simptr pSim_;
-extern size_t dim_;
+extern simptr         pSim_;
+extern size_t         dim_;
 extern vector<double> lowbounds_;
 extern vector<double> highbounds_;
-extern bool debug_;
-extern double curtime_;
-extern bool initDisplay_;
+extern bool           debug_;
+extern double         curtime_;
+extern bool           initDisplay_;
 
 size_t getDim();
 void   setDim(size_t dim);
@@ -47,92 +47,6 @@ bool initialize();
 bool run(double simtime, double dt, bool display);
 void runUntil(const double breaktime, const double dt, bool display);
 
-// Bounds.
-void           setLowerBounds(const vector<double> bounds);
-vector<double> getLowerBounds();
-
-void           setHigherBounds(const vector<double> bounds);
-vector<double> getHigherBounds();
-
-void setBoundaries(const vector<pair<double, double>>& bounds);
-std::vector<pair<double, double>> getBoundaries();
-
-void setPartitions(const char* name, double val);
-
-ErrorCode addSpecies(const char* name, const char* mollist);
-
-ErrorCode setSpeciesMobility(const char* name, MolecState state, double difc,
-    vector<double>& drift, vector<double>& difmatrix);
-
-ErrorCode setSpeciesStyle(
-    const char* name, const MolecState state, double size, char* color);
-
-ErrorCode addSurface(const char* name);
-
-ErrorCode setSurfaceAction(const char* name, enum PanelFace face,
-    const char* species, enum MolecState state, enum SrfAction action);
-
-ErrorCode addPanel(const char* surface, enum PanelShape panelShape,
-    const char* panel, const char* axisstring, vector<double>& params);
-
-ErrorCode addCompartment(const char* compartment);
-
-void addCompartmentSurface(const char* compt, const char* surface);
-
-void addCompartmentPoint(const char* compt, vector<double> point);
-
-void addCompartmentMolecules(
-    const char* species, size_t number, const char* compt);
-
-void addSurfaceMolecules(const char* species, enum MolecState state,
-    size_t number, const char* surface, enum PanelShape panelShape,
-    const char* panel, vector<double>& position);
-
-ErrorCode addReaction(const char* reaction, const char* reactant1,
-    enum MolecState rstate1, const char* reactant2, enum MolecState rstate2,
-    vector<string> productSpecies, vector<enum MolecState> productStates,
-    double rate);
-
-void setReactionRegion(
-    const char* reac, const char* compt, const char* surface);
-
-ErrorCode setSimTimes(const double start, const double end, const double step);
-
-int getMoleculeCount(const char* name, enum MolecState state);
-
-// Inline functions.
-inline simptr simPtr()
-{
-    return pSim_;
-}
-
-inline ErrorCode setBoundaryType(int dim, int highside, char type)
-{
-    return smolSetBoundaryType(pSim_, dim, highside, type);
-}
-
-inline ErrorCode addMolList(const char* mollist)
-{
-    return smolAddMolList(pSim_, mollist);
-}
-
-inline ErrorCode addSolutionMolecules(const char* name, int nums,
-    vector<double>& lowposition, vector<double>& highposition)
-{
-    return smolAddSolutionMolecules(
-        pSim_, name, nums, &lowposition[0], &highposition[0]);
-}
-
-inline ErrorCode setGraphicsParams(const char* method, int timestep, int delay)
-{
-    return smolSetGraphicsParams(pSim_, method, timestep, delay);
-}
-
-inline ErrorCode updateSim()
-{
-    return smolUpdateSim(pSim_);
-}
-
 ErrorCode setDt(double dt);
 double    getDt();
 
@@ -142,6 +56,9 @@ inline void cleanup()
         smolFreeSim(pSim_);
 }
 
+void setBoundaries(const vector<pair<double, double>>& bounds);
+std::vector<pair<double, double>> getBoundaries();
+
 /* --------------------------------------------------------------------------*/
 /**
  * @Synopsis  Split a filepath between dirname/filename. For examples::
@@ -149,17 +66,23 @@ inline void cleanup()
  *
  * @Param filepath
  *
- * @Returns   
+ * @Returns
  */
 /* ----------------------------------------------------------------------------*/
 inline pair<string, string> splitPath(const string& p)
 {
     string filename, fileroot;
     auto   pos = p.find_last_of('/');
-    fileroot = p.substr(0, pos + 1);
-    filename = p.substr(pos + 1);
+    fileroot   = p.substr(0, pos + 1);
+    filename   = p.substr(pos + 1);
     return {fileroot, filename};
 }
 
+inline array<double, 4> color2RGBA(char* color)
+{
+    array<double, 4> rgba = {0, 0, 0, 1.0};
+    graphicsreadcolor(&color, &rgba[0]);
+    return rgba;
+}
 
 #endif /* end of include guard: SIMULTION_H */
