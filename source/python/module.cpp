@@ -216,7 +216,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // *mollist);
     m.def("addSpecies", [](const char *species, const char *mollist) {
         return smolAddSpecies(pSim_, species, mollist);
-    });
+    }, "species"_a, "mollist"_a="");
 
     // int   smolGetSpeciesIndex(simptr sim, const char *species);
     m.def("getSpeciesIndex", [](const char *species) -> int {
@@ -497,7 +497,7 @@ PYBIND11_MODULE(_smoldyn, m)
     //         const char *reactant1, enum MolecState rstate1, const char
     //         *reactant2, enum MolecState rstate2, int nproduct, const char
     //         **productspecies, enum MolecState *productstates, double rate);
-    m.def("adReaction",
+    m.def("addReaction",
         [](const char *             reaction,   // Name of the reaction.
             const char *            reactant1,  // First reactant
             enum MolecState         rstate1,    // First reactant state
