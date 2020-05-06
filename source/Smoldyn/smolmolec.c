@@ -33,17 +33,17 @@
 
 // enumerated type functions
 enum MolListType molstring2mlt(char *string);
-char *molmlt2string(enum MolListType mlt, char *string);
+char *           molmlt2string(enum MolListType mlt, char *string);
 
 // low level utilities
 char *molpos2string(simptr sim, moleculeptr mptr, char *string);
 
 // memory management
 moleculeptr molalloc(int dim);
-void molfree(moleculeptr mptr);
-void molfreesurfdrift(double *****surfdrift, int maxspec, int maxsrf);
-molssptr molssalloc(molssptr mols, int maxspecies);
-int mollistalloc(molssptr mols, int maxlist, enum MolListType mlt);
+void        molfree(moleculeptr mptr);
+void        molfreesurfdrift(double *****surfdrift, int maxspec, int maxsrf);
+molssptr    molssalloc(molssptr mols, int maxspecies);
+int         mollistalloc(molssptr mols, int maxlist, enum MolListType mlt);
 int molexpandlist(molssptr mols, int dim, int ll, int nspaces, int nmolecs);
 int molpatternindexalloc(int **indexptr, int n);
 int molpatternalloc(simptr sim, int maxpattern);
@@ -54,15 +54,15 @@ int molpatternalloc(simptr sim, int maxpattern);
 int molsetmaxspecies(simptr sim, int max);
 int molsupdateparams(molssptr mols, double dt);
 int molsupdatelists(simptr sim);
-int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
-                       int parent2);
+int molgeneratespecies(
+    simptr sim, const char *name, int nparents, int parent1, int parent2);
 
 // adding and removing molecules
 moleculeptr newestmol(molssptr mols);
-int molgetexport(simptr sim, int ident, enum MolecState ms);
-int molputimport(simptr sim, int nmol, int ident, enum MolecState ms,
-                 panelptr pnl, enum PanelFace face);
-int moldummyporter(simptr sim);
+int         molgetexport(simptr sim, int ident, enum MolecState ms);
+int         molputimport(simptr sim, int nmol, int ident, enum MolecState ms,
+            panelptr pnl, enum PanelFace face);
+int         moldummyporter(simptr sim);
 
 // core simulation functions
 
@@ -155,11 +155,11 @@ char *molmlt2string(enum MolListType mlt, char *string)
 /******************************************************************************/
 
 /* molstring2pattern */
-int molstring2pattern(const char *str, enum MolecState *msptr, char *pat,
-                      int mode)
+int molstring2pattern(
+    const char *str, enum MolecState *msptr, char *pat, int mode)
 {
-    char nm[STRCHAR], *pareno, *parenc;
-    int itct;
+    char            nm[STRCHAR], *pareno, *parenc;
+    int             itct;
     enum MolecState ms;
 
     if(!pat)
@@ -177,9 +177,9 @@ int molstring2pattern(const char *str, enum MolecState *msptr, char *pat,
         return -1;  // cannot read name
 
     if(nm[strlen(nm) - 1] == ')') {
-        parenc = nm + strlen(nm) - 1;
+        parenc  = nm + strlen(nm) - 1;
         *parenc = '\0';
-        pareno = strrchr(nm, '(');
+        pareno  = strrchr(nm, '(');
         if(!pareno)
             return -2;  // improper open parenthesis
         *pareno = '\0';
@@ -225,20 +225,20 @@ int molreversepattern(simptr sim, const char *pattern, char *patternrev)
 
 /* molpatternindex */
 int molpatternindex(simptr sim, const char *pattern, const char *rname,
-                    int isrule, int update, int **indexptr)
+    int isrule, int update, int **indexptr)
 {
     int npattern, pat, er, i, i1, i2, j, istart, jstart, matchwords, subwords,
         totalwords, nspecies, haswildcard, hasspeciesgroup;
-    int iword, ismatch, keepgoing, onthefly, imatch, imatch2;
-    int **patindex, *index, *patindextemp, *matchindex1, *matchindex2;
+    int    iword, ismatch, keepgoing, onthefly, imatch, imatch2;
+    int ** patindex, *index, *patindextemp, *matchindex1, *matchindex2;
     char **patlist, *patlisttemp, matchstr[STRCHAR], *substr, *newline,
         **patrname, *patrnametemp;
-    char teststring[STRCHAR], deststring[STRCHAR], tempstring[STRCHAR];
+    char        teststring[STRCHAR], deststring[STRCHAR], tempstring[STRCHAR];
     const char *newline2;
-    molssptr mols;
+    molssptr    mols;
 
-    mols = sim->mols;
-    patlist = mols->patlist;
+    mols     = sim->mols;
+    patlist  = mols->patlist;
     patindex = mols->patindex;
     patrname = mols->patrname;
     npattern = mols->npattern;
@@ -251,7 +251,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
 
     if(npattern) {
         pat = locateVstr(patlist, pattern, npattern,
-                         1);  // look for pattern in patlist list
+            1);      // look for pattern in patlist list
         if(rname) {  // if a reaction, set pat to also get same reaction name
             while(pat >= 0 && !strcmp(patlist[pat], pattern) && patrname[pat] &&
                   strcmp(rname, patrname[pat]))
@@ -265,8 +265,8 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
     if(update && index && isrule && index[PDrule] != isrule)
         index[PDrule] = isrule;  // it wasn't a rule but is now
     if(update == 0 || (index && index[PDnspecies] < 0) ||
-       (!(onthefly && newline2) && index &&
-        index[PDnspecies] >= mols->nspecies)) {
+        (!(onthefly && newline2) && index &&
+            index[PDnspecies] >= mols->nspecies)) {
         if(indexptr)
             *indexptr = index;  // no updating required, so just return results
         return 0;
@@ -280,24 +280,24 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
             er = molpatternalloc(sim, 2 * npattern + 2);
             if(er)
                 return -1;
-            patlist = mols->patlist;
+            patlist  = mols->patlist;
             patindex = mols->patindex;
             patrname = mols->patrname;
         }
 
-        patlisttemp = patlist[npattern];  // store new spot as patlisttemp
+        patlisttemp  = patlist[npattern];  // store new spot as patlisttemp
         patindextemp = patindex[npattern];
         patrnametemp = patrname[npattern];
         for(j = npattern - 1; j >= pat;
             j--) {  // shift the list up one so new pattern goes to correct spot
-            patlist[j + 1] = patlist[j];
+            patlist[j + 1]  = patlist[j];
             patindex[j + 1] = patindex[j];
             patrname[j + 1] = patrname[j];
         }
         mols->npattern++;
         npattern = mols->npattern;
 
-        patlist[pat] = patlisttemp;  // put the new spot in the freed up space
+        patlist[pat]  = patlisttemp;  // put the new spot in the freed up space
         patindex[pat] = patindextemp;
         patrname[pat] = patrnametemp;
         strcpy(patlist[pat], pattern);  // set initial patlist and header values
@@ -306,40 +306,40 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
             if(!patrname[pat])
                 return -1;
         }
-        index = patindex[pat];
+        index             = patindex[pat];
         index[PDnresults] = 0;
         index[PDnspecies] = 0;
-        index[PDmatch] = 0;
-        index[PDsubst] = 0;
-        index[PDrule] = isrule;
+        index[PDmatch]    = 0;
+        index[PDsubst]    = 0;
+        index[PDrule]     = isrule;
     }
 
     // prepare to update index variable for current species list
     strcpy(matchstr,
-           pattern);  // assign to matchstr and substr and determine newline
+        pattern);  // assign to matchstr and substr and determine newline
     newline = strchr(matchstr, '\n');
     if(newline) {
         *newline = '\0';
-        substr = newline + 1;
+        substr   = newline + 1;
     }
     else
         substr = NULL;
     istart = index[PDnspecies];  // istart is first species to start checking
     jstart = index[PDnresults];  // jstart is first result that will be added
     if(istart == 0) {            // setup header
-        istart = 1;
-        matchwords = wordcount(matchstr);
-        subwords = newline ? wordcount(substr) : 0;
+        istart         = 1;
+        matchwords     = wordcount(matchstr);
+        subwords       = newline ? wordcount(substr) : 0;
         index[PDmatch] = matchwords;
         index[PDsubst] = subwords;
     }
     else {  // read header
         matchwords = index[PDmatch];
-        subwords = index[PDsubst];
+        subwords   = index[PDsubst];
     }
-    haswildcard = strpbrk(pattern, "*?&|{}[]") ? 1 : 0;
-    nspecies = mols->nspecies;
-    totalwords = matchwords + subwords;
+    haswildcard     = strpbrk(pattern, "*?&|{}[]") ? 1 : 0;
+    nspecies        = mols->nspecies;
+    totalwords      = matchwords + subwords;
     hasspeciesgroup = 0;
     if(newline)  // hasspeciesgroup is only defined if there is a newline
         for(iword = 0; iword < matchwords; iword++) {
@@ -359,7 +359,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
     // now update index variable for current species list
     if(!strcmp(pattern, "all")) {  // pattern == "all"
         if(index[PDalloc] < PDMAX + nspecies) {
-            er = molpatternindexalloc(&patindex[pat], PDMAX + nspecies);
+            er    = molpatternindexalloc(&patindex[pat], PDMAX + nspecies);
             index = patindex[pat];
             if(er)
                 return -1;
@@ -374,7 +374,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
     else if(!newline && !haswildcard &&
             matchwords == 1) {            // a single species name, no wildcards
         if(index[PDalloc] < PDMAX + 1) {  // only need space for 1 item
-            er = molpatternindexalloc(&patindex[pat], PDMAX + 1);
+            er    = molpatternindexalloc(&patindex[pat], PDMAX + 1);
             index = patindex[pat];
             if(er)
                 return -1;
@@ -387,7 +387,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
                 *indexptr = index;
             return -2;
         }
-        index[PDMAX] = i;
+        index[PDMAX]      = i;
         index[PDnresults] = 1;
         index[PDnspecies] = -1;
     }  // will never need updating
@@ -401,8 +401,8 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
                 return -10 + ismatch;
             if(ismatch == 1) {
                 if(index[PDalloc] < PDMAX + j + 1) {
-                    er = molpatternindexalloc(&patindex[pat],
-                                              PDMAX + 2 * (j + 1));
+                    er = molpatternindexalloc(
+                        &patindex[pat], PDMAX + 2 * (j + 1));
                     index = patindex[pat];
                     if(er)
                         return -1;
@@ -418,16 +418,16 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
 
     else if(!newline) {  // no newline but multiple matchwords
         simLog(sim, 7,
-               "BUG in molpatternindex: pattern '%s' has multiple matchwords "
-               "but no newline character\n",
-               pattern);
+            "BUG in molpatternindex: pattern '%s' has multiple matchwords "
+            "but no newline character\n",
+            pattern);
     }
 
     else if(!haswildcard && !hasspeciesgroup &&
             matchwords == 0) {  // pattern has no wildcards or multi-species
                                 // species group, so one entry at most
         if(index[PDalloc] < PDMAX + totalwords) {
-            er = molpatternindexalloc(&patindex[pat], PDMAX + totalwords);
+            er    = molpatternindexalloc(&patindex[pat], PDMAX + totalwords);
             index = patindex[pat];
             if(er)
                 return -1;
@@ -455,7 +455,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
             matchwords == 1) {  // pattern has no wildcards or multi-species
                                 // species group, so one entry at most
         if(index[PDalloc] < PDMAX + totalwords) {
-            er = molpatternindexalloc(&patindex[pat], PDMAX + totalwords);
+            er    = molpatternindexalloc(&patindex[pat], PDMAX + totalwords);
             index = patindex[pat];
             if(er)
                 return -1;
@@ -508,7 +508,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
             matchwords == 2) {  // pattern has no wildcards or multi-species
                                 // species group, so one entry at most
         if(index[PDalloc] < PDMAX + totalwords) {
-            er = molpatternindexalloc(&patindex[pat], PDMAX + totalwords);
+            er    = molpatternindexalloc(&patindex[pat], PDMAX + totalwords);
             index = patindex[pat];
             if(er)
                 return -1;
@@ -553,7 +553,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
             keepgoing = 1;
 
         if(keepgoing) {
-            index[PDMAX] = i1;
+            index[PDMAX]     = i1;
             index[PDMAX + 1] = i2;
             for(iword = 0; iword < subwords; iword++) {  // subwords
                 sscanf(strnword(substr, iword + 1), "%s", tempstring);
@@ -576,19 +576,19 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
 
     else if(!haswildcard && !hasspeciesgroup) {
         simLog(sim, 7,
-               "BUG in molpatternindex: pattern '%s' has more than two "
-               "reactants\n",
-               pattern);
+            "BUG in molpatternindex: pattern '%s' has more than two "
+            "reactants\n",
+            pattern);
     }
 
     else if(matchwords == 0) {  // pattern has wildcards or species group and 0
                                 // matchwords
         j = jstart;
-        while((ismatch = strEnhWildcardMatchAndSub(matchstr, "", substr,
-                                                   deststring)) > 0) {
+        while((ismatch = strEnhWildcardMatchAndSub(
+                   matchstr, "", substr, deststring)) > 0) {
             if(index[PDalloc] < PDMAX + totalwords * (j + 1)) {
-                er = molpatternindexalloc(&patindex[pat],
-                                          PDMAX + 2 * totalwords * (j + 1));
+                er = molpatternindexalloc(
+                    &patindex[pat], PDMAX + 2 * totalwords * (j + 1));
                 index = patindex[pat];
                 if(er)
                     return -1;
@@ -620,7 +620,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
         j = jstart;
         sscanf(matchstr, "%s", tempstring);
         er = molpatternindex(sim, tempstring, NULL, 0, 2,
-                             &matchindex1);  // get index of matchword
+            &matchindex1);  // get index of matchword
         if(er) {
             if(isrule && er == -2) {
                 if(indexptr)
@@ -657,16 +657,16 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
                     }
                     index[PDMAX + totalwords * j] = i1;
                     for(iword = 0; iword < subwords; iword++) {
-                        sscanf(strnword(deststring, iword + 1), "%s",
-                               tempstring);
-                        i = stringfind(mols->spname, mols->nspecies,
-                                       tempstring);
+                        sscanf(
+                            strnword(deststring, iword + 1), "%s", tempstring);
+                        i = stringfind(
+                            mols->spname, mols->nspecies, tempstring);
                         if(i < 0) {
                             if(!isrule)
                                 return -3;  // unknown substitute species
                             else {
-                                i = molgeneratespecies(sim, tempstring, 1, i1,
-                                                       0);
+                                i = molgeneratespecies(
+                                    sim, tempstring, 1, i1, 0);
                                 if(i < 0)
                                     return -6;
                             }
@@ -688,7 +688,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
         j = jstart;
         sscanf(matchstr, "%s", tempstring);
         er = molpatternindex(sim, tempstring, NULL, 0, 2,
-                             &matchindex1);  // get index of matchword
+            &matchindex1);  // get index of matchword
         if(er) {
             if(isrule && er == -2) {
                 if(indexptr)
@@ -702,7 +702,7 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
             pat++;  // prior molpatternindex call might have shifted pat
         sscanf(strnword(matchstr, 2), "%s", tempstring);
         er = molpatternindex(sim, tempstring, NULL, 0, 2,
-                             &matchindex2);  // get index of matchword
+            &matchindex2);  // get index of matchword
         if(er) {
             if(isrule && er == -2) {
                 if(indexptr)
@@ -747,30 +747,29 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
 
                 if(keepgoing) {
                     snprintf(teststring, STRCHAR, "%s %s", mols->spname[i1],
-                             mols->spname[i2]);
+                        mols->spname[i2]);
                     while((ismatch = strEnhWildcardMatchAndSub(
                                matchstr, teststring, substr, deststring)) > 0) {
                         if(index[PDalloc] < PDMAX + totalwords * (j + 1)) {
-                            er = molpatternindexalloc(
-                                &patindex[pat],
+                            er    = molpatternindexalloc(&patindex[pat],
                                 PDMAX + 2 * totalwords * (j + 1));
                             index = patindex[pat];
                             if(er)
                                 return -1;
                         }
-                        index[PDMAX + totalwords * j] = i1;
+                        index[PDMAX + totalwords * j]     = i1;
                         index[PDMAX + totalwords * j + 1] = i2;
                         for(iword = 0; iword < subwords; iword++) {
                             sscanf(strnword(deststring, iword + 1), "%s",
-                                   tempstring);
-                            i = stringfind(mols->spname, mols->nspecies,
-                                           tempstring);
+                                tempstring);
+                            i = stringfind(
+                                mols->spname, mols->nspecies, tempstring);
                             if(i < 0) {
                                 if(!isrule)
                                     return -3;  // unknown substitute species
                                 else {
-                                    i = molgeneratespecies(sim, tempstring, 2,
-                                                           i1, i2);
+                                    i = molgeneratespecies(
+                                        sim, tempstring, 2, i1, i2);
                                     if(i < 0)
                                         return -6;
                                 }
@@ -789,9 +788,9 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
 
     else {
         simLog(sim, 7,
-               "BUG in molpatternindex: pattern '%s' has more than two "
-               "reactants\n",
-               pattern);
+            "BUG in molpatternindex: pattern '%s' has more than two "
+            "reactants\n",
+            pattern);
     }
 
     if(indexptr)
@@ -800,18 +799,18 @@ int molpatternindex(simptr sim, const char *pattern, const char *rname,
 }
 
 /* molstring2index1 */
-int molstring2index1(simptr sim, const char *str, enum MolecState *msptr,
-                     int **indexptr)
+int molstring2index1(
+    simptr sim, const char *str, enum MolecState *msptr, int **indexptr)
 {
-    int er, isall, *index;
+    int  er, isall, *index;
     char pattern[STRCHAR];
 
     index = NULL;
-    er = molstring2pattern(str, msptr, pattern, 0);
+    er    = molstring2pattern(str, msptr, pattern, 0);
     if(er)
         return er;
     isall = strcmp(pattern, "all") ? 0 : 1;
-    er = molpatternindex(sim, pattern, NULL, 0, 2, &index);
+    er    = molpatternindex(sim, pattern, NULL, 0, 2, &index);
     if(indexptr)
         *indexptr = index;
     if(isall && !er)
@@ -830,7 +829,7 @@ int molstring2index1(simptr sim, const char *str, enum MolecState *msptr,
 /* moladdspeciesgroup */
 int moladdspeciesgroup(simptr sim, const char *group, char *species, int imol)
 {
-    int er, *gpindex, *spindex, isp, igp, gpnresults, pat;
+    int             er, *gpindex, *spindex, isp, igp, gpnresults, pat;
     enum MolecState ms;
 
     if(stringfind(sim->mols->spname, sim->mols->nspecies, group) >= 0)
@@ -853,10 +852,9 @@ int moladdspeciesgroup(simptr sim, const char *group, char *species, int imol)
         if(gpindex[PDalloc] < PDMAX + gpindex[PDnresults] +
                                   spindex[PDnresults]) {  // expand group index
                                                           // if needed
-            pat = locateVstr(sim->mols->patlist, group, sim->mols->npattern,
-                             0);  // look for pattern in patlist list
-            er = molpatternindexalloc(
-                &(sim->mols->patindex[pat]),
+            pat     = locateVstr(sim->mols->patlist, group, sim->mols->npattern,
+                0);  // look for pattern in patlist list
+            er      = molpatternindexalloc(&(sim->mols->patindex[pat]),
                 PDMAX + 2 * (gpindex[PDnresults] + spindex[PDnresults]));
             gpindex = sim->mols->patindex[pat];
             if(er)
@@ -865,9 +863,9 @@ int moladdspeciesgroup(simptr sim, const char *group, char *species, int imol)
 
         for(isp = 0; isp < spindex[PDnresults];
             isp++) {  // integrate species list into group list
-            imol = spindex[PDMAX + isp];
+            imol       = spindex[PDMAX + isp];
             gpnresults = gpindex[PDnresults];
-            igp = locateVi(gpindex + PDMAX, imol, gpnresults, 0);
+            igp        = locateVi(gpindex + PDMAX, imol, gpnresults, 0);
             if(igp < 0) {  // not in group list so add it
                 for(igp = PDMAX + gpnresults;
                     igp > PDMAX && gpindex[igp - 1] > imol; igp--)
@@ -881,18 +879,18 @@ int moladdspeciesgroup(simptr sim, const char *group, char *species, int imol)
 
     if(imol) {
         if(gpindex[PDalloc] <
-           PDMAX + gpindex[PDnresults] + 1) {  // expand group index if needed
-            pat = locateVstr(sim->mols->patlist, group, sim->mols->npattern,
-                             0);  // look for pattern in patlist list
-            er = molpatternindexalloc(&(sim->mols->patindex[pat]),
-                                      PDMAX + 2 * (gpindex[PDnresults] + 1));
+            PDMAX + gpindex[PDnresults] + 1) {  // expand group index if needed
+            pat     = locateVstr(sim->mols->patlist, group, sim->mols->npattern,
+                0);  // look for pattern in patlist list
+            er      = molpatternindexalloc(&(sim->mols->patindex[pat]),
+                PDMAX + 2 * (gpindex[PDnresults] + 1));
             gpindex = sim->mols->patindex[pat];
             if(er)
                 return -7;
         }
 
         gpnresults = gpindex[PDnresults];
-        igp = locateVi(gpindex + PDMAX, imol, gpnresults, 0);
+        igp        = locateVi(gpindex + PDMAX, imol, gpnresults, 0);
         if(igp < 0) {  // not in group list so add it
             for(igp = PDMAX + gpnresults;
                 igp > PDMAX && gpindex[igp - 1] > imol; igp--)
@@ -919,14 +917,14 @@ char *molserno2string(unsigned long long serno, char *string)
         snprintf(string, sizeof(string), LLUFORMAT, serno);
     else
         snprintf(string, sizeof(string), LLUFORMAT "." LLUFORMAT, serno >> 32,
-                 serno & 0xFFFFFFFF);
+            serno & 0xFFFFFFFF);
     return string;
 }
 
 /* molstring2serno */
 unsigned long long molstring2serno(char *string)
 {
-    char *dotptr;
+    char *             dotptr;
     unsigned long long i1, i2, answer;
 
     answer = 0;
@@ -948,12 +946,11 @@ unsigned long long molstring2serno(char *string)
 
 /* molfindserno */
 unsigned long long molfindserno(simptr sim, unsigned long long def,
-                                long int pserno, unsigned long long r1serno,
-                                unsigned long long r2serno,
-                                unsigned long long *sernolist)
+    long int pserno, unsigned long long r1serno, unsigned long long r2serno,
+    unsigned long long *sernolist)
 {
     unsigned long long answer, i1, i2;
-    long int bitcode;
+    long int           bitcode;
 
     if(pserno > 0)
         return (unsigned long long)pserno;
@@ -1023,14 +1020,14 @@ unsigned long long molfindserno(simptr sim, unsigned long long def,
 /* molismobile */
 int molismobile(simptr sim, int species, enum MolecState ms)
 {
-    molssptr mols;
-    int d, dim, s;
+    molssptr        mols;
+    int             d, dim, s;
     enum PanelShape ps;
 
     if(ms == MSbsoln)
         ms = MSsoln;
     mols = sim->mols;
-    dim = sim->dim;
+    dim  = sim->dim;
     if(mols->difc[species][ms] > 0)
         return 1;
     if(mols->difm && mols->difm[species] && mols->difm[species][ms])
@@ -1042,7 +1039,7 @@ int molismobile(simptr sim, int species, enum MolecState ms)
             if(mols->drift[species][ms][d] != 0)
                 return 1;
     if(mols->surfdrift && mols->surfdrift[species] &&
-       mols->surfdrift[species][ms])
+        mols->surfdrift[species][ms])
         for(s = 0; s < sim->srfss->nsrf; s++)
             if(mols->surfdrift[species][ms][s])
                 for(ps = (enum PanelShape)0; ps < PSMAX;
@@ -1058,15 +1055,15 @@ int molismobile(simptr sim, int species, enum MolecState ms)
 /* molpos2string. */
 char *molpos2string(simptr sim, moleculeptr mptr, char *string)
 {
-    int d, dim, done, p, tryagain, count;
-    char *line2;
-    double newpos[DIMMAX], crosspt[DIMMAX], dist;
-    boxptr bptr;
+    int      d, dim, done, p, tryagain, count;
+    char *   line2;
+    double   newpos[DIMMAX], crosspt[DIMMAX], dist;
+    boxptr   bptr;
     panelptr pnl;
 
-    dim = sim->dim;
-    done = 0;
-    dist = 0;
+    dim   = sim->dim;
+    done  = 0;
+    dist  = 0;
     count = 0;
 
     line2 = string;  // write position to string
@@ -1085,15 +1082,15 @@ char *molpos2string(simptr sim, moleculeptr mptr, char *string)
         }
 
         tryagain = 0;
-        bptr = pos2box(sim, newpos);
+        bptr     = pos2box(sim, newpos);
         if(bptr != pos2box(sim, mptr->pos))
             tryagain = 1;  // check for same box
         for(p = 0; p < bptr->npanel && tryagain == 0;
             p++) {  // check for no panels crossed
             pnl = bptr->panel[p];
             if(mptr->pnl != pnl &&
-               lineXpanel(mptr->pos, newpos, pnl, dim, crosspt, NULL, NULL,
-                          NULL, NULL, NULL, 0))
+                lineXpanel(mptr->pos, newpos, pnl, dim, crosspt, NULL, NULL,
+                    NULL, NULL, NULL, 0))
                 tryagain = 1;
         }
         if(!tryagain)
@@ -1102,9 +1099,9 @@ char *molpos2string(simptr sim, moleculeptr mptr, char *string)
         if(!done) {
             if(++count > 50) {
                 simLog(sim, 8,
-                       "WARNING: unable to write %s molecule position (%s) on "
-                       "the correct side of all surfaces\n",
-                       sim->mols->spname[mptr->ident], string);
+                    "WARNING: unable to write %s molecule position (%s) on "
+                    "the correct side of all surfaces\n",
+                    sim->mols->spname[mptr->ident], string);
                 return string;
             }
 
@@ -1118,7 +1115,7 @@ char *molpos2string(simptr sim, moleculeptr mptr, char *string)
             line2 = string;  // write position to string
             for(d = 0; d < dim; d++) {
                 snprintf(line2, sizeof(line2), " %g",
-                         mptr->pos[d] + unirandCCD(-dist, dist));
+                    mptr->pos[d] + unirandCCD(-dist, dist));
                 line2 += strlen(line2);
             }
         }
@@ -1129,9 +1126,9 @@ char *molpos2string(simptr sim, moleculeptr mptr, char *string)
 
 /* molchangeident */
 void molchangeident(simptr sim, moleculeptr mptr, int ll, int m, int i,
-                    enum MolecState ms, panelptr pnl)
+    enum MolecState ms, panelptr pnl)
 {
-    int dim, ll2;
+    int    dim, ll2;
     double epsilon;
 
     if(i == 0) {
@@ -1139,10 +1136,10 @@ void molchangeident(simptr sim, moleculeptr mptr, int ll, int m, int i,
         return;
     }
 
-    dim = sim->dim;
+    dim     = sim->dim;
     epsilon = sim->srfss ? sim->srfss->epsilon : 0;
 
-    mptr->ident = i;
+    mptr->ident  = i;
     mptr->mstate = ms;
     if(ms == MSsoln || ms == MSbsoln)
         mptr->pnl = NULL;
@@ -1188,9 +1185,9 @@ void molchangeident(simptr sim, moleculeptr mptr, int ll, int m, int i,
 /* molssetgausstable */
 int molssetgausstable(simptr sim, int size)
 {
-    int er;
+    int      er;
     molssptr mols;
-    double *newtable;
+    double * newtable;
 
     er = molenablemols(sim, -1);
     if(er)
@@ -1212,7 +1209,7 @@ int molssetgausstable(simptr sim, int size)
     if(mols->gausstbl)
         free(mols->gausstbl);
     mols->ngausstbl = size;
-    mols->gausstbl = newtable;
+    mols->gausstbl  = newtable;
     return 0;
 failure:
     simLog(sim, 10, "Unable to allocate memory in molssetgausstable");
@@ -1220,14 +1217,13 @@ failure:
 }
 
 /* molsetdifc */
-void molsetdifc(simptr sim, int ident, int *index, enum MolecState ms,
-                double difc)
+void molsetdifc(
+    simptr sim, int ident, int *index, enum MolecState ms, double difc)
 {
-    int j;
     enum MolecState mslo, mshi;
 
     if(index) {
-        for(j = 0; j < index[PDnresults]; j++)
+        for(int j = 0; j < index[PDnresults]; j++)
             molsetdifc(sim, index[PDMAX + j], NULL, ms, difc);
         return;
     }
@@ -1253,12 +1249,12 @@ void molsetdifc(simptr sim, int ident, int *index, enum MolecState ms,
 }
 
 /* molsetdifm */
-int molsetdifm(simptr sim, int ident, int *index, enum MolecState ms,
-               double *difm)
+int molsetdifm(
+    simptr sim, int ident, int *index, enum MolecState ms, double *difm)
 {
-    int j, d, dim, er;
+    int             j, d, dim, er;
     enum MolecState mslo, mshi;
-    double *difmat, dm2[DIMMAX * DIMMAX];
+    double *        difmat, dm2[DIMMAX * DIMMAX];
 
     if(index) {
         for(j = 0; j < index[PDnresults]; j++) {
@@ -1305,12 +1301,12 @@ failure:
 }
 
 /* molsetdrift */
-int molsetdrift(simptr sim, int ident, int *index, enum MolecState ms,
-                double *drift)
+int molsetdrift(
+    simptr sim, int ident, int *index, enum MolecState ms, double *drift)
 {
-    int j, d, er;
+    int             j, d, er;
     enum MolecState mslo, mshi;
-    double *driftvect;
+    double *        driftvect;
 
     if(index) {
         for(j = 0; j < index[PDnresults]; j++) {
@@ -1355,24 +1351,24 @@ failure:
 
 /* molsetsurfdrift */
 int molsetsurfdrift(simptr sim, int ident, int *index, enum MolecState ms,
-                    int surface, enum PanelShape ps, double *drift)
+    int surface, enum PanelShape ps, double *drift)
 {
-    int d, i1, j, dim, s1, slo, shi, er;
+    int             d, i1, j, dim, s1, slo, shi, er;
     enum MolecState mslo, mshi, ms1;
     enum PanelShape ps1, pslo, pshi;
-    molssptr mols;
+    molssptr        mols;
 
     if(index) {
         for(j = 0; j < index[PDnresults]; j++) {
-            er = molsetsurfdrift(sim, index[PDMAX + j], NULL, ms, surface, ps,
-                                 drift);
+            er = molsetsurfdrift(
+                sim, index[PDMAX + j], NULL, ms, surface, ps, drift);
             if(er)
                 return er;
         }
         return 0;
     }
 
-    dim = sim->dim;
+    dim  = sim->dim;
     mols = sim->mols;
 
     if(ms != MSall)
@@ -1397,8 +1393,8 @@ int molsetsurfdrift(simptr sim, int ident, int *index, enum MolecState ms,
     }
 
     if(!mols->surfdrift) {
-        CHECKMEM(mols->surfdrift = (double *****)calloc(mols->maxspecies,
-                                                        sizeof(double ****)));
+        CHECKMEM(mols->surfdrift = (double *****)calloc(
+                     mols->maxspecies, sizeof(double ****)));
         for(i1 = 0; i1 < mols->maxspecies; i1++)
             mols->surfdrift[i1] = NULL;
     }
@@ -1447,10 +1443,10 @@ failure:
 }
 
 /* molsetdisplaysize */
-void molsetdisplaysize(simptr sim, int ident, int *index, enum MolecState ms,
-                       double dsize)
+void molsetdisplaysize(
+    simptr sim, int ident, int *index, enum MolecState ms, double dsize)
 {
-    int j;
+    int             j;
     enum MolecState mslo, mshi;
 
     if(index) {
@@ -1477,10 +1473,10 @@ void molsetdisplaysize(simptr sim, int ident, int *index, enum MolecState ms,
 }
 
 /* molsetcolor */
-void molsetcolor(simptr sim, int ident, int *index, enum MolecState ms,
-                 const double *color)
+void molsetcolor(
+    simptr sim, int ident, int *index, enum MolecState ms, const double *color)
 {
-    int col, j;
+    int             col, j;
     enum MolecState mslo, mshi;
 
     if(index) {
@@ -1508,10 +1504,10 @@ void molsetcolor(simptr sim, int ident, int *index, enum MolecState ms,
 }
 
 /* molsetlistlookup */
-void molsetlistlookup(simptr sim, int ident, int *index, enum MolecState ms,
-                      int ll)
+void molsetlistlookup(
+    simptr sim, int ident, int *index, enum MolecState ms, int ll)
 {
-    int i, j, diffusing;
+    int             i, j, diffusing;
     enum MolecState ms1;
 
     if(index) {
@@ -1583,9 +1579,9 @@ void molsetexist(simptr sim, int ident, enum MolecState ms, int exist)
 /* molcount */
 int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
 {
-    int count, ll, nmol, top, m, j, nresults, uselist;
-    moleculeptr *mlist;
-    molssptr mols;
+    int             count, ll, nmol, top, m, j, nresults, uselist;
+    moleculeptr *   mlist;
+    molssptr        mols;
     enum MolecState msval;
 
     mols = sim->mols;
@@ -1603,8 +1599,8 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
         for(ll = 0; ll < mols->nlist;
             ll++) {  // count molecules that need sorting
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            nmol  = mols->nl[ll];
+            top   = mols->sortl[ll];
             for(m = top; m < nmol && count < max; m++)
                 if(mlist[m]->ident > 0)
                     count++;
@@ -1614,23 +1610,23 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
     else if(i < 0) {  // all species, one state
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            top = mols->sortl[ll];
+            top   = mols->sortl[ll];
             for(m = 0; m < top && count < max;
                 m++)  // count properly sorted molecules
                 if(mlist[m]->ident > 0 && mlist[m]->mstate == ms)
                     count++;
         }
         mlist = mols->dead;  // count resurrected molecules
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol && count < max; m++)
             if(mlist[m]->ident > 0 && mlist[m]->mstate == ms)
                 count++;
         for(ll = 0; ll < mols->nlist;
             ll++) {  // count molecules that need sorting
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            nmol  = mols->nl[ll];
+            top   = mols->sortl[ll];
             for(m = top; m < nmol && count < max; m++)
                 if(mlist[m]->ident > 0 && mlist[m]->mstate == ms)
                     count++;
@@ -1646,7 +1642,7 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
                     uselist = 1;
             if(uselist) {
                 mlist = mols->live[ll];
-                top = mols->sortl[ll];
+                top   = mols->sortl[ll];
                 for(m = 0; m < top && count < max;
                     m++)  // count properly sorted molecules
                     if(mlist[m]->ident == i)
@@ -1654,16 +1650,16 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
             }
         }
         mlist = mols->dead;  // count resurrected molecules
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol && count < max; m++)
             if(mlist[m]->ident == i)
                 count++;
         for(ll = 0; ll < mols->nlist;
             ll++) {  // count molecules that need sorting
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            nmol  = mols->nl[ll];
+            top   = mols->sortl[ll];
             for(m = top; m < nmol && count < max; m++)
                 if(mlist[m]->ident == i)
                     count++;
@@ -1671,24 +1667,24 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
     }
 
     else if(i > 0) {  // single species, single state
-        ll = mols->listlookup[i][ms];
+        ll    = mols->listlookup[i][ms];
         mlist = mols->live[ll];
-        top = mols->sortl[ll];
+        top   = mols->sortl[ll];
         for(m = 0; m < top && count < max;
             m++)  // count properly sorted molecules
             if(mlist[m]->ident == i && mlist[m]->mstate == ms)
                 count++;
         mlist = mols->dead;  // count resurrected molecules
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol && count < max; m++)
             if(mlist[m]->ident == i && mlist[m]->mstate == ms)
                 count++;
         for(ll = 0; ll < mols->nlist;
             ll++) {  // count molecules that need sorting
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            nmol  = mols->nl[ll];
+            top   = mols->sortl[ll];
             for(m = top; m < nmol && count < max; m++)
                 if(mlist[m]->ident == i && mlist[m]->mstate == ms)
                     count++;
@@ -1713,30 +1709,30 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
             }
             if(uselist) {
                 mlist = mols->live[ll];
-                top = mols->sortl[ll];
+                top   = mols->sortl[ll];
                 for(m = 0; m < top && count < max;
                     m++)  // count properly sorted molecules
                     if(locateVi(index + PDMAX, mlist[m]->ident, nresults, 0) >=
-                           0 &&
-                       (ms == MSall || mlist[m]->mstate == ms))
+                            0 &&
+                        (ms == MSall || mlist[m]->mstate == ms))
                         count++;
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol && count < max; m++)
             if(locateVi(index + PDMAX, mlist[m]->ident, nresults, 0) >= 0 &&
-               (ms == MSall || mlist[m]->mstate == ms))
+                (ms == MSall || mlist[m]->mstate == ms))
                 count++;
         for(ll = 0; ll < mols->nlist;
             ll++) {  // count molecules that need sorting
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            nmol  = mols->nl[ll];
+            top   = mols->sortl[ll];
             for(m = top; m < nmol && count < max; m++)
                 if(locateVi(index + PDMAX, mlist[m]->ident, nresults, 0) >= 0 &&
-                   (ms == MSall || mlist[m]->mstate == ms))
+                    (ms == MSall || mlist[m]->mstate == ms))
                     count++;
         }
     }
@@ -1746,13 +1742,13 @@ int molcount(simptr sim, int i, int *index, enum MolecState ms, int max)
 
 /* molscancmd */
 void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
-                enum CMDcode (*fn)(simptr, cmdptr, char *))
+    enum CMDcode (*fn)(simptr, cmdptr, char *))
 {
-    int ll, nmol, top, m, j, nresults, uselist;
-    moleculeptr *mlist, mptr;
-    molssptr mols;
+    int             ll, nmol, top, m, j, nresults, uselist;
+    moleculeptr *   mlist, mptr;
+    molssptr        mols;
     enum MolecState msval;
-    enum CMDcode code;
+    enum CMDcode    code;
 
     mols = sim->mols;
     if(!mols)
@@ -1762,7 +1758,7 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
     if(i < 0 && ms == MSall) {  // all species, all states
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
+            nmol  = mols->nl[ll];
             for(m = 0; m < nmol; m++) {
                 mptr = mlist[m];
                 if(mptr->ident > 0) {
@@ -1773,8 +1769,8 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident > 0) {
@@ -1788,7 +1784,7 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
     else if(i < 0) {  // all species, one state
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
+            nmol  = mols->nl[ll];
             for(m = 0; m < nmol; m++) {
                 mptr = mlist[m];
                 if(mptr->ident > 0 && mptr->mstate == ms) {
@@ -1799,8 +1795,8 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident > 0 && mptr->mstate == ms) {
@@ -1813,9 +1809,9 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
 
     else if(i > 0 && ms == MSall) {  // one species, all states
         for(ll = 0; ll < mols->nlist; ll++) {
-            mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            mlist   = mols->live[ll];
+            nmol    = mols->nl[ll];
+            top     = mols->sortl[ll];
             uselist = 0;
             for(msval = (enum MolecState)0; msval < MSMAX && !uselist;
                 msval = (enum MolecState)(msval + 1))
@@ -1843,8 +1839,8 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident == i) {
@@ -1857,9 +1853,9 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
 
     else if(i > 0) {  // single species, single state
         for(ll = 0; ll < mols->nlist; ll++) {
-            mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            mlist   = mols->live[ll];
+            nmol    = mols->nl[ll];
+            top     = mols->sortl[ll];
             uselist = (mols->listlookup[i][ms] == ll) ? 1 : 0;
             if(uselist) {
                 for(m = 0; m < nmol; m++) {
@@ -1883,8 +1879,8 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident == i && mptr->mstate == ms) {
@@ -1898,9 +1894,9 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
     else if(index) {  // list of molecules in index
         nresults = index[PDnresults];
         for(ll = 0; ll < mols->nlist; ll++) {
-            mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            mlist   = mols->live[ll];
+            nmol    = mols->nl[ll];
+            top     = mols->sortl[ll];
             uselist = 0;
             if(ms == MSall) {
                 for(j = 0; j < nresults; j++)
@@ -1918,7 +1914,7 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
                 for(m = 0; m < nmol; m++) {
                     mptr = mlist[m];
                     if(locateVi(index + PDMAX, mptr->ident, nresults, 0) >= 0 &&
-                       (ms == MSall || mptr->mstate == ms)) {
+                        (ms == MSall || mptr->mstate == ms)) {
                         code = (*fn)(sim, cmd, (char *)mptr);
                         if(code != CMDok)
                             return;
@@ -1929,7 +1925,7 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
                 for(m = top; m < nmol; m++) {
                     mptr = mlist[m];
                     if(locateVi(index + PDMAX, mptr->ident, nresults, 0) >= 0 &&
-                       (ms == MSall || mptr->mstate == ms)) {
+                        (ms == MSall || mptr->mstate == ms)) {
                         code = (*fn)(sim, cmd, (char *)mptr);
                         if(code != CMDok)
                             return;
@@ -1938,12 +1934,12 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(locateVi(index + PDMAX, mptr->ident, nresults, 0) >= 0 &&
-               (ms == MSall || mptr->mstate == ms)) {
+                (ms == MSall || mptr->mstate == ms)) {
                 code = (*fn)(sim, cmd, (char *)mptr);
                 if(code != CMDok)
                     return;
@@ -1956,13 +1952,13 @@ void molscancmd(simptr sim, int i, int *index, enum MolecState ms, cmdptr cmd,
 
 /* molscanfn */
 void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
-               double (*fn)(void *, char *, char *))
+    double (*fn)(void *, char *, char *))
 {
-    int ll, nmol, top, m, j, nresults, uselist;
-    moleculeptr *mlist, mptr;
-    molssptr mols;
+    int             ll, nmol, top, m, j, nresults, uselist;
+    moleculeptr *   mlist, mptr;
+    molssptr        mols;
     enum MolecState msval;
-    double code;
+    double          code;
 
     mols = sim->mols;
     if(!mols)
@@ -1971,7 +1967,7 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
     if(i < 0 && ms == MSall) {  // all species, all states
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
+            nmol  = mols->nl[ll];
             for(m = 0; m < nmol; m++) {
                 mptr = mlist[m];
                 if(mptr->ident > 0) {
@@ -1982,8 +1978,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident > 0) {
@@ -1997,7 +1993,7 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
     else if(i < 0) {  // all species, one state
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
+            nmol  = mols->nl[ll];
             for(m = 0; m < nmol; m++) {
                 mptr = mlist[m];
                 if(mptr->ident > 0 && mptr->mstate == ms) {
@@ -2008,8 +2004,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident > 0 && mptr->mstate == ms) {
@@ -2022,8 +2018,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
 
     else if(i > 0 && ms == MSall) {  // one species, all states
         for(ll = 0; ll < mols->nlist; ll++) {
-            mlist = mols->live[ll];
-            top = mols->sortl[ll];
+            mlist   = mols->live[ll];
+            top     = mols->sortl[ll];
             uselist = 0;
             for(msval = (enum MolecState)0; msval < MSMAX && !uselist;
                 msval = (enum MolecState)(msval + 1))
@@ -2040,8 +2036,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
                 }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident == i) {
@@ -2052,8 +2048,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
         }
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            top = mols->sortl[ll];
-            nmol = mols->nl[ll];
+            top   = mols->sortl[ll];
+            nmol  = mols->nl[ll];
             for(m = top; m < nmol; m++) {
                 mptr = mlist[m];
                 if(mptr->ident == i) {
@@ -2066,9 +2062,9 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
     }
 
     else if(i > 0) {  // single species, single state
-        ll = mols->listlookup[i][ms];
+        ll    = mols->listlookup[i][ms];
         mlist = mols->live[ll];
-        top = mols->sortl[ll];
+        top   = mols->sortl[ll];
         for(m = 0; m < top; m++) {
             mptr = mlist[m];
             if(mptr->ident == i && mptr->mstate == ms) {
@@ -2078,8 +2074,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(mptr->ident == i && mptr->mstate == ms) {
@@ -2090,8 +2086,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
         }
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            top = mols->sortl[ll];
-            nmol = mols->nl[ll];
+            top   = mols->sortl[ll];
+            nmol  = mols->nl[ll];
             for(m = top; m < nmol; m++) {
                 mptr = mlist[m];
                 if(mptr->ident == i && mptr->mstate == ms) {
@@ -2106,8 +2102,8 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
     else if(index) {  // list of molecules in index
         nresults = index[PDnresults];
         for(ll = 0; ll < mols->nlist; ll++) {
-            mlist = mols->live[ll];
-            top = mols->sortl[ll];
+            mlist   = mols->live[ll];
+            top     = mols->sortl[ll];
             uselist = 0;
             if(ms == MSall) {
                 for(j = 0; j < nresults; j++)
@@ -2125,7 +2121,7 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
                 for(m = 0; m < top; m++) {
                     mptr = mlist[m];
                     if(locateVi(index + PDMAX, mptr->ident, nresults, 0) >= 0 &&
-                       (ms == MSall || mptr->mstate == ms)) {
+                        (ms == MSall || mptr->mstate == ms)) {
                         code = (*fn)(sim, erstr, (char *)mptr);
                         if(code != 0)
                             return;
@@ -2134,12 +2130,12 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
             }
         }
         mlist = mols->dead;
-        nmol = mols->nd;
-        top = mols->topd;
+        nmol  = mols->nd;
+        top   = mols->topd;
         for(m = top; m < nmol; m++) {
             mptr = mlist[m];
             if(locateVi(index + PDMAX, mptr->ident, nresults, 0) >= 0 &&
-               (ms == MSall || mptr->mstate == ms)) {
+                (ms == MSall || mptr->mstate == ms)) {
                 code = (*fn)(sim, erstr, (char *)mptr);
                 if(code != 0)
                     return;
@@ -2147,12 +2143,12 @@ void molscanfn(simptr sim, int i, int *index, enum MolecState ms, char *erstr,
         }
         for(ll = 0; ll < mols->nlist; ll++) {
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
-            top = mols->sortl[ll];
+            nmol  = mols->nl[ll];
+            top   = mols->sortl[ll];
             for(m = top; m < nmol; m++) {
                 mptr = mlist[m];
                 if(locateVi(index + PDMAX, mptr->ident, nresults, 0) >= 0 &&
-                   (ms == MSall || mptr->mstate == ms)) {
+                    (ms == MSall || mptr->mstate == ms)) {
                     code = (*fn)(sim, erstr, (char *)mptr);
                     if(code != 0)
                         return;
@@ -2179,8 +2175,8 @@ int molismatch(moleculeptr mptr, int i, int *index, enum MolecState ms)
 }
 
 /* MolCalcDifcSum */
-double MolCalcDifcSum(simptr sim, int i1, enum MolecState ms1, int i2,
-                      enum MolecState ms2)
+double MolCalcDifcSum(
+    simptr sim, int i1, enum MolecState ms1, int i2, enum MolecState ms2)
 {
     double sum;
 
@@ -2206,21 +2202,21 @@ double MolCalcDifcSum(simptr sim, int i1, enum MolecState ms1, int i2,
 moleculeptr molalloc(int dim)
 {
     moleculeptr mptr;
-    int d;
+    int         d;
 
     mptr = NULL;
     CHECKMEM(mptr = (moleculeptr)malloc(sizeof(struct moleculestruct)));
-    mptr->serno = 0;
-    mptr->list = -1;
-    mptr->pos = NULL;
-    mptr->posx = NULL;
-    mptr->via = NULL;
+    mptr->serno     = 0;
+    mptr->list      = -1;
+    mptr->pos       = NULL;
+    mptr->posx      = NULL;
+    mptr->via       = NULL;
     mptr->posoffset = NULL;
-    mptr->ident = 0;
-    mptr->mstate = MSsoln;
-    mptr->box = NULL;
-    mptr->pnl = NULL;
-    mptr->pnlx = NULL;
+    mptr->ident     = 0;
+    mptr->mstate    = MSsoln;
+    mptr->box       = NULL;
+    mptr->pnl       = NULL;
+    mptr->pnlx      = NULL;
 
     CHECKMEM(mptr->pos = (double *)calloc(dim, sizeof(double)));
     CHECKMEM(mptr->posx = (double *)calloc(dim, sizeof(double)));
@@ -2255,14 +2251,14 @@ void molfree(moleculeptr mptr)
 /* molexpandsurfdrift */
 int molexpandsurfdrift(simptr sim, int oldmaxspec, int oldmaxsrf)
 {  //?? needs to be called whenever maxspecies or maxsrf increase
-    double *****oldsurfdrift;
-    int i, s;
+    double *****    oldsurfdrift;
+    int             i, s;
     enum MolecState ms;
     enum PanelShape ps;
 
     if(!sim->mols->surfdrift)
         return 0;
-    oldsurfdrift = sim->mols->surfdrift;
+    oldsurfdrift         = sim->mols->surfdrift;
     sim->mols->surfdrift = NULL;
 
     for(i = 0; i < oldmaxspec; i++)
@@ -2275,9 +2271,9 @@ int molexpandsurfdrift(simptr sim, int oldmaxspec, int oldmaxsrf)
                             for(ps = (enum PanelShape)0; ps < PSMAX;
                                 ps = (enum PanelShape)(ps + 1))
                                 if(oldsurfdrift[i][ms][s][ps]) {
-                                    CHECK(molsetsurfdrift(
-                                              sim, i, NULL, ms, s, ps,
-                                              oldsurfdrift[i][ms][s][ps]) == 0);
+                                    CHECK(
+                                        molsetsurfdrift(sim, i, NULL, ms, s, ps,
+                                            oldsurfdrift[i][ms][s][ps]) == 0);
                                 }
 
     molfreesurfdrift(oldsurfdrift, oldmaxspec, oldmaxsrf);
@@ -2289,7 +2285,7 @@ failure:
 /* molfreesurfdrift */
 void molfreesurfdrift(double *****surfdrift, int maxspec, int maxsrf)
 {
-    int i, s;
+    int             i, s;
     enum MolecState ms;
     enum PanelShape ps;
 
@@ -2318,7 +2314,7 @@ void molfreesurfdrift(double *****surfdrift, int maxspec, int maxsrf)
 /* molpatternindexalloc */
 int molpatternindexalloc(int **indexptr, int n)
 {
-    int j;
+    int  j;
     int *index, *newindex;
 
     index = *indexptr;
@@ -2342,9 +2338,9 @@ int molpatternindexalloc(int **indexptr, int n)
 /* molpatternalloc */
 int molpatternalloc(simptr sim, int maxpattern)
 {
-    int i, er;
+    int    i, er;
     char **newpatlist;
-    int **newpatindex;
+    int ** newpatindex;
     char **newpatrname;
 
     newpatlist = (char **)calloc(maxpattern, sizeof(char *));
@@ -2358,7 +2354,7 @@ int molpatternalloc(simptr sim, int maxpattern)
         return 1;
 
     for(i = 0; i < sim->mols->maxpattern; i++) {
-        newpatlist[i] = sim->mols->patlist[i];
+        newpatlist[i]  = sim->mols->patlist[i];
         newpatindex[i] = sim->mols->patindex[i];
         newpatrname[i] = sim->mols->patrname[i];
     }
@@ -2367,8 +2363,8 @@ int molpatternalloc(simptr sim, int maxpattern)
         if(!newpatlist[i])
             return 1;
         newpatlist[i][0] = '\0';
-        newpatindex[i] = NULL;
-        er = molpatternindexalloc(&newpatindex[i], PDMAX + 1);
+        newpatindex[i]   = NULL;
+        er               = molpatternindexalloc(&newpatindex[i], PDMAX + 1);
         if(er)
             return 1;
         newpatrname[i] = NULL;
@@ -2378,18 +2374,18 @@ int molpatternalloc(simptr sim, int maxpattern)
     free(sim->mols->patindex);
     free(sim->mols->patrname);
     sim->mols->maxpattern = maxpattern;
-    sim->mols->patlist = newpatlist;
-    sim->mols->patindex = newpatindex;
-    sim->mols->patrname = newpatrname;
+    sim->mols->patlist    = newpatlist;
+    sim->mols->patindex   = newpatindex;
+    sim->mols->patrname   = newpatrname;
     return 0;
 }
 
 /* molssalloc */
 molssptr molssalloc(molssptr mols, int maxspecies)
 {
-    int i, **newexist, **newlistlookup, *newexpand, oldmaxspecies;
+    int             i, **newexist, **newlistlookup, *newexpand, oldmaxspecies;
     enum MolecState ms;
-    char **newspname;
+    char **         newspname;
     double **newdifc, **newdifstep, ***newdifm, ***newdrift, **newdisplay,
         ***newcolor;
 
@@ -2401,45 +2397,45 @@ molssptr molssalloc(molssptr mols, int maxspecies)
         mols = (molssptr)malloc(sizeof(struct molsuperstruct));
         CHECKMEM(mols);
 
-        mols->condition = SCinit;
-        mols->sim = NULL;
-        mols->maxspecies = 0;
-        mols->nspecies = 1;
-        mols->spname = NULL;
-        mols->maxpattern = 0;
-        mols->npattern = 0;
-        mols->patlist = NULL;
-        mols->patindex = NULL;
-        mols->patrname = NULL;
-        mols->difc = NULL;
-        mols->difstep = NULL;
-        mols->difm = NULL;
-        mols->drift = NULL;
-        mols->surfdrift = NULL;
-        mols->display = NULL;
-        mols->color = NULL;
-        mols->exist = NULL;
-        mols->dead = NULL;
-        mols->maxdlimit = -1;
-        mols->maxd = 0;
-        mols->nd = 0;
-        mols->topd = 0;
-        mols->maxlist = 0;
-        mols->nlist = 0;
-        mols->listlookup = NULL;
-        mols->listname = NULL;
-        mols->listtype = NULL;
-        mols->live = NULL;
-        mols->maxl = NULL;
-        mols->nl = NULL;
-        mols->topl = NULL;
-        mols->sortl = NULL;
+        mols->condition   = SCinit;
+        mols->sim         = NULL;
+        mols->maxspecies  = 0;
+        mols->nspecies    = 1;
+        mols->spname      = NULL;
+        mols->maxpattern  = 0;
+        mols->npattern    = 0;
+        mols->patlist     = NULL;
+        mols->patindex    = NULL;
+        mols->patrname    = NULL;
+        mols->difc        = NULL;
+        mols->difstep     = NULL;
+        mols->difm        = NULL;
+        mols->drift       = NULL;
+        mols->surfdrift   = NULL;
+        mols->display     = NULL;
+        mols->color       = NULL;
+        mols->exist       = NULL;
+        mols->dead        = NULL;
+        mols->maxdlimit   = -1;
+        mols->maxd        = 0;
+        mols->nd          = 0;
+        mols->topd        = 0;
+        mols->maxlist     = 0;
+        mols->nlist       = 0;
+        mols->listlookup  = NULL;
+        mols->listname    = NULL;
+        mols->listtype    = NULL;
+        mols->live        = NULL;
+        mols->maxl        = NULL;
+        mols->nl          = NULL;
+        mols->topl        = NULL;
+        mols->sortl       = NULL;
         mols->diffuselist = NULL;
-        mols->serno = 1;
-        mols->ngausstbl = 0;
-        mols->gausstbl = NULL;
-        mols->expand = NULL;
-        mols->touch = 0;
+        mols->serno       = 1;
+        mols->ngausstbl   = 0;
+        mols->gausstbl    = NULL;
+        mols->expand      = NULL;
+        mols->touch       = 0;
     }
 
     if(maxspecies > mols->maxspecies) {
@@ -2587,8 +2583,8 @@ molssptr molssalloc(molssptr mols, int maxspecies)
         mols->expand = newexpand;
 
         if(mols->surfdrift && mols->sim->srfss) {
-            CHECK(molexpandsurfdrift(mols->sim, oldmaxspecies,
-                                     mols->sim->srfss->maxsrf) == 0);
+            CHECK(molexpandsurfdrift(
+                      mols->sim, oldmaxspecies, mols->sim->srfss->maxsrf) == 0);
         }
     }
 
@@ -2602,9 +2598,9 @@ failure:
 /* mollistalloc */
 int mollistalloc(molssptr mols, int maxlist, enum MolListType mlt)
 {
-    int *maxl, *nl, *topl, *sortl, *diffuselist, ll, m;
-    moleculeptr **live, mptr;
-    char **listname;
+    int *             maxl, *nl, *topl, *sortl, *diffuselist, ll, m;
+    moleculeptr **    live, mptr;
+    char **           listname;
     enum MolListType *listtype;
 
     if(maxlist <= 0)
@@ -2613,13 +2609,13 @@ int mollistalloc(molssptr mols, int maxlist, enum MolListType mlt)
         return -3;
     maxlist += mols->maxlist;
 
-    listname = NULL;  // allocate new arrays
-    listtype = NULL;
-    live = NULL;
-    maxl = NULL;
-    nl = NULL;
-    topl = NULL;
-    sortl = NULL;
+    listname    = NULL;  // allocate new arrays
+    listtype    = NULL;
+    live        = NULL;
+    maxl        = NULL;
+    nl          = NULL;
+    topl        = NULL;
+    sortl       = NULL;
     diffuselist = NULL;
 
     CHECKMEM(listname = (char **)calloc(maxlist, sizeof(char *)));
@@ -2656,13 +2652,13 @@ int mollistalloc(molssptr mols, int maxlist, enum MolListType mlt)
         diffuselist[ll] = 0;
 
     for(ll = 0; ll < mols->maxlist; ll++) {  // copy over existing portions
-        listname[ll] = mols->listname[ll];
-        listtype[ll] = mols->listtype[ll];
-        live[ll] = mols->live[ll];
-        maxl[ll] = mols->maxl[ll];
-        nl[ll] = mols->nl[ll];
-        topl[ll] = mols->topl[ll];
-        sortl[ll] = mols->sortl[ll];
+        listname[ll]    = mols->listname[ll];
+        listtype[ll]    = mols->listtype[ll];
+        live[ll]        = mols->live[ll];
+        maxl[ll]        = mols->maxl[ll];
+        nl[ll]          = mols->nl[ll];
+        topl[ll]        = mols->topl[ll];
+        sortl[ll]       = mols->sortl[ll];
         diffuselist[ll] = mols->diffuselist[ll];
     }
 
@@ -2685,8 +2681,8 @@ int mollistalloc(molssptr mols, int maxlist, enum MolListType mlt)
     }
 
     for(ll = mols->maxlist; ll < maxlist; ll++) {  // allocate live lists
-        CHECKMEM(live[ll] =
-                     (moleculeptr *)calloc(maxl[ll], sizeof(moleculeptr)));
+        CHECKMEM(
+            live[ll] = (moleculeptr *)calloc(maxl[ll], sizeof(moleculeptr)));
         for(m = 0; m < maxl[ll]; m++)
             live[ll][m] = NULL;
     }
@@ -2701,15 +2697,15 @@ int mollistalloc(molssptr mols, int maxlist, enum MolListType mlt)
         free(mols->sortl);
         free(mols->diffuselist);
     }
-    ll = mols->maxlist;
-    mols->maxlist = maxlist;  // store new lists
-    mols->listname = listname;
-    mols->listtype = listtype;
-    mols->live = live;
-    mols->maxl = maxl;
-    mols->nl = nl;
-    mols->topl = topl;
-    mols->sortl = sortl;
+    ll                = mols->maxlist;
+    mols->maxlist     = maxlist;  // store new lists
+    mols->listname    = listname;
+    mols->listtype    = listtype;
+    mols->live        = live;
+    mols->maxl        = maxl;
+    mols->nl          = nl;
+    mols->topl        = topl;
+    mols->sortl       = sortl;
     mols->diffuselist = diffuselist;
     return ll;
 
@@ -2736,7 +2732,7 @@ failure:
 int molexpandlist(molssptr mols, int dim, int ll, int nspaces, int nmolecs)
 {
     moleculeptr *newlist, *oldlist;
-    int m, nold, maxold, maxnew;
+    int          m, nold, maxold, maxnew;
 
     if(!mols || ll >= mols->nlist)
         return 2;
@@ -2775,7 +2771,7 @@ int molexpandlist(molssptr mols, int dim, int ll, int nspaces, int nmolecs)
         for(m = mols->nd - 1; m >= mols->topd;
             m--) {  // copy resurrected molecules higher on list
             newlist[m + nmolecs] = newlist[m];
-            newlist[m] = NULL;
+            newlist[m]           = NULL;
         }
         for(m = mols->topd; m < mols->topd + nmolecs;
             m++) {  // create new empty molecules
@@ -2795,7 +2791,7 @@ failure:
 /* molssfree */
 void molssfree(molssptr mols, int maxsrf)
 {
-    int m, ll, i, maxspecies;
+    int             m, ll, i, maxspecies;
     enum MolecState ms;
 
     if(!mols)
@@ -2930,10 +2926,10 @@ void molssfree(molssptr mols, int maxsrf)
 /* molssoutput */
 void molssoutput(simptr sim)
 {
-    int nspecies, i, ll, same, sum, s, pat, *index, vflag;
-    molssptr mols;
-    char string[STRCHAR];
-    double maxstep;
+    int             nspecies, i, ll, same, sum, s, pat, *index, vflag;
+    molssptr        mols;
+    char            string[STRCHAR];
+    double          maxstep;
     enum MolecState ms;
     enum PanelShape ps;
 
@@ -2944,21 +2940,21 @@ void molssoutput(simptr sim)
         simLog(sim, 2, " No molecule superstructure defined\n\n");
         return;
     }
-    mols = sim->mols;
+    mols     = sim->mols;
     nspecies = mols->nspecies;
 
     if(mols->condition != SCok)
         simLog(sim, 7, " Molecule superstructure condition: %s\n",
-               simsc2string(mols->condition, string));
+            simsc2string(mols->condition, string));
     simLog(sim, 1, " Next molecule serial number: %lu\n", mols->serno);
     if(mols->gausstbl)
         simLog(sim, 1,
-               " Table for Gaussian distributed random numbers has %i values\n",
-               mols->ngausstbl);
+            " Table for Gaussian distributed random numbers has %i values\n",
+            mols->ngausstbl);
     else
         simLog(sim, 1,
-               " Table for Gaussian distributed random numbers has not been "
-               "set up\n");
+            " Table for Gaussian distributed random numbers has not been "
+            "set up\n");
 
     simLog(sim, 2, " %i molecule lists:\n", mols->nlist);
     for(ll = 0; ll < mols->nlist; ll++) {
@@ -2966,10 +2962,9 @@ void molssoutput(simptr sim)
             if(mols->live[ll] == NULL)
                 simLog(sim, 1, "  list %i is not allocated\n", ll);
             simLog(sim, 1,
-                   "  %s: type=%s, allocated size=%i, number of molecules=%i",
-                   mols->listname[ll],
-                   molmlt2string(mols->listtype[ll], string), mols->maxl[ll],
-                   mols->nl[ll]);
+                "  %s: type=%s, allocated size=%i, number of molecules=%i",
+                mols->listname[ll], molmlt2string(mols->listtype[ll], string),
+                mols->maxl[ll], mols->nl[ll]);
             if(mols->topl[ll] != mols->nl[ll] && mols->topl != 0)
                 simLog(sim, 1, ", top value=%i", mols->topl[ll]);
             if(mols->sortl[ll] != mols->nl[ll])
@@ -2978,7 +2973,7 @@ void molssoutput(simptr sim)
         }
         else
             simLog(sim, 2, "%s%s%s", ll == 0 ? "  " : " ", mols->listname[ll],
-                   ll == mols->nlist - 1 ? "\n" : ",");
+                ll == mols->nlist - 1 ? "\n" : ",");
     }
 
     simLog(sim, 1, " Diffusion molecule lists:");
@@ -3037,14 +3032,14 @@ void molssoutput(simptr sim)
             if(mols->difstep[i][MSsoln] > maxstep)
                 maxstep = mols->difstep[i][MSsoln];
             simLog(sim, 2, "  all states: difc=%g, rms step=%g",
-                   mols->difc[i][MSsoln], mols->difstep[i][MSsoln]);
+                mols->difc[i][MSsoln], mols->difstep[i][MSsoln]);
             if(mols->difm[i][MSsoln])
                 simLog(sim, 2, " (anisotropic)");
             if(mols->drift[i][MSsoln])
                 simLog(sim, 2, " (drift)");
             if(mols->listname)
                 simLog(sim, 2, ", list=%s",
-                       mols->listname[mols->listlookup[i][MSsoln]]);
+                    mols->listname[mols->listlookup[i][MSsoln]]);
             simLog(sim, 2, ", number=%i\n", molcount(sim, i, NULL, MSall, -1));
         }
         else {
@@ -3054,17 +3049,17 @@ void molssoutput(simptr sim)
                     if(mols->difstep[i][ms] > maxstep)
                         maxstep = mols->difstep[i][ms];
                     simLog(sim, 2, "  %s: difc=%g, rms step=%g",
-                           molms2string(ms, string), mols->difc[i][ms],
-                           mols->difstep[i][ms]);
+                        molms2string(ms, string), mols->difc[i][ms],
+                        mols->difstep[i][ms]);
                     if(mols->difm[i][ms])
                         simLog(sim, 2, " (anisotropic)");
                     if(mols->drift[i][ms])
                         simLog(sim, 2, " (drift)");
                     if(mols->listname)
                         simLog(sim, 2, ", list=%s",
-                               mols->listname[mols->listlookup[i][ms]]);
+                            mols->listname[mols->listlookup[i][ms]]);
                     simLog(sim, 2, ", number=%i\n",
-                           molcount(sim, i, NULL, ms, -1));
+                        molcount(sim, i, NULL, ms, -1));
                 }
         }
 
@@ -3080,15 +3075,13 @@ void molssoutput(simptr sim)
                                 ps = (enum PanelShape)(ps + 1))
                                 if(mols->surfdrift[i][ms][s][ps]) {
                                     simLog(sim, 2, " %s,%s",
-                                           sim->srfss->snames[s],
-                                           surfps2string(ps, string));
+                                        sim->srfss->snames[s],
+                                        surfps2string(ps, string));
                                     if(sim->dim == 2)
-                                        simLog(
-                                            sim, 2, "=%g",
+                                        simLog(sim, 2, "=%g",
                                             mols->surfdrift[i][ms][s][ps][0]);
                                     else
-                                        simLog(
-                                            sim, 2, "=(%g,%g)",
+                                        simLog(sim, 2, "=(%g,%g)",
                                             mols->surfdrift[i][ms][s][ps][0],
                                             mols->surfdrift[i][ms][s][ps][1]);
                                 }
@@ -3113,8 +3106,8 @@ void molssoutput(simptr sim)
                 simLog(sim, 2, "  all states:");
                 if(mols->display[i][MSsoln])
                     simLog(sim, 2, " color= %g,%g,%g, size=%g\n",
-                           mols->color[i][MSsoln][0], mols->color[i][MSsoln][1],
-                           mols->color[i][MSsoln][2], mols->display[i][MSsoln]);
+                        mols->color[i][MSsoln][0], mols->color[i][MSsoln][1],
+                        mols->color[i][MSsoln][2], mols->display[i][MSsoln]);
                 else
                     simLog(sim, 2, " not displayed to graphics\n");
             }
@@ -3125,9 +3118,9 @@ void molssoutput(simptr sim)
                         simLog(sim, 2, "  %s:", molms2string(ms, string));
                         if(mols->display[i][ms])
                             simLog(sim, 2,
-                                   " color= %g,%g,%g, display size= %g\n",
-                                   mols->color[i][ms][0], mols->color[i][ms][1],
-                                   mols->color[i][ms][2], mols->display[i][ms]);
+                                " color= %g,%g,%g, display size= %g\n",
+                                mols->color[i][ms][0], mols->color[i][ms][1],
+                                mols->color[i][ms][2], mols->display[i][ms]);
                         else
                             simLog(sim, 2, " not displayed to graphics\n");
                     }
@@ -3138,7 +3131,7 @@ void molssoutput(simptr sim)
     if(mols->dead == NULL)
         simLog(sim, 1, " No dead list allocated\n");
     simLog(sim, 1, " Dead list: allocated size=%i, number of molecules=%i",
-           mols->maxd, mols->nd);
+        mols->maxd, mols->nd);
     if(mols->topd != mols->nd)
         simLog(sim, 1, ", top value=%i", mols->topd);
     simLog(sim, 1, "\n");
@@ -3157,16 +3150,16 @@ void molssoutput(simptr sim)
 /* writemols */
 void writemols(simptr sim, FILE *fptr)
 {
-    int i, d, ll, dim;
-    char **spname, string[STRCHAR];
+    int             i, d, ll, dim;
+    char **         spname, string[STRCHAR];
     enum MolecState ms;
-    molssptr mols;
-    double val0, val1, val2;
+    molssptr        mols;
+    double          val0, val1, val2;
 
     mols = sim->mols;
     if(!mols)
         return;
-    dim = sim->dim;
+    dim    = sim->dim;
     spname = mols->spname;
     fprintf(fptr, "# Molecule parameters\n");
 
@@ -3195,14 +3188,14 @@ void writemols(simptr sim, FILE *fptr)
                 ms = (enum MolecState)(ms + 1))
                 if(mols->difc[i][ms] > 0)
                     fprintf(fptr, "difc %s(%s) %g\n", spname[i],
-                            molms2string(ms, string), mols->difc[i][ms]);
+                        molms2string(ms, string), mols->difc[i][ms]);
         }
 
         for(ms = (enum MolecState)(0); ms < MSMAX;
             ms = (enum MolecState)(ms + 1)) {
             if(mols->difm[i][ms]) {
-                fprintf(fptr, "difm %s(%s)", spname[i],
-                        molms2string(ms, string));
+                fprintf(
+                    fptr, "difm %s(%s)", spname[i], molms2string(ms, string));
                 for(d = 0; d < dim * dim; d++)
                     fprintf(fptr, " %g", mols->difm[i][ms][d]);
                 fprintf(fptr, "\n");
@@ -3212,8 +3205,8 @@ void writemols(simptr sim, FILE *fptr)
         for(ms = (enum MolecState)(0); ms < MSMAX;
             ms = (enum MolecState)(ms + 1)) {
             if(mols->drift[i][ms]) {
-                fprintf(fptr, "drift %s(%s)", spname[i],
-                        molms2string(ms, string));
+                fprintf(
+                    fptr, "drift %s(%s)", spname[i], molms2string(ms, string));
                 for(d = 0; d < dim; d++)
                     fprintf(fptr, " %g", mols->drift[i][ms][d]);
                 fprintf(fptr, "\n");
@@ -3228,13 +3221,13 @@ void writemols(simptr sim, FILE *fptr)
                 ;
             if(ms == MSMAX)
                 fprintf(fptr, "mol_list %s(all) %s\n", spname[i],
-                        mols->listname[ll]);
+                    mols->listname[ll]);
             else {
                 for(ms = (enum MolecState)(0); ms < MSMAX;
                     ms = (enum MolecState)(ms + 1))
                     fprintf(fptr, "mol_list %s(%s) %s\n", spname[i],
-                            molms2string(ms, string),
-                            mols->listname[mols->listlookup[i][ms]]);
+                        molms2string(ms, string),
+                        mols->listname[mols->listlookup[i][ms]]);
             }
         }
 
@@ -3249,7 +3242,7 @@ void writemols(simptr sim, FILE *fptr)
             for(ms = (enum MolecState)(0); ms < MSMAX;
                 ms = (enum MolecState)(ms + 1))
                 fprintf(fptr, "display_size %s(%s) %g\n", spname[i],
-                        molms2string(ms, string), mols->display[i][ms]);
+                    molms2string(ms, string), mols->display[i][ms]);
         }
 
         val0 = mols->color[i][0][0];
@@ -3261,14 +3254,14 @@ void writemols(simptr sim, FILE *fptr)
             ms = (enum MolecState)(ms + 1))
             ;
         if(ms == MSMAX)
-            fprintf(fptr, "color %s(all) %g %g %g\n", spname[i], val0, val1,
-                    val2);
+            fprintf(
+                fptr, "color %s(all) %g %g %g\n", spname[i], val0, val1, val2);
         else {
             for(ms = (enum MolecState)(0); ms < MSMAX;
                 ms = (enum MolecState)(ms + 1))
                 fprintf(fptr, "color %s(%s) %g %g %g\n", spname[i],
-                        molms2string(ms, string), mols->color[i][ms][0],
-                        mols->color[i][ms][1], mols->color[i][ms][2]);
+                    molms2string(ms, string), mols->color[i][ms][0],
+                    mols->color[i][ms][1], mols->color[i][ms][2]);
         }
         fprintf(fptr, "\n");
     }
@@ -3278,9 +3271,9 @@ void writemols(simptr sim, FILE *fptr)
 /* writemolecules */
 void writemolecules(simptr sim, FILE *fptr)
 {
-    int m, ll;
-    char **spname, string[STRCHAR];
-    molssptr mols;
+    int         m, ll;
+    char **     spname, string[STRCHAR];
+    molssptr    mols;
     moleculeptr mptr;
 
     mols = sim->mols;
@@ -3298,12 +3291,12 @@ void writemolecules(simptr sim, FILE *fptr)
                         fprintf(fptr, "mol 1 %s", spname[mptr->ident]);
                     else {
                         fprintf(fptr, "surface_mol 1 %s(%s) %s",
-                                spname[mptr->ident],
-                                molms2string(mptr->mstate, string),
-                                mptr->pnl->srf->sname);
+                            spname[mptr->ident],
+                            molms2string(mptr->mstate, string),
+                            mptr->pnl->srf->sname);
                         fprintf(fptr, " %s %s",
-                                surfps2string(mptr->pnl->ps, string),
-                                mptr->pnl->pname);
+                            surfps2string(mptr->pnl->ps, string),
+                            mptr->pnl->pname);
                     }
                     fprintf(fptr, "%s\n", molpos2string(sim, mptr, string));
                 }
@@ -3315,28 +3308,28 @@ void writemolecules(simptr sim, FILE *fptr)
 /* checkmolparams */
 int checkmolparams(simptr sim, int *warnptr)
 {
-    int dim, i, nspecies, m, ll, warn, error, sum, same;
-    molssptr mols;
-    moleculeptr mptr;
-    char **spname, string[STRCHAR];
-    double m2[DIMMAX * DIMMAX], diag;
+    int             dim, i, nspecies, m, ll, warn, error, sum, same;
+    molssptr        mols;
+    moleculeptr     mptr;
+    char **         spname, string[STRCHAR];
+    double          m2[DIMMAX * DIMMAX], diag;
     enum MolecState ms;
 
     error = warn = 0;
-    mols = sim->mols;
+    mols         = sim->mols;
     if(!mols) {
         if(warnptr)
             *warnptr = warn;
         return 0;
     }
-    dim = sim->dim;
+    dim      = sim->dim;
     nspecies = mols->nspecies;
-    spname = mols->spname;
+    spname   = mols->spname;
 
     if(mols->condition != SCok) {
         warn++;
         simLog(sim, 7, " WARNING: molecule structure %s\n",
-               simsc2string(mols->condition, string));
+            simsc2string(mols->condition, string));
     }
 
     for(ll = 0; ll < mols->nlist; ll++) {  // check molecule list sorting
@@ -3345,36 +3338,34 @@ int checkmolparams(simptr sim, int *warnptr)
             if(!mptr) {
                 error++;
                 simLog(sim, 10,
-                       " SMOLDYN BUG: NULL molecule in live list %i at %i\n",
-                       ll, m);
+                    " SMOLDYN BUG: NULL molecule in live list %i at %i\n", ll,
+                    m);
             }
             else if(mptr->list != mols->listlookup[mptr->ident][mptr->mstate]) {
                 error++;
                 simLog(sim, 10,
-                       " SMOLDYN BUG: molecule list value for species %i (%s) "
-                       "is %i but should be %i\n",
-                       mptr->ident, molms2string(mptr->mstate, string),
-                       mptr->list, mols->listlookup[mptr->ident][mptr->mstate]);
+                    " SMOLDYN BUG: molecule list value for species %i (%s) "
+                    "is %i but should be %i\n",
+                    mptr->ident, molms2string(mptr->mstate, string), mptr->list,
+                    mols->listlookup[mptr->ident][mptr->mstate]);
             }
             else if(mptr->list != ll) {
                 warn++;
                 simLog(sim, 9,
-                       " WARNING: mis-sorted molecule in live list %i at %i\n",
-                       ll, m);
+                    " WARNING: mis-sorted molecule in live list %i at %i\n", ll,
+                    m);
             }
             else if(!mptr->ident) {
                 warn++;
                 simLog(sim, 5,
-                       " WARNING: empty molecule in live list %i at %i\n", ll,
-                       m);
+                    " WARNING: empty molecule in live list %i at %i\n", ll, m);
             }
         }
         for(; m < mols->maxl[ll]; m++) {
             mptr = mols->live[ll][m];
             if(mptr) {
                 error++;
-                simLog(
-                    sim, 10,
+                simLog(sim, 10,
                     " SMOLDYN BUG: misplaced molecule in live list %i at %i\n",
                     ll, m);
             }
@@ -3385,20 +3376,20 @@ int checkmolparams(simptr sim, int *warnptr)
         mptr = mols->dead[m];
         if(!mptr) {
             error++;
-            simLog(sim, 10, " SMOLDYN BUG: NULL molecule in dead list at %i\n",
-                   m);
+            simLog(
+                sim, 10, " SMOLDYN BUG: NULL molecule in dead list at %i\n", m);
         }
         else if(mptr->list != -1) {
             error++;
             simLog(sim, 10,
-                   " SMOLDYN BUG: mis-sorted molecule in dead list at %i "
-                   "(species %i, serno %s)\n",
-                   m, mptr->ident, molserno2string(mptr->serno, string));
+                " SMOLDYN BUG: mis-sorted molecule in dead list at %i "
+                "(species %i, serno %s)\n",
+                m, mptr->ident, molserno2string(mptr->serno, string));
         }
         else if(mptr->ident) {
             error++;
-            simLog(sim, 10, " SMOLDYN BUG: live molecule in dead list at %i\n",
-                   m);
+            simLog(
+                sim, 10, " SMOLDYN BUG: live molecule in dead list at %i\n", m);
         }
     }
     for(; m < mols->nd; m++) {
@@ -3406,20 +3397,18 @@ int checkmolparams(simptr sim, int *warnptr)
         if(!mptr) {
             error++;
             simLog(sim, 10,
-                   " SMOLDYN BUG: NULL molecule in resurrected list at %i\n",
-                   m);
+                " SMOLDYN BUG: NULL molecule in resurrected list at %i\n", m);
         }
         else if(mptr->list == -1) {
             error++;
-            simLog(
-                sim, 10,
+            simLog(sim, 10,
                 " SMOLDYN BUG: mis-sorted molecule in resurrected list at %i\n",
                 m);
         }
         else if(!mptr->ident) {
             error++;
-            simLog(sim, 10, " BUG: dead molecule in resurrected list at %i\n",
-                   m);
+            simLog(
+                sim, 10, " BUG: dead molecule in resurrected list at %i\n", m);
         }
     }
     for(; m < mols->maxd; m++) {
@@ -3427,7 +3416,7 @@ int checkmolparams(simptr sim, int *warnptr)
         if(mptr) {
             error++;
             simLog(sim, 10,
-                   " SMOLDYN BUG: misplaced molecule in dead list at %i\n", m);
+                " SMOLDYN BUG: misplaced molecule in dead list at %i\n", m);
         }
     }
 
@@ -3437,10 +3426,9 @@ int checkmolparams(simptr sim, int *warnptr)
             mptr = mols->live[ll][m];
             if(!posinsystem(sim, mptr->pos)) {
                 simLog(sim, 5,
-                       " WARNING: molecule #%s, of type '%s', is outside "
-                       "system volume\n",
-                       molserno2string(mptr->serno, string),
-                       spname[mptr->ident]);
+                    " WARNING: molecule #%s, of type '%s', is outside "
+                    "system volume\n",
+                    molserno2string(mptr->serno, string), spname[mptr->ident]);
                 warn++;
             }
         }
@@ -3452,9 +3440,9 @@ int checkmolparams(simptr sim, int *warnptr)
                 dotMMD(mols->difm[i][ms], mols->difm[i][ms], m2, dim, dim, dim);
                 if(!issymmetricMD(m2, dim)) {
                     simLog(sim, 5,
-                           " WARNING: diffusion matrix for molecule %s (%s) is "
-                           "asymmetric\n",
-                           spname[i], molms2string(ms, string));
+                        " WARNING: diffusion matrix for molecule %s (%s) is "
+                        "asymmetric\n",
+                        spname[i], molms2string(ms, string));
                     warn++;
                 }
             }
@@ -3484,16 +3472,16 @@ int checkmolparams(simptr sim, int *warnptr)
                 ms = (enum MolecState)(ms + 1)) {
                 if(mols->display[i][ms] > 0.1 * diag) {
                     simLog(sim, 5,
-                           " WARNING: very large display size for molecule %s "
-                           "(%s)\n",
-                           spname[i], same ? "all" : molms2string(ms, string));
+                        " WARNING: very large display size for molecule %s "
+                        "(%s)\n",
+                        spname[i], same ? "all" : molms2string(ms, string));
                     warn++;
                 }
                 if(mols->display[i][ms] < 0.001 * diag) {
                     simLog(sim, 5,
-                           " WARNING: very small display size for molecule %s "
-                           "(%s)\n",
-                           spname[i], same ? "all" : molms2string(ms, string));
+                        " WARNING: very small display size for molecule %s "
+                        "(%s)\n",
+                        spname[i], same ? "all" : molms2string(ms, string));
                     warn++;
                 }
             }
@@ -3513,7 +3501,7 @@ int checkmolparams(simptr sim, int *warnptr)
 int molenablemols(simptr sim, int maxspecies)
 {
     molssptr mols;
-    int er;
+    int      er;
 
     if(sim->mols) {  // check for redundant function call
         if(maxspecies == -1) {
@@ -3572,7 +3560,7 @@ void molsetcondition(molssptr mols, enum StructCond cond, int upgrade)
 /* addmollist */
 int addmollist(simptr sim, const char *nm, enum MolListType mlt)
 {
-    int ll, er;
+    int      ll, er;
     molssptr mols;
 
     if(!sim->mols) {
@@ -3590,7 +3578,7 @@ int addmollist(simptr sim, const char *nm, enum MolListType mlt)
         if(er < 0)
             return -1;
     }
-    ll = mols->nlist++;
+    ll                 = mols->nlist++;
     mols->listtype[ll] = mlt;
     strcpy(mols->listname[ll], nm);
     boxsetcondition(sim->boxs, SClists, 0);
@@ -3626,7 +3614,7 @@ int molsetmaxmol(simptr sim, int max)
 int moladdspecies(simptr sim, const char *nm)
 {
     molssptr mols;
-    int found, er;
+    int      found, er;
 
     er = molenablemols(sim, -1);
     if(er)
@@ -3649,18 +3637,18 @@ int moladdspecies(simptr sim, const char *nm)
 }
 
 /* molgeneratespecies */
-int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
-                       int parent2)
+int molgeneratespecies(
+    simptr sim, const char *name, int nparents, int parent1, int parent2)
 {
-    int i, c, s;
+    int             i, c, s;
     enum MolecState ms, ms0, ms1, ms2, ms4;
-    molssptr mols;
-    double d1, d2, r1, r2, color[3];
-    surfaceptr srf;
-    enum PanelFace face;
-    enum SrfAction act1, act2;
-    surfactionptr det1, det2;
-    const double blackcolor[3] = {0, 0, 0};
+    molssptr        mols;
+    double          d1, d2, r1, r2, color[3];
+    surfaceptr      srf;
+    enum PanelFace  face;
+    enum SrfAction  act1, act2;
+    surfactionptr   det1, det2;
+    const double    blackcolor[3] = {0, 0, 0};
 
     mols = sim->mols;
 
@@ -3686,17 +3674,17 @@ int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
                     for(face = (enum PanelFace)0; face <= PFnone;
                         face = (PanelFace)(face + 1)) {
                         surfsetaction(srf, i, NULL, ms, face,
-                                      srf->action[parent1][ms][face], -1);
+                            srf->action[parent1][ms][face], -1);
                         if(srf->action[parent1][ms][face] == SAmult) {
                             for(ms4 = (enum MolecState)0;
                                 ms4 < (enum MolecState)MSMAX1;
                                 ms4 = (enum MolecState)(ms4 + 1)) {
-                                srfindex2tristate(ms, face, ms4, &ms0, &ms1,
-                                                  &ms2);
+                                srfindex2tristate(
+                                    ms, face, ms4, &ms0, &ms1, &ms2);
                                 surfsetrate(srf, i, NULL, ms0, ms1, ms2, i,
-                                            srf->actdetails[parent1][ms][face]
-                                                ->srfrate[ms4],
-                                            1);
+                                    srf->actdetails[parent1][ms][face]
+                                        ->srfrate[ms4],
+                                    1);
                             }
                         }
                     }
@@ -3715,8 +3703,8 @@ int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
             if(d1 == 0 || d2 == 0)
                 molsetdifc(sim, i, NULL, ms, 0);
             else
-                molsetdifc(sim, i, NULL, ms,
-                           pow(pow(d1, -3) + pow(d2, -3), -1.0 / 3));
+                molsetdifc(
+                    sim, i, NULL, ms, pow(pow(d1, -3) + pow(d2, -3), -1.0 / 3));
             if(r2 == 0) {
                 molsetdisplaysize(sim, i, NULL, ms, r1);
                 molsetcolor(sim, i, NULL, ms, mols->color[parent1][ms]);
@@ -3726,11 +3714,11 @@ int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
                 molsetcolor(sim, i, NULL, ms, mols->color[parent2][ms]);
             }
             else {
-                molsetdisplaysize(sim, i, NULL, ms,
-                                  pow(pow(r1, 3) + pow(r2, 3), 1.0 / 3));
+                molsetdisplaysize(
+                    sim, i, NULL, ms, pow(pow(r1, 3) + pow(r2, 3), 1.0 / 3));
                 for(c = 0; c < 3; c++)
                     color[c] = (r1 * mols->color[parent1][ms][c] +
-                                r2 * mols->color[parent2][ms][c]) /
+                                   r2 * mols->color[parent2][ms][c]) /
                                (r1 + r2);
                 molsetcolor(sim, i, NULL, ms, color);
             }
@@ -3752,10 +3740,10 @@ int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
                             for(ms4 = (enum MolecState)0;
                                 ms4 < (enum MolecState)MSMAX1;
                                 ms4 = (enum MolecState)(ms4 + 1)) {
-                                srfindex2tristate(ms, face, ms4, &ms0, &ms1,
-                                                  &ms2);
+                                srfindex2tristate(
+                                    ms, face, ms4, &ms0, &ms1, &ms2);
                                 surfsetrate(srf, i, NULL, ms0, ms1, ms2, i,
-                                            det1->srfrate[ms4], 1);
+                                    det1->srfrate[ms4], 1);
                             }
                         }
                     }
@@ -3770,7 +3758,7 @@ int molgeneratespecies(simptr sim, const char *name, int nparents, int parent1,
 /* molsupdateparams */
 int molsupdateparams(molssptr mols, double dt)
 {
-    int i, ll;
+    int             i, ll;
     enum MolecState ms;
 
     for(ll = 0; ll < mols->nlist; ll++)
@@ -3793,10 +3781,10 @@ int molsupdateparams(molssptr mols, double dt)
 /* molsupdatelists */
 int molsupdatelists(simptr sim)
 {
-    int i, ll, m, ndif, nfix, ok, er;
+    int             i, ll, m, ndif, nfix, ok, er;
     enum MolecState ms;
-    molssptr mols;
-    moleculeptr mptr;
+    molssptr        mols;
+    moleculeptr     mptr;
 
     mols = sim->mols;
 
@@ -3809,12 +3797,12 @@ int molsupdatelists(simptr sim)
             ms = (enum MolecState)(ms + 1))
             mols->exist[i][ms] = 0;
     for(m = mols->topd; m < mols->nd; m++) {
-        mptr = mols->dead[m];
+        mptr                                   = mols->dead[m];
         mols->exist[mptr->ident][mptr->mstate] = 1;
     }
     for(ll = 0; ll < mols->nlist; ll++)
         for(m = 0; m < mols->nl[ll]; m++) {
-            mptr = mols->live[ll][m];
+            mptr                                   = mols->live[ll][m];
             mols->exist[mptr->ident][mptr->mstate] = 1;
         }
     for(i = 1; i < mols->nspecies; i++) {
@@ -3881,7 +3869,7 @@ int molsupdatelists(simptr sim)
 
     for(m = mols->topd; m < mols->nd;
         m++) {  // set molecule list values for molecules in dead list
-        mptr = mols->dead[m];
+        mptr       = mols->dead[m];
         mptr->list = mols->listlookup[mptr->ident][mptr->mstate];
     }
 
@@ -3891,7 +3879,7 @@ int molsupdatelists(simptr sim)
 /* molsupdate */
 int molsupdate(simptr sim)
 {
-    int er;
+    int      er;
     molssptr mols;
 
     mols = sim->mols;
@@ -3921,12 +3909,12 @@ void molkill(simptr sim, moleculeptr mptr, int ll, int m)
 {
     int d;
 
-    mptr->ident = 0;
+    mptr->ident  = 0;
     mptr->mstate = MSsoln;
-    mptr->list = -1;
+    mptr->list   = -1;
     for(d = 0; d < sim->dim; d++)
         mptr->posoffset[d] = 0;
-    mptr->pnl = NULL;
+    mptr->pnl  = NULL;
     mptr->pnlx = NULL;
     if(ll < 0)
         ;
@@ -3942,7 +3930,7 @@ void molkill(simptr sim, moleculeptr mptr, int ll, int m)
 moleculeptr getnextmol(molssptr mols)
 {
     moleculeptr mptr;
-    int er, nmol;
+    int         er, nmol;
 
     if(mols->topd == 0) {
         if(mols->maxdlimit >= 0 && mols->maxd >= mols->maxdlimit)
@@ -3954,7 +3942,7 @@ moleculeptr getnextmol(molssptr mols)
         if(er)
             return NULL;
     }
-    mptr = mols->dead[--mols->topd];
+    mptr        = mols->dead[--mols->topd];
     mptr->serno = (unsigned long long)(mols->serno++);
 
     mols->touch++;
@@ -3968,19 +3956,19 @@ moleculeptr newestmol(molssptr mols)
 }
 
 /* addmol */
-int addmol(simptr sim, int nmol, int ident, double *poslo, double *poshi,
-           int sort)
+int addmol(
+    simptr sim, int nmol, int ident, double *poslo, double *poshi, int sort)
 {
-    int m, d;
+    int         m, d;
     moleculeptr mptr;
 
     for(m = 0; m < nmol; m++) {
         mptr = getnextmol(sim->mols);
         if(!mptr)
             return 3;
-        mptr->ident = ident;
+        mptr->ident  = ident;
         mptr->mstate = MSsoln;
-        mptr->list = sim->mols->listlookup[ident][MSsoln];
+        mptr->list   = sim->mols->listlookup[ident][MSsoln];
         if(poslo == poshi)
             for(d = 0; d < sim->dim; d++)
                 mptr->posx[d] = mptr->pos[d] = poslo[d];
@@ -4002,21 +3990,21 @@ int addmol(simptr sim, int nmol, int ident, double *poslo, double *poshi,
 
 /* addsurfmol */
 int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
-               panelptr pnl, int surface, enum PanelShape ps, char *pname)
+    panelptr pnl, int surface, enum PanelShape ps, char *pname)
 {
-    int dim, m, d, totpanel, panel;
+    int         dim, m, d, totpanel, panel;
     moleculeptr mptr;
-    int s, slo, shi, pslo, pshi, p, plo, phi, pindex;
-    double *areatable, area, mpos[DIMMAX], mpos2[DIMMAX];
-    panelptr *paneltable;
-    surfaceptr srf;
+    int         s, slo, shi, pslo, pshi, p, plo, phi, pindex;
+    double *    areatable, area, mpos[DIMMAX], mpos2[DIMMAX];
+    panelptr *  paneltable;
+    surfaceptr  srf;
 
     dim = sim->dim;
 
     if(pnl || (surface >= 0 && ps != PSall && pname &&
-               strcmp(pname, "all"))) {  // add to a specific panel
+                  strcmp(pname, "all"))) {  // add to a specific panel
         if(!pnl) {
-            srf = sim->srfss->srflist[surface];
+            srf   = sim->srfss->srflist[surface];
             panel = stringfind(srf->pname[ps], srf->npanel[ps], pname);
             if(panel < 0)
                 return 2;
@@ -4026,9 +4014,9 @@ int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
             mptr = getnextmol(sim->mols);
             if(!mptr)
                 return 3;
-            mptr->ident = ident;
+            mptr->ident  = ident;
             mptr->mstate = ms;
-            mptr->list = sim->mols->listlookup[ident][ms];
+            mptr->list   = sim->mols->listlookup[ident][ms];
             mptr->pnl = mptr->pnlx = pnl;
             if(pos) {
                 for(d = 0; d < dim; d++)
@@ -4069,13 +4057,13 @@ int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
             return 1;
         }
 
-        slo = (surface >= 0) ? surface : 0;
-        shi = (surface >= 0) ? surface + 1 : sim->srfss->nsrf;
+        slo  = (surface >= 0) ? surface : 0;
+        shi  = (surface >= 0) ? surface + 1 : sim->srfss->nsrf;
         pslo = (ps != PSall) ? ps : 0;
         pshi = (ps != PSall) ? ps + 1 : PSMAX;
 
         pindex = 0;  // fill in area lookup tables
-        area = 0;
+        area   = 0;
         for(s = slo; s < shi; s++)
             for(ps = PanelShape(pslo); ps < pshi; ps = PanelShape(ps + 1)) {
                 srf = sim->srfss->srflist[s];
@@ -4083,8 +4071,8 @@ int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
                     plo = 0;
                     phi = srf->npanel[ps];
                 }
-                else if((panel = stringfind(srf->pname[ps], srf->npanel[ps],
-                                            pname)) < 0)
+                else if((panel = stringfind(
+                             srf->pname[ps], srf->npanel[ps], pname)) < 0)
                     plo = phi = 0;
                 else {
                     plo = panel;
@@ -4092,7 +4080,7 @@ int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
                 }
                 for(p = plo; p < phi; p++) {
                     area += surfacearea2(sim, s, ps, srf->pname[ps][p], NULL);
-                    areatable[pindex] = area;
+                    areatable[pindex]  = area;
                     paneltable[pindex] = srf->panels[ps][p];
                     pindex++;
                 }
@@ -4105,11 +4093,11 @@ int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
                 free(areatable);
                 return 3;
             }
-            mptr->ident = ident;
+            mptr->ident  = ident;
             mptr->mstate = ms;
-            mptr->list = sim->mols->listlookup[ident][ms];
-            pindex = intrandpD(totpanel, areatable);
-            pnl = paneltable[pindex];
+            mptr->list   = sim->mols->listlookup[ident][ms];
+            pindex       = intrandpD(totpanel, areatable);
+            pnl          = paneltable[pindex];
             mptr->pnl = mptr->pnlx = pnl;
             panelrandpos(pnl, mpos, dim);
             if(ms == MSfront)
@@ -4136,7 +4124,7 @@ int addsurfmol(simptr sim, int nmol, int ident, enum MolecState ms, double *pos,
 /* addcompartmol */
 int addcompartmol(simptr sim, int nmol, int ident, compartptr cmpt)
 {
-    int d, dim, m, er;
+    int         d, dim, m, er;
     moleculeptr mptr;
 
     if(cmpt->npts == 0 && cmpt->ncmptl == 0)
@@ -4147,10 +4135,10 @@ int addcompartmol(simptr sim, int nmol, int ident, compartptr cmpt)
         mptr = getnextmol(sim->mols);
         if(!mptr)
             return 3;
-        mptr->ident = ident;
+        mptr->ident  = ident;
         mptr->mstate = MSsoln;
-        mptr->list = sim->mols->listlookup[ident][MSsoln];
-        er = compartrandpos(sim, mptr->pos, cmpt);
+        mptr->list   = sim->mols->listlookup[ident][MSsoln];
+        er           = compartrandpos(sim, mptr->pos, cmpt);
         if(er)
             return 2;
         for(d = 0; d < dim; d++)
@@ -4172,24 +4160,24 @@ int addcompartmol(simptr sim, int nmol, int ident, compartptr cmpt)
 /* molsort */
 int molsort(simptr sim, int onlydead2live)
 {
-    molssptr mols;
-    int nlist, *maxl, *nl, *topl, *sortl, m, ll, ll2;
-    moleculeptr *dead, **live, *mlist, mptr;
+    molssptr          mols;
+    int               nlist, *maxl, *nl, *topl, *sortl, m, ll, ll2;
+    moleculeptr *     dead, **live, *mlist, mptr;
     enum MolListType *listtype;
-    boxptr bptr;
-    panelptr pnl;
+    boxptr            bptr;
+    panelptr          pnl;
 
     if(!sim->mols)
         return 0;
-    mols = sim->mols;
-    dead = mols->dead;
-    nlist = mols->nlist;
+    mols     = sim->mols;
+    dead     = mols->dead;
+    nlist    = mols->nlist;
     listtype = mols->listtype;
-    live = mols->live;
-    maxl = mols->maxl;
-    nl = mols->nl;
-    topl = mols->topl;
-    sortl = mols->sortl;
+    live     = mols->live;
+    maxl     = mols->maxl;
+    nl       = mols->nl;
+    topl     = mols->topl;
+    sortl    = mols->sortl;
 
     if(!onlydead2live) {
         for(ll = 0; ll < nlist; ll++)  // reset topl indicies
@@ -4205,14 +4193,14 @@ int molsort(simptr sim, int onlydead2live)
                             boxremovemol(mptr, ll);
                         if(mptr->pnl)
                             surfremovemol(mptr, ll);
-                        dead[mols->nd++] = dead[mols->topd];
+                        dead[mols->nd++]   = dead[mols->topd];
                         dead[mols->topd++] = mptr;
-                        mlist[m] = NULL;
+                        mlist[m]           = NULL;
                     }
                     else {  // move to another live list
-                        ll2 = mptr->list;
+                        ll2  = mptr->list;
                         bptr = mptr->box;
-                        pnl = mptr->pnl;
+                        pnl  = mptr->pnl;
                         if(bptr)
                             boxremovemol(mptr, ll);
                         if(pnl)
@@ -4223,7 +4211,7 @@ int molsort(simptr sim, int onlydead2live)
                                 return 1;
                             }
                         live[ll2][nl[ll2]++] = mptr;
-                        mlist[m] = NULL;
+                        mlist[m]             = NULL;
                         if(listtype[ll2] == MLTsystem) {
                             if(bptr)
                                 mptr->box = bptr;
@@ -4245,7 +4233,7 @@ int molsort(simptr sim, int onlydead2live)
 
                     mlist[m] = mlist[--topl[ll]];  // compact original live list
                     mlist[topl[ll]] = mlist[--nl[ll]];
-                    mlist[nl[ll]] = NULL;
+                    mlist[nl[ll]]   = NULL;
                     m--;
                 }
             }
@@ -4255,14 +4243,14 @@ int molsort(simptr sim, int onlydead2live)
     for(m = mols->topd; m < mols->nd;
         m++) {  // move molecules from resurrected to reborn
         mptr = dead[m];
-        ll2 = mptr->list;
+        ll2  = mptr->list;
         if(nl[ll2] == maxl[ll2])
             if(molexpandlist(mols, sim->dim, ll2, -1, 0)) {
                 simLog(sim, 10, "out of memory in molsort\n");
                 return 1;
             }
         live[ll2][nl[ll2]++] = mptr;
-        dead[m] = NULL;
+        dead[m]              = NULL;
         if(listtype[ll2] == MLTsystem) {
             if(boxaddmol(mptr, ll2)) {
                 simLog(sim, 10, "out of memory in molsort\n");
@@ -4283,18 +4271,18 @@ int molsort(simptr sim, int onlydead2live)
 /* moldosurfdrift */
 void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
 {
-    int i, s, axis;
+    int             i, s, axis;
     enum MolecState ms;
     enum PanelShape ps;
     double *****surfdrift, vect[3], drift1, drift2, *pt1, *pt2, dist, unit0[3],
         unit1[3], unit2[3], top[3];
     panelptr pnl;
 
-    i = mptr->ident;
-    ms = mptr->mstate;
-    pnl = mptr->pnl;
-    s = pnl->srf->selfindex;
-    ps = pnl->ps;
+    i         = mptr->ident;
+    ms        = mptr->mstate;
+    pnl       = mptr->pnl;
+    s         = pnl->srf->selfindex;
+    ps        = pnl->ps;
     surfdrift = sim->mols->surfdrift;
     vect[0] = vect[1] = vect[2] = 0;
 
@@ -4314,8 +4302,8 @@ void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
                           pnl->point[1][0];
             }
             else if(ps == PSdisk) {
-                pt1 = mptr->pos;
-                pt2 = pnl->point[0];
+                pt1  = mptr->pos;
+                pt2  = pnl->point[0];
                 dist = sqrt((pt2[0] - pt1[0]) * (pt2[0] - pt1[0]) +
                             (pt2[1] - pt1[1]) * (pt2[1] - pt1[1]));
                 if(dist > VERYCLOSE) {
@@ -4336,7 +4324,7 @@ void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
             drift2 = surfdrift[i][ms][s][ps][1] * dt;
             if(ps == PSrect) {
                 vect[(int)(pnl->front[2])] = drift1;
-                axis = 0;
+                axis                       = 0;
                 if(axis == (int)(pnl->front[1]) || axis == (int)(pnl->front[2]))
                     axis++;
                 if(axis == (int)(pnl->front[1]) || axis == (int)(pnl->front[2]))
@@ -4345,7 +4333,7 @@ void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
             }
             else if(ps == PStri) {
                 Geo_TriUnitVects(pnl->point[0], pnl->point[1], pnl->point[2],
-                                 unit0, unit1, unit2);
+                    unit0, unit1, unit2);
                 vect[0] = drift1 * unit1[0] + drift2 * unit2[0];
                 vect[1] = drift1 * unit1[1] + drift2 * unit2[1];
                 vect[2] = drift1 * unit1[2] + drift2 * unit2[2];
@@ -4355,14 +4343,14 @@ void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
                 top[1] = pnl->point[0][1];
                 top[2] = pnl->point[0][2] + pnl->point[1][0];
                 Geo_SphereUnitVects(pnl->point[0], top, mptr->pos,
-                                    (int)(pnl->front[0]), unit0, unit1, unit2);
+                    (int)(pnl->front[0]), unit0, unit1, unit2);
                 vect[0] = drift1 * unit1[0] + drift2 * unit2[0];
                 vect[1] = drift1 * unit1[1] + drift2 * unit2[1];
                 vect[2] = drift1 * unit1[2] + drift2 * unit2[2];
             }
             else if(ps == PScyl) {
                 Geo_CylUnitVects(pnl->point[0], pnl->point[1], mptr->pos,
-                                 (int)(pnl->front[2]), unit0, unit1, unit2);
+                    (int)(pnl->front[2]), unit0, unit1, unit2);
                 vect[0] = drift1 * unit1[0] + drift2 * unit2[0];
                 vect[1] = drift1 * unit1[1] + drift2 * unit2[1];
                 vect[2] = drift1 * unit1[2] + drift2 * unit2[2];
@@ -4372,14 +4360,14 @@ void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
                 top[1] = pnl->point[0][1] - pnl->point[2][1];
                 top[2] = pnl->point[0][2] - pnl->point[2][2];
                 Geo_SphereUnitVects(pnl->point[0], top, mptr->pos,
-                                    (int)(pnl->front[0]), unit0, unit1, unit2);
+                    (int)(pnl->front[0]), unit0, unit1, unit2);
                 vect[0] = drift1 * unit1[0] + drift2 * unit2[0];
                 vect[1] = drift1 * unit1[1] + drift2 * unit2[1];
                 vect[2] = drift1 * unit1[2] + drift2 * unit2[2];
             }
             else if(ps == PSdisk) {
-                Geo_DiskUnitVects(pnl->point[0], pnl->front, mptr->pos, unit0,
-                                  unit1, unit2);
+                Geo_DiskUnitVects(
+                    pnl->point[0], pnl->front, mptr->pos, unit0, unit1, unit2);
                 vect[0] = drift1 * unit1[0] + drift2 * unit2[0];
                 vect[1] = drift1 * unit1[1] + drift2 * unit2[1];
                 vect[2] = drift1 * unit1[2] + drift2 * unit2[2];
@@ -4397,40 +4385,40 @@ void moldosurfdrift(simptr sim, moleculeptr mptr, double dt)
 /* diffuse */
 int diffuse(simptr sim)
 {
-    molssptr mols;
-    int ll, m, d, nmol, dim, i, ngtablem1;
+    molssptr        mols;
+    int             ll, m, d, nmol, dim, i, ngtablem1;
     enum MolecState ms;
-    double flt1;
+    double          flt1;
     double v1[DIMMAX], v2[DIMMAX], **difstep, ***difm, ***drift, *gtable, dt;
     moleculeptr *mlist;
-    moleculeptr mptr;
+    moleculeptr  mptr;
 
     if(!sim->mols)
         return 0;
-    dim = sim->dim;
-    mols = sim->mols;
+    dim       = sim->dim;
+    mols      = sim->mols;
     ngtablem1 = mols->ngausstbl - 1;
-    gtable = mols->gausstbl;
-    difstep = mols->difstep;
-    difm = mols->difm;
-    drift = mols->drift;
-    dt = sim->dt;
-    flt1 = sqrt(2.0 * dt);
+    gtable    = mols->gausstbl;
+    difstep   = mols->difstep;
+    difm      = mols->difm;
+    drift     = mols->drift;
+    dt        = sim->dt;
+    flt1      = sqrt(2.0 * dt);
 
     for(ll = 0; ll < mols->nlist; ll++)
         if(mols->diffuselist[ll]) {
             mlist = mols->live[ll];
-            nmol = mols->nl[ll];
+            nmol  = mols->nl[ll];
             for(m = 0; m < nmol; m++) {
                 mptr = mlist[m];
-                i = mptr->ident;
-                ms = mptr->mstate;
+                i    = mptr->ident;
+                ms   = mptr->mstate;
                 for(d = 0; d < dim; d++)
                     mptr->posx[d] = mptr->pos[d];
                 mptr->pnlx = mptr->pnl;
 
                 if(mptr->pnl && mols->surfdrift && mols->surfdrift[i] &&
-                   mols->surfdrift[i][ms])
+                    mols->surfdrift[i][ms])
                     moldosurfdrift(sim, mptr, dt);  // surface drift
                 if(drift[i][ms])                    // drift
                     for(d = 0; d < dim; d++)

@@ -12,6 +12,8 @@ from typing import List
 from smoldyn import _smoldyn
 from .kinetics import Species
 
+from smoldyn.config import __logger__
+
 @dataclass
 class Boundaries:
     low: List[float]
@@ -25,12 +27,12 @@ class Boundaries:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
         _smoldyn.setBoundaries(list(zip(self.low, self.high)))
+        __logger__.debug('Getting boundaries', _smoldyn.getBoundaries())
         assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
 
 
 class Model(object):
     """Model class.
-    
     """
 
     def __init__(self, bounds):
@@ -44,7 +46,7 @@ class Model(object):
         _smoldyn.run(stoptime, dt)
 
     def addMolecules(self, mol : Species, N, pos):
-        print(f"[INFO ] Adding {N} of {mol} with pos {pos}")
+        __logger__.debug(f"Adding {N} of {mol} with pos {pos}")
         res = _smoldyn.addSolutionMolecules(mol.name, N
                 , self.bounds.low, self.bounds.high)
         assert res == _smoldyn.ErrorCode.ok

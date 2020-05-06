@@ -3,6 +3,7 @@ Python bindings.
 """
 
 from . import _smoldyn
+import logging
 
 __version__ = _smoldyn.__version__
 
@@ -11,3 +12,4 @@ from .simulation import *
 from .geometry import *
 from .kinetics import *
 from .utils import *
+
