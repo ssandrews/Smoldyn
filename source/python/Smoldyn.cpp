@@ -93,7 +93,7 @@ void runUntil(const double breaktime, const double dt, bool display)
     smolRunSimUntil(pSim_, breaktime);
 }
 
-bool runSim(double stoptime, double dt, bool display)
+bool run(double stoptime, double dt, bool display)
 {
     if(!pSim_) {
         if(!initialize()) {

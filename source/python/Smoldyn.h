@@ -44,7 +44,7 @@ size_t getRandomSeed();
 bool initialize();
 
 // Smoldyn.
-bool runSim(double simtime, double dt, bool display);
+bool run(double simtime, double dt, bool display);
 void runUntil(const double breaktime, const double dt, bool display);
 
 // Bounds.
@@ -138,9 +138,27 @@ double    getDt();
 
 inline void cleanup()
 {
-    cout << "Cleaning up. " << endl;
     if(pSim_)
         smolFreeSim(pSim_);
+}
+
+/* --------------------------------------------------------------------------*/
+/**
+ * @Synopsis  Split a filepath between dirname/filename. For examples::
+ *  /a/b/c.txt -> (/a/b, c.txt)
+ *
+ * @Param filepath
+ *
+ * @Returns   
+ */
+/* ----------------------------------------------------------------------------*/
+inline pair<string, string> splitPath(const string& p)
+{
+    string filename, fileroot;
+    auto   pos = p.find_last_of('/');
+    fileroot = p.substr(0, pos + 1);
+    filename = p.substr(pos + 1);
+    return {fileroot, filename};
 }
 
 

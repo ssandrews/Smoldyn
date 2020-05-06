@@ -38,20 +38,15 @@ extern int scmdopenfiles(cmdssptr cmds, int overwrite);
 /* ----------------------------------------------------------------------------*/
 int init_and_run(const string &filepath, const string &flags)
 {
-    int er = 0, wflag = 0;
-
-    string filename, fileroot;
-    auto   pos = filepath.find_last_of('/');
-
-    fileroot = filepath.substr(0, pos + 1);
-    filename = filepath.substr(pos + 1);
+    int  er = 0, wflag = 0;
+    auto p = splitPath(filepath);
 
 #ifdef OPTION_VCELL
-    er = simInitAndLoad(fileroot.c_str(), filename.c_str(), &pSim_,
+    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &pSim_,
         flags.c_str(), new SimpleValueProviderFactory(), new SimpleMesh());
 #else
     er = simInitAndLoad(
-        fileroot.c_str(), filename.c_str(), &pSim_, flags.c_str());
+        p.first.c_str(), p.second.c_str(), &pSim_, flags.c_str());
 #endif
     if(!er) {
         // if (!tflag && pSim_->graphss && pSim_->graphss->graphics != 0)
@@ -145,36 +140,66 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("same", ErrorCode::ECsame)
         .value("wildcard", ErrorCode::ECwildcard);
 
-    /**************************************************************************
-     * FUNCTIONS.
-     **************************************************************************
-     */
+    /*******************
+     *  Miscellaneous  *
+     *******************/
+    m.def("getVersion", &smolGetVersion);
 
+    /************
+     *  Errors  *
+     ************/
     m.def("setDebugMode", &smolSetDebugMode);
     m.def("errorCodeToString", &smolErrorCodeToString);
 
-    // Sim structure functions are not exposed to Python. They are for internal
-    // use only.
+    /************************
+     *  Sim struture
+     *  Use with care!
+     ************************/
+    m.def("newSim",
+        [](int dim, vector<double> &lowbounds, vector<double> &highbounds) {
+            pSim_ = smolNewSim(dim, &lowbounds[0], &highbounds[0]);
+            return pSim_;
+        });
+    m.def("updateSim", [](void) { return smolUpdateSim(pSim_); });
+    m.def("runTimeStep", [](void) { return smolRunTimeStep(pSim_); });
+    m.def("runSim", [](void) { return smolRunSim(pSim_); });
+    m.def("runSimUntil",
+        [](double breaktime) { return smolRunSimUntil(pSim_, breaktime); });
+    m.def("freeSim", [](void) { return smolFreeSim(pSim_); });
+    m.def("displaySim", [](void) { return smolDisplaySim(pSim_); });
 
-    // Read configuration file.
+    // Extra (not in C api).
+    m.def("run", &run, "stoptime"_a, "dt"_a, "display"_a = true);
+    m.def(
+        "runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true);
+
+    /*****************************
+     *  Read configuration file  *
+     *****************************/
+    m.def("prepareSimFromFile", [](const char *filepath, const char *flags) {
+        auto path = splitPath(string(filepath));
+        return smolPrepareSimFromFile(
+            path.first.c_str(), path.second.c_str(), flags);
+    });
+
+    /*************************
+     *  Simulation settings  *
+     *************************/
     m.def("loadSimFromFile",
         [](const string &filepath, const char *flags) -> ErrorCode {
-            string filename, fileroot;
-            auto   pos = filepath.find_last_of('/');
-            fileroot   = filepath.substr(0, pos + 1);
-            filename   = filepath.substr(pos + 1);
+            auto p = splitPath(filepath);
             assert(pSim_);
             return smolLoadSimFromFile(
-                fileroot.c_str(), filename.c_str(), &pSim_, flags);
+                p.first.c_str(), p.second.c_str(), &pSim_, flags);
         });
     m.def("readConfigString",
         [](const char *statement, char *params) -> ErrorCode {
             return smolReadConfigString(pSim_, statement, params);
         });
 
-
-    //-----------------------------------------------------------------------------
-    // Extra functions not available in the C-API. 
+    /*********************************************************
+     *  Extra function which are not avilable in the C-API.  *
+     *********************************************************/
     m.def("getDim", &getDim, "Dimention of the system");
     m.def("setDim", &setDim, "Set the dimnetion of the system.");
     m.def("getSeed", &getRandomSeed);
@@ -216,9 +241,11 @@ PYBIND11_MODULE(_smoldyn, m)
     //-----------------------------------------------------------------------------
     // enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char
     // *mollist);
-    m.def("addSpecies", [](const char *species, const char *mollist) {
-        return smolAddSpecies(pSim_, species, mollist);
-    }, "species"_a, "mollist"_a="");
+    m.def("addSpecies",
+        [](const char *species, const char *mollist) {
+            return smolAddSpecies(pSim_, species, mollist);
+        },
+        "species"_a, "mollist"_a = "");
 
     // int   smolGetSpeciesIndex(simptr sim, const char *species);
     m.def("getSpeciesIndex", [](const char *species) -> int {
@@ -741,11 +768,6 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolSetRandomSeed(pSim_, seed);
     });
 
-    m.def("setSimTimes", &setSimTimes);
-    m.def("updateSim", &updateSim);
-    m.def("runSim", &runSim, "stoptime"_a, "dt"_a, "display"_a = true);
-    m.def(
-        "runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true);
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
 

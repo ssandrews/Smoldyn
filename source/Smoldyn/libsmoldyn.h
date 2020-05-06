@@ -36,7 +36,8 @@ enum ErrorCode {
     ECerror    = -8,
     ECmemory   = -9,
     ECbug      = -10,
-    ECsame     = -11, ECwildcard = -12
+    ECsame     = -11,
+    ECwildcard = -12
 };
 
 #ifdef __cplusplus
@@ -118,7 +119,8 @@ enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
 
 /********************************* Molecules **********************************/
 
-enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char *mollist);
+enum ErrorCode smolAddSpecies(
+    simptr sim, const char *species, const char *mollist);
 int            smolGetSpeciesIndex(simptr sim, const char *species);
 int            smolGetSpeciesIndexNT(simptr sim, const char *species);
 char *         smolGetSpeciesName(simptr sim, int speciesindex, char *species);

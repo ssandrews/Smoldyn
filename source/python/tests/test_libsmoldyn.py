@@ -47,7 +47,7 @@ def test_library():
     S.addReaction("r100", "", MS.all, "", MS.all, ["ATP"], [MS.soln], 0.02)
     S.setReactionRegion("r100", "Cell00", "");
 
-    S.runSim(200, dt=0.01, display=True)
+    S.run(200, dt=0.01, display=True)
 
 
 def main():
