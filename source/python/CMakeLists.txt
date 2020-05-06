@@ -2,8 +2,19 @@
 
 pybind11_add_module(_smoldyn MODULE Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
 
+if("${CMAKE_VERSION}" VERSION_LESS "3.12")
+    find_package(PythonInterp REQUIRED)
+    find_package(PythonLibs REQUIRED)
+else()
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    set(PYTHON_EXECUTABLE Python3::Interpreter)
+    set(PYTHON_INCLUDE_DIRS ${Python_INCLUDE_DIRS})
+endif()
+
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
-target_include_directories(_smoldyn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
+target_include_directories(_smoldyn PRIVATE 
+    ${PYTHON_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
