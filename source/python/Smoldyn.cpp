@@ -12,13 +12,13 @@ using namespace std;
 #include "Smoldyn.h"
 
 // Global variables.
-simptr pSim_;
-size_t dim_ = 0;
-vector<double> lowbounds_;
-vector<double> highbounds_;
-bool debug_ = false;
-double curtime_ = 0.0;
-bool initDisplay_ = false;
+simptr_uptr_type_ pSim_ = simptr_uptr_type_(nullptr, smolFreeSim);
+size_t                dim_ = 0;
+vector<double>        lowbounds_;
+vector<double>        highbounds_;
+bool                  debug_       = false;
+double                curtime_     = 0.0;
+bool                  initDisplay_ = false;
 
 size_t getDim()
 {
@@ -28,29 +28,29 @@ size_t getDim()
 void setDim(size_t dim)
 {
     dim_ = dim;
-    if(pSim_)
-        pSim_->dim = dim;
+    if(pSim_.get())
+        pSim_.get()->dim = dim;
 }
 
 void setRandomSeed(size_t seed)
 {
-    if(!pSim_)
+    if(!pSim_.get())
         return;
-    pSim_->randseed = randomize(seed);
+    pSim_.get()->randseed = randomize(seed);
 }
 
 size_t getRandomSeed(void)
 {
-    return pSim_->randseed;
+    return pSim_.get()->randseed;
 }
 
 bool initialize()
 {
-    if(pSim_)
+    if(pSim_.get())
         return true;
     if(getDim() <= 0 || getDim() > 3) {
-        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim()
-             << endl;
+        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got "
+             << getDim() << endl;
         return false;
     }
 
@@ -74,42 +74,42 @@ bool initialize()
         }
     }
 
-    pSim_ = smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]);
+    pSim_.reset(smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]));
     if(debug_)
         smolSetDebugMode(1);
-    return pSim_ ? true : false;
+    return pSim_.get() ? true : false;
 }
 
 void runUntil(const double breaktime, const double dt, bool display)
 {
     // If dt>0, reset dt else use the old one.
     if(dt > 0.0)
-        smolSetTimeStep(pSim_, dt);
+        smolSetTimeStep(pSim_.get(), dt);
 
     if(display and (!initDisplay_)) {
-        smolDisplaySim(pSim_);
+        smolDisplaySim(pSim_.get());
         initDisplay_ = true;
     }
-    smolRunSimUntil(pSim_, breaktime);
+    smolRunSimUntil(pSim_.get(), breaktime);
 }
 
 bool run(double stoptime, double dt, bool display)
 {
-    if(!pSim_) {
+    if(!pSim_.get()) {
         if(!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
             return false;
         }
     }
 
-    smolSetSimTimes(pSim_, curtime_, stoptime, dt);
-    smolUpdateSim(pSim_);
+    smolSetSimTimes(pSim_.get(), curtime_, stoptime, dt);
+    smolUpdateSim(pSim_.get());
 
     if(display and !initDisplay_) {
-        smolDisplaySim(pSim_);
+        smolDisplaySim(pSim_.get());
         initDisplay_ = true;
     }
-    auto r   = smolRunSimUntil(pSim_, stoptime);
+    auto r   = smolRunSimUntil(pSim_.get(), stoptime);
     curtime_ = stoptime;
     return r == ErrorCode::ECok;
 }
@@ -136,10 +136,10 @@ vector<pair<double, double>> getBoundaries()
 
 ErrorCode setDt(double dt)
 {
-    return smolSetTimeStep(pSim_, dt);
+    return smolSetTimeStep(pSim_.get(), dt);
 }
 
 double getDt()
 {
-    return pSim_->dt;
+    return pSim_.get()->dt;
 }

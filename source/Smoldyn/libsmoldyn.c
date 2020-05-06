@@ -360,6 +360,7 @@ failure:
 /* smolFreeSim */
 extern "C" enum ErrorCode smolFreeSim(simptr sim)
 {
+    printf("Cleaning up.\n");
     simfree(sim);
     return ECok;
 }

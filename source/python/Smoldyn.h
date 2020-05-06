@@ -26,8 +26,14 @@ namespace py = pybind11;
 // defined in smolgraphics.c file.
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
-// Global variables for module.
-extern simptr         pSim_;
+/*************************************
+*  Global variables for the module  *
+*************************************/
+
+// Unique Ptr to hold simptr with custom deleter.
+using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
+extern simptr_uptr_type_ pSim_;
+
 extern size_t         dim_;
 extern vector<double> lowbounds_;
 extern vector<double> highbounds_;
@@ -53,7 +59,7 @@ double    getDt();
 inline void cleanup()
 {
     if(pSim_)
-        smolFreeSim(pSim_);
+        smolFreeSim(pSim_.get());
 }
 
 void setBoundaries(const vector<pair<double, double>>& bounds);
