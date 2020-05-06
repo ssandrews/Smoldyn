@@ -71,4 +71,4 @@ model.addMolecules(b, 1000, pos='u')
 # fwdrxn = Reaction(subs=[a, b], prds=[c], k=100)
 r = sm.Reaction(subs=[c], prds=[a, b], kf=0.1, kb=100)
 
-model.runSim(100, dt=0.01)
+model.run(100, dt=0.01)
