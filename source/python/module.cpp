@@ -192,7 +192,7 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix,
     // int append);
-    m.def("addOutputFile", [](const char *filename, bool suffix, bool append) {
+    m.def("addOutputFile", [](char *filename, bool suffix, bool append) {
         return smolAddOutputFile(pSim_, filename, suffix, append);
     });
 
