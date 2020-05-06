@@ -25,13 +25,12 @@ using namespace pybind11::literals;  // for _a
 extern int scmdopenfiles(cmdssptr cmds, int overwrite);
 
 /* --------------------------------------------------------------------------*/
-/**
- * @Synopsis  Initialize and run the simulation. This function takes input file
- * and run the simulation. This is more or less same as `main()` function in
- * smoldyn.c file.
+/** @Synopsis  Initialize and run the simulation from given file.
  *
- * @Param filepath
- * @Param flags
+ * This function takes input file and run the simulation. This is more or less
+ * same as `main()` function in smoldyn.c file.
+ *
+ * @Param filepath @Param flags
  *
  * @Returns
  */
@@ -41,7 +40,9 @@ int init_and_run(const string &filepath, const string &flags)
     int  er = 0, wflag = 0;
     auto p = splitPath(filepath);
 
-    simptr psim = pSim_.get();
+    // DO NOT USE global simptr
+    simptr psim;
+
 #ifdef OPTION_VCELL
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str(),
         new SimpleValueProviderFactory(), new SimpleMesh());
@@ -50,27 +51,27 @@ int init_and_run(const string &filepath, const string &flags)
         simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str());
 #endif
     if(!er) {
-        // if (!tflag && pSim_->graphss && pSim_->graphss->graphics != 0)
+        // if (!tflag && psim->graphss && psim->graphss->graphics != 0)
         // gl2glutInit(0, "");
-        er = simUpdateAndDisplay(pSim_.get());
+        er = simUpdateAndDisplay(psim);
     }
     if(!er)
-        er = scmdopenfiles((cmdssptr)pSim_->cmds, wflag);
+        er = scmdopenfiles((cmdssptr)psim->cmds, wflag);
     if(er) {
-        simLog(pSim_.get(), 4, "%sSimulation skipped\n", er ? "\n" : "");
+        simLog(psim, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
     else {
         fflush(stdout);
         fflush(stderr);
-        if(!pSim_->graphss || pSim_->graphss->graphics == 0) {
-            er = smolsimulate(pSim_.get());
-            endsimulate(pSim_.get(), er);
+        if(!psim->graphss || psim->graphss->graphics == 0) {
+            er = smolsimulate(psim);
+            endsimulate(psim, er);
         }
         else {
-            smolsimulategl(pSim_.get());
+            smolsimulategl(psim);
         }
     }
-    simfree(pSim_.get());
+    simfree(psim);
     simfuncfree();
     return er;
 }
@@ -155,7 +156,8 @@ PYBIND11_MODULE(_smoldyn, m)
     /************************
      *  Sim struture (use with care).
      ************************/
-    m.def("newSim",
+    m.def(
+        "newSim",
         [](int dim, vector<double> &lowbounds, vector<double> &highbounds) {
             pSim_.reset(smolNewSim(dim, &lowbounds[0], &highbounds[0]));
             return pSim_.get();
@@ -333,7 +335,8 @@ PYBIND11_MODULE(_smoldyn, m)
      ***************/
     // enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char
     // *mollist);
-    m.def("addSpecies",
+    m.def(
+        "addSpecies",
         [](const char *species, const char *mollist) {
             return smolAddSpecies(pSim_.get(), species, mollist);
         },
@@ -357,7 +360,8 @@ PYBIND11_MODULE(_smoldyn, m)
     // enum ErrorCode smolSetSpeciesMobility(simptr sim, const char *species,
     //     enum MolecState state, double difc, double *drift, double
     //     *difmatrix);
-    m.def("setSpeciesMobility",
+    m.def(
+        "setSpeciesMobility",
         [](const char *species, MolecState state, double difc,
             vector<double> &drift, vector<double> &difmatrix) {
             return smolSetSpeciesMobility(
