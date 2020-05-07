@@ -6,9 +6,7 @@ __email__            = "dilawars@ncbs.res.in"
 
 __all__ = ['Model']
 
-from dataclasses import dataclass, field
-from typing import List
-
+import warnings
 from smoldyn import _smoldyn
 from .kinetics import Species
 from .geometry import Boundaries
@@ -20,8 +18,10 @@ class Model(object):
     """Model class.
     """
 
-    def __init__(self, bounds):
+    def __init__(self, bounds, **kwargs):
         self.bounds : Boundaries = bounds
+        if kwargs.get('accuracy', 0.0):
+            self.accuracry: float = kwargs['accuracy']
 
     @property
     def dim(self):
@@ -33,6 +33,8 @@ class Model(object):
 
     @accuracy.setter
     def accuracy(self, accuracy: float):
+        # Deperacted?
+        warnings.DeprecationWarning("accuracy is deprecated?")
         _smoldyn.setAccuracy(accuracy)
 
     def run(self, stoptime, dt=1e-3):
