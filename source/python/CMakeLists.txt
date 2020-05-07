@@ -10,7 +10,7 @@ else()
     set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 endif()
 
-pybind11_add_module(_smoldyn MODULE Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
+pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
 
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
 target_include_directories(_smoldyn PRIVATE 

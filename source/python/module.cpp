@@ -14,8 +14,10 @@ using namespace std;
 #include "pybind11/stl_bind.h"
 #include "pybind11/functional.h"
 
+#include "StateMonitor.h"
+
+// Globals are also declarated here.
 #include "Smoldyn.h"
-#include "SmoldynSpecies.h"
 
 #include "../Smoldyn/smoldynfuncs.h"
 
@@ -155,8 +157,7 @@ PYBIND11_MODULE(_smoldyn, m)
     /************************
      *  Sim struture (use with care).
      ************************/
-    m.def(
-        "newSim",
+    m.def("newSim",
         [](int dim, vector<double> &lowbounds, vector<double> &highbounds) {
             pSim_.reset(smolNewSim(dim, &lowbounds[0], &highbounds[0]));
             return pSim_.get();
@@ -228,7 +229,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setTimeStep", [](double timestep) -> ErrorCode {
         return smolSetTimeStep(pSim_.get(), timestep);
     });
-    m.def("getTimeStep", [](){ return pSim_->dt; });
+    m.def("getTimeStep", []() { return pSim_->dt; });
 
     // enum ErrorCode smolSetRandomSeed(simptr sim, long int seed);
     m.def("setRandomSeed", [](long int seed) -> ErrorCode {
@@ -323,8 +324,11 @@ PYBIND11_MODULE(_smoldyn, m)
     //     double step, double multiplier, const char *commandstring);
     m.def("addCommand", [](char type, double on, double off, double step,
                             double multiplier, const char *commandstring) {
-        return smolAddCommand(
-            pSim_.get(), type, on, off, step, multiplier, commandstring);
+        // This is a custom version of scmdaddcommand
+        er = addCommandWithStateMonitor(pSim_->cmds, type, pSim_->tmin,
+            pSim_->tmax, pSim_->dt, on, off, step, multiplier, commandstring,
+            pStateMonitor_..get());
+        return er;
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
@@ -337,8 +341,7 @@ PYBIND11_MODULE(_smoldyn, m)
      ***************/
     // enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char
     // *mollist);
-    m.def(
-        "addSpecies",
+    m.def("addSpecies",
         [](const char *species, const char *mollist) {
             return smolAddSpecies(pSim_.get(), species, mollist);
         },
@@ -362,8 +365,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // enum ErrorCode smolSetSpeciesMobility(simptr sim, const char *species,
     //     enum MolecState state, double difc, double *drift, double
     //     *difmatrix);
-    m.def(
-        "setSpeciesMobility",
+    m.def("setSpeciesMobility",
         [](const char *species, MolecState state, double difc,
             vector<double> &drift, vector<double> &difmatrix) {
             return smolSetSpeciesMobility(
@@ -648,7 +650,7 @@ PYBIND11_MODULE(_smoldyn, m)
             // We'll runinto wchar_t vs char* issue from python2/python3
             // str/unicode fiasco. Be safe, use string and cast to const char*
             // by ourselves.
-            
+
             size_t nprd = productStates.size();
 
             vector<const char *> productSpecies(nprd);
@@ -667,8 +669,8 @@ PYBIND11_MODULE(_smoldyn, m)
             // reactant2[0] = '\0';
 
             return smolAddReaction(pSim_.get(), reaction, reactant1, rstate1,
-                reactant2, rstate2, productSpecies.size(), productSpecies.data(),
-                &productStates[0], rate);
+                reactant2, rstate2, productSpecies.size(),
+                productSpecies.data(), &productStates[0], rate);
         });
 
     // int smolGetReactionIndex(simptr sim, int *orderptr, const char

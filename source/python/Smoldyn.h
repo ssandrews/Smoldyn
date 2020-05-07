@@ -21,18 +21,21 @@ namespace py = pybind11;
 
 #include "SmoldynDefine.hh"
 
+#include "StateMonitor.h"
 #include "../Smoldyn/libsmoldyn.h"
 
 // defined in smolgraphics.c file.
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
 /*************************************
-*  Global variables for the module  *
-*************************************/
+ *  Global variables for the module  *
+ *************************************/
 
 // Unique Ptr to hold simptr with custom deleter.
 using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
 extern simptr_uptr_type_ pSim_;
+
+extern unique_ptr<StateMonitor> pStateMonitor_;
 
 extern size_t         dim_;
 extern vector<double> lowbounds_;
@@ -90,5 +93,9 @@ inline array<double, 4> color2RGBA(char* color)
     graphicsreadcolor(&color, &rgba[0]);
     return rgba;
 }
+
+int addCommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt,
+    double on, double off, double step, double multiplier,
+    const char* commandstring, const StateMonitor* pSM);
 
 #endif /* end of include guard: SIMULTION_H */
