@@ -94,8 +94,4 @@ inline array<double, 4> color2RGBA(char* color)
     return rgba;
 }
 
-int addCommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt,
-    double on, double off, double step, double multiplier,
-    const char* commandstring, const StateMonitor* pSM);
-
 #endif /* end of include guard: SIMULTION_H */
