@@ -211,11 +211,13 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setTimeStart", [](double time) -> ErrorCode {
         return smolSetTimeStart(pSim_.get(), time);
     });
+    m.def("getTimeStart", []() { return pSim_->tmin; });
 
     // enum ErrorCode smolSetTimeStop(simptr sim, double timestop);
     m.def("setTimeStop", [](double timestop) -> ErrorCode {
         return smolSetTimeStop(pSim_.get(), timestop);
     });
+    m.def("getTimeStop", []() { return pSim_->tmax; });
 
     // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
     m.def("setTimeNow", [](double timenow) -> ErrorCode {
@@ -226,6 +228,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setTimeStep", [](double timestep) -> ErrorCode {
         return smolSetTimeStep(pSim_.get(), timestep);
     });
+    m.def("getTimeStep", [](){ return pSim_->dt; });
 
     // enum ErrorCode smolSetRandomSeed(simptr sim, long int seed);
     m.def("setRandomSeed", [](long int seed) -> ErrorCode {

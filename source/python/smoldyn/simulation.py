@@ -4,7 +4,7 @@ __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2020-, Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-__all__ = ['Model']
+__all__ = ['StateMonitor', 'Model']
 
 import warnings
 from smoldyn import _smoldyn
@@ -12,6 +12,27 @@ from .kinetics import Species
 from .geometry import Boundaries
 
 from smoldyn.config import __logger__
+
+class StateMonitor(object):
+    """State Monitor
+    """
+    def __init__(self, objs, state, **kwargs):
+        self.objs = objs
+        self.state = state
+        self.t = []
+        self._start = kwargs.get('start', _smoldyn.getTimeStart())
+        self._stop = kwargs.get('stop', _smoldyn.getTimeStop())
+        self._step = kwargs.get('step', _smoldyn.getTimeStep())
+        self._multiplier = kwargs.get('multiplier', 1.0)
+        setattr(self, state, {})
+        for o in objs:
+            getattr(self, state)[o] = []
+        if state == 'molcount':
+            self.initMolcount()
+
+    def initMolcount(self):
+        _smoldyn.addCommand('i', self._start, self._stop, self._step,
+                self._multiplier, 'molcount')
 
 
 class Model(object):

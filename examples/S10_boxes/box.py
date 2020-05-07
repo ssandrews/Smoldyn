@@ -7,7 +7,7 @@ import smoldyn as sm
 b = sm.Boundaries(low=[0,0,0], high=[100,100,100], types='ppp')
 model = sm.Model(bounds=b, accuracy=10)
 
-sm.Box(size=10)
+sm.Box(size=10)   
 
 # declaration of species A, B, and C with attributes. 
 a = sm.Species('A', state='soln', difc=1, color='red')
@@ -20,8 +20,12 @@ model.addMolecules(b, 1000, pos='u')
 
 r = sm.Reaction(subs=[c], prds=(a,b), kf=0.1, kb=100)
 
+M = sm.StateMonitor([a, b, c], 'molcount')
+
 ## time_start 0
 ## time_stop 100
 ## time_step 0.01
 # TODO
 model.run(100, dt=0.01)
+
+print(M.t, M.molcount[a], M.molcount[b])
