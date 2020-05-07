@@ -6,32 +6,30 @@
 import smoldyn as sm
 b = sm.Boundaries(low=[0,0,0], high=[100,100,100], types='ppp')
 model = sm.Model(bounds=b)
-sm.Box(size=10)
+model.accuracy = 10
 
-## accuracy 10
-## TODO:
+sm.Box(size=10)
 
 # declaration of species A, B, and C with attributes. 
 a = sm.Species('A', state='soln', difc=1, color='red')
+a.mol_list = 'Alist'
+
 b = sm.Species('B', state="soln", color='green', difc=1)
-c = sm.Species('C', state='soln', difc=1.0, color='blue')
+b.mol_list = 'Blist'
+
+c = sm.Species('C', state='soln', difc=1.0, color='blue', mol_list='Clist')
+
 
 ## time_start 0
 ## time_stop 100
 ## time_step 0.01
 # TODO
  
-## molecule_lists Alist Blist Clist
-## mol_list A Alist
-## mol_list B Blist
-## mol_list C Clist
-# TODO
-
 model.addMolecules(a, 1000, pos='uuu')
 model.addMolecules(b, 1000, pos='u')
 
-# revrxn = Reaction(subs=[c], prds=[a, b], k=0.1)
-# fwdrxn = Reaction(subs=[a, b], prds=[c], k=100)
-r = sm.Reaction(subs=[c], prds=[a, b], kf=0.1, kb=100)
+#  revrxn = sm.Reaction(subs=[c], prds=[a, b], kf=0.1)
+#  fwdrxn = sm.Reaction(subs=[a, b], prds=[c], kf=100)
+r = sm.Reaction(subs=[c], prds=(a,b), kf=0.1, kb=100)
 
 model.run(100, dt=0.01)
