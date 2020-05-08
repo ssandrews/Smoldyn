@@ -13,12 +13,14 @@ using namespace std;
 
 // Global variables.
 simptr_uptr_type_ pSim_ = simptr_uptr_type_(nullptr, smolFreeSim);
-size_t                dim_ = 0;
-vector<double>        lowbounds_;
-vector<double>        highbounds_;
-bool                  debug_       = false;
-double                curtime_     = 0.0;
-bool                  initDisplay_ = false;
+
+
+size_t         dim_ = 0;
+vector<double> lowbounds_;
+vector<double> highbounds_;
+bool           debug_       = false;
+double         curtime_     = 0.0;
+bool           initDisplay_ = false;
 
 size_t getDim()
 {
@@ -114,7 +116,7 @@ bool run(double stoptime, double dt, bool display)
     return r == ErrorCode::ECok;
 }
 
-void setBoundaries(const vector<pair<double, double>>& bounds)
+void setBoundaries(const vector<pair<double, double>> &bounds)
 {
     setDim(bounds.size());
     lowbounds_.resize(dim_);
@@ -143,3 +145,4 @@ double getDt()
 {
     return pSim_.get()->dt;
 }
+

@@ -19,11 +19,13 @@ class NullSpecies:
 
 
 class Species:
-    def __init__(self, name, state, color="", difc=0.0, size=1.0):
+    def __init__(self, name, state, color="", difc=0.0, size=1.0, mol_list=""):
         self.name: str = name
         assert self.name
+
         k = _smoldyn.addSpecies(self.name)
-        assert k == _smoldyn.ErrorCode.ok, k
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule: {k}"
+
         self.state = _smoldyn.MolecState.__members__[state]
 
         self._difc: float = difc
@@ -34,11 +36,16 @@ class Species:
         self.size: float = self._size
         self.color: str = self._color
 
+        self._mol_list: str = mol_list
+        if mol_list:
+            self.mol_list: str = mol_list
+
     def __repr__(self):
-        return f"<Species: {self.name}, difc={self.difc}, color={self.color}, size={self.size}>"
+        return f"<Molecule: {self.name}, difc={self.difc}, state={self.state}>"
 
     def setStyle(self):
-        k = _smoldyn.setMoleculeStyle(self.name, self.state, self.size, self.color)
+        k = _smoldyn.setMoleculeStyle(self.name, self.state, self.size,
+                                      self.color)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}, {k}"
 
     @property
@@ -51,6 +58,19 @@ class Species:
         self._difc = difc
         k = _smoldyn.setSpeciesMobility(self.name, self.state, self.difc)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set mobility: {k}"
+
+    @property
+    def mol_list(self) -> str:
+        return self._mol_list
+
+    @mol_list.setter
+    def mol_list(self, val):
+        k = _smoldyn.addMolList(val)
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
+        k = _smoldyn.setMolList(self.name, self.state, val)
+        assert (k == _smoldyn.ErrorCode.ok
+                ), f"Failed to set mol_list={val} on {self}: {k}"
+        self._mol_list = val
 
     @property
     def color(self) -> str:
@@ -73,24 +93,15 @@ class Species:
 
 class HalfReaction:
     def __init__(self, subs: List[Species], prds: List[Species], k, rname=""):
-        assert len(subs) < 3, "At most two reactants are supported"
+        assert len(subs) < 3, "At most two reactants are supported."
         r1 = subs[0]
         r2 = subs[1] if len(subs) == 2 else NullSpecies()
         if not rname:
-            rname = str(self)
+            rname = 'r%d' % id(self)
         assert rname
-        __logger__.info(f"Adding reaction {subs} -> {prds}")
-        print(f"rname={rname}: r1='{r1.name}'/{r1.state} r2='{r2.name}'/{r2.state} prds={prds}")
-        k = _smoldyn.addReaction(
-            rname,
-            r1.name,
-            r1.state,
-            r2.name,
-            r2.state,
-            [x.name for x in prds],
-            [x.state for x in prds],
-            k,
-        )
+        k = _smoldyn.addReaction(rname, r1.name, r1.state, r2.name, r2.state,
+                                 [x.name for x in prds],
+                                 [x.state for x in prds], k)
         if k != _smoldyn.ErrorCode.ok:
             __logger__.warning(f" Reactant1 : {r1}")
             __logger__.warning(f" Reactant2 : {r2}")

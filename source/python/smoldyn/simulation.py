@@ -4,43 +4,59 @@ __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2020-, Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-__all__ = ['Boundaries', 'Model']
+__all__ = ['StateMonitor', 'Model']
 
-from dataclasses import dataclass, field
-from typing import List
-
+import warnings
 from smoldyn import _smoldyn
 from .kinetics import Species
+from .geometry import Boundaries
 
 from smoldyn.config import __logger__
 
-@dataclass
-class Boundaries:
-    low: List[float]
-    high: List[float]
-    types: List[str]
-    dim: field(init=False) = 0
+class StateMonitor(object):
+    """State Monitor
+    """
+    def __init__(self, objs, state, **kwargs):
+        self.objs = objs
+        self.state = state
+        self.t = []
+        self._start = kwargs.get('start', _smoldyn.getTimeStart())
+        self._stop = kwargs.get('stop', _smoldyn.getTimeStop())
+        self._step = kwargs.get('step', _smoldyn.getTimeStep())
+        self._multiplier = kwargs.get('multiplier', 1.0)
+        setattr(self, state, {})
+        for o in objs:
+            getattr(self, state)[o] = []
+        if state == 'molcount':
+            self.initMolcount()
 
-    def __post_init__(self):
-        assert len(self.low) == len(self.high), "Size mismatch"
-        if len(self.types) == 1:
-            self.types = self.types * len(self.low)
-        self.dim = len(self.low)
-        _smoldyn.setBoundaries(list(zip(self.low, self.high)))
-        __logger__.debug('Getting boundaries', _smoldyn.getBoundaries())
-        assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
+    def initMolcount(self):
+        _smoldyn.addCommand('i', self._start, self._stop, self._step,
+                self._multiplier, 'molcount')
 
 
 class Model(object):
     """Model class.
     """
 
-    def __init__(self, bounds):
-        self.bounds = bounds
+    def __init__(self, bounds, **kwargs):
+        self.bounds : Boundaries = bounds
+        if kwargs.get('accuracy', 0.0):
+            self.accuracry: float = kwargs['accuracy']
 
     @property
     def dim(self):
         return self.bound.dim
+
+    @property
+    def accuracy(self):
+        return _smoldyn.getAccuracy()
+
+    @accuracy.setter
+    def accuracy(self, accuracy: float):
+        # Deperacted?
+        warnings.DeprecationWarning("accuracy is deprecated?")
+        _smoldyn.setAccuracy(accuracy)
 
     def run(self, stoptime, dt=1e-3):
         _smoldyn.run(stoptime, dt)

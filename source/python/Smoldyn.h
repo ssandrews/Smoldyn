@@ -27,12 +27,13 @@ namespace py = pybind11;
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
 /*************************************
-*  Global variables for the module  *
-*************************************/
+ *  Global variables for the module  *
+ *************************************/
 
 // Unique Ptr to hold simptr with custom deleter.
 using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
 extern simptr_uptr_type_ pSim_;
+
 
 extern size_t         dim_;
 extern vector<double> lowbounds_;

@@ -95,7 +95,8 @@ void ChangeSize(int w,int h) {
 void KeyPush(unsigned char key,int x,int y) {
 #ifdef __gl_h_
 	GLint viewport[4],w,h;
-	char name[STRCHAR],str[STRCHAR];
+        constexpr size_t _STRCHAR = STRCHAR + 128;
+	char name[_STRCHAR],str[_STRCHAR];
 	GLfloat clipheight,clipwidth;
 
 	x=y=0;	// to avoid compiler warnings
@@ -111,8 +112,8 @@ void KeyPush(unsigned char key,int x,int y) {
 		glGetIntegerv(GL_VIEWPORT,viewport);
 		w=viewport[2];
 		h=viewport[3];
-		snprintf(str,STRCHAR,"%s%%0%ii.tif",TiffName,(int)log10((double)TiffNumMax)+1);
-		str[STRCHAR-1]='\0';
+		snprintf(str,STRCHAR+100,"%s%%0%ii.tif",TiffName,(int)log10((double)TiffNumMax)+1);
+		str[_STRCHAR-1]='\0';
 		snprintf(name,STRCHAR,str,TiffNumber);
 		name[STRCHAR-1]='\0';
 		WriteTIFF(name,"OpenGL picture",0,0,w,h,-1);

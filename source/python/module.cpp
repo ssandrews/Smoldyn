@@ -14,8 +14,8 @@ using namespace std;
 #include "pybind11/stl_bind.h"
 #include "pybind11/functional.h"
 
+// Globals are also declarated here.
 #include "Smoldyn.h"
-#include "SmoldynSpecies.h"
 
 #include "../Smoldyn/smoldynfuncs.h"
 
@@ -32,7 +32,6 @@ extern int scmdopenfiles(cmdssptr cmds, int overwrite);
  *
  * @Param filepath @Param flags
  *
- * @Returns
  */
 /* ----------------------------------------------------------------------------*/
 int init_and_run(const string &filepath, const string &flags)
@@ -82,7 +81,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // options.disable_function_signatures();
 
     m.doc() = R"pbdoc(
-        Python interface of smoldyn simulation.
+        Python interface of smoldyn simulator.
     )pbdoc";
 
     py::enum_<SrfAction>(m, "SrfAction")
@@ -212,11 +211,13 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setTimeStart", [](double time) -> ErrorCode {
         return smolSetTimeStart(pSim_.get(), time);
     });
+    m.def("getTimeStart", []() { return pSim_->tmin; });
 
     // enum ErrorCode smolSetTimeStop(simptr sim, double timestop);
     m.def("setTimeStop", [](double timestop) -> ErrorCode {
         return smolSetTimeStop(pSim_.get(), timestop);
     });
+    m.def("getTimeStop", []() { return pSim_->tmax; });
 
     // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
     m.def("setTimeNow", [](double timenow) -> ErrorCode {
@@ -227,6 +228,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setTimeStep", [](double timestep) -> ErrorCode {
         return smolSetTimeStep(pSim_.get(), timestep);
     });
+    m.def("getTimeStep", [](){ return pSim_->dt; });
 
     // enum ErrorCode smolSetRandomSeed(simptr sim, long int seed);
     m.def("setRandomSeed", [](long int seed) -> ErrorCode {
@@ -321,8 +323,7 @@ PYBIND11_MODULE(_smoldyn, m)
     //     double step, double multiplier, const char *commandstring);
     m.def("addCommand", [](char type, double on, double off, double step,
                             double multiplier, const char *commandstring) {
-        return smolAddCommand(
-            pSim_.get(), type, on, off, step, multiplier, commandstring);
+        return smolAddCommand(pSim_.get(), type, on, off, step, multiplier, commandstring);
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
@@ -373,8 +374,8 @@ PYBIND11_MODULE(_smoldyn, m)
 
     //?? needs function smolSetSpeciesSurfaceDrift
     // enum ErrorCode smolAddMolList(simptr sim, const char *mollist);
-    m.def("getMolListIndex", [](const char *mollist) {
-        return smolGetMolListIndex(pSim_.get(), mollist);
+    m.def("addMolList", [](const char *mollist) {
+        return smolAddMolList(pSim_.get(), mollist);
     });
 
     // int   smolGetMolListIndex(simptr sim, const char *mollist);
@@ -633,27 +634,39 @@ PYBIND11_MODULE(_smoldyn, m)
     //         *reactant2, enum MolecState rstate2, int nproduct, const char
     //         **productspecies, enum MolecState *productstates, double rate);
     m.def("addReaction",
-        [](const char *             reaction,   // Name of the reaction.
-            const char *            reactant1,  // First reactant
-            enum MolecState         rstate1,    // First reactant state
-            const char *            reactant2,  // Second reactant.
-            enum MolecState         rstate2,    // second reactant state.
-            vector<string>          productSpeciesStr,  // product species.
-            vector<enum MolecState> productStates,      // product state.
-            double                  rate                // rate
+        [](const char *         reaction,           // Name of the reaction.
+            const char *        reactant1,          // First reactant
+            MolecState          rstate1,            // First reactant state
+            const char *        reactant2,          // Second reactant.
+            MolecState          rstate2,            // second reactant state.
+            vector<string> &    productSpeciesStr,  // product species.
+            vector<MolecState> &productStates,      // product state.
+            double              rate                // rate
         ) {
             // NOTE: Can't use vector<const char*> in the function argument.
             // We'll runinto wchar_t vs char* issue from python2/python3
             // str/unicode fiasco. Be safe, use string and cast to const char*
             // by ourselves.
-            vector<const char *> productSpecies;
-            for(auto s : productSpeciesStr)
-                productSpecies.push_back(s.c_str());
+            
+            size_t nprd = productStates.size();
 
-            assert(productSpecies.size() == productSpecies.size());
+            vector<const char *> productSpecies(nprd);
+            for(size_t i = 0; i < nprd; i++)
+                productSpecies[i] = productSpeciesStr[i].c_str();
+
+            // cout << reaction << " r1: '" << reactant1 << "' r2: '" <<
+            // reactant2
+            //      << "' " << " rate=" << rate;
+            // for(auto s : productSpeciesStr)
+            //     cout << " '" << s << "'";
+            // cout << endl;
+
+            // Not sure if this is needed here.
+            // if(reactant2 == "")
+            // reactant2[0] = '\0';
 
             return smolAddReaction(pSim_.get(), reaction, reactant1, rstate1,
-                reactant2, rstate2, productSpecies.size(), &productSpecies[0],
+                reactant2, rstate2, productSpecies.size(), productSpecies.data(),
                 &productStates[0], rate);
         });
 
@@ -809,6 +822,8 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setBoundaries", &setBoundaries);
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
+    m.def("setAccuracy", [](double accuracy) { pSim_->accur = accuracy; });
+    m.def("getAccuracy", [](void) { return pSim_->accur; });
 
     /* Function */
     m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",
