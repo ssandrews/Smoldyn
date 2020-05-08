@@ -166,7 +166,6 @@ typedef struct cmdsuperstruct {
     double flag;            // global command structure flag
     int    precision;       // precision for output commands
     char   outformat;       // output format, 's' or 'c'
-    double* data;           // data (row).
 } * cmdssptr;
 
 #endif
