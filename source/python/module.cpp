@@ -14,8 +14,6 @@ using namespace std;
 #include "pybind11/stl_bind.h"
 #include "pybind11/functional.h"
 
-#include "StateMonitor.h"
-
 // Globals are also declarated here.
 #include "Smoldyn.h"
 

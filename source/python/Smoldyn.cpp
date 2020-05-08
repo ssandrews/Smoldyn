@@ -14,8 +14,6 @@ using namespace std;
 // Global variables.
 simptr_uptr_type_ pSim_ = simptr_uptr_type_(nullptr, smolFreeSim);
 
-// State monitor.
-unique_ptr<StateMonitor> pStateMonitor_(new StateMonitor());
 
 size_t         dim_ = 0;
 vector<double> lowbounds_;

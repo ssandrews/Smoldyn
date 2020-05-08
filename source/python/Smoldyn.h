@@ -21,7 +21,6 @@ namespace py = pybind11;
 
 #include "SmoldynDefine.hh"
 
-#include "StateMonitor.h"
 #include "../Smoldyn/libsmoldyn.h"
 
 // defined in smolgraphics.c file.
@@ -35,7 +34,6 @@ extern int graphicsreadcolor(char** stringptr, double* rgba);
 using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
 extern simptr_uptr_type_ pSim_;
 
-extern unique_ptr<StateMonitor> pStateMonitor_;
 
 extern size_t         dim_;
 extern vector<double> lowbounds_;
