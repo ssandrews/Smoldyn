@@ -4,6 +4,7 @@
  */
 
 #include <iostream>
+#include <vector>
 #include <string>
 #include <map>
 
@@ -15,14 +16,17 @@ using namespace std;
 #include "pybind11/functional.h"
 
 // Globals are also declarated here.
-#include "Smoldyn.h"
 
+#include "../lib/SimCommand.h"
 #include "../Smoldyn/smoldynfuncs.h"
+#include "Smoldyn.h"
 
 using namespace pybind11::literals;  // for _a
 
 // Defined in SimCommand.c file.
 extern int scmdopenfiles(cmdssptr cmds, int overwrite);
+extern vector<vector<double>>& getData();
+
 
 /* --------------------------------------------------------------------------*/
 /** @Synopsis  Initialize and run the simulation from given file.
@@ -824,6 +828,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setDt", &setDt);
     m.def("setAccuracy", [](double accuracy) { pSim_->accur = accuracy; });
     m.def("getAccuracy", [](void) { return pSim_->accur; });
+    m.def("getData", &getData, py::return_value_policy::reference);
 
     /* Function */
     m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",

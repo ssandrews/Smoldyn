@@ -69,3 +69,6 @@ class Model(object):
 
     def runSim(self, t, dt):
         _smoldyn.runSim(t, dt)
+
+    def data(self):
+        return _smoldyn.getData()

@@ -30,14 +30,17 @@ void scmdcatfname(cmdssptr cmds, int fid, char *str);
 
 std::vector<std::vector<double>> data_;
 
-void collectdata(double* vals, size_t n) 
+void collectdata(double *vals, size_t n)
 {
-    std::vector<double> v(vals, vals+n);
+    std::vector<double> v(vals, vals + n);
     data_.emplace_back(v);
-    printf("data size is %ld\n", data_.size());
+    /** printf("num rows=%ld\n", data_.size()); */
 }
 
-
+std::vector<std::vector<double>>& getData()
+{
+    return data_;
+}
 
 /* ***** internal routine ***** */
 
@@ -1103,7 +1106,7 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, ...)
             strstrreplace(newformat, "%,", " ", STRCHAR);
     }
 
-#if 0
+#if 1
 
     // Count the number of vargs. count % in the format. Also when newline
     // char is recieved send data to datamanager.
