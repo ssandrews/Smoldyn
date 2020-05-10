@@ -14,6 +14,9 @@ if(NOT SMOLDYN_VERSION)
    set(SMOLDYN_VERSION "3.0")
 endif()
 
+# Build internal dependencies 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/external/fmt-6.2.1/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/external/fmt-6.2.1/include)
 
 ######### Targets to build ###########
 
@@ -95,7 +98,7 @@ set(SRC_FILES
     source/lib/Rn.c
     source/lib/RnSort.c
     source/lib/rxnparam.c
-    source/lib/SimCommand.c
+    source/lib/SimCommand.cpp
     source/lib/Sphere.c
     source/lib/string2.c
     source/lib/SurfaceParam.c
@@ -478,6 +481,7 @@ endif(OPTION_NSV)
 ####### Option: Build with PDE ##########
 
 ####### Targets ##########
+list(APPEND DEP_LIBS fmt::fmt)
 
 if(OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
@@ -491,13 +495,13 @@ if(OPTION_TARGET_LIBSMOLDYN)
     target_link_libraries(smoldyn_shared ${DEP_LIBS})
     target_link_libraries(smoldyn_static ${DEP_LIBS})
     if(APPLE)
-        SET_TARGET_PROPERTIES(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
+        set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
     endif(APPLE)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 ########## Python module #########
 if(OPTION_PYTHON)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/external/pybind11)
     add_subdirectory(source/python)
 endif()
 
@@ -513,7 +517,9 @@ if(NOT OPTION_MINGW)
     if(OPTION_TARGET_LIBSMOLDYN)
         install(TARGETS smoldyn_shared LIBRARY DESTINATION lib)
         install(TARGETS smoldyn_static ARCHIVE DESTINATION lib)
-        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h DESTINATION include)
+        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h 
+            ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
+            DESTINATION include)
     endif(OPTION_TARGET_LIBSMOLDYN)
 
 endif(NOT OPTION_MINGW)

@@ -1,7 +1,11 @@
-/* Steven Andrews, 1/10/04.
-Library for runtime command interpreter used for various simulations.
-Copyright 2004-2007 by Steven Andrews.  This work is distributed under the terms
-of the Gnu Lesser General Public License (LGPL). */
+/* 
+ * Steven Andrews, 1/10/04.
+ * Dilawar Singh, 2020-05-10
+ * Library for runtime command interpreter used for various simulations.
+ * Same as SimCommand.c but uses variadic templates to avoid va_ family of
+ * macros.
+ * 
+ */
 
 #include <limits.h>
 #include <stdarg.h>
@@ -30,16 +34,17 @@ void scmdcatfname(cmdssptr cmds, int fid, char *str);
 
 std::vector<std::vector<double>> data_;
 
+std::vector<std::vector<double>>& getData()
+{
+    return data_;
+}
+
+// Collect data.
 void collectdata(double *vals, size_t n)
 {
     std::vector<double> v(vals, vals + n);
     data_.emplace_back(v);
     /** printf("num rows=%ld\n", data_.size()); */
-}
-
-std::vector<std::vector<double>>& getData()
-{
-    return data_;
 }
 
 /* ***** internal routine ***** */
@@ -1083,79 +1088,6 @@ void insertdata(const char *fmt, ...)
 {
 }
 
-/* scmdfprintf */
-int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, ...)
-{
-    char    message[STRCHARLONG], newformat[STRCHAR], replacestr[STRCHAR];
-    va_list arguments;
-    int     code;
-
-    strncpy(newformat, format, STRCHAR - 1);
-    newformat[STRCHAR - 1] = '\0';
-    if(!cmds) {
-        strstrreplace(newformat, "%,", " ", STRCHAR);
-    }
-    else {
-        if(cmds->precision >= 0) {
-            snprintf(replacestr, STRCHAR, "%%.%ig", cmds->precision);
-            strstrreplace(newformat, "%g", replacestr, STRCHAR);
-        }
-        if(cmds->outformat == 'c')
-            strstrreplace(newformat, "%,", ",", STRCHAR);
-        else
-            strstrreplace(newformat, "%,", " ", STRCHAR);
-    }
-
-    // Count the number of vargs. count % in the format. Also when newline
-    // char is recieved send data to datamanager.
-    static size_t    nvargs    = 0;
-    static size_t    rowlength = 0;
-    constexpr size_t MAXARGS   = 256;
-
-    if(!cmds->data)
-        cmds->data = (double *)calloc(MAXARGS, sizeof(double));
-
-    for(size_t i = 0; i < strlen(newformat); i++) {
-        if(newformat[i] == '%' && newformat[i+1] != 's') {
-            rowlength += 1;
-            nvargs += 1;
-        }
-        else if(newformat[i] == '\n') {
-            collectdata(cmds->data, rowlength);
-            if(cmds->data)
-                free(cmds->data);
-            cmds->data = (double *)calloc(MAXARGS, sizeof(double));
-            rowlength  = 0;
-        }
-    }
-
-    if(nvargs >= MAXARGS) {
-        printf(
-            "Warning: A maximum of 256 fields are supported. data will be "
-            "truncated.");
-        nvargs = MAXARGS;
-    }
-
-    va_start(arguments, format);
-
-    // copy 
-    va_list vlist;
-    va_copy(vlist, arguments);
-
-    // write to fptr
-    vsnprintf(message, STRCHARLONG, newformat, arguments);
-    va_end(arguments);
-    code = fprintf(fptr, "%s", message);
-
-    // collect data.
-    double x = 0.0;
-    for(size_t i = 0; i < nvargs; i++) {
-        x             = va_arg(vlist, double);
-        cmds->data[i] = x;
-    }
-    va_end(vlist);
-    return code;
-}
 
 /* scmdflush */
 void scmdflush(FILE *fptr)

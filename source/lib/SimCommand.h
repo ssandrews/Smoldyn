@@ -10,6 +10,13 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "stdio.h"
 #include "string2.h"
 
+#include <cstring>
+#include <cstdlib>
+#include <vector>
+
+#include <fmt/core.h>
+#include <fmt/printf.h>
+
 #define SFNCHECK(A, ...)                                 \
     if(!(A)) {                                           \
         if(erstr)                                        \
@@ -80,6 +87,7 @@ typedef struct cmdsuperstruct {
     double *data;            // store data
 } * cmdssptr;
 
+
 // non-file functions
 char *   scmdcode2string(enum CMDcode code, char *string);
 cmdptr   scmdalloc(void);
@@ -116,7 +124,40 @@ int   scmdopenfiles(cmdssptr cmds, int overwrite);
 FILE *scmdoverwrite(cmdssptr cmds, char *line2);
 FILE *scmdincfile(cmdssptr cmds, char *line2);
 FILE *scmdgetfptr(cmdssptr cmds, char *line2);
-int   scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, ...);
 void  scmdflush(FILE *fptr);
+
+std::vector<std::vector<double>>& getData();
+void collectdata(double *vals, size_t n);
+
+
+/* scmdfprintf */
+template<typename... Args>
+int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, const Args&... args)
+{
+    char    message[STRCHARLONG], newformat[STRCHAR], replacestr[STRCHAR];
+    int     code;
+
+    std::strncpy(newformat, format, STRCHAR - 1);
+    newformat[STRCHAR - 1] = '\0';
+    if(!cmds) {
+        strstrreplace(newformat, "%,", " ", STRCHAR);
+    }
+    else {
+        if(cmds->precision >= 0) {
+            snprintf(replacestr, STRCHAR, "%%.%ig", cmds->precision);
+            strstrreplace(newformat, "%g", replacestr, STRCHAR);
+        }
+        if(cmds->outformat == 'c')
+            strstrreplace(newformat, "%,", ",", STRCHAR);
+        else
+            strstrreplace(newformat, "%,", " ", STRCHAR);
+    }
+
+    // Count the number of vargs. count % in the format. Also when newline
+    // char is recieved send data to datamanager.
+    // constexpr size_t nvargs  = sizeof...(args);
+
+    return fmt::fprintf(fptr, newformat, args...);
+}
 
 #endif

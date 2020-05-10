@@ -175,7 +175,9 @@ add_headers(FMT_HEADERS chrono.h color.h compile.h core.h format.h format-inl.h
                         locale.h os.h ostream.h posix.h printf.h ranges.h)
 set(FMT_SOURCES src/format.cc src/os.cc)
 
-add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
+add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS})
+set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 add_library(fmt::fmt ALIAS fmt)
 
 if (HAVE_STRTOD_L)
