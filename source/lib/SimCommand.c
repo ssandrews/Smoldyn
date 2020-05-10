@@ -1106,8 +1106,6 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, ...)
             strstrreplace(newformat, "%,", " ", STRCHAR);
     }
 
-#if 1
-
     // Count the number of vargs. count % in the format. Also when newline
     // char is recieved send data to datamanager.
     static size_t    nvargs    = 0;
@@ -1123,7 +1121,6 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, ...)
             nvargs += 1;
         }
         else if(newformat[i] == '\n') {
-            // printf("new line encountered. Flush data %ld.\n", rowlength);
             collectdata(cmds->data, rowlength);
             if(cmds->data)
                 free(cmds->data);
@@ -1138,22 +1135,25 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, ...)
             "truncated.");
         nvargs = MAXARGS;
     }
-    va_list vlist;
-#endif
 
     va_start(arguments, format);
-    vsnprintf(message, STRCHARLONG, newformat, arguments);
 
-#if 0
+    // copy 
+    va_list vlist;
+    va_copy(vlist, arguments);
+
+    // write to fptr
+    vsnprintf(message, STRCHARLONG, newformat, arguments);
+    va_end(arguments);
+    code = fprintf(fptr, "%s", message);
+
+    // collect data.
     double x = 0.0;
     for(size_t i = 0; i < nvargs; i++) {
         x             = va_arg(vlist, double);
         cmds->data[i] = x;
     }
-    va_end(arguments);
-#endif
-
-    code = fprintf(fptr, "%s", message);
+    va_end(vlist);
     return code;
 }
 

@@ -27,5 +27,6 @@ M = sm.StateMonitor([a, b, c], 'molcount')
 ## time_step 0.01
 # TODO
 model.run(100, dt=0.01)
-print(model.data())
+for l in model.data():
+    print(l)
 
