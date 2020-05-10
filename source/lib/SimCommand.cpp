@@ -32,20 +32,11 @@
 
 void scmdcatfname(cmdssptr cmds, int fid, char *str);
 
-std::vector<std::vector<double>> data_;
-
-std::vector<std::vector<double>>& getData()
+std::vector<double>& getData()
 {
     return data_;
 }
 
-// Collect data.
-void collectdata(double *vals, size_t n)
-{
-    std::vector<double> v(vals, vals + n);
-    data_.emplace_back(v);
-    /** printf("num rows=%ld\n", data_.size()); */
-}
 
 /* ***** internal routine ***** */
 

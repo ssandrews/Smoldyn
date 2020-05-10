@@ -17,6 +17,9 @@ of the Gnu Lesser General Public License (LGPL). */
 #include <fmt/core.h>
 #include <fmt/printf.h>
 
+// std::vector<std::vector<double>> data_;
+std::vector<double> data_;
+
 #define SFNCHECK(A, ...)                                 \
     if(!(A)) {                                           \
         if(erstr)                                        \
@@ -87,7 +90,6 @@ typedef struct cmdsuperstruct {
     double *data;            // store data
 } * cmdssptr;
 
-
 // non-file functions
 char *   scmdcode2string(enum CMDcode code, char *string);
 cmdptr   scmdalloc(void);
@@ -126,16 +128,30 @@ FILE *scmdincfile(cmdssptr cmds, char *line2);
 FILE *scmdgetfptr(cmdssptr cmds, char *line2);
 void  scmdflush(FILE *fptr);
 
-std::vector<std::vector<double>>& getData();
-void collectdata(double *vals, size_t n);
+// std::vector<std::vector<double>> &getData();
 
+std::vector<double> &getData();
+void                 collectdata(double *vals, size_t n);
+
+// Collect data.
+
+void collectdata()
+{
+}
+
+template <typename... Args>
+void collectdata(double x, const Args &... arg)
+{
+    data_.push_back(x);
+    collectdata(arg...);
+}
 
 /* scmdfprintf */
-template<typename... Args>
-int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, const Args&... args)
+template <typename... Args>
+int scmdfprintf(
+    cmdssptr cmds, FILE *fptr, const char *format, const Args &... args)
 {
-    char    message[STRCHARLONG], newformat[STRCHAR], replacestr[STRCHAR];
-    int     code;
+    char newformat[STRCHAR], replacestr[STRCHAR];
 
     std::strncpy(newformat, format, STRCHAR - 1);
     newformat[STRCHAR - 1] = '\0';
@@ -152,12 +168,9 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, const Args&... ar
         else
             strstrreplace(newformat, "%,", " ", STRCHAR);
     }
-
-    // Count the number of vargs. count % in the format. Also when newline
-    // char is recieved send data to datamanager.
-    // constexpr size_t nvargs  = sizeof...(args);
-
-    return fmt::fprintf(fptr, newformat, args...);
+    int r = fmt::fprintf(fptr, newformat, args...);
+    collectdata(args...);
+    return r;
 }
 
 #endif

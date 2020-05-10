@@ -894,7 +894,7 @@ enum CMDcode cmdecho(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(termqt = strchr(str, '"'), "no terminal quote on string");
     *termqt = '\0';
     strbslash2escseq(str);
-    scmdfprintf(cmd->cmds, fptr, "%s", str);
+    scmdfprintf<std::string>(cmd->cmds, fptr, "%s", str);
     scmdflush(fptr);
     return CMDok;
 }
@@ -935,9 +935,9 @@ enum CMDcode cmdmolcountheader(simptr sim, cmdptr cmd, char *line2)
     fptr = scmdgetfptr(sim->cmds, line2);
     SCMDCHECK(fptr, "file name not recognized");
     SCMDCHECK(sim->mols, "molecules are undefined");
-    scmdfprintf(cmd->cmds, fptr, "time");
+    scmdfprintf<>(cmd->cmds, fptr, "time");
     for(i = 1; i < sim->mols->nspecies; i++)
-        scmdfprintf(cmd->cmds, fptr, "%,%s", sim->mols->spname[i]);
+        scmdfprintf<std::string>(cmd->cmds, fptr, "%,%s", sim->mols->spname[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
