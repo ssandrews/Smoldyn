@@ -153,28 +153,36 @@ void collectdata(const char x, const Args&... arg)
 }
 
 template <typename... Args>
-void collectdata(unsigned int x, const Args &... arg)
+void collectdata(const unsigned int& x, const Args &... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(unsigned long x, const Args &... arg)
+void collectdata(const unsigned long int& x, const Args &... arg)
+{
+    data_.push_back((double)x);
+    collectdata(arg...);
+}
+
+
+template <typename... Args>
+void collectdata(const int& x, const Args &... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(int x, const Args &... arg)
+void collectdata(const long int& x, const Args &... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(double x, const Args &... arg)
+void collectdata(const double& x, const Args &... arg)
 {
     data_.push_back(x);
     collectdata(arg...);
