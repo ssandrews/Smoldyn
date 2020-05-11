@@ -29,7 +29,7 @@ target_link_libraries(_smoldyn PRIVATE smoldyn_static)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${CMAKE_CURRENT_SOURCE_DIR}/setup.py)
 
-add_custom_command(TARGET _smoldyn POST_BUILD
+add_custom_target(wheel DEPENDS _smoldyn 
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
         -d ${CMAKE_BINARY_DIR}/wheel
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
