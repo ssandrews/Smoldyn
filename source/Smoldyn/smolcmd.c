@@ -1013,7 +1013,7 @@ enum CMDcode cmdmolcount(simptr sim, cmdptr cmd, char *line2)
 
     scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
     for(i = 1; i < nspecies; i++)
-        scmdfprintf(cmd->cmds, fptr, "%,%i", ct[i]);
+        scmdfprintf<double>(cmd->cmds, fptr, "%,%i", ct[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
@@ -1173,7 +1173,7 @@ enum CMDcode cmdmolcountinbox(simptr sim, cmdptr cmd, char *line2)
 
     scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
     for(i = 1; i < nspecies; i++)
-        scmdfprintf(cmd->cmds, fptr, "%,%i", ct[i]);
+        scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
@@ -1240,7 +1240,7 @@ enum CMDcode cmdmolcountincmpt(simptr sim, cmdptr cmd, char *line2)
 
     scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
     for(i = 1; i < nspecies; i++)
-        scmdfprintf(cmd->cmds, fptr, "%,%i", ct[i]);
+        scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
@@ -1311,7 +1311,7 @@ enum CMDcode cmdmolcountincmpts(simptr sim, cmdptr cmd, char *line2)
     scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
     for(i = 1; i < nspecies * ncmpt; i++)
         if(i % nspecies != 0)
-            scmdfprintf(cmd->cmds, fptr, "%,%i", ct[i]);
+            scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
@@ -1381,7 +1381,7 @@ enum CMDcode cmdmolcountincmpt2(simptr sim, cmdptr cmd, char *line2)
 
     scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
     for(i = 1; i < nspecies; i++)
-        scmdfprintf(cmd->cmds, fptr, "%,%i", ct[i]);
+        scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
@@ -1446,7 +1446,7 @@ enum CMDcode cmdmolcountonsurf(simptr sim, cmdptr cmd, char *line2)
 
     scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
     for(i = 1; i < nspecies; i++)
-        scmdfprintf(cmd->cmds, fptr, "%,%i", ct[i]);
+        scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[i]);
     scmdfprintf(cmd->cmds, fptr, "\n");
     scmdflush(fptr);
     return CMDok;
@@ -1583,7 +1583,7 @@ enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
     if(average <= 1) {
         scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
         for(bin = 0; bin < nbin; bin++)
-            scmdfprintf(cmd->cmds, fptr, "%,%i", ct[bin]);
+            scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[bin]);
         scmdfprintf(cmd->cmds, fptr, "\n");
     }
     else if(cmd->invoke % average == 0) {
@@ -1727,13 +1727,14 @@ enum CMDcode cmdmolcountspace2d(simptr sim, cmdptr cmd, char *line2)
         for(bin2 = 0; bin2 < nbin2; bin2++) {
             bin1 = 0;
             if(average <= 1)
-                scmdfprintf(cmd->cmds, fptr, "%i", ct[bin2 * nbin1 + bin1]);
+                scmdfprintf<unsigned int>(
+                    cmd->cmds, fptr, "%i", ct[bin2 * nbin1 + bin1]);
             else
                 scmdfprintf(cmd->cmds, fptr, "%g",
                     (double)(ct[bin2 * nbin1 + bin1] / (double)average));
             for(bin1 = 1; bin1 < nbin1; bin1++) {
                 if(average <= 1)
-                    scmdfprintf(
+                    scmdfprintf<unsigned int>(
                         cmd->cmds, fptr, "%,%i", ct[bin2 * nbin1 + bin1]);
                 else
                     scmdfprintf(cmd->cmds, fptr, "%,%g",
@@ -1839,7 +1840,7 @@ enum CMDcode cmdmolcountspaceradial(simptr sim, cmdptr cmd, char *line2)
     if(average <= 1) {
         scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
         for(bin = 0; bin < nbin; bin++)
-            scmdfprintf(cmd->cmds, fptr, "%,%i", ct[bin]);
+            scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[bin]);
         scmdfprintf(cmd->cmds, fptr, "\n");
     }
     else if(cmd->invoke % average == 0) {
@@ -1966,7 +1967,7 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim, cmdptr cmd, char *line2)
     if(average <= 1) {
         scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
         for(bin = 0; bin < nbin; bin++)
-            scmdfprintf(cmd->cmds, fptr, "%,%i", ct[bin]);
+            scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", ct[bin]);
         scmdfprintf(cmd->cmds, fptr, "\n");
     }
     else if(cmd->invoke % average == 0) {
@@ -2344,7 +2345,7 @@ enum CMDcode cmdmolcountspecies(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(fptr, "file name not recognized");
 
     count = (i == -4) ? 0 : molcount(sim, i, index, ms, -1);
-    scmdfprintf(cmd->cmds, fptr, "%g%,%i\n", sim->time, count);
+    scmdfprintf<double>(cmd->cmds, fptr, "%g%,%i\n", sim->time, count);
     scmdflush(fptr);
     return CMDok;
 }
@@ -2370,7 +2371,7 @@ enum CMDcode cmdmolcountspecieslist(simptr sim, cmdptr cmd, char *line2)
         SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
         SCMDCHECK(i != -7, "error allocating memory");
         count = (i == -4) ? 0 : molcount(sim, i, index, ms, -1);
-        scmdfprintf(cmd->cmds, fptr, "%,%i", count);
+        scmdfprintf<unsigned int>(cmd->cmds, fptr, "%,%i", count);
     }
 
     scmdfprintf(cmd->cmds, fptr, "\n");
@@ -2464,7 +2465,8 @@ enum CMDcode cmdlistmols2(simptr sim, cmdptr cmd, char *line2)
 
 scanportion:
     mptr = (moleculeptr)line2;
-    scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+    scmdfprintf<unsigned int>(
+        cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
     scmdfprintf(
@@ -2510,7 +2512,8 @@ enum CMDcode cmdlistmols3(simptr sim, cmdptr cmd, char *line2)
 
 scanportion:
     mptr = (moleculeptr)line2;
-    scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+    scmdfprintf<unsigned int>(
+        cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
     scmdfprintf(
@@ -2556,7 +2559,8 @@ enum CMDcode cmdlistmols4(simptr sim, cmdptr cmd, char *line2)
 
 scanportion:
     mptr = (moleculeptr)line2;
-    scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+    scmdfprintf<unsigned int>(
+        cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d] + mptr->posoffset[d]);
     scmdfprintf(
@@ -2614,7 +2618,7 @@ enum CMDcode cmdlistmolscmpt(simptr sim, cmdptr cmd, char *line2)
 scanportion:
     mptr = (moleculeptr)line2;
     if(posincompart(sim, mptr->pos, cmpt, 0)) {
-        scmdfprintf(
+        scmdfprintf<unsigned int>(
             cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
         for(d = 0; d < sim->dim; d++)
             scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
@@ -3512,7 +3516,7 @@ enum CMDcode cmdresidencetime(simptr sim, cmdptr cmd, char *line2)
             ctr++;
             sum += sim->time - v2[j][1];
             if(listout > 0 && cmd->invoke > 0 && cmd->invoke % listout == 0)
-                scmdfprintf(
+                scmdfprintf<unsigned long>(
                     cmd->cmds, fptr, "%li%,%g\n", v1[j], sim->time - v2[j][1]);
         }
     }
@@ -3649,7 +3653,7 @@ enum CMDcode cmdprintLattice(simptr sim, cmdptr cmd, char *line2)
     buffer = NULL;
     for(i = 0; i < n; ++i) {
         lattice = sim->latticess->latticelist[i];
-        scmdfprintf(
+        scmdfprintf<double>(
             cmd->cmds, fptr, "Lattice %d: %s:\n", i, lattice->latticename);
         NSV_CALL(nsv_print(lattice->nsv, &buffer));
         scmdfprintf(cmd->cmds, fptr, "%s", buffer ? buffer : "Error");

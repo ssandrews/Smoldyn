@@ -140,6 +140,40 @@ void collectdata()
 }
 
 template <typename... Args>
+void collectdata(const std::string& x, const Args&... arg)
+{
+    collectdata(arg...);
+}
+
+template <typename... Args>
+void collectdata(const char x, const Args&... arg)
+{
+    data_.push_back((double)x);
+    collectdata(arg...);
+}
+
+template <typename... Args>
+void collectdata(unsigned int x, const Args &... arg)
+{
+    data_.push_back((double)x);
+    collectdata(arg...);
+}
+
+template <typename... Args>
+void collectdata(unsigned long x, const Args &... arg)
+{
+    data_.push_back((double)x);
+    collectdata(arg...);
+}
+
+template <typename... Args>
+void collectdata(int x, const Args &... arg)
+{
+    data_.push_back((double)x);
+    collectdata(arg...);
+}
+
+template <typename... Args>
 void collectdata(double x, const Args &... arg)
 {
     data_.push_back(x);
