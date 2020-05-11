@@ -20,21 +20,21 @@ of the Gnu Lesser General Public License (LGPL). */
 // std::vector<std::vector<double>> data_;
 std::vector<double> data_;
 
-#define SFNCHECK(A, ...)                                 \
-    if(!(A)) {                                           \
-        if(erstr)                                        \
-            snprintf(erstr, sizeof(erstr), __VA_ARGS__); \
-        return dblnan();                                 \
-    }                                                    \
-    else                                                 \
+#define SFNCHECK(A, ...)                                      \
+    if(!(A)) {                                                \
+        if(erstr)                                             \
+            snprintf(erstr, 64 * sizeof(erstr), __VA_ARGS__); \
+        return dblnan();                                      \
+    }                                                         \
+    else                                                      \
         (void)0
-#define SCMDCHECK(A, ...)                                          \
-    if(!(A)) {                                                     \
-        if(cmd)                                                    \
-            snprintf(cmd->erstr, sizeof(cmd->erstr), __VA_ARGS__); \
-        return CMDwarn;                                            \
-    }                                                              \
-    else                                                           \
+#define SCMDCHECK(A, ...)                                               \
+    if(!(A)) {                                                          \
+        if(cmd)                                                         \
+            snprintf(cmd->erstr, 64 * sizeof(cmd->erstr), __VA_ARGS__); \
+        return CMDwarn;                                                 \
+    }                                                                   \
+    else                                                                \
         (void)0
 
 enum CMDcode {
@@ -139,59 +139,16 @@ void collectdata()
 {
 }
 
-template <typename... Args>
-void collectdata(std::string x,  Args... arg)
+template <typename T, typename... Args>
+void collectdata(T x, Args &&... arg)
 {
-    collectdata(arg...);
-}
-
-template <typename... Args>
-void collectdata(char x, Args... arg)
-{
-    data_.push_back((double)x);
-    collectdata(arg...);
-}
-
-template <typename... Args>
-void collectdata(unsigned int x, Args... arg)
-{
-    data_.push_back((double)x);
-    collectdata(arg...);
-}
-
-template <typename... Args>
-void collectdata(unsigned long int x, Args... arg)
-{
-    data_.push_back((double)x);
-    collectdata(arg...);
-}
-
-
-template <typename... Args>
-void collectdata(int x, Args... arg)
-{
-    data_.push_back((double)x);
-    collectdata(arg...);
-}
-
-template <typename... Args>
-void collectdata(long int x, Args... arg)
-{
-    data_.push_back((double)x);
-    collectdata(arg...);
-}
-
-template <typename... Args>
-void collectdata(double x, Args... arg)
-{
-    data_.push_back(x);
+    // data_.push_back(x);
     collectdata(arg...);
 }
 
 /* scmdfprintf */
 template <typename... Args>
-int scmdfprintf(
-    cmdssptr cmds, FILE *fptr, const char *format, Args... args)
+int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, Args... args)
 {
     char newformat[STRCHAR], replacestr[STRCHAR];
 

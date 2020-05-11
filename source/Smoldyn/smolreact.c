@@ -718,7 +718,7 @@ char *rxnsernocode2string(long int pserno, char *pattern)
     long int bitcode;
 
     if(pserno >= 0) {
-        snprintf(pattern, sizeof(pattern), "%li", pserno);
+        snprintf(pattern, 3*sizeof(pattern), "%li", pserno);
         return pattern;
     }
 
@@ -2014,7 +2014,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
 
     else if(rxn->rparamt == RPconfspread) {  // confspread
         if(rxn->rate < 0) {
-            snprintf(erstr, sizeof(erstr), "reaction %s rate is undefined",
+            snprintf(erstr, 8*sizeof(erstr), "reaction %s rate is undefined",
                 rxn->rname);
             return 1;
         }
@@ -2024,7 +2024,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
 
     else if(order == 0) {  // order 0
         if(rxn->rate < 0) {
-            snprintf(erstr, sizeof(erstr), "reaction %s rate is undefined",
+            snprintf(erstr, 8*sizeof(erstr), "reaction %s rate is undefined",
                 rxn->rname);
             return 1;
         }
@@ -2043,7 +2043,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
             ;  // determine first state that this is permitted for (usually only
                // state)
         if(rxn->rate < 0) {
-            snprintf(erstr, sizeof(erstr), "reaction %s rate is undefined",
+            snprintf(erstr, 8*sizeof(erstr), "reaction %s rate is undefined",
                 rxn->rname);
             return 1;
         }
@@ -2060,7 +2060,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
                     for(ms1 = (MolecState)0; ms1 < MSMAX;
                         ms1 = (MolecState)(ms1 + 1))
                         if(rxn->permit[ms1] != rxn2->permit[ms1]) {
-                            snprintf(erstr, sizeof(erstr),
+                            snprintf(erstr, 20*sizeof(erstr),
                                 "reactions %s and %s have the same reactant "
                                 "but different state permissions, which is not "
                                 "allowed",
@@ -2089,7 +2089,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
             rxn->prob /= product;  // probability, accounting for prior
                                    // reactions, see documentation
             if(!(rxn->prob >= 0 && rxn->prob <= 1)) {
-                snprintf(erstr, sizeof(erstr),
+                snprintf(erstr, 10*sizeof(erstr),
                     "reaction %s probability is %g, which is out of range",
                     rxn->rname, rxn->prob);
                 return 5;
@@ -2110,7 +2110,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
         if(rxn->rate < 0) {
             if(rxn->prob < 0)
                 rxn->prob = 1;
-            snprintf(erstr, sizeof(erstr), "reaction rate %s is undefined",
+            snprintf(erstr, 10*sizeof(erstr), "reaction rate %s is undefined",
                 rxn->rname);
             return 1;
         }
@@ -2159,7 +2159,7 @@ int rxnsetrate(simptr sim, int order, int r, char *erstr)
         else if(rate3 <= 0)
             rxn->bindrad2 = 0;
         else if(dsum <= 0) {
-            snprintf(erstr, sizeof(erstr), "Both diffusion coefficients are 0");
+            snprintf(erstr, 10*sizeof(erstr), "Both diffusion coefficients are 0");
             return 4;
         }
         else if(rparamt == RPunbindrad)
@@ -2230,7 +2230,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
         if(rparamt == RPnone || rparamt == RPirrev || rparamt == RPconfspread)
             rxn->unbindrad = 0;
         else {
-            snprintf(erstr, sizeof(erstr),
+            snprintf(erstr, 10*sizeof(erstr),
                 "Illegal product parameter because reaction has no products");
             er = 1;
         }
@@ -2255,7 +2255,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
                 rxn->prdpos[0][d] = 0;
         }
         else {
-            snprintf(erstr, sizeof(erstr),
+            snprintf(erstr, 10*sizeof(erstr),
                 "Illegal product parameter because reaction only has one "
                 "product");
             er = 2;
@@ -2328,7 +2328,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
                 rparamt == RPpgemmaxw || rparamt == RPratio ||
                 rparamt == RPpgem2 || rparamt == RPpgemmax2 ||
                 rparamt == RPratio2) {
-                snprintf(erstr, sizeof(erstr),
+                snprintf(erstr, 10*sizeof(erstr),
                     "Illegal product parameter because products don't react");
                 er = 3;
             }
@@ -2353,7 +2353,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
                 bindradr = -1;
 
             if(rparamt == RPnone) {
-                snprintf(erstr, sizeof(erstr),
+                snprintf(erstr, 10*sizeof(erstr),
                     "BUG: Undefined product placement for reversible reaction");
                 er = 5;
             }
@@ -2364,7 +2364,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
             }
             else if(rxnr->bindrad2 < 0) {  // all below options require bindrad2
                                            // >= 0
-                snprintf(erstr, sizeof(erstr),
+                snprintf(erstr, 10*sizeof(erstr),
                     "Binding radius of reaction products is undefined");
                 er = 6;
             }
@@ -2379,7 +2379,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
                 rxn->prdpos[1][0] = -rpar * bindradr * dc2;
             }
             else if(dsum <= 0) {  // all below options require dsum > 0
-                snprintf(erstr, sizeof(erstr),
+                snprintf(erstr, 10*sizeof(erstr),
                     "Cannot set unbinding distance because sum of product "
                     "diffusion constants is 0");
                 er = 4;
@@ -2387,13 +2387,13 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
             else if(rparamt == RPpgem || rparamt == RPpgem2) {
                 rpar = unbindingradius(rpar, sim->dt, dsum, bindradr);
                 if(rpar == -2) {
-                    snprintf(erstr, sizeof(erstr),
+                    snprintf(erstr, 10*sizeof(erstr),
                         "Cannot create an unbinding radius due to illegal "
                         "input values");
                     er = 7;
                 }
                 else if(rpar < 0) {
-                    snprintf(erstr, sizeof(erstr),
+                    snprintf(erstr, 8*sizeof(erstr),
                         "Maximum possible geminate binding probability is %g",
                         -rpar);
                     er = 8;
@@ -2408,7 +2408,7 @@ int rxnsetproduct(simptr sim, int order, int r, char *erstr)
                     rparamt == RPpgemmax2) {
                 rpar = unbindingradius(rpar, sim->dt, dsum, bindradr);
                 if(rpar == -2) {
-                    snprintf(erstr, sizeof(erstr), "Illegal input values");
+                    snprintf(erstr, 8*sizeof(erstr), "Illegal input values");
                     er = 9;
                 }
                 else if(rpar <= 0) {

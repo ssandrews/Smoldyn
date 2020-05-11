@@ -146,8 +146,8 @@ include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume 
 
 ####### Compiler macros ######################
 add_definitions(-std=c++11 -Wall -Wno-unused-result -Werror)
-add_definitions(-Wno-sizeof-pointer-memaccess)
-add_definitions(-fmax-errors=2)
+add_definitions(-Wno-sizeof-pointer-memaccess -Wno-maybe-uninitialized)
+add_definitions(-fmax-errors=1)
 
 
 ####### Build for debugging or release ##########

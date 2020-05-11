@@ -914,9 +914,9 @@ int moladdspeciesgroup(simptr sim, const char *group, char *species, int imol)
 char *molserno2string(unsigned long long serno, char *string)
 {
     if(serno < 0xFFFFFFFF)
-        snprintf(string, sizeof(string), LLUFORMAT, serno);
+        snprintf(string, 2*sizeof(string), LLUFORMAT, serno);
     else
-        snprintf(string, sizeof(string), LLUFORMAT "." LLUFORMAT, serno >> 32,
+        snprintf(string, 4*sizeof(string), LLUFORMAT "." LLUFORMAT, serno >> 32,
             serno & 0xFFFFFFFF);
     return string;
 }
@@ -1068,7 +1068,7 @@ char *molpos2string(simptr sim, moleculeptr mptr, char *string)
 
     line2 = string;  // write position to string
     for(d = 0; d < dim; d++) {
-        snprintf(line2, sizeof(line2), " %g", mptr->pos[d]);
+        snprintf(line2, 2*sizeof(line2), " %g", mptr->pos[d]);
         line2 += strlen(line2);
     }
 
@@ -1114,7 +1114,7 @@ char *molpos2string(simptr sim, moleculeptr mptr, char *string)
 
             line2 = string;  // write position to string
             for(d = 0; d < dim; d++) {
-                snprintf(line2, sizeof(line2), " %g",
+                snprintf(line2, 2*sizeof(line2), " %g",
                     mptr->pos[d] + unirandCCD(-dist, dist));
                 line2 += strlen(line2);
             }
