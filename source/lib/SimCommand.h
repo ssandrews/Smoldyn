@@ -131,7 +131,7 @@ void  scmdflush(FILE *fptr);
 // std::vector<std::vector<double>> &getData();
 
 std::vector<double> &getData();
-void                 collectdata(double *vals, size_t n);
+// void                 collectdata(double *vals, size_t n);
 
 // Collect data.
 
@@ -140,27 +140,27 @@ void collectdata()
 }
 
 template <typename... Args>
-void collectdata(const std::string& x, const Args&... arg)
+void collectdata(std::string x,  Args... arg)
 {
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(const char x, const Args&... arg)
-{
-    data_.push_back((double)x);
-    collectdata(arg...);
-}
-
-template <typename... Args>
-void collectdata(const unsigned int& x, const Args &... arg)
+void collectdata(char x, Args... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(const unsigned long int& x, const Args &... arg)
+void collectdata(unsigned int x, Args... arg)
+{
+    data_.push_back((double)x);
+    collectdata(arg...);
+}
+
+template <typename... Args>
+void collectdata(unsigned long int x, Args... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
@@ -168,21 +168,21 @@ void collectdata(const unsigned long int& x, const Args &... arg)
 
 
 template <typename... Args>
-void collectdata(const int& x, const Args &... arg)
+void collectdata(int x, Args... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(const long int& x, const Args &... arg)
+void collectdata(long int x, Args... arg)
 {
     data_.push_back((double)x);
     collectdata(arg...);
 }
 
 template <typename... Args>
-void collectdata(const double& x, const Args &... arg)
+void collectdata(double x, Args... arg)
 {
     data_.push_back(x);
     collectdata(arg...);
@@ -191,7 +191,7 @@ void collectdata(const double& x, const Args &... arg)
 /* scmdfprintf */
 template <typename... Args>
 int scmdfprintf(
-    cmdssptr cmds, FILE *fptr, const char *format, const Args &... args)
+    cmdssptr cmds, FILE *fptr, const char *format, Args... args)
 {
     char newformat[STRCHAR], replacestr[STRCHAR];
 
