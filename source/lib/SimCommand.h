@@ -18,7 +18,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include <fmt/printf.h>
 
 // std::vector<std::vector<double>> data_;
-std::vector<double> data_;
+extern std::vector<double> data_;
 
 #define SFNCHECK(A, ...)                                      \
     if(!(A)) {                                                \
@@ -135,16 +135,23 @@ std::vector<double> &getData();
 
 // Collect data.
 
-void collectdata()
+inline void collectdata()
 {
 }
 
-template <typename T, typename... Args>
-void collectdata(T x, Args &&... arg)
+template <typename... Args> inline
+void collectdata(const double& x, const Args &&... arg)
 {
-    // data_.push_back(x);
+    data_.push_back(x);
     collectdata(arg...);
 }
+
+template<typename... Args> inline
+void collectdata(const char*& x, const Args&&... arg)
+{
+    collectdata(arg...);
+}
+
 
 /* scmdfprintf */
 template <typename... Args>
@@ -168,7 +175,7 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, Args... args)
             strstrreplace(newformat, "%,", " ", STRCHAR);
     }
     int r = fmt::fprintf(fptr, newformat, args...);
-    collectdata(args...);
+    
     return r;
 }
 

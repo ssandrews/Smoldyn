@@ -30,6 +30,9 @@
 #define SCMDPRINTF(A, ...) printf(__VA_ARGS__)
 #endif
 
+// std::vector<std::vector<double>> data_;
+std::vector<double> data_;
+
 void scmdcatfname(cmdssptr cmds, int fid, char *str);
 
 std::vector<double>& getData()
