@@ -38,9 +38,9 @@ add_custom_target(wheel DEPENDS _smoldyn
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel/*
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "installing wheel")
+    COMMAND ${PYTHON_EXECUTABLE} setup.py develop
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "installing in developer mode.")
     #VERBATIM)
     
 
