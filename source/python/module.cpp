@@ -25,7 +25,8 @@ using namespace pybind11::literals;  // for _a
 
 // Defined in SimCommand.c file.
 extern int scmdopenfiles(cmdssptr cmds, int overwrite);
-extern vector<vector<double>>& getData();
+
+extern vector<double>& getData();
 
 
 /* --------------------------------------------------------------------------*/

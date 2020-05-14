@@ -1090,3 +1090,39 @@ void scmdflush(FILE *fptr)
     return;
 }
 
+// void collectdata(double x, char* c)
+// {
+//     data_.push_back(x);
+// }
+// 
+// template <typename... Args> 
+// void collectdata(const double& x, const Args &&... arg)
+// {
+//     // printf("d %f", x);
+//     data_.push_back(x);
+//     collectdata(arg...);
+// }
+// 
+// template<typename... Args> 
+// void collectdata(const char*& x, const Args&&... arg)
+// {
+//     // printf("c %s", x);
+//     collectdata(arg...);
+// }
+// 
+// template<typename... Args> 
+// void collectdata(char* x, const Args&&... arg)
+// {
+//     // printf("c %s", x);
+//     collectdata(arg...);
+// }
+// 
+// 
+// template<typename... Args> 
+// void collectdata(double x, const Args&&... arg)
+// {
+//     // printf("c %s", x);
+//     data_.push_back(x);
+//     collectdata(arg...);
+// }
+// 

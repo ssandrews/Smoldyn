@@ -10,6 +10,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "stdio.h"
 #include "string2.h"
 
+#include <iostream>
 #include <cstring>
 #include <cstdlib>
 #include <vector>
@@ -131,24 +132,23 @@ void  scmdflush(FILE *fptr);
 // std::vector<std::vector<double>> &getData();
 
 std::vector<double> &getData();
-// void                 collectdata(double *vals, size_t n);
 
-// Collect data.
 
 inline void collectdata()
-{
-}
+{}
 
-template <typename... Args> inline
-void collectdata(const double& x, const Args &&... arg)
+// Collect data.
+template <typename T=double, typename... Args>
+inline void collectdata(double first, Args... arg)
 {
-    data_.push_back(x);
+    data_.push_back(first);
     collectdata(arg...);
 }
 
-template<typename... Args> inline
-void collectdata(const char*& x, const Args&&... arg)
+template <typename T, typename... Args>
+inline void collectdata(T first, Args... arg)
 {
+    // data_.push_back(first);
     collectdata(arg...);
 }
 
@@ -175,7 +175,7 @@ int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, Args... args)
             strstrreplace(newformat, "%,", " ", STRCHAR);
     }
     int r = fmt::fprintf(fptr, newformat, args...);
-    
+    collectdata(args...);
     return r;
 }
 
