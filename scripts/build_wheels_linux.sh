@@ -46,7 +46,7 @@ $PYTHON -m venv $VENV
 if [ -n "$PYPI_PASSWORD" ]; then
     $PYTHON -m twine upload $WHEELHOUSE/smoldyn*.whl \
         --repository testpypi \
-        --user dilawar \
+        --user __token__ \
         --password $PYPI_PASSWORD \
         --skip-existing
 else
