@@ -2,7 +2,9 @@
 
 
 if("${CMAKE_VERSION}" VERSION_LESS "3.12")
-    find_package(PythonInterp REQUIRED)
+    if(NOT PYTHON_EXECUTABLE)
+        find_package(PythonInterp REQUIRED)
+    endif()
     find_package(PythonLibs REQUIRED)
 else()
     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
