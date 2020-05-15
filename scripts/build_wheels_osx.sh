@@ -64,8 +64,8 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
 
 if [ -n "$PYPI_PASSWORD" ]; then
     echo "Did you test the wheels?"
-    $PYTHON -m twine upload --repository testpypi \
-        -u dilawar -p $PYPI_PASSWORD \
+    $PYTHON -m twine upload \
+        -u __token__ -p $PYPI_PASSWORD \
         --skip-existing \
         $WHEELHOUSE/smoldyn*.whl
 fi
