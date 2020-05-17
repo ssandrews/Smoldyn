@@ -145,7 +145,8 @@ set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
 include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
 
 ####### Compiler macros ######################
-add_definitions(-std=c++11 -Wall -Wno-unused-result -Werror)
+set(CMAKE_CXX_STANDARD 17)
+add_definitions(-Wall -Wno-unused-result -Werror)
 add_definitions(-Wno-sizeof-pointer-memaccess -Wno-maybe-uninitialized)
 add_definitions(-fmax-errors=1)
 

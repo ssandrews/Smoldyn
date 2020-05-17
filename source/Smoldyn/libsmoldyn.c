@@ -920,7 +920,7 @@ extern "C" int smolGetSpeciesIndex(simptr sim, const char *species)
         char buffer[100];
         strncpy(buffer, "Species '", 12); //sizeof(buffer));
         strncat(buffer, species, 50); //sizeof(buffer));
-        strncat(buffer, "' not found.", sizeof(buffer));
+        strncat(buffer, "' not found.", 20); //sizeof(buffer));
         LCHECK(i > 0, funcname, ECnonexist, buffer);
     }
     /* LCHECK(i > 0, funcname, ECnonexist, "species not found"); */
@@ -946,7 +946,7 @@ extern "C" int smolGetSpeciesIndexNT(simptr sim, const char *species)
         char buffer[256];
         strncpy(buffer, "Species ", sizeof(buffer));
         strncat(buffer, species, 100); //sizeof(buffer));
-        strncat(buffer, " not found.", sizeof(buffer));
+        strncat(buffer, " not found.", 20); //sizeof(buffer));
         LCHECKNT(i > 0, funcname, ECnonexist, buffer);
     }
     /** LCHECKNT(i > 0, funcname, ECnonexist, "species not found"); */

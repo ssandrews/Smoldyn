@@ -14,6 +14,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <type_traits>
 
 #include <fmt/core.h>
 #include <fmt/printf.h>
@@ -138,23 +139,19 @@ inline void collectdata()
 {}
 
 // Collect data.
-template <typename T=double, typename... Args>
-inline void collectdata(double first, Args... arg)
-{
-    data_.push_back(first);
-    collectdata(arg...);
-}
-
 template <typename T, typename... Args>
 inline void collectdata(T first, Args... arg)
 {
-    // data_.push_back(first);
+    //if constexpr (std::is_same_v<double, T>)
+    if constexpr (std::is_integral_v<T>)
+        data_.push_back(first);
     collectdata(arg...);
 }
 
 
 /* scmdfprintf */
 template <typename... Args>
+inline 
 int scmdfprintf(cmdssptr cmds, FILE *fptr, const char *format, Args... args)
 {
     char newformat[STRCHAR], replacestr[STRCHAR];

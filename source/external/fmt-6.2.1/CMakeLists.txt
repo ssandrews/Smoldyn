@@ -79,7 +79,7 @@ endif ()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
   "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 
-include(cxx14)
+#include(cxx14)
 include(CheckCXXCompilerFlag)
 
 list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_variadic_templates" index)
@@ -177,7 +177,6 @@ set(FMT_SOURCES src/format.cc src/os.cc)
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS})
 set_property(TARGET fmt PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 add_library(fmt::fmt ALIAS fmt)
 
 if (HAVE_STRTOD_L)
