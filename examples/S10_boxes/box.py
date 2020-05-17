@@ -28,5 +28,4 @@ M = sm.StateMonitor([a, b, c], 'molcount')
 # TODO
 model.run(100, dt=0.01)
 print('Getting data...')
-for l in model.data():
-    print(l)
+print(model.data())

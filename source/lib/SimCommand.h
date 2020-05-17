@@ -19,8 +19,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include <fmt/core.h>
 #include <fmt/printf.h>
 
-// std::vector<std::vector<double>> data_;
-extern std::vector<double> data_;
+extern std::vector<double> row_;
 
 #define SFNCHECK(A, ...)                                      \
     if(!(A)) {                                                \
@@ -130,9 +129,7 @@ FILE *scmdincfile(cmdssptr cmds, char *line2);
 FILE *scmdgetfptr(cmdssptr cmds, char *line2);
 void  scmdflush(FILE *fptr);
 
-// std::vector<std::vector<double>> &getData();
-
-std::vector<double> &getData();
+std::vector<std::vector<double>> &getData();
 
 
 inline void collectdata()
@@ -142,9 +139,9 @@ inline void collectdata()
 template <typename T, typename... Args>
 inline void collectdata(T first, Args... arg)
 {
-    //if constexpr (std::is_same_v<double, T>)
-    if constexpr (std::is_integral_v<T>)
-        data_.push_back(first);
+    // float or intergral type are pushed into global data container.
+    if constexpr (std::is_arithmetic_v<T>)
+        row_.push_back(first);
     collectdata(arg...);
 }
 

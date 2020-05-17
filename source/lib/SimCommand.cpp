@@ -1,10 +1,10 @@
-/* 
+/*
  * Steven Andrews, 1/10/04.
  * Dilawar Singh, 2020-05-10
  * Library for runtime command interpreter used for various simulations.
  * Same as SimCommand.c but uses variadic templates to avoid va_ family of
  * macros.
- * 
+ *
  */
 
 #include <limits.h>
@@ -31,15 +31,15 @@
 #endif
 
 // std::vector<std::vector<double>> data_;
-std::vector<double> data_;
+std::vector<std::vector<double>> data_;
+std::vector<double> row_;
 
 void scmdcatfname(cmdssptr cmds, int fid, char *str);
 
-std::vector<double>& getData()
+std::vector<std::vector<double>> &getData()
 {
     return data_;
 }
-
 
 /* ***** internal routine ***** */
 
@@ -61,8 +61,8 @@ void scmdcatfname(cmdssptr cmds, int fid, char *str)
     else
         strncat(str, cmds->fname[fid], STRCHAR);
     if(cmds->fsuffix[fid] && STRCHAR - strlen(str) > 4)
-        snprintf(str + strlen(str), sizeof(str) - strlen(str), "_%03i",
-            cmds->fsuffix[fid]);
+        snprintf(
+            str + strlen(str), sizeof(str) - strlen(str), "_%03i", cmds->fsuffix[fid]);
     if(dot)
         strncat(str, dot, STRCHAR - strlen(str));
     return;
@@ -140,8 +140,8 @@ void scmdfree(cmdptr cmd)
 }
 
 /* scmdssalloc */
-cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void *, cmdptr, char *),
-    void *cmdfnarg, const char *root)
+cmdssptr scmdssalloc(
+    enum CMDcode (*cmdfn)(void *, cmdptr, char *), void *cmdfnarg, const char *root)
 {
     cmdssptr cmds;
 
@@ -245,9 +245,8 @@ int scmdqalloci(cmdssptr cmds, int n)
 }
 
 /* scmdaddcommand */
-int scmdaddcommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt,
-    double on, double off, double step, double multiplier,
-    const char *commandstring)
+int scmdaddcommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt, double on,
+    double off, double step, double multiplier, const char *commandstring)
 {
     cmdptr cmd;
 
@@ -306,8 +305,8 @@ int scmdaddcommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt,
             }
     }
 
-    else if(ch == 'B' || ch == 'A' || ch == '&' || ch == 'j' || ch == 'I' ||
-            ch == 'E' || ch == 'N' || ch == 'e' || ch == 'n') {
+    else if(ch == 'B' || ch == 'A' || ch == '&' || ch == 'j' || ch == 'I' || ch == 'E' ||
+            ch == 'N' || ch == 'e' || ch == 'n') {
         cmd->oni = 0;
         if(dt == 0 || tmin >= tmax)
             cmd->offi = Q_LLONG_MAX;
@@ -317,8 +316,7 @@ int scmdaddcommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt,
         if(ch == 'B')
             cmd->oni = cmd->offi = -1;
         else if(ch == 'A')
-            cmd->oni = cmd->offi =
-                (cmd->offi == Q_LLONG_MAX ? cmd->offi : cmd->offi + 1);
+            cmd->oni = cmd->offi = (cmd->offi == Q_LLONG_MAX ? cmd->offi : cmd->offi + 1);
         else if(ch == '&') {
             cmd->oni  = (Q_LONGLONG)on;
             cmd->offi = cmd->oni;
@@ -385,8 +383,7 @@ int scmdstr2cmd(cmdssptr cmds, char *line2, double tmin, double tmax, double dt,
         else if(ch == 'a')
             cmd->on = cmd->off = tmax + dt;
         else if(ch == '@') {
-            itct = strmathsscanf(
-                line2, "%mlg", varnames, varvalues, nvar, &cmd->on);
+            itct = strmathsscanf(line2, "%mlg", varnames, varvalues, nvar, &cmd->on);
             if(itct != 1)
                 return 3;
             cmd->off = cmd->on;
@@ -394,8 +391,8 @@ int scmdstr2cmd(cmdssptr cmds, char *line2, double tmin, double tmax, double dt,
                 return 4;
         }
         else if(ch == 'i') {
-            itct = strmathsscanf(line2, "%mlg %mlg %mlg", varnames, varvalues,
-                nvar, &cmd->on, &cmd->off, &cmd->dt);
+            itct = strmathsscanf(line2, "%mlg %mlg %mlg", varnames, varvalues, nvar,
+                &cmd->on, &cmd->off, &cmd->dt);
             if(itct != 3)
                 return 3;
             if(cmd->on < tmin)
@@ -408,8 +405,8 @@ int scmdstr2cmd(cmdssptr cmds, char *line2, double tmin, double tmax, double dt,
                 return 4;
         }
         else if(ch == 'x') {
-            itct = strmathsscanf(line2, "%mlg %mlg %mlg %mlg", varnames,
-                varvalues, nvar, &cmd->on, &cmd->off, &cmd->dt, &cmd->xt);
+            itct = strmathsscanf(line2, "%mlg %mlg %mlg %mlg", varnames, varvalues, nvar,
+                &cmd->on, &cmd->off, &cmd->dt, &cmd->xt);
             if(itct != 4)
                 return 3;
             if(cmd->on < tmin)
@@ -445,8 +442,7 @@ int scmdstr2cmd(cmdssptr cmds, char *line2, double tmin, double tmax, double dt,
         if(ch == 'B')
             cmd->oni = cmd->offi = -1;
         else if(ch == 'A')
-            cmd->oni = cmd->offi =
-                (cmd->offi == Q_LLONG_MAX ? cmd->offi : cmd->offi + 1);
+            cmd->oni = cmd->offi = (cmd->offi == Q_LLONG_MAX ? cmd->offi : cmd->offi + 1);
         else if(ch == '&') {
             itct = strmathsscanf(line2, "%mi", varnames, varvalues, nvar, &i1);
             if(itct != 1)
@@ -543,17 +539,16 @@ enum CMDcode scmdexecute(
     else
         cmds->iter = iter;
 
-    if(cmds->cmdi)  // integer execution times
-        while((q_length(cmds->cmdi) > 0) &&
-              (q_frontkeyL(cmds->cmdi) <= iter || donow)) {
+    if(cmds->cmdi) {
+        // integer execution times
+        while((q_length(cmds->cmdi) > 0) && (q_frontkeyL(cmds->cmdi) <= iter || donow)) {
             q_pop(cmds->cmdi, NULL, NULL, NULL, NULL, &voidptr);
             cmd = (cmdptr)voidptr;
             cmd->invoke++;
             code1 = (*cmds->cmdfn)(cmds->cmdfnarg, cmd, cmd->str);
             if(code1 == CMDwarn) {
                 if(strlen(cmd->erstr))
-                    SCMDPRINTF(
-                        7, "command '%s' error: %s\n", cmd->str, cmd->erstr);
+                    SCMDPRINTF(7, "command '%s' error: %s\n", cmd->str, cmd->erstr);
                 else
                     SCMDPRINTF(7, "error with command: '%s'\n", cmd->str);
             }
@@ -569,18 +564,18 @@ enum CMDcode scmdexecute(
             if(code1 > code2)
                 code2 = code1;
         }
+    }
 
-    if(cmds->cmd)  // float execution times
-        while((q_length(cmds->cmd) > 0) &&
-              (q_frontkeyD(cmds->cmd) <= time || donow)) {
+    if(cmds->cmd) {
+        // float execution times
+        while((q_length(cmds->cmd) > 0) && (q_frontkeyD(cmds->cmd) <= time || donow)) {
             q_pop(cmds->cmd, NULL, NULL, NULL, NULL, &voidptr);
             cmd = (cmdptr)voidptr;
             cmd->invoke++;
             code1 = (*cmds->cmdfn)(cmds->cmdfnarg, cmd, cmd->str);
             if(code1 == CMDwarn) {
                 if(strlen(cmd->erstr))
-                    SCMDPRINTF(
-                        7, "command '%s' error: %s\n", cmd->str, cmd->erstr);
+                    SCMDPRINTF(7, "command '%s' error: %s\n", cmd->str, cmd->erstr);
                 else
                     SCMDPRINTF(7, "error with command: '%s'\n", cmd->str);
             }
@@ -599,6 +594,13 @@ enum CMDcode scmdexecute(
             if(code1 > code2)
                 code2 = code1;
         }
+    }
+
+    // Push the row to global data and reset the row.
+    if(row_.size() > 0) {
+        data_.push_back(row_);
+        row_.clear();
+    }
 
     return code2;
 }
@@ -614,8 +616,8 @@ enum CMDcode scmdcmdtype(cmdssptr cmds, cmdptr cmd)
 }
 
 /* scmdnextcmdtime */
-int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter,
-    enum CMDcode type, int equalok, double *timeptr, Q_LONGLONG *iterptr)
+int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter, enum CMDcode type,
+    int equalok, double *timeptr, Q_LONGLONG *iterptr)
 {
     double       tbest, t, dt;
     int          i, ans, done;
@@ -633,8 +635,8 @@ int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter,
     if(cmds->cmdi) {
         i    = -1;
         done = 0;
-        while(!done && (i = q_next(i, NULL, NULL, NULL, NULL, &voidptr,
-                            cmds->cmdi)) >= 0) {
+        while(
+            !done && (i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmds->cmdi)) >= 0) {
             cmd = (cmdptr)voidptr;
             if(type == CMDall || (cmdtype = scmdcmdtype(cmds, cmd)) == type ||
                 (type == CMDctrlORobs &&
@@ -658,8 +660,8 @@ int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter,
     if(cmds->cmd) {
         i    = -1;
         done = 0;
-        while(!done && (i = q_next(i, NULL, NULL, NULL, NULL, &voidptr,
-                            cmds->cmd)) >= 0) {
+        while(
+            !done && (i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmds->cmd)) >= 0) {
             cmd = (cmdptr)voidptr;
             if(type == CMDall || (cmdtype = scmdcmdtype(cmds, cmd)) == type ||
                 (type == CMDctrlORobs &&
@@ -668,8 +670,8 @@ int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter,
                 dt = cmd->dt;
                 if((equalok && t >= time) || (!equalok && t > time))
                     done = 1;
-                while(((equalok && t < time) || (!equalok && t <= time)) &&
-                      t <= cmd->off) {
+                while(
+                    ((equalok && t < time) || (!equalok && t <= time)) && t <= cmd->off) {
                     t += dt;
                     if(cmd->xt > 1)
                         dt *= cmd->xt;
@@ -717,10 +719,8 @@ void scmdoutput(cmdssptr cmds)
     else
         SCMDPRINTF(2, " No output files\n");
     for(fid = 0; fid < cmds->nfile; fid++) {
-        if(!strcmp(cmds->fname[fid], "stdout") ||
-            !strcmp(cmds->fname[fid], "stderr"))
-            SCMDPRINTF(2, "  %s (file open): %s\n", cmds->fname[fid],
-                cmds->fname[fid]);
+        if(!strcmp(cmds->fname[fid], "stdout") || !strcmp(cmds->fname[fid], "stderr"))
+            SCMDPRINTF(2, "  %s (file open): %s\n", cmds->fname[fid], cmds->fname[fid]);
         else {
             scmdcatfname(cmds, fid, string);
             SCMDPRINTF(2, "  %s (file %s): %s\n", cmds->fname[fid],
@@ -733,14 +733,13 @@ void scmdoutput(cmdssptr cmds)
         SCMDPRINTF(2, " Time queue:\n");
         SCMDPRINTF(2, "  %i queue spaces used of %i total\n", q_length(cmdq),
             q_maxlength(cmdq) - 1);
-        SCMDPRINTF(2,
-            "  Times to start, stop, and step, strings, and command type:\n");
+        SCMDPRINTF(2, "  Times to start, stop, and step, strings, and command type:\n");
         i = -1;
         while((i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmdq)) >= 0) {
             cmd = (cmdptr)voidptr;
             SCMDPRINTF(2, "  %g %g%s%g '%s' (%s)\n", cmd->on, cmd->off,
-                cmd->xt > 1 ? " *" : " ", cmd->xt > 1 ? cmd->xt : cmd->dt,
-                cmd->str, scmdcode2string(scmdcmdtype(cmds, cmd), string));
+                cmd->xt > 1 ? " *" : " ", cmd->xt > 1 ? cmd->xt : cmd->dt, cmd->str,
+                scmdcode2string(scmdcmdtype(cmds, cmd), string));
         }
     }
     cmdq = cmds->cmdi;
@@ -755,14 +754,13 @@ void scmdoutput(cmdssptr cmds)
         while((i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmdq)) >= 0) {
             cmd = (cmdptr)voidptr;
             if(cmd->offi != Q_LLONG_MAX) {
-                snprintf(string2, STRCHAR, "  %s %s %s '%%s' (%%s)\n", Q_LLI,
-                    Q_LLI, Q_LLI);
+                snprintf(
+                    string2, STRCHAR, "  %s %s %s '%%s' (%%s)\n", Q_LLI, Q_LLI, Q_LLI);
                 SCMDPRINTF(2, string2, cmd->oni, cmd->offi, cmd->dti, cmd->str,
                     scmdcode2string(scmdcmdtype(cmds, cmd), string));
             }
             else {
-                snprintf(string2, STRCHAR, "  %s end %s '%%s' (%%s)\n", Q_LLI,
-                    Q_LLI);
+                snprintf(string2, STRCHAR, "  %s end %s '%%s' (%%s)\n", Q_LLI, Q_LLI);
                 SCMDPRINTF(2, string2, cmd->oni, cmd->dti, cmd->str,
                     scmdcode2string(scmdcmdtype(cmds, cmd), string));
             }
@@ -800,23 +798,20 @@ void scmdwritecommands(cmdssptr cmds, FILE *fptr, char *filename)
 
     i = -1;
     if(cmds->cmdi)
-        while((i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmds->cmdi)) >=
-              0) {
+        while((i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmds->cmdi)) >= 0) {
             cmd = (cmdptr)voidptr;
-            snprintf(
-                string2, STRCHAR, "cmd I %s %s %s %%s\n", Q_LLI, Q_LLI, Q_LLI);
+            snprintf(string2, STRCHAR, "cmd I %s %s %s %%s\n", Q_LLI, Q_LLI, Q_LLI);
             fprintf(fptr, string2, cmd->oni, cmd->offi, cmd->dti, cmd->str);
         }
     if(cmds->cmd)
-        while(
-            (i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmds->cmd)) >= 0) {
+        while((i = q_next(i, NULL, NULL, NULL, NULL, &voidptr, cmds->cmd)) >= 0) {
             cmd = (cmdptr)voidptr;
             if(cmd->xt <= 1)
-                fprintf(fptr, "cmd i %g %g %g %s\n", cmd->on, cmd->off, cmd->dt,
-                    cmd->str);
+                fprintf(
+                    fptr, "cmd i %g %g %g %s\n", cmd->on, cmd->off, cmd->dt, cmd->str);
             else
-                fprintf(fptr, "cmd x %g %g %g %g %s\n", cmd->on, cmd->off,
-                    cmd->dt, cmd->xt, cmd->str);
+                fprintf(fptr, "cmd x %g %g %g %g %s\n", cmd->on, cmd->off, cmd->dt,
+                    cmd->xt, cmd->str);
         }
     fprintf(fptr, "\n");
     return;
@@ -982,8 +977,7 @@ int scmdopenfiles(cmdssptr cmds, int overwrite)
                 fptr = fopen(str1, "r");
                 if(fptr) {
                     fclose(fptr);
-                    fprintf(stderr,
-                        "Overwrite existing output file '%s' (y/n)? ",
+                    fprintf(stderr, "Overwrite existing output file '%s' (y/n)? ",
                         cmds->fname[fid]);
                     scanf("%s", str2);
                     if(!(str2[0] == 'y' || str2[0] == 'Y'))
@@ -996,8 +990,7 @@ int scmdopenfiles(cmdssptr cmds, int overwrite)
                 cmds->fptr[fid] = fopen(str1, "w");
         }
         if(!cmds->fptr[fid]) {
-            SCMDPRINTF(
-                7, "Failed to open file '%s' for writing\n", cmds->fname[fid]);
+            SCMDPRINTF(7, "Failed to open file '%s' for writing\n", cmds->fname[fid]);
             return 1;
         }
     }
@@ -1019,8 +1012,7 @@ FILE *scmdoverwrite(cmdssptr cmds, char *line2)
     fid = stringfind(cmds->fname, cmds->nfile, fname);
     if(fid < 0)
         return NULL;
-    if(strcmp(cmds->fname[fid], "stdout") &&
-        strcmp(cmds->fname[fid], "stderr")) {
+    if(strcmp(cmds->fname[fid], "stdout") && strcmp(cmds->fname[fid], "stderr")) {
         fclose(cmds->fptr[fid]);
         scmdcatfname(cmds, fid, str1);
         cmds->fptr[fid] = fopen(str1, "w");
@@ -1042,8 +1034,7 @@ FILE *scmdincfile(cmdssptr cmds, char *line2)
     fid = stringfind(cmds->fname, cmds->nfile, fname);
     if(fid < 0)
         return NULL;
-    if(strcmp(cmds->fname[fid], "stdout") &&
-        strcmp(cmds->fname[fid], "stderr")) {
+    if(strcmp(cmds->fname[fid], "stdout") && strcmp(cmds->fname[fid], "stderr")) {
         fclose(cmds->fptr[fid]);
         cmds->fsuffix[fid]++;
         scmdcatfname(cmds, fid, str1);
@@ -1078,10 +1069,6 @@ FILE *scmdgetfptr(cmdssptr cmds, char *line2)
     return cmds->fptr[fid];
 }
 
-void insertdata(const char *fmt, ...)
-{
-}
-
 
 /* scmdflush */
 void scmdflush(FILE *fptr)
@@ -1089,40 +1076,3 @@ void scmdflush(FILE *fptr)
     fflush(fptr);
     return;
 }
-
-// void collectdata(double x, char* c)
-// {
-//     data_.push_back(x);
-// }
-// 
-// template <typename... Args> 
-// void collectdata(const double& x, const Args &&... arg)
-// {
-//     // printf("d %f", x);
-//     data_.push_back(x);
-//     collectdata(arg...);
-// }
-// 
-// template<typename... Args> 
-// void collectdata(const char*& x, const Args&&... arg)
-// {
-//     // printf("c %s", x);
-//     collectdata(arg...);
-// }
-// 
-// template<typename... Args> 
-// void collectdata(char* x, const Args&&... arg)
-// {
-//     // printf("c %s", x);
-//     collectdata(arg...);
-// }
-// 
-// 
-// template<typename... Args> 
-// void collectdata(double x, const Args&&... arg)
-// {
-//     // printf("c %s", x);
-//     data_.push_back(x);
-//     collectdata(arg...);
-// }
-// 
