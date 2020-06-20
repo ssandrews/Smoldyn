@@ -1,5 +1,4 @@
-# python bindings
-
+# python binding.
 
 if("${CMAKE_VERSION}" VERSION_LESS "3.12")
     if(NOT PYTHON_EXECUTABLE)
@@ -32,12 +31,12 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${CMAKE_CURRENT_SOURCE_DIR}/setup.py)
 
 add_custom_target(wheel DEPENDS _smoldyn 
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
-        -d ${CMAKE_BINARY_DIR}/wheel
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel -d ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating wheel"
+    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR}"
     VERBATIM)
 
+# This target is for developers.
 add_custom_target(pyinstall
     DEPENDS _smoldyn
     COMMAND ${PYTHON_EXECUTABLE} setup.py develop
