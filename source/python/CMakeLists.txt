@@ -2,7 +2,9 @@
 
 
 if("${CMAKE_VERSION}" VERSION_LESS "3.12")
-    find_package(PythonInterp REQUIRED)
+    if(NOT PYTHON_EXECUTABLE)
+        find_package(PythonInterp REQUIRED)
+    endif()
     find_package(PythonLibs REQUIRED)
 else()
     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
@@ -29,7 +31,7 @@ target_link_libraries(_smoldyn PRIVATE smoldyn_static)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${CMAKE_CURRENT_SOURCE_DIR}/setup.py)
 
-add_custom_command(TARGET _smoldyn POST_BUILD
+add_custom_target(wheel DEPENDS _smoldyn 
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
         -d ${CMAKE_BINARY_DIR}/wheel
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -38,9 +40,9 @@ add_custom_command(TARGET _smoldyn POST_BUILD
 
 add_custom_target(pyinstall
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel/*
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "installing wheel")
+    COMMAND ${PYTHON_EXECUTABLE} setup.py develop
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "installing in developer mode.")
     #VERBATIM)
     
 
