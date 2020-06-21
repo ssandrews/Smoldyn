@@ -31,9 +31,13 @@ extern int graphicsreadcolor(char** stringptr, double* rgba);
  *************************************/
 
 // Unique Ptr to hold simptr with custom deleter.
-using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
-extern simptr_uptr_type_ pSim_;
+//using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
+//extern simptr_uptr_type_ pSim_;
 
+// Collect all simptr here.
+// extern vector<simptr_uptr_type_> vecSimptrs_;
+extern vector<simptr> simptrs_;
+extern simptr cursim_;
 
 extern size_t         dim_;
 extern vector<double> lowbounds_;
@@ -59,8 +63,8 @@ double    getDt();
 
 inline void cleanup()
 {
-    if(pSim_)
-        smolFreeSim(pSim_.get());
+    for(auto v: simptrs_)
+      smolFreeSim(v);
 }
 
 void setBoundaries(const vector<pair<double, double>>& bounds);
