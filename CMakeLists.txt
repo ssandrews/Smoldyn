@@ -146,9 +146,7 @@ include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume 
 
 ####### Compiler macros ######################
 set(CMAKE_CXX_STANDARD 17)
-add_definitions(-Wall -Wno-unused-result -Werror)
-add_definitions(-Wno-sizeof-pointer-memaccess -Wno-maybe-uninitialized)
-add_definitions(-fmax-errors=1)
+add_definitions(-Wall)
 
 
 ####### Build for debugging or release ##########
