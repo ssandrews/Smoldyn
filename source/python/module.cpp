@@ -200,16 +200,17 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def(
         "newSim",
         [](int dim, vector<double> &lowbounds, vector<double> &highbounds) {
-            cursim_ = smolNewSim(dim, &lowbounds[0], &highbounds[0]);
-            simptrs_.push_back(cursim_);
-            return cursim_;
+            auto sim = smolNewSim(dim, &lowbounds[0], &highbounds[0]);
+            simptrs_.push_back(sim);
+            return sim;
         },
         py::return_value_policy::reference);
 
     // make a simptr current working simptr. The simptr must be initialized
     // properly. 
-    // FIXME: 
-    m.def("curSimStruct", [](simstruct* const ptr) {  cursim_ = ptr; }, "current simptr");
+    // FIXME: Tests are not exhaustive.
+    m.def("setCurSimStruct", [](simstruct* const ptr) {  cursim_ = ptr; }, "change current simstruct");
+    m.def("getCurSimStruct", []() { return cursim_;}, "Get current sim struct");
 
     m.def("updateSim", [](void) { return smolUpdateSim(cursim_); });
     m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_); });
