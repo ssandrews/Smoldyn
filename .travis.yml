@@ -4,9 +4,7 @@ sudo: required
 matrix:
   include:
     - os : osx
-      osx_image: xcode11
-    - os: osx
-      osx_image: xcode10
+      osx_image: xcode11.3
     - os: linux
       sudo: required
 

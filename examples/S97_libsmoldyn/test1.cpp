@@ -30,12 +30,12 @@ OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries
 
 int main(int argc, char* argv[])
 {
-    simptr sim;
-    double lbounds[2];
-    double hbounds[2];
-    double params[10];
-    const char* species[1] = {"ATP"};
-    enum MolecState states[1] = {MSsoln};
+    simptr          sim;
+    double          lbounds[2];
+    double          hbounds[2];
+    double          params[10];
+    const char*     species[1] = {"ATP"};
+    enum MolecState states[1]  = {MSsoln};
 
     smolSetDebugMode(1);
 
@@ -75,13 +75,13 @@ int main(int argc, char* argv[])
     smolAddCompartmentSurface(sim, "Cell00", "Membrane00");
     smolAddCompartmentPoint(sim, "Cell00", params);
 
-    smolAddSurfaceMolecules(sim, "ACA", MSdown, 30, "Membrane00", PSall, "all",
-                            0);
-    smolAddSurfaceMolecules(sim, "cAR1", MSup, 30, "Membrane00", PSall, "all",
-                            0);
+    smolAddSurfaceMolecules(
+        sim, "ACA", MSdown, 30, "Membrane00", PSall, "all", 0);
+    smolAddSurfaceMolecules(
+        sim, "cAR1", MSup, 30, "Membrane00", PSall, "all", 0);
 
-    smolAddReaction(sim, "r100", "", MSall, "", MSall, 1, species, states,
-                    0.02);
+    smolAddReaction(
+        sim, "r100", "", MSall, "", MSall, 1, species, states, 0.02);
     smolSetReactionRegion(sim, "r100", "Cell00", "");
 
     smolUpdateSim(sim);

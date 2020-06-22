@@ -1,9 +1,22 @@
-# python bindings
+# python binding.
 
-pybind11_add_module(_smoldyn MODULE Smoldyn.cpp SmoldynSpecies.cpp module.cpp)
+if("${CMAKE_VERSION}" VERSION_LESS "3.12")
+    if(NOT PYTHON_EXECUTABLE)
+        find_package(PythonInterp REQUIRED)
+    endif()
+    find_package(PythonLibs REQUIRED)
+else()
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
+endif()
+
+pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
 
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
-target_include_directories(_smoldyn PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
+target_include_directories(_smoldyn PRIVATE 
+    ${PYTHON_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
@@ -17,18 +30,18 @@ target_link_libraries(_smoldyn PRIVATE smoldyn_static)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${CMAKE_CURRENT_SOURCE_DIR}/setup.py)
 
-add_custom_command(TARGET _smoldyn POST_BUILD
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
-        -d ${CMAKE_BINARY_DIR}/wheel
+add_custom_target(wheel DEPENDS _smoldyn 
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel -d ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating wheel"
+    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR}"
     VERBATIM)
 
+# This target is for developers.
 add_custom_target(pyinstall
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel/*
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    COMMENT "installing wheel")
+    COMMAND ${PYTHON_EXECUTABLE} setup.py develop
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "installing in developer mode.")
     #VERBATIM)
     
 

@@ -360,6 +360,7 @@ failure:
 /* smolFreeSim */
 extern "C" enum ErrorCode smolFreeSim(simptr sim)
 {
+    printf("Cleaning up.\n");
     simfree(sim);
     return ECok;
 }
@@ -917,9 +918,9 @@ extern "C" int smolGetSpeciesIndex(simptr sim, const char *species)
 
     if(i <= 0) {
         char buffer[100];
-        strncpy(buffer, "Species '", sizeof(buffer));
-        strncat(buffer, species, sizeof(buffer));
-        strncat(buffer, "' not found.", sizeof(buffer));
+        strncpy(buffer, "Species '", 12); //sizeof(buffer));
+        strncat(buffer, species, 50); //sizeof(buffer));
+        strncat(buffer, "' not found.", 20); //sizeof(buffer));
         LCHECK(i > 0, funcname, ECnonexist, buffer);
     }
     /* LCHECK(i > 0, funcname, ECnonexist, "species not found"); */
@@ -944,8 +945,8 @@ extern "C" int smolGetSpeciesIndexNT(simptr sim, const char *species)
     if(i <= 0) {
         char buffer[256];
         strncpy(buffer, "Species ", sizeof(buffer));
-        strncat(buffer, species, sizeof(buffer));
-        strncat(buffer, " not found.", sizeof(buffer));
+        strncat(buffer, species, 100); //sizeof(buffer));
+        strncat(buffer, " not found.", 20); //sizeof(buffer));
         LCHECKNT(i > 0, funcname, ECnonexist, buffer);
     }
     /** LCHECKNT(i > 0, funcname, ECnonexist, "species not found"); */

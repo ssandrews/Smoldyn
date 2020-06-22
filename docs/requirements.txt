@@ -1,5 +1,0 @@
-mkdocs
-mkdocs-macros-plugin
-mkdocs-material
-mkdocs-material-extensions
-pymdown-extensions

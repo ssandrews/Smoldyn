@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e 
+set -x
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -10,15 +11,21 @@ rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
 SMOLDYN_VERSION=$(bash ${SCRIPT_DIR}/get_version.sh)
 
-PYTHON=/opt/python/cp37-cp37m/bin/python
+PYDIR=/opt/python/cp37-cp37m/
+PYTHON=$PYDIR/bin/python
+
+# install cmake using pip.
+$PYTHON -m pip install cmake 
+CMAKE=$PYDIR/bin/cmake
 
 # dependencies
 $PYTHON -m pip install twine auditwheel pytest
 mkdir -p _build_wheel_linux
 (
     cd _build_wheel_linux
-    cmake ../../ \
-        -DPYTHON_EXECUTABLE=$PYTHON \
+    $CMAKE ../../ \
+	-DPython3_EXECUTABLE=$PYTHON \
+	-DPython3_LIBRARY=$PYDIR/lib/python3.7 \
         -DSMOLDYN_VERSION=${SMOLDYN_VERSION}
     make -j`nproc` VERBOSE=1
     make pytest 
@@ -45,8 +52,7 @@ $PYTHON -m venv $VENV
 # If successful, upload using twine.
 if [ -n "$PYPI_PASSWORD" ]; then
     $PYTHON -m twine upload $WHEELHOUSE/smoldyn*.whl \
-        --repository testpypi \
-        --user dilawar \
+        --user __token__ \
         --password $PYPI_PASSWORD \
         --skip-existing
 else
