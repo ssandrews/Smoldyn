@@ -51,9 +51,10 @@ breakatwhitespace=false
 \tableofcontents
 
 
-% New chapter
+% Chapter: Programmer's introduction
 \chapter{Programmer's introduction}
 
+% What is Smoldyn?
 \section{What is Smoldyn?}
 
 Smoldyn is a Brownian dynamics simulator.  It represents space as a 1-, 2-, or 3-dimensional continuum, as opposed to a lattice, and it steps through time using finite length time steps.   Smoldyn represents molecules as individual point-like particles and membranes as infinitely thin surfaces.  Smoldyn simulates molecular diffusion, chemical reactions between individual molecules, and a wide variety of molecule-surface interactions.  So far, Smoldyn has been used primarily for either detailed biophysics research problems, such as on diffusion-influenced reaction dynamics, or for investigating the effects of spatial organization on simple biological systems, such as the \emph{Escherichia coli} chemotaxis system.
@@ -62,6 +63,7 @@ Smoldyn is also a community development project.  I wrote nearly all of the core
 
 In order to maintain and enhance Smoldyn's value for computational biologists, as opposed to letting it become a hodgepodge of mismatched code, it is helpful to carefully define what Smoldyn is, and what it isn't.
 
+% Smoldyn design philosophy
 \section{Smoldyn design philosophy}
 
 Central to Smoldyn's design philosophy is the concept of two distinct levels of approximation between physical reality and numerical simulation.
@@ -73,13 +75,15 @@ In the second level of approximation, the dynamics of the model system are appro
 The Smoldyn software represents a balance between algorithms that are exact for the Smoluchowski model system and those that are computationally efficient.  Often, these goals are actually complementary because highly accurate algorithms enable the use of long simulation time steps and hence enable fast simulations.  However, there are also often tradeoffs, where better accuracy leads to slower simulations.  The challenge with seeking a balanced approach between accuracy and computational efficiency is that the software users (i.e. modelers) generally aren't comfortable trusting software that is known to be inaccurate.  For this reason, every algorithm in Smoldyn is exact in two ways.  First, the simulated \emph{rates} of all isolated algorithms are exact for any length time step.  For example, in a simulation of the irreversible bimolecular reaction A + B $\rightarrow$ C, Smoldyn always gets the macroscopic reaction rate exactly correct, although the exact positions of the molecules are not necessarily in perfect agreement with those found for the model system.  This focus on rates is important for Smoldyn to yield accurate equilibrium constants.  Secondly, all simulated dynamics, regardless of how many algorithms are used in a simulation, approach exactness as simulation time steps are reduced towards zero.  In the process, of course, simulation run times approach infinity, so exactness isn't actually achievable.  However, having results that can approach exactness is important because it enables modelers to understand and quantify their simulation errors.
 
 
-% New chapter
+% Chapter: Smoldyn code and build system
 \chapter{Smoldyn code and build system}
 
+% github
 \section{github}
 
 As of version 2.57, Smoldyn's official code respository is github at ssandrews/Smoldyn\_Official (github has several other versions of Smoldyn as well). I am still new to github, so there are many features there that I don't understand yet.
 
+% Code merging
 \section{Code merging}
 
 Here are some options for merging code.
@@ -106,6 +110,7 @@ XCode offers FileMerge.app, which is at /Developer/Applications/Utilities/FileMe
 
 Alternatively, Eclipse, at \url{www.eclipse.org} works well.
 
+% Source code dependencies
 \section{Source code dependencies}
 
 Code dependencies are shown below in a tree structure, such that the each file depends on the files that are indented below it.  Note that the default Smoldyn configuration does not use either pthreads or Libmoleculizer, which results in many fewer code dependencies.  Also, Smoldyn still builds and runs without its dependencies, but simply offers fewer features.
@@ -135,6 +140,7 @@ For GPU Smoldyn, you will need some other things too.  First is the CUDA library
 
 The Boost library is from \url{http://www.boost.org/users/download/}.  This doesn't get installed with an installer, but instead the whole directory gets copied over.  It didn't work when I put it in a system location, but did work when I copied the ``boost" subdirectory into the GPU code directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
 
+% Building with CMake (versions 2.27 and higher)
 \section{Building with CMake (versions 2.27 and higher)}
 
 Smoldyn built using the GNU Autoconf, Automake, and Libtool tools through version 2.26.  These GNU tools are remarkably arcane so I switched to CMake for versions 2.27 and above, which has been a vast improvement.  I maintained the AutoTools documentation through version 2.31 and then removed it.
@@ -170,6 +176,7 @@ CMake option & default & function\\
 \multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
 \end{longtable}
 
+% Building Windows versions
 \section{Building Windows versions}
 
 \subsection{Cross-compiling with MinGW}
@@ -192,6 +199,7 @@ I copied the i386 tiff*.h files from MinGW directory to /opt/local/x86...include
 
 As of version 2.59, I am building Windows versions on a Windows computer with MinGW. I haven't figured out CMake there yet, so I copy the smoldynconfigure.h file and all of the source files to the Windows computer, compile, copy the .exe file back to the Mac, and continue with the build process. I'm distributing old version of SmolCrowd and wrl2smol in the Windows package (they only change very rarely, so the old ones are also the current ones).
 
+% Unit and regression testing
 \section{Unit and regression testing}
 
 Smoldyn does not include unit tests in their purest form.  Instead, I tested Smoldyn's algorithms, both for qualitative and quantitative performance, using simple Smoldyn configuration files, which function as unit tests.  Many of these test files are in the examples directory.  Individual files focus on specific algorithms, such as diffusion, unimolecular reactions, absorbing surface interactions, etc.  Simply watching the simulation graphics is typically adequate for assessing qualitative performance, while data analysis and comparison against analytical theory is generally required for assessing quantitative performance.
@@ -200,13 +208,51 @@ The examples/S95\_regression directory includes files used for regression testin
 
 To add a new unit test to the regression testing suite, simply make sure that the unit test runs relatively quickly (a few seconds) and has no text output.  Then, copy and paste the top few lines from any of the current unit tests (e.g. bounce2.txt), so that the new unit test will output molecule positions.  Finally, list the unit test name in the Python script.
 
+% Python bindings
+\section{Python bindings}
 
-% New chapter
+There are a lot of additions for building with the Python bindings (all added by Dilawar Singh). Following is the list of the CMake variables, which was updated slightly when adding Python bindings.
+
+\begin{longtable}[c]{lll}
+Smoldyn option & default & effect when ON\\
+\hline
+\texttt{-DSMOLDYN\_VERSION} & \texttt{3.0} & Smoldyn version number\\
+\texttt{-DOPTION\_VCELL} & \texttt{OFF} & Build for inclusion within VCell\\
+\texttt{-DOPTION\_NSV} & \texttt{ON} & Build with Next Subvolume support\\
+\texttt{-DOPTION\_PDE} & \texttt{OFF} & Build with support for PDE simulation\\
+\texttt{-DOPTION\_VTK} & \texttt{OFF} & Build with support for VTK visualization\\
+\texttt{-DOPTION\_STATIC} & \texttt{OFF} & Build using static libraries\\
+\texttt{-DOPTION\_USE\_OPENGL} & \texttt{ON} & Build with graphics support\\
+\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with LibTiff support\\
+\texttt{-DOPTION\_TARGET\_SMOLDYN} & \texttt{ON} & Build stand-alone Smoldyn program\\
+\texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{ON} & Build LibSmoldyn library\\
+\texttt{-DOPTION\_PYTHON} & \texttt{ON} & Build Python module\\
+\hline
+CMake option & default & function\\
+\hline
+\texttt{-DCMAKE\_BUILD\_TYPE} & \texttt{Release} & Choose CMake build type\\
+\multicolumn{3}{l}{\hspace{0.3in}options are: \texttt{None}, \texttt{Debug}, \texttt{Release}, \texttt{RelWithDebInfo}, and \texttt{MinSizeRel}}\\
+\texttt{-DCMAKE\_CXX\_COMPILER:FILEPATH} & clang & Compile with specific compiler\\
+\multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
+\end{longtable}
+
+The CMakeLists file has a few subdirectories. (1) It includes one for the NSV code. (2) The subdirectory ``source/pybind11'' includes a the pybind11 library, which offers ``Seamless operability between C++11 and Python... pybind11 is a lightweight header-only library that exposes C++ types in Python and vice versa, mainly to create Python bindings of existing C++ code''. It is widely used and can be downloaded from github. It does not require pre-compiling like the other dependencies because it is compiled with the rest of Smoldyn. There is no custom code here, but only code from the pybind11 project. (3) Another subdirectory is ``source/python'', which includes the new Python binding code and was written, by Dilawar, specifically for Smoldyn. (4) Another is ``examples'', which is for automatic testing, which has been partially set up but not completed.
+
+The new top-level CMakeLists file now has partially complete documentation generation with Doxygen. It reads the file docs/Doxyfile.in to build the documentation. I don't know where the results get put.
+
+Other files in the docs directory are markdown file versions of the Smoldyn documentation that I wrote. Dilawar made them from the original pdf, tex, and docx files in the documentation folder using pandoc and then edited them manaully. The mkdocs file generates a website from the `docs' folder, and mkdocs.yml is the configuration file for this, using the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar's readthedocs web site shows the results.
+
+Another new directory is called ``scripts''. It includes development related scripts for building Smoldyn on online platforms like Travis, Open Build Service, OSX, and docker. I don't believe that these are complete yet. The build\_wheels\_osx.sh script has stuff about homebrew, which I avoid, so this is going to take some work before I'll want to run it.
+
+The source directory includes two new subdirectories, which are pybind11 and python. The former is just downloaded from github, described above. The latter is Dilawar's work.
+
+
+% Chapter: Files, macros, variables, etc.
 \chapter{Files, macros, variables, etc.}
 
 The Smoldyn code is separated into several sets of files.  (1) Library files, such as math2.c, are general-purpose C library files, nearly all of which I wrote.  Smoldyn uses some of the functions in them, but far from all.  (2) Each of these library files has a header, such as math2.h, that declares the structures and functions within that library file.  These library files and headers are documented in separate documents, such as the file math2\_doc.pdf.  (3) The core Smoldyn source code is in files that begin with ``smol", such as smolmolec.c.  Smoldyn uses all of these functions.  The main entry point to the program is in the file smoldyn.c, in the main function.  This file also includes some high level functions for running the simulation.  The other files take care of different portions of the simulation, such as molecules, virtual boxes, or surfaces.  I have tried to encapsulate the code so that functions in any file are allowed to read directly from any structure, but only the functions in the file that corresponds to a structure is allowed to write to it.  (4) The Smoldyn core source code files share a single header file, which is called smoldyn.h.  It declares all data structures and function declarations.  This header and the core Smoldyn files are documented here and in part I of the documentation.
 
-
+% Smoldyn source files
 \section{Smoldyn source files}
 
 \begin{longtable}[c]{ll}
@@ -226,6 +272,7 @@ smolsurface.c & surfaces\\
 smolwall.c & walls\\
 \end{longtable}
 
+% Constants and global variables
 \section{Constants and global variables}
 
 
@@ -259,6 +306,7 @@ Sim is a global variable for the current simulation structure.  This is only use
 
 \end{description}
 
+% Macros
 \section{Macros}
 
 \begin{description}
@@ -272,6 +320,7 @@ This is identical to CHECK, except that it also copies the included string to th
 
 \end{description}
 
+% Local variables
 \section{Local variables}
 
 It has proven useful to use consistent names for local variables for code readability.  In places, there are exceptions, but the following table lists the typical uses for most local variables.  This table is also quite out of date.
@@ -378,7 +427,7 @@ variable & type & use\\
 \texttt{wptr} & \texttt{wallptr} & pointer to wall\\
 \end{longtable}
 
-% New chapter
+% Chapter: Structures and functions
 \chapter{Structures and functions}
 
 Smoldyn is written in C, with a C style.  The proper maintenance of structures, which are described below, is a central aspect of the program.  In general, the basic objects are molecules, walls, surfaces, and virtual boxes, each of which has its own structure.  In many cases, these items are grouped together into superstructures, which are basically just a list of fundamental elements, along with some more information that pertains to the whole list.  Reactions, compartments, and ports aren't really objects, but are also among the core data structures.  Finally, a simulation structure is a high level structure which contains all the parameters and the current state of the simulation.
@@ -389,10 +438,12 @@ All allocation routines return either a pointer to the structure that was alloca
 
 Both the code and the description below are sorted into categories: molecules, walls, reactions, boxes, surfaces, compartments, ports, and the simulation structure.  In many cases, functions within each category work with only their respective object.  However, the core program is highly integrated so that functions in one category may use objects in another category.  Functions in one category (defined by the file that they are listed in) are not supposed to write to objects in other categories, although some exceptions may exist.
 
+% Header files
 \section{Header files}
 
 Smoldyn has several header files.  They are: (\emph{i}) smoldyn.h, which lists all of the structure declarations, (\emph{ii}) smoldynfuncs.h, which lists all of the basic Smoldyn function declarations, (\emph{iii}) libsmoldyn.h, which lists all declarations for Libsmoldyn, and (\emph{iv}) smoldyn\_config.h, which is automatically generated during the configuration process and which lists the compilation configure options.
 
+% Molecules (functions in smolmolec.c)
 \section{Molecules (functions in smolmolec.c)}
 
 Each individual molecule is stored with a \texttt{moleculestruct} structure, pointed to by a \texttt{moleculeptr}.  This contains information about the molecule's position, identity, and other characteristics that are specific to each individual molecule.  These molecules are organized using a molecule superstructure, which contains lists of the active molecules, a list of unused molecule storage space called dead molecules, and other information about the molecules in general.
@@ -522,7 +573,7 @@ index & \texttt{live[0]} & \texttt{live[1]} & \texttt{dead}\\
 
 Here, each list has \texttt{max}=8, and so is indexed with \texttt{m} from 0 to 7.  A `?' is memory that is not part of that which was allocated, a `-' is a \texttt{NULL} value, a `0' is an empty molecule, and other numbers are other identities (`1' and `2' are mobile, whereas `3' is immobile).  The `0's in the the two live lists are to be transferred to the dead list during the next sort, while the `1' in the dead list has been resurrected and is to be moved to mobile live list.  Based on the \texttt{topl[0]} index, it can be seen that the `1' and `2' in the mobile live list were just put there during the last sorting, and so are reborn molecules.
 
-There is one dead list and there are \texttt{nlist} live lists.  The dead list has total size \texttt{maxd} and is filled to level \texttt{nd}.  The index \texttt{topd}, which is between 0 and \texttt{nd}, separates the dead molecules (list element is -1) with indices from 0 to \texttt{topd-1} from the resurrected molecules (list elements ³ 0) that have indices between \texttt{topd} and \texttt{nd-1}.  The dead list is automatically expanded up to size \texttt{maxdlimit} if this value is positive, and is automatically expanded without limit if \texttt{maxdlimit} is negative (the default).  Live list \texttt{ll} has total size \texttt{maxl[ll]} and is filled to level \texttt{nl[ll]}.  The index \texttt{topl[ll]}, which is between 0 and \texttt{nl[ll]} separates the molecules that were there on the prior time step that have smaller indices from those that were created in the last time step, called the reborn molecules, which have higher indices.
+There is one dead list and there are \texttt{nlist} live lists.  The dead list has total size \texttt{maxd} and is filled to level \texttt{nd}.  The index \texttt{topd}, which is between 0 and \texttt{nd}, separates the dead molecules (list element is -1) with indices from 0 to \texttt{topd-1} from the resurrected molecules (list elements 0) that have indices between \texttt{topd} and \texttt{nd-1}.  The dead list is automatically expanded up to size \texttt{maxdlimit} if this value is positive, and is automatically expanded without limit if \texttt{maxdlimit} is negative (the default).  Live list \texttt{ll} has total size \texttt{maxl[ll]} and is filled to level \texttt{nl[ll]}.  The index \texttt{topl[ll]}, which is between 0 and \texttt{nl[ll]} separates the molecules that were there on the prior time step that have smaller indices from those that were created in the last time step, called the reborn molecules, which have higher indices.
 
 \begin{description}
 
@@ -857,6 +908,7 @@ Performs surface drift on molecule \texttt{mptr} over time step \texttt{dt}.  Th
 
 \end{description}
 
+% Walls (functions in smolwall.c)
 \section{Walls (functions in smolwall.c)}
 
 The simulation volume is defined by its bounding walls.  If no other surfaces are defined, these walls can be reflecting, periodic, absorbing, or transparent.  Because walls can be transparent, molecules can leave the simulation volume.  However, this can be a bad idea because the virtual boxes are defined to exactly fill the volume within the walls, so molecules or surfaces outside of the simulation volume can lead to very slow simulations.  Also, the graphics are designed for the simulation volume within the walls.  If surfaces are defined, then walls, regardless of how they are set up, are simulated as though they are transparent.
@@ -967,7 +1019,7 @@ Sets the type of an existing wall for dimension \texttt{d} to \texttt{type}.  Se
 
 \end{description}
 
-% ****** Reactions *********
+% Reactions (functions in smolrxn.c)
 \section{Reactions (functions in smolrxn.c)}
 
 Reactions were overhauled for Smoldyn version 1.82, so the following text describes the current version.  Reactions are stored with several structures.  There is a reaction superstructure for each reaction order (which may be 0, 1, or 2).  Within each superstructure, there is a separate structure for each reaction.
@@ -1381,7 +1433,7 @@ Identifies likely bimolecular reactions, sending ones that probably occur to \te
 
 \end{description}
 
-% ******** Rules section ***************
+% Rules (functions in smolrule.c)
 \section{Rules (functions in smolrule.c)}
 
 Rules were part of the reaction superstructure through version 2.46 but were then moved to their own superstructure in version 2.47.  As with other portions of Smoldyn, rules are organized with a superstructure that contains information about all of the rules, and then with individual rule structures that contain information about the individual rules.  The rules superstructure is only created if necessary.  Each rule is a partially parsed set of instructions that tell Smoldyn what definitions to make whenever the rules are expanded, which may be before the simulation runs or on-the-fly during the simulation.
@@ -1539,7 +1591,7 @@ Returns 0 for success or the following errors which arise from \texttt{RxnAddRea
 \end{description}
 
 
-% ******** Surfaces section ***************
+% Surfaces (functions in smolsurf.c)
 \section{Surfaces (functions in smolsurf.c)}
 
 Surfaces are organized with a surface superstructure that contains not much more than just a list of surfaces and their names.  Each of these surfaces, defined with a surface structure, has various properties that apply to the whole surface, such as its color on the front and back faces, how it is drawn, and how it interacts with diffusing molecules.  A surface structure also includes lists of panels that comprise the surface.  These panels may be rectangular, triangular, spherical, or other shapes.  A single surface can contain many panels of multiple shapes.
@@ -2423,7 +2475,7 @@ Takes care of actions for surface-bound molecules, such as desorption, on-surfac
 
 \end{description}
 
-
+% Boxes (functions in smolboxes.c)
 \section{Boxes (functions in smolboxes.c)}
 
 The simulation volume is exactly divided into an array of identical virtual boxes.  These allow the simulation to run efficiently because only potential reactions between molecules that are known to be physically close need to be checked, and the same for molecule-surface interactions.  In principle, the boxes are fairly simple.  In practice though, they complicate the overall code quite significantly.  While the boxes are sized to exactly fill the simulation volume, the edge boxes are considered to extend beyond the volume to plus or minus infinity.  In this way, all of space is within some box, and points outside of the simulation volume are assigned to the nearest box.
@@ -2617,6 +2669,7 @@ This function was modified on 1/15/16 so that if \texttt{reborn} is 1, then mole
 
 \end{description}
 
+% Compartments (functions in smolcompart.c)
 \section{Compartments (functions in smolcompart.c)}
 
 Compartments are regions of volume that are bounded by surfaces.  They do not include their bounding surfaces.  They have no function in the performance of the simulation, but are useful for input, output, and communication with MOOSE.  Compartments do not maintain a record of what they contain, but instead they define a set of rules that make it is possible to test whether objects are inside or outside of the compartment.  Compartments may be disjoint and they may overlap each other.
@@ -2787,7 +2840,7 @@ This has a number of flaws with the external molecules.  The algorithm is that a
 
 \end{description}
 
-
+% Ports (functions in smolport.c)
 \section{Ports (functions in smolport.c)}
 
 Ports are data structures for importing and exporting molecules between a Smoldyn simulation and another simulation.  In particular, they are designed for the incorporation of Smoldyn into MOOSE, but they could also be used to connect multiple Smoldyn simulations or for other connections.
@@ -2904,7 +2957,7 @@ Transports molecules from \texttt{port1} of simulation structure \texttt{sim1} t
 
 \end{description}
 
-
+% Lattices (functions in smollattice.c)
 \section{Lattices (functions in smollattice.c)}
 
 A lattice is a region of space in which molecules do not have precise spatial locations, but are compartmentalized to lattice subvolumes.  At present, lattices use axis-aligned rectangular subvolumes, but they could at some point be unstructured meshes (as in URDME).  In the lattice region of space, molecules are currently represented as discrete individuals, in each subvolume.  At some point though, this could be extended to continuous concentrations, to enable PDE simulation methods.  Lattice regions of space interface to particle-based regions of space through Smoldyn's ports.
@@ -3121,7 +3174,7 @@ Gets the copy number of a species in the \texttt{nsv} data structure. Enter \tex
 
 \end{description}
 
-% Filaments
+% Filaments (functions in smolfilament.c)
 \section{Filaments (functions in smolfilament.c)}
 
 Filament support is in progress.
@@ -3469,7 +3522,7 @@ Does nothing currently.  This function will take compute any simulation list cha
 
 \end{description}
 
-% BioNetGen section
+% BioNetGen (functions in smolbng.c)
 \section{BioNetGen (functions in smolbng.c)}
 
 BioNetGen is a separate software tool that expands biochemical reaction network rules to form complete biochemical reaction networks.  Weiren Cui wrote a short perl program, called b2s, which reads BioNetGen output (.net file) and converts that into Smoldyn input.  Inspired by it, I wrote a more elaborate interpreter into the main Smoldyn source code (in C) so that Smoldyn can read these files directly.  The plan is that Smoldyn will be distributed with the basic BioNetGen perl program.  Then, when Smoldyn encounters rules within an input file, it will automatically call BioNetGen, BioNetGen will expand the rules into a .net file, and Smoldyn will read the .net file into Smoldyn structures.
@@ -3720,7 +3773,7 @@ Updates a bng structure, bringing it up to the ok condition.  This calls the \te
 
 \end{description}
 
-
+% Complexes (not written yet)
 \section{Complexes (not written yet)}
 
 It's becoming increasingly apparent that Smoldyn needs to support macromolecular complexes.  This section presents documentation for code that hasn't been written yet in the hopes that this will provide a design for the code once there is time to write it.
@@ -3780,7 +3833,7 @@ Add to moleculesuperstruct:
 	double *mass;						// mass of species [i]
 
 
-
+% Graphics (functions in smolgraphics.c)
 \section{Graphics (functions in smolgraphics.c)}
 
 Overall, Smoldyn's graphics use is fairly straightforward, although it is nevertheless a little complicated due to the design of the OpenGL glut library.  For stand-alone Smoldyn, the program's entry and exit point are in the \texttt{main} function, which is in smoldyn.c.  From here, the program forks to either \texttt{smolsimulate} (in smolsim.c) if graphics are not used or to \texttt{smolsimulategl} (in smolgraphics.c) if graphics are used.  In the latter case, the OpenGL glut framework is used, in which control is passed from the main program to OpenGL and is not returned again until the user chooses quit from a menu.  This leads to a slightly strange program structure, although I have attempted to contain all of the strangeness to a few functions at the end of smolgraphics.c.
@@ -3978,7 +4031,7 @@ Both \texttt{RenderScene} and \texttt{TimerFunction} are declared locally, rathe
 
 \end{description}
 
-
+% Simulation structure (functions in smolsim.c)
 \section{Simulation structure (functions in smolsim.c)}
 
 At the highest level of the structures is the simulation structure.  This is a large framework that contains information about the simulation that is to be run as well as pointers to each of the component structures and superstructures.  It also contains some scratch space for functions to use as they wish.
@@ -4198,8 +4251,7 @@ Note that the sequence in which the simulation components are set up is designed
 
 \end{description}
 
-% Commands section
-
+% Commands (functions in smolcmd.c)
 \section{Commands (functions in smolcmd.c)}
 
 \subsection*{Writing commands}
@@ -4209,12 +4261,12 @@ Command strings are not parsed, checked, or even looked at during simulation ini
 To write a command, do the following steps, which can be done in any order:
 
 \begin{itemize}
-\item Write a description of the new command that will go into the reference section of the userÕs manual.
+\item Write a description of the new command that will go into the reference section of the user's manual.
 \item In smolcmd.c, add a new declaration to the top of the file for the command, which looks like:
 \begin{lstlisting}
 enum CMDcode cmdname(simptr sim,cmdptr cmd,char *line2);
 \end{lstlisting}
-\item The first function of smolcmd.c is \texttt{docommand}.  In it, add an \texttt{else if(É)} line for the new command.  It looks like:
+\item The first function of smolcmd.c is \texttt{docommand}.  In it, add an \texttt{else if} line for the new command.  It looks like:
 \begin{lstlisting}
 else if(!strcmp(word,"name")) return cmdname(sim,cmd,line2);
 \end{lstlisting}
@@ -4581,7 +4633,7 @@ Fixes the copy number of molecules in a compartment so that it is within the spe
 
 \item[\texttt{enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
-Equilibrates a pair of molecular species, allowing the efficient simulation of rapid reactions.  It reads two molecule names from \texttt{line2}, followed by a probability value.  Then, it looks for all molecules in the live lists with either of the two types and replaces them with the second type using the listed probability or with the first type using 1Ð the listed probability.
+Equilibrates a pair of molecular species, allowing the efficient simulation of rapid reactions.  It reads two molecule names from \texttt{line2}, followed by a probability value.  Then, it looks for all molecules in the live lists with either of the two types and replaces them with the second type using the listed probability or with the first type using 1 the listed probability.
 
 \item[\texttt{enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
@@ -4683,6 +4735,7 @@ This function, which might be better off in the smolsurf.c code, is used to test
 
 \end{description}
 
+% Top-level code (functions in smoldyn.c)
 \section{Top-level code (functions in smoldyn.c)}
 
 The top-level source code file, smoldyn.c, contains only the \texttt{main} function for the stand-alone Smoldyn program.  It is declared locally in this source file and so cannot be called from externally, except from the shell.  This source code file is not included in Libsmoldyn.
@@ -4695,11 +4748,12 @@ The top-level source code file, smoldyn.c, contains only the \texttt{main} funct
 
 \end{description}
 
-% New chapter
+% Chapter: Code design
 \chapter{Code design}
 
 This chapter describes interactions between different portions of the code.  The code is, and may always be, in flux.  While I try to maintain this section of the documentation, be forewarned that it might not reflect the most recent changes.
 
+% Memory management
 \section{Memory management}
 
 The following table, \emph{which is very out of date} shows memory allocation and freeing for the different structures.  For both the allocation and freeing columns, the top line shows the function in which the structure is actually allocated or freed, while subsequent lines show the functions that call the preceding functions.
@@ -4814,6 +4868,7 @@ simstruct&simalloc&simfree\\
 \end{longtable}
 \end{ttfamily}
 
+% Data structure preparation and updating
 \section{Data structure preparation and updating}
 
 The original Smoldyn design was that it read a configuration file, set up internal data structures, ran the simulation, and then quit.  Two problems arose.  First, the sequence for setting up the internal data structures became increasingly complicated as the program gained features, and second, this overall program flow wasn't always what users wanted.  As a result, the code is now more modularized and it includes a ``condition" element in each data structure that reports on the overall state of that data structure.  These help, but data structure set up and updating are still somewhat complicated, which is the focus of this section.
@@ -4884,6 +4939,7 @@ Structure conditions (SC) are divided into four categories: \texttt{SCinit}, \te
 \>\>\>does nothing\\
 \end{tabbing}
 
+% Simulation algorithm sequence
 \section{Simulation algorithm sequence}
 
 In a sense, the core function of the entire Smoldyn program is \texttt{simulatetimestep}, which is in smolsim.c.  Using the assumption that all data structures are given to this function are in good working order, \texttt{simulatetimestep} runs the simulation for one time step, and then cleans up all of the data structures as required, thus leaving them again in good working order.  The sequence of tasks performed here is central to accurate and efficient simulation, as well as data structure maintenance.
@@ -5926,9 +5982,10 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \end{itemize}
 
 
-% New chapter
+% Chapter: The wish/ to do list
 \chapter{The wish/ to do list}
 
+% Bugs and issues to fix
 \section{Bugs and issues to fix}
 \begin{itemize}
 \item Surfaces now have lists of molecules adsorbed to them. The code would be faster if these lists were used as appropriate, such as for checking the actions of surface-bound molecules.
@@ -5945,6 +6002,7 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item If there are multiple reaction channels for a first order reaction and if the rate of one is set as a rate while the rate of a later one is set with the probability, and then the simulation time step is then changed by a command, then the reaction probability of the later one does not properly account for the changed conditional probability of the first occurring.  The solution is to add a data structure element called \texttt{probreq}, for probability requested, and to then calculate the simulation probability from this, so that the original user-entered information is never overwritten.
 \end{itemize}
 
+% Desired features
 \section{Desired features}
 
 \subsection*{Libsmoldyn}

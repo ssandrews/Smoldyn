@@ -51,56 +51,57 @@ breakatwhitespace=false
 \tableofcontents
 
 
-%New chapter
+% Chapter: About Libsmoldyn
 \chapter{About Libsmoldyn}
-Libsmoldyn is a C and C++ interface to the Smoldyn simulator.  Libsmoldyn is complementary to the stand-alone Smoldyn program in that it is a little more difficult to use, but it provides much more flexibility.  In addition, Libsmoldyn provides: (\emph{i}) an application programming interface that will be relatively stable, even as Smoldyn is updated and improved, (\emph{ii}) function names that are relatively sensible and that shouldn't collide with other function names in other software, and (\emph{iii}) reasonably thorough error checking in every function which helps ensure that the user is using the function in a sensible way and in a way that won't crash Smoldyn.
+Libsmoldyn is a C and C++ interface to the Smoldyn simulator. Libsmoldyn is complementary to the stand-alone Smoldyn program in that it is a little more difficult to use, but it provides much more flexibility. In addition, Libsmoldyn provides: (\emph{i}) an application programming interface that will be relatively stable, even as Smoldyn is updated and improved, (\emph{ii}) function names that are relatively sensible and that shouldn't collide with other function names in other software, and (\emph{iii}) reasonably thorough error checking in every function which helps ensure that the user is using the function in a sensible way and in a way that won't crash Smoldyn.
 
-I initially planned to use SWIG to provide Libsmoldyn access from several languages but have not pursued this recently.  Carlos Lopez's group was adding Libsmoldyn to PySB for a while, to give it Python accessibility, although that project is not ongoing currently.
+I initially planned to use SWIG to provide Libsmoldyn access from several languages but have not pursued this recently. Carlos Lopez's group was adding Libsmoldyn to PySB for a while, to give it Python accessibility, although that project is not ongoing currently.
 
-Libsmoldyn only barely supports graphics at present due to constraints imposed by the glut code library.  This will be improved in a future version (by changing to the freeglut library, which doesn't insist on controlling the main event loop, as the glut library does).
+Libsmoldyn only barely supports graphics at present due to constraints imposed by the glut code library. This will be improved in a future version (by changing to the freeglut library, which doesn't insist on controlling the main event loop, as the glut library does).
 
 
-% New chapter
+% Chapter: Compiling and linking
 \chapter{Compiling and linking}
 
+% Compiling
 \section{Compiling}
 
 \subsection*{Header files}
-To enable a C or C++ program to call Libsmoldyn, it has to include the Libsmoldyn header file.  Libsmoldyn comes with one header file, libsmoldyn.h, which has function declarations for all of the Libsmoldyn functions.  For most Libsmoldyn applications, this is the only header file that you will need to include.  For Mac and Linux, it is typically installed to /usr/local/include.  This is one of the standard system paths, so include it with
+To enable a C or C++ program to call Libsmoldyn, it has to include the Libsmoldyn header file. Libsmoldyn comes with one header file, libsmoldyn.h, which has function declarations for all of the Libsmoldyn functions. For most Libsmoldyn applications, this is the only header file that you will need to include. For Mac and Linux, it is typically installed to /usr/local/include. This is one of the standard system paths, so include it with
 
 \begin{quote}
 \lstinline{#include <libsmoldyn.h>}
 \end{quote}
 
-If the libsmoldyn.h header file is in some other directory or if your system isn't seeing its path as a system path, then include the file using double quotes rather than angle brackets and/or include more information about the path.  For example, \lstinline{#include "/user/local/include/libsmoldyn.h"}.
+If the libsmoldyn.h header file is in some other directory or if your system isn't seeing its path as a system path, then include the file using double quotes rather than angle brackets and/or include more information about the path. For example, \lstinline{#include "/user/local/include/libsmoldyn.h"}.
 
-Libsmoldyn.h calls a second header file, smoldyn.h, which is also typically installed to /usr/local/include/.  If you plan to access the Smoldyn data structure directly, then you will also need to include it with \lstinline{#include <smoldyn.h>}.  In general, it is safe to read from this data structure but it can be dangerous to write to it unless you really know what you are doing.  Also, working with this data structure directly bypasses one of the benefits of using Libsmoldyn, which is that the interface should be relatively immune to future Smoldyn developments, because different aspects of the internal data structure get changed once in a while.
+Libsmoldyn.h calls a second header file, smoldyn.h, which is also typically installed to /usr/local/include/. If you plan to access the Smoldyn data structure directly, then you will also need to include it with \lstinline{#include <smoldyn.h>}. In general, it is safe to read from this data structure but it can be dangerous to write to it unless you really know what you are doing. Also, working with this data structure directly bypasses one of the benefits of using Libsmoldyn, which is that the interface should be relatively immune to future Smoldyn developments, because different aspects of the internal data structure get changed once in a while.
 
-The smoldyn.h header calls yet another header file, smoldynconfigure.h, which is also installed by default in /usr/local/include/.  That file is automatically generated by the build system.  It describes what Smoldyn components are included in the build, what system the build was compiled for, etc.  This might be helpful to include for some applications.
+The smoldyn.h header calls yet another header file, smoldynconfigure.h, which is also installed by default in /usr/local/include/. That file is automatically generated by the build system. It describes what Smoldyn components are included in the build, what system the build was compiled for, etc. This might be helpful to include for some applications.
 
 \subsection*{Compiling example}
-In the \texttt{examples/S97\_libsmoldyn/testcode/} directory, you'll find the testcode.c program.  To compile this source code to object code, enter:
+In the \texttt{examples/S97\_libsmoldyn/testcode/} directory, you'll find the testcode.c program. To compile this source code to object code, enter:
 
 \begin{quote}
 \lstinline{gcc -Wall -O0 -g -c testcode.c}
 \end{quote}
 
-The compile flags \texttt{-O0 -g} aren't necessary but can be useful for debugging purposes.  If compiling doesn't work at this stage, it's probably because you're missing the header files.  Make sure that you have libsmoldyn.h, smoldyn.h, and smoldyn\_config.h in the \texttt{/usr/local/include} directory.
+The compile flags \texttt{-O0 -g} aren't necessary but can be useful for debugging purposes. If compiling doesn't work at this stage, it's probably because you're missing the header files. Make sure that you have libsmoldyn.h, smoldyn.h, and smoldyn\_config.h in the \texttt{/usr/local/include} directory.
 
-
+% Linking
 \section{Linking}
 
-Linking the different object files together to create an executable that actually runs is often one of the greatest frustrations of using software libraries.  It should be easy but usually isn't.
+Linking the different object files together to create an executable that actually runs is often one of the greatest frustrations of using software libraries. It should be easy but usually isn't.
 
-The Libsmoldyn library can be linked statically, meaning that the Libsmoldyn code will be copied into the final result, or it can be linked dynamically, so that the final result will simply reference the Libsmoldyn code that is stored separately.  Dynamic linking is somewhat more elegant in that it doesn't create unnecessary copies of the compiled code.  It can also be easier.  On the other hand, it's less convenient if you plan to distribute your software, because then you need to make sure that you distribute the Libsmoldyn header file and library code along with your own software.  Also, I can only get the gdb debugger to help find errors within Libsmoldyn if the library is statically linked.
+The Libsmoldyn library can be linked statically, meaning that the Libsmoldyn code will be copied into the final result, or it can be linked dynamically, so that the final result will simply reference the Libsmoldyn code that is stored separately. Dynamic linking is somewhat more elegant in that it doesn't create unnecessary copies of the compiled code. It can also be easier. On the other hand, it's less convenient if you plan to distribute your software, because then you need to make sure that you distribute the Libsmoldyn header file and library code along with your own software. Also, I can only get the gdb debugger to help find errors within Libsmoldyn if the library is statically linked.
 
-The Libsmoldyn static library is called libsmoldyn\_static.a and the Libsmoldyn dynamic library is called libsmoldyn\_shared.so (on Linux; the .so suffix is replaced by .dylib on a Mac and by .dll on Windows).  By default, these libraries are installed to /usr/local/lib/.
+The Libsmoldyn static library is called libsmoldyn\_static.a and the Libsmoldyn dynamic library is called libsmoldyn\_shared.so (on Linux; the .so suffix is replaced by .dylib on a Mac and by .dll on Windows). By default, these libraries are installed to /usr/local/lib/.
 
 \subsection*{Linking examples}
 
-Following are several example for static and dynamic linking.  They are shown for C; if you used C++, then link with g++ instead of gcc.  The linking options for Smoldyn compiled with OpenGL are shown for Macintosh; these lines are simpler for other systems.
+Following are several example for static and dynamic linking. They are shown for C; if you used C++, then link with g++ instead of gcc. The linking options for Smoldyn compiled with OpenGL are shown for Macintosh; these lines are simpler for other systems.
 
-I have had a hard time getting static linking working on a Mac, although apparently it works fine on Ubuntu.  The problem is that it doesn't find the standard C++ library.  The solution is to build the Smoldyn library without NSV, so that the standard C++ library isn't needed.  I also commented out a few ``throw'' statements from smolsim.c and libsmoldyn.c for this purpose.
+I have had a hard time getting static linking working on a Mac, although apparently it works fine on Ubuntu. The problem is that it doesn't find the standard C++ library. The solution is to build the Smoldyn library without NSV, so that the standard C++ library isn't needed. I also commented out a few ``throw'' statements from smolsim.c and libsmoldyn.c for this purpose.
 
 Static link, no OpenGL:
 \begin{quote}
@@ -122,12 +123,12 @@ Dynamic link, with OpenGL:
 \lstinline{gcc test1.o -L/usr/local/lib -I/System/Library/Frameworks/OpenGL.framework/Headers -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT -framework OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 -lsmoldyn_shared -ltiff}
 \end{quote}
 
-
+% Using smaller versions of Libsmoldyn
 \section{Using smaller versions of Libsmoldyn}
 
-As a default, Smoldyn and Libsmoldyn are compiled with all of their components.  However, they can also be compiled without OpenGL, without hybrid simulation (NSV) support, without LibTiff support, etc.  Removing these components removes some aspects of the functionality, obviously, but can also simplify linking.
+As a default, Smoldyn and Libsmoldyn are compiled with all of their components. However, they can also be compiled without OpenGL, without hybrid simulation (NSV) support, without LibTiff support, etc. Removing these components removes some aspects of the functionality, obviously, but can also simplify linking.
 
-Following is a simple diagram for Smoldyn's code dependencies.  Each file depends on the files that are indented below it.
+Following is a simple diagram for Smoldyn's code dependencies. Each file depends on the files that are indented below it.
 
 \begin{tabbing}
 \hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\kill
@@ -142,13 +143,13 @@ Following is a simple diagram for Smoldyn's code dependencies.  Each file depend
 \end{tabbing}
 
 
-To build with fewer components, you will need to run CMake to compile Smoldyn.  This is described in more detail in the Smoldyn Code Documentation, but summarized here for convenience.
+To build with fewer components, you will need to run CMake to compile Smoldyn. This is described in more detail in the Smoldyn Code Documentation, but summarized here for convenience.
 
-I prefer to run CMake from a command line interface.  At a command line interface, change directories to cmake.  Every time you change CMake settings, you'll probably want to do a clean build.  To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results.  If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it.  For a default build, enter ``cmake ..".  A few test results will be printed out, and then configuring will be complete.  When CMake is done, it will have written a lot of stuff to the cmake directory.  Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what some important build parameters are.
+I prefer to run CMake from a command line interface. At a command line interface, change directories to cmake. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. When CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what some important build parameters are.
 
-Once configuring is complete, enter ``make".  Hopefully, Smoldyn will build, again with build files being put into the cmake directory.  Finally, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
+Once configuring is complete, enter ``make". Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Finally, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
 
-For custom builds, you need to set various options to non-default settings.  With a command line interface, list each non-default option on the command line after the ``cmake ..'' start.  Following are some helpful build options:
+For custom builds, you need to set various options to non-default settings. With a command line interface, list each non-default option on the command line after the ``cmake ..'' start. Following are some helpful build options:
 
 \begin{longtable}[c]{lll}
 Smoldyn option & default & effect when ON\\
@@ -177,14 +178,14 @@ For example, the following line builds Smoldyn and Libsmoldyn for debugging and 
 \lstinline{cmake .. -DCMAKE_BUILD_TYPE=Debug -DOPTION_TARGET_LIBSMOLDYN=ON -DOPTION_NSV=OFF}
 \end{quote}
 
-% New chapter
+% Chapter: Error trapping
 \chapter{Error trapping}
 
-Every function in Libsmoldyn checks that its input values are acceptable and also that no errors arise in the function execution.  These errors are returned to the host library in a number of ways.  Most Libsmoldyn functions (e.g. \texttt{smolRunSim}) return any error codes directly, which makes it easy to see if an error arose.  However, a few functions (e.g. \texttt{smolNewSim}) return other types of values and so return some other indication of success or failure (e.g. \texttt{NULL}).  In addition, some functions can raise warnings, which indicate that behavior is unusual but not incorrect.
+Every function in Libsmoldyn checks that its input values are acceptable and also that no errors arise in the function execution. These errors are returned to the host library in a number of ways. Most Libsmoldyn functions (e.g. \texttt{smolRunSim}) return any error codes directly, which makes it easy to see if an error arose. However, a few functions (e.g. \texttt{smolNewSim}) return other types of values and so return some other indication of success or failure (e.g. \texttt{NULL}). In addition, some functions can raise warnings, which indicate that behavior is unusual but not incorrect.
 
-For all of these errors and warnings, get the details of the problem using the function \texttt{smolGetError}, which will return the error code, the name of the function where the error arose, and a descriptive error string.  This will also clear the error, if desired.  If errors are not cleared, they are left until they are overwritten by subsequent errors.  Warnings are also left until they are cleared or overwritten.
+For all of these errors and warnings, get the details of the problem using the function \texttt{smolGetError}, which will return the error code, the name of the function where the error arose, and a descriptive error string. This will also clear the error, if desired. If errors are not cleared, they are left until they are overwritten by subsequent errors. Warnings are also left until they are cleared or overwritten.
 
-When writing code, it can be helpful to put Libsmoldyn into its debugging mode using the \texttt{smolSetDebugMode} function.  Doing this causes any errors that arise to be displayed to stderr.
+When writing code, it can be helpful to put Libsmoldyn into its debugging mode using the \texttt{smolSetDebugMode} function. Doing this causes any errors that arise to be displayed to stderr.
 
 The possible error codes are declared in libsmoldyn.h with:
 
@@ -212,20 +213,20 @@ value & code & interpretation\\
 
 \end{longtable}
 
-
+% Error checking system internal to libsmoldyn.c
 \section{Error checking system internal to libsmoldyn.c}
 
-This section describes how to write Libsmoldyn functions using error checking.  While it is an essential part of all Libsmoldyn functions, these details are not important for most Libsmoldyn users.
+This section describes how to write Libsmoldyn functions using error checking. While it is an essential part of all Libsmoldyn functions, these details are not important for most Libsmoldyn users.
 
 \begin{enumerate}
-\item The first line of every Libsmoldyn function should be \texttt{const char *funcname="}\emph{function\_name}\texttt{";}.  This name will be returned with any error message to tell the user where the error arose.
-\item Within the function, check for warnings or errors with the \texttt{LCHECK} macro.  The macro format is \texttt{LCHECK(}\emph{condition}\texttt{,funcname,}\emph{error\_code}\texttt{,"}\emph{message}\texttt{");}.  This checks that the test \emph{condition} is true, and issues a notification, warning, or error when this is not the case.  The \emph{message} should be a descriptive message that is under 256 characters in length.
-\item Most functions return an ``\texttt{enum ErrorCode}".  If this is the case for your function, and your function might return a notification and/or a warning, then end the main body of the function with \texttt{return libwarncode;}.  If it cannot return a notification or a warning, then end it with \texttt{return ECok;}.  Finally, if it does not return an ``\texttt{enum ErrorCode}", then it needs to return some other error condition that will tell the user to check for errors using \texttt{smolGetError}.
+\item The first line of every Libsmoldyn function should be \texttt{const char *funcname="}\emph{function\_name}\texttt{";}. This name will be returned with any error message to tell the user where the error arose.
+\item Within the function, check for warnings or errors with the \texttt{LCHECK} macro. The macro format is \texttt{LCHECK(}\emph{condition}\texttt{,funcname,}\emph{error\_code}\texttt{,"}\emph{message}\texttt{");}. This checks that the test \emph{condition} is true, and issues a notification, warning, or error when this is not the case. The \emph{message} should be a descriptive message that is under 256 characters in length.
+\item Most functions return an ``\texttt{enum ErrorCode}". If this is the case for your function, and your function might return a notification and/or a warning, then end the main body of the function with \texttt{return libwarncode;}. If it cannot return a notification or a warning, then end it with \texttt{return ECok;}. Finally, if it does not return an ``\texttt{enum ErrorCode}", then it needs to return some other error condition that will tell the user to check for errors using \texttt{smolGetError}.
 \item After the main body of the function, add a goto target called \texttt{failure:}.
 \item Assuming the function returns an ``\texttt{enum ErrorCode}", end the function with \texttt{return liberrorcode;}.
 \end{enumerate}
 
-The \texttt{smolSetTimeStep} function provides an excellent and simple example of how Libsmoldyn functions typically address errors.  It is:
+The \texttt{smolSetTimeStep} function provides an excellent and simple example of how Libsmoldyn functions typically address errors. It is:
 
 \begin{quote}
 \begin{lstlisting}
@@ -241,7 +242,7 @@ enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
 \end{lstlisting}
 \end{quote}
 
-The \texttt{smolGet...Index} functions are worth a comment.  Each of these functions returns the index of an item, such as a species or a surface, based on the name of the item.  If the name is not found or other errors arise, then these functions return the error code, cast as an integer.  Also, if the name is ``all", then these functions return the error code \texttt{ECall} and set the error string ``species cannot be `all'", or equivalent.  A typical use of these functions is seen in \texttt{smolSetSpeciesMobility}, which includes the following code:
+The \texttt{smolGet...Index} functions are worth a comment. Each of these functions returns the index of an item, such as a species or a surface, based on the name of the item. If the name is not found or other errors arise, then these functions return the error code, cast as an integer. Also, if the name is ``all", then these functions return the error code \texttt{ECall} and set the error string ``species cannot be `all'", or equivalent. A typical use of these functions is seen in \texttt{smolSetSpeciesMobility}, which includes the following code:
 
 \begin{quote}
 \begin{lstlisting}
@@ -254,9 +255,9 @@ else LCHECK(i>0,funcname,ECsame,NULL);
 In this particular case, this function permits an input of ``all", so it clears errors that arise from this return value, and leaves \texttt{i} as a negative value for later use.
 
 
-% New chapter
+% Chapter: Libsmoldyn quick function guide
 \chapter{Libsmoldyn quick function guide}
-The Libsmoldyn functions correspond relatively closely to the Smoldyn language statements, although not perfectly.  However, all functionality should be available using either method.  The following table lists the correspondences.  Statements preceded by asterisks need to be either entered in statement blocks or preceded by the statement's context (e.g. with \texttt{surface} \emph{name}).  Where correspondence does not apply, the table lists ``N/A".
+The Libsmoldyn functions correspond relatively closely to the Smoldyn language statements, although not perfectly. However, all functionality should be available using either method. The following table lists the correspondences. Statements preceded by asterisks need to be either entered in statement blocks or preceded by the statement's context (e.g. with \texttt{surface} \emph{name}). Where correspondence does not apply, the table lists ``N/A".
 
 \begin{longtable}[c]{ll}
 Statement & Libsmoldyn function\\
@@ -429,87 +430,191 @@ N/A & \texttt{smolPrepareSimFromFile}\\
 \end{longtable}
 
 
-% New chapter
-\chapter{Libsmoldyn header file}
+% Chapter: Data structures and declarations
+\chapter{Data structures and declarations}
 
-Following is the entire Libsmoldyn header file, libsmoldyn.h.  This lists all of the function declarations.  If there is a discrepancy between declarations listed here and those listed in following sections, the ones shown here are almost certainly the correct ones.  This file references smoldyn.h, which lists all of the data structure declarations and enumerated type definitions.
+% Enumerations
+\section{Enumerations}
 
-If you compiled and installed Smoldyn using the default configuration, both files should be in your /usr/local/include/smoldyn directory.  Also in this directory is the smoldyn\_config.h file.  This file was used for compiling Smoldyn and Libsmoldyn but is not needed afterwards.  Nevertheless, it's copied to the /usr/local/include/smoldyn directory so that programs that call Libsmoldyn can know what options Libsmoldyn was built with.
+In C, enumerations are already defined, so they can be used as is. Here is an example of using an enumerated error code as an argument,
+\begin{lstlisting}
+smolErrorCodeToString(ECwarning,mystring)
+\end{lstlisting}
 
-\lstinputlisting{../../source/Smoldyn/libsmoldyn.h}
+In Python, enumerations are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example,
+\begin{lstlisting}
+import smoldyn._smoldyn as S
+EC=S.ErrorCode
+S.errorCodeToString(EC.warning,mystring)
+\end{lstlisting}
+
+Surface actions (SrfAction)
+\begin{longtable}[c]{llll}
+Statement & Libsmoldyn & Python & Notes\\
+\hline
+reflect & SAreflect & reflect\\
+transmit & SAtrans & trans\\
+absorb & SAabsorb & absorb\\
+jump & SAjump & jump\\
+port & SAport & port\\
+multiple & SAmult & mult & multiple actions\\
+N/A & SAno & no & static surface-bound molecules\\
+N/A & SAnone & none & none of the other options\\
+N/A & SAadsorb & adsorb & internal use only\\
+N/A & SArevdes & revdes & internal use only\\
+N/A & SAirrevdes & irrevdes & internal use only\\
+N/A & SAflip & flip & internal use only
+\end{longtable}
+
+Molecule state (MolecState)
+\begin{longtable}[c]{llll}
+Statement & Libsmoldyn & Python & Notes\\
+\hline
+soln & MSsoln & soln\\
+front & MSfront & front\\
+back & MSback & back\\
+up & MSup & up\\
+down & MSdown & down\\
+bsoln & MSbsoln & bsoln & pseudo-state for surface interactions\\
+all & MSall & all & for model creation by user\\
+N/A & MSnone & none & internal use only
+\end{longtable}
+
+Panel face (PanelFace)
+\begin{longtable}[c]{llll}
+Statement & Libsmoldyn & Python & Notes\\
+\hline
+front & PFfront & front\\
+back & PFback & back\\
+N/A & PFnone & none & internal use only\\
+both & PFboth & both & for model creation by user
+\end{longtable}
+
+Panel shape (PanelShape)
+\begin{longtable}[c]{llll}
+Statement & Libsmoldyn & Python & Notes\\
+\hline
+rect & PSrect & rect & rectangle\\
+tri & PStri & tri & triangle\\
+sph & PSsph & sph & sphere\\
+cyl & PScyl & cyl & cylinder\\
+hemi & PShemi & hemi & hemisphere\\
+disk & PSdisk & disk & disk\\
+all & PSall & all & for model creation by user\\
+N/A & PSnone & none & internal use only
+\end{longtable}
+
+Libsmoldyn error code (ErrorCode)
+\begin{longtable}[c]{llll}
+Statement & Libsmoldyn & Python & Notes\\
+\hline
+N/A & ECok & ok & value 0\\
+N/A & ECnotify & notify & value -1\\
+N/A & ECwarning & warning & value -2\\
+N/A & ECnonexist & nonexist & value -3\\
+N/A & ECall & all & value -4\\
+N/A & ECmissing & missing & value -5\\
+N/A & ECbounds & bounds & value -6\\
+N/A & ECsyntax & syntax & value -7\\
+N/A & ECerror & error & value -8\\
+N/A & ECmemory & memory & value -9\\
+N/A & ECbug & bug & value -10\\
+N/A & ECsame & same & value -11\\
+N/A & ECwildcard & wildcard & value -12
+\end{longtable}
+
+% Libsmoldyn header file
+\section{Libsmoldyn header file}
+
+The Libsmoldyn header file is libsmoldyn.h. It lists all of the function declarations. This file references smoldyn.h, which lists all of the data structure declarations and enumerated type definitions.
+
+If you compiled and installed Smoldyn using the default configuration, both files should be in your /usr/local/include/smoldyn directory. Also in this directory is the smoldyn\_config.h file. This file was used for compiling Smoldyn and Libsmoldyn but is not needed afterwards. Nevertheless, it's copied to the /usr/local/include/smoldyn directory so that programs that call Libsmoldyn can know what options Libsmoldyn was built with.
 
 
-% New chapter
+% Chapter: Libsmoldyn functions
 \chapter{Libsmoldyn functions}
 
+% General comments
 \section{General comments}
 
-None of the functions allocate memory, except within the simulation data structure.  This means, for example, that all functions that return strings do not allocate these strings themselves, but instead write the string text to memory that the library user allocated and gave to the function.
+None of the functions allocate memory, except within the simulation data structure. This means, for example, that all functions that return strings do not allocate these strings themselves, but instead write the string text to memory that the library user allocated and gave to the function.
 All strings are fixed at \texttt{STRCHAR} characters, where this constant is defined in string2.h to 256 characters.
 
+% Miscellaneous
 \section{Miscellaneous}
 
 \begin{description}
 
-\item[\texttt{double smolGetVersion(void);}]
+\item[GetVersion]
 \hfill \\
+C: \texttt{double} \texttt{smolGetVersion(void);}\\
+Python: \texttt{getVersion()}, \texttt{smoldyn.\_\_version\_\_} \\
 Returns the Smoldyn version number.
 
 \end{description}
 
-
+% Errors
 \section{Errors}
 
 \begin{description}
 
-\item[\texttt{void}]
-\texttt{smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring);}
+\item[SetError]
 \hfill \\
-This function is probably not useful for most users.  Sets the Libsmoldyn error code to \texttt{errorcode}, error function to \texttt{errorfunction}, and error string to \texttt{errorstring}.  The sole exception is if \texttt{errorcode} is \texttt{ECsame} then this does nothing and simply returns.  Back to it's normal operation, this also either sets or clears the Libsmoldyn warning code, as appropriate.  If \texttt{errorstring} is entered as \texttt{NULL}, this clears the current error string, and similarly for \texttt{errorfunction}.
+C: \texttt{void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring);}\\
+Python: N/A\\
+This function is probably not useful for most users. Sets the Libsmoldyn error code to \texttt{errorcode}, error function to \texttt{errorfunction}, and error string to \texttt{errorstring}. The sole exception is if \texttt{errorcode} is \texttt{ECsame} then this does nothing and simply returns. Back to it's normal operation, this also either sets or clears the Libsmoldyn warning code, as appropriate. If \texttt{errorstring} is entered as \texttt{NULL}, this clears the current error string, and similarly for \texttt{errorfunction}.
 
-\item[\texttt{enum ErrorCode}]
-\texttt{smolGetError(char *errorfunction,char *errorstring,int clearerror);}
+\item[GetError]
 \hfill \\
-Returns the current LibSmoldyn error code directly, returns the function where the error occurred in \texttt{errorfunction} if it is not \texttt{NULL}, and returns the error string in \texttt{errorstring} if it is not \texttt{NULL}.  Set \texttt{clearerror} to 1 to clear the error and 0 to leave any error condition unchanged.
+C: \texttt{enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int clearerror);}\\
+Python: N/A\\
+Returns the current LibSmoldyn error code directly, returns the function where the error occurred in \texttt{errorfunction} if it is not \texttt{NULL}, and returns the error string in \texttt{errorstring} if it is not \texttt{NULL}. Set \texttt{clearerror} to 1 to clear the error and 0 to leave any error condition unchanged.
 
-\item[\texttt{void	 smolClearError(void);}]
+\item[ClearError]
 \hfill \\
+C: \texttt{void smolClearError(void);}\\
+Python: N/A\\
 Clears any error condition.
 
-\item[\texttt{void smolSetDebugMode(int debugmode);}]
+\item[SetDebugMode]
 \hfill \\
-Enter \texttt{debugmode} as 1 to enable debugging and 0 to disable debugging.  When debug mode is turned on, all errors are displayed to stderr, as are all cleared errors.  By turning on debug mode, you can often avoid checking for errors with additional code and you also typically don't need to call \texttt{smolGetError}.
+C: \texttt{void smolSetDebugMode(int debugmode);}\\
+Python: \texttt{setDebugMode(int debugmode)}\\
+Enter \texttt{debugmode} as 1 to enable debugging and 0 to disable debugging. When debug mode is turned on, all errors are displayed to stderr, as are all cleared errors. By turning on debug mode, you can often avoid checking for errors with additional code and you also typically don't need to call \texttt{smolGetError}.
 
-\item[\texttt{char* smolErrorCodeTostring(enum ErrorCode erc,char *string);}]
+\item[ErrorCodeToString]
 \hfill \\
-Returns a string both directly and in \texttt{string} that corresponds to the error code in \texttt{erc}.  For example, if \texttt{erc} is \texttt{ECmemory}, this returns the string ``memory".
+C: \texttt{char* smolErrorCodeToString(enum ErrorCode erc,char *string);}\\
+Python: \texttt{str errorCodeToString(enum ErrorCode erc,str string)}\\
+Returns a string both directly and in \texttt{string} that corresponds to the error code in \texttt{erc}. For example, if \texttt{erc} is \texttt{ECmemory}, this returns the string ``memory". To do: The string is not needed or used in the Python version.
 
 \end{description}
 
-
+% Sim structure
 \section{Sim structure}
 
 \begin{description}
 
-\item[\texttt{simptr}]
-\texttt{smolNewSim(int dim,double *lowbounds,double *highbounds);}
+\item[NewSim]
 \hfill \\
-Creates and returns a new sim structure.  The structure is initialized for a \texttt{dim} dimensional system that has boundaries defined by the points \texttt{lowbounds} and \texttt{highbounds}.  Boundaries are transmitting (modify them with \texttt{smolSetBoundaryType}).  Returns \texttt{NULL} upon failure.
+C: \texttt{simptr smolNewSim(int dim,double *lowbounds,double *highbounds);}\\
+Python: \texttt{newSim(int dim, vector<double> \&lowbounds, vector<double> \&highbounds)}\\
+Creates and returns a new sim structure. The structure is initialized for a \texttt{dim} dimensional system that has boundaries defined by the points \texttt{lowbounds} and \texttt{highbounds}. Boundaries are transmitting (modify them with \texttt{smolSetBoundaryType}). Returns \texttt{NULL} upon failure. To do: I can't get Python version to run because this returns a structure that it can't deal with.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolUpdateSim(simptr sim);}
 \hfill \\
-Updates the simulation structure.  This calculates all simulation parameters from physical parameters, sorts lists, and generally does everything required to make a simulation ready to run.  It may be called multiple times.
+Updates the simulation structure. This calculates all simulation parameters from physical parameters, sorts lists, and generally does everything required to make a simulation ready to run. It may be called multiple times.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolRunTimeStep(simptr sim);}
 \hfill \\
-Runs one time step of the simulation.  Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
+Runs one time step of the simulation. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolRunSim(simptr sim);}
 \hfill \\
-Runs the simulation until it terminates.  Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
+Runs the simulation until it terminates. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolRunSimUntil(simptr sim,double breaktime);}
@@ -527,7 +632,7 @@ Displays all relevant information about the simulation system to stdout.
 
 \end{description}
 
-
+% Read configuration file
 \section{Read configuration file}
 
 \begin{description}
@@ -535,21 +640,21 @@ Displays all relevant information about the simulation system to stdout.
 \item[\texttt{simptr}]
 \texttt{smolPrepareSimFromFile(char *filepath,char *filename,char *flags);}
 \hfill \\
-Reads the Smoldyn configuration file that is at \texttt{filepath} and has file name \texttt{filename}, sets it up, and outputs simulation diagnostics to stdout.  Returns the sim structure, or \texttt{NULL} if an error occurred.  \texttt{flags} are the command line flags that are entered for normal Smoldyn use.  Either or both of \texttt{filepath} and \texttt{flags} can be sent in as \texttt{NULL} if there is nothing to report.  After this function runs successfully, it should be possible to call \texttt{smolRunSim} or \texttt{smolRunTimeStep}.
+Reads the Smoldyn configuration file that is at \texttt{filepath} and has file name \texttt{filename}, sets it up, and outputs simulation diagnostics to stdout. Returns the sim structure, or \texttt{NULL} if an error occurred. \texttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \texttt{filepath} and \texttt{flags} can be sent in as \texttt{NULL} if there is nothing to report. After this function runs successfully, it should be possible to call \texttt{smolRunSim} or \texttt{smolRunTimeStep}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolLoadSimFromFile(char *filepath,char *filename,simptr *simpointer,char *flags);}
 \hfill \\
-Loads part or all of a sim structure from the file that is at \texttt{filepath} and has file name \texttt{filename}.  Send in \texttt{simpointer} as a pointer to sim, where sim may be an existing simulation structure that this function will append or \texttt{NULL} if it is to be created by this function.  \texttt{flags} are the command line flags that are entered for normal Smoldyn use.  Either or both of \texttt{filepath} and \texttt{flags} can be sent in as \texttt{NULL} if there is nothing to report.  After this function runs successfully, call \texttt{smolUpdateSim} to calculate simulation parameters.
+Loads part or all of a sim structure from the file that is at \texttt{filepath} and has file name \texttt{filename}. Send in \texttt{simpointer} as a pointer to sim, where sim may be an existing simulation structure that this function will append or \texttt{NULL} if it is to be created by this function. \texttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \texttt{filepath} and \texttt{flags} can be sent in as \texttt{NULL} if there is nothing to report. After this function runs successfully, call \texttt{smolUpdateSim} to calculate simulation parameters.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolReadConfigString(simptr sim,char *statement,char *parameters);}
 \hfill \\
-Reads and processes what would normally be a single line of a configuration file.  The first word of the line is the statement name, entered here as \texttt{statement}, while the rest of the line is entered as \texttt{parameters}.  Separate different parameters with spaces.  The same parser is used as for normal Smoldyn configuration files.  This function does not make use of block style input formatting, such as for surface definitions.  This means that a new surface needs to declared with ``\texttt{new\_surface} \emph{name}" and all subsequent surface definitions need to start with ``\texttt{surface} \emph{name}".  Analogous rules apply to compartments and port.
+Reads and processes what would normally be a single line of a configuration file. The first word of the line is the statement name, entered here as \texttt{statement}, while the rest of the line is entered as \texttt{parameters}. Separate different parameters with spaces. The same parser is used as for normal Smoldyn configuration files. This function does not make use of block style input formatting, such as for surface definitions. This means that a new surface needs to declared with ``\texttt{new\_surface} \emph{name}" and all subsequent surface definitions need to start with ``\texttt{surface} \emph{name}". Analogous rules apply to compartments and port.
 
 \end{description}
 
-
+% Simulation settings
 \section{Simulation settings}
 
 \begin{description}
@@ -557,7 +662,7 @@ Reads and processes what would normally be a single line of a configuration file
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetSimTimes(simptr sim,double timestart,double timestop,double timestep);}
 \hfill \\
-Sets all of the simulation time parameters to the values entered here.  In addition the simulation ``time now" is set to \texttt{timestart}.
+Sets all of the simulation time parameters to the values entered here. In addition the simulation ``time now" is set to \texttt{timestart}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetTimeStart(simptr sim,double timestart);}
@@ -587,11 +692,11 @@ Sets the random number generator seed to \texttt{seed} if \texttt{seed} is at le
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetPartitions(simptr sim,char *method,double value);}
 \hfill \\
-Sets the virtual partitions in the simulation volume.  Enter \texttt{method} as ``molperbox" and then enter \texttt{value} with the requested number of molecules per partition volume; the default, which is used if this function is not called at all, is a target of 4 molecules per box.  Or, enter \texttt{method} as ``boxsize" and enter \texttt{value} with the requested partition spacing.  In this latter case, the actual partition spacing may be larger or smaller than the requested value in order to fit an integer number of partitions into each coordinate of the simulation volume.
+Sets the virtual partitions in the simulation volume. Enter \texttt{method} as ``molperbox" and then enter \texttt{value} with the requested number of molecules per partition volume; the default, which is used if this function is not called at all, is a target of 4 molecules per box. Or, enter \texttt{method} as ``boxsize" and enter \texttt{value} with the requested partition spacing. In this latter case, the actual partition spacing may be larger or smaller than the requested value in order to fit an integer number of partitions into each coordinate of the simulation volume.
 
 \end{description}
 
-
+% Graphics
 \section{Graphics}
 
 \begin{description}
@@ -599,46 +704,46 @@ Sets the virtual partitions in the simulation volume.  Enter \texttt{method} as 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetGraphicsParams(simptr sim,char *method,int timesteps,double delay);}
 \hfill \\
-Sets basic simulation graphics parameters.  Enter \texttt{method} as ``none" for no graphics (the default), ``opengl" for fast but minimal OpenGL graphics, ``opengl\_good" for improved OpenGL graphics, ``opengl\_better" for fairly good OpenGL graphics, or as \texttt{NULL} to not set this parameter currently.  Enter \texttt{timesteps} with a positive integer to set the number of simulation time steps between graphics renderings (1 is the default) or with a negative number to not set this parameter currently.  Enter \texttt{delay} as a non-negative number to set the minimum number of milliseconds that must elapse between subsequent graphics renderings in order to improve visualization (0 is the default) or as a negative number to not set this parameter currently.
+Sets basic simulation graphics parameters. Enter \texttt{method} as ``none" for no graphics (the default), ``opengl" for fast but minimal OpenGL graphics, ``opengl\_good" for improved OpenGL graphics, ``opengl\_better" for fairly good OpenGL graphics, or as \texttt{NULL} to not set this parameter currently. Enter \texttt{timesteps} with a positive integer to set the number of simulation time steps between graphics renderings (1 is the default) or with a negative number to not set this parameter currently. Enter \texttt{delay} as a non-negative number to set the minimum number of milliseconds that must elapse between subsequent graphics renderings in order to improve visualization (0 is the default) or as a negative number to not set this parameter currently.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetTiffParams(simptr sim,int timesteps,char *tiffname,int lowcount,int highcount);}
 \hfill \\
-Sets parameters for the automatic collection of TIFF format snapshots of the graphics window.  \texttt{timesteps} is the number of simulation timesteps that should elapse between subsequent snapshots, \texttt{tiffname} is the root filename of the output TIFF files, \texttt{lowcount} is a number that is appended to the filename of the first snapshot and which is then incremented for subsequent snapshots, and \texttt{highcount} is the last numbered file that will be collected.  Enter negative numbers for \texttt{timesteps}, \texttt{lowcount}, and/or \texttt{highcount} to not set these parameters, and enter \texttt{NULL} for \texttt{tiffname} to not set the file name.
+Sets parameters for the automatic collection of TIFF format snapshots of the graphics window. \texttt{timesteps} is the number of simulation timesteps that should elapse between subsequent snapshots, \texttt{tiffname} is the root filename of the output TIFF files, \texttt{lowcount} is a number that is appended to the filename of the first snapshot and which is then incremented for subsequent snapshots, and \texttt{highcount} is the last numbered file that will be collected. Enter negative numbers for \texttt{timesteps}, \texttt{lowcount}, and/or \texttt{highcount} to not set these parameters, and enter \texttt{NULL} for \texttt{tiffname} to not set the file name.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetLightParams(simptr sim,int lightindex,double *ambient,double *diffuse,double *specular,double *position);}
 \hfill \\
-Sets the lighting parameters that are used for the rendering method ``opengl\_better".  Enter \texttt{lightindex} as -1 for the global ambient light (in which case \texttt{diffuse}, \texttt{specular}, and \texttt{position} should all be \texttt{NULL}) or as 0 to 8 for one of the 8 light sources.  For each light source, you can specify the 4-value color vector for the light's ambient, diffuse, and specular properties (all values should be between 0 and 1).  You can also specify the 3-dimensional position for the light.  To not set a property, just enter the respective vector as \texttt{NULL}.
+Sets the lighting parameters that are used for the rendering method ``opengl\_better". Enter \texttt{lightindex} as -1 for the global ambient light (in which case \texttt{diffuse}, \texttt{specular}, and \texttt{position} should all be \texttt{NULL}) or as 0 to 8 for one of the 8 light sources. For each light source, you can specify the 4-value color vector for the light's ambient, diffuse, and specular properties (all values should be between 0 and 1). You can also specify the 3-dimensional position for the light. To not set a property, just enter the respective vector as \texttt{NULL}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetBackgroundStyle(simptr sim,double *color);}
 \hfill \\
-Sets the color of the graphics display background.  \texttt{color} is a 4-value vector with red, green, blue, and alpha values.
+Sets the color of the graphics display background. \texttt{color} is a 4-value vector with red, green, blue, and alpha values.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetFrameStyle(simptr sim,double thickness,double *color);}
 \hfill \\
-Sets the thickness and the color of the wire frame that outlines the simulation system in the graphics window.  Enter \texttt{thickness} as 0 for no frame, as a positive number for the number of points in thickness, or as a negative number to not set this parameter.  Enter \texttt{color} as a 4-value vector with the frame color, or as \texttt{NULL} to not set it.
+Sets the thickness and the color of the wire frame that outlines the simulation system in the graphics window. Enter \texttt{thickness} as 0 for no frame, as a positive number for the number of points in thickness, or as a negative number to not set this parameter. Enter \texttt{color} as a 4-value vector with the frame color, or as \texttt{NULL} to not set it.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetGridStyle(simptr sim,double thickness,double *color);}
 \hfill \\
-Sets the thickness and the color of a grid that shows where the partitions are that separate Smoldyn's virtual boxes.  Enter \texttt{thickness} as 0 for no grid, as a positive number for the number of points in thickness, or as a negative number to not set this parameter.  Enter \texttt{color} as a 4-value vector with the grid color, or as \texttt{NULL} to not set it.
+Sets the thickness and the color of a grid that shows where the partitions are that separate Smoldyn's virtual boxes. Enter \texttt{thickness} as 0 for no grid, as a positive number for the number of points in thickness, or as a negative number to not set this parameter. Enter \texttt{color} as a 4-value vector with the grid color, or as \texttt{NULL} to not set it.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetTextStyle(simptr sim,double *color);}
 \hfill \\
-Sets the color of any text that is displayed to the graphics window.  \texttt{color} is a 4-value vector with red, green, blue, and alpha values.
+Sets the color of any text that is displayed to the graphics window. \texttt{color} is a 4-value vector with red, green, blue, and alpha values.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddTextDisplay(simptr sim,char *item);}
 \hfill \\
-Adds \texttt{item} to the list of things that Smoldyn should display as text to the graphics window.  Currently supported options are ``time" and the names of species and, optionally, their states.  For species and states, the graphics window shows the number of molecules.
+Adds \texttt{item} to the list of things that Smoldyn should display as text to the graphics window. Currently supported options are ``time" and the names of species and, optionally, their states. For species and states, the graphics window shows the number of molecules.
 
 \end{description}
 
-
+% Runtime commands
 \section{Runtime commands}
 
 \begin{description}
@@ -651,12 +756,12 @@ Sets the file path for text output files to \texttt{path}.
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddOutputFile(simptr sim,char *filename,int suffix,int append);}
 \hfill \\
-Declares the file called \texttt{filename} as a file for output by one or more runtime commands.  Note that spaces are not permitted in the file name.  If \texttt{suffix} is non-negative, then the file name is suffixed by this integer, which can be helpful for creating output file stacks.  Enter \texttt{append} as 1 if any current file should simply be appended, or to 0 if any current file should be overwritten.
+Declares the file called \texttt{filename} as a file for output by one or more runtime commands. Note that spaces are not permitted in the file name. If \texttt{suffix} is non-negative, then the file name is suffixed by this integer, which can be helpful for creating output file stacks. Enter \texttt{append} as 1 if any current file should simply be appended, or to 0 if any current file should be overwritten.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,char *commandstring);}
 \hfill \\
-Adds a run-time command to the simulation, including its timing instructions.  This function should generally be called after \texttt{smolSetSimTimes} to make sure that command times get set correctly.  The following table lists the command type options along with the other parameters that are used for each type.  Parameters that are not required are simply ignored.  The \texttt{commandstring} is the command name followed by any command parameters.
+Adds a run-time command to the simulation, including its timing instructions. This function should generally be called after \texttt{smolSetSimTimes} to make sure that command times get set correctly. The following table lists the command type options along with the other parameters that are used for each type. Parameters that are not required are simply ignored. The \texttt{commandstring} is the command name followed by any command parameters.
 
 \begin{longtable}[c]{ll|cccc}
 \texttt{type} & meaning & \texttt{on} & \texttt{off} & \texttt{step} & \texttt{multiplier}\\
@@ -680,11 +785,11 @@ Adds a run-time command to the simulation, including its timing instructions.  T
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddCommandFromString(simptr sim,char *string);}
 \hfill \\
-Defines a runtime command, including its execution timing parameters, from the string \texttt{string}.  This string should be identical to ones used in configuration files, except that they do not include the ``cmd" statement.
+Defines a runtime command, including its execution timing parameters, from the string \texttt{string}. This string should be identical to ones used in configuration files, except that they do not include the ``cmd" statement.
 
 \end{description}
 
-
+% Molecules
 \section{Molecules}
 
 \begin{description}
@@ -692,22 +797,22 @@ Defines a runtime command, including its execution timing parameters, from the s
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddSpecies(simptr sim,char *species,char *mollist);}
 \hfill \\
-Adds a molecular species named \texttt{species} to the system.  If you have already created species lists and want all states of this species to live in a specific list, then enter it in \texttt{mollist}; otherwise, enter \texttt{mollist} as \texttt{NULL} or an empty string to request default behavior.
+Adds a molecular species named \texttt{species} to the system. If you have already created species lists and want all states of this species to live in a specific list, then enter it in \texttt{mollist}; otherwise, enter \texttt{mollist} as \texttt{NULL} or an empty string to request default behavior.
 
 \item[\texttt{int}]
 \texttt{smolGetSpeciesIndex(simptr sim,char *species);}
 \hfill \\
-Returns the species index that corresponds to the species named \texttt{species}.  Upon failure, this function returns an error code cast as an integer.
+Returns the species index that corresponds to the species named \texttt{species}. Upon failure, this function returns an error code cast as an integer.
 
 \item[\texttt{char*}]
 \texttt{smolGetSpeciesName(simptr sim,int speciesindex,char *species);}
 \hfill \\
-Returns the species name that corresponds to the species index in \texttt{speciesindex}.  The name is returned both in \texttt{species} and directly, where the latter simplifies function use.  Upon failure, this function returns \texttt{NULL}.
+Returns the species name that corresponds to the species index in \texttt{speciesindex}. The name is returned both in \texttt{species} and directly, where the latter simplifies function use. Upon failure, this function returns \texttt{NULL}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetSpeciesMobility(simptr sim,char *species,enum MolecState state,double difc,double *drift,double *difmatrix);}
 \hfill \\
-Sets any or all of the mobility coefficients for species \texttt{species} (which may be ``all") and state \texttt{state} (which may be \texttt{MSall}).  \texttt{difc} is the isotropic diffusion coefficient, \texttt{drift} is the drift vector, and \texttt{difmatrix} is the square of the anisotropic diffusion matrix (see the User's manual).  To not set coefficients, enter a negative number in \texttt{difc} and/or enter a \texttt{NULL} pointer in the other inputs, respectively.
+Sets any or all of the mobility coefficients for species \texttt{species} (which may be ``all") and state \texttt{state} (which may be \texttt{MSall}). \texttt{difc} is the isotropic diffusion coefficient, \texttt{drift} is the drift vector, and \texttt{difmatrix} is the square of the anisotropic diffusion matrix (see the User's manual). To not set coefficients, enter a negative number in \texttt{difc} and/or enter a \texttt{NULL} pointer in the other inputs, respectively.
 
 \item[\texttt{int}]
 \texttt{smolAddMolList(simptr sim,char *mollist);}
@@ -722,7 +827,7 @@ Returns the list index that corresponds to the list named \texttt{mollist}.
 \item[\texttt{char*}]
 \texttt{smolGetMolListName(simptr sim,int mollistindex,char *mollist);}
 \hfill \\
-Returns the molecule list name that corresponds to the molecule list with index \texttt{mollistindex}.  The name is returned both in \texttt{mollist} and directly.  On error, this function \texttt{NULL}.
+Returns the molecule list name that corresponds to the molecule list with index \texttt{mollistindex}. The name is returned both in \texttt{mollist} and directly. On error, this function \texttt{NULL}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetMolList(simptr sim,char *species,enum MolecState state,char *mollist);}
@@ -732,36 +837,36 @@ Sets the molecule list for species \texttt{species} (which may be ``all") and st
 \item[\texttt{enum ErrorCode}]
 \texttt{ smolSetMaxMolecules(simptr sim,int maxmolecules);}
 \hfill \\
-Sets the maximum number of molecules that can simultaneously exist in a system to \texttt{maxmolecules}.  At present, this function needs to be called for a simulation to run, although it will become optional once dynamic molecule memory allocation has been written.
+Sets the maximum number of molecules that can simultaneously exist in a system to \texttt{maxmolecules}. At present, this function needs to be called for a simulation to run, although it will become optional once dynamic molecule memory allocation has been written.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddSolutionMolecules(simptr sim,char *species,int number,double *lowposition,double *highposition);}
 \hfill \\
-Adds \texttt{number} solution state molecules of species \texttt{species} to the system.  They are randomly distributed within the box that has its opposite corners defined by \texttt{lowposition} and \texttt{highposition}.  Any or all of these coordinates can equal each other to place the molecules along a plane or at a point.  Enter \texttt{lowposition} and/or \texttt{highposition} as \texttt{NULL} to indicate that the respective corner is equal to that corner of the entire system volume.
+Adds \texttt{number} solution state molecules of species \texttt{species} to the system. They are randomly distributed within the box that has its opposite corners defined by \texttt{lowposition} and \texttt{highposition}. Any or all of these coordinates can equal each other to place the molecules along a plane or at a point. Enter \texttt{lowposition} and/or \texttt{highposition} as \texttt{NULL} to indicate that the respective corner is equal to that corner of the entire system volume.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddCompartmentMolecules(simptr sim,char *species,int number,char *compartment);}
 \hfill \\
-Adds \texttt{number} solution state molecules of species \texttt{species} to the compartment \texttt{compartment}.  Molecules are randomly distributed within the compartment.
+Adds \texttt{number} solution state molecules of species \texttt{species} to the compartment \texttt{compartment}. Molecules are randomly distributed within the compartment.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddSurfaceMolecules(simptr sim,int speciesindex,enum MolecState state,int number,int surface,enum PanelShape panelshape,int panel,double *position);}
 \hfill \\
-Adds \texttt{number} molecules of species \texttt{species} and state \texttt{state} to surface(s) in the system.  It is permissible for \texttt{surface} to be ``all", \texttt{panelshape} to be PSall, and/or \texttt{panel} to be ``all".  If you want molecules at a specific position, then you need to enter a specific surface, panel shape, and panel, and then enter the position in \texttt{position}.
+Adds \texttt{number} molecules of species \texttt{species} and state \texttt{state} to surface(s) in the system. It is permissible for \texttt{surface} to be ``all", \texttt{panelshape} to be PSall, and/or \texttt{panel} to be ``all". If you want molecules at a specific position, then you need to enter a specific surface, panel shape, and panel, and then enter the position in \texttt{position}.
 
 \item[\texttt{int}]
 \texttt{smolGetMoleculeCount(simptr sim,char *species,enum MolecState state);}
 \hfill \\
-Returns the total number of molecules in the system that have species \texttt{species} (``all" is permitted) and state \texttt{state} (\texttt{MSall} is permitted).  Any error is returned as the error code cast as an integer.
+Returns the total number of molecules in the system that have species \texttt{species} (``all" is permitted) and state \texttt{state} (\texttt{MSall} is permitted). Any error is returned as the error code cast as an integer.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color);}
 \hfill \\
-Sets the graphical display parameters for molecules of species \texttt{species} (``all" is permitted) and state \texttt{state} (\texttt{MSall} is permitted).  Enter \texttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size.  Enter \texttt{color} with the 3-value color vector or with \texttt{NULL} to not set the color.
+Sets the graphical display parameters for molecules of species \texttt{species} (``all" is permitted) and state \texttt{state} (\texttt{MSall} is permitted). Enter \texttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \texttt{color} with the 3-value color vector or with \texttt{NULL} to not set the color.
 
 \end{description}
 
-
+% Surfaces
 \section{Surfaces}
 
 \begin{description}
@@ -769,7 +874,7 @@ Sets the graphical display parameters for molecules of species \texttt{species} 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetBoundaryType(simptr sim,int dimension,int highside,char type);}
 \hfill \\
-Sets the molecule interaction properties for a system boundary that bounds the \texttt{dimension} axis.  Enter \texttt{dimension} as -1 to indicate all dimensions.  Set \texttt{highside} to 0 for the lower boundary, to 1 for the upper boundary, and to -1 for both boundaries.  The boundary type is entered in \texttt{type} as `r' for reflecting, `p' for periodic, `a' for absorbing, or `t' for transmitting.  Note that Smoldyn only observes these properties if no surfaces are declared; otherwise all boundaries are transmitting regardless of what's entered here.
+Sets the molecule interaction properties for a system boundary that bounds the \texttt{dimension} axis. Enter \texttt{dimension} as -1 to indicate all dimensions. Set \texttt{highside} to 0 for the lower boundary, to 1 for the upper boundary, and to -1 for both boundaries. The boundary type is entered in \texttt{type} as `r' for reflecting, `p' for periodic, `a' for absorbing, or `t' for transmitting. Note that Smoldyn only observes these properties if no surfaces are declared; otherwise all boundaries are transmitting regardless of what's entered here.
 
 \item[\texttt{int}]
 \texttt{smolAddSurface(simptr sim,char *surface);}
@@ -779,22 +884,22 @@ Adds a surface called \texttt{surface} to the system.
 \item[\texttt{int}]
 \texttt{smolGetSurfaceIndex(simptr sim,char *surface);}
 \hfill \\
-Returns the surface index that corresponds to the surface named \texttt{surface}.  The index is non-negative.  On failure, this returns an error code cast as an integer.
+Returns the surface index that corresponds to the surface named \texttt{surface}. The index is non-negative. On failure, this returns an error code cast as an integer.
 
 \item[\texttt{char*}]
 \texttt{smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);}
 \hfill \\
-Returns the surface name for surface number \texttt{surfaceindex} both directly and in the \texttt{surface} string.  On failure, this returns \texttt{NULL}.
+Returns the surface name for surface number \texttt{surfaceindex} both directly and in the \texttt{surface} string. On failure, this returns \texttt{NULL}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetSurfaceAction(simptr sim,char *surface,enum PanelFace face,char *species,enum MolecState state,enum SrfAction action);}
 \hfill \\
-Sets the action that should happen when a molecule of species \texttt{species} (may be ``all") and state \texttt{state} (may be \texttt{MSall}) diffuses into face \texttt{face} (may be \texttt{PFboth}) of surface \texttt{surface}.  The action is set to \texttt{action}.
+Sets the action that should happen when a molecule of species \texttt{species} (may be ``all") and state \texttt{state} (may be \texttt{MSall}) diffuses into face \texttt{face} (may be \texttt{PFboth}) of surface \texttt{surface}. The action is set to \texttt{action}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetSurfaceRate(simptr sim,char *surface,char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,char *newspecies,int isinternal);}
 \hfill \\
-Sets the surface interaction rate(s) for surface \texttt{surface} (may be ``all") and species \texttt{species} (may be ``all") and state \texttt{state}.  The transition being considered is from \texttt{state1} to \texttt{state2} (this function uses the tri-state format for describing surface interactions, shown below).  The interaction rate is set to \texttt{rate}, which is interpreted as a probability value for internal use if \texttt{isinternal} is 1 and as a physical interaction coefficient if \texttt{isinternal} is 0.  If the molecule ends up interacting with the surface, it changes to new species \texttt{newspecies}.  Enter \texttt{newspecies} as either \texttt{NULL} or an empty string to indicate that molecules should not change species upon interactions.  The molecule states are most easily understood with the following table.  If the action listed in the table is in italics, then the corresponding combination of states is not a permitted input.
+Sets the surface interaction rate(s) for surface \texttt{surface} (may be ``all") and species \texttt{species} (may be ``all") and state \texttt{state}. The transition being considered is from \texttt{state1} to \texttt{state2} (this function uses the tri-state format for describing surface interactions, shown below). The interaction rate is set to \texttt{rate}, which is interpreted as a probability value for internal use if \texttt{isinternal} is 1 and as a physical interaction coefficient if \texttt{isinternal} is 0. If the molecule ends up interacting with the surface, it changes to new species \texttt{newspecies}. Enter \texttt{newspecies} as either \texttt{NULL} or an empty string to indicate that molecules should not change species upon interactions. The molecule states are most easily understood with the following table. If the action listed in the table is in italics, then the corresponding combination of states is not a permitted input.
 
 \begin{longtable}[c]{l|ccc|c}
 interaction class&\multicolumn{3}{c}{tristate format}&action\\
@@ -832,46 +937,46 @@ impossible&"&bound'&any&\emph{nonsense}\\
 \item[\texttt{int}]
 \texttt{smolAddPanel(simptr sim,char *surface,enum PanelShape panelshape,char *panel,char *axisstring,double *params);}
 \hfill \\
-Adds or modifies a panel of shape \texttt{panelshape} of surface \texttt{surface}.  \texttt{axisstring} lists any text parameters for the panel, which in practice is only a single word that gives the orientation of a rectangle panel (e.g. ``+0" or ``-y").  \texttt{params} lists the numerical parameters for the panel location, size, and drawing characteristics.  These are exactly the same parameters that are listed for the ``panel" statement in Smoldyn configuration files, with the sole exception that the first rectangle ``parameter" is actually a string that is entered in \texttt{axisstring}.  \texttt{panelname} is an optional parameter for naming the panel; if it is included and is not an empty string, the panel is named \texttt{panelname}.  If this panel name was already used by a panel of the same shape, then this function overwrites that panel's data with the new data.  If the name was already used by a panel with a different shape, then this creates an error, and if the name was not used before, then a new panel is created.  To use default panel naming, send in \texttt{panelname} as either \texttt{NULL} or as an empty string.  In the latter case, \texttt{panelname} is returned with the newly assigned default name.
+Adds or modifies a panel of shape \texttt{panelshape} of surface \texttt{surface}. \texttt{axisstring} lists any text parameters for the panel, which in practice is only a single word that gives the orientation of a rectangle panel (e.g. ``+0" or ``-y"). \texttt{params} lists the numerical parameters for the panel location, size, and drawing characteristics. These are exactly the same parameters that are listed for the ``panel" statement in Smoldyn configuration files, with the sole exception that the first rectangle ``parameter" is actually a string that is entered in \texttt{axisstring}. \texttt{panelname} is an optional parameter for naming the panel; if it is included and is not an empty string, the panel is named \texttt{panelname}. If this panel name was already used by a panel of the same shape, then this function overwrites that panel's data with the new data. If the name was already used by a panel with a different shape, then this creates an error, and if the name was not used before, then a new panel is created. To use default panel naming, send in \texttt{panelname} as either \texttt{NULL} or as an empty string. In the latter case, \texttt{panelname} is returned with the newly assigned default name.
 
 \item[\texttt{int}]
 \texttt{smolGetPanelIndex(simptr sim,char *surface,enum PanelShape *panelshapeptr,char *panel);}
 \hfill \\
-Returns the panel index for the panel called \texttt{panel} on surface \texttt{surface}.  If \texttt{panelshapeptr} is not \texttt{NULL}, this also returns the panel shape in \texttt{panelshapeptr}.  On failure, this returns the error code cast as an integer.
+Returns the panel index for the panel called \texttt{panel} on surface \texttt{surface}. If \texttt{panelshapeptr} is not \texttt{NULL}, this also returns the panel shape in \texttt{panelshapeptr}. On failure, this returns the error code cast as an integer.
 
 \item[\texttt{char*}]
 \texttt{smolGetPanelName(simptr sim,char *surface,enum PanelShape panelshape,int panelindex,char *panel);}
 \hfill \\
-Returns the name of the panel that is in surface \texttt{surface}, has shape \texttt{panelshape}, and has index \texttt{panelindex}, both directly and in the string \texttt{panel}.  On failure, this returns \texttt{NULL}.
+Returns the name of the panel that is in surface \texttt{surface}, has shape \texttt{panelshape}, and has index \texttt{panelindex}, both directly and in the string \texttt{panel}. On failure, this returns \texttt{NULL}.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetPanelJump(simptr sim,const char *surface,const char *panel1,enum PanelFace face1,const char *panel2,enum PanelFace face2,int isbidirectional);}
 \hfill \\
-Sets a jumping link between face \texttt{face1} of panel \texttt{panel1} and face \texttt{face2} of panel \texttt{panel2} of surface \texttt{surface}.  The link goes from \texttt{panel1} to \texttt{panel2} if \texttt{bidirectional} is entered as 0 and goes in both directions if \texttt{bidirectional} is entered as 1.  None of the surface, panel, or face entries is allowed to be ``all".  This does not set the actions of any species to ``jump", which has to be done using the \texttt{smolSetSurfaceAction} function.
+Sets a jumping link between face \texttt{face1} of panel \texttt{panel1} and face \texttt{face2} of panel \texttt{panel2} of surface \texttt{surface}. The link goes from \texttt{panel1} to \texttt{panel2} if \texttt{bidirectional} is entered as 0 and goes in both directions if \texttt{bidirectional} is entered as 1. None of the surface, panel, or face entries is allowed to be ``all". This does not set the actions of any species to ``jump", which has to be done using the \texttt{smolSetSurfaceAction} function.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddSurfaceUnboundedEmitter(simptr sim,const char *surface,enum PanelFace face,const char *species,double emitamount,double *emitposition);}
 \hfill \\
-Adds information about a point molecular source so that face \texttt{face} of surface \texttt{surface} can have its absorption properties calculated so that the molecular concentrations will become the same as they would be if the surface weren't there at all.  The point molecular source emits molecules of species \texttt{species}, with a rate of \texttt{emitamount} and is at location \texttt{emitposition}.  The emission rate does not need to be in absolute units, but only has to be correct relative to other unbounded emitters.  None of the inputs to this function are allowed to be ``all".
+Adds information about a point molecular source so that face \texttt{face} of surface \texttt{surface} can have its absorption properties calculated so that the molecular concentrations will become the same as they would be if the surface weren't there at all. The point molecular source emits molecules of species \texttt{species}, with a rate of \texttt{emitamount} and is at location \texttt{emitposition}. The emission rate does not need to be in absolute units, but only has to be correct relative to other unbounded emitters. None of the inputs to this function are allowed to be ``all".
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetSurfaceSimParams(simptr sim,const char *parameter,double value);}
 \hfill \\
-Sets the surface simulation parameter named with \texttt{parameter} to value \texttt{value}.  The possible parameters are ``epsilon", ``margin", and ``neighbordist".  In all cases, the defaults are nearly always good, although this function allows them to be modified if desired.  Epsilon is the maximum distance away from a surface that Smoldyn is allowed to place a surface-bound molecule.  Margin is the distance inside from the edge of a surface panel that Smoldyn will place surface-bound molecules that hop onto this panel.  Neighbor distance is the maximum distance over which surface-bound molecules are allowed to hop to transition from one panel to a neighboring panel.
+Sets the surface simulation parameter named with \texttt{parameter} to value \texttt{value}. The possible parameters are ``epsilon", ``margin", and ``neighbordist". In all cases, the defaults are nearly always good, although this function allows them to be modified if desired. Epsilon is the maximum distance away from a surface that Smoldyn is allowed to place a surface-bound molecule. Margin is the distance inside from the edge of a surface panel that Smoldyn will place surface-bound molecules that hop onto this panel. Neighbor distance is the maximum distance over which surface-bound molecules are allowed to hop to transition from one panel to a neighboring panel.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddPanelNeighbor(simptr sim,const char *surface1,const char *panel1,const char *surface2,const char *panel2,int reciprocal);}
 \hfill \\
-Adds panel \texttt{panel2} of surface \texttt{surface2} as a neighbor of panel \texttt{panel1} or surface \texttt{surface1}, meaning that surface-bound molecules will be allowed to diffuse from \texttt{panel1} to \texttt{panel2}.  These are not allowed to be the same panel.  Also, ``all" values are not permitted.  Otherwise, essentially any possible entries are legitimate.  If surface-bound molecules should also be allowed to diffuse from \texttt{panel2} to \texttt{panel1}, enter \texttt{reciprocal} as 1; if not, enter \texttt{reciprocal} as 0.
+Adds panel \texttt{panel2} of surface \texttt{surface2} as a neighbor of panel \texttt{panel1} or surface \texttt{surface1}, meaning that surface-bound molecules will be allowed to diffuse from \texttt{panel1} to \texttt{panel2}. These are not allowed to be the same panel. Also, ``all" values are not permitted. Otherwise, essentially any possible entries are legitimate. If surface-bound molecules should also be allowed to diffuse from \texttt{panel2} to \texttt{panel1}, enter \texttt{reciprocal} as 1; if not, enter \texttt{reciprocal} as 0.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetSurfaceStyle(simptr sim,const char *surface,enum PanelFace face,enum DrawMode mode,double thickness,double *color,int stipplefactor,int stipplepattern,double shininess);}
 \hfill \\
-Sets the graphics output style for face \texttt{face} of surface \texttt{surface}.  \texttt{mode} is the drawing mode; enter it as \texttt{DMnone} to not set this parameter and otherwise enter it as \texttt{DMno} to not draw the surface, \texttt{DMvert} for vertices, \texttt{DMedge} for edges, or \texttt{DMface} for faces.  The \texttt{thickness} parameter gives the point size or line width for drawing vertices or edges, or can be entered as a negative number to not set this parameter.  \texttt{color} is the 4-value color vector for the surface, or can be entered as \texttt{NULL} to not set this parameter.  \texttt{stipplefactor} is the repeat distance for the entire edge stippling pattern, or can be entered as a negative number to not set it.  \texttt{stipplepattern} is the edge stippling pattern, which needs to be between 0 and 0xFFFF, or can be entered as -1 to not set this parameter.  And \texttt{shininess} is the surface shininess, for use with lighting in the ``opengl\_better" graphics display option, or can be entered as -1 to not set this parameter.  The parameters \texttt{thickness}, \texttt{stipplefactor}, and \texttt{stipplepattern} only apply to edge style drawing modes and ignore any input in the \texttt{face} entry.  The \texttt{shininess} parameter only applies to the face style drawing modes.
+Sets the graphics output style for face \texttt{face} of surface \texttt{surface}. \texttt{mode} is the drawing mode; enter it as \texttt{DMnone} to not set this parameter and otherwise enter it as \texttt{DMno} to not draw the surface, \texttt{DMvert} for vertices, \texttt{DMedge} for edges, or \texttt{DMface} for faces. The \texttt{thickness} parameter gives the point size or line width for drawing vertices or edges, or can be entered as a negative number to not set this parameter. \texttt{color} is the 4-value color vector for the surface, or can be entered as \texttt{NULL} to not set this parameter. \texttt{stipplefactor} is the repeat distance for the entire edge stippling pattern, or can be entered as a negative number to not set it. \texttt{stipplepattern} is the edge stippling pattern, which needs to be between 0 and 0xFFFF, or can be entered as -1 to not set this parameter. And \texttt{shininess} is the surface shininess, for use with lighting in the ``opengl\_better" graphics display option, or can be entered as -1 to not set this parameter. The parameters \texttt{thickness}, \texttt{stipplefactor}, and \texttt{stipplepattern} only apply to edge style drawing modes and ignore any input in the \texttt{face} entry. The \texttt{shininess} parameter only applies to the face style drawing modes.
 
 \end{description}
 
-
+% Compartments
 \section{Compartments}
 
 \begin{description}
@@ -884,12 +989,12 @@ Adds a compartment called \texttt{compartment} to the system.
 \item[\texttt{int}]
 \texttt{smolGetCompartmentIndex(simptr sim,char *compartment)}
 \hfill \\
-Returns the index of the compartment named \texttt{compartment}.  On failure, this returns an error code cast as an integer.
+Returns the index of the compartment named \texttt{compartment}. On failure, this returns an error code cast as an integer.
 
 \item[\texttt{char*}]
 \texttt{smolGetCompartmentName(simptr sim,int compartmentindex,char *compartment)}
 \hfill \\
-Returns the name of the compartment that has index \texttt{compartmentindex} both directly and in the string \texttt{compartment}.  Returns \texttt{NULL} if an error arises.
+Returns the name of the compartment that has index \texttt{compartmentindex} both directly and in the string \texttt{compartment}. Returns \texttt{NULL} if an error arises.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddCompartmentSurface(simptr sim,char *compartment,char *surface);}
@@ -908,7 +1013,7 @@ Modifies the current definition of compartment \texttt{compartment} using a logi
 
 \end{description}
 
-
+% Reactions
 \section{Reactions}
 
 \begin{description}
@@ -916,32 +1021,32 @@ Modifies the current definition of compartment \texttt{compartment} using a logi
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddReaction(simptr sim,const char *reaction,const char *reactant1,enum MolecState rstate1,const char *reactant2,enum MolecState rstate2,int nproduct,const char **productspecies,enum MolecState *productstates,double rate);}
 \hfill \\
-Adds reaction named \texttt{reaction} to the system.  This reaction can have up to two reactants, whose species are listed in \texttt{reactant1} and \texttt{reactant2} and whose states are listed in \texttt{rstate1} and \texttt{rstate2}.  If the reaction has fewer than two reactants, set either or both of \texttt{reactant1} and \texttt{reactant2} to either \texttt{NULL} or an empty string.  State the number of reaction products in \texttt{nproduct}, list their species in \texttt{productspecies}, and list their states in \texttt{productstates}.  To set the reaction rate, enter it in \texttt{rate}; otherwise, enter \texttt{rate} as a negative number.
+Adds reaction named \texttt{reaction} to the system. This reaction can have up to two reactants, whose species are listed in \texttt{reactant1} and \texttt{reactant2} and whose states are listed in \texttt{rstate1} and \texttt{rstate2}. If the reaction has fewer than two reactants, set either or both of \texttt{reactant1} and \texttt{reactant2} to either \texttt{NULL} or an empty string. State the number of reaction products in \texttt{nproduct}, list their species in \texttt{productspecies}, and list their states in \texttt{productstates}. To set the reaction rate, enter it in \texttt{rate}; otherwise, enter \texttt{rate} as a negative number.
 
 \item[\texttt{int}]
 \texttt{smolGetReactionIndex(simptr sim,int *orderptr,char *reaction);}
 \hfill \\
-Returns the index and order for the reaction that is named \texttt{reaction}.  If the order is known, send in \texttt{orderptr} pointing to this value.  If it is not known, send in \texttt{orderptr} equal to either \texttt{NULL} or pointing to a negative number; in this case, it will be returned pointing to the reaction order, if the reaction was found.  On failure, this returns the error code, cast as an integer.
+Returns the index and order for the reaction that is named \texttt{reaction}. If the order is known, send in \texttt{orderptr} pointing to this value. If it is not known, send in \texttt{orderptr} equal to either \texttt{NULL} or pointing to a negative number; in this case, it will be returned pointing to the reaction order, if the reaction was found. On failure, this returns the error code, cast as an integer.
 
 \item[\texttt{char*}]
 \texttt{smolGetReactionName(simptr sim,int order,int reactionindex,char *reaction);}
 \hfill \\
-Returns the name of the reaction that has reaction order \texttt{order} and index \texttt{reactionindex} in the string \texttt{reaction}.  Also returns the result directly.  Returns \texttt{NULL} if an error arises.
+Returns the name of the reaction that has reaction order \texttt{order} and index \texttt{reactionindex} in the string \texttt{reaction}. Also returns the result directly. Returns \texttt{NULL} if an error arises.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetReactionRate(simptr sim,int order,char *reaction,double rate,int isinternal);}
 \hfill \\
-Set the reaction rate to \texttt{rate}.  If this value is to be interpreted as an internal reaction rate parameter, meaning the production rate for zeroth order reactions, the reaction probability for first order reactions, or the binding radius for second order reactions, then set \texttt{isinternal} to 1.  Rather than calling this function at all, it's usually easier to use the \texttt{rate} parameter of the \texttt{smolAddReaction} function, although that doesn't cope with internal rate values.
+Set the reaction rate to \texttt{rate}. If this value is to be interpreted as an internal reaction rate parameter, meaning the production rate for zeroth order reactions, the reaction probability for first order reactions, or the binding radius for second order reactions, then set \texttt{isinternal} to 1. Rather than calling this function at all, it's usually easier to use the \texttt{rate} parameter of the \texttt{smolAddReaction} function, although that doesn't cope with internal rate values.
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface);}
 \hfill \\
-Limits the spatial region where a reaction can take place to the compartment \texttt{compartment} and/or the surface \texttt{surface}.  To not set one of these limits, enter \texttt{compartment} and/or \texttt{surface} as \texttt{NULL}.  To remove a previously set limit, enter \texttt{compartment} and/or \texttt{surface} as the empty string, ``".
+Limits the spatial region where a reaction can take place to the compartment \texttt{compartment} and/or the surface \texttt{surface}. To not set one of these limits, enter \texttt{compartment} and/or \texttt{surface} as \texttt{NULL}. To remove a previously set limit, enter \texttt{compartment} and/or \texttt{surface} as the empty string, ``".
 
 \item[\texttt{enum ErrorCode}]
 \texttt{smolSetReactionProducts(simptr sim,const char *reaction,enum RevParam method,double parameter,const char *product,double *position);}
 \hfill \\
-Sets the reaction product parameters for reaction \texttt{reaction}.  At a minimum, the \texttt{method} reversible parameter is required.  Most of these methods require a single parameter, entered in \texttt{parameter}.  A few methods also require a product, in \texttt{product} and the relative position of this product in \texttt{position}.
+Sets the reaction product parameters for reaction \texttt{reaction}. At a minimum, the \texttt{method} reversible parameter is required. Most of these methods require a single parameter, entered in \texttt{parameter}. A few methods also require a product, in \texttt{product} and the relative position of this product in \texttt{position}.
 
 \begin{longtable}[c]{lccc}
 \texttt{method} & \texttt{parameter} & \texttt{product} & \texttt{position}\\
@@ -966,7 +1071,7 @@ If \texttt{method} is \texttt{RPbounce}, then a negative number for the \texttt{
 
 \end{description}
 
-
+% Ports
 \section{Ports}
 
 \begin{description}
@@ -974,7 +1079,7 @@ If \texttt{method} is \texttt{RPbounce}, then a negative number for the \texttt{
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddPort(simptr sim,const char *port,const char *surface,enum PanelFace face);}
 \hfill \\
-Adds a port to the simulation.  The port will be named \texttt{port} and will port at the \texttt{face} face of surface \texttt{surface}.
+Adds a port to the simulation. The port will be named \texttt{port} and will port at the \texttt{face} face of surface \texttt{surface}.
 
 \item[\texttt{int}]
 \texttt{smolGetPortIndex(simptr sim,const char *port);}
@@ -989,12 +1094,12 @@ Returns the name of the port with index \texttt{portindex}, both directly and in
 \item[\texttt{enum ErrorCode}]
 \texttt{smolAddPortMolecules(simptr sim,const char *port,int nmolec,const char *species,double **positions);}
 \hfill \\
-Adds \texttt{nmolec} molecules to Smoldyn's import buffer of port \texttt{port}.  These molecules will all have species \texttt{species} and state \texttt{MSsoln}.  Enter \texttt{positions} as \texttt{NULL} to have the molecules positioned randomly over the porting surface and as an \texttt{nmolec} length list of position vectors to have them located at those specific initial positions.  These initial positions should be close to the porting surface, and on the Smoldyn system side of it.
+Adds \texttt{nmolec} molecules to Smoldyn's import buffer of port \texttt{port}. These molecules will all have species \texttt{species} and state \texttt{MSsoln}. Enter \texttt{positions} as \texttt{NULL} to have the molecules positioned randomly over the porting surface and as an \texttt{nmolec} length list of position vectors to have them located at those specific initial positions. These initial positions should be close to the porting surface, and on the Smoldyn system side of it.
 
 \item[\texttt{int}]
 \texttt{smolGetPortMolecules(simptr sim,const char *port,const char *species,enum MolecState state,int remove);}
 \hfill \\
-Returns the number of molecules that are in Smoldyn's export buffer of port \texttt{port}.  Enter \texttt{species} with the species of the molecules that should be retrieved, or ``all" for all species.  Enter \texttt{state} with the states of the molecules that should be retrieved, or \texttt{MSall} for all states.  Enter \texttt{remove} with 1 to remove molecules from the export buffer after they are retrieved or with 0 to leave them in the buffer.  If an error arises, this returns the error code cast as an integer.
+Returns the number of molecules that are in Smoldyn's export buffer of port \texttt{port}. Enter \texttt{species} with the species of the molecules that should be retrieved, or ``all" for all species. Enter \texttt{state} with the states of the molecules that should be retrieved, or \texttt{MSall} for all states. Enter \texttt{remove} with 1 to remove molecules from the export buffer after they are retrieved or with 0 to leave them in the buffer. If an error arises, this returns the error code cast as an integer.
 
 \end{description}
 
