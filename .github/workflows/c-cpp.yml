@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install
+      run: sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
     - name: configure
       run: mkdir build && cd build && cmake ..
     - name: make
