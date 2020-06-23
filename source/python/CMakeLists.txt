@@ -83,6 +83,7 @@ endforeach()
 # Run tests using pytest.
 add_custom_target(pytest 
     DEPENDS pydevel
+    COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest || echo "Failed to install pytest"
     COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
     COMMENT "Running pytest."
     VERBATIM)
