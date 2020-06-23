@@ -17,6 +17,7 @@ jobs:
       run: |
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
         sudo apt -y install python3-pytest python3-numpy python3-matplotlib python3-wheel
+        python3 -m pip install numpy pytest matplotlib wheel --user
     - name: configure
       run: mkdir build && cd build && cmake ..
     - name: make
