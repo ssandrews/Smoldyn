@@ -43,38 +43,34 @@ int init_and_run(const string &filepath, const string &flags)
     int  er = 0, wflag = 0;
     auto p = splitPath(filepath);
 
-    // DO NOT USE global simptr here.
-    simptr psim;
-    psim->logfile = nullptr;
-
 #ifdef OPTION_VCELL
-    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str(),
+    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &cursim_, flags.c_str(),
         new SimpleValueProviderFactory(), new SimpleMesh());
 #else
-    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str());
+    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &cursim_, flags.c_str());
 #endif
     if(!er) {
-        // if (!tflag && psim->graphss && psim->graphss->graphics != 0)
+        // if (!tflag && cursim_->graphss && cursim_->graphss->graphics != 0)
         // gl2glutInit(0, "");
-        er = simUpdateAndDisplay(psim);
+        er = simUpdateAndDisplay(cursim_);
     }
     if(!er)
-        er = scmdopenfiles((cmdssptr)psim->cmds, wflag);
+        er = scmdopenfiles((cmdssptr)cursim_->cmds, wflag);
     if(er) {
-        simLog(psim, 4, "%sSimulation skipped\n", er ? "\n" : "");
+        simLog(cursim_, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
     else {
         fflush(stdout);
         fflush(stderr);
-        if(!psim->graphss || psim->graphss->graphics == 0) {
-            er = smolsimulate(psim);
-            endsimulate(psim, er);
+        if(!cursim_->graphss || cursim_->graphss->graphics == 0) {
+            er = smolsimulate(cursim_);
+            endsimulate(cursim_, er);
         }
         else {
-            smolsimulategl(psim);
+            smolsimulategl(cursim_);
         }
     }
-    simfree(psim);
+    simfree(cursim_);
     simfuncfree();
     return er;
 }
@@ -234,9 +230,7 @@ PYBIND11_MODULE(_smoldyn, m)
     });
     m.def("loadSimFromFile", [](const string &filepath, const char *flags) -> ErrorCode {
         auto   p    = splitPath(filepath);
-        simptr psim = cursim_;
-        assert(psim);
-        return smolLoadSimFromFile(p.first.c_str(), p.second.c_str(), &psim, flags);
+        return smolLoadSimFromFile(p.first.c_str(), p.second.c_str(), &cursim_, flags);
     });
     m.def("readConfigString", [](const char *statement, char *params) -> ErrorCode {
         return smolReadConfigString(cursim_, statement, params);
