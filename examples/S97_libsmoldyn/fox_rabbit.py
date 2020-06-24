@@ -3,7 +3,7 @@
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2019-, Dilawar Singh"
 
-import smoldyn._smoldyn as S
+import smoldyn as S
 import numpy as np
 import matplotlib.pyplot as plt
 

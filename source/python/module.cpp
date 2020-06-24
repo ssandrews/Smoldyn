@@ -465,7 +465,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species,
     //     enum MolecState state, double size, double *color);
     m.def("setMoleculeStyle",
-        [](const char *species, MolecState state, double size, char *color) {
+        [](const char *species, MolecState state, double size, char* color) {
             auto rgba = color2RGBA(color);
             return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
         });

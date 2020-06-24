@@ -1,29 +1,23 @@
-"""test_sanity.py: 
-
 """
-    
-__author__           = "Dilawar Singh"
-__copyright__        = "Copyright 2016, Dilawar Singh"
-__credits__          = ["NCBS Bangalore"]
-__license__          = "GNU GPL"
-__version__          = "1.0.0"
-__maintainer__       = "Dilawar Singh"
-__email__            = "dilawars@ncbs.res.in"
-__status__           = "Development"
+File: test_sanity.py
+Author: Dilawar Singh
+Email: dilawars@ncbs.res.in
+Description: 
+    User can create multiple simptr and assign one of them as current simptr.
+"""
+# todo: Test a full simulation with configuration changes.
 
-from smoldyn import _smoldyn
+import smoldyn
 
 def main():
-    curSim = _smoldyn.getCurSimStruct()
-    print('curSim', curSim)   # not initialized yet.
-    s1 = _smoldyn.newSim(3, [0, 0, 0], [10,10,10]) 
+    curSim = smoldyn.getCurSimStruct()
+    print('curSim', curSim)   # not initialized, will print None.
+    s1 = smoldyn.newSim(3, [0, 0, 0], [10,10,10]) 
     assert s1 != curSim
-    s2 = _smoldyn.newSim(2, [0,0], [10,10])  
+    s2 = smoldyn.newSim(2, [0,0], [10,10])  
     assert s2 != curSim != s1
-    _smoldyn.setCurSimStruct(s1)
-    assert s1 == _smoldyn.getCurSimStruct()
-    print('s1', s1)
-    print('s2', s2)
+    smoldyn.setCurSimStruct(s1)
+    assert s1 == smoldyn.getCurSimStruct()
     
 
 if __name__ == "__main__":
