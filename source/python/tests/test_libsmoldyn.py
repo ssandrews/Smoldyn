@@ -4,7 +4,7 @@ __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbS.reS.in"
 
 # Test only extension module.
-from smoldyn import _smoldyn as S
+import smoldyn as S
 
 def test_library():
     """We test the C API here
