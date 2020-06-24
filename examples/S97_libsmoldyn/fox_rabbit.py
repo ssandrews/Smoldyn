@@ -3,11 +3,11 @@
 __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2019-, Dilawar Singh"
 
-import smoldyn._smoldyn as S
+import smoldyn as S
 import numpy as np
 import matplotlib.pyplot as plt
 
-MS = S.MS
+MS = S.MolecState
 
 v1 = [-100.0, -100.0, -10.0]
 v2 = [100.0, 100, 10.0]
@@ -27,8 +27,8 @@ S.addSolutionMolecules("rabbit", 1000, v1, v2)
 S.addSolutionMolecules("fox", 1000, v1, v2)
 
 S.setGraphicsParams("opengl", 5, 0)
-S.setSpeciesStyle("rabbit", MS.all, 2, 'red')
-S.setSpeciesStyle("fox", MS.all, 3, 'green')
+S.setMoleculeStyle("rabbit", MS.all, 2, 'red')
+S.setMoleculeStyle("fox", MS.all, 3, 'green')
 
 T, F, R = [], [], []
 for t in np.arange(0.1, 2.0, 0.1):
