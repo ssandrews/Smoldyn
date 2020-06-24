@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/dilawar/Smoldyn-official.svg?branch=master)](https://travis-ci.org/dilawar/Smoldyn-official)
+[![Build Status](https://travis-ci.org/dilawar/Smoldyn-official.svg?branch=master)](https://travis-ci.org/dilawar/Smoldyn-official) ![C/C++ CI](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg)
 
 # Smoldyn-official
 
