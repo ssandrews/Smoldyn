@@ -16,6 +16,7 @@ jobs:
     - name: install
       run: |
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
+        sudo apt -y install xvfb
         sudo apt -y install python3-pytest python3-numpy python3-matplotlib python3-wheel
         python3 -m pip install numpy pytest matplotlib wheel --user
     - name: configure
@@ -23,4 +24,4 @@ jobs:
     - name: make
       run: cd build && make -j2 && make wheel
     - name: make check
-      run: cd build && make pytest
+      run: cd build && xvfb-run --auto-servernum ctest --output-on-failure && xvfb-run --auto-servernum make pytest
