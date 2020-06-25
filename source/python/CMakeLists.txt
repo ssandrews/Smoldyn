@@ -41,7 +41,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
 
 add_custom_target(wheel DEPENDS _smoldyn 
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel -d ${CMAKE_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "Generating wheel in ${CMAKE_BINARY_DIR}"
     VERBATIM)
 
