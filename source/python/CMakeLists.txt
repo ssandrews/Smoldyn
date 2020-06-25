@@ -45,13 +45,12 @@ add_custom_target(wheel DEPENDS _smoldyn
     COMMENT "Generating wheel in ${CMAKE_BINARY_DIR}"
     VERBATIM)
 
-# This target is for developers.
-add_custom_target(pyinstall
-    DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} setup.py develop
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "installing in developer mode.")
-    #VERBATIM)
+  add_custom_target(pyinstall
+    COMMAND ${PYTHON_EXECUTABLE} setup.py install 
+      --prefix ${CMAKE_INSTALL_PREFIX}
+    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
+    COMMENT "RUNNING: python3 setup.py install --prefix ${CMAKE_INSTALL_PREFIX}"
+    VERBATIM)
 
 add_custom_target(pyinstall_venv
     DEPENDS _smoldyn
@@ -84,7 +83,7 @@ foreach(_pyscript ${TEST_SCRIPTS})
         ${PYTHON_EXECUTABLE} ${_pyscript}
         WORKING_DIRECTORY ${_test_dir})
     set_tests_properties(${_test_name} PROPERTIES 
-        ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}")
+      ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
 endforeach()
 
 # Run tests using pytest.
