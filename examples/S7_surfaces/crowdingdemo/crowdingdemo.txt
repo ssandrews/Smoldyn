@@ -1,0 +1,71 @@
+# Crowding demo, for making a nice movie.
+
+
+# Model parameters
+define SYSLENGTH 50		# system length
+define KRATE 25			# reaction rate
+define MOL 1000
+
+
+# Graphical output
+graphics opengl_good		# level of graphics quality (or none)
+
+# System space and time definitions
+dim 2				# 2 system
+boundaries 0 0 SYSLENGTH
+boundaries 1 0 SYSLENGTH
+
+time_start 0			# simulation starting time
+time_stop 10			# simulation stopping time
+time_step 0.0002		# simulation time step
+
+boxsize 2
+
+# Molecular species and their properties
+species A B
+difc A 10
+difc B 10
+color A red
+color B green
+display_size all(all) 0.5
+
+
+# Surfaces in the system and their properties
+start_surface walls
+  action front all jump
+  action back all reflect
+  color both black
+  thickness 1
+  polygon both edge
+  panel rect +0  0 0  SYSLENGTH rx1
+  panel rect -0  SYSLENGTH 0  SYSLENGTH rx2
+  panel rect +1  0 0 SYSLENGTH ry1
+  panel rect -1  0 SYSLENGTH SYSLENGTH ry2
+  jump rx1 front <-> rx2 front
+  jump ry1 front <-> ry2 front
+end_surface
+
+read_file circles35.txt
+
+surface smolcrowd2 polygon both none
+surface smolcrowd polygon front face
+surface smolcrowd color both black
+
+# Chemical reactions
+reaction fwd A + B -> 0 KRATE
+
+# Place molecules for initial condition
+mol MOL A u u
+mol MOL B u u
+
+# Output and other run-time commands
+cmd B killmolinsphere all all
+cmd B pause
+
+tiff_name movie/crowdingdemo
+tiff_iter 20
+tiff_max 300
+
+
+end_file
+
