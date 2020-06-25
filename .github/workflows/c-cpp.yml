@@ -23,4 +23,4 @@ jobs:
     - name: make
       run: cd build && make -j2 && make wheel
     - name: make check
-      run: cd build && ctest && make pytest
+      run: cd build && ctest --output-on-failure && make pytest
