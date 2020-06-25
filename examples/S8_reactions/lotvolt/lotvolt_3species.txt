@@ -1,0 +1,61 @@
+# Simulation file for Lotka-Voltera reaction
+
+graphics opengl
+graphic_iter 5
+
+dim 2
+species rabbit fox grass fatrabbit
+
+boundaries x -100 100 r
+boundaries y -100 100 r
+
+time_start 0
+time_stop 20
+time_step 0.001
+
+color rabbit blue
+color fatrabbit blue
+color fox red
+color grass green
+
+display_size rabbit 3
+display_size fatrabbit 4
+display_size fox 4
+display_size grass 2
+
+molecule_lists rlist flist glist frlist
+mol_list rabbit rlist
+mol_list fox flist
+mol_list grass glist
+mol_list fatrabbit frlist
+molperbox 1
+
+difc grass 0
+difc rabbit 200
+difc fatrabbit 200
+difc fox 150
+
+reaction grassgrow	0 -> grass	0.1
+reaction rabbiteat	rabbit + grass -> fatrabbit 200
+reaction fatrabbiteat	fatrabbit + grass -> fatrabbit 200
+reaction rabbitdie	rabbit -> 0	5
+reaction morerabbit	fatrabbit -> rabbit + rabbit 40
+reaction foxeat		rabbit + fox -> fox + fox 4000
+reaction foxeatfat	fatrabbit + fox -> fox + fox 8000
+reaction foxdie		fox -> 0 5
+
+mol 3000 grass u u
+mol 200 rabbit u u
+mol 100 fatrabbit u u
+mol 200 fox u u
+
+cmd B pause
+
+text_display time grass rabbit fatrabbit fox
+
+output_files lotvoltout.txt
+
+cmd N 20 molcount lotvoltout.txt
+
+end_file
+
