@@ -11,6 +11,9 @@ else()
     set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 endif()
 
+set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
+file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
+
 pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
 
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
@@ -20,15 +23,21 @@ target_include_directories(_smoldyn PRIVATE
 
 set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/smoldyn)
+    LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
 
 add_dependencies(_smoldyn smoldyn_static)
 
 target_link_libraries(_smoldyn PRIVATE smoldyn_static)
 
+add_custom_command(TARGET _smoldyn POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/source/python/smoldyn ${PY_SMOLDYN_OUTDIR}/smoldyn
+  COMMENT "Copying python source tree to binary directory"
+  VERBATIM)
+
 # copy setup.py.in to setup.py
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/setup.py)
+    ${PY_SMOLDYN_OUTDIR}/setup.py)
 
 add_custom_target(wheel DEPENDS _smoldyn 
     COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel -d ${CMAKE_BINARY_DIR}
@@ -43,12 +52,11 @@ add_custom_target(pyinstall
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "installing in developer mode.")
     #VERBATIM)
-    
 
 add_custom_target(pyinstall_venv
     DEPENDS _smoldyn
     COMMAND ${PYTHON_EXECUTABLE} setup.py install
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "RUNNING: python3 setup.py install"
     VERBATIM)
 
@@ -60,10 +68,9 @@ add_custom_target(pyuninstall
 add_custom_target(pydevel
     DEPENDS _smoldyn
     COMMAND ${PYTHON_EXECUTABLE} setup.py develop --user
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "RUNNING: python3 setup.py develop --user"
     VERBATIM)
-
 
 enable_testing()
 
