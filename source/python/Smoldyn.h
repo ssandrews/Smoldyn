@@ -32,10 +32,9 @@ extern int graphicsreadcolor(char** stringptr, double* rgba);
 
 // Unique Ptr to hold simptr with custom deleter.
 //using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
-//extern simptr_uptr_type_ pSim_;
 
 // Collect all simptr here.
-// extern vector<simptr_uptr_type_> vecSimptrs_;
+//extern vector<simptr_uptr_type_> simptrs_;
 extern vector<simptr> simptrs_;
 extern simptr cursim_;
 
@@ -45,6 +44,11 @@ extern vector<double> highbounds_;
 extern bool           debug_;
 extern double         curtime_;
 extern bool           initDisplay_;
+
+extern void simfree(simptr ptr);
+
+bool addToSimptrVec(simptr ptr);
+bool deleteSimptr(simptr ptr);
 
 size_t getDim();
 void   setDim(size_t dim);
@@ -63,8 +67,8 @@ double    getDt();
 
 inline void cleanup()
 {
-    for(auto v: simptrs_)
-      smolFreeSim(v);
+    // smart pointer does the cleanup.
+    simptrs_.clear();
 }
 
 void setBoundaries(const vector<pair<double, double>>& bounds);

@@ -9,16 +9,34 @@ Description:
 
 import smoldyn
 
-def main():
+def test_cursim():
+    print('test_cursim')
+    smoldyn.clearAllSimStructs()
     curSim = smoldyn.getCurSimStruct()
-    print('curSim', curSim)   # not initialized, will print None.
+    print('cursim', curSim)
+    # assert curSim == None, curSim # Not initialized yet.
     s1 = smoldyn.newSim(3, [0, 0, 0], [10,10,10]) 
-    assert s1 != curSim
+    #assert s1 != curSim, (s1, curSim)
+
     s2 = smoldyn.newSim(2, [0,0], [10,10])  
-    assert s2 != curSim != s1
+    assert s2 != s1, (s1, s2)
     smoldyn.setCurSimStruct(s1)
     assert s1 == smoldyn.getCurSimStruct()
-    
+
+def test_newcursim():
+    print('test_newcursim')
+    smoldyn.setBoundaries([(0,1), (0,1)])
+    cs = smoldyn.getCurSimStruct()
+    assert cs != None
+    print(cs)
+
+def main():
+    """TODO: Docstring for main.
+    :returns: TODO
+
+    """
+    test_newcursim()
+    test_cursim()
 
 if __name__ == "__main__":
     main()
