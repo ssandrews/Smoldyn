@@ -73,8 +73,8 @@ extern "C" void smolSetThrowing(int corethreshold, int libthreshold)
 }
 
 /* smolSetError */
-extern "C" void smolSetError(const char *errorfunction,
-    enum ErrorCode errorcode, const char *errorstring)
+extern "C" void smolSetError(
+    const char *errorfunction, enum ErrorCode errorcode, const char *errorstring)
 {
     char string[STRCHAR];
     //	int severity;
@@ -98,8 +98,8 @@ extern "C" void smolSetError(const char *errorfunction,
 
     if(Libdebugmode && Liberrorfunction[0] != '\0') {
         if(Liberrorcode == ECnotify)
-            fprintf(stderr, "Libsmoldyn notification from %s: %s\n",
-                Liberrorfunction, Liberrorstring);
+            fprintf(stderr, "Libsmoldyn notification from %s: %s\n", Liberrorfunction,
+                Liberrorstring);
         else if(Liberrorcode == ECwarning)
             fprintf(stderr, "Libsmoldyn warning in %s: %s\n", Liberrorfunction,
                 Liberrorstring);
@@ -112,8 +112,8 @@ extern "C" void smolSetError(const char *errorfunction,
 }
 
 /* smolSetErrorNT */
-extern "C" void smolSetErrorNT(const char *errorfunction,
-    enum ErrorCode errorcode, const char *errorstring)
+extern "C" void smolSetErrorNT(
+    const char *errorfunction, enum ErrorCode errorcode, const char *errorstring)
 {
     if(errorcode != ECsame) {
         Liberrorcode = errorcode;
@@ -270,8 +270,7 @@ extern "C" enum ErrorCode smolRunTimeStep(simptr sim)
         "allocated");
     LCHECK(er != 6, funcname, ECerror,
         "Simulation terminated during molecule sorting\n  Out of memory");
-    LCHECK(
-        er != 7, funcname, ECnotify, "Simulation stopped by a runtime command");
+    LCHECK(er != 7, funcname, ECnotify, "Simulation stopped by a runtime command");
     LCHECK(er != 8, funcname, ECerror,
         "Simulation terminated during simulation state updating\n  Out of "
         "memory");
@@ -308,8 +307,7 @@ extern "C" enum ErrorCode smolRunSim(simptr sim)
             "molecules allocated");
         LCHECK(er != 6, funcname, ECerror,
             "Simulation terminated during molecule sorting\n  Out of memory");
-        LCHECK(er != 7, funcname, ECnotify,
-            "Simulation stopped by a runtime command");
+        LCHECK(er != 7, funcname, ECnotify, "Simulation stopped by a runtime command");
         LCHECK(er != 8, funcname, ECerror,
             "Simulation terminated during simulation state updating\n  Out of "
             "memory");
@@ -345,8 +343,7 @@ extern "C" enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)
         "allocated");
     LCHECK(er != 6, funcname, ECerror,
         "Simulation terminated during molecule sorting\n  Out of memory");
-    LCHECK(
-        er != 7, funcname, ECnotify, "Simulation stopped by a runtime command");
+    LCHECK(er != 7, funcname, ECnotify, "Simulation stopped by a runtime command");
     LCHECK(er != 8, funcname, ECerror,
         "Simulation terminated during simulation state updating\n  Out of "
         "memory");
@@ -395,8 +392,8 @@ extern "C" simptr smolPrepareSimFromFile(
     if(!flags)
         flags = emptystring;
 #ifdef OPTION_VCELL
-    er = simInitAndLoad(filepath, filename, &sim, flags,
-        new SimpleValueProviderFactory(), new SimpleMesh());
+    er = simInitAndLoad(filepath, filename, &sim, flags, new SimpleValueProviderFactory(),
+        new SimpleMesh());
 #else
     er = simInitAndLoad(filepath, filename, &sim, flags);
 #endif
@@ -410,8 +407,8 @@ failure:
 }
 
 /* smolLoadSimFromFile */
-extern "C" enum ErrorCode smolLoadSimFromFile(const char *filepath,
-    const char *filename, simptr *simpointer, const char *flags)
+extern "C" enum ErrorCode smolLoadSimFromFile(
+    const char *filepath, const char *filename, simptr *simpointer, const char *flags)
 {
     const char *funcname = "smolLoadSimFromFile";
     int         er;
@@ -547,8 +544,7 @@ failure:
 }
 
 /* smolSetPartitions */
-extern "C" enum ErrorCode smolSetPartitions(
-    simptr sim, const char *method, double value)
+extern "C" enum ErrorCode smolSetPartitions(simptr sim, const char *method, double value)
 {
     const char *funcname = "smolSetPartitions";
     int         er;
@@ -598,8 +594,8 @@ failure:
 }
 
 /* smolSetTiffParams */
-extern "C" enum ErrorCode smolSetTiffParams(simptr sim, int timesteps,
-    const char *tiffname, int lowcount, int highcount)
+extern "C" enum ErrorCode smolSetTiffParams(
+    simptr sim, int timesteps, const char *tiffname, int lowcount, int highcount)
 {
     const char *funcname = "smolSetTiffParams";
     char        nm1[STRCHAR];
@@ -629,8 +625,8 @@ failure:
 }
 
 /* smolSetLightParams */
-extern "C" enum ErrorCode smolSetLightParams(simptr sim, int lightindex,
-    double *ambient, double *diffuse, double *specular, double *position)
+extern "C" enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double *ambient,
+    double *diffuse, double *specular, double *position)
 {
     const char *funcname = "smolSetLightParams";
     int         c, er;
@@ -638,8 +634,8 @@ extern "C" enum ErrorCode smolSetLightParams(simptr sim, int lightindex,
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(lightindex >= -1 && lightindex < MAXLIGHTS, funcname, ECbounds,
         "lightindex out of bounds");
-    LCHECK(lightindex >= 0 || (!diffuse && !specular && !position), funcname,
-        ECsyntax, "can only set ambient for global light");
+    LCHECK(lightindex >= 0 || (!diffuse && !specular && !position), funcname, ECsyntax,
+        "can only set ambient for global light");
 
     if(ambient) {
         for(c = 0; c < 4; c++)
@@ -692,8 +688,7 @@ failure:
 }
 
 /* smolSetFrameStyle */
-extern "C" enum ErrorCode smolSetFrameStyle(
-    simptr sim, double thickness, double *color)
+extern "C" enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double *color)
 {
     const char *funcname = "smolSetFrameStyle";
     int         c, er;
@@ -716,8 +711,7 @@ failure:
 }
 
 /* smolSetGridStyle */
-extern "C" enum ErrorCode smolSetGridStyle(
-    simptr sim, double thickness, double *color)
+extern "C" enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double *color)
 {
     const char *funcname = "smolSetGridStyle";
     int         c, er;
@@ -766,12 +760,9 @@ extern "C" enum ErrorCode smolAddTextDisplay(simptr sim, char *item)
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     er = graphicssettextitem(sim, item);
-    LCHECK(
-        er != 1, funcname, ECmemory, "out of memory adding text display item");
-    LCHECK(er != 2, funcname, ECsyntax,
-        "listed item is not recognized or not supported");
-    LCHECK(
-        er != 3, funcname, ECwarning, "text display item was already listed");
+    LCHECK(er != 1, funcname, ECmemory, "out of memory adding text display item");
+    LCHECK(er != 2, funcname, ECsyntax, "listed item is not recognized or not supported");
+    LCHECK(er != 3, funcname, ECwarning, "text display item was already listed");
     return Libwarncode;
 failure:
     return Liberrorcode;
@@ -820,21 +811,20 @@ failure:
 }
 
 /* smolAddCommand */
-extern "C" enum ErrorCode smolAddCommand(simptr sim, char type, double on,
-    double off, double step, double multiplier, const char *commandstring)
+extern "C" enum ErrorCode smolAddCommand(simptr sim, char type, double on, double off,
+    double step, double multiplier, const char *commandstring)
 {
     const char *funcname = "smolSetCommand";
     int         er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
-    er = scmdaddcommand(sim->cmds, type, sim->tmin, sim->tmax, sim->dt, on, off,
-        step, multiplier, commandstring);
+    er = scmdaddcommand(sim->cmds, type, sim->tmin, sim->tmax, sim->dt, on, off, step,
+        multiplier, commandstring);
     LCHECK(er != 1, funcname, ECmemory, "out of memory creating command");
     LCHECK(er != 2, funcname, ECbug, "missing sim->cmds");
     LCHECK(er != 5, funcname, ECbounds, "step needs to be >0");
     LCHECK(er != 6, funcname, ECsyntax, "command type is not recognized");
-    LCHECK(
-        er != 7, funcname, ECmemory, "out of memory adding command to queue");
+    LCHECK(er != 7, funcname, ECmemory, "out of memory adding command to queue");
     LCHECK(er != 8, funcname, ECbounds, "multiplier needs to be >1");
     return ECok;
 failure:
@@ -849,15 +839,13 @@ extern "C" enum ErrorCode smolAddCommandFromString(simptr sim, char *string)
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(string, funcname, ECmissing, "missing string");
-    er = scmdstr2cmd(
-        sim->cmds, string, sim->tmin, sim->tmax, sim->dt, NULL, NULL, 0);
+    er = scmdstr2cmd(sim->cmds, string, sim->tmin, sim->tmax, sim->dt, NULL, NULL, 0);
     LCHECK(er != 1, funcname, ECmemory, "out of memory in cmd");
     LCHECK(er != 2, funcname, ECbug, "BUG: no command superstructure for cmd");
     LCHECK(er != 3, funcname, ECsyntax, "cmd format: type [on off dt] string");
     LCHECK(er != 4, funcname, ECmissing, "command string is missing");
     LCHECK(er != 5, funcname, ECbounds, "cmd time step needs to be >0");
-    LCHECK(er != 6, funcname, ECsyntax,
-        "command timing type character not recognized");
+    LCHECK(er != 6, funcname, ECsyntax, "command timing type character not recognized");
     LCHECK(er != 7, funcname, ECerror, "insertion of command in queue failed");
     LCHECK(er != 8, funcname, ECbounds, "cmd time multiplier needs to be >1");
     return ECok;
@@ -891,12 +879,9 @@ extern "C" enum ErrorCode smolAddSpecies(
     LCHECK(i != -2, funcname, ECbug, "add species bug");
     LCHECK(i != -3, funcname, ECbug,
         "more species are entered than are automatically allocated");
-    LCHECK(
-        i != -4, funcname, ECsyntax, "'empty' is not a permitted species name");
-    LCHECK(
-        i != -5, funcname, ECwarning, "this species has already been declared");
-    LCHECK(i != -6, funcname, ECsyntax,
-        "'?' and '*' are not allowed in species names");
+    LCHECK(i != -4, funcname, ECsyntax, "'empty' is not a permitted species name");
+    LCHECK(i != -5, funcname, ECwarning, "this species has already been declared");
+    LCHECK(i != -6, funcname, ECsyntax, "'?' and '*' are not allowed in species names");
     if(mollist && mollist[0] != '\0')
         molsetlistlookup(sim, i, NULL, MSall, ll);
     return Libwarncode;
@@ -918,9 +903,9 @@ extern "C" int smolGetSpeciesIndex(simptr sim, const char *species)
 
     if(i <= 0) {
         char buffer[100];
-        strncpy(buffer, "Species '", 12); //sizeof(buffer));
-        strncat(buffer, species, 50); //sizeof(buffer));
-        strncat(buffer, "' not found.", 20); //sizeof(buffer));
+        strncpy(buffer, "Species '", 12);     // sizeof(buffer));
+        strncat(buffer, species, 50);         // sizeof(buffer));
+        strncat(buffer, "' not found.", 20);  // sizeof(buffer));
         LCHECK(i > 0, funcname, ECnonexist, buffer);
     }
     /* LCHECK(i > 0, funcname, ECnonexist, "species not found"); */
@@ -938,15 +923,14 @@ extern "C" int smolGetSpeciesIndexNT(simptr sim, const char *species)
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(species, funcname, ECmissing, "missing species name");
     LCHECKNT(sim->mols, funcname, ECnonexist, "no species defined");
-    LCHECKNT(
-        strcmp(species, "all"), funcname, ECall, "species cannot be 'all'");
+    LCHECKNT(strcmp(species, "all"), funcname, ECall, "species cannot be 'all'");
     i = stringfind(sim->mols->spname, sim->mols->nspecies, species);
 
     if(i <= 0) {
         char buffer[256];
         strncpy(buffer, "Species ", sizeof(buffer));
-        strncat(buffer, species, 100); //sizeof(buffer));
-        strncat(buffer, " not found.", 20); //sizeof(buffer));
+        strncat(buffer, species, 100);       // sizeof(buffer));
+        strncat(buffer, " not found.", 20);  // sizeof(buffer));
         LCHECKNT(i > 0, funcname, ECnonexist, buffer);
     }
     /** LCHECKNT(i > 0, funcname, ECnonexist, "species not found"); */
@@ -973,9 +957,8 @@ failure:
 }
 
 /* smolSetSpeciesMobility */
-extern "C" enum ErrorCode smolSetSpeciesMobility(simptr sim,
-    const char *species, enum MolecState state, double difc, double *drift,
-    double *difmatrix)
+extern "C" enum ErrorCode smolSetSpeciesMobility(simptr sim, const char *species,
+    enum MolecState state, double difc, double *drift, double *difmatrix)
 {
     const char *funcname = "smolSetSpeciesMobility";
     int         i, er, isall, ilow, ihigh;
@@ -1033,8 +1016,7 @@ extern "C" enum ErrorCode smolAddMolList(simptr sim, const char *mollist)
     LCHECK(mollist, funcname, ECmissing, "missing mollist");
     ll = addmollist(sim, mollist, MLTsystem);
     LCHECK(ll != -1, funcname, ECmemory, "out of memory");
-    LCHECK(ll != -2, funcname, ECwarning,
-        "molecule list name has already been used");
+    LCHECK(ll != -2, funcname, ECwarning, "molecule list name has already been used");
     LCHECK(ll != -3, funcname, ECbug, "illegal addmollist inputs");
     return Libwarncode;
 failure:
@@ -1067,8 +1049,7 @@ extern "C" int smolGetMolListIndexNT(simptr sim, const char *mollist)
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(mollist, funcname, ECmissing, "missing mollist");
     LCHECKNT(sim->mols, funcname, ECnonexist, "no molecule lists defined");
-    LCHECKNT(strcmp(mollist, "all"), funcname, ECall,
-        "molecule list cannot be 'all'");
+    LCHECKNT(strcmp(mollist, "all"), funcname, ECall, "molecule list cannot be 'all'");
     ll = stringfind(sim->mols->listname, sim->mols->nlist, mollist);
     LCHECKNT(ll >= 0, funcname, ECnonexist, "list name not recognized");
     return ll;
@@ -1127,8 +1108,7 @@ extern "C" enum ErrorCode smolSetMaxMolecules(simptr sim, int maxmolecules)
     int         er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
-    LCHECK(
-        maxmolecules > 0, funcname, ECbounds, "maxmolecules needs to be > 0");
+    LCHECK(maxmolecules > 0, funcname, ECbounds, "maxmolecules needs to be > 0");
     er = molsetmaxmol(sim, maxmolecules);
     LCHECK(!er, funcname, ECmemory, "out of memory allocating molecules");
     return ECok;
@@ -1137,8 +1117,8 @@ failure:
 }
 
 /* smolAddSolutionMolecules */
-extern "C" enum ErrorCode smolAddSolutionMolecules(simptr sim,
-    const char *species, int number, double *lowposition, double *highposition)
+extern "C" enum ErrorCode smolAddSolutionMolecules(simptr sim, const char *species,
+    int number, double *lowposition, double *highposition)
 {
     const char *funcname = "smolAddSolutionMolecules";
     int         er, i, d;
@@ -1184,8 +1164,7 @@ extern "C" enum ErrorCode smolAddCompartmentMolecules(
     c = smolGetCompartmentIndexNT(sim, compartment);
     LCHECK(c >= 0, funcname, ECsame, NULL);
     er = addcompartmol(sim, number, i, sim->cmptss->cmptlist[c]);
-    LCHECK(er != 2, funcname, ECerror,
-        "compartment volume is zero or nearly zero");
+    LCHECK(er != 2, funcname, ECerror, "compartment volume is zero or nearly zero");
     LCHECK(er != 3, funcname, ECmemory, "out of memory adding molecules");
     return ECok;
 failure:
@@ -1193,9 +1172,9 @@ failure:
 }
 
 /* smolAddSurfaceMolecules */
-extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim,
-    const char *species, enum MolecState state, int number, const char *surface,
-    enum PanelShape panelshape, const char *panel, double *position)
+extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim, const char *species,
+    enum MolecState state, int number, const char *surface, enum PanelShape panelshape,
+    const char *panel, double *position)
 {
     const char *funcname = "smolAddSurfaceMolecules";
     int         i, s, p, er;
@@ -1213,8 +1192,8 @@ extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim,
     }
     else
         LCHECK(s >= 0, funcname, ECsame, NULL);
-    LCHECK((panelshape >= 0 && panelshape < PSMAX) || panelshape == PSall,
-        funcname, ECnonexist, "invalid panelshape");
+    LCHECK((panelshape >= 0 && panelshape < PSMAX) || panelshape == PSall, funcname,
+        ECnonexist, "invalid panelshape");
     pnl = NULL;
     p   = smolGetPanelIndexNT(sim, surface, NULL, panel);
     if(p == (int)ECall) {
@@ -1226,8 +1205,8 @@ extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim,
 
     if(p >= 0) {
         LCHECK(s >= 0, funcname, ECsyntax, "needs to be specific surface");
-        LCHECK(panelshape != PSall, funcname, ECsyntax,
-            "needs to be specific panelshape");
+        LCHECK(
+            panelshape != PSall, funcname, ECsyntax, "needs to be specific panelshape");
         pnl = sim->srfss->srflist[s]->panels[panelshape][p];
     }
     else {
@@ -1235,8 +1214,7 @@ extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim,
             "a panel must be specified if position is entered");
     }
     er = addsurfmol(sim, number, i, state, position, pnl, s, panelshape, NULL);
-    LCHECK(er != 1, funcname, ECmemory,
-        "unable to allocate temporary storage space");
+    LCHECK(er != 1, funcname, ECmemory, "unable to allocate temporary storage space");
     LCHECK(er != 2, funcname, ECbug, "panel name not recognized");
     LCHECK(er != 3, funcname, ECmemory, "out of memory adding molecules");
 
@@ -1266,8 +1244,8 @@ failure:
 }
 
 /* smolSetMoleculeStyle */
-extern "C" enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species,
-    enum MolecState state, double size, double *color)
+extern "C" enum ErrorCode smolSetMoleculeStyle(
+    simptr sim, const char *species, enum MolecState state, double size, double *color)
 {
     const char *funcname = "smolSetTextStyle";
     int         i, c;
@@ -1312,8 +1290,8 @@ extern "C" enum ErrorCode smolSetBoundaryType(
     LCHECK(dimension < sim->dim, funcname, ECbounds,
         "dimension cannot exceed system dimensionality");
     LCHECK(highside <= 1, funcname, ECbounds, "highside must be -1, 0, or 1");
-    LCHECK(type == 'r' || type == 'p' || type == 'a' || type == 't', funcname,
-        ECsyntax, "invalid type");
+    LCHECK(type == 'r' || type == 'p' || type == 'a' || type == 't', funcname, ECsyntax,
+        "invalid type");
     er = wallsettype(sim, dimension, highside, type);
     LCHECK(!er, funcname, ECbug, "bug in wallsettype");
     return ECok;
@@ -1351,8 +1329,7 @@ extern "C" int smolGetSurfaceIndex(simptr sim, const char *surface)
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(surface, funcname, ECmissing, "missing surface");
-    LCHECK(sim->srfss && sim->srfss->nsrf, funcname, ECnonexist,
-        "no surfaces defined");
+    LCHECK(sim->srfss && sim->srfss->nsrf, funcname, ECnonexist, "no surfaces defined");
     LCHECK(strcmp(surface, "all"), funcname, ECall, "surface cannot be 'all'");
     s = stringfind(sim->srfss->snames, sim->srfss->nsrf, surface);
     LCHECK(s >= 0, funcname, ECnonexist, "surface not found");
@@ -1369,10 +1346,8 @@ extern "C" int smolGetSurfaceIndexNT(simptr sim, const char *surface)
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(surface, funcname, ECmissing, "missing surface");
-    LCHECKNT(sim->srfss && sim->srfss->nsrf, funcname, ECnonexist,
-        "no surfaces defined");
-    LCHECKNT(
-        strcmp(surface, "all"), funcname, ECall, "surface cannot be 'all'");
+    LCHECKNT(sim->srfss && sim->srfss->nsrf, funcname, ECnonexist, "no surfaces defined");
+    LCHECKNT(strcmp(surface, "all"), funcname, ECall, "surface cannot be 'all'");
     s = stringfind(sim->srfss->snames, sim->srfss->nsrf, surface);
     LCHECKNT(s >= 0, funcname, ECnonexist, "surface not found");
     return s;
@@ -1388,10 +1363,9 @@ extern "C" char *smolGetSurfaceName(simptr sim, int surfaceindex, char *surface)
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(surfaceindex >= 0, funcname, ECbounds, "invalid surface index");
     LCHECK(surface, funcname, ECmissing, "missing surface");
-    LCHECK(sim->srfss && sim->srfss->nsrf, funcname, ECnonexist,
-        "no surfaces defined");
-    LCHECK(surfaceindex < sim->srfss->nsrf, funcname, ECnonexist,
-        "surface does not exist");
+    LCHECK(sim->srfss && sim->srfss->nsrf, funcname, ECnonexist, "no surfaces defined");
+    LCHECK(
+        surfaceindex < sim->srfss->nsrf, funcname, ECnonexist, "surface does not exist");
     strcpy(surface, sim->srfss->snames[surfaceindex]);
     return surface;
 failure:
@@ -1415,8 +1389,8 @@ extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
     }
     else
         LCHECK(s >= 0, funcname, ECsame, NULL);
-    LCHECK(face == PFfront || face == PFback || face == PFboth, funcname,
-        ECbounds, "invalid face");
+    LCHECK(face == PFfront || face == PFback || face == PFboth, funcname, ECbounds,
+        "invalid face");
     i = smolGetSpeciesIndexNT(sim, species);
     if(i == (int)ECall) {
         smolClearError();
@@ -1426,8 +1400,7 @@ extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
         LCHECK(i > 0, funcname, ECsame, NULL);
     LCHECK((state >= 0 && state < MSMAX) || state == MSall, funcname, ECbounds,
         "invalid state");
-    LCHECK(
-        action >= 0 && action <= SAmult, funcname, ECbounds, "invalid action");
+    LCHECK(action >= 0 && action <= SAmult, funcname, ECbounds, "invalid action");
     if(s >= 0) {
         srf = sim->srfss->srflist[s];
         er  = surfsetaction(srf, i, NULL, state, face, action, 0);
@@ -1470,15 +1443,11 @@ extern "C" enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,
     else
         LCHECK(i > 0, funcname, ECsame, NULL);
     LCHECK(state >= 0 && state < MSMAX, funcname, ECbounds, "invalid state");
-    LCHECK(
-        state1 >= 0 && state1 < MSMAX1, funcname, ECbounds, "invalid state1");
-    LCHECK(state == MSsoln || state1 == MSsoln || state1 == MSbsoln ||
-               state1 == state,
+    LCHECK(state1 >= 0 && state1 < MSMAX1, funcname, ECbounds, "invalid state1");
+    LCHECK(state == MSsoln || state1 == MSsoln || state1 == MSbsoln || state1 == state,
         funcname, ECsyntax, "nonsensical state combination");
-    LCHECK(
-        state2 >= 0 && state2 < MSMAX1, funcname, ECbounds, "invalid state2");
-    LCHECK(state1 != state2, funcname, ECsyntax,
-        "cannot set rate for state1 = state2");
+    LCHECK(state2 >= 0 && state2 < MSMAX1, funcname, ECbounds, "invalid state2");
+    LCHECK(state1 != state2, funcname, ECsyntax, "cannot set rate for state1 = state2");
     if(newspecies && newspecies[0] != '\0') {
         i2 = smolGetSpeciesIndexNT(sim, newspecies);
         LCHECK(i2 > 0, funcname, ECerror, "invalid newspecies");
@@ -1486,8 +1455,8 @@ extern "C" enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,
     else
         i2 = -5;
     LCHECK(rate >= 0, funcname, ECbounds, "rate needs to be non-negative");
-    LCHECK(!(isinternal && rate > 1), funcname, ECbounds,
-        "internal rate needs to be <= 1");
+    LCHECK(
+        !(isinternal && rate > 1), funcname, ECbounds, "internal rate needs to be <= 1");
 
     if(s >= 0) {
         srf = sim->srfss->srflist[s];
@@ -1498,8 +1467,8 @@ extern "C" enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,
     else {
         for(s = 0; s < sim->srfss->nsrf; s++) {
             srf = sim->srfss->srflist[s];
-            er  = surfsetrate(srf, i, NULL, state, state1, state2, i2, rate,
-                isinternal ? 2 : 1);
+            er  = surfsetrate(
+                srf, i, NULL, state, state1, state2, i2, rate, isinternal ? 2 : 1);
             LCHECK(!er, funcname, ECerror, "error in surfsetrate");
         }
     }
@@ -1510,8 +1479,7 @@ failure:
 
 /* smolAddPanel */
 extern "C" enum ErrorCode smolAddPanel(simptr sim, const char *surface,
-    enum PanelShape panelshape, const char *panel, const char *axisstring,
-    double *params)
+    enum PanelShape panelshape, const char *panel, const char *axisstring, double *params)
 {
     const char *funcname = "smolAddPanel";
     int         er, s;
@@ -1530,10 +1498,8 @@ extern "C" enum ErrorCode smolAddPanel(simptr sim, const char *surface,
     er  = surfaddpanel(srf, sim->dim, panelshape, axisstring, params, panel);
     LCHECK(er != -1, funcname, ECmemory, "out of memory adding panel");
     LCHECK(er != 3, funcname, ECsyntax, "cannot parse axisstring");
-    LCHECK(er != 4, funcname, ECbounds,
-        "drawing slices and stacks need to be positive");
-    LCHECK(er != 5, funcname, ECbounds,
-        "cylinder ends cannot be at the same location");
+    LCHECK(er != 4, funcname, ECbounds, "drawing slices and stacks need to be positive");
+    LCHECK(er != 5, funcname, ECbounds, "cylinder ends cannot be at the same location");
     LCHECK(er != 6, funcname, ECbounds,
         "hemisphere outward pointing vector has zero length");
     LCHECK(er != 7, funcname, ECbounds, "radius needs to be positive");
@@ -1547,8 +1513,8 @@ failure:
 }
 
 /* smolGetPanelIndex */
-extern "C" int smolGetPanelIndex(simptr sim, const char *surface,
-    enum PanelShape *panelshapeptr, const char *panel)
+extern "C" int smolGetPanelIndex(
+    simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel)
 {
     const char *    funcname = "smolGetPanelIndex";
     surfaceptr      srf;
@@ -1562,8 +1528,7 @@ extern "C" int smolGetPanelIndex(simptr sim, const char *surface,
     LCHECK(strcmp(panel, "all"), funcname, ECall, "panel cannot be 'all'");
     srf = sim->srfss->srflist[s];
     p   = -1;
-    for(ps = (PanelShape)0; ps < (PanelShape)PSMAX && p < 0;
-        ps = (PanelShape)(ps + 1))
+    for(ps = (PanelShape)0; ps < (PanelShape)PSMAX && p < 0; ps = (PanelShape)(ps + 1))
         p = stringfind(srf->pname[ps], srf->npanel[ps], panel);
     LCHECK(p >= 0, funcname, ECnonexist, "panel not found");
     if(panelshapeptr)
@@ -1574,8 +1539,8 @@ failure:
 }
 
 /* smolGetPanelIndexNT */
-extern "C" int smolGetPanelIndexNT(simptr sim, const char *surface,
-    enum PanelShape *panelshapeptr, const char *panel)
+extern "C" int smolGetPanelIndexNT(
+    simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel)
 {
     const char *    funcname = "smolGetPanelIndexNT";
     surfaceptr      srf;
@@ -1589,8 +1554,7 @@ extern "C" int smolGetPanelIndexNT(simptr sim, const char *surface,
     LCHECKNT(strcmp(panel, "all"), funcname, ECall, "panel cannot be 'all'");
     srf = sim->srfss->srflist[s];
     p   = -1;
-    for(ps = (PanelShape)0; ps < (PanelShape)PSMAX && p < 0;
-        ps = (PanelShape)(ps + 1))
+    for(ps = (PanelShape)0; ps < (PanelShape)PSMAX && p < 0; ps = (PanelShape)(ps + 1))
         p = stringfind(srf->pname[ps], srf->npanel[ps], panel);
     LCHECKNT(p >= 0, funcname, ECnonexist, "panel not found");
     if(panelshapeptr)
@@ -1626,8 +1590,8 @@ failure:
 
 /* smolSetPanelJump */
 extern "C" enum ErrorCode smolSetPanelJump(simptr sim, const char *surface,
-    const char *panel1, enum PanelFace face1, const char *panel2,
-    enum PanelFace face2, int isbidirectional)
+    const char *panel1, enum PanelFace face1, const char *panel2, enum PanelFace face2,
+    int isbidirectional)
 {
     const char *    funcname = "smolSetPanelJump";
     int             s, p1, p2, er;
@@ -1657,17 +1621,15 @@ extern "C" enum ErrorCode smolSetPanelJump(simptr sim, const char *surface,
     pnl1 = srf->panels[ps1][p1];
     pnl2 = srf->panels[ps2][p2];
     er   = surfsetjumppanel(srf, pnl1, face1, isbidirectional, pnl2, face2);
-    LCHECK(
-        !er, funcname, ECbug, "BUG: error code returned by surfsetjumppanel");
+    LCHECK(!er, funcname, ECbug, "BUG: error code returned by surfsetjumppanel");
     return ECok;
 failure:
     return Liberrorcode;
 }
 
 /* smolAddSurfaceUnboundedEmitter */
-extern "C" enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,
-    const char *surface, enum PanelFace face, const char *species,
-    double emitamount, double *emitposition)
+extern "C" enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim, const char *surface,
+    enum PanelFace face, const char *species, double emitamount, double *emitposition)
 {
     const char *funcname = "smolAddSurfaceUnboundedEmitter";
     int         s, i, er;
@@ -1683,8 +1645,7 @@ extern "C" enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,
 
     srf = sim->srfss->srflist[s];
     er  = surfaddemitter(srf, face, i, emitamount, emitposition, sim->dim);
-    LCHECK(
-        !er, funcname, ECmemory, "out of memory allocating unbounded emitter");
+    LCHECK(!er, funcname, ECmemory, "out of memory allocating unbounded emitter");
 
     return ECok;
 failure:
@@ -1725,8 +1686,7 @@ failure:
 
 /* smolAddPanelNeighbor */
 extern "C" enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
-    const char *panel1, const char *surface2, const char *panel2,
-    int reciprocal)
+    const char *panel1, const char *surface2, const char *panel2, int reciprocal)
 {
     const char *    funcname = "smolAddPanelNeighbor";
     int             s1, s2, p1, p2, er;
@@ -1779,8 +1739,7 @@ extern "C" enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface,
     srf = sim->srfss->srflist[s];
 
     if(mode != DMnone) {
-        LCHECK(mode >= 0 && mode < DMnone, funcname, ECsyntax,
-            "mode not recognized");
+        LCHECK(mode >= 0 && mode < DMnone, funcname, ECsyntax, "mode not recognized");
         er = surfsetdrawmode(srf, face, mode);
         LCHECK(!er, funcname, ECbug, "BUG: error in surfsetdrawmode");
     }
@@ -1796,8 +1755,7 @@ extern "C" enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface,
         LCHECK(!er, funcname, ECbug, "BUG: error in surfsetcolor");
     }
     if(stipplefactor >= 0) {
-        LCHECK(stipplefactor > 0, funcname, ECbounds,
-            "stipplefactor needs to be >0");
+        LCHECK(stipplefactor > 0, funcname, ECbounds, "stipplefactor needs to be >0");
         er = surfsetstipple(srf, stipplefactor, -1);
         LCHECK(!er, funcname, ECbug, "BUG: error in surfsetstipple");
     }
@@ -1808,8 +1766,7 @@ extern "C" enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface,
         LCHECK(!er, funcname, ECbug, "BUG: error in surfsetstipple");
     }
     if(shininess >= 0) {
-        LCHECK(shininess <= 128, funcname, ECbounds,
-            "shininess cannot exceed 128");
+        LCHECK(shininess <= 128, funcname, ECbounds, "shininess cannot exceed 128");
         er = surfsetshiny(srf, face, shininess);
         LCHECK(!er, funcname, ECbug, "BUG: error in surfsetshiny");
     }
@@ -1824,8 +1781,7 @@ failure:
 /******************************************************************************/
 
 /* smolAddCompartment */
-extern "C" enum ErrorCode smolAddCompartment(
-    simptr sim, const char *compartment)
+extern "C" enum ErrorCode smolAddCompartment(simptr sim, const char *compartment)
 {
     const char *funcname = "smolAddCompartment";
     int         c;
@@ -1856,8 +1812,7 @@ extern "C" int smolGetCompartmentIndex(simptr sim, const char *compartment)
     LCHECK(compartment, funcname, ECmissing, "missing compartment");
     LCHECK(sim->cmptss && sim->cmptss->ncmpt, funcname, ECnonexist,
         "no compartments defined");
-    LCHECK(strcmp(compartment, "all"), funcname, ECall,
-        "compartment cannot be 'all'");
+    LCHECK(strcmp(compartment, "all"), funcname, ECall, "compartment cannot be 'all'");
     c = stringfind(sim->cmptss->cnames, sim->cmptss->ncmpt, compartment);
     LCHECK(c >= 0, funcname, ECnonexist, "compartment not found");
     return c;
@@ -1875,8 +1830,7 @@ extern "C" int smolGetCompartmentIndexNT(simptr sim, const char *compartment)
     LCHECKNT(compartment, funcname, ECmissing, "missing compartment");
     LCHECKNT(sim->cmptss && sim->cmptss->ncmpt, funcname, ECnonexist,
         "no compartments defined");
-    LCHECKNT(strcmp(compartment, "all"), funcname, ECall,
-        "compartment cannot be 'all'");
+    LCHECKNT(strcmp(compartment, "all"), funcname, ECall, "compartment cannot be 'all'");
     c = stringfind(sim->cmptss->cnames, sim->cmptss->ncmpt, compartment);
     LCHECKNT(c >= 0, funcname, ECnonexist, "compartment not found");
     return c;
@@ -1891,8 +1845,7 @@ extern "C" char *smolGetCompartmentName(
     const char *funcname = "smolGetCompartmentName";
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
-    LCHECK(
-        compartmentindex >= 0, funcname, ECbounds, "invalid compartment index");
+    LCHECK(compartmentindex >= 0, funcname, ECbounds, "invalid compartment index");
     LCHECK(compartment, funcname, ECmissing, "missing compartment string");
     LCHECK(sim->cmptss && sim->cmptss->ncmpt, funcname, ECnonexist,
         "no compartments defined");
@@ -1942,8 +1895,8 @@ failure:
 }
 
 /* smolAddCompartmentLogic */
-extern "C" enum ErrorCode smolAddCompartmentLogic(simptr sim,
-    const char *compartment, enum CmptLogic logic, const char *compartment2)
+extern "C" enum ErrorCode smolAddCompartmentLogic(
+    simptr sim, const char *compartment, enum CmptLogic logic, const char *compartment2)
 {
     const char *funcname = "smolAddCompartmentLogic";
     int         c, c2, er;
@@ -1955,8 +1908,7 @@ extern "C" enum ErrorCode smolAddCompartmentLogic(simptr sim,
         "invalid logic operation");
     c2 = smolGetCompartmentIndexNT(sim, compartment2);
     LCHECK(c2 >= 0, funcname, ECerror, "error with compartment2");
-    er = compartaddcmptl(
-        sim->cmptss->cmptlist[c], sim->cmptss->cmptlist[c2], logic);
+    er = compartaddcmptl(sim->cmptss->cmptlist[c], sim->cmptss->cmptlist[c2], logic);
     LCHECK(!er, funcname, ECmemory, "out of memory in compartaddcmpt");
     return ECok;
 failure:
@@ -1986,16 +1938,14 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
     if(reactant1 && reactant1[0] != '\0') {
         rctident[order] = smolGetSpeciesIndexNT(sim, reactant1);
         LCHECK(rctident[order] > 0, funcname, ECsame, NULL);
-        LCHECK(rstate1 >= 0 && rstate1 < MSMAX, funcname, ECbounds,
-            "invalid rstate1");
+        LCHECK(rstate1 >= 0 && rstate1 < MSMAX, funcname, ECbounds, "invalid rstate1");
         rctstate[order] = rstate1;
         order++;
     }
     if(reactant2 && reactant2[0] != '\0') {
         rctident[order] = smolGetSpeciesIndexNT(sim, reactant2);
         LCHECK(rctident[order] > 0, funcname, ECsame, NULL);
-        LCHECK(rstate2 >= 0 && rstate2 < MSMAX, funcname, ECbounds,
-            "invalid rstate2");
+        LCHECK(rstate2 >= 0 && rstate2 < MSMAX, funcname, ECbounds, "invalid rstate2");
         rctstate[order] = rstate2;
         order++;
     }
@@ -2006,12 +1956,12 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
         for(prd = 0; prd < nproduct; prd++) {
             prdident[prd] = smolGetSpeciesIndexNT(sim, productspecies[prd]);
             LCHECK(prdident[prd] > 0, funcname, ECsame, NULL);
-            LCHECK(productstates[prd] >= MSsoln && productstates[prd] < MSMAX,
-                funcname, ECsyntax, "invalid product state");
+            LCHECK(productstates[prd] >= MSsoln && productstates[prd] < MSMAX, funcname,
+                ECsyntax, "invalid product state");
         }
     }
-    rxn = RxnAddReaction(sim, reaction, order, rctident, rctstate, nproduct,
-        prdident, productstates, NULL, NULL);
+    rxn = RxnAddReaction(sim, reaction, order, rctident, rctstate, nproduct, prdident,
+        productstates, NULL, NULL);
     LCHECK(rxn, funcname, ECmemory, "out of memory allocating reaction");
 
     if(rate >= 0) {
@@ -2028,30 +1978,27 @@ failure:
 }
 
 /* smolGetReactionIndex */
-extern "C" int smolGetReactionIndex(
-    simptr sim, int *orderptr, const char *reaction)
+extern "C" int smolGetReactionIndex(simptr sim, int *orderptr, const char *reaction)
 {
     const char *funcname = "smolGetReactionIndex";
     int         order, r;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(reaction, funcname, ECmissing, "missing reaction");
-    LCHECK(
-        strcmp(reaction, "all"), funcname, ECall, "reaction cannot be 'all'");
+    LCHECK(strcmp(reaction, "all"), funcname, ECall, "reaction cannot be 'all'");
     if(orderptr && *orderptr >= 0 && *orderptr < MAXORDER) {
         order = *orderptr;
-        LCHECK(sim->rxnss[order] && sim->rxnss[order]->totrxn, funcname,
-            ECnonexist, "no reactions defined of this order");
-        r = stringfind(
-            sim->rxnss[order]->rname, sim->rxnss[order]->totrxn, reaction);
+        LCHECK(sim->rxnss[order] && sim->rxnss[order]->totrxn, funcname, ECnonexist,
+            "no reactions defined of this order");
+        r = stringfind(sim->rxnss[order]->rname, sim->rxnss[order]->totrxn, reaction);
         LCHECK(r >= 0, funcname, ECnonexist, "reaction not found");
     }
     else {
         r = -1;
         for(order = 0; order < MAXORDER && r < 0; order++)
             if(sim->rxnss[order])
-                r = stringfind(sim->rxnss[order]->rname,
-                    sim->rxnss[order]->totrxn, reaction);
+                r = stringfind(
+                    sim->rxnss[order]->rname, sim->rxnss[order]->totrxn, reaction);
         LCHECK(r >= 0, funcname, ECnonexist, "reaction not found");
         if(orderptr)
             *orderptr = order - 1;
@@ -2062,30 +2009,27 @@ failure:
 }
 
 /* smolGetReactionIndexNT */
-extern "C" int smolGetReactionIndexNT(
-    simptr sim, int *orderptr, const char *reaction)
+extern "C" int smolGetReactionIndexNT(simptr sim, int *orderptr, const char *reaction)
 {
     const char *funcname = "smolGetReactionIndexNT";
     int         order, r;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(reaction, funcname, ECmissing, "missing reaction");
-    LCHECKNT(
-        strcmp(reaction, "all"), funcname, ECall, "reaction cannot be 'all'");
+    LCHECKNT(strcmp(reaction, "all"), funcname, ECall, "reaction cannot be 'all'");
     if(orderptr && *orderptr >= 0 && *orderptr < MAXORDER) {
         order = *orderptr;
-        LCHECKNT(sim->rxnss[order] && sim->rxnss[order]->totrxn, funcname,
-            ECnonexist, "no reactions defined of this order");
-        r = stringfind(
-            sim->rxnss[order]->rname, sim->rxnss[order]->totrxn, reaction);
+        LCHECKNT(sim->rxnss[order] && sim->rxnss[order]->totrxn, funcname, ECnonexist,
+            "no reactions defined of this order");
+        r = stringfind(sim->rxnss[order]->rname, sim->rxnss[order]->totrxn, reaction);
         LCHECKNT(r >= 0, funcname, ECnonexist, "reaction not found");
     }
     else {
         r = -1;
         for(order = 0; order < MAXORDER && r < 0; order++)
             if(sim->rxnss[order])
-                r = stringfind(sim->rxnss[order]->rname,
-                    sim->rxnss[order]->totrxn, reaction);
+                r = stringfind(
+                    sim->rxnss[order]->rname, sim->rxnss[order]->totrxn, reaction);
         LCHECKNT(r >= 0, funcname, ECnonexist, "reaction not found");
         if(orderptr)
             *orderptr = order - 1;
@@ -2102,8 +2046,7 @@ extern "C" char *smolGetReactionName(
     const char *funcname = "smolGetReactionName";
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
-    LCHECK(order >= 0 && order < MAXORDER, funcname, ECbounds,
-        "invalid reaction order");
+    LCHECK(order >= 0 && order < MAXORDER, funcname, ECbounds, "invalid reaction order");
     LCHECK(reactionindex >= 0, funcname, ECbounds, "invalid reaction name");
     LCHECK(reaction, funcname, ECmissing, "missing reaction");
     LCHECK(sim->rxnss[order] && sim->rxnss[order]->totrxn, funcname, ECnonexist,
@@ -2145,8 +2088,8 @@ failure:
 }
 
 /* smolSetReactionRegion */
-extern "C" enum ErrorCode smolSetReactionRegion(simptr sim,
-    const char *reaction, const char *compartment, const char *surface)
+extern "C" enum ErrorCode smolSetReactionRegion(
+    simptr sim, const char *reaction, const char *compartment, const char *surface)
 {
     const char *funcname = "smolSetReactionRegion";
     int         order, r, c, s;
@@ -2180,9 +2123,8 @@ failure:
 }
 
 /* smolSetReactionProducts */
-extern "C" enum ErrorCode smolSetReactionProducts(simptr sim,
-    const char *reaction, enum RevParam method, double parameter,
-    const char *product, double *position)
+extern "C" enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction,
+    enum RevParam method, double parameter, const char *product, double *position)
 {
     const char *funcname = "smolSetReactionProducts";
     int         order, r, done, prd, i, er;
@@ -2208,10 +2150,8 @@ extern "C" enum ErrorCode smolSetReactionProducts(simptr sim,
     }
 
     er = RxnSetRevparam(sim, rxn, method, parameter, prd, position, sim->dim);
-    LCHECK(er != 1, funcname, ECwarning,
-        "reaction product parameter was set before");
-    LCHECK(er != 2, funcname, ECbounds,
-        "reaction product parameter out of bounds");
+    LCHECK(er != 1, funcname, ECwarning, "reaction product parameter was set before");
+    LCHECK(er != 2, funcname, ECbounds, "reaction product parameter out of bounds");
     LCHECK(er != 3, funcname, ECnonexist, "invalid reaction product method");
     LCHECK(er != 4, funcname, ECmissing, "missing product name");
     LCHECK(er != 5, funcname, ECmissing, "missing product position");
@@ -2240,8 +2180,8 @@ extern "C" enum ErrorCode smolAddPort(
         smolClearError();
     else
         LCHECK(s >= 0, funcname, ECsame, NULL);
-    LCHECK(face == PFfront || face == PFback || face == PFnone, funcname,
-        ECsyntax, "invalid face");
+    LCHECK(face == PFfront || face == PFback || face == PFnone, funcname, ECsyntax,
+        "invalid face");
     simport = portaddport(sim, port, sim->srfss->srflist[s], face);
     LCHECK(simport, funcname, ECmemory, "out of memory adding port");
 
@@ -2258,8 +2198,7 @@ extern "C" int smolGetPortIndex(simptr sim, const char *port)
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(port, funcname, ECmissing, "missing port");
-    LCHECK(sim->portss && sim->portss->nport, funcname, ECnonexist,
-        "no ports defined");
+    LCHECK(sim->portss && sim->portss->nport, funcname, ECnonexist, "no ports defined");
     LCHECK(strcmp(port, "all"), funcname, ECall, "port cannot be 'all'");
     p = stringfind(sim->portss->portnames, sim->portss->nport, port);
     LCHECK(p >= 0, funcname, ECnonexist, "port not found");
@@ -2276,8 +2215,7 @@ extern "C" int smolGetPortIndexNT(simptr sim, const char *port)
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(port, funcname, ECmissing, "missing port");
-    LCHECKNT(sim->portss && sim->portss->nport, funcname, ECnonexist,
-        "no ports defined");
+    LCHECKNT(sim->portss && sim->portss->nport, funcname, ECnonexist, "no ports defined");
     LCHECKNT(strcmp(port, "all"), funcname, ECall, "port cannot be 'all'");
     p = stringfind(sim->portss->portnames, sim->portss->nport, port);
     LCHECKNT(p >= 0, funcname, ECnonexist, "port not found");
@@ -2294,10 +2232,8 @@ extern "C" char *smolGetPortName(simptr sim, int portindex, char *port)
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(portindex >= 0, funcname, ECbounds, "invalid port index");
     LCHECK(port, funcname, ECmissing, "missing port string");
-    LCHECK(sim->portss && sim->portss->nport, funcname, ECnonexist,
-        "no ports defined");
-    LCHECK(portindex < sim->portss->nport, funcname, ECnonexist,
-        "port does not exist");
+    LCHECK(sim->portss && sim->portss->nport, funcname, ECnonexist, "no ports defined");
+    LCHECK(portindex < sim->portss->nport, funcname, ECnonexist, "port does not exist");
     strcpy(port, sim->portss->portnames[portindex]);
     return port;
 failure:
@@ -2305,8 +2241,8 @@ failure:
 }
 
 /* smolAddPortMolecules */
-extern "C" enum ErrorCode smolAddPortMolecules(simptr sim, const char *port,
-    int nmolec, const char *species, double **positions)
+extern "C" enum ErrorCode smolAddPortMolecules(
+    simptr sim, const char *port, int nmolec, const char *species, double **positions)
 {
     const char *funcname = "smolAddPortMolecules";
     int         prt, i, er;
@@ -2333,8 +2269,8 @@ failure:
 }
 
 /* smolGetPortMolecules */
-extern "C" int smolGetPortMolecules(simptr sim, const char *port,
-    const char *species, enum MolecState state, int remove)
+extern "C" int smolGetPortMolecules(
+    simptr sim, const char *port, const char *species, enum MolecState state, int remove)
 {
     const char *funcname = "smolGetPortMolecules";
     int         prt, i, num;
@@ -2375,11 +2311,9 @@ extern "C" enum ErrorCode smolAddLattice(simptr sim, const char *lattice,
     simlattice = NULL;
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(lattice, funcname, ECmissing, "missing lattice");
-    p = stringfind(
-        sim->latticess->latticenames, sim->latticess->nlattice, lattice);
+    p = stringfind(sim->latticess->latticenames, sim->latticess->nlattice, lattice);
     LCHECK(p < 0, funcname, ECsame, "lattice name already exists");
-    er = latticeaddlattice(
-        sim, &simlattice, lattice, min, max, dx, btype, LATTICEnsv);
+    er = latticeaddlattice(sim, &simlattice, lattice, min, max, dx, btype, LATTICEnsv);
     LCHECK(er == 0, funcname, ECerror, "error adding lattice");
     LCHECK(simlattice, funcname, ECmemory, "out of memory adding lattice");
     return ECok;
@@ -2398,8 +2332,7 @@ extern "C" int smolGetLatticeIndex(simptr sim, const char *lattice)
     LCHECK(sim->latticess && sim->latticess->nlattice, funcname, ECnonexist,
         "no lattices defined");
     LCHECK(strcmp(lattice, "all"), funcname, ECall, "lattice cannot be 'all'");
-    p = stringfind(
-        sim->latticess->latticenames, sim->latticess->nlattice, lattice);
+    p = stringfind(sim->latticess->latticenames, sim->latticess->nlattice, lattice);
     LCHECK(p >= 0, funcname, ECnonexist, "lattice not found");
     return p;
 failure:
@@ -2416,10 +2349,8 @@ extern "C" int smolGetLatticeIndexNT(simptr sim, const char *lattice)
     LCHECKNT(lattice, funcname, ECmissing, "missing lattice");
     LCHECKNT(sim->latticess && sim->latticess->nlattice, funcname, ECnonexist,
         "no lattices defined");
-    LCHECKNT(
-        strcmp(lattice, "all"), funcname, ECall, "lattice cannot be 'all'");
-    p = stringfind(
-        sim->latticess->latticenames, sim->latticess->nlattice, lattice);
+    LCHECKNT(strcmp(lattice, "all"), funcname, ECall, "lattice cannot be 'all'");
+    p = stringfind(sim->latticess->latticenames, sim->latticess->nlattice, lattice);
     LCHECKNT(p >= 0, funcname, ECnonexist, "lattice not found");
     return p;
 failure:
@@ -2445,9 +2376,8 @@ failure:
 }
 
 /* smolAddLatticeMolecules */
-extern "C" enum ErrorCode smolAddLatticeMolecules(simptr sim,
-    const char *lattice, const char *species, int number, double *lowposition,
-    double *highposition)
+extern "C" enum ErrorCode smolAddLatticeMolecules(simptr sim, const char *lattice,
+    const char *species, int number, double *lowposition, double *highposition)
 {
     const char *funcname = "smolAddLatticeMolecules";
     int         er, i, lat;

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -12,11 +13,11 @@ using namespace std;
 #include "Smoldyn.h"
 
 // Global variables.
-// simptr_uptr_type_ pSim_ = simptr_uptr_type_(nullptr, smolFreeSim);
-
 // Keep all simptrs in a vector. A user can use them for different
 // configurations.
+// vector<simptr_uptr_type_> simptrs_;
 vector<simptr> simptrs_;
+
 // This is the current simptr in use.
 simptr cursim_;
 
@@ -26,6 +27,28 @@ vector<double> highbounds_;
 bool           debug_       = false;
 double         curtime_     = 0.0;
 bool           initDisplay_ = false;
+
+bool addToSimptrVec(simptr ptr)
+{
+    auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
+    if(p != simptrs_.end()) {
+        simptrs_.push_back(ptr);
+        return true;
+    }
+    return false;
+}
+
+
+bool deleteSimptr(simptr ptr)
+{
+    auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
+    if(p != simptrs_.end()) {
+        simptrs_.erase(p);
+        simfree(ptr);
+        return true;
+    }
+    return false;
+}
 
 size_t getDim()
 {

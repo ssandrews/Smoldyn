@@ -177,8 +177,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readonly("bngss", &simstruct::bngss, " bionetget superstructure")
         .def_readonly("filss", &simstruct::filss, " filament superstructure")
         .def_readonly("cmds", &simstruct::cmds, " command superstructure")
-        .def_readonly("graphss", &simstruct::graphss, " graphics superstructure")
-        ;
+        .def_readonly("graphss", &simstruct::graphss, " graphics superstructure");
 
     /*******************
      *  Miscellaneous  *
@@ -199,17 +198,45 @@ PYBIND11_MODULE(_smoldyn, m)
         [](int dim, vector<double> &lowbounds, vector<double> &highbounds) {
             auto sim = smolNewSim(dim, &lowbounds[0], &highbounds[0]);
             simptrs_.push_back(sim);
-            return sim;
+            return simptrs_.back();
         },
         py::return_value_policy::reference);
 
     // make a simptr current working simptr. The simptr must be initialized
-    // properly. 
+    // properly.
     // FIXME: Tests are not exhaustive.
-    m.def("setCurSimStruct", [](simstruct* const ptr) {  cursim_ = ptr; }, "change current simstruct");
-    m.def("getCurSimStruct", []() { return cursim_;}, "Get current sim struct");
+    m.def(
+        "setCurSimStruct", [](simstruct *const ptr) { cursim_ = ptr; },
+        "change current simstruct");
+    m.def(
+        "getCurSimStruct",
+        []() {
+            if(!cursim_) {
+                py::print(
+                    "Warn: Simultion config (simptr) is not initialize yet."
+                    " Did you set the `dim` and `boundary`?");
+            }
+            return cursim_;
+        },
+        "Get current sim struct");
 
-    m.def("updateSim", [](void) { return smolUpdateSim(cursim_); });
+    m.def("updateSim", [](void) {
+        if(!cursim_) {
+            py::print(
+                "Warn: Simulation is not initialized yet. Did you set `boundaries` and "
+                "`dim`?");
+            return ECwarning;
+        }
+        return smolUpdateSim(cursim_);
+    });
+    m.def(
+        "clearAllSimStructs",
+        []() {
+            for(auto v : simptrs_) deleteSimptr(v);
+            simptrs_.clear();
+            deleteSimptr(cursim_);
+        },
+        "Clear all simptrs (excluding the one in use)");
     m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_); });
     m.def("runSim", [](void) { return smolRunSim(cursim_); });
     m.def("runSimUntil",
@@ -229,7 +256,7 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
     });
     m.def("loadSimFromFile", [](const string &filepath, const char *flags) -> ErrorCode {
-        auto   p    = splitPath(filepath);
+        auto p = splitPath(filepath);
         return smolLoadSimFromFile(p.first.c_str(), p.second.c_str(), &cursim_, flags);
     });
     m.def("readConfigString", [](const char *statement, char *params) -> ErrorCode {
@@ -465,7 +492,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species,
     //     enum MolecState state, double size, double *color);
     m.def("setMoleculeStyle",
-        [](const char *species, MolecState state, double size, char* color) {
+        [](const char *species, MolecState state, double size, char *color) {
             auto rgba = color2RGBA(color);
             return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
         });
@@ -831,4 +858,5 @@ PYBIND11_MODULE(_smoldyn, m)
 
     /* attributes */
     m.attr("__version__") = VERSION;  // Version is set by CMAKE
+
 }
