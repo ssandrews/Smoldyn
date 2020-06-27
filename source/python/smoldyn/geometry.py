@@ -23,11 +23,11 @@ class Compartment:
 class Boundaries:
     low: List[float]
     high: List[float]
-    types: List[str]
+    types: List[str] = ['r']
     dim: field(init=False) = 0
 
     def __post_init__(self):
-        assert len(self.low) == len(self.high), "Size mismatch"
+        assert len(self.low) == len(self.high), "Size mismatch."
         if len(self.types) == 1:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)

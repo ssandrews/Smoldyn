@@ -11,12 +11,9 @@ else()
     set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 endif()
 
-<<<<<<< HEAD
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 
-=======
->>>>>>> pybind11
 pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
 
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
@@ -28,15 +25,16 @@ set_target_properties(_smoldyn PROPERTIES
     SUFFIX ".so"
     LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
 
-add_dependencies(_smoldyn smoldyn_static)
-
-target_link_libraries(_smoldyn PRIVATE smoldyn_static)
-
-add_custom_command(TARGET _smoldyn POST_BUILD
+add_custom_target(copy_python_tree 
   COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/source/python/smoldyn ${PY_SMOLDYN_OUTDIR}/smoldyn
   COMMENT "Copying python source tree to binary directory"
   VERBATIM)
+
+add_dependencies(_smoldyn smoldyn_static copy_python_tree)
+
+target_link_libraries(_smoldyn PRIVATE smoldyn_static)
+
 
 # copy setup.py.in to setup.py
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
