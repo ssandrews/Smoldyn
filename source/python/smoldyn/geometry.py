@@ -23,7 +23,7 @@ class Compartment:
 class Boundaries:
     low: List[float]
     high: List[float]
-    types: List[str] = ['r']
+    types: List[str] = field(default_factory=lambda: ['r'])
     dim: field(init=False) = 0
 
     def __post_init__(self):
