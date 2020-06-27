@@ -394,8 +394,7 @@ extern "C" simptr smolPrepareSimFromFile(
 #ifdef OPTION_VCELL
     er = simInitAndLoad(filepath, filename, &sim, flags, new SimpleValueProviderFactory(),
         new SimpleMesh());
-#else
-    er = simInitAndLoad(filepath, filename, &sim, flags);
+#else er = simInitAndLoad(filepath, filename, &sim, flags);
 #endif
     LCHECK(!er, funcname, ECerror, "Failed to initialize and load simulation");
     er = simUpdateAndDisplay(sim);

@@ -11,9 +11,12 @@ else()
     set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 endif()
 
+<<<<<<< HEAD
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 
+=======
+>>>>>>> pybind11
 pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
 
 target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})

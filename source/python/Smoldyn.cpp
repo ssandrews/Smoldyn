@@ -4,7 +4,10 @@
 
 #include <iostream>
 #include <vector>
+<<<<<<< HEAD
 #include <algorithm>
+=======
+>>>>>>> pybind11
 
 using namespace std;
 
@@ -13,11 +16,19 @@ using namespace std;
 #include "Smoldyn.h"
 
 // Global variables.
+<<<<<<< HEAD
 // Keep all simptrs in a vector. A user can use them for different
 // configurations.
 // vector<simptr_uptr_type_> simptrs_;
 vector<simptr> simptrs_;
 
+=======
+// simptr_uptr_type_ pSim_ = simptr_uptr_type_(nullptr, smolFreeSim);
+
+// Keep all simptrs in a vector. A user can use them for different
+// configurations.
+vector<simptr> simptrs_;
+>>>>>>> pybind11
 // This is the current simptr in use.
 simptr cursim_;
 
@@ -28,6 +39,7 @@ bool           debug_       = false;
 double         curtime_     = 0.0;
 bool           initDisplay_ = false;
 
+<<<<<<< HEAD
 bool addToSimptrVec(simptr ptr)
 {
     auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
@@ -50,6 +62,8 @@ bool deleteSimptr(simptr ptr)
     return false;
 }
 
+=======
+>>>>>>> pybind11
 size_t getDim()
 {
     return dim_;

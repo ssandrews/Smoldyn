@@ -232,7 +232,8 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def(
         "clearAllSimStructs",
         []() {
-            for(auto v : simptrs_) deleteSimptr(v);
+            for(auto v : simptrs_)
+                deleteSimptr(v);
             simptrs_.clear();
             deleteSimptr(cursim_);
         },
@@ -858,5 +859,4 @@ PYBIND11_MODULE(_smoldyn, m)
 
     /* attributes */
     m.attr("__version__") = VERSION;  // Version is set by CMAKE
-
 }
