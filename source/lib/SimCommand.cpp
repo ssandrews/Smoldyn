@@ -1,10 +1,13 @@
 /*
  * Steven Andrews, 1/10/04.
- * Dilawar Singh, 2020-05-10
  * Library for runtime command interpreter used for various simulations.
  * Same as SimCommand.c but uses variadic templates to avoid va_ family of
  * macros.
  *
+ * Modifications:
+ *  Dilawar Singh, 2020-05-10
+ *  - Converted to C++17 file.
+ *  - Added couple of functions to collect numerical data during simulation.
  */
 
 #include <limits.h>
@@ -47,7 +50,7 @@ std::vector<std::vector<double>> &getData()
 void scmdcatfname(cmdssptr cmds, int fid, char *str)
 {
     char *dot;
-    int   min;
+    int min;
 
     strncpy(str, cmds->root, STRCHAR);
     strncat(str, cmds->froot, STRCHAR - strlen(str));
@@ -176,8 +179,8 @@ cmdssptr scmdssalloc(
 void scmdssfree(cmdssptr cmds)
 {
     cmdptr cmd;
-    void * voidptr;
-    int    fid;
+    void *voidptr;
+    int fid;
 
     if(!cmds)
         return;
@@ -359,8 +362,8 @@ int scmdaddcommand(cmdssptr cmds, char ch, double tmin, double tmax, double dt, 
 int scmdstr2cmd(cmdssptr cmds, char *line2, double tmin, double tmax, double dt,
     char **varnames, double *varvalues, int nvar)
 {
-    int    itct, i1;
-    char   ch;
+    int itct, i1;
+    char ch;
     cmdptr cmd;
 
     if(!cmds)
@@ -510,7 +513,7 @@ int scmdstr2cmd(cmdssptr cmds, char *line2, double tmin, double tmax, double dt,
 void scmdpop(cmdssptr cmds, double t)
 {
     cmdptr cmd;
-    void * voidptr;
+    void *voidptr;
 
     if(!cmds || !cmds->cmd)
         return;
@@ -527,9 +530,9 @@ enum CMDcode scmdexecute(
     cmdssptr cmds, double time, double simdt, Q_LONGLONG iter, int donow)
 {
     enum CMDcode code1, code2;
-    cmdptr       cmd;
-    double       dt;
-    void *       voidptr;
+    cmdptr cmd;
+    double dt;
+    void *voidptr;
 
     if(!cmds)
         return CMDok;
@@ -619,12 +622,12 @@ enum CMDcode scmdcmdtype(cmdssptr cmds, cmdptr cmd)
 int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter, enum CMDcode type,
     int equalok, double *timeptr, Q_LONGLONG *iterptr)
 {
-    double       tbest, t, dt;
-    int          i, ans, done;
-    Q_LONGLONG   dti, it, itbest;
-    cmdptr       cmd;
+    double tbest, t, dt;
+    int i, ans, done;
+    Q_LONGLONG dti, it, itbest;
+    cmdptr cmd;
     enum CMDcode cmdtype;
-    void *       voidptr;
+    void *voidptr;
 
     if(!cmds)
         return 0;
@@ -695,11 +698,11 @@ int scmdnextcmdtime(cmdssptr cmds, double time, Q_LONGLONG iter, enum CMDcode ty
 /* scmdoutput */
 void scmdoutput(cmdssptr cmds)
 {
-    int    fid, i;
-    queue  cmdq;
+    int fid, i;
+    queue cmdq;
     cmdptr cmd;
-    void * voidptr;
-    char   string[STRCHAR], string2[STRCHAR];
+    void *voidptr;
+    char string[STRCHAR], string2[STRCHAR];
 
     SCMDPRINTF(2, "RUNTIME COMMAND INTERPRETER\n");
     if(!cmds) {
@@ -773,10 +776,10 @@ void scmdoutput(cmdssptr cmds)
 /* scmdwritecommands */
 void scmdwritecommands(cmdssptr cmds, FILE *fptr, char *filename)
 {
-    int    i, fid;
+    int i, fid;
     cmdptr cmd;
-    void * voidptr;
-    char   string2[STRCHAR];
+    void *voidptr;
+    char string2[STRCHAR];
 
     fprintf(fptr, "# Command parameters\n");
     if(strlen(cmds->froot))
@@ -864,7 +867,7 @@ int scmdsetfroot(cmdssptr cmds, const char *root)
 /* scmdsetfnames */
 int scmdsetfnames(cmdssptr cmds, char *str, int append)
 {
-    int    fid, itct, n, newmaxfile, *newfsuffix, *newfappend;
+    int fid, itct, n, newmaxfile, *newfsuffix, *newfappend;
     char **newfname;
     FILE **newfptr;
 
@@ -953,8 +956,8 @@ int scmdsetfsuffix(cmdssptr cmds, const char *fname, int i)
 /* scmdopenfiles */
 int scmdopenfiles(cmdssptr cmds, int overwrite)
 {
-    int   fid;
-    char  str1[STRCHAR], str2[STRCHAR];
+    int fid;
+    char str1[STRCHAR], str2[STRCHAR];
     FILE *fptr;
 
     if(!cmds)
@@ -1001,7 +1004,7 @@ int scmdopenfiles(cmdssptr cmds, int overwrite)
 /* scmdoverwrite */
 FILE *scmdoverwrite(cmdssptr cmds, char *line2)
 {
-    int         itct, fid;
+    int itct, fid;
     static char fname[STRCHAR], str1[STRCHAR];
 
     if(!line2)
@@ -1023,7 +1026,7 @@ FILE *scmdoverwrite(cmdssptr cmds, char *line2)
 /* scmdincfile */
 FILE *scmdincfile(cmdssptr cmds, char *line2)
 {
-    int         itct, fid;
+    int itct, fid;
     static char fname[STRCHAR], str1[STRCHAR];
 
     if(!line2)
@@ -1049,7 +1052,7 @@ FILE *scmdincfile(cmdssptr cmds, char *line2)
 /* scmdgetfptr */
 FILE *scmdgetfptr(cmdssptr cmds, char *line2)
 {
-    int         itct, fid;
+    int itct, fid;
     static char fname[STRCHAR];
 
     if(!line2)
@@ -1068,7 +1071,6 @@ FILE *scmdgetfptr(cmdssptr cmds, char *line2)
         return NULL;
     return cmds->fptr[fid];
 }
-
 
 /* scmdflush */
 void scmdflush(FILE *fptr)

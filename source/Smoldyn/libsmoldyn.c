@@ -35,12 +35,12 @@
     else                         \
         (void)0
 
-enum ErrorCode Liberrorcode              = ECok;
-enum ErrorCode Libwarncode               = ECok;
-char           Liberrorfunction[STRCHAR] = "";
-char           Liberrorstring[STRCHAR]   = "";
-int            Libdebugmode              = 1;
-int            LibThrowThreshold         = 11;
+enum ErrorCode Liberrorcode    = ECok;
+enum ErrorCode Libwarncode     = ECok;
+char Liberrorfunction[STRCHAR] = "";
+char Liberrorstring[STRCHAR]   = "";
+int Libdebugmode               = 1;
+int LibThrowThreshold          = 11;
 
 /******************************************************************************/
 /******************************* Miscellaneous ********************************/
@@ -203,8 +203,8 @@ extern "C" char *smolErrorCodeToString(enum ErrorCode erc, char *string)
 extern "C" simptr smolNewSim(int dim, double *lowbounds, double *highbounds)
 {
     const char *funcname = "smolNewSim";
-    simptr      sim;
-    int         d, er;
+    simptr sim;
+    int d, er;
 
     sim = NULL;
     LCHECK(dim > 0, funcname, ECbounds, "dim must be >0");
@@ -237,7 +237,7 @@ failure:
 extern "C" enum ErrorCode smolUpdateSim(simptr sim)
 {
     const char *funcname = "smolUpdateSim";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     er = simupdate(sim);
@@ -251,7 +251,7 @@ failure:
 extern "C" enum ErrorCode smolRunTimeStep(simptr sim)
 {
     const char *funcname = "smolRunTimeStep";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     simsettime(sim, sim->time + sim->dt / 2, 4);
@@ -285,7 +285,7 @@ failure:
 extern "C" enum ErrorCode smolRunSim(simptr sim)
 {
     const char *funcname = "smolRunSim";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     if(sim->graphss && sim->graphss->graphics > 0)
@@ -323,7 +323,7 @@ failure:
 extern "C" enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)
 {
     const char *funcname = "smolRunSimUntil";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     simsettime(sim, breaktime, 4);
@@ -379,9 +379,9 @@ extern "C" simptr smolPrepareSimFromFile(
     const char *filepath, const char *filename, const char *flags)
 {
     const char *funcname = "smolPrepareSimFromFile";
-    int         er;
-    char        emptystring[STRCHAR];
-    simptr      sim;
+    int er;
+    char emptystring[STRCHAR];
+    simptr sim;
 
     sim = NULL;
     LCHECK(filename, funcname, ECmissing, "missing filename");
@@ -394,7 +394,8 @@ extern "C" simptr smolPrepareSimFromFile(
 #ifdef OPTION_VCELL
     er = simInitAndLoad(filepath, filename, &sim, flags, new SimpleValueProviderFactory(),
         new SimpleMesh());
-#else er = simInitAndLoad(filepath, filename, &sim, flags);
+#else
+    er = simInitAndLoad(filepath, filename, &sim, flags);
 #endif
     LCHECK(!er, funcname, ECerror, "Failed to initialize and load simulation");
     er = simUpdateAndDisplay(sim);
@@ -410,9 +411,9 @@ extern "C" enum ErrorCode smolLoadSimFromFile(
     const char *filepath, const char *filename, simptr *simpointer, const char *flags)
 {
     const char *funcname = "smolLoadSimFromFile";
-    int         er;
-    char        emptystring[STRCHAR];
-    simptr      sim;
+    int er;
+    char emptystring[STRCHAR];
+    simptr sim;
 
     LCHECK(filename, funcname, ECmissing, "missing filename");
     LCHECK(simpointer, funcname, ECmissing, "missing simpointer");
@@ -546,7 +547,7 @@ failure:
 extern "C" enum ErrorCode smolSetPartitions(simptr sim, const char *method, double value)
 {
     const char *funcname = "smolSetPartitions";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(method, funcname, ECmissing, "missing method string");
@@ -568,7 +569,7 @@ extern "C" enum ErrorCode smolSetGraphicsParams(
     simptr sim, const char *method, int timesteps, int delay)
 {
     const char *funcname = "smolSetGraphicsParams";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     er = graphicsenablegraphics(sim, method);
@@ -597,8 +598,8 @@ extern "C" enum ErrorCode smolSetTiffParams(
     simptr sim, int timesteps, const char *tiffname, int lowcount, int highcount)
 {
     const char *funcname = "smolSetTiffParams";
-    char        nm1[STRCHAR];
-    int         er;
+    char nm1[STRCHAR];
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     if(timesteps > 0) {
@@ -628,7 +629,7 @@ extern "C" enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double 
     double *diffuse, double *specular, double *position)
 {
     const char *funcname = "smolSetLightParams";
-    int         c, er;
+    int c, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(lightindex >= -1 && lightindex < MAXLIGHTS, funcname, ECbounds,
@@ -671,7 +672,7 @@ failure:
 extern "C" enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color)
 {
     const char *funcname = "smolSetBackgroundStyle";
-    int         c, er;
+    int c, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     if(color) {
@@ -690,7 +691,7 @@ failure:
 extern "C" enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double *color)
 {
     const char *funcname = "smolSetFrameStyle";
-    int         c, er;
+    int c, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     if(thickness >= 0) {
@@ -713,7 +714,7 @@ failure:
 extern "C" enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double *color)
 {
     const char *funcname = "smolSetGridStyle";
-    int         c, er;
+    int c, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     if(thickness >= 0) {
@@ -736,7 +737,7 @@ failure:
 extern "C" enum ErrorCode smolSetTextStyle(simptr sim, double *color)
 {
     const char *funcname = "smolSetTextStyle";
-    int         c, er;
+    int c, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     if(color) {
@@ -755,7 +756,7 @@ failure:
 extern "C" enum ErrorCode smolAddTextDisplay(simptr sim, char *item)
 {
     const char *funcname = "smolAddTextDisplay";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     er = graphicssettextitem(sim, item);
@@ -775,7 +776,7 @@ failure:
 extern "C" enum ErrorCode smolSetOutputPath(simptr sim, const char *path)
 {
     const char *funcname = "smolSetOutputPath";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(path, funcname, ECmissing, "missing path");
@@ -791,7 +792,7 @@ extern "C" enum ErrorCode smolAddOutputFile(
     simptr sim, char *filename, int suffix, int append)
 {
     const char *funcname = "smolSetOutputFile";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(filename, funcname, ECmissing, "missing filename");
@@ -814,7 +815,7 @@ extern "C" enum ErrorCode smolAddCommand(simptr sim, char type, double on, doubl
     double step, double multiplier, const char *commandstring)
 {
     const char *funcname = "smolSetCommand";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     er = scmdaddcommand(sim->cmds, type, sim->tmin, sim->tmax, sim->dt, on, off, step,
@@ -834,7 +835,7 @@ failure:
 extern "C" enum ErrorCode smolAddCommandFromString(simptr sim, char *string)
 {
     const char *funcname = "smolSetCommandFromString";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(string, funcname, ECmissing, "missing string");
@@ -861,7 +862,7 @@ extern "C" enum ErrorCode smolAddSpecies(
     simptr sim, const char *species, const char *mollist)
 {
     const char *funcname = "smolAddSpecies";
-    int         i, ll;
+    int i, ll;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(species, funcname, ECmissing, "missing species");
@@ -892,7 +893,7 @@ failure:
 extern "C" int smolGetSpeciesIndex(simptr sim, const char *species)
 {
     const char *funcname = "smolGetSpeciesIndex";
-    int         i;
+    int i;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(species, funcname, ECmissing, "missing species name");
@@ -917,7 +918,7 @@ failure:
 extern "C" int smolGetSpeciesIndexNT(simptr sim, const char *species)
 {
     const char *funcname = "smolGetSpeciesIndexNT";
-    int         i;
+    int i;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(species, funcname, ECmissing, "missing species name");
@@ -960,7 +961,7 @@ extern "C" enum ErrorCode smolSetSpeciesMobility(simptr sim, const char *species
     enum MolecState state, double difc, double *drift, double *difmatrix)
 {
     const char *funcname = "smolSetSpeciesMobility";
-    int         i, er, isall, ilow, ihigh;
+    int i, er, isall, ilow, ihigh;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(sim->mols, funcname, ECnonexist, "no species defined");
@@ -1009,7 +1010,7 @@ failure:
 extern "C" enum ErrorCode smolAddMolList(simptr sim, const char *mollist)
 {
     const char *funcname = "smolAddMolList";
-    int         ll;
+    int ll;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(mollist, funcname, ECmissing, "missing mollist");
@@ -1026,7 +1027,7 @@ failure:
 extern "C" int smolGetMolListIndex(simptr sim, const char *mollist)
 {
     const char *funcname = "smolGetMolListIndex";
-    int         ll;
+    int ll;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(mollist, funcname, ECmissing, "missing mollist");
@@ -1043,7 +1044,7 @@ failure:
 extern "C" int smolGetMolListIndexNT(simptr sim, const char *mollist)
 {
     const char *funcname = "smolGetMolListIndexNT";
-    int         ll;
+    int ll;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(mollist, funcname, ECmissing, "missing mollist");
@@ -1078,7 +1079,7 @@ extern "C" enum ErrorCode smolSetMolList(
     simptr sim, const char *species, enum MolecState state, const char *mollist)
 {
     const char *funcname = "smolSetMolList";
-    int         i, ll;
+    int i, ll;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     i = smolGetSpeciesIndexNT(sim, species);
@@ -1104,7 +1105,7 @@ failure:
 extern "C" enum ErrorCode smolSetMaxMolecules(simptr sim, int maxmolecules)
 {
     const char *funcname = "smolSetMaxMolecules";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(maxmolecules > 0, funcname, ECbounds, "maxmolecules needs to be > 0");
@@ -1120,8 +1121,8 @@ extern "C" enum ErrorCode smolAddSolutionMolecules(simptr sim, const char *speci
     int number, double *lowposition, double *highposition)
 {
     const char *funcname = "smolAddSolutionMolecules";
-    int         er, i, d;
-    double *    low, *high, lowpos[3], highpos[3];
+    int er, i, d;
+    double *low, *high, lowpos[3], highpos[3];
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     i = smolGetSpeciesIndexNT(sim, species);
@@ -1154,7 +1155,7 @@ extern "C" enum ErrorCode smolAddCompartmentMolecules(
     simptr sim, const char *species, int number, const char *compartment)
 {
     const char *funcname = "smolAddCompartmentMolecules";
-    int         i, er, c;
+    int i, er, c;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     i = smolGetSpeciesIndexNT(sim, species);
@@ -1176,8 +1177,8 @@ extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim, const char *specie
     const char *panel, double *position)
 {
     const char *funcname = "smolAddSurfaceMolecules";
-    int         i, s, p, er;
-    panelptr    pnl;
+    int i, s, p, er;
+    panelptr pnl;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     i = smolGetSpeciesIndexNT(sim, species);
@@ -1227,7 +1228,7 @@ extern "C" int smolGetMoleculeCount(
     simptr sim, const char *species, enum MolecState state)
 {
     const char *funcname = "smolGetMoleculeCount";
-    int         i;
+    int i;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     i = smolGetSpeciesIndexNT(sim, species);
@@ -1247,7 +1248,7 @@ extern "C" enum ErrorCode smolSetMoleculeStyle(
     simptr sim, const char *species, enum MolecState state, double size, double *color)
 {
     const char *funcname = "smolSetTextStyle";
-    int         i, c;
+    int i, c;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     i = smolGetSpeciesIndexNT(sim, species);
@@ -1283,7 +1284,7 @@ extern "C" enum ErrorCode smolSetBoundaryType(
     simptr sim, int dimension, int highside, char type)
 {
     const char *funcname = "smolSetBoundaryType";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(dimension < sim->dim, funcname, ECbounds,
@@ -1302,8 +1303,8 @@ failure:
 extern "C" enum ErrorCode smolAddSurface(simptr sim, const char *surface)
 {
     const char *funcname = "smolAddSurface";
-    int         s;
-    surfaceptr  srf;
+    int s;
+    surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1324,7 +1325,7 @@ failure:
 extern "C" int smolGetSurfaceIndex(simptr sim, const char *surface)
 {
     const char *funcname = "smolGetSurfaceIndex";
-    int         s;
+    int s;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(surface, funcname, ECmissing, "missing surface");
@@ -1341,7 +1342,7 @@ failure:
 extern "C" int smolGetSurfaceIndexNT(simptr sim, const char *surface)
 {
     const char *funcname = "smolGetSurfaceIndexNT";
-    int         s;
+    int s;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(surface, funcname, ECmissing, "missing surface");
@@ -1377,8 +1378,8 @@ extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
     enum SrfAction action)
 {
     const char *funcname = "smolSetSurfaceAction";
-    int         er, i, s;
-    surfaceptr  srf;
+    int er, i, s;
+    surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1423,8 +1424,8 @@ extern "C" enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,
     enum MolecState state2, double rate, const char *newspecies, int isinternal)
 {
     const char *funcname = "smolSetSurfaceRate";
-    int         er, i, i2, s;
-    surfaceptr  srf;
+    int er, i, i2, s;
+    surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1481,8 +1482,8 @@ extern "C" enum ErrorCode smolAddPanel(simptr sim, const char *surface,
     enum PanelShape panelshape, const char *panel, const char *axisstring, double *params)
 {
     const char *funcname = "smolAddPanel";
-    int         er, s;
-    surfaceptr  srf;
+    int er, s;
+    surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1515,9 +1516,9 @@ failure:
 extern "C" int smolGetPanelIndex(
     simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel)
 {
-    const char *    funcname = "smolGetPanelIndex";
-    surfaceptr      srf;
-    int             p, s;
+    const char *funcname = "smolGetPanelIndex";
+    surfaceptr srf;
+    int p, s;
     enum PanelShape ps;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
@@ -1541,9 +1542,9 @@ failure:
 extern "C" int smolGetPanelIndexNT(
     simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel)
 {
-    const char *    funcname = "smolGetPanelIndexNT";
-    surfaceptr      srf;
-    int             p, s;
+    const char *funcname = "smolGetPanelIndexNT";
+    surfaceptr srf;
+    int p, s;
     enum PanelShape ps;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
@@ -1568,8 +1569,8 @@ extern "C" char *smolGetPanelName(simptr sim, const char *surface,
     enum PanelShape panelshape, int panelindex, char *panel)
 {
     const char *funcname = "smolGetPanelName";
-    surfaceptr  srf;
-    int         s;
+    surfaceptr srf;
+    int s;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1592,11 +1593,11 @@ extern "C" enum ErrorCode smolSetPanelJump(simptr sim, const char *surface,
     const char *panel1, enum PanelFace face1, const char *panel2, enum PanelFace face2,
     int isbidirectional)
 {
-    const char *    funcname = "smolSetPanelJump";
-    int             s, p1, p2, er;
-    surfaceptr      srf;
+    const char *funcname = "smolSetPanelJump";
+    int s, p1, p2, er;
+    surfaceptr srf;
     enum PanelShape ps1, ps2;
-    panelptr        pnl1, pnl2;
+    panelptr pnl1, pnl2;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1631,8 +1632,8 @@ extern "C" enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim, const char 
     enum PanelFace face, const char *species, double emitamount, double *emitposition)
 {
     const char *funcname = "smolAddSurfaceUnboundedEmitter";
-    int         s, i, er;
-    surfaceptr  srf;
+    int s, i, er;
+    surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1656,7 +1657,7 @@ extern "C" enum ErrorCode smolSetSurfaceSimParams(
     simptr sim, const char *parameter, double value)
 {
     const char *funcname = "smolSetSurfaceSimParams";
-    int         er;
+    int er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(parameter, funcname, ECmissing, "missing parameter name");
@@ -1687,9 +1688,9 @@ failure:
 extern "C" enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
     const char *panel1, const char *surface2, const char *panel2, int reciprocal)
 {
-    const char *    funcname = "smolAddPanelNeighbor";
-    int             s1, s2, p1, p2, er;
-    panelptr        pnl1, pnl2;
+    const char *funcname = "smolAddPanelNeighbor";
+    int s1, s2, p1, p2, er;
+    panelptr pnl1, pnl2;
     enum PanelShape ps1, ps2;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
@@ -1724,8 +1725,8 @@ extern "C" enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface,
     int stipplefactor, int stipplepattern, double shininess)
 {
     const char *funcname = "smolSetSurfaceFaceStyle";
-    int         s, c, er;
-    surfaceptr  srf;
+    int s, c, er;
+    surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1783,8 +1784,8 @@ failure:
 extern "C" enum ErrorCode smolAddCompartment(simptr sim, const char *compartment)
 {
     const char *funcname = "smolAddCompartment";
-    int         c;
-    compartptr  cmpt;
+    int c;
+    compartptr cmpt;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     c = smolGetCompartmentIndexNT(sim, compartment);
@@ -1805,7 +1806,7 @@ failure:
 extern "C" int smolGetCompartmentIndex(simptr sim, const char *compartment)
 {
     const char *funcname = "smolGetCompartmentIndex";
-    int         c;
+    int c;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(compartment, funcname, ECmissing, "missing compartment");
@@ -1823,7 +1824,7 @@ failure:
 extern "C" int smolGetCompartmentIndexNT(simptr sim, const char *compartment)
 {
     const char *funcname = "smolGetCompartmentIndexNT";
-    int         c;
+    int c;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(compartment, funcname, ECmissing, "missing compartment");
@@ -1861,7 +1862,7 @@ extern "C" enum ErrorCode smolAddCompartmentSurface(
     simptr sim, const char *compartment, const char *surface)
 {
     const char *funcname = "smolAddCompartmentSurface";
-    int         c, s, er;
+    int c, s, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     c = smolGetCompartmentIndexNT(sim, compartment);
@@ -1880,7 +1881,7 @@ extern "C" enum ErrorCode smolAddCompartmentPoint(
     simptr sim, const char *compartment, double *point)
 {
     const char *funcname = "smolAddCompartmentPoint";
-    int         c, er;
+    int c, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     c = smolGetCompartmentIndexNT(sim, compartment);
@@ -1898,7 +1899,7 @@ extern "C" enum ErrorCode smolAddCompartmentLogic(
     simptr sim, const char *compartment, enum CmptLogic logic, const char *compartment2)
 {
     const char *funcname = "smolAddCompartmentLogic";
-    int         c, c2, er;
+    int c, c2, er;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     c = smolGetCompartmentIndexNT(sim, compartment);
@@ -1924,9 +1925,9 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
     enum MolecState rstate2, int nproduct, const char **productspecies,
     enum MolecState *productstates, double rate)
 {
-    const char *    funcname = "smolAddReaction";
-    rxnptr          rxn;
-    int             order, prd, rctident[MAXORDER], prdident[MAXPRODUCT], er;
+    const char *funcname = "smolAddReaction";
+    rxnptr rxn;
+    int order, prd, rctident[MAXORDER], prdident[MAXPRODUCT], er;
     enum MolecState rctstate[MAXORDER];
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
@@ -1980,7 +1981,7 @@ failure:
 extern "C" int smolGetReactionIndex(simptr sim, int *orderptr, const char *reaction)
 {
     const char *funcname = "smolGetReactionIndex";
-    int         order, r;
+    int order, r;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(reaction, funcname, ECmissing, "missing reaction");
@@ -2011,7 +2012,7 @@ failure:
 extern "C" int smolGetReactionIndexNT(simptr sim, int *orderptr, const char *reaction)
 {
     const char *funcname = "smolGetReactionIndexNT";
-    int         order, r;
+    int order, r;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(reaction, funcname, ECmissing, "missing reaction");
@@ -2063,8 +2064,8 @@ extern "C" enum ErrorCode smolSetReactionRate(
     simptr sim, const char *reaction, double rate, int isinternal)
 {
     const char *funcname = "smolSetReactionRate";
-    int         r, er, order;
-    rxnptr      rxn;
+    int r, er, order;
+    rxnptr rxn;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     order = -1;
@@ -2091,8 +2092,8 @@ extern "C" enum ErrorCode smolSetReactionRegion(
     simptr sim, const char *reaction, const char *compartment, const char *surface)
 {
     const char *funcname = "smolSetReactionRegion";
-    int         order, r, c, s;
-    rxnptr      rxn;
+    int order, r, c, s;
+    rxnptr rxn;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     order = -1;
@@ -2126,8 +2127,8 @@ extern "C" enum ErrorCode smolSetReactionProducts(simptr sim, const char *reacti
     enum RevParam method, double parameter, const char *product, double *position)
 {
     const char *funcname = "smolSetReactionProducts";
-    int         order, r, done, prd, i, er;
-    rxnptr      rxn;
+    int order, r, done, prd, i, er;
+    rxnptr rxn;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     order = -1;
@@ -2169,8 +2170,8 @@ extern "C" enum ErrorCode smolAddPort(
     simptr sim, const char *port, const char *surface, enum PanelFace face)
 {
     const char *funcname = "smolAddPort";
-    int         s;
-    portptr     simport;
+    int s;
+    portptr simport;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(port, funcname, ECmissing, "missing port");
@@ -2193,7 +2194,7 @@ failure:
 extern "C" int smolGetPortIndex(simptr sim, const char *port)
 {
     const char *funcname = "smolGetPortIndex";
-    int         p;
+    int p;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(port, funcname, ECmissing, "missing port");
@@ -2210,7 +2211,7 @@ failure:
 extern "C" int smolGetPortIndexNT(simptr sim, const char *port)
 {
     const char *funcname = "smolGetPortIndexNT";
-    int         p;
+    int p;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(port, funcname, ECmissing, "missing port");
@@ -2244,8 +2245,8 @@ extern "C" enum ErrorCode smolAddPortMolecules(
     simptr sim, const char *port, int nmolec, const char *species, double **positions)
 {
     const char *funcname = "smolAddPortMolecules";
-    int         prt, i, er;
-    portptr     simport;
+    int prt, i, er;
+    portptr simport;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     prt = smolGetPortIndexNT(sim, port);
@@ -2272,8 +2273,8 @@ extern "C" int smolGetPortMolecules(
     simptr sim, const char *port, const char *species, enum MolecState state, int remove)
 {
     const char *funcname = "smolGetPortMolecules";
-    int         prt, i, num;
-    portptr     simport;
+    int prt, i, num;
+    portptr simport;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     prt = smolGetPortIndexNT(sim, port);
@@ -2305,8 +2306,8 @@ extern "C" enum ErrorCode smolAddLattice(simptr sim, const char *lattice,
     const double *min, const double *max, const double *dx, const char *btype)
 {
     const char *funcname = "smolAddLattice";
-    int         er, p;
-    latticeptr  simlattice;
+    int er, p;
+    latticeptr simlattice;
     simlattice = NULL;
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(lattice, funcname, ECmissing, "missing lattice");
@@ -2324,7 +2325,7 @@ failure:
 extern "C" int smolGetLatticeIndex(simptr sim, const char *lattice)
 {
     const char *funcname = "smolGetLatticeIndex";
-    int         p;
+    int p;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     LCHECK(lattice, funcname, ECmissing, "missing lattice");
@@ -2342,7 +2343,7 @@ failure:
 extern "C" int smolGetLatticeIndexNT(simptr sim, const char *lattice)
 {
     const char *funcname = "smolGetLatticeIndexNT";
-    int         p;
+    int p;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     LCHECKNT(lattice, funcname, ECmissing, "missing lattice");
@@ -2379,9 +2380,9 @@ extern "C" enum ErrorCode smolAddLatticeMolecules(simptr sim, const char *lattic
     const char *species, int number, double *lowposition, double *highposition)
 {
     const char *funcname = "smolAddLatticeMolecules";
-    int         er, i, lat;
-    double *    low, *high;
-    latticeptr  simlattice;
+    int er, i, lat;
+    double *low, *high;
+    latticeptr simlattice;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     lat = smolGetLatticeIndexNT(sim, lattice);
@@ -2413,9 +2414,9 @@ extern "C" enum ErrorCode smolAddLatticePort(
     simptr sim, const char *lattice, const char *port)
 {
     const char *funcname = "smolAddLatticePort";
-    int         prt, lat;
-    latticeptr  simlattice;
-    portptr     simport;
+    int prt, lat;
+    latticeptr simlattice;
+    portptr simport;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     lat = smolGetLatticeIndexNT(sim, lattice);
@@ -2435,8 +2436,8 @@ extern "C" enum ErrorCode smolAddLatticeSpecies(
     simptr sim, const char *lattice, const char *species)
 {
     const char *funcname = "smolAddLatticeSpecies";
-    int         er, i, lat;
-    latticeptr  simlattice;
+    int er, i, lat;
+    latticeptr simlattice;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     lat = smolGetLatticeIndexNT(sim, lattice);
@@ -2456,9 +2457,9 @@ extern "C" enum ErrorCode smolAddLatticeReaction(
     simptr sim, const char *lattice, const char *reaction, const int move)
 {
     const char *funcname = "smolAddLatticeReaction";
-    int         er, lat, r, order;
-    latticeptr  simlattice;
-    rxnptr      rxn;
+    int er, lat, r, order;
+    latticeptr simlattice;
+    rxnptr rxn;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     lat = smolGetLatticeIndexNT(sim, lattice);

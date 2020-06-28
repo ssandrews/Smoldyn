@@ -6,9 +6,9 @@ AlignEscapedNewlinesLeft: true
 AlignTrailingComments: true
 AlignAfterOpenBracket: false
 AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
+AlignConsecutiveDeclarations: false
 AlignEscapedNewlines: true
-AllowAllParametersOfDeclarationOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
@@ -21,12 +21,9 @@ BinPackParameters: true
 ColumnLimit: 90
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 DerivePointerBinding: true
-ExperimentalAutoDetectBinPacking: false
 IndentCaseLabels: true
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
-ObjCSpaceBeforeProtocolList: false
-PenaltyBreakBeforeFirstCallParameter: 1
 PenaltyBreakComment: 60
 PenaltyBreakString: 1000
 PenaltyBreakFirstLessLess: 120

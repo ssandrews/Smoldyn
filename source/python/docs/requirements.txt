@@ -1,4 +1,5 @@
 sphinx
 sphinxcontrib-napoleon
 sphinxcontrib-mermaid
+sphinx-autodoc-typehints
 # sphinxcontrib-plantuml

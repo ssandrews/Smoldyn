@@ -35,12 +35,12 @@ using std::stringstream;
 /******************************************************************************/
 
 void (*LoggingCallback)(simptr, int, const char *, ...) = NULL;
-int   ThrowThreshold                                    = 11;
+int ThrowThreshold                                      = 11;
 FILE *LogFile                                           = NULL;
-char  ErrorString[STRCHARLONG]                          = "";
-int   ErrorType                                         = 0;
-char  SimFlags[STRCHAR]                                 = "";
-int   VCellDefined                                      = 0;
+char ErrorString[STRCHARLONG]                           = "";
+int ErrorType                                           = 0;
+char SimFlags[STRCHAR]                                  = "";
+int VCellDefined                                        = 0;
 
 /******************************************************************************/
 /***************************** Simulation structure ***************************/
@@ -87,10 +87,10 @@ void simSetThrowing(int corethreshold)
 /* simLog */
 void simLog(simptr sim, int importance, const char *format, ...)
 {
-    char    message[STRCHARLONG], *flags;
+    char message[STRCHARLONG], *flags;
     va_list arguments;
-    int     qflag, vflag, wflag;
-    FILE *  fptr;
+    int qflag, vflag, wflag;
+    FILE *fptr;
 
     va_start(arguments, format);
     vsprintf(message, format, arguments);
@@ -255,8 +255,8 @@ void Simsetrandseed(simptr sim, long int randseed)
 /* simalloc */
 simptr simalloc(const char *fileroot)
 {
-    simptr         sim;
-    int            order;
+    simptr sim;
+    int order;
     enum EventType et;
 
     sim = NULL;
@@ -371,9 +371,9 @@ void simfuncfree(void)
 /* sim_expandvariables */
 int simexpandvariables(simptr sim, int spaces)
 {
-    char ** newvarnames;
+    char **newvarnames;
     double *newvarvalues;
-    int     newmaxvar, i, newnvar;
+    int newmaxvar, i, newnvar;
 
     newmaxvar   = sim->maxvar + spaces;
     newvarnames = (char **)calloc(newmaxvar, sizeof(char *));
@@ -494,7 +494,7 @@ void writesim(simptr sim, FILE *fptr)
 /* checksimparams */
 int checksimparams(simptr sim)
 {
-    int  warn, error, warndiff;
+    int warn, error, warndiff;
     char string[STRCHAR];
 
     simLog(sim, 2, "PARAMETER CHECK\n");
@@ -594,7 +594,7 @@ int simsetdim(simptr sim, int dim)
 /* simsettime */
 int simsettime(simptr sim, double time, int code)
 {
-    int        er;
+    int er;
     static int timedefined = 0;
 
     if(code == -1)
@@ -642,26 +642,26 @@ int simreadstring(simptr sim, ParseFilePtr pfp, const char *word, char *line2)
     char nm[STRCHAR], nm1[STRCHAR], shapenm[STRCHAR], ch, rname[STRCHAR], fname[STRCHAR],
         pattern[STRCHAR];
     char errstr[STRCHARLONG];
-    int  er, i, nmol, d, i1, s, c, ll, order, *index;
-    int  rulelist[MAXORDER + MAXPRODUCT], r, ord, rct, prd, itct, prt, lt, f, detailsi[8];
-    long int        pserno, sernolist[MAXPRODUCT];
-    double          flt1, flt2, v1[DIMMAX * DIMMAX], v2[4], poslo[DIMMAX], poshi[DIMMAX];
+    int er, i, nmol, d, i1, s, c, ll, order, *index;
+    int rulelist[MAXORDER + MAXPRODUCT], r, ord, rct, prd, itct, prt, lt, f, detailsi[8];
+    long int pserno, sernolist[MAXPRODUCT];
+    double flt1, flt2, v1[DIMMAX * DIMMAX], v2[4], poslo[DIMMAX], poshi[DIMMAX];
     enum MolecState ms, rctstate[MAXORDER];
     enum PanelShape ps;
-    enum RevParam   rpart;
+    enum RevParam rpart;
     enum LightParam ltparam;
     enum SpeciesRepresentation replist[MAXORDER + MAXPRODUCT];
-    rxnptr                     rxn;
-    compartptr                 cmpt;
-    surfaceptr                 srf;
-    portptr                    port;
-    filamentptr                fil;
-    long int                   li1;
-    listptrli                  lilist;
-    listptrv                   vlist;
+    rxnptr rxn;
+    compartptr cmpt;
+    surfaceptr srf;
+    portptr port;
+    filamentptr fil;
+    long int li1;
+    listptrli lilist;
+    listptrv vlist;
 
-    int     dim, nvar;
-    char ** varnames;
+    int dim, nvar;
+    char **varnames;
     double *varvalues;
 
     dim       = sim->dim;
@@ -2512,8 +2512,8 @@ int loadJMS(simptr sim, ParseFilePtr *pfpptr, char *line2, char *erstr);
 /* loadsim */
 int loadsim(simptr sim, const char *fileroot, const char *filename, const char *flags)
 {
-    int          done, pfpcode, er;
-    char         word[STRCHAR], *line2, errstring[STRCHARLONG];
+    int done, pfpcode, er;
+    char word[STRCHAR], *line2, errstring[STRCHARLONG];
     ParseFilePtr pfp;
 
     strncpy(sim->filepath, fileroot, STRCHAR);
@@ -2614,7 +2614,7 @@ failure:  // failure
 /* simupdate */
 int simupdate(simptr sim)
 {
-    int        er;
+    int er;
     static int recurs = 0;
 
     if(sim->condition == SCok) {
@@ -2735,7 +2735,7 @@ int simInitAndLoad(const char *fileroot, const char *filename, simptr *smptr,
 {
 
     simptr sim;
-    int    er, qflag;
+    int er, qflag;
 
     sim = *smptr;
     if(!sim) {
@@ -2842,7 +2842,7 @@ failure:
 /* simdocommands */
 int simdocommands(simptr sim)
 {
-    int          er;
+    int er;
     enum CMDcode ccode;
 
     ccode = scmdexecute(sim->cmds, sim->time, sim->dt, -1, 0);
@@ -2860,9 +2860,9 @@ int simdocommands(simptr sim)
 /* debugcode */
 void debugcode(simptr sim, const char *prefix)
 {
-    int         m;
+    int m;
     moleculeptr mptr;
-    char        string[STRCHAR];
+    char string[STRCHAR];
 
     if(sim->time < 189.243 || sim->time > 189.247)
         return;

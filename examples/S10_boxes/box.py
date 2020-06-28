@@ -22,10 +22,8 @@ r = sm.Reaction(subs=[c], prds=(a,b), kf=0.1, kb=100)
 
 M = sm.StateMonitor([a, b, c], 'molcount')
 
-## time_start 0
-## time_stop 100
-## time_step 0.01
-# TODO
 model.run(100, dt=0.01)
-print('Getting data...')
-print(model.data())
+
+# Now getting data and printing line.
+for row in model.data():
+    print(row)

@@ -15,20 +15,41 @@ from smoldyn.config import __logger__
 @dataclass
 class NullSpecies:
     name: str = ""
-    state: str = _smoldyn.MolecState.__members__["all"]
-
+    state = _smoldyn.MolecState.__members__["all"]
 
 class Species:
-    def __init__(self, name, state='soln', color="", difc=0.0, size=1.0, mol_list=""):
+    """
+    Class to handle chemical species.
+    """
+
+    def __init__(self, name, state='soln', color="black", difc=0.0, size=1.0, mol_list=""):
+        """__init__.
+
+        Parameters
+        ----------
+        name : str
+            name of the species.
+        state : str
+            state of the species. One of the following: 
+                soln, front, back, up, down, bsoln, all, none, some
+        color : str or tuple of float (r, g, b), optional
+            color of the species (default 'black')
+        difc : float, optional
+            diffusion coefficient (default 0.0, unit: μM^2/s)
+        size : float, optional
+            size of the molecule (default 1.0, unit: ).
+        mol_list : str, optional
+            molecule list (default '')
+        """
         self.name: str = name
         assert self.name
 
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule: {k}"
 
-        if 'state' not in _smoldyn.MolecState.__members__:
-            raise NameError(f"{state} is not a valid MolecState."
-                    f" Available states are: {_smoldyn.MolecState.__members__.keys()}")
+        if state not in _smoldyn.MolecState.__members__:
+            raise NameError(f"{state} is not a valid MolecState. Available "
+                    "states are:{', '.join(_smoldyn.MolecState.__members__.keys())}")
 
         self.state = _smoldyn.MolecState.__members__[state]
 
@@ -48,8 +69,7 @@ class Species:
         return f"<Molecule: {self.name}, difc={self.difc}, state={self.state}>"
 
     def setStyle(self):
-        k = _smoldyn.setMoleculeStyle(self.name, self.state, self.size,
-                                      self.color)
+        k = _smoldyn.setMoleculeStyle(self.name, self.state, self.size, self.color)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}, {k}"
 
     @property
@@ -93,6 +113,12 @@ class Species:
     def size(self, size: float):
         self._size = size
         self.setStyle()
+
+    def addToSolution(self, mol:float, highpos:List[float]=[], lowpos:List[float]=[]):
+        assert self.state == _smoldyn.MolecState.soln, ( "You can't use this "
+            f"function on a Species with type {self.state}" )
+        k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
 
 class HalfReaction:

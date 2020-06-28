@@ -29,6 +29,7 @@ author = 'Steven S Andrews, Dilawar Singh'
 # ones.
 extensions = [
         'sphinx.ext.autodoc',
+        'sphinx_autodoc_typehints',
         'sphinx.ext.autosummary',
         'sphinx.ext.napoleon'
         ]

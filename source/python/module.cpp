@@ -40,7 +40,7 @@ extern vector<vector<double>> &getData();
 /* ----------------------------------------------------------------------------*/
 int init_and_run(const string &filepath, const string &flags)
 {
-    int  er = 0, wflag = 0;
+    int er = 0, wflag = 0;
     auto p = splitPath(filepath);
 
 #ifdef OPTION_VCELL
@@ -452,12 +452,19 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolAddSolutionMolecules(simptr sim, const char *species,
     //     int number, double *lowposition, double *highposition);
-    m.def("addSolutionMolecules",
+    m.def(
+        "addSolutionMolecules",
         [](const char *species, int number, vector<double> &lowposition,
             vector<double> &highposition) {
             return smolAddSolutionMolecules(
                 cursim_, species, number, &lowposition[0], &highposition[0]);
-        });
+        },
+        "Adds number solution state molecules of species species to the system. They are "
+        "randomly distributed within the box that has its opposite corners defined by "
+        "`lowposition` and `highposition`. Any or all of these coordinates can equal "
+        "each other to place the molecules along a plane or at a point. Enter "
+        "`lowposition` and/or `highposition` as `[]` or `None` to indicate that the "
+        "respective corner is equal to that corner of the entire system volume.");
 
     // enum ErrorCode smolAddCompartmentMolecules(
     //     simptr sim, const char *species, int number, const char
@@ -660,14 +667,14 @@ PYBIND11_MODULE(_smoldyn, m)
     //         *reactant2, enum MolecState rstate2, int nproduct, const char
     //         **productspecies, enum MolecState *productstates, double rate);
     m.def("addReaction",
-        [](const char *         reaction,           // Name of the reaction.
-            const char *        reactant1,          // First reactant
-            MolecState          rstate1,            // First reactant state
-            const char *        reactant2,          // Second reactant.
-            MolecState          rstate2,            // second reactant state.
-            vector<string> &    productSpeciesStr,  // product species.
-            vector<MolecState> &productStates,      // product state.
-            double              rate                // rate
+        [](const char *reaction,                // Name of the reaction.
+            const char *reactant1,              // First reactant
+            MolecState rstate1,                 // First reactant state
+            const char *reactant2,              // Second reactant.
+            MolecState rstate2,                 // second reactant state.
+            vector<string> &productSpeciesStr,  // product species.
+            vector<MolecState> &productStates,  // product state.
+            double rate                         // rate
         ) {
             // NOTE: Can't use vector<const char*> in the function argument.
             // We'll runinto wchar_t vs char* issue from python2/python3
