@@ -78,11 +78,10 @@ int strhasname(const char *string, const char *name)
     while(*string) {
         for(i = 0; i < len && *string == name[i]; i++)
             string++;
-        if(i == len &&
-            (*string == '\0' || !(isalnum(*string) || *string == '_')))
+        if(i == len && (*string == '\0' || !(isalnum(*string) || *string == '_')))
             return 1;
-        while(*string && (*string != name[0] || isalnum(*(string - 1)) ||
-                             *(string - 1) == '_'))
+        while(*string &&
+              (*string != name[0] || isalnum(*(string - 1)) || *(string - 1) == '_'))
             string++;
     }
     return 0;
@@ -98,8 +97,7 @@ int strbegin(const char *strshort, const char *strlong, int casesensitive)
         while(strshort[i] != '\0' && strshort[i] == strlong[i])
             i++;
     else
-        while(
-            strshort[i] != '\0' && tolower(strshort[i]) == tolower(strlong[i]))
+        while(strshort[i] != '\0' && tolower(strshort[i]) == tolower(strlong[i]))
             i++;
     if(strshort[i] == '\0' && i > 0)
         return 1;
@@ -371,8 +369,7 @@ int strparenmatch(const char *string, int index)
     i     = index + dir;
     count = 0;
     for(;;) {
-        while(
-            i >= 0 && string[i] != '\0' && string[i] != ch1 && string[i] != ch2)
+        while(i >= 0 && string[i] != '\0' && string[i] != ch1 && string[i] != ch2)
             i += dir;
         if(i < 0 || string[i] == '\0')
             return -2;
@@ -1010,22 +1007,18 @@ int strwildcardmatch(const char *pat, const char *str)
 }  // more pattern, so no match
 
 /* strwildcardmatchandsub */
-int strwildcardmatchandsub(
-    const char *pat, const char *str, char *dest, int starextra)
+int strwildcardmatchandsub(const char *pat, const char *str, char *dest, int starextra)
 {
-    int s, p, s1, p1, starpt, isub, nsub, isubstar, match, blen, d, brend,
-        starxc;
+    int  s, p, s1, p1, starpt, isub, nsub, isubstar, match, blen, d, brend, starxc;
     int  maxsub = 16;
     char subst[16][STRCHAR], patst[16][STRCHAR];
 
-    p1 = s1 = -1;  // p1 and s1 are pat and str indicies following star text
-    p = s  = 0;    // p and s are current pat and str indicies
-    starpt = 0;    // starpt is star start location in str
-    isub   = 0;    // isub is current substitution string index
-    isubstar =
-        0;  // isubstar is substitution string index for most recent open star
-    starxc =
-        0;  // starxc is extra characters that were included in first star text
+    p1 = s1 = -1;    // p1 and s1 are pat and str indicies following star text
+    p = s    = 0;    // p and s are current pat and str indicies
+    starpt   = 0;    // starpt is star start location in str
+    isub     = 0;    // isub is current substitution string index
+    isubstar = 0;    // isubstar is substitution string index for most recent open star
+    starxc   = 0;    // starxc is extra characters that were included in first star text
     while(str[s]) {  // walk through pat and str, determining if match and
                      // recording pattern and substitution strings
         if(pat[p] == '*') {
@@ -1075,8 +1068,8 @@ int strwildcardmatchandsub(
             brend = strchrindex(pat, ']', p);
             if(brend == -1)
                 return -7;
-            blen = brend - p -
-                   1;  // length of text within brackets not including brackets
+            blen =
+                brend - p - 1;  // length of text within brackets not including brackets
             match = strcharlistmatch(pat + p + 1, str[s], blen);
             if(match) {
                 if(isub == maxsub)
@@ -1132,8 +1125,7 @@ int strwildcardmatchandsub(
         strcpy(patst[isubstar], "**");
         p1 = -1;
     }
-    while(
-        pat[p] == '*') {  // any additional stars in pat represent no characters
+    while(pat[p] == '*') {  // any additional stars in pat represent no characters
         if(isub == maxsub)
             return -6;
         subst[isub][0] = '\0';
@@ -1148,13 +1140,13 @@ int strwildcardmatchandsub(
     // At this point, have returned 0 if no match; continuing if match.  Have
     // nsub substitutions, recorded in substr and subpat
     //	for(isub=0;isub<nsub;isub++) {									// debug
-    //code 		printf("%i: pat='%s' subst='%s'\n",isub,patst[isub],subst[isub]); }
+    // code 		printf("%i: pat='%s' subst='%s'\n",isub,patst[isub],subst[isub]); }
 
     if(dest) {  // perform substitutions
         for(d = 0; dest[d] != '\0'; d++) {
             if(dest[d] == '*') {
-                for(isub = 0; isub < nsub && (patst[isub][0] == 'x' ||
-                                                 strcmp(patst[isub], "**"));
+                for(isub = 0;
+                    isub < nsub && (patst[isub][0] == 'x' || strcmp(patst[isub], "**"));
                     isub++)
                     ;
                 if(isub == nsub)
@@ -1163,8 +1155,8 @@ int strwildcardmatchandsub(
                 strMidCat(dest, d, d + 1, subst[isub], 0, -1);
             }
             else if(dest[d] == '?') {
-                for(isub = 0; isub < nsub && (patst[isub][0] == 'x' ||
-                                                 strcmp(patst[isub], "??"));
+                for(isub = 0;
+                    isub < nsub && (patst[isub][0] == 'x' || strcmp(patst[isub], "??"));
                     isub++)
                     ;
                 if(isub == nsub)
@@ -1177,9 +1169,9 @@ int strwildcardmatchandsub(
                 if(brend == -1)
                     return -8;
                 blen = brend - d - 1;
-                for(isub = 0; isub < nsub &&
-                              (patst[isub][0] == 'x' ||
-                                  strncmp(patst[isub] + 1, dest + d, blen + 2));
+                for(isub = 0;
+                    isub < nsub && (patst[isub][0] == 'x' ||
+                                       strncmp(patst[isub] + 1, dest + d, blen + 2));
                     isub++)
                     ;
                 if(isub == nsub)
@@ -1312,8 +1304,7 @@ int strexpandlogic(const char *pat, int start, int stop, char ***resultsptr)
     if(stop == start)
         return 0;  // empty pattern
 
-    isym = start + strChrBrackets(
-                       pat + start, stop - start, ' ', "{");  // word separator
+    isym = start + strChrBrackets(pat + start, stop - start, ' ', "{");  // word separator
     if(isym >= start) {  // space operator found at i2
         if(isym == start || isym == stop - 1)
             return -2;  // missing space operand
@@ -1332,8 +1323,7 @@ int strexpandlogic(const char *pat, int start, int stop, char ***resultsptr)
             for(ir = 0; ir < rnum; ir++) {
                 ires          = il * rnum + ir;
                 results[ires] = (char *)calloc(
-                    strlen(llist[il]) + 1 + strlen(rlist[ir]) + 1,
-                    sizeof(char));
+                    strlen(llist[il]) + 1 + strlen(rlist[ir]) + 1, sizeof(char));
                 if(!results[ires])
                     return -1;
                 strcpy(results[ires], llist[il]);
@@ -1350,8 +1340,7 @@ int strexpandlogic(const char *pat, int start, int stop, char ***resultsptr)
         return lnum * rnum;
     }
 
-    isym = start +
-           strChrBrackets(pat + start, stop - start, '|', "{");  // OR operator
+    isym = start + strChrBrackets(pat + start, stop - start, '|', "{");  // OR operator
     if(isym >= start) {     // OR operator found at i2
         if(isym > start) {  // left operand
             lnum = strexpandlogic(pat, start, isym, &llist);
@@ -1398,8 +1387,7 @@ int strexpandlogic(const char *pat, int start, int stop, char ***resultsptr)
         return lnum + rnum;
     }
 
-    isym = start +
-           strChrBrackets(pat + start, stop - start, '&', "{");  // AND operator
+    isym = start + strChrBrackets(pat + start, stop - start, '&', "{");  // AND operator
     if(isym >= start) {  // AND operator found at i2
         if(isym == start || isym == stop - 1)
             return -3;  // missing AND operand
@@ -1444,8 +1432,7 @@ int strexpandlogic(const char *pat, int start, int stop, char ***resultsptr)
         return 2 * lnum * rnum;
     }
 
-    isym =
-        start + strChrBrackets(pat + start, stop - start, '{', "");  // braces
+    isym = start + strChrBrackets(pat + start, stop - start, '{', "");  // braces
     if(isym >= start) {
         i2 = strparenmatch(pat, isym);
         if(i2 < 0)
@@ -1471,8 +1458,7 @@ int strexpandlogic(const char *pat, int start, int stop, char ***resultsptr)
             for(ir = 0; ir < rnum; ir++) {
                 ires          = il * rnum + ir;
                 results[ires] = (char *)calloc(
-                    isym + strlen(llist[il]) + strlen(rlist[ir]) + 1,
-                    sizeof(char));
+                    isym + strlen(llist[il]) + strlen(rlist[ir]) + 1, sizeof(char));
                 if(!results[ires])
                     return -1;
                 strncpy(results[ires], pat + start, isym - start);
@@ -1625,8 +1611,7 @@ int strEnhWildcardMatchAndSub(
             if(strwildcardmatch(patlist[iresults], str)) {
                 strncpy(dest, destlist ? destlist[0] : "", STRCHAR - 1);
                 dest[STRCHAR - 1] = '\0';
-                ismatch           = strwildcardmatchandsub(
-                    patlist[iresults], str, dest, starextra);
+                ismatch = strwildcardmatchandsub(patlist[iresults], str, dest, starextra);
                 if(ismatch)
                     starextra++;  // starextra looks for multiple matches when
                                   // there are 2 stars
@@ -1669,8 +1654,7 @@ int strEnhWildcardMatchAndSub(
             if(strwildcardmatch(patlist[iresults], str)) {
                 strncpy(dest, destlist[iresults], STRCHAR - 1);
                 dest[STRCHAR - 1] = '\0';
-                ismatch           = strwildcardmatchandsub(
-                    patlist[iresults], str, dest, starextra);
+                ismatch = strwildcardmatchandsub(patlist[iresults], str, dest, starextra);
                 if(ismatch)
                     starextra++;  // starextra looks for multiple matches when
                                   // there are 2 stars
@@ -1757,8 +1741,8 @@ int strloadmathfunctions(void)
 }
 
 /* strevalfunction */
-double strevalfunction(char *expression, char *parameters, void *voidptr,
-    void *funcptr, char **varnames, const double *varvalues, int nvar)
+double strevalfunction(char *expression, char *parameters, void *voidptr, void *funcptr,
+    char **varnames, const double *varvalues, int nvar)
 {
     static int    maxfunc = 0, nfunc = 0;
     static char **funclist = NULL, **paramlist = NULL;
@@ -1884,8 +1868,7 @@ failure:
 }
 
 /* strmatheval */
-double strmatheval(
-    char *expression, char **varnames, const double *varvalues, int nvar)
+double strmatheval(char *expression, char **varnames, const double *varvalues, int nvar)
 {
     static int unarysymbol = 0;
     int        length, i1, i2;
@@ -1923,13 +1906,11 @@ double strmatheval(
         expression[length - 1] = '\0';
         *ptr                   = '\0';
         ptr++;
-        answer = strevalfunction(
-            expression, ptr, NULL, NULL, varnames, varvalues, nvar);
+        answer = strevalfunction(expression, ptr, NULL, NULL, varnames, varvalues, nvar);
         CHECK(answer >= 0 || answer < 0);
     }
 
-    else if((i1 = strPbrkBrackets(expression, length - 1, "+-", "([{", 1)) >
-                0 &&
+    else if((i1 = strPbrkBrackets(expression, length - 1, "+-", "([{", 1)) > 0 &&
             !strchr("^*/", expression[i1 - 1]) &&
             !(strchr("Ee", expression[i1 - 1]) && i1 > 1 &&
                 strchr("0123456789", expression[i1 - 2]))) {  // binary + -
@@ -1937,19 +1918,16 @@ double strmatheval(
         ptr         = expression + i1;
         ptrchar     = *ptr;
         *ptr        = '\0';
-        answer =
-            strmatheval(expression, varnames, varvalues, nvar);  // first term
-        *ptr = ptrchar;
-        while((i2 = strPbrkBrackets(
-                   ptr + 1, strlen(ptr + 1) - 1, "+-", "([{", 1)) > 0 &&
+        answer      = strmatheval(expression, varnames, varvalues, nvar);  // first term
+        *ptr        = ptrchar;
+        while((i2 = strPbrkBrackets(ptr + 1, strlen(ptr + 1) - 1, "+-", "([{", 1)) > 0 &&
               !strchr("^*/", ptr[i2]) &&
               !(strchr("Ee", ptr[i2]) && strchr("0123456789", ptr[i2 - 1]))) {
             ptr2     = ptr + 1 + i2;
             ptr2char = *ptr2;
             *ptr2    = '\0';
-            term     = strmatheval(
-                ptr + 1, varnames, varvalues, nvar);  // middle terms
-            *ptr2 = ptr2char;
+            term     = strmatheval(ptr + 1, varnames, varvalues, nvar);  // middle terms
+            *ptr2    = ptr2char;
             if(ptrchar == '+')
                 answer = answer + term;
             else
@@ -1970,17 +1948,14 @@ double strmatheval(
         ptr         = expression + i1;
         ptrchar     = *ptr;
         *ptr        = '\0';
-        answer =
-            strmatheval(expression, varnames, varvalues, nvar);  // first term
-        *ptr = ptrchar;
-        while((i2 = strPbrkBrackets(
-                   ptr + 1, strlen(ptr + 1) - 1, "*/%", "([{", 1)) > 0) {
+        answer      = strmatheval(expression, varnames, varvalues, nvar);  // first term
+        *ptr        = ptrchar;
+        while((i2 = strPbrkBrackets(ptr + 1, strlen(ptr + 1) - 1, "*/%", "([{", 1)) > 0) {
             ptr2     = ptr + 1 + i2;
             ptr2char = *ptr2;
             *ptr2    = '\0';
-            term     = strmatheval(
-                ptr + 1, varnames, varvalues, nvar);  // middle terms
-            *ptr2 = ptr2char;
+            term     = strmatheval(ptr + 1, varnames, varvalues, nvar);  // middle terms
+            *ptr2    = ptr2char;
             if(ptrchar == '*')
                 answer = answer * term;
             else if(ptrchar == '/') {
@@ -1989,8 +1964,7 @@ double strmatheval(
             }
             else {
                 CHECKS(term > 0.5, "illegal modulo value");
-                answer =
-                    (double)((long int)(answer + 0.5) % (long int)(term + 0.5));
+                answer = (double)((long int)(answer + 0.5) % (long int)(term + 0.5));
             }
             ptr     = ptr2;
             ptrchar = ptr2char;
@@ -2004,8 +1978,7 @@ double strmatheval(
         }
         else {
             CHECKS(term > 0.5, "illegal modulo value");
-            answer =
-                (double)((long int)(answer + 0.5) % (long int)(term + 0.5));
+            answer = (double)((long int)(answer + 0.5) % (long int)(term + 0.5));
         }
     }
 
@@ -2017,7 +1990,8 @@ double strmatheval(
     }
 
     else if((i1 = strPbrkBrackets(expression, length - 1, "^", "([{", 1)) >
-            0) {  // binary ^
+            0) {  // binary
+                  // ^
         unarysymbol = 0;
         ptr         = expression + i1;
         ptrchar     = *ptr;
@@ -2045,8 +2019,7 @@ failure:
 }
 
 /* strmathevalint */
-int strmathevalint(
-    char *expression, char **varnames, const double *varvalues, int nvar)
+int strmathevalint(char *expression, char **varnames, const double *varvalues, int nvar)
 {
     double value;
 
@@ -2098,8 +2071,7 @@ int strmathsscanf(const char *str, const char *format, char **varnames,
             CHECKS(0, "BUG: illegal string formatting argument");
 
         word    = strwhichword(fmtpos1, fmtpos2);
-        strpos2 = strnwordc(
-            strpos1, word);  // position in string with math for parsing
+        strpos2 = strnwordc(strpos1, word);  // position in string with math for parsing
         if(!strpos2)
             break;
 
@@ -2111,16 +2083,14 @@ int strmathsscanf(const char *str, const char *format, char **varnames,
             if(strmatherror(NULL, 0))
                 break;
             strcat(newformat, "%i ");
-            snprintf(newstr + strlen(newstr), STRCHAR - strlen(newstr), "%i ",
-                valueint);
+            snprintf(newstr + strlen(newstr), STRCHAR - strlen(newstr), "%i ", valueint);
         }
         else {
             value = strmatheval(expression, varnames, varvalues, nvar);
             if(strmatherror(NULL, 0))
                 break;
             strcat(newformat, "%lg ");
-            snprintf(newstr + strlen(newstr), STRCHAR - strlen(newstr),
-                "%.17g ", value);
+            snprintf(newstr + strlen(newstr), STRCHAR - strlen(newstr), "%.17g ", value);
         }
 
         fmtpos1 = strnwordc(fmtpos2, 2);

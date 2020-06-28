@@ -8,13 +8,16 @@ Description:
 """
 
 import smoldyn as S
-print(f"[INFO] Using smoldyn from {S.__file__}")
 
+# declare boundaries first. 
 b = S.Boundaries(low=[0,0,0], high=[100,100,100])
-print(b)
+
+# Now declare a model with this boundary. After this statement the
+# configuration will be initialized.
 m = S.Model(bounds=b)
+
+# set the seed.
 S.setSeed(0)
 
-assert S.getSeed() == 10
-assert S.getDim() == 3
+red = S.Species('red', color='red')
 

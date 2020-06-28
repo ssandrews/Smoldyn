@@ -19,12 +19,16 @@ class NullSpecies:
 
 
 class Species:
-    def __init__(self, name, state, color="", difc=0.0, size=1.0, mol_list=""):
+    def __init__(self, name, state='soln', color="", difc=0.0, size=1.0, mol_list=""):
         self.name: str = name
         assert self.name
 
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule: {k}"
+
+        if 'state' not in _smoldyn.MolecState.__members__:
+            raise NameError(f"{state} is not a valid MolecState."
+                    f" Available states are: {_smoldyn.MolecState.__members__.keys()}")
 
         self.state = _smoldyn.MolecState.__members__[state]
 
