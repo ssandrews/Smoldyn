@@ -350,11 +350,19 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
 
+    m.def("setBackgroundStyle", [](array<double, 4> &rgba) {
+        return smolSetBackgroundStyle(cursim_, &rgba[0]);
+    });
+
     // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
     // *color);
     m.def("setFrameStyle", [](double thickness, char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
+        return smolSetBackgroundStyle(cursim_, &rgba[0]);
+    });
+
+    m.def("setFrameStyle", [](double thickness, array<double, 4> &rgba) {
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
 
@@ -366,12 +374,18 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolSetGridStyle(cursim_, thickness, &rgba[0]);
     });
 
+    m.def("setGridStyle", [](double thickness, array<double, 4> &rgba) {
+        return smolSetGridStyle(cursim_, thickness, &rgba[0]);
+    });
+
     // enum ErrorCode smolSetTextStyle(simptr sim, double *color);
     m.def("setTextStyle", [](char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
         return smolSetTextStyle(cursim_, &rgba[0]);
     });
+    m.def("setTextStyle",
+        [](array<double, 4> &rgba) { return smolSetTextStyle(cursim_, &rgba[0]); });
 
     // enum ErrorCode smolAddTextDisplay(simptr sim, char *item);
     m.def("addTextDisplay", [](char *item) { return smolAddTextDisplay(cursim_, item); });
@@ -514,6 +528,10 @@ PYBIND11_MODULE(_smoldyn, m)
             auto rgba = color2RGBA(color);
             return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
         });
+    m.def("setMoleculeStyle",
+        [](const char *species, MolecState state, double size, array<double, 4> &rgba) {
+            return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
+        });
 
     /*************
      *  Surface  *
@@ -634,6 +652,13 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetSurfaceStyle(cursim_, surface, face, mode, thickness, &rgba[0],
                 stipplefactor, stipplepattern, shininess);
         });
+    m.def("setSurfaceStyle",
+        [](const char *surface, PanelFace face, DrawMode mode, double thickness,
+            array<double, 4>& rgba, int stipplefactor, int stipplepattern, double shininess) {
+            return smolSetSurfaceStyle(cursim_, surface, face, mode, thickness, &rgba[0],
+                stipplefactor, stipplepattern, shininess);
+        });
+
 
     /*****************
      *  Compartment  *
