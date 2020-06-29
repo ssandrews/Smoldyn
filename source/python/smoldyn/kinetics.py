@@ -5,9 +5,10 @@ __copyright__ = "Copyright 2020-, Dilawar Singh"
 __maintainer__ = "Dilawar Singh"
 __email__ = "dilawars@ncbs.res.in"
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 
+import smoldyn.types as T
 from smoldyn import _smoldyn
 from smoldyn.config import __logger__
 
@@ -17,14 +18,22 @@ class NullSpecies:
     name: str = ""
     state = _smoldyn.MolecState.__members__["all"]
 
+
 class Species:
-    """
-    Class to handle chemical species.
+    """Chemical species.
     """
 
-    def __init__(self, name, state='soln', color="black", difc=0.0, size=1.0, mol_list=""):
-        """__init__.
-
+    def __init__(
+        self,
+        name: str,
+        state: str = "soln",
+        color: T.Color = "",
+        difc: float = 0.0,
+        display_size: int = 2,
+        mol_list: str = "",
+        **kwargs
+    ):
+        """
         Parameters
         ----------
         name : str
@@ -36,8 +45,8 @@ class Species:
             color of the species (default 'black')
         difc : float, optional
             diffusion coefficient (default 0.0, unit: μM^2/s)
-        size : float, optional
-            size of the molecule (default 1.0, unit: ).
+        display_size : int, optional
+            display size of the molecule (default 3px).
         mol_list : str, optional
             molecule list (default '')
         """
@@ -48,14 +57,16 @@ class Species:
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule: {k}"
 
         if state not in _smoldyn.MolecState.__members__:
-            raise NameError(f"{state} is not a valid MolecState. Available "
-                    "states are:{', '.join(_smoldyn.MolecState.__members__.keys())}")
+            raise NameError(
+                f"{state} is not a valid MolecState. Available "
+                "states are:{', '.join(_smoldyn.MolecState.__members__.keys())}"
+            )
 
         self.state = _smoldyn.MolecState.__members__[state]
 
         self._difc: float = difc
         self._color = color
-        self._size: float = size
+        self._size: int = display_size
 
         self.difc: float = self._difc
         self.size: float = self._size
@@ -92,8 +103,9 @@ class Species:
         k = _smoldyn.addMolList(val)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
         k = _smoldyn.setMolList(self.name, self.state, val)
-        assert (k == _smoldyn.ErrorCode.ok
-                ), f"Failed to set mol_list={val} on {self}: {k}"
+        assert (
+            k == _smoldyn.ErrorCode.ok
+        ), f"Failed to set mol_list={val} on {self}: {k}"
         self._mol_list = val
 
     @property
@@ -114,9 +126,12 @@ class Species:
         self._size = size
         self.setStyle()
 
-    def addToSolution(self, mol:float, highpos:List[float]=[], lowpos:List[float]=[]):
-        assert self.state == _smoldyn.MolecState.soln, ( "You can't use this "
-            f"function on a Species with type {self.state}" )
+    def addToSolution(
+        self, mol: float, highpos: List[float] = [], lowpos: List[float] = []
+    ):
+        assert self.state == _smoldyn.MolecState.soln, (
+            "You can't use this " f"function on a Species with type {self.state}"
+        )
         k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
@@ -127,11 +142,18 @@ class HalfReaction:
         r1 = subs[0]
         r2 = subs[1] if len(subs) == 2 else NullSpecies()
         if not rname:
-            rname = 'r%d' % id(self)
+            rname = "r%d" % id(self)
         assert rname
-        k = _smoldyn.addReaction(rname, r1.name, r1.state, r2.name, r2.state,
-                                 [x.name for x in prds],
-                                 [x.state for x in prds], k)
+        k = _smoldyn.addReaction(
+            rname,
+            r1.name,
+            r1.state,
+            r2.name,
+            r2.state,
+            [x.name for x in prds],
+            [x.state for x in prds],
+            k,
+        )
         if k != _smoldyn.ErrorCode.ok:
             __logger__.warning(f" Reactant1 : {r1}")
             __logger__.warning(f" Reactant2 : {r2}")

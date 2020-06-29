@@ -12,6 +12,7 @@ from typing import List, Union
 from smoldyn import _smoldyn
 from smoldyn._smoldyn import PanelShape, PanelFace, SrfAction, DrawMode, ErrorCode
 from smoldyn.kinetics import Species
+import smoldyn.types as T 
 from smoldyn.config import __logger__
 from dataclasses import dataclass, field
 
@@ -40,7 +41,7 @@ class Panel(object):
     def __init__(self, panelshape: PanelShape = PanelShape.none, name=""):
         self.name = name
         self.ctype: PanelShape = panelshape
-        self.pts: List[float] = []
+        self.pts: T.Vector = []
 
     def _axisIndex(self, axisname):
         axisDict = dict(x=0, y=1, z=2)
@@ -55,15 +56,15 @@ class Panel(object):
 
 class Rectangle(Panel):
     def __init__(
-        self, corner: List[float], dimensions: List[float], axis: str, name=""
+        self, corner: T.Vector, dimensions: T.Vector, axis: str, name=""
     ):
         """Rectangle (Panel)
 
         Parameters
         ----------
-        corner : List[float]
+        corner : Vector
             One corner of the rectangle.
-        dimensions : List[float]
+        dimensions : Vector
             Dimensions of the rectangle e.g., for a 2D rectangle it is a list of
             values of width and height.
         height : float
@@ -107,12 +108,12 @@ class Rectangle(Panel):
 
 
 class Triangle(Panel):
-    def __init__(self, vertices: List[List[float]] = [[]], name=""):
+    def __init__(self, vertices: List[T.Vector] = [[]], name=""):
         """Triangle Panel.
 
         Parameters
         ----------
-        vertices : List[List[float]]
+        vertices : 
             vertices of triangle.
         name :
             name
@@ -129,7 +130,7 @@ class Sphere(Panel):
 
         Parameters
         ----------
-        center : List[float]
+        center : 
             The center of the sphere.
         radius : float
             The radius of the sphere.
@@ -147,9 +148,9 @@ class Sphere(Panel):
 class Hemisphere(Panel):
     def __init__(
         self,
-        center: List[float],
+        center: T.Vector,
         radius: float,
-        vector: List[float],
+        vector: T.Vector,
         slices: int,
         stacks: int,
         name: str = "",
@@ -158,13 +159,13 @@ class Hemisphere(Panel):
 
         Parameters
         ----------
-        center : List[float]
+        center : 
             The center of hemisphere
         radius : float
             The radius of the hemisphere. Enter a positive radius to have the
             front of the surface on the outside and a negative radius for it to
             be on the inside.
-        vector : List[float]
+        vector :
             The outward pointing vector (needs NOT be normalized)
         slices : int
             The number of slices
@@ -188,8 +189,8 @@ class Hemisphere(Panel):
 class Cylinder(Panel):
     def __init__(
         self,
-        start: List[float],
-        end: List[float],
+        start: T.Vector,
+        end: T.Vector,
         radius: float,
         slices: int,
         stacks: int,
@@ -199,9 +200,9 @@ class Cylinder(Panel):
 
         Parameters
         ----------
-        start : List[float]
+        start : 
             Cylinder axis start point 
-        end : List[float]
+        end : 
             Cylinder axis's end point
         radius : float
             The radius of the cylinder. If the radius is negative then the front
@@ -225,17 +226,17 @@ class Cylinder(Panel):
 
 class Disk(Panel):
     def __init__(
-        self, center: List[float], radius: float, vector: List[float], name=""
+        self, center: T.Vector, radius: float, vector: T.Vector, name=""
     ):
         """Disk
 
         Parameters
         ----------
-        center : List[float]
+        center : 
             center of the disk.
         radius : float
             radius of the disk.
-        vector: List[float]
+        vector: 
             A vector that points away from the front of the disk. The size of
             this vector is 2 for 2-D and 3 for 3-D.
         name : optional
@@ -299,7 +300,7 @@ class Surface(object):
         self,
         panelface: str,
         drawmode: str,
-        color="",
+        color: T.Color="",
         thickness: float = 1,
         stipplefactor: int = -1,
         stipplepattern: int = -1,
@@ -323,8 +324,8 @@ class Surface(object):
             only relevant for 1-D and 2-D simulations, and for 3-D simulations
             in which surfaces are drawn with just vertices or edges and not
             faces.
-        color : str, tuple(R, G, B, A)
-            color e.g. 'black', 'red' etc.
+        color : Color
+            color e.g. 'black', 'red', [0.1,0.1,0.1,1] etc.
         stipplefactor : int
             stipplefactor is the repeat distance for the entire stippling
             pattern (1 is a good choice).  Stippling of the surface edges, for
@@ -429,8 +430,8 @@ class Port(object):
 
 @dataclass
 class Boundaries:
-    low: List[float]
-    high: List[float]
+    low: T.Vector
+    high: T.Vector
     types: List[str] = field(default_factory=lambda: ["r"])
     dim: field(init=False) = 0
 
