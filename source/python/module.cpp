@@ -141,6 +141,23 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("same", ErrorCode::ECsame)
         .value("wildcard", ErrorCode::ECwildcard);
 
+    py::enum_<DrawMode>(m, "DrawMode")
+        .value("no", DrawMode::DMno)
+        .value("vert", DrawMode::DMvert)
+        .value("edge", DrawMode::DMedge)
+        .value("ve", DrawMode::DMve)
+        .value("face", DrawMode::DMface)
+        .value("vf", DrawMode::DMvf)
+        .value("ef", DrawMode::DMef)
+        .value("vef", DrawMode::DMvef)
+        .value("none", DrawMode::DMnone);
+
+    py::enum_<SMLflag>(m, "SMLflag")
+        .value("no", SMLflag::SMLno)
+        .value("diffuse", SMLflag::SMLdiffuse)
+        .value("react", SMLflag::SMLreact)
+        .value("srfbound", SMLflag::SMLsrfbound);
+
     /* simptr */
     // TODO: Only simple members are exposed (readonly).
     py::class_<simstruct>(m, "simstruct")

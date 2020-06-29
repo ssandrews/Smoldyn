@@ -4,14 +4,12 @@ __author__           = "Dilawar Singh"
 __copyright__        = "Copyright 2020-, Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-__all__ = ['StateMonitor', 'Model']
+__all__ = ['StateMonitor', 'Simulation']
 
 import warnings
 from smoldyn import _smoldyn
 from .kinetics import Species
 from .geometry import Boundaries
-
-from smoldyn.config import __logger__
 
 class StateMonitor(object):
     """State Monitor
@@ -35,18 +33,20 @@ class StateMonitor(object):
                 self._multiplier, 'molcount')
 
 
-class Model(object):
-    """Model class.
+class Simulation(object):
+    """This is the top level class.
     """
 
-    def __init__(self, bounds, **kwargs):
-        self.bounds : Boundaries = bounds
+    def __init__(self, stop:float, step:float, **kwargs):
+        self.start = kwargs.get('start', 0.0)
+        self.stop = stop
+        self.step = step
         if kwargs.get('accuracy', 0.0):
             self.accuracry: float = kwargs['accuracy']
 
-    @property
-    def dim(self):
-        return self.bound.dim
+    def setGraphics(self, method:str, timestep:int, delay:int=0):
+        k = _smoldyn.setGraphicsParams(method, timestep, delay)
+        assert k == _smoldyn.ErrorCode.ok
 
     @property
     def accuracy(self):
@@ -58,17 +58,18 @@ class Model(object):
         warnings.DeprecationWarning("accuracy is deprecated?")
         _smoldyn.setAccuracy(accuracy)
 
-    def run(self, stoptime, dt=1e-3):
-        _smoldyn.run(stoptime, dt)
+    def run(self, stop=None, start=None, step=None):
+        if stop is not None:
+            self.stop = stop
+        if start is not None:
+            self.start = start
+        if step is not None:
+            self.step = step
+        print(f"[INFO] Running till {self.stop} dt={self.step}")
+        _smoldyn.run(self.stop, self.step)
 
-    def addMolecules(self, mol : Species, N, pos):
-        __logger__.debug(f"Adding {N} of {mol} with pos {pos}")
-        res = _smoldyn.addSolutionMolecules(mol.name, N
-                , self.bounds.low, self.bounds.high)
-        assert res == _smoldyn.ErrorCode.ok
-
-    def runSim(self, t, dt):
-        _smoldyn.runSim(t, dt)
+    def runUntil(self, t, dt):
+        _smoldyn.runUntil(t, dt)
 
     def data(self):
         return _smoldyn.getData()

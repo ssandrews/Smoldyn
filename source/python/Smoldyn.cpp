@@ -21,12 +21,12 @@ vector<simptr> simptrs_;
 // This is the current simptr in use.
 simptr cursim_;
 
-size_t         dim_ = 0;
+size_t dim_ = 0;
 vector<double> lowbounds_;
 vector<double> highbounds_;
-bool           debug_       = false;
-double         curtime_     = 0.0;
-bool           initDisplay_ = false;
+bool debug_       = false;
+double curtime_   = 0.0;
+bool initDisplay_ = false;
 
 bool addToSimptrVec(simptr ptr)
 {
@@ -37,7 +37,6 @@ bool addToSimptrVec(simptr ptr)
     }
     return false;
 }
-
 
 bool deleteSimptr(simptr ptr)
 {
@@ -86,8 +85,7 @@ bool initialize()
     if(cursim_)
         return true;
     if(getDim() <= 0 || getDim() > 3) {
-        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got "
-             << getDim() << endl;
+        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim() << endl;
         return false;
     }
 
@@ -104,9 +102,8 @@ bool initialize()
     for(size_t d = 0; d < getDim(); d++) {
         if(lowbounds_[d] >= highbounds_[d]) {
             cerr << __FUNCTION__ << ": lowbounds must be < highbounds"
-                 << " which is not true at index " << d
-                 << " where lowbounds is " << lowbounds_[d]
-                 << " and highbound is " << highbounds_[d] << endl;
+                 << " which is not true at index " << d << " where lowbounds is "
+                 << lowbounds_[d] << " and highbound is " << highbounds_[d] << endl;
             return false;
         }
     }
@@ -151,7 +148,7 @@ bool run(double stoptime, double dt, bool display)
     return r == ErrorCode::ECok;
 }
 
-void setBoundaries(const vector<pair<double, double>> &bounds)
+void setBoundaries(const vector<pair<double, double>>& bounds)
 {
     setDim(bounds.size());
     lowbounds_.resize(dim_);

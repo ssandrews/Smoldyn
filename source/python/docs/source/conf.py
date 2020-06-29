@@ -29,12 +29,19 @@ author = 'Steven S Andrews, Dilawar Singh'
 # ones.
 extensions = [
         'sphinx.ext.autodoc',
+        'sphinx.ext.napoleon',
         'sphinx_autodoc_typehints',
         'sphinx.ext.autosummary',
-        'sphinx.ext.napoleon'
         ]
 
 autoclass_content = 'both'
+autodoc_default_options = {
+    'member-order': 'bysource',
+    'special-members': '__init__',
+    'undoc-members': True,
+    'show_inheritance': True,
+}
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
