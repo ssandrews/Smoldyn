@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
+
+__author__ = "Dilawar Singh <dilawars@ncbs.res.in>"
+
 """
-File: geometry.py
-Author: Dilawar Singh
-Email: dilawars@ncbs.res.in
-Description: 
-    This file contains classes related to geometry of simulation arena.
+Geometry related classes.
 """
 
 import functools
@@ -25,14 +24,11 @@ class Compartment:
 
 
 class Panel(object):
-    """Panel: A surface is composed of one or more Panels. Following types of
-    Panel are supported.
-        - Rectangle
-        - Triangle
-        - Sphere
-        - Hemisphere
-        - Cylinder
-        - Disk
+    """Panels are required to construct a surface. Following types of Panel are
+    supported. 
+
+    :py:class:`~.Rectangle`, :py:class:`~.Triangle`, :py:class:`~.Sphere`,
+    :py:class:`~.Hemisphere`, :py:class:`~.Cylinder`, :py:class:`~.Disk`
     """
 
     def __init__(self, name=""):
@@ -53,13 +49,10 @@ class Panel(object):
 
 
 class Rectangle(Panel):
-    """Rectangle
-    """
-
     def __init__(
         self, corner: List[float], dimensions: List[float], axis: str, name=""
     ):
-        """__init__.
+        """Rectangle (Panel)
 
         Parameters
         ----------
@@ -110,10 +103,8 @@ class Rectangle(Panel):
 
 
 class Triangle(Panel):
-    """docstring for Triangle"""
-
     def __init__(self, vertices: List[List[float]] = [[]], name=""):
-        """__init__.
+        """Triangle Panel.
 
         Parameters
         ----------
@@ -130,10 +121,8 @@ class Triangle(Panel):
 
 
 class Sphere(Panel):
-    """docstring for Sphere"""
-
     def __init__(self, center: List[float], radius: float, name=""):
-        """__init__.
+        """Sphere 
 
         Parameters
         ----------
@@ -154,8 +143,6 @@ class Sphere(Panel):
 
 
 class Hemisphere(Panel):
-    """docstring for Hemisphere"""
-
     def __init__(
         self,
         center: List[float],
@@ -165,7 +152,7 @@ class Hemisphere(Panel):
         stacks: int,
         name="",
     ):
-        """__init__.
+        """Hemisphere 
 
         Parameters
         ----------
@@ -197,8 +184,6 @@ class Hemisphere(Panel):
 
 
 class Cylinder(Panel):
-    """docstring for Cylinder"""
-
     def __init__(
         self,
         start: List[float],
@@ -208,7 +193,7 @@ class Cylinder(Panel):
         stacks: int,
         name="",
     ):
-        """__init__.
+        """Cylinder
 
         Parameters
         ----------
@@ -238,13 +223,10 @@ class Cylinder(Panel):
 
 
 class Disk(Panel):
-    """docstring for Disk
-    """
-
     def __init__(
         self, center: List[float], radius: float, vector: List[float], name=""
     ):
-        """__init__.
+        """Disk
 
         Parameters
         ----------
@@ -269,9 +251,6 @@ class Disk(Panel):
 
 
 class Surface(object):
-    """Surface
-    """
-
     def __init__(self, panels: List[Panel] = [], name: str = ""):
         self.panels = panels
         self.name = name
