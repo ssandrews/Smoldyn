@@ -143,7 +143,7 @@ bool run(double stoptime, double dt, bool display)
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
-    auto r   = smolRunSimUntil(cursim_, stoptime);
+    auto r   = smolRunSim(cursim_);
     curtime_ = stoptime;
     return r == ErrorCode::ECok;
 }

@@ -25,18 +25,8 @@ __all__ = [
     "Hemisphere",
     "Cylinder",
     "Disk",
-    "Compartment",
     "Boundaries",
 ]
-
-
-class Compartment:
-    """Compartment
-    """
-
-    def __init__(self, arg):
-        super().__init__()
-        self.arg = arg
 
 
 class Panel(object):
@@ -309,11 +299,11 @@ class Surface(object):
         self,
         panelface: str,
         drawmode: str,
-        color="black",
-        thickness: float = 1.0,
-        stipplefactor: int = 1,
-        stipplepattern: int = 0,
-        shininess: int = 1,
+        color="",
+        thickness: float = 1,
+        stipplefactor: int = -1,
+        stipplepattern: int = -1,
+        shininess: int = -1,
     ):
         """Set drawing style for this surface.
 
@@ -364,7 +354,7 @@ class Surface(object):
             stipplepattern,
             shininess,
         )
-        assert k == ErrorCode.ok, "Failed to set drawing style"
+        assert k == ErrorCode.ok, f"Failed to set drawing style {k}"
 
     def addAction(
         self, species: Union[Species, str], face: str, action: str, new_spec=None

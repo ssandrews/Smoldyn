@@ -20,10 +20,10 @@ b = S.Boundaries(low=[0,0,0], high=[100,100,100])
 S.setSeed(0)
 
 # Declare the species.
-spRed = S.Species('red', color='red', difc=3)
+spRed = S.Species('red', color='red', difc=3, size=3)
 spRed.addToSolution(20, highpos=[10,50,50])
 
-spGreen = S.Species('green', color='green', difc=1)
+spGreen = S.Species('green', color='green', difc=1, size=3)
 spGreen.addToSolution(10)
 
 # Add surfaces
@@ -39,9 +39,10 @@ s1.setStyle('both', 'edge')
 s1.addAction('all', 'both', 'reflect')
 
 # portsurf
-r1 = S.Rectangle(corner=[0,0,0], dimensions=[100,100], axis='-x')
-portSurf = S.Surface('portsurf', panels=[r1])
-portSurf.setStyle('both', 'face')
+rr = S.Rectangle(corner=[0,0,0], dimensions=[100,100], axis='+x')
+portSurf = S.Surface('portsurf', panels=[rr])
+portSurf.setStyle('front', 'face', color='black')
+portSurf.setStyle('back', 'face', color='gray')
 portSurf.addAction('all', 'front', 'port')
 portSurf.addAction('all', 'back', 'reflect')
 
@@ -49,5 +50,5 @@ portSurf.addAction('all', 'back', 'reflect')
 testport = S.Port('testport', surface=portSurf, panel='front')
 
 s = S.Simulation(step=0.01, stop=100)
-s.setGraphics('opengl', 10)
+s.setGraphics('opengl', 20)
 s.run()

@@ -48,8 +48,8 @@ surface portsurf
 face front
 end_port
 
-cmd e porttransport testport testport
-cmd e warnescapee all 
+#cmd e porttransport testport testport
+#cmd e warnescapee all 
 
 end_file
 
