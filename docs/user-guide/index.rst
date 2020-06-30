@@ -1,10 +1,7 @@
-
-!!! warn
-
-    __This html is generated from
-    `documentation/Smoldyn/SmoldynUsersManual.docx` using pandoc. The
-    conversion may not be correct. Please refer to official documentation at
-    <https://smoldyn.org>.__
+.. warn::
+   This html is generated from `documentation/Smoldyn/SmoldynUsersManual.docx` using pandoc. The
+   conversion may not be correct. Please refer to official documentation at
+   <https://smoldyn.org>.
 
 Smoldyn is a computer program for simulating chemical processes on a
 microscopic size scale. The size scale is sufficiently detailed that all
@@ -38,13 +35,14 @@ it is possible to enter commands in the configuration file that are
 executed at runtime, and which output quantitative results from the
 simulation to text files. Smoldyn quits when the simulation is complete.
 
-## About this User’s Manual
+About this User’s Manual
+------------------------
 
 Do not read the manual from end to end. New users should read the
-[Installation](#installing-smoldyn) chapter as needed and the [Getting
-Started](#getting-started) chapter. The last half of the manual is a reference
-section which lists all statements and commands. The first portions of the
-other chapters provide helpful introductions on additional topics. Later
-portions of those chapters present advanced material that you may want to learn
-if you continue with Smoldyn.
+`Installation <#installing-smoldyn>`__ chapter as needed and the
+`Getting Started <#getting-started>`__ chapter. The last half of the
+manual is a reference section which lists all statements and commands.
+The first portions of the other chapters provide helpful introductions
+on additional topics. Later portions of those chapters present advanced
+material that you may want to learn if you continue with Smoldyn.
 

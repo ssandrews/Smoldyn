@@ -11,4 +11,4 @@ from .geometry import *
 from .kinetics import *
 from .utils import *
 
-
+__version__ = _smoldyn.__version__

@@ -1,5 +1,9 @@
-mkdocs
-mkdocs-macros-plugin
-mkdocs-material
-mkdocs-material-extensions
-pymdown-extensions
+sphinx
+breathe
+sphinx_rtd_theme
+sphinx
+recommonmark
+sphinxcontrib-napoleon
+sphinxcontrib-mermaid
+sphinx-autodoc-typehints
+# sphinxcontrib-plantuml

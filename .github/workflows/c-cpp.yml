@@ -38,3 +38,4 @@ jobs:
     - name: ctest -j2
       run: |
         cd build && xvfb-run --auto-servernum ctest --output-on-failure 
+        cd build && xvfb-run --auto-servernum make pyexamples

@@ -31,6 +31,7 @@ option(OPTION_MINGW "Cross-compile for Windows using MinGW compiler" OFF)
 option(OPTION_USE_OPENGL "Build with OpenGL support" ON)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
+option(OPTION_DOCS "Generate documentation" OFF)
 
 if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
@@ -521,15 +522,18 @@ endif(NOT OPTION_MINGW)
 
 
 ########## configure file #########
-
 configure_file (
     ${CMAKE_CURRENT_SOURCE_DIR}/source/smoldynconfigure.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
     )
+
+######### docs ##############
+if(OPTION_DOCS)
+    add_subdirectory(docs)
+endif(OPTION_DOCS)
 
 ########## package #########
 include(CPack)
 
 ######### Testing #############
 enable_testing()
-add_subdirectory(examples)

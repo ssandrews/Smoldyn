@@ -95,9 +95,27 @@ foreach(_pyscript ${TEST_SCRIPTS})
       ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
 endforeach()
 
+# Collect python examples.
+add_custom_target(pyexamples)
+
+file(GLOB_RECURSE PY_MODELS "../../examples/*.py")
+foreach(_py_model ${PY_MODELS})
+    #message(STATUS "Adding ${_py_model} to runnable examples")
+    get_filename_component(_ex_name ${_py_model} NAME_WE)
+    get_filename_component(_ex_dir ${_py_model} DIRECTORY)
+    add_custom_target(${_ex_name} 
+        COMMAND PYTHONPATH=${PY_SMOLDYN_OUTDIR} 
+            MPLBACKEND=Agg
+            SMOLDYN_NON_INTERACTIVE=1
+            ${PYTHON_EXECUTABLE} ${_py_model}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Executing ${_py_model}" VERBATIM)
+    add_dependencies(pyexamples ${_ex_name})
+endforeach()
+
+
 enable_testing()
 add_test(NAME pytest 
     COMMAND ${PYTHON_EXECUTABLE} -m pytest -q ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
 set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")

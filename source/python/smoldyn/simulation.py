@@ -7,6 +7,7 @@ __email__            = "dilawars@ncbs.res.in"
 __all__ = ['StateMonitor', 'Simulation']
 
 import warnings
+import os
 from smoldyn import _smoldyn
 from .kinetics import Species
 from .geometry import Boundaries
@@ -32,21 +33,56 @@ class StateMonitor(object):
         _smoldyn.addCommand('i', self._start, self._stop, self._step,
                 self._multiplier, 'molcount')
 
+    def data(self):
+        return _smoldyn.getData()
+
 
 class Simulation(object):
-    """This is the top level class.
+    """Class to store simulation related attributes. 
+
+    See also
+    -------
+    _smoldyn.simptr
     """
 
-    def __init__(self, stop:float, step:float, **kwargs):
+    def __init__(self, stop:float, step:float, quitatend:bool=False, **kwargs):
+        """
+        Parameters
+        ----------
+        stop : float
+            Simulation stop time (sec)
+        step : float
+            Simulation step or dt (sec)
+        quitatend : bool
+            If `True`, Smoldyn won't prompt user at the end of simulation and
+            quit. Same effect can also be achieved by setting environment variable 
+            `SMOLDYN_NON_INTERACTIVE` to 1.
+        kwargs :
+            kwargs
+        """
         self.start = kwargs.get('start', 0.0)
         self.stop = stop
         self.step = step
+        self.simptr = _smoldyn.getCurSimStruct()
+        assert self.simptr, "Configuration is not initialized"
         if kwargs.get('accuracy', 0.0):
             self.accuracry: float = kwargs['accuracy']
+        self.quitatend = quitatend
+        # TODO: Add to documentation.
+        if os.getenv('SMOLDYN_NON_INTERACTIVE', ''):
+            self.quitatend = True
 
     def setGraphics(self, method:str, timestep:int, delay:int=0):
         k = _smoldyn.setGraphicsParams(method, timestep, delay)
         assert k == _smoldyn.ErrorCode.ok
+
+    @property
+    def quitatend(self):
+        return self.simptr.quitatend
+
+    @quitatend.setter
+    def quitatend(self, val:bool):
+        self.simptr.quitatend = val
 
     @property
     def accuracy(self):

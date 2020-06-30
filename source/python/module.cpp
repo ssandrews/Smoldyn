@@ -163,10 +163,10 @@ PYBIND11_MODULE(_smoldyn, m)
     py::class_<simstruct>(m, "simstruct")
         //.def(py::init<>())
         .def_readonly("condition", &simstruct::condition, "Structure condition")
-        .def_readonly("logfile", &simstruct::logfile, "configuration file path")
-        .def_readonly("filepath", &simstruct::filepath, "configuration file path")
-        .def_readonly("filename", &simstruct::filename, "configuration file name")
-        .def_readonly("flags", &simstruct::flags, "command-line options from user")
+        .def_readwrite("logfile", &simstruct::logfile, "configuration file path")
+        .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
+        .def_readwrite("filename", &simstruct::filename, "configuration file name")
+        .def_readwrite("flags", &simstruct::flags, "command-line options from user")
         .def_readonly(
             "clockstt", &simstruct::clockstt, "clock starting time of simulation")
         .def_readonly(
@@ -183,7 +183,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readonly("tmax", &simstruct::tmax, " simulation end time")
         .def_readonly("tbreak", &simstruct::tbreak, " simulation break time")
         .def_readonly("dt", &simstruct::dt, " simulation time step")
-        .def_readonly("quitatend", &simstruct::quitatend, " simulation quits at the end")
+        .def_readwrite("quitatend", &simstruct::quitatend, " simulation quits at the end")
         .def_readonly("ruless", &simstruct::ruless, " rule superstructure")
         .def_readonly("mols", &simstruct::mols, " molecule superstructure")
         .def_readonly("srfss", &simstruct::srfss, " surface superstructure")
@@ -888,13 +888,11 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setSeed", &setRandomSeed);
     m.def("getBoundaries", &getBoundaries);
     m.def("setBoundaries",
-        py::overload_cast<const vector<pair<double, double>>&>(&setBoundaries)
-        , "Set boundaries using vector of (low,high) tuples"
-        );
+        py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
+        "Set boundaries using vector of (low,high) tuples");
     m.def("setBoundaries",
-        py::overload_cast<const vector<double>&, const vector<double>&>(&setBoundaries)
-        , "Set boundaries using vector of low and a vector of high points"
-        );
+        py::overload_cast<const vector<double> &, const vector<double> &>(&setBoundaries),
+        "Set boundaries using vector of low and a vector of high points");
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
     m.def("setAccuracy", [](double accuracy) { cursim_->accur = accuracy; });
