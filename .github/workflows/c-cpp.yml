@@ -37,5 +37,6 @@ jobs:
       run: cd build && make -j2 && make wheel
     - name: ctest -j2
       run: |
-        cd build && xvfb-run --auto-servernum ctest --output-on-failure 
-        cd build && xvfb-run --auto-servernum make pyexamples
+        cd build
+        xvfb-run --auto-servernum ctest --output-on-failure 
+        xvfb-run --auto-servernum make pyexamples
