@@ -16,21 +16,6 @@ import smoldyn.types as T
 from smoldyn.config import __logger__
 from dataclasses import dataclass, field
 
-__all__ = [
-    "Surface",
-    "SurfaceFaceCollection",
-    "Port",
-    "Panel",
-    "Sphere",
-    "Rectangle",
-    "Triangle",
-    "Hemisphere",
-    "Cylinder",
-    "Disk",
-    "Boundaries",
-]
-
-
 class Panel(object):
     """Panels are required to construct a surface. Following primitives are
     available.
@@ -478,6 +463,17 @@ class Port(object):
 
 @dataclass
 class Boundaries:
+    """Boundaries may be reflective, transparent, absorbing, or periodic.
+    Reflective means that all molecules that diffuse into a boundary will be
+    reflected back into the system. Transparent, which is the default type,
+    means that molecules just diffuse through the boundary as though it weren’t
+    there. With absorbing boundaries, any molecule that touches a boundary is
+    immediately removed from the system. Finally, with periodic boundaries,
+    which are also called wrap-around or toroidal boundaries, any molecule that
+    diffuses off of one side of space is instantly moved to the opposite edge
+    of space; these are useful for simulating a small portion of a large system
+    while avoiding edge effects.
+    """
     low: List[float]
     high: List[float]
     types: List[str] = field(default_factory=lambda: ["r"])
@@ -494,6 +490,22 @@ class Boundaries:
 
         k = _smoldyn.setBoundaryType(-1, -1, self.types[0])
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
+
+
+def setBoundaries(low:List[float], high:List[float], types:List[str]):
+    """Define system volume by setting boundaries.
+
+    Parameters
+    ----------
+    low : List[float]
+        lower limit of axes. For example for x=0, y=-100, and z=0, use [0,-100,0].
+    high :
+        higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
+    types : List[str]
+        Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
+        absorbing, and 'p' for periodic boundary.
+    """
+    return Boundaries(low, high, types)
 
 
 @dataclass

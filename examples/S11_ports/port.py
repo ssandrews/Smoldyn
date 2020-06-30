@@ -25,7 +25,9 @@ r3 = S.Rectangle(corner=[0,100,0], dimensions=[100,100], axis='-y')
 r4 = S.Rectangle(corner=[0,0,0], dimensions=[100,100], axis='+z')
 r5 = S.Rectangle(corner=[0,0,100], dimensions=[100,100], axis='-z')
 s1 = S.Surface('walls', panels=[r1,r2,r3,r4,r5])
-s1.both.setStyle(drawmode='edge')
+#s1.both.setStyle(drawmode='edge')
+s1.setStyle('both', drawmode='edge')
+
 s1.both.addAction('all', 'reflect')
 
 # portsurf
