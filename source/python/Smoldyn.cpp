@@ -160,11 +160,31 @@ void setBoundaries(const vector<pair<double, double>>& bounds)
     initialize();
 }
 
-vector<pair<double, double>> getBoundaries()
+void setBoundaries(const vector<double>& lowbounds, const vector<double>& highbounds)
 {
-    vector<pair<double, double>> bounds(getDim());
-    for(size_t i = 0; i < getDim(); i++)
-        bounds[i] = {lowbounds_[i], highbounds_[i]};
+    assert(lowbounds.size() == highbounds.size());
+    setDim(lowbounds.size());
+    lowbounds_.resize(getDim());
+    highbounds_.resize(getDim());
+    for(size_t i = 0; i < getDim(); i++) {
+        lowbounds_[i]  = lowbounds[i];
+        highbounds_[i] = highbounds[i];
+    }
+    initialize();
+}
+
+
+pair<vector<double>, vector<double>> getBoundaries()
+{
+    // vector<pair<double, double>> bounds(getDim());
+    pair<vector<double>, vector<double>> bounds;
+    bounds.first.resize(getDim());
+    bounds.second.resize(getDim());
+
+    for(size_t i = 0; i < getDim(); i++) {
+        bounds.first[i] = lowbounds_[i];
+        bounds.second[i] = highbounds_[i];
+    }
     return bounds;
 }
 

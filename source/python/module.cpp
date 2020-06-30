@@ -350,9 +350,8 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
 
-    m.def("setBackgroundStyle", [](array<double, 4> &rgba) {
-        return smolSetBackgroundStyle(cursim_, &rgba[0]);
-    });
+    m.def("setBackgroundStyle",
+        [](array<double, 4> &rgba) { return smolSetBackgroundStyle(cursim_, &rgba[0]); });
 
     // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
     // *color);
@@ -652,13 +651,13 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetSurfaceStyle(cursim_, surface, face, mode, thickness, &rgba[0],
                 stipplefactor, stipplepattern, shininess);
         });
-    m.def("setSurfaceStyle",
-        [](const char *surface, PanelFace face, DrawMode mode, double thickness,
-            array<double, 4>& rgba, int stipplefactor, int stipplepattern, double shininess) {
+    m.def(
+        "setSurfaceStyle", [](const char *surface, PanelFace face, DrawMode mode,
+                               double thickness, array<double, 4> &rgba,
+                               int stipplefactor, int stipplepattern, double shininess) {
             return smolSetSurfaceStyle(cursim_, surface, face, mode, thickness, &rgba[0],
                 stipplefactor, stipplepattern, shininess);
         });
-
 
     /*****************
      *  Compartment  *
@@ -888,7 +887,14 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("getSeed", &getRandomSeed);
     m.def("setSeed", &setRandomSeed);
     m.def("getBoundaries", &getBoundaries);
-    m.def("setBoundaries", &setBoundaries);
+    m.def("setBoundaries",
+        py::overload_cast<const vector<pair<double, double>>&>(&setBoundaries)
+        , "Set boundaries using vector of (low,high) tuples"
+        );
+    m.def("setBoundaries",
+        py::overload_cast<const vector<double>&, const vector<double>&>(&setBoundaries)
+        , "Set boundaries using vector of low and a vector of high points"
+        );
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
     m.def("setAccuracy", [](double accuracy) { cursim_->accur = accuracy; });

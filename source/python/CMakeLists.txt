@@ -98,7 +98,7 @@ endforeach()
 # Run tests using pytest.
 add_custom_target(pytest 
     DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest || echo "Failed to install pytest"
+    COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest matplotlib || echo "Failed to install pytest"
     COMMAND PYTHONPATH=${PY_SMOLDYN_OUTDIR} ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
     COMMENT "Running pytest."
     VERBATIM)

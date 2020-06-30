@@ -484,7 +484,7 @@ class Boundaries:
         if len(self.types) == 1:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
-        _smoldyn.setBoundaries(list(zip(self.low, self.high)))
+        _smoldyn.setBoundaries(self.low, self.high)
         __logger__.debug("Getting boundaries", _smoldyn.getBoundaries())
         assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
 
@@ -492,7 +492,7 @@ class Boundaries:
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
 
 
-def setBoundaries(low:List[float], high:List[float], types:List[str]):
+def setBounds(low:List[float], high:List[float], types:List[str]):
     """Define system volume by setting boundaries.
 
     Parameters
@@ -504,6 +504,10 @@ def setBoundaries(low:List[float], high:List[float], types:List[str]):
     types : List[str]
         Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
         absorbing, and 'p' for periodic boundary.
+
+    See also
+    --------
+    setBoundaries, setBoundaryType
     """
     return Boundaries(low, high, types)
 
