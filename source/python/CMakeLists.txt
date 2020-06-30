@@ -95,10 +95,9 @@ foreach(_pyscript ${TEST_SCRIPTS})
       ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
 endforeach()
 
-# Run tests using pytest.
-add_custom_target(pytest 
-    DEPENDS _smoldyn
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest matplotlib || echo "Failed to install pytest"
-    COMMAND PYTHONPATH=${PY_SMOLDYN_OUTDIR} ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
-    COMMENT "Running pytest."
-    VERBATIM)
+enable_testing()
+add_test(NAME pytest 
+    COMMAND ${PYTHON_EXECUTABLE} -m pytest -q ${CMAKE_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")

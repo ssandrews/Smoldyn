@@ -23,5 +23,5 @@ jobs:
       run: mkdir build && cd build && cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 ..
     - name: make
       run: cd build && make -j2 && make wheel
-    - name: make check
-      run: cd build && xvfb-run --auto-servernum ctest --output-on-failure && xvfb-run --auto-servernum make pytest
+    - name: ctest
+      run: cd build && xvfb-run --auto-servernum ctest --output-on-failure 
