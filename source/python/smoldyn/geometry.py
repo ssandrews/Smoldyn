@@ -12,7 +12,7 @@ from typing import List, Union
 from smoldyn import _smoldyn
 from smoldyn._smoldyn import PanelShape, PanelFace, SrfAction, DrawMode, ErrorCode
 from smoldyn.kinetics import Species
-import smoldyn.types as T 
+import smoldyn.types as T
 from smoldyn.config import __logger__
 from dataclasses import dataclass, field
 
@@ -48,9 +48,6 @@ class Panel(object):
         axisDict = dict(x=0, y=1, z=2)
         return int(axisDict.get(axisname.lower(), axisname))
 
-    def addToSurface(self, surface):
-        print("[INFO] Adding pts to surface")
-
     def toText(self):
         return f"panel {self.ctype} {self.axisstr} {' '.join(map(str,self.pts))} {self.name}".strip()
 
@@ -63,9 +60,9 @@ class Rectangle(Panel):
 
         Parameters
         ----------
-        corner : Vector
+        corner : List[float]
             One corner of the rectangle.
-        dimensions : Vector
+        dimensions : List[float]
             Dimensions of the rectangle e.g., for a 2D rectangle it is a list of
             values of width and height.
         height : float
@@ -251,17 +248,18 @@ class Disk(Panel):
         self.axisstr = ""
         self.pts = [*self.center, self.radius, *self.vector]
 
+
 class SurfaceFaceCollection:
     """Collection of faces of a surface"""
 
     def __init__(self, faces: List[str], surfname):
-        self.faces : str = faces
+        self.faces: str = faces
         self.surfname = surfname
 
     def setStyle(
         self,
         drawmode: str,
-        color: T.Color="",
+        color: T.Color = "",
         thickness: float = 1,
         stipplefactor: int = -1,
         stipplepattern: int = -1,
@@ -346,8 +344,11 @@ class SurfaceFaceCollection:
 
         for which in self.faces:
             k = _smoldyn.setSurfaceAction(
-                self.surfname, PanelFace.__members__[which]
-                , sname, sstate, SrfAction.__members__[action]
+                self.surfname,
+                PanelFace.__members__[which],
+                sname,
+                sstate,
+                SrfAction.__members__[action],
             )
             assert k == ErrorCode.ok
 
@@ -388,11 +389,10 @@ class Surface(object):
         self.name = name
         _smoldyn.addSurface(self.name)
 
-        self.front = SurfaceFaceCollection(['front'], name)
-        self.back = SurfaceFaceCollection(['back'], name)
-        self.both = SurfaceFaceCollection(['front', 'back'], name)
+        self.front = SurfaceFaceCollection(["front"], name)
+        self.back = SurfaceFaceCollection(["back"], name)
+        self.both = SurfaceFaceCollection(["front", "back"], name)
         self._addToSmoldyn()
-
 
     def _addToSmoldyn(self):
         # add panels
@@ -420,7 +420,7 @@ class Surface(object):
         --------
         SurfaceFaceCollection.setStyle
         """
-        assert face in ['front', 'back', 'both']
+        assert face in ["front", "back", "both"]
         getattr(self, face).setStyle(*args, **kwargs)
 
     def addAction(self, face, *args, **kwargs):
@@ -457,7 +457,7 @@ class Port(object):
     simulation at the porting surface by other programs.
     """
 
-    def __init__(self, name:str, surface:Union[Surface,str], panel:str):
+    def __init__(self, name: str, surface: Union[Surface, str], panel: str):
         """
         Parameters
         ----------
@@ -468,12 +468,13 @@ class Port(object):
         panel : str
             Face of the which surface active for porting: "front" or "back".
         """
-        self.name : str = name
+        self.name: str = name
         self.surfname = surface.name if isinstance(surface, Surface) else surface
         assert panel in ["front", "back"]
         self.panel = PanelFace.__members__[panel]
         k = _smoldyn.addPort(self.name, self.surfname, self.panel)
         assert k == ErrorCode.ok
+
 
 @dataclass
 class Boundaries:
