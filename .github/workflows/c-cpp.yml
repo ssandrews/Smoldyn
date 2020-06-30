@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6,3.7,3.8]
+        python-version: [3.7,3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -32,7 +32,7 @@ jobs:
         which python
         python -c "import sys; print(sys.version)"
         python -m pip install pytest matplotlib numpy wheel
-        mkdir build && cd build && cmake -DPython_EXECUTABLE=$(which pyhton) ..
+        mkdir build && cd build && cmake ..
     - name: make
       run: cd build && make -j2 && make wheel
     - name: ctest -j2
