@@ -24,10 +24,8 @@ jobs:
       run: |
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
         sudo apt -y install xvfb
-        #  There could be /home/linuxbrew/.linuxbrew at the front of PATH.
-        #  Cmake picks the wrong python.
-        echo $PATH
-        export PATH=/usr/bin:/usr/sbin/:/sbin/:/bin:/usr/local/bin/:$HOME/.local/bin:$PATH
+        # Remove linuxbrew
+        sudo ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall)" || echo "Failed to remove linuxbrew"
     - name: configure
       run: | 
         cmake --version
