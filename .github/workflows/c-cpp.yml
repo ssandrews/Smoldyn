@@ -24,6 +24,10 @@ jobs:
       run: |
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
         sudo apt -y install xvfb
+        #  There could be /home/linuxbrew/.linuxbrew at the front of PATH.
+        #  Cmake picks the wrong python.
+        echo $PATH
+        export PATH=/usr/bin:/usr/sbin/:/sbin/:/bin:/usr/local/bin/:$HOME/.local/bin:$PATH
     - name: configure
       run: | 
         cmake --version
