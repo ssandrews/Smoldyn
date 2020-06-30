@@ -1,4 +1,4 @@
-Smoldy and Python
+Smoldyn and Python
 =================
 
 User API

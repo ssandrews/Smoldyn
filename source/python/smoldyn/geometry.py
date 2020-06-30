@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 
 __all__ = [
     "Surface",
+    "SurfaceFaceCollection",
     "Port",
     "Panel",
     "Sphere",
@@ -31,11 +32,11 @@ __all__ = [
 
 
 class Panel(object):
-    """Panels are required to construct a surface. Following types of Panel are
-    supported. 
+    """Panels are required to construct a surface. Following primitives are
+    available.
 
-    :py:class:`~.Rectangle`, :py:class:`~.Triangle`, :py:class:`~.Sphere`,
-    :py:class:`~.Hemisphere`, :py:class:`~.Cylinder`, :py:class:`~.Disk`
+    :py:class:`~Rectangle`, :py:class:`~Triangle`, :py:class:`~Sphere`,
+    :py:class:`~Hemisphere`, :py:class:`~Cylinder`, :py:class:`~Disk`
     """
 
     def __init__(self, panelshape: PanelShape = PanelShape.none, name=""):
@@ -251,7 +252,7 @@ class Disk(Panel):
         self.pts = [*self.center, self.radius, *self.vector]
 
 class SurfaceFaceCollection:
-    """Face of a surface"""
+    """Collection of faces of a surface"""
 
     def __init__(self, faces: List[str], surfname):
         self.faces : str = faces
@@ -314,19 +315,17 @@ class SurfaceFaceCollection:
             )
             assert k == ErrorCode.ok, f"Failed to set drawing style {k}"
 
-    def addAction(
-        self, species: Union[Species, str], action: str, new_spec=None
-    ):
-        """The behavior of molecules named species when they collide with the
-        `face` of this surface.
+    def addAction(self, species: Union[Species, str], action: str, new_spec=None):
+        """The behavior of molecules named species when they collide with this
+        face of this surface.
 
         Parameters
         ----------
         species : Union[Species, str]
             Species. If `"all"`, then this action applies to all molecules.
         action : str
-            The action can be  “reflect”, “absorb”, “transmit”, “jump”, “port”,
-            or “periodic”.
+            The action can be  `“reflect”`, `“absorb”`, `“transmit”`, `“jump”`,
+            `“port”`, or `“periodic”`.
         new_spec: str
             If `new_spec` is entered, then the molecule changes to this new
             species upon surface collision. In addition, it’s permissible to
@@ -363,7 +362,7 @@ class Surface(object):
     curves in 2D simulations (or 0D points in 1D simulations).Each surface
     has a “front” and a “back” face, so molecules can interact differently
     with the two sides of a surface.Each surface is composed of one or more
-    “:py:class:`~.Panels`”, where each panels can be a rectangle, triangle, sphere,
+    “:py:class:`~Panels`”, where each panels can be a rectangle, triangle, sphere,
     hemisphere, cylinder, or a disk. Surfaces can be disjoint, with separate
     non-connected portions.  However, all portions of a given surface type
     are displayed in the same way and interact with molecules in the same
@@ -375,7 +374,7 @@ class Surface(object):
         Parameters
         ----------
         panels : List[Panel]
-            A surface consists of one or more panels
+            List of panels. A surface must have at least one.
         name : str 
             name of the surface
 
@@ -403,6 +402,45 @@ class Surface(object):
                 self.name, panel.ctype, panel.name, panel.axisstr, panel.pts
             )
             assert k == ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
+
+    def setStyle(self, face, *args, **kwargs):
+        """See the function :py:class:`~SurfaceFaceCollection.setStyle` for more
+        details. This function forwards the the call to
+        `SurfaceFaceCollection.setStyle` function.
+
+        Parameters
+        ----------
+        face: str
+            face of the surface: 'front', 'back', 'both'
+
+        *args and **kwargs: 
+            See :py:class:`~SurfaceFaceCollection.setStyle`
+
+        See Also
+        --------
+        SurfaceFaceCollection.setStyle
+        """
+        assert face in ['front', 'back', 'both']
+        getattr(self, face).setStyle(*args, **kwargs)
+
+    def addAction(self, face, *args, **kwargs):
+        """See the function :py:class:`~SurfaceFaceCollection.addAction` for more
+        details. This function forwards the the call to
+        `SurfaceFaceCollection.addAction` function.
+
+        Parameters
+        ----------
+        face: str
+            face of the surface: 'front', 'back', 'both'
+
+        *args and **kwargs: 
+            See :py:func:`~SurfaceFaceCollection.addAction`
+
+        See Also
+        --------
+        SurfaceFaceCollection.addAction
+        """
+        getattr(self, face).addAction(*args, *kwargs)
 
 
 class Port(object):
