@@ -9,6 +9,3 @@ from typing import Union, Tuple, List
 
 # Color type
 Color = Union[str, Tuple[float,float,float,float]]
-
-# Vector
-Vector = List[float]

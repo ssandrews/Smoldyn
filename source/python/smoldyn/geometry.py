@@ -41,7 +41,7 @@ class Panel(object):
     def __init__(self, panelshape: PanelShape = PanelShape.none, name=""):
         self.name = name
         self.ctype: PanelShape = panelshape
-        self.pts: T.Vector = []
+        self.pts: List[float] = []
 
     def _axisIndex(self, axisname):
         axisDict = dict(x=0, y=1, z=2)
@@ -56,7 +56,7 @@ class Panel(object):
 
 class Rectangle(Panel):
     def __init__(
-        self, corner: T.Vector, dimensions: T.Vector, axis: str, name=""
+        self, corner: List[float], dimensions: List[float], axis: str, name=""
     ):
         """Rectangle (Panel)
 
@@ -108,7 +108,7 @@ class Rectangle(Panel):
 
 
 class Triangle(Panel):
-    def __init__(self, vertices: List[T.Vector] = [[]], name=""):
+    def __init__(self, vertices: List[List[float]] = [[]], name=""):
         """Triangle Panel.
 
         Parameters
@@ -148,9 +148,9 @@ class Sphere(Panel):
 class Hemisphere(Panel):
     def __init__(
         self,
-        center: T.Vector,
+        center: List[float],
         radius: float,
-        vector: T.Vector,
+        vector: List[float],
         slices: int,
         stacks: int,
         name: str = "",
@@ -189,8 +189,8 @@ class Hemisphere(Panel):
 class Cylinder(Panel):
     def __init__(
         self,
-        start: T.Vector,
-        end: T.Vector,
+        start: List[float],
+        end: List[float],
         radius: float,
         slices: int,
         stacks: int,
@@ -226,7 +226,7 @@ class Cylinder(Panel):
 
 class Disk(Panel):
     def __init__(
-        self, center: T.Vector, radius: float, vector: T.Vector, name=""
+        self, center: List[float], radius: float, vector: List[float], name=""
     ):
         """Disk
 
@@ -250,55 +250,15 @@ class Disk(Panel):
         self.axisstr = ""
         self.pts = [*self.center, self.radius, *self.vector]
 
+class SurfaceFaceCollection:
+    """Face of a surface"""
 
-class Surface(object):
-    """Surfaces are infinitesimally thin structures that can be used to
-    represent cell membranes, obstructions, system boundaries, or other things.
-
-    Note
-    -----
-    They are 2D structures in 3D simulations, or 1D lines or
-    curves in 2D simulations (or 0D points in 1D simulations).Each surface
-    has a “front” and a “back” face, so molecules can interact differently
-    with the two sides of a surface.Each surface is composed of one or more
-    “:py:class:`~.Panels`”, where each panels can be a rectangle, triangle, sphere,
-    hemisphere, cylinder, or a disk. Surfaces can be disjoint, with separate
-    non-connected portions.  However, all portions of a given surface type
-    are displayed in the same way and interact with molecules in the same
-    way.
-    """
-
-    def __init__(self, name: str, panels: List[Panel]):
-        """
-        Parameters
-        ----------
-        panels : List[Panel]
-            A surface consists of one or more panels
-        name : str 
-            name of the surface
-
-        Examples:
-        >>> r1 = S.Rectangle(corner=[100,0,0], dimensions=[100,100], axis='-x')
-        >>> r2 = S.Rectangle(corner=[0,0,0], dimensions=[100,100], axis='+y')
-        >>> s = smoldyn.Surface("walls", panels=["r1", "r2"])
-        """
-        self.panels = panels
-        self.name = name
-        _smoldyn.addSurface(self.name)
-        self._addToSmoldyn()
-
-    def _addToSmoldyn(self):
-        # add panels
-        assert self.name, "Surface name is missing"
-        for panel in self.panels:
-            k = _smoldyn.addPanel(
-                self.name, panel.ctype, panel.name, panel.axisstr, panel.pts
-            )
-            assert k == ErrorCode.ok, f"Failed to add panel to surface {self.name}"
+    def __init__(self, faces: List[str], surfname):
+        self.faces : str = faces
+        self.surfname = surfname
 
     def setStyle(
         self,
-        panelface: str,
         drawmode: str,
         color: T.Color="",
         thickness: float = 1,
@@ -306,12 +266,10 @@ class Surface(object):
         stipplepattern: int = -1,
         shininess: int = -1,
     ):
-        """Set drawing style for this surface.
+        """Set drawing style for the face of surface.
 
         Parameters
         ----------
-        panelface : str
-            face of the panel. `face` can be “front”, “back”, or “both”.
         drawmode : str
             `drawmode` may be “none”, “vertex”, “edge”, “face”, or combinations 
             of ‘v’, ‘e’, or ‘f’ for multiple renderings of vertices, edges,
@@ -342,23 +300,22 @@ class Surface(object):
             range from 0 for visually flat surfaces to 128 for very shiny
             surfaces.  This is only relevant for some simulations.
         """
-        assert self.name, "Surface must have a valid name"
-        assert panelface in ("front", "back", "both")
-        # TODO: Check on drawmode
-        k = _smoldyn.setSurfaceStyle(
-            self.name,
-            PanelFace.__members__[panelface],
-            DrawMode.__members__[drawmode],
-            thickness,
-            color,
-            stipplefactor,
-            stipplepattern,
-            shininess,
-        )
-        assert k == ErrorCode.ok, f"Failed to set drawing style {k}"
+        for which in self.faces:
+            # TODO: Check on drawmode
+            k = _smoldyn.setSurfaceStyle(
+                self.surfname,
+                PanelFace.__members__[which],
+                DrawMode.__members__[drawmode],
+                thickness,
+                color,
+                stipplefactor,
+                stipplepattern,
+                shininess,
+            )
+            assert k == ErrorCode.ok, f"Failed to set drawing style {k}"
 
     def addAction(
-        self, species: Union[Species, str], face: str, action: str, new_spec=None
+        self, species: Union[Species, str], action: str, new_spec=None
     ):
         """The behavior of molecules named species when they collide with the
         `face` of this surface.
@@ -367,8 +324,6 @@ class Surface(object):
         ----------
         species : Union[Species, str]
             Species. If `"all"`, then this action applies to all molecules.
-        face : str
-            `face` can be “front”, “back”, or “both”.  
         action : str
             The action can be  “reflect”, “absorb”, “transmit”, “jump”, “port”,
             or “periodic”.
@@ -390,11 +345,65 @@ class Surface(object):
         if new_spec:
             raise NotImplementedError("This feature is not implemented.")
 
-        k = _smoldyn.setSurfaceAction(
-            self.name, PanelFace.__members__[face]
-            , sname, sstate, SrfAction.__members__[action]
-        )
-        assert k == ErrorCode.ok
+        for which in self.faces:
+            k = _smoldyn.setSurfaceAction(
+                self.surfname, PanelFace.__members__[which]
+                , sname, sstate, SrfAction.__members__[action]
+            )
+            assert k == ErrorCode.ok
+
+
+class Surface(object):
+    """Surfaces are infinitesimally thin structures that can be used to
+    represent cell membranes, obstructions, system boundaries, or other things.
+
+    Note
+    -----
+    They are 2D structures in 3D simulations, or 1D lines or
+    curves in 2D simulations (or 0D points in 1D simulations).Each surface
+    has a “front” and a “back” face, so molecules can interact differently
+    with the two sides of a surface.Each surface is composed of one or more
+    “:py:class:`~.Panels`”, where each panels can be a rectangle, triangle, sphere,
+    hemisphere, cylinder, or a disk. Surfaces can be disjoint, with separate
+    non-connected portions.  However, all portions of a given surface type
+    are displayed in the same way and interact with molecules in the same
+    way.
+    """
+
+    def __init__(self, name: str, panels: List[Panel]):
+        """
+        Parameters
+        ----------
+        panels : List[Panel]
+            A surface consists of one or more panels
+        name : str 
+            name of the surface
+
+        Examples
+        --------
+        >>> r1 = S.Rectangle(corner=[100,0,0], dimensions=[100,100], axis='-x')
+        >>> r2 = S.Rectangle(corner=[0,0,0], dimensions=[100,100], axis='+y')
+        >>> s = smoldyn.Surface("walls", panels=["r1", "r2"])
+        """
+        self.panels = panels
+        self.name = name
+        _smoldyn.addSurface(self.name)
+
+        self.front = SurfaceFaceCollection(['front'], name)
+        self.back = SurfaceFaceCollection(['back'], name)
+        self.both = SurfaceFaceCollection(['front', 'back'], name)
+        self._addToSmoldyn()
+
+
+    def _addToSmoldyn(self):
+        # add panels
+        assert self.name, "Surface name is missing"
+        for panel in self.panels:
+            k = _smoldyn.addPanel(
+                self.name, panel.ctype, panel.name, panel.axisstr, panel.pts
+            )
+            assert k == ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
+
 
 class Port(object):
     """Ports are data structures that are used for importing and
@@ -430,8 +439,8 @@ class Port(object):
 
 @dataclass
 class Boundaries:
-    low: T.Vector
-    high: T.Vector
+    low: List[float]
+    high: List[float]
     types: List[str] = field(default_factory=lambda: ["r"])
     dim: field(init=False) = 0
 
