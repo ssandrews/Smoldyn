@@ -25,15 +25,16 @@ set_target_properties(_smoldyn PROPERTIES
     SUFFIX ".so"
     LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
 
-add_dependencies(_smoldyn smoldyn_static)
-
-target_link_libraries(_smoldyn PRIVATE smoldyn_static)
-
-add_custom_command(TARGET _smoldyn POST_BUILD
+add_custom_target(copy_python_tree 
   COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/source/python/smoldyn ${PY_SMOLDYN_OUTDIR}/smoldyn
   COMMENT "Copying python source tree to binary directory"
   VERBATIM)
+
+add_dependencies(_smoldyn smoldyn_static copy_python_tree)
+
+target_link_libraries(_smoldyn PRIVATE smoldyn_static)
+
 
 # copy setup.py.in to setup.py
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
@@ -71,6 +72,14 @@ add_custom_target(pydevel
     COMMENT "RUNNING: python3 setup.py develop --user"
     VERBATIM)
 
+add_custom_target(doc_api_html
+    DEPENDS _smoldyn
+    COMMAND sphinx-build ${CMAKE_CURRENT_SOURCE_DIR}/docs/source
+        ${PY_SMOLDYN_OUTDIR}/html
+    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
+    COMMENT "Generating Python's API doc (HTML)"
+    VERBATIM)
+
 enable_testing()
 
 ###  python tests ###
@@ -86,10 +95,9 @@ foreach(_pyscript ${TEST_SCRIPTS})
       ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
 endforeach()
 
-# Run tests using pytest.
-add_custom_target(pytest 
-    DEPENDS pydevel
-    COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest || echo "Failed to install pytest"
-    COMMAND ${PYTHON_EXECUTABLE} -m pytest ${CMAKE_SOURCE_DIR}
-    COMMENT "Running pytest."
-    VERBATIM)
+enable_testing()
+add_test(NAME pytest 
+    COMMAND ${PYTHON_EXECUTABLE} -m pytest -q ${CMAKE_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")

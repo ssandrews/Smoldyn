@@ -21,12 +21,12 @@ vector<simptr> simptrs_;
 // This is the current simptr in use.
 simptr cursim_;
 
-size_t         dim_ = 0;
+size_t dim_ = 0;
 vector<double> lowbounds_;
 vector<double> highbounds_;
-bool           debug_       = false;
-double         curtime_     = 0.0;
-bool           initDisplay_ = false;
+bool debug_       = false;
+double curtime_   = 0.0;
+bool initDisplay_ = false;
 
 bool addToSimptrVec(simptr ptr)
 {
@@ -37,7 +37,6 @@ bool addToSimptrVec(simptr ptr)
     }
     return false;
 }
-
 
 bool deleteSimptr(simptr ptr)
 {
@@ -62,10 +61,17 @@ void setDim(size_t dim)
         cursim_->dim = dim;
 }
 
+void printSimptrNotInitWarning(const char* funcname)
+{
+    py::print("Warn:", funcname, "simptr is not initialized. set boundaries/dim first.");
+}
+
 void setRandomSeed(size_t seed)
 {
-    if(!cursim_)
+    if(!cursim_) {
+        printSimptrNotInitWarning(__FUNCTION__);
         return;
+    }
     cursim_->randseed = randomize(seed);
 }
 
@@ -79,8 +85,7 @@ bool initialize()
     if(cursim_)
         return true;
     if(getDim() <= 0 || getDim() > 3) {
-        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got "
-             << getDim() << endl;
+        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim() << endl;
         return false;
     }
 
@@ -97,9 +102,8 @@ bool initialize()
     for(size_t d = 0; d < getDim(); d++) {
         if(lowbounds_[d] >= highbounds_[d]) {
             cerr << __FUNCTION__ << ": lowbounds must be < highbounds"
-                 << " which is not true at index " << d
-                 << " where lowbounds is " << lowbounds_[d]
-                 << " and highbound is " << highbounds_[d] << endl;
+                 << " which is not true at index " << d << " where lowbounds is "
+                 << lowbounds_[d] << " and highbound is " << highbounds_[d] << endl;
             return false;
         }
     }
@@ -139,12 +143,12 @@ bool run(double stoptime, double dt, bool display)
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
-    auto r   = smolRunSimUntil(cursim_, stoptime);
+    auto r   = smolRunSim(cursim_);
     curtime_ = stoptime;
     return r == ErrorCode::ECok;
 }
 
-void setBoundaries(const vector<pair<double, double>> &bounds)
+void setBoundaries(const vector<pair<double, double>>& bounds)
 {
     setDim(bounds.size());
     lowbounds_.resize(dim_);
@@ -156,11 +160,31 @@ void setBoundaries(const vector<pair<double, double>> &bounds)
     initialize();
 }
 
-vector<pair<double, double>> getBoundaries()
+void setBoundaries(const vector<double>& lowbounds, const vector<double>& highbounds)
 {
-    vector<pair<double, double>> bounds(getDim());
-    for(size_t i = 0; i < getDim(); i++)
-        bounds[i] = {lowbounds_[i], highbounds_[i]};
+    assert(lowbounds.size() == highbounds.size());
+    setDim(lowbounds.size());
+    lowbounds_.resize(getDim());
+    highbounds_.resize(getDim());
+    for(size_t i = 0; i < getDim(); i++) {
+        lowbounds_[i]  = lowbounds[i];
+        highbounds_[i] = highbounds[i];
+    }
+    initialize();
+}
+
+
+pair<vector<double>, vector<double>> getBoundaries()
+{
+    // vector<pair<double, double>> bounds(getDim());
+    pair<vector<double>, vector<double>> bounds;
+    bounds.first.resize(getDim());
+    bounds.second.resize(getDim());
+
+    for(size_t i = 0; i < getDim(); i++) {
+        bounds.first[i] = lowbounds_[i];
+        bounds.second[i] = highbounds_[i];
+    }
     return bounds;
 }
 

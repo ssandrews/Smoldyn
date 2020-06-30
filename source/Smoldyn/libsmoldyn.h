@@ -57,13 +57,13 @@ void smolSetError(
 void smolSetErrorNT(
     const char *errorfunction, enum ErrorCode errorcode, const char *errorstring);
 enum ErrorCode smolGetError(char *errorfunction, char *errorstring, int clearerror);
-void           smolClearError(void);
-void           smolSetDebugMode(int debugmode);
-char *         smolErrorCodeToString(enum ErrorCode erc, char *string);
+void smolClearError(void);
+void smolSetDebugMode(int debugmode);
+char *smolErrorCodeToString(enum ErrorCode erc, char *string);
 
 /******************************** Sim structure *******************************/
 
-simptr         smolNewSim(int dim, double *lowbounds, double *highbounds);
+simptr smolNewSim(int dim, double *lowbounds, double *highbounds);
 enum ErrorCode smolUpdateSim(simptr sim);
 enum ErrorCode smolRunTimeStep(simptr sim);
 enum ErrorCode smolRunSim(simptr sim);
@@ -116,16 +116,16 @@ enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
 /********************************* Molecules **********************************/
 
 enum ErrorCode smolAddSpecies(simptr sim, const char *species, const char *mollist);
-int            smolGetSpeciesIndex(simptr sim, const char *species);
-int            smolGetSpeciesIndexNT(simptr sim, const char *species);
-char *         smolGetSpeciesName(simptr sim, int speciesindex, char *species);
+int smolGetSpeciesIndex(simptr sim, const char *species);
+int smolGetSpeciesIndexNT(simptr sim, const char *species);
+char *smolGetSpeciesName(simptr sim, int speciesindex, char *species);
 enum ErrorCode smolSetSpeciesMobility(simptr sim, const char *species,
     enum MolecState state, double difc, double *drift, double *difmatrix);
 //?? needs function smolSetSpeciesSurfaceDrift
 enum ErrorCode smolAddMolList(simptr sim, const char *mollist);
-int            smolGetMolListIndex(simptr sim, const char *mollist);
-int            smolGetMolListIndexNT(simptr sim, const char *mollist);
-char *         smolGetMolListName(simptr sim, int mollistindex, char *mollist);
+int smolGetMolListIndex(simptr sim, const char *mollist);
+int smolGetMolListIndexNT(simptr sim, const char *mollist);
+char *smolGetMolListName(simptr sim, int mollistindex, char *mollist);
 enum ErrorCode smolSetMolList(
     simptr sim, const char *species, enum MolecState state, const char *mollist);
 enum ErrorCode smolSetMaxMolecules(simptr sim, int maxmolecules);
@@ -144,9 +144,9 @@ enum ErrorCode smolSetMoleculeStyle(
 
 enum ErrorCode smolSetBoundaryType(simptr sim, int dimension, int highside, char type);
 enum ErrorCode smolAddSurface(simptr sim, const char *surface);
-int            smolGetSurfaceIndex(simptr sim, const char *surface);
-int            smolGetSurfaceIndexNT(simptr sim, const char *surface);
-char *         smolGetSurfaceName(simptr sim, int surfaceindex, char *surface);
+int smolGetSurfaceIndex(simptr sim, const char *surface);
+int smolGetSurfaceIndexNT(simptr sim, const char *surface);
+char *smolGetSurfaceName(simptr sim, int surfaceindex, char *surface);
 enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface, enum PanelFace face,
     const char *species, enum MolecState state, enum SrfAction action);
 enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface, const char *species,
@@ -154,8 +154,8 @@ enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface, const char *s
     const char *newspecies, int isinternal);
 enum ErrorCode smolAddPanel(simptr sim, const char *surface, enum PanelShape panelshape,
     const char *panel, const char *axisstring, double *params);
-int            smolGetPanelIndex(
-               simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel);
+int smolGetPanelIndex(
+    simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel);
 int smolGetPanelIndexNT(
     simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel);
 char *smolGetPanelName(simptr sim, const char *surface, enum PanelShape panelshape,
@@ -174,8 +174,8 @@ enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface, enum PanelFa
 /********************************* Compartments *******************************/
 
 enum ErrorCode smolAddCompartment(simptr sim, const char *compartment);
-int            smolGetCompartmentIndex(simptr sim, const char *compartment);
-int            smolGetCompartmentIndexNT(simptr sim, const char *compartment);
+int smolGetCompartmentIndex(simptr sim, const char *compartment);
+int smolGetCompartmentIndexNT(simptr sim, const char *compartment);
 char *smolGetCompartmentName(simptr sim, int compartmentindex, char *compartment);
 enum ErrorCode smolAddCompartmentSurface(
     simptr sim, const char *compartment, const char *surface);
@@ -189,8 +189,8 @@ enum ErrorCode smolAddCompartmentLogic(
 enum ErrorCode smolAddReaction(simptr sim, const char *reaction, const char *reactant1,
     enum MolecState rstate1, const char *reactant2, enum MolecState rstate2, int nproduct,
     const char **productspecies, enum MolecState *productstates, double rate);
-int            smolGetReactionIndex(simptr sim, int *orderptr, const char *reaction);
-int            smolGetReactionIndexNT(simptr sim, int *orderptr, const char *reaction);
+int smolGetReactionIndex(simptr sim, int *orderptr, const char *reaction);
+int smolGetReactionIndexNT(simptr sim, int *orderptr, const char *reaction);
 char *smolGetReactionName(simptr sim, int order, int reactionindex, char *reaction);
 enum ErrorCode smolSetReactionRate(
     simptr sim, const char *reaction, double rate, int type);
@@ -203,9 +203,9 @@ enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction,
 
 enum ErrorCode smolAddPort(
     simptr sim, const char *port, const char *surface, enum PanelFace face);
-int            smolGetPortIndex(simptr sim, const char *port);
-int            smolGetPortIndexNT(simptr sim, const char *port);
-char *         smolGetPortName(simptr sim, int portindex, char *port);
+int smolGetPortIndex(simptr sim, const char *port);
+int smolGetPortIndexNT(simptr sim, const char *port);
+char *smolGetPortName(simptr sim, int portindex, char *port);
 enum ErrorCode smolAddPortMolecules(
     simptr sim, const char *port, int nmolec, const char *species, double **positions);
 int smolGetPortMolecules(
@@ -218,9 +218,9 @@ enum ErrorCode smolAddLattice(simptr sim, const char *lattice, const double *min
 enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const char *port);
 enum ErrorCode smolAddLatticeSpecies(
     simptr sim, const char *lattice, const char *species);
-int            smolGetLatticeIndex(simptr sim, const char *lattice);
-int            smolGetLatticeIndexNT(simptr sim, const char *lattice);
-char *         smolGetLatticeName(simptr sim, int latticeindex, char *lattice);
+int smolGetLatticeIndex(simptr sim, const char *lattice);
+int smolGetLatticeIndexNT(simptr sim, const char *lattice);
+char *smolGetLatticeName(simptr sim, int latticeindex, char *lattice);
 enum ErrorCode smolAddLatticeMolecules(simptr sim, const char *lattice,
     const char *species, int number, double *lowposition, double *highposition);
 enum ErrorCode smolAddLatticeReaction(

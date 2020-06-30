@@ -183,9 +183,21 @@ For example, the following line builds Smoldyn and Libsmoldyn for debugging and 
 
 \section{Files}
 
-After building Smoldyn, there are two Python modules, both of which end up in the source/python/smoldyn directory. One place where I can reliably access these files is by navigating to Smoldyn-official/source/python. From there, I can start Python and import smoldyn.
+After building Smoldyn (assuming you were in
+\texttt{/path/to/Smoldyn-official/build} directory when you ran \verb|make|
+command.), the python module ends up in the
+\texttt{/path/to/Smoldyn-official/build/py}.  Add this directory to your
+\texttt{PYTHOPATH} e.g. 
+\verb|export PTYHONPATH=/path/to/Smoldyn-official/build/py:$PYTHONPATH|
 
-Note that it's possible to see where the library is imported from by entering ``smoldyn.\_\_file\_\_''.
+Note that it's possible to see where the library is imported from by checking
+\verb|smoldyn.__file__|. For example,
+
+\begin{verbatim}
+>>> import smoldyn
+>>> print(smoldyn.__file__)
+/home/dilawars/Work/FORKES/Smoldyn-official/build/py/smoldyn/__init__.py
+\end{verbatim}
 
 % Chapter: Error trapping
 \chapter{Error trapping}

@@ -37,6 +37,3 @@ def main():
     """
     test_newcursim()
     test_cursim()
-
-if __name__ == "__main__":
-    main()

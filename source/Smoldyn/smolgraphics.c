@@ -472,8 +472,7 @@ graphicsssptr graphssalloc(void)
     int           lt;
 
     graphss = NULL;
-    CHECKMEM(
-        graphss = (graphicsssptr)malloc(sizeof(struct graphicssuperstruct)));
+    CHECKMEM(graphss = (graphicsssptr)malloc(sizeof(struct graphicssuperstruct)));
 
     graphss->condition    = SCinit;
     graphss->sim          = NULL;
@@ -570,19 +569,16 @@ void graphssoutput(simptr sim)
     simLog(sim, 2, "\n");
     if(graphss->framepts)
         simLog(sim, 2, " frame color: %g,%g,%g,%g\n", graphss->framecolor[0],
-            graphss->framecolor[1], graphss->framecolor[2],
-            graphss->framecolor[3]);
+            graphss->framecolor[1], graphss->framecolor[2], graphss->framecolor[3]);
     if(graphss->gridpts)
         simLog(sim, 2, " grid color: %g,%g,%g,%g\n", graphss->gridcolor[0],
-            graphss->gridcolor[1], graphss->gridcolor[2],
-            graphss->gridcolor[3]);
+            graphss->gridcolor[1], graphss->gridcolor[2], graphss->gridcolor[3]);
     simLog(sim, 2, " background color: %g,%g,%g,%g\n", graphss->backcolor[0],
         graphss->backcolor[1], graphss->backcolor[2], graphss->backcolor[3]);
 
     if(graphss->ntextitems) {
         simLog(sim, 2, " text color: %g,%g,%g,%g\n", graphss->textcolor[0],
-            graphss->textcolor[1], graphss->textcolor[2],
-            graphss->textcolor[3]);
+            graphss->textcolor[1], graphss->textcolor[2], graphss->textcolor[3]);
         simLog(sim, 2, " text items:");
         for(i1 = 0; i1 < graphss->ntextitems; i1++)
             simLog(sim, 2, " %s", graphss->textitems[i1]);
@@ -591,25 +587,24 @@ void graphssoutput(simptr sim)
 
     if(graphss->graphics >= 3)
         simLog(sim, 2, " ambient light (%s): %g %g %g %g\n",
-            graphicslp2string(graphss->roomstate, string1),
-            graphss->ambiroom[0], graphss->ambiroom[1], graphss->ambiroom[2],
-            graphss->ambiroom[3]);
+            graphicslp2string(graphss->roomstate, string1), graphss->ambiroom[0],
+            graphss->ambiroom[1], graphss->ambiroom[2], graphss->ambiroom[3]);
     for(lt = 0; lt < MAXLIGHTS; lt++)
         if(graphss->lightstate[lt] != LPauto) {
             simLog(sim, 2, " light %i: %s\n", lt,
                 graphicslp2string(graphss->lightstate[lt], string1));
-            simLog(sim, 2, "  position: %g %g %g %g\n",
-                graphss->lightpos[lt][0], graphss->lightpos[lt][1],
-                graphss->lightpos[lt][2], graphss->lightpos[lt][3]);
-            simLog(sim, 2, "  ambient: %g %g %g %g\n",
-                graphss->ambilight[lt][0], graphss->ambilight[lt][1],
-                graphss->ambilight[lt][2], graphss->ambilight[lt][3]);
-            simLog(sim, 2, "  diffuse: %g %g %g %g\n",
-                graphss->difflight[lt][0], graphss->difflight[lt][1],
-                graphss->difflight[lt][2], graphss->difflight[lt][3]);
-            simLog(sim, 2, "  specular: %g %g %g %g\n",
-                graphss->speclight[lt][0], graphss->speclight[lt][1],
-                graphss->speclight[lt][2], graphss->speclight[lt][3]);
+            simLog(sim, 2, "  position: %g %g %g %g\n", graphss->lightpos[lt][0],
+                graphss->lightpos[lt][1], graphss->lightpos[lt][2],
+                graphss->lightpos[lt][3]);
+            simLog(sim, 2, "  ambient: %g %g %g %g\n", graphss->ambilight[lt][0],
+                graphss->ambilight[lt][1], graphss->ambilight[lt][2],
+                graphss->ambilight[lt][3]);
+            simLog(sim, 2, "  diffuse: %g %g %g %g\n", graphss->difflight[lt][0],
+                graphss->difflight[lt][1], graphss->difflight[lt][2],
+                graphss->difflight[lt][3]);
+            simLog(sim, 2, "  specular: %g %g %g %g\n", graphss->speclight[lt][0],
+                graphss->speclight[lt][1], graphss->speclight[lt][2],
+                graphss->speclight[lt][3]);
         }
 
     gl2GetString("TiffName", string1);
@@ -671,23 +666,20 @@ void writegraphss(simptr sim, FILE *fptr)
         fprintf(fptr, "text_display %s\n", graphss->textitems[item]);
 
     if(graphss->roomstate != LPauto) {
-        fprintf(fptr, "light global ambient %g %g %g %g\n",
-            graphss->ambiroom[0], graphss->ambiroom[1], graphss->ambiroom[2],
-            graphss->ambiroom[3]);
-        fprintf(fptr, "light global %s\n",
-            graphicslp2string(graphss->roomstate, string));
+        fprintf(fptr, "light global ambient %g %g %g %g\n", graphss->ambiroom[0],
+            graphss->ambiroom[1], graphss->ambiroom[2], graphss->ambiroom[3]);
+        fprintf(fptr, "light global %s\n", graphicslp2string(graphss->roomstate, string));
     }
     for(lt = 0; lt < MAXLIGHTS; lt++)
         if(graphss->lightstate[lt] != LPauto) {
-            fprintf(fptr, "light %i position %g %g %g\n", lt,
-                graphss->lightpos[lt][0], graphss->lightpos[lt][1],
-                graphss->lightpos[lt][2]);
-            fprintf(fptr, "light %i ambient %g %g %g %g\n", lt,
-                graphss->ambilight[lt][0], graphss->ambilight[lt][1],
-                graphss->ambilight[lt][2], graphss->ambilight[lt][3]);
-            fprintf(fptr, "light %i diffuse %g %g %g %g\n", lt,
-                graphss->difflight[lt][0], graphss->difflight[lt][1],
-                graphss->difflight[lt][2], graphss->difflight[lt][3]);
+            fprintf(fptr, "light %i position %g %g %g\n", lt, graphss->lightpos[lt][0],
+                graphss->lightpos[lt][1], graphss->lightpos[lt][2]);
+            fprintf(fptr, "light %i ambient %g %g %g %g\n", lt, graphss->ambilight[lt][0],
+                graphss->ambilight[lt][1], graphss->ambilight[lt][2],
+                graphss->ambilight[lt][3]);
+            fprintf(fptr, "light %i diffuse %g %g %g %g\n", lt, graphss->difflight[lt][0],
+                graphss->difflight[lt][1], graphss->difflight[lt][2],
+                graphss->difflight[lt][3]);
             fprintf(fptr, "light %i specular %g %g %g %g\n", lt,
                 graphss->speclight[lt][0], graphss->speclight[lt][1],
                 graphss->speclight[lt][2], graphss->speclight[lt][3]);
@@ -730,8 +722,7 @@ int checkgraphicsparams(simptr sim, int *warnptr)
 /******************************************************************************/
 
 /* graphicssetcondition */
-void graphicssetcondition(
-    graphicsssptr graphss, enum StructCond cond, int upgrade)
+void graphicssetcondition(graphicsssptr graphss, enum StructCond cond, int upgrade)
 {
     if(!graphss)
         return;
@@ -990,8 +981,7 @@ int graphicssettextitem(simptr sim, char *itemname)
     if(!strcmp(itemname, "time"))
         ;  // supported items
     else if(((sim->mols &&
-                 ((i = molstring2index1(sim, itemname, &ms, NULL)) >= 0 ||
-                     i == -5)) ||
+                 ((i = molstring2index1(sim, itemname, &ms, NULL)) >= 0 || i == -5)) ||
                 sim->ruless) &&
             ms != MSbsoln)
         ;
@@ -1006,8 +996,8 @@ int graphicssettextitem(simptr sim, char *itemname)
 }
 
 /* graphicssetlight */
-int graphicssetlight(simptr sim, graphicsssptr graphss, int lt,
-    enum LightParam ltparam, double *value)
+int graphicssetlight(
+    simptr sim, graphicsssptr graphss, int lt, enum LightParam ltparam, double *value)
 {
     int i, er;
 
@@ -1117,8 +1107,8 @@ int graphicsupdateinit(simptr sim)
     dim   = sim->dim;
     wlist = sim->wlist;
     if(dim == 1)
-        gl2Initialize(sim->filename, (float)wlist[0]->pos, (float)wlist[1]->pos,
-            0, 0, 0, 0);
+        gl2Initialize(
+            sim->filename, (float)wlist[0]->pos, (float)wlist[1]->pos, 0, 0, 0, 0);
     else if(dim == 2)
         gl2Initialize(sim->filename, (float)wlist[0]->pos, (float)wlist[1]->pos,
             (float)wlist[2]->pos, (float)wlist[3]->pos, 0, 0);
@@ -1150,8 +1140,8 @@ int graphicsupdatelists(simptr sim)
 
     if(graphss->graphics >= 3) {
         glEnable(GL_LIGHTING);
-        glLightModelfv(GL_LIGHT_MODEL_AMBIENT,
-            gl2Double2GLfloat(graphss->ambiroom, f1, 4));
+        glLightModelfv(
+            GL_LIGHT_MODEL_AMBIENT, gl2Double2GLfloat(graphss->ambiroom, f1, 4));
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
         glEnable(GL_COLOR_MATERIAL);
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
@@ -1174,9 +1164,8 @@ int graphicsupdateparams(simptr sim)
     if(tflag || graphss->graphics == 0)
         return 0;
 
-    glClearColor((GLclampf)graphss->backcolor[0],
-        (GLclampf)graphss->backcolor[1], (GLclampf)graphss->backcolor[2],
-        (GLclampf)graphss->backcolor[3]);
+    glClearColor((GLclampf)graphss->backcolor[0], (GLclampf)graphss->backcolor[1],
+        (GLclampf)graphss->backcolor[2], (GLclampf)graphss->backcolor[3]);
     if(graphss->graphics >= 3) {
         for(lt = 0; lt < MAXLIGHTS; lt++)
             if(graphss->lightstate[lt] == LPon) {
@@ -1249,13 +1238,13 @@ int graphicsupdate(simptr sim)
 void RenderSurfaces(simptr sim)
 {
 #ifdef __gl_h_
-    surfacessptr srfss;
-    surfaceptr   srf;
-    int          s, p, graphics, fdone, bdone, c;
-    double **    point, *front;
-    double       xlo, xhi, ylo, yhi, xpix, ypix, ymid, zmid;
-    double delta, deltax, deltay, theta, vect[3], vect2[3], axis[3], height;
-    double flcolor[4], blcolor[4];
+    surfacessptr  srfss;
+    surfaceptr    srf;
+    int           s, p, graphics, fdone, bdone, c;
+    double **     point, *front;
+    double        xlo, xhi, ylo, yhi, xpix, ypix, ymid, zmid;
+    double        delta, deltax, deltay, theta, vect[3], vect2[3], axis[3], height;
+    double        flcolor[4], blcolor[4];
     enum DrawMode fdrawmode, bdrawmode, fdm, bdm;
     GLdouble      gldvect[3];
     GLfloat       glfvect[4];
@@ -1300,17 +1289,13 @@ void RenderSurfaces(simptr sim)
                 for(p = 0; p < srf->npanel[2]; p++) {  // 1-D spheres front
                     point = srf->panels[2][p]->point;
                     front = srf->panels[2][p]->front;
-                    glVertex3d((GLdouble)(point[0][0] + point[1][0] +
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] + point[1][0] + front[0] * delta),
                         (GLdouble)(ymid - (yhi - ylo) / 20), (GLdouble)zmid);
-                    glVertex3d((GLdouble)(point[0][0] + point[1][0] +
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] + point[1][0] + front[0] * delta),
                         (GLdouble)(ymid + (yhi - ylo) / 20), (GLdouble)zmid);
-                    glVertex3d((GLdouble)(point[0][0] - point[1][0] -
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] - point[1][0] - front[0] * delta),
                         (GLdouble)(ymid - (yhi - ylo) / 20), (GLdouble)zmid);
-                    glVertex3d((GLdouble)(point[0][0] - point[1][0] -
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] - point[1][0] - front[0] * delta),
                         (GLdouble)(ymid + (yhi - ylo) / 20), (GLdouble)zmid);
                 }
                 glEnd();
@@ -1337,17 +1322,13 @@ void RenderSurfaces(simptr sim)
                 for(p = 0; p < srf->npanel[2]; p++) {  // 1-D spheres back
                     point = srf->panels[2][p]->point;
                     front = srf->panels[2][p]->front;
-                    glVertex3d((GLdouble)(point[0][0] + point[1][0] +
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] + point[1][0] + front[0] * delta),
                         (GLdouble)(ymid - (yhi - ylo) / 20), (GLdouble)zmid);
-                    glVertex3d((GLdouble)(point[0][0] + point[1][0] +
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] + point[1][0] + front[0] * delta),
                         (GLdouble)(ymid + (yhi - ylo) / 20), (GLdouble)zmid);
-                    glVertex3d((GLdouble)(point[0][0] - point[1][0] -
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] - point[1][0] - front[0] * delta),
                         (GLdouble)(ymid - (yhi - ylo) / 20), (GLdouble)zmid);
-                    glVertex3d((GLdouble)(point[0][0] - point[1][0] -
-                                          front[0] * delta),
+                    glVertex3d((GLdouble)(point[0][0] - point[1][0] - front[0] * delta),
                         (GLdouble)(ymid + (yhi - ylo) / 20), (GLdouble)zmid);
                 }
                 glEnd();
@@ -1385,22 +1366,18 @@ void RenderSurfaces(simptr sim)
                     }
                     else {
                         glVertex3d((GLdouble)(point[0][0]),
-                            (GLdouble)(point[0][1] + front[0] * deltay),
-                            (GLdouble)zmid);
+                            (GLdouble)(point[0][1] + front[0] * deltay), (GLdouble)zmid);
                         glVertex3d((GLdouble)(point[1][0]),
-                            (GLdouble)(point[1][1] + front[0] * deltay),
-                            (GLdouble)zmid);
+                            (GLdouble)(point[1][1] + front[0] * deltay), (GLdouble)zmid);
                     }
                 }
                 for(p = 0; p < srf->npanel[1]; p++) {  // 2-D triangles front
                     point = srf->panels[1][p]->point;
                     front = srf->panels[1][p]->front;
                     glVertex3d((GLdouble)(point[0][0] + front[0] * deltax),
-                        (GLdouble)(point[0][1] + front[1] * deltay),
-                        (GLdouble)zmid);
+                        (GLdouble)(point[0][1] + front[1] * deltay), (GLdouble)zmid);
                     glVertex3d((GLdouble)(point[1][0] + front[0] * deltax),
-                        (GLdouble)(point[1][1] + front[1] * deltay),
-                        (GLdouble)zmid);
+                        (GLdouble)(point[1][1] + front[1] * deltay), (GLdouble)zmid);
                 }
                 for(p = 0; p < srf->npanel[3]; p++) {  // 2-D cylinders front
                     point = srf->panels[3][p]->point;
@@ -1431,13 +1408,13 @@ void RenderSurfaces(simptr sim)
                     front = srf->panels[5][p]->front;
                     glVertex3d((GLdouble)(point[0][0] + point[1][0] * front[1] +
                                           front[0] * deltax),
-                        (GLdouble)(point[0][1] - point[1][0] * front[0] +
-                                   front[1] * deltay),
+                        (GLdouble)(
+                            point[0][1] - point[1][0] * front[0] + front[1] * deltay),
                         (GLdouble)zmid);
                     glVertex3d((GLdouble)(point[0][0] - point[1][0] * front[1] +
                                           front[0] * deltax),
-                        (GLdouble)(point[0][1] + point[1][0] * front[0] +
-                                   front[1] * deltay),
+                        (GLdouble)(
+                            point[0][1] + point[1][0] * front[0] + front[1] * deltay),
                         (GLdouble)zmid);
                 }
                 glEnd();
@@ -1445,15 +1422,12 @@ void RenderSurfaces(simptr sim)
                     point = srf->panels[2][p]->point;
                     front = srf->panels[2][p]->front;
                     if(fdrawmode & DMvert)
-                        gl2DrawCircleD(
-                            point[0], point[1][0], (int)point[1][1], 'v', 2);
+                        gl2DrawCircleD(point[0], point[1][0], (int)point[1][1], 'v', 2);
                     if(fdrawmode & DMface)
-                        gl2DrawCircleD(
-                            point[0], point[1][0], (int)point[1][1], 'f', 2);
+                        gl2DrawCircleD(point[0], point[1][0], (int)point[1][1], 'f', 2);
                     if(fdrawmode & DMedge)
-                        gl2DrawCircleD(point[0],
-                            point[1][0] + front[0] * deltax, (int)point[1][1],
-                            'e', 2);
+                        gl2DrawCircleD(point[0], point[1][0] + front[0] * deltax,
+                            (int)point[1][1], 'e', 2);
                 }
                 for(p = 0; p < srf->npanel[4]; p++) {  // 2-D hemispheres front
                     point = srf->panels[4][p]->point;
@@ -1466,8 +1440,8 @@ void RenderSurfaces(simptr sim)
                         gl2DrawArcD(point[0], point[1][0], theta, theta + PI,
                             (int)point[1][1], 'f', 2);
                     if(fdrawmode & DMedge)
-                        gl2DrawArcD(point[0], point[1][0] + front[0] * deltax,
-                            theta, theta + PI, (int)point[1][1], 'e', 2);
+                        gl2DrawArcD(point[0], point[1][0] + front[0] * deltax, theta,
+                            theta + PI, (int)point[1][1], 'e', 2);
                 }
 
                 if(fdrawmode & DMedge || fdrawmode & DMface) {
@@ -1475,16 +1449,13 @@ void RenderSurfaces(simptr sim)
                     deltay *= -1;
                     glColor4fv(gl2Double2GLfloat(srf->bcolor, glfvect, 4));
                     glBegin(GL_LINES);
-                    for(p = 0; p < srf->npanel[0];
-                        p++) {  // 2-D rectangles back
+                    for(p = 0; p < srf->npanel[0]; p++) {  // 2-D rectangles back
                         point = srf->panels[0][p]->point;
                         front = srf->panels[0][p]->front;
                         if(front[1] == 0) {
-                            glVertex3d(
-                                (GLdouble)(point[0][0] + front[0] * deltax),
+                            glVertex3d((GLdouble)(point[0][0] + front[0] * deltax),
                                 (GLdouble)(point[0][1]), (GLdouble)zmid);
-                            glVertex3d(
-                                (GLdouble)(point[1][0] + front[0] * deltax),
+                            glVertex3d((GLdouble)(point[1][0] + front[0] * deltax),
                                 (GLdouble)(point[1][1]), (GLdouble)zmid);
                         }
                         else {
@@ -1500,36 +1471,30 @@ void RenderSurfaces(simptr sim)
                         point = srf->panels[1][p]->point;
                         front = srf->panels[1][p]->front;
                         glVertex3d((GLdouble)(point[0][0] + front[0] * deltax),
-                            (GLdouble)(point[0][1] + front[1] * deltay),
-                            (GLdouble)zmid);
+                            (GLdouble)(point[0][1] + front[1] * deltay), (GLdouble)zmid);
                         glVertex3d((GLdouble)(point[1][0] + front[0] * deltax),
-                            (GLdouble)(point[1][1] + front[1] * deltay),
-                            (GLdouble)zmid);
+                            (GLdouble)(point[1][1] + front[1] * deltay), (GLdouble)zmid);
                     }
                     for(p = 0; p < srf->npanel[3]; p++) {  // 2-D cylinders back
                         point = srf->panels[3][p]->point;
                         front = srf->panels[3][p]->front;
-                        glVertex3d(
-                            (GLdouble)(point[0][0] + front[0] * point[2][0] +
-                                       front[2] * front[0] * deltax),
+                        glVertex3d((GLdouble)(point[0][0] + front[0] * point[2][0] +
+                                              front[2] * front[0] * deltax),
                             (GLdouble)(point[0][1] + front[1] * point[2][0] +
                                        front[2] * front[1] * deltay),
                             (GLdouble)zmid);
-                        glVertex3d(
-                            (GLdouble)(point[1][0] + front[0] * point[2][0] +
-                                       front[2] * front[0] * deltax),
+                        glVertex3d((GLdouble)(point[1][0] + front[0] * point[2][0] +
+                                              front[2] * front[0] * deltax),
                             (GLdouble)(point[1][1] + front[1] * point[2][0] +
                                        front[2] * front[1] * deltay),
                             (GLdouble)zmid);
-                        glVertex3d(
-                            (GLdouble)(point[0][0] - front[0] * point[2][0] -
-                                       front[2] * front[0] * deltax),
+                        glVertex3d((GLdouble)(point[0][0] - front[0] * point[2][0] -
+                                              front[2] * front[0] * deltax),
                             (GLdouble)(point[0][1] - front[1] * point[2][0] -
                                        front[2] * front[1] * deltay),
                             (GLdouble)zmid);
-                        glVertex3d(
-                            (GLdouble)(point[1][0] - front[0] * point[2][0] -
-                                       front[2] * front[0] * deltax),
+                        glVertex3d((GLdouble)(point[1][0] - front[0] * point[2][0] -
+                                              front[2] * front[0] * deltax),
                             (GLdouble)(point[1][1] - front[1] * point[2][0] -
                                        front[2] * front[1] * deltay),
                             (GLdouble)zmid);
@@ -1537,17 +1502,15 @@ void RenderSurfaces(simptr sim)
                     for(p = 0; p < srf->npanel[5]; p++) {  // 2-D disks back
                         point = srf->panels[5][p]->point;
                         front = srf->panels[5][p]->front;
-                        glVertex3d(
-                            (GLdouble)(point[0][0] + point[1][0] * front[1] +
-                                       front[0] * deltax),
-                            (GLdouble)(point[0][1] - point[1][0] * front[0] +
-                                       front[1] * deltay),
+                        glVertex3d((GLdouble)(point[0][0] + point[1][0] * front[1] +
+                                              front[0] * deltax),
+                            (GLdouble)(
+                                point[0][1] - point[1][0] * front[0] + front[1] * deltay),
                             (GLdouble)zmid);
-                        glVertex3d(
-                            (GLdouble)(point[0][0] - point[1][0] * front[1] +
-                                       front[0] * deltax),
-                            (GLdouble)(point[0][1] + point[1][0] * front[0] +
-                                       front[1] * deltay),
+                        glVertex3d((GLdouble)(point[0][0] - point[1][0] * front[1] +
+                                              front[0] * deltax),
+                            (GLdouble)(
+                                point[0][1] + point[1][0] * front[0] + front[1] * deltay),
                             (GLdouble)zmid);
                     }
                     glEnd();
@@ -1555,18 +1518,15 @@ void RenderSurfaces(simptr sim)
                         point = srf->panels[2][p]->point;
                         front = srf->panels[2][p]->front;
                         if(bdrawmode & DMedge)
-                            gl2DrawCircleD(point[0],
-                                point[1][0] + front[0] * deltax,
+                            gl2DrawCircleD(point[0], point[1][0] + front[0] * deltax,
                                 (int)point[1][1], 'e', 2);
                     }
-                    for(p = 0; p < srf->npanel[4];
-                        p++) {  // 2-D hemispheres back
+                    for(p = 0; p < srf->npanel[4]; p++) {  // 2-D hemispheres back
                         point = srf->panels[4][p]->point;
                         front = srf->panels[4][p]->front;
                         theta = atan2(point[2][1], point[2][0]) + PI / 2.0;
                         if(bdrawmode & DMedge)
-                            gl2DrawArcD(point[0],
-                                point[1][0] + front[0] * deltax, theta,
+                            gl2DrawArcD(point[0], point[1][0] + front[0] * deltax, theta,
                                 theta + PI, (int)point[1][1], 'e', 2);
                     }
                 }
@@ -1625,15 +1585,15 @@ void RenderSurfaces(simptr sim)
                 glLineWidth((GLfloat)srf->edgepts);
                 if(graphics >= 2 && srf->edgestipple[1] != 0xFFFF) {
                     glEnable(GL_LINE_STIPPLE);
-                    glLineStipple((GLint)srf->edgestipple[0],
-                        (GLushort)srf->edgestipple[1]);
+                    glLineStipple(
+                        (GLint)srf->edgestipple[0], (GLushort)srf->edgestipple[1]);
                 }
 
                 if(graphics >= 3) {
-                    glMaterialfv(GL_FRONT, GL_SPECULAR,
-                        gl2Double2GLfloat(flcolor, glfvect, 4));
-                    glMaterialfv(GL_BACK, GL_SPECULAR,
-                        gl2Double2GLfloat(blcolor, glfvect, 4));
+                    glMaterialfv(
+                        GL_FRONT, GL_SPECULAR, gl2Double2GLfloat(flcolor, glfvect, 4));
+                    glMaterialfv(
+                        GL_BACK, GL_SPECULAR, gl2Double2GLfloat(blcolor, glfvect, 4));
                     glMateriali(GL_FRONT, GL_SHININESS, (GLint)srf->fshiny);
                     glMateriali(GL_BACK, GL_SHININESS, (GLint)srf->bshiny);
                 }
@@ -1643,19 +1603,19 @@ void RenderSurfaces(simptr sim)
                     for(p = 0; p < srf->npanel[PSrect]; p++) {
                         if(graphics >= 3) {
                             gldvect[0] = gldvect[1] = gldvect[2] = 0;
-                            front = srf->panels[PSrect][p]->front;
+                            front                  = srf->panels[PSrect][p]->front;
                             gldvect[(int)front[1]] = (GLdouble)front[0];
                             glNormal3dv(gldvect);
                         }
                         point = srf->panels[PSrect][p]->point;
-                        glVertex3d((GLdouble)(point[0][0]),
-                            (GLdouble)(point[0][1]), (GLdouble)(point[0][2]));
-                        glVertex3d((GLdouble)(point[1][0]),
-                            (GLdouble)(point[1][1]), (GLdouble)(point[1][2]));
-                        glVertex3d((GLdouble)(point[2][0]),
-                            (GLdouble)(point[2][1]), (GLdouble)(point[2][2]));
-                        glVertex3d((GLdouble)(point[3][0]),
-                            (GLdouble)(point[3][1]), (GLdouble)(point[3][2]));
+                        glVertex3d((GLdouble)(point[0][0]), (GLdouble)(point[0][1]),
+                            (GLdouble)(point[0][2]));
+                        glVertex3d((GLdouble)(point[1][0]), (GLdouble)(point[1][1]),
+                            (GLdouble)(point[1][2]));
+                        glVertex3d((GLdouble)(point[2][0]), (GLdouble)(point[2][1]),
+                            (GLdouble)(point[2][2]));
+                        glVertex3d((GLdouble)(point[3][0]), (GLdouble)(point[3][1]),
+                            (GLdouble)(point[3][2]));
                     }
                     glEnd();
                 }
@@ -1667,12 +1627,12 @@ void RenderSurfaces(simptr sim)
                             glNormal3fv(gl2Double2GLfloat(
                                 srf->panels[PStri][p]->front, glfvect, 4));
                         point = srf->panels[PStri][p]->point;
-                        glVertex3d((GLdouble)(point[0][0]),
-                            (GLdouble)(point[0][1]), (GLdouble)(point[0][2]));
-                        glVertex3d((GLdouble)(point[1][0]),
-                            (GLdouble)(point[1][1]), (GLdouble)(point[1][2]));
-                        glVertex3d((GLdouble)(point[2][0]),
-                            (GLdouble)(point[2][1]), (GLdouble)(point[2][2]));
+                        glVertex3d((GLdouble)(point[0][0]), (GLdouble)(point[0][1]),
+                            (GLdouble)(point[0][2]));
+                        glVertex3d((GLdouble)(point[1][0]), (GLdouble)(point[1][1]),
+                            (GLdouble)(point[1][2]));
+                        glVertex3d((GLdouble)(point[2][0]), (GLdouble)(point[2][1]),
+                            (GLdouble)(point[2][2]));
                     }
                     glEnd();
                 }
@@ -1682,11 +1642,10 @@ void RenderSurfaces(simptr sim)
                     front = srf->panels[PSsph][p]->front;
                     glMatrixMode(GL_MODELVIEW);
                     glPushMatrix();
-                    glTranslated((GLdouble)(point[0][0]),
-                        (GLdouble)(point[0][1]), (GLdouble)(point[0][2]));
-                    gl2DrawSphere(point[1][0], (int)point[1][1],
-                        (int)point[1][2], front[0] > 0 ? 0 : 1,
-                        graphics >= 3 ? 1 : 0);
+                    glTranslated((GLdouble)(point[0][0]), (GLdouble)(point[0][1]),
+                        (GLdouble)(point[0][2]));
+                    gl2DrawSphere(point[1][0], (int)point[1][1], (int)point[1][2],
+                        front[0] > 0 ? 0 : 1, graphics >= 3 ? 1 : 0);
                     glPopMatrix();
                 }
 
@@ -1695,22 +1654,21 @@ void RenderSurfaces(simptr sim)
                     front = srf->panels[PScyl][p]->front;
                     glMatrixMode(GL_MODELVIEW);
                     glPushMatrix();
-                    glTranslated((GLdouble)(point[0][0]),
-                        (GLdouble)(point[0][1]), (GLdouble)(point[0][2]));
+                    glTranslated((GLdouble)(point[0][0]), (GLdouble)(point[0][1]),
+                        (GLdouble)(point[0][2]));
                     vect[0] = vect[1] = 0;
                     vect[2]           = 1;
                     vect2[0]          = point[1][0] - point[0][0];
                     vect2[1]          = point[1][1] - point[0][1];
                     vect2[2]          = point[1][2] - point[0][2];
-                    height = sqrt(vect2[0] * vect2[0] + vect2[1] * vect2[1] +
-                                  vect2[2] * vect2[2]);
+                    height            = sqrt(
+                        vect2[0] * vect2[0] + vect2[1] * vect2[1] + vect2[2] * vect2[2]);
                     normalizeVD(vect2, 3);
                     theta = gl2FindRotateD(vect, vect2, axis);
-                    glRotated((GLdouble)theta, (GLdouble)(axis[0]),
-                        (GLdouble)(axis[1]), (GLdouble)(axis[2]));
-                    gl2DrawCylinder(point[2][0], point[2][0], height,
-                        (int)point[2][1], (int)point[2][2],
-                        front[0] > 0 ? 0 : 1, graphics >= 3 ? 1 : 0);
+                    glRotated((GLdouble)theta, (GLdouble)(axis[0]), (GLdouble)(axis[1]),
+                        (GLdouble)(axis[2]));
+                    gl2DrawCylinder(point[2][0], point[2][0], height, (int)point[2][1],
+                        (int)point[2][2], front[0] > 0 ? 0 : 1, graphics >= 3 ? 1 : 0);
                     glPopMatrix();
                 }
 
@@ -1719,16 +1677,15 @@ void RenderSurfaces(simptr sim)
                     front = srf->panels[PShemi][p]->front;
                     glMatrixMode(GL_MODELVIEW);
                     glPushMatrix();
-                    glTranslated((GLdouble)(point[0][0]),
-                        (GLdouble)(point[0][1]), (GLdouble)(point[0][2]));
+                    glTranslated((GLdouble)(point[0][0]), (GLdouble)(point[0][1]),
+                        (GLdouble)(point[0][2]));
                     vect[0] = vect[1] = 0;
                     vect[2]           = -1;
                     theta             = gl2FindRotateD(vect, point[2], axis);
-                    glRotated((GLdouble)theta, (GLdouble)(axis[0]),
-                        (GLdouble)(axis[1]), (GLdouble)(axis[2]));
-                    gl2DrawHemisphere(point[1][0], (int)point[1][1],
-                        (int)point[1][2], front[0] > 0 ? 0 : 1,
-                        graphics >= 3 ? 1 : 0);
+                    glRotated((GLdouble)theta, (GLdouble)(axis[0]), (GLdouble)(axis[1]),
+                        (GLdouble)(axis[2]));
+                    gl2DrawHemisphere(point[1][0], (int)point[1][1], (int)point[1][2],
+                        front[0] > 0 ? 0 : 1, graphics >= 3 ? 1 : 0);
                     glPopMatrix();
                 }
 
@@ -1737,13 +1694,13 @@ void RenderSurfaces(simptr sim)
                     front = srf->panels[PSdisk][p]->front;
                     glMatrixMode(GL_MODELVIEW);
                     glPushMatrix();
-                    glTranslated((GLdouble)(point[0][0]),
-                        (GLdouble)(point[0][1]), (GLdouble)(point[0][2]));
+                    glTranslated((GLdouble)(point[0][0]), (GLdouble)(point[0][1]),
+                        (GLdouble)(point[0][2]));
                     vect[0] = vect[1] = 0;
                     vect[2]           = -1;
                     theta             = gl2FindRotateD(vect, front, axis);
-                    glRotated((GLdouble)theta, (GLdouble)(axis[0]),
-                        (GLdouble)(axis[1]), (GLdouble)(axis[2]));
+                    glRotated((GLdouble)theta, (GLdouble)(axis[0]), (GLdouble)(axis[1]),
+                        (GLdouble)(axis[2]));
                     vect2[0] = vect2[1] = vect2[2] = 0;
                     gl2DrawCircleD(vect2, point[1][0], (int)point[1][1], 'f',
                         3);  //?? 'f' isn't right
@@ -1809,8 +1766,7 @@ void RenderFilaments(simptr sim)
             glColor4fv(gl2Double2GLfloat(fil->color, glfvect, 4));
             if(graphics >= 2 && fil->edgestipple[1] != 0xFFFF) {
                 glEnable(GL_LINE_STIPPLE);
-                glLineStipple(
-                    (GLint)fil->edgestipple[0], (GLushort)fil->edgestipple[1]);
+                glLineStipple((GLint)fil->edgestipple[0], (GLushort)fil->edgestipple[1]);
             }
             if(drawmode & DMedge) {
                 glLineWidth((GLfloat)fil->edgepts);
@@ -1823,8 +1779,8 @@ void RenderFilaments(simptr sim)
 
             for(vtx = fil->front; vtx <= fil->back; vtx++) {
                 point = fil->sxyz[vtx];
-                glVertex3d((GLdouble)(point[0]), (GLdouble)(point[1]),
-                    (GLdouble)(point[2]));
+                glVertex3d(
+                    (GLdouble)(point[0]), (GLdouble)(point[1]), (GLdouble)(point[2]));
             }
             glEnd();
         }
@@ -1877,15 +1833,14 @@ void RenderMolecs(simptr sim)
                     ms   = mptr->mstate;
                     if(mols->display[i][ms] > 0) {
                         glPointSize((GLfloat)mols->display[i][ms]);
-                        glColor3fv(
-                            gl2Double2GLfloat(mols->color[i][ms], glf1, 3));
+                        glColor3fv(gl2Double2GLfloat(mols->color[i][ms], glf1, 3));
                         glBegin(GL_POINTS);
                         if(dim == 1)
-                            glVertex3d((GLdouble)mptr->pos[0], (GLdouble)ymid,
-                                (GLdouble)zmid);
+                            glVertex3d(
+                                (GLdouble)mptr->pos[0], (GLdouble)ymid, (GLdouble)zmid);
                         else if(dim == 2)
-                            glVertex3d((GLdouble)(mptr->pos[0]),
-                                (GLdouble)(mptr->pos[1]), (GLdouble)zmid);
+                            glVertex3d((GLdouble)(mptr->pos[0]), (GLdouble)(mptr->pos[1]),
+                                (GLdouble)zmid);
                         else
                             glVertex3fv(gl2Double2GLfloat(mptr->pos, glf1, 3));
                         glEnd();
@@ -1907,21 +1862,18 @@ void RenderMolecs(simptr sim)
                     i    = mptr->ident;
                     ms   = mptr->mstate;
                     if(mols->display[i][ms] > 0) {
-                        glColor3fv(
-                            gl2Double2GLfloat(mols->color[i][ms], glf1, 3));
+                        glColor3fv(gl2Double2GLfloat(mols->color[i][ms], glf1, 3));
                         glPushMatrix();
                         if(dim == 1)
-                            glTranslated((GLdouble)(mptr->pos[0]),
-                                (GLdouble)ymid, (GLdouble)zmid);
+                            glTranslated(
+                                (GLdouble)(mptr->pos[0]), (GLdouble)ymid, (GLdouble)zmid);
                         else if(dim == 2)
                             glTranslated((GLdouble)(mptr->pos[0]),
                                 (GLdouble)(mptr->pos[1]), (GLdouble)zmid);
                         else
                             glTranslated((GLdouble)(mptr->pos[0]),
-                                (GLdouble)(mptr->pos[1]),
-                                (GLdouble)(mptr->pos[2]));
-                        glutSolidSphere(
-                            (GLdouble)(mols->display[i][ms]), 15, 15);
+                                (GLdouble)(mptr->pos[1]), (GLdouble)(mptr->pos[2]));
+                        glutSolidSphere((GLdouble)(mols->display[i][ms]), 15, 15);
                         glPopMatrix();
                     }
                 }
@@ -1953,22 +1905,19 @@ void RenderLattice(simptr sim)
         positions    = NULL;
         copy_numbers = NULL;
         n            = 0;
-        for(ilat = 0; ilat < lattice->nspecies;
-            ilat++) {  // ilat is the species identity
+        for(ilat = 0; ilat < lattice->nspecies; ilat++) {  // ilat is the species identity
             ismol = lattice->species_index[ilat];
             NSV_CALL(n = nsv_get_species_copy_numbers(
                          lattice->nsv, ismol, &copy_numbers, &positions));
-            for(i = 0; i < n;
-                ++i) {  // n is the total number of molecules of this species,
-                        // copy_numbers is how many in each site, and positions
-                        // are the site positions
-                if((mols->display[ismol][MSsoln] > 0) &&
-                    (copy_numbers[i] > 0)) {
+            for(i = 0; i < n; ++i) {  // n is the total number of molecules of this
+                                      // species, copy_numbers is how many in each site,
+                                      // and positions are the site positions
+                if((mols->display[ismol][MSsoln] > 0) && (copy_numbers[i] > 0)) {
                     poslo[0] = positions[3 * i + 0] - 0.5 * lattice->dx[0];
                     poshi[0] = positions[3 * i + 0] + 0.5 * lattice->dx[0];
                     if(dim == 1) {
-                        deltay = 0.025 * (gl2GetNumber("ClipTop") -
-                                             gl2GetNumber("ClipBot"));
+                        deltay =
+                            0.025 * (gl2GetNumber("ClipTop") - gl2GetNumber("ClipBot"));
                         poslo[1] -= deltay;
                         poshi[1] += deltay;
                     }
@@ -1980,8 +1929,7 @@ void RenderLattice(simptr sim)
                         poslo[2] = positions[3 * i + 2] - 0.5 * lattice->dx[2];
                         poshi[2] = positions[3 * i + 2] + 0.5 * lattice->dx[2];
                     }
-                    glColor3fv(
-                        gl2Double2GLfloat(mols->color[ismol][MSsoln], glf1, 3));
+                    glColor3fv(gl2Double2GLfloat(mols->color[ismol][MSsoln], glf1, 3));
                     gl2DrawBoxFaceD(poslo, poshi, dim == 3 ? 3 : 2);
                 }
             }
@@ -2006,10 +1954,9 @@ void RenderText(simptr sim)
         itemname = graphss->textitems[item];
         if(!strcmp(itemname, "time"))
             snprintf(string, STRCHAR, "time: %g", sim->time);
-        else if((i = molstring2index1(sim, itemname, &ms, &index)) >= 0 ||
-                i == -5)
-            snprintf(string, STRCHAR, "%s: %i", itemname,
-                molcount(sim, i, index, ms, -1));
+        else if((i = molstring2index1(sim, itemname, &ms, &index)) >= 0 || i == -5)
+            snprintf(
+                string, STRCHAR, "%s: %i", itemname, molcount(sim, i, index, ms, -1));
         else if(sim->ruless)
             snprintf(string, STRCHAR, "%s: 0", itemname);
         else
@@ -2020,8 +1967,7 @@ void RenderText(simptr sim)
         if(item + 1 < graphss->ntextitems)
             strncat(string2, ", ", STRCHAR - 3);
     }
-    gl2DrawTextD(
-        5, 95, graphss->textcolor, GLUT_BITMAP_HELVETICA_12, string2, -1);
+    gl2DrawTextD(5, 95, graphss->textcolor, GLUT_BITMAP_HELVETICA_12, string2, -1);
 #endif
     return;
 }
@@ -2148,8 +2094,7 @@ void TimerFunction(int state)
         state = simulatetimestep(sim);
         graphss->currentit++;
     }
-    else if(state > 0 ||
-            (state == 0 && gl2State(-1) == 2)) {  // stop the simulation
+    else if(state > 0 || (state == 0 && gl2State(-1) == 2)) {  // stop the simulation
         if(oldstate == 0)
             sim->elapsedtime += difftime(time(NULL), sim->clockstt);
         endsimulate(sim, state);
@@ -2188,8 +2133,7 @@ void smolsimulategl(simptr sim)
         endsimulate(sim, er);
     glutMainLoop();
 #else
-    simLog(sim, 5,
-        "Graphics are unavailable, so performing non-graphics simulation.\n");
+    simLog(sim, 5, "Graphics are unavailable, so performing non-graphics simulation.\n");
     smolsimulate(sim);
 #endif
     return;

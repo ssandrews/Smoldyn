@@ -40,7 +40,7 @@ extern vector<vector<double>> &getData();
 /* ----------------------------------------------------------------------------*/
 int init_and_run(const string &filepath, const string &flags)
 {
-    int  er = 0, wflag = 0;
+    int er = 0, wflag = 0;
     auto p = splitPath(filepath);
 
 #ifdef OPTION_VCELL
@@ -141,6 +141,23 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("same", ErrorCode::ECsame)
         .value("wildcard", ErrorCode::ECwildcard);
 
+    py::enum_<DrawMode>(m, "DrawMode")
+        .value("no", DrawMode::DMno)
+        .value("vert", DrawMode::DMvert)
+        .value("edge", DrawMode::DMedge)
+        .value("ve", DrawMode::DMve)
+        .value("face", DrawMode::DMface)
+        .value("vf", DrawMode::DMvf)
+        .value("ef", DrawMode::DMef)
+        .value("vef", DrawMode::DMvef)
+        .value("none", DrawMode::DMnone);
+
+    py::enum_<SMLflag>(m, "SMLflag")
+        .value("no", SMLflag::SMLno)
+        .value("diffuse", SMLflag::SMLdiffuse)
+        .value("react", SMLflag::SMLreact)
+        .value("srfbound", SMLflag::SMLsrfbound);
+
     /* simptr */
     // TODO: Only simple members are exposed (readonly).
     py::class_<simstruct>(m, "simstruct")
@@ -232,7 +249,8 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def(
         "clearAllSimStructs",
         []() {
-            for(auto v : simptrs_) deleteSimptr(v);
+            for(auto v : simptrs_)
+                deleteSimptr(v);
             simptrs_.clear();
             deleteSimptr(cursim_);
         },
@@ -255,11 +273,11 @@ PYBIND11_MODULE(_smoldyn, m)
         auto path = splitPath(string(filepath));
         return smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
     });
-    m.def("loadSimFromFile", [](const string &filepath, const char *flags) -> ErrorCode {
+    m.def("loadSimFromFile", [](const string &filepath, const char *flags) {
         auto p = splitPath(filepath);
         return smolLoadSimFromFile(p.first.c_str(), p.second.c_str(), &cursim_, flags);
     });
-    m.def("readConfigString", [](const char *statement, char *params) -> ErrorCode {
+    m.def("readConfigString", [](const char *statement, char *params) {
         return smolReadConfigString(cursim_, statement, params);
     });
 
@@ -268,33 +286,30 @@ PYBIND11_MODULE(_smoldyn, m)
      *************************/
     // enum ErrorCode smolSetSimTimes(
     //         simptr sim, double timestart, double timestop, double timestep);
-    m.def("setSimTimes",
-        [](double timestart, double timestop, double timestep) -> ErrorCode {
-            return smolSetSimTimes(cursim_, timestart, timestop, timestep);
-        });
+    m.def("setSimTimes", [](double timestart, double timestop, double timestep) {
+        return smolSetSimTimes(cursim_, timestart, timestop, timestep);
+    });
 
     // enum ErrorCode smolSetTimeStart(simptr sim, double timestart);
-    m.def("setTimeStart",
-        [](double time) -> ErrorCode { return smolSetTimeStart(cursim_, time); });
+    m.def("setTimeStart", [](double time) { return smolSetTimeStart(cursim_, time); });
     m.def("getTimeStart", []() { return cursim_->tmin; });
 
     // enum ErrorCode smolSetTimeStop(simptr sim, double timestop);
     m.def("setTimeStop",
-        [](double timestop) -> ErrorCode { return smolSetTimeStop(cursim_, timestop); });
+        [](double timestop) { return smolSetTimeStop(cursim_, timestop); });
     m.def("getTimeStop", []() { return cursim_->tmax; });
 
     // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
-    m.def("setTimeNow",
-        [](double timenow) -> ErrorCode { return smolSetTimeNow(cursim_, timenow); });
+    m.def("setTimeNow", [](double timenow) { return smolSetTimeNow(cursim_, timenow); });
 
     // enum ErrorCode smolSetTimeStep(simptr sim, double timestep);
     m.def("setTimeStep",
-        [](double timestep) -> ErrorCode { return smolSetTimeStep(cursim_, timestep); });
+        [](double timestep) { return smolSetTimeStep(cursim_, timestep); });
     m.def("getTimeStep", []() { return cursim_->dt; });
 
     // enum ErrorCode smolSetRandomSeed(simptr sim, long int seed);
-    m.def("setRandomSeed",
-        [](long int seed) -> ErrorCode { return smolSetRandomSeed(cursim_, seed); });
+    m.def(
+        "setRandomSeed", [](long int seed) { return smolSetRandomSeed(cursim_, seed); });
 
     // enum ErrorCode smolSetPartitions(simptr sim, const char *method, double
     // value);
@@ -307,16 +322,14 @@ PYBIND11_MODULE(_smoldyn, m)
      *********************************/
     // enum ErrorCode smolSetGraphicsParams(simptr sim, const char *method, int
     // timesteps, int delay);
-    m.def("setGraphicsParams",
-        [](const char *method, int timestep, int delay) -> ErrorCode {
-            return smolSetGraphicsParams(cursim_, method, timestep, delay);
-        });
+    m.def("setGraphicsParams", [](const char *method, int timestep, int delay) {
+        return smolSetGraphicsParams(cursim_, method, timestep, delay);
+    });
 
     // enum ErrorCode smolSetTiffParams(simptr sim, int timesteps,
     //     const char *tiffname, int lowcount, int highcount);
     m.def("setTiffParams",
-        [](int timesteps, const char *tiffname, int lowcount,
-            int highcount) -> ErrorCode {
+        [](int timesteps, const char *tiffname, int lowcount, int highcount) {
             return smolSetTiffParams(cursim_, timesteps, tiffname, lowcount, highcount);
         });
 
@@ -325,23 +338,30 @@ PYBIND11_MODULE(_smoldyn, m)
     //     double *diffuse, double *specular, double *position);
     m.def("setLightParams",
         [](int lightindex, vector<double> &ambient, vector<double> &diffuse,
-            vector<double> &specular, vector<double> &position) -> ErrorCode {
+            vector<double> &specular, vector<double> &position) {
             return smolSetLightParams(cursim_, lightindex, &ambient[0], &diffuse[0],
                 &specular[0], &position[0]);
         });
 
     // enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color);
-    m.def("setBackgroundStyle", [](char *color) -> ErrorCode {
+    m.def("setBackgroundStyle", [](char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
 
+    m.def("setBackgroundStyle",
+        [](array<double, 4> &rgba) { return smolSetBackgroundStyle(cursim_, &rgba[0]); });
+
     // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
     // *color);
-    m.def("setFrameStyle", [](double thickness, char *color) -> ErrorCode {
+    m.def("setFrameStyle", [](double thickness, char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
+        return smolSetBackgroundStyle(cursim_, &rgba[0]);
+    });
+
+    m.def("setFrameStyle", [](double thickness, array<double, 4> &rgba) {
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
 
@@ -353,16 +373,21 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolSetGridStyle(cursim_, thickness, &rgba[0]);
     });
 
+    m.def("setGridStyle", [](double thickness, array<double, 4> &rgba) {
+        return smolSetGridStyle(cursim_, thickness, &rgba[0]);
+    });
+
     // enum ErrorCode smolSetTextStyle(simptr sim, double *color);
-    m.def("setTextStyle", [](char *color) -> ErrorCode {
+    m.def("setTextStyle", [](char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
         return smolSetTextStyle(cursim_, &rgba[0]);
     });
+    m.def("setTextStyle",
+        [](array<double, 4> &rgba) { return smolSetTextStyle(cursim_, &rgba[0]); });
 
     // enum ErrorCode smolAddTextDisplay(simptr sim, char *item);
-    m.def("addTextDisplay",
-        [](char *item) -> ErrorCode { return smolAddTextDisplay(cursim_, item); });
+    m.def("addTextDisplay", [](char *item) { return smolAddTextDisplay(cursim_, item); });
 
     /***********************
      *  Runtime commands.  *
@@ -457,12 +482,19 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolAddSolutionMolecules(simptr sim, const char *species,
     //     int number, double *lowposition, double *highposition);
-    m.def("addSolutionMolecules",
+    m.def(
+        "addSolutionMolecules",
         [](const char *species, int number, vector<double> &lowposition,
             vector<double> &highposition) {
             return smolAddSolutionMolecules(
                 cursim_, species, number, &lowposition[0], &highposition[0]);
-        });
+        },
+        "Adds number solution state molecules of species species to the system. They are "
+        "randomly distributed within the box that has its opposite corners defined by "
+        "`lowposition` and `highposition`. Any or all of these coordinates can equal "
+        "each other to place the molecules along a plane or at a point. Enter "
+        "`lowposition` and/or `highposition` as `[]` or `None` to indicate that the "
+        "respective corner is equal to that corner of the entire system volume.");
 
     // enum ErrorCode smolAddCompartmentMolecules(
     //     simptr sim, const char *species, int number, const char
@@ -477,8 +509,7 @@ PYBIND11_MODULE(_smoldyn, m)
     //     enum PanelShape panelshape, const char *panel, double *position);
     m.def("addSurfaceMolecules",
         [](const char *species, MolecState state, int number, const char *surface,
-            PanelShape panelshape, const char *panel,
-            vector<double> &position) -> ErrorCode {
+            PanelShape panelshape, const char *panel, vector<double> &position) {
             return smolAddSurfaceMolecules(cursim_, species, state, number, surface,
                 panelshape, panel, &position[0]);
         });
@@ -494,6 +525,10 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setMoleculeStyle",
         [](const char *species, MolecState state, double size, char *color) {
             auto rgba = color2RGBA(color);
+            return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
+        });
+    m.def("setMoleculeStyle",
+        [](const char *species, MolecState state, double size, array<double, 4> &rgba) {
             return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
         });
 
@@ -616,6 +651,13 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetSurfaceStyle(cursim_, surface, face, mode, thickness, &rgba[0],
                 stipplefactor, stipplepattern, shininess);
         });
+    m.def(
+        "setSurfaceStyle", [](const char *surface, PanelFace face, DrawMode mode,
+                               double thickness, array<double, 4> &rgba,
+                               int stipplefactor, int stipplepattern, double shininess) {
+            return smolSetSurfaceStyle(cursim_, surface, face, mode, thickness, &rgba[0],
+                stipplefactor, stipplepattern, shininess);
+        });
 
     /*****************
      *  Compartment  *
@@ -666,14 +708,14 @@ PYBIND11_MODULE(_smoldyn, m)
     //         *reactant2, enum MolecState rstate2, int nproduct, const char
     //         **productspecies, enum MolecState *productstates, double rate);
     m.def("addReaction",
-        [](const char *         reaction,           // Name of the reaction.
-            const char *        reactant1,          // First reactant
-            MolecState          rstate1,            // First reactant state
-            const char *        reactant2,          // Second reactant.
-            MolecState          rstate2,            // second reactant state.
-            vector<string> &    productSpeciesStr,  // product species.
-            vector<MolecState> &productStates,      // product state.
-            double              rate                // rate
+        [](const char *reaction,                // Name of the reaction.
+            const char *reactant1,              // First reactant
+            MolecState rstate1,                 // First reactant state
+            const char *reactant2,              // Second reactant.
+            MolecState rstate2,                 // second reactant state.
+            vector<string> &productSpeciesStr,  // product species.
+            vector<MolecState> &productStates,  // product state.
+            double rate                         // rate
         ) {
             // NOTE: Can't use vector<const char*> in the function argument.
             // We'll runinto wchar_t vs char* issue from python2/python3
@@ -845,7 +887,14 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("getSeed", &getRandomSeed);
     m.def("setSeed", &setRandomSeed);
     m.def("getBoundaries", &getBoundaries);
-    m.def("setBoundaries", &setBoundaries);
+    m.def("setBoundaries",
+        py::overload_cast<const vector<pair<double, double>>&>(&setBoundaries)
+        , "Set boundaries using vector of (low,high) tuples"
+        );
+    m.def("setBoundaries",
+        py::overload_cast<const vector<double>&, const vector<double>&>(&setBoundaries)
+        , "Set boundaries using vector of low and a vector of high points"
+        );
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
     m.def("setAccuracy", [](double accuracy) { cursim_->accur = accuracy; });
@@ -858,5 +907,4 @@ PYBIND11_MODULE(_smoldyn, m)
 
     /* attributes */
     m.attr("__version__") = VERSION;  // Version is set by CMAKE
-
 }
