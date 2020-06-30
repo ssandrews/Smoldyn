@@ -20,7 +20,7 @@ jobs:
         sudo apt -y install python3-pytest python3-numpy python3-matplotlib python3-wheel
         python3 -m pip install numpy pytest matplotlib wheel --user
     - name: configure
-      run: mkdir build && cd build && cmake ..
+      run: mkdir build && cd build && cmake -DPYTHON_EXECUTABLE=/usr/bin/python3 ..
     - name: make
       run: cd build && make -j2 && make wheel
     - name: make check
