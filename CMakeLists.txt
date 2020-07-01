@@ -9,7 +9,7 @@
 project(smoldyn)
 cmake_minimum_required(VERSION 3.0)
 
-# CI/CD can also set this variable. If not, use the default one. 
+# CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
    set(SMOLDYN_VERSION "2.62.dev")
 endif()
@@ -449,7 +449,7 @@ if(OPTION_NSV)
     set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/NextSubVolume/boost_include)
     include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 
-    list(APPEND SRC_FILES 
+    list(APPEND SRC_FILES
         source/NextSubVolume/StructuredGrid.cpp
         source/NextSubVolume/Species.cpp
         source/NextSubVolume/ReactionEquation.cpp
@@ -459,7 +459,7 @@ if(OPTION_NSV)
         source/NextSubVolume/Geometry.cpp
         source/NextSubVolume/nsvc.cpp
         )
-    list(APPEND HEADER_FILES 
+    list(APPEND HEADER_FILES
         source/NextSubVolume/Vector.h
         source/NextSubVolume/StructuredGrid.h
         source/NextSubVolume/Species.h
@@ -513,7 +513,7 @@ if(NOT OPTION_MINGW)
     if(OPTION_TARGET_LIBSMOLDYN)
         install(TARGETS smoldyn_shared LIBRARY DESTINATION lib)
         install(TARGETS smoldyn_static ARCHIVE DESTINATION lib)
-        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h 
+        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h
             ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
             DESTINATION include)
     endif(OPTION_TARGET_LIBSMOLDYN)

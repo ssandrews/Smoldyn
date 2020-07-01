@@ -1,20 +1,200 @@
 # -*- coding: utf-8 -*-
 
-__author__ = "Dilawar Singh <dilawars@ncbs.res.in>"
+__author__ = "Dilawar Singh"
+__copyright__ = "Copyright 2020-, Dilawar Singh"
+__maintainer__ = "Dilawar Singh"
+__email__ = "dilawars@ncbs.res.in"
 
-"""
-Geometry related classes.
-"""
-
-import functools
+import os
+import warnings
 import operator
-from typing import List, Union
-from smoldyn import _smoldyn
-from smoldyn._smoldyn import PanelShape, PanelFace, SrfAction, DrawMode, ErrorCode
-from smoldyn.kinetics import Species
-import smoldyn.types as T
-from smoldyn.config import __logger__
+import functools
 from dataclasses import dataclass, field
+from smoldyn.config import __logger__
+from typing import Union, Tuple, List, Dict
+from smoldyn import _smoldyn
+
+# Color type
+Color = Union[str, Tuple[float, float, float, float]]
+
+
+@dataclass
+class NullSpecies:
+    name: str = ""
+    state = _smoldyn.MolecState.__members__["all"]
+
+
+class Species(object):
+    """Chemical species.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        state: str = "soln",
+        color: Union[str, Dict[str, Color]] = "",
+        difc: Union[float, Dict[str, float]] = 0.0,
+        display_size: int = 3,
+        mol_list: str = "",
+    ):
+        """
+        Parameters
+        ----------
+        name : str
+            Name of the species.
+        state : str
+            State of the species. One of the following: 
+                'soln', 'front', 'back', 'up', 'down', 'bsoln', 'all', 'none',
+                'some'
+        color: Color or dict of Colors
+            If a single `Color` is given, all states of this molecule will be
+            assigned this color. To assign different colors to different
+            states, use a dictionary of `Color`s.
+        difc : float or a dict of floats
+            Diffusion coefficient. If a single value is given, all states of
+            the molecule gets the same value. To assign different values to
+            different states, use a dict e.g. {'soln':1, 'front':2}.
+        display_size : int, optional
+            display size of the molecule (default 3px).
+        mol_list : str, optional
+            molecule list (default '')
+
+        See also
+        --------
+        Color
+        """
+        self.name: str = name
+        assert self.name
+
+        k = _smoldyn.addSpecies(self.name)
+        assert k == _smoldyn.ErrorCode.ok, "Failed to add molecule"
+
+        if state not in _smoldyn.MolecState.__members__:
+            raise NameError(
+                f"{state} is not a valid MolecState. Available "
+                "states are:{', '.join(_smoldyn.MolecState.__members__.keys())}"
+            )
+
+        self.state = _smoldyn.MolecState.__members__[state]
+        self._size: float = display_size
+
+        if not isinstance(difc, dict):
+            difc = dict(all=difc)
+        self._difc: Dict[str, float] = difc
+
+        if not isinstance(color, dict):
+            color = dict(all=color)
+        self._color = color
+
+        self.difc = self._difc
+        self.color = self._color
+
+        self._mol_list: str = mol_list
+        if mol_list:
+            self.mol_list: str = mol_list
+
+    def __repr__(self):
+        return f"<Molecule: {self.name}, difc={self.difc}, state={self.state}>"
+
+    def __setStyle(self):
+        for state, color in self._color.items():
+            state = _smoldyn.MolecState.__members__[state]
+            k = _smoldyn.setMoleculeStyle(self.name, state, self.size, color)
+            assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}, {k}"
+
+    @property
+    def difc(self) -> float:
+        return self._difc
+
+    @difc.setter
+    def difc(self, difconst):
+        if not isinstance(difconst, dict):
+            self._difc = dict(all=difconst)
+        for state, D in self._difc.items():
+            st = _smoldyn.MolecState.__members__[state]
+            k = _smoldyn.setSpeciesMobility(self.name, st, D)
+            assert k == _smoldyn.ErrorCode.ok
+
+    @property
+    def mol_list(self) -> str:
+        return self._mol_list
+
+    @mol_list.setter
+    def mol_list(self, val):
+        k = _smoldyn.addMolList(val)
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
+        k = _smoldyn.setMolList(self.name, self.state, val)
+        assert (
+            k == _smoldyn.ErrorCode.ok
+        ), f"Failed to set mol_list={val} on {self}: {k}"
+        self._mol_list = val
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, clr):
+        if isinstance(clr, str):
+            clr = dict(all=clr)
+        self.__setStyle()
+
+    @property
+    def size(self):
+        return self._size
+
+    @size.setter
+    def size(self, size: float):
+        self._size = size
+        self.__setStyle()
+
+    def addToSolution(
+        self, mol: float, highpos: List[float] = [], lowpos: List[float] = []
+    ):
+        assert (
+            self.state == _smoldyn.MolecState.soln
+        ), f"You can't use this function on a Species with type {self.state}"
+        k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
+
+
+class HalfReaction:
+    def __init__(self, subs: List[Species], prds: List[Species], k, rname=""):
+        assert len(subs) < 3, "At most two reactants are supported."
+        r1 = subs[0]
+        r2 = subs[1] if len(subs) == 2 else NullSpecies()
+        if not rname:
+            rname = "r%d" % id(self)
+        assert rname
+        k = _smoldyn.addReaction(
+            rname,
+            r1.name,
+            r1.state,
+            r2.name,
+            r2.state,
+            [x.name for x in prds],
+            [x.state for x in prds],
+            k,
+        )
+        if k != _smoldyn.ErrorCode.ok:
+            __logger__.warning(f" Reactant1 : {r1}")
+            __logger__.warning(f" Reactant2 : {r2}")
+            __logger__.warning(f" Subtrate  : {subs}")
+            __logger__.warning(f" Products  : {prds}")
+            raise RuntimeError(f"Failed to add reaction: {k}")
+
+
+class Reaction(object):
+    """Reaction.
+    """
+
+    def __init__(self, subs: List[Species], prds: List[Species], kf, kb=0.0):
+        assert len(subs) < 3, "At most two reactants are supported"
+        self.forward = HalfReaction(subs, prds, kf)
+        self.backbard = None
+        if kb > 0:
+            self.backbard = HalfReaction(prds, subs, kb)
+
 
 class Panel(object):
     """Panels are required to construct a surface. Following primitives are
@@ -24,9 +204,11 @@ class Panel(object):
     :py:class:`~Hemisphere`, :py:class:`~Cylinder`, :py:class:`~Disk`
     """
 
-    def __init__(self, panelshape: PanelShape = PanelShape.none, name=""):
+    def __init__(
+        self, panelshape: _smoldyn.PanelShape = _smoldyn.PanelShape.none, name=""
+    ):
         self.name = name
-        self.ctype: PanelShape = panelshape
+        self.ctype: _smoldyn.PanelShape = panelshape
         self.pts: List[float] = []
 
     def _axisIndex(self, axisname):
@@ -59,7 +241,7 @@ class Rectangle(Panel):
         name : optional
             name of the panel.
         """
-        super(Rectangle, self).__init__(PanelShape.rect, name=name)
+        super(Rectangle, self).__init__(_smoldyn.PanelShape.rect, name=name)
         self.corner = corner
         self.dimensions = dimensions
         assert axis[0] in "+-", "axis must precede by '+' or '-'"
@@ -74,22 +256,6 @@ class Rectangle(Panel):
         return self.axisstr, self.pts
 
 
-##    def plot(self, ax = None):
-##        """
-##        TODO: Not tested.
-##        """
-##        import matplotlib.pyplot as plt
-##        import matplotlib.patches as patches
-##        from mpl_toolkits.mplot3d import Axes3D
-##        import mpl_toolkits.mplot3d.art3d as art3d
-##
-##        if ax is None:
-##            ax = plt.subplot(111, projection='3d')
-##        rect = patches.Rectangle(self.center, self.width, self.height)
-##        ax.add_patch(rect)
-##        art3d.pathpatch_2d_to_3d(rect, zdir=self.axis[1])
-
-
 class Triangle(Panel):
     def __init__(self, vertices: List[List[float]] = [[]], name=""):
         """Triangle Panel.
@@ -101,14 +267,16 @@ class Triangle(Panel):
         name :
             name
         """
-        super(Triangle, self).__init__(PanelShape.tri, name)
+        super(Triangle, self).__init__(_smoldyn.PanelShape.tri, name)
         self.axisstr = ""
         self.vertices = vertices
         self.pts = functools.reduce(operator.iconcat, vertices, [])
 
 
 class Sphere(Panel):
-    def __init__(self, center: List[float], radius: float, name=""):
+    def __init__(
+        self, center: List[float], radius: float, slices: int, stacks: int = 0, name=""
+    ):
         """Sphere 
 
         Parameters
@@ -117,15 +285,23 @@ class Sphere(Panel):
             The center of the sphere.
         radius : float
             The radius of the sphere.
+        slices: int
+            Number of slices (longitudnal lines) that are used for drawing the sphere.
+        stacks: int
+            Number of stacks (latitude lines, default 0) that are used to drawing the sphere. `
+            If a non-postive number is given,`slices` value is used.
         name : optional
-            name
+            name of the panel. If omitted, 0, 1, 2 etc. will be assigned. 
         """
-        super(Sphere, self).__init__(PanelShape.sph, name=name)
+        super(Sphere, self).__init__(_smoldyn.PanelShape.sph, name=name)
         self.center = center
         self.radius = radius
+        self.slices = slices
+        assert self.slices > 0, "Positive int is required"
+        self.stacks = stacks if stacks > 0 else slices
         # Smoldyn panel
         self.axisstr = ""
-        self.pts = [*self.center, self.radius]
+        self.pts = [*self.center, self.radius, self.slices, self.stacks]
 
 
 class Hemisphere(Panel):
@@ -158,7 +334,7 @@ class Hemisphere(Panel):
             name
         """
         super(Hemisphere, self).__init__(name=name)
-        self.ctype = PanelShape.hemi
+        self.ctype = _smoldyn.PanelShape.hemi
         self.center = center
         self.radius = radius
         self.vector = vector
@@ -197,7 +373,7 @@ class Cylinder(Panel):
         name : optional
             name
         """
-        super(Cylinder, self).__init__(PanelShape.cyl, name=name)
+        super(Cylinder, self).__init__(_smoldyn.PanelShape.cyl, name=name)
         self.start = start
         self.end = end
         self.slices = slices
@@ -225,7 +401,7 @@ class Disk(Panel):
         name : optional
             name
         """
-        super(Disk, self).__init__(PanelShape.disk, name=name)
+        super(Disk, self).__init__(_smoldyn.PanelShape.disk, name=name)
         self.center = center
         self.radius = radius
         self.vector = vector
@@ -234,7 +410,7 @@ class Disk(Panel):
         self.pts = [*self.center, self.radius, *self.vector]
 
 
-class SurfaceFaceCollection:
+class SurfaceFaceCollection(object):
     """Collection of faces of a surface"""
 
     def __init__(self, faces: List[str], surfname):
@@ -243,9 +419,9 @@ class SurfaceFaceCollection:
 
     def setStyle(
         self,
-        drawmode: str,
-        color: T.Color = "",
-        thickness: float = 1,
+        color: Color = "",
+        drawmode: str = "none",
+        thickness: float = 1.0,
         stipplefactor: int = -1,
         stipplepattern: int = -1,
         shininess: int = -1,
@@ -288,15 +464,15 @@ class SurfaceFaceCollection:
             # TODO: Check on drawmode
             k = _smoldyn.setSurfaceStyle(
                 self.surfname,
-                PanelFace.__members__[which],
-                DrawMode.__members__[drawmode],
+                _smoldyn.PanelFace.__members__[which],
+                _smoldyn.DrawMode.__members__[drawmode],
                 thickness,
                 color,
                 stipplefactor,
                 stipplepattern,
                 shininess,
             )
-            assert k == ErrorCode.ok, f"Failed to set drawing style {k}"
+            assert k == _smoldyn.ErrorCode.ok, f"Failed to set drawing style {k}"
 
     def addAction(self, species: Union[Species, str], action: str, new_spec=None):
         """The behavior of molecules named species when they collide with this
@@ -330,12 +506,12 @@ class SurfaceFaceCollection:
         for which in self.faces:
             k = _smoldyn.setSurfaceAction(
                 self.surfname,
-                PanelFace.__members__[which],
+                _smoldyn.PanelFace.__members__[which],
                 sname,
                 sstate,
-                SrfAction.__members__[action],
+                _smoldyn.SrfAction.__members__[action],
             )
-            assert k == ErrorCode.ok
+            assert k == _smoldyn.ErrorCode.ok
 
 
 class Surface(object):
@@ -382,11 +558,16 @@ class Surface(object):
     def _addToSmoldyn(self):
         # add panels
         assert self.name, "Surface name is missing"
-        for panel in self.panels:
+        for i, panel in enumerate(self.panels):
+            panel.name = panel.name if panel.name else str(i)
             k = _smoldyn.addPanel(
-                self.name, panel.ctype, panel.name, panel.axisstr, panel.pts
+                self.name,
+                panel.ctype,
+                panel.name,
+                panel.axisstr,
+                panel.pts,
             )
-            assert k == ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
+            assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
     def setStyle(self, face, *args, **kwargs):
         """See the function :py:class:`~SurfaceFaceCollection.setStyle` for more
@@ -427,6 +608,49 @@ class Surface(object):
         """
         getattr(self, face).addAction(*args, *kwargs)
 
+    def addMolecules(
+        self,
+        species: Species,
+        mol: int,
+        panels: List[Panel] = [],
+        pos: List[float] = [],
+    ):
+        """Place molecules with random or specific positions onto a given
+        surface (optionally specified panels).
+
+        Parameters
+        ----------
+        species: Species
+            Species to add.
+        mol : int
+            number of molecules
+        surface : smoldyn.geometry.Surface
+            Surface
+        panels: smoldyn.geometry.Panel
+            Panels of surface. If `None` or `[]` is given then all panels of
+            surfece are used.
+        pos: List[float]
+            Position of the molecules. If not given, then randomly distribute
+            the molecules onto the surface/panels.
+        """
+        assert mol > 0, "Needs a positive number"
+        assert species
+        panels = panels if panels else self.panels
+        for panel in panels:
+            assert panel
+            assert panel.ctype
+            print(111, panel.name, panel.ctype)
+            k = _smoldyn.addSurfaceMolecules(
+                species.name,
+                species.state,
+                mol,
+                self.name,
+                panel.ctype,
+                panel.name,
+                pos,
+            )
+            assert k == _smoldyn.ErrorCode.ok
+
 
 class Port(object):
     """Ports are data structures that are used for importing and
@@ -458,7 +682,7 @@ class Port(object):
         assert panel in ["front", "back"]
         self.panel = PanelFace.__members__[panel]
         k = _smoldyn.addPort(self.name, self.surfname, self.panel)
-        assert k == ErrorCode.ok
+        assert k == _smoldyn.ErrorCode.ok
 
 
 @dataclass
@@ -474,6 +698,7 @@ class Boundaries:
     of space; these are useful for simulating a small portion of a large system
     while avoiding edge effects.
     """
+
     low: List[float]
     high: List[float]
     types: List[str] = field(default_factory=lambda: ["r"])
@@ -487,29 +712,9 @@ class Boundaries:
         _smoldyn.setBoundaries(self.low, self.high)
         __logger__.debug("Getting boundaries", _smoldyn.getBoundaries())
         assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
-
-        k = _smoldyn.setBoundaryType(-1, -1, self.types[0])
-        assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
-
-
-def setBounds(low:List[float], high:List[float], types:List[str]):
-    """Define system volume by setting boundaries.
-
-    Parameters
-    ----------
-    low : List[float]
-        lower limit of axes. For example for x=0, y=-100, and z=0, use [0,-100,0].
-    high :
-        higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
-    types : List[str]
-        Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
-        absorbing, and 'p' for periodic boundary.
-
-    See also
-    --------
-    setBoundaries, setBoundaryType
-    """
-    return Boundaries(low, high, types)
+        if self.types:
+            k = _smoldyn.setBoundaryType(-1, -1, self.types[0])
+            assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
 
 
 @dataclass
@@ -530,3 +735,183 @@ class MoleculePerBox(Partition):
 class Box(Partition):
     def __init__(self, size):
         super().__init__("boxsize", size)
+
+
+class Compartment(object):
+    """Compartment
+    """
+
+    def __init__(self, name: str, surface: Union[str, Surface], point: List[float]):
+        """
+        Parameters
+        ----------
+        name : str
+            name of the compartment.
+        surface : Union[str, Surface]
+            Name of the bounding surface for this compartment.
+        point : List[float]
+            An interior-defining point for this compartment.
+        """
+        self.name = name
+        self.srfname = surface.name if isinstance(surface, Surface) else surface
+        self.point = point
+        assert self.point, "At least one point is required."
+        k = _smoldyn.addCompartment(self.name)
+        assert k == _smoldyn.ErrorCode.ok
+        k = _smoldyn.addCompartmentSurface(self.name, self.srfname)
+        assert k == _smoldyn.ErrorCode.ok
+        k = _smoldyn.addCompartmentPoint(self.name, self.point)
+        assert k == _smoldyn.ErrorCode.ok
+
+    def addMolecules(self, species: Species, mol: int):
+        """Place molecules randomly in a compartment.
+
+        Parameters
+        ----------
+        mol : int
+            number of molecules
+        species : Species
+            Species to add
+
+        See also
+        --------
+        :py:class:`smoldyn.kinetics.Species.addToCompartment`
+        """
+        assert mol > 0, "Needs a positive number"
+        k = _smoldyn.addCompartmentMolecules(species.name, mol, self.name)
+        assert k == _smoldyn.ErrorCode.ok
+
+
+def setBounds(low: List[float], high: List[float], types: List[str] = []):
+    """Define system volume by setting boundaries.
+
+    Parameters
+    ----------
+    low : List[float]
+        lower limit of axes. For example for x=0, y=-100, and z=0, use [0,-100,0].
+    high :
+        higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
+    types : List[str]
+        Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
+        absorbing, and 'p' for periodic boundary.
+
+    See also
+    --------
+    smoldyn.setBoundaries, smoldyn.setBoundaryType
+    """
+    Boundaries(low, high, types)
+
+
+class StateMonitor(object):
+    """State Monitor
+    """
+
+    def __init__(self, objs, state, **kwargs):
+        self.objs = objs
+        self.state = state
+        self.t = []
+        self._start = kwargs.get("start", _smoldyn.getTimeStart())
+        self._stop = kwargs.get("stop", _smoldyn.getTimeStop())
+        self._step = kwargs.get("step", _smoldyn.getTimeStep())
+        self._multiplier = kwargs.get("multiplier", 1.0)
+        setattr(self, state, {})
+        for o in objs:
+            getattr(self, state)[o] = []
+        if state == "molcount":
+            self.initMolcount()
+
+    def initMolcount(self):
+        _smoldyn.addCommand(
+            "i", self._start, self._stop, self._step, self._multiplier, "molcount"
+        )
+
+    def data(self):
+        return _smoldyn.getData()
+
+
+class Simulation(object):
+    """Class to store simulation related attributes. 
+
+    See also
+    -------
+    _smoldyn.simptr
+    """
+
+    def __init__(self, stop: float, step: float, quitatend: bool = False, **kwargs):
+        """
+        Parameters
+        ----------
+        stop : float
+            Simulation stop time (sec)
+        step : float
+            Simulation step or dt (sec)
+        quitatend : bool
+            If `True`, Smoldyn won't prompt user at the end of simulation and
+            quit. Same effect can also be achieved by setting environment variable 
+            `SMOLDYN_NON_INTERACTIVE` to 1.
+        kwargs :
+            kwargs
+        """
+        self.start = kwargs.get("start", 0.0)
+        self.stop = stop
+        self.step = step
+        self.simptr = _smoldyn.getCurSimStruct()
+        assert self.simptr, "Configuration is not initialized"
+        if kwargs.get("accuracy", 0.0):
+            self.accuracry: float = kwargs["accuracy"]
+        self.quitatend = quitatend
+        # TODO: Add to documentation.
+        if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
+            self.quitatend = True
+
+    def setGraphics(self, method: str, timestep: int = 1, delay: int = 0):
+        """Set graphics for this simulation.
+
+        Parameters
+        ----------
+        method : str
+            Avaibale options: "opengl", "opengl_good", "opengl_better"
+        timestep : int
+            Update graphics after every `timestep` (default 1)
+        delay : int
+            delay
+        """
+        k = _smoldyn.setGraphicsParams(method, timestep, delay)
+        assert k == _smoldyn.ErrorCode.ok
+
+    # alias for setGraphics
+    addGraphics = setGraphics
+
+    @property
+    def quitatend(self):
+        return self.simptr.quitatend
+
+    @quitatend.setter
+    def quitatend(self, val: bool):
+        self.simptr.quitatend = val
+
+    @property
+    def accuracy(self):
+        return _smoldyn.getAccuracy()
+
+    @accuracy.setter
+    def accuracy(self, accuracy: float):
+        # Deperacted?
+        warnings.DeprecationWarning("accuracy is deprecated?")
+        _smoldyn.setAccuracy(accuracy)
+
+    def run(self, stop=None, start=None, step=None):
+        if stop is not None:
+            self.stop = stop
+        if start is not None:
+            self.start = start
+        if step is not None:
+            self.step = step
+        print(f"[INFO] Running till {self.stop} dt={self.step}")
+        _smoldyn.run(self.stop, self.step)
+
+    def runUntil(self, t, dt):
+        _smoldyn.runUntil(t, dt)
+
+    def data(self):
+        return _smoldyn.getData()

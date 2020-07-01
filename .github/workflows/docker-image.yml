@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build manylinux2010 wheels
-      run: docker build . --file scripts/Dockerfile --tag smoldyn-manylinux:$(date +%s)
+      run: cd scripts && make run

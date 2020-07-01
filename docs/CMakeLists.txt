@@ -60,6 +60,15 @@ add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
 # Nice named target so we can run the job easily
 add_custom_target(Sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
 
+# LiveHTML (for developer and document write)
+add_custom_target(livehtml
+    COMMAND sphinx-autobuild -p 0 -H 0.0.0.0 -B --delay 1 
+        -b html
+        ${SMOLDYN_DOC_SOURCE_DIR} ${CMAKE_BINARY_DIR}/livehtml
+    COMMENT "Genrating live HTML"
+    VERBATIM)
+
+
 # Add an install target to install the docs
 include(GNUInstallDirs)
 install(DIRECTORY ${SPHINX_BUILD} DESTINATION ${CMAKE_INSTALL_DOCDIR})

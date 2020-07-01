@@ -13,4 +13,4 @@ RUN yum -y install freeglut-devel libtiff-devel libXmu-devel libXi-devel && yum 
 WORKDIR /root
 ADD . /root/
 RUN ls -ltrh
-CMD cd scripts && PYPI_PASSWORD=$PYPI_PASSWORD ./build_wheels_linux.sh 
+RUN cd scripts && PYPI_PASSWORD=$PYPI_PASSWORD ./build_wheels_linux.sh 

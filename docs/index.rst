@@ -1,35 +1,36 @@
 .. warning::
    Please refer to `https://smoldyn.org`_ for official documents. This is a work in progress.
 
-User Manual
-############
+..
+    Introduction
+    *************
 
-Instroduction
-*************
+    .. include:: user-guide/index.rst
 
-.. include:: user-guide/index.rst
+    Installing Smoldyn
+    ******************
 
-Installing Smoldyn
-******************
+    .. include:: user-guide/installation.rst
 
-.. include:: user-guide/installation.rst
+    Getting Started
+    ***************
 
-Getting Started
-***************
+    .. include:: user-guide/getting-started.rst
 
-.. include:: user-guide/getting-started.rst
-
-Acknowledgements
-***************
-
-.. include:: user-guide/acknowledgement.rst
-
-Python User Manual
-##################
+Getting Started with Python
+****************************
 
 .. include:: user-guide/using-python.rst
 
+.. include:: user-guide/getting-started-with-python.rst
+
 Python API
-##########
+**********
 
 .. include:: developer-guide/user_api.rst
+
+Acknowledgements
+****************
+
+.. include:: user-guide/acknowledgement.rst
+

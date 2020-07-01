@@ -3,6 +3,7 @@ breathe
 sphinx_rtd_theme
 sphinx
 recommonmark
+sphinxcontrib-programoutput
 sphinxcontrib-napoleon
 sphinxcontrib-mermaid
 sphinx-autodoc-typehints
