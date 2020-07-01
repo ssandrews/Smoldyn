@@ -158,6 +158,29 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("react", SMLflag::SMLreact)
         .value("srfbound", SMLflag::SMLsrfbound);
 
+    py::enum_<RevParam>(m, "RevParam")
+        .value("none", RevParam::RPnone)
+        .value("irrev", RevParam::RPirrev)
+        .value("confspread", RevParam::RPconfspread)
+        .value("bounce", RevParam::RPbounce)
+        .value("pgem", RevParam::RPpgem)
+        .value("pgemmax", RevParam::RPpgemmax)
+        .value("pgemmaxw", RevParam::RPpgemmaxw)
+        .value("ratio", RevParam::RPratio)
+        .value("unbindrad", RevParam::RPunbindrad)
+        .value("pgem2", RevParam::RPpgem2)
+        .value("pgemmax2", RevParam::RPpgemmax2)
+        .value("ratio2", RevParam::RPratio2)
+        .value("offset", RevParam::RPoffset)
+        .value("fixed", RevParam::RPfixed);
+
+    py::enum_<SpeciesRepresentation>(m, "SpeciesRepresentation")
+        .value("particle", SpeciesRepresentation::SRparticle)
+        .value("lattice", SpeciesRepresentation::SRlattice)
+        .value("both", SpeciesRepresentation::SRboth)
+        .value("none", SpeciesRepresentation::SRnone)
+        .value("free", SpeciesRepresentation::SRfree);
+
     /* simptr */
     // TODO: Only simple members are exposed (readonly).
     py::class_<simstruct>(m, "simstruct")

@@ -36,9 +36,9 @@ sm.setBounds(low=[-1, -1], high=[1, 1])
 #
 # There are few other parameters. Type `help(smoldyn.Species)` in Python
 # console to know about them.
-S = sm.Species('S', 'soln', difc=3, color='green', display_size=0.02)
-P = sm.Species('P', 'soln', difc=3, color='darkblue', display_size=0.02)
+S = sm.Species('S', 'bsoln', difc=3, color='green', display_size=0.02)
 E = sm.Species('E', 'front', color='darkred', display_size=0.03)
+P = sm.Species('P', 'bsoln', difc=3, color='darkblue', display_size=0.02)
 ES = sm.Species('ES', 'front', color='orange', display_size=0.03)
 
 # Surfaces in the system and their properties.
@@ -81,7 +81,7 @@ membrane.addMolecules(E, 100)
 # endif
 
 s = sm.Simulation(stop=10, step=0.01)
-s.setGraphics('opengl_good', timestep=1)
+s.setGraphics('opengl_good', timestep=20, frame_thickness=2)
 s.run()
  
 # # Graphical output

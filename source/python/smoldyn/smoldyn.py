@@ -195,6 +195,21 @@ class Reaction(object):
         if kb > 0:
             self.backbard = HalfReaction(prds, subs, kb)
 
+    def productPlacement(self, type: str, *params):
+        """Placement method and parameters for the products of reaction.
+        This also affects the binding radius of the reverse reaction, as
+        explained in the manual. 
+
+        Parameters
+        ----------
+        type : 
+            Availabele values: 'irrev', 'pgem', 'pgemmax', 'pgemmaxw', 'ratio'
+            , 'unbindrad', 'pgem2', 'pgemmax2', 'ratio2', 'offset', 'fixed'
+        params :
+            params
+        """
+
+
 
 class Panel(object):
     """Panels are required to construct a surface. Following primitives are
