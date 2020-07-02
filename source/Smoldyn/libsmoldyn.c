@@ -1945,7 +1945,7 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
     if(reactant2 && reactant2[0] != '\0') {
         rctident[order] = smolGetSpeciesIndexNT(sim, reactant2);
         LCHECK(rctident[order] > 0, funcname, ECsame, NULL);
-        LCHECK(rstate2 >= 0 && rstate2 < MSMAX, funcname, ECbounds, "invalid rstate2");
+        LCHECK(rstate2 >= 0 && rstate2 <= MSMAX, funcname, ECbounds, "invalid rstate2");
         rctstate[order] = rstate2;
         order++;
     }

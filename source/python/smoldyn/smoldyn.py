@@ -4,17 +4,19 @@
 See _smoldyn.so for C-API.
 """
 
-__author__     = "Dilawar Singh"
-__copyright__  = "Copyright 2020-, Dilawar Singh"
+__author__ = "Dilawar Singh"
+__copyright__ = "Copyright 2020-, Dilawar Singh"
 __maintainer__ = "Dilawar Singh"
-__email__      = "dilawars@ncbs.res.in"
+__email__ = "dilawars@ncbs.res.in"
 
 import os
 import warnings
 import operator
 import functools
+from pathlib import Path
 from dataclasses import dataclass, field
 from smoldyn.config import __logger__
+from smoldyn.utils import color2RGBA
 from typing import Union, Tuple, List, Dict
 from smoldyn import _smoldyn
 
@@ -212,7 +214,6 @@ class Reaction(object):
         params :
             params
         """
-
 
 
 class Panel(object):
@@ -580,11 +581,7 @@ class Surface(object):
         for i, panel in enumerate(self.panels):
             panel.name = panel.name if panel.name else str(i)
             k = _smoldyn.addPanel(
-                self.name,
-                panel.ctype,
-                panel.name,
-                panel.axisstr,
-                panel.pts,
+                self.name, panel.ctype, panel.name, panel.axisstr, panel.pts,
             )
             assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
@@ -883,23 +880,112 @@ class Simulation(object):
         if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
             self.quitatend = True
 
-    def setGraphics(self, method: str, timestep: int = 1, delay: int = 0):
-        """Set graphics for this simulation.
+    def setGraphics(
+        self,
+        method: str,
+        iter: int = 20,
+        delay: int = 0,
+        bg_color: Color = "white",
+        frame_thickness: int = 2,
+        frame_color: Color = "black",
+        grid_thickness: int = 0,
+        grid_color: Color = "white",
+    ):
+        """Set graphics parameters for this simulation.
 
         Parameters
         ----------
         method : str
-            Avaibale options: "opengl", "opengl_good", "opengl_better"
-        timestep : int
-            Update graphics after every `timestep` (default 1)
+            Avaibale options: "none", "opengl", "opengl_good", "opengl_better"
+        iter : int
+            Update graphics after every nth step (default 20)
         delay : int
-            delay
+            Additional delay between rendering
+        bg_color: Color
+            Background color
+        frame_thickness: int
+            Thickness of the frame that is drawn around the simulation volume,
+            in pts. Default value is 2.
+        frame_color: Color
+            Specify the color of the frame. Default value is 'black'
+        grid_thickness: int
+            Thickness of the grid lines that can be drawn to show the virtual
+            boxes. Default value is 0, so that thegrid is not drawn.
+        grid_color: Color
+            Color of the grid. Default "white" or [1,1,1,1]
         """
-        k = _smoldyn.setGraphicsParams(method, timestep, delay)
+        k = _smoldyn.setGraphicsParams(method, iter, delay)
+        assert k == _smoldyn.ErrorCode.ok
+        k = _smoldyn.setBackgroundStyle(bg_color)
+        assert k == _smoldyn.ErrorCode.ok
+        k = _smoldyn.setFrameStyle(frame_thickness, frame_color)
         assert k == _smoldyn.ErrorCode.ok
 
-    # alias for setGraphics
-    addGraphics = setGraphics
+        if grid_thickness > 0 and grid_color != bg_color:
+            k = _smoldyn.setGridStyle(grid_thickness, grid_color)
+            assert k == _smoldyn.ErrorCode.ok
+
+    def setTiff(
+        self, tiffname: Path = "OpenGL", minsuffix: int = 1, maxsuffix: int = 999
+    ):
+        """TIFF related parameters.
+
+        Parameters
+        ----------
+        tiffname : str
+            Root filename for TIFF files, which may include path information if
+            desired.  If the parent directory does not exists, it will be created.
+            Default is “OpenGL”, which leads to the first TIFF being saved as
+            “OpenGL001.tif”.
+        minsuffix : int
+            Initial suffix number of TIFF files that are saved.  Default value
+            is 1.
+        maxsuffix : int
+            Largest possible suffix number of TIFF files that are saved.  Once
+            this value has been reached, additional TIFFs cannot be saved.
+            Default value is 999.
+            
+        """
+        try:
+            Path(tiffname).parent.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            __logger__.warning(e)
+        k = _smoldyn.setTiffParams(tiffname, minsuffix, maxsuffix)
+        assert k == _smoldyn.ErrorCode.ok
+
+    def setLight(
+        self,
+        index: int,
+        ambient: Color,
+        diffuse: Color,
+        specular: Color,
+        pos: List[float],
+    ):
+        """Set the parameters for a light source, for use with opengl_better
+        quality graphics. Parameters “ambient”, “diffuse”, “specular” are for
+        the light’s colors, which are then specified with either a word or in
+        the values as red, green, blue, and optionally alpha.
+
+        Parameters
+        ----------
+        index : int
+            The light index should be between 0 and 7.
+        ambient : Color
+            ambient
+        diffuse : Color
+            diffuse
+        specular : Color
+            specular
+        pos : List[float]
+            Light’s 3-dimensional position, which is specified as x, y,and zin
+            the values. Lights specified this way are automatically enabled
+            (turned on).
+        """
+        ambient = color2RGBA(ambient) if isinstance(ambient, str) else ambient
+        diffuse = color2RGBA(diffuse) if isinstance(diffuse, str) else diffuse
+        specular = color2RGBA(specular) if isinstance(specular, str) else specular
+        k = _smoldyn.setLightParams(index, ambient, diffuse, specular, pos)
+        assert k == _smoldyn.ErrorCode.ok
 
     @property
     def quitatend(self):

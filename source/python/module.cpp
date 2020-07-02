@@ -181,8 +181,71 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("none", SpeciesRepresentation::SRnone)
         .value("free", SpeciesRepresentation::SRfree);
 
+    /* graphics */
+    py::class_<graphicssuperstruct>(m, "graphicssuperstruct")
+        .def_readonly(
+            "condition", &graphicssuperstruct::condition)  // structure condition
+        .def_readonly("graphics",
+            &graphicssuperstruct::graphics)  // graphics: 0=none, 1=opengl, 2=good opengl
+        .def_readonly(
+            "runmode", &graphicssuperstruct::runmode)  // 0=Smoldyn, 1=Libsmoldyn
+        .def_readonly("currentit",
+            &graphicssuperstruct::currentit)  // current number of simulation time steps
+        .def_readonly("graphicsit",
+            &graphicssuperstruct::graphicit)  // number of time steps per graphics update
+        .def_readonly(
+            "graphicdelay", &graphicssuperstruct::graphicdelay)  // minimum delay (in ms)
+                                                                 // for graphics updates
+        .def_readonly(
+            "tiffit", &graphicssuperstruct::tiffit)  // number of time steps per tiff save
+        .def_readonly("framepts",
+            &graphicssuperstruct::framepts)  // thickness of frame for graphics
+        .def_readonly("gridpts",
+            &graphicssuperstruct::gridpts)  // thickness of virtual box grid for graphics
+        .def_readonly("framecolor", &graphicssuperstruct::framecolor)  // frame color [c]
+        .def_readonly("gridcolor", &graphicssuperstruct::gridcolor)    // grid color [c]
+        .def_readonly(
+            "backcolor", &graphicssuperstruct::backcolor)  // background color [c]
+        .def_readonly("textcolor", &graphicssuperstruct::textcolor)  // text color [c]
+        .def_readonly("maxtextitems",
+            &graphicssuperstruct::maxtextitems)  // allocated size of item list
+        .def_readonly(
+            "ntextitems", &graphicssuperstruct::ntextitems)  // actual size of item list
+        .def("textitems",
+            [](const graphicssuperstruct &gst) {
+                vector<std::string> txt(gst.ntextitems, "");
+                for(int i = 0; i < gst.ntextitems; i++) {
+                    const char *t = gst.textitems[i];
+                    txt[i]        = std::string(t);
+                }
+                return txt;
+            })
+        // .def_readonly(
+        //     "roomstate", &graphicssuperstruct::roomstate)  // on, off, or auto (on)
+        .def_readonly(
+            "ambiroom", &graphicssuperstruct::ambiroom)  // global ambient light [c]
+                                                         // .def_readonly("lightstate",
+        //     &graphicssuperstruct::lightstate)  // on, off, or auto (off) [lt]
+        .def("ambilight",
+            [](const graphicssuperstruct &st, size_t lindex) {
+                assert(lindex >= 0 && lindex < 8);
+                return st.ambilight[lindex];
+            })  // ambient light color [lt][c]
+        .def("difflight",
+            [](const graphicssuperstruct &st, size_t lindex) {
+                return st.difflight[lindex];
+            })  // diffuse light color [lt][c]
+        .def("speclight",
+            [](const graphicssuperstruct &st, size_t lindex) {
+                return st.speclight[lindex];
+            })  // specular light color [lt][c]
+        .def("lightpos",
+            [](const graphicssuperstruct &st, size_t lindex) {
+                return st.lightpos[lindex];
+            })  // light positions [lt][d]
+        ;
+
     /* simptr */
-    // TODO: Only simple members are exposed (readonly).
     py::class_<simstruct>(m, "simstruct")
         //.def(py::init<>())
         .def_readonly("condition", &simstruct::condition, "Structure condition")
@@ -207,17 +270,17 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readonly("tbreak", &simstruct::tbreak, " simulation break time")
         .def_readonly("dt", &simstruct::dt, " simulation time step")
         .def_readwrite("quitatend", &simstruct::quitatend, " simulation quits at the end")
-        .def_readonly("ruless", &simstruct::ruless, " rule superstructure")
-        .def_readonly("mols", &simstruct::mols, " molecule superstructure")
-        .def_readonly("srfss", &simstruct::srfss, " surface superstructure")
+        .def_readonly("rules", &simstruct::ruless, " rule superstructure")
+        .def_readonly("molecuels", &simstruct::mols, " molecule superstructure")
+        .def_readonly("surfaces", &simstruct::srfss, " surface superstructure")
         .def_readonly("boxs", &simstruct::boxs, " box superstructure")
-        .def_readonly("cmptss", &simstruct::cmptss, " compartment superstructure")
-        .def_readonly("portss", &simstruct::portss, " port superstructure")
-        .def_readonly("latticess", &simstruct::latticess, " lattice superstructure")
-        .def_readonly("bngss", &simstruct::bngss, " bionetget superstructure")
-        .def_readonly("filss", &simstruct::filss, " filament superstructure")
-        .def_readonly("cmds", &simstruct::cmds, " command superstructure")
-        .def_readonly("graphss", &simstruct::graphss, " graphics superstructure");
+        .def_readonly("cmpts", &simstruct::cmptss, " compartment superstructure")
+        .def_readonly("ports", &simstruct::portss, " port superstructure")
+        .def_readonly("lattices", &simstruct::latticess, " lattice superstructure")
+        .def_readonly("bionets", &simstruct::bngss, " bionetget superstructure")
+        .def_readonly("filaments", &simstruct::filss, " filament superstructure")
+        .def_readonly("commands", &simstruct::cmds, " command superstructure")
+        .def_readonly("graphics", &simstruct::graphss, " graphics superstructure");
 
     /*******************
      *  Miscellaneous  *
@@ -372,9 +435,11 @@ PYBIND11_MODULE(_smoldyn, m)
         graphicsreadcolor(&color, &rgba[0]);
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
-
     m.def("setBackgroundStyle",
-        [](array<double, 4> &rgba) { return smolSetBackgroundStyle(cursim_, &rgba[0]); });
+        [](array<double, 4> rgba) { return smolSetBackgroundStyle(cursim_, &rgba[0]); });
+
+    // Extra function not available in C-API.
+    m.def("getBackgroundColor", []() { return cursim_->graphss->backcolor; });
 
     // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
     // *color);
