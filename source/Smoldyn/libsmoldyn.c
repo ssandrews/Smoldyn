@@ -1956,7 +1956,7 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
         for(prd = 0; prd < nproduct; prd++) {
             prdident[prd] = smolGetSpeciesIndexNT(sim, productspecies[prd]);
             LCHECK(prdident[prd] > 0, funcname, ECsame, NULL);
-            LCHECK(productstates[prd] >= MSsoln && productstates[prd] < MSMAX, funcname,
+            LCHECK(productstates[prd] >= MSsoln && productstates[prd] <= MSMAX, funcname,
                 ECsyntax, "invalid product state");
         }
     }

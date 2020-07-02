@@ -26,10 +26,25 @@ from smoldyn import _smoldyn
 Color = Union[str, Tuple[float, float, float, float]]
 
 
+def toMolecState(st: Tuple[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
+    """Convert a string to equivalent MolecState.
+
+    Parameters
+    ----------
+    st : Tuple[str, _smoldyn.MolecState]
+        Given state either a string or MolecState. If MolecState is given, this
+        function simply returns it.
+    """
+    return _smoldyn.MolecState.__members__[st] if isinstance(st, str) else st
+
+
 @dataclass
 class NullSpecies:
     name: str = ""
     state = _smoldyn.MolecState.__members__["all"]
+
+    def __len__(self):
+        return 0
 
 
 class Species(object):
@@ -170,56 +185,9 @@ class Species(object):
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
 
-class HalfReaction:
-    def __init__(self, subs: List[Species], prds: List[Species], k, rname=""):
-        assert len(subs) < 3, "At most two reactants are supported."
-        r1 = subs[0]
-        r2 = subs[1] if len(subs) == 2 else NullSpecies()
-        if not rname:
-            rname = "r%d" % id(self)
-        assert rname
-        k = _smoldyn.addReaction(
-            rname,
-            r1.name,
-            r1.state,
-            r2.name,
-            r2.state,
-            [x.name for x in prds],
-            [x.state for x in prds],
-            k,
-        )
-        if k != _smoldyn.ErrorCode.ok:
-            __logger__.warning(f" Reactant1 : {r1}")
-            __logger__.warning(f" Reactant2 : {r2}")
-            __logger__.warning(f" Subtrate  : {subs}")
-            __logger__.warning(f" Products  : {prds}")
-            raise RuntimeError(f"Failed to add reaction: {k}")
-
-
-class Reaction(object):
-    """Reaction.
-    """
-
-    def __init__(self, subs: List[Species], prds: List[Species], kf, kb=0.0):
-        assert len(subs) < 3, "At most two reactants are supported"
-        self.forward = HalfReaction(subs, prds, kf)
-        self.backbard = None
-        if kb > 0:
-            self.backbard = HalfReaction(prds, subs, kb)
-
-    def productPlacement(self, type: str, *params):
-        """Placement method and parameters for the products of reaction.
-        This also affects the binding radius of the reverse reaction, as
-        explained in the manual. 
-
-        Parameters
-        ----------
-        type : 
-            Availabele values: 'irrev', 'pgem', 'pgemmax', 'pgemmaxw', 'ratio'
-            , 'unbindrad', 'pgem2', 'pgemmax2', 'ratio2', 'offset', 'fixed'
-        params :
-            params
-        """
+# Type of a substract and product of a Reaction
+SpeciesState = Union[_smoldyn.MolecState, str]
+ReacSpecies = Union[Species, Tuple[Species, SpeciesState]]
 
 
 class Panel(object):
@@ -632,7 +600,7 @@ class Surface(object):
 
     def addMolecules(
         self,
-        species: Species,
+        species: ReacSpecies,
         mol: int,
         panels: List[Panel] = [],
         pos: List[float] = [],
@@ -642,8 +610,9 @@ class Surface(object):
 
         Parameters
         ----------
-        species: Species
-            Species to add.
+        species: 
+            Species to add. Either Species or a tuple of (Species, MolecState)
+            e.g. (A, 'front')
         mol : int
             number of molecules
         surface : smoldyn.geometry.Surface
@@ -655,20 +624,21 @@ class Surface(object):
             Position of the molecules. If not given, then randomly distribute
             the molecules onto the surface/panels.
         """
-        assert mol > 0, "Needs a positive number"
+        assert mol > 0, "Expected a positive number"
         assert species
+        if isinstance(species, Species):
+            sname = species.name
+            sstate = species.state
+        else:
+            assert len(species) == 2, "Expected tuple of (Species, MolecState)"
+            sname = species[0].name
+            sstate = toMolecState(species[1])
         panels = panels if panels else self.panels
         for panel in panels:
             assert panel
             assert panel.ctype
             k = _smoldyn.addSurfaceMolecules(
-                species.name,
-                species.state,
-                mol,
-                self.name,
-                panel.ctype,
-                panel.name,
-                pos,
+                sname, sstate, mol, self.name, panel.ctype, panel.name, pos,
             )
             assert k == _smoldyn.ErrorCode.ok
 
@@ -1143,3 +1113,167 @@ class Simulation(object):
     def addCommand(self, type, cmd, **kwargs):
         c = Command(type, cmd, **kwargs)
         self.commands.append(c)
+
+
+class HalfReaction(object):
+    def __init__(
+        self,
+        name: str,
+        subs: List[ReacSpecies],
+        prds: List[ReacSpecies],
+        rate: float,
+        compartment: Compartment = None,
+        surface: Surface = None,
+    ):
+        """Half Reaction (only occurs in forwared direction).
+
+        Parameters
+        ----------
+        name: str
+            name of the reaction.
+        subs : List[ReacSpecies]
+            List of rectants.
+        prds : List[ReacSpecies]
+            List of products.
+        rate : float
+            rate of the reaction
+        compartment: Compartment
+            If not ``None``, restrict the reaction to this compartment.
+        surface: Surface
+            If not ``None``, restricts this reaction to this surface.
+        """
+
+        self.name = name
+        self.rate = rate
+        self.compartment = compartment
+        self.surface = surface
+
+        assert len(subs) < 3, "At most two reactants are supported."
+        r1 = subs[0]
+        r2 = subs[1] if len(subs) == 2 else NullSpecies()
+
+        if isinstance(r1, Species):
+            r1name, r1state = r1.name, r1.state
+        else:
+            assert len(r1) == 2, "Expected tuple of (Species, state) e.g. (A, 'front')"
+            r1name = r1[0].name
+            r1state = toMolecState(r1[1])
+
+        if isinstance(r2, (Species, NullSpecies)):
+            r2name, r2state = r2.name, r2.state
+        else:
+            assert len(r2) == 2, "Expected tuple of (Species,state) e.g. (S, 'back')"
+            r2name, r2state = r2[0].name, toMolecState(r2[1])
+
+        prdNames, prdStates = [], []
+        for x in prds:
+            if isinstance(x, Tuple):
+                prdNames.append(x[0].name)
+                prdStates.append(toMolecState(x[1]))
+            else:
+                prdNames.append(x.name)
+                prdStates.append(x.state)
+
+        if not name:
+            name = "r%d" % id(self)
+        k = _smoldyn.addReaction(
+            name, r1name, r1state, r2name, r2state, prdNames, prdStates, rate,
+        )
+        if k != _smoldyn.ErrorCode.ok:
+            __logger__.warning(f" Substrates  : {subs}")
+            __logger__.warning(f" Products  : {prds}")
+            raise RuntimeError(f"Failed to add reaction: {k}")
+
+        if self.compartment is not None or self.surface is not None:
+            cname = self.compartment.name if self.compartment else ""
+            sname = self.surface.name if self.surface else ""
+            assert cname or sname
+            k = _smoldyn.setReactionRegion(self.name, cname, sname)
+            assert k == _smoldyn.ErrorCode.ok
+
+    def setProductPlacement(
+        self, type: str, param: float = 0.0, product: str = None, pos: List[float] = []
+    ):
+        """Placement method and parameters for the products of reaction.
+        This also affects the binding radius of the reverse reaction, as
+        explained in the manual. 
+
+        Parameters
+        ----------
+        type : 
+            Availabele values: 'irrev', 'pgem', 'pgemmax', 'pgemmaxw', 'ratio'
+            , 'unbindrad', 'pgem2', 'pgemmax2', 'ratio2', 'offset', 'fixed'
+        param : float
+            Parameter value. Usually required except for type 'irrev'
+        product: str, optional
+            Required for type 'fixed' and 'offset'
+        pos: 
+            Required for type 'fixed' and 'offset'
+
+        Notes
+        -----
+        To create a “bounce” type reaction, for simulating excluded volume,
+        enter the typeas bounce.  In this case, enterno parameter for the
+        default algorithm orone parameter.The default algorithm, also entered
+        with a -2 parameter, performs ballistic reflection for spherical
+        molecules. Enter a parameter of -1 for an algorithm in which the reactant
+        edges get separated by the same amount as they used to overlap, along
+        their separation vector (e.g. consider two reactants each of radius 1,
+        so the binding radius is set to 2; then, if the center-to-center
+        distance is found to be 1.6, the molecules get separated to make the
+        center-to-center distance equal to 2.4).  Alternatively, you can use
+        the parameter value to define the new separation, which should be
+        larger than the binding radius.
+        """
+        revType = _smoldyn.RevParam.__members__[type]
+        if type in ["fixed", "offset"]:
+            assert product, "Product is required"
+            assert pos, "pos is required"
+        print(self.name, revType, param)
+        k = _smoldyn.setReactionProducts(self.name, revType, param, product, pos)
+        assert k == _smoldyn.ErrorCode.ok
+
+
+class Reaction(object):
+    """A chemical reaction. Each reaction creates two HalfReactions: forward
+    and backward. 
+    """
+
+    def __init__(
+        self,
+        name: str,
+        subs: List[ReacSpecies],
+        prds: List[ReacSpecies],
+        kf: float,
+        kb: float = 0.0,
+        compartment: Compartment = None,
+        surface: Surface = None,
+    ):
+        """__init__.
+
+        Parameters
+        ----------
+        name : str
+            name of the reaction.
+        subs : List[ReacSpecies]
+            subtrates
+        prds : List[ReacSpecies]
+            products
+        kf : float
+            Forward rate constant
+        kb : float
+            Backward rate constant (default 0.0)
+        compartment : Compartment
+            Reaction compartment. If not `None`, both forward and backward
+            reactions will be limited to this compartment. 
+        surface : Surface
+            Reaction surface. If not `None`, both forward and backward
+            reactions will be limited to this surface. 
+        """
+        self.name = f"r{id(self):d}" if not name else name
+        self.forward = HalfReaction(name + "fwd", subs, prds, kf, compartment, surface)
+        self.backward = None
+        if kb > 0:
+            self.backward = HalfReaction(
+                name + "rev", prds, subs, kb, compartment, surface
+            )
