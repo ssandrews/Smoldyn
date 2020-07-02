@@ -881,7 +881,7 @@ class Command(object):
             ), "Must specify argument step greater than 0"
             self.step = self.kwargs["step"]
         elif self.type in "ixjI":
-            assert self.kwargs.get("on", None), "Missing argument on"
+            assert self.kwargs.get("on", None) is not None, ("Missing argument on", self.kwargs)
             assert self.kwargs.get("off", None), "Missing argument off"
             assert self.kwargs.get("step", None), "Missing argument step"
             self.on = self.kwargs["on"]
@@ -1006,8 +1006,10 @@ class Simulation(object):
 
     def __set_text_display__(self, text_display):
         if isinstance(text_display, str):
-            text_display = text_display.trim().split(" ")
+            text_display = text_display.strip().split(" ")
         for item in text_display:
+            if not item:
+                continue
             k = _smoldyn.addTextDisplay(self.__todisp_text__(item))
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set '{item}'"
 

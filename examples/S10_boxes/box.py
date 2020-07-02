@@ -15,9 +15,13 @@ c = sm.Species('C', state='soln', difc=1.0, color='blue', mol_list='Clist')
 a.addToSolution(1000)
 b.addToSolution(1000)
 
-r = sm.Reaction(subs=[c], prds=(a,b), kf=0.1, kb=100)
-M = sm.StateMonitor([a, b, c], 'molcount')
+r = sm.Reaction('r1', subs=[c], prds=(a,b), kf=0.1, kb=100)
 s = sm.Simulation(100, step=0.01, accuracy=10)
+s.addCommand('i', 'molcount', on=0, off=100, step=10)
+
+# Optional.
+M = sm.StateMonitor([a, b, c], 'molcount')
+
 s.run()
 
 # Now getting data and printing line.
