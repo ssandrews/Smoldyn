@@ -29,6 +29,21 @@ extern int scmdopenfiles(cmdssptr cmds, int overwrite);
 extern vector<vector<double>> &getData();
 
 /* --------------------------------------------------------------------------*/
+/**
+ * @Synopsis  Convert an array of color to a tuple.
+ *
+ * @Param f
+ *
+ * @Returns
+ */
+/* ----------------------------------------------------------------------------*/
+array<double, 4> pycolor(const double *f)
+{
+    array<double, 4> c = {f[0], f[1], f[2], f[3]};
+    return c;
+}
+
+/* --------------------------------------------------------------------------*/
 /** @Synopsis  Initialize and run the simulation from given file.
  *
  * This function takes input file and run the simulation. This is more or less
@@ -182,36 +197,44 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("free", SpeciesRepresentation::SRfree);
 
     /* graphics */
-    py::class_<graphicssuperstruct>(m, "graphicssuperstruct")
+    py::class_<graphicssuperstruct>(m, "Graphics")
         .def_readonly(
             "condition", &graphicssuperstruct::condition)  // structure condition
-        .def_readonly("graphics",
+        .def_readonly("method",
             &graphicssuperstruct::graphics)  // graphics: 0=none, 1=opengl, 2=good opengl
         .def_readonly(
             "runmode", &graphicssuperstruct::runmode)  // 0=Smoldyn, 1=Libsmoldyn
-        .def_readonly("currentit",
+        .def_readonly("currentIter",
             &graphicssuperstruct::currentit)  // current number of simulation time steps
-        .def_readonly("graphicsit",
+        .def_readonly("graphicIter",
             &graphicssuperstruct::graphicit)  // number of time steps per graphics update
         .def_readonly(
-            "graphicdelay", &graphicssuperstruct::graphicdelay)  // minimum delay (in ms)
+            "graphicDelay", &graphicssuperstruct::graphicdelay)  // minimum delay (in ms)
                                                                  // for graphics updates
-        .def_readonly(
-            "tiffit", &graphicssuperstruct::tiffit)  // number of time steps per tiff save
-        .def_readonly("framepts",
+        .def_readonly("tiffIter",
+            &graphicssuperstruct::tiffit)  // number of time steps per tiff save
+        .def_readonly("framePoints",
             &graphicssuperstruct::framepts)  // thickness of frame for graphics
-        .def_readonly("gridpts",
+        .def_readonly("gridPoints",
             &graphicssuperstruct::gridpts)  // thickness of virtual box grid for graphics
-        .def_readonly("framecolor", &graphicssuperstruct::framecolor)  // frame color [c]
-        .def_readonly("gridcolor", &graphicssuperstruct::gridcolor)    // grid color [c]
-        .def_readonly(
-            "backcolor", &graphicssuperstruct::backcolor)  // background color [c]
-        .def_readonly("textcolor", &graphicssuperstruct::textcolor)  // text color [c]
-        .def_readonly("maxtextitems",
+        .def_readonly("frameColor", &graphicssuperstruct::framecolor)  // frame color [c]
+        .def_property_readonly("gridColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.gridcolor);
+            })  // grid color [c]
+        .def_property_readonly("bgColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.backcolor);
+            })  // background color [c]
+        .def_property_readonly("textColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.textcolor);
+            })  // text color [c]
+        .def_readonly("maxTextItems",
             &graphicssuperstruct::maxtextitems)  // allocated size of item list
         .def_readonly(
-            "ntextitems", &graphicssuperstruct::ntextitems)  // actual size of item list
-        .def("textitems",
+            "nTextItems", &graphicssuperstruct::ntextitems)  // actual size of item list
+        .def_property_readonly("textItems",
             [](const graphicssuperstruct &gst) {
                 vector<std::string> txt(gst.ntextitems, "");
                 for(int i = 0; i < gst.ntextitems; i++) {
@@ -222,24 +245,34 @@ PYBIND11_MODULE(_smoldyn, m)
             })
         // .def_readonly(
         //     "roomstate", &graphicssuperstruct::roomstate)  // on, off, or auto (on)
-        .def_readonly(
-            "ambiroom", &graphicssuperstruct::ambiroom)  // global ambient light [c]
-                                                         // .def_readonly("lightstate",
+        .def_property_readonly("globalAmbientLightColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.ambiroom);
+            })  // global ambient light [c]
+        // .def_readonly("lightstate",
         //     &graphicssuperstruct::lightstate)  // on, off, or auto (off) [lt]
-        .def("ambilight",
-            [](const graphicssuperstruct &st, size_t lindex) {
-                assert(lindex >= 0 && lindex < 8);
-                return st.ambilight[lindex];
-            })  // ambient light color [lt][c]
-        .def("difflight",
-            [](const graphicssuperstruct &st, size_t lindex) {
-                return st.difflight[lindex];
+        .def_property_readonly("ambientLightColor",
+            [](const graphicssuperstruct &st) {
+                vector<array<double, 4>> ambient(MAXLIGHTS);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    ambient[i] = pycolor(st.ambilight[i]);
+                return ambient;
+            })
+        .def_property_readonly("diffuseLightColor",
+            [](const graphicssuperstruct &st) {
+                vector<array<double, 4>> difflight(MAXLIGHTS);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    difflight[i] = pycolor(st.difflight[i]);
+                return difflight;
             })  // diffuse light color [lt][c]
-        .def("speclight",
-            [](const graphicssuperstruct &st, size_t lindex) {
-                return st.speclight[lindex];
+        .def("specularLightColor",
+            [](const graphicssuperstruct &st) {
+                vector<array<double, 4>> light(MAXLIGHTS);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    light[i] = pycolor(st.speclight[i]);
+                return light;
             })  // specular light color [lt][c]
-        .def("lightpos",
+        .def("lightPosition",
             [](const graphicssuperstruct &st, size_t lindex) {
                 return st.lightpos[lindex];
             })  // light positions [lt][d]
@@ -254,22 +287,23 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readwrite("filename", &simstruct::filename, "configuration file name")
         .def_readwrite("flags", &simstruct::flags, "command-line options from user")
         .def_readonly(
-            "clockstt", &simstruct::clockstt, "clock starting time of simulation")
+            "start_time", &simstruct::clockstt, "clock starting time of simulation")
         .def_readonly(
-            "elapsedtime", &simstruct::elapsedtime, "elapsed time of simulation")
-        .def_readonly("randseed", &simstruct::randseed, "random number generator seed")
+            "elapsed_time", &simstruct::elapsedtime, "elapsed time of simulation")
+        .def_readonly("seed", &simstruct::randseed, "random number generator seed")
         .def_readonly(
-            "eventcount", &simstruct::eventcount, "counter for simulation events")
-        .def_readonly("maxvar", &simstruct::maxvar, "allocated user-settable variables")
+            "event_count", &simstruct::eventcount, "counter for simulation events")
+        .def_readonly("max_var", &simstruct::maxvar, "allocated user-settable variables")
         .def_readonly("nvar", &simstruct::nvar, "number of user-settable variables")
         .def_readonly("dim", &simstruct::dim, " dimensionality of space.")
-        .def_readonly("accur", &simstruct::accur, " accuracy, on scale from 0 to 10")
+        .def_readonly("accuracy", &simstruct::accur, " accuracy, on scale from 0 to 10")
         .def_readonly("time", &simstruct::time, " current time in simulation")
-        .def_readonly("tmin", &simstruct::tmin, " simulation start time")
-        .def_readonly("tmax", &simstruct::tmax, " simulation end time")
-        .def_readonly("tbreak", &simstruct::tbreak, " simulation break time")
+        .def_readonly("start_time", &simstruct::tmin, " simulation start time")
+        .def_readonly("end_time", &simstruct::tmax, " simulation end time")
+        .def_readonly("break_time", &simstruct::tbreak, " simulation break time")
         .def_readonly("dt", &simstruct::dt, " simulation time step")
-        .def_readwrite("quitatend", &simstruct::quitatend, " simulation quits at the end")
+        .def_readwrite(
+            "quit_at_end", &simstruct::quitatend, " simulation quits at the end")
         .def_readonly("rules", &simstruct::ruless, " rule superstructure")
         .def_readonly("molecuels", &simstruct::mols, " molecule superstructure")
         .def_readonly("surfaces", &simstruct::srfss, " surface superstructure")
@@ -280,7 +314,8 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readonly("bionets", &simstruct::bngss, " bionetget superstructure")
         .def_readonly("filaments", &simstruct::filss, " filament superstructure")
         .def_readonly("commands", &simstruct::cmds, " command superstructure")
-        .def_readonly("graphics", &simstruct::graphss, " graphics superstructure");
+        .def_readonly(
+            "graphics", &simstruct::graphss, py::return_value_policy::reference);
 
     /*******************
      *  Miscellaneous  *
@@ -321,7 +356,7 @@ PYBIND11_MODULE(_smoldyn, m)
             }
             return cursim_;
         },
-        "Get current sim struct");
+        "Get current sim struct", py::return_value_policy::reference);
 
     m.def("updateSim", [](void) {
         if(!cursim_) {
@@ -433,24 +468,23 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setBackgroundStyle", [](char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
+        // cout << "debug: Setting background color " << rgba[0] << ' ' << rgba[1] << ' '
+        // << rgba[2] << ' ' << rgba[3] << endl;
         return smolSetBackgroundStyle(cursim_, &rgba[0]);
     });
     m.def("setBackgroundStyle",
         [](array<double, 4> rgba) { return smolSetBackgroundStyle(cursim_, &rgba[0]); });
-
-    // Extra function not available in C-API.
-    m.def("getBackgroundColor", []() { return cursim_->graphss->backcolor; });
 
     // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
     // *color);
     m.def("setFrameStyle", [](double thickness, char *color) {
         array<double, 4> rgba = {0, 0, 0, 1.0};
         graphicsreadcolor(&color, &rgba[0]);
-        return smolSetBackgroundStyle(cursim_, &rgba[0]);
+        return smolSetFrameStyle(cursim_, thickness, &rgba[0]);
     });
 
     m.def("setFrameStyle", [](double thickness, array<double, 4> &rgba) {
-        return smolSetBackgroundStyle(cursim_, &rgba[0]);
+        return smolSetFrameStyle(cursim_, thickness, &rgba[0]);
     });
 
     // enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double

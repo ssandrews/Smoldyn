@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# - * - coding : utf - 8 - * -
 """Smoldyn user API.
 
 See _smoldyn.so for C-API.
@@ -481,7 +481,7 @@ class SurfaceFaceCollection(object):
             surfaces.  This is only relevant for some simulations.
         """
         for which in self.faces:
-            # TODO: Check on drawmode
+            # TODO : Check on drawmode
             k = _smoldyn.setSurfaceStyle(
                 self.surfname,
                 _smoldyn.PanelFace.__members__[which],
@@ -655,7 +655,6 @@ class Surface(object):
         for panel in panels:
             assert panel
             assert panel.ctype
-            print(111, panel.name, panel.ctype)
             k = _smoldyn.addSurfaceMolecules(
                 species.name,
                 species.state,
@@ -853,7 +852,7 @@ class Simulation(object):
     _smoldyn.simptr
     """
 
-    def __init__(self, stop: float, step: float, quitatend: bool = False, **kwargs):
+    def __init__(self, stop: float, step: float, quitAtEnd: bool = False, **kwargs):
         """
         Parameters
         ----------
@@ -861,7 +860,7 @@ class Simulation(object):
             Simulation stop time (sec)
         step : float
             Simulation step or dt (sec)
-        quitatend : bool
+        quitAtEnd : bool
             If `True`, Smoldyn won't prompt user at the end of simulation and
             quit. Same effect can also be achieved by setting environment variable 
             `SMOLDYN_NON_INTERACTIVE` to 1.
@@ -875,10 +874,10 @@ class Simulation(object):
         assert self.simptr, "Configuration is not initialized"
         if kwargs.get("accuracy", 0.0):
             self.accuracry: float = kwargs["accuracy"]
-        self.quitatend = quitatend
-        # TODO: Add to documentation.
+        self.quitAtEnd = quitAtEnd
+        # TODO : Add to documentation.
         if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
-            self.quitatend = True
+            self.quitAtEnd = True
 
     def setGraphics(
         self,
@@ -988,12 +987,12 @@ class Simulation(object):
         assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def quitatend(self):
-        return self.simptr.quitatend
+    def quitAtEnd(self):
+        return self.simptr.quit_at_end
 
-    @quitatend.setter
-    def quitatend(self, val: bool):
-        self.simptr.quitatend = val
+    @quitAtEnd.setter
+    def quitAtEnd(self, val: bool):
+        self.simptr.quit_at_end = val
 
     @property
     def accuracy(self):
@@ -1001,7 +1000,7 @@ class Simulation(object):
 
     @accuracy.setter
     def accuracy(self, accuracy: float):
-        # Deperacted?
+        # Deperacted ?
         warnings.DeprecationWarning("accuracy is deprecated?")
         _smoldyn.setAccuracy(accuracy)
 

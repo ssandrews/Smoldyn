@@ -83,11 +83,3 @@ membrane.addMolecules(E, 100)
 s = sm.Simulation(stop=10, step=0.01)
 s.setGraphics('opengl_good', bg_color='white', frame_thickness=2)
 s.run()
- 
-# # Graphical output
-# graphics opengl_good		# level of graphics quality (or none)
-# frame_thickness 0		# turns off display of the system boundaries
-# 
-# time_start 0			# simulation starting time
-# time_stop 10			# simulation stopping time
-# time_step 0.01			# simulation time step
