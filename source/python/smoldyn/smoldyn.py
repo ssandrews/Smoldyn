@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+"""Smoldyn user API.
 
-__author__ = "Dilawar Singh"
-__copyright__ = "Copyright 2020-, Dilawar Singh"
+See _smoldyn.so for C-API.
+"""
+
+__author__     = "Dilawar Singh"
+__copyright__  = "Copyright 2020-, Dilawar Singh"
 __maintainer__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__      = "dilawars@ncbs.res.in"
 
 import os
 import warnings
@@ -695,7 +699,7 @@ class Port(object):
         self.name: str = name
         self.surfname = surface.name if isinstance(surface, Surface) else surface
         assert panel in ["front", "back"]
-        self.panel = PanelFace.__members__[panel]
+        self.panel = _smoldyn.PanelFace.__members__[panel]
         k = _smoldyn.addPort(self.name, self.surfname, self.panel)
         assert k == _smoldyn.ErrorCode.ok
 
