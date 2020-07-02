@@ -20,7 +20,9 @@ from smoldyn.utils import color2RGBA
 from typing import Union, Tuple, List, Dict
 from smoldyn import _smoldyn
 
-# Color type
+# Color type.
+# Either a string such as 'black', 'red', 'orange' or a tuple of 4 values such
+# as [1,1,0,1] specifying RGBA value.
 Color = Union[str, Tuple[float, float, float, float]]
 
 
@@ -81,6 +83,7 @@ class Species(object):
                 "states are:{', '.join(_smoldyn.MolecState.__members__.keys())}"
             )
 
+        self.__state__ = state
         self.state = _smoldyn.MolecState.__members__[state]
         self._size: float = display_size
 
@@ -101,6 +104,9 @@ class Species(object):
 
     def __repr__(self):
         return f"<Molecule: {self.name}, difc={self.difc}, state={self.state}>"
+
+    def __to_disp__(self):
+        return f"{self.name}({self.__state__})"
 
     def __setStyle(self):
         for state, color in self._color.items():
@@ -844,6 +850,90 @@ class StateMonitor(object):
         return _smoldyn.getData()
 
 
+class Command(object):
+    """Smoldyn command
+    """
+
+    def __init__(self, type: str, cmd: str, **kwargs):
+        """
+        Parameters
+        ----------
+        cmd : str
+            command string.
+        type : str
+            Command type. Use capital letter version for integer queue.
+            - ‘b’ or 'B' for before the simulation
+            - ‘a’ or 'A' for after the simulation,
+            - ‘e’ or 'E' for every time step during the simulation
+            - ‘@’ or '&' for a single command execution at time ``time``
+            - ‘n’ or 'N' for every n’th iteration of the simulation
+            - ‘i’ or 'I' for a fixed time interval. The command is executed
+              over the period from on to off with intervals of at least dt(the
+              actual intervals will only end at the times of simulation time
+              steps).
+            - ‘x’ for a fixed time multiplier. The command is executed at on,
+              then on+dt, then on+dt*xt, then on+dt*xt2, and so forth.
+            - ‘j’ for every ``dtit`` step with a set starting iteration and
+              stopping iteration.
+        kwargs :
+            kwargs
+
+        Notes
+        -----
+        See section 2.4 for the commands that are available.
+        """
+        self.__allowed_cmd_type__ = "@&aAbBeEnNiIjx"
+        self.type = type
+        self.on = 0.0
+        self.off = 0.0
+        self.step = 0.0
+        self.multiplier = 0.0
+        self.cmd = cmd
+        self.kwargs = dict(kwargs)
+        self.__added__ = False
+        # self.__finalize__()
+
+    def __finalize__(self):
+        # Intialize the command.
+        assert (
+            self.type in self.__allowed_cmd_type__
+        ), f"command type {self.type} not supported."
+        if "@" == self.type:
+            assert (
+                self.kwargs.get("time", 0.0) >= 0.0
+            ), "Must specifiy argument time greater than 0"
+            self.on = self.off = self.kwargs["time"]
+        elif self.type in "aAbBeE":
+            pass
+        elif self.type in "nN":
+            assert (
+                self.kwargs.get("step", 0.0) > 0.0
+            ), "Must specify argument step greater than 0"
+            self.step = self.kwargs["step"]
+        elif self.type in "ixjI":
+            assert self.kwargs.get("on", None), "Missing argument on"
+            assert self.kwargs.get("off", None), "Missing argument off"
+            assert self.kwargs.get("step", None), "Missing argument step"
+            self.on = self.kwargs["on"]
+            self.off = self.kwargs["off"]
+            self.step = self.kwargs["step"]
+            if "x" == self.type:
+                assert self.kwargs.get(
+                    "multiplier", None
+                ), "Missing argument multiplier"
+                self.multiplier = self.kwargs["multiplier"]
+        else:
+            raise RuntimeError(f"Command type {self.type} is unsupported")
+        self.__add_command__()
+        self.__added__ = True
+
+    def __add_command__(self):
+        k = _smoldyn.addCommand(
+            self.type, self.on, self.off, self.step, self.multiplier, self.cmd
+        )
+        assert k == _smoldyn.ErrorCode.ok
+
+
 class Simulation(object):
     """Class to store simulation related attributes. 
 
@@ -871,6 +961,7 @@ class Simulation(object):
         self.stop = stop
         self.step = step
         self.simptr = _smoldyn.getCurSimStruct()
+        self.commands = []
         assert self.simptr, "Configuration is not initialized"
         if kwargs.get("accuracy", 0.0):
             self.accuracry: float = kwargs["accuracy"]
@@ -878,6 +969,13 @@ class Simulation(object):
         # TODO : Add to documentation.
         if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
             self.quitAtEnd = True
+
+    def __finalize_cmds__(self):
+        # Add commands to smoldyn engine.
+        for cmd in self.commands:
+            if cmd.__added__:
+                continue
+            cmd.__finalize__()
 
     def setGraphics(
         self,
@@ -889,6 +987,7 @@ class Simulation(object):
         frame_color: Color = "black",
         grid_thickness: int = 0,
         grid_color: Color = "white",
+        text_display: Union[List, str] = "",
     ):
         """Set graphics parameters for this simulation.
 
@@ -912,6 +1011,9 @@ class Simulation(object):
             boxes. Default value is 0, so that thegrid is not drawn.
         grid_color: Color
             Color of the grid. Default "white" or [1,1,1,1]
+        text_display: 
+            List of variables to be displayed. Or a text string containing
+            variable names e.g. 'time E S ES(front)'
         """
         k = _smoldyn.setGraphicsParams(method, iter, delay)
         assert k == _smoldyn.ErrorCode.ok
@@ -923,6 +1025,21 @@ class Simulation(object):
         if grid_thickness > 0 and grid_color != bg_color:
             k = _smoldyn.setGridStyle(grid_thickness, grid_color)
             assert k == _smoldyn.ErrorCode.ok
+
+        self.__set_text_display__(text_display)
+
+    @classmethod
+    def __todisp_text__(self, x):
+        if isinstance(x, str):
+            return x
+        return x.__to_disp__()
+
+    def __set_text_display__(self, text_display):
+        if isinstance(text_display, str):
+            text_display = text_display.trim().split(" ")
+        for item in text_display:
+            k = _smoldyn.addTextDisplay(self.__todisp_text__(item))
+            assert k == _smoldyn.ErrorCode.ok, f"Failed to set '{item}'"
 
     def setTiff(
         self, tiffname: Path = "OpenGL", minsuffix: int = 1, maxsuffix: int = 999
@@ -1004,6 +1121,10 @@ class Simulation(object):
         warnings.DeprecationWarning("accuracy is deprecated?")
         _smoldyn.setAccuracy(accuracy)
 
+    @property
+    def data(self):
+        return _smoldyn.getData()
+
     def run(self, stop=None, start=None, step=None):
         if stop is not None:
             self.stop = stop
@@ -1011,11 +1132,14 @@ class Simulation(object):
             self.start = start
         if step is not None:
             self.step = step
-        print(f"[INFO] Running till {self.stop} dt={self.step}")
+
+        self.__finalize_cmds__()
         _smoldyn.run(self.stop, self.step)
 
     def runUntil(self, t, dt):
+        self.__finalize_cmds__()
         _smoldyn.runUntil(t, dt)
 
-    def data(self):
-        return _smoldyn.getData()
+    def addCommand(self, type, cmd, **kwargs):
+        c = Command(type, cmd, **kwargs)
+        self.commands.append(c)

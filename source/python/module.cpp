@@ -1022,7 +1022,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("getData", &getData, py::return_value_policy::reference);
 
     /* Function */
-    m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",
+    m.def("loadModel", &init_and_run, "filepath"_a, "args"_a = "",
         "Load model from a txt file");
 
     /* attributes */

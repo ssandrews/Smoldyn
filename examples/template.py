@@ -16,14 +16,14 @@ It executes a Michaelis-Menten reaction within and on the surface of a 2D circle
 """
 
 __author__ = "Dilawar Singh"
-__email__  = "dilawars@ncbs.res.in"
+__email__ = "dilawars@ncbs.res.in"
 
 import smoldyn as sm
 
 # Model parameters
-K_FWD=0.001		        # substrate-enzyme association reaction rate
-K_BACK=1			# complex dissociation reaction rate
-K_PROD=1			# complex reaction rate to product
+K_FWD = 0.001  # substrate-enzyme association reaction rate
+K_BACK = 1  # complex dissociation reaction rate
+K_PROD = 1  # complex reaction rate to product
 
 # System space and time definitions. It is a 2D system bound between x=-1 to
 # x=1 and y=-1 to y=1.
@@ -36,22 +36,22 @@ sm.setBounds(low=[-1, -1], high=[1, 1])
 #
 # There are few other parameters. Type `help(smoldyn.Species)` in Python
 # console to know about them.
-S = sm.Species('S', difc=3, color='green', display_size=0.02)
-E = sm.Species('E', color='darkred', display_size=0.03)
-P = sm.Species('P', difc=3, color='darkblue', display_size=0.02)
-ES = sm.Species('ES', color='orange', display_size=0.03)
+S = sm.Species("S", difc=3, color="green", display_size=0.02)
+E = sm.Species("E", color="darkred", display_size=0.03)
+P = sm.Species("P", difc=3, color="darkblue", display_size=0.02)
+ES = sm.Species("ES", color="orange", display_size=0.03)
 
 # Surfaces in the system and their properties.
 # Declare a sphere
-s1 = sm.Sphere(center=(0,0), radius=1, slices=50)
+s1 = sm.Sphere(center=(0, 0), radius=1, slices=50)
 # Surface requires at least one panel (Sphere in this case).
-membrane = sm.Surface('membrane', panels=[s1])
+membrane = sm.Surface("membrane", panels=[s1])
 
 # Add action to `both` faces for surface. You can also use `front` or `back`
 # as well. `all` molecules reflect at both surface faces
-membrane.both.addAction('all', 'reflect')
-membrane.both.setStyle(color='black', thickness=1)
-inside = sm.Compartment(name='inside', surface=membrane, point=[0, 0])
+membrane.both.addAction("all", "reflect")
+membrane.both.setStyle(color="black", thickness=1)
+inside = sm.Compartment(name="inside", surface=membrane, point=[0, 0])
 
 # Chemical reactions
 # Association and dissociation reactions.
@@ -60,17 +60,12 @@ rep = sm.Reaction([E, S], [ES], kf=K_FWD, kb=K_BACK)
 # product_placement back pgemmax 0.2			# for reversible reactions
 
 # product formation reaction
-prod =  sm.Reaction([ES], [E, P], kf=K_PROD)
+prod = sm.Reaction([ES], [E, P], kf=K_PROD)
 
 # Place molecules for initial condition
 inside.addMolecules(S, 500)
-# Or,
-# S.addToCompartment(500, inside)
-
 # surface_mol 100 E(front) membrane all all	# puts 100 E molecules on surface
 membrane.addMolecules(E, 100)
-# or,
-# E.addToSurface(100, membrane)
 
 # # Output and other run-time commands
 # text_display time S E(front) ES(front) P	# displays species counts to graphics
@@ -81,5 +76,13 @@ membrane.addMolecules(E, 100)
 # endif
 
 s = sm.Simulation(stop=10, step=0.01)
-s.setGraphics('opengl_good', bg_color='white', frame_thickness=2)
+s.setGraphics(
+    "opengl_good",
+    iter=3,
+    bg_color="white",
+    frame_thickness=2,
+    text_display=["time", S, 'E(front)', 'ES(front)', P],
+)
+s.addCommand('B', 'molcountheader templateout.txt')
+s.addCommand('N', step=10, cmd='molcount templateout.txt')
 s.run()
