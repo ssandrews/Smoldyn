@@ -23,7 +23,7 @@ from smoldyn import _smoldyn
 # Color type.
 # Either a string such as 'black', 'red', 'orange' or a tuple of 4 values such
 # as [1,1,0,1] specifying RGBA value.
-Color = Union[str, Tuple[float, float, float, float]]
+Color = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 
 
 def toMolecState(st: Tuple[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
@@ -36,15 +36,6 @@ def toMolecState(st: Tuple[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
         function simply returns it.
     """
     return _smoldyn.MolecState.__members__[st] if isinstance(st, str) else st
-
-
-@dataclass
-class NullSpecies:
-    name: str = ""
-    state = _smoldyn.MolecState.__members__["all"]
-
-    def __len__(self):
-        return 0
 
 
 class Species(object):
@@ -89,6 +80,9 @@ class Species(object):
         self.name: str = name
         assert self.name
 
+        self._displaySize = None
+        self._color = {}
+
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, "Failed to add molecule"
 
@@ -100,16 +94,21 @@ class Species(object):
 
         self.__state__ = state
         self.state = _smoldyn.MolecState.__members__[state]
-        self._size: float = display_size
 
+        # prepare diffusion constant dict (for state).
         if not isinstance(difc, dict):
-            difc = dict(all=difc)
+            difc = {self.__state__ : difc}
         self._difc: Dict[str, float] = difc
 
+        # prepare color dict for states.
         if not isinstance(color, dict):
-            color = dict(all=color)
+            color = {self.__state__ : color}
         self._color = color
 
+        # display size.
+        self.displaySize: float = display_size
+
+        # now set style.
         self.difc = self._difc
         self.color = self._color
 
@@ -124,9 +123,14 @@ class Species(object):
         return f"{self.name}({self.__state__})"
 
     def __setStyle(self):
-        for state, color in self._color.items():
+        assert self.displaySize is not None, "set displaySize first"
+        for state, color in self.color.items():
+            if len(color) == 3:
+                # add missing A value.
+                color = (*color, 1)
+
             state = _smoldyn.MolecState.__members__[state]
-            k = _smoldyn.setMoleculeStyle(self.name, state, self.size, color)
+            k = _smoldyn.setMoleculeStyle(self.name, state, self.displaySize, color)
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}, {k}"
 
     @property
@@ -136,7 +140,7 @@ class Species(object):
     @difc.setter
     def difc(self, difconst):
         if not isinstance(difconst, dict):
-            self._difc = dict(all=difconst)
+            self._difc = {self.__state__:difconst}
         for state, D in self._difc.items():
             st = _smoldyn.MolecState.__members__[state]
             k = _smoldyn.setSpeciesMobility(self.name, st, D)
@@ -167,12 +171,12 @@ class Species(object):
         self.__setStyle()
 
     @property
-    def size(self):
-        return self._size
+    def displaySize(self):
+        return self._displaySize
 
-    @size.setter
-    def size(self, size: float):
-        self._size = size
+    @displaySize.setter
+    def displaySize(self, size: float):
+        self._displaySize = size
         self.__setStyle()
 
     def addToSolution(
@@ -183,6 +187,15 @@ class Species(object):
         ), f"You can't use this function on a Species with type {self.state}"
         k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
+
+
+@dataclass
+class NullSpecies(Species):
+    name: str = ""
+    state = _smoldyn.MolecState.__members__["none"]
+
+    def __len__(self):
+        return 0
 
 
 # Type of a substract and product of a Reaction
@@ -881,7 +894,10 @@ class Command(object):
             ), "Must specify argument step greater than 0"
             self.step = self.kwargs["step"]
         elif self.type in "ixjI":
-            assert self.kwargs.get("on", None) is not None, ("Missing argument on", self.kwargs)
+            assert self.kwargs.get("on", None) is not None, (
+                "Missing argument on",
+                self.kwargs,
+            )
             assert self.kwargs.get("off", None), "Missing argument off"
             assert self.kwargs.get("step", None), "Missing argument step"
             self.on = self.kwargs["on"]
@@ -925,20 +941,67 @@ class Simulation(object):
             quit. Same effect can also be achieved by setting environment variable 
             `SMOLDYN_NON_INTERACTIVE` to 1.
         kwargs :
-            kwargs
+            output_files : str
+                Declare output_files
         """
         self.start = kwargs.get("start", 0.0)
         self.stop = stop
         self.step = step
         self.simptr = _smoldyn.getCurSimStruct()
         self.commands = []
+        self.kwargs = kwargs
         assert self.simptr, "Configuration is not initialized"
-        if kwargs.get("accuracy", 0.0):
+        if self.kwargs.get("accuracy", 0.0):
             self.accuracry: float = kwargs["accuracy"]
-        self.quitAtEnd = quitAtEnd
+
+        if self.kwargs.get("output_files", []):
+            self.setOutputFiles(self.kwargs["output_files"])
+
         # TODO : Add to documentation.
+        self.quitAtEnd = quitAtEnd
         if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
             self.quitAtEnd = True
+
+    def setOutputFiles(self, outfiles: List[str], append=False):
+        """Declaration of filenames that can be used for output of simulation
+        results.  Spaces are not permitted in these names.  Any previous files
+        with the same name will be overwritten.
+
+        Parameters
+        ----------
+        outfiles : List[str]
+            Output files.  If all files don't have the same parent directory,
+            last file's parent directory is used.
+        append : bool
+            If `True`, append the data to the exsiting file. Default `False`.
+
+        See also
+        --------
+        setOutputFile
+        """
+        for outfile in outfiles:
+            self.setOutputFile(outfile, append)
+
+    def setOutputFile(self, outfile, append: bool = False):
+        """Declaration of filenames that can be used for output of simulation
+        results.  Spaces are not permitted in these names.  Any previous files
+        with the same name will be overwritten.
+
+        Parameters
+        ----------
+        outfile : Union[str, Path]
+            Output file. 
+        append : bool
+            If `True`, append the data to the exsiting file. Default `False`.
+
+        See also
+        --------
+        setOutputFiles
+        """
+        outfile = Path(outfile)
+        if outfile.parent != Path("."):
+            _smoldyn.addOutputPath(outfile.parent)
+        _smoldyn.addOutputFile(outfile.name, False, append)
 
     def __finalize_cmds__(self):
         # Add commands to smoldyn engine.
@@ -997,6 +1060,9 @@ class Simulation(object):
             assert k == _smoldyn.ErrorCode.ok
 
         self.__set_text_display__(text_display)
+
+    # alias for setGraphics
+    addGraphics = setGraphics
 
     @classmethod
     def __todisp_text__(self, x):
@@ -1151,6 +1217,9 @@ class HalfReaction(object):
         self.surface = surface
 
         assert len(subs) < 3, "At most two reactants are supported."
+        if len(subs) == 0:
+            assert len(prds) > 0, "At least one product for a zero-order reaction."
+            subs = [NullSpecies()]
         r1 = subs[0]
         r2 = subs[1] if len(subs) == 2 else NullSpecies()
 
@@ -1161,7 +1230,7 @@ class HalfReaction(object):
             r1name = r1[0].name
             r1state = toMolecState(r1[1])
 
-        if isinstance(r2, (Species, NullSpecies)):
+        if isinstance(r2, Species):
             r2name, r2state = r2.name, r2.state
         else:
             assert len(r2) == 2, "Expected tuple of (Species,state) e.g. (S, 'back')"
@@ -1231,7 +1300,6 @@ class HalfReaction(object):
         if type in ["fixed", "offset"]:
             assert product, "Product is required"
             assert pos, "pos is required"
-        print(self.name, revType, param)
         k = _smoldyn.setReactionProducts(self.name, revType, param, product, pos)
         assert k == _smoldyn.ErrorCode.ok
 
@@ -1273,9 +1341,8 @@ class Reaction(object):
             reactions will be limited to this surface. 
         """
         self.name = f"r{id(self):d}" if not name else name
-        self.forward = HalfReaction(name + "fwd", subs, prds, kf, compartment, surface)
+        fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, None)
+        self.forward = HalfReaction(fwdname, subs, prds, kf, compartment, surface)
         self.backward = None
         if kb > 0:
-            self.backward = HalfReaction(
-                name + "rev", prds, subs, kb, compartment, surface
-            )
+            self.backward = HalfReaction(revname, prds, subs, kb, compartment, surface)
