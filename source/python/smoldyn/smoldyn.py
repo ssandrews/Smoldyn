@@ -141,13 +141,22 @@ class Species(object):
 
     @difc.setter
     def difc(self, difconst: DiffConst):
+        """Isotropic Diffusion coeffiecient of the Species.
+
+        Parameters
+        ----------
+        difconst : DiffConst
+            Default value is 0. If a single value is given, all states of the
+            molecule are assigned the same value. To assign state specific
+            values, use a dictionary. Missing states will be assigned 0.0.
+        """
         if not isinstance(difconst, dict):
-            diffconst = {self.__state__: difconst}
+            difconst = {self.__state__: difconst}
+        self._difc = difconst
         for state, D in difconst.items():
             st = _smoldyn.MolecState.__members__[state]
             k = _smoldyn.setSpeciesMobility(self.name, st, D)
             assert k == _smoldyn.ErrorCode.ok
-        self._difc = diffconst
 
     @property
     def mol_list(self) -> str:
