@@ -16,7 +16,7 @@
 define K_FWD 0.001		# substrate-enzyme association reaction rate
 define K_BACK 1			# complex dissociation reaction rate
 define K_PROD 1			# complex reaction rate to product
-#define TEXTOUTPUT		# uncomment this line for text output
+define TEXTOUTPUT		# uncomment this line for text output
 
 # Graphical output
 graphics opengl_good		# level of graphics quality (or none)

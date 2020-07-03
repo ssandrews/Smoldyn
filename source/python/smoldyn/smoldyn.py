@@ -985,8 +985,8 @@ class Simulation(object):
             quit. Same effect can also be achieved by setting environment variable 
             `SMOLDYN_NON_INTERACTIVE` to 1.
         kwargs :
-            output_files : str
-                Declare output_files
+            output_files :
+                Declare output files.
         """
         self.start = kwargs.get("start", 0.0)
         self.stop = stop
@@ -1006,7 +1006,7 @@ class Simulation(object):
         if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
             self.quitAtEnd = True
 
-    def setOutputFiles(self, outfiles: List[str], append=False):
+    def setOutputFiles(self, outfiles: List[str], append=True):
         """Declaration of filenames that can be used for output of simulation
         results.  Spaces are not permitted in these names.  Any previous files
         with the same name will be overwritten.
@@ -1042,9 +1042,9 @@ class Simulation(object):
         --------
         setOutputFiles
         """
-        outfile = Path(outfile)
+        outfile = Path(outfile).resolve()
         if outfile.parent != Path("."):
-            _smoldyn.addOutputPath(outfile.parent)
+            _smoldyn.setOutputPath(str(outfile.parent) + "/")
         _smoldyn.addOutputFile(outfile.name, False, append)
 
     def __finalize_cmds__(self):

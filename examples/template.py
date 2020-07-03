@@ -68,17 +68,10 @@ inside.addMolecules(S, 500)
 # surface_mol 100 E(front) membrane all all	# puts 100 E molecules on surface
 membrane.addMolecules((E, "front"), 100)
 
-# # Output and other run-time commands
-# text_display time S E(front) ES(front) P	# displays species counts to graphics
-# ifdefine TEXTOUTPUT				# only run this if needed
-#   output_files templateout.txt			# file names for text output
-#   cmd B molcountheader templateout.txt		# text output run at beginning
-#   cmd N 10 molcount templateout.txt		# text output run every 10 time steps
-# endif
-
-s = sm.Simulation(stop=10, step=0.01, output_files=['templateout.txt'])
-s.addCommand("B", "molcountheader templateout.txt")
-s.addCommand("N", step=10, cmd="molcount templateout.txt")
+# Output and other run-time commands
+s = sm.Simulation(stop=10, step=0.01, output_files=["templateout.txt"])
+s.addCommand("B", cmd="molcountheader templateout.txt")
+s.addCommand("N", cmd="molcount templateout.txt", step=10)
 s.setGraphics(
     "opengl_good",
     iter=3,

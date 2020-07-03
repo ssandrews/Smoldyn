@@ -957,8 +957,9 @@ enum CMDcode cmdmolcount(simptr sim, cmdptr cmd, char *line2)
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
 
-    SCMDCHECK(cmd->i1 != -1,
-        "error on setup");  // failed before, don't try again
+     // failed before, don't try again
+    SCMDCHECK(cmd->i1 != -1, "error on setup"); 
+
     fptr = scmdgetfptr(sim->cmds, line2);
     SCMDCHECK(fptr, "file name not recognized");
     SCMDCHECK(sim->mols, "molecules are undefined");
