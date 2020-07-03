@@ -10,7 +10,6 @@ __maintainer__ = "Dilawar Singh"
 __email__ = "dilawars@ncbs.res.in"
 
 import os
-import warnings
 import operator
 import functools
 from pathlib import Path
@@ -141,10 +140,10 @@ class Species(object):
         return self._difc
 
     @difc.setter
-    def difc(self, difconst : DiffConst):
+    def difc(self, difconst: DiffConst):
         if not isinstance(difconst, dict):
-             diffconst = {self.__state__: difconst}
-        for state, D in diffconst.items():
+            diffconst = {self.__state__: difconst}
+        for state, D in difconst.items():
             st = _smoldyn.MolecState.__members__[state]
             k = _smoldyn.setSpeciesMobility(self.name, st, D)
             assert k == _smoldyn.ErrorCode.ok
@@ -456,9 +455,9 @@ class Disk(Panel):
 class SurfaceFaceCollection(object):
     """Collection of faces of a surface"""
 
-    def __init__(self, faces: List[str], surfname:str):
+    def __init__(self, faces: List[str], surfname: str):
         self.faces: List[str] = faces
-        self.surfname: str= surfname
+        self.surfname: str = surfname
 
     def setStyle(
         self,
