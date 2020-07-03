@@ -5,12 +5,12 @@ __copyright__        = "Copyright 2019-, Dilawar Singh"
 __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-from smoldyn import _smoldyn
+from smoldyn import _smoldyn                  # type: ignore
 from typing import Tuple
 
 __matplotlib_found__ = False
 try:
-    from matplotlib import colors
+    from matplotlib import colors           # type: ignore
     __matplotlib_found__ = True
 except Exception as e:
     raise e

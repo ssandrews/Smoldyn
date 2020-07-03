@@ -55,18 +55,18 @@ inside = sm.Compartment(name="inside", surface=membrane, point=[0, 0])
 
 # Chemical reactions
 # Association and dissociation reactions.
-r1 = sm.Reaction('r1', [(E, "front"), (S, "bsoln")], [(ES, "front")], kf=K_FWD, kb=K_BACK)
-r1.backward.setProductPlacement('pgemmax', 0.2)
-
-# product_placement back pgemmax 0.2			# for reversible reactions
+r1 = sm.Reaction(
+    "r1", [(E, "front"), (S, "bsoln")], [(ES, "front")], kf=K_FWD, kb=K_BACK
+)
+r1.backward.setProductPlacement("pgemmax", 0.2)
 
 # product formation reaction
-r2 = sm.Reaction('r2', [(ES, 'front')], [(E,'front'), (P, 'bsoln')], kf=K_PROD)
+r2 = sm.Reaction("r2", [(ES, "front")], [(E, "front"), (P, "bsoln")], kf=K_PROD)
 
 # Place molecules for initial condition
 inside.addMolecules(S, 500)
 # surface_mol 100 E(front) membrane all all	# puts 100 E molecules on surface
-membrane.addMolecules((E,'front'), 100)
+membrane.addMolecules((E, "front"), 100)
 
 # # Output and other run-time commands
 # text_display time S E(front) ES(front) P	# displays species counts to graphics
@@ -76,14 +76,14 @@ membrane.addMolecules((E,'front'), 100)
 #   cmd N 10 molcount templateout.txt		# text output run every 10 time steps
 # endif
 
-s = sm.Simulation(stop=10, step=0.01)
+s = sm.Simulation(stop=10, step=0.01, output_files=['templateout.txt'])
+s.addCommand("B", "molcountheader templateout.txt")
+s.addCommand("N", step=10, cmd="molcount templateout.txt")
 s.setGraphics(
     "opengl_good",
     iter=3,
     bg_color="white",
-    frame_thickness=2,
+    frame_thickness=1,
     text_display=["time", S, "E(front)", "ES(front)", P],
 )
-s.addCommand("B", "molcountheader templateout.txt")
-s.addCommand("N", step=10, cmd="molcount templateout.txt")
 s.run()

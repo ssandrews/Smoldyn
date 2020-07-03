@@ -24,9 +24,10 @@ from smoldyn import _smoldyn
 # Either a string such as 'black', 'red', 'orange' or a tuple of 4 values such
 # as [1,1,0,1] specifying RGBA value.
 Color = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
+DiffConst = Union[float, Dict[str, float]]
 
 
-def toMolecState(st: Tuple[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
+def toMolecState(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
     """Convert a string to equivalent MolecState.
 
     Parameters
@@ -85,8 +86,8 @@ class Species(object):
         self.name: str = name
         assert self.name
 
-        self._displaySize = None
-        self._color = {}
+        self._displaySize: Dict[str, float] = {}
+        self._color: Dict[str, Color] = {}
 
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, "Failed to add molecule"
@@ -100,22 +101,19 @@ class Species(object):
         self.__state__ = state
         self.state = _smoldyn.MolecState.__members__[state]
 
-        # prepare diffusion constant dict (for state).
+        # Prepare diffusion constant dict (for state).
         if not isinstance(difc, dict):
-            difc = {self.__state__ : difc}
-        self._difc: Dict[str, float] = difc
-
-        # prepare color dict for states.
-        if not isinstance(color, dict):
-            color = {self.__state__ : color}
-        self._color = color
-
-        # display size.
-        self.displaySize: float = display_size
-
-        # now set style.
+            difc = {self.__state__: difc}
+        self._difc: DiffConst = difc
         self.difc = self._difc
+
+        # Prepare color dict for states.
+        if not isinstance(color, dict):
+            color = {self.__state__: color}
+        self._color = color
         self.color = self._color
+
+        self.display_size = display_size
 
         self._mol_list: str = mol_list
         if mol_list:
@@ -127,29 +125,30 @@ class Species(object):
     def __to_disp__(self):
         return f"{self.name}({self.__state__})"
 
-    def __setStyle(self):
-        assert self.displaySize is not None, "set displaySize first"
+    def __setStyle(self, method="opengl"):
+        assert self.display_size is not None, "set display_size first"
         for state, color in self.color.items():
-            if not isinstance(color, str) and len(color) == 3:
-                # add missing A value.
-                color = (*color, 1)
+            if not isinstance(color, str):
+                color = (*color, 1) if len(color) == 3 else color
+                assert len(color) == 4, "Expected a tuple of 4 values: RGBA"
 
             state = _smoldyn.MolecState.__members__[state]
-            k = _smoldyn.setMoleculeStyle(self.name, state, self.displaySize, color)
+            k = _smoldyn.setMoleculeStyle(self.name, state, self.display_size, color)
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}, {k}"
 
     @property
-    def difc(self) -> float:
+    def difc(self) -> DiffConst:
         return self._difc
 
     @difc.setter
-    def difc(self, difconst):
+    def difc(self, difconst : DiffConst):
         if not isinstance(difconst, dict):
-            self._difc = {self.__state__:difconst}
-        for state, D in self._difc.items():
+             diffconst = {self.__state__: difconst}
+        for state, D in diffconst.items():
             st = _smoldyn.MolecState.__members__[state]
             k = _smoldyn.setSpeciesMobility(self.name, st, D)
             assert k == _smoldyn.ErrorCode.ok
+        self._difc = diffconst
 
     @property
     def mol_list(self) -> str:
@@ -174,16 +173,47 @@ class Species(object):
         if isinstance(clr, str):
             clr = {self.__state__: clr}
         self._color = clr
-        self.__setStyle()
+        for state, color in self._color.items():
+            state = (
+                _smoldyn.MolecState.__members__[state]
+                if isinstance(state, str)
+                else state
+            )
+            if not isinstance(color, str) and len(color) == 3:
+                color = *color, 1
+                assert len(color) == 4, "Needs tuple of 4 values (R,G,B,A)"
+            k = _smoldyn.setMoleculeStyle(self.name, state, 0.0, color)
+            assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def displaySize(self):
+    def display_size(self):
         return self._displaySize
 
-    @displaySize.setter
-    def displaySize(self, size: float):
+    @display_size.setter
+    def display_size(self, size: Union[float, Dict[str, float]]):
+        """Set the display_size of the molecule. 
+
+        Parameters
+        ----------
+        size : Union[float, Dict[str, float]]
+            If a single value is provided, it is applied to all states of the
+            moelcule. For state specific value of display_size, use a
+            dictionary.
+
+        Note
+        -----
+        For the “opengl” graphics level, the display size value is in pixels.
+        Here, numbers from 2 to 4 are typically good choices (deafult 2px).
+        For the two better graphics options, the display size value is the
+        radius with which the molecule is drawn, using the same units as
+        elsewhere in the input file.
+        """
+        if isinstance(size, (float, int)):
+            size = {_smoldyn.MolecState.all: size}
         self._displaySize = size
-        self.__setStyle()
+        for state, size in self._displaySize.items():
+            k = _smoldyn.setMoleculeStyle(self.name, state, size, None)
+            assert k == _smoldyn.ErrorCode.ok
 
     def addToSolution(
         self, mol: float, highpos: List[float] = [], lowpos: List[float] = []
@@ -355,7 +385,7 @@ class Hemisphere(Panel):
         self.stacks = stacks
         # Smoldyn Panel
         self.axisstr = ""
-        self.pts = [*self.center, self.radius, *self.vector, self.slices, self.stack]
+        self.pts = [*self.center, self.radius, *self.vector, self.slices, self.stacks]
 
 
 class Cylinder(Panel):
@@ -426,9 +456,9 @@ class Disk(Panel):
 class SurfaceFaceCollection(object):
     """Collection of faces of a surface"""
 
-    def __init__(self, faces: List[str], surfname):
-        self.faces: str = faces
-        self.surfname = surfname
+    def __init__(self, faces: List[str], surfname:str):
+        self.faces: List[str] = faces
+        self.surfname: str= surfname
 
     def setStyle(
         self,
@@ -712,7 +742,7 @@ class Boundaries:
     low: List[float]
     high: List[float]
     types: List[str] = field(default_factory=lambda: ["r"])
-    dim: field(init=False) = 0
+    dim: int = 0
 
     def __post_init__(self):
         assert len(self.low) == len(self.high), "Size mismatch."
@@ -954,7 +984,7 @@ class Simulation(object):
         self.stop = stop
         self.step = step
         self.simptr = _smoldyn.getCurSimStruct()
-        self.commands = []
+        self.commands: List[Command] = []
         self.kwargs = kwargs
         assert self.simptr, "Configuration is not initialized"
         if self.kwargs.get("accuracy", 0.0):
@@ -1086,13 +1116,13 @@ class Simulation(object):
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set '{item}'"
 
     def setTiff(
-        self, tiffname: Path = "OpenGL", minsuffix: int = 1, maxsuffix: int = 999
+        self, tiffname: Path = Path("OpenGL"), minsuffix: int = 1, maxsuffix: int = 999
     ):
         """TIFF related parameters.
 
         Parameters
         ----------
-        tiffname : str
+        tiffname : str, Path
             Root filename for TIFF files, which may include path information if
             desired.  If the parent directory does not exists, it will be created.
             Default is “OpenGL”, which leads to the first TIFF being saved as
@@ -1161,8 +1191,6 @@ class Simulation(object):
 
     @accuracy.setter
     def accuracy(self, accuracy: float):
-        # Deperacted ?
-        warnings.DeprecationWarning("accuracy is deprecated?")
         _smoldyn.setAccuracy(accuracy)
 
     @property
@@ -1244,12 +1272,12 @@ class HalfReaction(object):
 
         prdNames, prdStates = [], []
         for x in prds:
-            if isinstance(x, Tuple):
-                prdNames.append(x[0].name)
-                prdStates.append(toMolecState(x[1]))
-            else:
+            if isinstance(x, Species):
                 prdNames.append(x.name)
                 prdStates.append(x.state)
+            else:
+                prdNames.append(x[0].name)
+                prdStates.append(toMolecState(x[1]))
 
         if not name:
             name = "r%d" % id(self)
@@ -1347,7 +1375,7 @@ class Reaction(object):
             reactions will be limited to this surface. 
         """
         self.name = f"r{id(self):d}" if not name else name
-        fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, None)
+        fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
         self.forward = HalfReaction(fwdname, subs, prds, kf, compartment, surface)
         self.backward = None
         if kb > 0:
