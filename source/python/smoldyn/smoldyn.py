@@ -48,7 +48,7 @@ class Species(object):
         state: str = "soln",
         color: Union[str, Dict[str, Color]] = "",
         difc: Union[float, Dict[str, float]] = 0.0,
-        display_size: int = 3,
+        display_size: float = 2,
         mol_list: str = "",
     ):
         """
@@ -68,8 +68,13 @@ class Species(object):
             Diffusion coefficient. If a single value is given, all states of
             the molecule gets the same value. To assign different values to
             different states, use a dict e.g. {'soln':1, 'front':2}.
-        display_size : int, optional
-            display size of the molecule (default 3px).
+        display_size : float, optional
+            display size of the molecule. For the “opengl” graphics level, the
+            display size value is in pixels.  Here, numbers from 2 to 4 are
+            typically good choices (deafult 2px).  For the two better graphics
+            options, the display size value is the radius with which the
+            molecule is drawn, using the same units as elsewhere in the input
+            file.
         mol_list : str, optional
             molecule list (default '')
 
@@ -125,7 +130,7 @@ class Species(object):
     def __setStyle(self):
         assert self.displaySize is not None, "set displaySize first"
         for state, color in self.color.items():
-            if len(color) == 3:
+            if not isinstance(color, str) and len(color) == 3:
                 # add missing A value.
                 color = (*color, 1)
 
@@ -167,7 +172,8 @@ class Species(object):
     @color.setter
     def color(self, clr):
         if isinstance(clr, str):
-            clr = dict(all=clr)
+            clr = {self.__state__: clr}
+        self._color = clr
         self.__setStyle()
 
     @property
@@ -1013,7 +1019,7 @@ class Simulation(object):
     def setGraphics(
         self,
         method: str,
-        iter: int = 20,
+        iter: int = 5,
         delay: int = 0,
         bg_color: Color = "white",
         frame_thickness: int = 2,

@@ -10,6 +10,6 @@ med = sm.Reaction('med', [], [green], kf=0.01)
 fast = sm.Reaction('fast', [], [blue], kf=0.1)
 
 s = sm.Simulation(stop=10, step=0.1, output_files=['zeroreactout.txt'])
-s.setGraphics('opengl_good')
+s.setGraphics('opengl')
 s.addCommand('e', cmd='molcount zeroreactout.txt')
 s.run()
