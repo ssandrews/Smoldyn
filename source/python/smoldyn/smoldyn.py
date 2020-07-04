@@ -70,7 +70,7 @@ class Species(object):
         state: str = "soln",
         color: Union[str, Dict[str, Color]] = "",
         difc: Union[float, Dict[str, float]] = 0.0,
-        display_size: float = 2,
+        display_size: float = 3,
         mol_list: str = "",
     ):
         """
@@ -230,9 +230,7 @@ class Species(object):
         if isinstance(size, (float, int)):
             size = {_smoldyn.MolecState.all: size}
         self._displaySize = size
-        print(f"  Setting display size {self._displaySize}")
         for state, size in self._displaySize.items():
-            print(f"--- {state} {size}")
             k = _smoldyn.setMoleculeSize(self.name, state, size)
             assert k == _smoldyn.ErrorCode.ok
 
@@ -315,7 +313,6 @@ class Panel(object):
         assert self.surface, "This panel has no Surface"
         assert panel.surface, "This panel has no Surface"
         assert self != panel, "A panel cannot be its own neighbor"
-        print(111, self, self.surface, panel, panel.surface)
         k = _smoldyn.addPanelNeighbor(
             self.surface.name, self.name, panel.surface.name, panel.name, reciprocal
         )
@@ -1119,7 +1116,7 @@ class Simulation(object):
     def setGraphics(
         self,
         method: str,
-        iter: int = 5,
+        iter: int = 20,
         delay: int = 0,
         bg_color: Color = "white",
         frame_thickness: int = 2,

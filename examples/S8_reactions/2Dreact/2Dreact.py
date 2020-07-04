@@ -8,8 +8,8 @@ import smoldyn as sm
 
 sm.setBounds([-5, -5, -5], [5, 5, 5])
 red = sm.Species("red", difc=dict(all=0.1), color="red")
-green = sm.Species("green", color="green")
-blue = sm.Species("blue", color="blue")
+green = sm.Species("green", difc=dict(all=0.1), color="green")
+blue = sm.Species("blue", difc=dict(all=0.1), color="blue")
 
 h1 = sm.Hemisphere(center=[-3, 0, 0], radius=2, vector=[1, 0, 0], slices=10, stacks=5)
 h2 = sm.Hemisphere(center=[3, 0, 0], radius=2, vector=[-1, 0, 0], slices=10, stacks=5)
