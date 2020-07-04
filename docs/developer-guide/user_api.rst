@@ -1,11 +1,8 @@
-.. automodule:: smoldyn.simulation
-   :members:
-
-.. automodule:: smoldyn.geometry
-   :members:
-
-.. automodule:: smoldyn.kinetics
+.. automodule:: smoldyn.smoldyn
    :members:
 
 .. automodule:: smoldyn.utils
+   :members:
+
+.. automodule:: smoldyn._smoldyn
    :members:
