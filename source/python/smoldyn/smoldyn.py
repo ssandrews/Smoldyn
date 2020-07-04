@@ -1,8 +1,7 @@
-# - * - coding : utf - 8 - * -
 """Smoldyn user API.
-
-See _smoldyn.so for C-API.
 """
+
+from __future__ import annotations
 
 __author__ = "Dilawar Singh"
 __copyright__ = "Copyright 2020-, Dilawar Singh"
@@ -13,6 +12,7 @@ __all__ = [
     "Species",
     "Panel",
     "Triangle",
+    "Rectangle",
     "Sphere",
     "Hemisphere",
     "Cylinder",
@@ -278,18 +278,52 @@ class Panel(object):
     """
 
     def __init__(
-        self, panelshape: _smoldyn.PanelShape = _smoldyn.PanelShape.none, name=""
+        self,
+        name: str = "",
+        shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
+        neighbours: List[Panel] = [],
     ):
         self.name = name
-        self.ctype: _smoldyn.PanelShape = panelshape
+        self.ctype: _smoldyn.PanelShape = shape
         self.pts: List[float] = []
+        self._neighbors: List[Panel] = neighbours
+        self.surface: Surface = None
 
-    def _axisIndex(self, axisname):
+    def __str__(self):
+        return f"{self.name} type={self.ctype} surface={self.surface.name}"
+
+    def _axisIndex(self, axisname: str):
         axisDict = dict(x=0, y=1, z=2)
         return int(axisDict.get(axisname.lower(), axisname))
 
     def toText(self):
         return f"panel {self.ctype} {self.axisstr} {' '.join(map(str,self.pts))} {self.name}".strip()
+
+    @property
+    def neighbors(self):
+        return self._neighbors
+
+    @neighbors.setter
+    def neighbors(self, panels: List[Panel]):
+        for panel in panels:
+            self._assignNeighbor(self, panel)
+
+    @property
+    def neighbor(self):
+        return self._neighbors[0]
+
+    @neighbor.setter
+    def neighbor(self, panel: Panel):
+        self._assignNeighbor(panel)
+
+    def _assignNeighbor(self, panel, reciprocal: bool = False):
+        assert self.surface, "This panel has no Surface"
+        assert panel.surface, "This panel has no Surface"
+        assert self != panel, "A panel cannot be its own neighbor"
+        k = _smoldyn.addPanelNeighbor(
+            self.surface.name, self.name, panel.surface.name, panel.name, reciprocal
+        )
+        assert k == _smoldyn.ErrorCode.ok
 
 
 class Rectangle(Panel):
@@ -314,7 +348,7 @@ class Rectangle(Panel):
         name : optional
             name of the panel.
         """
-        super(Rectangle, self).__init__(_smoldyn.PanelShape.rect, name=name)
+        super().__init__(shape=_smoldyn.PanelShape.rect, name=name)
         self.corner = corner
         self.dimensions = dimensions
         assert axis[0] in "+-", "axis must precede by '+' or '-'"
@@ -340,7 +374,7 @@ class Triangle(Panel):
         name :
             name
         """
-        super(Triangle, self).__init__(_smoldyn.PanelShape.tri, name)
+        super().__init__(shape=_smoldyn.PanelShape.tri, name=name)
         self.axisstr = ""
         self.vertices = vertices
         self.pts = functools.reduce(operator.iconcat, vertices, [])
@@ -366,7 +400,7 @@ class Sphere(Panel):
         name : optional
             name of the panel. If omitted, 0, 1, 2 etc. will be assigned. 
         """
-        super(Sphere, self).__init__(_smoldyn.PanelShape.sph, name=name)
+        super().__init__(shape=_smoldyn.PanelShape.sph, name=name)
         self.center = center
         self.radius = radius
         self.slices = slices
@@ -406,8 +440,7 @@ class Hemisphere(Panel):
         name : optional
             name
         """
-        super(Hemisphere, self).__init__(name=name)
-        self.ctype = _smoldyn.PanelShape.hemi
+        super().__init__(shape=_smoldyn.PanelShape.hemi, name=name)
         self.center = center
         self.radius = radius
         self.vector = vector
@@ -446,7 +479,7 @@ class Cylinder(Panel):
         name : optional
             name
         """
-        super(Cylinder, self).__init__(_smoldyn.PanelShape.cyl, name=name)
+        super().__init__(shape=_smoldyn.PanelShape.cyl, name=name)
         self.start = start
         self.end = end
         self.slices = slices
@@ -474,7 +507,7 @@ class Disk(Panel):
         name : optional
             name
         """
-        super(Disk, self).__init__(_smoldyn.PanelShape.disk, name=name)
+        super().__init__(shape=_smoldyn.PanelShape.disk, name=name)
         self.center = center
         self.radius = radius
         self.vector = vector
@@ -632,10 +665,13 @@ class Surface(object):
         # add panels
         assert self.name, "Surface name is missing"
         for i, panel in enumerate(self.panels):
-            panel.name = panel.name if panel.name else str(i)
+            panel.name = panel.name if panel.name else f"panel{i}"
+            panel.surface = self
             k = _smoldyn.addPanel(
                 self.name, panel.ctype, panel.name, panel.axisstr, panel.pts,
             )
+            pn = _smoldyn.getPanelIndexNT(self.name, panel.ctype, panel.name)
+            print(111, f"Adding {panel} to {self.name}. Index={pn}")
             assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
     def setStyle(self, face, *args, **kwargs):

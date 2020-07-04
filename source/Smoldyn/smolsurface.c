@@ -6921,8 +6921,8 @@ int dosurfinteract(simptr sim, moleculeptr mptr, int ll, int m, panelptr pnl,
             mptr->pnl = mptr->pnlx;
             done      = 1;
         }
-        //			fixpt2panel(mptr->pos,pnl,dim,face,0); }		// old version, up to 2.50;
-        //line can be deleted
+        //			fixpt2panel(mptr->pos,pnl,dim,face,0); }		// old version, up
+        //to 2.50; line can be deleted
         if(i2 != i)
             molchangeident(sim, mptr, ll, m, i2, ms, mptr->pnl);
     }

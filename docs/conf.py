@@ -31,15 +31,15 @@ release = "2.63"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.imgmath",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
+    "sphinx.ext.imgmath",
     "sphinxcontrib.programoutput",
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "recommonmark",
     #  'breathe',
-    "sphinx_autodoc_typehints",
     "sphinx.ext.autosummary",
 ]
 

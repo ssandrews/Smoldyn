@@ -760,7 +760,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
     //     const char *panel1, const char *surface2, const char *panel2,
     //     int reciprocal);
-    m.def("addPanelNeighbhor",
+    m.def("addPanelNeighbor",
         [](const char *surface1, const char *panel1, const char *surface2,
             const char *panel2, int reciprocal) {
             return smolAddPanelNeighbor(

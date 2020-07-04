@@ -1714,6 +1714,7 @@ extern "C" enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
     LCHECK(p1 >= 0, funcname, ECsame, NULL);
     p2 = smolGetPanelIndexNT(sim, surface2, &ps2, panel2);
     LCHECK(p2 >= 0, funcname, ECsame, NULL);
+
     LCHECK(!(s1 == s2 && p1 == p2), funcname, ECerror,
         "panels cannot be their own neighbors");
 
