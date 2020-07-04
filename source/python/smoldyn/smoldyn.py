@@ -68,7 +68,7 @@ class Species(object):
         self,
         name: str,
         state: str = "soln",
-        color: Union[str, Dict[str, Color]] = "",
+        color: Union[str, Dict[str, Color]] = "black",
         difc: Union[float, Dict[str, float]] = 0.0,
         display_size: float = 3,
         mol_list: str = "",
@@ -187,7 +187,7 @@ class Species(object):
 
     @color.setter
     def color(self, clr):
-        if isinstance(clr, str):
+        if not isinstance(clr, dict):
             clr = {"all": clr}
         self._color = clr
         for state, color in self._color.items():
