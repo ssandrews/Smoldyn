@@ -660,6 +660,25 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetMoleculeStyle(cursim_, species, state, size, &rgba[0]);
         });
 
+    // enum ErrorCode smolSetMoleculeColor(simptr sim, const char *species,
+    //     enum MolecState state, double *color);
+    m.def("setMoleculeColor",
+        [](const char *species, MolecState state, char* color) {
+            auto rgba = color2RGBA(color);
+            return smolSetMoleculeColor(cursim_, species, state, &rgba[0]);
+        });
+
+    m.def("setMoleculeColor",
+        [](const char *species, MolecState state, array<double, 4> &rgba) {
+            return smolSetMoleculeColor(cursim_, species, state, &rgba[0]);
+        });
+
+    // enum ErrorCode smolSetMoleculeSize(simptr sim, const char *species,
+    //     enum MolecState state, double size);
+    m.def("setMoleculeSize", [](const char *species, MolecState state, double size) {
+        return smolSetMoleculeSize(cursim_, species, state, size);
+    });
+
     /*************
      *  Surface  *
      *************/
@@ -711,19 +730,20 @@ PYBIND11_MODULE(_smoldyn, m)
                           const char *axisstring, vector<double> &params) {
         return smolAddPanel(cursim_, surface, panelshape, panel, axisstring, &params[0]);
     });
+
     // int            smolGetPanelIndex(simptr sim, const char *surface,
     //                enum PanelShape *panelshapeptr, const char *panel);
-    m.def("getPanelIndex",
-        [](const char *surface, PanelShape *panelshape, const char *panel) {
-            return smolGetPanelIndex(cursim_, surface, panelshape, panel);
-        });
+    m.def("getPanelIndex", [](const char *surface, const char *panel) {
+        PanelShape panelshape{PanelShape::PSnone};
+        return smolGetPanelIndex(cursim_, surface, &panelshape, panel);
+    });
 
     // int            smolGetPanelIndexNT(simptr sim, const char *surface,
     //                enum PanelShape *panelshapeptr, const char *panel);
-    m.def("getPanelIndexNT",
-        [](const char *surface, PanelShape *panelshape, const char *panel) {
-            return smolGetPanelIndexNT(cursim_, surface, panelshape, panel);
-        });
+    m.def("getPanelIndexNT", [](const char *surface, const char *panel) {
+        PanelShape panelshape{PanelShape::PSnone};
+        return smolGetPanelIndexNT(cursim_, surface, &panelshape, panel);
+    });
 
     // char*  smolGetPanelName(simptr sim, const char *surface, enum PanelShape
     // panelshape, int panelindex, char *panel);

@@ -811,10 +811,10 @@ failure:
 }
 
 /* smolOpenOutputFiles */
-enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite=0)
+enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)
 {
     const char *funcname = "smolOpenOutputFiles";
-    int err = scmdopenfiles(sim->cmds, overwrite);
+    int err              = scmdopenfiles(sim->cmds, overwrite);
     LCHECK(!err, funcname, ECbug, "scmdopenfiles bug");
 
     return Libwarncode;
@@ -1255,11 +1255,63 @@ failure:
     return (int)Liberrorcode;
 }
 
+/* smolSetMoleculeColor */
+extern "C" enum ErrorCode smolSetMoleculeColor(
+    simptr sim, const char *species, enum MolecState state, double *color)
+{
+    const char *funcname = "smolSetMoleculeColor";
+    int i, c;
+
+    LCHECK(sim, funcname, ECmissing, "missing sim");
+    i = smolGetSpeciesIndexNT(sim, species);
+    if(i == (int)ECall) {
+        smolClearError();
+        i = -5;
+    }
+    else
+        LCHECK(i > 0, funcname, ECsame, NULL);
+
+    LCHECK((state >= 0 && state < MSMAX) || state == MSall, funcname, ECsyntax,
+        "invalid state");
+
+    for(c = 0; c < 3; c++)
+        LCHECK(color[c] >= 0 && color[c] <= 1, funcname, ECbounds,
+                "color value out of bounds");
+    molsetcolor(sim, i, NULL, state, color);
+    return ECok;
+failure:
+    return Liberrorcode;
+
+}
+
+extern "C" enum ErrorCode smolSetMoleculeSize(
+    simptr sim, const char *species, enum MolecState state, double size)
+{
+    const char *funcname = "smolSetMoleculeSize";
+    int i;
+    LCHECK(sim, funcname, ECmissing, "missing sim");
+    i = smolGetSpeciesIndexNT(sim, species);
+    if(i == (int)ECall) {
+        smolClearError();
+        i = -5;
+    }
+    else
+        LCHECK(i > 0, funcname, ECsame, NULL);
+    LCHECK((state >= 0 && state < MSMAX) || state == MSall, funcname, ECsyntax,
+        "invalid state");
+
+    molsetdisplaysize(sim, i, NULL, state, size);
+    return ECok;
+failure:
+    return Liberrorcode;
+}
+
+
 /* smolSetMoleculeStyle */
 extern "C" enum ErrorCode smolSetMoleculeStyle(
     simptr sim, const char *species, enum MolecState state, double size, double *color)
 {
-    const char *funcname = "smolSetTextStyle";
+    const char *funcname = "smolSetMoleculeStyle";
     int i, c;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
@@ -1507,7 +1559,9 @@ extern "C" enum ErrorCode smolAddPanel(simptr sim, const char *surface,
     }
     LCHECK(params, funcname, ECmissing, "missing params");
     srf = sim->srfss->srflist[s];
-    er  = surfaddpanel(srf, sim->dim, panelshape, axisstring, params, panel);
+
+    er = surfaddpanel(srf, sim->dim, panelshape, axisstring, params, panel);
+
     LCHECK(er != -1, funcname, ECmemory, "out of memory adding panel");
     LCHECK(er != 3, funcname, ECsyntax, "cannot parse axisstring");
     LCHECK(er != 4, funcname, ECbounds, "drawing slices and stacks need to be positive");
@@ -1520,6 +1574,7 @@ extern "C" enum ErrorCode smolAddPanel(simptr sim, const char *surface,
         "panel name was used before for a different panel shape");
     LCHECK(!er, funcname, ECbug, "bug in smolAddPanel");
     return ECok;
+
 failure:
     return Liberrorcode;
 }
@@ -1531,7 +1586,7 @@ extern "C" int smolGetPanelIndex(
     const char *funcname = "smolGetPanelIndex";
     surfaceptr srf;
     int p, s;
-    enum PanelShape ps;
+    PanelShape ps = PanelShape::PSnone;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
@@ -1540,8 +1595,16 @@ extern "C" int smolGetPanelIndex(
     LCHECK(strcmp(panel, "all"), funcname, ECall, "panel cannot be 'all'");
     srf = sim->srfss->srflist[s];
     p   = -1;
-    for(ps = (PanelShape)0; ps < (PanelShape)PSMAX && p < 0; ps = (PanelShape)(ps + 1))
-        p = stringfind(srf->pname[ps], srf->npanel[ps], panel);
+
+    for(auto ips : AllPanels_arr) {
+        int _ips = static_cast<int>(ips);
+        p        = stringfind(srf->pname[_ips], srf->npanel[_ips], panel);
+        if(p >= 0) {
+            ps = ips;
+            break;
+        }
+    }
+
     LCHECK(p >= 0, funcname, ECnonexist, "panel not found");
     if(panelshapeptr)
         *panelshapeptr = ps;
@@ -1552,22 +1615,32 @@ failure:
 
 /* smolGetPanelIndexNT */
 extern "C" int smolGetPanelIndexNT(
-    simptr sim, const char *surface, enum PanelShape *panelshapeptr, const char *panel)
+    simptr sim, const char *surface, PanelShape *panelshapeptr, const char *panel)
 {
     const char *funcname = "smolGetPanelIndexNT";
     surfaceptr srf;
+    PanelShape ps = PanelShape::PSnone;
     int p, s;
-    enum PanelShape ps;
 
     LCHECKNT(sim, funcname, ECmissing, "missing sim");
     s = smolGetSurfaceIndexNT(sim, surface);
+
     LCHECKNT(s >= 0, funcname, ECsame, NULL);
     LCHECKNT(panel, funcname, ECmissing, "missing panel name");
     LCHECKNT(strcmp(panel, "all"), funcname, ECall, "panel cannot be 'all'");
+
     srf = sim->srfss->srflist[s];
     p   = -1;
-    for(ps = (PanelShape)0; ps < (PanelShape)PSMAX && p < 0; ps = (PanelShape)(ps + 1))
-        p = stringfind(srf->pname[ps], srf->npanel[ps], panel);
+
+    for(auto ips : AllPanels_arr) {
+        int _ips = static_cast<int>(ips);
+        p        = stringfind(srf->pname[_ips], srf->npanel[_ips], panel);
+        if(p >= 0) {
+            ps = ips;
+            break;
+        }
+    }
+
     LCHECKNT(p >= 0, funcname, ECnonexist, "panel not found");
     if(panelshapeptr)
         *panelshapeptr = ps;
@@ -1702,8 +1775,9 @@ extern "C" enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
 {
     const char *funcname = "smolAddPanelNeighbor";
     int s1, s2, p1, p2, er;
+
     panelptr pnl1, pnl2;
-    enum PanelShape ps1, ps2;
+    PanelShape ps1 = PanelShape::PSnone, ps2 = PanelShape::PSnone;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
     s1 = smolGetSurfaceIndexNT(sim, surface1);
@@ -1715,7 +1789,7 @@ extern "C" enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,
     p2 = smolGetPanelIndexNT(sim, surface2, &ps2, panel2);
     LCHECK(p2 >= 0, funcname, ECsame, NULL);
 
-    LCHECK(!(s1 == s2 && p1 == p2), funcname, ECerror,
+    LCHECK(!(s1 == s2 && p1 == p2 && ps1 == ps2), funcname, ECerror,
         "panels cannot be their own neighbors");
 
     pnl1 = sim->srfss->srflist[s1]->panels[ps1][p1];

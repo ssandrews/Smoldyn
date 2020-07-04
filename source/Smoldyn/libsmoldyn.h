@@ -138,6 +138,10 @@ enum ErrorCode smolAddSurfaceMolecules(simptr sim, const char *species,
     enum MolecState state, int number, const char *surface, enum PanelShape panelshape,
     const char *panel, double *position);
 int smolGetMoleculeCount(simptr sim, const char *species, enum MolecState state);
+enum ErrorCode smolSetMoleculeSize(
+    simptr sim, const char *species, enum MolecState state, double size);
+enum ErrorCode smolSetMoleculeColor(
+    simptr sim, const char *species, enum MolecState state, double *color);
 enum ErrorCode smolSetMoleculeStyle(
     simptr sim, const char *species, enum MolecState state, double size, double *color);
 

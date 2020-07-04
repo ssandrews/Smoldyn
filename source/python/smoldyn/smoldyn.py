@@ -100,9 +100,6 @@ class Species(object):
         mol_list : str, optional
             molecule list (default '')
 
-        See also
-        --------
-        Color
         """
         self.name: str = name
         assert self.name
@@ -128,11 +125,8 @@ class Species(object):
         self._difc: DiffConst = difc
         self.difc = self._difc
 
-        # Prepare color dict for states.
-        if not isinstance(color, dict):
-            color = {self.__state__: color}
-        self._color = color
-        self.color = self._color
+        # assign color
+        self.color = color
 
         self.display_size = display_size
 
@@ -146,16 +140,9 @@ class Species(object):
     def __to_disp__(self):
         return f"{self.name}({self.__state__})"
 
-    def __setStyle(self, method="opengl"):
-        assert self.display_size is not None, "set display_size first"
-        for state, color in self.color.items():
-            if not isinstance(color, str):
-                color = (*color, 1) if len(color) == 3 else color
-                assert len(color) == 4, "Expected a tuple of 4 values: RGBA"
-
-            state = _smoldyn.MolecState.__members__[state]
-            k = _smoldyn.setMoleculeStyle(self.name, state, self.display_size, color)
-            assert k == _smoldyn.ErrorCode.ok, f"Failed to set style on {self}, {k}"
+    def setStyle(self, size: float, color: Color, method="opengl"):
+        self.color = color
+        self.display_size = size
 
     @property
     def difc(self) -> DiffConst:
@@ -201,7 +188,7 @@ class Species(object):
     @color.setter
     def color(self, clr):
         if isinstance(clr, str):
-            clr = {self.__state__: clr}
+            clr = {"all": clr}
         self._color = clr
         for state, color in self._color.items():
             state = (
@@ -212,7 +199,9 @@ class Species(object):
             if not isinstance(color, str) and len(color) == 3:
                 color = *color, 1
                 assert len(color) == 4, "Needs tuple of 4 values (R,G,B,A)"
-            k = _smoldyn.setMoleculeStyle(self.name, state, 0.0, color)
+            else:
+                color = color2RGBA(color)
+            k = _smoldyn.setMoleculeColor(self.name, state, color)
             assert k == _smoldyn.ErrorCode.ok
 
     @property
@@ -241,8 +230,10 @@ class Species(object):
         if isinstance(size, (float, int)):
             size = {_smoldyn.MolecState.all: size}
         self._displaySize = size
+        print(f"  Setting display size {self._displaySize}")
         for state, size in self._displaySize.items():
-            k = _smoldyn.setMoleculeStyle(self.name, state, size, None)
+            print(f"--- {state} {size}")
+            k = _smoldyn.setMoleculeSize(self.name, state, size)
             assert k == _smoldyn.ErrorCode.ok
 
     def addToSolution(
@@ -290,11 +281,15 @@ class Panel(object):
         self.surface: Surface = None
 
     def __str__(self):
-        return f"{self.name} type={self.ctype} surface={self.surface.name}"
+        return f"<{self.name} type={self.ctype} index={self.index}>"
 
     def _axisIndex(self, axisname: str):
         axisDict = dict(x=0, y=1, z=2)
         return int(axisDict.get(axisname.lower(), axisname))
+
+    @property
+    def index(self) -> int:
+        return _smoldyn.getPanelIndexNT(self.surface.name, self.name)
 
     def toText(self):
         return f"panel {self.ctype} {self.axisstr} {' '.join(map(str,self.pts))} {self.name}".strip()
@@ -306,7 +301,7 @@ class Panel(object):
     @neighbors.setter
     def neighbors(self, panels: List[Panel]):
         for panel in panels:
-            self._assignNeighbor(self, panel)
+            self._assignNeighbor(panel)
 
     @property
     def neighbor(self):
@@ -320,6 +315,7 @@ class Panel(object):
         assert self.surface, "This panel has no Surface"
         assert panel.surface, "This panel has no Surface"
         assert self != panel, "A panel cannot be its own neighbor"
+        print(111, self, self.surface, panel, panel.surface)
         k = _smoldyn.addPanelNeighbor(
             self.surface.name, self.name, panel.surface.name, panel.name, reciprocal
         )
@@ -459,7 +455,7 @@ class Cylinder(Panel):
         radius: float,
         slices: int,
         stacks: int,
-        name="",
+        name: str = "",
     ):
         """Cylinder
 
@@ -480,13 +476,14 @@ class Cylinder(Panel):
             name
         """
         super().__init__(shape=_smoldyn.PanelShape.cyl, name=name)
-        self.start = start
-        self.end = end
-        self.slices = slices
-        self.stacks = stacks
+        self.start: List[float] = start
+        self.end: List[float] = end
+        self.radius: float = radius
+        self.slices: int = slices
+        self.stacks: int = stacks
         # Smoldyn panel
-        self.axisstr = ""
-        self.pts = [*self.start, *self.end, self.slices, self.stacks]
+        self.axisstr: str = ""
+        self.pts = [*self.start, *self.end, self.radius, self.slices, self.stacks]
 
 
 class Disk(Panel):
@@ -670,8 +667,6 @@ class Surface(object):
             k = _smoldyn.addPanel(
                 self.name, panel.ctype, panel.name, panel.axisstr, panel.pts,
             )
-            pn = _smoldyn.getPanelIndexNT(self.name, panel.ctype, panel.name)
-            print(111, f"Adding {panel} to {self.name}. Index={pn}")
             assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
     def setStyle(self, face, *args, **kwargs):
