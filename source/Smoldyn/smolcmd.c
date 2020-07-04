@@ -29,8 +29,8 @@
 #include "smoldynconfigure.h"
 
 /* Global variables */
-int     Nvar;
-char ** Varnames;
+int Nvar;
+char **Varnames;
 double *Varvalues;
 
 /**********************************************************/
@@ -147,12 +147,12 @@ double fnmolcount(void *voidsim, char *erstr, char *line2);
 double fnmolcountonsurf(void *voidsim, char *erstr, char *line2);
 
 // internal functions
-void         cmdv1free(cmdptr cmd);
-void         cmdv1v2free(cmdptr cmd);
+void cmdv1free(cmdptr cmd);
+void cmdv1v2free(cmdptr cmd);
 enum CMDcode conditionalcmdtype(simptr sim, cmdptr cmd, int nparam);
-int          insideecoli(double *pos, double *ofst, double rad, double length);
-void         putinecoli(double *pos, double *ofst, double rad, double length);
-int  molinpanels(simptr sim, moleculeptr mptr, int s, enum PanelShape ps);
+int insideecoli(double *pos, double *ofst, double rad, double length);
+void putinecoli(double *pos, double *ofst, double rad, double length);
+int molinpanels(simptr sim, moleculeptr mptr, int s, enum PanelShape ps);
 void cmdmeansqrdispfree(cmdptr cmd);
 
 /**********************************************************/
@@ -163,8 +163,8 @@ void cmdmeansqrdispfree(cmdptr cmd);
 enum CMDcode docommand(void *cmdfnarg, cmdptr cmd, char *line)
 {
     simptr sim;
-    char   word[STRCHAR], *line2;
-    int    itct;
+    char word[STRCHAR], *line2;
+    int itct;
 
     if(!cmdfnarg)
         return CMDok;
@@ -387,11 +387,11 @@ enum CMDcode docommand(void *cmdfnarg, cmdptr cmd, char *line)
 int loadsmolfunctions(simptr sim)
 {
     double er;
-    char   str1[STRCHAR], str2[STRCHAR];
+    char str1[STRCHAR], str2[STRCHAR];
 
     er = 0;
-    er += strevalfunction(strcpy(str1, "molcount"), strcpy(str2, "dves"),
-        (void *)sim, (void *)&fnmolcount, NULL, NULL, 0);
+    er += strevalfunction(strcpy(str1, "molcount"), strcpy(str2, "dves"), (void *)sim,
+        (void *)&fnmolcount, NULL, NULL, 0);
     er += strevalfunction(strcpy(str1, "molcountonsurf"), strcpy(str2, "dves"),
         (void *)sim, (void *)&fnmolcountonsurf, NULL, NULL, 0);
 
@@ -414,14 +414,13 @@ enum CMDcode cmdstop(simptr sim, cmdptr cmd, char *line2)
 enum CMDcode cmdpause(simptr sim, cmdptr cmd, char *line2)
 {
     char c;
-    int  tflag;
+    int tflag;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDcontrol;
     if(!sim->graphss || sim->graphss->graphics == 0) {
-        fprintf(stderr,
-            "Simulation paused at time %g.  Press enter to continue.",
-            sim->time);
+        fprintf(
+            stderr, "Simulation paused at time %g.  Press enter to continue.", sim->time);
         scanf("%c", &c);
         return CMDok;
     }
@@ -445,7 +444,7 @@ enum CMDcode cmdbeep(simptr sim, cmdptr cmd, char *line2)
 enum CMDcode cmdkeypress(simptr sim, cmdptr cmd, char *line2)
 {
     char c;
-    int  itct, tflag;
+    int itct, tflag;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDcontrol;
@@ -463,7 +462,7 @@ enum CMDcode cmdkeypress(simptr sim, cmdptr cmd, char *line2)
 enum CMDcode cmdsetflag(simptr sim, cmdptr cmd, char *line2)
 {
     double f1;
-    int    itct;
+    int itct;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDcontrol;
@@ -477,7 +476,7 @@ enum CMDcode cmdsetflag(simptr sim, cmdptr cmd, char *line2)
 /* cmdsetrandseed */
 enum CMDcode cmdsetrandseed(simptr sim, cmdptr cmd, char *line2)
 {
-    int      itct;
+    int itct;
     long int seed;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -495,7 +494,7 @@ enum CMDcode cmdsetrandseed(simptr sim, cmdptr cmd, char *line2)
 /* cmdsetgraphics */
 enum CMDcode cmdsetgraphics(simptr sim, cmdptr cmd, char *line2)
 {
-    int  itct;
+    int itct;
     char str[STRCHAR];
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -573,8 +572,8 @@ enum CMDcode cmdincrementfile(simptr sim, cmdptr cmd, char *line2)
 /* cmdifflag */
 enum CMDcode cmdifflag(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct;
-    char   ch;
+    int itct;
+    char ch;
     double f1, flag;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -582,11 +581,10 @@ enum CMDcode cmdifflag(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     itct = strmathsscanf(line2, "%c %mlg", Varnames, Varvalues, Nvar, &ch, &f1);
     SCMDCHECK(itct == 2, "cannot read comparison symbol or flag value");
-    SCMDCHECK(ch == '<' || ch == '=' || ch == '>',
-        "comparison symbol has to be <, =, or >");
+    SCMDCHECK(
+        ch == '<' || ch == '=' || ch == '>', "comparison symbol has to be <, =, or >");
     flag = scmdreadflag(sim->cmds);
-    if((ch == '<' && flag < f1) || (ch == '=' && flag == f1) ||
-        (ch == '>' && flag > f1))
+    if((ch == '<' && flag < f1) || (ch == '=' && flag == f1) || (ch == '>' && flag > f1))
         return docommand(sim, cmd, strnword(line2, 3));
     return CMDok;
 }
@@ -594,7 +592,7 @@ enum CMDcode cmdifflag(simptr sim, cmdptr cmd, char *line2)
 /* cmdifprob */
 enum CMDcode cmdifprob(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct;
+    int itct;
     double f1;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -602,8 +600,7 @@ enum CMDcode cmdifprob(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &f1);
     SCMDCHECK(itct == 1, "cannot read probability value");
-    SCMDCHECK(
-        f1 >= 0 && f1 <= 1, "probability value needs to be between 0 and 1");
+    SCMDCHECK(f1 >= 0 && f1 <= 1, "probability value needs to be between 0 and 1");
     if(randCOD() < f1)
         return docommand(sim, cmd, strnword(line2, 2));
     return CMDok;
@@ -612,7 +609,7 @@ enum CMDcode cmdifprob(simptr sim, cmdptr cmd, char *line2)
 /* cmdifno */
 enum CMDcode cmdifno(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, count, *index;
+    int i, count, *index;
     enum MolecState ms;
 
     if(line2 && !strcmp(line2, "cmdtype")) {
@@ -621,8 +618,7 @@ enum CMDcode cmdifno(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -635,7 +631,7 @@ enum CMDcode cmdifno(simptr sim, cmdptr cmd, char *line2)
 /* cmdifless */
 enum CMDcode cmdifless(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, *index, count, min;
+    int itct, i, *index, count, min;
     enum MolecState ms;
 
     if(line2 && !strcmp(line2, "cmdtype")) {
@@ -644,8 +640,7 @@ enum CMDcode cmdifless(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -661,7 +656,7 @@ enum CMDcode cmdifless(simptr sim, cmdptr cmd, char *line2)
 /* cmdifmore */
 enum CMDcode cmdifmore(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, *index, count, min;
+    int itct, i, *index, count, min;
     enum MolecState ms;
 
     if(line2 && !strcmp(line2, "cmdtype")) {
@@ -670,8 +665,7 @@ enum CMDcode cmdifmore(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -687,14 +681,14 @@ enum CMDcode cmdifmore(simptr sim, cmdptr cmd, char *line2)
 /* cmdifincmpt */
 enum CMDcode cmdifincmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int               itct, i, min, c, *index;
-    enum MolecState   ms;
-    char              cname[STRCHAR];
-    compartssptr      cmptss;
-    char              ch;
-    moleculeptr       mptr;
-    static compartptr cmpt   = NULL;
-    static int        inscan = 0, count = 0;
+    int itct, i, min, c, *index;
+    enum MolecState ms;
+    char cname[STRCHAR];
+    compartssptr cmptss;
+    char ch;
+    moleculeptr mptr;
+    static compartptr cmpt = NULL;
+    static int inscan = 0, count = 0;
 
     if(inscan)
         goto scanportion;
@@ -707,18 +701,15 @@ enum CMDcode cmdifincmpt(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing argument");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     SCMDCHECK(line2 = strnword(line2, 2), "missing value argument");
-    itct = strmathsscanf(
-        line2, "%c %mi %s", Varnames, Varvalues, Nvar, &ch, &min, cname);
+    itct = strmathsscanf(line2, "%c %mi %s", Varnames, Varvalues, Nvar, &ch, &min, cname);
+    SCMDCHECK(itct == 3, "cannot read symbol, value, and/or compartment arguments");
     SCMDCHECK(
-        itct == 3, "cannot read symbol, value, and/or compartment arguments");
-    SCMDCHECK(ch == '<' || ch == '=' || ch == '>',
-        "comparison symbol has to be <, =, or >");
+        ch == '<' || ch == '=' || ch == '>', "comparison symbol has to be <, =, or >");
     c = stringfind(cmptss->cnames, cmptss->ncmpt, cname);
     SCMDCHECK(c >= 0, "compartment name not recognized");
     cmpt  = cmptss->cmptlist[c];
@@ -747,9 +738,9 @@ scanportion:
 /* cmdifchange */
 enum CMDcode cmdifchange(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, *index, count, num, diff;
+    int itct, i, *index, count, num, diff;
     enum MolecState ms;
-    char            change;
+    char change;
 
     if(line2 && !strcmp(line2, "cmdtype")) {
         return conditionalcmdtype(sim, cmd, 2);
@@ -757,14 +748,12 @@ enum CMDcode cmdifchange(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     SCMDCHECK(line2 = strnword(line2, 2), "missing value argument");
-    itct = strmathsscanf(
-        line2, "%c %mi", Varnames, Varvalues, Nvar, &change, &num);
+    itct = strmathsscanf(line2, "%c %mi", Varnames, Varvalues, Nvar, &change, &num);
     SCMDCHECK(itct == 2, "cannot read change or number arguments");
     SCMDCHECK(line2 = strnword(line2, 3), "missing conditional command");
 
@@ -786,21 +775,20 @@ enum CMDcode cmdifchange(simptr sim, cmdptr cmd, char *line2)
 /* cmdif */
 enum CMDcode cmdif(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct;
-    char   symbol;
+    int itct;
+    char symbol;
     double value1, value2;
 
     if(line2 && !strcmp(line2, "cmdtype")) {
         return conditionalcmdtype(sim, cmd, 2);
     }
 
-    itct = strmathsscanf(line2, "%mlg %c %mlg", Varnames, Varvalues, Nvar,
-        &value1, &symbol, &value2);
+    itct = strmathsscanf(
+        line2, "%mlg %c %mlg", Varnames, Varvalues, Nvar, &value1, &symbol, &value2);
     SCMDCHECK(itct == 3, "cannot read command arguments");
     SCMDCHECK(line2 = strnword(line2, 4), "missing conditional command");
 
-    if((symbol == '>' && value1 > value2) ||
-        (symbol == '<' && value1 < value2) ||
+    if((symbol == '>' && value1 > value2) || (symbol == '<' && value1 < value2) ||
         (symbol == '=' && value1 == value2))
         return docommand(sim, cmd, line2);
 
@@ -814,13 +802,13 @@ enum CMDcode cmdif(simptr sim, cmdptr cmd, char *line2)
 /* cmdwarnescapee */
 enum CMDcode cmdwarnescapee(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, escape, *index;
+    int i, escape, *index;
     enum MolecState ms;
-    static FILE *   fptr = NULL;
-    moleculeptr     mptr;
-    double *        pos, *posx, *via;
-    static int      inscan = 0;
-    char            string[STRCHAR];
+    static FILE *fptr = NULL;
+    moleculeptr mptr;
+    double *pos, *posx, *via;
+    static int inscan = 0;
+    char string[STRCHAR];
 
     if(inscan)
         goto scanportion;
@@ -829,8 +817,7 @@ enum CMDcode cmdwarnescapee(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -856,22 +843,20 @@ scanportion:
         if(!escape) {
             via = mptr->via;
             if(sim->dim == 1)
-                scmdfprintf(cmd->cmds, fptr,
-                    "New escapee: %g #%s %g to %g via %g\n", sim->time,
-                    molserno2string(mptr->serno, string), posx[0], pos[0],
+                scmdfprintf(cmd->cmds, fptr, "New escapee: %g #%s %g to %g via %g\n",
+                    sim->time, molserno2string(mptr->serno, string), posx[0], pos[0],
                     via[0]);
             else if(sim->dim == 2)
                 scmdfprintf(cmd->cmds, fptr,
-                    "New escapee: %g #%s (%g,%g) to (%g,%g) via (%g,%g)\n",
-                    sim->time, molserno2string(mptr->serno, string), posx[0],
-                    posx[1], pos[0], pos[1], via[0], via[1]);
+                    "New escapee: %g #%s (%g,%g) to (%g,%g) via (%g,%g)\n", sim->time,
+                    molserno2string(mptr->serno, string), posx[0], posx[1], pos[0],
+                    pos[1], via[0], via[1]);
             else
                 scmdfprintf(cmd->cmds, fptr,
                     "New escapee: %g #%s (%g,%g,%g) to (%g,%g,%g) via "
                     "(%g,%g,%g)\n",
-                    sim->time, molserno2string(mptr->serno, string), posx[0],
-                    posx[1], posx[2], pos[0], pos[1], pos[2], via[0], via[1],
-                    via[2]);
+                    sim->time, molserno2string(mptr->serno, string), posx[0], posx[1],
+                    posx[2], pos[0], pos[1], pos[2], via[0], via[1], via[2]);
         }
     }
     return CMDok;
@@ -902,10 +887,10 @@ enum CMDcode cmdecho(simptr sim, cmdptr cmd, char *line2)
 /* cmdevaluate */
 enum CMDcode cmdevaluate(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE * fptr;
+    FILE *fptr;
     double answer;
-    int    it, er;
-    char   erstr[STRCHAR];
+    int it, er;
+    char erstr[STRCHAR];
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
@@ -913,8 +898,7 @@ enum CMDcode cmdevaluate(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(fptr, "file name not recognized");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing item to evaluate");
-    it = strmathsscanf(
-        line2, "%mlg", sim->varnames, sim->varvalues, sim->nvar, &answer);
+    it = strmathsscanf(line2, "%mlg", sim->varnames, sim->varvalues, sim->nvar, &answer);
     if(it != 1) {
         er = strmatherror(erstr, 1);
         SCMDCHECK(!er, "%s", erstr);
@@ -928,7 +912,7 @@ enum CMDcode cmdevaluate(simptr sim, cmdptr cmd, char *line2)
 enum CMDcode cmdmolcountheader(simptr sim, cmdptr cmd, char *line2)
 {
     FILE *fptr;
-    int   i;
+    int i;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
@@ -946,19 +930,19 @@ enum CMDcode cmdmolcountheader(simptr sim, cmdptr cmd, char *line2)
 /* cmdmolcount */
 enum CMDcode cmdmolcount(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *      fptr;
-    int         i, nspecies, *ctlat, ilat;
-    latticeptr  lat;
+    FILE *fptr;
+    int i, nspecies, *ctlat, ilat;
+    latticeptr lat;
     moleculeptr mptr;
-    static int  inscan = 0, *ct = NULL;
+    static int inscan = 0, *ct = NULL;
 
     if(inscan)
         goto scanportion;
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
 
-     // failed before, don't try again
-    SCMDCHECK(cmd->i1 != -1, "error on setup"); 
+    // failed before, don't try again
+    SCMDCHECK(cmd->i1 != -1, "error on setup");
 
     fptr = scmdgetfptr(sim->cmds, line2);
     SCMDCHECK(fptr, "file name not recognized");
@@ -1028,12 +1012,12 @@ scanportion:
 /* fnmolcount */
 double fnmolcount(void *voidsim, char *erstr, char *line2)
 {
-    simptr          sim;
+    simptr sim;
     enum MolecState ms;
-    int             i, *index;
-    static char     oldline2[STRCHAR] = "\0";
-    static int      inscan            = 0, ct;
-    static long int oldtouch          = 0;
+    int i, *index;
+    static char oldline2[STRCHAR] = "\0";
+    static int inscan             = 0, ct;
+    static long int oldtouch      = 0;
 
     sim = (simptr)voidsim;
     if(inscan)
@@ -1049,8 +1033,7 @@ double fnmolcount(void *voidsim, char *erstr, char *line2)
     SFNCHECK(line2, "missing arguments");
     i = molstring2index1(sim, line2, &ms, &index);
     SFNCHECK(i != -1, "species is missing or cannot be read");
-    SFNCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SFNCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SFNCHECK(i != -3, "cannot read molecule state value");
     SFNCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SFNCHECK(i != -7, "error allocating memory");
@@ -1069,16 +1052,16 @@ scanportion:
 /* fnmolcountonsurf */
 double fnmolcountonsurf(void *voidsim, char *erstr, char *line2)
 {
-    simptr            sim;
-    enum MolecState   ms;
-    int               i, *index, s, comma, itct;
-    static int        inscan = 0, ct;
-    surfacessptr      srfss;
-    char              nm[STRCHAR];
+    simptr sim;
+    enum MolecState ms;
+    int i, *index, s, comma, itct;
+    static int inscan = 0, ct;
+    surfacessptr srfss;
+    char nm[STRCHAR];
     static surfaceptr srf;
-    moleculeptr       mptr;
-    static long int   oldtouch          = 0;
-    static char       oldline2[STRCHAR] = "\0";
+    moleculeptr mptr;
+    static long int oldtouch      = 0;
+    static char oldline2[STRCHAR] = "\0";
 
     sim = (simptr)voidsim;
     if(inscan)
@@ -1094,13 +1077,12 @@ double fnmolcountonsurf(void *voidsim, char *erstr, char *line2)
     srfss = sim->srfss;
     SFNCHECK(srfss, "no surfaces defined");
     SFNCHECK(line2, "missing arguments");
-    SFNCHECK((comma = strChrBrackets(line2, -1, ',', "([{,\"'")) > 0,
-        "missing parameter");
+    SFNCHECK(
+        (comma = strChrBrackets(line2, -1, ',', "([{,\"'")) > 0, "missing parameter");
     line2[comma] = '\0';
     i            = molstring2index1(sim, line2, &ms, &index);
     SFNCHECK(i != -1, "species is missing or cannot be read");
-    SFNCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SFNCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SFNCHECK(i != -3, "cannot read molecule state value");
     SFNCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SFNCHECK(i != -7, "error allocating memory");
@@ -1127,11 +1109,11 @@ scanportion:  //?? This is very inefficient; should use surface molecule list
 /* cmdmolcountinbox */
 enum CMDcode cmdmolcountinbox(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *        fptr;
-    int           d, dim, itct, i, nspecies;
-    moleculeptr   mptr;
+    FILE *fptr;
+    int d, dim, itct, i, nspecies;
+    moleculeptr mptr;
     static double low[3] = {0, 0, 0}, high[3] = {0, 0, 0};
-    static int    inscan = 0, *ct;
+    static int inscan = 0, *ct;
 
     if(inscan)
         goto scanportion;
@@ -1191,13 +1173,13 @@ scanportion:
 /* cmdmolcountincmpt */
 enum CMDcode cmdmolcountincmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *            fptr;
-    char              nm[STRCHAR];
-    compartssptr      cmptss;
-    int               itct, c, i, nspecies;
-    moleculeptr       mptr;
-    static compartptr cmpt   = NULL;
-    static int        inscan = 0, *ct;
+    FILE *fptr;
+    char nm[STRCHAR];
+    compartssptr cmptss;
+    int itct, c, i, nspecies;
+    moleculeptr mptr;
+    static compartptr cmpt = NULL;
+    static int inscan      = 0, *ct;
 
     if(inscan)
         goto scanportion;
@@ -1256,12 +1238,12 @@ scanportion:
 /* cmdmolcountincmpts */
 enum CMDcode cmdmolcountincmpts(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *            fptr;
-    char              nm[STRCHAR];
-    compartssptr      cmptss;
-    int               itct, c, i, ic;
-    moleculeptr       mptr;
-    static int        inscan = 0, *ct, ncmpt, nspecies;
+    FILE *fptr;
+    char nm[STRCHAR];
+    compartssptr cmptss;
+    int itct, c, i, ic;
+    moleculeptr mptr;
+    static int inscan = 0, *ct, ncmpt, nspecies;
     static compartptr cmptlist[16];
 
     if(inscan)
@@ -1328,14 +1310,14 @@ scanportion:
 /* cmdmolcountincmpt2 */
 enum CMDcode cmdmolcountincmpt2(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *            fptr;
-    char              nm[STRCHAR], state[STRCHAR];
-    compartssptr      cmptss;
-    int               itct, c, i, nspecies;
-    moleculeptr       mptr;
-    enum MolecState   ms;
+    FILE *fptr;
+    char nm[STRCHAR], state[STRCHAR];
+    compartssptr cmptss;
+    int itct, c, i, nspecies;
+    moleculeptr mptr;
+    enum MolecState ms;
     static compartptr cmpt;
-    static int        inscan = 0, *ct;
+    static int inscan = 0, *ct;
 
     if(inscan)
         goto scanportion;
@@ -1397,12 +1379,12 @@ scanportion:
 /* cmdmolcountonsurf */
 enum CMDcode cmdmolcountonsurf(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *            fptr;
-    char              nm[STRCHAR];
-    surfacessptr      srfss;
-    int               itct, s, i, nspecies;
-    moleculeptr       mptr;
-    static int        inscan = 0, *ct;
+    FILE *fptr;
+    char nm[STRCHAR];
+    surfacessptr srfss;
+    int itct, s, i, nspecies;
+    moleculeptr mptr;
+    static int inscan = 0, *ct;
     static surfaceptr srf;
 
     if(inscan)
@@ -1462,14 +1444,14 @@ scanportion:
 /* cmdmolcountspace */
 enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *          fptr;
-    int             dim, i, itct, ax2, d, bin, average, *ctlat, ilat, *index, j;
+    FILE *fptr;
+    int dim, i, itct, ax2, d, bin, average, *ctlat, ilat, *index, j;
     enum MolecState ms;
-    char            axisstr[STRCHAR];
-    moleculeptr     mptr;
-    latticeptr      lat;
-    static double   low[DIMMAX], high[DIMMAX], scale;
-    static int      inscan = 0, nbin, *ct, axis;
+    char axisstr[STRCHAR];
+    moleculeptr mptr;
+    latticeptr lat;
+    static double low[DIMMAX], high[DIMMAX], scale;
+    static int inscan = 0, nbin, *ct, axis;
 
     if(inscan)
         goto scanportion;
@@ -1482,8 +1464,7 @@ enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -1502,11 +1483,10 @@ enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(axis >= 0 && axis < dim, "illegal axis value");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing arguments");
-    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar,
-        &low[axis], &high[axis], &nbin);
+    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar, &low[axis],
+        &high[axis], &nbin);
     SCMDCHECK(itct == 3, "cannot read arguments: low high bins");
-    SCMDCHECK(
-        low[axis] < high[axis], "low value needs to be less than high value");
+    SCMDCHECK(low[axis] < high[axis], "low value needs to be less than high value");
     SCMDCHECK(nbin > 0, "bins value needs to be > 0");
     line2 = strnword(line2, 4);
     ax2   = 0;
@@ -1514,10 +1494,9 @@ enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
         if(ax2 == axis)
             ax2++;
         SCMDCHECK(line2, "missing position arguments");
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &low[ax2], &high[ax2]);
-        SCMDCHECK(
-            itct == 2, "cannot read (or insufficient) position arguments");
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &low[ax2], &high[ax2]);
+        SCMDCHECK(itct == 2, "cannot read (or insufficient) position arguments");
         SCMDCHECK(low[ax2] <= high[ax2],
             "low value needs to be less than or equal to high value");
         line2 = strnword(line2, 3);
@@ -1569,8 +1548,8 @@ enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
                 lat = sim->latticess->latticelist[ilat];
                 if(lat->type == LATTICEnsv) {
                     for(j = 0; j < index[PDnresults]; j++) {
-                        NSV_CALL(nsv_molcountspace(lat->nsv, index[PDMAX + j],
-                            low, high, dim, nbin, axis, ctlat));
+                        NSV_CALL(nsv_molcountspace(lat->nsv, index[PDMAX + j], low, high,
+                            dim, nbin, axis, ctlat));
                         for(bin = 0; bin < nbin; ++bin)
                             ct[bin] += ctlat[bin];
                     }
@@ -1590,8 +1569,7 @@ enum CMDcode cmdmolcountspace(simptr sim, cmdptr cmd, char *line2)
     else if(cmd->invoke % average == 0) {
         scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
         for(bin = 0; bin < nbin; bin++)
-            scmdfprintf(
-                cmd->cmds, fptr, "%,%g", (double)(ct[bin]) / (double)average);
+            scmdfprintf(cmd->cmds, fptr, "%,%g", (double)(ct[bin]) / (double)average);
         scmdfprintf(cmd->cmds, fptr, "\n");
     }
     scmdflush(fptr);
@@ -1612,14 +1590,14 @@ scanportion:
 /* cmdmolcountspace2d */
 enum CMDcode cmdmolcountspace2d(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *          fptr;
-    int             dim, i, itct, d, bin, average, *index, curaxis, bin1, bin2;
+    FILE *fptr;
+    int dim, i, itct, d, bin, average, *index, curaxis, bin1, bin2;
     enum MolecState ms;
-    char            axisstr[STRCHAR];
-    moleculeptr     mptr;
+    char axisstr[STRCHAR];
+    moleculeptr mptr;
 
     static double low[DIMMAX], high[DIMMAX], scale1, scale2;
-    static int    inscan = 0, nbin1, nbin2, *ct, axis, axis1, axis2;
+    static int inscan = 0, nbin1, nbin2, *ct, axis, axis1, axis2;
 
     if(inscan)
         goto scanportion;
@@ -1632,8 +1610,7 @@ enum CMDcode cmdmolcountspace2d(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -1650,19 +1627,17 @@ enum CMDcode cmdmolcountspace2d(simptr sim, cmdptr cmd, char *line2)
         axis = 2;
     else
         axis = 3;
-    SCMDCHECK((dim == 2 && axis == 2) || (dim == 3 && axis < 3),
-        "illegal axis value");
+    SCMDCHECK((dim == 2 && axis == 2) || (dim == 3 && axis < 3), "illegal axis value");
     line2 = strnword(line2, 2);
 
     SCMDCHECK(line2, "missing arguments");
     curaxis = 0;
     if(curaxis == axis)
         curaxis++;  // first parallel axis
-    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar,
-        &low[curaxis], &high[curaxis], &nbin1);
+    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar, &low[curaxis],
+        &high[curaxis], &nbin1);
     SCMDCHECK(itct == 3, "cannot read arguments: low high bins");
-    SCMDCHECK(low[curaxis] < high[curaxis],
-        "low value needs to be less than high value");
+    SCMDCHECK(low[curaxis] < high[curaxis], "low value needs to be less than high value");
     SCMDCHECK(nbin1 > 0, "bins value needs to be > 0");
     axis1 = curaxis;
     line2 = strnword(line2, 4);
@@ -1671,21 +1646,19 @@ enum CMDcode cmdmolcountspace2d(simptr sim, cmdptr cmd, char *line2)
     curaxis++;
     if(curaxis == axis)
         curaxis++;  // second parallel axis
-    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar,
-        &low[curaxis], &high[curaxis], &nbin2);
+    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar, &low[curaxis],
+        &high[curaxis], &nbin2);
     SCMDCHECK(itct == 3, "cannot read arguments: low high bins");
-    SCMDCHECK(low[curaxis] < high[curaxis],
-        "low value needs to be less than high value");
+    SCMDCHECK(low[curaxis] < high[curaxis], "low value needs to be less than high value");
     SCMDCHECK(nbin2 > 0, "bins value needs to be > 0");
     axis2 = curaxis;
     line2 = strnword(line2, 4);
 
     if(dim == 3) {
         curaxis = axis;  // perpendicular axis
-        itct    = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &low[curaxis], &high[curaxis]);
-        SCMDCHECK(
-            itct == 2, "cannot read (or insufficient) position arguments");
+        itct    = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &low[curaxis], &high[curaxis]);
+        SCMDCHECK(itct == 2, "cannot read (or insufficient) position arguments");
         SCMDCHECK(low[curaxis] <= high[curaxis],
             "low value needs to be less than or equal to high value");
         line2 = strnword(line2, 3);
@@ -1728,15 +1701,13 @@ enum CMDcode cmdmolcountspace2d(simptr sim, cmdptr cmd, char *line2)
         for(bin2 = 0; bin2 < nbin2; bin2++) {
             bin1 = 0;
             if(average <= 1)
-                scmdfprintf(
-                    cmd->cmds, fptr, "%i", ct[bin2 * nbin1 + bin1]);
+                scmdfprintf(cmd->cmds, fptr, "%i", ct[bin2 * nbin1 + bin1]);
             else
                 scmdfprintf(cmd->cmds, fptr, "%g",
                     (double)(ct[bin2 * nbin1 + bin1] / (double)average));
             for(bin1 = 1; bin1 < nbin1; bin1++) {
                 if(average <= 1)
-                    scmdfprintf(
-                        cmd->cmds, fptr, "%,%i", ct[bin2 * nbin1 + bin1]);
+                    scmdfprintf(cmd->cmds, fptr, "%,%i", ct[bin2 * nbin1 + bin1]);
                 else
                     scmdfprintf(cmd->cmds, fptr, "%,%g",
                         (double)(ct[bin2 * nbin1 + bin1] / (double)average));
@@ -1767,13 +1738,13 @@ scanportion:
 /* cmdmolcountspaceradial */
 enum CMDcode cmdmolcountspaceradial(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *          fptr;
-    int             i, itct, d, bin, average, *index;
+    FILE *fptr;
+    int i, itct, d, bin, average, *index;
     enum MolecState ms;
-    double          radius, molrad;
-    moleculeptr     mptr;
-    static double   center[DIMMAX], scale, radius2;
-    static int      inscan = 0, nbin, *ct;
+    double radius, molrad;
+    moleculeptr mptr;
+    static double center[DIMMAX], scale, radius2;
+    static int inscan = 0, nbin, *ct;
 
     if(inscan)
         goto scanportion;
@@ -1785,22 +1756,19 @@ enum CMDcode cmdmolcountspaceradial(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing arguments");
     for(d = 0; d < sim->dim; d++) {
-        itct =
-            strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &center[d]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &center[d]);
         SCMDCHECK(itct == 1, "missing center value");
         line2 = strnword(line2, 2);
         SCMDCHECK(line2, "missing arguments");
     }
-    itct = strmathsscanf(
-        line2, "%mlg %mi", Varnames, Varvalues, Nvar, &radius, &nbin);
+    itct = strmathsscanf(line2, "%mlg %mi", Varnames, Varvalues, Nvar, &radius, &nbin);
     SCMDCHECK(itct == 2, "cannot read arguments: radius bins");
     SCMDCHECK(radius > 0, "radius needs to be greater than 0");
     SCMDCHECK(nbin > 0, "bins value needs to be > 0");
@@ -1847,8 +1815,7 @@ enum CMDcode cmdmolcountspaceradial(simptr sim, cmdptr cmd, char *line2)
     else if(cmd->invoke % average == 0) {
         scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
         for(bin = 0; bin < nbin; bin++)
-            scmdfprintf(
-                cmd->cmds, fptr, "%,%g", (double)(ct[bin]) / (double)average);
+            scmdfprintf(cmd->cmds, fptr, "%,%g", (double)(ct[bin]) / (double)average);
         scmdfprintf(cmd->cmds, fptr, "\n");
     }
     scmdflush(fptr);
@@ -1872,13 +1839,12 @@ scanportion:
 /* cmdmolcountspacepolarangle */
 enum CMDcode cmdmolcountspacepolarangle(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *          fptr;
-    int             i, itct, d, bin, average, *index;
+    FILE *fptr;
+    int i, itct, d, bin, average, *index;
     enum MolecState ms;
-    double          radiusmin, radiusmax, molrad, poleleninv, angle;
-    moleculeptr     mptr;
-    static double   center[DIMMAX], pole[DIMMAX], poleangle, scale, radiusmin2,
-        radiusmax2;
+    double radiusmin, radiusmax, molrad, poleleninv, angle;
+    moleculeptr mptr;
+    static double center[DIMMAX], pole[DIMMAX], poleangle, scale, radiusmin2, radiusmax2;
     static int inscan = 0, nbin, *ct;
 
     if(inscan)
@@ -1891,29 +1857,26 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing arguments");
     for(d = 0; d < sim->dim; d++) {
-        itct =
-            strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &center[d]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &center[d]);
         SCMDCHECK(itct == 1, "missing center value");
         line2 = strnword(line2, 2);
         SCMDCHECK(line2, "missing arguments");
     }
     for(d = 0; d < sim->dim; d++) {
-        itct =
-            strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &pole[d]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &pole[d]);
         SCMDCHECK(itct == 1, "missing pole value");
         line2 = strnword(line2, 2);
         SCMDCHECK(line2, "missing arguments");
     }
-    itct = strmathsscanf(line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar,
-        &radiusmin, &radiusmax, &nbin);
+    itct = strmathsscanf(
+        line2, "%mlg %mlg %mi", Varnames, Varvalues, Nvar, &radiusmin, &radiusmax, &nbin);
     SCMDCHECK(itct == 3, "cannot read arguments: radius_min radius_max bins");
     SCMDCHECK(nbin > 0, "bins value needs to be > 0");
     line2 = strnword(line2, 4);
@@ -1949,9 +1912,8 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim, cmdptr cmd, char *line2)
         poleangle = atan2(pole[1], pole[0]);
     }
     else {
-        poleangle = 0;
-        poleleninv =
-            sqrt(pole[0] * pole[0] + pole[1] * pole[1] + pole[2] * pole[2]);
+        poleangle  = 0;
+        poleleninv = sqrt(pole[0] * pole[0] + pole[1] * pole[1] + pole[2] * pole[2]);
         SCMDCHECK(poleleninv > 0, "pole vector is equal to zero");
         poleleninv = 1.0 / poleleninv;
         pole[0] *= poleleninv;
@@ -1974,8 +1936,7 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim, cmdptr cmd, char *line2)
     else if(cmd->invoke % average == 0) {
         scmdfprintf(cmd->cmds, fptr, "%g", sim->time);
         for(bin = 0; bin < nbin; bin++)
-            scmdfprintf(
-                cmd->cmds, fptr, "%,%g", (double)(ct[bin]) / (double)average);
+            scmdfprintf(cmd->cmds, fptr, "%,%g", (double)(ct[bin]) / (double)average);
         scmdfprintf(cmd->cmds, fptr, "\n");
     }
     scmdflush(fptr);
@@ -2013,13 +1974,13 @@ scanportion:
 enum CMDcode cmdradialdistribution(simptr sim, cmdptr cmd, char *line2)
 {
     FILE *fptr;
-    int   dim, i1, itct, d, bin, average, *index1, i, ll, m, wrap[DIMMAX];
+    int dim, i1, itct, d, bin, average, *index1, i, ll, m, wrap[DIMMAX];
     enum MolecState ms1, mslo, mshi, ms;
-    moleculeptr     mptr, mptr2;
-    boxptr          bptr;
-    double          dist, scale2, rdf;
-    static double   scale, radius, syswidth[DIMMAX];
-    static int      inscan = 0, nbin, *ct, i2, *index2, lllo, llhi, mcount;
+    moleculeptr mptr, mptr2;
+    boxptr bptr;
+    double dist, scale2, rdf;
+    static double scale, radius, syswidth[DIMMAX];
+    static int inscan = 0, nbin, *ct, i2, *index2, lllo, llhi, mcount;
     static enum MolecState ms2;
 
     if(inscan)
@@ -2032,8 +1993,7 @@ enum CMDcode cmdradialdistribution(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i1 = molstring2index1(sim, line2, &ms1, &index1);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -2041,15 +2001,14 @@ enum CMDcode cmdradialdistribution(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i2 = molstring2index1(sim, line2, &ms2, &index2);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing arguments");
-    itct = strmathsscanf(line2, "%mlg %mi %mi", Varnames, Varvalues, Nvar,
-        &radius, &nbin, &average);
+    itct = strmathsscanf(
+        line2, "%mlg %mi %mi", Varnames, Varvalues, Nvar, &radius, &nbin, &average);
     SCMDCHECK(itct == 3, "cannot read arguments: radius bins average");
     SCMDCHECK(radius > 0, "radius needs to be greater than 0");
     SCMDCHECK(nbin > 0, "bins value needs to be > 0");
@@ -2118,14 +2077,12 @@ enum CMDcode cmdradialdistribution(simptr sim, cmdptr cmd, char *line2)
             if(dim == 1)
                 rdf = (double)ct[bin] / ((double)mcount * scale2);
             else if(dim == 2)
-                rdf = (double)ct[bin] /
-                      ((double)mcount * scale2 *
-                          (2 * bin + 1));  // (bin+1)^2-bin^2=(2*bin+1)
+                rdf = (double)ct[bin] / ((double)mcount * scale2 *
+                                            (2 * bin + 1));  // (bin+1)^2-bin^2=(2*bin+1)
             else
-                rdf = (double)ct[bin] /
-                      ((double)mcount * scale2 *
-                          (3 * bin * bin + 3 * bin +
-                              1));  // (bin+1)^3-bin^3=(3*bin^2+3*bin+1)
+                rdf = (double)ct[bin] / ((double)mcount * scale2 *
+                                            (3 * bin * bin + 3 * bin +
+                                                1));  // (bin+1)^3-bin^3=(3*bin^2+3*bin+1)
             scmdfprintf(cmd->cmds, fptr, "%,%g", rdf);
         }
         scmdfprintf(cmd->cmds, fptr, "\n");
@@ -2145,10 +2102,8 @@ scanportion:
                 if(mptr2 != mptr && molismatch(mptr2, i2, index2, ms2)) {
                     dist = 0;
                     for(d = 0; d < dim; d++)
-                        dist += (mptr2->pos[d] + wrap[d] * syswidth[d] -
-                                    mptr->pos[d]) *
-                                (mptr2->pos[d] + wrap[d] * syswidth[d] -
-                                    mptr->pos[d]);
+                        dist += (mptr2->pos[d] + wrap[d] * syswidth[d] - mptr->pos[d]) *
+                                (mptr2->pos[d] + wrap[d] * syswidth[d] - mptr->pos[d]);
                     dist = sqrt(dist);
                     bin  = (int)floor(scale * dist);
                     if(bin < nbin)
@@ -2164,13 +2119,12 @@ scanportion:
 enum CMDcode cmdradialdistribution2(simptr sim, cmdptr cmd, char *line2)
 {
     FILE *fptr;
-    int   dim, i1, itct, d, bin, average, *index1, i, ll, m, wrap[DIMMAX];
+    int dim, i1, itct, d, bin, average, *index1, i, ll, m, wrap[DIMMAX];
     enum MolecState ms1, mslo, mshi, ms;
-    moleculeptr     mptr, mptr2;
-    boxptr          bptr;
-    double          dist, scale2, rdf;
-    static double   scale, radius, syswidth[DIMMAX], lowpos[DIMMAX],
-        highpos[DIMMAX];
+    moleculeptr mptr, mptr2;
+    boxptr bptr;
+    double dist, scale2, rdf;
+    static double scale, radius, syswidth[DIMMAX], lowpos[DIMMAX], highpos[DIMMAX];
     static int inscan = 0, nbin, *ct, i2, *index2, lllo, llhi, mcount;
     static enum MolecState ms2;
 
@@ -2184,8 +2138,7 @@ enum CMDcode cmdradialdistribution2(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i1 = molstring2index1(sim, line2, &ms1, &index1);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -2193,24 +2146,23 @@ enum CMDcode cmdradialdistribution2(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     i2 = molstring2index1(sim, line2, &ms2, &index2);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing arguments");
     for(d = 0; d < sim->dim; d++) {
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &lowpos[d], &highpos[d]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &lowpos[d], &highpos[d]);
         SCMDCHECK(itct == 2, "missing arguments");
         SCMDCHECK(lowpos[d] <= highpos[d],
             "low position value needs to be <= high position value");
         line2 = strnword(line2, 3);
         SCMDCHECK(line2, "missing arguments");
     }
-    itct = strmathsscanf(line2, "%mlg %mi %mi", Varnames, Varvalues, Nvar,
-        &radius, &nbin, &average);
+    itct = strmathsscanf(
+        line2, "%mlg %mi %mi", Varnames, Varvalues, Nvar, &radius, &nbin, &average);
     SCMDCHECK(itct == 3, "cannot read arguments: radius bins average");
     SCMDCHECK(radius > 0, "radius needs to be greater than 0");
     SCMDCHECK(nbin > 0, "bins value needs to be > 0");
@@ -2279,14 +2231,12 @@ enum CMDcode cmdradialdistribution2(simptr sim, cmdptr cmd, char *line2)
             if(dim == 1)
                 rdf = (double)ct[bin] / ((double)mcount * scale2);
             else if(dim == 2)
-                rdf = (double)ct[bin] /
-                      ((double)mcount * scale2 *
-                          (2 * bin + 1));  // (bin+1)^2-bin^2=(2*bin+1)
+                rdf = (double)ct[bin] / ((double)mcount * scale2 *
+                                            (2 * bin + 1));  // (bin+1)^2-bin^2=(2*bin+1)
             else
-                rdf = (double)ct[bin] /
-                      ((double)mcount * scale2 *
-                          (3 * bin * bin + 3 * bin +
-                              1));  // (bin+1)^3-bin^3=(3*bin^2+3*bin+1)
+                rdf = (double)ct[bin] / ((double)mcount * scale2 *
+                                            (3 * bin * bin + 3 * bin +
+                                                1));  // (bin+1)^3-bin^3=(3*bin^2+3*bin+1)
             scmdfprintf(cmd->cmds, fptr, "%,%g", rdf);
         }
         scmdfprintf(cmd->cmds, fptr, "\n");
@@ -2310,10 +2260,8 @@ scanportion:
                 if(mptr2 != mptr && molismatch(mptr2, i2, index2, ms2)) {
                     dist = 0;
                     for(d = 0; d < dim; d++)
-                        dist += (mptr2->pos[d] + wrap[d] * syswidth[d] -
-                                    mptr->pos[d]) *
-                                (mptr2->pos[d] + wrap[d] * syswidth[d] -
-                                    mptr->pos[d]);
+                        dist += (mptr2->pos[d] + wrap[d] * syswidth[d] - mptr->pos[d]) *
+                                (mptr2->pos[d] + wrap[d] * syswidth[d] - mptr->pos[d]);
                     dist = sqrt(dist);
                     bin  = (int)floor(scale * dist);
                     if(bin < nbin)
@@ -2328,16 +2276,15 @@ scanportion:
 /* cmdmolcountspecies */
 enum CMDcode cmdmolcountspecies(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *          fptr;
-    int             i, *index, count;
+    FILE *fptr;
+    int i, *index, count;
     enum MolecState ms;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2354,8 +2301,8 @@ enum CMDcode cmdmolcountspecies(simptr sim, cmdptr cmd, char *line2)
 /* cmdmolcountspecieslist */
 enum CMDcode cmdmolcountspecieslist(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *          fptr;
-    int             i, *index, count;
+    FILE *fptr;
+    int i, *index, count;
     enum MolecState ms;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -2366,8 +2313,7 @@ enum CMDcode cmdmolcountspecieslist(simptr sim, cmdptr cmd, char *line2)
     while((line2 = strnword(line2, 2))) {
         i = molstring2index1(sim, line2, &ms, &index);
         SCMDCHECK(i != -1, "species is missing or cannot be read");
-        SCMDCHECK(i != -2,
-            "mismatched or improper parentheses around molecule state");
+        SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
         SCMDCHECK(i != -3, "cannot read molecule state value");
         SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
         SCMDCHECK(i != -7, "error allocating memory");
@@ -2384,8 +2330,8 @@ enum CMDcode cmdmolcountspecieslist(simptr sim, cmdptr cmd, char *line2)
 enum CMDcode cmdmollistsize(simptr sim, cmdptr cmd, char *line2)
 {
     FILE *fptr;
-    int   ll, itct;
-    char  listname[STRCHAR];
+    int ll, itct;
+    char listname[STRCHAR];
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
@@ -2405,11 +2351,11 @@ enum CMDcode cmdmollistsize(simptr sim, cmdptr cmd, char *line2)
 /* cmdlistmols */
 enum CMDcode cmdlistmols(simptr sim, cmdptr cmd, char *line2)
 {
-    int          d;
-    char         string[STRCHAR];
-    moleculeptr  mptr;
+    int d;
+    char string[STRCHAR];
+    moleculeptr mptr;
     static FILE *fptr;
-    static int   inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -2433,19 +2379,18 @@ scanportion:
         molms2string(mptr->mstate, string));
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
-    scmdfprintf(
-        cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
+    scmdfprintf(cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
     return CMDok;
 }
 
 /* cmdlistmols2 */
 enum CMDcode cmdlistmols2(simptr sim, cmdptr cmd, char *line2)
 {
-    int          d;
-    moleculeptr  mptr;
+    int d;
+    moleculeptr mptr;
     static FILE *fptr;
-    static int   inscan = 0, invk;
-    char         string[STRCHAR];
+    static int inscan = 0, invk;
+    char string[STRCHAR];
 
     if(inscan)
         goto scanportion;
@@ -2466,24 +2411,22 @@ enum CMDcode cmdlistmols2(simptr sim, cmdptr cmd, char *line2)
 
 scanportion:
     mptr = (moleculeptr)line2;
-    scmdfprintf(
-        cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+    scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
-    scmdfprintf(
-        cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
+    scmdfprintf(cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
     return CMDok;
 }
 
 /* cmdlistmols3 */
 enum CMDcode cmdlistmols3(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, *index, d;
-    moleculeptr     mptr;
+    int i, *index, d;
+    moleculeptr mptr;
     enum MolecState ms;
-    static FILE *   fptr;
-    static int      inscan = 0, invk;
-    char            string[STRCHAR];
+    static FILE *fptr;
+    static int inscan = 0, invk;
+    char string[STRCHAR];
 
     if(inscan)
         goto scanportion;
@@ -2492,8 +2435,7 @@ enum CMDcode cmdlistmols3(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2513,24 +2455,22 @@ enum CMDcode cmdlistmols3(simptr sim, cmdptr cmd, char *line2)
 
 scanportion:
     mptr = (moleculeptr)line2;
-    scmdfprintf(
-        cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+    scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
-    scmdfprintf(
-        cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
+    scmdfprintf(cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
     return CMDok;
 }
 
 /* cmdlistmols4 */
 enum CMDcode cmdlistmols4(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, d, *index;
-    moleculeptr     mptr;
+    int i, d, *index;
+    moleculeptr mptr;
     enum MolecState ms;
-    static FILE *   fptr;
-    static int      inscan = 0, invk;
-    char            string[STRCHAR];
+    static FILE *fptr;
+    static int inscan = 0, invk;
+    char string[STRCHAR];
 
     if(inscan)
         goto scanportion;
@@ -2539,8 +2479,7 @@ enum CMDcode cmdlistmols4(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2560,26 +2499,24 @@ enum CMDcode cmdlistmols4(simptr sim, cmdptr cmd, char *line2)
 
 scanportion:
     mptr = (moleculeptr)line2;
-    scmdfprintf(
-        cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+    scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d] + mptr->posoffset[d]);
-    scmdfprintf(
-        cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
+    scmdfprintf(cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
     return CMDok;
 }
 
 /* cmdlistmolscmpt */
 enum CMDcode cmdlistmolscmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int               i, *index, c, itct, d;
-    moleculeptr       mptr;
-    enum MolecState   ms;
-    char              cname[STRCHAR], string[STRCHAR];
-    compartssptr      cmptss;
-    static FILE *     fptr;
+    int i, *index, c, itct, d;
+    moleculeptr mptr;
+    enum MolecState ms;
+    char cname[STRCHAR], string[STRCHAR];
+    compartssptr cmptss;
+    static FILE *fptr;
     static compartptr cmpt;
-    static int        inscan = 0, invk;
+    static int inscan = 0, invk;
 
     if(inscan)
         goto scanportion;
@@ -2588,8 +2525,7 @@ enum CMDcode cmdlistmolscmpt(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2619,12 +2555,10 @@ enum CMDcode cmdlistmolscmpt(simptr sim, cmdptr cmd, char *line2)
 scanportion:
     mptr = (moleculeptr)line2;
     if(posincompart(sim, mptr->pos, cmpt, 0)) {
-        scmdfprintf(
-            cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
+        scmdfprintf(cmd->cmds, fptr, "%i%,%i%,%i", invk, mptr->ident, mptr->mstate);
         for(d = 0; d < sim->dim; d++)
             scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
-        scmdfprintf(
-            cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
+        scmdfprintf(cmd->cmds, fptr, "%,%s\n", molserno2string(mptr->serno, string));
     }
     return CMDok;
 }
@@ -2632,11 +2566,11 @@ scanportion:
 /* cmdmolpos */
 enum CMDcode cmdmolpos(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, d, *index;
-    moleculeptr     mptr;
+    int i, d, *index;
+    moleculeptr mptr;
     enum MolecState ms;
-    static FILE *   fptr;
-    static int      inscan = 0;
+    static FILE *fptr;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -2645,8 +2579,7 @@ enum CMDcode cmdmolpos(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2675,12 +2608,12 @@ scanportion:
 /* cmdtrackmol */
 enum CMDcode cmdtrackmol(simptr sim, cmdptr cmd, char *line2)
 {
-    int                       itct, d, c;
-    moleculeptr               mptr;
-    char                      string[STRCHAR];
-    static FILE *             fptr;
+    int itct, d, c;
+    moleculeptr mptr;
+    char string[STRCHAR];
+    static FILE *fptr;
     static unsigned long long serno;
-    static int                inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -2709,8 +2642,8 @@ scanportion:
            (serno < 0xFFFFFFFF && mptr->serno > 0xFFFFFFFF &&
                (mptr->serno) >> 32 == serno)))
         return CMDok;
-    scmdfprintf(cmd->cmds, fptr, "%g%,%s%,%s", sim->time,
-        sim->mols->spname[mptr->ident], molms2string(mptr->mstate, string));
+    scmdfprintf(cmd->cmds, fptr, "%g%,%s%,%s", sim->time, sim->mols->spname[mptr->ident],
+        molms2string(mptr->mstate, string));
     scmdfprintf(cmd->cmds, fptr, "%,%s", molserno2string(mptr->serno, string));
     for(d = 0; d < sim->dim; d++)
         scmdfprintf(cmd->cmds, fptr, "%,%g", mptr->pos[d]);
@@ -2728,12 +2661,12 @@ scanportion:
 /* cmdmolmoments */
 enum CMDcode cmdmolmoments(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, *index, d, d2, dim;
-    FILE *          fptr;
-    moleculeptr     mptr;
+    int i, *index, d, d2, dim;
+    FILE *fptr;
+    moleculeptr mptr;
     enum MolecState ms;
-    static double   v1[DIMMAX], m1[DIMMAX * DIMMAX];
-    static int      inscan = 0, ctr;
+    static double v1[DIMMAX], m1[DIMMAX * DIMMAX];
+    static int inscan = 0, ctr;
 
     if(inscan)
         goto scanportion;
@@ -2742,8 +2675,7 @@ enum CMDcode cmdmolmoments(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2807,8 +2739,8 @@ enum CMDcode cmdsavesim(simptr sim, cmdptr cmd, char *line2)
         strcutwhite(line2, 2);
     }
 
-    scmdfprintf(cmd->cmds, fptr,
-        "# Configuration file automatically created by Smoldyn\n\n");
+    scmdfprintf(
+        cmd->cmds, fptr, "# Configuration file automatically created by Smoldyn\n\n");
     writesim(sim, fptr);
     writegraphss(sim, fptr);
     writemols(sim, fptr);
@@ -2841,15 +2773,15 @@ void cmdmeansqrdispfree(cmdptr cmd)
 /* cmdmeansqrdisp */
 enum CMDcode cmdmeansqrdisp(simptr sim, cmdptr cmd, char *line2)
 {
-    char            dimstr[STRCHAR];
-    int             i, *index, j, d, itct, dim;
-    FILE *          fptr;
-    double          r2, diff, **v2;
-    long int *      v1;
+    char dimstr[STRCHAR];
+    int i, *index, j, d, itct, dim;
+    FILE *fptr;
+    double r2, diff, **v2;
+    long int *v1;
     enum MolecState ms;
-    moleculeptr     mptr;
-    static double   sum, sum4;
-    static int      inscan = 0, ctr, msddim;
+    moleculeptr mptr;
+    static double sum, sum4;
+    static int inscan = 0, ctr, msddim;
 
     if(inscan)
         goto scanportion;
@@ -2858,8 +2790,7 @@ enum CMDcode cmdmeansqrdisp(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -2936,8 +2867,7 @@ enum CMDcode cmdmeansqrdisp(simptr sim, cmdptr cmd, char *line2)
         inscan = 0;
     }
 
-    scmdfprintf(
-        cmd->cmds, fptr, "%g%,%g%,%g\n", sim->time, sum / ctr, sum4 / ctr);
+    scmdfprintf(cmd->cmds, fptr, "%g%,%g%,%g\n", sim->time, sum / ctr, sum4 / ctr);
     scmdflush(fptr);
     return CMDok;
 
@@ -2965,8 +2895,7 @@ scanportion:
                 sum4 += r2 * r2;
             }
             else {
-                diff =
-                    mptr->posoffset[msddim] + mptr->pos[msddim] - v2[j][msddim];
+                diff = mptr->posoffset[msddim] + mptr->pos[msddim] - v2[j][msddim];
                 sum += diff * diff;
                 sum4 += diff * diff * diff * diff;
             }
@@ -2978,17 +2907,17 @@ scanportion:
 /* cmdmeansqrdisp2 */
 enum CMDcode cmdmeansqrdisp2(simptr sim, cmdptr cmd, char *line2)
 {
-    char            dimstr[STRCHAR];
-    int             i, j, d, itct, dim, msddim, maxmoment, mom, *index;
-    FILE *          fptr;
-    moleculeptr     mptr;
-    double          sum[17];
-    double          r2, diff, **v2, *dblptr;
-    long int *      v1;
+    char dimstr[STRCHAR];
+    int i, j, d, itct, dim, msddim, maxmoment, mom, *index;
+    FILE *fptr;
+    moleculeptr mptr;
+    double sum[17];
+    double r2, diff, **v2, *dblptr;
+    long int *v1;
     enum MolecState ms;
-    char            reportchar;
-    static char     startchar;
-    static int      inscan = 0, maxmol, ctr;
+    char reportchar;
+    static char startchar;
+    static int inscan = 0, maxmol, ctr;
 
     if(inscan)
         goto scanportion;
@@ -2997,8 +2926,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -3019,10 +2947,9 @@ enum CMDcode cmdmeansqrdisp2(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(msddim < sim->dim, "invalid dimension value");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "insufficient arguments");
-    itct = strmathsscanf(line2, "%c %c %mi %mi", Varnames, Varvalues, Nvar,
-        &startchar, &reportchar, &maxmol, &maxmoment);
-    SCMDCHECK(itct == 4,
-        "cannot read start, report, max_mol, or max_moment information");
+    itct = strmathsscanf(line2, "%c %c %mi %mi", Varnames, Varvalues, Nvar, &startchar,
+        &reportchar, &maxmol, &maxmoment);
+    SCMDCHECK(itct == 4, "cannot read start, report, max_mol, or max_moment information");
     SCMDCHECK(maxmol > 0, "max_mol has to be at least 1");
     SCMDCHECK(maxmoment > 0, "maxmoment has to be at least 1");
     SCMDCHECK(maxmoment <= 16, "max_moment cannot exceed 16");
@@ -3190,17 +3117,17 @@ scanportion:
 /* cmdmeansqrdisp3 */
 enum CMDcode cmdmeansqrdisp3(simptr sim, cmdptr cmd, char *line2)
 {
-    char            dimstr[STRCHAR];
-    int             i, j, d, itct, dim, msddim, *index;
-    FILE *          fptr;
-    moleculeptr     mptr;
-    double          sum, wgt;
-    double          r2, diff, **v2, *dblptr, change;
-    long int *      v1;
+    char dimstr[STRCHAR];
+    int i, j, d, itct, dim, msddim, *index;
+    FILE *fptr;
+    moleculeptr mptr;
+    double sum, wgt;
+    double r2, diff, **v2, *dblptr, change;
+    long int *v1;
     enum MolecState ms;
-    char            reportchar;
-    static char     startchar;
-    static int      inscan = 0, ctr, maxmol;
+    char reportchar;
+    static char startchar;
+    static int inscan = 0, ctr, maxmol;
 
     if(inscan)
         goto scanportion;
@@ -3209,8 +3136,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -3231,17 +3157,15 @@ enum CMDcode cmdmeansqrdisp3(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(msddim < sim->dim, "invalid dimension value");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "insufficient arguments");
-    itct = strmathsscanf(line2, "%c %c %i %mlg", Varnames, Varvalues, Nvar,
-        &startchar, &reportchar, &maxmol, &change);
-    SCMDCHECK(
-        itct == 4, "cannot read start, report, max_mol, or change information");
+    itct = strmathsscanf(line2, "%c %c %i %mlg", Varnames, Varvalues, Nvar, &startchar,
+        &reportchar, &maxmol, &change);
+    SCMDCHECK(itct == 4, "cannot read start, report, max_mol, or change information");
     SCMDCHECK(maxmol > 0, "max_mol has to be at least 1");
     line2 = strnword(line2, 5);
     fptr  = scmdgetfptr(sim->cmds, line2);
     SCMDCHECK(fptr, "file name not recognized");
     line2 = strnword(line2, 2);
-    SCMDCHECK(change <= 0 || line2,
-        "missing task to be accomplished if change is small");
+    SCMDCHECK(change <= 0 || line2, "missing task to be accomplished if change is small");
 
     SCMDCHECK(cmd->i2 != 2,
         "error on setup");  // failed before, don't try again
@@ -3411,16 +3335,16 @@ scanportion:
 /* cmdresidencetime */
 enum CMDcode cmdresidencetime(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, j, d, itct, summaryout, listout, *index;
-    FILE *          fptr;
-    moleculeptr     mptr;
-    double          sum;
-    double **       v2, *dblptr;
-    long int *      v1;
+    int i, j, d, itct, summaryout, listout, *index;
+    FILE *fptr;
+    moleculeptr mptr;
+    double sum;
+    double **v2, *dblptr;
+    long int *v1;
     enum MolecState ms;
-    char            reportchar;
-    static char     startchar;
-    static int      inscan = 0, ctr, maxmol;
+    char reportchar;
+    static char startchar;
+    static int inscan = 0, ctr, maxmol;
 
     if(inscan)
         goto scanportion;
@@ -3429,8 +3353,7 @@ enum CMDcode cmdresidencetime(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -3517,8 +3440,7 @@ enum CMDcode cmdresidencetime(simptr sim, cmdptr cmd, char *line2)
             ctr++;
             sum += sim->time - v2[j][1];
             if(listout > 0 && cmd->invoke > 0 && cmd->invoke % listout == 0)
-                scmdfprintf(
-                    cmd->cmds, fptr, "%li%,%g\n", v1[j], sim->time - v2[j][1]);
+                scmdfprintf(cmd->cmds, fptr, "%li%,%g\n", v1[j], sim->time - v2[j][1]);
         }
     }
 
@@ -3582,8 +3504,8 @@ scanportion:
 /* cmddiagnostics */
 enum CMDcode cmddiagnostics(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, order;
-    static char     nm[STRCHAR];
+    int itct, order;
+    static char nm[STRCHAR];
     enum SmolStruct ss;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -3640,10 +3562,10 @@ enum CMDcode cmdexecutiontime(simptr sim, cmdptr cmd, char *line2)
 /* cmdprintLattice */
 enum CMDcode cmdprintLattice(simptr sim, cmdptr cmd, char *line2)
 {
-    FILE *     fptr;
+    FILE *fptr;
     latticeptr lattice;
-    char *     buffer;
-    int        n, i;
+    char *buffer;
+    int n, i;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDobserve;
@@ -3654,8 +3576,7 @@ enum CMDcode cmdprintLattice(simptr sim, cmdptr cmd, char *line2)
     buffer = NULL;
     for(i = 0; i < n; ++i) {
         lattice = sim->latticess->latticelist[i];
-        scmdfprintf(
-            cmd->cmds, fptr, "Lattice %d: %s:\n", i, lattice->latticename);
+        scmdfprintf(cmd->cmds, fptr, "Lattice %d: %s:\n", i, lattice->latticename);
         NSV_CALL(nsv_print(lattice->nsv, &buffer));
         scmdfprintf(cmd->cmds, fptr, "%s", buffer ? buffer : "Error");
         buffer = NULL;
@@ -3669,15 +3590,14 @@ enum CMDcode cmdwriteVTK(simptr sim, cmdptr cmd, char *line2)
 {
 
 #ifndef OPTION_VTK
-    simLog(NULL, 11,
-        "ERROR: VTK option not set. Recompile with OPTION_VTK = ON\n");
+    simLog(NULL, 11, "ERROR: VTK option not set. Recompile with OPTION_VTK = ON\n");
 #else
 
-    char                        nm[STRCHAR];
-    moleculeptr                 mptr;
-    int                         itct;
+    char nm[STRCHAR];
+    moleculeptr mptr;
+    int itct;
     static vtkUnstructuredGrid *grid;
-    static int                  inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -3699,8 +3619,8 @@ enum CMDcode cmdwriteVTK(simptr sim, cmdptr cmd, char *line2)
 
 #ifdef OPTION_NSV
     static char nm2[STRCHAR];
-    latticeptr  lattice;
-    int         ll;
+    latticeptr lattice;
+    int ll;
 
     if(sim->latticess) {
         for(ll = 0; ll < sim->latticess->nlattice; ++ll) {
@@ -3709,8 +3629,7 @@ enum CMDcode cmdwriteVTK(simptr sim, cmdptr cmd, char *line2)
             switch(lattice->type) {
                 case LATTICEnsv:
                     if(lattice->nsv)
-                        vtkWriteGrid(
-                            nm, nm2, cmd->invoke, nsv_get_grid(lattice->nsv));
+                        vtkWriteGrid(nm, nm2, cmd->invoke, nsv_get_grid(lattice->nsv));
                     break;
                 case LATTICEpde:
                     // not implemented
@@ -3739,7 +3658,7 @@ scanportion:
 /* cmdset */
 enum CMDcode cmdset(simptr sim, cmdptr cmd, char *line2)
 {
-    int  er, itct;
+    int er, itct;
     char word[STRCHAR];
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -3757,16 +3676,15 @@ enum CMDcode cmdset(simptr sim, cmdptr cmd, char *line2)
 /* cmdpointsource */
 enum CMDcode cmdpointsource(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, num, i;
-    char   nm[STRCHAR];
+    int itct, num, i;
+    char nm[STRCHAR];
     double pos[DIMMAX], numdbl;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
     SCMDCHECK(line2, "missing argument");
     SCMDCHECK(sim->mols, "molecules are undefined");
-    itct =
-        strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &numdbl);
+    itct = strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &numdbl);
     SCMDCHECK(itct == 2, "read failure");
     SCMDCHECK(numdbl >= 0, "number cannot be negative");
     num = (int)numdbl;
@@ -3782,27 +3700,25 @@ enum CMDcode cmdpointsource(simptr sim, cmdptr cmd, char *line2)
         itct = strmathsscanf(
             line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &pos[0], &pos[1]);
     else
-        itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar,
-            &pos[0], &pos[1], &pos[2]);
+        itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar, &pos[0],
+            &pos[1], &pos[2]);
     SCMDCHECK(itct == sim->dim, "insufficient location dimensions");
-    SCMDCHECK(addmol(sim, num, i, pos, pos, 1) == 0,
-        "not enough available molecules");
+    SCMDCHECK(addmol(sim, num, i, pos, pos, 1) == 0, "not enough available molecules");
     return CMDok;
 }
 
 /* cmdvolumesource */
 enum CMDcode cmdvolumesource(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, num, i, d;
-    char   nm[STRCHAR];
+    int itct, num, i, d;
+    char nm[STRCHAR];
     double poslo[DIMMAX], poshi[DIMMAX], numdbl;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
     SCMDCHECK(line2, "missing argument");
     SCMDCHECK(sim->mols, "molecules are undefined");
-    itct =
-        strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &numdbl);
+    itct = strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &numdbl);
     SCMDCHECK(itct == 2, "read failure");
     SCMDCHECK(numdbl >= 0, "number cannot be negative");
     num = (int)numdbl;
@@ -3814,21 +3730,21 @@ enum CMDcode cmdvolumesource(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing location");
     for(d = 0; d < sim->dim; d++) {
         SCMDCHECK(line2, "missing argument");
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &poslo[d], &poshi[d]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &poslo[d], &poshi[d]);
         SCMDCHECK(itct == 2, "read failure");
         line2 = strnword(line2, 3);
     }
-    SCMDCHECK(addmol(sim, num, i, poslo, poshi, 1) == 0,
-        "not enough available molecules");
+    SCMDCHECK(
+        addmol(sim, num, i, poslo, poshi, 1) == 0, "not enough available molecules");
     return CMDok;
 }
 
 /* guassiansource */
 enum CMDcode cmdgaussiansource(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, num, i, d, imol, dim;
-    char   nm[STRCHAR];
+    int itct, num, i, d, imol, dim;
+    char nm[STRCHAR];
     double mean[DIMMAX], sigma[DIMMAX], pos[DIMMAX], lowcorner[DIMMAX],
         highcorner[DIMMAX], numdbl;
 
@@ -3838,8 +3754,7 @@ enum CMDcode cmdgaussiansource(simptr sim, cmdptr cmd, char *line2)
     dim = sim->dim;
     SCMDCHECK(line2, "missing argument");
     SCMDCHECK(sim->mols, "molecules are undefined");
-    itct =
-        strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &numdbl);
+    itct = strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &numdbl);
     SCMDCHECK(itct == 2, "read failure");
     SCMDCHECK(numdbl >= 0, "number cannot be negative");
     num = (int)numdbl;
@@ -3864,8 +3779,7 @@ enum CMDcode cmdgaussiansource(simptr sim, cmdptr cmd, char *line2)
                 pos[d] = mean[d] + sigma[d] * gaussrandD();
             } while(pos[d] < lowcorner[d] || pos[d] > highcorner[d]);
         }
-        SCMDCHECK(addmol(sim, 1, i, pos, pos, 0) == 0,
-            "not enough available molecules");
+        SCMDCHECK(addmol(sim, 1, i, pos, pos, 0) == 0, "not enough available molecules");
     }
     return CMDok;
 }
@@ -3873,17 +3787,17 @@ enum CMDcode cmdgaussiansource(simptr sim, cmdptr cmd, char *line2)
 /* cmdmovesurfacemol */
 enum CMDcode cmdmovesurfacemol(simptr sim, cmdptr cmd, char *line2)
 {
-    int                    itct, i, s1, s2, d, *index;
-    char                   nm[STRCHAR], nm2[STRCHAR];
-    enum MolecState        ms1;
-    moleculeptr            mptr;
-    double                 pos[DIMMAX];
-    static panelptr        pnl2;
+    int itct, i, s1, s2, d, *index;
+    char nm[STRCHAR], nm2[STRCHAR];
+    enum MolecState ms1;
+    moleculeptr mptr;
+    double pos[DIMMAX];
+    static panelptr pnl2;
     static enum MolecState ms2;
-    static surfaceptr      srf, srf2;
-    static double          prob;
+    static surfaceptr srf, srf2;
+    static double prob;
     static enum PanelShape ps1, ps2;
-    static int             inscan = 0, p1, p2;
+    static int inscan = 0, p1, p2;
 
     if(inscan)
         goto scanportion;
@@ -3893,19 +3807,17 @@ enum CMDcode cmdmovesurfacemol(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing arguments");
     SCMDCHECK(sim->mols, "molecules are undefined");
     SCMDCHECK(sim->srfss, "surfaces are undefined");
-    itct =
-        strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &prob);
+    itct = strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm, &prob);
     SCMDCHECK(itct == 2, "failed to read molecule name or probability");
 
     i = molstring2index1(sim, line2, &ms1, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
-    SCMDCHECK(ms1 == MSfront || ms1 == MSback || ms1 == MSup || ms1 == MSdown ||
-                  ms1 == MSall,
+    SCMDCHECK(
+        ms1 == MSfront || ms1 == MSback || ms1 == MSup || ms1 == MSdown || ms1 == MSall,
         "illegal molecule state");
     SCMDCHECK(prob >= 0 && prob <= 1, "probability out of bounds");
     line2 = strnword(line2, 3);
@@ -3958,8 +3870,8 @@ scanportion:
                 mptr->posoffset[d] = mptr->pos[d] - pos[d];
                 mptr->posx[d] = mptr->pos[d] = pos[d];
             }
-            molchangeident(sim, mptr, -1, -1, mptr->ident,
-                ms2 == MSnone ? mptr->mstate : ms2, pnl2);
+            molchangeident(
+                sim, mptr, -1, -1, mptr->ident, ms2 == MSnone ? mptr->mstate : ms2, pnl2);
         }
     return CMDok;
 }
@@ -3967,10 +3879,10 @@ scanportion:
 /* cmdkillmol */
 enum CMDcode cmdkillmol(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, *index;
-    moleculeptr     mptr;
+    int i, *index;
+    moleculeptr mptr;
     enum MolecState ms;
-    static int      inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -3979,8 +3891,7 @@ enum CMDcode cmdkillmol(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -4001,13 +3912,13 @@ scanportion:
 /* cmdkillmolprob */
 enum CMDcode cmdkillmolprob(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, *index;
-    moleculeptr     mptr;
+    int itct, i, *index;
+    moleculeptr mptr;
     enum MolecState ms;
-    static double   prob;
-    static char     probstr[STRCHAR];
-    static int      xyzvar;
-    static int      inscan = 0;
+    static double prob;
+    static char probstr[STRCHAR];
+    static int xyzvar;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -4016,15 +3927,13 @@ enum CMDcode cmdkillmolprob(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing probability value");
-    if(strhasname(line2, "x") || strhasname(line2, "y") ||
-        strhasname(line2, "z")) {
+    if(strhasname(line2, "x") || strhasname(line2, "y") || strhasname(line2, "z")) {
         xyzvar = 1;
         strcpy(probstr, line2);
     }
@@ -4032,8 +3941,7 @@ enum CMDcode cmdkillmolprob(simptr sim, cmdptr cmd, char *line2)
         xyzvar = 0;
         itct   = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &prob);
         SCMDCHECK(itct == 1, "killmolprob format: name[(state)] probability");
-        SCMDCHECK(
-            prob >= 0 && prob <= 1, "probability needs to be between 0 and 1");
+        SCMDCHECK(prob >= 0 && prob <= 1, "probability needs to be between 0 and 1");
     }
 
     if(i != -4) {
@@ -4062,11 +3970,11 @@ scanportion:
 /* cmdkillmolinsphere */
 enum CMDcode cmdkillmolinsphere(simptr sim, cmdptr cmd, char *line2)
 {
-    int                    itct, i, *index;
-    char                   nm[STRCHAR];
-    moleculeptr            mptr;
+    int itct, i, *index;
+    char nm[STRCHAR];
+    moleculeptr mptr;
     static enum MolecState ms;
-    static int             inscan = 0, s;
+    static int inscan = 0, s;
 
     if(inscan)
         goto scanportion;
@@ -4077,8 +3985,7 @@ enum CMDcode cmdkillmolinsphere(simptr sim, cmdptr cmd, char *line2)
         return CMDok;
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -4110,13 +4017,13 @@ scanportion:
 /* cmdkillmolincmpt */
 enum CMDcode cmdkillmolincmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int               itct, i, c, *index;
-    char              cname[STRCHAR];
-    moleculeptr       mptr;
-    enum MolecState   ms;
-    compartssptr      cmptss;
+    int itct, i, c, *index;
+    char cname[STRCHAR];
+    moleculeptr mptr;
+    enum MolecState ms;
+    compartssptr cmptss;
     static compartptr cmpt;
-    static int        inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -4129,8 +4036,7 @@ enum CMDcode cmdkillmolincmpt(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing argument");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -4158,10 +4064,10 @@ scanportion:
 /* cmdkillmoloutsidesystem */
 enum CMDcode cmdkillmoloutsidesystem(simptr sim, cmdptr cmd, char *line2)
 {
-    int             i, *index;
-    moleculeptr     mptr;
+    int i, *index;
+    moleculeptr mptr;
     enum MolecState ms;
-    static int      inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -4172,8 +4078,7 @@ enum CMDcode cmdkillmoloutsidesystem(simptr sim, cmdptr cmd, char *line2)
         return CMDok;
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -4195,8 +4100,8 @@ scanportion:
 /* cmdfixmolcount */
 enum CMDcode cmdfixmolcount(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, num, i, ll, m, ct, numl;
-    char   nm[STRCHAR];
+    int itct, num, i, ll, m, ct, numl;
+    char nm[STRCHAR];
     double pos1[DIMMAX], pos2[DIMMAX];
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -4240,8 +4145,8 @@ enum CMDcode cmdfixmolcount(simptr sim, cmdptr cmd, char *line2)
 /* cmdfixmolcountrange */
 enum CMDcode cmdfixmolcountrange(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, lownum, highnum, i, ll, m, ct, numl;
-    char   nm[STRCHAR];
+    int itct, lownum, highnum, i, ll, m, ct, numl;
+    char nm[STRCHAR];
     double pos1[DIMMAX], pos2[DIMMAX];
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -4287,25 +4192,23 @@ enum CMDcode cmdfixmolcountrange(simptr sim, cmdptr cmd, char *line2)
 /* cmdfixmolcountonsurf */
 enum CMDcode cmdfixmolcountonsurf(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, num, i, ll, m, ct, numl, s, *index;
-    char            nm[STRCHAR];
+    int itct, num, i, ll, m, ct, numl, s, *index;
+    char nm[STRCHAR];
     enum MolecState ms;
-    surfaceptr      sptr;
-    moleculeptr     mptr;
+    surfaceptr sptr;
+    moleculeptr mptr;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
     SCMDCHECK(line2, "missing argument");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     SCMDCHECK(i > 0, "molecule name needs to be for a single species");
-    SCMDCHECK(ms != MSsoln && ms != MSbsoln,
-        "molecule state needs to be surface-bound");
+    SCMDCHECK(ms != MSsoln && ms != MSbsoln, "molecule state needs to be surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "fixmolcountonsurf format: species(state) number surface");
     itct = strmathsscanf(line2, "%mi %s", Varnames, Varvalues, Nvar, &num, nm);
@@ -4328,8 +4231,7 @@ enum CMDcode cmdfixmolcountonsurf(simptr sim, cmdptr cmd, char *line2)
     if(ct == num)
         ;
     else if(ct < num) {
-        SCMDCHECK(
-            addsurfmol(sim, num - ct, i, ms, NULL, NULL, s, PSall, NULL) == 0,
+        SCMDCHECK(addsurfmol(sim, num - ct, i, ms, NULL, NULL, s, PSall, NULL) == 0,
             "not enough available molecules");
     }
     else {
@@ -4337,8 +4239,7 @@ enum CMDcode cmdfixmolcountonsurf(simptr sim, cmdptr cmd, char *line2)
         for(; num > 0; num--) {
             m    = intrand(numl);
             mptr = sim->mols->live[ll][m];
-            while(!(mptr->ident == i && mptr->mstate == ms &&
-                    mptr->pnl->srf == sptr)) {
+            while(!(mptr->ident == i && mptr->mstate == ms && mptr->pnl->srf == sptr)) {
                 m    = (m == numl - 1) ? 0 : m + 1;
                 mptr = sim->mols->live[ll][m];
             }
@@ -4352,11 +4253,11 @@ enum CMDcode cmdfixmolcountonsurf(simptr sim, cmdptr cmd, char *line2)
 /* cmdfixmolcountrangeonsurf */
 enum CMDcode cmdfixmolcountrangeonsurf(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, lownum, highnum, i, ll, m, ct, numl, s, *index;
-    char            nm[STRCHAR];
+    int itct, lownum, highnum, i, ll, m, ct, numl, s, *index;
+    char nm[STRCHAR];
     enum MolecState ms;
-    surfaceptr      sptr;
-    moleculeptr     mptr;
+    surfaceptr sptr;
+    moleculeptr mptr;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
@@ -4364,14 +4265,12 @@ enum CMDcode cmdfixmolcountrangeonsurf(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing argument");
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
     SCMDCHECK(i > 0, "molecule name needs to be for a single species");
-    SCMDCHECK(ms != MSsoln && ms != MSbsoln,
-        "molecule state needs to be surface-bound");
+    SCMDCHECK(ms != MSsoln && ms != MSbsoln, "molecule state needs to be surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2,
         "fixmolcountrangeonsurf format: species(state) low_number "
@@ -4398,8 +4297,7 @@ enum CMDcode cmdfixmolcountrangeonsurf(simptr sim, cmdptr cmd, char *line2)
     if(ct >= lownum && ct <= highnum)
         ;
     else if(ct < lownum) {
-        SCMDCHECK(addsurfmol(
-                      sim, lownum - ct, i, ms, NULL, NULL, s, PSall, NULL) == 0,
+        SCMDCHECK(addsurfmol(sim, lownum - ct, i, ms, NULL, NULL, s, PSall, NULL) == 0,
             "not enough available molecules");
     }
     else {
@@ -4407,8 +4305,7 @@ enum CMDcode cmdfixmolcountrangeonsurf(simptr sim, cmdptr cmd, char *line2)
         for(; highnum > 0; highnum--) {
             m    = intrand(numl);
             mptr = sim->mols->live[ll][m];
-            while(!(mptr->ident == i && mptr->mstate == ms &&
-                    mptr->pnl->srf == sptr)) {
+            while(!(mptr->ident == i && mptr->mstate == ms && mptr->pnl->srf == sptr)) {
                 m    = (m == numl - 1) ? 0 : m + 1;
                 mptr = sim->mols->live[ll][m];
             }
@@ -4422,10 +4319,10 @@ enum CMDcode cmdfixmolcountrangeonsurf(simptr sim, cmdptr cmd, char *line2)
 /* cmdfixmolcountincmpt */
 enum CMDcode cmdfixmolcountincmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int         itct, num, i, ll, m, ct, numl, c;
-    char        nm[STRCHAR];
+    int itct, num, i, ll, m, ct, numl, c;
+    char nm[STRCHAR];
     moleculeptr mptr;
-    compartptr  cmpt;
+    compartptr cmpt;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
@@ -4458,8 +4355,8 @@ enum CMDcode cmdfixmolcountincmpt(simptr sim, cmdptr cmd, char *line2)
     if(ct == num)
         ;
     else if(ct < num) {
-        SCMDCHECK(addcompartmol(sim, num - ct, i, cmpt) == 0,
-            "not enough available molecules");
+        SCMDCHECK(
+            addcompartmol(sim, num - ct, i, cmpt) == 0, "not enough available molecules");
     }
     else {
         num = ct - num;
@@ -4481,10 +4378,10 @@ enum CMDcode cmdfixmolcountincmpt(simptr sim, cmdptr cmd, char *line2)
 /* cmdfixmolcountrangeincmpt */
 enum CMDcode cmdfixmolcountrangeincmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int         itct, i, ll, m, ct, numl, c, lownum, highnum;
-    char        nm[STRCHAR];
+    int itct, i, ll, m, ct, numl, c, lownum, highnum;
+    char nm[STRCHAR];
     moleculeptr mptr;
-    compartptr  cmpt;
+    compartptr cmpt;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
@@ -4540,13 +4437,13 @@ enum CMDcode cmdfixmolcountrangeincmpt(simptr sim, cmdptr cmd, char *line2)
 /* cmdequilmol */
 enum CMDcode cmdequilmol(simptr sim, cmdptr cmd, char *line2)
 {
-    int                    itct, *index;
-    moleculeptr            mptr;
+    int itct, *index;
+    moleculeptr mptr;
     static enum MolecState ms1, ms2;
-    static double          prob;
-    static int             xyzvar;
-    static char            probstr[STRCHAR];
-    static int             inscan = 0, i1, i2;
+    static double prob;
+    static int xyzvar;
+    static char probstr[STRCHAR];
+    static int inscan = 0, i1, i2;
 
     if(inscan)
         goto scanportion;
@@ -4555,8 +4452,7 @@ enum CMDcode cmdequilmol(simptr sim, cmdptr cmd, char *line2)
 
     i1 = molstring2index1(sim, line2, &ms1, &index);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -4565,20 +4461,17 @@ enum CMDcode cmdequilmol(simptr sim, cmdptr cmd, char *line2)
     line2 = strnword(line2, 2);
     i2    = molstring2index1(sim, line2, &ms2, &index);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     SCMDCHECK(i2 > 0, "molecule name has to be for a single species");
     SCMDCHECK(ms2 != MSall, "molecule state cannot be 'all'");
-    SCMDCHECK(
-        (ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
+    SCMDCHECK((ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
         "cannot equilibrate between solution and surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing probability argument");
-    if(strhasname(line2, "x") || strhasname(line2, "y") ||
-        strhasname(line2, "z")) {
+    if(strhasname(line2, "x") || strhasname(line2, "y") || strhasname(line2, "z")) {
         xyzvar = 1;
         strcpy(probstr, line2);
     }
@@ -4617,14 +4510,14 @@ scanportion:
 /* cmdreplacemol */
 enum CMDcode cmdreplacemol(simptr sim, cmdptr cmd, char *line2)
 {
-    int                    itct, i1, *index1, *index2;
-    enum MolecState        ms1;
-    moleculeptr            mptr;
+    int itct, i1, *index1, *index2;
+    enum MolecState ms1;
+    moleculeptr mptr;
     static enum MolecState ms2;
-    static double          prob;
-    static char            probstr[STRCHAR];
-    static int             xyzvar;
-    static int             inscan = 0, i2;
+    static double prob;
+    static char probstr[STRCHAR];
+    static int xyzvar;
+    static int inscan = 0, i2;
 
     if(inscan)
         goto scanportion;
@@ -4633,8 +4526,7 @@ enum CMDcode cmdreplacemol(simptr sim, cmdptr cmd, char *line2)
 
     i1 = molstring2index1(sim, line2, &ms1, &index1);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -4643,22 +4535,19 @@ enum CMDcode cmdreplacemol(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing second species name");
     i2 = molstring2index1(sim, line2, &ms2, &index2);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     SCMDCHECK(i2 > 0, "molecule name has to be for a single species");
     SCMDCHECK(ms2 != MSall, "molecule state cannot be 'all'");
-    SCMDCHECK(
-        (ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
+    SCMDCHECK((ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
         "cannot equilibrate between solution and surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing probability information");
     itct = sscanf(line2, "%s", probstr);
     SCMDCHECK(itct == 1, "missing probability information");
-    if(strhasname(probstr, "x") || strhasname(probstr, "y") ||
-        strhasname(probstr, "z"))
+    if(strhasname(probstr, "x") || strhasname(probstr, "y") || strhasname(probstr, "z"))
         xyzvar = 1;
     else {
         xyzvar = 0;
@@ -4690,10 +4579,10 @@ scanportion:
 /* cmdreplacexyzmol */
 enum CMDcode cmdreplacexyzmol(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, m, d, ll, *index;
-    moleculeptr *   mlist;
-    boxptr          bptr;
-    double          pos[DIMMAX];
+    int itct, i, m, d, ll, *index;
+    moleculeptr *mlist;
+    boxptr bptr;
+    double pos[DIMMAX];
     enum MolecState ms;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -4701,8 +4590,7 @@ enum CMDcode cmdreplacexyzmol(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -4716,8 +4604,8 @@ enum CMDcode cmdreplacexyzmol(simptr sim, cmdptr cmd, char *line2)
         itct = strmathsscanf(
             line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &pos[0], &pos[1]);
     else
-        itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar,
-            &pos[0], &pos[1], &pos[2]);
+        itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar, &pos[0],
+            &pos[1], &pos[2]);
     SCMDCHECK(itct == sim->dim, "insufficient dimensions entered");
     bptr  = pos2box(sim, pos);
     ll    = sim->mols->listlookup[i][ms];
@@ -4737,22 +4625,21 @@ enum CMDcode cmdreplacexyzmol(simptr sim, cmdptr cmd, char *line2)
 /* cmdreplacevolmol */
 enum CMDcode cmdreplacevolmol(simptr sim, cmdptr cmd, char *line2)
 {
-    int             m, itct, dim, d, b, b1, b2, i1, i2, ll, *index;
-    double *        pos, poslo[DIMMAX], poshi[DIMMAX], frac;
-    boxptr          bptr1, bptr2, bptr;
-    boxssptr        boxs;
-    moleculeptr *   mlist, mptr;
+    int m, itct, dim, d, b, b1, b2, i1, i2, ll, *index;
+    double *pos, poslo[DIMMAX], poshi[DIMMAX], frac;
+    boxptr bptr1, bptr2, bptr;
+    boxssptr boxs;
+    moleculeptr *mlist, mptr;
     enum MolecState ms1, ms2;
-    char            probstr[STRCHAR];
-    int             xyzvar;
+    char probstr[STRCHAR];
+    int xyzvar;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
 
     i1 = molstring2index1(sim, line2, &ms1, &index);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -4761,22 +4648,19 @@ enum CMDcode cmdreplacevolmol(simptr sim, cmdptr cmd, char *line2)
     line2 = strnword(line2, 2);
     i2    = molstring2index1(sim, line2, &ms2, &index);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     SCMDCHECK(i2 > 0, "molecule name has to be for a single species");
     SCMDCHECK(ms2 != MSall, "molecule state cannot be 'all'");
-    SCMDCHECK(
-        (ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
+    SCMDCHECK((ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
         "cannot equilibrate between solution and surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing fraction information");
     itct = sscanf(line2, "%s", probstr);
     SCMDCHECK(itct == 1, "cannot read fraction");
-    if(strhasname(probstr, "x") || strhasname(probstr, "y") ||
-        strhasname(probstr, "z"))
+    if(strhasname(probstr, "x") || strhasname(probstr, "y") || strhasname(probstr, "z"))
         xyzvar = 1;
     else {
         xyzvar = 0;
@@ -4789,8 +4673,8 @@ enum CMDcode cmdreplacevolmol(simptr sim, cmdptr cmd, char *line2)
     boxs  = sim->boxs;
     for(d = 0; d < dim; d++) {
         SCMDCHECK(line2, "missing argument");
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &poslo[d], &poshi[d]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &poslo[d], &poshi[d]);
         SCMDCHECK(itct == 2, "read failure");
         line2 = strnword(line2, 3);
     }
@@ -4800,8 +4684,7 @@ enum CMDcode cmdreplacevolmol(simptr sim, cmdptr cmd, char *line2)
     b1    = indx2addZV(bptr1->indx, boxs->side, dim);
     b2    = indx2addZV(bptr2->indx, boxs->side, dim);
     ll    = sim->mols->listlookup[i1][ms1];
-    for(b = b1; b <= b2;
-        b = nextaddZV(b, bptr1->indx, bptr2->indx, boxs->side, dim)) {
+    for(b = b1; b <= b2; b = nextaddZV(b, bptr1->indx, bptr2->indx, boxs->side, dim)) {
         bptr  = boxs->blist[b];
         mlist = bptr->mol[ll];
         for(m = 0; m < bptr->nmol[ll]; m++) {
@@ -4818,8 +4701,7 @@ enum CMDcode cmdreplacevolmol(simptr sim, cmdptr cmd, char *line2)
                             simsetvariable(sim, "y", mptr->pos[1]);
                         if(sim->dim > 2)
                             simsetvariable(sim, "z", mptr->pos[2]);
-                        strmathsscanf(
-                            probstr, "%mlg", Varnames, Varvalues, Nvar, &frac);
+                        strmathsscanf(probstr, "%mlg", Varnames, Varvalues, Nvar, &frac);
                     }
                     if(coinrandD(frac)) {
                         molchangeident(sim, mptr, ll, -1, i2, ms2, mptr->pnl);
@@ -4834,16 +4716,16 @@ enum CMDcode cmdreplacevolmol(simptr sim, cmdptr cmd, char *line2)
 /* cmdreplacecmptmol */
 enum CMDcode cmdreplacecmptmol(simptr sim, cmdptr cmd, char *line2)
 {
-    int                    itct, i1, c, *index1, *index2;
-    char                   nm[STRCHAR];
-    enum MolecState        ms1;
-    moleculeptr            mptr;
+    int itct, i1, c, *index1, *index2;
+    char nm[STRCHAR];
+    enum MolecState ms1;
+    moleculeptr mptr;
     static enum MolecState ms2;
-    static compartptr      cmpt;
-    static double          frac;
-    static char            probstr[STRCHAR];
-    static int             xyzvar;
-    static int             inscan = 0, i2;
+    static compartptr cmpt;
+    static double frac;
+    static char probstr[STRCHAR];
+    static int xyzvar;
+    static int inscan = 0, i2;
 
     if(inscan)
         goto scanportion;
@@ -4852,8 +4734,7 @@ enum CMDcode cmdreplacecmptmol(simptr sim, cmdptr cmd, char *line2)
 
     i1 = molstring2index1(sim, line2, &ms1, &index1);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -4862,22 +4743,19 @@ enum CMDcode cmdreplacecmptmol(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(line2, "missing second species name");
     i2 = molstring2index1(sim, line2, &ms2, &index2);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     SCMDCHECK(i2 > 0, "molecule name has to be for a single species");
     SCMDCHECK(ms2 != MSall, "molecule state cannot be 'all'");
-    SCMDCHECK(
-        (ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
+    SCMDCHECK((ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
         "cannot equilibrate between solution and surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing fraction information");
     itct = sscanf(line2, "%s", probstr);
     SCMDCHECK(itct == 1, "missing fraction information");
-    if(strhasname(probstr, "x") || strhasname(probstr, "y") ||
-        strhasname(probstr, "z"))
+    if(strhasname(probstr, "x") || strhasname(probstr, "y") || strhasname(probstr, "z"))
         xyzvar = 1;
     else {
         xyzvar = 0;
@@ -4917,12 +4795,12 @@ scanportion:
 /* cmdmodulatemol */
 enum CMDcode cmdmodulatemol(simptr sim, cmdptr cmd, char *line2)
 {
-    int                    itct, *index;
-    moleculeptr            mptr;
-    double                 freq, shift;
-    static double          prob;
+    int itct, *index;
+    moleculeptr mptr;
+    double freq, shift;
+    static double prob;
     static enum MolecState ms1, ms2;
-    static int             inscan = 0, i1, i2;
+    static int inscan = 0, i1, i2;
 
     if(inscan)
         goto scanportion;
@@ -4931,8 +4809,7 @@ enum CMDcode cmdmodulatemol(simptr sim, cmdptr cmd, char *line2)
 
     i1 = molstring2index1(sim, line2, &ms1, &index);
     SCMDCHECK(i1 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i1 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i1 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i1 != -3, "cannot read molecule state value");
     SCMDCHECK(i1 != -4, "molecule name not recognized");
     SCMDCHECK(i1 != -7, "error allocating memory");
@@ -4941,20 +4818,17 @@ enum CMDcode cmdmodulatemol(simptr sim, cmdptr cmd, char *line2)
     line2 = strnword(line2, 2);
     i2    = molstring2index1(sim, line2, &ms2, &index);
     SCMDCHECK(i2 != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i2 != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i2 != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i2 != -3, "cannot read molecule state value");
     SCMDCHECK(i2 != -4, "molecule name not recognized");
     SCMDCHECK(i2 != -7, "error allocating memory");
     SCMDCHECK(i2 > 0, "molecule name has to be for a single species");
     SCMDCHECK(ms2 != MSall, "molecule state cannot be 'all'");
-    SCMDCHECK(
-        (ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
+    SCMDCHECK((ms1 == MSsoln && ms2 == MSsoln) || (ms1 != MSsoln && ms2 != MSsoln),
         "cannot equilibrate between solution and surface-bound");
     line2 = strnword(line2, 2);
     SCMDCHECK(line2, "missing frequency and shift");
-    itct = strmathsscanf(
-        line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &freq, &shift);
+    itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &freq, &shift);
     SCMDCHECK(itct == 2, "failure reading frequency or shift");
 
     inscan = 1;
@@ -4978,12 +4852,12 @@ scanportion:
 /* cmdreact1 */
 enum CMDcode cmdreact1(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, r, *index;
-    char            rnm[STRCHAR];
-    moleculeptr     mptr;
+    int itct, i, r, *index;
+    char rnm[STRCHAR];
+    moleculeptr mptr;
     enum MolecState ms;
-    static rxnptr   rxn;
-    static int      inscan = 0;
+    static rxnptr rxn;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -4992,8 +4866,7 @@ enum CMDcode cmdreact1(simptr sim, cmdptr cmd, char *line2)
 
     i = molstring2index1(sim, line2, &ms, &index);
     SCMDCHECK(i != -1, "species is missing or cannot be read");
-    SCMDCHECK(
-        i != -2, "mismatched or improper parentheses around molecule state");
+    SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
     SCMDCHECK(i != -3, "cannot read molecule state value");
     SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
     SCMDCHECK(i != -7, "error allocating memory");
@@ -5023,16 +4896,15 @@ scanportion:
 /* cmdsetrateint */
 enum CMDcode cmdsetrateint(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, r, order;
-    char   rnm[STRCHAR];
+    int itct, r, order;
+    char rnm[STRCHAR];
     double rateint;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
 
     SCMDCHECK(line2, "missing argument");
-    itct = strmathsscanf(
-        line2, "%s %mlg", Varnames, Varvalues, Nvar, rnm, &rateint);
+    itct = strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, rnm, &rateint);
     SCMDCHECK(itct == 2, "read failure");
     r = -1;
     if(sim->rxnss[0])
@@ -5046,8 +4918,7 @@ enum CMDcode cmdsetrateint(simptr sim, cmdptr cmd, char *line2)
             order = 1;
         else {
             if(sim->rxnss[2])
-                r = stringfind(
-                    sim->rxnss[2]->rname, sim->rxnss[2]->totrxn, rnm);
+                r = stringfind(sim->rxnss[2]->rname, sim->rxnss[2]->totrxn, rnm);
             if(r >= 0)
                 order = 2;
             else
@@ -5065,7 +4936,7 @@ enum CMDcode cmdsetrateint(simptr sim, cmdptr cmd, char *line2)
 /* cmdshufflemollist */
 enum CMDcode cmdshufflemollist(simptr sim, cmdptr cmd, char *line2)
 {
-    int  itct, ll, lllo, llhi;
+    int itct, ll, lllo, llhi;
     char nm[STRCHAR];
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -5091,10 +4962,10 @@ enum CMDcode cmdshufflemollist(simptr sim, cmdptr cmd, char *line2)
 /* cmdshufflereactions */
 enum CMDcode cmdshufflereactions(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, i, j, i1, i2, isym, j1, j2, *index1, *index2;
-    char            nm1[STRCHAR], nm2[STRCHAR];
+    int itct, i, j, i1, i2, isym, j1, j2, *index1, *index2;
+    char nm1[STRCHAR], nm2[STRCHAR];
     enum MolecState ms1, ms2;
-    rxnssptr        rxnss;
+    rxnssptr rxnss;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
@@ -5129,7 +5000,7 @@ enum CMDcode cmdshufflereactions(simptr sim, cmdptr cmd, char *line2)
 /* cmdsettimestep */
 enum CMDcode cmdsettimestep(simptr sim, cmdptr cmd, char *line2)
 {
-    int    itct, er;
+    int itct, er;
     double dt;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -5148,8 +5019,8 @@ enum CMDcode cmdsettimestep(simptr sim, cmdptr cmd, char *line2)
 /* cmdporttransport */
 enum CMDcode cmdporttransport(simptr sim, cmdptr cmd, char *line2)
 {
-    int     itct, prt1, prt2;
-    char    nm1[STRCHAR], nm2[STRCHAR];
+    int itct, prt1, prt2;
+    char nm1[STRCHAR], nm2[STRCHAR];
     portptr port1, port2;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -5172,10 +5043,10 @@ enum CMDcode cmdporttransport(simptr sim, cmdptr cmd, char *line2)
 /* cmdexcludebox */
 enum CMDcode cmdexcludebox(simptr sim, cmdptr cmd, char *line2)
 {
-    int          m, itct, dim, d, b, b1, b2;
-    double *     pos, poslo[DIMMAX], poshi[DIMMAX];
-    boxptr       bptr1, bptr2, bptr;
-    boxssptr     boxs;
+    int m, itct, dim, d, b, b1, b2;
+    double *pos, poslo[DIMMAX], poshi[DIMMAX];
+    boxptr bptr1, bptr2, bptr;
+    boxssptr boxs;
     moleculeptr *mlist;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -5185,8 +5056,8 @@ enum CMDcode cmdexcludebox(simptr sim, cmdptr cmd, char *line2)
     boxs = sim->boxs;
     for(d = 0; d < dim; d++) {
         SCMDCHECK(line2, "missing argument");
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &poslo[d], &poshi[d]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &poslo[d], &poshi[d]);
         SCMDCHECK(itct == 2, "read failure");
         line2 = strnword(line2, 3);
     }
@@ -5195,8 +5066,7 @@ enum CMDcode cmdexcludebox(simptr sim, cmdptr cmd, char *line2)
     bptr2 = pos2box(sim, poshi);
     b1    = indx2addZV(bptr1->indx, boxs->side, dim);
     b2    = indx2addZV(bptr2->indx, boxs->side, dim);
-    for(b = b1; b <= b2;
-        b = nextaddZV(b, bptr1->indx, bptr2->indx, boxs->side, dim)) {
+    for(b = b1; b <= b2; b = nextaddZV(b, bptr1->indx, bptr2->indx, boxs->side, dim)) {
         bptr  = boxs->blist[b];
         mlist = bptr->mol[0];
         for(m = 0; m < bptr->nmol[0]; m++) {
@@ -5221,10 +5091,10 @@ enum CMDcode cmdexcludebox(simptr sim, cmdptr cmd, char *line2)
 /* cmdexcludesphere */
 enum CMDcode cmdexcludesphere(simptr sim, cmdptr cmd, char *line2)
 {
-    int          m, itct, dim, d, b, b1, b2;
-    double *     pos, poslo[DIMMAX], poshi[DIMMAX], poscent[DIMMAX], rad, dist;
-    boxptr       bptr1, bptr2, bptr;
-    boxssptr     boxs;
+    int m, itct, dim, d, b, b1, b2;
+    double *pos, poslo[DIMMAX], poshi[DIMMAX], poscent[DIMMAX], rad, dist;
+    boxptr bptr1, bptr2, bptr;
+    boxssptr boxs;
     moleculeptr *mlist;
 
     if(line2 && !strcmp(line2, "cmdtype"))
@@ -5234,8 +5104,7 @@ enum CMDcode cmdexcludesphere(simptr sim, cmdptr cmd, char *line2)
     boxs = sim->boxs;
     for(d = 0; d < dim; d++) {
         SCMDCHECK(line2, "missing center argument");
-        itct = strmathsscanf(
-            line2, "%mlg", Varnames, Varvalues, Nvar, &poscent[d]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &poscent[d]);
         SCMDCHECK(itct == 1, "failure reading center");
         line2 = strnword(line2, 2);
     }
@@ -5253,21 +5122,18 @@ enum CMDcode cmdexcludesphere(simptr sim, cmdptr cmd, char *line2)
     bptr2 = pos2box(sim, poshi);
     b1    = indx2addZV(bptr1->indx, boxs->side, dim);
     b2    = indx2addZV(bptr2->indx, boxs->side, dim);
-    for(b = b1; b <= b2;
-        b = nextaddZV(b, bptr1->indx, bptr2->indx, boxs->side, dim)) {
+    for(b = b1; b <= b2; b = nextaddZV(b, bptr1->indx, bptr2->indx, boxs->side, dim)) {
         bptr  = boxs->blist[b];
         mlist = bptr->mol[0];
         for(m = 0; m < bptr->nmol[0]; m++) {
             pos = mlist[m]->pos;
             for(dist = 0, d = 0; d < dim; d++)
-                if((dist += (pos[d] - poscent[d]) * (pos[d] - poscent[d])) >
-                    rad)
+                if((dist += (pos[d] - poscent[d]) * (pos[d] - poscent[d])) > rad)
                     d = dim + 1;
             if(d == dim) {
                 pos = mlist[m]->posx;
                 for(dist = 0, d = 0; d < dim; d++)
-                    if((dist += (pos[d] - poscent[d]) * (pos[d] - poscent[d])) >
-                        rad)
+                    if((dist += (pos[d] - poscent[d]) * (pos[d] - poscent[d])) > rad)
                         d = dim + 1;
                 if(d > dim)
                     copyVD(mlist[m]->posx, mlist[m]->pos, dim);
@@ -5281,10 +5147,10 @@ enum CMDcode cmdexcludesphere(simptr sim, cmdptr cmd, char *line2)
 /* cmdincludeecoli */
 enum CMDcode cmdincludeecoli(simptr sim, cmdptr cmd, char *line2)
 {
-    moleculeptr   mptr;
-    wallptr *     wlist;
+    moleculeptr mptr;
+    wallptr *wlist;
     static double rad, length, pos[DIMMAX];
-    static int    inscan = 0;
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -5319,32 +5185,29 @@ scanportion:
 /* cmdsetreactionratemolcount */
 enum CMDcode cmdsetreactionratemolcount(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, order, r, count, i, *index, er;
-    char            nm1[STRCHAR];
-    rxnptr          rxn;
-    double          rate, coeff;
+    int itct, order, r, count, i, *index, er;
+    char nm1[STRCHAR];
+    rxnptr rxn;
+    double rate, coeff;
     enum MolecState ms;
-    listptrv        vlist;
+    listptrv vlist;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
 
     SCMDCHECK(line2, "missing argument");
-    itct =
-        strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm1, &coeff);
+    itct = strmathsscanf(line2, "%s %mlg", Varnames, Varvalues, Nvar, nm1, &coeff);
     SCMDCHECK(itct == 2, "missing reaction name or coefficient c0");
     r = readrxnname(sim, nm1, &order, &rxn, &vlist, 1);
     SCMDCHECK(r >= 0, "unrecognized reaction name");
     line2 = strnword(line2, 3);
     rate  = coeff;
     while(line2) {
-        itct = strmathsscanf(
-            line2, "%mlg %s", Varnames, Varvalues, Nvar, &coeff, nm1);
+        itct = strmathsscanf(line2, "%mlg %s", Varnames, Varvalues, Nvar, &coeff, nm1);
         SCMDCHECK(itct == 2, "missing coefficient and/or species parameters");
         i = molstring2index1(sim, line2, &ms, &index);
         SCMDCHECK(i != -1, "species is missing or cannot be read");
-        SCMDCHECK(i != -2,
-            "mismatched or improper parentheses around molecule state");
+        SCMDCHECK(i != -2, "mismatched or improper parentheses around molecule state");
         SCMDCHECK(i != -3, "cannot read molecule state value");
         SCMDCHECK(i != -4 || sim->ruless, "molecule name not recognized");
         SCMDCHECK(i != -7, "error allocating memory");
@@ -5371,16 +5234,16 @@ enum CMDcode cmdsetreactionratemolcount(simptr sim, cmdptr cmd, char *line2)
 /* cmdexpandsystem */
 enum CMDcode cmdexpandsystem(simptr sim, cmdptr cmd, char *line2)
 {
-    int             itct, d, dim, s, p, c, k, i, em;
-    double          zero[DIMMAX];
-    moleculeptr     mptr;
-    surfaceptr      srf;
+    int itct, d, dim, s, p, c, k, i, em;
+    double zero[DIMMAX];
+    moleculeptr mptr;
+    surfaceptr srf;
     enum PanelShape ps;
-    enum PanelFace  face;
-    panelptr        pnl;
-    compartptr      cmpt;
-    static double   expand[DIMMAX], center[DIMMAX];
-    static int      inscan = 0;
+    enum PanelFace face;
+    panelptr pnl;
+    compartptr cmpt;
+    static double expand[DIMMAX], center[DIMMAX];
+    static int inscan = 0;
 
     if(inscan)
         goto scanportion;
@@ -5390,11 +5253,10 @@ enum CMDcode cmdexpandsystem(simptr sim, cmdptr cmd, char *line2)
     dim = sim->dim;
     SCMDCHECK(line2, "missing arguments");
     if(dim == 1)
-        itct =
-            strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &expand[0]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &expand[0]);
     else if(dim == 2)
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &expand[0], &expand[1]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &expand[0], &expand[1]);
     else
         itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar,
             &expand[0], &expand[1], &expand[2]);
@@ -5409,8 +5271,7 @@ enum CMDcode cmdexpandsystem(simptr sim, cmdptr cmd, char *line2)
         zero[0] = zero[1] = zero[2] = 0;
         for(s = 0; s < sim->srfss->nsrf; s++) {
             srf = sim->srfss->srflist[s];
-            for(ps = (PanelShape)0; ps < (PanelShape)PSMAX;
-                ps = (PanelShape)(ps + 1))
+            for(ps = (PanelShape)0; ps < (PanelShape)PSMAX; ps = (PanelShape)(ps + 1))
                 for(p = 0; p < srf->npanel[ps]; p++) {
                     pnl = srf->panels[ps][p];
                     surftransformpanel(pnl, sim->dim, zero, center, expand);
@@ -5423,8 +5284,7 @@ enum CMDcode cmdexpandsystem(simptr sim, cmdptr cmd, char *line2)
                             for(d = 0; d < dim; d++)
                                 srf->emitterpos[face][i][em][d] =
                                     center[d] +
-                                    (srf->emitterpos[face][i][em][d] -
-                                        center[d]) *
+                                    (srf->emitterpos[face][i][em][d] - center[d]) *
                                         expand[d];
         }
     }
@@ -5435,8 +5295,7 @@ enum CMDcode cmdexpandsystem(simptr sim, cmdptr cmd, char *line2)
             for(k = 0; k < cmpt->npts; k++)
                 for(d = 0; d < dim; d++)
                     cmpt->points[k][d] =
-                        center[d] +
-                        (cmpt->points[k][d] - center[d]) * expand[d];
+                        center[d] + (cmpt->points[k][d] - center[d]) * expand[d];
         }
         compartsetcondition(sim->cmptss, SCparams, 0);
     }
@@ -5456,11 +5315,11 @@ scanportion:
 /* cmdtranslatecmpt */
 enum CMDcode cmdtranslatecmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int          itct, dim, c, code;
+    int itct, dim, c, code;
     compartssptr cmptss;
-    compartptr   cmpt;
-    char         cname[STRCHAR];
-    double       translate[DIMMAX];
+    compartptr cmpt;
+    char cname[STRCHAR];
+    double translate[DIMMAX];
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
@@ -5475,26 +5334,22 @@ enum CMDcode cmdtranslatecmpt(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(c >= 0, "compartment name not recognized");
     cmpt = cmptss->cmptlist[c];
 
-    SCMDCHECK(
-        line2 = strnword(line2, 2), "second argument should be code value");
+    SCMDCHECK(line2 = strnword(line2, 2), "second argument should be code value");
     ;
     itct = strmathsscanf(line2, "%mi", Varnames, Varvalues, Nvar, &code);
     SCMDCHECK(itct == 1, "second argument should be code value");
 
-    SCMDCHECK(
-        line2 = strnword(line2, 2), "missing arguments for translation amount");
+    SCMDCHECK(line2 = strnword(line2, 2), "missing arguments for translation amount");
     ;
     if(dim == 1)
-        itct = strmathsscanf(
-            line2, "%mlg", Varnames, Varvalues, Nvar, &translate[0]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &translate[0]);
     else if(dim == 2)
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &translate[0], &translate[1]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &translate[0], &translate[1]);
     else
         itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar,
             &translate[0], &translate[1], &translate[2]);
-    SCMDCHECK(
-        itct == dim, "cannot read translation values or wrong number of them");
+    SCMDCHECK(itct == dim, "cannot read translation values or wrong number of them");
 
     comparttranslate(sim, cmpt, code, translate);
 
@@ -5504,12 +5359,11 @@ enum CMDcode cmdtranslatecmpt(simptr sim, cmdptr cmd, char *line2)
 /* cmddiffusecmpt */
 enum CMDcode cmddiffusecmpt(simptr sim, cmdptr cmd, char *line2)
 {
-    int          itct, dim, c, code, d, valid, pt, is, nsample;
+    int itct, dim, c, code, d, valid, pt, is, nsample;
     compartssptr cmptss;
-    compartptr   cmpt, cmptbound;
-    char         cname[STRCHAR];
-    double stddev[DIMMAX], translate[DIMMAX], samplept[DIMMAX], testpt[DIMMAX],
-        radius;
+    compartptr cmpt, cmptbound;
+    char cname[STRCHAR];
+    double stddev[DIMMAX], translate[DIMMAX], samplept[DIMMAX], testpt[DIMMAX], radius;
 
     if(line2 && !strcmp(line2, "cmdtype"))
         return CMDmanipulate;
@@ -5524,31 +5378,28 @@ enum CMDcode cmddiffusecmpt(simptr sim, cmdptr cmd, char *line2)
     SCMDCHECK(c >= 0, "compartment name not recognized");
     cmpt = cmptss->cmptlist[c];
 
-    SCMDCHECK(
-        line2 = strnword(line2, 2), "second argument should be code value");
+    SCMDCHECK(line2 = strnword(line2, 2), "second argument should be code value");
     ;
     itct = strmathsscanf(line2, "%mi", Varnames, Varvalues, Nvar, &code);
     SCMDCHECK(itct == 1, "second argument should be code value");
 
-    SCMDCHECK(line2 = strnword(line2, 2),
-        "missing arguments for standard deviations");
+    SCMDCHECK(line2 = strnword(line2, 2), "missing arguments for standard deviations");
     ;
     if(dim == 1)
-        itct =
-            strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &stddev[0]);
+        itct = strmathsscanf(line2, "%mlg", Varnames, Varvalues, Nvar, &stddev[0]);
     else if(dim == 2)
-        itct = strmathsscanf(line2, "%mlg %mlg", Varnames, Varvalues, Nvar,
-            &stddev[0], &stddev[1]);
+        itct = strmathsscanf(
+            line2, "%mlg %mlg", Varnames, Varvalues, Nvar, &stddev[0], &stddev[1]);
     else
         itct = strmathsscanf(line2, "%mlg %mlg %mlg", Varnames, Varvalues, Nvar,
             &stddev[0], &stddev[1], &stddev[2]);
-    SCMDCHECK(itct == dim,
-        "cannot read standard deviation values or wrong number of them");
+    SCMDCHECK(
+        itct == dim, "cannot read standard deviation values or wrong number of them");
 
     line2 = strnword(line2, dim + 1);
     if(line2) {
-        itct = strmathsscanf(line2, "%s %mlg %mi", Varnames, Varvalues, Nvar,
-            cname, &radius, &nsample);
+        itct = strmathsscanf(
+            line2, "%s %mlg %mi", Varnames, Varvalues, Nvar, cname, &radius, &nsample);
         SCMDCHECK(itct == 3,
             "cannot read bounding compartment name, radius, and/or "
             "number of samples");
@@ -5618,7 +5469,7 @@ void cmdv1v2free(cmdptr cmd)
 /* conditionalcmdtype */
 enum CMDcode conditionalcmdtype(simptr sim, cmdptr cmd, int nparam)
 {
-    char         string[STRCHAR], *strptr;
+    char string[STRCHAR], *strptr;
     enum CMDcode ans;
 
     if(!cmd->str)
@@ -5639,13 +5490,12 @@ int insideecoli(double *pos, double *ofst, double rad, double length)
 {
     double dist;
 
-    dist = (pos[1] - ofst[1]) * (pos[1] - ofst[1]) +
-           (pos[2] - ofst[2]) * (pos[2] - ofst[2]);
+    dist =
+        (pos[1] - ofst[1]) * (pos[1] - ofst[1]) + (pos[2] - ofst[2]) * (pos[2] - ofst[2]);
     if(pos[0] - ofst[0] < rad)
         dist += (pos[0] - ofst[0] - rad) * (pos[0] - ofst[0] - rad);
     else if(pos[0] - ofst[0] > length - rad)
-        dist += (pos[0] - ofst[0] - length + rad) *
-                (pos[0] - ofst[0] - length + rad);
+        dist += (pos[0] - ofst[0] - length + rad) * (pos[0] - ofst[0] - length + rad);
     return dist < rad * rad;
 }
 
@@ -5654,19 +5504,17 @@ void putinecoli(double *pos, double *ofst, double rad, double length)
 {
     double dist;
 
-    dist = (pos[1] - ofst[1]) * (pos[1] - ofst[1]) +
-           (pos[2] - ofst[2]) * (pos[2] - ofst[2]);
+    dist =
+        (pos[1] - ofst[1]) * (pos[1] - ofst[1]) + (pos[2] - ofst[2]) * (pos[2] - ofst[2]);
     if(pos[0] - ofst[0] < rad) {
         dist += (pos[0] - ofst[0] - rad) * (pos[0] - ofst[0] - rad);
         dist   = sqrt(rad * rad / dist);
         pos[0] = ofst[0] + rad + dist * (pos[0] - ofst[0] - rad);
     }
     else if(pos[0] - ofst[0] > length - rad) {
-        dist += (pos[0] - ofst[0] - length + rad) *
-                (pos[0] - ofst[0] - length + rad);
-        dist = sqrt(rad * rad / dist);
-        pos[0] =
-            ofst[0] + length - rad + dist * (pos[0] - ofst[0] - length + rad);
+        dist += (pos[0] - ofst[0] - length + rad) * (pos[0] - ofst[0] - length + rad);
+        dist   = sqrt(rad * rad / dist);
+        pos[0] = ofst[0] + length - rad + dist * (pos[0] - ofst[0] - length + rad);
     }
     else
         dist = sqrt(rad * rad / dist);
@@ -5678,8 +5526,8 @@ void putinecoli(double *pos, double *ofst, double rad, double length)
 /* molinpanels */
 int molinpanels(simptr sim, moleculeptr mptr, int s, enum PanelShape ps)
 {
-    int       p, dim, npnl;
-    double *  pos;
+    int p, dim, npnl;
+    double *pos;
     panelptr *pnls, pnl;
 
     if(ps != PSsph)

@@ -133,7 +133,7 @@ endif()
 
 if(OPTION_TARGET_LIBSMOLDYN)
     list(APPEND HEADER_FILES source/Smoldyn/libsmoldyn.h)
-    list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.c)
+    list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.cpp)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )

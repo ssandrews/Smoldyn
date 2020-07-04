@@ -810,6 +810,18 @@ failure:
     return Liberrorcode;
 }
 
+/* smolOpenOutputFiles */
+enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite=0)
+{
+    const char *funcname = "smolOpenOutputFiles";
+    int err = scmdopenfiles(sim->cmds, overwrite);
+    LCHECK(!err, funcname, ECbug, "scmdopenfiles bug");
+
+    return Libwarncode;
+failure:
+    return Liberrorcode;
+}
+
 /* smolAddCommand */
 extern "C" enum ErrorCode smolAddCommand(simptr sim, char type, double on, double off,
     double step, double multiplier, const char *commandstring)

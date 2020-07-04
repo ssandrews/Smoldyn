@@ -70,7 +70,7 @@ int init_and_run(const string &filepath, const string &flags)
         er = simUpdateAndDisplay(cursim_);
     }
     if(!er)
-        er = scmdopenfiles((cmdssptr)cursim_->cmds, wflag);
+        er = smolOpenOutputFiles(cursim_, wflag);
     if(er) {
         simLog(cursim_, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
@@ -378,14 +378,17 @@ PYBIND11_MODULE(_smoldyn, m)
         "Clear all simptrs (excluding the one in use)");
     m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_); });
     m.def("runSim", [](void) { return smolRunSim(cursim_); });
-    m.def("runSimUntil",
-        [](double breaktime) { return smolRunSimUntil(cursim_, breaktime); });
+    m.def("runSimUntil", [](double breaktime, bool overwrite) {
+        return smolRunSimUntil(cursim_, breaktime);
+    });
+
     m.def("freeSim", [](void) { return smolFreeSim(cursim_); });
     m.def("displaySim", [](void) { return smolDisplaySim(cursim_); });
 
     // Extra (not in C api).
-    m.def("run", &run, "stoptime"_a, "dt"_a, "display"_a = true);
-    m.def("runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true);
+    m.def("run", &run, "stoptime"_a, "dt"_a, "display"_a = true, "overwrite"_a = false);
+    m.def("runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true,
+        "overwrite"_a = false);
 
     /*****************************
      *  Read configuration file  *
@@ -528,13 +531,16 @@ PYBIND11_MODULE(_smoldyn, m)
     // off,
     //     double step, double multiplier, const char *commandstring);
     m.def("addCommand", [](char type, double on, double off, double step,
-                            double multiplier, const char *commandstring) {
-        return smolAddCommand(cursim_, type, on, off, step, multiplier, commandstring);
+                            double multiplier, const string &commandstring) {
+        return smolAddCommand(
+            cursim_, type, on, off, step, multiplier, commandstring.c_str());
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
-    m.def("addCommmandFromString",
-        [](char *command) { return smolAddCommandFromString(cursim_, command); });
+    m.def("addCommandFromString", [](const string &command) {
+        char *cmd = strdup(command.c_str());
+        return smolAddCommandFromString(cursim_, cmd);
+    });
 
     /***************
      *  Molecules  *

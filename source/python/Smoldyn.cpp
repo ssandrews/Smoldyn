@@ -114,7 +114,8 @@ bool initialize()
     return cursim_ ? true : false;
 }
 
-void runUntil(const double breaktime, const double dt, bool display)
+void runUntil(
+    const double breaktime, const double dt, bool display, bool overwrite = false)
 {
     // If dt>0, reset dt else use the old one.
     if(dt > 0.0)
@@ -124,10 +125,15 @@ void runUntil(const double breaktime, const double dt, bool display)
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
+
+    auto er = smolOpenOutputFiles(cursim_, overwrite);
+    if(er)
+        cerr << __FUNCTION__ << ": Simulation skipped." << endl;
+
     smolRunSimUntil(cursim_, breaktime);
 }
 
-bool run(double stoptime, double dt, bool display)
+bool run(double stoptime, double dt, bool display, bool overwrite = false)
 {
     if(!cursim_) {
         if(!initialize()) {
@@ -138,6 +144,10 @@ bool run(double stoptime, double dt, bool display)
 
     smolSetSimTimes(cursim_, curtime_, stoptime, dt);
     smolUpdateSim(cursim_);
+
+    auto er = smolOpenOutputFiles(cursim_, overwrite);
+    if(er)
+        cerr << __FUNCTION__ << ": Simulation skipped." << endl;
 
     if(display and !initDisplay_) {
         smolDisplaySim(cursim_);
@@ -173,7 +183,6 @@ void setBoundaries(const vector<double>& lowbounds, const vector<double>& highbo
     initialize();
 }
 
-
 pair<vector<double>, vector<double>> getBoundaries()
 {
     // vector<pair<double, double>> bounds(getDim());
@@ -182,7 +191,7 @@ pair<vector<double>, vector<double>> getBoundaries()
     bounds.second.resize(getDim());
 
     for(size_t i = 0; i < getDim(); i++) {
-        bounds.first[i] = lowbounds_[i];
+        bounds.first[i]  = lowbounds_[i];
         bounds.second[i] = highbounds_[i];
     }
     return bounds;

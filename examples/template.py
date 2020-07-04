@@ -70,8 +70,10 @@ membrane.addMolecules((E, "front"), 100)
 
 # Output and other run-time commands
 s = sm.Simulation(stop=10, step=0.01, output_files=["templateout.txt"])
-s.addCommand("B", cmd="molcountheader templateout.txt")
-s.addCommand("N", cmd="molcount templateout.txt", step=10)
+s.addCommand(cmd="molcountheader templateout.txt", type="B")
+s.addCommand(cmd="molcount templateout.txt", type="N", step=10)
+# s.addCommandFromString('B molcountheader templateout.txt')
+# s.addCommandFromString("N 10 molcount templateout.txt")
 s.setGraphics(
     "opengl_good",
     iter=3,

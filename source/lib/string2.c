@@ -572,7 +572,6 @@ int stringfind(char **slist, int n, const char *s)
 {
 #endif
     int i;
-
     for(i = 0; i < n && strcmp(slist[i], s); i++)
         ;
     return i < n ? i : -1;

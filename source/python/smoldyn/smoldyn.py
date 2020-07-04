@@ -881,14 +881,17 @@ class Command(object):
     """Smoldyn command
     """
 
-    def __init__(self, type: str, cmd: str, **kwargs):
+    def __init__(self, cmd: str, type: str = "", **kwargs):
         """
         Parameters
         ----------
         cmd : str
             command string.
         type : str
-            Command type. Use capital letter version for integer queue.
+            Type of command. When `from_string` is set to `True`, we expect the the type to
+            be included in the `cmd` string.
+
+            Use capital letter version for integer queue.
             - ‘b’ or 'B' for before the simulation
             - ‘a’ or 'A' for after the simulation,
             - ‘e’ or 'E' for every time step during the simulation
@@ -903,7 +906,8 @@ class Command(object):
             - ‘j’ for every ``dtit`` step with a set starting iteration and
               stopping iteration.
         kwargs :
-            kwargs
+            from_string: False
+                If True, use plain text string to generate the command.
 
         Notes
         -----
@@ -917,6 +921,7 @@ class Command(object):
         self.multiplier = 0.0
         self.cmd = cmd
         self.kwargs = dict(kwargs)
+        self.fromString = self.kwargs.get("from_string", False)
         self.__added__ = False
         # self.__finalize__()
 
@@ -925,6 +930,10 @@ class Command(object):
         assert (
             self.type in self.__allowed_cmd_type__
         ), f"command type {self.type} not supported."
+        if self.fromString:
+            k = _smoldyn.addCommandFromString(self.cmd)
+            assert k == _smoldyn.ErrorCode.ok
+            return
         if "@" == self.type:
             assert (
                 self.kwargs.get("time", 0.0) >= 0.0
@@ -1220,8 +1229,47 @@ class Simulation(object):
         self.__finalize_cmds__()
         _smoldyn.runUntil(t, dt)
 
-    def addCommand(self, type, cmd, **kwargs):
-        c = Command(type, cmd, **kwargs)
+    def addCommand(self, cmd: str, type: str, **kwargs):
+        """Add command.
+
+        Parameters
+        ----------
+        cmd : str
+            Command string.
+        type : str
+            Type of command. When `from_string` is set to `True`, we expect the the type to
+            be included in the `cmd` string.
+
+            Use capital letter version for integer queue.
+            - ‘b’ or 'B' for before the simulation
+            - ‘a’ or 'A' for after the simulation,
+            - ‘e’ or 'E' for every time step during the simulation
+            - ‘@’ or '&' for a single command execution at time ``time``
+            - ‘n’ or 'N' for every n’th iteration of the simulation
+            - ‘i’ or 'I' for a fixed time interval. The command is executed
+              over the period from on to off with intervals of at least dt(the
+              actual intervals will only end at the times of simulation time
+              steps).
+            - ‘x’ for a fixed time multiplier. The command is executed at on,
+              then on+dt, then on+dt*xt, then on+dt*xt2, and so forth.
+            - ‘j’ for every ``dtit`` step with a set starting iteration and
+              stopping iteration.
+        kwargs :
+            kwargs of :func:`Command <smoldyn.smoldyn.Class.__init__>`.
+        """
+        c = Command(cmd, type, from_string=False, **kwargs)
+        self.commands.append(c)
+
+    def addCommandFromString(self, cmd: str):
+        """Add command using a single string. See the Smoldyn's User Manual for
+        details.
+
+        Parameters
+        ----------
+        cmd : str
+            Command string
+        """
+        c = Command(cmd, from_string=True)
         self.commands.append(c)
 
 

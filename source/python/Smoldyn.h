@@ -59,8 +59,8 @@ size_t getRandomSeed();
 bool initialize();
 
 // Smoldyn.
-bool run(double simtime, double dt, bool display);
-void runUntil(const double breaktime, const double dt, bool display);
+bool run(double simtime, double dt, bool display, bool overwrite);
+void runUntil(const double breaktime, const double dt, bool display, bool overwrite);
 
 ErrorCode setDt(double dt);
 double    getDt();
