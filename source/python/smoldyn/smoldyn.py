@@ -64,7 +64,7 @@ class Color:
         return str(self.name)
 
 
-def toMolecState(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
+def _toMS(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
     """Convert a string to equivalent MolecState.
 
     Parameters
@@ -123,9 +123,9 @@ class Species(object):
         self._displaySize: Dict[str, float] = {}
         self._color: Dict[str, Color] = {}
         self._difc: Dict[str, float] = {}
-        self._mol_list: str = mol_list
+        self._mol_list: str = ""
 
-        k = _smoldyn.addSpecies(self.name, mol_list)
+        k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, "Failed to add molecule"
 
         if state not in _smoldyn.MolecState.__members__:
@@ -196,7 +196,7 @@ class Species(object):
     def mol_list(self, val):
         k = _smoldyn.addMolList(val)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
-        k = _smoldyn.setMolList(self.name, self.state, val)
+        k = _smoldyn.setMolList(self.name, _toMS(self.state), val)
         assert (
             k == _smoldyn.ErrorCode.ok
         ), f"Failed to set mol_list={val} on {self}: {k}"
@@ -273,7 +273,7 @@ class Species(object):
             uniformly between the upper bound and this value.
         """
         assert (
-            self.state == _smoldyn.MolecState.soln
+            self.state == "soln"
         ), f"You can't use this function on a Species with type {self.state}"
         if fixed:
             lowpos = highpos = fixed
@@ -879,7 +879,7 @@ class Surface(object):
         else:
             assert len(species) == 2, "Expected tuple of (Species, MolecState)"
             sname = species[0].name
-            sstate = toMolecState(species[1])
+            sstate = _toMS(species[1])
         panels = panels if panels else self.panels
 
         # Distribute molecules equally among the panels.
@@ -1511,26 +1511,26 @@ class HalfReaction(object):
         r2 = subs[1] if len(subs) == 2 else NullSpecies()
 
         if isinstance(r1, Species):
-            r1name, r1state = r1.name, r1.state
+            r1name, r1state = r1.name, _toMS(r1.state)
         else:
             assert len(r1) == 2, "Expected tuple of (Species, state) e.g. (A, 'front')"
             r1name = r1[0].name
-            r1state = toMolecState(r1[1])
+            r1state = _toMS(r1[1])
 
         if isinstance(r2, Species):
-            r2name, r2state = r2.name, r2.state
+            r2name, r2state = r2.name, _toMS(r2.state)
         else:
             assert len(r2) == 2, "Expected tuple of (Species,state) e.g. (S, 'back')"
-            r2name, r2state = r2[0].name, toMolecState(r2[1])
+            r2name, r2state = r2[0].name, _toMS(r2[1])
 
         prdNames, prdStates = [], []
         for x in prds:
             if isinstance(x, Species):
                 prdNames.append(x.name)
-                prdStates.append(x.state)
+                prdStates.append(_toMS(x.state))
             else:
                 prdNames.append(x[0].name)
-                prdStates.append(toMolecState(x[1]))
+                prdStates.append(_toMS(x[1]))
 
         if not name:
             name = "r%d" % id(self)
