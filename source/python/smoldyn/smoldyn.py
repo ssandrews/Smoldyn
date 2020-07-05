@@ -292,7 +292,7 @@ class NullSpecies(Species):
 
 # Type of a substract and product of a Reaction
 SpeciesState = Union[_smoldyn.MolecState, str]
-ReacSpecies = Union[Species, Tuple[Species, SpeciesState]]
+SpeciesWithState = Union[Species, Tuple[Species, SpeciesState]]
 
 
 class Panel(object):
@@ -300,7 +300,7 @@ class Panel(object):
         self,
         name: str = "",
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
-        neighbours: List[Panel] = [],
+        neighbors: List[Panel] = [],
     ):
         """Panels are components of a surface. One or more Panels are requried
         to form a Surface. Following geometric primitives are available.
@@ -313,13 +313,16 @@ class Panel(object):
         - [Disk](smoldyn.smoldyn.Disk)
         """
 
+        self._neighbors: List[Panel] = []
+
         self.name = name
         self.ctype: _smoldyn.PanelShape = shape
         self.pts: List[float] = []
-        self._neighbors: List[Panel] = neighbours
-        self.surface: Surface = NullSurface()
         self.front = _PanelFace("front", self)
         self.back = _PanelFace("back", self)
+
+        self.surface: Surface = NullSurface()
+        self.neighbors = neighbors
 
     def jumpTo(
         self, face1: str, panel2: Panel, face2: str, bidirectional: bool = False
@@ -372,6 +375,7 @@ class Panel(object):
 
     @neighbors.setter
     def neighbors(self, panels: List[Panel]):
+        self._neighbors = panels
         for panel in panels:
             self._assignNeighbor(panel)
 
@@ -391,6 +395,23 @@ class Panel(object):
             self.surface.name, self.name, panel.surface.name, panel.name, reciprocal
         )
         assert k == _smoldyn.ErrorCode.ok
+
+    def setNeighbors(self, panels, reciprocal: bool = False):
+        """Set neighbors.
+
+        Parameters
+        ----------
+        panels :
+            Neighboring panels
+        reciprocal : bool
+            If True, this panel also becomes neighbor of all panels in arguments.
+
+        See Also
+        --------
+        Panel.neighbor, Panel.neighbors
+        """
+        for panel in panels:
+            self._assignNeighbor(panel, reciprocal)
 
 
 class Rectangle(Panel):
@@ -716,6 +737,9 @@ class _SurfaceFaceCollection(object):
             else:
                 sname, sstate = sp, _smoldyn.MolecState.soln
 
+            if isinstance(sstate, str):
+                sstate = _smoldyn.MolecState.__members__[sstate]
+
             # TODO:
             if new_spec:
                 raise NotImplementedError("This feature is not implemented.")
@@ -823,8 +847,8 @@ class Surface(object):
 
     def addMolecules(
         self,
-        species: ReacSpecies,
-        mol: int,
+        species: SpeciesWithState,
+        N: int,
         panels: List[Panel] = [],
         pos: List[float] = [],
     ):
@@ -834,9 +858,9 @@ class Surface(object):
         Parameters
         ----------
         species: 
-            Species to add. Either Species or a tuple of (Species, MolecState)
+            Species to add, a Species or a tuple of (Species, MolecState)
             e.g. (A, 'front')
-        mol : int
+        N : int
             number of molecules
         surface : smoldyn.geometry.Surface
             Surface
@@ -847,7 +871,7 @@ class Surface(object):
             Position of the molecules. If not given, then randomly distribute
             the molecules onto the surface/panels.
         """
-        assert mol > 0, "Expected a positive number"
+        assert N > 0, "Expected a positive number"
         assert species
         if isinstance(species, Species):
             sname = species.name
@@ -857,11 +881,18 @@ class Surface(object):
             sname = species[0].name
             sstate = toMolecState(species[1])
         panels = panels if panels else self.panels
-        for panel in panels:
+
+        # Distribute molecules equally among the panels.
+        _N = N // len(panels)
+        Ns = [_N] * len(panels)
+        Ns[0] += N - sum(Ns)
+        assert sum(Ns) == N
+
+        for panel, _n in zip(panels, Ns):
             assert panel
             assert panel.ctype
             k = _smoldyn.addSurfaceMolecules(
-                sname, sstate, mol, self.name, panel.ctype, panel.name, pos,
+                sname, sstate, _n, self.name, panel.ctype, panel.name, pos,
             )
             assert k == _smoldyn.ErrorCode.ok
 
@@ -1443,8 +1474,8 @@ class HalfReaction(object):
     def __init__(
         self,
         name: str,
-        subs: List[ReacSpecies],
-        prds: List[ReacSpecies],
+        subs: List[SpeciesWithState],
+        prds: List[SpeciesWithState],
         rate: float,
         compartment: Compartment = None,
         surface: Surface = None,
@@ -1455,9 +1486,9 @@ class HalfReaction(object):
         ----------
         name: str
             name of the reaction.
-        subs : List[ReacSpecies]
+        subs : List[SpeciesWithState]
             List of rectants.
-        prds : List[ReacSpecies]
+        prds : List[SpeciesWithState]
             List of products.
         rate : float
             rate of the reaction
@@ -1569,8 +1600,8 @@ class Reaction(object):
     def __init__(
         self,
         name: str,
-        subs: List[ReacSpecies],
-        prds: List[ReacSpecies],
+        subs: List[SpeciesWithState],
+        prds: List[SpeciesWithState],
         kf: float,
         kb: float = 0.0,
         compartment: Compartment = None,
@@ -1582,9 +1613,9 @@ class Reaction(object):
         ----------
         name : str
             name of the reaction.
-        subs : List[ReacSpecies]
+        subs : List[SpeciesWithState]
             subtrates
-        prds : List[ReacSpecies]
+        prds : List[SpeciesWithState]
             products
         kf : float
             Forward rate constant
