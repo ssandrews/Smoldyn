@@ -27,7 +27,6 @@ markdown_extensions:
     - codehilite
     - admonition
     - attr_list
-    - mkautodoc
     - pymdownx.arithmatex
     - pymdownx.betterem:
         smart_enable: all

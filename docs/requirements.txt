@@ -4,4 +4,3 @@ mkdocs-material
 mkdocs-material-extensions
 pymdown-extensions
 mkapi
-
