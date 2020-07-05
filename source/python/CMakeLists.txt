@@ -23,7 +23,7 @@ target_include_directories(_smoldyn PRIVATE
 
 set_target_properties(_smoldyn PROPERTIES 
     SUFFIX ".so"
-    LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/smoldyn/)
 
 add_custom_target(copy_python_tree 
   COMMAND ${CMAKE_COMMAND} -E copy_directory

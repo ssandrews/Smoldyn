@@ -1,10 +1,7 @@
-sphinx
-breathe
-sphinx_rtd_theme
-sphinx
-recommonmark
-sphinxcontrib-programoutput
-sphinxcontrib-napoleon
-sphinxcontrib-mermaid
-sphinx-autodoc-typehints
-# sphinxcontrib-plantuml
+mkdocs
+mkdocs-macros-plugin
+mkdocs-material
+mkdocs-material-extensions
+pymdown-extensions
+mkapi
+

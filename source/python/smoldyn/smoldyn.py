@@ -281,19 +281,23 @@ ReacSpecies = Union[Species, Tuple[Species, SpeciesState]]
 
 
 class Panel(object):
-    """Panels are required to construct a surface. Following primitives are
-    available.
-
-    :py:class:`~Rectangle`, :py:class:`~Triangle`, :py:class:`~Sphere`,
-    :py:class:`~Hemisphere`, :py:class:`~Cylinder`, :py:class:`~Disk`
-    """
-
     def __init__(
         self,
         name: str = "",
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
         neighbours: List[Panel] = [],
     ):
+        """Panels are components of a surface. One or more Panels are requried
+        to form a Surface. Following geometric primitives are available.
+
+        - [Rectangle](smoldyn.smoldyn.Rectangle)
+        - [Triangle](smoldyn.smoldyn.Triangle)
+        - [Sphere](smoldyn.smoldyn.Sphere)
+        - [Hemisphere](smoldyn.smoldyn.Hemisphere)
+        - [Cylinder](smoldyn.smoldyn.Cylinder)
+        - [Disk](smoldyn.smoldyn.Disk)
+        """
+
         self.name = name
         self.ctype: _smoldyn.PanelShape = shape
         self.pts: List[float] = []
@@ -345,7 +349,7 @@ class Rectangle(Panel):
     def __init__(
         self, corner: List[float], dimensions: List[float], axis: str, name=""
     ):
-        """Rectangle (Panel)
+        """Rectangle
 
         Parameters
         ----------
@@ -532,10 +536,9 @@ class Disk(Panel):
         self.pts = [*self.center, self.radius, *self.vector]
 
 
-class SurfaceFaceCollection(object):
-    """Collection of faces of a surface"""
-
+class _SurfaceFaceCollection(object):
     def __init__(self, faces: List[str], surfname: str):
+        """Collection of faces of a surface"""
         self.faces: List[str] = faces
         self.surfname: str = surfname
 
@@ -672,9 +675,9 @@ class Surface(object):
         self.name = name
         _smoldyn.addSurface(self.name)
 
-        self.front = SurfaceFaceCollection(["front"], name)
-        self.back = SurfaceFaceCollection(["back"], name)
-        self.both = SurfaceFaceCollection(["front", "back"], name)
+        self.front = _SurfaceFaceCollection(["front"], name)
+        self.back = _SurfaceFaceCollection(["back"], name)
+        self.both = _SurfaceFaceCollection(["front", "back"], name)
         self._addToSmoldyn()
 
     def _addToSmoldyn(self):
@@ -689,9 +692,8 @@ class Surface(object):
             assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
     def setStyle(self, face, *args, **kwargs):
-        """See the function :py:class:`~SurfaceFaceCollection.setStyle` for more
-        details. This function forwards the the call to
-        `SurfaceFaceCollection.setStyle` function.
+        """See the function [setStyle](_SurfaceFaceCollection.setStyle) for more
+        details. This function forwards the call to `_SurfaceFaceCollection.setStyle`.
 
         Parameters
         ----------
@@ -699,19 +701,19 @@ class Surface(object):
             face of the surface: 'front', 'back', 'both'
 
         *args and **kwargs: 
-            See :py:class:`~SurfaceFaceCollection.setStyle`
+            See `_SurfaceFaceCollection.setStyle`
 
         See Also
         --------
-        SurfaceFaceCollection.setStyle
+        _SurfaceFaceCollection.setStyle
         """
         assert face in ["front", "back", "both"]
         getattr(self, face).setStyle(*args, **kwargs)
 
     def addAction(self, face, *args, **kwargs):
-        """See the function :py:class:`~SurfaceFaceCollection.addAction` for more
+        """See the function `_SurfaceFaceCollection.addAction` for more
         details. This function forwards the the call to
-        `SurfaceFaceCollection.addAction` function.
+        `_SurfaceFaceCollection.addAction` function.
 
         Parameters
         ----------
@@ -719,11 +721,11 @@ class Surface(object):
             face of the surface: 'front', 'back', 'both'
 
         *args and **kwargs: 
-            See :py:func:`~SurfaceFaceCollection.addAction`
+            See `_SurfaceFaceCollection.addAction`
 
         See Also
         --------
-        SurfaceFaceCollection.addAction
+        _SurfaceFaceCollection.addAction
         """
         getattr(self, face).addAction(*args, *kwargs)
 
@@ -858,11 +860,10 @@ class Box(Partition):
 
 
 class Compartment(object):
-    """Compartment
-    """
-
     def __init__(self, name: str, surface: Union[str, Surface], point: List[float]):
         """
+        Comapartment.
+
         Parameters
         ----------
         name : str
@@ -883,12 +884,12 @@ class Compartment(object):
         k = _smoldyn.addCompartmentPoint(self.name, self.point)
         assert k == _smoldyn.ErrorCode.ok
 
-    def addMolecules(self, species: Species, mol: int):
-        """Place molecules randomly in a compartment.
+    def addMolecules(self, species: Species, N: int):
+        """Place number of molecules in a compartment (uniformly distributed)
 
         Parameters
         ----------
-        mol : int
+        N : int
             number of molecules
         species : Species
             Species to add
@@ -897,8 +898,8 @@ class Compartment(object):
         --------
         :py:class:`smoldyn.kinetics.Species.addToCompartment`
         """
-        assert mol > 0, "Needs a positive number"
-        k = _smoldyn.addCompartmentMolecules(species.name, mol, self.name)
+        assert N > 0, "Needs a positive number"
+        k = _smoldyn.addCompartmentMolecules(species.name, N, self.name)
         assert k == _smoldyn.ErrorCode.ok
 
 

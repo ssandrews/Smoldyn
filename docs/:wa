@@ -1,0 +1,58 @@
+.. warning:: This is a work in progress.
+
+.. note::
+    
+   Smoldyn supports Python version 3.6 or higher. For Python version 3.6, you
+   have to install `dataclasses` module manually. If you are using ``pip`` to
+   install ``smnoldyn`` then ``dataclasses`` is installed automatically for
+   Python version 3.6.
+
+Installing Python module
+-------------------------
+
+Use ``pip`` to install Smoldyn. See
+`<https://pip.pypa.io/en/stable/installing/>`_  for how to install and use
+``pip``.
+
+.. code-block::
+
+    $ python3 -m pip install smoldyn --user
+
+After successful installation, you can verify by running the following command in the terminal.
+
+.. code-block::
+
+    $ python3 -c "import smoldyn; print(smoldyn.__version)"
+    '2.62.dev'
+
+If installation fails for some reason or your platform is not supported, you
+can build the Python module by yourself.  Refer to the section `Compiling
+Smoldyn`_.  Feel free to open a ticket on the `Github repository
+<https://github.com/ssandrews/Smoldyn-official` or write to
+`<support@smoldyn.org>`.
+
+.. todo:: Add Python build instructions to the docs.
+
+Quick Comparison 
+-----------------
+
+If you are already familiar with Smoldyn then I recommend that you compare
+Smoldyn's plain text model with equivalent Python model in ``examples``
+directory. Not all models are translated to Python but there are enough to get
+you started.
+
+
+Here is an example which shows plain text and Python module side by side
+
+.. list-table::  Smoldyn model in Python and plain text
+   :align: left
+   :widths: 50 50
+   :header-rows: 1
+
+   * - Plain Text Model
+     - Python Model
+   * - .. literalinclude:: /../examples/S10_boxes/box.txt
+            :linenos:
+     - .. literalinclude:: /../examples/S10_boxes/box.py
+            :linenos:
+            :language: python
