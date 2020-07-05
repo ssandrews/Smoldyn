@@ -876,17 +876,6 @@ PYBIND11_MODULE(_smoldyn, m)
             for(size_t i = 0; i < nprd; i++)
                 productSpecies[i] = productSpeciesStr[i].c_str();
 
-            // cout << reaction << " r1: '" << reactant1 << "' r2: '" <<
-            // reactant2
-            //      << "' " << " rate=" << rate;
-            // for(auto s : productSpeciesStr)
-            //     cout << " '" << s << "'";
-            // cout << endl;
-
-            // Not sure if this is needed here.
-            // if(reactant2 == "")
-            // reactant2[0] = '\0';
-
             return smolAddReaction(cursim_, reaction, reactant1, rstate1, reactant2,
                 rstate2, productSpecies.size(), productSpecies.data(), &productStates[0],
                 rate);

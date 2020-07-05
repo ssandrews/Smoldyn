@@ -235,12 +235,34 @@ class Species(object):
             assert k == _smoldyn.ErrorCode.ok
 
     def addToSolution(
-        self, mol: float, highpos: List[float] = [], lowpos: List[float] = []
+        self,
+        N: int,
+        fixed: List[float] = [],
+        highpos: List[float] = [],
+        lowpos: List[float] = [],
     ):
+        """Add molecule to solution.
+
+        Parameters
+        ----------
+        N : float
+            Number of molecules
+        fixed : List[float]
+            Fixed location. If given, both `lowpos` and `highpos` will be set
+            to this value.
+        highpos : List[float]
+            Upper bound on the molecules location. Molecules will be distributed
+            uniformly between the lowerbound and this value.
+        lowpos : List[float]
+            Lower bound on the molecules location. Molecules will be distributed
+            uniformly between the upper bound and this value.
+        """
         assert (
             self.state == _smoldyn.MolecState.soln
         ), f"You can't use this function on a Species with type {self.state}"
-        k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
+        if fixed:
+            lowpos = highpos = fixed
+        k = _smoldyn.addSolutionMolecules(self.name, N, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
 
@@ -880,26 +902,6 @@ class Compartment(object):
         assert k == _smoldyn.ErrorCode.ok
 
 
-def setBounds(low: List[float], high: List[float], types: List[str] = []):
-    """Define system volume by setting boundaries.
-
-    Parameters
-    ----------
-    low : List[float]
-        lower limit of axes. For example for x=0, y=-100, and z=0, use [0,-100,0].
-    high :
-        higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
-    types : List[str]
-        Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
-        absorbing, and 'p' for periodic boundary.
-
-    See also
-    --------
-    smoldyn.setBoundaries, smoldyn.setBoundaryType
-    """
-    Boundaries(low, high, types)
-
-
 class StateMonitor(object):
     """State Monitor
     """
@@ -1357,7 +1359,7 @@ class HalfReaction(object):
         self.surface = surface
 
         assert len(subs) < 3, "At most two reactants are supported."
-        if len(subs) == 0:
+        if subs is None or len(subs) == 0:
             assert len(prds) > 0, "At least one product for a zero-order reaction."
             subs = [NullSpecies()]
         r1 = subs[0]
@@ -1486,3 +1488,35 @@ class Reaction(object):
         self.backward = None
         if kb > 0:
             self.backward = HalfReaction(revname, prds, subs, kb, compartment, surface)
+
+
+def setBounds(low: List[float], high: List[float], types: List[str] = []):
+    """Define system volume by setting boundaries.
+
+    Parameters
+    ----------
+    low : List[float]
+        lower limit of axes. For example for x=0, y=-100, and z=0, use [0,-100,0].
+    high :
+        higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
+    types : List[str]
+        Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
+        absorbing, and 'p' for periodic boundary.
+
+    See also
+    --------
+    smoldyn.setBoundaries, smoldyn.setBoundaryType
+    """
+    Boundaries(low, high, types)
+
+
+def addMoleculesToSolution(molecule, *args, **kwargs):
+    """Add molecules to the solution. 
+
+    An alias of Species.addToSolution
+
+    See also
+    --------
+    Species.addToSolution
+    """
+    molecule.addMoleculesToSolution(*args, **kwargs)
