@@ -49,7 +49,7 @@ membrane = sm.Surface("membrane", panels=[s1])
 
 # Add action to `both` faces for surface. You can also use `front` or `back`
 # as well. `all` molecules reflect at both surface faces
-membrane.both.addAction("all", "reflect")
+membrane.both.addAction([S, E, P, ES], "reflect")
 membrane.both.setStyle(color="black", thickness=1)
 inside = sm.Compartment(name="inside", surface=membrane, point=[0, 0])
 

@@ -44,8 +44,24 @@ from smoldyn import _smoldyn
 # Color type.
 # Either a string such as 'black', 'red', 'orange' or a tuple of 4 values such
 # as [1,1,0,1] specifying RGBA value.
-Color = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
+ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 DiffConst = Union[float, Dict[str, float]]
+
+
+class Color:
+    def __init__(self, color):
+        assert not isinstance(color, dict)
+        self.name = color if not isinstance(color, Color) else color.name
+        self.rgba = self._toRGBA()
+
+    def _toRGBA(self):
+        if isinstance(self.name, str):
+            return color2RGBA(self.name) if self.name else None
+        if len(self.name) == 3:
+            return (*self.name, 1)
+
+    def __str__(self):
+        return str(self.name)
 
 
 def toMolecState(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
@@ -68,7 +84,7 @@ class Species(object):
         self,
         name: str,
         state: str = "soln",
-        color: Union[str, Dict[str, Color]] = "black",
+        color: Union[ColorType, Dict[str, ColorType]] = {"soln": "black"},
         difc: Union[float, Dict[str, float]] = 0.0,
         display_size: float = 3,
         mol_list: str = "",
@@ -106,8 +122,10 @@ class Species(object):
 
         self._displaySize: Dict[str, float] = {}
         self._color: Dict[str, Color] = {}
+        self._difc: Dict[str, float] = {}
+        self._mol_list: str = mol_list
 
-        k = _smoldyn.addSpecies(self.name)
+        k = _smoldyn.addSpecies(self.name, mol_list)
         assert k == _smoldyn.ErrorCode.ok, "Failed to add molecule"
 
         if state not in _smoldyn.MolecState.__members__:
@@ -116,21 +134,16 @@ class Species(object):
                 "states are:{', '.join(_smoldyn.MolecState.__members__.keys())}"
             )
 
-        self.__state__ = state
-        self.state = _smoldyn.MolecState.__members__[state]
+        self.state = state
 
         # Prepare diffusion constant dict (for state).
         if not isinstance(difc, dict):
-            difc = {self.__state__: difc}
-        self._difc: DiffConst = difc
-        self.difc = self._difc
+            difc = {self.state: difc}
+        self.difc = difc
 
         # assign color
         self.color = color
-
         self.display_size = display_size
-
-        self._mol_list: str = mol_list
         if mol_list:
             self.mol_list: str = mol_list
 
@@ -138,11 +151,15 @@ class Species(object):
         return f"<Molecule: {self.name}, difc={self.difc}, state={self.state}>"
 
     def __to_disp__(self):
-        return f"{self.name}({self.__state__})"
+        return f"{self.name}({self.state})"
 
-    def setStyle(self, size: float, color: Color, method="opengl"):
+    def setStyle(
+        self,
+        display_size: Union[float, Dict[str, float]],
+        color: Union[ColorType, Dict[str, ColorType]],
+    ):
         self.color = color
-        self.display_size = size
+        self.display_size = display_size
 
     @property
     def difc(self) -> DiffConst:
@@ -159,11 +176,15 @@ class Species(object):
             molecule are assigned the same value. To assign state specific
             values, use a dictionary. Missing states will be assigned 0.0.
         """
-        if not isinstance(difconst, dict):
-            difconst = {self.__state__: difconst}
-        self._difc = difconst
-        for state, D in difconst.items():
-            st = _smoldyn.MolecState.__members__[state]
+        self._difc = (
+            {self.state: difconst} if not isinstance(difconst, dict) else difconst
+        )
+        for state, D in self._difc.items():
+            st = (
+                _smoldyn.MolecState.__members__[state]
+                if isinstance(state, str)
+                else state
+            )
             k = _smoldyn.setSpeciesMobility(self.name, st, D)
             assert k == _smoldyn.ErrorCode.ok
 
@@ -186,22 +207,16 @@ class Species(object):
         return self._color
 
     @color.setter
-    def color(self, clr):
-        if not isinstance(clr, dict):
-            clr = {"all": clr}
-        self._color = clr
-        for state, color in self._color.items():
+    def color(self, clr: Union[ColorType, Color]):
+        self._color = {self.state: Color(clr)} if not isinstance(clr, dict) else clr
+        for state, _clr in self._color.items():
+            _clr = Color(_clr)
             state = (
                 _smoldyn.MolecState.__members__[state]
                 if isinstance(state, str)
                 else state
             )
-            if not isinstance(color, str) and len(color) == 3:
-                color = *color, 1
-                assert len(color) == 4, "Needs tuple of 4 values (R,G,B,A)"
-            else:
-                color = color2RGBA(color)
-            k = _smoldyn.setMoleculeColor(self.name, state, color)
+            k = _smoldyn.setMoleculeColor(self.name, state, _clr.rgba)
             assert k == _smoldyn.ErrorCode.ok
 
     @property
@@ -302,7 +317,40 @@ class Panel(object):
         self.ctype: _smoldyn.PanelShape = shape
         self.pts: List[float] = []
         self._neighbors: List[Panel] = neighbours
-        self.surface: Surface = None
+        self.surface: Surface = NullSurface()
+        self.front = _PanelFace("front", self)
+        self.back = _PanelFace("back", self)
+
+    def jumpTo(
+        self, face1: str, panel2: Panel, face2: str, bidirectional: bool = False
+    ):
+        """Add a jump reaction between two panels of the same surface.
+
+        This panel has name panel1, and face face1.  A molecule that hits this
+        face of the panel, and that has “jump” action for this face, gets
+        translated to the face face2 of the panel panel2 (which needs to be the
+        same shape as the originating panel). 
+
+        Parameters
+        ----------
+        face1 : Panel
+            
+        panel2 : to this Panel
+        face2 : to this face
+
+        Examples
+        --------
+        
+        Smoldyn expression: 
+            jump r1 front <-> r2 front 
+
+        >>> r1.addJump('front', r2, 'front', True)   
+
+        Or, 
+
+        >>> r1.front.jumpTo(r2.front, True)
+        """
+        return getattr(self, face1).jumpTo(getattr(panel2, face2))
 
     def __str__(self):
         return f"<{self.name} type={self.ctype} index={self.index}>"
@@ -536,6 +584,39 @@ class Disk(Panel):
         self.pts = [*self.center, self.radius, *self.vector]
 
 
+class _PanelFace(object):
+    def __init__(self, name: str, panel: Panel):
+        assert name in ["front", "back"]
+        self.name = _smoldyn.PanelFace.__members__[name]
+        self.panel = panel
+
+    def jumpTo(self, toface: _PanelFace, bidirectional: bool = False):
+        """Add a jump reaction between two panels of same Surface
+
+        See also
+        --------
+        Panel.jumpTo
+        """
+        assert (
+            self.panel.ctype == toface.panel.ctype
+        ), "Both panels must have same geometry"
+        assert (
+            self.panel.surface == toface.panel.surface
+        ), "Both panels must have same surface"
+        ## print(111, self.panel.surface.name, self.panel.name
+        ##         , self.name, toface.panel.name,
+        ##         toface.name, bidirectional)
+        k = _smoldyn.setPanelJump(
+            self.panel.surface.name,
+            self.panel.name,
+            self.name,
+            toface.panel.name,
+            toface.name,
+            bidirectional,
+        )
+        assert k == _smoldyn.ErrorCode.ok
+
+
 class _SurfaceFaceCollection(object):
     def __init__(self, faces: List[str], surfname: str):
         """Collection of faces of a surface"""
@@ -544,7 +625,7 @@ class _SurfaceFaceCollection(object):
 
     def setStyle(
         self,
-        color: Color = "",
+        color: ColorType = "",
         drawmode: str = "none",
         thickness: float = 1.0,
         stipplefactor: int = -1,
@@ -592,25 +673,29 @@ class _SurfaceFaceCollection(object):
                 _smoldyn.PanelFace.__members__[which],
                 _smoldyn.DrawMode.__members__[drawmode],
                 thickness,
-                color,
+                Color(color).rgba,
                 stipplefactor,
                 stipplepattern,
                 shininess,
             )
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set drawing style {k}"
 
-    def addAction(self, species: Union[Species, str], action: str, new_spec=None):
+    def addAction(
+        self, species: Union[Species, List[Species]], action: str, new_spec=None
+    ):
         """The behavior of molecules named species when they collide with this
         face of this surface.
 
         Parameters
         ----------
-        species : Union[Species, str]
-            Species. If `"all"`, then this action applies to all molecules.
+        species :
+            List of species or a single species. DO NOT use the name of
+            species.
         action : str
             The action can be  `“reflect”`, `“absorb”`, `“transmit”`, `“jump”`,
             `“port”`, or `“periodic”`.
         new_spec: str
+            TODO: Implement it.
             If `new_spec` is entered, then the molecule changes to this new
             species upon surface collision. In addition, it’s permissible to
             enter the action as “multiple,” in which case the rates need to be
@@ -619,24 +704,31 @@ class _SurfaceFaceCollection(object):
             transmission for all molecules.
         """
         assert action in ["reflect", "absorb", "transmit", "jump", "port", "periodic"]
-        if isinstance(species, Species):
-            sname, sstate = species.name, species.state
-        else:
-            sname, sstate = species, _smoldyn.MolecState.soln
-
-        # TODO:
-        if new_spec:
-            raise NotImplementedError("This feature is not implemented.")
-
-        for which in self.faces:
-            k = _smoldyn.setSurfaceAction(
-                self.surfname,
-                _smoldyn.PanelFace.__members__[which],
-                sname,
-                sstate,
-                _smoldyn.SrfAction.__members__[action],
+        if isinstance(species, str):
+            raise NameError(
+                "This API does not accepts species by their names."
+                " Please pass the objects."
             )
-            assert k == _smoldyn.ErrorCode.ok
+        listSpecies = [species] if isinstance(species, Species) else species
+        for sp in listSpecies:
+            if isinstance(sp, Species):
+                sname, sstate = sp.name, sp.state
+            else:
+                sname, sstate = sp, _smoldyn.MolecState.soln
+
+            # TODO:
+            if new_spec:
+                raise NotImplementedError("This feature is not implemented.")
+
+            for which in self.faces:
+                k = _smoldyn.setSurfaceAction(
+                    self.surfname,
+                    _smoldyn.PanelFace.__members__[which],
+                    sname,
+                    sstate,
+                    _smoldyn.SrfAction.__members__[action],
+                )
+                assert k == _smoldyn.ErrorCode.ok
 
 
 class Surface(object):
@@ -774,6 +866,12 @@ class Surface(object):
             assert k == _smoldyn.ErrorCode.ok
 
 
+class NullSurface(Surface):
+    def __init__(self):
+        self.name = ""
+        self.panels = []
+
+
 class Port(object):
     """Ports are data structures that are used for importing and
     exporting molecules between a Smoldyn simulation and another simulation.  In
@@ -823,7 +921,7 @@ class Boundaries:
 
     low: List[float]
     high: List[float]
-    types: List[str] = field(default_factory=lambda: ["r"])
+    types: Union[str, List[str]] = field(default_factory=lambda: ["r"])
     dim: int = 0
 
     def __post_init__(self):
@@ -834,8 +932,8 @@ class Boundaries:
         _smoldyn.setBoundaries(self.low, self.high)
         __logger__.debug("Getting boundaries", _smoldyn.getBoundaries())
         assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
-        if self.types:
-            k = _smoldyn.setBoundaryType(-1, -1, self.types[0])
+        for _d, _t in zip(range(self.dim), self.types):
+            k = _smoldyn.setBoundaryType(_d, -1, _t)
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
 
 
@@ -1121,11 +1219,11 @@ class Simulation(object):
         method: str,
         iter: int = 20,
         delay: int = 0,
-        bg_color: Color = "white",
+        bg_color: ColorType = "white",
         frame_thickness: int = 2,
-        frame_color: Color = "black",
+        frame_color: ColorType = "black",
         grid_thickness: int = 0,
-        grid_color: Color = "white",
+        grid_color: ColorType = "white",
         text_display: Union[List, str] = "",
     ):
         """Set graphics parameters for this simulation.
@@ -1241,9 +1339,9 @@ class Simulation(object):
             the values. Lights specified this way are automatically enabled
             (turned on).
         """
-        ambient = color2RGBA(ambient) if isinstance(ambient, str) else ambient
-        diffuse = color2RGBA(diffuse) if isinstance(diffuse, str) else diffuse
-        specular = color2RGBA(specular) if isinstance(specular, str) else specular
+        ambient = Color(ambient).rgba
+        diffuse = Color(diffuse).rgba
+        specular = Color(specular).rgba
         k = _smoldyn.setLightParams(index, ambient, diffuse, specular, pos)
         assert k == _smoldyn.ErrorCode.ok
 
@@ -1327,6 +1425,21 @@ class Simulation(object):
 
 
 class HalfReaction(object):
+
+    # Shortcodes for types (fixme: deprecated?)
+    __typedict__ = dict(
+        i="irrev",
+        p="pgem",
+        x="pgemmax",
+        y="pgemmax2",
+        r="ratio",
+        b="unbindrad",
+        q="pgem2",
+        s="ratio2",
+        o="offset",
+        f="fixed",
+    )
+
     def __init__(
         self,
         name: str,
@@ -1414,9 +1527,9 @@ class HalfReaction(object):
 
         Parameters
         ----------
-        type : 
-            Availabele values: 'irrev', 'pgem', 'pgemmax', 'pgemmaxw', 'ratio'
-            , 'unbindrad', 'pgem2', 'pgemmax2', 'ratio2', 'offset', 'fixed'
+        type : 'irrev' ('i'), 'pgem' ('p'), 'pgemmax' ('x')
+            , 'pgemmax2' ('y'), 'ratio' ('r'), 'unbindrad' ('b')
+            , 'pgem2' ('q'), 'ratio2' ('s'), 'offset' ('o'), 'fixed' ('f')
         param : float
             Parameter value. Usually required except for type 'irrev'
         product: str, optional
@@ -1439,6 +1552,7 @@ class HalfReaction(object):
         the parameter value to define the new separation, which should be
         larger than the binding radius.
         """
+        type = self.__typedict__.get(type, type)
         revType = _smoldyn.RevParam.__members__[type]
         if type in ["fixed", "offset"]:
             assert product, "Product is required"
@@ -1491,7 +1605,7 @@ class Reaction(object):
             self.backward = HalfReaction(revname, prds, subs, kb, compartment, surface)
 
 
-def setBounds(low: List[float], high: List[float], types: List[str] = []):
+def setBounds(low: List[float], high: List[float], types: Union[str, List[str]] = []):
     """Define system volume by setting boundaries.
 
     Parameters
