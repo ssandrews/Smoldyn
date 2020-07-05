@@ -12,6 +12,9 @@ nav:
         - 'Getting started': 'user-guide/getting-started.md'
         - 'References': 'user-guide/references.md'
         - 'Acknowledgements': 'user-guide/acknowledgement.md'
+    - 'Python API':
+        - 'User API': 'python-guide/user-api.md'
+        - 'Developer API': 'developer-guide/python-api.md'
     - 'Developer Guide':
         - 'About the codebase': 'developer-guide/about-codebase.md'
     - 'Other documents': 'other/emulate-doc.md'
@@ -24,6 +27,7 @@ markdown_extensions:
     - codehilite
     - admonition
     - attr_list
+    - mkautodoc
     - pymdownx.arithmatex
     - pymdownx.betterem:
         smart_enable: all
@@ -45,6 +49,8 @@ markdown_extensions:
 
 plugins:
     - search
+    - mkapi:
+        src_dirs: [source/python]
 
 extra_javascript:
   - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
