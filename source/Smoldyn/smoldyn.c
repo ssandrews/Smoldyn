@@ -1,9 +1,22 @@
-/* Steven Andrews, started 10/22/2001.
- This is the entry point for the Smoldyn program.
- See documentation called SmoldynUsersManual.pdf and SmoldynCodeDoc.pdf, and the
- Smoldyn website, which is at www.smoldyn.org. Copyright 2003-2016 by Steven
- Andrews.  This work is distributed under the terms of the Gnu Lesser General
- Public License (LGPL). */
+/*! @author Steven Andrews @date 10/22/2001 (started)
+ *
+ * \mainpage Smoldyn's Doxygen Documentation
+ *
+ * Smoldyn is a computer program for cell-scale
+ * biochemical simulations. It simulates each molecule of interest individually
+ * to capture natural stochasticity and to yield nanometer-scale spatial
+ * resolution. It treats other molecules implicitly, enabling it to simulate
+ * hundreds of thousands of molecules over several minutes of real time.
+ * Simulated molecules diffuse, react, are confined by surfaces, and bind to
+ * membranes much as they would in a real biological system.
+ * 
+ * This is a doxygen generated document suitable for developers. Normal users
+ * of this program should refer to <a
+ * href="https://smoldyn.org">https://smoldyn.org</a> or <a
+ * href="https://smoldyn.readthedocs.io/en/latest/">https://smoldyn.readthedocs.io/en/latest/</a>.
+ *
+ * \copyright 2003-2020 by Steven Andrews. Gnu Lesser General Public License (LGPL).
+ */
 
 #include <math.h>
 #include <stdio.h>
@@ -22,19 +35,22 @@
 #endif
 #include "smoldyn.h"
 
-/* ***************************************************************** */
-/* ********************** main() segment *************************** */
-/* ***************************************************************** */
-
-/* main */
+/**
+ * @brief This is the entry point for the Smoldy program.
+ *
+ * @param argc
+ * @param argv
+ *
+ * @return 0 on success.
+ */
 int main(int argc, char** argv)
 {
     int exitCode = 0;
 
     try {
         simptr sim;
-        int    i, er, pflag, wflag, tflag, Vflag, oflag;
-        char   root[STRCHAR], fname[STRCHAR], flags[STRCHAR], *cptr;
+        int i, er, pflag, wflag, tflag, Vflag, oflag;
+        char root[STRCHAR], fname[STRCHAR], flags[STRCHAR], *cptr;
 
         for(i = 0; i < STRCHAR; i++)
             root[i] = fname[i] = flags[i] = '\0';
@@ -108,8 +124,8 @@ int main(int argc, char** argv)
 
         printf("root=%s, fname=%s, flags=%s\n", root, fname, flags);
 #ifdef OPTION_VCELL
-        er = simInitAndLoad(root, fname, &sim, flags,
-            new SimpleValueProviderFactory(), new SimpleMesh());
+        er = simInitAndLoad(
+            root, fname, &sim, flags, new SimpleValueProviderFactory(), new SimpleMesh());
 #else
         er = simInitAndLoad(root, fname, &sim, flags);
 #endif

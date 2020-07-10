@@ -15,7 +15,7 @@ find_package(Sphinx REQUIRED)
 file(GLOB_RECURSE SMOLDYN_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/../source/*.h)
 
 # These are used in Doxygen.in file.
-set(DOXYGEN_INPUT_DIRS ../source/)
+set(DOXYGEN_INPUT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../source/)
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_BINARY_DIR}/doxygen)
 set(DOXYGEN_INDEX_FILE ${DOXYGEN_OUTPUT_DIR}/xml/index.xml)
 
