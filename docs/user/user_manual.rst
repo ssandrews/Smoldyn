@@ -1,6 +1,6 @@
-#####################
-Smoldyn's User Manual
-#####################
+############
+User Manual
+############
 
 *************
 Using Smoldyn
@@ -16,7 +16,7 @@ any molecules that are not of immediate interest are only treated implicitly.
 In the simulation, molecules diffuse, react, are confined by surfaces, and bind
 to membranes, much as they would in a real chemical system.
 
-In Smoldyn, each molecule is represented by a point in 1", 2", or 3-dimensional
+In Smoldyn, each molecule is represented by a point in 1-, 2-, or 3-dimensional
 continuous space. Simulated molecules do not have spatial orientations or
 momenta. They can have volumes if desired, but do not need to. Because of these
 approximations, simulations are typically accurate on spatial scales down to
@@ -26,9 +26,20 @@ than tens of microns, or dynamics that unfold over tens of minutes, simulation
 methods that are more computationally efficient but less accurate are likely to
 be preferable.
 
-The input to Smoldyn is a plain text configuration file. This file specifies
-all of the details of the system, such as the shapes and positions of
-membranes, the initial types and locations of molecules, diffusion
+There are two ways to use Smoldyn simulator. First, as a standalone command
+line program which reads a plain text configuration file, and second, as a
+Python language library or an extension module. The later is added recently and
+covers all features of Smoldyn. Python provides expressive syntax, easy control
+over the simulation environment, and also brings its whole scientific and
+engineering ecosystem to Smoldyn users.
+
+.. tikz::
+   \node[draw] (config) {Configuration file};
+   
+
+In the first mode, the input to Smoldyn is a plain text configuration file.
+This file specifies all of the details of the system, such as the shapes and
+positions of membranes, the initial types and locations of molecules, diffusion
 coefficients, instructions for the graphical output, and so on. Smoldyn reads
 this file, prints out some information about the system so the user can verify
 that the file was interpreted correctly, and then runs the simulation. As the

@@ -6,8 +6,13 @@
 Welcome to Smoldyn's documentation!
 ===================================
 
+.. image:: http://www.smoldyn.org/smoldyn_banner.jpg
+
 .. warning::
-   Please refer to `https://smoldyn.org`_ for official documents. This is a work in progress.
+
+   Please refer to <https://smoldyn.org> for official documents.  It is
+   converted from official documentations and has formatting errors. There are
+   some additions as well which are still a work in progress.
 
 
 .. toctree::

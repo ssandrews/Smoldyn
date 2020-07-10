@@ -1,16 +1,21 @@
 # Configuration file for the Sphinx documentation builder.
 import subprocess
+import sys
 import time
+import os
 
+# RTD doesn't uinderstand cmake. Implement the cmake flow here as well.
 with open('Doxyfile.in') as f:
     txt = f.read()
-
 txt = txt.replace('@DOXYGEN_OUTPUT_DIR@', 'build_doxygen/doxygen')
 txt = txt.replace('@DOXYGEN_INPUT_DIRS@', '..')
 with open('_Doxyfile', 'w') as f:
     f.write(txt)
-time.sleep(0.1)
-subprocess.call("mkdir -p build_doxygen; doxygen _Doxyfile", shell=True)
+
+# builds doxygen on READTHEDOCS
+if os.environ.get('READTHEDOCS', None) == 'True':
+    time.sleep(0.1)
+    subprocess.call("mkdir -p build_doxygen; doxygen _Doxyfile", shell=True)
 
 # -- Project information -----------------------------------------------------
 
@@ -25,13 +30,14 @@ release = "2.63.dev"
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
+# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     "sphinx.ext.imgmath",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinxcontrib.programoutput",
+    "sphinxcontrib.plantuml",
+    "sphinxcontrib.tikz",
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
     "recommonmark",
