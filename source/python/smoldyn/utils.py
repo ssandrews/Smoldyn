@@ -12,8 +12,8 @@ __matplotlib_found__ = False
 try:
     from matplotlib import colors           # type: ignore
     __matplotlib_found__ = True
-except Exception as e:
-    raise e
+except ImportError as e:
+    pass
 
 def load_model(path, args=''):
     _smoldyn.load_model(path, args)

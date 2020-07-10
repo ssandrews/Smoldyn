@@ -4,19 +4,22 @@ sudo: required
 matrix:
   include:
     - os : osx
+      osx_image: xcode12
+    - os : osx
       osx_image: xcode11.3
+    - os : osx
+      osx_image: xcode10.1
     - os: linux
       sudo: required
 
 services:
   - docker
+  - xvfb
 
 branches:
-    only:
-        - master
-        - pybind11
-        - devel
-
+  only:
+    - master
+    - devel
 
 notifications:
   email:
@@ -26,5 +29,6 @@ notifications:
     on_failure: always
 
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then (cd scripts && ./build_wheels_osx.sh); fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then (cd scripts && make) ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then (cd devel && ./build_wheels_osx.sh); fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then (cd devel && make) ; fi
+

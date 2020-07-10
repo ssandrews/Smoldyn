@@ -1,15 +1,8 @@
 # python binding.
 
-if("${CMAKE_VERSION}" VERSION_LESS "3.12")
-    if(NOT PYTHON_EXECUTABLE)
-        find_package(PythonInterp REQUIRED)
-    endif()
-    find_package(PythonLibs REQUIRED)
-else()
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
-    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
-endif()
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
@@ -22,8 +15,7 @@ target_include_directories(_smoldyn PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES 
-    SUFFIX ".so"
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/smoldyn/)
+    LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
 
 add_custom_target(copy_python_tree 
   COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -40,8 +32,13 @@ target_link_libraries(_smoldyn PRIVATE smoldyn_static)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${PY_SMOLDYN_OUTDIR}/setup.py)
 
+set(WHEEL_PYTHON_TAG py${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR})
+set(WHEEL_ABI_TAG cp${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR})
+set(WHEEL_PLATFORM_TAG cp${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR})
 add_custom_target(wheel DEPENDS _smoldyn 
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel -d ${CMAKE_BINARY_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel 
+	--python-tag ${WHEEL_PYTHON_TAG}
+        -d ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "Generating wheel in ${CMAKE_BINARY_DIR}"
     VERBATIM)

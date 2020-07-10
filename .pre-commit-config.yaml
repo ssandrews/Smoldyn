@@ -3,6 +3,7 @@ repos:
   rev: v3.1.0  # Use the ref you want to point at
   hooks:
     - id: check-ast
+      exclude: ^docs/
     - id: check-case-conflict
     - id: check-merge-conflict
 
@@ -12,4 +13,4 @@ repos:
     python: python3.7
   hooks:
     - id: black
-
+      exclude: ^docs/

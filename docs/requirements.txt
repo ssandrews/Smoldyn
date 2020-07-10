@@ -1,6 +1,10 @@
-mkdocs
-mkdocs-macros-plugin
-mkdocs-material
-mkdocs-material-extensions
-pymdown-extensions
-mkapi
+sphinx==3.1.2
+--pre smoldyn
+breathe
+sphinx_rtd_theme
+commonmark
+recommonmark
+sphinxcontrib-programoutput
+sphinxcontrib-napoleon
+sphinxcontrib-mermaid
+sphinx-autodoc-typehints

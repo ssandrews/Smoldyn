@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# For homebrew.
-
 set -e 
+set -x
 
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
@@ -39,15 +38,12 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     ls -ltr
     cmake ../.. \
         -DSMOLDYN_VERSION:STRING=${SMOLDYN_VERSION} \
-        -DPYTHON_EXECUTABLE=$PYTHON
-
+        -DPython3_EXECUTABLE=$PYTHON
     make -j4 
-    make pytest
-    # cmake generates whl file in the wheel folder.
-    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v wheel/*.whl
-
-    ls $WHEELHOUSE/smoldyn*-py*.whl
-
+    make wheel
+    ctest --output-on-failure
+    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v *.whl
+    ls $WHEELHOUSE/smoldyn*.whl
     # create a virtualenv and test this.
     VENV=/tmp/venv
     rm -rf $VENV
@@ -55,9 +51,8 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         $PYTHON -m venv $VENV
         source $VENV/bin/activate
         python --version
-        python -m pip install $WHEELHOUSE/smoldyn*-py*.whl
+        python -m pip install $WHEELHOUSE/smoldyn*.whl
         python -c 'import smoldyn; print(smoldyn.__version__ )'
-        python -m smoldyn $SCRIPT_DIR/../examples/S4_molecules/mollist.txt
         deactivate
     )
 )

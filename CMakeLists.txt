@@ -7,11 +7,11 @@
 ########## Basic setup ##########
 
 project(smoldyn)
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 
 # CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
-   set(SMOLDYN_VERSION "2.62.dev")
+   set(SMOLDYN_VERSION "2.63.dev0")
 endif()
 
 ######### Targets to build ###########

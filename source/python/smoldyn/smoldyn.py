@@ -9,6 +9,8 @@ __maintainer__ = "Dilawar Singh"
 __email__ = "dilawars@ncbs.res.in"
 
 __all__ = [
+    "__version__",
+    "version",
     "Species",
     "Panel",
     "Triangle",
@@ -40,6 +42,10 @@ from smoldyn.config import __logger__
 from smoldyn.utils import color2RGBA
 from typing import Union, Tuple, List, Dict
 from smoldyn import _smoldyn
+
+# Smoldyn version
+__version__ = _smoldyn.__version__
+version = lambda: __version__
 
 # Color type.
 # Either a string such as 'black', 'red', 'orange' or a tuple of 4 values such
