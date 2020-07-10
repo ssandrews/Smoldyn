@@ -46,11 +46,17 @@ extern "C" {
 
 /******************************* Miscellaneous ********************************/
 
+    /**
+     * @brief Returns version of smoldyn.
+     *
+     * @return 
+     */
 double smolGetVersion(void);
 
 /*********************************** Errors ***********************************/
 
 void smolSetLogging(FILE *logfile, void (*logFunction)(simptr, int, const char *, ...));
+
 void smolSetThrowing(int corethreshold, int libthreshold);
 void smolSetError(
     const char *errorfunction, enum ErrorCode errorcode, const char *errorstring);
