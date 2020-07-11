@@ -78,7 +78,7 @@ Macintosh
    correctly.
 5. Test Smoldyn by typing ``smoldyn examples/S1\_intro/bounce3.txt``.
 
-.. warn:: If installation failed
+.. warning:: If installation failed
 
    Type `smoldyn "V`. This should run Smoldyn just enough to print out the
    version number. If this works, then you have Smoldyn and it runs, but
@@ -158,7 +158,7 @@ Windows
    Smoldyn should work just as well as if it was installed, but you will
    need to be in this directory to run it.
 
-.. warn:: If installation failed
+.. note:: If installation failed
 
    If you get errors due to missing dll files, look in the dll directory in
    the Smoldyn download. If the needed dll file is in there, then simply copy
@@ -238,19 +238,20 @@ Test Smoldyn
 ------------
 
 -  Type ``smoldyn -V`` to just print out the Smoldyn version number.  If it
-  doesn’t work, then the most likely problem is that your system is not set
-  up to run programs that are in your /usr/local/bin directory, which is
-  where Smoldyn is installed by default. To fix this temporarily, type
-  ``export PATH=$PATH:/usr/local/bin``; to fix it permanently, although it
-  will only take effect after you open a new terminal window, use emacs or
-  some other editor to edit the file -------------------------------/.profile and add the line ``export
-  PATH=$PATH:/usr/local/bin``.
+   doesn’t work, then the most likely problem is that your system is not set up
+   to run programs that are in your /usr/local/bin directory, which is where
+   Smoldyn is installed by default. To fix this temporarily, type ``export
+   PATH=$PATH:/usr/local/bin``; to fix it permanently, although it will only
+   take effect after you open a new terminal window, use emacs or some other
+   editor to edit the file ``~/.profile`` and add the line ``export
+   PATH=$PATH:/usr/local/bin``.
+
 -  Type ``smoldyn examples/S8\_reactions/lotvolt/lotvolt.txt`` to run a
-  Lotka-Volterra simulation. If a graphics window doesn’t appear, then the
-  OpenGL linking somehow failed. Otherwise, press ‘T’ (upper-case) at some
-  point during the simulation to save a tiff-format image of the graphical
-  display. If it works, it will be saved to the current directory as
-  OpenGL001.tif; if not, then the libtiff linking somehow failed.
+   Lotka-Volterra simulation. If a graphics window doesn’t appear, then the
+   OpenGL linking somehow failed. Otherwise, press ‘T’ (upper-case) at some
+   point during the simulation to save a tiff-format image of the graphical
+   display. If it works, it will be saved to the current directory as
+   OpenGL001.tif; if not, then the libtiff linking somehow failed.
 
 Compiling options
 -----------------
@@ -1013,40 +1014,38 @@ Space and Time
 Space
 -----
 
-Smoldyn simulations can be run in a system that is 1, 2, or
-3-dimensional. These can be useful for accurate simulations of systems
-that naturally have these dimensions. For example, a 2-dimensional
-system can be useful for investigating diffusional dynamics and
-interactions of transmembrane proteins. Smoldyn does not permit 4 or
-more dimensional systems because it is not clear that they would be
-useful. Define the system dimensionality with the dim statement, which
-needs to be one of the first statements in a configuration file.
+Smoldyn simulations can be run in a system that is 1, 2, or 3-dimensional.
+These can be useful for accurate simulations of systems that naturally have
+these dimensions. For example, a 2-dimensional system can be useful for
+investigating diffusional dynamics and interactions of transmembrane proteins.
+Smoldyn does not permit 4 or more dimensional systems because it is not clear
+that they would be useful. Define the system dimensionality with the dim
+statement, which needs to be one of the first statements in a configuration
+file.
 
-Along with the system dimensionality, it is necessary to specify the
-outermost boundaries of the system. In most cases, it is best to design
-the simulation so that all molecules stay within the system boundaries,
-although this is not required. All simulation processes are performed
-outside of the system boundaries exactly as they are within the
-boundaries. Boundaries are used by Smoldyn to allow efficient simulation
-and for scaling the graphical display. They are typically defined with
-the boundaries statement, as seen in the example
-``S1_intro/bounce3.txt``. Boundaries may be reflective, transparent,
-absorbing, or periodic. Reflective means that all molecules that diffuse
-into a boundary will be reflected back into the system. Transparent,
-which is the default type, means that molecules just diffuse through the
-boundary as though it weren’t there. With absorbing boundaries, any
-molecule that touches a boundary is immediately removed from the system.
-Finally, with periodic boundaries, which are also called wrap-around or
-toroidal boundaries, any molecule that diffuses off of one side of space
-is instantly moved to the opposite edge of space; these are useful for
-simulating a small portion of a large system while avoiding edge
-effects.
+Along with the system dimensionality, it is necessary to specify the outermost
+boundaries of the system. In most cases, it is best to design the simulation so
+that all molecules stay within the system boundaries, although this is not
+required. All simulation processes are performed outside of the system
+boundaries exactly as they are within the boundaries. Boundaries are used by
+Smoldyn to allow efficient simulation and for scaling the graphical display.
+They are typically defined with the boundaries statement, as seen in the
+example ``S1_intro/bounce3.txt``. Boundaries may be reflective, transparent,
+absorbing, or periodic. Reflective means that all molecules that diffuse into a
+boundary will be reflected back into the system. Transparent, which is the
+default type, means that molecules just diffuse through the boundary as though
+it weren’t there. With absorbing boundaries, any molecule that touches a
+boundary is immediately removed from the system.  Finally, with periodic
+boundaries, which are also called wrap-around or toroidal boundaries, any
+molecule that diffuses off of one side of space is instantly moved to the
+opposite edge of space; these are useful for simulating a small portion of a
+large system while avoiding edge effects.
 
-On rare occasion, it might be desirable to have asymmetric system
-boundary types. For example, one side of a system might be reflective
-while the other is absorbing. To accomplish this, use the low_wall and
-high_wall statements instead of a boundary statement. This is
-illustrated in the example file ``S3_space/bounds1.txt``.
+On rare occasion, it might be desirable to have asymmetric system boundary
+types. For example, one side of a system might be reflective while the other is
+absorbing. To accomplish this, use the low_wall and high_wall statements
+instead of a boundary statement. This is illustrated in the example file
+``S3_space/bounds1.txt``.
 
 These boundaries of the entire system are different from surfaces, which
 are described below. However, they have enough in common that Smoldyn
@@ -4767,30 +4766,29 @@ The following table summarizes the statements about lattices.
 .. |image22| image:: ../media/image53.png
 .. |image23| image:: ../media/image54.png
 .. |image24| image:: ../media/image55.png
-.. |image25| image:: media/image56.png
-.. |image26| image:: media/image57.png
+.. |image25| image:: ../media/image56.png
+.. |image26| image:: ../media/image57.png
 .. |image27| image:: ../media/image58.png
 .. |image28| image:: ../media/image59.png
-.. |image29| image:: media/image62.png
-.. |image30| image:: media/image63.png
-Prior to my starting Smoldyn, I attended an M-Cell workshop taught by
-Joel Stiles and Tom Bartoll, where I learned several of the concepts
-that became incorporated in the program. I started writing Smoldyn while
-I was a post-doc in Dennis Bray’s laboratory at the University of
-Cambridge and funded by NIGMS grant GM64713. I made further additions
-during my next post-doc in Adam Arkin’s laboratory at the Lawrence
-Berkeley National Laboratory, where I was funded by the Genomes to Life
-Project of the US Department of Energy and an NSF post-doctoral
-fellowship in biological informatics. Next, I made a lot of progress
-during my stay as a visiting scientist in Upi Bhalla’s lab at the
-National Centre for Biological Research, in Bangalore, where I was
-funded by the Computer Research Laboratories (Pune, India). I made
-further additions as part of my work as a research fellow at the
-Molecular Sciences Institute, where I was funded by grants from the NIH
-and the MITRE corporation that were awarded to Roger Brent. Yet more
-additions were made during work as a staff scientist in Roger Brent’s
-laboratory at the Fred Hutchinson Cancer Research Center and funded by
-MITRE contracts and NIH grants to Roger Brent.
+.. |image29| image:: ../media/image62.png
+.. |image30| image:: ../media/image63.png
+
+Prior to my starting Smoldyn, I attended an M-Cell workshop taught by Joel
+Stiles and Tom Bartoll, where I learned several of the concepts that became
+incorporated in the program. I started writing Smoldyn while I was a post-doc
+in Dennis Bray’s laboratory at the University of Cambridge and funded by NIGMS
+grant GM64713. I made further additions during my next post-doc in Adam Arkin’s
+laboratory at the Lawrence Berkeley National Laboratory, where I was funded by
+the Genomes to Life Project of the US Department of Energy and an NSF
+post-doctoral fellowship in biological informatics. Next, I made a lot of
+progress during my stay as a visiting scientist in Upi Bhalla’s lab at the
+National Centre for Biological Research, in Bangalore, where I was funded by
+the Computer Research Laboratories (Pune, India). I made further additions as
+part of my work as a research fellow at the Molecular Sciences Institute, where
+I was funded by grants from the NIH and the MITRE corporation that were awarded
+to Roger Brent. Yet more additions were made during work as a staff scientist
+in Roger Brent’s laboratory at the Fred Hutchinson Cancer Research Center and
+funded by MITRE contracts and NIH grants to Roger Brent.
 
 
 Copyright and Citation
@@ -4803,27 +4801,27 @@ appropriate. These papers are:
 Description of the Smoldyn program
 ----------------------------------
 
-• Andrews, Steven S., Nathan J. Addy, Roger Brent, and Adam P. Arkin
-``Detailed simulations of cell biology with Smoldyn 2.1`` *PLoS Comp.
-Biol.* 6:e1000705, 2010.
+- Andrews, Steven S., Nathan J. Addy, Roger Brent, and Adam P. Arkin,
+  ``Detailed simulations of cell biology with Smoldyn 2.1`` *PLoS Comp.  Biol.*
+  6:e1000705, 2010.
 
 How to use Smoldyn
+------------------
 
-• Andrews, Steven S. ``Smoldyn User’s Manual`` http://www.smoldyn.org.
+- Andrews, Steven S. ``Smoldyn User’s Manual`` http://www.smoldyn.org.
 
-• Andrews, Steven S.
-``Spatial and stochastic cellular modeling with the Smoldyn simulator``
-*Methods for Molecular Biology*, 804:519-542, 2012.
+- Andrews, Steven S. ``Spatial and stochastic cellular modeling with the
+  Smoldyn simulator`` *Methods for Molecular Biology*, 804:519-542, 2012.
 
 Description of Smoldyn algorithms
+----------------------------------
 
-• Andrews, Steven S. and Dennis Bray
-``Stochastic simulation of chemical reactions with spatial resolution and single molecule detail``
-*Phys. Biol.* 1:137-151, 2004.
+- Andrews, Steven S. and Dennis Bray ``Stochastic simulation of chemical
+  reactions with spatial resolution and single molecule detail`` *Phys. Biol.*
+  1:137-151, 2004.
 
-• Andrews, Steven S.
-``Accurate particle-based simulation of adsorption, desorption, and partial transmission``
-*Phys. Biol.* 6:046015, 2009.
+- Andrews, Steven S. ``Accurate particle-based simulation of adsorption,
+  desorption, and partial transmission`` *Phys. Biol.* 6:046015, 2009.
 
 Nearly all of the core Smoldyn program was written by myself (Steve
 Andrews). Exceptions include the following. (1) Smoldyn includes few
@@ -7817,23 +7815,21 @@ issued).
 
    expandsystem *expandx expandy expandz*
 
-Expand, or contract, everything in system, which includes molecule
-locations and surfaces, about the center of the system. Expands by
-*expandx* along the x-coordinate, by *expandy* along the y-coordinate,
-and by *expandz* along the z-coordinate. Enter as many numbers as there
-are dimensions. Each number should be 1 for no change, a number larger
-than 1 for expansion and a number smaller than 1 for contraction.
-Negative numbers perform system inversion. This command can be used, for
-example, to mimic lengthwise or diameter growth of a cell. *Warning*:
-isotropic expansion or contraction, in which all three expansion values
-are equal, generally works well, with no unintentional transfer of
-molecules across surfaces. However, anisotropic expansion or contraction
-would normally cause some of Smoldyn’s panel shapes to become distorted,
-including spheres, hemispheres, cylinders, and disks. Smoldyn does not
-support this, so these panels are expanded but not distorted. In the
-process, molecules often cross the surfaces unintentionally and need to
-be dealt with separately (e.g. killed off). See the expandsystem.txt
-example file.
+Expand, or contract, everything in system, which includes molecule locations
+and surfaces, about the center of the system. Expands by ``expandx`` along the
+x-coordinate, by ``expandy`` along the y-coordinate, and by ``expandz`` along
+the z-coordinate. Enter as many numbers as there are dimensions. Each number
+should be 1 for no change, a number larger than 1 for expansion and a number
+smaller than 1 for contraction.  Negative numbers perform system inversion.
+This command can be used, for example, to mimic lengthwise or diameter growth
+of a cell. *Warning*: isotropic expansion or contraction, in which all three
+expansion values are equal, generally works well, with no unintentional
+transfer of molecules across surfaces. However, anisotropic expansion or
+contraction would normally cause some of Smoldyn’s panel shapes to become
+distorted, including spheres, hemispheres, cylinders, and disks. Smoldyn does
+not support this, so these panels are expanded but not distorted. In the
+process, molecules often cross the surfaces unintentionally and need to be
+dealt with separately (e.g. killed off). See the expandsystem.txt example file.
 
 .. code::
 
@@ -7841,40 +7837,36 @@ example file.
    translatecmpt *compartment code ∆x ∆y*
    translatecmpt *compartment code ∆x ∆y ∆z*
 
-Translate the compartment called *compartment* by the shift value given
-in *∆x*, *∆y*, and *∆z* (with fewer values for lower dimensions). The
-*code* value describes which attributes of the compartment should be
-moved; add the codes for the individual attributes for the final code
-value. The individual codes are: 1 for translating the compartment
-surfaces, 2 for translating the molecules that are bound to those
-surfaces, 4 for translating the molecules that are within the
-compartment, and 8 for shifting the molecules that are outside of the
-compartment but that get bumped into by the moving surfaces. Thus, use a
-code of 15 to get all of these behaviors at once. With code of 4, all
-molecules within the compartment are translated, regardless of their
-surface actions. With code of 8, all molecules that a compartment
-surface would bump into get translated, unless their surface action is
-``transmit``. If a molecule gets ``squeezed``, meaning that it gets
-bumped into by the moving compartment, but then gets bumped back due to
-some other surface, then that molecule will end up inside of the
-compartment.
+Translate the compartment called *compartment* by the shift value given in
+``∆x``, ``∆y``, and ``∆z`` (with fewer values for lower dimensions). The *code*
+value describes which attributes of the compartment should be moved; add the
+codes for the individual attributes for the final code value. The individual
+codes are: 1 for translating the compartment surfaces, 2 for translating the
+molecules that are bound to those surfaces, 4 for translating the molecules
+that are within the compartment, and 8 for shifting the molecules that are
+outside of the compartment but that get bumped into by the moving surfaces.
+Thus, use a code of 15 to get all of these behaviors at once. With code of 4,
+all molecules within the compartment are translated, regardless of their
+surface actions. With code of 8, all molecules that a compartment surface would
+bump into get translated, unless their surface action is ``transmit``. If a
+molecule gets ``squeezed``, meaning that it gets bumped into by the moving
+compartment, but then gets bumped back due to some other surface, then that
+molecule will end up inside of the compartment.
 
 .. code::
 
    diffusecmpt *compartment code stddev<sub>x</sub>* [cmpt_bound radius nsample]
    diffusecmpt *compartment code stddev<sub>x</sub> stddev<sub>y</sub>* [cmpt_bound radius nsample]
-
    diffusecmpt *compartment code stddev<sub>x</sub> stddev<sub>y</sub> stddev<sub>z</sub>* [cmpt_bound radius nsample]
 
-This is similar to translatecmpt, except that this translates the
-compartment by a Gaussian distributed random amount that has standard
-deviation on each axis of *stddevx*, *stddevy*, and *stddevz*. Also,
-this has three optional parameters: *cmpt_bound*, *radius*, and
-*nsample*. If they are entered, then Smoldyn keeps the diffusing
-compartment within the bounding compartment called *cmpt_bound*
-(assuming it was inside initially). It does this by computing *nsample*
-test points that are on a spherical shell of radius *radius* around each
-of the compartment’s interior-defining points, and determines if any of
-these test points are not within the bounding compartment. If a test
-point is outside, then the diffusing compartment is moved back away from
-the edge of the bounding compartment.
+This is similar to ``translatecmpt``, except that this translates the
+compartment by a Gaussian distributed random amount that has standard deviation
+on each axis of *stddevx*, *stddevy*, and *stddevz*. Also, this has three
+optional parameters: *cmpt_bound*, *radius*, and *nsample*. If they are
+entered, then Smoldyn keeps the diffusing compartment within the bounding
+compartment called *cmpt_bound* (assuming it was inside initially). It does
+this by computing *nsample* test points that are on a spherical shell of radius
+*radius* around each of the compartment’s interior-defining points, and
+determines if any of these test points are not within the bounding compartment.
+If a test point is outside, then the diffusing compartment is moved back away
+from the edge of the bounding compartment.

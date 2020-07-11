@@ -1,8 +1,8 @@
-Programmer’s introduction
-=========================
+Programmer's introduction
+***************************
 
 What is Smoldyn?
-----------------
+================
 
 Smoldyn is a Brownian dynamics simulator. It represents space as a 1-,
 2-, or 3-dimensional continuum, as opposed to a lattice, and it steps
@@ -30,7 +30,7 @@ code, it is helpful to carefully define what Smoldyn is, and what it
 isn’t.
 
 Smoldyn design philosophy
--------------------------
+=========================
 
 Central to Smoldyn’s design philosophy is the concept of two distinct
 levels of approximation between physical reality and numerical
@@ -96,10 +96,9 @@ results that can approach exactness is important because it enables
 modelers to understand and quantify their simulation errors.
 
 Smoldyn code and build system
-=============================
 
 github
-------
+======
 
 As of version 2.57, Smoldyn’s official code respository is github at
 ssandrews/Smoldyn_Official (github has several other versions of Smoldyn
@@ -107,12 +106,12 @@ as well). I am still new to github, so there are many features there
 that I don’t understand yet.
 
 Code merging
-------------
+============
 
 Here are some options for merging code.
 
 Minimalist text based merging
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 ``mydir="../../../gccCode/Library"``
    | 
@@ -128,7 +127,7 @@ Minimalist text based merging
    | finds all lines of Smoldyn source code that call Geo_Sphere_Normal.
 
 GUI applications
-~~~~~~~~~~~~~~~~
+----------------
 
 XCode offers FileMerge.app, which is at
 /Developer/Applications/Utilities/FileMerge.app. It’s very easy to use.
@@ -137,7 +136,7 @@ Alternatively, Eclipse, at `www.eclipse.org <www.eclipse.org>`__ works
 well.
 
 Source code dependencies
-------------------------
+========================
 
 Code dependencies are shown below in a tree structure, such that the
 each file depends on the files that are indented below it. Note that the
@@ -205,7 +204,7 @@ did work when I copied the “boost" subdirectory into the GPU code
 directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
 
 Building with CMake (versions 2.27 and higher)
-----------------------------------------------
+==============================================
 
 Smoldyn built using the GNU Autoconf, Automake, and Libtool tools
 through version 2.26. These GNU tools are remarkably arcane so I
@@ -294,10 +293,10 @@ Following are some helpful build options:
 +--------------------------+-------------+--------------------------+
 
 Building Windows versions
--------------------------
+=========================
 
 Cross-compiling with MinGW
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 Smoldyn was cross-compiled for Windows from Mac using MinGW up to
 version 2.58, although it didn’t work well for the last several of those
@@ -367,7 +366,7 @@ loaded: /opt/local/lib/libisl.19.dylib; Referenced from:
 found”, even for Hello World. I gave up.
 
 Building Windows version on a Windows computer with MinGW
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------------
 
 As of version 2.59, I am building Windows versions on a Windows computer
 with MinGW. I haven’t figured out CMake there yet, so I copy the
@@ -378,7 +377,7 @@ wrl2smol in the Windows package (they only change very rarely, so the
 old ones are also the current ones).
 
 Unit and regression testing
----------------------------
+===========================
 
 Smoldyn does not include unit tests in their purest form. Instead, I
 tested Smoldyn’s algorithms, both for qualitative and quantitative
@@ -412,7 +411,7 @@ output molecule positions. Finally, list the unit test name in the
 Python script.
 
 Python bindings
----------------
+===============
 
 There are a lot of additions for building with the Python bindings (all
 added by Dilawar Singh). Following is the list of the CMake variables,
@@ -503,7 +502,6 @@ and python. The former is just downloaded from github, described above.
 The latter is Dilawar’s work.
 
 Files, macros, variables, etc.
-==============================
 
 The Smoldyn code is separated into several sets of files. (1) Library
 files, such as math2.c, are general-purpose C library files, nearly all
@@ -526,7 +524,7 @@ and function declarations. This header and the core Smoldyn files are
 documented here and in part I of the documentation.
 
 Smoldyn source files
---------------------
+====================
 
 ============== =============================================
 file           function
@@ -546,7 +544,7 @@ smolwall.c     walls
 ============== =============================================
 
 Constants and global variables
-------------------------------
+==============================
 
 smoldyn.h
    | 
@@ -584,7 +582,7 @@ smoldyn.c
      between functions.
 
 Macros
-------
+======
 
 ``#define CHECK(A) if(!(A)) goto failure; else (void)0``
    | 
@@ -609,7 +607,7 @@ Macros
      error reporting.
 
 Local variables
----------------
+===============
 
 It has proven useful to use consistent names for local variables for
 code readability. In places, there are exceptions, but the following
@@ -875,7 +873,6 @@ also quite out of date.
 +-----------------+---------------------+----------------------------+
 
 Structures and functions
-========================
 
 Smoldyn is written in C, with a C style. The proper maintenance of
 structures, which are described below, is a central aspect of the
@@ -915,7 +912,7 @@ they are listed in) are not supposed to write to objects in other
 categories, although some exceptions may exist.
 
 Header files
-------------
+============
 
 Smoldyn has several header files. They are: (*i*) smoldyn.h, which lists
 all of the structure declarations, (*ii*) smoldynfuncs.h, which lists
@@ -925,7 +922,7 @@ smoldyn_config.h, which is automatically generated during the
 configuration process and which lists the compilation configure options.
 
 Molecules (functions in smolmolec.c)
-------------------------------------
+====================================
 
 Each individual molecule is stored with a ``moleculestruct`` structure,
 pointed to by a ``moleculeptr``. This contains information about the
@@ -1210,7 +1207,7 @@ smaller indices from those that were created in the last time step,
 called the reborn molecules, which have higher indices.
 
 enumerated type functions
--------------------------
+--------------------------
 
 ``enum MolecState molstring2ms(char *string);``
    | 
@@ -1237,11 +1234,12 @@ enumerated type functions
      type ``mlt``. The string needs to be pre-allocaed; it is returned
      to allow function nesting.
 
+
 low level utilities
 -------------------
 
 ``char *molserno2string(unsigned long long serno,char *string);``
-   | 
+   |
    | Writes the molecule serial number to a pre-allocated string,
      returning the pointer to that string. If the serial number is not a
      concatenated number, then just writes that number to the string. If
@@ -1533,6 +1531,8 @@ low level utilities
    touched.
 
 set structure values
+---------------------
+
 ``int molssetgausstable(simptr sim,int size);``
    | 
    | Sets the size of the Gaussian look-up table to ``size`` and also
@@ -1688,6 +1688,8 @@ set structure values
      ``i1`` and/or ``i2`` as 0 to not include it in the sum.
 
 memory management
+------------------
+
 ``moleculeptr molalloc(int dim);``
    | 
    | ``molalloc`` allocates and initiallizes a new ``moleculestruct``.
@@ -1793,6 +1795,8 @@ memory management
      molecules in all its lists.
 
 data structure output
+---------------------
+
 ``void molssoutput(simptr sim);``
    | 
    | ``molssoutput`` prints all the parameters in a molecule
@@ -1822,6 +1826,8 @@ data structure output
      warnings in ``warnptr``.
 
 structure setup
+----------------
+
 ``int molenablemols(simptr sim,int maxspecies);``
    | 
    | Enables molecules. This function can be called multiple times.
@@ -1929,6 +1935,8 @@ structure setup
      success, or 1 for insufficient memory.
 
 adding and removing molecules
+-----------------------------
+
 ``void molkill(simptr sim,moleculeptr mptr,int ll,int m);``
    | 
    | Kills a molecule from one of the live lists. ``mptr`` is a pointer
@@ -2002,6 +2010,8 @@ adding and removing molecules
      found, or 3 if there aren’t enough available molecules.
 
 core simulation functions
+--------------------------
+
 ``int molsort(simptr sim,int onlydead2live);``
    | 
    | Sorts molecules between live and dead lists, and between live
@@ -2070,7 +2080,7 @@ core simulation functions
      this function).
 
 Walls (functions in smolwall.c)
--------------------------------
+===============================
 
 The simulation volume is defined by its bounding walls. If no other
 surfaces are defined, these walls can be reflecting, periodic,
@@ -2119,6 +2129,8 @@ space, and are not configured well to act as membranes. Wall behaviors
 are completely ignored if any membranes are declared.
 
 low level utilities
+--------------------
+
 ``void systemrandpos(simptr sim,double *pos);``
    | 
    | Returns a random point within the system volume, chosen with a
@@ -2163,6 +2175,8 @@ low level utilities
      from ``pos1`` to ``pos2``, while accounting for wrapping.
 
 memory management
+------------------
+
 ``wallptr wallalloc(void);``
    | 
    | ``wallalloc`` allocates and initializes a new wall. The pointer to
@@ -2184,6 +2198,8 @@ memory management
      walls.
 
 data structure output
+----------------------
+
 ``void walloutput(simptr sim);``
    | 
    | ``walloutput`` prints the wall structure information, including
@@ -2204,6 +2220,8 @@ data structure output
      number of warnings in ``warnptr``.
 
 structure setup
+----------------
+
 ``int walladd(simptr sim,int d,int highside,double pos,char type);``
    | 
    | Adds a wall to the system. If no walls have been added yet, this
@@ -2224,6 +2242,8 @@ structure setup
      and/or system sides.
 
 core simulation functions
+--------------------------
+
 ``void checkwalls(simptr sim,int ll,int reborn,boxptr bptr);``
    | 
    | ``checkwalls`` does the reflection, wrap-around, or absorption of
@@ -2238,7 +2258,7 @@ core simulation functions
      otherwise only those in box ``bptr`` are checked.
 
 Reactions (functions in smolrxn.c)
-----------------------------------
+==================================
 
 Reactions were overhauled for Smoldyn version 1.82, so the following
 text describes the current version. Reactions are stored with several
@@ -2247,7 +2267,7 @@ structures. There is a reaction superstructure for each reaction order
 separate structure for each reaction.
 
 enumerated types
-~~~~~~~~~~~~~~~~
+----------------
 
 Following are the enumerated types and the structures.
 
@@ -2267,7 +2287,7 @@ configuration file. The enumerated type ``RevParam`` lists the possible
 “reversible parameter types" that are allowed.
 
 reaction structure
-~~~~~~~~~~~~~~~~~~
+------------------
 
 ::
 
@@ -2401,7 +2421,7 @@ is not stored, but instead the cumulative probability for the events is
 stored. Both methods are accurate.
 
 reaction superstructure
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 ::
 
@@ -2454,7 +2474,7 @@ or molecule list combinations, need to be checked to find reactions of
 this order.
 
 packed species identities
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 Several of the structure elements use packed values, which can be
 performed with ``rxnpackident`` and similar functions. Alternatively,
@@ -2472,9 +2492,11 @@ See the Wildcards section of the Code Design section for an explanation
 of how reactions are set up and expanded.
 
 reaction functions
-~~~~~~~~~~~~~~~~~~
+------------------
 
 enumerated types
+^^^^^^^^^^^^^^^^
+
 ``enum RevParam rxnstring2rp(char *string);``
    | 
    | Converts string to enumerated ``RevParam`` type. This reads either
@@ -2500,6 +2522,8 @@ enumerated types
      well as ``SRnone``, get returned as “none”.
 
 low level utilities
+^^^^^^^^^^^^^^^^^^^^
+
 ``int``
    | ``readrxnname(simptr sim,const char *rname,int *orderptr,rxnptr *rxnpt,listptrv *vlistptr,int rxntype);``
    | Using a reaction name in ``rname``, this looks for it in one of
@@ -2618,6 +2642,8 @@ low level utilities
      descriptions for ``rxnstring2sernocode`` and ``molfindserno``.
 
 memory management
+^^^^^^^^^^^^^^^^^
+
 ``rxnptr rxnalloc(int order);``
    | 
    | Allocates and initializes a reaction structure of order ``order``.
@@ -2656,6 +2682,8 @@ memory management
      the order of the superstructure where the failure occurred.
 
 data structure output
+^^^^^^^^^^^^^^^^^^^^^^
+
 ``void rxnoutput(simptr sim,int order);``
    | 
    | Displays the contents of a reaction superstructure for order
@@ -2678,6 +2706,8 @@ data structure output
      number of warnings in ``warnptr``.
 
 parameter calculations
+^^^^^^^^^^^^^^^^^^^^^^^
+
 ``int rxnsetrate(simptr sim,int order,int r,char *erstr);``
    | 
    | Sets the internal reaction rate parameters for reaction ``r`` of
@@ -2920,6 +2950,8 @@ parameter calculations
      element.
 
 structure set up
+^^^^^^^^^^^^^^^^^
+
 ``void rxnsetcondition(simptr sim,int order,enum StructCond cond,int upgrade);``
    | 
    | Sets the reaction superstructure condition, for order ``order``, to
@@ -3230,6 +3262,8 @@ structure set up
      start-up or afterwards.
 
 reaction parsing function
+--------------------------
+
 ``int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr);``
    | 
    | Parses reaction statement in configuration file. This code was in
@@ -3238,6 +3272,8 @@ reaction parsing function
      function. It’s only called by ``simreadstring``.
 
 core simulation functions
+-------------------------
+
 ``int``
    | ``doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,int m1,int ll2,int m2,double *pos,panelptr rxnpnl);``
    | Executes a reaction that has already been determined to have
@@ -3345,7 +3381,7 @@ core simulation functions
      success or 1 if not enough molecules were allocated initially.
 
 Rules (functions in smolrule.c)
--------------------------------
+===============================
 
 Rules were part of the reaction superstructure through version 2.46 but
 were then moved to their own superstructure in version 2.47. As with
@@ -3361,10 +3397,8 @@ Reaction rules are typically only useful in combination with wildcard
 characters. See the Wildcards section of the Code Design chapter for the
 definitive description of the reaction rules.
 
-.. _enumerated-types-1:
-
 enumerated types
-~~~~~~~~~~~~~~~~
+----------------
 
 The only enumerated type in the rules definitions is the ``RuleType``:
 
@@ -3379,7 +3413,7 @@ specify a certain type of definition, which may be to create reactions,
 set diffusion coefficients, etc.
 
 rule structure
-~~~~~~~~~~~~~~
+--------------
 
 ::
 
@@ -3461,7 +3495,7 @@ data structure for different types of rules.
 +----------------+----------------+----------------+--------------+
 
 rule superstructure
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 ::
 
@@ -3488,9 +3522,11 @@ stored here and referred to when updating is required. The
 on-the-fly rule generation is desired.
 
 rule functions
-~~~~~~~~~~~~~~
+--------------
 
 enumerated types
+^^^^^^^^^^^^^^^^^
+
 ``enum RuleType rulestring2rt(const char *string);``
    | 
    | Converts string to enumerated ``RuleType`` type. This reads full
@@ -3503,6 +3539,8 @@ enumerated types
      string is returned to simplify function cascading.
 
 memory management
+^^^^^^^^^^^^^^^^^^
+
 ``ruleptr rulealloc();``
    | 
    | Allocates a new rule structure. All pointers are initiallized to
@@ -3530,6 +3568,8 @@ memory management
    | Frees a rule superstructure, including all of its contents.
 
 data structure output
+^^^^^^^^^^^^^^^^^^^^^^
+
 ``void ruleoutput(simptr sim);``
    | 
    | Outputs information about the rules, including the rule
@@ -3546,6 +3586,8 @@ data structure output
      are no checks at all here yet.
 
 structure set up
+^^^^^^^^^^^^^^^^
+
 ``int``
    | ``RuleAddRule(simptr sim,enum RuleType type,const char *rname,const char *pattern,const enum MolecState *rctstate,const enum MolecState *prdstate,double rate,const int *detailsi,const double *detailsf);``
    | Adds a rule to the list of rules. Enter the rule type in ``type``.
@@ -3609,6 +3651,8 @@ structure set up
    +----------------+----------------+----------------+--------------+
 
 core simulation functions
+-------------------------
+
 ``int RuleExpandRules(simptr sim,int iterations);``
    | 
    | Expands the rules by ``iterations`` iterations. Also,
@@ -3643,7 +3687,7 @@ core simulation functions
    requested but there are no rules to expand.
 
 Surfaces (functions in smolsurf.c)
-----------------------------------
+==================================
 
 Surfaces are organized with a surface superstructure that contains not
 much more than just a list of surfaces and their names. Each of these
@@ -3656,7 +3700,7 @@ other shapes. A single surface can contain many panels of multiple
 shapes.
 
 Surface geometry
-~~~~~~~~~~~~~~~~
+----------------
 
 The table below lists the types of panels and key aspects of how they
 are stored internally. Panel locations and sizes, plus some drawing
@@ -3867,7 +3911,7 @@ relatively easy, although some math likely needs to be done for a couple
 of them. Finally, check and document.
 
 Molecule-surface interactions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 Molecule-surface interactions arise when a molecule collides with a
 surface, or when a surface-bound molecule undergoes a spontaneous state
@@ -3952,7 +3996,7 @@ porting coefficient is about :math:`0.86s/\Delta t`, where :math:`s` is
 the rms step length and :math:`\Delta t` is the time step.
 
 Surface data structures
-~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------
 
 ::
 
@@ -4239,7 +4283,7 @@ development, and provided minimal accuracy improvements, so I got rid of
 them. Now, only direct collisions are detected and dealt with.
 
 Function interdependence
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Following is a partial listing of what functions call what other
 functions. This is incomplete but could be completed relatively easily
@@ -4294,9 +4338,11 @@ if necessary.
 | ``surfenablesurfaces`` if needed, see above
 
 Surface functions
-~~~~~~~~~~~~~~~~~
+-----------------
 
 enumerated types
+^^^^^^^^^^^^^^^^^
+
 ``enum PanelFace surfstring2face(char *string);``
    | 
    | Converts panel face ``string`` to an enumerated panel face type.
@@ -4353,6 +4399,8 @@ enumerated types
      function nesting.
 
 low level utilities
+--------------------
+
 ``int readsurfacename(simptr sim,char *str,enum PanelShape *psptr,int *pptr);``
    | 
    | Reads the first word of string ``str`` to parse the surface name
@@ -4526,66 +4574,46 @@ low level utilities
      surface-bound molecules to interact with other surfaces that they
      cross. The following table shows the input and output values.
 
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | i     |       | a     |       |       |       |       |       |
-   | ntera |       | ction |       |       |       |       |       |
-   | ction |       |       |       |       |       |       |       |
-   | class |       |       |       |       |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | ``    | ``fa  | ``    |       | ``    | ``fa  | ``    |
-   |       | ms1`` | ce1`` | ms2`` |       | ms3`` | ce2`` | ms4`` |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | soln  | front | fsoln | re    | soln  | front | fsoln |
-   |       |       |       |       | flect |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | bsoln | tra   | soln  | back  | fsoln |
-   |       |       |       |       | nsmit |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | coll  | "     | "     | bound | bind  | bound | none  | fsoln |
-   | ision |       |       |       |       |       |       |       |
-   | from  |       |       |       |       |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | sol   | "     | back  | fsoln | tra   | soln  | front | bsoln |
-   | ution |       |       |       | nsmit |       |       |       |
-   | state |       |       |       |       |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | bsoln | re    | soln  | back  | bsoln |
-   |       |       |       |       | flect |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | bound | bind  | bound | none  | bsoln |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | impos | "     | none  | any   | impos | none  | none  | none  |
-   | sible |       |       |       | sible |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | bound | front | fsoln | re    | bound | front | fsoln |
-   |       |       |       |       | flect |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | bsoln | tra   | bound | back  | fsoln |
-   |       |       |       |       | nsmit |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | coll  | "     | "     | b     | hop   | *bo   | *     | *b    |
-   | ision |       |       | ound’ |       | und’* | both* | ound* |
-   | from  |       |       |       |       |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | bound | "     | back  | fsoln | tra   | bound | front | bsoln |
-   | state |       |       |       | nsmit |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | bsoln | re    | bound | back  | bsoln |
-   |       |       |       |       | flect |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | b     | hop   | *bo   | *     | *b    |
-   |       |       |       | ound’ |       | und’* | both* | ound* |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | a     | "     | none  | fsoln | d     | soln  | front | bound |
-   | ction |       |       |       | esorb |       |       |       |
-   | from  |       |       |       |       |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   | bound | "     | "     | bsoln | d     | soln  | back  | bound |
-   | state |       |       |       | esorb |       |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
-   |       | "     | "     | b     | flip  | b     | none  | bound |
-   |       |       |       | ound’ |       | ound’ |       |       |
-   +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | interaction class |         | action    |         |          |          |             |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | ``ms1`` | ``face1`` | ``ms2`` |          | function | ``*ms3ptr`` |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | soln    | front     | fsoln   | reflect  | 1        | fsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bsoln   | transmit | 0        | fsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | collision from    | "       | "         | bound   | adsorb   | 0        | fsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | solution state    | "       | back      | fsoln   | transmit | 0        | bsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bsoln   | reflect  | 1        | bsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bound   | adsorb   | 0        | bsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | impossible        | "       | none      | any     |          | 0        | none        |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | bound   | front     | fsoln   | reflect  | 1        | fsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bsoln   | transmit | 0        | fsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | collision from    | "       | "         | bound’  | hop      | 0        | fsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | bound state       | "       | back      | fsoln   | transmit | 0        | bsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bsoln   | reflect  | 1        | bsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bound’  | hop      | 0        | bsoln       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | action from       | "       | none      | fsoln   | desorb   | 0        | bound       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    | bound state       | "       | "         | bsoln   | desorb   | 0        | bound       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bound   | no       | 1        | bound       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+    |                   | "       | "         | bound’  | flip     | 0        | bound       |
+    +-------------------+---------+-----------+---------+----------+----------+-------------+
+
 
    The italicized rows for the “reverse states" columns indicate that a
    bound-state molecule collided with a new surface and then hopped to
@@ -4718,6 +4746,8 @@ low level utilities
      ``SAjump`` < ``SAabsorb`` < ``SAport``.
 
 memory management
+-----------------
+
 ``surfaceactionptr surfaceactionalloc(int species);``
    | 
    | Allocates a surface action structure for storing action details,
@@ -4841,6 +4871,8 @@ memory management
      panels.
 
 data structure output
+----------------------
+
 ``void surfaceoutput(simptr sim);``
    | 
    | Prints out information about all surfaces, including the surface
@@ -4858,6 +4890,8 @@ data structure output
      well, although those haven’t been written yet.
 
 structure set up
+-----------------
+
 ``int surfenablesurfaces(simptr sim,int maxsurf);``
    | 
    | Allocates and sets up the surface superstructure for a maximum of
@@ -5234,6 +5268,8 @@ structure set up
    | Sets up or updates surface data structures.
 
 core simulation functions
+-------------------------
+
 ``enum PanelFace``
    | ``panelside(double* pt,panelptr pnl,int dim,double *distptr,int strict,int useoldpos);``
    | Returns the side of the panel ``pnl`` that point ``pt`` is on. If
@@ -5695,7 +5731,7 @@ core simulation functions
      code of 0.
 
 Boxes (functions in smolboxes.c)
---------------------------------
+================================
 
 The simulation volume is exactly divided into an array of identical
 virtual boxes. These allow the simulation to run efficiently because
@@ -5816,6 +5852,8 @@ Converting the box number to the indices can also be done, but the Zn.c
 routine is easiest for this.
 
 low level utilities
+-------------------
+
 ``void box2pos(simptr sim,boxptr bptr,double *poslo,double *poshi);``
    | 
    | Given a pointer to a box in ``bptr``, this returns the coordinate
@@ -5884,6 +5922,8 @@ low level utilities
    and/or that didn’t use periodic boundary conditions.
 
 memory management
+-----------------
+
 ``boxptr boxalloc(int dim,int nlist);``
    | 
    | ``boxalloc`` allocates and minimally initiallizes a new
@@ -5938,6 +5978,8 @@ memory management
    | Frees a box superstructure, including the boxes.
 
 data structure output
+----------------------
+
 ``void boxoutput(boxssptr boxs,int blo,int bhi,int dim);``
    | 
    | This displays the details of virtual boxes in the box
@@ -5958,6 +6000,8 @@ data structure output
      molecules per box, box sizes, and number of panels in each box.
 
 structure set up
+----------------
+
 ``void boxsetcondition(boxssptr boxs,enum StructCond cond,int upgrade);``
    | 
    | Sets the box superstructure condition to ``cond``, if appropriate.
@@ -5997,6 +6041,8 @@ structure set up
    | Sets up or updates box data structures.
 
 core simulation functions
+-------------------------
+
 ``boxptr line2nextbox(simptr sim,double *pt1,double *pt2,boxptr bptr);``
    | 
    | Given a line segment which is defined by the starting point ``pt1``
@@ -6052,7 +6098,7 @@ core simulation functions
    before, especially if boxes have a lot of molecules in them.
 
 Compartments (functions in smolcompart.c)
------------------------------------------
+=========================================
 
 Compartments are regions of volume that are bounded by surfaces. They do
 not include their bounding surfaces. They have no function in the
@@ -6075,7 +6121,7 @@ logic equation: equal to the cell compartment and not the nucleus
 compartment.
 
 Data structures
-~~~~~~~~~~~~~~~
+---------------
 
 ::
 
@@ -6119,6 +6165,8 @@ condition is the current condition of the superstructure and sim is a
 pointer to the simulation structure that owns this superstructure.
 
 enumerated types
+-----------------
+
 ``enum CmptLogic compartstring2cl(char *string);``
    | 
    | Converts compartment logic symbol string to an enumerated
@@ -6134,6 +6182,8 @@ enumerated types
      “none". ``string`` is returned to allow for function nesting.
 
 low level utilities
+-------------------
+
 ``int posincompart(simptr sim,double *pos,compartptr cmpt,int useoldpos);``
    | 
    | Tests if position ``pos`` is in compartment ``cmpt``, returning 1
@@ -6151,6 +6201,8 @@ low level utilities
      which case this returns 1.
 
 memory management
+------------------
+
 ``compartptr compartalloc(void);``
    | 
    | Allocates memory for a compartment. All arrays are set to ``NULL``,
@@ -6175,6 +6227,8 @@ memory management
      everything within them.
 
 data structure output
+----------------------
+
 ``void compartoutput(simptr sim);``
    | 
    | Displays all important information about all compartments to
@@ -6191,6 +6245,8 @@ data structure output
    | This checks a few compartment parameters.
 
 structure set up
+-----------------
+
 ``void compartsetcondition(compartssptr cmptss,enum StructCond cond,int upgrade);``
    | 
    | Sets the compartment superstructure condition to ``cond``, if
@@ -6304,6 +6360,8 @@ structure set up
    | Sets up or updates all portions of compartment data structures.
 
 core simulation functions
+--------------------------
+
 ``void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate);``
    | 
    | Translates compartment ``cmpt`` by the displacement given in
@@ -6335,7 +6393,7 @@ core simulation functions
    seems that it could be improved.
 
 Ports (functions in smolport.c)
--------------------------------
+===============================
 
 Ports are data structures for importing and exporting molecules between
 a Smoldyn simulation and another simulation. In particular, they are
@@ -6354,10 +6412,8 @@ Smoldyn simulations.
 As much as possible, the code for ports is very analogous to the code
 for compartments.
 
-.. _data-structures-1:
-
 Data structures
-~~~~~~~~~~~~~~~
+---------------
 
 ::
 
@@ -6383,6 +6439,8 @@ the current condition of the superstructure and ``sim`` is a pointer to
 the simulation structure that owns this superstructure.
 
 memory management
+------------------
+
 ``portptr portalloc(void);``
    | 
    | Allocates memory for a port. Pointers are set to ``NULL`` and
@@ -6406,6 +6464,8 @@ memory management
    | Frees a port superstructure, including all ports.
 
 data structure output
+----------------------
+
 ``void portoutput(simptr sim);``
    | 
    | Displays all important information about all ports to stdout.
@@ -6420,6 +6480,8 @@ data structure output
    | This checks a few port parameters.
 
 structure set up
+----------------
+
 ``void portsetcondition(portssptr portss,enum StructCond cond,int upgrade);``
    | 
    | Sets the port superstructure condition to ``cond``, if appropriate.
@@ -6482,6 +6544,8 @@ structure set up
    | Sets up or updates all port data structure components.
 
 core simulation functions
+--------------------------
+
 ``int portgetmols(simptr sim,portptr port,int ident,enum MolecState ms,int remove);``
    | 
    | Returns the number of molecules of type ``ident`` (use -1 for all
@@ -6519,7 +6583,7 @@ core simulation functions
      simulations that communicate with ports.
 
 Lattices (functions in smollattice.c)
--------------------------------------
+=====================================
 
 A lattice is a region of space in which molecules do not have precise
 spatial locations, but are compartmentalized to lattice subvolumes. At
@@ -6544,10 +6608,8 @@ the rest of Smoldyn. The code in smollattice.c is always compiled,
 regardless of compiling options, but if the ``LATTICE`` configuration
 variable is undefined, then all calls to the nsv code are disabled.
 
-.. _data-structures-2:
-
 Data structures
-~~~~~~~~~~~~~~~
+---------------
 
 ::
 
@@ -6634,9 +6696,11 @@ this because I didn’t think these molecules had precise positions. The
 code (the PDE code isn’t included yet).
 
 Functions
-~~~~~~~~~
+==========
 
 memory management
+------------------
+
 ``latticeptr latticealloc(int dim);``
    | 
    | Allocates memory for a lattice assuming a ``dim`` dimensional
@@ -6682,6 +6746,8 @@ memory management
    | Free a lattice superstructure and all of its contents.
 
 data structure output
+---------------------
+
 ``void latticeoutput(simptr sim);``
    | 
    | Outputs the contents of the lattice superstructure and all of the
@@ -6700,6 +6766,8 @@ data structure output
      function along with the appropriate error level.
 
 structure set up
+----------------
+
 ``void latticesetcondition(latticessptr latticess,enum StructCond cond,int upgrade);``
    | 
    | Sets the lattice superstructure condition to ``cond``, if
@@ -6821,12 +6889,16 @@ structure set up
      modules.
 
 core simulation functions
+--------------------------
+
 ``int latticeruntimestep(simptr sim);``
    | 
    | Runs the lattice NSV code for one simulation time step for each
      lattice. Returns 0.
 
 NSV functions, in nsvc.cpp
+---------------------------
+
 ``void nsv_init();``
    | 
    | Initializes the Kairos simulation engine.
@@ -6904,12 +6976,12 @@ NSV functions, in nsvc.cpp
      these need to freed afterwards.
 
 Filaments (functions in smolfilament.c)
----------------------------------------
+=======================================
 
 Filament support is in progress.
 
 Data structures declared in smoldyn.h
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 ::
 
@@ -7058,7 +7130,7 @@ condition element and a pointer up the heirarchy to the simulation
 structure.
 
 Filament math
-~~~~~~~~~~~~~
+-------------
 
 Following are the basic equations for the filament relative angles
 (:math:`\mathbf{A}`, ``dcm``), absolute angles (:math:`\mathbf{B}`,
@@ -7070,8 +7142,8 @@ Following are the basic equations for the filament relative angles
 
 :math:`\mathbf{B}_i = \mathbf{A}^T_{i+1} \cdot \mathbf{B}_{i+1}`
 
-Function declarations.
-~~~~~~~~~~~~~~~~~~~~~~
+Function declarations
+=====================
 
 As much as possible, functions are declared locally rather than in the
 smoldynfuncs.h header file. This simplifies the code reading because it
@@ -7088,6 +7160,8 @@ are only called internally.
    Returns ``DTnone`` for unrecognized input.
 
 low level utilities
+--------------------
+
 ``double filRandomLength(const filamenttypeptr filtype,double thickness,double sigmamult);``
    | 
    | Local. Returns a random segment length using the mechanics
@@ -7146,6 +7220,8 @@ low level utilities
    single array shift.
 
 Memory management
+------------------
+
 ``beadptr beadalloc();``
    | 
    | Allocates memory for a single bead and initializes this bead.
@@ -7197,6 +7273,8 @@ Memory management
    | Fres a filament superstructure and all of the structures within it.
 
 Data structure output
+---------------------
+
 ``void filtypeoutput(filamenttypeptr filtype,int dim);``
    Outputs all of the key information about a filament type to the
    display.
@@ -7221,6 +7299,8 @@ Data structure output
      This function isn’t written yet.
 
 Filament manipulation
+----------------------
+
 ``int``
    | ``filAddSegment(filamentptr fil,double *x,double length,double *angle,double thickness,char endchar);``
    | Adds a segment to filament ``fil``. If this is the first segment,
@@ -7293,6 +7373,8 @@ Filament manipulation
    | This copies all of the values in a filament to another filament.
 
 Structure set up
+----------------
+
 ``void filsetcondition(filamentssptr filss,enum StructCond cond,int upgrade);``
    | 
    | Local. This function sets the condition of the filament
@@ -7390,6 +7472,8 @@ Structure set up
    | 
 
 Core simulation functions
+---------------------------
+
 ``int filMonomerXSurface(simptr sim,filamentptr fil,char endchar);``
    | 
 
@@ -7403,7 +7487,7 @@ Core simulation functions
    | 
 
 BioNetGen (functions in smolbng.c)
-----------------------------------
+==================================
 
 BioNetGen is a separate software tool that expands biochemical reaction
 network rules to form complete biochemical reaction networks. Weiren Cui
@@ -7548,6 +7632,8 @@ Below, all functions are labeled as either “Local" or “Global" to
 indicate this status.
 
 Memory management functions
+----------------------------
+
 ``void bngallocsurfacedata(bngptr bng,int maxsurface);``
    | 
    | This allocates memory for the surface action elements for the
@@ -7590,6 +7676,8 @@ Memory management functions
    | Local. Frees a bng superstructure, including all of its contents.
 
 Data structure output
+----------------------
+
 ``void bngoutput(simptr sim);``
    | 
    | Global. Outputs the contents of the bng superstructure and all bng
@@ -7601,6 +7689,8 @@ Data structure output
      very little at present.
 
 Structure set up - bng
+-----------------------
+
 ``void bngsetcondition(bngssptr bngss,enum StructCond cond,int upgrade);``
    | 
    | Local. This function sets the condition of the bng superstructure.
@@ -7639,6 +7729,8 @@ Structure set up - bng
      string entered in ``path``. Returns 0.
 
 Structure set up - parameters
+------------------------------
+
 ``int bngparseparameter(bngptr bng,int index);``
    | 
    | Local. Parses the parameter value string for the parameter with
@@ -7659,6 +7751,8 @@ Structure set up - parameters
      last case, the error message can be found using ``strmatherror``.
 
 Structure set up - monomers
+----------------------------
+
 ``int bngaddmonomer(bngptr bng,const char *name,enum MolecState ms);``
    | 
    | Local. Adds a monomer, or modifies an existing monomer, in a bng
@@ -7707,6 +7801,8 @@ Structure set up - monomers
      -1 if out of memory, or -2 for invalid monomer name.
 
 Structure set up - species
+---------------------------
+
 ``int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods);``
    | 
    | Local. Generates a short name for a bspecies, saving it in
@@ -7826,6 +7922,8 @@ Structure set up - species
      ``bngparsespecies`` for failure.
 
 Structure set up - reactions
+-----------------------------
+
 ``int bngparsereaction(bngptr bng,int index);``
    | 
    | Local. Parses the reaction with index ``index``. This reads the bng
@@ -7849,6 +7947,8 @@ Structure set up - reactions
      inability to parse the rate string.
 
 Structure set up - reactions
+-----------------------------
+
 ``int bngaddgroup(bngptr bng,int gindex,const char *gname,const char *specieslist);``
    | 
    | Adds a group, created in the .bngl file with “begin observables"
@@ -7863,6 +7963,8 @@ Structure set up - reactions
      sends the results to ``moladdspeciesgroup`` for group creation.
 
 Structure set up - high level functions
+----------------------------------------
+
 ``int bngrunBNGL2(bngptr bng,char *filename,char *outname);``
    | 
    | Local. This runs the BNG2.pl program on the BNGL file called
@@ -7902,12 +8004,12 @@ Structure set up - high level functions
      carry out the updating tasks.
 
 Core simulation functions
-   | 
+=========================
 
 No core simulation functions.
 
 Complexes (not written yet)
----------------------------
+===========================
 
 It’s becoming increasingly apparent that Smoldyn needs to support
 macromolecular complexes. This section presents documentation for code
@@ -7964,7 +8066,7 @@ monomerstruct.
 Add to moleculesuperstruct: double \*mass; // mass of species [i]
 
 Graphics (functions in smolgraphics.c)
---------------------------------------
+======================================
 
 Overall, Smoldyn’s graphics use is fairly straightforward, although it
 is nevertheless a little complicated due to the design of the OpenGL
@@ -8020,6 +8122,8 @@ done by ``RenderSim``. Data structure
        } *graphicsssptr;
 
 enumerated types
+-----------------
+
 ``enum LightParam graphicsstring2lp(char *string);``
    | 
    | Converts a string to an enumerated light parameter.
@@ -8030,6 +8134,8 @@ enumerated types
      returned.
 
 low level utilities
+--------------------
+
 ``int graphicsreadcolor(char **stringptr,double *rgba);``
    | 
    | Reads the text of the string that ``stringptr`` points to, to find
@@ -8058,6 +8164,8 @@ low level utilities
      if the listed alpha value is out of range.
 
 memory management
+------------------
+
 ``graphicsssptr graphssalloc(void)``
    | 
    | Allocates and intializes the graphics superstructure. No OpenGL
@@ -8068,6 +8176,8 @@ memory management
    | Frees a graphics superstructure.
 
 data structure output
+----------------------
+
 ``void graphssoutput(simptr sim)``
    | 
    | Displays all graphics parameters from the graphics superstructure
@@ -8087,6 +8197,8 @@ data structure output
      doesn’t check anything, but just returns two zeros.
 
 structure setup
+---------------
+
 ``void graphicssetcondition(graphicsssptr graphss,enum StructCond cond,int upgrade);``
    | 
    | Sets the graphics superstructure condition to ``cond``, if
@@ -8212,6 +8324,8 @@ structure setup
      memory could not be allocated for the graphics superstructure.
 
 structure update functions
+---------------------------
+
 ``int graphicsupdateinit(simptr sim);``
    | 
    | Performs basic graphics initialization. This calls ``gl2glutInit``
@@ -8239,6 +8353,8 @@ structure update functions
      on the amount of updating required.
 
 core simulation functions
+--------------------------
+
 ``void RenderSurfaces(simptr sim)``
    | 
    | Draws all surfaces in the simulation using OpenGL graphics. The 3-D
@@ -8263,14 +8379,15 @@ core simulation functions
      and the grid itself.
 
 Top level OpenGL functions
-   Both ``RenderScene`` and ``TimerFunction`` are declared locally,
-   rather than in smoldynfuncs.h. This makes them invisible outside of
-   this source file. They are callback functions for OpenGL. In
-   addition, the ``Sim`` variable is declared as a global variable, with
-   the scope of this file. It is here because OpenGL does not allow
-   ``void*`` pointers to be passed through to all callback functions, so
-   making it a global variable enables the callback functions to access
-   the simulation data structure.
+===========================
+
+Both ``RenderScene`` and ``TimerFunction`` are declared locally, rather than in
+smoldynfuncs.h. This makes them invisible outside of this source file.  They
+are callback functions for OpenGL. In addition, the ``Sim`` variable is
+declared as a global variable, with the scope of this file. It is here because
+OpenGL does not allow ``void*`` pointers to be passed through to all callback
+functions, so making it a global variable enables the callback functions to
+access the simulation data structure.
 
 ``void RenderScene(void);``
    | 
@@ -8323,7 +8440,7 @@ Top level OpenGL functions
      program quits.
 
 Simulation structure (functions in smolsim.c)
----------------------------------------------
+=============================================
 
 At the highest level of the structures is the simulation structure. This
 is a large framework that contains information about the simulation that
@@ -8331,10 +8448,8 @@ is to be run as well as pointers to each of the component structures and
 superstructures. It also contains some scratch space for functions to
 use as they wish.
 
-.. _data-structures-3:
-
 Data structures
-~~~~~~~~~~~~~~~
+---------------
 
 ::
 
@@ -8445,12 +8560,12 @@ smoldyn.h header file and the SimCommand.h header file.
 Finally, the simulation structure lists the function pointers for the
 core simulation algorithms.
 
-.. _functions-1:
-
 Functions
-~~~~~~~~~
+==========
 
 enumerated types
+-----------------
+
 ``enum SmolStruct simstring2ss(char *string)``
    | 
    | Returns the enumerated simulation structure type that corresponds
@@ -8470,6 +8585,8 @@ enumerated types
      address of the string is returned to allow for function nesting.
 
 low level utilities
+--------------------
+
 ``double simversionnumber(void);``
    | 
    | Returns the version number of Smoldyn. This reads the ``VERSION``
@@ -8483,6 +8600,8 @@ low level utilities
      than 0.
 
 memory management
+------------------
+
 ``simptr simalloc(char *root)``
    | 
    | Allocates a simulation structure. Essentially everything, including
@@ -8512,6 +8631,8 @@ memory management
      variables, and clears new ones as needed.
 
 data structure output
+----------------------
+
 ``void simLog(simptr sim,int importance,const char* format, ...)``
    | 
    | All text output should be sent to this function. As a default, it
@@ -8591,13 +8712,13 @@ data structure output
      program. Returns the number of errors.
 
 structure set up
-   | 
-   | Initialization procedures are meant to be called once at the
-     beginning of the program to allocate and set up the necessary
-     structures. These routines call memory allocation procedures as
-     needed. ``simupdate`` is the only one of these routines that should
-     ever need to be called externally, since it calls the other
-     functions as needed.
+----------------
+
+Initialization procedures are meant to be called once at the beginning of the
+program to allocate and set up the necessary structures. These routines call
+memory allocation procedures as needed. ``simupdate`` is the only one of these
+routines that should ever need to be called externally, since it calls the
+other functions as needed.
 
 ``int simsetpthreads(simptr sim,int number);``
    | 
@@ -8713,6 +8834,8 @@ structure set up
      simulation structure.
 
 core simulation functions
+-------------------------
+
 ``int simdocommands(simptr sim);``
    | 
    | Performs all commands that should happen at the current time. This
@@ -8765,54 +8888,51 @@ core simulation functions
      essentially nothing other than running ``simulatetimestep`` until
      the simulation terminates or stops due to reaching the break time.
 
+
 Commands (functions in smolcmd.c)
----------------------------------
+=================================
 
 Writing commands
-~~~~~~~~~~~~~~~~
+-----------------
 
-Command strings are not parsed, checked, or even looked at during
-simulation initialization. Instead, they are run by the command
-interpreter during the simulation. Command routines are given complete
-freedom to look at and/or modify any part of a simulation structure or
-sub-structure. This, of course, also gives commands the ability to crash
-the computer program, so they need to be written carefully to prevent
-this. Every command is sent a pointer to the simulation structure in
-sim, as well as a string of command parameters in ``line2``.
+Command strings are not parsed, checked, or even looked at during simulation
+initialization. Instead, they are run by the command interpreter during the
+simulation. Command routines are given complete freedom to look at and/or
+modify any part of a simulation structure or sub-structure. This, of course,
+also gives commands the ability to crash the computer program, so they need to
+be written carefully to prevent this. Every command is sent a pointer to the
+simulation structure in sim, as well as a string of command parameters in
+``line2``.
 
-To write a command, do the following steps, which can be done in any
-order:
+To write a command, do the following steps, which can be done in any order.
 
--  Write a description of the new command that will go into the
-   reference section of the user’s manual.
+- Write a description of the new command that will go into the reference
+  section of the user’s manual.
 
--  In smolcmd.c, add a new declaration to the top of the file for the
-   command, which looks like:
-
-   ::
+- In smolcmd.c, add a new declaration to the top of the file for the command,
+  which looks like.
+  ::
 
       enum CMDcode cmdname(simptr sim,cmdptr cmd,char *line2);
 
--  The first function of smolcmd.c is ``docommand``. In it, add an
-   ``else if`` line for the new command. It looks like:
-
-   ::
+- The first function of smolcmd.c is ``docommand``. In it, add an ``else if``
+  line for the new command. It looks like.
+  ::
 
       else if(!strcmp(word,"name")) return cmdname(sim,cmd,line2);
 
--  Write the function for the new command, modeling it on the command
-   functions currently in smolcmd.c. See below.
+- Write the function for the new command, modeling it on the command functions
+  currently in smolcmd.c. See below.
 
 -  Proofread the function and test the command.
 
--  Write documentation about the command for this section of this
-   manual.
+-  Write documentation about the command for this section of this manual.
 
 -  Mention the command in the modifications portion of this manual.
 
-Each command is written with a similar structure. As an example, here is
-``cmdecho``:
 
+Each command is written with a similar structure. As an example, here is
+``cmdecho``.
 ::
 
    enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2) {
@@ -8895,8 +9015,7 @@ to the command to actually do whatever needs to be done with the
 identified molecules. This leads to a more complicated command
 structure, of which an example is in ``cmdifincmpt``, which calls
 another command if there are some number of molecules in a specified
-compartment. Here is part of its listing:
-
+compartment. Here is part of its listing.
 ::
 
    enum CMDcode cmdifincmpt(simptr sim,cmdptr cmd,char *line2) {
@@ -8948,7 +9067,7 @@ what it needs to do and returns ``CMDok`` to indicuate that the task is
 complete.
 
 Externally accessible function
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------
 
 Not all functions are listed here because many of them don’t require any
 more description than what is already given in the Smoldyn User Manual.
@@ -8968,9 +9087,11 @@ more description than what is already given in the Smoldyn User Manual.
    simulation termination, and ``CMDpause`` for simulation pausing.
 
 Individual command functions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
 simulation control
+------------------
+
 ``enum CMDcode cmdstop(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Returns a value of 2, meaning that the simulation should stop. Any
@@ -9011,6 +9132,8 @@ simulation control
    | Sets the number of iterations between each graphics update.
 
 file manipulation
+------------------
+
 ``enum CMDcode cmdoverwrite(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Overwrites a prior output file. See the user manual.
@@ -9025,6 +9148,8 @@ file manipulation
    | Sets the random number seed.
 
 conditional
+-----------
+
 ``enum CMDcode cmdifflag(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Runs the command in ``line2`` depending on value of the command
@@ -9074,6 +9199,8 @@ conditional
      another value.
 
 observation commands
+---------------------
+
 ``enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Checks for molecules that escaped from the system and displays
@@ -9312,6 +9439,8 @@ observation commands
    | Outputs VTK data for the current simulation state.
 
 system manipulation
+--------------------
+
 ``enum CMDcode cmdset(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Reads ``line2`` to extract the first word and the rest of the line.
@@ -9547,6 +9676,8 @@ system manipulation
      ``cmpttranslate``.
 
 Internal functions
+-------------------
+
 ``void cmdv1free(cmdptr cmd);``
    | 
    | Frees array ``cmd->v1``.
@@ -9593,7 +9724,7 @@ Internal functions
      surfaces will be checked.
 
 Top-level code (functions in smoldyn.c)
----------------------------------------
+=======================================
 
 The top-level source code file, smoldyn.c, contains only the ``main``
 function for the stand-alone Smoldyn program. It is declared locally in
@@ -9611,7 +9742,6 @@ the shell. This source code file is not included in Libsmoldyn.
      it returns to the shell.
 
 Code design
-===========
 
 This chapter describes interactions between different portions of the
 code. The code is, and may always be, in flux. While I try to maintain
@@ -9619,7 +9749,7 @@ this section of the documentation, be forewarned that it might not
 reflect the most recent changes.
 
 Memory management
------------------
+=================
 
 The following table, *which is very out of date* shows memory allocation
 and freeing for the different structures. For both the allocation and
@@ -9850,7 +9980,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 
 Data structure preparation and updating
----------------------------------------
+=======================================
 
 The original Smoldyn design was that it read a configuration file, set
 up internal data structures, ran the simulation, and then quit. Two
@@ -9948,7 +10078,7 @@ table was updated after changes for version 2.23.
 | does nothing
 
 Simulation algorithm sequence
------------------------------
+=============================
 
 In a sense, the core function of the entire Smoldyn program is
 ``simulatetimestep``, which is in smolsim.c. Using the assumption that
@@ -10052,10 +10182,10 @@ radius might be initially placed within the binding radius of another
 reactant).
 
 Wildcards, species groups, and patterns
----------------------------------------
+=======================================
 
 Patterns
-~~~~~~~~
+--------
 
 Most of Smoldyn’s treatment of wildcards, species groups, and patterns
 is in the molecules and reactions portion of the code. The basic idea is
@@ -10138,7 +10268,7 @@ for “AD" and “XD" species, and elements 12 to 19 would be empty. The
 list of results is sorted in ascending order.
 
 Control flow and functions - species names
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 The entry point for most functions that deal with species names that are
 provided by the user is ``molstring2index1``. This function takes a
@@ -10172,7 +10302,7 @@ list of species, which it both stores and returns in ``index``. At the
 end, ``molstring2index1`` returns the index variable.
 
 Reaction rule storage
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 Reaction rules are stored within the reaction superstructure. A
 simulation can have up to three reaction superstructures, corresponding
@@ -10210,7 +10340,7 @@ are simply stored here and referred to when updating is required. The
 on-the-fly rule generation is desired.
 
 Control flow and functions - reactions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 Reactions are initially added to a simulation when the ``simreadstring``
 function encounters a “reaction" or “reaction_rule" word in a
@@ -10280,7 +10410,7 @@ After this, Smoldyn continues on to read more lines from the input file,
 possibly repeating the same procedure if another reaction is entered.
 
 Control and flow - network generation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------
 
 Reaction rule expansion occurs through the ``RuleExpandRules`` function.
 This function is called if the user uses the “expand_rules” statement,
@@ -10307,10 +10437,9 @@ has not yet been used for rule expansion, and is set to either 2 or 3 if
 it has been used for expansion.
 
 Smoldyn modifications
-=====================
 
 Modifications for version 1.5 (released 7/03)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------
 
 -  Added hierarchical configuration file name support.
 
@@ -10373,7 +10502,7 @@ Modifications for version 1.5 (released 7/03)
    parameters are reasonable.
 
 Modifications for version 1.51 (released 9/5/03)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Fixed a minor bug in ``doreact`` which allowed the molecule
    superstructure indices to become illegal if not enough molecules were
@@ -10415,7 +10544,7 @@ Modifications for version 1.51 (released 9/5/03)
    ``table`` elements.
 
 Modifications for version 1.52 (released 10/24/03)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Changed comments in rxnparam.h and rxnparam.c, but no changes in
    code.
@@ -10459,7 +10588,7 @@ Modifications for version 1.52 (released 10/24/03)
 -  Renamed the “test files" folder to “test_files".
 
 Modifications for version 1.53 (released 2/9/04)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Cleaned up commands a little more by writing routine ``getfptr`` in
    smollib2.c and calling it from commands that save data, rather than
@@ -10497,7 +10626,7 @@ Modifications for version 1.53 (released 2/9/04)
    it was paused is now displayed to the text window.
 
 Modifications for version 1.54 (released 3/3/04)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Swapped order of commands and OpenGL drawing so that commands are
    executed before displaying results. Also wrote section 3.2 of the
@@ -10507,7 +10636,7 @@ Modifications for version 1.54 (released 3/3/04)
    and added the reactW set of test files.
 
 Modifications for version 1.55 (released 8/20/04)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Improved graphics manipulations and added ability to save image as a
    TIFF file. This is not documented yet.
@@ -10526,7 +10655,7 @@ Modifications for version 1.55 (released 8/20/04)
    ``SCMDCHECK``.
 
 Modifications for version 1.56 (released 1/14/05)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Made lots of changes in opengl2.c.
 
@@ -10547,12 +10676,12 @@ Modifications for version 1.56 (released 1/14/05)
    files.
 
 Modifications for version 1.57 (released 2/17/05)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Added command ``setrateint``.
 
 Modifications for version 1.58 (released 7/22/05)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed 2-D graphics so they a border is now shown again around the
    simulation volume.
@@ -10566,18 +10695,18 @@ Modifications for version 1.58 (released 7/22/05)
 -  Added position ranges to ``mol`` command.
 
 Modifications for version 1.59 (released 8/26/05)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Random number seed is now stored and is displayed before a simulation
    starts.
 
 Modifications for version 1.60 (not released, but given to Karen 9/30/05)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------------------------------
 
 -  Fixed a small bug in ``checkparams``.
 
 Modifications for version 1.70 (released 5/17/06)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Added reflective, absorbing, and transparent surfaces for 1 to 3
    dimensions with panel shapes that can be: rectangle, triangle, and
@@ -10606,7 +10735,7 @@ Modifications for version 1.70 (released 5/17/06)
    after reactions.
 
 Modifications for version 1.71 (released 12/8/06)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Added ``glutInit`` call to ``main`` function in smoldyn.c.
 
@@ -10649,7 +10778,7 @@ Modifications for version 1.71 (released 12/8/06)
    surfaces.
 
 Modifications for version 1.72 (released 2/26/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Finally got reflective surfaces to stop leaking diffusing molecules.
    This involved many changes in the surface code sections.
@@ -10669,7 +10798,7 @@ Modifications for version 1.72 (released 2/26/07)
 -  Updated ``savesim`` command to accomodate surface changes.
 
 Modifications for version 1.73 (released 9/25/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Trivial bug fixed in ``loadsurface``, fixed minor bug regarding
    periodic surfaces.
@@ -10698,7 +10827,7 @@ Modifications for version 1.73 (released 9/25/07)
 -  Improvements to Makefiles and improvement of compiling advice.
 
 Modifications for version 1.74 (released 10/22/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Coincident surfaces have defined behavior.
 
@@ -10726,7 +10855,7 @@ Modifications for version 1.74 (released 10/22/07)
    ``polygon_back``, and ``polygon_both`` with ``polygon``.
 
 Modifications for version 1.75 (released 11/6/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Added surface-bound molecules. This has involved changes in the
    molecule superstructure, surface structures, panel structures, and
@@ -10769,7 +10898,7 @@ Modifications for version 1.75 (released 11/6/07)
 -  Starting adding a user manual section to the documentation.
 
 Modifications for version 1.76 (released 11/7/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Split smollib.c and smollib.h source code files into smolload.c,
    smolrun.c, and their headers. Also, moved some functions from
@@ -10783,7 +10912,7 @@ Modifications for version 1.76 (released 11/7/07)
    counters.
 
 Modifications for version 1.77 (released 11/18/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Overall, few changes that affect users.
 
@@ -10801,7 +10930,7 @@ Modifications for version 1.77 (released 11/18/07)
    may help for parallelization.
 
 Modifications for version 1.78 (released 11/29/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Minor changes with graphics.
 
@@ -10856,7 +10985,7 @@ Modifications for version 1.78 (released 11/29/07)
 -  Added command ``molcountinbox``.
 
 Modifications for version 1.79 (released 12/6/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed several bugs in ``scmdexecute``. Commands no longer execute
    repeatedly after the simulation is finished.
@@ -10893,7 +11022,7 @@ Modifications for version 1.79 (released 12/6/07)
    non-commercial use and modification of the code" to LGPL.
 
 Modifications for version 1.80 (released 12/22/07)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Changed the exiting code some so ‘Q’ quits the program.
 
@@ -10931,7 +11060,7 @@ Modifications for version 1.80 (released 12/22/07)
    some changes, as did various other functions.
 
 Modifications for version 1.81 (released 1/22/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Changed developing environments from Macintosh Codewarrior to
    Macintosh gcc with XCode as an editor.
@@ -10976,7 +11105,7 @@ Modifications for version 1.81 (released 1/22/08)
    new and improved example files.
 
 Modifications for version 1.82 (released 2/28/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Changed ``readmolname`` so now a name without a state implies
    ``MSsoln`` rather than ``MSall``, as it was before.
@@ -10994,7 +11123,7 @@ Modifications for version 1.82 (released 2/28/08)
    products frequently escaped the simulation volume.
 
 Modifications for version 1.83 (released 3/14/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed minor bug with allosteric reactions.
 
@@ -11013,7 +11142,7 @@ Modifications for version 1.83 (released 3/14/08)
 -  Added drift to molecular motions.
 
 Modifications for version 1.84 (released 4/11/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed a very minor bug in ``line2nextbox`` function.
 
@@ -11042,7 +11171,7 @@ Modifications for version 1.84 (released 4/11/08)
 -  Added order 0 and order 1 compartment reactions.
 
 Modifications for version 1.85 (released 6/3/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Changed command execution timing for ‘x’ type commands so that they
    do not execute any more often than the simulation time step.
@@ -11089,7 +11218,7 @@ Modifications for version 1.85 (released 6/3/08)
    included changes in smoldyn.h, smolreact.c, and the documentation.
 
 Modifications for version 1.86 (released 11/17/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Small progress on implementing accurate adsorption algorithms.
 
@@ -11111,14 +11240,14 @@ Modifications for version 1.86 (released 11/17/08)
    commands did not interact with surfaces.
 
 Modifications for version 1.87 (released 12/7/08)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed a minor bug in line parsing.
 
 -  Vastly improved the wrl2smol utility program.
 
 Modifications for version 1.88 (released 1/16/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Added accurate adsorption, desorption, and partial transmission
    algorithms.
@@ -11147,7 +11276,7 @@ Modifications for version 1.88 (released 1/16/09)
    compartments.
 
 Modifications for version 1.89 (released 2/11/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Wrote documentation for “simulation settings" and started
    documentation for “network generation".
@@ -11194,7 +11323,7 @@ Modifications for version 1.89 (released 2/11/09)
    have excluded volume.
 
 Modifications for version 2.00 (released 2/17/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed a trivial bug so that the ``time_start`` statement now sets
    both the start time and the current time.
@@ -11204,7 +11333,7 @@ Modifications for version 2.00 (released 2/17/09)
    tremendous number of other improvements.
 
 Modifications for version 2.01 (released 3/3/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Fixed a bug with compartment volume calculations, and improved
    compartment setup. Renamed ``compartaddbox`` to ``compartupdatebox``,
@@ -11231,7 +11360,7 @@ Modifications for version 2.01 (released 3/3/09)
    and 3-D panel shapes for basic functionality.
 
 Modifications for version 2.02 (released 5/5/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Changed ``molcount`` function so that it now works for unsorted
    molecule lists as well as for sorted molecule lists. This will affect
@@ -11254,7 +11383,7 @@ Modifications for version 2.02 (released 5/5/09)
 -  Added command ``meansqrdisp2``.
 
 Modifications for version 2.03 (released 5/22/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Changed build system from a simple makefile to the GNU
    Autoconf/Automake system. This works for many systems but not all.
@@ -11265,7 +11394,7 @@ Modifications for version 2.03 (released 5/22/09)
 -  Added support for libMoleculizer, which includes a lot of new code.
 
 Modifications for version 2.04 (released 6/27/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Lots of improvements to the same changes that were made for version
    2.03. Now, all of these features appear to be stable and the build
@@ -11278,7 +11407,7 @@ Modifications for version 2.04 (released 6/27/09)
    it run a little faster.
 
 Modifications for version 2.05 (released 7/23/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Improved Smoldyn build system so that it now works for most Mac and
    Linux platforms.
@@ -11293,7 +11422,7 @@ Modifications for version 2.05 (released 7/23/09)
    which would hurt development of the Smoldyn project.
 
 Modifications for version 2.06 (released 11/6/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Lots of code cleanup, including formatting changes, removal of unused
    variables, adding function declarations, etc.
@@ -11325,7 +11454,7 @@ Modifications for version 2.06 (released 11/6/09)
 -  New release shell script.
 
 Modifications for version 2.07 (released 11/17/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Trivial updates to ``surface_mol`` and ``compartment_mol`` (to
    support 0 molecules)
@@ -11354,7 +11483,7 @@ Modifications for version 2.07 (released 11/17/09)
 -  Fixed a minor bug with ``neighbor_dist`` statement.
 
 Modifications for version 2.08 (unofficially released 11/20/09)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------------------
 
 -  Fixed a bug for reactions between 2 surface-bound molecules, where
    the destination panel was sometimes wrong.
@@ -11362,7 +11491,7 @@ Modifications for version 2.08 (unofficially released 11/20/09)
 -  Cleaned up release files some.
 
 Modifications for version 2.09 (released 1/6/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Nathan fixed “make dist" build function.
 
@@ -11394,7 +11523,7 @@ Modifications for version 2.09 (released 1/6/10)
    without opengl support. Re-released 1/20/10.
 
 Modifications for version 2.10 (released 3/24/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Lots of work on libmoleculizer. Mostly rewrote smolmoleculizer.c
    file, and redid most of the Smoldyn moleculizer data structures. More
@@ -11408,12 +11537,12 @@ Modifications for version 2.10 (released 3/24/10)
    the file.
 
 Modifications for version 2.11 (released 5/4/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Nathan added ``-lglut`` flag to standard configure for building.
 
 Modifications for version 2.12 (released 6/10/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Changed panel input so that a panel can be input multiple times and
    the new data will overwrite the old.
@@ -11427,7 +11556,7 @@ Modifications for version 2.12 (released 6/10/10)
    allow “empty" as a molecule species.
 
 Modifications for version 2.13 (released 7/15/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed reaction output slightly, so that activation-limited reaction
    rate is displayed and binding radius is not displayed for order 1
@@ -11451,7 +11580,7 @@ Modifications for version 2.13 (released 7/15/10)
    needed though.
 
 Modifications for version 2.14 (released 7/18/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed ``#ifdef`` portion of queue.h so that it will compile on
    Windows correctly.
@@ -11459,7 +11588,7 @@ Modifications for version 2.14 (released 7/18/10)
 -  Added default product placement parameter for continuation reactions.
 
 Modifications for version 2.15 (released 7/20/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed bug that I just introduced for version 2.14 with default
    product placement parameter for continuation reactions.
@@ -11467,7 +11596,7 @@ Modifications for version 2.15 (released 7/20/10)
 -  Fixed bug that didn’t allow libmoleculizer to run.
 
 Modifications for version 2.16 (released 9/24/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Added statement ``expand_network``.
 
@@ -11480,7 +11609,7 @@ Modifications for version 2.16 (released 9/24/10)
    for surface crossings.
 
 Modifications for version 2.17 (released 11/19/10)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------
 
 -  Added compile flag ``-lGLU`` to configure.ac file, which seems to be
    necessary for Ubuntu systems.
@@ -11490,14 +11619,14 @@ Modifications for version 2.17 (released 11/19/10)
    ``experfcD(SQRT2*c1)`` to expand the input domain.
 
 Modifications for version 2.18 (released 1/6/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Fixed a small bug in ``molchangeident`` function. Before, panel data
    was retained for molecules that desorbed to ``MSbsoln``, whereas it
    should not have been.
 
 Modifications for version 2.19 (released 2/11/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Converted programmer’s documentation from Word to LaTeX.
 
@@ -11549,7 +11678,7 @@ Modifications for version 2.19 (released 2/11/11)
 -  Added “–define" option for command line.
 
 Modifications for version 2.20 (released 3/4/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Fixed bug which causes crashes if species change at surface was to
    “empty".
@@ -11569,7 +11698,7 @@ Modifications for version 2.20 (released 3/4/11)
 -  Added display_define statement.
 
 Modifications for version 2.21 (released 3/11/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed bugs in Geometry.c for nearest triangle column and nearest
    triangle points.
@@ -11595,7 +11724,7 @@ Modifications for version 2.21 (released 3/11/11)
 -  Improved SmolCrowd user interface.
 
 Modifications for version 2.22 (released 3/22/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Fixed a trivial mistake in opengl2.c that I created in version 2.21
    that arose when compiling without opengl.
@@ -11605,7 +11734,7 @@ Modifications for version 2.22 (released 3/22/11)
    libsmoldyn directory to the Subversion site and distribution.
 
 Modifications for version 2.23 (released 6/24/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Wrote most of libsmoldyn.h and libsmoldyn.c.
 
@@ -11686,7 +11815,7 @@ Modifications for version 2.23 (released 6/24/11)
    ``movemol2closepanel``.
 
 Modifications for version 2.24 (released 7/27/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Modularized graphics input, so all assignments are now made in
    smolgraphics functions rather than directly in ``simreadstring``.
@@ -11751,7 +11880,7 @@ Modifications for version 2.24 (released 7/27/11)
    AutoTools stuff for SWIG code.
 
 Modifications for version 2.25 (released 9/26/11)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  In configure.ac file, line 278, swapped sequence of a couple of
    lines. For version 2.24, the 3 lines starting with
@@ -11767,7 +11896,7 @@ Modifications for version 2.25 (released 9/26/11)
    using max_species.
 
 Modifications for version 2.26 (released 3/2/12)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 -  Added some support for species name entry using enhanced wildcards.
    This included new matching functions in string2.c, a logic expansion
@@ -11791,7 +11920,7 @@ Modifications for version 2.26 (released 3/2/12)
    sometimes got overlooked.
 
 Modifications for version 2.27 (released 7/26/12)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------------------------
 
 -  Merging in VCell changes.
 
@@ -11894,9 +12023,7 @@ Modifications for version 2.27 (released 7/26/12)
    from adequate. It did not cross-compile for Windows and the compiled
    version did not work on Mac OS 10.5.
 
-   .. rubric:: Modifications for version 2.28 (released 8/28/12)
-      :name: modifications-for-version-2.28-released-82812
-      :class: unnumbered
+.. rubric:: Modifications for version 2.28 (released 8/28/12)
 
 -  Fixed a bug in ``morebireact``, in smolreact.c, where molecule
    positions were moved to account for periodic boundary wrapping, but
@@ -11917,9 +12044,7 @@ Modifications for version 2.27 (released 7/26/12)
    However, I went through the files and verified that there are no
    other changes.
 
-   .. rubric:: Modifications for version 2.29 (released 4/10/13)
-      :name: modifications-for-version-2.29-released-41013
-      :class: unnumbered
+.. rubric:: Modifications for version 2.29 (released 4/10/13)
 
 -  Fixed a minor bug in ``molismobile``, in smolmol.c, which caused bugs
    for some species with surface drifts.
@@ -11947,9 +12072,7 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added extern "C" stuff to libsmoldyn.h.
 
-   .. rubric:: Modifications for version 2.30 (released 8/21/13)
-      :name: modifications-for-version-2.30-released-82113
-      :class: unnumbered
+.. rubric:: Modifications for version 2.30 (released 8/21/13)
 
 -  Fixed a bug in ``Geo_Cyl2Rect``, in the Geometry library. It was
    causing leaking surfaces.
@@ -11975,9 +12098,7 @@ Modifications for version 2.27 (released 7/26/12)
    license. Also, I think that NSF and other funding agencies prefer
    LGPL.
 
-   .. rubric:: Modifications for version 2.31 (released 9/9/13)
-      :name: modifications-for-version-2.31-released-9913
-      :class: unnumbered
+.. rubric:: Modifications for version 2.31 (released 9/9/13)
 
 -  Added command called setreactionratemolcount.
 
@@ -11988,9 +12109,7 @@ Modifications for version 2.27 (released 7/26/12)
    coefficients based on molecule lifetimes and also so it works with
    all states of a species.
 
-   .. rubric:: Modifications for version 2.32 (released 8/29/14)
-      :name: modifications-for-version-2.32-released-82914
-      :class: unnumbered
+.. rubric:: Modifications for version 2.32 (released 8/29/14)
 
 -  Overhaul of wildcard support. This included work on the wildcard
    match and substitute functions in string2.c, addition of pattern data
@@ -12036,9 +12155,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed a minor bug in which the “keypress" command would cause crashes
    if the simulation was run without OpenGL support.
 
-   .. rubric:: Modifications for version 2.33 (released 10/9/14)
-      :name: modifications-for-version-2.33-released-10914
-      :class: unnumbered
+.. rubric:: Modifications for version 2.33 (released 10/9/14)
 
 -  Fixed a minor but important bug in changemolident.
 
@@ -12054,9 +12171,7 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added cmdtrackmol function.
 
-   .. rubric:: Modifications for version 2.34 (released 1/8/15)
-      :name: modifications-for-version-2.34-released-1815
-      :class: unnumbered
+.. rubric:: Modifications for version 2.34 (released 1/8/15)
 
 -  Nearly complete BNG conversion code.
 
@@ -12068,9 +12183,7 @@ Modifications for version 2.27 (released 7/26/12)
    lattice space only get placed into first subvolume. This leads to
    more accurate diffusion results.
 
-   .. rubric:: Modifications for version 2.35 (released 4/23/15)
-      :name: modifications-for-version-2.35-released-42315
-      :class: unnumbered
+.. rubric:: Modifications for version 2.35 (released 4/23/15)
 
 -  Fixed substantial bugs in ``rxnsetrate`` and ``rxncalcrate``, in
    smolreact.c. The bug was that unimolecular reactions that had
@@ -12080,9 +12193,7 @@ Modifications for version 2.27 (released 7/26/12)
    happen) for the second and subsequent reactions incorrectly. This was
    only a problem with relatively high reaction probabilities.
 
-   .. rubric:: Modifications for version 2.36 (released 6/9/15)
-      :name: modifications-for-version-2.36-released-6915
-      :class: unnumbered
+.. rubric:: Modifications for version 2.36 (released 6/9/15)
 
 -  Fixed a bug in ``doreact`` in which bounce reactions did not work
    when both reactants had exactly the same locations.
@@ -12092,9 +12203,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  All output commands now flush the output buffer after the command is
    done.
 
-   .. rubric:: Modifications for version 2.37 (released 10/7/15)
-      :name: modifications-for-version-2.37-released-10715
-      :class: unnumbered
+.. rubric:: Modifications for version 2.37 (released 10/7/15)
 
 -  Fixed a bug in parse.c in which global definitions weren’t being
    passed to upstream files.
@@ -12127,9 +12236,7 @@ Modifications for version 2.27 (released 7/26/12)
    this. This addition, and the reaction_serialnum addition, should make
    it much easier to do particle tracking simulations.
 
-   .. rubric:: Modifications for version 2.38 (released 10/22/15)
-      :name: modifications-for-version-2.38-released-102215
-      :class: unnumbered
+.. rubric:: Modifications for version 2.38 (released 10/22/15)
 
 -  Added line to cmake file to enable building for Macs with OS 10.5 or
    above.
@@ -12202,9 +12309,7 @@ Modifications for version 2.27 (released 7/26/12)
    bounce type reactions to jump between surface panels. This was caused
    by incorrect setting of the new panel value.
 
-   .. rubric:: Modifications for version 2.39 (released 1/15/16)
-      :name: modifications-for-version-2.39-released-11516
-      :class: unnumbered
+.. rubric:: Modifications for version 2.39 (released 1/15/16)
 
 -  Fixed a bug in ``Geo_NearestTrianglePt2``, which led to incorrect
    answers for points that were outside of the triangle. This fixed a
@@ -12232,9 +12337,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed minor bugs in ``meansqrdisp``, ``meansqrdisp2``, and
    ``meansqrdisp3`` which did not allow computations for all axes.
 
-   .. rubric:: Modifications for version 2.40 (released 3/22/16)
-      :name: modifications-for-version-2.40-released-32216
-      :class: unnumbered
+.. rubric:: Modifications for version 2.40 (released 3/22/16)
 
 -  This is somewhat of a beta release, since a lot of things have
    changed and not all are documented or fully tested.
@@ -12274,9 +12377,7 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Started updating the user’s manual, but there’s much more to be done.
 
-   .. rubric:: Modifications for version 2.41 (released 4/8/16)
-      :name: modifications-for-version-2.41-released-4816
-      :class: unnumbered
+.. rubric:: Modifications for version 2.41 (released 4/8/16)
 
 -  Fixed a trivial bug that caused crashes.
 
@@ -12295,9 +12396,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Improved the Windows installation script. It might not work yet, but
    it’s probably closer.
 
-   .. rubric:: Modifications for version 2.42 (released 4/29/16)
-      :name: modifications-for-version-2.42-released-42916
-      :class: unnumbered
+.. rubric:: Modifications for version 2.42 (released 4/29/16)
 
 -  Added command for radial distribution function, also including a
    ``boxscan`` function.
@@ -12310,9 +12409,7 @@ Modifications for version 2.27 (released 7/26/12)
    different behavior, but that’s because of the expanded output, not
    different simulation results.
 
-   .. rubric:: Modifications for version 2.43 (released 5/18/16)
-      :name: modifications-for-version-2.43-released-51816
-      :class: unnumbered
+.. rubric:: Modifications for version 2.43 (released 5/18/16)
 
 -  Renamed Smoldyn_doc1 to SmoldynUsersManual, and split Smoldyn_doc2 to
    SmoldynCodeDoc and LibsmoldynManual.
@@ -12322,9 +12419,7 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added gaussiansource and molcountspace2d commands.
 
-   .. rubric:: Modifications for version 2.44 (released 6/27/16)
-      :name: modifications-for-version-2.44-released-62716
-      :class: unnumbered
+.. rubric:: Modifications for version 2.44 (released 6/27/16)
 
 -  Added reversible reaction definitions. In the process, moved reaction
    parsing to the new function ``rxnparsereaction`` and added function
@@ -12333,9 +12428,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed release.sh slightly so that freeglut.dll is included in the
    windows release.
 
-   .. rubric:: Modifications for version 2.45 (released 7/15/16)
-      :name: modifications-for-version-2.45-released-71516
-      :class: unnumbered
+.. rubric:: Modifications for version 2.45 (released 7/15/16)
 
 -  Fixed bugs in equilmol and modulatemol where they returned the wrong
    probabilities. These were caused by the change to using molscan in
@@ -12358,9 +12451,7 @@ Modifications for version 2.27 (released 7/26/12)
    compartment boundaries, and that there is at least one compartment on
    either side of the port.
 
-   .. rubric:: Modifications for version 2.46 (released 7/30/16)
-      :name: modifications-for-version-2.46-released-73016
-      :class: unnumbered
+.. rubric:: Modifications for version 2.46 (released 7/30/16)
 
 -  Added section S94_archive to the examples files. It currently has
    files for my 2016 Bioinformatics paper.
@@ -12380,9 +12471,7 @@ Modifications for version 2.27 (released 7/26/12)
    regression tests that all agree with the BioNetGen expansion, making
    them validated models.
 
-   .. rubric:: Modifications for version 2.47 (released 8/30/16)
-      :name: modifications-for-version-2.47-released-83016
-      :class: unnumbered
+.. rubric:: Modifications for version 2.47 (released 8/30/16)
 
 -  Added a new rules section to the code. This includes a rules portion
    of the data structure, the smolrules.c file, and functions in that
@@ -12425,9 +12514,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed a compiling bug in smolmolec.c in which const char\* was being
    converted to char\* in a strchr function.
 
-   .. rubric:: Modifications for version 2.48 (released 11/16/16)
-      :name: modifications-for-version-2.48-released-111616
-      :class: unnumbered
+.. rubric:: Modifications for version 2.48 (released 11/16/16)
 
 -  Fixed a minor bug in ``strmathsscanf``.
 
@@ -12440,9 +12527,7 @@ Modifications for version 2.27 (released 7/26/12)
    because not doing this causes crashes. It’s likely required before
    other things, but I didn’t modify others.
 
-   .. rubric:: Modifications for version 2.49 (released 2/17/17)
-      :name: modifications-for-version-2.49-released-21717
-      :class: unnumbered
+.. rubric:: Modifications for version 2.49 (released 2/17/17)
 
 -  Fixed bugs in molcount and molcountspace commands that arose if
    lattice species didn’t align with Smoldyn species.
@@ -12464,9 +12549,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Added function parsing to string2.c, so Smoldyn now recognizes sqrt,
    sin, cosh, etc.
 
-   .. rubric:: Modifications for version 2.50 (released 2/27/17)
-      :name: modifications-for-version-2.50-released-22717
-      :class: unnumbered
+.. rubric:: Modifications for version 2.50 (released 2/27/17)
 
 -  Added infrastructure for Smoldyn functions. This involved the command
    ``cmdevaluate``, the functions ``fnmolcount``, ``molscanfn``,
@@ -12491,9 +12574,7 @@ Modifications for version 2.27 (released 7/26/12)
    molecules were touched. It lets functions not recompute if the touch
    value is the same as it was during a prior call.
 
-   .. rubric:: Modifications for version 2.51 (released 3/15/17)
-      :name: modifications-for-version-2.51-released-31517
-      :class: unnumbered
+.. rubric:: Modifications for version 2.51 (released 3/15/17)
 
 -  Fixed a bug in which surface-bound molecules could leak through
    another surface. The problem was that the surface-bound molecule code
@@ -12512,16 +12593,12 @@ Modifications for version 2.27 (released 7/26/12)
    result works well, but it is still conceivable to have molecule leaks
    in rare situations.
 
-   .. rubric:: Modifications for version 2.52 (released 5/16/17)
-      :name: modifications-for-version-2.52-released-51617
-      :class: unnumbered
+.. rubric:: Modifications for version 2.52 (released 5/16/17)
 
 -  Martin Robinson fixed a minor bug in smolcmd.c that had to do with
    the lattice code.
 
-   .. rubric:: Modifications for version 2.53 (released 5/25/17)
-      :name: modifications-for-version-2.53-released-52517
-      :class: unnumbered
+.. rubric:: Modifications for version 2.53 (released 5/25/17)
 
 -  Fixed minor bugs in smolcmd.c that had to do with the lattice code.
    Part of the version 2.49 modifications was that I “fixed bugs in
@@ -12542,9 +12619,7 @@ Modifications for version 2.27 (released 7/26/12)
    determine which address to choose for the functions because their
    names are overloaded.
 
-   .. rubric:: Modifications for version 2.54 (released 8/27/17)
-      :name: modifications-for-version-2.54-released-82717
-      :class: unnumbered
+.. rubric:: Modifications for version 2.54 (released 8/27/17)
 
 -  Added a line to ``molpatternindex`` that sets the ``PDrule`` element
    of the ``index`` variable if update is requested, ``index`` already
@@ -12560,9 +12635,7 @@ Modifications for version 2.27 (released 7/26/12)
    with the same beginning and ending points. Added surfacedrift2 and 3
    to the regression files because these were the ones that failed.
 
-   .. rubric:: Modifications for version 2.55 (released 7/16/18)
-      :name: modifications-for-version-2.55-released-71618
-      :class: unnumbered
+.. rubric:: Modifications for version 2.55 (released 7/16/18)
 
 -  Added a ‘time’ option to the ``random_seed`` statement for setting
    the value to the current time.
@@ -12601,9 +12674,7 @@ Modifications for version 2.27 (released 7/26/12)
    another part of this change, ``molismobile`` now allows for a
    ``MSbsoln`` input.
 
-   .. rubric:: Modifications for version 2.56 (released 9/18/18)
-      :name: modifications-for-version-2.56-released-91818
-      :class: unnumbered
+.. rubric:: Modifications for version 2.56 (released 9/18/18)
 
 -  Fixed a bug that arose when the system was expanded and then some
    molecules were killed. System expansion triggered boxupdateparams
@@ -12644,9 +12715,7 @@ Modifications for version 2.27 (released 7/26/12)
    and requested reaction rates yet. In particular, it has trouble with
    the pgem, pgemmax, and pgemmaxw reverse parameters.
 
-   .. rubric:: Modifications for version 2.57 (released 3/21/19)
-      :name: modifications-for-version-2.57-released-32119
-      :class: unnumbered
+.. rubric:: Modifications for version 2.57 (released 3/21/19)
 
 -  Moved Smoldyn source from the Fred Hutchinson Center’s “hedgehog”
    subversion server to github, where it is called “Smoldyn_Official”.
@@ -12665,9 +12734,7 @@ Modifications for version 2.27 (released 7/26/12)
    molecule serial numbers to ``unsigned long long``, but left most
    other serial number values as ``long int``.
 
-   .. rubric:: Modifications for version 2.58 (released 3/29/19)
-      :name: modifications-for-version-2.58-released-32919
-      :class: unnumbered
+.. rubric:: Modifications for version 2.58 (released 3/29/19)
 
 -  Fixed minor bug in string2.c that caused loss of numerical precision
    when using ``strmathsscanf``.
@@ -12695,9 +12762,7 @@ Modifications for version 2.27 (released 7/26/12)
    so that this dll is copied when Smoldyn is installed. This will
    hopefully fix an error that Kevin Chen told me about.
 
-   .. rubric:: Modifications for version 2.59 (released 5/15/19)
-      :name: modifications-for-version-2.59-released-51519
-      :class: unnumbered
+.. rubric:: Modifications for version 2.59 (released 5/15/19)
 
 -  Trivial changes to the code to remove compiler errors and warnings.
 
@@ -12708,9 +12773,7 @@ Modifications for version 2.27 (released 7/26/12)
    computer. This still doesn’t support LibTiff or NSV but at least it
    does work.
 
-   .. rubric:: Modifications for version 2.60 (released 6/7/19)
-      :name: modifications-for-version-2.60-released-6719
-      :class: unnumbered
+.. rubric:: Modifications for version 2.60 (released 6/7/19)
 
 -  Further improvements on Windows support. This release now builds
    SmolCrowd and wrl2smol on a Windows computer. It also uses static
@@ -12724,9 +12787,7 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed a trivial bug for the “stipple” statement, which was trying to
    read hex code with the math parser.
 
-   .. rubric:: Modifications for version 2.61 (released 7/22/19)
-      :name: modifications-for-version-2.61-released-72219
-      :class: unnumbered
+.. rubric:: Modifications for version 2.61 (released 7/22/19)
 
 -  Rewrote boxscansphere, which is called by the commands
    radialdistribution and radialdistribution2. This function only worked
@@ -12744,9 +12805,7 @@ Modifications for version 2.27 (released 7/26/12)
    effectively the edge of simulated space, at least for determining
    what panels are in what boxes.
 
-   .. rubric:: Modifications for version 2.62 (not released yet)
-      :name: modifications-for-version-2.62-not-released-yet
-      :class: unnumbered
+.. rubric:: Modifications for version 2.62 (not released yet)
 
 -  Extended the pointsource, volumesource, and gaussiansource commands
    so that they now allow non-integer numbers of molecules to be
@@ -12754,10 +12813,9 @@ Modifications for version 2.27 (released 7/26/12)
    choose a Poisson-distributed random number of molecules.
 
 The wish/ to do list
-====================
 
 Bugs and issues to fix
-----------------------
+======================
 
 -  Surfaces now have lists of molecules adsorbed to them. The code would
    be faster if these lists were used as appropriate, such as for
@@ -12809,10 +12867,10 @@ Bugs and issues to fix
    user-entered information is never overwritten.
 
 Desired features
-----------------
+================
 
 Libsmoldyn
-~~~~~~~~~~
+----------
 
 -  Test libsmoldyn.
 
@@ -12829,7 +12887,7 @@ Libsmoldyn
 -  Finish swigging for Python, and then swig for R and Octave.
 
 Code acceleration
-~~~~~~~~~~~~~~~~~
+-----------------
 
 -  There are lots of little tweaks that could be made to speed up the
    code. For example:
@@ -12852,7 +12910,7 @@ Code acceleration
    roots and trig. functions, as possible.
 
 Electrostatics
-~~~~~~~~~~~~~~
+--------------
 
 -  Arnd Pralle wants Smoldyn to simulate electrostatic interactions. At
    first, I was thinking that this would be a big pain. But then I
@@ -12869,18 +12927,18 @@ Electrostatics
    chemical reactions at short distances.
 
 BioNetGen
-~~~~~~~~~
+---------
 
 -  Need to finish groups stuff. More testing would be good, too.
 
 Math
-~~~~
+----
 
 -  Add functions that have parentheses, such as sin(x) and atan2(x,y).
    Also add a molcount function.
 
 Commands
-~~~~~~~~
+--------
 
 -  Commands need to be overhauled. They need to be modularized, they
    need to support wildcards, and they need to be able to export data to
@@ -12920,7 +12978,7 @@ Commands
    of simulation variables could be printed with a user-defined format.
 
 Distribution
-~~~~~~~~~~~~
+------------
 
 -  Sourceforge. The account has been set up but needs code, etc. Then, I
    should e-mail everyone who might be interested to invite them to join
@@ -12953,7 +13011,7 @@ Distribution
    Fink, etc. code databases. This has be done to some extent.
 
 Core Smoldyn
-~~~~~~~~~~~~
+------------
 
 -  Add a surface panel shape called a holey sphere. This would be a
    sphere but with as many holes as desired. It could serve as a neuron
@@ -12979,7 +13037,7 @@ Core Smoldyn
 -  Check bimolecular reaction rates for surface-bound molecules.
 
 Graphics and I/O
-~~~~~~~~~~~~~~~~
+----------------
 
 -  Off-screen rendering would be very helpful. Two options seem most
    promising. (1) Off-screen rendering with OpenGL. This requires a
@@ -13008,7 +13066,7 @@ Graphics and I/O
    reactions, molecules, etc. Species removal would be harder.
 
 Code improvements
-~~~~~~~~~~~~~~~~~
+-----------------
 
 -  First order reactions would be more efficient with an event queue
    rather than a probabilistic likelihood at each time step.
@@ -13033,7 +13091,7 @@ Code improvements
    probabilities.
 
 Major additions
-~~~~~~~~~~~~~~~
+---------------
 
 -  Fibers (such as DNA, actin, microtubules, MinD, FtsZ, etc.),
    fiber-bound molecules, etc. Also, membrane-bound polymers would be

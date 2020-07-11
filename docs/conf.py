@@ -42,7 +42,7 @@ extensions = [
     "sphinx_rtd_theme",
     "recommonmark",
     "breathe",
-    "sphinx_autodoc_typehints",
+    #  "sphinx_autodoc_typehints",
     "sphinx.ext.autosummary",
 ]
 
@@ -66,7 +66,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*.md"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -84,4 +84,4 @@ html_static_path = ["_static"]
 source_parsers = {
     ".md": "recommonmark.parser.CommonMarkParser",
 }
-source_suffix = [".rst", ".md"]
+source_suffix = [".rst"]

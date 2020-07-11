@@ -44,7 +44,7 @@ file(GLOB_RECURSE SMOLDYN_RST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../docs/*.rst)
 # - Our doc files have been updated
 # - The Sphinx config has been updated
 add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
-    COMMAND ${SPHINX_EXECUTABLE} -b html -W
+    COMMAND ${SPHINX_EXECUTABLE} -b html 
         # Tell Breathe where to find the Doxygen output
         -Dbreathe_projects.smoldyn=${DOXYGEN_OUTPUT_DIR}/xml 
         ${SPHINX_SOURCE} ${SPHINX_BUILD}

@@ -83,9 +83,6 @@ def _toMS(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
 
 
 class Species(object):
-    """Chemical species.
-    """
-
     def __init__(
         self,
         name: str,
@@ -96,24 +93,25 @@ class Species(object):
         mol_list: str = "",
     ):
         """
+        Species or Molecule.
+
         Parameters
         ----------
         name : str
             Name of the species.
         state : str
             State of the species. One of the following: 
-                'soln', 'front', 'back', 'up', 'down', 'bsoln', 'all', 'none',
-                'some'
+                'soln', 'front', 'back', 'up', 'down', 'bsoln', 'all', 'none','some'
         color: Color or dict of Colors
-            If a single `Color` is given, all states of this molecule will be
+            If a single :py:class:`Color` is given, all states of this molecule will be
             assigned this color. To assign different colors to different
-            states, use a dictionary of `Color`s.
+            states, use a dictionary of :py:class:`Color`.
         difc : float or a dict of floats
             Diffusion coefficient. If a single value is given, all states of
             the molecule gets the same value. To assign different values to
             different states, use a dict e.g. {'soln':1, 'front':2}.
         display_size : float, optional
-            display size of the molecule. For the “opengl” graphics level, the
+            display size of the molecule. For the ``opengl`` graphics level, the
             display size value is in pixels.  Here, numbers from 2 to 4 are
             typically good choices (deafult 2px).  For the two better graphics
             options, the display size value is the radius with which the
@@ -664,9 +662,9 @@ class _SurfaceFaceCollection(object):
         Parameters
         ----------
         drawmode : str
-            `drawmode` may be “none”, “vertex”, “edge”, “face”, or combinations 
-            of ‘v’, ‘e’, or ‘f’ for multiple renderings of vertices, edges,
-            and/or faces.  2-D spheres and hemispheres are either filled or are
+            May be "none", "vertex", "edge", "face", or combinations of ‘v’,
+            ‘e’, or ‘f’ for multiple renderings of vertices, edges, and/or
+            faces. 2-D spheres and hemispheres are either filled or are
             outlined depending on the polygon frontcharacter. If multiple
             renderings are chosen in 3D, then panel faces are shown in the
             requested color and other renderings are shown in black.
@@ -676,18 +674,18 @@ class _SurfaceFaceCollection(object):
             in which surfaces are drawn with just vertices or edges and not
             faces.
         color : Color
-            color e.g. 'black', 'red', [0.1,0.1,0.1,1] etc.
+            color e.g. 'black', 'red', [0.1,0.1,0.1] etc.
         stipplefactor : int
             stipplefactor is the repeat distance for the entire stippling
             pattern (1 is a good choice).  Stippling of the surface edges, for
             drawing purposes.  This is only relevant for 3-D simulations in
             which surfaces are drawn with just edges and not faces, and with
-            `opengl_good` or `opengl_better` display method.
+            opengl_good or opengl_better display method.
         stipplepattern : int
             stipplepattern a hexidecimal integer, enter the stippling pattern between
-            0x0000 (0) and 0xFFFF (65536).  0x00FF (256) has long dashes,
-            0x0F0F (3855) has medium dashes, 0x5555 (21845)  has dots, etc.
-            Turn stippling off with 0xFFFF (65536).
+            ``0x0000`` (0) and ``0xFFFF`` (65536), ``0x00FF`` (256) has long dashes,
+            ``0x0F0F`` (3855) has medium dashes, ``0x5555`` (21845)  has dots, etc.
+            Turn stippling off with ``0xFFFF`` (65536).
         shininess : float
             Shininess of the surface for drawing purposes.  This value can
             range from 0 for visually flat surfaces to 128 for very shiny
@@ -814,40 +812,41 @@ class Surface(object):
             assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
     def setStyle(self, face, *args, **kwargs):
-        """See the function [setStyle](_SurfaceFaceCollection.setStyle) for more
-        details. This function forwards the call to `_SurfaceFaceCollection.setStyle`.
+        """See the function :func:`_SurfaceFaceCollection.setStyle` for more
+        details. This function forwards arguments to
+        :func:`_SurfaceFaceCollection.setStyle`.
 
         Parameters
         ----------
         face: str
             face of the surface: 'front', 'back', 'both'
-
-        *args and **kwargs: 
-            See `_SurfaceFaceCollection.setStyle`
+        *args:
+            See :func:`_SurfaceFaceCollection.setStyle`
+        **kwargs: 
+            See :func:`_SurfaceFaceCollection.setStyle`
 
         See Also
         --------
-        _SurfaceFaceCollection.setStyle
+        :func:`_SurfaceFaceCollection.setStyle`
         """
         assert face in ["front", "back", "both"]
         getattr(self, face).setStyle(*args, **kwargs)
 
     def addAction(self, face, *args, **kwargs):
-        """See the function `_SurfaceFaceCollection.addAction` for more
-        details. This function forwards the the call to
-        `_SurfaceFaceCollection.addAction` function.
+        """This function forwards the arguements to :func:`_SurfaceFaceCollection.addAction`.
 
         Parameters
         ----------
         face: str
             face of the surface: 'front', 'back', 'both'
-
-        *args and **kwargs: 
-            See `_SurfaceFaceCollection.addAction`
+        *args:
+            See :func:`_SurfaceFaceCollection.addAction`
+        **kwargs: 
+            See :func:`_SurfaceFaceCollection.addAction`
 
         See Also
         --------
-        _SurfaceFaceCollection.addAction
+        :func:`_SurfaceFaceCollection.addAction`
         """
         getattr(self, face).addAction(*args, *kwargs)
 
@@ -1066,36 +1065,28 @@ class StateMonitor(object):
 
 
 class Command(object):
-    """Smoldyn command
-    """
-
     def __init__(self, cmd: str, type: str = "", **kwargs):
-        """
+        """Smoldyn Command
+
         Parameters
         ----------
-        cmd : str
+        cmd: str
             command string.
-        type : str
-            Type of command. When `from_string` is set to `True`, we expect the the type to
-            be included in the `cmd` string.
+        type: str
+            Type of command. Optional when `from_string` is set to `True`. Then 
+            the type is to be included in the `cmd` string itself.
 
-            Use capital letter version for integer queue.
-            - ‘b’ or 'B' for before the simulation
-            - ‘a’ or 'A' for after the simulation,
-            - ‘e’ or 'E' for every time step during the simulation
-            - ‘@’ or '&' for a single command execution at time ``time``
-            - ‘n’ or 'N' for every n’th iteration of the simulation
-            - ‘i’ or 'I' for a fixed time interval. The command is executed
-              over the period from on to off with intervals of at least dt(the
-              actual intervals will only end at the times of simulation time
-              steps).
-            - ‘x’ for a fixed time multiplier. The command is executed at on,
-              then on+dt, then on+dt*xt, then on+dt*xt2, and so forth.
-            - ‘j’ for every ``dtit`` step with a set starting iteration and
-              stopping iteration.
-        kwargs :
-            from_string: False
-                If True, use plain text string to generate the command.
+            Use capital letter version for integer queue.  ‘b’ or 'B' for
+            before the simulation.  ‘a’ or 'A' for after the simulation.  ‘e’
+            or 'E' for every time step during the simulation.  ‘@’ or '&' for a
+            single command execution at time `time`.  ‘n’ or 'N' for every n’th
+            iteration of the simulation.  ‘i’ or 'I' for a fixed time interval.
+            The command is executed over the period from on to off with
+            intervals of at least dt(the actual intervals will only end at the
+            times of simulation time steps).  ‘x’ for a fixed time multiplier.
+            The command is executed at on, then on+dt, then on+dt*xt, then
+            on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
+            starting iteration and stopping iteration.
 
         Notes
         -----
@@ -1422,28 +1413,25 @@ class Simulation(object):
 
         Parameters
         ----------
-        cmd : str
+        cmd: str
             Command string.
-        type : str
-            Type of command. When `from_string` is set to `True`, we expect the the type to
-            be included in the `cmd` string.
+        type: str
+            Type of command. Optional when `from_string` is set to `True`. Then 
+            the type is to be included in the `cmd` string itself.
 
-            Use capital letter version for integer queue.
-            - ‘b’ or 'B' for before the simulation
-            - ‘a’ or 'A' for after the simulation,
-            - ‘e’ or 'E' for every time step during the simulation
-            - ‘@’ or '&' for a single command execution at time ``time``
-            - ‘n’ or 'N' for every n’th iteration of the simulation
-            - ‘i’ or 'I' for a fixed time interval. The command is executed
-              over the period from on to off with intervals of at least dt(the
-              actual intervals will only end at the times of simulation time
-              steps).
-            - ‘x’ for a fixed time multiplier. The command is executed at on,
-              then on+dt, then on+dt*xt, then on+dt*xt2, and so forth.
-            - ‘j’ for every ``dtit`` step with a set starting iteration and
-              stopping iteration.
-        kwargs :
-            kwargs of :func:`Command <smoldyn.smoldyn.Class.__init__>`.
+            Use capital letter version for integer queue.  ‘b’ or 'B' for
+            before the simulation.  ‘a’ or 'A' for after the simulation.  ‘e’
+            or 'E' for every time step during the simulation.  ‘@’ or '&' for a
+            single command execution at time `time`.  ‘n’ or 'N' for every n’th
+            iteration of the simulation.  ‘i’ or 'I' for a fixed time interval.
+            The command is executed over the period from on to off with
+            intervals of at least dt(the actual intervals will only end at the
+            times of simulation time steps).  ‘x’ for a fixed time multiplier.
+            The command is executed at on, then on+dt, then on+dt*xt, then
+            on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
+            starting iteration and stopping iteration.
+        kwargs: dict
+            kwargs of :func:`Command.__init__`.
         """
         c = Command(cmd, type, from_string=False, **kwargs)
         self.commands.append(c)
