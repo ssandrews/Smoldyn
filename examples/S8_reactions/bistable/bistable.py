@@ -14,7 +14,7 @@ A2 = sm.Species("A2", difc=1, color="red", display_size=5)
 B2 = sm.Species("B2", difc=1, color="blue", display_size=5)
 
 # mol 1 X 5 5
-X.addToSolution(1, fixed=[5, 5])
+X.addToSolution(1, pos=[5, 5])
 
 express = sm.Reaction("express", subs=[X], prds=[X, A, B], kf=1)
 Adimer = sm.Reaction("Adimer", subs=[A, A], prds=[A2], kf=1, kb=1)

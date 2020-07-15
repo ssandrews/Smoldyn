@@ -3073,6 +3073,14 @@ void endsimulate(simptr sim, int er)
 
     simLog(sim, 2, "total execution time: %g seconds\n", sim->elapsedtime);
 
+    // If SMOLDYN_NON_INTERACTIVE is set, quit at end. Useful when running
+    // examples.
+    const char* envName = "SMOLDYN_NON_INTERACTIVE";
+    char* value;
+    value = getenv(envName);
+    if(value && value[0] != '\0')
+        sim->quitatend = 1;
+
     if(sim->graphss && sim->graphss->graphics > 0 && !tflag && !sim->quitatend)
         fprintf(stderr, "\nTo quit: Activate graphics window, then press shift-Q.\a\n");
     return;

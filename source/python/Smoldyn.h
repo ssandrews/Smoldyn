@@ -72,7 +72,7 @@ inline void cleanup()
 }
 
 void setBoundaries(const vector<pair<double, double>>& bounds);
-void setBoundaries(const vector<double>& lows, const vector<double>& highs);
+void setBoundaries(vector<double>& lows, vector<double>& highs);
 
 //std::vector<pair<double, double>> getBoundaries();
 std::pair<vector<double>, vector<double>> getBoundaries();

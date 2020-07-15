@@ -20,6 +20,7 @@ Welcome to Smoldyn's documentation!
    :caption: Table of Contents
 
    user/user_manual
+   user/user_manual_python
    developer/index
    python/api
    SmolEmulate <other/emulate-doc>

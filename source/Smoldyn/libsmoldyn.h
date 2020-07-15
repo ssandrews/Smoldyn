@@ -46,11 +46,11 @@ extern "C" {
 
 /******************************* Miscellaneous ********************************/
 
-    /**
-     * @brief Returns version of smoldyn.
-     *
-     * @return 
-     */
+/**
+ * @brief Returns version of smoldyn.
+ *
+ * @return
+ */
 double smolGetVersion(void);
 
 /*********************************** Errors ***********************************/
@@ -209,6 +209,7 @@ enum ErrorCode smolSetReactionRegion(
     simptr sim, const char *reaction, const char *compartment, const char *surface);
 enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction,
     enum RevParam method, double parameter, const char *product, double *position);
+enum ErrorCode smolSetReactionIntersurface(simptr sim, const char *reaction, int *rules);
 
 /********************************* Ports ***********************************/
 

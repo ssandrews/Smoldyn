@@ -7,5 +7,7 @@ recommonmark
 sphinxcontrib-plantuml
 sphinxcontrib-programoutput
 sphinxcontrib-napoleon
+sphinxcontrib-napoleon
+sphinxcontrib-inlinesyntaxhighlight
 sphinxcontrib-tikz
 sphinx-autodoc-typehints

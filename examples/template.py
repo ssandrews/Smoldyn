@@ -25,7 +25,7 @@ K_FWD = 0.001  # substrate-enzyme association reaction rate
 K_BACK = 1  # complex dissociation reaction rate
 K_PROD = 1  # complex reaction rate to product
 
-# System space and time definitions. It is a 2D system bound between x=-1 to
+# System space definitions. It is a 2D system bound between x=-1 to
 # x=1 and y=-1 to y=1.
 sm.setBounds(low=[-1, -1], high=[1, 1])
 
@@ -36,10 +36,10 @@ sm.setBounds(low=[-1, -1], high=[1, 1])
 #
 # There are few other parameters. Type `help(smoldyn.Species)` in Python
 # console to know about them.
-S = sm.Species("S", difc=3, color="green", display_size=0.02)
-E = sm.Species("E", color="darkred", display_size=0.03)
-P = sm.Species("P", difc=3, color="darkblue", display_size=0.02)
-ES = sm.Species("ES", color="orange", display_size=0.03)
+S = sm.Species("S", difc=3, color=dict(all="green"), display_size=dict(all=0.02))
+E = sm.Species("E", color=dict(all="darkred"), display_size=dict(all=0.03))
+P = sm.Species("P", difc=3, color=dict(all="darkblue"), display_size=dict(all=0.02))
+ES = sm.Species("ES", color=dict(all="orange"), display_size=dict(all=0.03))
 
 # Surfaces in the system and their properties.
 # Declare a sphere
@@ -52,19 +52,18 @@ membrane = sm.Surface("membrane", panels=[s1])
 membrane.both.addAction([S, E, P, ES], "reflect")
 membrane.both.setStyle(color="black", thickness=1)
 inside = sm.Compartment(name="inside", surface=membrane, point=[0, 0])
+inside.addMolecules(S, 500)  # Place molecules for initial condition
 
 # Chemical reactions
 # Association and dissociation reactions.
 r1 = sm.Reaction(
     "r1", [(E, "front"), (S, "bsoln")], [(ES, "front")], kf=K_FWD, kb=K_BACK
 )
-r1.backward.setProductPlacement("pgemmax", 0.2)
+r1.reverse.setProductPlacement("pgemmax", 0.2)
 
 # product formation reaction
 r2 = sm.Reaction("r2", [(ES, "front")], [(E, "front"), (P, "bsoln")], kf=K_PROD)
 
-# Place molecules for initial condition
-inside.addMolecules(S, 500)
 # surface_mol 100 E(front) membrane all all	# puts 100 E molecules on surface
 membrane.addMolecules((E, "front"), 100)
 
@@ -76,9 +75,8 @@ s.addCommand(cmd="molcount templateout.txt", type="N", step=10)
 # s.addCommandFromString("N 10 molcount templateout.txt")
 s.setGraphics(
     "opengl_good",
-    iter=3,
     bg_color="white",
     frame_thickness=1,
-    text_display=["time", S, "E(front)", "ES(front)", P],
+    text_display=["time", S, (E, "front"), (ES, "front"), P],
 )
 s.run()

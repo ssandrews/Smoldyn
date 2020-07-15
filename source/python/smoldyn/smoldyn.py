@@ -40,7 +40,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from smoldyn.config import __logger__
 from smoldyn.utils import color2RGBA
-from typing import Union, Tuple, List, Dict
+from typing import Union, Tuple, List, Dict, Optional
 from smoldyn import _smoldyn
 
 # Smoldyn version
@@ -113,7 +113,7 @@ class Species(object):
         display_size : float, optional
             display size of the molecule. For the ``opengl`` graphics level, the
             display size value is in pixels.  Here, numbers from 2 to 4 are
-            typically good choices (deafult 2px).  For the two better graphics
+            typically good choices (default 2px).  For the two better graphics
             options, the display size value is the radius with which the
             molecule is drawn, using the same units as elsewhere in the input
             file.
@@ -250,13 +250,18 @@ class Species(object):
             size = {_smoldyn.MolecState.all: size}
         self._displaySize = size
         for state, size in self._displaySize.items():
+            state = (
+                _smoldyn.MolecState.__members__[state]
+                if isinstance(state, str)
+                else state
+            )
             k = _smoldyn.setMoleculeSize(self.name, state, size)
             assert k == _smoldyn.ErrorCode.ok
 
     def addToSolution(
         self,
         N: int,
-        fixed: List[float] = [],
+        pos: List[float] = [],
         highpos: List[float] = [],
         lowpos: List[float] = [],
     ):
@@ -266,7 +271,7 @@ class Species(object):
         ----------
         N : float
             Number of molecules
-        fixed : List[float]
+        pos : List[float]
             Fixed location. If given, both `lowpos` and `highpos` will be set
             to this value.
         highpos : List[float]
@@ -279,8 +284,8 @@ class Species(object):
         assert (
             self.state == "soln"
         ), f"You can't use this function on a Species with type {self.state}"
-        if fixed:
-            lowpos = highpos = fixed
+        if pos:
+            lowpos = highpos = pos
         k = _smoldyn.addSolutionMolecules(self.name, N, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
@@ -289,6 +294,9 @@ class Species(object):
 class NullSpecies(Species):
     name: str = ""
     state = _smoldyn.MolecState.__members__["none"]
+
+    def __bool__(self):
+        return False
 
     def __len__(self):
         return 0
@@ -392,8 +400,8 @@ class Panel(object):
         self._assignNeighbor(panel)
 
     def _assignNeighbor(self, panel, reciprocal: bool = False):
-        assert self.surface, "This panel has no Surface"
-        assert panel.surface, "This panel has no Surface"
+        assert self.surface, f"Panel {self} has no Surface assigned."
+        assert panel.surface, f"Panel {panel} has no Surface assigned."
         assert self != panel, "A panel cannot be its own neighbor"
         k = _smoldyn.addPanelNeighbor(
             self.surface.name, self.name, panel.surface.name, panel.name, reciprocal
@@ -854,7 +862,7 @@ class Surface(object):
         self,
         species: SpeciesWithState,
         N: int,
-        panels: List[Panel] = [],
+        panels: Optional(List[Panel]) = None,
         pos: List[float] = [],
     ):
         """Place molecules with random or specific positions onto a given
@@ -870,7 +878,7 @@ class Surface(object):
         surface : smoldyn.geometry.Surface
             Surface
         panels: smoldyn.geometry.Panel
-            Panels of surface. If `None` or `[]` is given then all panels of
+            Panels of surface. If `None` is given then all panels of
             surfece are used.
         pos: List[float]
             Position of the molecules. If not given, then randomly distribute
@@ -885,7 +893,8 @@ class Surface(object):
             assert len(species) == 2, "Expected tuple of (Species, MolecState)"
             sname = species[0].name
             sstate = _toMS(species[1])
-        panels = panels if panels else self.panels
+
+        panels = panels if panels is not None else self.panels
 
         # Distribute molecules equally among the panels.
         _N = N // len(panels)
@@ -906,6 +915,9 @@ class NullSurface(Surface):
     def __init__(self):
         self.name = ""
         self.panels = []
+
+    def __bool__(self):
+        return False
 
 
 class Port(object):
@@ -953,11 +965,15 @@ class Boundaries:
     diffuses off of one side of space is instantly moved to the opposite edge
     of space; these are useful for simulating a small portion of a large system
     while avoiding edge effects.
+
+    See also
+    --------
+    setBounds
     """
 
     low: List[float]
     high: List[float]
-    types: Union[str, List[str]] = field(default_factory=lambda: ["r"])
+    types: Union[str, List[str]] = field(default_factory=lambda: "r")
     dim: int = 0
 
     def __post_init__(self):
@@ -966,11 +982,17 @@ class Boundaries:
             self.types = self.types * len(self.low)
         self.dim = len(self.low)
         _smoldyn.setBoundaries(self.low, self.high)
-        __logger__.debug("Getting boundaries", _smoldyn.getBoundaries())
         assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
         for _d, _t in zip(range(self.dim), self.types):
-            k = _smoldyn.setBoundaryType(_d, -1, _t)
-            assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
+            if len(_t) == 1:
+                k = _smoldyn.setBoundaryType(_d, -1, _t)
+                assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
+            else:
+                for i, t in zip([0, 1], _t):
+                    k = _smoldyn.setBoundaryType(_d, i, t)
+                    assert (
+                        k == _smoldyn.ErrorCode.ok
+                    ), f"Failed to set boundary type: {k}"
 
 
 @dataclass
@@ -979,6 +1001,15 @@ class Partition:
     value: float
 
     def __post_init__(self):
+        """Sets the virtual partitions in the simulation volumne. Two
+        specialization is avaiable: :py:class:`MoleculePerBox`, and
+        :py:class:`Box`.
+
+        See also
+        --------
+        :py:class:`MoleculePerBox`
+        :py:class:`Box`
+        """
         k = _smoldyn.setPartitions(self.name, self.value)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set partition: {k}"
 
@@ -1153,28 +1184,27 @@ class Command(object):
 
 
 class Simulation(object):
-    """Class to store simulation related attributes. 
-
-    See also
-    -------
-    _smoldyn.simptr
-    """
-
-    def __init__(self, stop: float, step: float, quitAtEnd: bool = False, **kwargs):
+    def __init__(self, stop: float, step: float, quit_at_end: bool = False, **kwargs):
         """
+        Class to store simulation related attributes. 
+
         Parameters
         ----------
         stop : float
             Simulation stop time (sec)
         step : float
             Simulation step or dt (sec)
-        quitAtEnd : bool
+        quit_at_end : bool
             If `True`, Smoldyn won't prompt user at the end of simulation and
             quit. Same effect can also be achieved by setting environment variable 
             `SMOLDYN_NON_INTERACTIVE` to 1.
         kwargs :
             output_files :
                 Declare output files.
+
+        See also
+        --------
+        :py:_smoldyn.simptr
         """
         self.start = kwargs.get("start", 0.0)
         self.stop = stop
@@ -1190,7 +1220,7 @@ class Simulation(object):
             self.setOutputFiles(self.kwargs["output_files"])
 
         # TODO : Add to documentation.
-        self.quitAtEnd = quitAtEnd
+        self.quitAtEnd = quit_at_end
         if os.getenv("SMOLDYN_NON_INTERACTIVE", ""):
             self.quitAtEnd = True
 
@@ -1300,6 +1330,8 @@ class Simulation(object):
     def __todisp_text__(self, x):
         if isinstance(x, str):
             return x
+        if isinstance(x, tuple):
+            return f"{x[0].name}({x[1]})"
         return x.__to_disp__()
 
     def __set_text_display__(self, text_display):
@@ -1312,7 +1344,11 @@ class Simulation(object):
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set '{item}'"
 
     def setTiff(
-        self, tiffname: Path = Path("OpenGL"), minsuffix: int = 1, maxsuffix: int = 999
+        self,
+        tiffname: Path = Path("OpenGL"),
+        minsuffix: int = 1,
+        maxsuffix: int = 999,
+        every: int = 5,
     ):
         """TIFF related parameters.
 
@@ -1330,13 +1366,15 @@ class Simulation(object):
             Largest possible suffix number of TIFF files that are saved.  Once
             this value has been reached, additional TIFFs cannot be saved.
             Default value is 999.
-            
+        every: int
+            ``every`` is the number of simulation timesteps that should elapse
+            between subsequent snapshots.
         """
         try:
             Path(tiffname).parent.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             __logger__.warning(e)
-        k = _smoldyn.setTiffParams(tiffname, minsuffix, maxsuffix)
+        k = _smoldyn.setTiffParams(every, str(tiffname), minsuffix, maxsuffix)
         assert k == _smoldyn.ErrorCode.ok
 
     def setLight(
@@ -1470,9 +1508,12 @@ class HalfReaction(object):
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        rate: float,
+        rate: float = -1.0,
+        *,
         compartment: Compartment = None,
         surface: Surface = None,
+        binding_radius: float = 0.0,
+        reaction_probability: float = 0.0,
     ):
         """Half Reaction (only occurs in forwared direction).
 
@@ -1490,10 +1531,17 @@ class HalfReaction(object):
             If not ``None``, restrict the reaction to this compartment.
         surface: Surface
             If not ``None``, restricts this reaction to this surface.
+        binding_radius: float
+            binding radius (for second order reactions, if kf is not given)
+        reaction_probability: float
+            reaction probability (for first order reactions, if kf if not
+            given)
         """
 
         self.name = name
         self.rate = rate
+        self.subs = subs
+        self.prds = prds
         self.compartment = compartment
         self.surface = surface
 
@@ -1528,6 +1576,7 @@ class HalfReaction(object):
 
         if not name:
             name = "r%d" % id(self)
+
         k = _smoldyn.addReaction(
             name, r1name, r1state, r2name, r2state, prdNames, prdStates, rate,
         )
@@ -1536,12 +1585,31 @@ class HalfReaction(object):
             __logger__.warning(f" Products  : {prds}")
             raise RuntimeError(f"Failed to add reaction: {k}")
 
+        # if rate is negative, then we expect either binding_radius or
+        # reaction_probability.
+        if rate < 0.0:
+            # check if reaction_probability is given
+            if len(subs) < 2:
+                assert (
+                    reaction_probability > 0.0
+                ), "Must set rate or reaction_probability"
+                k = _smoldyn.setReactionRate(name, reaction_probability, True)
+                assert k == _smoldyn.ErrorCode.ok
+            else:
+                assert binding_radius > 0.0, "Must set either rate of binding_radius"
+                k = _smoldyn.setReactionRate(name, binding_radius, True)
+                assert k == _smoldyn.ErrorCode.ok
+
         if self.compartment is not None or self.surface is not None:
             cname = self.compartment.name if self.compartment else ""
             sname = self.surface.name if self.surface else ""
             assert cname or sname
             k = _smoldyn.setReactionRegion(self.name, cname, sname)
             assert k == _smoldyn.ErrorCode.ok
+
+    @property
+    def order(self):
+        return len(self.subs)
 
     def setProductPlacement(
         self, type: str, param: float = 0.0, product: str = None, pos: List[float] = []
@@ -1587,21 +1655,20 @@ class HalfReaction(object):
 
 
 class Reaction(object):
-    """A chemical reaction. Each reaction creates two HalfReactions: forward
-    and backward. 
-    """
-
     def __init__(
         self,
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        kf: float,
-        kb: float = 0.0,
+        kf: float = -1.0,
+        binding_radius: float = 0.0,
+        reaction_probability: float = 0.0,
+        kb: float = -1.0,
         compartment: Compartment = None,
         surface: Surface = None,
     ):
-        """__init__.
+        """A chemical reaction. Each reaction consists of two HalfReactions,
+        forward  (always present) and reverse (`None` if ``kb<=0.0``).
 
         Parameters
         ----------
@@ -1615,22 +1682,72 @@ class Reaction(object):
             Forward rate constant
         kb : float
             Backward rate constant (default 0.0)
+        binding_radius: float
+            Binding radius (for second order reaction)
+        reaction_probability: float
+            Reaction probability (first order reaction)
         compartment : Compartment
-            Reaction compartment. If not `None`, both forward and backward
+            Reaction compartment. If not `None`, both forward and reverse
             reactions will be limited to this compartment. 
         surface : Surface
-            Reaction surface. If not `None`, both forward and backward
+            Reaction surface. If not `None`, both forward and reverse
             reactions will be limited to this surface. 
         """
         self.name = f"r{id(self):d}" if not name else name
         fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
-        self.forward = HalfReaction(fwdname, subs, prds, kf, compartment, surface)
-        self.backward = None
-        if kb > 0:
-            self.backward = HalfReaction(revname, prds, subs, kb, compartment, surface)
+        self.forward = HalfReaction(
+            fwdname,
+            subs,
+            prds,
+            kf,
+            compartment=compartment,
+            surface=surface,
+            binding_radius=binding_radius,
+            reaction_probability=reaction_probability,
+        )
+        self.reverse = None
+        if kb > 0.0:
+            self.reverse = HalfReaction(
+                revname, prds, subs, kb, compartment=compartment, surface=surface
+            )
+
+    def setIntersurface(self, rules: Optional[List[Union[int, str]]]):
+        """Define `rules` to allow a bimolecular reaction operates when its
+        reactants are on different surfaces. In general, there should be as
+        many rule values as there are products for this reaction
 
 
-def setBounds(low: List[float], high: List[float], types: Union[str, List[str]] = []):
+        Parameters
+        ----------
+        rules : 
+            List of integer or string. For each product choose `1` (or
+            ``"r1"``) if it should be placed on the first reactant’s surface or
+            relative to that surface, and `2` (``"r2"``) if it should be placed
+            on the second reactant’s surface or relative to that surface. To
+            turn off intersurface reactions, which is the default behavior,
+            give rule_list as ``[-1]`` or ``None``.  To turn on intersurface
+            reactions for reactions that have no products, give rule_list as
+            ``[0]`` or ``[]``. This statement cannot be used together with the
+            ``setSerialNum`` function for the same reaction.
+
+        """
+        assert self.forward.order == 2, "Bimoleculear reaction is needed."
+        assert len(rules) == len(
+            self.forward.prds
+        ), "Length of rules should be equal to number of products"
+        rules = [-1] if rules is None else rules
+        rules = [0] if rules == [] else rules
+        _rules: List[int] = []
+
+        # r1, r2 are turned to 1, 2 etc.
+        for r in rules:
+            r = int(r[1:]) if isinstance(r, str) else int(r)
+            _rules.append(r)
+        k = _smoldyn.setReactionIntersurface(self.forward.name, _rules)
+        assert k == _smoldyn.ErrorCode.ok
+
+
+def setBounds(low: List[float], high: List[float], types: Union[str, List[str]] = "r"):
     """Define system volume by setting boundaries.
 
     Parameters
@@ -1639,9 +1756,13 @@ def setBounds(low: List[float], high: List[float], types: Union[str, List[str]] 
         lower limit of axes. For example for x=0, y=-100, and z=0, use [0,-100,0].
     high :
         higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
-    types : List[str]
+    types : Union[str, List[str]]
         Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
-        absorbing, and 'p' for periodic boundary.
+        absorbing, and 'p' for periodic boundary. Default is 'r'. 
+
+        If a single value is given, then  it is applied to all dimensions. 
+        If a string is two chracter long then low and high side of boundaries
+        are set different side.
 
     See also
     --------

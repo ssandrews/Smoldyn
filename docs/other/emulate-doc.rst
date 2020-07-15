@@ -385,8 +385,7 @@ Memory management
 ``void emufree(emuptr emu);``
    Frees an emu pointer and all of its contents.
 
-Data structure output
----------------------
+**Data structure output**
 
 ``void emuoutput(emuptr emu);``
    | 
@@ -400,8 +399,7 @@ Data structure output
      output. Prints out the number of warnings and errors at the end.
      Returns the number of errors.
 
-Structure set up
-----------------
+**Structure set up**
 
 ``int emusetparam(emuptr emu,char *param,double value);``
    | 
@@ -431,10 +429,7 @@ Structure set up
    | 
    | Inputs the emu structure parameters one at a time from the user.
 
-.. _structure-set-up-1:
 
-Structure set up
-----------------
 
 ``int emusetrmsstep(emuptr emu);``
    | 

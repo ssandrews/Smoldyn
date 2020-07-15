@@ -9,7 +9,7 @@
  * hundreds of thousands of molecules over several minutes of real time.
  * Simulated molecules diffuse, react, are confined by surfaces, and bind to
  * membranes much as they would in a real biological system.
- * 
+ *
  * This is a doxygen generated document suitable for developers. Normal users
  * of this program should refer to <a
  * href="https://smoldyn.org">https://smoldyn.org</a> or <a

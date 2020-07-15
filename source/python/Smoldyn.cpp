@@ -51,14 +51,14 @@ bool deleteSimptr(simptr ptr)
 
 size_t getDim()
 {
-    return dim_;
+    assert(lowbounds_.size() == (size_t)cursim_->dim);
+    return cursim_->dim;
 }
 
 void setDim(size_t dim)
 {
-    dim_ = dim;
-    if(cursim_)
-        cursim_->dim = dim;
+    assert(cursim_);
+    cursim_->dim = dim;
 }
 
 void printSimptrNotInitWarning(const char* funcname)
@@ -158,29 +158,27 @@ bool run(double stoptime, double dt, bool display, bool overwrite = false)
     return r == ErrorCode::ECok;
 }
 
-void setBoundaries(const vector<pair<double, double>>& bounds)
+
+void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
 {
-    setDim(bounds.size());
-    lowbounds_.resize(dim_);
-    highbounds_.resize(dim_);
-    for(size_t i = 0; i < dim_; i++) {
-        lowbounds_[i]  = bounds[i].first;
-        highbounds_[i] = bounds[i].second;
-    }
-    initialize();
+    lowbounds_ = lowbounds;
+    highbounds_ = highbounds;
+    assert(lowbounds.size() == highbounds.size());
+    if(cursim_)
+        simfree(cursim_);
+    cursim_ = smolNewSim(lowbounds.size(), &lowbounds[0], &highbounds[0]);
+    return;
 }
 
-void setBoundaries(const vector<double>& lowbounds, const vector<double>& highbounds)
+void setBoundaries(const vector<pair<double, double>>& bounds)
 {
-    assert(lowbounds.size() == highbounds.size());
-    setDim(lowbounds.size());
-    lowbounds_.resize(getDim());
-    highbounds_.resize(getDim());
-    for(size_t i = 0; i < getDim(); i++) {
-        lowbounds_[i]  = lowbounds[i];
-        highbounds_[i] = highbounds[i];
+    vector<double> lowbounds, highbounds;
+    for(const auto v: bounds) {
+        lowbounds.push_back(v.first);
+        highbounds.push_back(v.second);
     }
-    initialize();
+    setBoundaries(lowbounds, highbounds);
+    return;
 }
 
 pair<vector<double>, vector<double>> getBoundaries()

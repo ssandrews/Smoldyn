@@ -56,9 +56,15 @@ add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
     MAIN_DEPENDENCY ${SPHINX_SOURCE}/conf.py
     COMMENT "Generating documentation with Sphinx")
 
+# Generate doc using Sphinx and doxygen.
+add_custom_target(docs ALL 
+    COMMAND READTHEDOCS=True ${SPHINX_EXECUTABLE} -b html
+        ${SPHINX_SOURCE} ${SPHINX_BUILD}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Generating documentation with Sphinx and doxygen")
+
 # Nice named target so we can run the job easily
 add_custom_target(Sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
-add_custom_target(docs DEPENDS Sphinx)
 
 # LiveHTML (for developer and document write)
 add_custom_target(livehtml
@@ -67,7 +73,6 @@ add_custom_target(livehtml
         ${SMOLDYN_DOC_SOURCE_DIR} ${CMAKE_BINARY_DIR}/livehtml
     COMMENT "Genrating live HTML"
     VERBATIM)
-
 
 # Add an install target to install the docs
 include(GNUInstallDirs)

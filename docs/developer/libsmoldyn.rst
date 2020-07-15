@@ -1,5 +1,9 @@
+******************
 Library libsmodyn
 ******************
+
+About libsmoldyn
+================
 
 ``libsmoldyn`` is a C and C++ interface to the Smoldyn simulator.
 ``libsmoldyn`` is complementary to the stand-alone Smoldyn program in
@@ -30,16 +34,15 @@ Compiling and linking
 Compiling
 ---------
 
-Header files
-^^^^^^^^^^^^
+**Header files**
 
-To enable a C or C++ program to call ``libsmoldyn``, it has to include
-the ``libsmoldyn`` header file. ``libsmoldyn`` comes with one header
-file, libsmoldyn.h, which has function declarations for all of the
-``libsmoldyn`` functions. For most ``libsmoldyn`` applications, this is
-the only header file that you will need to include. For Mac and Linux,
-it is typically installed to /usr/local/include. This is one of the
-standard system paths, so include it with
+To enable a C or C++ program to call ``libsmoldyn``, it has to include the
+``libsmoldyn`` header file. ``libsmoldyn`` comes with one header file,
+``libsmoldyn.h``, which has function declarations for all of the ``libsmoldyn``
+functions. For most ``libsmoldyn`` applications, this is the only header file
+that you will need to include. For Mac and Linux, it is typically installed to
+/usr/local/include. This is one of the standard system paths, so include it
+with
 
 .. code:: c
 

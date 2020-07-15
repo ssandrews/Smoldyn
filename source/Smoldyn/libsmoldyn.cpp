@@ -6,6 +6,7 @@
  Public License (LGPL). */
 
 #include <string.h>
+#include "../lib/List.h"
 #include "opengl2.h"
 #include "SimCommand.h"
 #include "string2.h"
@@ -48,9 +49,9 @@ int LibThrowThreshold          = 11;
 
 /* --------------------------------------------------------------------------*/
 /**
- * @Synopsis Returns the smoldyn's version. 
+ * @Synopsis Returns the smoldyn's version.
  *
- * @Returns   
+ * @Returns
  */
 /* ----------------------------------------------------------------------------*/
 extern "C" double smolGetVersion(void)
@@ -1282,12 +1283,11 @@ extern "C" enum ErrorCode smolSetMoleculeColor(
 
     for(c = 0; c < 3; c++)
         LCHECK(color[c] >= 0 && color[c] <= 1, funcname, ECbounds,
-                "color value out of bounds");
+            "color value out of bounds");
     molsetcolor(sim, i, NULL, state, color);
     return ECok;
 failure:
     return Liberrorcode;
-
 }
 
 extern "C" enum ErrorCode smolSetMoleculeSize(
@@ -1311,7 +1311,6 @@ extern "C" enum ErrorCode smolSetMoleculeSize(
 failure:
     return Liberrorcode;
 }
-
 
 /* smolSetMoleculeStyle */
 extern "C" enum ErrorCode smolSetMoleculeStyle(
@@ -2169,7 +2168,7 @@ extern "C" enum ErrorCode smolSetReactionRate(
         er = RxnSetValue(sim, "rate", rxn, rate);
     else if(order < 2)
         er = RxnSetValue(sim, "prob", rxn, rate);
-    else
+    else 
         er = RxnSetValue(sim, "bindrad", rxn, rate);
     if(er == 3)
         LCHECK(0, funcname, ECwarning, "rate was set previously");
@@ -2209,6 +2208,52 @@ extern "C" enum ErrorCode smolSetReactionRegion(
     }
     else if(surface && surface[0] == '\0')
         RxnSetSurface(rxn, NULL);
+
+    return ECok;
+failure:
+    return Liberrorcode;
+}
+
+/* smolSetReactionIntersurface */
+enum ErrorCode smolSetReactionIntersurface(
+    simptr sim, const char *reaction, int *rulelist)
+{
+    const char *funcname = "smolSetReactionIntersurface";
+    int order, r, i;
+    int er;
+    listptrv vlist;
+    rxnptr rxn = NULL;
+
+    readrxnname(sim, reaction, &order, &rxn, NULL, 1);
+    if(!rxn)
+        readrxnname(sim, reaction, &order, &rxn, NULL, 2);
+    if(!rxn)
+        readrxnname(sim, reaction, &order, &rxn, NULL, 3);
+
+    LCHECK(rxn, funcname, ECnonexist, NULL);
+    LCHECK(order == 2, funcname, ECerror, NULL);
+
+    rxn = NULL;
+    r   = readrxnname(sim, reaction, NULL, &rxn, NULL, 1);
+    if(r >= 0) {
+        er = RxnSetIntersurfaceRules(rxn, rulelist);
+        LCHECK(er != 1, funcname, ECmemory, NULL);
+    }
+    r = readrxnname(sim, reaction, NULL, &rxn, &vlist, 2);
+    LCHECK(r != -2, funcname, ECmemory, NULL);
+    if(r >= 0) {
+        for(i = 0; i < vlist->n; i++) {
+            er = RxnSetIntersurfaceRules((rxnptr)vlist->xs[i], rulelist);
+            LCHECK(er != 1, funcname, ECmemory, NULL);
+        }
+        ListFreeV(vlist);
+    }
+    r = readrxnname(sim, reaction, NULL, &rxn, NULL, 3);
+    LCHECK(r != -2, funcname, ECmemory, NULL);
+    if(r >= 0) {
+        er = RxnSetIntersurfaceRules(rxn, rulelist);
+        LCHECK(er != 1, funcname, ECmemory, NULL);
+    }
 
     return ECok;
 failure:

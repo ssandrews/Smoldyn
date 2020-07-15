@@ -343,7 +343,20 @@ int checkwallparams(simptr sim, int *warnptr)
 /******************************** structure setup *****************************/
 /******************************************************************************/
 
-/* walladd */
+/**
+ * @brief Adds a wall to the system. If no walls have been added yet, this
+ * allocates the necessary memory.
+ *
+ * @param sim current simptr.
+ * @param d the dimension that the wall bounds.
+ * @param highside 0 if the wall is on the low side of the system and 1 if it
+ * is on the high side of the system.
+ * @param pos location of the wall in the d dimension.
+ * @param type describes the boundary condition (if there aren’t any surfaces).
+ *
+ * @return  Returns 0 for success, 1 for unable to allocate memory, or 2 if the
+ * simulation structure dim element hasn’t been set up yet.
+ */
 int walladd(simptr sim, int d, int highside, double pos, char type)
 {
     if(!sim->wlist) {
@@ -360,7 +373,18 @@ int walladd(simptr sim, int d, int highside, double pos, char type)
     return 0;
 }
 
-/* wallsettype */
+/**
+ * @brief Sets the type of an existing wall for dimension d to type. 
+ *
+ * @param sim current simptr
+ * @param d dimension of system
+ * @param highside Set highside to 0 if the wall is on the low side of the
+ * system and 1 if it is on the high side of the system.  Set `d` and/or
+ * `highside` to a negative number to indicate "all" dimension.
+ * @param type type of the wall.
+ *
+ * @return 0 on success.
+ */
 int wallsettype(simptr sim, int d, int highside, char type)
 {
     int d2;
