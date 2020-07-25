@@ -119,6 +119,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("back", MolecState::MSback)
         .value("up", MolecState::MSup)
         .value("down", MolecState::MSdown)
+        .value("fsoln", MolecState::MSsoln)  // fsoln is really soln
         .value("bsoln", MolecState::MSbsoln)
         .value("all", MolecState::MSall)
         .value("none", MolecState::MSnone)

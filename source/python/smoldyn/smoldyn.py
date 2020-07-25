@@ -19,6 +19,7 @@ __all__ = [
     "Hemisphere",
     "Cylinder",
     "Disk",
+    "Path2D",
     "Surface",
     "Port",
     "Boundaries",
@@ -36,11 +37,12 @@ __all__ = [
 import os
 import operator
 import functools
+import math
 from pathlib import Path
 from dataclasses import dataclass, field
 from smoldyn.config import __logger__
 from smoldyn.utils import color2RGBA
-from typing import Union, Tuple, List, Dict, Optional
+from typing import Union, Tuple, List, Dict, Optional, Sequence
 from smoldyn import _smoldyn
 
 # Smoldyn version
@@ -408,6 +410,11 @@ class Panel(object):
         )
         assert k == _smoldyn.ErrorCode.ok
 
+    def _getName(self, index: int) -> str:
+        if self.name:
+            return self.name
+        return f"{self.ctype}{index}"
+
     def setNeighbors(self, panels, reciprocal: bool = False):
         """Set neighbors.
 
@@ -428,15 +435,15 @@ class Panel(object):
 
 class Rectangle(Panel):
     def __init__(
-        self, corner: List[float], dimensions: List[float], axis: str, name=""
+        self, corner: Sequence[float], dimensions: Sequence[float], axis: str, name=""
     ):
         """Rectangle
 
         Parameters
         ----------
-        corner : List[float]
+        corner : 
             One corner of the rectangle.
-        dimensions : List[float]
+        dimensions :
             Dimensions of the rectangle e.g., for a 2D rectangle it is a list of
             values of width and height.
         height : float
@@ -464,7 +471,7 @@ class Rectangle(Panel):
 
 
 class Triangle(Panel):
-    def __init__(self, vertices: List[List[float]] = [[]], name=""):
+    def __init__(self, vertices: Sequence[Sequence[float]] = [[]], name=""):
         """Triangle Panel.
 
         Parameters
@@ -714,7 +721,7 @@ class _SurfaceFaceCollection(object):
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set drawing style {k}"
 
     def addAction(
-        self, species: Union[Species, List[Species]], action: str, new_spec=None
+        self, species: Union[Species, List[Species]], action: str, new_species=None
     ):
         """The behavior of molecules named species when they collide with this
         face of this surface.
@@ -727,9 +734,9 @@ class _SurfaceFaceCollection(object):
         action : str
             The action can be  `“reflect”`, `“absorb”`, `“transmit”`, `“jump”`,
             `“port”`, or `“periodic”`.
-        new_spec: str
+        new_species: str
             TODO: Implement it.
-            If `new_spec` is entered, then the molecule changes to this new
+            If `new_species` is entered, then the molecule changes to this new
             species upon surface collision. In addition, it’s permissible to
             enter the action as “multiple,” in which case the rates need to be
             set with rate; alternatively, just setting the rates will
@@ -753,7 +760,7 @@ class _SurfaceFaceCollection(object):
                 sstate = _smoldyn.MolecState.__members__[sstate]
 
             # TODO:
-            if new_spec:
+            if new_species:
                 raise NotImplementedError("This feature is not implemented.")
 
             for which in self.faces:
@@ -765,6 +772,55 @@ class _SurfaceFaceCollection(object):
                     _smoldyn.SrfAction.__members__[action],
                 )
                 assert k == _smoldyn.ErrorCode.ok
+
+
+class Path2D(object):
+    def __init__(self, *points, closed: bool = True):
+        """Construct a 2D path from given points.
+
+        A Path2D consists of `Rectangle` and `Triangle`.
+
+        Parameters
+        ----------
+        *points: 
+            Points
+        closed: bool
+            If closed is `True`, the last point and the first point are
+            connected.
+        """
+        self.points = list(points)
+        if closed and self.points[0] != self.points[-1]:
+            self.points.append(self.points[0])
+        self.panels: List[Panel] = []
+        for p1, p2 in zip(self.points, self.points[1:]):
+            (x1, y1), (x2, y2) = p1, p2
+            theta = math.atan2(y2 - y1, x2 - x1)
+            __logger__.debug(f"theta={theta} {p1} and {p2}")
+            if theta in [0.0, math.pi, math.pi / 2.0, -math.pi / 2.0]:
+                if theta == 0.0:
+                    axis = "+y"
+                elif theta == math.pi:
+                    axis = "-y"
+                elif theta == math.pi / 2.0:
+                    axis = "-x"
+                elif theta == -math.pi / 2.0:
+                    axis = "+x"
+                else:
+                    raise RuntimeError(
+                        "Should not be here."
+                        " Python3 numerical computation is broken!"
+                    )
+                length = x2 - x1 if y2 == y1 else y2 - y1
+                p = Rectangle(corner=(x1, y1), dimensions=[length], axis=axis)
+                __logger__.info(f"Added a Rectangle {p}")
+                self.panels.append(p)
+            else:
+                t = Triangle(vertices=((x1, y1), (x2, y2)))
+                __logger__.info(f"Added a Triangle {p}")
+                self.panels.append(t)
+
+
+# TODO: Add a Path3D or Surface3D. not sure what to call it.
 
 
 class Surface(object):
@@ -812,7 +868,7 @@ class Surface(object):
         # add panels
         assert self.name, "Surface name is missing"
         for i, panel in enumerate(self.panels):
-            panel.name = panel.name if panel.name else f"panel{i}"
+            panel.name = panel._getName(i)
             panel.surface = self
             k = _smoldyn.addPanel(
                 self.name, panel.ctype, panel.name, panel.axisstr, panel.pts,
@@ -862,7 +918,7 @@ class Surface(object):
         self,
         species: SpeciesWithState,
         N: int,
-        panels: Optional(List[Panel]) = None,
+        panels: Optional[List[Panel]] = None,
         pos: List[float] = [],
     ):
         """Place molecules with random or specific positions onto a given
@@ -909,6 +965,73 @@ class Surface(object):
                 sname, sstate, _n, self.name, panel.ctype, panel.name, pos,
             )
             assert k == _smoldyn.ErrorCode.ok
+
+    def _setRate(
+        self,
+        species: SpeciesWithState,
+        state1: SpeciesState,
+        state2: SpeciesState,
+        rate: float,
+        new_species: Optional[Species] = None,
+        isinternal: bool = False,
+    ):
+        if not isinstance(species, Species):
+            sname, sstate = species[0].name, species[1]
+        else:
+            sname, sstate = species.name, species.state
+        state1 = _toMS(state1)
+        k = _smoldyn.setSurfaceRate(
+            self.name,
+            sname,
+            _toMS(sstate),
+            _toMS(state1),
+            _toMS(state2),
+            rate,
+            new_species,
+            isinternal,
+        )
+        assert k == _smoldyn.ErrorCode.ok, "Failed to set rate"
+
+    def setRate(
+        self,
+        species: SpeciesWithState,
+        state1: SpeciesState,
+        state2: SpeciesState,
+        rate: float,
+        revrate: float = 0.0,
+        new_species: Optional[Species] = None,
+        isinternal: bool = False,
+    ):
+        """The rate constant for transitions from `state1` to `state2` of molecules
+        named `species`.
+
+        Parameters
+        ----------
+        species : SpeciesWithState
+            A species or a tuple of `Species` and its state.
+        state1 : SpeciesState
+            Can be any of: fsoln, bsoln (in solution, hitting the front or
+            back of the panel, respectively), front, back, up, or down.
+        state2 : SpeciesState
+            Can be any of: fsoln, bsoln (in solution, hitting the front or
+            back of the panel, respectively), front, back, up, or down.
+        rate : float
+            rate (must be on-zero positive value).
+        revrate: float
+            reverse rate (default 0.0). If this value is a positive non-zero
+            value, then a reverse rate is also set.
+        new_species :
+            newspecies
+        isinternal:
+            When set to `True`, a different value is entered. Instead of
+            entering the surface action rate, enter the probability of the
+            action at each collision.  Probabilities for reflection are ignored
+            since they are calculated as the probability that the molecule does
+            not transmit, absorb, or jump.
+        """
+        self._setRate(species, state1, state2, rate, new_species, isinternal)
+        if revrate > 0.0:
+            self._setRate(species, state2, state1, revrate, new_species, isinternal)
 
 
 class NullSurface(Surface):
@@ -1026,8 +1149,7 @@ class Box(Partition):
 
 class Compartment(object):
     def __init__(self, name: str, surface: Union[str, Surface], point: List[float]):
-        """
-        Comapartment.
+        """Comapartment.
 
         Parameters
         ----------
@@ -1050,7 +1172,7 @@ class Compartment(object):
         assert k == _smoldyn.ErrorCode.ok
 
     def addMolecules(self, species: Species, N: int):
-        """Place number of molecules in a compartment (uniformly distributed)
+        """Place number of molecules in a compartment (uniformly distributed).
 
         Parameters
         ----------
@@ -1097,7 +1219,7 @@ class StateMonitor(object):
 
 class Command(object):
     def __init__(self, cmd: str, type: str = "", **kwargs):
-        """Smoldyn Command
+        """Smoldyn Command.
 
         Parameters
         ----------
@@ -1150,6 +1272,8 @@ class Command(object):
             ), "Must specifiy argument time greater than 0"
             self.on = self.off = self.kwargs["time"]
         elif self.type in "aAbBeE":
+            # Run once when simulation starts. No need for 'on', 'off' and
+            # 'step'
             pass
         elif self.type in "nN":
             assert (
@@ -1463,7 +1587,7 @@ class Simulation(object):
             single command execution at time `time`.  ‘n’ or 'N' for every n’th
             iteration of the simulation.  ‘i’ or 'I' for a fixed time interval.
             The command is executed over the period from on to off with
-            intervals of at least dt(the actual intervals will only end at the
+            intervals of at least dt (the actual intervals will only end at the
             times of simulation time steps).  ‘x’ for a fixed time multiplier.
             The command is executed at on, then on+dt, then on+dt*xt, then
             on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
@@ -1471,6 +1595,8 @@ class Simulation(object):
         kwargs: dict
             kwargs of :func:`Command.__init__`.
         """
+        if "step" not in kwargs:
+            kwargs["step"] = self.step
         c = Command(cmd, type, from_string=False, **kwargs)
         self.commands.append(c)
 
@@ -1711,11 +1837,10 @@ class Reaction(object):
                 revname, prds, subs, kb, compartment=compartment, surface=surface
             )
 
-    def setIntersurface(self, rules: Optional[List[Union[int, str]]]):
+    def setIntersurface(self, rules: List[Union[int, str]]):
         """Define `rules` to allow a bimolecular reaction operates when its
         reactants are on different surfaces. In general, there should be as
         many rule values as there are products for this reaction
-
 
         Parameters
         ----------
