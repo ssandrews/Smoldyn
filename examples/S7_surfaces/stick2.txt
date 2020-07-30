@@ -56,4 +56,3 @@ mol 50 blue 20 20
 surface_mol 100 red(front) stick all all
 
 end_file
-

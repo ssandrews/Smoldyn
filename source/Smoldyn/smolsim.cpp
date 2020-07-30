@@ -30,6 +30,11 @@
 using std::stringstream;
 #endif
 
+#ifdef ENABLE_PYTHON_CALLBACK
+#include "../python/CallbackFunc.h"
+extern std::vector<CallbackFunc> callbacks_;
+#endif
+
 /******************************************************************************/
 /************************* Global variable definitions ************************/
 /******************************************************************************/
@@ -316,6 +321,12 @@ simptr simalloc(const char *fileroot)
     simsetvariable(sim, "x", dblnan());
     simsetvariable(sim, "y", dblnan());
     simsetvariable(sim, "z", dblnan());
+
+#if ENABLE_PYTHON_CALLBACK
+    sim->ncallbacks = 0;
+    sim->simstep = 0;
+#endif
+
     return sim;
 
 failure:
@@ -350,6 +361,13 @@ void simfree(simptr sim)
 
     for(v = 0; v < sim->maxvar; v++)
         free(sim->varnames[v]);
+
+#ifdef ENABLE_PYTHON_CALLBACK
+    for(v = 0; v < sim->ncallbacks; v++)
+        if(sim->callbacks[v])
+            free(sim->callbacks[v]);
+#endif
+
     free(sim->varnames);
     free(sim->varvalues);
     free(sim->flags);
@@ -2985,6 +3003,16 @@ int simulatetimestep(simptr sim)
     er = simdocommands(sim);
     if(er)
         return er;
+
+#ifdef ENABLE_PYTHON_CALLBACK
+    for(unsigned int i = 0; i < sim->ncallbacks; i++) {
+        auto callback = sim->callbacks[i];
+        if(0 == (sim->simstep % callback->getStep()) && callback->isValid())
+            callback->evalAndUpdate(sim->time);
+    }
+    sim->simstep += 1;
+#endif
+
     if(sim->time >= sim->tmax)
         return 1;
     if(sim->time >= sim->tbreak)
@@ -3075,8 +3103,8 @@ void endsimulate(simptr sim, int er)
 
     // If SMOLDYN_NON_INTERACTIVE is set, quit at end. Useful when running
     // examples.
-    const char* envName = "SMOLDYN_NON_INTERACTIVE";
-    char* value;
+    const char *envName = "SMOLDYN_NON_INTERACTIVE";
+    char *value;
     value = getenv(envName);
     if(value && value[0] != '\0')
         sim->quitatend = 1;

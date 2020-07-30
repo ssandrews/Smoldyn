@@ -335,7 +335,6 @@ extern "C" enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)
     LCHECK(sim, funcname, ECmissing, "missing sim");
     simsettime(sim, breaktime, 4);
     er = smolsimulate(sim);
-
     LCHECK(er != 1, funcname, ECnotify, "Simulation complete");
     LCHECK(er != 2, funcname, ECerror,
         "Simulation terminated during molecule assignment\n  Out of memory");
@@ -2019,7 +2018,7 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
 {
     const char *funcname = "smolAddReaction";
     rxnptr rxn;
-    int order, prd, rctident[MAXORDER], prdident[MAXPRODUCT], er;
+    int order, prd, rctident[MAXORDER], prdident[nproduct], er;
     enum MolecState rctstate[MAXORDER];
 
     LCHECK(sim, funcname, ECmissing, "missing sim");

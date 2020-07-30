@@ -11,6 +11,7 @@ using namespace std;
 #include "../lib/random2.h"
 
 #include "Smoldyn.h"
+#include "CallbackFunc.h"
 
 // Global variables.
 // Keep all simptrs in a vector. A user can use them for different
@@ -109,28 +110,67 @@ bool initialize()
     }
 
     cursim_ = smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]);
+
     if(debug_)
         smolSetDebugMode(1);
     return cursim_ ? true : false;
 }
 
-void runUntil(
+/**
+* @brief Connect a function's output to a variable.
+*
+* @param func
+* @param target
+* @param step
+* @param args
+*
+* @return 
+*/
+bool connect(const py::function& func, const string& target, const size_t step,
+    const py::list& args)
+{
+    assert(cursim_->ncallbacks < MAX_PY_CALLBACK);
+    if(cursim_->ncallbacks >= MAX_PY_CALLBACK) {
+        py::print("Error: Maximum of ", MAX_PY_CALLBACK, " are allowed.");
+        return false;
+    }
+
+    // cleanup is the job of simfree
+    auto f = new CallbackFunc();
+    f->setFunc(func);
+    f->setStep(step);
+    f->setTarget(target);
+    f->setArgs(args);
+    cursim_->callbacks[cursim_->ncallbacks] = f;
+    cursim_->ncallbacks += 1;
+    return true;
+}
+
+bool runUntil(
     const double breaktime, const double dt, bool display, bool overwrite = false)
 {
+    if(!cursim_) {
+        if(!initialize()) {
+            cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
+            return false;
+        }
+        auto er = smolOpenOutputFiles(cursim_, overwrite);
+        if(er)
+            cerr << __FUNCTION__ << ": Simulation skipped." << endl;
+    }
+
     // If dt>0, reset dt else use the old one.
     if(dt > 0.0)
         smolSetTimeStep(cursim_, dt);
+    smolUpdateSim(cursim_);
 
     if(display and (!initDisplay_)) {
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
 
-    auto er = smolOpenOutputFiles(cursim_, overwrite);
-    if(er)
-        cerr << __FUNCTION__ << ": Simulation skipped." << endl;
-
     smolRunSimUntil(cursim_, breaktime);
+    return true;
 }
 
 bool run(double stoptime, double dt, bool display, bool overwrite = false)
@@ -158,10 +198,9 @@ bool run(double stoptime, double dt, bool display, bool overwrite = false)
     return r == ErrorCode::ECok;
 }
 
-
 void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
 {
-    lowbounds_ = lowbounds;
+    lowbounds_  = lowbounds;
     highbounds_ = highbounds;
     assert(lowbounds.size() == highbounds.size());
     if(cursim_)
@@ -173,7 +212,7 @@ void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
 void setBoundaries(const vector<pair<double, double>>& bounds)
 {
     vector<double> lowbounds, highbounds;
-    for(const auto v: bounds) {
+    for(const auto v : bounds) {
         lowbounds.push_back(v.first);
         highbounds.push_back(v.second);
     }
@@ -204,4 +243,3 @@ double getDt()
 {
     return cursim_->dt;
 }
-

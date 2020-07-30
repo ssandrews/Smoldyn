@@ -18,11 +18,11 @@
  * \copyright 2003-2020 by Steven Andrews. Gnu Lesser General Public License (LGPL).
  */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 #include "SimCommand.h"
 #include "opengl2.h"

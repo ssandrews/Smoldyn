@@ -113,9 +113,9 @@ char *graphicslp2string(enum LightParam lp, char *string)
 /* graphicsreadcolor */
 int graphicsreadcolor(char **stringptr, double *rgba)
 {
-    char * string, name[STRCHAR];
+    char *string, name[STRCHAR];
     double r, g, b, a;
-    int    itct, er;
+    int itct, er;
 
     if(!stringptr)
         return 1;
@@ -469,7 +469,7 @@ int graphicsreadcolor(char **stringptr, double *rgba)
 graphicsssptr graphssalloc(void)
 {
     graphicsssptr graphss;
-    int           lt;
+    int lt;
 
     graphss = NULL;
     CHECKMEM(graphss = (graphicsssptr)malloc(sizeof(struct graphicssuperstruct)));
@@ -542,8 +542,8 @@ void graphssfree(graphicsssptr graphss)
 void graphssoutput(simptr sim)
 {
     graphicsssptr graphss;
-    char          string1[STRCHAR], string2[STRCHAR];
-    int           i1, i2, lt;
+    char string1[STRCHAR], string2[STRCHAR];
+    int i1, i2, lt;
 
     graphss = sim->graphss;
     simLog(sim, 2, "GRAPHICS PARAMETERS\n");
@@ -624,8 +624,8 @@ void graphssoutput(simptr sim)
 void writegraphss(simptr sim, FILE *fptr)
 {
     graphicsssptr graphss;
-    char          string[STRCHAR];
-    int           lt, item;
+    char string[STRCHAR];
+    int lt, item;
 
     graphss = sim->graphss;
     if(!graphss)
@@ -694,9 +694,9 @@ void writegraphss(simptr sim, FILE *fptr)
 /* checkgraphicsparams */
 int checkgraphicsparams(simptr sim, int *warnptr)
 {
-    int           error, warn;
+    int error, warn;
     graphicsssptr graphss;
-    char          string[STRCHAR];
+    char string[STRCHAR];
 
     error = warn = 0;
     graphss      = sim->graphss;
@@ -743,7 +743,7 @@ void graphicssetcondition(graphicsssptr graphss, enum StructCond cond, int upgra
 int graphicsenablegraphics(simptr sim, const char *type)
 {
     graphicsssptr graphss;
-    int           code;
+    int code;
 
     if(!sim)
         return 2;
@@ -950,9 +950,9 @@ int graphicssettextcolor(simptr sim, double *color)
 /* graphicssettextitem */
 int graphicssettextitem(simptr sim, char *itemname)
 {
-    graphicsssptr   graphss;
-    int             er, i, newmaxtextitems, item;
-    char **         newtextitems;
+    graphicsssptr graphss;
+    int er, i, newmaxtextitems, item;
+    char **newtextitems;
     enum MolecState ms;
 
     er = graphicsenablegraphics(sim, NULL);
@@ -1089,8 +1089,8 @@ int graphicsupdateinit(simptr sim)
 {
 #ifdef __gl_h_
     graphicsssptr graphss;
-    int           qflag, tflag, dim;
-    wallptr *     wlist;
+    int qflag, tflag, dim;
+    wallptr *wlist;
 
     graphss = sim->graphss;
     tflag   = strchr(sim->flags, 't') ? 1 : 0;
@@ -1130,8 +1130,8 @@ int graphicsupdatelists(simptr sim)
 {
 #ifdef __gl_h_
     graphicsssptr graphss;
-    int           tflag;
-    GLfloat       f1[4];
+    int tflag;
+    GLfloat f1[4];
 
     graphss = sim->graphss;
     tflag   = strchr(sim->flags, 't') ? 1 : 0;
@@ -1155,9 +1155,9 @@ int graphicsupdateparams(simptr sim)
 {
 #ifdef __gl_h_
     graphicsssptr graphss;
-    int           lt, tflag;
-    GLenum        gllightnum;
-    GLfloat       glf1[4];
+    int lt, tflag;
+    GLenum gllightnum;
+    GLfloat glf1[4];
 
     graphss = sim->graphss;
     tflag   = strchr(sim->flags, 't') ? 1 : 0;
@@ -1203,7 +1203,7 @@ int graphicsupdateparams(simptr sim)
 /* graphicsupdate */
 int graphicsupdate(simptr sim)
 {
-    int           er;
+    int er;
     graphicsssptr graphss;
 
     graphss = sim->graphss;
@@ -1238,16 +1238,16 @@ int graphicsupdate(simptr sim)
 void RenderSurfaces(simptr sim)
 {
 #ifdef __gl_h_
-    surfacessptr  srfss;
-    surfaceptr    srf;
-    int           s, p, graphics, fdone, bdone, c;
-    double **     point, *front;
-    double        xlo, xhi, ylo, yhi, xpix, ypix, ymid, zmid;
-    double        delta, deltax, deltay, theta, vect[3], vect2[3], axis[3], height;
-    double        flcolor[4], blcolor[4];
+    surfacessptr srfss;
+    surfaceptr srf;
+    int s, p, graphics, fdone, bdone, c;
+    double **point, *front;
+    double xlo, xhi, ylo, yhi, xpix, ypix, ymid, zmid;
+    double delta, deltax, deltay, theta, vect[3], vect2[3], axis[3], height;
+    double flcolor[4], blcolor[4];
     enum DrawMode fdrawmode, bdrawmode, fdm, bdm;
-    GLdouble      gldvect[3];
-    GLfloat       glfvect[4];
+    GLdouble gldvect[3];
+    GLfloat glfvect[4];
 
     srfss    = sim->srfss;
     graphics = sim->graphss->graphics;
@@ -1745,11 +1745,11 @@ void RenderFilaments(simptr sim)
 {
 #ifdef __gl_h_
     filamentssptr filss;
-    filamentptr   fil;
-    int           f, vtx, graphics;
-    double *      point;
+    filamentptr fil;
+    int f, vtx, graphics;
+    double *point;
     enum DrawMode drawmode;
-    GLfloat       glfvect[4];
+    GLfloat glfvect[4];
 
     filss = sim->filss;
     if(!filss)
@@ -1809,13 +1809,13 @@ void RenderFilaments(simptr sim)
 void RenderMolecs(simptr sim)
 {
 #ifdef __gl_h_
-    molssptr        mols;
-    moleculeptr     mptr;
-    int             ll, m, i, dim;
-    double          ymid, zmid;
+    molssptr mols;
+    moleculeptr mptr;
+    int ll, m, i, dim;
+    double ymid, zmid;
     enum MolecState ms;
-    GLfloat         whitecolor[] = {1, 1, 1, 1};
-    GLfloat         glf1[4];
+    GLfloat whitecolor[] = {1, 1, 1, 1};
+    GLfloat glf1[4];
 
     dim  = sim->dim;
     mols = sim->mols;
@@ -1887,13 +1887,13 @@ void RenderMolecs(simptr sim)
 void RenderLattice(simptr sim)
 {
 #ifdef __gl_h_
-    latticeptr    lattice;
-    int           lat, n, ilat, ismol, i, dim;
-    const int *   copy_numbers;
+    latticeptr lattice;
+    int lat, n, ilat, ismol, i, dim;
+    const int *copy_numbers;
     const double *positions;
-    molssptr      mols;
-    GLfloat       glf1[4];
-    double        poslo[3], poshi[3], deltay;
+    molssptr mols;
+    GLfloat glf1[4];
+    double poslo[3], poshi[3], deltay;
 
     mols     = sim->mols;
     dim      = sim->dim;
@@ -1943,9 +1943,9 @@ void RenderLattice(simptr sim)
 void RenderText(simptr sim)
 {
 #ifdef __gl_h_
-    graphicsssptr   graphss;
-    int             item, i, *index;
-    char *          itemname, string[STRCHAR], string2[STRCHAR];
+    graphicsssptr graphss;
+    int item, i, *index;
+    char *itemname, string[STRCHAR], string2[STRCHAR];
     enum MolecState ms;
 
     graphss    = sim->graphss;
@@ -1977,10 +1977,10 @@ void RenderSim(simptr sim)
 {
 #ifdef __gl_h_
     graphicsssptr graphss;
-    double        pt1[DIMMAX], pt2[DIMMAX];
-    int           dim;
-    wallptr *     wlist;
-    GLfloat       glf1[4];
+    double pt1[DIMMAX], pt2[DIMMAX];
+    int dim;
+    wallptr *wlist;
+    GLfloat glf1[4];
 
     graphss = sim->graphss;
     if(!graphss || graphss->graphics == 0)
@@ -2068,10 +2068,10 @@ void RenderScene(void)
 void TimerFunction(int state)
 {
 #ifdef __gl_h_
-    static int    oldstate = 0;
-    unsigned int  delay;
-    int           it;
-    simptr        sim;
+    static int oldstate = 0;
+    unsigned int delay;
+    int it;
+    simptr sim;
     graphicsssptr graphss;
 
     sim     = Sim;

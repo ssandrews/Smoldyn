@@ -113,12 +113,12 @@ class Species(object):
             the molecule gets the same value. To assign different values to
             different states, use a dict e.g. {'soln':1, 'front':2}.
         display_size : float, optional
-            display size of the molecule. For the ``opengl`` graphics level, the
-            display size value is in pixels.  Here, numbers from 2 to 4 are
-            typically good choices (default 2px).  For the two better graphics
-            options, the display size value is the radius with which the
-            molecule is drawn, using the same units as elsewhere in the input
-            file.
+            display size of the molecule. For the ``opengl`` graphics method, the
+            this value is in pixels.  Here, numbers from 2 to 4 are
+            typically good choices (default 3px).  For better graphics
+            options (opengl_good and opengl_better), the display size value is 
+            the radius with which the molecule is drawn, using the same units 
+            as elsewhere in the input file.
         mol_list : str, optional
             molecule list (default '')
 
@@ -216,13 +216,7 @@ class Species(object):
     def color(self, clr: Union[ColorType, Color]):
         self._color = {self.state: Color(clr)} if not isinstance(clr, dict) else clr
         for state, _clr in self._color.items():
-            _clr = Color(_clr)
-            state = (
-                _smoldyn.MolecState.__members__[state]
-                if isinstance(state, str)
-                else state
-            )
-            k = _smoldyn.setMoleculeColor(self.name, state, _clr.rgba)
+            k = _smoldyn.setMoleculeColor(self.name, _toMS(state), Color(_clr).rgba)
             assert k == _smoldyn.ErrorCode.ok
 
     @property
@@ -721,7 +715,10 @@ class _SurfaceFaceCollection(object):
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set drawing style {k}"
 
     def addAction(
-        self, species: Union[Species, List[Species]], action: str, new_species=None
+        self,
+        species: Union[Species, List[Species]],
+        action: str,
+        new_species: Optional[Species] = None,
     ):
         """The behavior of molecules named species when they collide with this
         face of this surface.
@@ -734,7 +731,7 @@ class _SurfaceFaceCollection(object):
         action : str
             The action can be  `“reflect”`, `“absorb”`, `“transmit”`, `“jump”`,
             `“port”`, or `“periodic”`.
-        new_species: str
+        new_species: 
             TODO: Implement it.
             If `new_species` is entered, then the molecule changes to this new
             species upon surface collision. In addition, it’s permissible to
@@ -759,7 +756,7 @@ class _SurfaceFaceCollection(object):
             if isinstance(sstate, str):
                 sstate = _smoldyn.MolecState.__members__[sstate]
 
-            # TODO:
+            # TODO: see issue #17
             if new_species:
                 raise NotImplementedError("This feature is not implemented.")
 
@@ -775,7 +772,7 @@ class _SurfaceFaceCollection(object):
 
 
 class Path2D(object):
-    def __init__(self, *points, closed: bool = True):
+    def __init__(self, *points, closed: bool = False):
         """Construct a 2D path from given points.
 
         A Path2D consists of `Rectangle` and `Triangle`.
@@ -786,7 +783,7 @@ class Path2D(object):
             Points
         closed: bool
             If closed is `True`, the last point and the first point are
-            connected.
+            connected. Default `False`.
         """
         self.points = list(points)
         if closed and self.points[0] != self.points[-1]:
@@ -980,6 +977,7 @@ class Surface(object):
         else:
             sname, sstate = species.name, species.state
         state1 = _toMS(state1)
+        new_species = new_species.name if new_species else None
         k = _smoldyn.setSurfaceRate(
             self.name,
             sname,
@@ -1308,7 +1306,9 @@ class Command(object):
 
 
 class Simulation(object):
-    def __init__(self, stop: float, step: float, quit_at_end: bool = False, **kwargs):
+    def __init__(
+        self, stop: float = 0.0, step: float = 0.0, quit_at_end: bool = False, **kwargs
+    ):
         """
         Class to store simulation related attributes. 
 
@@ -1566,9 +1566,18 @@ class Simulation(object):
         self.__finalize_cmds__()
         _smoldyn.run(self.stop, self.step)
 
-    def runUntil(self, t, dt):
+    def runUntil(self, stop, step=None):
+        self.step = self.stop
+        self.stop = stop
+        if step is not None:
+            self.step = step
+
         self.__finalize_cmds__()
-        _smoldyn.runUntil(t, dt)
+        _smoldyn.runUntil(self.stop, self.step)
+
+    def display(self):
+        k = _smoldyn.displaySim()
+        assert k == _smoldyn.ErrorCode.ok
 
     def addCommand(self, cmd: str, type: str, **kwargs):
         """Add command.
@@ -1663,10 +1672,11 @@ class HalfReaction(object):
             reaction probability (for first order reactions, if kf if not
             given)
         """
-
-        self.name = name
+        self.name = "r%d" % id(self) if not name else name
         self.rate = rate
         self.subs = subs
+        self.reaction_probability = reaction_probability
+        self.binding_radius = binding_radius
         self.prds = prds
         self.compartment = compartment
         self.surface = surface
@@ -1700,9 +1710,6 @@ class HalfReaction(object):
                 prdNames.append(x[0].name)
                 prdStates.append(_toMS(x[1]))
 
-        if not name:
-            name = "r%d" % id(self)
-
         k = _smoldyn.addReaction(
             name, r1name, r1state, r2name, r2state, prdNames, prdStates, rate,
         )
@@ -1710,28 +1717,33 @@ class HalfReaction(object):
             __logger__.warning(f" Substrates  : {subs}")
             __logger__.warning(f" Products  : {prds}")
             raise RuntimeError(f"Failed to add reaction: {k}")
-
-        # if rate is negative, then we expect either binding_radius or
-        # reaction_probability.
-        if rate < 0.0:
-            # check if reaction_probability is given
-            if len(subs) < 2:
-                assert (
-                    reaction_probability > 0.0
-                ), "Must set rate or reaction_probability"
-                k = _smoldyn.setReactionRate(name, reaction_probability, True)
-                assert k == _smoldyn.ErrorCode.ok
-            else:
-                assert binding_radius > 0.0, "Must set either rate of binding_radius"
-                k = _smoldyn.setReactionRate(name, binding_radius, True)
-                assert k == _smoldyn.ErrorCode.ok
-
+        self.setRate(rate, reaction_probability, binding_radius)
         if self.compartment is not None or self.surface is not None:
             cname = self.compartment.name if self.compartment else ""
             sname = self.surface.name if self.surface else ""
             assert cname or sname
             k = _smoldyn.setReactionRegion(self.name, cname, sname)
             assert k == _smoldyn.ErrorCode.ok
+
+    def setRate(self, rate, reaction_probability=0.0, binding_radius=0.0):
+        # if rate is negative, then we expect either binding_radius or
+        # reaction_probability.
+        if rate >= 0.0:
+            k = _smoldyn.setReactionRate(self.name, rate, False)
+            assert k == _smoldyn.ErrorCode.ok
+            return
+        if rate < 0.0:
+            # check if reaction_probability is given
+            if len(self.subs) < 2:
+                assert (
+                    reaction_probability > 0.0
+                ), "Must set rate or reaction_probability"
+                k = _smoldyn.setReactionRate(self.name, reaction_probability, True)
+                assert k == _smoldyn.ErrorCode.ok
+            else:
+                assert binding_radius > 0.0, "Must set either rate of binding_radius"
+                k = _smoldyn.setReactionRate(self.name, binding_radius, True)
+                assert k == _smoldyn.ErrorCode.ok
 
     @property
     def order(self):

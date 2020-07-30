@@ -1,5 +1,4 @@
 # python binding.
-
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
 set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
@@ -7,12 +6,24 @@ set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 
-pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
+# recompile libsmoldyn for PYTHON.
+set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
+add_library(_pysmoldyn STATIC ${SRC_FILES})
+target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
+target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
 
-target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
+set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
+target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
+
+pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
+
+target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
+    -DENABLE_PYTHON_CALLBACK)
 target_include_directories(_smoldyn PRIVATE 
     ${PYTHON_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
+    ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES 
     LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
@@ -23,9 +34,8 @@ add_custom_target(copy_python_tree
   COMMENT "Copying python source tree to binary directory"
   VERBATIM)
 
-add_dependencies(_smoldyn smoldyn_static copy_python_tree)
-
-target_link_libraries(_smoldyn PRIVATE smoldyn_static)
+add_dependencies(_smoldyn _pysmoldyn copy_python_tree)
+target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 
 
 # copy setup.py.in to setup.py

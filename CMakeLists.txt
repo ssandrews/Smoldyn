@@ -85,45 +85,45 @@ set(HEADER_FILES
     )
 
 set(SRC_FILES
-    source/lib/Geometry.c
-    source/lib/List.c
-    source/lib/math2.c
-    source/lib/opengl2.c
-    source/lib/parse.c
-    source/lib/queue.c
-    source/lib/random2.c
-    source/lib/Rn.c
-    source/lib/RnSort.c
-    source/lib/rxnparam.c
-    source/lib/SimCommand.cpp
-    source/lib/Sphere.c
-    source/lib/string2.c
-    source/lib/SurfaceParam.c
-    source/lib/Zn.c
-    source/lib/SFMT/SFMT.c
-    source/Smoldyn/smolbng.c
-    source/Smoldyn/smolboxes.c
-    source/Smoldyn/smolcmd.c
-    source/Smoldyn/smolcomparts.c
-    source/Smoldyn/smolfilament.c
-    source/Smoldyn/smolgraphics.c
-    source/Smoldyn/smolmolec.c
-    source/Smoldyn/smolport.c
-    source/Smoldyn/smollattice.c
-    source/Smoldyn/smolreact.c
-    source/Smoldyn/smolrule.c
-    source/Smoldyn/smolsim.c
-    source/Smoldyn/smolsurface.c
-    source/Smoldyn/smolwall.c
+    ${CMAKE_SOURCE_DIR}/source/lib/Geometry.c
+    ${CMAKE_SOURCE_DIR}/source/lib/List.c
+    ${CMAKE_SOURCE_DIR}/source/lib/math2.c
+    ${CMAKE_SOURCE_DIR}/source/lib/opengl2.c
+    ${CMAKE_SOURCE_DIR}/source/lib/parse.c
+    ${CMAKE_SOURCE_DIR}/source/lib/queue.c
+    ${CMAKE_SOURCE_DIR}/source/lib/random2.c
+    ${CMAKE_SOURCE_DIR}/source/lib/Rn.c
+    ${CMAKE_SOURCE_DIR}/source/lib/RnSort.c
+    ${CMAKE_SOURCE_DIR}/source/lib/rxnparam.c
+    ${CMAKE_SOURCE_DIR}/source/lib/SimCommand.cpp
+    ${CMAKE_SOURCE_DIR}/source/lib/Sphere.c
+    ${CMAKE_SOURCE_DIR}/source/lib/string2.c
+    ${CMAKE_SOURCE_DIR}/source/lib/SurfaceParam.c
+    ${CMAKE_SOURCE_DIR}/source/lib/Zn.c
+    ${CMAKE_SOURCE_DIR}/source/lib/SFMT/SFMT.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
     )
 
-set(MAIN_FILES source/Smoldyn/smoldyn.c)
+set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
 if(OPTION_VCELL)
     list(APPEND SRC_FILES
-        source/Smoldyn/smoldynhybrid.c
-        source/vcell/SimpleMesh.cpp
-        source/vcell/SimpleValueProvider.cpp )
+        ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynhybrid.c
+        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleMesh.cpp
+        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.cpp )
 endif(OPTION_VCELL)
 
 if(OPTION_PYTHON)
@@ -132,14 +132,20 @@ endif()
 
 
 if(OPTION_TARGET_LIBSMOLDYN)
-    list(APPEND HEADER_FILES source/Smoldyn/libsmoldyn.h)
-    list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.cpp)
+    list(APPEND HEADER_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.h)
+    list(APPEND SRC_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.cpp)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/examples/S97_libsmoldyn)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
 
-include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/source/lib 
+    ${CMAKE_SOURCE_DIR}/source/Smoldyn 
+    ${CMAKE_SOURCE_DIR}/source/vcell 
+    ${CMAKE_SOURCE_DIR}/source/NextSubVolume 
+    ${CMAKE_SOURCE_DIR}/source/vtk 
+    ${CMAKE_BINARY_DIR})
 
 ####### Compiler macros ######################
 set(CMAKE_CXX_STANDARD 17)
@@ -175,8 +181,8 @@ endif(OPTION_MINGW)
 
 if (OPTION_VCELL)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell ${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
+    include_directories(${CMAKE_SOURCE_DIR}/windows/glut-3.7.6)
+    link_directories(${CMAKE_SOURCE_DIR}/source/vcell ${CMAKE_SOURCE_DIR}/windows/glut-3.7.6)
     if (ARCH_64bit)
         list(APPEND DEP_LIBS glut64)
     else()
@@ -446,31 +452,31 @@ if(OPTION_NSV)
     endif()
 
 
-    set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/NextSubVolume/boost_include)
+    set(Boost_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/source/NextSubVolume/boost_include)
     include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 
     list(APPEND SRC_FILES
-        source/NextSubVolume/StructuredGrid.cpp
-        source/NextSubVolume/Species.cpp
-        source/NextSubVolume/ReactionEquation.cpp
-        source/NextSubVolume/NextSubvolumeMethod.cpp
-        source/NextSubVolume/Kairos.cpp
-        source/NextSubVolume/Io.cpp
-        source/NextSubVolume/Geometry.cpp
-        source/NextSubVolume/nsvc.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.cpp
         )
     list(APPEND HEADER_FILES
-        source/NextSubVolume/Vector.h
-        source/NextSubVolume/StructuredGrid.h
-        source/NextSubVolume/Species.h
-        source/NextSubVolume/ReactionEquation.h
-        source/NextSubVolume/NextSubvolumeMethod.h
-        source/NextSubVolume/Log.h
-        source/NextSubVolume/Kairos.h
-        source/NextSubVolume/Io.h
-        source/NextSubVolume/Geometry.h
-        source/NextSubVolume/Constants.h
-        source/NextSubVolume/nsvc.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Vector.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Log.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Constants.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.h
         )
 
     add_definitions("-Wno-deprecated")

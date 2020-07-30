@@ -20,6 +20,7 @@ using namespace std;
 #include "../lib/SimCommand.h"
 #include "../Smoldyn/smoldynfuncs.h"
 #include "Smoldyn.h"
+#include "CallbackFunc.h"
 
 using namespace pybind11::literals;  // for _a
 
@@ -27,6 +28,11 @@ using namespace pybind11::literals;  // for _a
 extern int scmdopenfiles(cmdssptr cmds, int overwrite);
 
 extern vector<vector<double>> &getData();
+
+double r_ = 0.0;
+
+/* globals */
+vector<unique_ptr<CallbackFunc>> callbacks_;
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -196,6 +202,12 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("both", SpeciesRepresentation::SRboth)
         .value("none", SpeciesRepresentation::SRnone)
         .value("free", SpeciesRepresentation::SRfree);
+
+    /* callback */
+    py::class_<CallbackFunc>(m, "CallbackFunc")
+        .def(py::init<>())
+        .def_property("func", &CallbackFunc::getFuncName, &CallbackFunc::setFuncName)
+        .def("evalAndUpdate", &CallbackFunc::evalAndUpdate);
 
     /* graphics */
     py::class_<graphicssuperstruct>(m, "Graphics")
@@ -915,7 +927,7 @@ PYBIND11_MODULE(_smoldyn, m)
                 productSpecies[i] = productSpeciesStr[i].c_str();
 
             return smolAddReaction(cursim_, reaction, reactant1, rstate1, reactant2,
-                rstate2, productSpecies.size(), productSpecies.data(), &productStates[0],
+                rstate2, productSpecies.size(), &productSpecies[0], &productStates[0],
                 rate);
         });
 
@@ -1083,6 +1095,10 @@ PYBIND11_MODULE(_smoldyn, m)
     /* Function */
     m.def("loadModel", &init_and_run, "filepath"_a, "args"_a = "",
         "Load model from a txt file");
+
+    /* Extra Function */
+    m.def("connect", &connect, "func"_a, "target"_a, "step"_a = 1,
+        "args"_a = std::vector<double>());
 
     /* attributes */
     m.attr("__version__") = VERSION;  // Version is set by CMAKE
