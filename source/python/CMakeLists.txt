@@ -126,3 +126,5 @@ add_test(NAME pytest
     COMMAND ${PYTHON_EXECUTABLE} -m pytest -q ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)

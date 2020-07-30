@@ -29,6 +29,26 @@ bool debug_       = false;
 double curtime_   = 0.0;
 bool initDisplay_ = false;
 
+bool connect(const py::function& func, const py::object& target, const size_t step,
+    const py::list& args)
+{
+    assert(cursim_->ncallbacks < MAX_PY_CALLBACK);
+    if(cursim_->ncallbacks >= MAX_PY_CALLBACK) {
+        py::print("Error: Maximum of ", MAX_PY_CALLBACK, " are allowed.");
+        return false;
+    }
+
+    // cleanup is the job of simfree
+    auto f = new CallbackFunc();
+    f->setFunc(func);
+    f->setStep(step);
+    f->setTarget(target);
+    f->setArgs(args);
+    cursim_->callbacks[cursim_->ncallbacks] = f;
+    cursim_->ncallbacks += 1;
+    return true;
+}
+
 bool addToSimptrVec(simptr ptr)
 {
     auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
@@ -114,36 +134,6 @@ bool initialize()
     if(debug_)
         smolSetDebugMode(1);
     return cursim_ ? true : false;
-}
-
-/**
-* @brief Connect a function's output to a variable.
-*
-* @param func
-* @param target
-* @param step
-* @param args
-*
-* @return 
-*/
-bool connect(const py::function& func, const string& target, const size_t step,
-    const py::list& args)
-{
-    assert(cursim_->ncallbacks < MAX_PY_CALLBACK);
-    if(cursim_->ncallbacks >= MAX_PY_CALLBACK) {
-        py::print("Error: Maximum of ", MAX_PY_CALLBACK, " are allowed.");
-        return false;
-    }
-
-    // cleanup is the job of simfree
-    auto f = new CallbackFunc();
-    f->setFunc(func);
-    f->setStep(step);
-    f->setTarget(target);
-    f->setArgs(args);
-    cursim_->callbacks[cursim_->ncallbacks] = f;
-    cursim_->ncallbacks += 1;
-    return true;
 }
 
 ErrorCode runUntil(

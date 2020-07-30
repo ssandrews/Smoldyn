@@ -16,7 +16,7 @@ S.seed = 0
 a, b = None, None
 avals, bvals = [], []
 
-expected_a = [
+expected_b = [
     (1.0, 1),
     (11.0, 1.841471),
     (21.0, 1e-05),
@@ -29,7 +29,7 @@ expected_a = [
     (91.0, 0.370112),
 ]
 
-expected_b = [
+expected_a = [
     (101.0, 0.1),
     (111.0, 101.844422),
     (121.0, 111.757954),
@@ -66,7 +66,9 @@ def test_connect_1():
     S.connect(new_dif_1, "b.difc", step=10, args=[1, 1])
     s = S.Simulation(100, 1, quiet=True)
     s.run()
-    assert [math.isclose(x[1], y[1]) for x, y in zip(bvals, expected_b)]
+    for a, b in zip(bvals, expected_b):
+        print(a, b)
+        assert math.isclose(a[1], b[1])
 
 
 def test_connect_2():
@@ -76,7 +78,9 @@ def test_connect_2():
     S.connect(new_dif_2, "a.difc", step=10, args=[1, 1])
     s = S.Simulation(200, 1)
     s.run()
-    assert [math.isclose(x[1], y[1]) for x, y in zip(avals, expected_a)]
+    for a, b in zip(avals, expected_a):
+        print(a, b)
+        assert math.isclose(a[1], b[1])
 
 
 def main():

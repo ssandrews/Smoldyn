@@ -28,8 +28,8 @@ public:
     void setStep(size_t step);
     size_t getStep() const;
 
-    void setTarget(const string& target);
-    std::string getTarget() const;
+    void setTarget(const py::handle& target);
+    py::handle getTarget() const;
 
     void setFunc(const py::function& target);
     py::function getFunc() const;
@@ -40,13 +40,14 @@ public:
     void setArgs(const py::list& args);
     py::list getArgs() const;
 
+
 private:
     /* data */
     double val_;
     std::string funcName_;
     py::function func_;
     size_t step_;
-    std::string target_;
+    py::handle target_;
     py::list args_;
 };
 

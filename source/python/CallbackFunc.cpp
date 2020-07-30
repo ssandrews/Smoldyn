@@ -11,12 +11,13 @@
 #include <cmath>
 #include <iostream>
 #include "CallbackFunc.h"
-
 #include <pybind11/eval.h>
 #include <pybind11/embed.h>
+
 namespace py = pybind11;
 
-CallbackFunc::CallbackFunc():  val_(0.0), funcName_(""), func_(py::none()), step_(1), args_({})
+CallbackFunc::CallbackFunc()
+    : val_(0.0), funcName_(""), func_(py::none()), step_(1), args_({})
 {
 }
 
@@ -26,18 +27,21 @@ CallbackFunc::~CallbackFunc()
 
 bool CallbackFunc::evalAndUpdate(double t)
 {
-    if(! isValid()) {
+    if(!isValid()) {
         cerr << "Not a valid statement: '" << funcName_ << "'." << endl;
         return std::nan("invalid.");
     }
 
     py::module m = py::module::import("__main__");
-    double v = 0.0;
-    if(func_)
-        v = func_(t, args_).cast<double>();
-    else
-        v = m.attr(funcName_.c_str())(t, args_).cast<double>();
-    py::exec(target_ + '=' + std::to_string(v), m.attr("__dict__"));
+
+    double v = func_ ? func_(t, args_).cast<double>()
+                     : m.attr(funcName_.c_str())(t, args_).cast<double>();
+
+    // If target_ is a function, call the function, else use the magic string.
+    if(true == py::isinstance<py::function>(target_))
+        target_(v);
+    else 
+        py::exec(target_.cast<string>() + '=' + std::to_string(v), m.attr("__dict__"));
     return true;
 }
 
@@ -46,10 +50,9 @@ bool CallbackFunc::isValid() const
     return (funcName_.size() > 0);
 }
 
-
 void CallbackFunc::setFunc(const py::function& func)
 {
-    func_ = func;
+    func_     = func;
     funcName_ = func_.attr("__name__").cast<string>();
 }
 
@@ -79,12 +82,12 @@ size_t CallbackFunc::getStep() const
     return step_;
 }
 
-void CallbackFunc::setTarget(const string& target)
+void CallbackFunc::setTarget(const py::handle& target)
 {
     target_ = target;
 }
 
-std::string CallbackFunc::getTarget() const
+py::handle CallbackFunc::getTarget() const
 {
     return target_;
 }
