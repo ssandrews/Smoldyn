@@ -146,13 +146,13 @@ bool connect(const py::function& func, const string& target, const size_t step,
     return true;
 }
 
-bool runUntil(
+ErrorCode runUntil(
     const double breaktime, const double dt, bool display, bool overwrite = false)
 {
     if(!cursim_) {
         if(!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
-            return false;
+            return ECerror;
         }
         auto er = smolOpenOutputFiles(cursim_, overwrite);
         if(er)
@@ -168,17 +168,15 @@ bool runUntil(
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
-
-    smolRunSimUntil(cursim_, breaktime);
-    return true;
+    return smolRunSimUntil(cursim_, breaktime);
 }
 
-bool run(double stoptime, double dt, bool display, bool overwrite = false)
+ErrorCode run(double stoptime, double dt, bool display, bool overwrite = false)
 {
     if(!cursim_) {
         if(!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
-            return false;
+            return ECerror;
         }
     }
 
@@ -195,7 +193,8 @@ bool run(double stoptime, double dt, bool display, bool overwrite = false)
     }
     auto r   = smolRunSim(cursim_);
     curtime_ = stoptime;
-    return r == ErrorCode::ECok;
+
+    return r;
 }
 
 void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)

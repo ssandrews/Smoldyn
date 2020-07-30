@@ -321,6 +321,10 @@ extern "C" enum ErrorCode smolRunSim(simptr sim)
         LCHECK(er != 9, funcname, ECerror,
             "Simulation terminated during diffusion\n  Out of memory");
     }
+    // Minor fix. If run() is called again, previous Liberrorcode does not
+    // reset to ECok but remain stuck to ECnotify.
+    if(Libwarncode == ECnotify)
+        Libwarncode = ECok;
     return Libwarncode;
 failure:
     return Liberrorcode;

@@ -132,7 +132,7 @@ class Species(object):
         self._mol_list: str = ""
 
         k = _smoldyn.addSpecies(self.name)
-        assert k == _smoldyn.ErrorCode.ok, "Failed to add molecule"
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule {k}"
 
         if state not in _smoldyn.MolecState.__members__:
             raise NameError(
@@ -961,7 +961,7 @@ class Surface(object):
             k = _smoldyn.addSurfaceMolecules(
                 sname, sstate, _n, self.name, panel.ctype, panel.name, pos,
             )
-            assert k == _smoldyn.ErrorCode.ok
+            assert k == _smoldyn.ErrorCode.ok, k
 
     def _setRate(
         self,
@@ -1564,7 +1564,8 @@ class Simulation(object):
             self.step = step
 
         self.__finalize_cmds__()
-        _smoldyn.run(self.stop, self.step)
+        k = _smoldyn.run(self.stop, self.step)
+        assert _smoldyn.ErrorCode.ok == k, k
 
     def runUntil(self, stop, step=None):
         self.step = self.stop

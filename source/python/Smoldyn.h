@@ -59,8 +59,8 @@ size_t getRandomSeed();
 bool initialize();
 
 // Smoldyn.
-bool run(double simtime, double dt, bool display, bool overwrite);
-bool runUntil(const double breaktime, const double dt, bool display, bool overwrite);
+ErrorCode run(double simtime, double dt, bool display, bool overwrite);
+ErrorCode runUntil(const double breaktime, const double dt, bool display, bool overwrite);
 
 bool connect(const py::function& func, const string& target, const size_t step,
     const py::list& args);
