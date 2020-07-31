@@ -57,11 +57,11 @@ def build_model_smoldyn():
     rect1 = S.Rectangle(corner=(0, 0), dimensions=[1000], axis="+y")
     bottom = S.Surface("boutonBottom", panels=[rect1])
     bottom.both.setStyle(color="red")
-
-    bottom.setRate(
-        sv, "fsoln", "front", rate=10, revrate=0.1
-    )  # SV stick to bottom of the bouton.
     bottom.back.addAction(trans, "reflect")  # but it reflect neurotranmitter
+
+    # SV stick to bottom of the bouton and also detach back with a smaller
+    # rate.
+    bottom.setRate(sv, "fsoln", "front", rate=10, revrate=0.001)
 
     # They move to outside of bouton, this value is dependant on the membrane
     # potential
@@ -71,8 +71,8 @@ def build_model_smoldyn():
     r1_ = S.Reaction("open2trans", subs=[svFused], prds=[trans] * 1000, kf=100)
     S.connect(generate_spike, update_kf, step=20)
 
-    s = S.Simulation(stop=1000, step=0.005)
-    s.addGraphics("opengl", iter=4)
+    s = S.Simulation(stop=1000, step=0.001)
+    s.addGraphics("opengl", iter=10, text_display="time")
     s.run()
     print("Done")
 

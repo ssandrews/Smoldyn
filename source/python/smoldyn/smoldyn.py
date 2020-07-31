@@ -1445,7 +1445,7 @@ class Simulation(object):
             k = _smoldyn.setGridStyle(grid_thickness, grid_color)
             assert k == _smoldyn.ErrorCode.ok
 
-        self.__set_text_display__(text_display)
+        self.setText(text_display)
 
     # alias for setGraphics
     addGraphics = setGraphics
@@ -1458,7 +1458,7 @@ class Simulation(object):
             return f"{x[0].name}({x[1]})"
         return x.__to_disp__()
 
-    def __set_text_display__(self, text_display):
+    def setText(self, text_display, color: ColorType = "black"):
         if isinstance(text_display, str):
             text_display = text_display.strip().split(" ")
         for item in text_display:
@@ -1466,6 +1466,9 @@ class Simulation(object):
                 continue
             k = _smoldyn.addTextDisplay(self.__todisp_text__(item))
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set '{item}'"
+
+        k = _smoldyn.setTextStyle(Color(color).rgba)
+        assert k == _smoldyn.ErrorCode.ok, "Failed to set text color"
 
     def setTiff(
         self,
