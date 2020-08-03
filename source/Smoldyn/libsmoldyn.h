@@ -148,7 +148,7 @@ int smolGetSurfaceIndex(simptr sim, const char *surface);
 int smolGetSurfaceIndexNT(simptr sim, const char *surface);
 char *smolGetSurfaceName(simptr sim, int surfaceindex, char *surface);
 enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface, enum PanelFace face,
-    const char *species, enum MolecState state, enum SrfAction action);
+    const char *species, enum MolecState state, enum SrfAction action, const char *newspecies);
 enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface, const char *species,
     enum MolecState state, enum MolecState state1, enum MolecState state2, double rate,
     const char *newspecies, int isinternal);
