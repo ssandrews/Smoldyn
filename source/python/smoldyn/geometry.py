@@ -323,10 +323,6 @@ class SurfaceFaceCollection:
         else:
             sname, sstate = species, _smoldyn.MolecState.soln
 
-        # TODO:
-        if new_spec:
-            raise NotImplementedError("This feature is not implemented.")
-
         for which in self.faces:
             k = _smoldyn.setSurfaceAction(
                 self.surfname,
@@ -334,6 +330,7 @@ class SurfaceFaceCollection:
                 sname,
                 sstate,
                 SrfAction.__members__[action],
+                new_spec,
             )
             assert k == ErrorCode.ok
 

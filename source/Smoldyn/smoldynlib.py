@@ -111,7 +111,7 @@ smolGetSurfaceName.argtypes = [c_void_p, c_int, c_char_p]
 
 smolSetSurfaceAction = smoldyn.smolSetSurfaceAction
 smolSetSurfaceAction.restype = c_int
-smolSetSurfaceAction.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_int]
+smolSetSurfaceAction.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_int, c_char_p]
 
 smolSetSurfaceRate = smoldyn.smolSetSurfaceRate
 smolSetSurfaceRate.restype = c_int
