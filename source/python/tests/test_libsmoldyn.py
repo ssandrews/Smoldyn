@@ -34,7 +34,7 @@ def test_library():
 
     # Adding surface.
     S.addSurface("Membrane00")
-    S.setSurfaceAction("Membrane00", PF.both, "ATP", MS.soln, SA.reflect)
+    S.setSurfaceAction("Membrane00", PF.both, "ATP", MS.soln, SA.reflect,"")
 
     params = [-20.0, 20.0, 10.0, 20.0, 20.0]
     S.addPanel("Membrane00", PS.sph, "", "", params)
