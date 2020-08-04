@@ -59,6 +59,24 @@ Libsmoldyn was originally written as a C API, but one that should work with C++ 
 
 Libsmoldyn only barely supports graphics at present due to constraints imposed by the glut code library. This will be improved in a future version (by changing to the freeglut library, which doesn't insist on controlling the main event loop, as the glut library does).
 
+% Chapter: Documentation and websites
+\chapter{Documentation and websites}
+
+The Smoldyn web site, www.smoldyn.org, is the principle download site. It also contains a decent amount of information about Smoldyn and other spatial simulators in the ``About'' section.
+
+The user's manual, SmoldynUserManual.pdf, is created from a Microsoft Word file. This file describes how to use the software, aimed at the stand-alone software, but is reasonably complete and readable.
+
+The code documentation, SmoldynCodeDoc.pdf, is created from a LaTeX file. This is a thorough description of the C code, including descriptions of all data structures and functions.
+
+The library documentation, LibsmoldynManual.pdf, is created from a LaTeX file. It tells how to use the C/C++ API to Smoldyn. It also describes the new Python bindings.
+
+Smoldyn can also be downloaded from the Python site: https://pypi.org/project/smoldyn/.
+
+The readthedocs website has information about the Smoldyn code, created using Doxygen: https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html.
+
+Smoldyn's code repository is on Github, at https://github.com/ssandrews/Smoldyn-official.
+
+
 
 % Chapter: Linking with C/C++
 \chapter{Linking with C/C++}
@@ -181,23 +199,112 @@ For example, the following line builds Smoldyn and Libsmoldyn for debugging and 
 % Chapter: Use with Python
 \chapter{Use with Python}
 
+\section{Installing}
+
+Hopefully, you should be able to install using
+\begin{verbatim}
+python3 -m pip install smoldyn --user --pre
+\end{verbatim}
+
+This should install the smoldyn nightly package, from: https://pypi.org/project/smoldyn/ 
+
+
 \section{Files}
 
-After building Smoldyn (assuming you were in
-\texttt{/path/to/Smoldyn-official/build} directory when you ran \verb|make|
-command.), the python module ends up in the
-\texttt{/path/to/Smoldyn-official/build/py}.  Add this directory to your
-\texttt{PYTHOPATH} e.g. 
-\verb|export PTYHONPATH=/path/to/Smoldyn-official/build/py:$PYTHONPATH|
+After building Smoldyn (assuming you were in \texttt{/path/to/Smoldyn-official/build} directory when you ran \texttt{make} command), the python module ends up in the \texttt{/path/to/Smoldyn-official/build/py} directory. The module can be imported into Python from this directory. Add this directory to your
+\texttt{PYTHONPATH} temporarily with \texttt{export PTYHONPATH=/path/to/Smoldyn-official/build/py:\$PYTHONPATH}. With this, the module can be accessed from any directory.
 
 Note that it's possible to see where the library is imported from by checking
-\verb|smoldyn.__file__|. For example,
+\verb|smoldyn.__file__| while in Python. For example,
 
 \begin{verbatim}
 >>> import smoldyn
 >>> print(smoldyn.__file__)
 /home/dilawars/Work/FORKES/Smoldyn-official/build/py/smoldyn/__init__.py
 \end{verbatim}
+
+
+\section{Python-specific functionality}
+
+Python offers a callback function that enables Smoldyn setup functions to be called repeatedly and automatically. Following is the text from Dilawar's description.
+
+Suppose I have the following function which generates a noisy value using the current time \texttt{t} and a list of arguments \texttt{args}.
+
+\begin{verbatim}
+def computeVm(t, args):
+    x, y = args 
+    return math.sin(t) + x * y + random.random()
+\end{verbatim}
+
+And I have a molecular species \texttt{ca}.
+
+\begin{verbatim}
+import smoldyn
+ca = smoldyn.Species('ca', difc=1, color='blue', display_size=1)
+\end{verbatim}
+Then the following connect the output of function computeVm to ca.difc parameter. This is called every 10th step.
+
+\begin{verbatim}
+smoldyn.connect(computeVm, "ca.difc", step=10, args=[1,2.1])
+\end{verbatim}
+
+In smoldyn.connect function, both source and target must be global variables. In the example below, I made a a global variable before I used it in connect. Else there will be a runtime error.
+
+\begin{verbatim}
+import smoldyn as S
+import random
+
+a = None
+
+def new_dif(t, args):
+    global a
+    x, y = args
+    print(a.difc)
+    return t + random.random()
+
+def test_connect():
+    global a
+    S.setBounds(low=(0, 0), high=(10, 10))
+    a = S.Species("a", color="red", difc=1)
+    S.connect(new_dif, "a.difc", step=10, args=[0, 1])
+    s = S.Simulation(100, 1)
+    s.run()
+    print("All done")
+
+test_connect()
+\end{verbatim}
+
+Also accepts a function.
+
+\begin{verbatim}
+def new_dif(t, args):
+    global a, avals
+    x, y = args
+    # note that b.difc is not still updated.
+    avals.append((t, a.difc["soln"]))
+    return x * math.sin(t) + y
+
+def update_difc(val):
+    global a
+    a.difc = val
+
+def test_connect():
+    global a, avals
+    S.setBounds(low=(0, 0), high=(10, 10))
+    a = S.Species("a", color="black", difc=0.1)
+    S.connect(new_dif, update_difc, step=10, args=[1, 1])
+    s = S.Simulation(100, 1)
+    s.run()
+    for a, b in zip(avals[1:], expected_a[1:]):
+        print(a, b)
+        assert math.isclose(a[1], b[1], rel_tol=1e-6, abs_tol=1e-6), (a[1], b[1])
+
+test_connect()
+\end{verbatim}
+
+Dilawar created some nice examples of this in use with a pre-synaptic bouton with N synaptic vesicles. These vesicles fuse with the bottom of the bouton (red surface). Upon fusion, one vesicle releases 1000 neurotransmitters which decay with time-constant $\tau$.
+
+The rate of release is controlled by a function. This is set by smoldyn.connect. The function generates s spike 0 or 1, if the value is 1 the rate is set to 1000 else it is 0.
 
 % Chapter: Error trapping
 \chapter{Error trapping}
@@ -766,25 +873,25 @@ Sets the lighting parameters that are used for the rendering method ``opengl\_be
 \hfill \\
 C: \texttt{enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color);}\\
 Python: \texttt{ErrorCode setBackgroundStyle(string color)}\\
-Sets the color of the graphics display background. \texttt{color} is a 4-value vector with red, green, blue, and alpha values.
+Sets the color of the graphics display background. \texttt{color} is a 4-value vector with red, green, blue, and alpha values (or, in Python, a color word).
 
 \item[SetFrameStyle]
 \hfill \\
 C: \texttt{enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double *color);}\\
 Python: \texttt{ErrorCode setFrameStyle(float thickness, string color)}\\
-Sets the thickness and the color of the wire frame that outlines the simulation system in the graphics window. Enter \texttt{thickness} as 0 for no frame, as a positive number for the number of points in thickness, or as a negative number to not set this parameter. Enter \texttt{color} as a 4-value vector with the frame color, or as \texttt{NULL} to not set it.
+Sets the thickness and the color of the wire frame that outlines the simulation system in the graphics window. Enter \texttt{thickness} as 0 for no frame, as a positive number for the number of points in thickness, or as a negative number to not set this parameter. Enter \texttt{color} as a 4-value vector with the frame color, or as \texttt{NULL} to not set it (or, in Python, a color word).
 
 \item[SetGridStyle]
 \hfill \\
 C: \texttt{enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double *color);}\\
 Python: \texttt{ErrorCode setGridStyle(float thickness, string color);}\\
-Sets the thickness and the color of a grid that shows where the partitions are that separate Smoldyn's virtual boxes. Enter \texttt{thickness} as 0 for no grid, as a positive number for the number of points in thickness, or as a negative number to not set this parameter. Enter \texttt{color} as a 4-value vector with the grid color, or as \texttt{NULL} to not set it.
+Sets the thickness and the color of a grid that shows where the partitions are that separate Smoldyn's virtual boxes. Enter \texttt{thickness} as 0 for no grid, as a positive number for the number of points in thickness, or as a negative number to not set this parameter. Enter \texttt{color} as a 4-value vector with the grid color, or as \texttt{NULL} to not set it (or, in Python, a color word).
 
 \item[SetTextStyle]
 \hfill \\
 C: \texttt{enum ErrorCode smolSetTextStyle(simptr sim, double *color);}\\
 Python: \texttt{ErrorCode setTextStyle(string color)}\\
-Sets the color of any text that is displayed to the graphics window. \texttt{color} is a 4-value vector with red, green, blue, and alpha values.
+Sets the color of any text that is displayed to the graphics window. \texttt{color} is a 4-value vector with red, green, blue, and alpha values (or, in Python, a color word).
 
 \item[AddTextDisplay]
 \hfill \\
@@ -931,7 +1038,7 @@ Returns the total number of molecules in the system that have species \texttt{sp
 \hfill \\
 C: \texttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size, double *color);}\\
 Python: \texttt{ErrorCode setMoleculeStyle(str species, MolecState state, float size, List[float] color)}\\
-Sets the graphical display parameters for molecules of species \texttt{species} (``all" is permitted) and state \texttt{state} (\texttt{MSall} is permitted). Enter \texttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \texttt{color} with the 3-value color vector or with \texttt{NULL} to not set the color.
+Sets the graphical display parameters for molecules of species \texttt{species} (``all" is permitted) and state \texttt{state} (\texttt{MSall} is permitted). Enter \texttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \texttt{color} with the 3-value color vector or with \texttt{NULL} to not set the color (or, in Python, a color word).
 
 \end{description}
 
@@ -966,9 +1073,9 @@ Returns the surface name for surface number \texttt{surfaceindex} both directly 
 
 \item[SetSurfaceAction]
 \hfill \\
-C: \texttt{enum ErrorCode smolSetSurfaceAction(simptr sim, char *surface, enum PanelFace face, char *species, enum MolecState state, enum SrfAction action);}\\
+C: \texttt{enum ErrorCode smolSetSurfaceAction(simptr sim, char *surface, enum PanelFace face, char *species, enum MolecState state, enum SrfAction action, char *newspecies);}\\
 Python: \texttt{ErrorCode setSurfaceAction(str surface, PanelFace face, str species, MolecState state, SrfAction action)}\\
-Sets the action that should happen when a molecule of species \texttt{species} (may be ``all") and state \texttt{state} (may be \texttt{MSall}) diffuses into face \texttt{face} (may be \texttt{PFboth}) of surface \texttt{surface}. The action is set to \texttt{action}.
+Sets the action that should happen when a molecule of species \texttt{species} (may be ``all") and state \texttt{state} (may be \texttt{MSall}) diffuses into face \texttt{face} (may be \texttt{PFboth}) of surface \texttt{surface}. The action is set to \texttt{action}. Enter \texttt{newspecies} to the name of a new species if the molecule should change species, or as either \texttt{NULL} or an empty string if it should not change species.
 
 \item[SetSurfaceRate]
 \hfill \\
@@ -1055,7 +1162,7 @@ Adds panel \texttt{panel2} of surface \texttt{surface2} as a neighbor of panel \
 \hfill \\
 C: \texttt{enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface, enum PanelFace face, enum DrawMode mode, double thickness, double *color, int stipplefactor, int stipplepattern, double shininess);}\\
 Python: \texttt{ErrorCode setSurfaceStyle(str surface, PanelFace face, DrawMode mode, float thickness, List[float] color, int stipplefactor, int stipplepattern, float shininess)}\\
-Sets the graphics output style for face \texttt{face} of surface \texttt{surface}. \texttt{mode} is the drawing mode; enter it as \texttt{DMnone} to not set this parameter and otherwise enter it as \texttt{DMno} to not draw the surface, \texttt{DMvert} for vertices, \texttt{DMedge} for edges, or \texttt{DMface} for faces. The \texttt{thickness} parameter gives the point size or line width for drawing vertices or edges, or can be entered as a negative number to not set this parameter. \texttt{color} is the 4-value color vector for the surface, or can be entered as \texttt{NULL} to not set this parameter. \texttt{stipplefactor} is the repeat distance for the entire edge stippling pattern, or can be entered as a negative number to not set it. \texttt{stipplepattern} is the edge stippling pattern, which needs to be between 0 and 0xFFFF, or can be entered as -1 to not set this parameter. And \texttt{shininess} is the surface shininess, for use with lighting in the ``opengl\_better" graphics display option, or can be entered as -1 to not set this parameter. The parameters \texttt{thickness}, \texttt{stipplefactor}, and \texttt{stipplepattern} only apply to edge style drawing modes and ignore any input in the \texttt{face} entry. The \texttt{shininess} parameter only applies to the face style drawing modes.
+Sets the graphics output style for face \texttt{face} of surface \texttt{surface}. \texttt{mode} is the drawing mode; enter it as \texttt{DMnone} to not set this parameter and otherwise enter it as \texttt{DMno} to not draw the surface, \texttt{DMvert} for vertices, \texttt{DMedge} for edges, or \texttt{DMface} for faces. The \texttt{thickness} parameter gives the point size or line width for drawing vertices or edges, or can be entered as a negative number to not set this parameter. \texttt{color} is the 4-value color vector for the surface, or can be entered as \texttt{NULL} to not set this parameter (or, in Python, a color word). \texttt{stipplefactor} is the repeat distance for the entire edge stippling pattern, or can be entered as a negative number to not set it. \texttt{stipplepattern} is the edge stippling pattern, which needs to be between 0 and 0xFFFF, or can be entered as -1 to not set this parameter. And \texttt{shininess} is the surface shininess, for use with lighting in the ``opengl\_better" graphics display option, or can be entered as -1 to not set this parameter. The parameters \texttt{thickness}, \texttt{stipplefactor}, and \texttt{stipplepattern} only apply to edge style drawing modes and ignore any input in the \texttt{face} entry. The \texttt{shininess} parameter only applies to the face style drawing modes.
 
 \end{description}
 

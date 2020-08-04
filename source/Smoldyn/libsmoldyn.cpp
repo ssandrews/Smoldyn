@@ -1447,10 +1447,10 @@ failure:
 /* smolSetSurfaceAction */
 extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
     enum PanelFace face, const char *species, enum MolecState state,
-    enum SrfAction action)
+    enum SrfAction action, const char *newspecies)
 {
     const char *funcname = "smolSetSurfaceAction";
-    int er, i, s;
+    int er, i, i2, s;
     surfaceptr srf;
 
     LCHECK(sim, funcname, ECmissing, "missing sim");
@@ -1473,15 +1473,23 @@ extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
     LCHECK((state >= 0 && state < MSMAX) || state == MSall, funcname, ECbounds,
         "invalid state");
     LCHECK(action >= 0 && action <= SAmult, funcname, ECbounds, "invalid action");
+
+		if(newspecies && strlen(newspecies)>0) {
+			i2 = smolGetSpeciesIndexNT(sim, newspecies);
+			LCHECK(i2 > 0, funcname, ECnonexist, "unrecognized new species name");
+		}
+		else
+			i2 = 0;
+
     if(s >= 0) {
         srf = sim->srfss->srflist[s];
-        er  = surfsetaction(srf, i, NULL, state, face, action, 0);
+        er  = surfsetaction(srf, i, NULL, state, face, action, i2);
         LCHECK(!er, funcname, ECbug, "bug in surfsetaction");
     }
     else {
         for(s = 0; s < sim->srfss->nsrf; s++) {
             srf = sim->srfss->srflist[s];
-            er  = surfsetaction(srf, i, NULL, state, face, action, 0);
+            er  = surfsetaction(srf, i, NULL, state, face, action, i2);
             LCHECK(!er, funcname, ECbug, "bug in surfsetaction");
         }
     }
@@ -2033,7 +2041,7 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim, const char *reaction,
     if(reactant1 && reactant1[0] != '\0') {
         rctident[order] = smolGetSpeciesIndexNT(sim, reactant1);
         LCHECK(rctident[order] > 0, funcname, ECsame, NULL);
-        LCHECK(rstate1 >= 0 && rstate1 < MSMAX, funcname, ECbounds, "invalid rstate1");
+        LCHECK(rstate1 >= 0 && rstate1 <= MSMAX, funcname, ECbounds, "invalid rstate1");
         rctstate[order] = rstate1;
         order++;
     }

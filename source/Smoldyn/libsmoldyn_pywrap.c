@@ -5949,6 +5949,7 @@ SWIGINTERN PyObject *_wrap_smolSetSurfaceAction(PyObject *SWIGUNUSEDPARM(self), 
   char *arg4 = (char *) 0 ;
   enum MolecState arg5 ;
   enum SrfAction arg6 ;
+  char *arg7 = (char *) 0 ;
   void *argp1 ;
   int res1 = 0 ;
   int res2 ;
@@ -5969,9 +5970,10 @@ SWIGINTERN PyObject *_wrap_smolSetSurfaceAction(PyObject *SWIGUNUSEDPARM(self), 
   PyObject * obj3 = 0 ;
   PyObject * obj4 = 0 ;
   PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
   enum ErrorCode result;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOO:smolSetSurfaceAction",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOO:smolSetSurfaceAction",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6)) SWIG_fail;
   {
     res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_simptr,  0 );
     if (!SWIG_IsOK(res1)) {
@@ -6008,7 +6010,8 @@ SWIGINTERN PyObject *_wrap_smolSetSurfaceAction(PyObject *SWIGUNUSEDPARM(self), 
     SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "smolSetSurfaceAction" "', argument " "6"" of type '" "enum SrfAction""'");
   } 
   arg6 = (enum SrfAction)(val6);
-  result = (enum ErrorCode)smolSetSurfaceAction(arg1,(char const *)arg2,arg3,(char const *)arg4,arg5,arg6);
+  arg7 = (char *)(
+  result = (enum ErrorCode)smolSetSurfaceAction(arg1,(char const *)arg2,arg3,(char const *)arg4,arg5,arg6,arg7);
   resultobj = SWIG_From_int((int)(result));
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   if (alloc4 == SWIG_NEWOBJ) free((char*)buf4);

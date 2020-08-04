@@ -757,10 +757,10 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
     //     enum PanelFace face, const char *species, enum MolecState state,
-    //     enum SrfAction action);
+    //     enum SrfAction action, const char *newspecies);
     m.def("setSurfaceAction", [](const char *surface, PanelFace face, const char *species,
-                                  MolecState state, SrfAction action) {
-        return smolSetSurfaceAction(cursim_, surface, face, species, state, action);
+                                  MolecState state, SrfAction action, const char *newspecies) {
+        return smolSetSurfaceAction(cursim_, surface, face, species, state, action, newspecies);
     });
 
     // enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,

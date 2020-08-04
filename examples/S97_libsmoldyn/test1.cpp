@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
     smolSetSpeciesMobility(sim, "cAR1", MSall, 1, 0, 0);
 
     smolAddSurface(sim, "Membrane00");
-    smolSetSurfaceAction(sim, "Membrane00", PFboth, "ATP", MSsoln, SAreflect);
+    smolSetSurfaceAction(sim, "Membrane00", PFboth, "ATP", MSsoln, SAreflect, NULL);
     params[0] = -20.0;
     params[1] = 20.0;
     params[2] = 10.0;
