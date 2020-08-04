@@ -813,7 +813,6 @@ class Path2D(object):
                 self.panels.append(p)
             else:
                 t = Triangle(vertices=((x1, y1), (x2, y2)))
-                __logger__.info(f"Added a Triangle {p}")
                 self.panels.append(t)
 
 
@@ -1837,6 +1836,8 @@ class Reaction(object):
         """
         self.name = f"r{id(self):d}" if not name else name
         fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
+        self._kf = kf
+        self._kb = kb
         self.forward = HalfReaction(
             fwdname,
             subs,
@@ -1848,10 +1849,27 @@ class Reaction(object):
             reaction_probability=reaction_probability,
         )
         self.reverse = None
-        if kb > 0.0:
+        if self._kb > 0.0:
             self.reverse = HalfReaction(
-                revname, prds, subs, kb, compartment=compartment, surface=surface
+                revname, prds, subs, self._kb, compartment=compartment, surface=surface
             )
+
+    @property
+    def kf(self):
+        return self._kf
+
+    @kf.setter
+    def kf(self, val: float):
+        self.forward.setRate(val)
+
+    @property
+    def kb(self):
+        return self._kh
+
+    @kb.setter
+    def kb(self, val: float):
+        assert self.backward
+        self.backward.setRate(val)
 
     def setIntersurface(self, rules: List[Union[int, str]]):
         """Define `rules` to allow a bimolecular reaction operates when its
