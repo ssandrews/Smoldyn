@@ -1,7 +1,8 @@
 """Smoldyn user API.
 """
 
-from __future__ import annotations
+# minimum python3.7 is required for the following to work.
+# from __future__ import annotations
 
 __author__ = "Dilawar Singh"
 __copyright__ = "Copyright 2020-, Dilawar Singh"
@@ -308,7 +309,8 @@ class Panel(object):
         self,
         name: str = "",
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
-        neighbors: List[Panel] = [],
+        # neighbors: List[Panel] = [],
+        neighbors: List = [],
     ):
         """Panels are components of a surface. One or more Panels are requried
         to form a Surface. Following geometric primitives are available.
@@ -321,7 +323,8 @@ class Panel(object):
         - [Disk](smoldyn.smoldyn.Disk)
         """
 
-        self._neighbors: List[Panel] = []
+        # self._neighbors: List[Panel] = []
+        self._neighbors: List = []
 
         self.name = name
         self.ctype: _smoldyn.PanelShape = shape
@@ -333,7 +336,7 @@ class Panel(object):
         self.neighbors = neighbors
 
     def jumpTo(
-        self, face1: str, panel2: Panel, face2: str, bidirectional: bool = False
+        self, face1: str, panel2, face2: str, bidirectional: bool = False
     ):
         """Add a jump reaction between two panels of the same surface.
 
@@ -382,7 +385,7 @@ class Panel(object):
         return self._neighbors
 
     @neighbors.setter
-    def neighbors(self, panels: List[Panel]):
+    def neighbors(self, panels: List):
         self._neighbors = panels
         for panel in panels:
             self._assignNeighbor(panel)
@@ -392,7 +395,7 @@ class Panel(object):
         return self._neighbors[0]
 
     @neighbor.setter
-    def neighbor(self, panel: Panel):
+    def neighbor(self, panel):
         self._assignNeighbor(panel)
 
     def _assignNeighbor(self, panel, reciprocal: bool = False):
@@ -624,7 +627,7 @@ class _PanelFace(object):
         self.name = _smoldyn.PanelFace.__members__[name]
         self.panel = panel
 
-    def jumpTo(self, toface: _PanelFace, bidirectional: bool = False):
+    def jumpTo(self, toface, bidirectional: bool = False):
         """Add a jump reaction between two panels of same Surface
 
         See also
