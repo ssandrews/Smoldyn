@@ -31,7 +31,7 @@ jobs:
         cmake --version
         which python
         python -c "import sys; print(sys.version)"
-        python -m pip install pytest matplotlib numpy wheel
+        python -m pip install pytest matplotlib numpy wheel dataclasses
         mkdir build && cd build && cmake ..
     - name: make
       run: cd build && make -j2 && make wheel
