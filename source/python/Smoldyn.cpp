@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#include "../lib/random2.h"
+#include "../libSteve/random2.h"
 
 #include "Smoldyn.h"
 

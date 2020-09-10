@@ -17,7 +17,7 @@ using namespace std;
 
 // Globals are also declarated here.
 
-#include "../lib/SimCommand.h"
+#include "../libSteve/SimCommand.h"
 #include "../Smoldyn/smoldynfuncs.h"
 #include "Smoldyn.h"
 

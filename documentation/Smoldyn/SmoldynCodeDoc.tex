@@ -94,8 +94,10 @@ Smoldyn's official code repository is github at https://github.com/ssandrews/Smo
 Up to version 2.61, the only documentation was included in the download package as Word and pdf files for the User's Manual and as LaTeX and pdf files for the code documentation (this file). At this point, Dilawar Singh started a readthedocs website for Smoldyn at \url{https://readthedocs.org/projects/smoldyn/downloads/}.
 
 
-% Source code dependencies
-\section{Source code dependencies}
+% Source code
+\section{Source code}
+
+\subsection{Dependencies}
 
 Code dependencies are shown below in a tree structure, such that the each file depends on the files that are indented below it. As much as possible, Smoldyn builds and runs without its dependencies, but offers fewer features.
 
@@ -108,7 +110,7 @@ Code dependencies are shown below in a tree structure, such that the each file d
 \>\>libiconv\\
 \>\>NSV\\
 \>\>\>VTK\\
-\>\>pybind11 (?)\\
+\>\>pybind11\\
 \end{tabbing}
 
 While some of the dependency code was included in the Smoldyn source distribution up to version 2.26, it is no longer included for versions 2.27 and newer versions. As a result, you need to get it yourself (or use a pre-compiled Smoldyn version). They are all fairly straightforward.
@@ -119,7 +121,37 @@ libiconv is from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14
 
 libXML++ is from \url{http://libxmlplusplus.sourceforge.net/}. While you can try to get a recent version, this is likely to be a major mistake because it has loads of dependencies, and those have dependencies, and so on. Instead, get libXML++ version 1.0.5. This is fully sufficient, and it works well. After downloading, extract the archive, change to the libxml++-1.0.5 directory, enter ``./configure", ``make", and ``sudo make install". This was straightforward for me.
 
-vtk is from \url{http://www.vtk.org/VTK/resources/software.html}. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed.
+vtk is from \url{http://www.vtk.org/VTK/resources/software.html}. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of installing VTK to the project, there is also a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used.
+
+\subsection{Directories}
+
+The source directory includes several subdirectories of code.
+
+\begin{description}
+
+\item[BioNetGen] I think this is the complete BioNetGen download, from about 2016. Smoldyn uses the BNG2.pl perl file for rule-based modeling when using the BNG conventions. This code is not included in Smoldyn during building, but is called during program operation.
+
+\item[libSteve] A library of code that I wrote. Pretty much all of it is plain C. Essentially none of the code here is specifically for Smoldyn or, more importantly, essentially none of the code here calls functions that are part of the core Smoldyn program (e.g. smolsim.c, smolreact.c, etc.). I think that the sole exception is SimCommand.c, which can call smolcmd.c but can also be run without calling it.
+
+\item[MinGWlibs] An external library code for cross-compiling from Mac to Windows with MinGW. This system isn't working at present, so this source code isn't being used.
+
+\item[NextSubVolume] Code that Martin Robinson wrote for hybrid Smoldyn, for simulating adjacent spatial regions with differing levels of detail.
+
+\item[pybind11] An external library on which Smoldyn's Python bindings are built.
+
+\item[SmolCrowd] Not compiled into Smoldyn, but a separate utility. It generates random crowders.
+
+\item[Smoldyn] The core of the Smoldyn program.
+
+\item[SmolEmulate] Not compiled into Smoldyn, but a separate utility. It emulates Smoldyn algorithms, for calibrating reaction rates.
+
+\item[vcell] Code used for linking Smoldyn into VCell. This was written by the VCell team, and I just keep it here for future use by them.
+
+\item[vtk] External library for the VTK visualization toolkit. It's used by the NSV code.
+
+\item[wrl2smol] Not compiled into Smoldyn, but a separate utility. It converts VRML language triangle data into Smoldyn style triangle input.
+
+\end{description}
 
 \subsection{GPU Smoldyn}
 
@@ -129,31 +161,45 @@ For GPU Smoldyn, you will need some other things too. First is the CUDA library,
 
 The Boost library is from \url{http://www.boost.org/users/download/}. This doesn't get installed with an installer, but instead the whole directory gets copied over. It didn't work when I put it in a system location, but did work when I copied the ``boost" subdirectory into the GPU code directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
 
-% Building with CMake (versions 2.27 and higher)
-\section{Building with CMake (versions 2.27 and higher)}
+% Building with CMake
+\section{Building with CMake}
 
-Smoldyn built using the GNU Autoconf, Automake, and Libtool tools through version 2.26. These GNU tools are remarkably arcane so I switched to CMake for versions 2.27 and above, which has been a vast improvement. I maintained the AutoTools documentation through version 2.31 and then removed it.
-
-Building requires CMake, which can be downloaded from \url{http://www.cmake.org}. I use version 2.87, but any version above 2.8 should work. CMake installs trivially (at least on Mac), with a standard installer and no building required.
+Building requires CMake, which can be downloaded from \url{http://www.cmake.org}. I use version 3.16, but any version above 3.0 should work. CMake installs trivially (at least on Mac), with a standard installer and no building required.
 
 You can run CMake from either a command line interface (my preference) or with a GUI. At a command line interface, change directories to cmake. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. See below for custom builds. The other option is to use the CMake GUI. It can be started by entering ``cmake-gui" at a command line. Either way, when CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what some important build parameters are.
 
 Once configuring is complete, enter ``make". Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Finally, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
 
+Here is the summary of the building process:
+
+\begin{lstlisting}
+> cd Smoldyn
+> mkdir build
+> cd build       # empty the directory if necessary with: rm -r *
+> cmake ..	     # add any options here
+> make
+> sudo make install
+\end{lstlisting}
+
 For custom builds, you need to set various options to non-default settings. This is straightforward in the CMake GUI. There, you just check or uncheck boxes, as desired. Alternatively, from a command line interface, you can start CMake with ``cmake .. -i" for interactive mode, and then CMake will ask you about each option. For each, you can just press return to select the default, or enter in values of your choice. Finally, you can also list each non-default option directly on the command line (preceded with a `D', presumably for define).
 
-Following are some helpful build options:
+Following are all of the build options in the Smoldyn CMake files, plus some of the more helpful standard ones.
 
 \begin{longtable}[c]{lll}
 Smoldyn option & default & effect when ON\\
 \hline
+\texttt{-DSMOLDYN\_VERSION} & 2.62.dev & Smoldyn version number\\
 \texttt{-DOPTION\_VCELL} & \texttt{OFF} & Build for inclusion within VCell\\
 \texttt{-DOPTION\_NSV} & \texttt{ON} & Build with Next Subvolume support\\
 \texttt{-DOPTION\_PDE} & \texttt{OFF} & Build with support for PDE simulation\\
 \texttt{-DOPTION\_VTK} & \texttt{OFF} & Build with support for VTK visualization\\
 \texttt{-DOPTION\_STATIC} & \texttt{OFF} & Build using static libraries\\
+\texttt{-DOPTION\_MINGW} & \texttt{OFF} & Build for MinGW compiler (not working currently)\\
 \texttt{-DOPTION\_USE\_OPENGL} & \texttt{ON} & Build with graphics support\\
-\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with LibTiff support\\
+\texttt{-DOPTION\_USE\_ZLIB} & \texttt{OFF} & Build with zlib support (use default)\\
+\texttt{-DOPTION\_USE\_ICONV} & \texttt{OFF} & Build with Libiconv support (use default)\\
+\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with libtiff support\\
+\texttt{-DOPTION\_PYTHON} & \texttt{ON} & Build Python module\\
 \texttt{-DOPTION\_TARGET\_SMOLDYN} & \texttt{ON} & Build stand-alone Smoldyn program\\
 \texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{OFF} & Build LibSmoldyn library\\
 \hline
@@ -165,10 +211,30 @@ CMake option & default & function\\
 \multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
 \end{longtable}
 
+The CMakeLists file lists a few subdirectories.
+
+(1) The subdirectory ``source/pybind11'' includes the pybind11 library, which offers ``Seamless operability between C++11 and Python... pybind11 is a lightweight header-only library that exposes C++ types in Python and vice versa, mainly to create Python bindings of existing C++ code''. It is widely used and can be downloaded from github. It does not require pre-compiling like the other dependencies because it is compiled with the rest of Smoldyn. There is no custom code here, but only code from the pybind11 project.
+
+(2) The subdirectory ``source/python'' includes Python binding code and was written, by Dilawar, specifically for Smoldyn.
+
+(3) The subdirectory ``examples'' is for automatic testing, which has been partially set up but not completed.
+
+\section{Documentation}
+
+Smoldyn is documented in three hand-written files, which are the User's Manual, the LibSmoldyn user's manual, and this programmers documentation. In addition, it has partially complete documentation generation with Doxygen. It reads the file docs/Doxyfile.in to build the documentation. I don't know where the results get put.
+
+Other files in the docs directory are markdown file versions of the Smoldyn documentation that I wrote. Dilawar made them from the original pdf, tex, and docx files in the documentation folder using pandoc and then edited them manaully. The mkdocs file generates a website from the `docs' folder, and mkdocs.yml is the configuration file for this, using the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar's readthedocs web site shows the results.
+
+\section{Continuous Integration}
+
+Another new directory is called ``scripts''. It includes development related scripts for building Smoldyn on online platforms like Travis, Open Build Service, OSX, and docker. I don't believe that these are complete yet. The build\_wheels\_osx.sh script has stuff about homebrew, which I avoid, so this is going to take some work before I'll want to run it.
+
+
+
 % Building Windows versions
 \section{Building Windows versions}
 
-\subsection{Cross-compiling with MinGW}
+\subsection{Cross-compiling with MinGW - obsolete}
 
 Smoldyn was cross-compiled for Windows from Mac using MinGW up to version 2.58, although it didn't work well for the last several of those versions; version 2.59 used a different build system; see below. The following text was written to describe this cross-compiling and has not been updated since then.
 
@@ -197,43 +263,6 @@ The examples/S95\_regression directory includes files used for regression testin
 
 To add a new unit test to the regression testing suite, simply make sure that the unit test runs relatively quickly (a few seconds) and has no text output. Then, copy and paste the top few lines from any of the current unit tests (e.g. bounce2.txt), so that the new unit test will output molecule positions. Finally, list the unit test name in the Python script.
 
-% Python bindings
-\section{Python bindings}
-
-There are a lot of additions for building with the Python bindings (all added by Dilawar Singh). Following is the list of the CMake variables, which was updated slightly when adding Python bindings.
-
-\begin{longtable}[c]{lll}
-Smoldyn option & default & effect when ON\\
-\hline
-\texttt{-DSMOLDYN\_VERSION} & \texttt{3.0} & Smoldyn version number\\
-\texttt{-DOPTION\_VCELL} & \texttt{OFF} & Build for inclusion within VCell\\
-\texttt{-DOPTION\_NSV} & \texttt{ON} & Build with Next Subvolume support\\
-\texttt{-DOPTION\_PDE} & \texttt{OFF} & Build with support for PDE simulation\\
-\texttt{-DOPTION\_VTK} & \texttt{OFF} & Build with support for VTK visualization\\
-\texttt{-DOPTION\_STATIC} & \texttt{OFF} & Build using static libraries\\
-\texttt{-DOPTION\_USE\_OPENGL} & \texttt{ON} & Build with graphics support\\
-\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with LibTiff support\\
-\texttt{-DOPTION\_TARGET\_SMOLDYN} & \texttt{ON} & Build stand-alone Smoldyn program\\
-\texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{ON} & Build LibSmoldyn library\\
-\texttt{-DOPTION\_PYTHON} & \texttt{ON} & Build Python module\\
-\hline
-CMake option & default & function\\
-\hline
-\texttt{-DCMAKE\_BUILD\_TYPE} & \texttt{Release} & Choose CMake build type\\
-\multicolumn{3}{l}{\hspace{0.3in}options are: \texttt{None}, \texttt{Debug}, \texttt{Release}, \texttt{RelWithDebInfo}, and \texttt{MinSizeRel}}\\
-\texttt{-DCMAKE\_CXX\_COMPILER:FILEPATH} & clang & Compile with specific compiler\\
-\multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
-\end{longtable}
-
-The CMakeLists file has a few subdirectories. (1) It includes one for the NSV code. (2) The subdirectory ``source/pybind11'' includes a the pybind11 library, which offers ``Seamless operability between C++11 and Python... pybind11 is a lightweight header-only library that exposes C++ types in Python and vice versa, mainly to create Python bindings of existing C++ code''. It is widely used and can be downloaded from github. It does not require pre-compiling like the other dependencies because it is compiled with the rest of Smoldyn. There is no custom code here, but only code from the pybind11 project. (3) Another subdirectory is ``source/python'', which includes the new Python binding code and was written, by Dilawar, specifically for Smoldyn. (4) Another is ``examples'', which is for automatic testing, which has been partially set up but not completed.
-
-The new top-level CMakeLists file now has partially complete documentation generation with Doxygen. It reads the file docs/Doxyfile.in to build the documentation. I don't know where the results get put.
-
-Other files in the docs directory are markdown file versions of the Smoldyn documentation that I wrote. Dilawar made them from the original pdf, tex, and docx files in the documentation folder using pandoc and then edited them manaully. The mkdocs file generates a website from the `docs' folder, and mkdocs.yml is the configuration file for this, using the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar's readthedocs web site shows the results.
-
-Another new directory is called ``scripts''. It includes development related scripts for building Smoldyn on online platforms like Travis, Open Build Service, OSX, and docker. I don't believe that these are complete yet. The build\_wheels\_osx.sh script has stuff about homebrew, which I avoid, so this is going to take some work before I'll want to run it.
-
-The source directory includes two new subdirectories, which are pybind11 and python. The former is just downloaded from github, described above. The latter is Dilawar's work.
 
 % Code techniques and tricks
 \section{Code techniques and tricks}

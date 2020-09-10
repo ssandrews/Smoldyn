@@ -59,22 +59,22 @@ endif(OPTION_STATIC)
 ######### Core code information ###########
 
 set(HEADER_FILES
-    source/lib/Geometry.h
-    source/lib/List.h
-    source/lib/math2.h
-    source/lib/opengl2.h
-    source/lib/parse.h
-    source/lib/queue.h
-    source/lib/random2.h
-    source/lib/Rn.h
-    source/lib/RnSort.h
-    source/lib/rxnparam.h
-    source/lib/SimCommand.h
-    source/lib/Sphere.h
-    source/lib/string2.h
-    source/lib/SurfaceParam.h
-    source/lib/Zn.h
-    source/lib/SFMT/SFMT.h
+    source/libSteve/Geometry.h
+    source/libSteve/List.h
+    source/libSteve/math2.h
+    source/libSteve/opengl2.h
+    source/libSteve/parse.h
+    source/libSteve/queue.h
+    source/libSteve/random2.h
+    source/libSteve/Rn.h
+    source/libSteve/RnSort.h
+    source/libSteve/rxnparam.h
+    source/libSteve/SimCommand.h
+    source/libSteve/Sphere.h
+    source/libSteve/string2.h
+    source/libSteve/SurfaceParam.h
+    source/libSteve/Zn.h
+    source/libSteve/SFMT/SFMT.h
     source/Smoldyn/smoldyn.h
     source/Smoldyn/smoldynfuncs.h
     source/vcell/SimpleMesh.h
@@ -84,22 +84,22 @@ set(HEADER_FILES
     )
 
 set(SRC_FILES
-    source/lib/Geometry.c
-    source/lib/List.c
-    source/lib/math2.c
-    source/lib/opengl2.c
-    source/lib/parse.c
-    source/lib/queue.c
-    source/lib/random2.c
-    source/lib/Rn.c
-    source/lib/RnSort.c
-    source/lib/rxnparam.c
-    source/lib/SimCommand.c
-    source/lib/Sphere.c
-    source/lib/string2.c
-    source/lib/SurfaceParam.c
-    source/lib/Zn.c
-    source/lib/SFMT/SFMT.c
+    source/libSteve/Geometry.c
+    source/libSteve/List.c
+    source/libSteve/math2.c
+    source/libSteve/opengl2.c
+    source/libSteve/parse.c
+    source/libSteve/queue.c
+    source/libSteve/random2.c
+    source/libSteve/Rn.c
+    source/libSteve/RnSort.c
+    source/libSteve/rxnparam.c
+    source/libSteve/SimCommand.c
+    source/libSteve/Sphere.c
+    source/libSteve/string2.c
+    source/libSteve/SurfaceParam.c
+    source/libSteve/Zn.c
+    source/libSteve/SFMT/SFMT.c
     source/Smoldyn/smolbng.c
     source/Smoldyn/smolboxes.c
     source/Smoldyn/smolcmd.c
@@ -138,7 +138,7 @@ endif(OPTION_TARGET_LIBSMOLDYN)
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
 
-include_directories(source/lib source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
+include_directories(source/libSteve source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
 
 ####### Compiler macros ######################
 set(CMAKE_CXX_STANDARD 17)
@@ -496,7 +496,7 @@ endif(OPTION_TARGET_LIBSMOLDYN)
 
 ########## Python module #########
 if(OPTION_PYTHON)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/external/pybind11)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
     add_subdirectory(source/python)
 endif()
 
