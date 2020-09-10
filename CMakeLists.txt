@@ -94,7 +94,7 @@ set(SRC_FILES
     source/lib/Rn.c
     source/lib/RnSort.c
     source/lib/rxnparam.c
-    source/lib/SimCommand.cpp
+    source/lib/SimCommand.c
     source/lib/Sphere.c
     source/lib/string2.c
     source/lib/SurfaceParam.c
