@@ -26,8 +26,6 @@ using namespace pybind11::literals;  // for _a
 // Defined in SimCommand.c file.
 extern int scmdopenfiles(cmdssptr cmds, int overwrite);
 
-extern vector<vector<double>> &getData();
-
 /* --------------------------------------------------------------------------*/
 /** @Synopsis  Initialize and run the simulation from given file.
  *
@@ -899,7 +897,6 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setDt", &setDt);
     m.def("setAccuracy", [](double accuracy) { cursim_->accur = accuracy; });
     m.def("getAccuracy", [](void) { return cursim_->accur; });
-    m.def("getData", &getData, py::return_value_policy::reference);
 
     /* Function */
     m.def("load_model", &init_and_run, "filepath"_a, "args"_a = "",
