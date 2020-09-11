@@ -13,6 +13,6 @@ foreach(_example ${EXAMPLE_SCRIPTS})
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Executing ${_example}" VERBATIM)
     set_target_properties(${_ex_name} PROPERTIES 
-        ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}")
+        ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/py")
     add_dependencies(examples ${_ex_name})
 endforeach()

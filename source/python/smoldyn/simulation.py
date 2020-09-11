@@ -70,6 +70,3 @@ class Simulation(object):
 
     def runUntil(self, t, dt):
         _smoldyn.runUntil(t, dt)
-
-    def data(self):
-        return _smoldyn.getData()
