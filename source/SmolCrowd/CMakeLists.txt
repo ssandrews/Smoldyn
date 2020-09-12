@@ -14,21 +14,21 @@ set(SMOLCROWD_VERSION "1.0")
 ######### Core code information ###########
 
 set(HEADER_FILES
-	../lib/Geometry.h
-	../lib/math2.h
-	../lib/random2.h
-	../lib/Rn.h
-	../lib/RnSort.h
-	../lib/SFMT/SFMT.h
+	../libSteve/Geometry.h
+	../libSteve/math2.h
+	../libSteve/random2.h
+	../libSteve/Rn.h
+	../libSteve/RnSort.h
+	../libSteve/SFMT/SFMT.h
 )
 
 set(SRC_FILES
-	../lib/Geometry.c
-	../lib/math2.c
-	../lib/random2.c
-	../lib/Rn.c
-	../lib/RnSort.c
-	../lib/SFMT/SFMT.c
+	../libSteve/Geometry.c
+	../libSteve/math2.c
+	../libSteve/random2.c
+	../libSteve/Rn.c
+	../libSteve/RnSort.c
+	../libSteve/SFMT/SFMT.c
 )
 
 set(MAIN_FILES SmolCrowd.c)
@@ -36,7 +36,7 @@ set(MAIN_FILES SmolCrowd.c)
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE C )
 set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE C )
 
-include_directories(../lib)
+include_directories(../libSteve)
 
 list(APPEND DEP_LIBS m)
 

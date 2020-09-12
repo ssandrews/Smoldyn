@@ -1,7 +1,7 @@
-add_executable(test1 test1.cpp)
+add_executable(test1 test1.c)
 target_link_libraries(test1 smoldyn_shared)
 
-add_executable(testcode ./testcode/testcode.cpp)
+add_executable(testcode ./testcode/testcode.c)
 target_link_libraries(testcode smoldyn_shared)
 
 enable_testing()

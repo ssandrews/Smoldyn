@@ -123,7 +123,7 @@ libXML++ is from \url{http://libxmlplusplus.sourceforge.net/}. While you can try
 
 vtk is from \url{http://www.vtk.org/VTK/resources/software.html}. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of installing VTK to the project, there is also a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used.
 
-\subsection{Directories}
+\subsection{Source directories}
 
 The source directory includes several subdirectories of code.
 
@@ -217,7 +217,11 @@ The CMakeLists file lists a few subdirectories.
 
 (2) The subdirectory ``source/python'' includes Python binding code and was written, by Dilawar, specifically for Smoldyn.
 
-(3) The subdirectory ``examples'' is for automatic testing, which has been partially set up but not completed.
+(3) The subdirectory ``examples'' is for automatic testing, which has been partially set up but not completed. To run these examples, enter ``make examples''.
+
+Several different targets can be built. The core software has the Smoldyn and LibSmoldyn targets, which are selected or unselected using the CMake options \texttt{OPTION\_TARGET\_SMOLDYN} and \texttt{OPTION\_TARGET\_LIBSMOLDYN}, described above. I'm not sure if \texttt{smoldyn\_static} and \texttt{smoldyn\_shared} qualify as targets or not, but they are both built as part of LibSmoldyn. When building, these targets create a Smoldyn executable, called just smoldyn on a Mac or smoldyn.exe on Windows, and static and shared libraries called libsmoldyn\_static.a and libsmoldyn\_shared.dylib on a Mac. Also, one can write \texttt{make install}, although this isn't really a different target. In addition, \texttt{make examples} does some testing.
+
+Within the python subdirectory, additional targets are: \texttt{wheel}, \texttt{pyinstall}, \texttt{pyinstall\_venv}, \texttt{pyuninstall}, \texttt{pydevel}, and \texttt{doc\_api\_html}.
 
 \section{Documentation}
 
