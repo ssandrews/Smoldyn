@@ -559,10 +559,14 @@ PYBIND11_MODULE(_smoldyn, m)
     // enum ErrorCode smolSetSurfaceAction(simptr sim, const char *surface,
     //     enum PanelFace face, const char *species, enum MolecState state,
     //     enum SrfAction action, const char *newspecies);
-    m.def("setSurfaceAction", [](const char *surface, PanelFace face, const char *species,
-                                  MolecState state, SrfAction action, const char *newspecies) {
-        return smolSetSurfaceAction(cursim_, surface, face, species, state, action, newspecies);
-    });
+    m.def(
+        "setSurfaceAction",
+        [](const char *surface, PanelFace face, const char *species, MolecState state,
+            SrfAction action, const char *newspecies) {
+            return smolSetSurfaceAction(
+                cursim_, surface, face, species, state, action, newspecies);
+        },
+        "surface"_a, "face"_a, "species"_a, "state"_a, "action"_a, "newspecies"_a = "");
 
     // enum ErrorCode smolSetSurfaceRate(simptr sim, const char *surface,
     //     const char *species, enum MolecState state, enum MolecState state1,
@@ -886,13 +890,11 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setSeed", &setRandomSeed);
     m.def("getBoundaries", &getBoundaries);
     m.def("setBoundaries",
-        py::overload_cast<const vector<pair<double, double>>&>(&setBoundaries)
-        , "Set boundaries using vector of (low,high) tuples"
-        );
+        py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
+        "Set boundaries using vector of (low,high) tuples");
     m.def("setBoundaries",
-        py::overload_cast<const vector<double>&, const vector<double>&>(&setBoundaries)
-        , "Set boundaries using vector of low and a vector of high points"
-        );
+        py::overload_cast<const vector<double> &, const vector<double> &>(&setBoundaries),
+        "Set boundaries using vector of low and a vector of high points");
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
     m.def("setAccuracy", [](double accuracy) { cursim_->accur = accuracy; });
