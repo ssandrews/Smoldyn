@@ -115,6 +115,8 @@ Code dependencies are shown below in a tree structure, such that the each file d
 
 While some of the dependency code was included in the Smoldyn source distribution up to version 2.26, it is no longer included for versions 2.27 and newer versions. As a result, you need to get it yourself (or use a pre-compiled Smoldyn version). They are all fairly straightforward.
 
+freeglut for Windows is from \url{https://www.transmissionzero.co.uk/software/freeglut-devel/}. I downloaded the freeglut 3.0.0 MinGW package.
+
 libtiff is from \url{http://download.osgeo.org/libtiff/}. I got version 3.9.6, which is the latest of the 3.9 series. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
 
 libiconv is from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14. I configured with ``./configure --enable-static" so that I'd get the static library.
@@ -221,7 +223,7 @@ The CMakeLists file lists a few subdirectories.
 
 Several different targets can be built. The core software has the Smoldyn and LibSmoldyn targets, which are selected or unselected using the CMake options \texttt{OPTION\_TARGET\_SMOLDYN} and \texttt{OPTION\_TARGET\_LIBSMOLDYN}, described above. I'm not sure if \texttt{smoldyn\_static} and \texttt{smoldyn\_shared} qualify as targets or not, but they are both built as part of LibSmoldyn. When building, these targets create a Smoldyn executable, called just smoldyn on a Mac or smoldyn.exe on Windows, and static and shared libraries called libsmoldyn\_static.a and libsmoldyn\_shared.dylib on a Mac. Also, one can write \texttt{make install}, although this isn't really a different target. In addition, \texttt{make examples} does some testing.
 
-Within the python subdirectory, additional targets are: \texttt{wheel}, \texttt{pyinstall}, \texttt{pyinstall\_venv}, \texttt{pyuninstall}, \texttt{pydevel}, and \texttt{doc\_api\_html}.
+Within the python subdirectory, additional targets are: \texttt{wheel}, \texttt{pyinstall}, \texttt{pyinstall\_venv}, \texttt{pyuninstall}, \texttt{pydevel}, and \texttt{doc\_api\_html}. I don't think that most of these targets need to be called specifically, but are instead called automatically when running just ``make''.
 
 \section{Documentation}
 

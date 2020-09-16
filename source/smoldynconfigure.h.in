@@ -31,6 +31,9 @@
 /* Define to 1 if you have the <GL/freeglut.h> header file. */
 #cmakedefine HAVE_GL_FREEGLUT_H
 
+/* Define to 1 if you have the <freeglut.h> header file. */
+#cmakedefine HAVE_FREEGLUT_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #cmakedefine HAVE_MEMORY_H
 

@@ -15,9 +15,11 @@ from pathlib import Path
 # This is set by cmake.
 version_ = "@SMOLDYN_VERSION@"
 
-readme = ''
-with open(Path(__file__).parent / '..' / '..' / 'README.md') as f:
-    readme = f.read()
+try:
+		with open(Path(__file__).parent / '..' / '..' / 'README.md') as f:
+				readme = f.read()
+except:
+		readme = ''
 
 setuptools.setup(
     name="smoldyn",

@@ -348,7 +348,7 @@ This section describes how to write Libsmoldyn functions using error checking. W
 
 \begin{enumerate}
 \item The first line of every Libsmoldyn function should be \texttt{const char *funcname="}\emph{function\_name}\texttt{";}. This name will be returned with any error message to tell the user where the error arose.
-\item Within the function, check for warnings or errors with the \texttt{LCHECK} macro. The macro format is \texttt{LCHECK(}\emph{condition}\texttt{, funcname, }\emph{error\_code}\texttt{, "}\emph{message}\texttt{");}. This checks that the test \emph{condition} is true, and issues a notification, warning, or error when this is not the case. The \emph{message} should be a descriptive message that is under 256 characters in length.
+\item Within the function, check for warnings or errors with either the \texttt{LCHECK} or \texttt{LCHECKNT} macros. In both cases, the macro format is \texttt{LCHECK(}\emph{condition}\texttt{, funcname, }\emph{error\_code}\texttt{, "}\emph{message}\texttt{");}. The macros check that the test \emph{condition} is true, and calls either \texttt{smolSetError} or \texttt{smolSetErrorNT} to deal with it if not. The \emph{message} should be a descriptive message that is under 256 characters in length. Use the regular version (not the ``no throw'' or ``NT'') version for errors that arise within the function, and the ``NT'' version for errors that arise is subroutines of the function, so that only a single error message is displayed to the output.
 \item Most functions return an ``\texttt{enum ErrorCode}". If this is the case for your function, and your function might return a notification and/or a warning, then end the main body of the function with \texttt{return libwarncode;}. If it cannot return a notification or a warning, then end it with \texttt{return ECok;}. Finally, if it does not return an ``\texttt{enum ErrorCode}", then it needs to return some other error condition that will tell the user to check for errors using \texttt{smolGetError}.
 \item After the main body of the function, add a goto target called \texttt{failure:}.
 \item Assuming the function returns an ``\texttt{enum ErrorCode}", end the function with \texttt{return liberrorcode;}.
@@ -689,8 +689,11 @@ Returns the Smoldyn version number.
 \item[SetError]
 \hfill \\
 C: \texttt{void smolSetError(const char *errorfunction, enum ErrorCode errorcode, const char *errorstring);}\\
+C: \texttt{void smolSetErrorNT(const char *errorfunction, enum ErrorCode errorcode, const char *errorstring);}\\
 Python: N/A\\
-This function is probably not useful for most users. Sets the Libsmoldyn error code to \texttt{errorcode}, error function to \texttt{errorfunction}, and error string to \texttt{errorstring}. The sole exception is if \texttt{errorcode} is \texttt{ECsame} then this does nothing and simply returns. Back to it's normal operation, this also either sets or clears the Libsmoldyn warning code, as appropriate. If \texttt{errorstring} is entered as \texttt{NULL}, this clears the current error string, and similarly for \texttt{errorfunction}.
+These functions are probably not useful for most users. Sets the Libsmoldyn error code to \texttt{errorcode}, error function to \texttt{errorfunction}, and error string to \texttt{errorstring}. The sole exception is if \texttt{errorcode} is \texttt{ECsame} then this does nothing and simply returns. Back to it's normal operation, this also either sets or clears the Libsmoldyn warning code, as appropriate. If \texttt{errorstring} is entered as \texttt{NULL}, this clears the current error string, and similarly for \texttt{errorfunction}. For the regular version without the ``NT'', if the library is being run in debug mode, then this function prints the notification, warning, or error out to stderr. It would also ideally throw exceptions if the error code is more severe than the \texttt{LibThrowThreshold} value, but this throwing doesn't work at present because throwing exceptions to the host code is incompatible with static linking.
+
+The ``NT'' version is the ``no throw'' version, which is the same as the regular version but doesn't display messages to stderr and doesn't throw exceptions. In general, library functions should call \texttt{smolSetError} for errors caught by that function itself, and \texttt{smolSetErrorNT} for errors caught by subroutines of that function, so that each error only leads to a single call of \texttt{smolSetError}.
 
 \item[GetError]
 \hfill \\
@@ -965,8 +968,9 @@ Adds a molecular species named \texttt{species} to the system. If you have alrea
 \item[GetSpeciesIndex]
 \hfill \\
 C: \texttt{int smolGetSpeciesIndex(simptr sim, char *species);}\\
+C: \texttt{int smolGetSpeciesIndexNT(simptr sim, char *species);}\\
 Python: \texttt{int getSpeciesIndex(str species)}\\
-Returns the species index that corresponds to the species named \texttt{species}. Upon failure, this function returns an error code cast as an integer.
+Returns the species index that corresponds to the species named \texttt{species}. Upon failure, this function returns an error code cast as an integer. The ``NT'' version is identical, but doesn't throw exceptions or print errors to stderr.
 
 \item[GetSpeciesName]
 \hfill \\
@@ -989,8 +993,9 @@ Adds a new molecule list, named \texttt{mollist}, to the system.
 \item[GetMolListIndex]
 \hfill \\
 C: \texttt{int smolGetMolListIndex(simptr sim, char *mollist);}\\
+C: \texttt{int smolGetMolListIndexNT(simptr sim, char *mollist);}\\
 Python: \texttt{int getMolListIndex(str mollist)}\\
-Returns the list index that corresponds to the list named \texttt{mollist}.
+Returns the list index that corresponds to the list named \texttt{mollist}. The ``NT'' version is identical but doesn't throw exceptions or print errors to the stderr output.
 
 \item[GetMolListName]
 \hfill \\
@@ -1062,8 +1067,9 @@ Adds a surface called \texttt{surface} to the system.
 \item[GetSurfaceIndex]
 \hfill \\
 C: \texttt{int smolGetSurfaceIndex(simptr sim, char *surface);}\\
+C: \texttt{int smolGetSurfaceIndexNT(simptr sim, char *surface);}\\
 Python: \texttt{int getSurfaceIndex(str surface)}\\
-Returns the surface index that corresponds to the surface named \texttt{surface}. The index is non-negative. On failure, this returns an error code cast as an integer.
+Returns the surface index that corresponds to the surface named \texttt{surface}. The index is non-negative. On failure, this returns an error code cast as an integer. The ``NT'' version is identical but errors aren't printed to the stderr output and don't throw exceptions.
 
 \item[GetSurfaceName]
 \hfill \\
@@ -1125,8 +1131,9 @@ Adds or modifies a panel of shape \texttt{panelshape} of surface \texttt{surface
 \item[GetPanelIndex]
 \hfill \\
 C: \texttt{int smolGetPanelIndex(simptr sim, char *surface, enum PanelShape *panelshapeptr, char *panel);}\\
+C: \texttt{int smolGetPanelIndexNT(simptr sim, char *surface, enum PanelShape *panelshapeptr, char *panel);}\\
 Python: \texttt{int getPanelIndex(str surface, PanelShape *panelshapeptr, str panel)}\\
-Returns the panel index for the panel called \texttt{panel} on surface \texttt{surface}. If \texttt{panelshapeptr} is not \texttt{NULL}, this also returns the panel shape in \texttt{panelshapeptr}. On failure, this returns the error code cast as an integer.
+Returns the panel index for the panel called \texttt{panel} on surface \texttt{surface}. If \texttt{panelshapeptr} is not \texttt{NULL}, this also returns the panel shape in \texttt{panelshapeptr}. On failure, this returns the error code cast as an integer. The ``NT'' version is identical but errors aren't printed to the stderr output and don't cause exceptions to be thrown.
 
 \item[GetPanelName]
 \hfill \\
@@ -1180,8 +1187,9 @@ Adds a compartment called \texttt{compartment} to the system.
 \item[GetCompartmentIndex]
 \hfill \\
 C: \texttt{int smolGetCompartmentIndex(simptr sim, char *compartment);}\\
+C: \texttt{int smolGetCompartmentIndexNT(simptr sim, char *compartment);}\\
 Python: \texttt{int getCompartmentIndex(str compartment)}\\
-Returns the index of the compartment named \texttt{compartment}. On failure, this returns an error code cast as an integer.
+Returns the index of the compartment named \texttt{compartment}. On failure, this returns an error code cast as an integer. The ``NT'' version is identical but errors aren't printed to the stderr output or cause exceptions to be thrown.
 
 \item[GetCompartmentName]
 \hfill \\
@@ -1222,8 +1230,9 @@ Adds reaction named \texttt{reaction} to the system. This reaction can have up t
 
 \item[GetReactionIndex]
 C: \texttt{int smolGetReactionIndex(simptr sim, int *orderptr, char *reaction);}\\
+C: \texttt{int smolGetReactionIndexNT(simptr sim, int *orderptr, char *reaction);}\\
 Python: \texttt{int getReactionIndex(List[int] orderptr, str reaction)}\\
-Returns the index and order for the reaction that is named \texttt{reaction}. If the order is known, send in \texttt{orderptr} pointing to this value. If it is not known, send in \texttt{orderptr} equal to either \texttt{NULL} or pointing to a negative number; in this case, it will be returned pointing to the reaction order, if the reaction was found. On failure, this returns the error code, cast as an integer.
+Returns the index and order for the reaction that is named \texttt{reaction}. If the order is known, send in \texttt{orderptr} pointing to this value. If it is not known, send in \texttt{orderptr} equal to either \texttt{NULL} or pointing to a negative number; in this case, it will be returned pointing to the reaction order, if the reaction was found. On failure, this returns the error code, cast as an integer. The ``NT'' version is identical but errors don't get displayed to the stderr output or cause exceptions to be thrown.
 
 \item[GetReactionName]
 \hfill \\
@@ -1286,8 +1295,9 @@ Adds a port to the simulation. The port will be named \texttt{port} and will por
 \item[GetPortIndex]
 \hfill \\
 C: \texttt{int smolGetPortIndex(simptr sim, const char *port);}\\
+C: \texttt{int smolGetPortIndexNT(simptr sim, const char *port);}\\
 Python: \texttt{int getPortIndex(str port)}\\
-Returns the index of the port named \texttt{port}.
+Returns the index of the port named \texttt{port}. The ``NT'' version is identical but errors don't get displayed to the stderr output or cause exceptions to be thrown.
 
 \item[GetPortName]
 \hfill \\
@@ -1310,5 +1320,54 @@ Returns the number of molecules that are in Smoldyn's export buffer of port \tex
 \end{description}
 
 
+% Lattices
+\section{Lattices}
+
+\begin{description}
+
+\item[AddLattice]
+\hfill \\
+C: \texttt{enum ErrorCode smolAddLattice(simptr sim,const char *lattice,const double *min,const double *max,const double *dx,const char *btype);}\\
+Python: \texttt{ErrorCode AddLattice(str lattice,List[float] min,List[float] max,List[float] dx,str btype)}\\
+Adds a lattice to the simulation for hybrid operation. The lattice is named \texttt{lattice} and extends from \texttt{min} to \texttt{max}, with lattice spacing \texttt{dx}. The boundary types are given with \texttt{btype}, which is a string of either `r' characters for reflective boundary or `p' characters for periodic boundary, with one character for each dimension and the dimensions listed in order (e.g. ``rrp'' is reflective on the $x$ and $y$ axes and periodic on the $z$ axis).
+
+\item[GetLatticeIndex]
+\hfill \\
+C: \texttt{int smolGetLatticeIndex(simptr sim,const char *lattice);}\\
+C: \texttt{int smolGetLatticeIndexNT(simptr sim,const char *lattice);}\\
+Python: \texttt{int GetLatticeIndex(str lattice)}\\
+Returns the index of the lattice named \texttt{lattice}. The ``NT'' version is identical but errors don't get displayed to the stderr output or cause exceptions to be thrown.
+
+\item[GetLatticeName]
+\hfill \\
+C: \texttt{char *smolGetLatticeName(simptr sim,int latticeindex,char *lattice);}\\
+Python: \texttt{str getLatticeName(int latticeindex, str lattice)}\\
+Returns the name of the lattice with index \texttt{latticeindex}, both directly and in \texttt{lattice}.
+
+\item[AddLatticeMolecules]
+\hfill \\
+C: \texttt{enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition);}\\
+Python: \texttt{ErrorCode AddLatticeMolecules(str lattice, str species, int number, List[float] lowposition, List[float] highposition)}\\
+Adds \texttt{number} molecules of species \texttt{species} to the lattice named \texttt{lattice}, randomly positioned over the volume extending from \texttt{lowposition} to \texttt{highposition}. These molecules will all have state \texttt{MSsoln}.
+
+\item[AddLatticePort]
+\hfill \\
+C: \texttt{enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const char *port);}\\
+Python: \texttt{ErrorCode AddLatticePort(str lattice, str port)}\\
+Connects port \texttt{port} with lattice \texttt{lattice}, so that molecules can transition across this port between the particle-based simulation region and the lattice-based simulation region.
+
+\item[AddLatticeSpecies]
+\hfill \\
+C: \texttt{enum ErrorCode smolAddLatticeSpecies(simptr sim,const char *lattice, const char *species);}\\
+Python: \texttt{ErrorCode AddLatticeSpecies(str lattice, str species)}\\
+Not all particle-based Smoldyn species are necessarily listed in a lattice portion of space, so use this function to add species to the lattice region of space. Clearly, the lattice is \texttt{lattice} and the species being added is \texttt{species}.
+
+\item[AddLatticeReaction]
+\hfill \\
+C: \texttt{enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice, const char *reaction, const int move);}\\
+Python: \texttt{ErrorCode AddLatticeReaction(str lattice, str reaction, int move)}\\
+Not all particle-based Smoldyn reactions are necessarily listed in a lattice portion of space, so use this function to add reactions to the lattice region of space. Clearly, the lattice is \texttt{lattice} and the reaction being added is \texttt{reaction}.
+
+\end{description}
 
 \end{document}
