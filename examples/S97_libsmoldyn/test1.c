@@ -1,5 +1,8 @@
-//#include <libsmoldyn.h>
-#include "/usr/local/include/libsmoldyn.h"
+// FIXME: This will break the build on CI where libsomodyn.h is not installed.
+//#include "/usr/local/include/libsmoldyn.h"
+
+// pass -I /usr/local/inlcude to gcc 
+#include <libsmoldyn.h>
 
 /**** Compiling and linking, for Macs ****
  
