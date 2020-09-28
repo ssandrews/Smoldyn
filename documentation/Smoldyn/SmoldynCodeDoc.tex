@@ -115,7 +115,7 @@ Code dependencies are shown below in a tree structure, such that the each file d
 
 While some of the dependency code was included in the Smoldyn source distribution up to version 2.26, it is no longer included for versions 2.27 and newer versions. As a result, you need to get it yourself (or use a pre-compiled Smoldyn version). They are all fairly straightforward.
 
-freeglut for Windows is from \url{https://www.transmissionzero.co.uk/software/freeglut-devel/}. I downloaded the freeglut 3.0.0 MinGW package.
+freeglut for Windows is from \url{https://www.transmissionzero.co.uk/software/freeglut-devel/}. I downloaded the freeglut 3.0.0 MinGW package. I didn't install, but instead put the pre-compiled freeglut files into the Smoldyn package windows directory.
 
 libtiff is from \url{http://download.osgeo.org/libtiff/}. I got version 3.9.6, which is the latest of the 3.9 series. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
 
@@ -123,7 +123,7 @@ libiconv is from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14
 
 libXML++ is from \url{http://libxmlplusplus.sourceforge.net/}. While you can try to get a recent version, this is likely to be a major mistake because it has loads of dependencies, and those have dependencies, and so on. Instead, get libXML++ version 1.0.5. This is fully sufficient, and it works well. After downloading, extract the archive, change to the libxml++-1.0.5 directory, enter ``./configure", ``make", and ``sudo make install". This was straightforward for me.
 
-vtk is from \url{http://www.vtk.org/VTK/resources/software.html}. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of installing VTK to the project, there is also a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used.
+vtk is from \url{http://www.vtk.org/VTK/resources/software.html}. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of installing VTK to the project, there is also a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used. For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the VTK-9.0.1.tar.gz file. I then extracted at the command line with tar -xvcf VTK-9.0.1.tar.gz, created a build subdirectory, moved into it, and ran ``cmake ..'' and ``msbuild VTK.sln''.
 
 \subsection{Source directories}
 
@@ -203,7 +203,8 @@ Smoldyn option & default & effect when ON\\
 \texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with libtiff support\\
 \texttt{-DOPTION\_PYTHON} & \texttt{ON} & Build Python module\\
 \texttt{-DOPTION\_TARGET\_SMOLDYN} & \texttt{ON} & Build stand-alone Smoldyn program\\
-\texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{OFF} & Build LibSmoldyn library\\
+\texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{ON} & Build LibSmoldyn library\\
+\texttt{-DOPTION\_EXAMPLES} & \texttt{ON} & Run Libsmoldyn tests\\
 \hline
 CMake option & default & function\\
 \hline
