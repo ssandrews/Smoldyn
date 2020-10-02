@@ -10,17 +10,26 @@
 /* Define to 1 if this build is for Windows */
 #cmakedefine WINDOWS_BUILD
 
+/* Define to 1 if you have the <gl.h> header file. */
+#cmakedefine HAVE_GL_H
+
 /* Define to 1 if you have the <GL/gl.h> header file. */
 #cmakedefine HAVE_GL_GL_H
 
 /* Define to 1 if you have the <OpenGL/gl.h> header file. */
 #cmakedefine HAVE_OPENGL_GL_H
 
+/* Define to 1 if you have the <glu.h> header file. */
+#cmakedefine HAVE_GLU_H
+
 /* Define to 1 if you have the <GL/glu.h> header file. */
 #cmakedefine HAVE_GL_GLU_H
 
 /* Define to 1 if you have the <OpenGL/glu.h> header file. */
 #cmakedefine HAVE_OPENGL_GLU_H
+
+/* Define to 1 if you have the <glut.h> header file. */
+#cmakedefine HAVE_GLUT_H
 
 /* Define to 1 if you have the <GL/glut.h> header file. */
 #cmakedefine HAVE_GL_GLUT_H

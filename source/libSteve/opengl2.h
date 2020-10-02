@@ -11,8 +11,9 @@ of the Gnu Lesser General Public License (LGPL). */
  should be done automatically with smoldynconfigure.h */
 
 #include "smoldynconfigure.h"
+#undef NDEBUG										// Prevents linking to libfreeglutd instead of libfreeglut
 
-#if defined(HAVE_OPENGL)							// Do NOT change the sequence of these if..elses without contacting Steve
+#if defined(HAVE_OPENGL)							// The sequence of these if..elses is important
 	#ifdef WIN32
 		#include <windows.h>
 	#endif
@@ -21,18 +22,24 @@ of the Gnu Lesser General Public License (LGPL). */
 		#include <OpenGl/gl.h>
 	#elif defined(HAVE_GL_GL_H)
 		#include <GL/gl.h>
-	#endif
+	#elif defined(HAVE_GL_H)
+		#include <gl.h>
+#endif
 
 	#if defined(HAVE_OPENGL_GLU_H)
 		#include <OpenGl/glu.h>
 	#elif defined(HAVE_GL_GLU_H)
 		#include <GL/glu.h>
-	#endif
+	#elif defined(HAVE_GLU_H)
+		#include <glu.h>
+#endif
 
 	#if defined(HAVE_GLUT_GLUT_H)
 		#include <GLUT/glut.h>
 	#elif defined(HAVE_GL_GLUT_H)
 		#include <GL/glut.h>
+	#elif defined(HAVE_GLUT_H)
+		#include <glut.h>
 	#elif defined(HAVE_GL_FREEGLUT_H)
 		#include <GL/freeglut.h>
 	#elif defined(HAVE_FREEGLUT_H)
