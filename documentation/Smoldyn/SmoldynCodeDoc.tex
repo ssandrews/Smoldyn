@@ -115,7 +115,7 @@ Code dependencies are shown below in a tree structure, such that the each file d
 
 While some of the dependency code was included in the Smoldyn source distribution up to version 2.26, it is no longer included for versions 2.27 and newer versions. As a result, you need to get it yourself (or use a pre-compiled Smoldyn version). They are all fairly straightforward.
 
-freeglut for Windows is from \url{https://www.transmissionzero.co.uk/software/freeglut-devel/}. I downloaded the freeglut 3.0.0 MinGW package. I didn't install, but instead put the pre-compiled freeglut files into the Smoldyn package windows directory.
+freeglut for Windows is from \url{https://www.transmissionzero.co.uk/software/freeglut-devel/}. I downloaded the freeglut 3.0.0 MinGW package. I didn't install, but instead put the pre-compiled freeglut files into the Smoldyn package windows directory. \textit{I edited the freeglut file:} In freeglut\_std.h, line 74 is ``pragma comment (lib, "freeglut\_staticd.lib")'' and line 94 is ``pragma comment (lib, "freeglutd.lib")''. However, these debug libraries aren't included in the package, so I removed the ``d'' characters from these library names.
 
 libtiff is from \url{http://download.osgeo.org/libtiff/}. I got version 3.9.6, which is the latest of the 3.9 series. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
 
@@ -303,6 +303,118 @@ finds all lines of Smoldyn source code that call Geo\_Sphere\_Normal.
 \end{description}
 
 Alternatively, XCode offers FileMerge.app, which is at /Developer/Applications/Utilities/FileMerge.app. It's very easy to use. Yet another option is Eclipse, at \url{www.eclipse.org}, which works well.
+
+% Chapter: CMake build system code
+\chapter{CMake build system code}
+
+\section{Top level CMake file}
+
+The CMake code for Smoldyn, in CMakeLists.txt in the top-most directory, is relatively straightforward, but still causes challenges. This section gives a fairly detailed look at the code, focusing particularly on the variable definitions.
+
+\begin{description}
+
+\item[Basic setup]
+\hfill \\
+Defines the project name, lists the CMake minimum version number, and sets the Smoldyn version number. Also tells CMake which version of C++ to use.\\
+\begin{longtable}[c]{lll}
+Variable & Description & Default\\
+\hline
+\texttt{SMOLDYN\_VERSION} & Smoldyn version number & 2.62.dev\\
+\texttt{CMAKE\_CXX\_STANDARD} & C++ version number & 17\\
+\end{longtable}
+
+\item[Targets to build]
+Whether to build Smoldyn, Libsmoldyn, or both.
+\begin{longtable}[c]{lll}
+Variable & Description & Default\\
+\hline
+\texttt{OPTION\_TARGET\_SMOLDYN} & Create stand-along Smoldyn program & ON\\
+\texttt{OPTION\_TARGET\_LIBSMOLDYN} & Create LibSmoldyn library & OFF\\
+\end{longtable}
+
+\item[Compiling options]
+All compiling options, determining which components to include and what the code is being built for. In the table below, * indicates that this option doesn't work at present. The default values listed below are only the initial settings; several of them get overridden later in this same section, depending on other settings.
+\begin{longtable}[c]{lll}
+Variable & Description & Default\\
+\hline
+\texttt{OPTION\_VCELL} & Compile Smoldyn for VCell & OFF\\
+\texttt{OPTION\_MINGW} & Cross-compile for Windows using MinGW compiler* & OFF\\
+\texttt{OPTION\_NSV} & Compile Smoldyn with NextSubvolume functionality & ON\\
+\texttt{OPTION\_PDE} & Compile Smoldyn with PDE functionality* & OFF\\
+\texttt{OPTION\_VTK} & Compile Smoldyn with VTK functionality & OFF\\
+\texttt{OPTION\_STATIC} & Compile Smoldyn with static libraries & OFF\\
+\texttt{OPTION\_USE\_OPENGL} & Build with OpenGL support & ON\\
+\texttt{OPTION\_USE\_ZLIB} & Build with Zlib support & OFF\\
+\texttt{OPTION\_PYTHON}  & Build Python module & OFF\\
+\texttt{OPTION\_EXAMPLES} & Run Libsmoldyn tests & OFF\\
+\texttt{OPTION\_LATTICE} & Whether to build lattice code & depends\\
+\end{longtable}
+
+\item[Core code information]
+This section lists all of the Smoldyn header files and source files, plus a few extra header files from some of the optional features (e.g. vtkwrapper.h). Some of the source files are only included for some of the options. All of the source and main files properties are set to the C++ language. The include directories are set here to all of the directories with header files.
+\begin{longtable}[c]{lll}
+Variable & Description & Default\\
+\hline
+\texttt{HEADER\_FILES} & List of all header files\\
+\texttt{SRC\_FILES} & List of all source files\\
+\texttt{MAIN\_FILES} & Name of the main file & smoldyn.c\\
+\end{longtable}
+
+\item[Compiler flags]
+This section sets most of the compiler flags for the build. It starts by determining if this is a release or debug build. Other options are `None', `RelWithDebInfo', and `MinSizeRel', but the code doesn't support those options. If it isn't ``Debug'', then it's a release. Depending on this build type, this section sets a list of basic compiler flags, if the compiler is clang or gnu. I tried these flags with Visual Studio, and they don't work there. Next, it creates a list of possible build platforms and goes through the list of possible platforms, adding to the compiler flags as needed as it goes along. As far as this is concerned, Windows and Visual Studio are the same thing. This section also sets the path to the BNG2 perl script.
+\begin{longtable}[c]{lll}
+Variable & Description & Default\\
+\hline
+\texttt{CMAKE\_BUILD\_TYPE} & Build type & Release\\
+\texttt{COMPILER\_IS\_CLANGXX} & clang C++ compiler\\
+\texttt{CMAKE\_CXX\_FLAGS} & C++ compiler flags string\\
+\texttt{DEP\_LIBS} & Library dependencies for linking\\
+\texttt{VCELL\_BUILD} & Build for VCell (ON or OFF)\\
+\texttt{APPLE\_BUILD} & Build for Apple (ON or OFF)\\
+\texttt{NIX\_BUILD} & Build for Unix or Linux (ON or OFF)\\
+\texttt{MINGW\_BUILD} & Build for MinGW (ON or OFF)\\
+\texttt{WINDOWS\_BUILD} & Build for Windows (ON or OFF)\\
+\texttt{BNG2\_PATH} & Path to BNG2 perl script\\
+\end{longtable}
+
+\item[OpenGL (gl and glu, not glut)]
+OpenGL is a bit of a challenge to include correctly, and platform dependent. The gl and glu libraries are usually built in, while the glut library is not necessarily, so this section just focuses on the gl and glu libraries. OpenGL is becoming deprecated, but I still use it, so this code starts by stating that it uses legacy preferences. The \texttt{include(FindOpenGL)} statement is used where possible; it automatically defines the variables \texttt{OPENGL\_FOUND)}, \texttt{OPENGL\_INCLUDE\_DIR}, and \texttt{OPENGL\_LIBRARIES}. However, the code overrides the include directories for Windows because the automatic system doesn't seem to find the built-in gl.h header file, and a different version of the header file from the Smoldyn directory seems to work well.
+\begin{longtable}[c]{lll}
+Variable & Description & Purpose\\
+\hline
+\texttt{HAVE\_OPEN\_GL} & TRUE if available, FALSE if not & smoldynconfig.h\\
+\texttt{HAVE\_GL\_H} & TRUE for header file gl.h  & smoldynconfig.h\\
+\texttt{HAVE\_GL\_GL\_H} & TRUE for header file GL/gl.h  & smoldynconfig.h\\
+\texttt{HAVE\_OPENGL\_GL\_H} & TRUE for header file OpenGL/gl.h  & smoldynconfig.h\\
+\texttt{HAVE\_GLU\_H} & TRUE for header file glu.h  & smoldynconfig.h\\
+\texttt{HAVE\_GL\_GLU\_H} & TRUE for header file GL/glu.h  & smoldynconfig.h\\
+\texttt{HAVE\_OPENGL\_GLU\_H} & TRUE for header file OpenGL/glu.h  & smoldynconfig.h\\
+\texttt{OPENGL\_FOUND)} & TRUE if OpenGL is found & local only\\
+\texttt{OPENGL\_INCLUDE\_DIR} & Include directory & local only\\
+\texttt{OPENGL\_LIBRARIES} & OpenGL Library directory & local only\\
+\texttt{GLU32\_LIBRARIES} & glu library directory & local only\\
+\texttt{DEP\_LIBS} & Library dependencies for linking & Appended\\
+\end{longtable}
+
+\item[OpenGL glut]
+The OpenGL glut libraries are found and added next. They are standard libraries on Mac and Linux, but aren't included on Windows. As a result, this uses the freeglut library for Windows, using a version provided with the Smoldyn package. From the freeglut documentation, one is supposed to use glut.h if only glut functionality is wanted, and freeglut.h is additional functionality is used that is only supported by freeglut; thus, this should only use glut.h, although parts of it incorrectly use freeglut.h. The \texttt{include(FindGLUT)} statement is used where possible; it automatically defines the variables \texttt{GLUT\_FOUND)}, \texttt{GLUT\_INCLUDE\_DIR}, and \texttt{GLUT\_LIBRARIES}.
+\begin{longtable}[c]{lll}
+Variable & Description & Purpose\\
+\hline
+\texttt{HAVE\_GLUT\_H} & TRUE for header file gutl.h  & smoldynconfig.h\\
+\texttt{HAVE\_GL\_GLUT\_H} & TRUE for header file GL/gutl.h  & smoldynconfig.h\\
+\texttt{HAVE\_GLUT\_GLUT\_H} & TRUE for header file GLUT/gutl.h  & smoldynconfig.h\\
+\texttt{HAVE\_GL\_FREEGLUT\_H} & TRUE for header file GL/freeglut.h  & smoldynconfig.h\\
+\texttt{GLUT\_FOUND)} & TRUE if glut is found & local only\\
+\texttt{GLUT\_INCLUDE\_DIR} & Include directory & local only\\
+\texttt{GLUT\_LIBRARIES} & glut library directory & local only\\
+\texttt{DEP\_LIBS} & Library dependencies for linking & Appended\\
+\end{longtable}
+
+
+
+\end{description}
+
 
 
 

@@ -11,7 +11,6 @@ of the Gnu Lesser General Public License (LGPL). */
  should be done automatically with smoldynconfigure.h */
 
 #include "smoldynconfigure.h"
-#undef NDEBUG										// Prevents linking to libfreeglutd instead of libfreeglut
 
 #if defined(HAVE_OPENGL)							// The sequence of these if..elses is important
 	#ifdef WIN32

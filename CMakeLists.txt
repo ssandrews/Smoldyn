@@ -13,25 +13,33 @@ cmake_minimum_required(VERSION 3.0)
 if(NOT SMOLDYN_VERSION)
    set(SMOLDYN_VERSION "2.62.dev")
 endif()
+message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
+
+set(CMAKE_CXX_STANDARD 17)
+
 
 ######### Targets to build ###########
 
 option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" ON)
-option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" ON)
+option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" OFF)
+
+message(STATUS "Compiling for Smoldyn: ${OPTION_TARGET_SMOLDYN}")
+message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
 
 
 ####### Compiling options ##########
 
 option(OPTION_VCELL "Compile Smoldyn for VCell" OFF)
+option(OPTION_MINGW "Cross-compile for Windows using MinGW compiler" OFF)
+
 option(OPTION_NSV "Compile Smoldyn with NextSubvolume functionality" ON)
 option(OPTION_PDE "Compile Smoldyn with PDE functionality" OFF)
 option(OPTION_VTK "Compile Smoldyn with VTK functionality" OFF)
 option(OPTION_STATIC "Compile Smoldyn with static libraries" OFF)
-option(OPTION_MINGW "Cross-compile for Windows using MinGW compiler" OFF)
 option(OPTION_USE_OPENGL "Build with OpenGL support" ON)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
-option(OPTION_PYTHON  "Build Python module" ON)
-option(OPTION_EXAMPLES "Run Libsmoldyn tests" ON)
+option(OPTION_PYTHON  "Build Python module" OFF)
+option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
 
 if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
@@ -44,17 +52,18 @@ else(OPTION_VCELL)
     option(OPTION_USE_ICONV "Build with Libiconv support" OFF)
 endif(OPTION_VCELL)
 
-if (OPTION_NSV)
+if (OPTION_NSV OR OPTION_PDE)
     set(OPTION_LATTICE ON)
-endif (OPTION_NSV)
-
-if (OPTION_PDE)
-    set(OPTION_LATTICE ON)
-endif (OPTION_PDE)
+endif ()
 
 if (OPTION_STATIC)
     set(OPTION_USE_ZLIB ON)
-endif(OPTION_STATIC)
+endif ()
+
+if (OPTION_PYTHON)
+    set(OPTION_TARGET_LIBSMOLDYN ON)
+    message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
+endif ()
 
 
 ######### Core code information ###########
@@ -126,11 +135,6 @@ if(OPTION_VCELL)
         source/vcell/SimpleValueProvider.cpp )
 endif(OPTION_VCELL)
 
-if(OPTION_PYTHON)
-    set(OPTION_TARGET_LIBSMOLDYN ON)
-endif()
-
-
 if(OPTION_TARGET_LIBSMOLDYN)
     list(APPEND HEADER_FILES source/Smoldyn/libsmoldyn.h)
     list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.c)
@@ -141,40 +145,36 @@ set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
 
 include_directories(source/libSteve source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
 
-####### Compiler macros ######################
-set(CMAKE_CXX_STANDARD 17)
-add_definitions(-Wall)
 
-
-####### Build for debugging or release ##########
-if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-    set(COMPILER_IS_CLANGXX TRUE)
-endif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-
-if(CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANGXX)
-#    set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -Wall -Wno-deprecated-declarations")
-#    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wall  -Wno-deprecated-declarations -DNDEBUG")
-endif(CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANGXX)
+####### Compiler flags ######################
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
-
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+#if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+#    set(COMPILER_IS_CLANGXX TRUE)
+#endif ()
+#if(CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANGXX)
+#    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+#        set(CMAKE_CXX_FLAGS "-O0 -g -Wall -DNDEBUG")
+#    else ()
+#        set(CMAKE_CXX_FLAGS "-O2 -Wall -DNDEBUG")
+#    endif ()
+#endif ()
 
-####### Option: Compile with MinGW ##########
-
-if (OPTION_MINGW)
-    message(STATUS "Cross-compiling for Windows using MinGW libraries from: ${MINGWDIR}")
-endif(OPTION_MINGW)
-
-
-######### Platform dependent information ##########
+set(VCELL_BUILD OFF)
+set(APPLE_BUILD OFF)
+set(NIX_BUILD OFF)
+set(MINGW_BUILD OFF)
+set(WINDOWS_BUILD OFF)
 
 if (OPTION_VCELL)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set(VCELL_BUILD ON)
+    message(STATUS "Compiling for VCell")
+    add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
     link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell ${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
     if (ARCH_64bit)
@@ -183,37 +183,28 @@ if (OPTION_VCELL)
         list(APPEND DEP_LIBS glut32 zlib)
     endif()
 elseif (OPTION_MINGW)
+    set(MINGW_BUILD ON)
+    message(STATUS "Cross-compiling for Windows using MinGW libraries from: ${MINGWDIR}")
+    set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
     include_directories(${MINGWDIR}/include windows)
     link_directories(${MINGWDIR}/lib)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D FREEGLUT_STATIC -static")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D FREEGLUT_STATIC -static")
     set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_C_FLAGS} -static -s")
     set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -static -s")
-endif()
-
-
-
-set(APPLE_BUILD 0)
-set(NIX_BUILD 0)
-set(MINGW_BUILD 0)
-set(WINDOWS_BUILD 0)
-if(OPTION_MINGW)
-    message(STATUS "Cross-compiling using MinGW compiler")
-    set(MINGW_BUILD 1)
-    set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
 elseif(APPLE)
+    set(APPLE_BUILD ON)
     message(STATUS "Compiling on an Apple computer")
-    set(APPLE_BUILD 1)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9")
     set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
 elseif(WIN32)
+    set(WINDOWS_BUILD ON)
     message(STATUS "Compiling on a Windows computer")
-    set(WINDOWS_BUILD 1)
     set(OPTION_USE_LIBTIFF 0)
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
 else()
+    set(NIX_BUILD ON)
     message(STATUS "Compiling on a Linux computer")
-    set(NIX_BUILD 1)
     set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
 endif()
 
@@ -225,8 +216,8 @@ set(OpenGL_GL_PREFERENCE LEGACY)
 
 if (OPTION_USE_OPENGL AND OPTION_VCELL)
     set(HAVE_OPENGL TRUE)
-    set(HAVE_GL_GLU_H TRUE)
     set(HAVE_GL_GL_H TRUE)
+    set(HAVE_GL_GLU_H TRUE)
 elseif(OPTION_USE_OPENGL)
     if(OPTION_MINGW)
         list(APPEND DEP_LIBS opengl32 glu32 freeglut_static gdi32 winmm)
@@ -235,15 +226,18 @@ elseif(OPTION_USE_OPENGL)
         find_file(HAVE_GL_GLU_H GL/glu.h PATHS ${MINGWDIR}/include)
         find_file(HAVE_OPENGL_GLU_H OpenGL/glu.h PATHS ${MINGWDIR}/include)
 
-        find_path(OPEN_GL_INCLUDE_DIR gl.h PATHS ${MINGWDIR}/include/GL)
-        get_filename_component(OPEN_GL_INCLUDE_DIR "${HAVE_GL_GL_H}" PATH)
-        find_library(OPEN_GL_LIBRARIES libopengl32.a PATHS ${MINGWDIR}/lib)
+        find_path(OPENGL_INCLUDE_DIR gl.h PATHS ${MINGWDIR}/include/GL)
+        get_filename_component(OPENGL_INCLUDE_DIR "${HAVE_GL_GL_H}" PATH)
+        find_library(OPENGL_LIBRARIES libopengl32.a PATHS ${MINGWDIR}/lib)
         find_library(GLU32_LIBRARIES libglu32.a PATHS ${MINGWDIR}/lib)
+        if(GLU32_LIBRARIES)
+            message(STATUS "Glu32 found: '${GLU32_LIBRARIES}'")
+        else()
+            message(FATAL_ERROR "Glu32 not found.  Building without OpenGL is possible.")
+        endif()
     elseif(WINDOWS_BUILD)
         find_file(HAVE_GL_H gl.h PATHS windows/gl NO_DEFAULT_PATH)
-        message(STATUS "Value of HAVE_GL_H: '${HAVE_GL_H}'")
         find_file(HAVE_GLU_H glu.h PATHS windows/gl NO_DEFAULT_PATH)
-        message(STATUS "Value of HAVE_GLU_H: '${HAVE_GLU_H}'")
         include(FindOpenGL)
         get_filename_component(OPENGL_INCLUDE_DIR "${HAVE_GL_H}" PATH)
     else()
@@ -254,28 +248,20 @@ elseif(OPTION_USE_OPENGL)
         include(FindOpenGL)
     endif()
 
+    if(OPENGL_INCLUDE_DIR AND OPENGL_LIBRARIES)
+        set(OPENGL_FOUND TRUE)
+    endif()
+
     if(OPENGL_FOUND)
-        set(OPENGL_FOUND TRUE)
         message(STATUS "OpenGL found: '${OPENGL_INCLUDE_DIR}', '${OPENGL_LIBRARIES}'")
-    elseif(OPEN_GL_INCLUDE_DIR AND OPEN_GL_LIBRARIES)
-        set(OPENGL_FOUND TRUE)
-        message(STATUS "OpenGL found: '${OPEN_GL_INCLUDE_DIR}', '${OPEN_GL_LIBRARIES}'")
     else()
-        set(OPENGL_FOUND FALSE)
+        message(STATUS "OpenGL include and library variables: '${OPENGL_INCLUDE_DIR}', '${OPENGL_LIBRARIES}'")
         message(FATAL_ERROR "OpenGL not found.  Building without OpenGL is possible.")
     endif()
 
-    if(OPTION_MINGW)
-        if(GLU32_LIBRARIES)
-            message(STATUS "Glu32 found: '${GLU32_LIBRARIES}'")
-        else()
-            message(FATAL_ERROR "Glu32 not found.  Building without OpenGL is possible.")
-        endif()
-    endif(OPTION_MINGW)
-
     set(HAVE_OPENGL TRUE)
-    include_directories(${OPENGL_INCLUDE_DIR} ${OPEN_GL_INCLUDE_DIR})
-    list(APPEND DEP_LIBS ${OPENGL_LIBRARIES} ${OPEN_GL_LIBRARIES} ${GLU32_LIBRARIES})
+    include_directories(${OPENGL_INCLUDE_DIR})
+    list(APPEND DEP_LIBS ${OPENGL_LIBRARIES} ${GLU32_LIBRARIES})
 endif()
 
 
@@ -297,7 +283,8 @@ elseif(OPTION_USE_OPENGL)
         #		find_path(GLUT_INCLUDE_DIR GL/freeglut.h)
         #		find_library(GLUT_LIBRARIES libglut.a)
     elseif(WINDOWS_BUILD)
-	message(STATUS "Looking for glut")
+	add_compile_definitions(FREEGLUT_STATIC)
+	add_compile_definitions(NDEBUG)
         find_file(HAVE_GLUT_H glut.h PATHS windows/freeglut/include/GL NO_DEFAULT_PATH)
 	message(STATUS "contents of HAVE_GLUT_H: '${HAVE_GLUT_H}'")
         get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GLUT_H}" PATH)
@@ -309,23 +296,19 @@ elseif(OPTION_USE_OPENGL)
         find_file(HAVE_GL_GLUT_H GL/glut.h)
         find_file(HAVE_GLUT_GLUT_H GLUT/glut.h)
         include(FindGLUT)
-        #find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h)
-        #find_path(GLUT_INCLUDE_DIR GL/freeglut.h)
-        #find_library(GLUT_LIBRARIES NAMES libglut)
     endif()
 
+    if (GLUT_INCLUDE_DIR AND GLUT_LIBRARIES)
+        set(GLUT_FOUND TRUE)
+    endif ()
+
     if(GLUT_FOUND)
-        set(GLUT_FOUND TRUE)
-        message(STATUS "Glut found: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
-    elseif(GLUT_INCLUDE_DIR AND GLUT_LIBRARIES)
-        set(GLUT_FOUND TRUE)
         message(STATUS "Glut found: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
     else()
-        set(GLUT_FOUND FALSE)
+        message(STATUS "Glut include and library variables: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
         message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
     endif()
 
-    set(HAVE_OPENGL TRUE)
     include_directories(${GLUT_INCLUDE_DIR})
     list(APPEND DEP_LIBS ${GLUT_LIBRARIES})
 endif()
@@ -454,6 +437,7 @@ if(OPTION_VTK)
 
 endif(OPTION_VTK)
 
+
 ####### Option: Build with NextSubvolume ##########
 
 if(OPTION_NSV)
@@ -505,7 +489,9 @@ if(OPTION_NSV)
 	endif(NOT WINDOWS_BUILD)
 endif(OPTION_NSV)
 
+
 ####### Option: Build with PDE ##########
+
 
 ####### Targets ##########
 if(OPTION_TARGET_SMOLDYN)
@@ -523,6 +509,7 @@ if(OPTION_TARGET_LIBSMOLDYN)
         set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
     endif(APPLE)
 endif(OPTION_TARGET_LIBSMOLDYN)
+
 
 ########## Python module #########
 if(OPTION_PYTHON)
@@ -557,8 +544,10 @@ configure_file (
     ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
     )
 
+
 ########## package #########
 include(CPack)
+
 
 ######### Testing #############
 if(OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
