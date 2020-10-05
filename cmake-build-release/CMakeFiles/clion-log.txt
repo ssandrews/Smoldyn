@@ -1,0 +1,53 @@
+"C:\Program Files\CMake\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install -DOPTION_NSV=OFF -G "CodeBlocks - NMake Makefiles" D:\Smoldyn
+-- The C compiler identification is MSVC 19.27.29111.0
+-- The CXX compiler identification is MSVC 19.27.29111.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.27.29110/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.27.29110/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Smoldyn version set to: '2.62.dev'
+-- Compiling for Smoldyn: ON
+-- Compiling for Libsmoldyn: OFF
+-- Build type: Release
+-- Compiling on a Windows computer
+-- CMAKE_CXX_FLAGS variable: '/DWIN32 /D_WINDOWS /W3 /GR /EHsc'
+-- BioNetGen path: '%PROGRAMFILES%\\Smoldyn\\BioNetGen\\BNG2.pl' 
+-- Found OpenGL: opengl32   
+-- OpenGL found: '', 'opengl32;glu32'
+-- contents of GLUT_INCLUDE_DIR: 'GLUT_INCLUDE_DIR-NOTFOUND'
+-- OPENGL_FOUND: TRUE
+-- Looking for include file sys/types.h
+-- Looking for include file sys/types.h - found
+-- Looking for include file unistd.h
+-- Looking for include file unistd.h - not found
+-- Looking for include file sys/time.h
+-- Looking for include file sys/time.h - not found
+-- Looking for include file stdbool.h
+-- Looking for include file stdbool.h - found
+-- Looking for include file sys/param.h
+-- Looking for include file sys/param.h - not found
+-- Looking for include file sys/ioctl.h
+-- Looking for include file sys/ioctl.h - not found
+-- Looking for include file fcntl.h
+-- Looking for include file fcntl.h - found
+-- Looking for include file usbhid.h
+-- Looking for include file usbhid.h - not found
+-- Looking for gettimeofday
+-- Looking for gettimeofday - not found
+-- Looking for XParseGeometry
+-- Looking for XParseGeometry - not found
+-- Looking for include file stdint.h
+-- Looking for include file stdint.h - found
+-- Looking for include file inttypes.h
+-- Looking for include file inttypes.h - found
+-- Glut include and library variables: 'GLUT_INCLUDE_DIR-NOTFOUND', ''
+statusFREEGLUT_INCLUDE_DIRECTORIES D:/Smoldyn/windows/freeglut-3.2.1/include
+-- Configuring done
+-- Generating done
+-- Build files have been written to: D:/Smoldyn/cmake-build-release
