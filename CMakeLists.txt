@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.0)
 
 # CI/CD can also set this variable. If not, use the default one. 
 if(NOT SMOLDYN_VERSION)
-   set(SMOLDYN_VERSION "2.62.dev")
+    set(SMOLDYN_VERSION "2.62.dev")
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
@@ -21,9 +21,9 @@ set(CMAKE_CXX_STANDARD 17)
 ######### Targets to build ###########
 
 option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" ON)
-option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" OFF)
-
 message(STATUS "Compiling for Smoldyn: ${OPTION_TARGET_SMOLDYN}")
+
+option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" OFF)
 message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
 
 
@@ -47,10 +47,10 @@ if (OPTION_VCELL)
     set(HAVE_ZLIB TRUE)
     set(OPTION_USE_ICONV OFF)
     set(HAVE_ICONV FALSE)
-else(OPTION_VCELL)
+else ()
     option(OPTION_USE_LIBTIFF "Build with LibTiff support" ON)
     option(OPTION_USE_ICONV "Build with Libiconv support" OFF)
-endif(OPTION_VCELL)
+endif ()
 
 if (OPTION_NSV OR OPTION_PDE)
     set(OPTION_LATTICE ON)
@@ -148,22 +148,11 @@ include_directories(source/libSteve source/Smoldyn source/vcell source/NextSubVo
 
 ####### Compiler flags ######################
 
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif ()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
-#if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-#    set(COMPILER_IS_CLANGXX TRUE)
-#endif ()
-#if(CMAKE_COMPILER_IS_GNUCXX OR COMPILER_IS_CLANGXX)
-#    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-#        set(CMAKE_CXX_FLAGS "-O0 -g -Wall -DNDEBUG")
-#    else ()
-#        set(CMAKE_CXX_FLAGS "-O2 -Wall -DNDEBUG")
-#    endif ()
-#endif ()
 
 set(VCELL_BUILD OFF)
 set(APPLE_BUILD OFF)
@@ -192,21 +181,26 @@ elseif (OPTION_MINGW)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D FREEGLUT_STATIC -static")
     set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_C_FLAGS} -static -s")
     set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -static -s")
-elseif(APPLE)
+elseif (APPLE)
     set(APPLE_BUILD ON)
     message(STATUS "Compiling on an Apple computer")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.9")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated -mmacosx-version-min=10.9")
     set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
-elseif(WIN32)
+elseif (WIN32)
     set(WINDOWS_BUILD ON)
     message(STATUS "Compiling on a Windows computer")
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
+    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
     set(OPTION_USE_LIBTIFF 0)
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
-else()
+else ()
     set(NIX_BUILD ON)
     message(STATUS "Compiling on a Linux computer")
     set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
-endif()
+endif ()
+
+message(STATUS "CMAKE_CXX_FLAGS variable: '${CMAKE_CXX_FLAGS}'")
+message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
 
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
@@ -269,8 +263,8 @@ endif()
 
 if (OPTION_USE_OPENGL AND OPTION_VCELL)
     set(HAVE_GL_GLUT_H TRUE)
-elseif(OPTION_USE_OPENGL)
-    if(OPTION_MINGW)
+elseif (OPTION_USE_OPENGL)
+    if (MINGW_BUILD)
         find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h PATHS ${MINGWDIR}/include)
         #find_file(HAVE_GLUT_GLUT_H GLUT/glut.h PATHS ${MINGWDIR}/include)
 
@@ -282,21 +276,21 @@ elseif(OPTION_USE_OPENGL)
         #		find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h)
         #		find_path(GLUT_INCLUDE_DIR GL/freeglut.h)
         #		find_library(GLUT_LIBRARIES libglut.a)
-    elseif(WINDOWS_BUILD)
-	add_compile_definitions(FREEGLUT_STATIC)
-	add_compile_definitions(NDEBUG)
+    elseif (WINDOWS_BUILD)
+        add_compile_definitions(FREEGLUT_STATIC)
+        add_compile_definitions(NDEBUG)
         find_file(HAVE_GLUT_H glut.h PATHS windows/freeglut/include/GL NO_DEFAULT_PATH)
-	message(STATUS "contents of HAVE_GLUT_H: '${HAVE_GLUT_H}'")
+        message(STATUS "contents of HAVE_GLUT_H: '${HAVE_GLUT_H}'")
         get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GLUT_H}" PATH)
-	message(STATUS "contents of GLUT_INCLUDE_DIR: '${GLUT_INCLUDE_DIR}'")
+        message(STATUS "contents of GLUT_INCLUDE_DIR: '${GLUT_INCLUDE_DIR}'")
         find_file(GLUT_LIBRARIES NAMES libfreeglut_static.a PATHS windows/freeglut/lib NO_DEFAULT_PATH)
-	message(STATUS "contents of GLUT_LIBRARIES: '${GLUT_LIBRARIES}'")
+        message(STATUS "contents of GLUT_LIBRARIES: '${GLUT_LIBRARIES}'")
         set(GLUT_FOUND TRUE)
-    else()
+    else ()
         find_file(HAVE_GL_GLUT_H GL/glut.h)
         find_file(HAVE_GLUT_GLUT_H GLUT/glut.h)
         include(FindGLUT)
-    endif()
+    endif ()
 
     if (GLUT_INCLUDE_DIR AND GLUT_LIBRARIES)
         set(GLUT_FOUND TRUE)
@@ -316,37 +310,36 @@ endif()
 
 ####### Build with LibX11 (only required for static build on Mac) ##########
 
-#if(OPTION_STATIC AND OPTION_USE_OPENGL AND HAVE_OPENGL)
-#	FIND_PACKAGE(X11)
-#	if(X11_FOUND)
-#		message(STATUS "Found X11: '${X11_INCLUDE_DIR}', '${X11_LIBRARIES}'")
-#	else()
-#		message(FATAL_ERROR "X11 not found")
-#	endif()
-#	include_directories(${X11_INCLUDE_DIR})
-#	list(APPEND DEP_LIBS ${X11_LIBRARIES})
+#if (OPTION_STATIC AND OPTION_USE_OPENGL AND HAVE_OPENGL)
+#	   find_package(X11)
+#	   if (X11_FOUND)
+#        message(STATUS "Found X11: '${X11_INCLUDE_DIR}', '${X11_LIBRARIES}'")
+#    else ()
+#        message(FATAL_ERROR "X11 not found")
+#    endif ()
+#    include_directories(${X11_INCLUDE_DIR})
+#    list(APPEND DEP_LIBS ${X11_LIBRARIES})
 #endif()
 
 
 ####### Option: Build with LibTiff ##########
 
-if(NOT HAVE_OPENGL)
+if(OPTION_USE_LIBTIFF AND NOT HAVE_OPENGL)
     message(WARNING "LibTiff won't be used because build does not include OpenGL.")
     set(OPTION_USE_LIBTIFF OFF)
 endif()
 
-if(OPTION_USE_LIBTIFF)
-
-    if(OPTION_MINGW)
+if (OPTION_USE_LIBTIFF)
+    if (MINGW_BUILD)
         find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
         find_library(TIFF_LIBRARY libtiff.a PATHS ${MINGWDIR}/lib NO_DEFAULT_PATH)
         #find_path(TIFF_INCLUDE_DIR tiff.h PATHS source/MinGWlibs/i386-mingw32/include NO_DEFAULT_PATH)
         #find_library(TIFF_LIBRARY libtiff.a PATHS source/MinGWlibs/i386-mingw32/lib NO_DEFAULT_PATH)
-    elseif(OPTION_STATIC)
+    elseif (OPTION_STATIC)
         find_path(TIFF_INCLUDE_DIR tiff.h)
         find_library(TIFF_LIBRARY libtiff.a)
-    else()
-        FIND_PACKAGE(TIFF)
+    else ()
+        find_package(TIFF)
     endif()
 
     if(TIFF_INCLUDE_DIR AND TIFF_LIBRARY)
@@ -354,12 +347,13 @@ if(OPTION_USE_LIBTIFF)
         message(STATUS "Found Libtiff: '${TIFF_INCLUDE_DIR}', '${TIFF_LIBRARY}'")
     else()
         set(HAVE_LIBTIFF FALSE)
+        message(STATUS "Libtiff include and library variables: '${TIFF_INCLUDE_DIR}', '${TIFF_LIBRARY}'")
         message(FATAL_ERROR "Libtiff not found")
-    endif()
+    endif ()
 
     include_directories(${TIFF_INCLUDE_DIR})
     list(APPEND DEP_LIBS ${TIFF_LIBRARY})
-endif(OPTION_USE_LIBTIFF)
+endif ()
 
 
 ####### Option: Build with Zlib ##########
@@ -430,9 +424,6 @@ if(OPTION_VTK)
 
     list(APPEND SRC_FILES source/vtk/vtkwrapper.cpp)
     list(APPEND HEADER_FILES source/vtk/vtkwrapper.h)
-    if(NOT WINDOWS_BUILD)
-        add_definitions(-Wno-deprecated)
-    endif(NOT WINDOWS_BUILD)
     list(APPEND DEP_LIBS ${VTK_LIBRARIES})
 
 endif(OPTION_VTK)
@@ -440,21 +431,21 @@ endif(OPTION_VTK)
 
 ####### Option: Build with NextSubvolume ##########
 
-if(OPTION_NSV)
+if (OPTION_NSV)
     #add_subdirectory(source/NextSubVolume)
     #list(APPEND DEP_LIBS nsv)
     #include_directories(source/NextSubVolume)
     #include_directories(${VTK_INCLUDE_DIRS})
 
-    if(OPTION_MINGW)
+    if (OPTION_MINGW)
         find_path(SIGNAL_H_DIR signal.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
-        if(SIGNAL_H_DIR)
+        if (SIGNAL_H_DIR)
             message(STATUS "Found signal.h: '${SIGNAL_H_DIR}'")
-        else()
+        else ()
             message(FATAL_ERROR "signal.h not found")
-        endif()
+        endif ()
         include_directories(${SIGNAL_H_DIR})
-    endif()
+    endif ()
 
 
     set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/NextSubVolume/boost_include)
@@ -484,57 +475,56 @@ if(OPTION_NSV)
         source/NextSubVolume/nsvc.h
         )
 
-	if(NOT WINDOWS_BUILD)
-	    add_definitions("-Wno-deprecated")
-	endif(NOT WINDOWS_BUILD)
-endif(OPTION_NSV)
+endif (OPTION_NSV)
 
 
 ####### Option: Build with PDE ##########
 
 
 ####### Targets ##########
-if(OPTION_TARGET_SMOLDYN)
+
+if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
     target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
-endif()
+endif ()
 
-if(OPTION_TARGET_LIBSMOLDYN)
+if (OPTION_TARGET_LIBSMOLDYN)
     add_library(smoldyn_shared SHARED ${SRC_FILES} ${HEADER_FILES})
     add_library(smoldyn_static STATIC ${SRC_FILES} ${HEADER_FILES})
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
     target_link_libraries(smoldyn_shared ${DEP_LIBS})
     target_link_libraries(smoldyn_static ${DEP_LIBS})
-    if(APPLE)
+    if (APPLE_BUILD)
         set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
-    endif(APPLE)
-endif(OPTION_TARGET_LIBSMOLDYN)
+    endif ()
+endif ()
 
 
 ########## Python module #########
-if(OPTION_PYTHON)
+
+if (OPTION_PYTHON)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
     add_subdirectory(source/python)
-endif()
+endif ()
 
 
 ########## install ###########
 
 if(NOT OPTION_MINGW)
 
-    if(OPTION_TARGET_SMOLDYN)
+    if (OPTION_TARGET_SMOLDYN)
         install(TARGETS smoldyn RUNTIME DESTINATION bin)
     endif()
 
-    if(OPTION_TARGET_LIBSMOLDYN)
+    if (OPTION_TARGET_LIBSMOLDYN)
         install(TARGETS smoldyn_shared LIBRARY DESTINATION lib)
         install(TARGETS smoldyn_static ARCHIVE DESTINATION lib)
         install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h 
             ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
             DESTINATION include)
-    endif(OPTION_TARGET_LIBSMOLDYN)
+    endif ()
 
-endif(NOT OPTION_MINGW)
+endif ()
 
 
 ########## configure file #########
@@ -550,7 +540,7 @@ include(CPack)
 
 
 ######### Testing #############
-if(OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
+if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
     enable_testing()
     add_subdirectory(examples)
-endif(OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
+endif ()

@@ -333,7 +333,7 @@ Variable & Description & Default\\
 \end{longtable}
 
 \item[Compiling options]
-All compiling options, determining which components to include and what the code is being built for. In the table below, * indicates that this option doesn't work at present. The default values listed below are only the initial settings; several of them get overridden later in this same section, depending on other settings.
+Most of the compiling options are listed here. They determine which components to include and what the code is being built for. In the table below, * indicates that this option doesn't work at present and so should always be turned off. The default values listed below are only for Mac and Linux and are the initial settings; several of them get overridden later in this same section, depending on other settings.
 \begin{longtable}[c]{lll}
 Variable & Description & Default\\
 \hline
@@ -345,9 +345,13 @@ Variable & Description & Default\\
 \texttt{OPTION\_STATIC} & Compile Smoldyn with static libraries & OFF\\
 \texttt{OPTION\_USE\_OPENGL} & Build with OpenGL support & ON\\
 \texttt{OPTION\_USE\_ZLIB} & Build with Zlib support & OFF\\
+\texttt{OPTION\_USE\_LIBTIFF} & Whether to include the LibTIFF library & ON\\
+\texttt{OPTION\_USE\_ICONV} & Whether to include the Libiconv library & OFF\\
 \texttt{OPTION\_PYTHON}  & Build Python module & OFF\\
 \texttt{OPTION\_EXAMPLES} & Run Libsmoldyn tests & OFF\\
 \texttt{OPTION\_LATTICE} & Whether to build lattice code & depends\\
+\texttt{HAVE\_ZLIB} & Already have Zlib library\\
+\texttt{HAVE\_ICONV} & Already have Libiconv library\\
 \end{longtable}
 
 \item[Core code information]
@@ -361,12 +365,12 @@ Variable & Description & Default\\
 \end{longtable}
 
 \item[Compiler flags]
-This section sets most of the compiler flags for the build. It starts by determining if this is a release or debug build. Other options are `None', `RelWithDebInfo', and `MinSizeRel', but the code doesn't support those options. If it isn't ``Debug'', then it's a release. Depending on this build type, this section sets a list of basic compiler flags, if the compiler is clang or gnu. I tried these flags with Visual Studio, and they don't work there. Next, it creates a list of possible build platforms and goes through the list of possible platforms, adding to the compiler flags as needed as it goes along. As far as this is concerned, Windows and Visual Studio are the same thing. This section also sets the path to the BNG2 perl script.
+This section sets most of the compiler flags for the build. It starts by determining what type of build this is, where the options are `Release', `Debug', `None', `RelWithDebInfo', and `MinSizeRel'; it sets the value to `Release' as a default. This is a built-in CMake variable, so CMake defines several compiler flags automatically based on this build type, without them needing to be set here. Next, this section creates a list of possible build platforms and goes through the list of possible platforms, adding to the compiler flags as needed as it goes along. As far as this is concerned, ``MinGW'' means cross-compile from Mac to Windows using the MinGW compiler, and ``Windows'' means compile on Windows using the Visual Studio compiler. This section also sets the path to the BNG2 perl script.
 \begin{longtable}[c]{lll}
 Variable & Description & Default\\
 \hline
 \texttt{CMAKE\_BUILD\_TYPE} & Build type & Release\\
-\texttt{COMPILER\_IS\_CLANGXX} & clang C++ compiler\\
+\texttt{CMAKE\_C\_FLAGS} & C compiler flags string\\
 \texttt{CMAKE\_CXX\_FLAGS} & C++ compiler flags string\\
 \texttt{DEP\_LIBS} & Library dependencies for linking\\
 \texttt{VCELL\_BUILD} & Build for VCell (ON or OFF)\\
@@ -378,7 +382,7 @@ Variable & Description & Default\\
 \end{longtable}
 
 \item[OpenGL (gl and glu, not glut)]
-OpenGL is a bit of a challenge to include correctly, and platform dependent. The gl and glu libraries are usually built in, while the glut library is not necessarily, so this section just focuses on the gl and glu libraries. OpenGL is becoming deprecated, but I still use it, so this code starts by stating that it uses legacy preferences. The \texttt{include(FindOpenGL)} statement is used where possible; it automatically defines the variables \texttt{OPENGL\_FOUND)}, \texttt{OPENGL\_INCLUDE\_DIR}, and \texttt{OPENGL\_LIBRARIES}. However, the code overrides the include directories for Windows because the automatic system doesn't seem to find the built-in gl.h header file, and a different version of the header file from the Smoldyn directory seems to work well.
+OpenGL is a bit of a challenge to include correctly, and platform dependent. The gl and glu libraries are usually built in, while the glut library is not necessarily, so this section just focuses on the gl and glu libraries. OpenGL is becoming deprecated, but I still use it, so this code starts by stating that it uses legacy preferences. The \texttt{include(FindOpenGL)} statement is used where possible; it automatically defines the variables \texttt{OPENGL\_FOUND}, \texttt{OPENGL\_INCLUDE\_DIR}, and \texttt{OPENGL\_LIBRARIES}. However, the code overrides the include directories for Windows because the automatic system doesn't seem to find the built-in gl.h header file, and a different version of the header file from the Smoldyn directory seems to work well.
 \begin{longtable}[c]{lll}
 Variable & Description & Purpose\\
 \hline
@@ -389,7 +393,7 @@ Variable & Description & Purpose\\
 \texttt{HAVE\_GLU\_H} & TRUE for header file glu.h  & smoldynconfig.h\\
 \texttt{HAVE\_GL\_GLU\_H} & TRUE for header file GL/glu.h  & smoldynconfig.h\\
 \texttt{HAVE\_OPENGL\_GLU\_H} & TRUE for header file OpenGL/glu.h  & smoldynconfig.h\\
-\texttt{OPENGL\_FOUND)} & TRUE if OpenGL is found & local only\\
+\texttt{OPENGL\_FOUND} & TRUE if OpenGL is found & local only\\
 \texttt{OPENGL\_INCLUDE\_DIR} & Include directory & local only\\
 \texttt{OPENGL\_LIBRARIES} & OpenGL Library directory & local only\\
 \texttt{GLU32\_LIBRARIES} & glu library directory & local only\\
@@ -411,11 +415,82 @@ Variable & Description & Purpose\\
 \texttt{DEP\_LIBS} & Library dependencies for linking & Appended\\
 \end{longtable}
 
+\item[LibX11]
+This section used to add the LibX11 library, which was apparently only needed for a static build on a Mac. However, the section is fully commented out at present, so it presumably wasn't needed.
 
+\item[LibTiff]
+This section adds the LibTiff library, to enable the user to save TIFF format images of the simulation. I haven't been able to get LibTiff to work correctly on Windows yet, so this section only applies to non-Windows systems.
+\begin{longtable}[c]{ll}
+Variable & Description\\
+\hline
+\texttt{HAVE\_LIBTIFF} & TRUE if LibTiff is found, FALSE if not\\
+\texttt{TIFF\_INCLUDE\_DIR} & Include directory\\
+\texttt{TIFF\_LIBRARY} & Library directory\\
+\texttt{DEP\_LIBS} & Appended: library dependencies for linking\\
+\end{longtable}
+
+\item[Zlib]
+This section adds the Zlib library.
+\begin{longtable}[c]{ll}
+Variable & Description\\
+\hline
+\texttt{HAVE\_ZLIB} & TRUE if Zlib is found, FALSE if not\\
+\texttt{ZLIB\_INCLUDE\_DIRS} & Include directory\\
+\texttt{ZLIB\_LIBRARIES} & Library directory\\
+\texttt{DEP\_LIBS} & Appended: library dependencies for linking\\
+\end{longtable}
+
+\item[Libiconv]
+This section adds the Libiconv library.
+\begin{longtable}[c]{ll}
+Variable & Description\\
+\hline
+\texttt{HAVE\_INCONV} & TRUE if Libiconv is found, FALSE if not\\
+\texttt{ICONV\_INCLUDE\_DIRS} & Include directory\\
+\texttt{ICONV\_LIBRARIES} & Library directory\\
+\texttt{DEP\_LIBS} & Appended: library dependencies for linking\\
+\end{longtable}
+
+\item[VTK]
+This section adds the VTK library, used for saving graphical output to VTK format files. The VTK source code is in the Smoldyn source/vtk subdirectory.
+\begin{longtable}[c]{ll}
+Variable & Description\\
+\hline
+\texttt{VTK\_FOUND} & TRUE if VTK is found, FALSE if not\\
+\texttt{VTK\_INCLUDE\_DIRS} & Include directory\\
+\texttt{DEP\_LIBS} & Appended: library dependencies for linking\\
+\end{longtable}
+
+\item[NextSubvolume]
+This section adds the code for hybrid simulation using lattices, which is the nsv code written by Martin Robinson. All of the source code is in the Smoldyn subdirectory source/NextSubVolume. This section used to call the CMakeLists file in source/NextSubVolume with the add\_subdirectory statement, but then I simplified the build by moving all of that source into this CMakeLists.txt file. The result is a fairly simple build. This section adds code for signal.h if MinGW is used, and adds a boost include directory. It also appends the lists of source files and header files with the NSV code.
+\begin{longtable}[c]{ll}
+Variable & Description\\
+\hline
+\texttt{SIGNAL\_H\_DIR} & Directory to signal.h, only for MinGW\\
+\texttt{Boost\_INCLUDE\_DIR} & Include directory for Boost, which is in the NSV source\\
+\texttt{SRC\_FILES} & Appended: Smoldyn source files\\
+\texttt{HEADER\_FILES} & Appended: Smoldyn header files\\
+\end{longtable}
+
+\item[PDE]
+This is an empty section for possible future use for PDE hybrid simulation.
+
+\item[Targets]
+Here, the target building is set up. The two targets are Smoldyn and Libsmoldyn. Smoldyn has an executable, with source files, main files, and header files. Libsmoldyn comes in both shared and static versions, both of which have source files and header files. No variables are defined here.
+
+\item[Python module]
+This section simply adds two CMake subdirectories, for pybind11 and the python code that Dilawar Singh wrote.
+
+\item[Install]
+This section describes how to install the software. Just the Smoldyn executable is installed if that is the only target. If the Libsmoldyn target is built as well, then this also installs: the shared and static Libsmoldyn library files and the header files: libsmoldyn.h, smoldyn.h, smoldynconfigure.h.
+
+\item[Package]
+This was an effort to create a nice package with CPack. I haven't finished this topic yet.
+
+\item[Testing]
+Here are a few tests of Libsmoldyn. This section adds the examples subdirectory.
 
 \end{description}
-
-
 
 
 % Chapter: Files, macros, variables, etc.
