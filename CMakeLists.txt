@@ -7,7 +7,8 @@
 ########## Basic setup ##########
 
 project(smoldyn)
-cmake_minimum_required(VERSION 3.0)
+# use a more recent cmake version - Its worth it!
+cmake_minimum_required(VERSION 3.15..3.18)
 
 # CI/CD can also set this variable. If not, use the default one. 
 if(NOT SMOLDYN_VERSION)
@@ -143,6 +144,7 @@ endif(OPTION_TARGET_LIBSMOLDYN)
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
 
+# It is recommended not to use "include_directories". Use "target_include_directories" instead.
 include_directories(source/libSteve source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
 
 
@@ -265,27 +267,55 @@ if (OPTION_USE_OPENGL AND OPTION_VCELL)
     set(HAVE_GL_GLUT_H TRUE)
 elseif (OPTION_USE_OPENGL)
     if (MINGW_BUILD)
-        find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h PATHS ${MINGWDIR}/include)
+        find_file(HAVE_GLfreeglut_H GL/freeglut.h PATHS ${MINGWDIR}/include)
         #find_file(HAVE_GLUT_GLUT_H GLUT/glut.h PATHS ${MINGWDIR}/include)
 
-        get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GL_FREEGLUT_H}" PATH)
+        get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GLfreeglut_H}" PATH)
         #find_path(GLUT_INCLUDE_DIR glut.h PATHS ${MINGWDIR}/include/GL)
         find_library(GLUT_LIBRARIES libfreeglut_static.a PATHS ${MINGWDIR}/lib)
         #find_library(GLUT_LIBRARIES libglut32.a PATHS ${MINGWDIR}/lib)
         #	elseif(OPTION_STATIC)
-        #		find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h)
+        #		find_file(HAVE_GLfreeglut_H GL/freeglut.h)
         #		find_path(GLUT_INCLUDE_DIR GL/freeglut.h)
         #		find_library(GLUT_LIBRARIES libglut.a)
     elseif (WINDOWS_BUILD)
+        # Modern cmake "frowns" upon all these generic functions and instead prefers the targeted version
+        # for instance, here you should use "target_compile_definition", which would mean refactoring these
+        # until after you have used add_library.
         add_compile_definitions(FREEGLUT_STATIC)
         add_compile_definitions(NDEBUG)
-        find_file(HAVE_GLUT_H glut.h PATHS windows/freeglut/include/GL NO_DEFAULT_PATH)
-        message(STATUS "contents of HAVE_GLUT_H: '${HAVE_GLUT_H}'")
-        get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GLUT_H}" PATH)
+
+        # I suspect you want this instead: 1) more direct to use find_path not find_file and 2) so that you can do #include "GL/glut.h"
+        find_path(GLUT_INCLUDE_DIR GL/glut.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut/include NO_DEFAULT_PATH)
+
+        # In general, its pretty bad practice to have binaries stored in repositories like github.
+        # sources are better. If you had sources you could do "add_subdirectory" and build dependency targets
+        # along with your smoldyn targets. Then, its really easy to use the target for linking etc.
+        # for instance, you could do target_include_directories(smoldyn PUBLIC freeglut), the PUBLIC keyword would
+        # indicate to targets that link to smoldyn (if any) to also link freeglut, which is nice. If nothing will link
+        # to Smoldyn then set PUBLIC to PRIVAET.
         message(STATUS "contents of GLUT_INCLUDE_DIR: '${GLUT_INCLUDE_DIR}'")
-        find_file(GLUT_LIBRARIES NAMES libfreeglut_static.a PATHS windows/freeglut/lib NO_DEFAULT_PATH)
-        message(STATUS "contents of GLUT_LIBRARIES: '${GLUT_LIBRARIES}'")
-        set(GLUT_FOUND TRUE)
+
+        # it seems that there is no libfreeglut_static.lib in your windows/freeglut folder. There seems to be
+        # a libfreeglut_static.a, but this will not work with msvc (.a is not a format msvc can use).
+        # Instead, if you want to link statically, you'll need to find the freeglut.lib file. On windows, they had this peculiar
+        # idea of naming both static libraries with *.lib and export libraries with *.lib. This is annoying, but essentially
+        # means that you don't actually link a dynamic library (dll) itself, but a *lib file, called an import library.
+        # Then, you just need to be able to locate the *.dll at *runtime*.
+
+        # So, lets locate the import library for freeglut.
+
+        find_package(OpenGL REQUIRED)
+        message(STATUS "OPENGL_FOUND: ${OPENGL_FOUND}")
+
+        add_subdirectory(windows/freeglut-3.2.1)
+
+#        find_package(GLUT REQUIRED)
+#        message(STATUS "GLUT: ${GLUT}")
+
+#        find_program(GLUT_LIBRARIES NAMES libfreeglut_static${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS windows/freeglut/lib NO_DEFAULT_PATH)
+#        message(STATUS "contents of GLUT_LIBRARIES: '${GLUT_LIBRARIES}'")
+#        set(GLUT_FOUND TRUE)
     else ()
         find_file(HAVE_GL_GLUT_H GL/glut.h)
         find_file(HAVE_GLUT_GLUT_H GLUT/glut.h)
@@ -300,11 +330,12 @@ elseif (OPTION_USE_OPENGL)
         message(STATUS "Glut found: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
     else()
         message(STATUS "Glut include and library variables: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
-        message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
+#        message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
     endif()
 
-    include_directories(${GLUT_INCLUDE_DIR})
-    list(APPEND DEP_LIBS ${GLUT_LIBRARIES})
+    # We do this later with the target* versions
+#    include_directories(${GLUT_INCLUDE_DIR})
+#    list(APPEND DEP_LIBS ${GLUT_LIBRARIES})
 endif()
 
 
@@ -485,7 +516,24 @@ endif (OPTION_NSV)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
+    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS} freeglut_static )
+
+    find_path(FREEGLUT_INCLUDE_DIRECTORIES NAMES GL/freeglut.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut-3.2.1/include REQUIRED)
+    MESSAGE(status "FREEGLUT_INCLUDE_DIRECTORIES ${FREEGLUT_INCLUDE_DIRECTORIES}")
+
+    #it seems you have included the GL folder as well as the include folder. This is probably a mistake. Usually people only
+    #include up to the include folder.
+    #for instance:
+    #   - windows/freeglut-3.2.1/include
+    # is the correct include folder for freeglut, and not
+    #   - windows/freeglut-3.2.1/include/GL
+    # However I get compiler errors when I do this:
+    # target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}")
+    # so instead do
+    target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}/GL")
+
+    # this tell cmake to always build the freeglut_static target before trying to build smoldyn
+    add_dependencies(smoldyn freeglut_static)
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)

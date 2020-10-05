@@ -1,0 +1,2284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="freeglut"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="msvc8"/>
+		<Option virtualFolders="CMake Files\;CMake Files\windows\;CMake Files\windows\freeglut-3.2.1\;CMake Files\windows\freeglut-3.2.1\src\;CMake Files\source\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 all"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="subwin">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/subwin.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 subwin"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="subwin/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/subwin.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 subwin/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="freeglut">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/freeglut.dll" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_EXPORTS"/>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 freeglut"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="freeglut/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/freeglut.dll" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_EXPORTS"/>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 freeglut/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer_callback">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer_callback.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer_callback"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer_callback/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer_callback.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer_callback/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="subwin_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/subwin_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 subwin_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="subwin_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/subwin_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 subwin_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="smooth_opengl3">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/smooth_opengl3.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 smooth_opengl3"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="smooth_opengl3/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/smooth_opengl3.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 smooth_opengl3/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="freeglut_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/lib/freeglut_static.lib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 freeglut_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="freeglut_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/lib/freeglut_static.lib" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 freeglut_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="CallbackMaker">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/CallbackMaker.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 CallbackMaker"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="CallbackMaker/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/CallbackMaker.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 CallbackMaker/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals_random_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals_random_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals_random_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals_random_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals_random_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals_random_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="CallbackMaker_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/CallbackMaker_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 CallbackMaker_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="CallbackMaker_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/CallbackMaker_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 CallbackMaker_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer_callback_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer_callback_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer_callback_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer_callback_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer_callback_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer_callback_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="smooth_opengl3_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/smooth_opengl3_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 smooth_opengl3_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="smooth_opengl3_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/smooth_opengl3_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 smooth_opengl3_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals_random">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals_random.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals_random"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals_random/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals_random.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals_random/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Fractals/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Fractals.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Fractals/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Lorenz">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Lorenz.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Lorenz"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Lorenz/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Lorenz.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Lorenz/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="multi-touch">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/multi-touch.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 multi-touch"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="multi-touch/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/multi-touch.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 multi-touch/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Lorenz_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Lorenz_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Lorenz_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Lorenz_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Lorenz_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Lorenz_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="shapes">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/shapes.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 shapes"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="shapes/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/shapes.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 shapes/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="One">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/One.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 One"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="One/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/One.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 One/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="shapes_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/shapes_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 shapes_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="shapes_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/shapes_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 shapes_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="One_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/One_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 One_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="One_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/One_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 One_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Resizer">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Resizer.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Resizer"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Resizer/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Resizer.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Resizer/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Resizer_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Resizer_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Resizer_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Resizer_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/Resizer_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 Resizer_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="multi-touch_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/multi-touch_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 multi-touch_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="multi-touch_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/multi-touch_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 multi-touch_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer_static">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer_static"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="timer_static/fast">
+				<Option output="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin/timer_static.exe" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="D:/Smoldyn/cmake-build-release/windows/freeglut-3.2.1/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="msvc8"/>
+				<Compiler>
+					<Add option="-DFREEGLUT_STATIC"/>
+					<Add option="-DNDEBUG"/>
+					<Add option="-D_CRT_SECURE_NO_WARNINGS"/>
+					<Add option="-D_WIN32_WINNT=0x0601"/>
+					<Add option="-DWINVER=0x0601"/>
+					<Add option="-DHAVE_CONFIG_H"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/src"/>
+					<Add directory="D:/Smoldyn/windows/freeglut-3.2.1/include"/>
+					<Add directory="D:/Smoldyn/cmake-build-release"/>
+					<Add directory="D:/Smoldyn/source/libSteve"/>
+					<Add directory="D:/Smoldyn/source/Smoldyn"/>
+					<Add directory="D:/Smoldyn/source/vcell"/>
+					<Add directory="D:/Smoldyn/source/NextSubVolume"/>
+					<Add directory="D:/Smoldyn/source/vtk"/>
+					<Add directory="D:/Smoldyn/windows/freeglut/include/GL"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\ATLMFC\include"/>
+					<Add directory="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.27.29110\include"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"/>
+					<Add directory="C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\cppwinrt"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 timer_static/fast"/>
+					<CompileFile command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+					<DistClean command="nmake /NOLOGO /f D:\Smoldyn\cmake-build-release\windows\freeglut-3.2.1\Makefile VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="D:/Smoldyn/cmake-build-release/freeglut.rc">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/include/GL/freeglut.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/include/GL/freeglut_ext.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/include/GL/freeglut_std.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/include/GL/freeglut_ucall.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/CallbackMaker/CallbackMaker.c">
+			<Option target="CallbackMaker"/>
+			<Option target="CallbackMaker_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/Fractals/fractals.c">
+			<Option target="Fractals_static"/>
+			<Option target="Fractals"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/Fractals_random/fractals_random.c">
+			<Option target="Fractals_random_static"/>
+			<Option target="Fractals_random"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/Lorenz/lorenz.c">
+			<Option target="Lorenz"/>
+			<Option target="Lorenz_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/One/one.c">
+			<Option target="One"/>
+			<Option target="One_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/One/one.rc">
+			<Option target="One"/>
+			<Option target="One_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/Resizer/Resizer.cpp">
+			<Option target="Resizer"/>
+			<Option target="Resizer_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/multi-touch/multi-touch.c">
+			<Option target="multi-touch"/>
+			<Option target="multi-touch_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/shapes/glmatrix.c">
+			<Option target="shapes"/>
+			<Option target="shapes_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/shapes/glmatrix.h">
+			<Option target="shapes"/>
+			<Option target="shapes_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/shapes/shapes.c">
+			<Option target="shapes"/>
+			<Option target="shapes_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/smooth_opengl3/smooth_opengl3.c">
+			<Option target="smooth_opengl3"/>
+			<Option target="smooth_opengl3_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/subwin/subwin.c">
+			<Option target="subwin"/>
+			<Option target="subwin_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/timer/timer.c">
+			<Option target="timer"/>
+			<Option target="timer_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/progs/demos/timer_callback/timer.c">
+			<Option target="timer_callback"/>
+			<Option target="timer_callback_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_callback_macros.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_callbacks.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_cursor.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_display.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_ext.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_font.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_font_data.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_gamemode.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_geometry.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_gl2.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_gl2.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_init.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_init.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_input_devices.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_internal.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_joystick.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_main.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_menu.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_misc.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_overlay.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_spaceball.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_state.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_stroke_mono_roman.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_stroke_roman.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_structure.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_teapot.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_teapot_data.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_videoresize.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_window.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_cursor_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_display_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_ext_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_gamemode_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_init_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_input_devices_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_internal_mswin.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_joystick_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_main_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_menu_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_spaceball_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_state_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_structure_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/mswin/fg_window_mswin.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/util/xparsegeometry_repl.c">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/util/xparsegeometry_repl.h">
+			<Option target="freeglut"/>
+			<Option target="freeglut_static"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\windows\freeglut-3.2.1\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/FreeGLUTConfig.cmake.in">
+			<Option virtualFolder="CMake Files\windows\freeglut-3.2.1\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/config.h.in">
+			<Option virtualFolder="CMake Files\windows\freeglut-3.2.1\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/freeglut.pc.in">
+			<Option virtualFolder="CMake Files\windows\freeglut-3.2.1\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/freeglut.rc.in">
+			<Option virtualFolder="CMake Files\windows\freeglut-3.2.1\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/windows/freeglut-3.2.1/src/fg_version.h.in">
+			<Option virtualFolder="CMake Files\windows\freeglut-3.2.1\src\"/>
+		</Unit>
+		<Unit filename="D:/Smoldyn/source/smoldynconfigure.h.in">
+			<Option virtualFolder="CMake Files\source\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

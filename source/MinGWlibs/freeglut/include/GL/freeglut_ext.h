@@ -4,7 +4,7 @@
 /*
  * freeglut_ext.h
  *
- * The non-GLUT-compatible extensions to the freeglut library include file
+ * The non-GLUT-compatible extensions to the _freeglut library include file
  *
  * Copyright (c) 1999-2000 Pawel W. Olszta. All Rights Reserved.
  * Written by Pawel W. Olszta, <olszta@sourceforge.net>
@@ -214,7 +214,7 @@ FGAPI void FGAPIENTRY glutMultiPassiveFunc( void (* callback)( int, int, int ) )
  */
 /* USE OF THESE FUNCTIONS IS DEPRECATED !!!!! */
 /* If you have a serious need for these functions in your application, please either
- * contact the "freeglut" developer community at freeglut-developer@lists.sourceforge.net,
+ * contact the "_freeglut" developer community at _freeglut-developer@lists.sourceforge.net,
  * switch to the OpenGLUT library, or else port your joystick functionality over to PLIB's
  * "js" library.
  */

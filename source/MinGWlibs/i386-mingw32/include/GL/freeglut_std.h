@@ -4,7 +4,7 @@
 /*
  * freeglut_std.h
  *
- * The GLUT-compatible part of the freeglut library include file
+ * The GLUT-compatible part of the _freeglut library include file
  *
  * Copyright (c) 1999-2000 Pawel W. Olszta. All Rights Reserved.
  * Written by Pawel W. Olszta, <olszta@sourceforge.net>
@@ -68,7 +68,7 @@
 #       define FGAPI
 #       define FGAPIENTRY
 
-        /* Link with Win32 static freeglut lib */
+        /* Link with Win32 static _freeglut lib */
 #       if FREEGLUT_LIB_PRAGMAS
 #           pragma comment (lib, "freeglut_static.lib")
 #       endif
@@ -82,9 +82,9 @@
 #       else
 #           define FGAPI __declspec(dllimport)
 
-            /* Link with Win32 shared freeglut lib */
+            /* Link with Win32 shared _freeglut lib */
 #           if FREEGLUT_LIB_PRAGMAS
-#               pragma comment (lib, "freeglut.lib")
+#               pragma comment (lib, "_freeglut.lib")
 #           endif
 
 #       endif
@@ -109,7 +109,7 @@
 #endif
 
 /*
- * The freeglut and GLUT API versions
+ * The _freeglut and GLUT API versions
  */
 #define  FREEGLUT             1
 #define  GLUT_API_VERSION     4

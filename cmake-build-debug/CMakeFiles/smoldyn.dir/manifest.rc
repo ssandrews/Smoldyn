@@ -1,0 +1,2 @@
+#pragma code_page(65001)
+1 /* CREATEPROCESS_MANIFEST_RESOURCE_ID */ 24 /* RT_MANIFEST */ "D:/Smoldyn/cmake-build-debug/CMakeFiles/smoldyn.dir/embed.manifest"

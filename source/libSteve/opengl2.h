@@ -15,7 +15,9 @@ of the Gnu Lesser General Public License (LGPL). */
 #if defined(HAVE_OPENGL)							// The sequence of these if..elses is important
 	#ifdef WIN32
 		#include <windows.h>
-	#endif
+#include <gl/GL.h>
+
+#endif
 
 	#if defined(HAVE_OPENGL_GL_H)
 		#include <OpenGl/gl.h>
