@@ -16,7 +16,7 @@ if(NOT SMOLDYN_VERSION)
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 
 ######### Targets to build ###########
@@ -516,24 +516,37 @@ endif (OPTION_NSV)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS} freeglut_static )
 
-    find_path(FREEGLUT_INCLUDE_DIRECTORIES NAMES GL/freeglut.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut-3.2.1/include REQUIRED)
-    MESSAGE(status "FREEGLUT_INCLUDE_DIRECTORIES ${FREEGLUT_INCLUDE_DIRECTORIES}")
+    if(NOT UNIX)
+        target_link_libraries(smoldyn PRIVATE ${DEP_LIBS} freeglut_static )
+        find_path(FREEGLUT_INCLUDE_DIRECTORIES NAMES GL/freeglut.h 
+            PATHS ${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut-3.2.1/include REQUIRED)
+        message(STATUS "FREEGLUT_INCLUDE_DIRECTORIES ${FREEGLUT_INCLUDE_DIRECTORIES}")
+        # this tell cmake to always build the freeglut_static target before trying to build smoldyn
+        #it seems you have included the GL folder as well as the include folder. This is probably a mistake. Usually people only
+        #include up to the include folder.
+        #for instance:
+        #   - windows/freeglut-3.2.1/include
+        # is the correct include folder for freeglut, and not
+        #   - windows/freeglut-3.2.1/include/GL
+        # However I get compiler errors when I do this:
+        # target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}")
+        # so instead do
+        target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}/GL")
+        add_dependencies(smoldyn freeglut_static)
+    else()
+        # Should this be an essential dependencies?
+        find_package(GLUT)
+        if(GLUT_FOUND)
+            target_include_directories(smoldyn PRIVATE ${GLUT_INCLUDE_DIR}) 
+            list(APPEND DEP_LIBS ${GLUT_glut_LIBRARY})
+            target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
+        else()
+            message(STATUS "GLUT is not found.")
+        endif()
+    endif()
 
-    #it seems you have included the GL folder as well as the include folder. This is probably a mistake. Usually people only
-    #include up to the include folder.
-    #for instance:
-    #   - windows/freeglut-3.2.1/include
-    # is the correct include folder for freeglut, and not
-    #   - windows/freeglut-3.2.1/include/GL
-    # However I get compiler errors when I do this:
-    # target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}")
-    # so instead do
-    target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}/GL")
 
-    # this tell cmake to always build the freeglut_static target before trying to build smoldyn
-    add_dependencies(smoldyn freeglut_static)
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
