@@ -33,7 +33,7 @@ jobs:
         which python
         python -c "import sys; print(sys.version)"
         python -m pip install pytest matplotlib numpy wheel
-        mkdir build && cd build && cmake ..
+        mkdir build && cd build && cmake -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON ..
     - name: make
       run: cd build && make -j2 && make wheel
     - name: ctest -j2
