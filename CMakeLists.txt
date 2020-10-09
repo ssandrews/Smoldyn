@@ -7,8 +7,8 @@
 ########## Basic setup ##########
 
 project(smoldyn)
-# use a more recent cmake version - Its worth it!
-cmake_minimum_required(VERSION 3.15..3.18)
+cmake_minimum_required(VERSION 3.0)
+# Newer CMake versions are better but I think this file works with old versions, too.
 
 # CI/CD can also set this variable. If not, use the default one. 
 if(NOT SMOLDYN_VERSION)
@@ -16,15 +16,15 @@ if(NOT SMOLDYN_VERSION)
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 
 ######### Targets to build ###########
 
 option(OPTION_TARGET_SMOLDYN "Create stand-alone Smoldyn program" ON)
-message(STATUS "Compiling for Smoldyn: ${OPTION_TARGET_SMOLDYN}")
+option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" ON)
 
-option(OPTION_TARGET_LIBSMOLDYN "Create LibSmoldyn library" OFF)
+message(STATUS "Compiling for Smoldyn: ${OPTION_TARGET_SMOLDYN}")
 message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
 
 
@@ -34,12 +34,13 @@ option(OPTION_VCELL "Compile Smoldyn for VCell" OFF)
 option(OPTION_MINGW "Cross-compile for Windows using MinGW compiler" OFF)
 
 option(OPTION_NSV "Compile Smoldyn with NextSubvolume functionality" ON)
-option(OPTION_PDE "Compile Smoldyn with PDE functionality" OFF)
 option(OPTION_VTK "Compile Smoldyn with VTK functionality" OFF)
 option(OPTION_STATIC "Compile Smoldyn with static libraries" OFF)
 option(OPTION_USE_OPENGL "Build with OpenGL support" ON)
+option(OPTION_USE_LIBTIFF "Build with LibTiff support" ON)
+option(OPTION_USE_ICONV "Build with Libiconv support" OFF)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
-option(OPTION_PYTHON  "Build Python module" OFF)
+option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
 
 if (OPTION_VCELL)
@@ -48,13 +49,6 @@ if (OPTION_VCELL)
     set(HAVE_ZLIB TRUE)
     set(OPTION_USE_ICONV OFF)
     set(HAVE_ICONV FALSE)
-else ()
-    option(OPTION_USE_LIBTIFF "Build with LibTiff support" ON)
-    option(OPTION_USE_ICONV "Build with Libiconv support" OFF)
-endif ()
-
-if (OPTION_NSV OR OPTION_PDE)
-    set(OPTION_LATTICE ON)
 endif ()
 
 if (OPTION_STATIC)
@@ -62,9 +56,21 @@ if (OPTION_STATIC)
 endif ()
 
 if (OPTION_PYTHON)
-    set(OPTION_TARGET_LIBSMOLDYN ON)
-    message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
+    if(NOT OPTION_TARGET_LIBSMOLDYN)
+        set(OPTION_TARGET_LIBSMOLDYN ON)
+        message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
+    endif ()
 endif ()
+
+message(STATUS "Option to compile Smoldyn for VCell: ${OPTION_VCELL}")
+message(STATUS "Option to cross-compile for Windows using MinGW: ${OPTION_MINGW}")
+message(STATUS "Option to include NextSubvolume: ${OPTION_NSV}")
+message(STATUS "Option to include VTK: ${OPTION_VTK}")
+message(STATUS "Option to compile with static libraries: ${OPTION_STATIC}")
+message(STATUS "Option to include OpenGL support: ${OPTION_USE_OPENGL}")
+message(STATUS "Option to include LibTiff: ${OPTION_USE_LIBTIFF}")
+message(STATUS "Option to incude Python module: ${OPTION_PYTHON}")
+message(STATUS "Option to run Libsmoldyn examples: ${OPTION_EXAMPLES}")
 
 
 ######### Core code information ###########
@@ -129,11 +135,14 @@ set(SRC_FILES
 
 set(MAIN_FILES source/Smoldyn/smoldyn.c)
 
+include_directories(source/libSteve source/Smoldyn ${CMAKE_BINARY_DIR})
+
 if(OPTION_VCELL)
     list(APPEND SRC_FILES
         source/Smoldyn/smoldynhybrid.c
         source/vcell/SimpleMesh.cpp
         source/vcell/SimpleValueProvider.cpp )
+    include_directories(source/vcell)
 endif(OPTION_VCELL)
 
 if(OPTION_TARGET_LIBSMOLDYN)
@@ -141,11 +150,13 @@ if(OPTION_TARGET_LIBSMOLDYN)
     list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.c)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
+if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
+    message(WARNING "LibTiff won't be used because build does not include OpenGL.")
+    set(OPTION_USE_LIBTIFF OFF)
+endif()
+
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
-
-# It is recommended not to use "include_directories". Use "target_include_directories" instead.
-include_directories(source/libSteve source/Smoldyn source/vcell source/NextSubVolume source/vtk ${CMAKE_BINARY_DIR})
 
 
 ####### Compiler flags ######################
@@ -166,18 +177,12 @@ if (OPTION_VCELL)
     set(VCELL_BUILD ON)
     message(STATUS "Compiling for VCell")
     add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell ${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    if (ARCH_64bit)
-        list(APPEND DEP_LIBS glut64)
-    else()
-        list(APPEND DEP_LIBS glut32 zlib)
-    endif()
+    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell)
 elseif (OPTION_MINGW)
     set(MINGW_BUILD ON)
     message(STATUS "Cross-compiling for Windows using MinGW libraries from: ${MINGWDIR}")
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
-    include_directories(${MINGWDIR}/include windows)
+     include_directories(${MINGWDIR}/include windows)
     link_directories(${MINGWDIR}/lib)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D FREEGLUT_STATIC -static")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D FREEGLUT_STATIC -static")
@@ -191,10 +196,11 @@ elseif (APPLE)
 elseif (WIN32)
     set(WINDOWS_BUILD ON)
     message(STATUS "Compiling on a Windows computer")
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut/include/GL)
-    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut/lib)
-    set(OPTION_USE_LIBTIFF 0)
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
+    if (OPTION_VTK)
+        message(WARNING "VTK not included because it isn't supported for Windows build")
+        set(OPTION_VTK OFF)
+    endif ()
 else ()
     set(NIX_BUILD ON)
     message(STATUS "Compiling on a Linux computer")
@@ -207,15 +213,15 @@ message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
 
-# see cmake --help-policy CMP0072"
-set(OpenGL_GL_PREFERENCE LEGACY)
+if (OPTION_USE_OPENGL)
+    # see cmake --help-policy CMP0072"
+    set(OpenGL_GL_PREFERENCE LEGACY)
 
-if (OPTION_USE_OPENGL AND OPTION_VCELL)
-    set(HAVE_OPENGL TRUE)
-    set(HAVE_GL_GL_H TRUE)
-    set(HAVE_GL_GLU_H TRUE)
-elseif(OPTION_USE_OPENGL)
-    if(OPTION_MINGW)
+    if (VCELL_BUILD)
+        set(HAVE_OPENGL TRUE)
+        set(HAVE_GL_GL_H TRUE)
+        set(HAVE_GL_GLU_H TRUE)
+    elseif (MINGW_BUILD)
         list(APPEND DEP_LIBS opengl32 glu32 freeglut_static gdi32 winmm)
         find_file(HAVE_GL_GL_H GL/gl.h PATHS ${MINGWDIR}/include)
         find_file(HAVE_OPENGL_GL_H OpenGL/gl.h PATHS ${MINGWDIR}/include)
@@ -231,11 +237,11 @@ elseif(OPTION_USE_OPENGL)
         else()
             message(FATAL_ERROR "Glu32 not found.  Building without OpenGL is possible.")
         endif()
-    elseif(WINDOWS_BUILD)
-        find_file(HAVE_GL_H gl.h PATHS windows/gl NO_DEFAULT_PATH)
-        find_file(HAVE_GLU_H glu.h PATHS windows/gl NO_DEFAULT_PATH)
+    elseif (WINDOWS_BUILD)
+        find_file(HAVE_GL_GL_H GL/gl.h PATHS source/MSVClibs NO_DEFAULT_PATH)
+        find_file(HAVE_GL_GLU_H GL/glu.h PATHS source/MSVClibs NO_DEFAULT_PATH)
         include(FindOpenGL)
-        get_filename_component(OPENGL_INCLUDE_DIR "${HAVE_GL_H}" PATH)
+        find_path(OPENGL_INCLUDE_DIR GL/gl.h source/MSVClibs NO_DEFAULT_PATH)
     else()
         find_file(HAVE_GL_GL_H GL/gl.h)
         find_file(HAVE_OPENGL_GL_H OpenGL/gl.h)
@@ -263,59 +269,34 @@ endif()
 
 ####### Option: Build with OpenGL (glut only) ##########
 
-if (OPTION_USE_OPENGL AND OPTION_VCELL)
-    set(HAVE_GL_GLUT_H TRUE)
-elseif (OPTION_USE_OPENGL)
-    if (MINGW_BUILD)
-        find_file(HAVE_GLfreeglut_H GL/freeglut.h PATHS ${MINGWDIR}/include)
+if (OPTION_USE_OPENGL)
+    if (VCELL_BUILD)
+        set(HAVE_GL_GLUT_H TRUE)
+        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
+        link_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
+        if (ARCH_64bit)
+            list(APPEND DEP_LIBS glut64)
+        else()
+            list(APPEND DEP_LIBS glut32 zlib)
+        endif()
+    elseif (MINGW_BUILD)
+        find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h PATHS ${MINGWDIR}/include)
         #find_file(HAVE_GLUT_GLUT_H GLUT/glut.h PATHS ${MINGWDIR}/include)
 
-        get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GLfreeglut_H}" PATH)
+        get_filename_component(GLUT_INCLUDE_DIR "${HAVE_GL_FREEGLUT_H}" PATH)
         #find_path(GLUT_INCLUDE_DIR glut.h PATHS ${MINGWDIR}/include/GL)
         find_library(GLUT_LIBRARIES libfreeglut_static.a PATHS ${MINGWDIR}/lib)
         #find_library(GLUT_LIBRARIES libglut32.a PATHS ${MINGWDIR}/lib)
         #	elseif(OPTION_STATIC)
-        #		find_file(HAVE_GLfreeglut_H GL/freeglut.h)
+        #		find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h)
         #		find_path(GLUT_INCLUDE_DIR GL/freeglut.h)
         #		find_library(GLUT_LIBRARIES libglut.a)
     elseif (WINDOWS_BUILD)
-        # Modern cmake "frowns" upon all these generic functions and instead prefers the targeted version
-        # for instance, here you should use "target_compile_definition", which would mean refactoring these
-        # until after you have used add_library.
         add_compile_definitions(FREEGLUT_STATIC)
-        add_compile_definitions(NDEBUG)
-
-        # I suspect you want this instead: 1) more direct to use find_path not find_file and 2) so that you can do #include "GL/glut.h"
-        find_path(GLUT_INCLUDE_DIR GL/glut.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut/include NO_DEFAULT_PATH)
-
-        # In general, its pretty bad practice to have binaries stored in repositories like github.
-        # sources are better. If you had sources you could do "add_subdirectory" and build dependency targets
-        # along with your smoldyn targets. Then, its really easy to use the target for linking etc.
-        # for instance, you could do target_include_directories(smoldyn PUBLIC freeglut), the PUBLIC keyword would
-        # indicate to targets that link to smoldyn (if any) to also link freeglut, which is nice. If nothing will link
-        # to Smoldyn then set PUBLIC to PRIVAET.
-        message(STATUS "contents of GLUT_INCLUDE_DIR: '${GLUT_INCLUDE_DIR}'")
-
-        # it seems that there is no libfreeglut_static.lib in your windows/freeglut folder. There seems to be
-        # a libfreeglut_static.a, but this will not work with msvc (.a is not a format msvc can use).
-        # Instead, if you want to link statically, you'll need to find the freeglut.lib file. On windows, they had this peculiar
-        # idea of naming both static libraries with *.lib and export libraries with *.lib. This is annoying, but essentially
-        # means that you don't actually link a dynamic library (dll) itself, but a *lib file, called an import library.
-        # Then, you just need to be able to locate the *.dll at *runtime*.
-
-        # So, lets locate the import library for freeglut.
-
-        find_package(OpenGL REQUIRED)
-        message(STATUS "OPENGL_FOUND: ${OPENGL_FOUND}")
-
-        add_subdirectory(windows/freeglut-3.2.1)
-
-#        find_package(GLUT REQUIRED)
-#        message(STATUS "GLUT: ${GLUT}")
-
-#        find_program(GLUT_LIBRARIES NAMES libfreeglut_static${CMAKE_SHARED_LIBRARY_SUFFIX} PATHS windows/freeglut/lib NO_DEFAULT_PATH)
-#        message(STATUS "contents of GLUT_LIBRARIES: '${GLUT_LIBRARIES}'")
-#        set(GLUT_FOUND TRUE)
+        find_path(GLUT_INCLUDE_DIR GL/glut.h source/MSVClibs NO_DEFAULT_PATH)
+        set(HAVE_GL_GLUT_H TRUE)
+        find_file(GLUT_LIBRARIES NAMES freeglut_staticd.lib PATHS source/MSVClibs NO_DEFAULT_PATH)
+        set(GLUT_FOUND TRUE)
     else ()
         find_file(HAVE_GL_GLUT_H GL/glut.h)
         find_file(HAVE_GLUT_GLUT_H GLUT/glut.h)
@@ -330,12 +311,11 @@ elseif (OPTION_USE_OPENGL)
         message(STATUS "Glut found: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
     else()
         message(STATUS "Glut include and library variables: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
-#        message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
+        message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
     endif()
 
-    # We do this later with the target* versions
-#    include_directories(${GLUT_INCLUDE_DIR})
-#    list(APPEND DEP_LIBS ${GLUT_LIBRARIES})
+    include_directories(${GLUT_INCLUDE_DIR})
+    list(APPEND DEP_LIBS ${GLUT_LIBRARIES})
 endif()
 
 
@@ -355,17 +335,17 @@ endif()
 
 ####### Option: Build with LibTiff ##########
 
-if(OPTION_USE_LIBTIFF AND NOT HAVE_OPENGL)
-    message(WARNING "LibTiff won't be used because build does not include OpenGL.")
-    set(OPTION_USE_LIBTIFF OFF)
-endif()
-
 if (OPTION_USE_LIBTIFF)
     if (MINGW_BUILD)
         find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
         find_library(TIFF_LIBRARY libtiff.a PATHS ${MINGWDIR}/lib NO_DEFAULT_PATH)
         #find_path(TIFF_INCLUDE_DIR tiff.h PATHS source/MinGWlibs/i386-mingw32/include NO_DEFAULT_PATH)
         #find_library(TIFF_LIBRARY libtiff.a PATHS source/MinGWlibs/i386-mingw32/lib NO_DEFAULT_PATH)
+    elseif (WINDOWS_BUILD)
+        find_path(TIFF_INCLUDE_DIR tiff.h source/MSVClibs NO_DEFAULT_PATH)
+        set(HAVE_TIFF_H TRUE)
+        find_file(TIFF_LIBRARY NAMES tiffd.lib PATHS source/MSVClibs NO_DEFAULT_PATH)
+        set(TIFF_FOUND TRUE)
     elseif (OPTION_STATIC)
         find_path(TIFF_INCLUDE_DIR tiff.h)
         find_library(TIFF_LIBRARY libtiff.a)
@@ -451,7 +431,7 @@ if(OPTION_VTK)
         message(FATAL_ERROR "VTK not found")
     endif()
 
-    include_directories(${VTK_INCLUDE_DIRS})
+    include_directories(source/vtk ${VTK_INCLUDE_DIRS})
 
     list(APPEND SRC_FILES source/vtk/vtkwrapper.cpp)
     list(APPEND HEADER_FILES source/vtk/vtkwrapper.h)
@@ -465,13 +445,13 @@ endif(OPTION_VTK)
 if (OPTION_NSV)
     #add_subdirectory(source/NextSubVolume)
     #list(APPEND DEP_LIBS nsv)
-    #include_directories(source/NextSubVolume)
+    include_directories(source/NextSubVolume)
     #include_directories(${VTK_INCLUDE_DIRS})
 
     if (OPTION_MINGW)
         find_path(SIGNAL_H_DIR signal.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
         if (SIGNAL_H_DIR)
-            message(STATUS "Found signal.h: '${SIGNAL_H_DIR}'")
+            message(STATUS "signal.h found: '${SIGNAL_H_DIR}'")
         else ()
             message(FATAL_ERROR "signal.h not found")
         endif ()
@@ -481,6 +461,7 @@ if (OPTION_NSV)
 
     set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/NextSubVolume/boost_include)
     include_directories(SYSTEM ${Boost_INCLUDE_DIR})
+    message(STATUS "Boost headers found: '${Boost_INCLUDE_DIR}'")
 
     list(APPEND SRC_FILES 
         source/NextSubVolume/StructuredGrid.cpp
@@ -506,34 +487,16 @@ if (OPTION_NSV)
         source/NextSubVolume/nsvc.h
         )
 
+    message(STATUS "NSV added to source files")
+
 endif (OPTION_NSV)
-
-
-####### Option: Build with PDE ##########
 
 
 ####### Targets ##########
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS} freeglut_static )
-
-    find_path(FREEGLUT_INCLUDE_DIRECTORIES NAMES GL/freeglut.h PATHS ${CMAKE_CURRENT_SOURCE_DIR}/windows/freeglut-3.2.1/include REQUIRED)
-    MESSAGE(status "FREEGLUT_INCLUDE_DIRECTORIES ${FREEGLUT_INCLUDE_DIRECTORIES}")
-
-    #it seems you have included the GL folder as well as the include folder. This is probably a mistake. Usually people only
-    #include up to the include folder.
-    #for instance:
-    #   - windows/freeglut-3.2.1/include
-    # is the correct include folder for freeglut, and not
-    #   - windows/freeglut-3.2.1/include/GL
-    # However I get compiler errors when I do this:
-    # target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}")
-    # so instead do
-    target_include_directories(smoldyn PRIVATE "${FREEGLUT_INCLUDE_DIRECTORIES}/GL")
-
-    # this tell cmake to always build the freeglut_static target before trying to build smoldyn
-    add_dependencies(smoldyn freeglut_static)
+    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)

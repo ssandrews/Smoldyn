@@ -120,7 +120,7 @@ void runUntil(const double breaktime, const double dt, bool display)
     if(dt > 0.0)
         smolSetTimeStep(cursim_, dt);
 
-    if(display and (!initDisplay_)) {
+    if(display && (!initDisplay_)) {
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
@@ -139,7 +139,7 @@ bool run(double stoptime, double dt, bool display)
     smolSetSimTimes(cursim_, curtime_, stoptime, dt);
     smolUpdateSim(cursim_);
 
-    if(display and !initDisplay_) {
+    if(display && !initDisplay_) {
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }

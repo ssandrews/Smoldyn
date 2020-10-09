@@ -21,6 +21,13 @@
 #define LCHECK(A,B,C,D) if(!(A)) {smolSetError(B,C,D);if(C<ECwarning) goto failure;} else (void)0
 #define LCHECKNT(A,B,C,D) if(!(A)) {smolSetErrorNT(B,C,D);if(C<ECwarning) goto failure;} else (void)0
 
+#ifdef __cplusplus
+    #define CSTRING "C"
+#else
+    #define CSTRING
+#endif
+
+
 enum ErrorCode Liberrorcode=ECok;
 enum ErrorCode Libwarncode=ECok;
 char Liberrorfunction[STRCHAR]="";
@@ -35,7 +42,7 @@ int LibThrowThreshold=11;
 
 
 /* smolGetVersion */
-extern "C" double smolGetVersion(void) {
+extern CSTRING double smolGetVersion(void) {
 	return simversionnumber(); }
 
 
@@ -44,20 +51,20 @@ extern "C" double smolGetVersion(void) {
 /******************************************************************************/
 
 /* smolSetLogging */
-extern "C" void smolSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*,...)) {
+extern CSTRING void smolSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*,...)) {
 	simSetLogging(logfile,logFunction);
 	return; }
 
 
 /* smolSetThrowing */
-extern "C" void smolSetThrowing(int corethreshold,int libthreshold) {
+extern CSTRING void smolSetThrowing(int corethreshold,int libthreshold) {
 	simSetThrowing(corethreshold);
 	LibThrowThreshold=libthreshold;
 	return; }
 
 
 /* smolSetError */
-extern "C" void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring) {
+extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring) {
 	char string[STRCHAR];
 //	int severity;
 
@@ -85,7 +92,7 @@ extern "C" void smolSetError(const char *errorfunction,enum ErrorCode errorcode,
 
 
 /* smolSetErrorNT */
-extern "C" void smolSetErrorNT(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring) {
+extern CSTRING void smolSetErrorNT(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring) {
 	if(errorcode!=ECsame) {
 		Liberrorcode=errorcode;
 		Libwarncode=(errorcode>=ECwarning)?errorcode:ECok;
@@ -99,7 +106,7 @@ extern "C" void smolSetErrorNT(const char *errorfunction,enum ErrorCode errorcod
 
 
 /* smolGetError */
-extern "C" enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int clearerror) {
+extern CSTRING enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int clearerror) {
 	enum ErrorCode erc;
 
 	erc=Liberrorcode;
@@ -110,7 +117,7 @@ extern "C" enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int
 
 
 /* smolClearError */
-extern "C" void smolClearError(void) {
+extern CSTRING void smolClearError(void) {
 	Liberrorcode=ECok;
 	Libwarncode=ECok;
 	Liberrorfunction[0]='\0';
@@ -119,13 +126,13 @@ extern "C" void smolClearError(void) {
 
 
 /* smolSetDebugMode */
-extern "C" void smolSetDebugMode(int debugmode) {
+extern CSTRING void smolSetDebugMode(int debugmode) {
 	Libdebugmode=debugmode;
 	return; }
 
 
 /* smolErrorCodeToString */
-extern "C" char *smolErrorCodeToString(enum ErrorCode erc,char *string) {
+extern CSTRING char *smolErrorCodeToString(enum ErrorCode erc,char *string) {
 	if(erc==ECok) strcpy(string,"ok");
 	else if(erc==ECnotify) strcpy(string,"notify");
 	else if(erc==ECwarning) strcpy(string,"warning");
@@ -147,7 +154,7 @@ extern "C" char *smolErrorCodeToString(enum ErrorCode erc,char *string) {
 /******************************************************************************/
 
 /* smolNewSim */
-extern "C" simptr smolNewSim(int dim,double *lowbounds,double *highbounds) {
+extern CSTRING simptr smolNewSim(int dim,double *lowbounds,double *highbounds) {
 	const char *funcname="smolNewSim";
 	simptr sim;
 	int d,er;
@@ -177,7 +184,7 @@ extern "C" simptr smolNewSim(int dim,double *lowbounds,double *highbounds) {
 
 
 /* smolUpdateSim */
-extern "C" enum ErrorCode smolUpdateSim(simptr sim) {
+extern CSTRING enum ErrorCode smolUpdateSim(simptr sim) {
 	const char *funcname="smolUpdateSim";
 	int er;
 
@@ -190,7 +197,7 @@ extern "C" enum ErrorCode smolUpdateSim(simptr sim) {
 
 
 /* smolRunTimeStep */
-extern "C" enum ErrorCode smolRunTimeStep(simptr sim) {
+extern CSTRING enum ErrorCode smolRunTimeStep(simptr sim) {
 	const char *funcname="smolRunTimeStep";
 	int er;
 
@@ -212,7 +219,7 @@ extern "C" enum ErrorCode smolRunTimeStep(simptr sim) {
 
 
 /* smolRunSim */
-extern "C" enum ErrorCode smolRunSim(simptr sim) {
+extern CSTRING enum ErrorCode smolRunSim(simptr sim) {
 	const char *funcname="smolRunSim";
 	int er;
 
@@ -236,7 +243,7 @@ extern "C" enum ErrorCode smolRunSim(simptr sim) {
 
 
 /* smolRunSimUntil */
-extern "C" enum ErrorCode smolRunSimUntil(simptr sim,double breaktime) {
+extern CSTRING enum ErrorCode smolRunSimUntil(simptr sim,double breaktime) {
 	const char *funcname="smolRunSimUntil";
 	int er;
 
@@ -259,13 +266,13 @@ extern "C" enum ErrorCode smolRunSimUntil(simptr sim,double breaktime) {
 
 
 /* smolFreeSim */
-extern "C" enum ErrorCode smolFreeSim(simptr sim) {
+extern CSTRING enum ErrorCode smolFreeSim(simptr sim) {
 	simfree(sim);
 	return ECok; }
 
 
 /* smolDisplaySim */
-extern "C" enum ErrorCode smolDisplaySim(simptr sim) {
+extern CSTRING enum ErrorCode smolDisplaySim(simptr sim) {
 	simsystemoutput(sim);
 	checksimparams(sim);
 	return ECok; }
@@ -277,7 +284,7 @@ extern "C" enum ErrorCode smolDisplaySim(simptr sim) {
 
 
 /* smolPrepareSimFromFile */
-extern "C" simptr smolPrepareSimFromFile(const char *filepath,const char *filename,const char *flags) {
+extern CSTRING simptr smolPrepareSimFromFile(const char *filepath,const char *filename,const char *flags) {
 	const char *funcname="smolPrepareSimFromFile";
 	int er;
 	char emptystring[STRCHAR];
@@ -304,7 +311,7 @@ extern "C" simptr smolPrepareSimFromFile(const char *filepath,const char *filena
 
 
 /* smolLoadSimFromFile */
-extern "C" enum ErrorCode smolLoadSimFromFile(const char *filepath,const char *filename,simptr *simpointer,const char *flags) {
+extern CSTRING enum ErrorCode smolLoadSimFromFile(const char *filepath,const char *filename,simptr *simpointer,const char *flags) {
 	const char *funcname="smolLoadSimFromFile";
 	int er;
 	char emptystring[STRCHAR];
@@ -331,7 +338,7 @@ extern "C" enum ErrorCode smolLoadSimFromFile(const char *filepath,const char *f
 
 
 /* smolReadConfigString */
-extern "C" enum ErrorCode smolReadConfigString(simptr sim,const char *statement,char *parameters) {
+extern CSTRING enum ErrorCode smolReadConfigString(simptr sim,const char *statement,char *parameters) {
 	return ECok; }
 	
 //?? Commented out to force compile
@@ -357,7 +364,7 @@ extern "C" enum ErrorCode smolReadConfigString(simptr sim,const char *statement,
 
 
 /* smolSetSimTimes */
-extern "C" enum ErrorCode smolSetSimTimes(simptr sim,double timestart,double timestop,double timestep) {
+extern CSTRING enum ErrorCode smolSetSimTimes(simptr sim,double timestart,double timestop,double timestep) {
 	const char *funcname="smolSetSimTimes";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -372,7 +379,7 @@ extern "C" enum ErrorCode smolSetSimTimes(simptr sim,double timestart,double tim
 
 
 /* smolSetTimeStart */
-extern "C" enum ErrorCode smolSetTimeStart(simptr sim,double timestart) {
+extern CSTRING enum ErrorCode smolSetTimeStart(simptr sim,double timestart) {
 	const char *funcname="smolSetTimeStart";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -383,7 +390,7 @@ extern "C" enum ErrorCode smolSetTimeStart(simptr sim,double timestart) {
 
 
 /* smolSetTimeStop */
-extern "C" enum ErrorCode smolSetTimeStop(simptr sim,double timestop) {
+extern CSTRING enum ErrorCode smolSetTimeStop(simptr sim,double timestop) {
 	const char *funcname="smolSetTimeStop";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -394,7 +401,7 @@ extern "C" enum ErrorCode smolSetTimeStop(simptr sim,double timestop) {
 
 
 /* smolSetTimeNow */
-extern "C" enum ErrorCode smolSetTimeNow(simptr sim,double timenow) {
+extern CSTRING enum ErrorCode smolSetTimeNow(simptr sim,double timenow) {
 	const char *funcname="smolSetTimeNow";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -405,7 +412,7 @@ extern "C" enum ErrorCode smolSetTimeNow(simptr sim,double timenow) {
 
 
 /* smolSetTimeStep */
-extern "C" enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
+extern CSTRING enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
 	const char *funcname="smolSetTimeStep";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -417,7 +424,7 @@ extern "C" enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
 
 
 /* smolSetRandomSeed */
-extern "C" enum ErrorCode smolSetRandomSeed(simptr sim,long int seed) {
+extern CSTRING enum ErrorCode smolSetRandomSeed(simptr sim,long int seed) {
 	const char *funcname="smolSetRandomSeed";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -428,7 +435,7 @@ extern "C" enum ErrorCode smolSetRandomSeed(simptr sim,long int seed) {
 
 
 /* smolSetPartitions */
-extern "C" enum ErrorCode smolSetPartitions(simptr sim,const char *method,double value) {
+extern CSTRING enum ErrorCode smolSetPartitions(simptr sim,const char *method,double value) {
 	const char *funcname="smolSetPartitions";
 	int er;
 
@@ -448,7 +455,7 @@ extern "C" enum ErrorCode smolSetPartitions(simptr sim,const char *method,double
 /******************************************************************************/
 
 /* smolSetGraphicsParams */
-extern "C" enum ErrorCode smolSetGraphicsParams(simptr sim,const char *method,int timesteps,int delay) {
+extern CSTRING enum ErrorCode smolSetGraphicsParams(simptr sim,const char *method,int timesteps,int delay) {
 	const char *funcname="smolSetGraphicsParams";
 	int er;
 
@@ -473,7 +480,7 @@ extern "C" enum ErrorCode smolSetGraphicsParams(simptr sim,const char *method,in
 
 
 /* smolSetTiffParams */
-extern "C" enum ErrorCode smolSetTiffParams(simptr sim,int timesteps,const char *tiffname,int lowcount,int highcount) {
+extern CSTRING enum ErrorCode smolSetTiffParams(simptr sim,int timesteps,const char *tiffname,int lowcount,int highcount) {
 	const char *funcname="smolSetTiffParams";
 	char nm1[STRCHAR];
 	int er;
@@ -498,7 +505,7 @@ extern "C" enum ErrorCode smolSetTiffParams(simptr sim,int timesteps,const char 
 
 
 /* smolSetLightParams */
-extern "C" enum ErrorCode smolSetLightParams(simptr sim,int lightindex,double *ambient,double *diffuse,double *specular,double *position) {
+extern CSTRING enum ErrorCode smolSetLightParams(simptr sim,int lightindex,double *ambient,double *diffuse,double *specular,double *position) {
 	const char *funcname="smolSetLightParams";
 	int c,er;
 
@@ -531,7 +538,7 @@ extern "C" enum ErrorCode smolSetLightParams(simptr sim,int lightindex,double *a
 
 
 /* smolSetBackgroundStyle */
-extern "C" enum ErrorCode smolSetBackgroundStyle(simptr sim,double *color) {
+extern CSTRING enum ErrorCode smolSetBackgroundStyle(simptr sim,double *color) {
 	const char *funcname="smolSetBackgroundStyle";
 	int c,er;
 
@@ -547,7 +554,7 @@ extern "C" enum ErrorCode smolSetBackgroundStyle(simptr sim,double *color) {
 
 
 /* smolSetFrameStyle */
-extern "C" enum ErrorCode smolSetFrameStyle(simptr sim,double thickness,double *color) {
+extern CSTRING enum ErrorCode smolSetFrameStyle(simptr sim,double thickness,double *color) {
 	const char *funcname="smolSetFrameStyle";
 	int c,er;
 
@@ -566,7 +573,7 @@ extern "C" enum ErrorCode smolSetFrameStyle(simptr sim,double thickness,double *
 
 
 /* smolSetGridStyle */
-extern "C" enum ErrorCode smolSetGridStyle(simptr sim,double thickness,double *color) {
+extern CSTRING enum ErrorCode smolSetGridStyle(simptr sim,double thickness,double *color) {
 	const char *funcname="smolSetGridStyle";
 	int c,er;
 
@@ -585,7 +592,7 @@ extern "C" enum ErrorCode smolSetGridStyle(simptr sim,double thickness,double *c
 
 
 /* smolSetTextStyle */
-extern "C" enum ErrorCode smolSetTextStyle(simptr sim,double *color) {
+extern CSTRING enum ErrorCode smolSetTextStyle(simptr sim,double *color) {
 	const char *funcname="smolSetTextStyle";
 	int c,er;
 
@@ -601,7 +608,7 @@ extern "C" enum ErrorCode smolSetTextStyle(simptr sim,double *color) {
 
 
 /* smolAddTextDisplay */
-extern "C" enum ErrorCode smolAddTextDisplay(simptr sim,char *item) {
+extern CSTRING enum ErrorCode smolAddTextDisplay(simptr sim,char *item) {
 	const char *funcname="smolAddTextDisplay";
 	int er;
 
@@ -620,7 +627,7 @@ extern "C" enum ErrorCode smolAddTextDisplay(simptr sim,char *item) {
 /******************************************************************************/
 
 /* smolSetOutputPath */
-extern "C" enum ErrorCode smolSetOutputPath(simptr sim,const char *path) {
+extern CSTRING enum ErrorCode smolSetOutputPath(simptr sim,const char *path) {
 	const char *funcname="smolSetOutputPath";
 	int er;
 
@@ -634,7 +641,7 @@ extern "C" enum ErrorCode smolSetOutputPath(simptr sim,const char *path) {
 
 
 /* smolAddOutputFile */
-extern "C" enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix,int append) {
+extern CSTRING enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix,int append) {
 	const char *funcname="smolSetOutputFile";
 	int er;
 
@@ -653,7 +660,7 @@ extern "C" enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix
 
 
 /* smolAddCommand */
-extern "C" enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring) {
+extern CSTRING enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring) {
 	const char *funcname="smolSetCommand";
 	int er;
 
@@ -671,7 +678,7 @@ extern "C" enum ErrorCode smolAddCommand(simptr sim,char type,double on,double o
 
 
 /* smolAddCommandFromString */
-extern "C" enum ErrorCode smolAddCommandFromString(simptr sim,char *string) {
+extern CSTRING enum ErrorCode smolAddCommandFromString(simptr sim,char *string) {
 	const char *funcname="smolSetCommandFromString";
 	int er;
 
@@ -696,7 +703,7 @@ extern "C" enum ErrorCode smolAddCommandFromString(simptr sim,char *string) {
 /******************************************************************************/
 
 /* smolAddSpecies */
-extern "C" enum ErrorCode smolAddSpecies(simptr sim,const char *species,const char *mollist) {
+extern CSTRING enum ErrorCode smolAddSpecies(simptr sim,const char *species,const char *mollist) {
 	const char *funcname="smolAddSpecies";
 	int i,ll;
 
@@ -722,7 +729,7 @@ extern "C" enum ErrorCode smolAddSpecies(simptr sim,const char *species,const ch
 
 
 /* smolGetSpeciesIndex */
-extern "C" int smolGetSpeciesIndex(simptr sim,const char *species) {
+extern CSTRING int smolGetSpeciesIndex(simptr sim,const char *species) {
 	const char *funcname="smolGetSpeciesIndex";
 	int i;
 
@@ -741,7 +748,7 @@ extern "C" int smolGetSpeciesIndex(simptr sim,const char *species) {
 
 
 /* smolGetSpeciesIndexNT */
-extern "C" int smolGetSpeciesIndexNT(simptr sim,const char *species) {
+extern CSTRING int smolGetSpeciesIndexNT(simptr sim,const char *species) {
 	const char *funcname="smolGetSpeciesIndexNT";
 	int i;
 
@@ -760,7 +767,7 @@ extern "C" int smolGetSpeciesIndexNT(simptr sim,const char *species) {
 
 
 /* smolGetSpeciesName */
-extern "C" char *smolGetSpeciesName(simptr sim,int speciesindex,char *species) {
+extern CSTRING char *smolGetSpeciesName(simptr sim,int speciesindex,char *species) {
 	const char *funcname="smolGetSpeciesName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -775,7 +782,7 @@ extern "C" char *smolGetSpeciesName(simptr sim,int speciesindex,char *species) {
 
 
 /* smolSetSpeciesMobility */
-extern "C" enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix) {
+extern CSTRING enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix) {
 	const char *funcname="smolSetSpeciesMobility";
 	int i,er,isall,ilow,ihigh;
 
@@ -813,7 +820,7 @@ extern "C" enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,
 
 
 /* smolAddMolList */
-extern "C" enum ErrorCode smolAddMolList(simptr sim,const char *mollist) {
+extern CSTRING enum ErrorCode smolAddMolList(simptr sim,const char *mollist) {
 	const char *funcname="smolAddMolList";
 	int ll;
 
@@ -829,7 +836,7 @@ extern "C" enum ErrorCode smolAddMolList(simptr sim,const char *mollist) {
 
 
 /* smolGetMolListIndex */
-extern "C" int smolGetMolListIndex(simptr sim,const char *mollist) {
+extern CSTRING int smolGetMolListIndex(simptr sim,const char *mollist) {
 	const char *funcname="smolGetMolListIndex";
 	int ll;
 
@@ -845,7 +852,7 @@ extern "C" int smolGetMolListIndex(simptr sim,const char *mollist) {
 
 
 /* smolGetMolListIndexNT */
-extern "C" int smolGetMolListIndexNT(simptr sim,const char *mollist) {
+extern CSTRING int smolGetMolListIndexNT(simptr sim,const char *mollist) {
 	const char *funcname="smolGetMolListIndexNT";
 	int ll;
 
@@ -861,7 +868,7 @@ extern "C" int smolGetMolListIndexNT(simptr sim,const char *mollist) {
 
 
 /* smolGetMolListName */
-extern "C" char *smolGetMolListName(simptr sim,int mollistindex,char *mollist) {
+extern CSTRING char *smolGetMolListName(simptr sim,int mollistindex,char *mollist) {
 	const char *funcname="smolGetMolListName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -876,7 +883,7 @@ extern "C" char *smolGetMolListName(simptr sim,int mollistindex,char *mollist) {
 
 
 /* smolSetMolList */
-extern "C" enum ErrorCode smolSetMolList(simptr sim,const char *species,enum MolecState state,const char *mollist) {
+extern CSTRING enum ErrorCode smolSetMolList(simptr sim,const char *species,enum MolecState state,const char *mollist) {
 	const char *funcname="smolSetMolList";
 	int i,ll;
 
@@ -895,7 +902,7 @@ extern "C" enum ErrorCode smolSetMolList(simptr sim,const char *species,enum Mol
 
 
 /* smolSetMaxMolecules */
-extern "C" enum ErrorCode smolSetMaxMolecules(simptr sim,int maxmolecules) {
+extern CSTRING enum ErrorCode smolSetMaxMolecules(simptr sim,int maxmolecules) {
 	const char *funcname="smolSetMaxMolecules";
 	int er;
 
@@ -909,7 +916,7 @@ extern "C" enum ErrorCode smolSetMaxMolecules(simptr sim,int maxmolecules) {
 
 
 /* smolAddSolutionMolecules */
-extern "C" enum ErrorCode smolAddSolutionMolecules(simptr sim,const char *species,int number,double *lowposition,double *highposition) {
+extern CSTRING enum ErrorCode smolAddSolutionMolecules(simptr sim,const char *species,int number,double *lowposition,double *highposition) {
 	const char *funcname="smolAddSolutionMolecules";
 	int er,i,d;
 	double *low,*high,lowpos[3],highpos[3];
@@ -937,7 +944,7 @@ extern "C" enum ErrorCode smolAddSolutionMolecules(simptr sim,const char *specie
 
 
 /* smolAddCompartmentMolecules */
-extern "C" enum ErrorCode smolAddCompartmentMolecules(simptr sim,const char *species,int number,const char *compartment) {
+extern CSTRING enum ErrorCode smolAddCompartmentMolecules(simptr sim,const char *species,int number,const char *compartment) {
 	const char *funcname="smolAddCompartmentMolecules";
 	int i,er,c;
 
@@ -956,7 +963,7 @@ extern "C" enum ErrorCode smolAddCompartmentMolecules(simptr sim,const char *spe
 
 
 /* smolAddSurfaceMolecules */
-extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim,const char *species,enum MolecState state,int number,const char *surface,enum PanelShape panelshape,const char *panel,double *position) {
+extern CSTRING enum ErrorCode smolAddSurfaceMolecules(simptr sim,const char *species,enum MolecState state,int number,const char *surface,enum PanelShape panelshape,const char *panel,double *position) {
 	const char *funcname="smolAddSurfaceMolecules";
 	int i,s,p,er;
 	panelptr pnl;
@@ -992,7 +999,7 @@ extern "C" enum ErrorCode smolAddSurfaceMolecules(simptr sim,const char *species
 
 
 /* smolGetMoleculeCount */
-extern "C" int smolGetMoleculeCount(simptr sim,const char *species,enum MolecState state) {
+extern CSTRING int smolGetMoleculeCount(simptr sim,const char *species,enum MolecState state) {
 	const char *funcname="smolGetMoleculeCount";
 	int i;
 
@@ -1006,7 +1013,7 @@ extern "C" int smolGetMoleculeCount(simptr sim,const char *species,enum MolecSta
 
 
 /* smolSetMoleculeStyle */
-extern "C" enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color) {
+extern CSTRING enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color) {
 	const char *funcname="smolSetTextStyle";
 	int i,c;
 
@@ -1032,7 +1039,7 @@ failure:
 /******************************************************************************/
 
 /* smolSetBoundaryType */
-extern "C" enum ErrorCode smolSetBoundaryType(simptr sim,int dimension,int highside,char type) {
+extern CSTRING enum ErrorCode smolSetBoundaryType(simptr sim,int dimension,int highside,char type) {
 	const char *funcname="smolSetBoundaryType";
 	int er;
 
@@ -1048,7 +1055,7 @@ extern "C" enum ErrorCode smolSetBoundaryType(simptr sim,int dimension,int highs
 
 
 /* smolAddSurface */
-extern "C" enum ErrorCode smolAddSurface(simptr sim,const char *surface) {
+extern CSTRING enum ErrorCode smolAddSurface(simptr sim,const char *surface) {
 	const char *funcname="smolAddSurface";
 	int s;
 	surfaceptr srf;
@@ -1066,7 +1073,7 @@ extern "C" enum ErrorCode smolAddSurface(simptr sim,const char *surface) {
 
 
 /* smolGetSurfaceIndex */
-extern "C" int smolGetSurfaceIndex(simptr sim,const char *surface) {
+extern CSTRING int smolGetSurfaceIndex(simptr sim,const char *surface) {
 	const char *funcname="smolGetSurfaceIndex";
 	int s;
 
@@ -1082,7 +1089,7 @@ extern "C" int smolGetSurfaceIndex(simptr sim,const char *surface) {
 
 
 /* smolGetSurfaceIndexNT */
-extern "C" int smolGetSurfaceIndexNT(simptr sim,const char *surface) {
+extern CSTRING int smolGetSurfaceIndexNT(simptr sim,const char *surface) {
 	const char *funcname="smolGetSurfaceIndexNT";
 	int s;
 
@@ -1098,7 +1105,7 @@ extern "C" int smolGetSurfaceIndexNT(simptr sim,const char *surface) {
 
 
 /* smolGetSurfaceName */
-extern "C" char *smolGetSurfaceName(simptr sim,int surfaceindex,char *surface) {
+extern CSTRING char *smolGetSurfaceName(simptr sim,int surfaceindex,char *surface) {
 	const char *funcname="smolGetSurfaceName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -1113,7 +1120,7 @@ extern "C" char *smolGetSurfaceName(simptr sim,int surfaceindex,char *surface) {
 
 
 /* smolSetSurfaceAction */
-extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action,const char *newspecies) {
+extern CSTRING enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action,const char *newspecies) {
 	const char *funcname="smolSetSurfaceAction";
 	int er,i,s,i2;
 	surfaceptr srf;
@@ -1148,7 +1155,7 @@ extern "C" enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surface,en
 
 
 /* smolSetSurfaceRate */
-extern "C" enum ErrorCode smolSetSurfaceRate(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal) {
+extern CSTRING enum ErrorCode smolSetSurfaceRate(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal) {
 	const char *funcname="smolSetSurfaceRate";
 	int er,i,i2,s;
 	surfaceptr srf;
@@ -1187,7 +1194,7 @@ extern "C" enum ErrorCode smolSetSurfaceRate(simptr sim,const char *surface,cons
 
 
 /* smolAddPanel */
-extern "C" enum ErrorCode smolAddPanel(simptr sim,const char *surface,enum PanelShape panelshape,const char *panel,const char *axisstring,double *params) {
+extern CSTRING enum ErrorCode smolAddPanel(simptr sim,const char *surface,enum PanelShape panelshape,const char *panel,const char *axisstring,double *params) {
 	const char *funcname="smolAddPanel";
 	int er,s;
 	surfaceptr srf;
@@ -1216,7 +1223,7 @@ extern "C" enum ErrorCode smolAddPanel(simptr sim,const char *surface,enum Panel
 
 
 /* smolGetPanelIndex */
-extern "C" int smolGetPanelIndex(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel) {
+extern CSTRING int smolGetPanelIndex(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel) {
 	const char *funcname="smolGetPanelIndex";
 	surfaceptr srf;
 	int p,s;
@@ -1229,7 +1236,7 @@ extern "C" int smolGetPanelIndex(simptr sim,const char *surface,enum PanelShape 
 	LCHECK(strcmp(panel,"all"),funcname,ECall,"panel cannot be 'all'");
 	srf=sim->srfss->srflist[s];
 	p=-1;
-	for(ps=(PanelShape)0;ps<(PanelShape)PSMAX && p<0;ps=(PanelShape)(ps+1))
+	for(ps=(enum PanelShape)0;ps<(enum PanelShape)PSMAX && p<0;ps=(enum PanelShape)(ps+1))
 		p=stringfind(srf->pname[ps],srf->npanel[ps],panel);
 	LCHECK(p>=0,funcname,ECnonexist,"panel not found");
 	if(panelshapeptr) *panelshapeptr=ps;
@@ -1239,7 +1246,7 @@ extern "C" int smolGetPanelIndex(simptr sim,const char *surface,enum PanelShape 
 
 
 /* smolGetPanelIndexNT */
-extern "C" int smolGetPanelIndexNT(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel) {
+extern CSTRING int smolGetPanelIndexNT(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel) {
 	const char *funcname="smolGetPanelIndexNT";
 	surfaceptr srf;
 	int p,s;
@@ -1252,7 +1259,7 @@ extern "C" int smolGetPanelIndexNT(simptr sim,const char *surface,enum PanelShap
 	LCHECKNT(strcmp(panel,"all"),funcname,ECall,"panel cannot be 'all'");
 	srf=sim->srfss->srflist[s];
 	p=-1;
-	for(ps=(PanelShape)0;ps<(PanelShape)PSMAX && p<0;ps=(PanelShape)(ps+1))
+	for(ps=(enum PanelShape)0;ps<(enum PanelShape)PSMAX && p<0;ps=(enum PanelShape)(ps+1))
 		p=stringfind(srf->pname[ps],srf->npanel[ps],panel);
 	LCHECKNT(p>=0,funcname,ECnonexist,"panel not found");
 	if(panelshapeptr) *panelshapeptr=ps;
@@ -1262,7 +1269,7 @@ extern "C" int smolGetPanelIndexNT(simptr sim,const char *surface,enum PanelShap
 
 
 /* smolGetPanelName */
-extern "C" char *smolGetPanelName(simptr sim,const char *surface,enum PanelShape panelshape,int panelindex,char *panel) {
+extern CSTRING char *smolGetPanelName(simptr sim,const char *surface,enum PanelShape panelshape,int panelindex,char *panel) {
 	const char *funcname="smolGetPanelName";
 	surfaceptr srf;
 	int s;
@@ -1282,7 +1289,7 @@ extern "C" char *smolGetPanelName(simptr sim,const char *surface,enum PanelShape
 
 
 /* smolSetPanelJump */
-extern "C" enum ErrorCode smolSetPanelJump(simptr sim,const char *surface,const char *panel1,enum PanelFace face1,const char *panel2,enum PanelFace face2,int isbidirectional) {
+extern CSTRING enum ErrorCode smolSetPanelJump(simptr sim,const char *surface,const char *panel1,enum PanelFace face1,const char *panel2,enum PanelFace face2,int isbidirectional) {
 	const char *funcname="smolSetPanelJump";
 	int s,p1,p2,er;
 	surfaceptr srf;
@@ -1313,7 +1320,7 @@ extern "C" enum ErrorCode smolSetPanelJump(simptr sim,const char *surface,const 
 
 
 /* smolAddSurfaceUnboundedEmitter */
-extern "C" enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const char *surface,enum PanelFace face,const char *species,double emitamount,double *emitposition) {
+extern CSTRING enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const char *surface,enum PanelFace face,const char *species,double emitamount,double *emitposition) {
 	const char *funcname="smolAddSurfaceUnboundedEmitter";
 	int s,i,er;
 	surfaceptr srf;
@@ -1335,7 +1342,7 @@ extern "C" enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const char *
 
 
 /* smolSetSurfaceSimParams */
-extern "C" enum ErrorCode smolSetSurfaceSimParams(simptr sim,const char *parameter,double value) {
+extern CSTRING enum ErrorCode smolSetSurfaceSimParams(simptr sim,const char *parameter,double value) {
 	const char *funcname="smolSetSurfaceSimParams";
 	int er;
 
@@ -1362,7 +1369,7 @@ extern "C" enum ErrorCode smolSetSurfaceSimParams(simptr sim,const char *paramet
 
 
 /* smolAddPanelNeighbor */
-extern "C" enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surface1,const char *panel1,const char *surface2,const char *panel2,int reciprocal) {
+extern CSTRING enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surface1,const char *panel1,const char *surface2,const char *panel2,int reciprocal) {
 	const char *funcname="smolAddPanelNeighbor";
 	int s1,s2,p1,p2,er;
 	panelptr pnl1,pnl2;
@@ -1393,7 +1400,7 @@ failure:
 
 
 /* smolSetSurfaceStyle */
-extern "C" enum ErrorCode smolSetSurfaceStyle(simptr sim,const char *surface,enum PanelFace face,enum DrawMode mode,double thickness,double *color,int stipplefactor,int stipplepattern,double shininess) {
+extern CSTRING enum ErrorCode smolSetSurfaceStyle(simptr sim,const char *surface,enum PanelFace face,enum DrawMode mode,double thickness,double *color,int stipplefactor,int stipplepattern,double shininess) {
 	const char *funcname="smolSetSurfaceFaceStyle";
 	int s,c,er;
 	surfaceptr srf;
@@ -1439,7 +1446,7 @@ failure:
 /******************************************************************************/
 
 /* smolAddCompartment */
-extern "C" enum ErrorCode smolAddCompartment(simptr sim,const char *compartment) {
+extern CSTRING enum ErrorCode smolAddCompartment(simptr sim,const char *compartment) {
 	const char *funcname="smolAddCompartment";
 	int c;
 	compartptr cmpt;
@@ -1457,7 +1464,7 @@ extern "C" enum ErrorCode smolAddCompartment(simptr sim,const char *compartment)
 
 
 /* smolGetCompartmentIndex */
-extern "C" int smolGetCompartmentIndex(simptr sim,const char *compartment) {
+extern CSTRING int smolGetCompartmentIndex(simptr sim,const char *compartment) {
 	const char *funcname="smolGetCompartmentIndex";
 	int c;
 
@@ -1473,7 +1480,7 @@ extern "C" int smolGetCompartmentIndex(simptr sim,const char *compartment) {
 
 
 /* smolGetCompartmentIndexNT */
-extern "C" int smolGetCompartmentIndexNT(simptr sim,const char *compartment) {
+extern CSTRING int smolGetCompartmentIndexNT(simptr sim,const char *compartment) {
 	const char *funcname="smolGetCompartmentIndexNT";
 	int c;
 
@@ -1489,7 +1496,7 @@ extern "C" int smolGetCompartmentIndexNT(simptr sim,const char *compartment) {
 
 
 /* smolGetCompartmentName */
-extern "C" char *smolGetCompartmentName(simptr sim,int compartmentindex,char *compartment) {
+extern CSTRING char *smolGetCompartmentName(simptr sim,int compartmentindex,char *compartment) {
 	const char *funcname="smolGetCompartmentName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -1504,7 +1511,7 @@ extern "C" char *smolGetCompartmentName(simptr sim,int compartmentindex,char *co
 
 
 /* smolAddCompartmentSurface */
-extern "C" enum ErrorCode smolAddCompartmentSurface(simptr sim,const char *compartment,const char *surface) {
+extern CSTRING enum ErrorCode smolAddCompartmentSurface(simptr sim,const char *compartment,const char *surface) {
 	const char *funcname="smolAddCompartmentSurface";
 	int c,s,er;
 
@@ -1521,7 +1528,7 @@ extern "C" enum ErrorCode smolAddCompartmentSurface(simptr sim,const char *compa
 
 
 /* smolAddCompartmentPoint */
-extern "C" enum ErrorCode smolAddCompartmentPoint(simptr sim,const char *compartment,double *point) {
+extern CSTRING enum ErrorCode smolAddCompartmentPoint(simptr sim,const char *compartment,double *point) {
 	const char *funcname="smolAddCompartmentPoint";
 	int c,er;
 
@@ -1537,7 +1544,7 @@ extern "C" enum ErrorCode smolAddCompartmentPoint(simptr sim,const char *compart
 
 
 /* smolAddCompartmentLogic */
-extern "C" enum ErrorCode smolAddCompartmentLogic(simptr sim,const char *compartment,enum CmptLogic logic,const char *compartment2) {
+extern CSTRING enum ErrorCode smolAddCompartmentLogic(simptr sim,const char *compartment,enum CmptLogic logic,const char *compartment2) {
 	const char *funcname="smolAddCompartmentLogic";
 	int c,c2,er;
 
@@ -1560,7 +1567,7 @@ extern "C" enum ErrorCode smolAddCompartmentLogic(simptr sim,const char *compart
 /******************************************************************************/
 
 /* smolAddReaction */
-extern "C" enum ErrorCode smolAddReaction(simptr sim,const char *reaction,const char *reactant1,enum MolecState rstate1,const char *reactant2,enum MolecState rstate2,int nproduct,const char **productspecies,enum MolecState *productstates,double rate) {
+extern CSTRING enum ErrorCode smolAddReaction(simptr sim,const char *reaction,const char *reactant1,enum MolecState rstate1,const char *reactant2,enum MolecState rstate2,int nproduct,const char **productspecies,enum MolecState *productstates,double rate) {
 	const char *funcname="smolAddReaction";
 	rxnptr rxn;
 	int order,prd,rctident[MAXORDER],prdident[MAXPRODUCT],er;
@@ -1605,7 +1612,7 @@ extern "C" enum ErrorCode smolAddReaction(simptr sim,const char *reaction,const 
 
 
 /* smolGetReactionIndex */
-extern "C" int smolGetReactionIndex(simptr sim,int *orderptr,const char *reaction) {
+extern CSTRING int smolGetReactionIndex(simptr sim,int *orderptr,const char *reaction) {
 	const char *funcname="smolGetReactionIndex";
 	int order,r;
 
@@ -1630,7 +1637,7 @@ extern "C" int smolGetReactionIndex(simptr sim,int *orderptr,const char *reactio
 
 
 /* smolGetReactionIndexNT */
-extern "C" int smolGetReactionIndexNT(simptr sim,int *orderptr,const char *reaction) {
+extern CSTRING int smolGetReactionIndexNT(simptr sim,int *orderptr,const char *reaction) {
 	const char *funcname="smolGetReactionIndexNT";
 	int order,r;
 
@@ -1655,7 +1662,7 @@ extern "C" int smolGetReactionIndexNT(simptr sim,int *orderptr,const char *react
 
 
 /* smolGetReactionName */
-extern "C" char *smolGetReactionName(simptr sim,int order,int reactionindex,char *reaction) {
+extern CSTRING char *smolGetReactionName(simptr sim,int order,int reactionindex,char *reaction) {
 	const char *funcname="smolGetReactionName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -1671,7 +1678,7 @@ failure:
 
 
 /* smolSetReactionRate */
-extern "C" enum ErrorCode smolSetReactionRate(simptr sim,const char *reaction,double rate,int isinternal) {
+extern CSTRING enum ErrorCode smolSetReactionRate(simptr sim,const char *reaction,double rate,int isinternal) {
 	const char *funcname="smolSetReactionRate";
 	int r,er,order;
 	rxnptr rxn;
@@ -1695,7 +1702,7 @@ extern "C" enum ErrorCode smolSetReactionRate(simptr sim,const char *reaction,do
 
 
 /* smolSetReactionRegion */
-extern "C" enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface) {
+extern CSTRING enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface) {
 	const char *funcname="smolSetReactionRegion";
 	int order,r,c,s;
 	rxnptr rxn;
@@ -1726,7 +1733,7 @@ extern "C" enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,
 
 
 /* smolSetReactionProducts */
-extern "C" enum ErrorCode smolSetReactionProducts(simptr sim,const char *reaction,enum RevParam method,double parameter,const char *product,double *position) {
+extern CSTRING enum ErrorCode smolSetReactionProducts(simptr sim,const char *reaction,enum RevParam method,double parameter,const char *product,double *position) {
 	const char *funcname="smolSetReactionProducts";
 	int order,r,done,prd,i,er;
 	rxnptr rxn;
@@ -1765,7 +1772,7 @@ failure:
 /******************************************************************************/
 
 /* smolAddPort */
-extern "C" enum ErrorCode smolAddPort(simptr sim,const char *port,const char *surface,enum PanelFace face) {
+extern CSTRING enum ErrorCode smolAddPort(simptr sim,const char *port,const char *surface,enum PanelFace face) {
 	const char *funcname="smolAddPort";
 	int s;
 	portptr simport;
@@ -1785,7 +1792,7 @@ extern "C" enum ErrorCode smolAddPort(simptr sim,const char *port,const char *su
 
 
 /* smolGetPortIndex */
-extern "C" int smolGetPortIndex(simptr sim,const char *port) {
+extern CSTRING int smolGetPortIndex(simptr sim,const char *port) {
 	const char *funcname="smolGetPortIndex";
 	int p;
 
@@ -1801,7 +1808,7 @@ extern "C" int smolGetPortIndex(simptr sim,const char *port) {
 
 
 /* smolGetPortIndexNT */
-extern "C" int smolGetPortIndexNT(simptr sim,const char *port) {
+extern CSTRING int smolGetPortIndexNT(simptr sim,const char *port) {
 	const char *funcname="smolGetPortIndexNT";
 	int p;
 
@@ -1817,7 +1824,7 @@ extern "C" int smolGetPortIndexNT(simptr sim,const char *port) {
 
 
 /* smolGetPortName */
-extern "C" char *smolGetPortName(simptr sim,int portindex,char *port) {
+extern CSTRING char *smolGetPortName(simptr sim,int portindex,char *port) {
 	const char *funcname="smolGetPortName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -1832,7 +1839,7 @@ extern "C" char *smolGetPortName(simptr sim,int portindex,char *port) {
 
 
 /* smolAddPortMolecules */
-extern "C" enum ErrorCode smolAddPortMolecules(simptr sim,const char *port,int nmolec,const char *species,double **positions) {
+extern CSTRING enum ErrorCode smolAddPortMolecules(simptr sim,const char *port,int nmolec,const char *species,double **positions) {
 	const char *funcname="smolAddPortMolecules";
 	int prt,i,er;
 	portptr simport;
@@ -1857,7 +1864,7 @@ failure:
 
 
 /* smolGetPortMolecules */
-extern "C" int smolGetPortMolecules(simptr sim,const char *port,const char *species,enum MolecState state,int remove) {
+extern CSTRING int smolGetPortMolecules(simptr sim,const char *port,const char *species,enum MolecState state,int remove) {
 	const char *funcname="smolGetPortMolecules";
 	int prt,i,num;
 	portptr simport;
@@ -1884,7 +1891,7 @@ failure:
 /******************************************************************************/
 
 /* smolAddLattice */
-extern "C" enum ErrorCode smolAddLattice(simptr sim,const char *lattice,const double *min,const double *max,const double *dx,const char *btype) {
+extern CSTRING enum ErrorCode smolAddLattice(simptr sim,const char *lattice,const double *min,const double *max,const double *dx,const char *btype) {
 	const char *funcname="smolAddLattice";
 	int er,p;
 	latticeptr simlattice;
@@ -1903,7 +1910,7 @@ extern "C" enum ErrorCode smolAddLattice(simptr sim,const char *lattice,const do
 
 
 /* smolGetLatticeIndex */
-extern "C" int smolGetLatticeIndex(simptr sim,const char *lattice) {
+extern CSTRING int smolGetLatticeIndex(simptr sim,const char *lattice) {
 	const char *funcname="smolGetLatticeIndex";
 	int p;
 
@@ -1919,7 +1926,7 @@ extern "C" int smolGetLatticeIndex(simptr sim,const char *lattice) {
 
 
 /* smolGetLatticeIndexNT */
-extern "C" int smolGetLatticeIndexNT(simptr sim,const char *lattice) {
+extern CSTRING int smolGetLatticeIndexNT(simptr sim,const char *lattice) {
 	const char *funcname="smolGetLatticeIndexNT";
 	int p;
 
@@ -1935,7 +1942,7 @@ extern "C" int smolGetLatticeIndexNT(simptr sim,const char *lattice) {
 
 
 /* smolGetLatticeName */
-extern "C" char *smolGetLatticeName(simptr sim,int latticeindex,char *lattice) {
+extern CSTRING char *smolGetLatticeName(simptr sim,int latticeindex,char *lattice) {
 	const char *funcname="smolGetLatticeName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -1949,7 +1956,7 @@ extern "C" char *smolGetLatticeName(simptr sim,int latticeindex,char *lattice) {
 	return NULL; }
 
 /* smolAddLatticeMolecules */
-extern "C" enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition) {
+extern CSTRING enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition) {
 	const char *funcname="smolAddLatticeMolecules";
 	int er,i,lat;
 	double *low,*high;
@@ -1979,7 +1986,7 @@ extern "C" enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice
 	return Liberrorcode; }
 
 /* smolAddLatticePort */
-extern "C" enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const char *port) {
+extern CSTRING enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const char *port) {
 	const char *funcname="smolAddLatticePort";
 	int prt,lat;
 	latticeptr simlattice;
@@ -1999,7 +2006,7 @@ extern "C" enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, co
 
 
 /* smolAddLatticeSpecies */
-extern "C" enum ErrorCode smolAddLatticeSpecies(simptr sim,const char *lattice, const char *species) {
+extern CSTRING enum ErrorCode smolAddLatticeSpecies(simptr sim,const char *lattice, const char *species) {
 	const char *funcname="smolAddLatticeSpecies";
 	int er,i,lat;
 	latticeptr simlattice;
@@ -2017,7 +2024,7 @@ extern "C" enum ErrorCode smolAddLatticeSpecies(simptr sim,const char *lattice, 
 	return Liberrorcode; }
 
 /* smolAddLatticeReaction */
-extern "C" enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice, const char *reaction, const int move) {
+extern CSTRING enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice, const char *reaction, const int move) {
 	const char *funcname="smolAddLatticeReaction";
 	int er,lat,r,order;
 	latticeptr simlattice;
