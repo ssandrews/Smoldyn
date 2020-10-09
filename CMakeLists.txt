@@ -496,7 +496,6 @@ endif (OPTION_NSV)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
