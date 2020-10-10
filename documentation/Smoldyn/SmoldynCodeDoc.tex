@@ -115,15 +115,15 @@ Code dependencies are shown below in a tree structure, such that the each file d
 
 While some of the dependency code was included in the Smoldyn source distribution up to version 2.26, it is no longer included for versions 2.27 and newer versions. As a result, you need to get it yourself (or use a pre-compiled Smoldyn version). They are all fairly straightforward.
 
-freeglut for Windows is from \url{https://www.transmissionzero.co.uk/software/freeglut-devel/}. I downloaded the freeglut 3.0.0 MinGW package. I didn't install, but instead put the pre-compiled freeglut files into the Smoldyn package windows directory. \textit{I edited the freeglut file:} In freeglut\_std.h, line 74 is ``pragma comment (lib, "freeglut\_staticd.lib")'' and line 94 is ``pragma comment (lib, "freeglutd.lib")''. However, these debug libraries aren't included in the package, so I removed the ``d'' characters from these library names.
+freeglut for Windows is from \url{http://freeglut.sourceforge.net}. I downloaded freeglut 3.2.1 source code and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. I tried all options that I could find and was simply unable to create the non-debug versions. Thus, I duplicated the debug versions and removed the ``d'' from the file name, in that hope that they would work as non-debug versions, too. At present, the Smoldyn build system seems to want the debug versions, so that's fine. I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download. Whether the debug or normal versions are wanted depends on the definition of the \texttt{NDEBUG} macro; glut.h calls freeglut\_std.h, and that file has some pragma lines that choose either libfreeglut or libfreeglutd, depending on \texttt{NDEBUG}.
 
-libtiff is from \url{http://download.osgeo.org/libtiff/}. I got version 3.9.6, which is the latest of the 3.9 series. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
+libtiff is from \url{http://download.osgeo.org/libtiff/}. For Mac, I got version 3.9.6, which was the latest of the 3.9 series. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual. For Windows, I downloaded version 3.8.0, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. I configured using the option ``cmake .. -DBUILD_SHARED_LIBS=FALSE'' and built with ``msbuild tiff.sln''. This only created the debug libraries, tiffd.lib, tiffxxd.lib, and portd.lib. I'm hoping that only tiffd.lib is needed, and that I can duplicate it to tiff.lib, which is what I did. I copied these libraries over to source/MSVClibs, and also added in several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
 
 libiconv is from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14. I configured with ``./configure --enable-static" so that I'd get the static library.
 
 libXML++ is from \url{http://libxmlplusplus.sourceforge.net/}. While you can try to get a recent version, this is likely to be a major mistake because it has loads of dependencies, and those have dependencies, and so on. Instead, get libXML++ version 1.0.5. This is fully sufficient, and it works well. After downloading, extract the archive, change to the libxml++-1.0.5 directory, enter ``./configure", ``make", and ``sudo make install". This was straightforward for me.
 
-vtk is from \url{http://www.vtk.org/VTK/resources/software.html}. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of installing VTK to the project, there is also a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used. For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the VTK-9.0.1.tar.gz file. I then extracted at the command line with tar -xvcf VTK-9.0.1.tar.gz, created a build subdirectory, moved into it, and ran ``cmake ..'' and ``msbuild VTK.sln''.
+vtk is from \url{http://www.vtk.org/VTK/resources/software.html}, at least for my Mac version. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of including VTK in the project, there is a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used. For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the VTK-9.0.1.tar.gz file. I then extracted at the command line with tar -xvcf VTK-9.0.1.tar.gz, created a build subdirectory, moved into it, and ran ``cmake ..'' and ``msbuild VTK.sln''. This required almost 3 hours to build on my very slow Windows computer. I copied the build directory over to ``source/VTKlibs'', and planned to link it in, following advice at \url{https://vtk.org/Wiki/VTK/Tutorials/CMakeListsFile}. However, I discovered that this VTK build directory is truly enormous (3.8 Gb) and it offers very little additional capability to Smoldyn, so I decided to leave it out for the Windows build.
 
 \subsection{Source directories}
 
@@ -311,6 +311,8 @@ Alternatively, XCode offers FileMerge.app, which is at /Developer/Applications/U
 
 The CMake code for Smoldyn, in CMakeLists.txt in the top-most directory, is relatively straightforward, but still causes challenges. This section gives a fairly detailed look at the code, focusing particularly on the variable definitions.
 
+Some aspects of this use somewhat obsolete terms. For example, the ``use\_directories'' statement is used substantially, but this has been replaced by ``target\_use\_directories''.
+
 \begin{description}
 
 \item[Basic setup]
@@ -355,7 +357,7 @@ Variable & Description & Default\\
 \end{longtable}
 
 \item[Core code information]
-This section lists all of the Smoldyn header files and source files, plus a few extra header files from some of the optional features (e.g. vtkwrapper.h). Some of the source files are only included for some of the options. All of the source and main files properties are set to the C++ language. The include directories are set here to all of the directories with header files.
+This section lists all of the Smoldyn header files and source files, plus a few extra header files from some of the optional features (e.g. vtkwrapper.h). Some of the source files are only included for some of the options. All of the source and main files properties are set to the C++ language, which is necessary because most of them have a ``.c'' ending (note that this setting only applies to the files listed so far, and does not apply to any subsequently listed files). The include directories are set here to all of the directories with header files.
 \begin{longtable}[c]{lll}
 Variable & Description & Default\\
 \hline
@@ -471,9 +473,6 @@ Variable & Description\\
 \texttt{SRC\_FILES} & Appended: Smoldyn source files\\
 \texttt{HEADER\_FILES} & Appended: Smoldyn header files\\
 \end{longtable}
-
-\item[PDE]
-This is an empty section for possible future use for PDE hybrid simulation.
 
 \item[Targets]
 Here, the target building is set up. The two targets are Smoldyn and Libsmoldyn. Smoldyn has an executable, with source files, main files, and header files. Libsmoldyn comes in both shared and static versions, both of which have source files and header files. No variables are defined here.
