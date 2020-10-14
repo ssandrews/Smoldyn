@@ -7,8 +7,17 @@
 ########## Basic setup ##########
 
 project(SmolCrowd)
-cmake_minimum_required(VERSION 2.6)
-set(SMOLCROWD_VERSION "1.0")
+cmake_minimum_required(VERSION 3.0)
+if (NOT SMOLCROWD_VERSION)
+    set(SMOLCROWD_VERSION "1.0")
+endif ()
+message(STATUS "SmolCrowd version set to: '${SMOLCROWD_VERSION}'")
+
+
+######### Compiling options #############
+
+option(OPTION_MINGW "Cross-compile for Windows using MinGW")
+message(STATUS "Option for cross-compile for Windows using MinGW: ${OPTION_MINGW}")
 
 
 ######### Core code information ###########
@@ -40,19 +49,21 @@ include_directories(../libSteve)
 
 list(APPEND DEP_LIBS m)
 
-####### Build for debugging or release ##########
 
-if(CMAKE_COMPILER_IS_GNUCC)
-	set(CMAKE_C_FLAGS_DEBUG "-O0 -g -Wall")
-	set(CMAKE_C_FLAGS_RELEASE "-O2 -Wall")
-endif(CMAKE_COMPILER_IS_GNUCC)
+####### Compiler flags ##########
 
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING
 		"Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-
+endif ()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+if (OPTION_MINGW)
+    message(STATUS "Cross-compiling for Windows using toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
+    message(STATUS "MinGW headers and libraries: ${MINGWDIR}")
+    include_directories(${MINGWDIR}/include)
+    link_directories(${MINGWDIR}/lib)
+endif ()
 
 
 ####### Targets ##########
@@ -63,6 +74,8 @@ target_link_libraries(SmolCrowd ${DEP_LIBS})
 
 ########## install ###########
 
-install(TARGETS SmolCrowd RUNTIME DESTINATION bin)
+if (NOT OPTION_MINGW)
+    install(TARGETS SmolCrowd RUNTIME DESTINATION bin)
+endif ()
 
 

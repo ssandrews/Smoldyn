@@ -83,28 +83,66 @@ The Smoldyn software represents a balance between algorithms that are exact for 
 
 \subsection{Primary site}
 
-Smoldyn's primary website is \url{http:www.smoldyn.org}. This website has information about the software and offers downloads of the current release, whether as pre-compiled versions or tar/zip/tgz files with the source code and other parts of the package.
+Smoldyn's primary website is \url{http://www.smoldyn.org}. This website has information about the software and offers downloads of the current release, whether as pre-compiled versions or tar/zip/tgz files with the source code and other parts of the package.
 
 \subsection{Source code}
 
-Smoldyn's official code repository is github at https://github.com/ssandrews/Smoldyn. This repository was named Smoldyn\_Official from its first github upload with version 2.57, up to version 2.62.dev, and was then renamed to just Smoldyn. Older versions used Subversion repositories that are now discontinued.
+Smoldyn's code repository is github at https://github.com/ssandrews/Smoldyn. This repository was named Smoldyn\_Official from its first github upload with version 2.57, up to version 2.62.dev, and was then renamed to just Smoldyn. Prior code repositories used Subversion servers that are now discontinued. I also started a SourceForge account at some point for Smoldyn, which I have not maintained. There are several other github repositories that have Smoldyn in their names, all of which are for the same overall software, but are not maintained by myself and don't have the official releases.
 
 \subsection{Documentation}
 
-Up to version 2.61, the only documentation was included in the download package as Word and pdf files for the User's Manual and as LaTeX and pdf files for the code documentation (this file). At this point, Dilawar Singh started a readthedocs website for Smoldyn at \url{https://readthedocs.org/projects/smoldyn/downloads/}.
+The most current documentation is included in the download package as Word and pdf files for the User's Manual and as LaTeX and pdf files for the code documentation (this file).
+
+Also, Dilawar Singh started a readthedocs website for Smoldyn at \url{https://readthedocs.org/projects/smoldyn/downloads/}. I'll try to maintain that site but, for now, it's not as current as the documentation that's packaged with the downloads. In addition, note that the documentation is stored on the same github site as the code, so if you really want the latest un-released documentation, then you can get it at the github site.
 
 
 % Source code
 \section{Source code}
 
+\subsection{Source directories}
+
+All of Smoldyn's code is in subdirectories within the ``source'' directory. These subdirectories and their contents are listed below.
+
+There is also one file in the source directory, which is smoldynconfigure.h.in. This file is used as a template by the CMake build system for creating a header file that describes the actual build configuration.
+
+\begin{description}
+
+\item[BioNetGen] I think this is the complete BioNetGen download, from about 2016. Smoldyn uses the BNG2.pl perl file for rule-based modeling when using the BNG language. This code is not included in Smoldyn during building, but a link is made to this file. Also, this entire BioNetGen directory gets copied to an install location (typically /usr/local/bin for Mac or Linux) when Smoldyn is installed. (This copying occurs if installing with the install script, but it doesn't appear to happen if installing using the ``make install'' target in the CMake build process.)
+
+\item[libSteve] This is a library of code that I wrote, which is used throughout the Smoldyn software. All of it is plain C, but can be compiled as C++ as well. Essentially none of the code here is specifically for Smoldyn or, more importantly, essentially none of the code here calls functions that are part of the core Smoldyn program (e.g. smolsim.c, smolreact.c, etc.). I think that the sole exception is SimCommand.c, which can call smolcmd.c but can also be run without calling it. In addition to the code that I wrote, the SFMT directory contains code for the Mersenne Twister random number generator, which I did not write.
+
+\item[MSVClibs] These are headers and libraries needed for compiling Smoldyn with the MSVC compiler, on Windows. All of the code here was downloaded on a Windows computer, compiled with MSVC, and then copied over to this directory. This code is only used when compiling with MSVC. Not all of the code here is actually used.
+
+\item[NextSubVolume] This is code that Martin Robinson wrote for hybrid Smoldyn, for simulating adjacent spatial regions with differing levels of detail. It is only used when building with the ``OPTION\_NSV'' option turned on.
+
+\item[pybind11] This is an external library on which Smoldyn's Python bindings are built. It has its own CMakeLists.txt file. I have not modified anything in here, and I think it is just the pybind11 download with no modifications.
+
+\item[SmolCrowd] This is not compiled into Smoldyn, but a separate text-based utility. It generates random crowders for importing into Smoldyn configuration files.
+
+\item[Smoldyn] This directory includes the core of the Smoldyn program. Essentially all of the code here has a ``.c'' suffix, becuase it was originally written in C and is still mostly just C. However, some files have slight C++ additions, so I now compile it with a C++ compiler. The file smoldynlib.py was written by Sean Garbett in 2013 and appears to be a Python interface for libSmoldyn. I haven't used it.
+
+\item[SmolEmulate] This is a separate utility, which is not compiled into Smoldyn. It emulates Smoldyn algorithms, for calibrating reaction rates. This code evolved from versions that I wrote to derive 3D reaction parameters for the Andrews and Bray, 2004 paper, and then to derive 1D surface interaction parameters for the Andrews, 2009 paper. It also supports 2D reactions, but I haven't finished that work yet (as of 2020).
+
+\item[vcell] This directory containts code used for linking Smoldyn into VCell. It was written by the VCell team, and I just keep it here for future use by them.
+
+\item[vtk] This is a wrapper for an external library for the VTK visualization toolkit. It's used by the NSV code. I'm not sure if VTK needs to be installed on the host computer for Smoldyn to offer VTK functionality.
+
+\item[wrl2smol] This is another utility that is not compiled into Smoldyn. It converts VRML language triangle data into Smoldyn style triangle input.
+
+\end{description}
+
+
 \subsection{Dependencies}
 
-Code dependencies are shown below in a tree structure, such that the each file depends on the files that are indented below it. As much as possible, Smoldyn builds and runs without its dependencies, but offers fewer features.
+As much as possible, Smoldyn is compiled statically so that its dependencies are automatically included in the binary distributions. However, if you compile Smoldyn yourself, then you may need to get them.
+
+Smoldyn's code dependencies have changed some over time, but are mostly shown below in a tree structure, such that the each file depends on the files that are indented below it. This tree might not be fully accurate for the current version. As much as possible, Smoldyn builds and runs without its dependencies, but offers fewer features if they aren't available. In particular, I've struggled some with getting some of them to work on Windows.
 
 \begin{tabbing}
 \hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\kill
 \>Smoldyn\\
 \>\>OpenGL\\
+\>\>OpenGL-glut\\
 \>\>libTiff\\
 \>\>zlib\\
 \>\>libiconv\\
@@ -113,64 +151,47 @@ Code dependencies are shown below in a tree structure, such that the each file d
 \>\>pybind11\\
 \end{tabbing}
 
-While some of the dependency code was included in the Smoldyn source distribution up to version 2.26, it is no longer included for versions 2.27 and newer versions. As a result, you need to get it yourself (or use a pre-compiled Smoldyn version). They are all fairly straightforward.
-
-freeglut for Windows is from \url{http://freeglut.sourceforge.net}. I downloaded freeglut 3.2.1 source code and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. I tried all options that I could find and was simply unable to create the non-debug versions. Thus, I duplicated the debug versions and removed the ``d'' from the file name, in that hope that they would work as non-debug versions, too. At present, the Smoldyn build system seems to want the debug versions, so that's fine. I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download. Whether the debug or normal versions are wanted depends on the definition of the \texttt{NDEBUG} macro; glut.h calls freeglut\_std.h, and that file has some pragma lines that choose either libfreeglut or libfreeglutd, depending on \texttt{NDEBUG}.
-
-libtiff is from \url{http://download.osgeo.org/libtiff/}. For Mac, I got version 3.9.6, which was the latest of the 3.9 series. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual. For Windows, I downloaded version 3.8.0, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. I configured using the option ``cmake .. -DBUILD_SHARED_LIBS=FALSE'' and built with ``msbuild tiff.sln''. This only created the debug libraries, tiffd.lib, tiffxxd.lib, and portd.lib. I'm hoping that only tiffd.lib is needed, and that I can duplicate it to tiff.lib, which is what I did. I copied these libraries over to source/MSVClibs, and also added in several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
-
-libiconv is from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14. I configured with ``./configure --enable-static" so that I'd get the static library.
-
-libXML++ is from \url{http://libxmlplusplus.sourceforge.net/}. While you can try to get a recent version, this is likely to be a major mistake because it has loads of dependencies, and those have dependencies, and so on. Instead, get libXML++ version 1.0.5. This is fully sufficient, and it works well. After downloading, extract the archive, change to the libxml++-1.0.5 directory, enter ``./configure", ``make", and ``sudo make install". This was straightforward for me.
-
-vtk is from \url{http://www.vtk.org/VTK/resources/software.html}, at least for my Mac version. I downloaded version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of including VTK in the project, there is a ``source/vtk'' directory within Smoldyn, which has just a few files; this is not called as a subdirectory, so I don't think that the CMakeLists.txt file that is here is actually used. For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the VTK-9.0.1.tar.gz file. I then extracted at the command line with tar -xvcf VTK-9.0.1.tar.gz, created a build subdirectory, moved into it, and ran ``cmake ..'' and ``msbuild VTK.sln''. This required almost 3 hours to build on my very slow Windows computer. I copied the build directory over to ``source/VTKlibs'', and planned to link it in, following advice at \url{https://vtk.org/Wiki/VTK/Tutorials/CMakeListsFile}. However, I discovered that this VTK build directory is truly enormous (3.8 Gb) and it offers very little additional capability to Smoldyn, so I decided to leave it out for the Windows build.
-
-\subsection{Source directories}
-
-The source directory includes several subdirectories of code.
+Getting the code for these dependencies has ranged from easy to impossible, so my approaches to solve these issues are listed below.
 
 \begin{description}
 
-\item[BioNetGen] I think this is the complete BioNetGen download, from about 2016. Smoldyn uses the BNG2.pl perl file for rule-based modeling when using the BNG conventions. This code is not included in Smoldyn during building, but is called during program operation.
+\item[glut] is complicated. It's part of the standard OpenGL libraries on Macs, but doesn't seem to be standard on Windows. Also, glut itself is obsolete, having been replaced by freeglut, which is a superset of glut; nevertheless, the glut.h header file is supposed to be used, unless one wants functions that are only available in freeglut.
 
-\item[libSteve] A library of code that I wrote. Pretty much all of it is plain C. Essentially none of the code here is specifically for Smoldyn or, more importantly, essentially none of the code here calls functions that are part of the core Smoldyn program (e.g. smolsim.c, smolreact.c, etc.). I think that the sole exception is SimCommand.c, which can call smolcmd.c but can also be run without calling it.
+For Windows with MSVC, I downloaded freeglut 3.2.1 from \url{http://freeglut.sourceforge.net} and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. I tried all options that I could find and was simply unable to create the non-debug versions. Thus, I duplicated the debug versions and removed the ``d'' from the file name, in that hope that they would work as non-debug versions, too. At present, the Smoldyn build system seems to want the debug versions, so that works well. Whether the debug or normal versions are wanted depends on the definition of the \texttt{NDEBUG} macro; glut.h calls freeglut\_std.h, and that file has some pragma lines that choose either libfreeglut or libfreeglutd, depending on \texttt{NDEBUG}. Anyhow, I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download.
 
-\item[MinGWlibs] An external library code for cross-compiling from Mac to Windows with MinGW. This system isn't working at present, so this source code isn't being used.
+For Windows with MinGW, I found that the MinGW cross-compiler download that I use (see below) has freeglut included in its collection of libraries. Thus, I link that that. Everything seems to work and Smoldyn builds well, but the resulting smoldyn.exe doesn't actually run.
 
-\item[NextSubVolume] Code that Martin Robinson wrote for hybrid Smoldyn, for simulating adjacent spatial regions with differing levels of detail.
+To address this, I also tried to compile the freeglut 3.2.1 download on a Windows computer but with the MinGW compiler. This didn't work. Thus, instead, I downloaded the freeglut 3.2.1 source code to my Mac and cross-compiled it for Windows using ``cmake .. -DCMAKE\_TOOLCHAIN\_FILE=../Toolchain-mingw32.cmake''. This actually worked and produced libfreeglut\_static.a, libfreeglut.dll.a, libfreeglut.dll, and many more files. I was able to build Smoldyn while linking to these files, but the result was the same as before in that I got smoldyn.exe just fine, but it didn't run.
 
-\item[pybind11] An external library on which Smoldyn's Python bindings are built.
+\item[libtiff] is optional. It is used for saving graphics images as TIFF files.
 
-\item[SmolCrowd] Not compiled into Smoldyn, but a separate utility. It generates random crowders.
+For Mac, I downloaded version 3.9.6, which was the latest of the 3.9 series, from \url{http://download.osgeo.org/libtiff/}. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
 
-\item[Smoldyn] The core of the Smoldyn program.
+For Windows with MSVC, I downloaded version 3.8.0 from \url{http://download.osgeo.org/libtiff/}, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. I configured using the option ``cmake .. -DBUILD\_SHARED\_LIBS=FALSE'' and built with ``msbuild tiff.sln''. This only created the debug libraries, tiffd.lib, tiffxxd.lib, and portd.lib. I'm hoping that only tiffd.lib is needed, and that I can duplicate it to tiff.lib, which is what I did. I copied these libraries over to source/MSVClibs, and also included several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
 
-\item[SmolEmulate] Not compiled into Smoldyn, but a separate utility. It emulates Smoldyn algorithms, for calibrating reaction rates.
+\item[libiconv] is a library that converts between different character encodings. I don't know why it's necessary, or even if it is necessary (the default Smoldyn build option settings have the iconv option turned off), but I cared about it at some point. I downloaded it from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14. I configured with ``./configure --enable-static" so that I'd get the static library.
 
-\item[vcell] Code used for linking Smoldyn into VCell. This was written by the VCell team, and I just keep it here for future use by them.
+\item[libXML++] is a wrapper for the libxml2 XML parser. Again, I don't know why it's necessary or even if it is necessary, but I cared about it at some point. It might have been a dependency for libMoleculizer, which was a disasterous Smoldyn module that I eventually got rid of.
 
-\item[vtk] External library for the VTK visualization toolkit. It's used by the NSV code.
+Anyhow, I downloaded libXML++ from \url{http://libxmlplusplus.sourceforge.net/}. While more recent versions are available, this is likely to be a major mistake because they have loads of dependencies, and the dependencies have dependencies, and so on. Instead, get libXML++ version 1.0.5. This is fully sufficient, and it works well. After downloading, extract the archive, change to the libxml++-1.0.5 directory, enter ``./configure", ``make", and ``sudo make install". This was straightforward for me.
 
-\item[wrl2smol] Not compiled into Smoldyn, but a separate utility. It converts VRML language triangle data into Smoldyn style triangle input.
+\item[vtk] is the Visualization Toolkit, useful for graphical visualization. This functionality was added to Smoldyn with the NSV addition, but I'm not sure if it only applies to the NSV portion of Smoldyn, or to all graphics.
+
+I downloaded my Mac version from \url{http://www.vtk.org/VTK/resources/software.html}, getting version 5.10.1. To build it, I created subdirectory called ``build" within the vtk download directory, changed to the build directory, and entered "cmake .." followed by "make". This is a very large package which took about a half hour to build. Lots of warnings were emitted, but the build completed successfully. Then, "sudo make install" installed the result. Quite a lot of files were installed. As part of including VTK in the project, there is a ``source/vtk'' directory within Smoldyn, which has just a few files.
+
+For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the VTK-9.0.1.tar.gz file. I then extracted at the command line with ``tar -xvcf VTK-9.0.1.tar.gz'', created a build subdirectory, moved into it, and ran ``cmake ..'' and ``msbuild VTK.sln''. This required almost 3 hours to build on my very slow Windows computer. I copied the build directory over to ``source/VTKlibs'', and planned to link it in, following advice at \url{https://vtk.org/Wiki/VTK/Tutorials/CMakeListsFile}. However, I discovered that this VTK build directory is truly enormous (3.8 Gb) and it offers very little additional capability to Smoldyn, so I decided to leave it out for the Windows build.
 
 \end{description}
 
-\subsection{GPU Smoldyn}
-
-Two versions of GPU Smoldyn have been written, one by Lorenzo Dematt\'{e}, and one by Denis Gladkov. I never managed to get either of them to work. However, here are some dependencies that I downloaded while trying to get Denis's version to work
-
-For GPU Smoldyn, you will need some other things too. First is the CUDA library, which is from NVIDIA at \url{https://developer.nvidia.com/cuda-downloads}. This downloaded and installed itself. Next is the GLEW library (OpenGL Extension Wrangler library), which is from \url{http://glew.sourceforge.net}. This builds with simply ``make" and ``make install" (no ``./configure" required). Next, the CUDPP library is from \url{http://code.google.com/p/cudpp/}. It builds with CMake (make a build directory, change to that directory, enter ``cmake ..", ``make", and ``sudo make install"). For some reason, my build did not install the cudpp\_config.h file, so I had to do so by hand. From the CUDPP build directory, I entered ``sudo cp ../include/cudpp\_config.h /usr/local/include/" and that fixed problems.
-
-The Boost library is from \url{http://www.boost.org/users/download/}. This doesn't get installed with an installer, but instead the whole directory gets copied over. It didn't work when I put it in a system location, but did work when I copied the ``boost" subdirectory into the GPU code directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
-
 % Building with CMake
-\section{Building with CMake}
+\section{CMake build system}
 
-Building requires CMake, which can be downloaded from \url{http://www.cmake.org}. I use version 3.16, but any version above 3.0 should work. CMake installs trivially (at least on Mac), with a standard installer and no building required.
+\subsection{Basic building}
+Smoldyn builds with CMake, which can be downloaded from \url{http://www.cmake.org}. I use version 3.16, but any version above 3.0 should work. CMake installs trivially (at least on Mac), with a standard installer and no building required.
 
-You can run CMake from either a command line interface (my preference) or with a GUI. At a command line interface, change directories to cmake. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. See below for custom builds. The other option is to use the CMake GUI. It can be started by entering ``cmake-gui" at a command line. Either way, when CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what some important build parameters are.
+CMake can be run from either a command line interface (my preference) or with a GUI. At a command line interface, change directories to cmake. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. See below for custom builds. The other option is to use the CMake GUI. It can be started by entering ``cmake-gui" at a command line. Either way, when CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what the build parameters are. On Windows with the MSVC compiler, there's no makefile, but smoldyn.sln instead; this is the ``solution'' file for compiling.
 
-Once configuring is complete, enter ``make". Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Finally, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
+Once configuring is complete, enter ``make" (on Mac or Linux, or ``msbuild smoldyn.sln'' on Windows with MSVC). Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Smoldyn can be run at this point. If you want to install, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
 
 Here is the summary of the building process:
 
@@ -191,20 +212,19 @@ Following are all of the build options in the Smoldyn CMake files, plus some of 
 Smoldyn option & default & effect when ON\\
 \hline
 \texttt{-DSMOLDYN\_VERSION} & 2.62.dev & Smoldyn version number\\
-\texttt{-DOPTION\_VCELL} & \texttt{OFF} & Build for inclusion within VCell\\
-\texttt{-DOPTION\_NSV} & \texttt{ON} & Build with Next Subvolume support\\
-\texttt{-DOPTION\_PDE} & \texttt{OFF} & Build with support for PDE simulation\\
-\texttt{-DOPTION\_VTK} & \texttt{OFF} & Build with support for VTK visualization\\
-\texttt{-DOPTION\_STATIC} & \texttt{OFF} & Build using static libraries\\
-\texttt{-DOPTION\_MINGW} & \texttt{OFF} & Build for MinGW compiler (not working currently)\\
-\texttt{-DOPTION\_USE\_OPENGL} & \texttt{ON} & Build with graphics support\\
-\texttt{-DOPTION\_USE\_ZLIB} & \texttt{OFF} & Build with zlib support (use default)\\
-\texttt{-DOPTION\_USE\_ICONV} & \texttt{OFF} & Build with Libiconv support (use default)\\
-\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with libtiff support\\
-\texttt{-DOPTION\_PYTHON} & \texttt{ON} & Build Python module\\
 \texttt{-DOPTION\_TARGET\_SMOLDYN} & \texttt{ON} & Build stand-alone Smoldyn program\\
 \texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{ON} & Build LibSmoldyn library\\
-\texttt{-DOPTION\_EXAMPLES} & \texttt{ON} & Run Libsmoldyn tests\\
+\texttt{-DOPTION\_VCELL} & \texttt{OFF} & Build for inclusion within VCell\\
+\texttt{-DOPTION\_MINGW} & \texttt{OFF} & Build for MinGW compiler (not working currently)\\
+\texttt{-DOPTION\_NSV} & \texttt{ON} & Build with Next Subvolume support\\
+\texttt{-DOPTION\_VTK} & \texttt{ON} & Build with support for VTK visualization\\
+\texttt{-DOPTION\_STATIC} & \texttt{OFF} & Build using static libraries\\
+\texttt{-DOPTION\_USE\_OPENGL} & \texttt{ON} & Build with graphics support\\
+\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with libtiff support\\
+\texttt{-DOPTION\_USE\_ICONV} & \texttt{OFF} & Build with Libiconv support (use default)\\
+\texttt{-DOPTION\_USE\_ZLIB} & \texttt{OFF} & Build with zlib support (use default)\\
+\texttt{-DOPTION\_PYTHON} & \texttt{ON} & Build Python module\\
+\texttt{-DOPTION\_EXAMPLES} & \texttt{OFF} & Run Libsmoldyn tests\\
 \hline
 CMake option & default & function\\
 \hline
@@ -212,166 +232,76 @@ CMake option & default & function\\
 \multicolumn{3}{l}{\hspace{0.3in}options are: \texttt{None}, \texttt{Debug}, \texttt{Release}, \texttt{RelWithDebInfo}, and \texttt{MinSizeRel}}\\
 \texttt{-DCMAKE\_CXX\_COMPILER:FILEPATH} & clang & Compile with specific compiler\\
 \multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
+\texttt{-DCMAKE\_TOOLCHAIN\_FILE} & None & Cross-compiling toolchain file \\
+\multicolumn{3}{l}{\hspace{0.3in}for example: ../Toolchain-mingw32.cmake}\\
 \end{longtable}
 
-The CMakeLists file lists a few subdirectories.
 
-(1) The subdirectory ``source/pybind11'' includes the pybind11 library, which offers ``Seamless operability between C++11 and Python... pybind11 is a lightweight header-only library that exposes C++ types in Python and vice versa, mainly to create Python bindings of existing C++ code''. It is widely used and can be downloaded from github. It does not require pre-compiling like the other dependencies because it is compiled with the rest of Smoldyn. There is no custom code here, but only code from the pybind11 project.
+% CMake build system code
+\subsection{CMake build system code}
 
-(2) The subdirectory ``source/python'' includes Python binding code and was written, by Dilawar, specifically for Smoldyn.
+The CMake code for Smoldyn, in CMakeLists.txt in the top-most directory, is relatively straightforward, but has still caused me vastly more grief than it should have. For that reason, this section gives a detailed look at the cmake code, focusing particularly on the variable definitions.
 
-(3) The subdirectory ``examples'' is for automatic testing, which has been partially set up but not completed. To run these examples, enter ``make examples''.
-
-Several different targets can be built. The core software has the Smoldyn and LibSmoldyn targets, which are selected or unselected using the CMake options \texttt{OPTION\_TARGET\_SMOLDYN} and \texttt{OPTION\_TARGET\_LIBSMOLDYN}, described above. I'm not sure if \texttt{smoldyn\_static} and \texttt{smoldyn\_shared} qualify as targets or not, but they are both built as part of LibSmoldyn. When building, these targets create a Smoldyn executable, called just smoldyn on a Mac or smoldyn.exe on Windows, and static and shared libraries called libsmoldyn\_static.a and libsmoldyn\_shared.dylib on a Mac. Also, one can write \texttt{make install}, although this isn't really a different target. In addition, \texttt{make examples} does some testing.
-
-Within the python subdirectory, additional targets are: \texttt{wheel}, \texttt{pyinstall}, \texttt{pyinstall\_venv}, \texttt{pyuninstall}, \texttt{pydevel}, and \texttt{doc\_api\_html}. I don't think that most of these targets need to be called specifically, but are instead called automatically when running just ``make''.
-
-\section{Documentation}
-
-Smoldyn is documented in three hand-written files, which are the User's Manual, the LibSmoldyn user's manual, and this programmers documentation. In addition, it has partially complete documentation generation with Doxygen. It reads the file docs/Doxyfile.in to build the documentation. I don't know where the results get put.
-
-Other files in the docs directory are markdown file versions of the Smoldyn documentation that I wrote. Dilawar made them from the original pdf, tex, and docx files in the documentation folder using pandoc and then edited them manaully. The mkdocs file generates a website from the `docs' folder, and mkdocs.yml is the configuration file for this, using the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar's readthedocs web site shows the results.
-
-\section{Continuous Integration}
-
-Another new directory is called ``scripts''. It includes development related scripts for building Smoldyn on online platforms like Travis, Open Build Service, OSX, and docker. I don't believe that these are complete yet. The build\_wheels\_osx.sh script has stuff about homebrew, which I avoid, so this is going to take some work before I'll want to run it.
-
-
-
-% Building Windows versions
-\section{Building Windows versions}
-
-\subsection{Cross-compiling with MinGW - obsolete}
-
-Smoldyn was cross-compiled for Windows from Mac using MinGW up to version 2.58, although it didn't work well for the last several of those versions; version 2.59 used a different build system; see below. The following text was written to describe this cross-compiling and has not been updated since then.
-
-Getting cross-compiling set up can be a major challenge, but I'll describe what worked for me here. First of all, I got MinGW from MacPorts using ``port install mingw-w64''. This installed the meta-package mingw-w64, along with two sets of other packages: i686-w64-mingw32-... and x86\_64-w64-mingw32-..., where the ... refers to the following 5 endings: binutils, crt, gcc, headers, and winpthreads.
-
-I initially thought that the i686-w64-mingw32-gcc was the compiler that I was supposed to use. In fact, it sort of works, but not really. I wrote the standard hello.c, which compiled nicely on my Mac with ``gcc -Wall hello.c -o hello''. To cross-compile, I tried to compile with ``i686-w64-mingw32-gcc -Wall hello.c -o hello.exe'' but this returned the error message ``i686-w64-mingw32-gcc: error trying to exec 'cc1': execvp: No such file or directory''. However, this did work when I prefaced the instruction with ``sudo'' and then entered my password. This clearly implied that the issue had to do with permissions, but I was never able to figure out what was wrong and my query to Stack Overflow about this was useless.
-
-When I finally switched to compiling with the x86\_64-w64-mingw32-gcc compiler, using the line ``x86\_64-w64-mingw32-gcc -Wall hello.c -o hello.exe'', then this worked perfectly without permission issues. I don't understand why the MacPorts MinGW download has the i686... and the x86... sets of files, which seem like reasonably parallel sets of files, of which only the x86... ones seem to be useful, but that's how it is.
-
-Part of the MacPorts MinGW download is a lot of library code that's pre-compiled for MinGW. The useful portions seem to be in /opt/local/x86\_64-w64-mingw32/include/ for the header files and /opt/local/x86\_64-w64-mingw32/lib/ for the source files. These include most of the libraries that Smoldyn uses. However, it doesn't include GLUT. I downloaded the ``freeglut 3.0.0 MinGW Package'' from https://www.transmissionzero.co.uk/software/freeglut-devel/. The download is in the Smoldyn source directory, from which I copied the include and lib directory contents to the /opt/local/x86\_64-w64-mingw32 directories.
-
-I copied the i386 tiff*.h files from MinGW directory to /opt/local/x86...include directory. They seem ok, but they're clearly for a different architecture. I also tried the i386 libtiff.a static libtiff library, but Smoldyn building complained that it wasn't compatible. I also tried downloading libtiff.a from many different websites, but got the same result every time, that they weren't compatible. I'm giving up for now on offering tiff support for Windows.
-
-... The cross-compiled Smoldyn version wasn't working during 2018 and into 2019, so I put major effort into fixing it during May, 2019, starting at version 2.58. The effort failed badly. At first, I was able to successfully cross-compile Hello World, a similar minimalist file that included OpenGL calls, and Smoldyn without graphics, but I couldn't compile Smoldyn with graphics. In the process, I discovered that the freeglut website listed above at www.transmissionzero.co.uk had good advice for compiling with OpenGL. After quite a lot of failed attempts, I decided to update my mingw compiler on my Mac, in case that was the problem. However, updating it just ruined everything totally, so cross-compiling no longer worked at all for anything. The i686 version of MinGW was broken and the x86 version returned ``dyld: Library not loaded: /opt/local/lib/libisl.19.dylib; Referenced from: /opt/local/libexec/gcc/x86\_64-w64-mingw32/8.3.0/cc1; Reason: image not found'', even for Hello World. I gave up.
-
-\subsection{Building Windows version on a Windows computer with MinGW}
-
-As of version 2.59, I am building Windows versions on a Windows computer with MinGW. I haven't figured out CMake there yet, so I copy the smoldynconfigure.h file and all of the source files to the Windows computer, compile, copy the .exe file back to the Mac, and continue with the build process. I'm distributing old version of SmolCrowd and wrl2smol in the Windows package (they only change very rarely, so the old ones are also the current ones).
-
-% Unit and regression testing
-\section{Unit and regression testing}
-
-Smoldyn does not include unit tests in their purest form. Instead, I tested Smoldyn's algorithms, both for qualitative and quantitative performance, using simple Smoldyn configuration files, which function as unit tests. Many of these test files are in the examples directory. Individual files focus on specific algorithms, such as diffusion, unimolecular reactions, absorbing surface interactions, etc. Simply watching the simulation graphics is typically adequate for assessing qualitative performance, while data analysis and comparison against analytical theory is generally required for assessing quantitative performance.
-
-The examples/S95\_regression directory includes files used for regression testing. This directory includes many of the original unit tests, although typically modified for longer time steps, shorter total run times, and a fixed random number seed. In addition, I removed the original output for these unit tests and instead instructed them to output all molecule positions at the end of the simulation. The idea is that this is a very sensitive way of detecting whether all interactions during the simulation were the same between two runs, or not. This directory also includes a Python script regression.py. This script runs all unit tests, outputs their results to a subdirectory, and compares the results to those that there previously generated. All differences are reported, enabling detection of potential bugs.
-
-To add a new unit test to the regression testing suite, simply make sure that the unit test runs relatively quickly (a few seconds) and has no text output. Then, copy and paste the top few lines from any of the current unit tests (e.g. bounce2.txt), so that the new unit test will output molecule positions. Finally, list the unit test name in the Python script.
-
-
-% Code techniques and tricks
-\section{Code techniques and tricks}
-
-\subsection{Formatting}
-
-I like a very compact source code style, where the indentation shows the code depth rather than the braces. It just was that way for the most part, but then the VCell team added code in their style, and then Dilawar reformatted the code to yet another style. I figured out how to revert to my style, and also standardize others' additions. I use the ``uncrustify'' software, which I downloaded from SourceForge at \url{https://sourceforge.net/projects/uncrustify/}. The package currently resides in my Smoldyn top level directory. I wrote a configuration file called ssa.cfg, which I use to format code; it is in the uncrustify directory.
-
-Instructions. To reformat smolreact.c, for example, enter
-
-\texttt{uncrustify -c ../../uncrustify/ssa.cfg smolreact.c}
-
-This creates a new file, smolreact.c.uncrustify. However, this still leaves lots of things that I like to fix. First, remove closing braces on their own lines. To do so, do a find and replace, first replace all `` \}'' with ``\}'', repeating as many times as necessary. Then replace all ``\textbackslash n\}'' with ``\}''. Another thing to look for is multi-line for statements. It would be nice if these could be removed by uncrustify, but it doesn't.
-
-\subsection{Code merging}
-
-Here are some options for merging code.
-
-Minimalist text based merging can be done as follows:
-
-\begin{description}
-\item[\texttt{mydir="../../../gccCode/Library"}]
-\hfill \\
-set variable
-\item[\texttt{diff Geometry.c \$mydir}]
-\hfill \\
-compares local version with version in \$mydir, and prints out differences.
-\item[\texttt{grep -n 'Geo\_Sphere\_Normal' ../Smoldyn/source/*.c}]
-\hfill \\
-finds all lines of Smoldyn source code that call Geo\_Sphere\_Normal.
-\end{description}
-
-Alternatively, XCode offers FileMerge.app, which is at /Developer/Applications/Utilities/FileMerge.app. It's very easy to use. Yet another option is Eclipse, at \url{www.eclipse.org}, which works well.
-
-% Chapter: CMake build system code
-\chapter{CMake build system code}
-
-\section{Top level CMake file}
-
-The CMake code for Smoldyn, in CMakeLists.txt in the top-most directory, is relatively straightforward, but still causes challenges. This section gives a fairly detailed look at the code, focusing particularly on the variable definitions.
-
-Some aspects of this use somewhat obsolete terms. For example, the ``use\_directories'' statement is used substantially, but this has been replaced by ``target\_use\_directories''.
+Some aspects of this file use somewhat deprecated approaches. For example, it uses the ``use\_directories'' statement, but one is supposed to use ``target\_use\_directories'' instead. The advantage to the latter approach is that it's better about keeping variables within their scope, but this file is simple enough that I'm not bothering to change things.
 
 \begin{description}
 
 \item[Basic setup]
 \hfill \\
 Defines the project name, lists the CMake minimum version number, and sets the Smoldyn version number. Also tells CMake which version of C++ to use.\\
-\begin{longtable}[c]{lll}
-Variable & Description & Default\\
+\begin{longtable}[c]{ll}
+Variable & Description\\
 \hline
-\texttt{SMOLDYN\_VERSION} & Smoldyn version number & 2.62.dev\\
-\texttt{CMAKE\_CXX\_STANDARD} & C++ version number & 17\\
+\texttt{SMOLDYN\_VERSION} & Smoldyn version number\\
+\texttt{CMAKE\_CXX\_STANDARD} & C++ version number\\
 \end{longtable}
 
 \item[Targets to build]
 Whether to build Smoldyn, Libsmoldyn, or both.
-\begin{longtable}[c]{lll}
-Variable & Description & Default\\
+\begin{longtable}[c]{ll}
+Variable & Description\\
 \hline
-\texttt{OPTION\_TARGET\_SMOLDYN} & Create stand-along Smoldyn program & ON\\
-\texttt{OPTION\_TARGET\_LIBSMOLDYN} & Create LibSmoldyn library & OFF\\
+\texttt{OPTION\_TARGET\_SMOLDYN} & Create stand-along Smoldyn program\\
+\texttt{OPTION\_TARGET\_LIBSMOLDYN} & Create LibSmoldyn library\\
 \end{longtable}
 
 \item[Compiling options]
-Most of the compiling options are listed here. They determine which components to include and what the code is being built for. In the table below, * indicates that this option doesn't work at present and so should always be turned off. The default values listed below are only for Mac and Linux and are the initial settings; several of them get overridden later in this same section, depending on other settings.
-\begin{longtable}[c]{lll}
-Variable & Description & Default\\
+Most of the compiling options are listed here. They determine which components to include and what the code is being built for. The default values listed in the code sometimes get overridden later in this same section, depending on other settings. Hopefully, the code outputs a warning if a user-requested value gets overridden.
+\begin{longtable}[c]{ll}
+Variable & Description\\
 \hline
-\texttt{OPTION\_VCELL} & Compile Smoldyn for VCell & OFF\\
-\texttt{OPTION\_MINGW} & Cross-compile for Windows using MinGW compiler* & OFF\\
-\texttt{OPTION\_NSV} & Compile Smoldyn with NextSubvolume functionality & ON\\
-\texttt{OPTION\_PDE} & Compile Smoldyn with PDE functionality* & OFF\\
-\texttt{OPTION\_VTK} & Compile Smoldyn with VTK functionality & OFF\\
-\texttt{OPTION\_STATIC} & Compile Smoldyn with static libraries & OFF\\
-\texttt{OPTION\_USE\_OPENGL} & Build with OpenGL support & ON\\
-\texttt{OPTION\_USE\_ZLIB} & Build with Zlib support & OFF\\
-\texttt{OPTION\_USE\_LIBTIFF} & Whether to include the LibTIFF library & ON\\
-\texttt{OPTION\_USE\_ICONV} & Whether to include the Libiconv library & OFF\\
-\texttt{OPTION\_PYTHON}  & Build Python module & OFF\\
-\texttt{OPTION\_EXAMPLES} & Run Libsmoldyn tests & OFF\\
-\texttt{OPTION\_LATTICE} & Whether to build lattice code & depends\\
+\texttt{OPTION\_VCELL} & Compile Smoldyn for VCell\\
+\texttt{OPTION\_MINGW} & Cross-compile for Windows using MinGW compiler\\
+\texttt{OPTION\_NSV} & Compile Smoldyn with NextSubvolume functionality\\
+\texttt{OPTION\_VTK} & Compile Smoldyn with VTK functionality\\
+\texttt{OPTION\_STATIC} & Compile Smoldyn with static libraries\\
+\texttt{OPTION\_USE\_OPENGL} & Build with OpenGL support\\
+\texttt{OPTION\_USE\_ZLIB} & Build with Zlib support\\
+\texttt{OPTION\_USE\_LIBTIFF} & Whether to include the LibTIFF library\\
+\texttt{OPTION\_USE\_ICONV} & Whether to include the Libiconv library\\
+\texttt{OPTION\_PYTHON}  & Build Python module\\
+\texttt{OPTION\_EXAMPLES} & Run Libsmoldyn tests\\
+\texttt{OPTION\_LATTICE} & Whether to build lattice code\\
 \texttt{HAVE\_ZLIB} & Already have Zlib library\\
 \texttt{HAVE\_ICONV} & Already have Libiconv library\\
 \end{longtable}
 
 \item[Core code information]
 This section lists all of the Smoldyn header files and source files, plus a few extra header files from some of the optional features (e.g. vtkwrapper.h). Some of the source files are only included for some of the options. All of the source and main files properties are set to the C++ language, which is necessary because most of them have a ``.c'' ending (note that this setting only applies to the files listed so far, and does not apply to any subsequently listed files). The include directories are set here to all of the directories with header files.
-\begin{longtable}[c]{lll}
-Variable & Description & Default\\
+\begin{longtable}[c]{ll}
+Variable & Description\\
 \hline
 \texttt{HEADER\_FILES} & List of all header files\\
 \texttt{SRC\_FILES} & List of all source files\\
-\texttt{MAIN\_FILES} & Name of the main file & smoldyn.c\\
+\texttt{MAIN\_FILES} & Name of the main file\\
 \end{longtable}
 
 \item[Compiler flags]
 This section sets most of the compiler flags for the build. It starts by determining what type of build this is, where the options are `Release', `Debug', `None', `RelWithDebInfo', and `MinSizeRel'; it sets the value to `Release' as a default. This is a built-in CMake variable, so CMake defines several compiler flags automatically based on this build type, without them needing to be set here. Next, this section creates a list of possible build platforms and goes through the list of possible platforms, adding to the compiler flags as needed as it goes along. As far as this is concerned, ``MinGW'' means cross-compile from Mac to Windows using the MinGW compiler, and ``Windows'' means compile on Windows using the Visual Studio compiler. This section also sets the path to the BNG2 perl script.
-\begin{longtable}[c]{lll}
-Variable & Description & Default\\
+\begin{longtable}[c]{ll}
+Variable & Description\\
 \hline
-\texttt{CMAKE\_BUILD\_TYPE} & Build type & Release\\
+\texttt{CMAKE\_BUILD\_TYPE} & Build type (default: Release)\\
 \texttt{CMAKE\_C\_FLAGS} & C compiler flags string\\
 \texttt{CMAKE\_CXX\_FLAGS} & C++ compiler flags string\\
 \texttt{DEP\_LIBS} & Library dependencies for linking\\
@@ -403,7 +333,7 @@ Variable & Description & Purpose\\
 \end{longtable}
 
 \item[OpenGL glut]
-The OpenGL glut libraries are found and added next. They are standard libraries on Mac and Linux, but aren't included on Windows. As a result, this uses the freeglut library for Windows, using a version provided with the Smoldyn package. From the freeglut documentation, one is supposed to use glut.h if only glut functionality is wanted, and freeglut.h is additional functionality is used that is only supported by freeglut; thus, this should only use glut.h, although parts of it incorrectly use freeglut.h. The \texttt{include(FindGLUT)} statement is used where possible; it automatically defines the variables \texttt{GLUT\_FOUND)}, \texttt{GLUT\_INCLUDE\_DIR}, and \texttt{GLUT\_LIBRARIES}.
+The OpenGL glut libraries are found and added next. They are standard libraries on Mac and Linux, but aren't included on Windows. As a result, this uses the freeglut library for Windows, using a version provided with the Smoldyn package. From the freeglut documentation, one is supposed to use glut.h if only glut functionality is wanted, and freeglut.h is additional functionality is used that is only supported by freeglut; thus, this should only use glut.h, although parts of it incorrectly use freeglut.h. The \texttt{include(FindGLUT)} statement is used where possible; it automatically defines the variables \texttt{GLUT\_FOUND}, \texttt{GLUT\_INCLUDE\_DIR}, and \texttt{GLUT\_LIBRARIES}.
 \begin{longtable}[c]{lll}
 Variable & Description & Purpose\\
 \hline
@@ -490,6 +420,109 @@ This was an effort to create a nice package with CPack. I haven't finished this 
 Here are a few tests of Libsmoldyn. This section adds the examples subdirectory.
 
 \end{description}
+
+
+% CMake subdirectories
+\subsection{CMake subdirectories}
+
+The CMakeLists file lists a few subdirectories.
+
+(1) The subdirectory ``source/pybind11'' includes the pybind11 library, which offers ``Seamless operability between C++11 and Python... pybind11 is a lightweight header-only library that exposes C++ types in Python and vice versa, mainly to create Python bindings of existing C++ code''. It is widely used and can be downloaded from github. It does not require pre-compiling like the other dependencies because it is compiled with the rest of Smoldyn. There is no custom code here, but only code from the pybind11 project.
+
+(2) The subdirectory ``source/python'' includes Python binding code and was written, by Dilawar, specifically for Smoldyn.
+
+(3) The subdirectory ``examples'' is for automatic testing, which has been partially set up but not completed. To run these examples, enter ``make examples''.
+
+Several different targets can be built. The core software has the Smoldyn and LibSmoldyn targets, which are selected or unselected using the CMake options \texttt{OPTION\_TARGET\_SMOLDYN} and \texttt{OPTION\_TARGET\_LIBSMOLDYN}, described above. I'm not sure if \texttt{smoldyn\_static} and \texttt{smoldyn\_shared} qualify as targets or not, but they are both built as part of LibSmoldyn. When building, these targets create a Smoldyn executable, called just smoldyn on a Mac or smoldyn.exe on Windows, and static and shared libraries called libsmoldyn\_static.a and libsmoldyn\_shared.dylib on a Mac. Also, one can write \texttt{make install}, although this isn't really a different target. In addition, \texttt{make examples} does some testing.
+
+Within the python subdirectory, additional targets are: \texttt{wheel}, \texttt{pyinstall}, \texttt{pyinstall\_venv}, \texttt{pyuninstall}, \texttt{pydevel}, and \texttt{doc\_api\_html}. I don't think that most of these targets need to be called specifically, but are instead called automatically when running just ``make''. These targets are fairly simple, just running a line of Python code in most cases.
+
+
+% Cross-compiling for Windows with MinGW
+\subsection{Cross-compiling for Windows with MinGW}
+
+Smoldyn was cross-compiled for Windows from Mac using MinGW up to version 2.58, although it didn't work well for the last several of those versions. Versions 2.59 to 2.61 used a different build system in which I copied source code files from Mac to Windows and then built on a Windows computer using my own compile script and the MinGW compiler. For version 2.62, I downloaded the MSVC compiler and returned to using CMake, but now running on the Windows computer. I'd like to get back to cross-compiling, but it's not working currently. Following are cross-compiling notes.
+
+In one failed attempt, I got MinGW from MacPorts using ``port install mingw-w64''. This installed the meta-package mingw-w64, along with two sets of other packages: i686-w64-mingw32-... and x86\_64-w64-mingw32-..., where the ... refers to the following 5 endings: binutils, crt, gcc, headers, and winpthreads. The i686-w64-mingw32-gcc compiler sort of works, but not really. I wrote the standard hello.c, which compiled nicely on my Mac with ``gcc -Wall hello.c -o hello''. To cross-compile, I tried to compile with ``i686-w64-mingw32-gcc -Wall hello.c -o hello.exe'' but this returned the error message ``i686-w64-mingw32-gcc: error trying to exec 'cc1': execvp: No such file or directory''. However, this did work when I prefaced the instruction with ``sudo'' and then entered my password. This clearly implied that the issue had to do with permissions, but I was never able to figure out what was wrong and my query to Stack Overflow about this was useless.
+
+I had success with MinGW when I switched to compiling with the x86\_64-w64-mingw32-gcc compiler, which I also downloaded with MacPorts (this didn't work in 2018 and 2019, but magically did again in 2020). It installed files with the same root but ending in -binutils, -ctr, -headers, and -winpthreads. Compiling hello world using the line ``x86\_64-w64-mingw32-gcc -Wall hello.c -o hello.exe'' worked without permission issues. This also successfully built the wrl2smol utility with simply ``x86\_64-w64-mingw32-gcc -Wall ../source/wrl2smol/wrl2smol.c -o wrl2smol.exe''. It works excellently with non-graphics applications, including wrl2smol, SmolCrowd, and Smoldyn without OpenGL. Adding in OpenGL still builds properly, but the result won't run on a Windows computer, returning an error that it won't run. Debugging this with a tool called ``Dependency walker'' indicated that lots of Windows libraries were missing, such as ``api-ms-win-appmodel-runtime''. I wasn't able to solve the problem.
+
+Part of the MacPorts MinGW download is a lot of library code that's pre-compiled for MinGW. The useful portions seem to be in /opt/local/x86\_64-w64-mingw32/include/ for the header files and /opt/local/x86\_64-w64-mingw32/lib/ for the source files. These include most of the libraries that Smoldyn uses. It didn't used to include glut, but the 2020 version does. Back when it didn't include glut, I downloaded the ``freeglut 3.0.0 MinGW Package'' from https://www.transmissionzero.co.uk/software/freeglut-devel/. The download was in the Smoldyn source directory, from which I copied the include and lib directory contents to the /opt/local/x86\_64-w64-mingw32 directories.
+
+For Libtiff, I had several failed attempts. I copied the i386 tiff*.h files from MinGW directory to /opt/local/x86...include directory. They seem ok, but they're clearly for a different architecture. I also tried the i386 libtiff.a static libtiff library, but Smoldyn building complained that it wasn't compatible. I also tried downloading libtiff.a from many different websites, but got the same result every time, that they weren't compatible. I gave up on offering tiff support for Windows, but I now think that I might be able to download the Libtiff source code and cross-compile myself. I successfully compiled the Libtiff source code on Windows with MSVC, but haven't tried yet for MinGW.
+
+
+\subsection{Building for Windows on Windows with MinGW}
+
+I think I have two different versions of MinGW on my Windows computer. For the second one, I downloaded MinGW using the mingw-get-setup.exe installer, from osdn.net, which was remarkably hard to figure out. I next ran ``mingw-get.exe install mingw32-gcc'' and it seemed to install the compiler.
+
+For versions 2.59 to 2.61, I built Windows versions on a Windows computer with MinGW. I hadn't figured out CMake there yet, so I copied the smoldynconfigure.h file and all of the source files to the Windows computer, compiled, copied the .exe file back to the Mac, and continued with the build process. I distributed old version of SmolCrowd and wrl2smol in the Windows package (they only change very rarely, so the old ones were also the current ones).
+
+\subsection{Building for Windows on Windows with Visual C}
+
+For version 2.62 and maybe future versions, I'm compiling the Windows version on a Windows computer using the Visual C compiler (MSVC). After lots of work, this now functions using the CMake build system.
+
+
+% Unit and regression testing
+\section{Unit and regression testing}
+
+Smoldyn does not include unit tests in their purest form. Instead, I tested Smoldyn's algorithms, both for qualitative and quantitative performance, using simple Smoldyn configuration files, which function as unit tests. Many of these test files are in the examples directory. Individual files focus on specific algorithms, such as diffusion, unimolecular reactions, absorbing surface interactions, etc. Simply watching the simulation graphics is typically adequate for assessing qualitative performance, while data analysis and comparison against analytical theory is generally required for assessing quantitative performance.
+
+The examples/S95\_regression directory includes files used for regression testing. This directory includes many of the original unit tests, although typically modified for longer time steps, shorter total run times, and a fixed random number seed. In addition, I removed the original output for these unit tests and instead instructed them to output all molecule positions at the end of the simulation. The idea is that this is a very sensitive way of detecting whether all interactions during the simulation were the same between two runs, or not. This directory also includes a Python script regression.py. This script runs all unit tests, outputs their results to a subdirectory, and compares the results to those that there previously generated. All differences are reported, enabling detection of potential bugs.
+
+To add a new unit test to the regression testing suite, simply make sure that the unit test runs relatively quickly (a few seconds) and has no text output. Then, copy and paste the top few lines from any of the current unit tests (e.g. bounce2.txt), so that the new unit test will output molecule positions or other relevant output. Finally, list the unit test name in the Python script.
+
+% GPU Smoldyn
+\section{GPU Smoldyn}
+
+Two versions of GPU Smoldyn have been written, one by Lorenzo Dematt\'{e}, and one by Denis Gladkov. I never managed to get either of them to work. However, here are some dependencies that I downloaded while trying to get Denis's version to work
+
+For GPU Smoldyn, you will need some other things too. First is the CUDA library, which is from NVIDIA at \url{https://developer.nvidia.com/cuda-downloads}. This downloaded and installed itself. Next is the GLEW library (OpenGL Extension Wrangler library), which is from \url{http://glew.sourceforge.net}. This builds with simply ``make" and ``make install" (no ``./configure" required). Next, the CUDPP library is from \url{http://code.google.com/p/cudpp/}. It builds with CMake (make a build directory, change to that directory, enter ``cmake ..", ``make", and ``sudo make install"). For some reason, my build did not install the cudpp\_config.h file, so I had to do so by hand. From the CUDPP build directory, I entered ``sudo cp ../include/cudpp\_config.h /usr/local/include/" and that fixed problems.
+
+The Boost library is from \url{http://www.boost.org/users/download/}. This doesn't get installed with an installer, but instead the whole directory gets copied over. It didn't work when I put it in a system location, but did work when I copied the ``boost" subdirectory into the GPU code directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
+
+
+
+% Code techniques and tricks
+\section{Code techniques and tricks}
+
+\subsection{Formatting}
+
+I like a very compact source code style, where the indentation shows the code depth rather than the braces. It just was that way for the most part, but then the VCell team added code in their style, and then Dilawar reformatted the code to yet another style. I figured out how to partially revert to my style, and also standardize others' additions. I use the ``uncrustify'' software, which I downloaded from SourceForge at \url{https://sourceforge.net/projects/uncrustify/}. The package currently resides in my Smoldyn top level directory. I wrote a configuration file called ssa.cfg, which I use to format code; it is in the uncrustify directory.
+
+To reformat smolreact.c, enter: \texttt{uncrustify -c ../../uncrustify/ssa.cfg smolreact.c}. This creates a new file, smolreact.c.uncrustify. However, this still leaves lots of things that I like to fix. First, remove closing braces on their own lines. To do so, do a find and replace, first replace all `` \}'' with ``\}'', repeating as many times as necessary. Then replace all ``\textbackslash n\}'' with ``\}''. Another thing to look for is multi-line for statements. It would be nice if these could be removed by uncrustify, but it doesn't.
+
+\subsection{Code merging}
+
+Here are some options for merging code.
+
+Minimalist text based merging can be done as follows:
+
+\begin{description}
+\item[\texttt{mydir="../../../gccCode/Library"}]
+\hfill \\
+set variable
+\item[\texttt{diff Geometry.c \$mydir}]
+\hfill \\
+compares local version with version in \$mydir, and prints out differences.
+\item[\texttt{grep -n 'Geo\_Sphere\_Normal' ../Smoldyn/source/*.c}]
+\hfill \\
+finds all lines of Smoldyn source code that call Geo\_Sphere\_Normal.
+\end{description}
+
+Alternatively, XCode offers FileMerge.app, which is at /Developer/Applications/Utilities/FileMerge.app. It's very easy to use. Yet another option is Eclipse, at \url{www.eclipse.org}, which works well.
+
+% Documentation
+\section{Documentation}
+
+Smoldyn is documented in three hand-written files, which are the User's Manual, the LibSmoldyn user's manual, and this programmers documentation. In addition, it has partially complete documentation generation with Doxygen. It reads the file docs/Doxyfile.in to build the documentation. I don't know where the results get put.
+
+Other files in the docs directory are markdown file versions of the Smoldyn documentation that I wrote. Dilawar made them from the original pdf, tex, and docx files in the documentation folder using pandoc and then edited them manaully. The mkdocs file generates a website from the `docs' folder, and mkdocs.yml is the configuration file for this, using the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar's readthedocs web site shows the results.
+
+\section{Continuous Integration}
+
+Another new directory is called ``scripts''. It includes development related scripts for building Smoldyn on online platforms like Travis, Open Build Service, OSX, and docker. I don't believe that these are complete yet. The build\_wheels\_osx.sh script has stuff about homebrew, which I avoid, so this is going to take some work before I'll want to run it.
+
 
 
 % Chapter: Files, macros, variables, etc.
