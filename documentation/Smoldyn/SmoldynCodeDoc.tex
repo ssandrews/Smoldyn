@@ -44,7 +44,7 @@ breakatwhitespace=false
 
 
 \title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.62}
-\date{\copyright August, 2020}
+\date{\copyright October, 2020}
 \author{Steve Andrews}
 \maketitle
 
@@ -94,6 +94,12 @@ Smoldyn's code repository is github at https://github.com/ssandrews/Smoldyn. Thi
 The most current documentation is included in the download package as Word and pdf files for the User's Manual and as LaTeX and pdf files for the code documentation (this file).
 
 Also, Dilawar Singh started a readthedocs website for Smoldyn at \url{https://readthedocs.org/projects/smoldyn/downloads/}. I'll try to maintain that site but, for now, it's not as current as the documentation that's packaged with the downloads. In addition, note that the documentation is stored on the same github site as the code, so if you really want the latest un-released documentation, then you can get it at the github site.
+
+Yet another readthedocs website is \url{https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html}.
+
+\subsection{Python}
+
+Dilawar started a PyPI site for Smoldyn at \url{https://pypi.org/project/smoldyn/}. I'm not sure if it includes the latest code through nightly builds, or if it takes manual upload. If the latter, then this doesn't include the latest code.
 
 
 % Source code
@@ -157,7 +163,7 @@ Getting the code for these dependencies has ranged from easy to impossible, so m
 
 \item[glut] is complicated. It's part of the standard OpenGL libraries on Macs, but doesn't seem to be standard on Windows. Also, glut itself is obsolete, having been replaced by freeglut, which is a superset of glut; nevertheless, the glut.h header file is supposed to be used, unless one wants functions that are only available in freeglut.
 
-For Windows with MSVC, I downloaded freeglut 3.2.1 from \url{http://freeglut.sourceforge.net} and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. I tried all options that I could find and was simply unable to create the non-debug versions. Thus, I duplicated the debug versions and removed the ``d'' from the file name, in that hope that they would work as non-debug versions, too. At present, the Smoldyn build system seems to want the debug versions, so that works well. Whether the debug or normal versions are wanted depends on the definition of the \texttt{NDEBUG} macro; glut.h calls freeglut\_std.h, and that file has some pragma lines that choose either libfreeglut or libfreeglutd, depending on \texttt{NDEBUG}. Anyhow, I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download.
+For Windows with MSVC, I downloaded freeglut 3.2.1 from \url{http://freeglut.sourceforge.net} and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. These work in Smoldyn but aren't ideal. I then found that I can create the release versions of the library with the same CMake step and then ``msbuild freeglut.sln /p:Configuration=Release''. I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download.
 
 For Windows with MinGW, I found that the MinGW cross-compiler download that I use (see below) has freeglut included in its collection of libraries. Thus, I link that that. Everything seems to work and Smoldyn builds well, but the resulting smoldyn.exe doesn't actually run.
 
@@ -167,7 +173,7 @@ To address this, I also tried to compile the freeglut 3.2.1 download on a Window
 
 For Mac, I downloaded version 3.9.6, which was the latest of the 3.9 series, from \url{http://download.osgeo.org/libtiff/}. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
 
-For Windows with MSVC, I downloaded version 3.8.0 from \url{http://download.osgeo.org/libtiff/}, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. I configured using the option ``cmake .. -DBUILD\_SHARED\_LIBS=FALSE'' and built with ``msbuild tiff.sln''. This only created the debug libraries, tiffd.lib, tiffxxd.lib, and portd.lib. I'm hoping that only tiffd.lib is needed, and that I can duplicate it to tiff.lib, which is what I did. I copied these libraries over to source/MSVClibs, and also included several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
+For Windows with MSVC, I downloaded version 3.8.0 from \url{http://download.osgeo.org/libtiff/}, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. It already has a ``build'' directory, so I worked in a new directory called ``mybuild''. I configured using the option ``cmake .. -DBUILD\_SHARED\_LIBS=FALSE'' and built with ``msbuild tiff.sln /p:Configuration=Release''. This created the libraries, libtiff/Release/tiff.lib and libtiff/Release/tiffxx.lib. I copied these libraries over to source/MSVClibs, and also included several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
 
 \item[libiconv] is a library that converts between different character encodings. I don't know why it's necessary, or even if it is necessary (the default Smoldyn build option settings have the iconv option turned off), but I cared about it at some point. I downloaded it from \url{http://www.gnu.org/software/libiconv/}. I got version 1.14. I configured with ``./configure --enable-static" so that I'd get the static library.
 
@@ -191,7 +197,7 @@ Smoldyn builds with CMake, which can be downloaded from \url{http://www.cmake.or
 
 CMake can be run from either a command line interface (my preference) or with a GUI. At a command line interface, change directories to cmake. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. See below for custom builds. The other option is to use the CMake GUI. It can be started by entering ``cmake-gui" at a command line. Either way, when CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what the build parameters are. On Windows with the MSVC compiler, there's no makefile, but smoldyn.sln instead; this is the ``solution'' file for compiling.
 
-Once configuring is complete, enter ``make" (on Mac or Linux, or ``msbuild smoldyn.sln'' on Windows with MSVC). Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Smoldyn can be run at this point. If you want to install, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
+Once configuring is complete, enter ``make" (on Mac or Linux, or ``msbuild smoldyn.sln /p:Configuration=Release'' on Windows with MSVC). Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Smoldyn can be run at this point. If you want to install, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
 
 Here is the summary of the building process:
 
@@ -460,7 +466,9 @@ For versions 2.59 to 2.61, I built Windows versions on a Windows computer with M
 
 \subsection{Building for Windows on Windows with Visual C}
 
-For version 2.62 and maybe future versions, I'm compiling the Windows version on a Windows computer using the Visual C compiler (MSVC). After lots of work, this now functions using the CMake build system.
+For version 2.62 and maybe future versions, I'm compiling the Windows version on a Windows computer using the Visual C compiler (MSVC). After lots of work, this now functions using the CMake build system. The method starts with creating a build directory, as usual (I haven't figured out how to remove all of the contents of the build directory, so I clean it out by moving up to the Smoldyn directory, removing build with ``rmdir /s build'', and then recreating it with ``mkdir build'', ``cd build''). Then, in the build directory, ``cmake ..'' as usual, with any options, and ``msbuild smoldyn.sln /p:Configuration=Release''. The final option is essential because Visual Studio ignores the CMake directive to make this a release build, creating a debug build instead, which then needs to link to debug libraries that most people don't have. This option tells Visual Studio that it should actually be a release build.
+
+I haven't figured out how to build alternate targets yet. The CMake documentation for build\_command (and an email from Ciaran) suggests that this might be possible with ``cmake .. --target wheel'', but this doesn't work for me. Also, the Microsoft documentation at \url{https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2019} say that I can build with ``msbuild smoldyn.sln -target:wheel''. This doesn't seem totally wrong, but it says that the target doesn't exist. Yet another approach is to change directories to build/source/python and enter ``msbuild wheel.vcxproj''. This seemed promising for me but led to the error ``invalid command `bdist\_wheel''', which a Google search seemed to suggest arose from not using pip. Also, I can't seem to figure out how to get pip to work on that computer, so perhaps that's the problem.
 
 
 % Unit and regression testing
@@ -6254,8 +6262,13 @@ Within the molecule superstructure, \texttt{expand} is a flag for on-the-fly rul
 \item Fixed a very minor bug in \texttt{Geo\_CylisXaabb3}, in which the code didn't check for a zero denominator, although I don't think this actually affected results at all.
 \item When boxes determine what panels are in them, the edge boxes used to extend to $\pm$\texttt{MAX\_DBL}. However, this caused problems in some geometry functions, so I defined a new global variable called \texttt{VERYLARGE}, which I set to $10^{20}$, which is now effectively the edge of simulated space, at least for determining what panels are in what boxes.
 
-\subsection*{Modifications for version 2.62 (not released yet)}
+\subsection*{Modifications for version 2.62 (released 10/14/20)}
 \item Extended the pointsource, volumesource, and gaussiansource commands so that they now allow non-integer numbers of molecules to be requested. If a non-integer value is requested, these functions choose a Poisson-distributed random number of molecules.
+\item Windows version is now compiled with MSVC and includes support for hybrid simulation with NSV package and saving images with LibTiff.
+\item Added Python support, which was mostly Dilawar Singh's work. This includes the pybind11 library and new Python code. The pre-compiled Mac version now comes with a Python wheel. The Python wheel can also be downloaded from PyPI with pip. This also included substantial editing of the Libsmoldyn documentation.
+\item Substantial CMakeLists.txt clean-up, along with updates to the build system documentation.
+\item Cross-compiling from Mac to Windows with MinGW works again, but not with graphics, so this was used for the SmolCrowd and wrl2smol utilities, but not for Smoldyn.
+\item Dilawar added several things that I haven't addressed yet: Travis continuous integration, Doxygen, readthedocs website compatibility, and several scripts.
 
 \end{itemize}
 

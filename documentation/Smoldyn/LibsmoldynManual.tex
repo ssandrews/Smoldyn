@@ -44,7 +44,7 @@ breakatwhitespace=false
 
 
 \title{\textbf{Libsmoldyn User's Manual} \\ \large for Smoldyn version 2.62}
-\date{\copyright June, 2020}
+\date{\copyright October, 2020}
 \author{Steve Andrews}
 \maketitle
 
@@ -58,24 +58,6 @@ Libsmoldyn is a C, C++, and Python interface to the Smoldyn simulator. Libsmoldy
 Libsmoldyn was originally written as a C API, but one that should work with C++ as well. Then, in 2019 and 2020, Dilawar Singh added Python bindings to it, which are still quite new but generally work well.
 
 Libsmoldyn only barely supports graphics at present due to constraints imposed by the glut code library. This will be improved in a future version (by changing to the freeglut library, which doesn't insist on controlling the main event loop, as the glut library does).
-
-% Chapter: Documentation and websites
-\chapter{Documentation and websites}
-
-The Smoldyn web site, www.smoldyn.org, is the principle download site. It also contains a decent amount of information about Smoldyn and other spatial simulators in the ``About'' section.
-
-The user's manual, SmoldynUserManual.pdf, is created from a Microsoft Word file. This file describes how to use the software, aimed at the stand-alone software, but is reasonably complete and readable.
-
-The code documentation, SmoldynCodeDoc.pdf, is created from a LaTeX file. This is a thorough description of the C code, including descriptions of all data structures and functions.
-
-The library documentation, LibsmoldynManual.pdf, is created from a LaTeX file. It tells how to use the C/C++ API to Smoldyn. It also describes the new Python bindings.
-
-Smoldyn can also be downloaded from the Python site: https://pypi.org/project/smoldyn/.
-
-The readthedocs website has information about the Smoldyn code, created using Doxygen: https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html.
-
-Smoldyn's code repository is on Github, at https://github.com/ssandrews/Smoldyn-official.
-
 
 
 % Chapter: Linking with C/C++
@@ -141,60 +123,6 @@ Dynamic link, with OpenGL:
 \lstinline{gcc test1.o -L/usr/local/lib -I/System/Library/Frameworks/OpenGL.framework/Headers -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT -framework OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 -lsmoldyn_shared -ltiff}
 \end{quote}
 
-% Using smaller versions of Libsmoldyn
-\section{Using smaller versions of Libsmoldyn}
-
-As a default, Smoldyn and Libsmoldyn are compiled with all of their components. However, they can also be compiled without OpenGL, without hybrid simulation (NSV) support, without LibTiff support, etc. Removing these components removes some aspects of the functionality, obviously, but can also simplify linking.
-
-Following is a simple diagram for Smoldyn's code dependencies. Each file depends on the files that are indented below it.
-
-\begin{tabbing}
-\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\kill
-\>Smoldyn\\
-\>\>OpenGL\\
-\>\>libTiff\\
-\>\>zlib\\
-\>\>libiconv\\
-\>\>NSV\\
-\>\>\>boost\\
-\>\>\>VTK\\
-\end{tabbing}
-
-
-To build with fewer components, you will need to run CMake to compile Smoldyn. This is described in more detail in the Smoldyn Code Documentation, but summarized here for convenience.
-
-I prefer to run CMake from a command line interface. At a command line interface, change directories to build. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the build directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. When CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what some important build parameters are.
-
-Once configuring is complete, enter ``make". Hopefully, Smoldyn will build, again with build files being put into the build directory. Finally, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
-
-For custom builds, you need to set various options to non-default settings. With a command line interface, list each non-default option on the command line after the ``cmake ..'' start. Following are some helpful build options:
-
-\begin{longtable}[c]{lll}
-Smoldyn option & default & effect when ON\\
-\hline
-\texttt{-DOPTION\_VCELL} & \texttt{OFF} & Build for inclusion within VCell\\
-\texttt{-DOPTION\_NSV} & \texttt{ON} & Build with Next Subvolume support\\
-\texttt{-DOPTION\_PDE} & \texttt{OFF} & Build with support for PDE simulation\\
-\texttt{-DOPTION\_VTK} & \texttt{OFF} & Build sith support for VTK visualization\\
-\texttt{-DOPTION\_STATIC} & \texttt{OFF} & Build using static libraries\\
-\texttt{-DOPTION\_USE\_OPENGL} & \texttt{ON} & Build with graphics support\\
-\texttt{-DOPTION\_USE\_LIBTIFF} & \texttt{ON} & Build with LibTiff support\\
-\texttt{-DOPTION\_TARGET\_SMOLDYN} & \texttt{ON} & Build stand-alone Smoldyn program\\
-\texttt{-DOPTION\_TARGET\_LIBSMOLDYN} & \texttt{OFF} & Build LibSmoldyn library\\
-\hline
-CMake option & default & function\\
-\hline
-\texttt{-DCMAKE\_BUILD\_TYPE} & \texttt{Release} & Choose CMake build type\\
-\multicolumn{3}{l}{\hspace{0.3in}options are: \texttt{None}, \texttt{Debug}, \texttt{Release}, \texttt{RelWithDebInfo}, and \texttt{MinSizeRel}}\\
-\texttt{-DCMAKE\_CXX\_COMPILER:FILEPATH} & clang & Compile with specific compiler\\
-\multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
-\end{longtable}
-
-For example, the following line builds Smoldyn and Libsmoldyn for debugging and without the hybrid simulation support:
-
-\begin{quote}
-\lstinline{cmake .. -DCMAKE_BUILD_TYPE=Debug -DOPTION_TARGET_LIBSMOLDYN=ON -DOPTION_NSV=OFF}
-\end{quote}
 
 % Chapter: Use with Python
 \chapter{Use with Python}
@@ -205,9 +133,9 @@ Hopefully, you should be able to install using
 \begin{verbatim}
 python3 -m pip install smoldyn --user --pre
 \end{verbatim}
+This should install the smoldyn nightly package, from: \url{https://pypi.org/project/smoldyn/}
 
-This should install the smoldyn nightly package, from: https://pypi.org/project/smoldyn/ 
-
+Alternatively, the Mac distribution comes with a Python wheel, called something like smoldyn-2.62-py3-none-any.whl. You should be able to write ``pip install smoldyn...whl'' and that will install it for you as well.
 
 \section{Files}
 
