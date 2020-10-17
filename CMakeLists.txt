@@ -2,7 +2,7 @@
 # Written by Steve Andrews, April 16, 2012. Updated by Steve Andrews since then.
 # This file, and other files of the Smoldyn project, are licensed with LGPL license.
 # The primary Smoldyn web site is http://www.smoldyn.org.
-# Please report bugs and problems to support@smoldyn.org.
+# Please report bugs and problems to support@smoldyn.org. 
 
 ########## Basic setup ##########
 
