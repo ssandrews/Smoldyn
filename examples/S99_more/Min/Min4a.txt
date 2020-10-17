@@ -1,0 +1,209 @@
+# File Min1.txt, by Steve Andrews, 11/2009.
+# E. coli Min system, based on Huang, Meir, Wingreen (HMW)
+# This file is HMW system exactly, plus surface diffusion
+# units are micron, second
+
+
+define ONE		0.02	# MinD(dimer)_MinE(front) diff. coeff. (um^2/s)
+define TWO		0.02	# MinD(dimer) diff. coeff. (um^2/s)
+define THREE		2	# MinD(dimer) diffusion coefficient (um^2/s)
+define FOUR		0.02	# MinD(monomer)_MinE(front) diff. coeff. (um^2/s)
+define FIVE		2.5	# MinD(monomer) diffusion coefficient (um^2/s)
+define SIX		2	# MinE diffusion coefficient (um^2/s)
+define SEVEN		0.02	# MinD(monomer) diff. coeff. (um^2/s)
+define EIGHT		1	# MinD phosphorylation rate (s^-1)
+define NINE		0.025	# MinD_ATP adsorption coeff. (um/s)
+define TEN		0.0015	# cooperative adsorption coeff. (um^3/s)
+define ELEVEN		0.7	# rate of MinD(monomer/dimer)_MinE breakdown (s^-1)
+define TWELVE		0.093	# MinE binding to surface-bound MinD (um^3/s)
+define THIRTEEN		10  	# MinD dissociation constant
+define FOURTEEN		0.1	# MinD association constant 
+
+define UNBINDRAD	0.01	# MinD separation on surface (um)
+
+define R		0.5	# cell radius
+define L_PARAM		2	# half of cell length
+define L_PARAM2		1.5	# half of cell length minus radius
+
+define NUMBER_MIND	4000	# number of MinD in cell
+define NUMBER_MINE	1400	# number of MinE in cell
+
+define TIME_STOP	300	# stopping time
+
+define KICK_START	1	# start with MinD_ATP at an end
+
+
+graphics opengl
+# graphic_iter 100
+
+# tiff_name movie/MinMovie
+# tiff_iter 200
+# tiff_min 1
+# tiff_max 200
+
+dim 3
+boundaries 0 -L_PARAM L_PARAM 
+boundaries 1 -R R
+boundaries 2 -R R
+frame_thickness 0
+time_start 0
+time_stop TIME_STOP
+time_step 0.002			# 2 millisecond time step
+
+accuracy 5
+molperbox 4
+
+max_species 10
+species MinD_ATP
+species MinD_ADP
+species MinE
+species MinD_ATP_MinE
+species MinD_ATP.MinD_ATP
+species MinD_ADP.MinD_ATP
+species MinD_ADP.MinD_ADP
+species MinD_ATP.MinD_ATP_MinE
+species MinD_ADP.MinD_ATP_MinE
+
+# molecule_lists list1 list2 list3 list4 list5 list6 list7 list8 list9 list10 list11
+# mol_list MinD_ATP(soln) list1
+# mol_list MinD_ATP(front) list2
+# mol_list MinD_ADP(all) list3
+# mol_list MinE(all) list4
+# mol_list MinD_ATP_MinE(all) list5
+# mol_list MinD_ATP.MinD_ATP(soln) list6
+# mol_list MinD_ADP.MinD_ATP(soln) list7
+# mol_list MinD_ADP.MinD_ADP(soln) list8
+# mol_list MinD_ATP.MinD_ATP(front) list9
+# mol_list MinD_ADP.MinD_ATP(front) list10
+
+max_mol 20000
+difc MinD_ATP(solution) FIVE
+difc MinD_ATP(front) SEVEN
+difc MinD_ADP(solution) FIVE
+difc MinE(solution) SIX
+difc MinD_ATP_MinE(front) FOUR
+difc MinD_ATP.MinD_ATP(solution) THREE
+difc MinD_ADP.MinD_ATP(solution) THREE
+difc MinD_ADP.MinD_ADP(solution) THREE
+difc MinD_ATP.MinD_ATP(front) TWO
+difc MinD_ADP.MinD_ATP(front) TWO
+difc MinD_ATP.MinD_ATP_MinE(front) ONE
+difc MinD_ADP.MinD_ATP_MinE(front) ONE
+
+color MinD_ATP(soln) 0 0 0.6			# MinD_ATP(solution) is dark blue
+color MinD_ATP(front) 0 0.6 0			# MinD_ATP(front) is dark green
+color MinD_ADP(soln) 0.4 0.6 1			# MinD_ADP is light blue
+color MinE(soln) 1 0 0				# MinE is red
+color MinD_ATP_MinE(front) 0.2 1 0.2		# MinD_ATP_MinE is bright green
+color MinD_ATP.MinD_ATP(solution) 0.8 0.8 0.8 	
+color MinD_ADP.MinD_ATP(solution) 0.5 0.5 0.5 	
+color MinD_ADP.MinD_ADP(solution) 0.2 0.2 0.2 	
+color MinD_ATP.MinD_ATP(front) 0 1 0
+color MinD_ADP.MinD_ATP(front) 0 0 1
+color MinD_ATP.MinD_ATP_MinE(front) 0.5 0 0.5
+color MinD_ADP.MinD_ATP_MinE(front) 1 1 0
+
+display_size all(solution) 2
+display_size all(front) 4
+
+max_surface 1
+start_surface membrane
+action both all reflect
+rate MinD_ATP fsoln front NINE	# reaction 1a
+rate MinD_ADP.MinD_ATP fsoln front NINE
+rate MinD_ATP.MinD_ATP fsoln front NINE
+polygon both edge
+max_panels cylinder 1
+panel cylinder -L_PARAM2 0 0 L_PARAM2 0 0 -R 20 10 cyl0
+max_panels hemisphere 2
+panel hemi -L_PARAM2 0 0 -R 1 0 0 20 5 hemi0
+panel hemi L_PARAM2 0 0 -R -1 0 0 20 5 hemi1
+neighbors cyl0 hemi0 hemi1
+neighbors hemi0 cyl0
+neighbors hemi1 cyl0
+end_surface
+
+max_compartment 1
+start_compartment cell
+surface membrane
+point 0 0 0
+end_compartment
+ 
+
+reaction 1A MinD_ATP(fsoln) + MinD_ATP(fsoln) -> MinD_ATP.MinD_ATP(fsoln) FOURTEEN
+reaction 1B MinD_ADP(fsoln) + MinD_ADP(fsoln) -> MinD_ADP.MinD_ADP(fsoln)  FOURTEEN 	# necessary?
+reaction 1C MinD_ADP(fsoln) + MinD_ATP(fsoln) -> MinD_ADP.MinD_ATP(fsoln) FOURTEEN
+reaction 1D MinD_ATP(all) + MinD_ATP(front) -> MinD_ATP.MinD_ATP(front) FOURTEEN
+reaction 1E MinD_ADP(fsoln) + MinD_ATP(front) -> MinD_ADP.MinD_ATP(front) FOURTEEN
+
+reaction 2A MinD_ATP.MinD_ATP(fsoln) -> MinD_ATP(fsoln) + MinD_ATP(fsoln) THIRTEEN
+product_placement 2A unbindrad UNBINDRAD
+reaction 2B MinD_ADP.MinD_ADP(fsoln) -> MinD_ADP(fsoln) + MinD_ADP(fsoln) THIRTEEN	# necessary?
+product_placement 2B unbindrad UNBINDRAD
+reaction 2C MinD_ADP.MinD_ATP(fsoln) -> MinD_ADP(fsoln) + MinD_ATP(fsoln) THIRTEEN
+product_placement 2C unbindrad UNBINDRAD
+reaction 2D MinD_ATP.MinD_ATP(front) -> MinD_ATP(front) + MinD_ATP(front) THIRTEEN
+product_placement 2D unbindrad UNBINDRAD
+reaction 2E MinD_ADP.MinD_ATP(front) -> MinD_ADP(fsoln) + MinD_ATP(front) THIRTEEN
+product_placement 2E unbindrad UNBINDRAD
+
+reaction 3A MinD_ATP(fsoln) + MinD_ATP(front) -> MinD_ATP(front) + MinD_ATP(front) TEN
+product_placement 3A unbindrad UNBINDRAD
+reaction 3B MinD_ATP.MinD_ATP(fsoln) + MinD_ATP(front) -> MinD_ATP.MinD_ATP(front) + MinD_ATP(front) TEN
+product_placement 3B unbindrad UNBINDRAD
+reaction 3C MinD_ADP.MinD_ATP(fsoln) + MinD_ATP(front) -> MinD_ADP.MinD_ATP(front) + MinD_ATP(front) TEN
+product_placement 3C unbindrad UNBINDRAD
+reaction 3D MinD_ATP.MinD_ATP(fsoln) + MinD_ATP.MinD_ATP(front) -> MinD_ATP.MinD_ATP(front) + MinD_ATP.MinD_ATP(front) TEN
+product_placement 3D unbindrad UNBINDRAD
+reaction 3E MinD_ADP.MinD_ATP(fsoln) + MinD_ATP.MinD_ATP(front) -> MinD_ADP.MinD_ATP(front) + MinD_ATP.MinD_ATP(front) TEN
+product_placement 3E unbindrad UNBINDRAD
+reaction 3F MinD_ADP.MinD_ATP(fsoln) + MinD_ADP.MinD_ATP(front) -> MinD_ADP.MinD_ATP(front) + MinD_ADP.MinD_ATP(front) TEN
+product_placement 3F unbindrad UNBINDRAD
+
+reaction 4A MinD_ATP(fsoln) + MinD_ATP_MinE(front) -> MinD_ATP(front) + MinD_ATP_MinE(front) TEN
+product_placement 4A unbindrad UNBINDRAD
+reaction 4B MinD_ATP.MinD_ATP(fsoln) + MinD_ATP_MinE(front) -> MinD_ATP.MinD_ATP(front) + MinD_ATP_MinE(front) TEN
+product_placement 4B unbindrad UNBINDRAD
+reaction 4C MinD_ADP.MinD_ATP(fsoln) + MinD_ATP_MinE(front) -> MinD_ADP.MinD_ATP(front) + MinD_ATP_MinE(front) TEN
+product_placement 4C unbindrad UNBINDRAD
+reaction 4D MinD_ADP.MinD_ATP(fsoln) + MinD_ADP.MinD_ATP_MinE(front) -> MinD_ADP.MinD_ATP(front) + MinD_ADP.MinD_ATP_MinE(front) TEN
+product_placement 4D unbindrad UNBINDRAD
+reaction 4E MinD_ATP.MinD_ATP(fsoln) + MinD_ADP.MinD_ATP_MinE(front) -> MinD_ADP.MinD_ATP(front) + MinD_ADP.MinD_ATP_MinE(front) TEN
+product_placement 4E unbindrad UNBINDRAD
+reaction 4F MinD_ADP.MinD_ATP(fsoln) + MinD_ATP.MinD_ATP_MinE(front) -> MinD_ADP.MinD_ATP(front) + MinD_ATP.MinD_ATP_MinE(front) TEN
+product_placement 4F unbindrad UNBINDRAD
+reaction 4G MinD_ATP.MinD_ATP(fsoln) + MinD_ATP.MinD_ATP_MinE(front) -> MinD_ADP.MinD_ATP(front) + MinD_ATP.MinD_ATP_MinE(front) TEN
+product_placement 4G unbindrad UNBINDRAD
+
+reaction 5A MinE(fsoln) + MinD_ATP(front) -> MinD_ATP_MinE(front) TWELVE
+reaction 5B MinE(fsoln) + MinD_ATP.MinD_ATP(front) -> MinD_ATP.MinD_ATP_MinE(front) TWELVE
+reaction 5C MinE(fsoln) + MinD_ADP.MinD_ATP(front) -> MinD_ADP.MinD_ATP_MinE(front) TWELVE
+
+reaction 6A MinD_ATP_MinE(front) -> MinD_ADP(fsoln) + MinE(fsoln) ELEVEN
+reaction 6B MinD_ATP.MinD_ATP_MinE(front) -> MinD_ADP.MinD_ATP_MinE(front) ELEVEN
+reaction 6C MinD_ADP.MinD_ATP_MinE(front) -> MinD_ADP.MinD_ADP(fsoln) + MinE(fsoln) ELEVEN
+
+reaction 7A MinD_ADP -> MinD_ATP EIGHT
+reaction 7B MinD_ADP.MinD_ADP -> MinD_ADP.MinD_ATP EIGHT
+reaction 7C MinD_ADP.MinD_ATP -> MinD_ATP.MinD_ATP EIGHT
+
+ifundefine KICK_START
+  surface_mol NUMBER_MIND MinD_ATP(front) membrane all all
+else
+  surface_mol NUMBER_MIND MinD_ATP(front) membrane hemi hemi1
+endif
+compartment_mol NUMBER_MINE MinE cell
+
+
+# output_files MinSave.txt FILEROOTout.txt
+# output_files myMin4out.txt 
+
+# cmd B pause
+# cmd @ 35 molcount myMin4out.txt
+
+# cmd i 0 TIME_STOP 100 overwrite MinSave.txt
+# cmd i 0 TIME_STOP 100 savesim MinSave.txt
+# cmd i 0 TIME_STOP 2 molmoments MinD_ATP(front) FILEROOTout.txt
+
+end_file
+

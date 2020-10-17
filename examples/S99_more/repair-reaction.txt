@@ -1,0 +1,90 @@
+# Measure effect of distance between loci on translocations. 1st order repair kinetics
+# Units are microns and seconds
+
+
+graphics opengl
+
+dim 3
+
+define site1 0.5 0.5 0.5
+define site2 0.5 0.75 0.5
+
+species Brk1 Brk2 Ligated1 Ligated2 Translocated    
+
+
+#define how the "molecules" move
+
+difc Brk1 0.00002
+difc Brk2 0.00002
+difc Ligated1 0
+difc Ligated2 0
+difc Translocated 0
+
+
+#define how the "molecules" look in the graphics
+
+color Brk1 blue
+display_size Brk1 10
+
+color Ligated1 darkblue
+display_size Ligated1 10	
+
+color Brk2 red
+display_size Brk2 10
+	
+color Ligated2 darkred
+display_size Ligated2 10
+
+color Translocated green
+display_size Translocated 10
+
+
+#define the time parameters
+
+time_start 0
+time_stop 24000
+time_step 0.001
+
+
+#define the simulation volume
+boundaries 0 -5 5
+boundaries 1 -5 5
+boundaries 2 -5 5
+
+
+#create the nucleus
+start_surface nucleus
+action both all reflect
+color both 0.3 0.3 0.3	
+polygon both edge
+max_panels sphere 1
+panel sphere 0 0 0 2.5 20 20
+end_surface
+
+
+#tells the simulation to wait until I press the spacebar before it starts
+cmd b pause
+
+
+# set the number and position of molecules 
+#"number" "name" "coordinates x y z"
+
+mol 1 Brk1 site1
+mol 1 Brk2 site2
+
+
+#define the reactions
+#reaction "name" "reactants" -> "products" "rate"
+
+reaction rep1 Brk1 -> Ligated1 .001
+reaction rep2 Brk2 -> Ligated2 .001
+reaction trans Brk1 + Brk2 -> Translocated 0.00002
+
+cmd n 2400000 pause
+cmd n 2400000 killmol all   
+cmd n 2400000 set mol 1 Brk1 site1
+cmd n 2400000 set mol 1 Brk2 site2
+
+end_file
+
+
