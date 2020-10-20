@@ -1,0 +1,58 @@
+# E-coli BamA simulation file
+
+graphics opengl_good
+dim 3
+species BamA RcsF IgaA OmpA [OmpA] BamA-RcsF OmpA-RcsF IgaA-RcsF BamA-RcsF-[OmpA]
+
+
+time_start 0
+time_stop 500
+time_step 0.1
+
+color BamA maroon
+color RcsF red
+color IgaA olive
+color OmpA sky
+color [OmpA] violet
+color BamA-rcsF rose
+color OmpA-RcsF yellow
+color IgaA-RcsF aqua
+color BamA-RcsF-[OmpA] grey
+
+display_size BamA 1
+display_size RcsF 1
+display_size IgaA 1
+display_size OmpA 1
+display_size [OmpA] 1
+display_size BamA-RcsF 1
+display_size OmpA-RcsF 1
+display_size IgaA-RcsF 1
+display_size BamA-RcsF-[OmpA]1
+
+boundaries 0 0 500 r
+boundaries 1 0 100 r
+boundaries 2 0 100 r
+
+mol 3900 BamA u u u
+mol 3100 RcsF u u 9
+mol 200 IgaA 0 u u
+mol 210000 [OmpA] u u u
+
+difc BamA 100
+difc RcsF 10
+difc [OmpA] 10
+
+reaction BamA + RcsF -> BamA-RcsF 3e-2
+reaction BamA-RcsF + OmpA -> BamA + OmpA-RcsF 5e2
+reaction BamA + [OmpA] -> OmpA 4e-8
+reaction BamA + RcsF + [OmpA] -> BamA-RcsF-[OmpA] 4e-2
+reaction BamA-RcsF-[OmpA] -> BamA + OmpA-RcsF 6e-2
+reaction RcsF + IgaA -> IgaA-RcsF 8e-2
+reaction X -> BamA 1e0
+reaction X -> RcsF 1e0
+reaction X -> IgaA 10e-1
+reaction X -> [OmpA] 1e3
+
+
+end_file
+

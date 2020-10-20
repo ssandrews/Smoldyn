@@ -25,6 +25,8 @@
 #ifndef IO_KAIROS_H_
 #define IO_KAIROS_H_
 
+#if defined(HAVE_VTK)
+
 #include <string>
 #include <vtkUnstructuredGrid.h>
 #include <vtkSmartPointer.h>
@@ -41,5 +43,5 @@ namespace Kairos {
 }
 
 
-
+#endif /* VTK */
 #endif /* IO_H_ */

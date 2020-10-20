@@ -390,7 +390,7 @@ void gl2glutInit(int *argc,char **argv) {
 	if(done) return;
 	done=1;
 	if(argc && argv)
-		glutInit(argc,argv);		// ?? This is where the code crashes when using freeglut
+		glutInit(argc,argv);		// ?? This is where the code crashes when using _freeglut
 	else {
 		defaultv=(char**) calloc(1,sizeof(char*));
 		if(!defaultv) return;

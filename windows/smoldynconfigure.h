@@ -28,7 +28,7 @@
 /* Define to 1 if you have the <GLUT/glut.h> header file. */
 /* #undef HAVE_GLUT_GLUT_H */
 
-/* Define to 1 if you have the <GL/freeglut.h> header file. */
+/* Define to 1 if you have the <GL/_freeglut.h> header file. */
 #define HAVE_GL_FREEGLUT_H
 
 /* Define to 1 if you have the <memory.h> header file. */
