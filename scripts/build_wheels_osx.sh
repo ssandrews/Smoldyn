@@ -42,7 +42,6 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         -DPYTHON_EXECUTABLE=$PYTHON
 
     make -j4 
-    make pytest
     # cmake generates whl file in the wheel folder.
     /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v wheel/*.whl
 
