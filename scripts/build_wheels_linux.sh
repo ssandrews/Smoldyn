@@ -11,45 +11,49 @@ rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
 SMOLDYN_VERSION=$(bash ${SCRIPT_DIR}/get_version.sh)
 
-PYDIR=/opt/python/cp37-cp37m/
-PYTHON=$PYDIR/bin/python
+PYDIR37=/opt/python/cp36-cp36m/
+PYDIR37=/opt/python/cp37-cp37m/
+PYDIR38=/opt/python/cp38-cp38/
+PYDIR39=/opt/python/cp39-cp39/
 
 # install cmake using pip.
-$PYTHON -m pip install cmake 
-CMAKE=$PYDIR/bin/cmake
+$PYDIR38/bin/python -m pip install cmake
+CMAKE=$PYDIR38/bin/cmake
 
-# dependencies
-$PYTHON -m pip install twine auditwheel pytest
-mkdir -p _build_wheel_linux
-(
-    cd _build_wheel_linux
-    $CMAKE ../../ \
-	-DPython3_EXECUTABLE=$PYTHON \
-	-DPython3_LIBRARY=$PYDIR/lib/python3.7 \
-        -DSMOLDYN_VERSION=${SMOLDYN_VERSION}
-    make -j`nproc` VERBOSE=1
-    make pytest  || echo "Pytest is not found."
-    make wheel && make pyinstall 
-    $PYTHON -m smoldyn $SCRIPT_DIR/../examples/S4_molecules/mollist.txt
+for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
+    PYTHON=$PYDIR/bin/python
 
-    # This generates a wheel in wheel/ directory. Repair and put in wheelhouse.
-    $PYTHON -m auditwheel repair wheel/*.whl -w $WHEELHOUSE
-)
+    # dependencies
+    $PYTHON -m pip install twine auditwheel pytest
+    mkdir -p _build_wheel_linux
+    (
+        cd _build_wheel_linux
+	# cmake version must be higher than 3.12
+	PYLIB=$(ls -d $PYDIR/lib/python3.*)
+        $CMAKE ../../ \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DPython3_EXECUTABLE=$PYTHON \
+            -DPython3_LIBRARY=$PYLIB \
+            -DSMOLDYN_VERSION=${SMOLDYN_VERSION}
+        make -j`nproc` VERBOSE=1
+        make wheel 
+        export PYTHONPATH=$(pwd)/py
+        $PYTHON -m smoldyn $SCRIPT_DIR/../examples/S4_molecules/mollist.txt
+        $PYTHON -m auditwheel repair *.whl -w $WHEELHOUSE
+
+	# install and test it
+        $PYTHON -m pip install *.whl
+        $PYTHON -c 'import smoldyn; print(dir(smoldyn))'
+        $PYTHON -c 'import smoldyn; print(smoldyn.__version__ )'
+
+	# remove it
+        rm -rf *.whl
+    )
+done
 
 ls -lh $WHEELHOUSE/*.whl
 $PYTHON -m auditwheel show $WHEELHOUSE/*.whl
 
-echo "Installing before testing ... "
-VENV=/tmp/smoldyn/venv
-$PYTHON -m venv $VENV
-(
-    source $VENV/bin/activate
-    python -m pip install $WHEELHOUSE/smoldyn*-py*.whl
-    python -c 'import smoldyn; print(smoldyn.__version__ )'
-    python -c 'import smoldyn; print(dir(smoldyn))'
-    deactivate
-)
-	
 # If successful, upload using twine.
 if [ -n "$PYPI_PASSWORD" ]; then
     $PYTHON -m twine upload $WHEELHOUSE/smoldyn*.whl \
