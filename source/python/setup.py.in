@@ -10,6 +10,7 @@ __email__ = "dilawar.s.rajput@gmail.com"
 
 import os
 import setuptools
+from setuptools.command.install import install
 from pathlib import Path
 
 # This is set by cmake.
@@ -20,6 +21,21 @@ try:
         readme = f.read()
 except:
     readme = ""
+
+# Thanks https://stackoverflow.com/a/62667991/1805129
+class BinaryDistribution(setuptools.dist.Distribution):
+    """Distribution which always forces a binary package with platform name"""
+    def has_ext_modules(foo):
+        return True
+
+
+# and thanks https://github.com/google/or-tools/issues/616#issue-303425730
+class InstallPlatlib(install):
+    def finalize_options(self):
+        install.finalize_options(self)
+        if self.distribution.has_ext_modules():
+            self.install_lib = self.install_platlib
+
 
 setuptools.setup(
     name="smoldyn",
@@ -33,8 +49,10 @@ setuptools.setup(
     license="Gnu LGPL",
     #  include_package_data=True,
     packages=setuptools.find_packages(),
-    package_data={"smoldyn": ["_smoldyn.so"]},
+    package_data={"smoldyn": ["_smoldyn.*so*"]},
     install_requires=["numpy", "dataclasses;python_version=='3.6'"],
     python_requires=">=3.6",
     classifiers=["Programming Language :: Python :: 3",],
+    distclass=BinaryDistribution,
+    cmdclass={"install":InstallPlatlib},
 )
