@@ -48,7 +48,6 @@ for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
 done
 
 ls -lh $WHEELHOUSE/*.whl
-$PYTHON -m auditwheel show $WHEELHOUSE/*.whl
 
 # If successful, upload using twine.
 if [ -n "$PYPI_PASSWORD" ]; then
