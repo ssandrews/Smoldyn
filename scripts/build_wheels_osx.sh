@@ -46,7 +46,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
 
     /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v *.whl
 
-    ls $WHEELHOUSE/smoldyn*-py*.whl
+    ls -ltR $WHEELHOUSE/smoldyn*.whl
 
     # create a virtualenv and test this.
     VENV=/tmp/venv
