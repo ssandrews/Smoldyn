@@ -55,7 +55,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         $PYTHON -m venv $VENV
         source $VENV/bin/activate
         python --version
-        python -m pip install $WHEELHOUSE/smoldyn*-py*.whl
+        python -m pip install $WHEELHOUSE/smoldyn*.whl
         python -c 'import smoldyn; print(smoldyn.__version__ )'
         python -m smoldyn $SCRIPT_DIR/../examples/S4_molecules/mollist.txt
         deactivate
