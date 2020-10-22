@@ -42,10 +42,9 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         -DOPTION_PYTHON=ON \
         -DPYTHON_EXECUTABLE=$PYTHON
 
-    make -j4 && make wheel
+    make -j$(nproc) && make wheel
 
-    # cmake generates whl file in the wheel folder.
-    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v wheel/*.whl
+    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v *.whl
 
     ls $WHEELHOUSE/smoldyn*-py*.whl
 
