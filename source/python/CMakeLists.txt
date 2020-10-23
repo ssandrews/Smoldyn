@@ -83,7 +83,9 @@ add_custom_target(doc_api_html
     COMMENT "Generating Python's API doc (HTML)"
     VERBATIM)
 
-install(CODE "execute_process(COMMAND make pyinstall WORKING_DIRECTORY ${CMAKE_BINARY_DIR})")
+configure_file(${CMAKE_SOURCE_DIR}/scripts/install_wheel.sh.in
+    ${CMAKE_BINARY_DIR}/install_wheel.sh)
+install(CODE "execute_process(COMMAND ${CMAKE_BINARY_DIR}/install_wheel.sh)")
 
 enable_testing()
 
