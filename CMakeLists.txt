@@ -7,8 +7,9 @@
 ########## Basic setup ##########
 
 project(smoldyn)
-cmake_minimum_required(VERSION 3.0)
+
 # Newer CMake versions are better but I think this file works with old versions, too.
+cmake_minimum_required(VERSION 2.8)
 
 # CI/CD can also set this variable. If not, use the default one. 
 if(NOT SMOLDYN_VERSION)
