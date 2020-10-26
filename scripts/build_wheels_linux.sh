@@ -16,10 +16,6 @@ PYDIR37=/opt/python/cp37-cp37m/
 PYDIR38=/opt/python/cp38-cp38/
 PYDIR39=/opt/python/cp39-cp39/
 
-# install cmake using pip.
-$PYDIR38/bin/python -m pip install cmake
-CMAKE=$PYDIR38/bin/cmake
-
 for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
     PYTHON=$PYDIR/bin/python
 
@@ -30,7 +26,7 @@ for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
         cd _build_wheel_linux
 	# cmake version must be higher than 3.12
 	PYLIB=$(ls -d $PYDIR/lib/python3.*)
-        $CMAKE ../../ \
+        cmake ../../ \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DPython3_EXECUTABLE=$PYTHON \
             -DPython3_LIBRARY=$PYLIB \
@@ -52,7 +48,6 @@ for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
 done
 
 ls -lh $WHEELHOUSE/*.whl
-$PYTHON -m auditwheel show $WHEELHOUSE/*.whl
 
 # If successful, upload using twine.
 if [ -n "$PYPI_PASSWORD" ]; then

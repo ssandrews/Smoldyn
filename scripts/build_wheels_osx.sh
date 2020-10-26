@@ -39,13 +39,14 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     ls -ltr
     cmake ../.. \
         -DSMOLDYN_VERSION:STRING=${SMOLDYN_VERSION} \
+        -DOPTION_PYTHON=ON \
         -DPYTHON_EXECUTABLE=$PYTHON
 
-    make -j4 
-    # cmake generates whl file in the wheel folder.
-    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v wheel/*.whl
+    make -j$(nproc) && make wheel
 
-    ls $WHEELHOUSE/smoldyn*-py*.whl
+    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v *.whl
+
+    ls -ltR $WHEELHOUSE/smoldyn*.whl
 
     # create a virtualenv and test this.
     VENV=/tmp/venv
@@ -54,7 +55,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         $PYTHON -m venv $VENV
         source $VENV/bin/activate
         python --version
-        python -m pip install $WHEELHOUSE/smoldyn*-py*.whl
+        python -m pip install $WHEELHOUSE/smoldyn*.whl
         python -c 'import smoldyn; print(smoldyn.__version__ )'
         python -m smoldyn $SCRIPT_DIR/../examples/S4_molecules/mollist.txt
         deactivate
