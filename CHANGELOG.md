@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.67.2 (1/12/22)
+
+- Fixes to graphics on OSX (#117).
+
 ### 2.67.1 (1/11/22)
 
 - Fixed a bug in Python `setAction` command: action `trans` as not exposed.
