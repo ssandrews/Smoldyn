@@ -3,6 +3,9 @@
 set -e
 set -x
 
+# See https://github.com/ssandrews/Smoldyn/runs/4770635750?check_suite_focus=true
+export MACOSX_DEPLOYMENT_TARGET=11_0
+
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
 brew install freeglut || echo "Failed to install freeglut"
