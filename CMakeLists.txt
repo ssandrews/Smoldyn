@@ -10,6 +10,9 @@ project(smoldyn)
 
 # Newer CMake versions are better but I think this file works with old versions, too.
 cmake_minimum_required(VERSION 2.8)
+if(POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+endif()
 
 # CI/CD can also set this variable. If not, use the default one. 
 if(NOT SMOLDYN_VERSION)
@@ -66,11 +69,10 @@ if (OPTION_PYTHON)
 endif ()
 
 if(OPTION_STRICT_BUILD)
-    add_definitions(-Wall -Werror)
-    add_definitions(-Wno-format-truncation)
+    add_definitions(-Wall)
+    # add_definitions(-Wno-format-truncation)
     # See https://stackoverflow.com/a/14132910/1805129
     add_definitions(-Wno-uninitialized)
-
     # Address sanitizer
     set(CMAKE_BUILD_TYPE Debug)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
