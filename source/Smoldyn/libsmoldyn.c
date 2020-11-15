@@ -96,8 +96,10 @@ extern CSTRING void smolSetErrorNT(const char *errorfunction,enum ErrorCode erro
 	if(errorcode!=ECsame) {
 		Liberrorcode=errorcode;
 		Libwarncode=(errorcode>=ECwarning)?errorcode:ECok;
-		if(errorstring)
+		if(errorstring) {
 			strncpy(Liberrorstring,errorstring,STRCHAR-1);
+                        Liberrorstring[STRCHAR-1] = '\0';
+                }
 		else Liberrorstring[0]='\0'; }
 	if(errorfunction)
 		strncpy(Liberrorfunction,errorfunction,STRCHAR-1);

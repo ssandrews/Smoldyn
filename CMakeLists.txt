@@ -10,10 +10,14 @@ project(smoldyn)
 
 # Newer CMake versions are better but I think this file works with old versions, too.
 cmake_minimum_required(VERSION 2.8)
+if(POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+endif()
 
 # CI/CD can also set this variable. If not, use the default one. 
 if(NOT SMOLDYN_VERSION)
-    set(SMOLDYN_VERSION "2.62.dev")
+    string(TIMESTAMP STAMP "%Y%d%m")
+    set(SMOLDYN_VERSION "2.63.dev${STAMP}")
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
@@ -43,6 +47,7 @@ option(OPTION_USE_ICONV "Build with Libiconv support" OFF)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
+option(OPTION_STRICT_BUILD "Treat most warnings as error and enable ASAN" OFF)
 
 if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
@@ -62,6 +67,17 @@ if (OPTION_PYTHON)
         message(STATUS "Compiling for Libsmoldyn: ${OPTION_TARGET_LIBSMOLDYN}")
     endif ()
 endif ()
+
+if(OPTION_STRICT_BUILD)
+    add_definitions(-Wall)
+    # add_definitions(-Wno-format-truncation)
+    # See https://stackoverflow.com/a/14132910/1805129
+    add_definitions(-Wno-uninitialized)
+    # Address sanitizer
+    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+endif()
 
 message(STATUS "Option to compile Smoldyn for VCell: ${OPTION_VCELL}")
 message(STATUS "Option to cross-compile for Windows using MinGW: ${OPTION_MINGW}")

@@ -33,7 +33,7 @@ int *printZV(int *c,int n) {
 char *Zn_vect2csvstring(int *c,int n,char *string) {
   int i;
 
-	if(n>0) snprintf(string,sizeof(string),"%i",c[0]);
+	if(n>0) snprintf(string, n*sizeof(string),"%i",c[0]);
   for(i=1;i<n;i++) snprintf(string+strlen(string),sizeof(string)-strlen(string),",%i",c[i]);
   return string; }
 
