@@ -8,8 +8,7 @@
 
 project(smoldyn)
 
-# Newer CMake versions are better but I think this file works with old versions, too.
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4)   # due to pybind11 
 if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
@@ -532,7 +531,7 @@ endif ()
 ########## Python module #########
 
 if (OPTION_PYTHON)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11-2.6.1)
     add_subdirectory(source/python)
 endif ()
 

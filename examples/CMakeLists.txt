@@ -9,10 +9,8 @@ foreach(_example ${EXAMPLE_SCRIPTS})
     get_filename_component(_ex_name ${_example} NAME_WE)
     get_filename_component(_ex_dir ${_example} DIRECTORY)
     add_custom_target(${_ex_name} COMMAND
-        ${PYTHON_EXECUTABLE} -m smoldyn ${_example}
+        PYTHONPATH=${CMAKE_BINARY_DIR}/py ${PYTHON_EXECUTABLE} -m smoldyn ${_example}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Executing ${_example}" VERBATIM)
-    set_target_properties(${_ex_name} PROPERTIES 
-        ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/py")
     add_dependencies(examples ${_ex_name})
 endforeach()

@@ -104,7 +104,9 @@ endforeach()
 
 enable_testing()
 add_test(NAME pytest 
-    COMMAND ${PYTHON_EXECUTABLE} -m pytest -q ${CMAKE_SOURCE_DIR}
+    COMMAND ${PYTHON_EXECUTABLE} -m pytest 
+        --ignore-glob source/pybind11-*
+        ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
