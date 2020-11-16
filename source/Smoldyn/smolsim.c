@@ -2488,9 +2488,16 @@ void endsimulate(simptr sim,int er) {
 
 	simLog(sim,2,"total execution time: %g seconds\n",sim->elapsedtime);
 
-	if(sim->graphss && sim->graphss->graphics>0 && !tflag && !sim->quitatend)
-		fprintf(stderr,"\nTo quit: Activate graphics window, then press shift-Q.\a\n");
-	return; }
+  // Useful when doing benchmarks. I don't want to press shift+Q after every
+  // script is run. If SMOLDYN_NO_PROMPT is set by user then smoldyn quit at the
+  // end without asking user.
+  const char* dontPrompt = getenv("SMOLDYN_NO_PROMPT");
+  if(dontPrompt != NULL && strlen(dontPrompt) > 0) 
+    sim->quitatend = 1;
+
+  if(sim->graphss && sim->graphss->graphics>0 && !tflag && !sim->quitatend)
+    fprintf(stderr,"\nTo quit: Activate graphics window, then press shift-Q.\a\n"); 
+  return; }
 
 
 /* smolsimulate */
