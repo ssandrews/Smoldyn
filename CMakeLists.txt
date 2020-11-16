@@ -67,17 +67,6 @@ if (OPTION_PYTHON)
     endif ()
 endif ()
 
-if(OPTION_STRICT_BUILD)
-    add_definitions(-Wall)
-    # add_definitions(-Wno-format-truncation)
-    # See https://stackoverflow.com/a/14132910/1805129
-    add_definitions(-Wno-uninitialized)
-    # Address sanitizer
-    set(CMAKE_BUILD_TYPE Debug)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-endif()
-
 message(STATUS "Option to compile Smoldyn for VCell: ${OPTION_VCELL}")
 message(STATUS "Option to cross-compile for Windows using MinGW: ${OPTION_MINGW}")
 if (OPTION_MINGW)
@@ -184,6 +173,18 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
 endif ()
+
+if(OPTION_STRICT_BUILD)
+    add_definitions(-Wall)
+    # add_definitions(-Wno-format-truncation)
+    # See https://stackoverflow.com/a/14132910/1805129
+    add_definitions(-Wno-uninitialized)
+    # Address sanitizer
+    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+endif()
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(VCELL_BUILD OFF)
