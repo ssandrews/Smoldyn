@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 # when set, smoldyn won't ask for user to press shift+Q at the end of
 # simulation.
 export SMOLDYN_NO_PROMPT=1
@@ -18,10 +16,9 @@ function quit_ctrlc()
 
 trap quit_ctrlc SIGINT
 
-EXAMPLES=$(find "*.txt" "$SCRIPT_DIR/../examples" -type f -name "*.txt")
+EXAMPLES=$(find "$SCRIPT_DIR/../examples" -type f -name "*.txt")
 for _f in $EXAMPLES; do
-    fname=$(basename "$_f")
-    timeout 30 perf record -o "$fname".perf "$SMOLDYN_BIN" "$_f"
+    timeout 30 perf record --timestamp-filename "$SMOLDYN_BIN" -w "$_f"
     if [ "$ALL_DONE" -ne 0 ]; then
         break;
     fi
