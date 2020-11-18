@@ -7,6 +7,8 @@ matrix:
       osx_image: xcode11.3
     - os: linux
       sudo: required
+    - os: windows
+      language: cpp
 
 services:
   - docker
@@ -14,7 +16,6 @@ services:
 branches:
     only:
         - master
-        - pybind11
         - devel
 
 

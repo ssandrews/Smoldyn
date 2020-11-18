@@ -52,5 +52,3 @@ g++ -Wall -Ilib Smoldyn\wrl2smol.c -c
 
 echo "Linking wrl2smol"
 g++ -static wrl2smol.o -o wrl2smol.exe
-
-
