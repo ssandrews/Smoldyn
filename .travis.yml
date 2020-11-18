@@ -10,6 +10,11 @@ matrix:
     - os: windows
       language: cpp
 
+jobs:
+  allow_failures:
+    - os: windows
+
+
 services:
   - docker
 
