@@ -31,7 +31,7 @@ bool initDisplay_ = false;
 bool addToSimptrVec(simptr ptr)
 {
     auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
-    if(p != simptrs_.end()) {
+    if(p == simptrs_.end()) {
         simptrs_.push_back(ptr);
         return true;
     }
