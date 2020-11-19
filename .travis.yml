@@ -7,15 +7,16 @@ matrix:
       osx_image: xcode11.3
     - os: linux
       sudo: required
+    - os: windows
+      language: cpp
+
+jobs:
+  allow_failures:
+    - os: windows
+
 
 services:
   - docker
-
-branches:
-    only:
-        - master
-        - pybind11
-        - devel
 
 
 notifications:
