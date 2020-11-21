@@ -18,7 +18,6 @@ jobs:
 services:
   - docker
 
-
 notifications:
   email:
     recipients:
