@@ -3,7 +3,7 @@ __email__ = "dilawars@ncbs.res.in"
 
 import smoldyn as S
 
-S.setBoundaries(low=(0,0,0), high=(100,100,100), types=['r','r','r'])
+S.setBounds(low=(0,0,0), high=(100,100,100), types=['r','r','r'])
 red = S.Species('red', difc=3)
 red.addToSolution(100)
 red.addToSolution(30, highpos=[20,30,20])

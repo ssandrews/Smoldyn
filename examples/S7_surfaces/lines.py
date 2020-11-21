@@ -2,12 +2,11 @@
 import os
 import random
 
-
 number=input('Enter number of lines: ')
-xlow=input('Enter x low: ')
-xhigh=input('Enter x high: ')
-ylow=input('Enter y low: ')
-yhigh=input('Enter y high: ')
+xlow=float(input('Enter x low: '))
+xhigh=float(input('Enter x high: '))
+ylow=float(input('Enter y low: '))
+yhigh=float(input('Enter y high: '))
 
 print('start_surface lines')
 for i in range(1,number):

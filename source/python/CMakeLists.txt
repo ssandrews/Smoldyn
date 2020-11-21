@@ -11,6 +11,8 @@ else()
     set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 endif()
 
+# NOTE: DO NOT change this without changing PYTHONPATH in
+# ../examples/CMakeLists.txt file.
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 
@@ -22,7 +24,7 @@ target_include_directories(_smoldyn PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES
-#    SUFFIX ".so"
+    # SUFFIX ".so"
    LIBRARY_OUTPUT_DIRECTORY ${PY_SMOLDYN_OUTDIR}/smoldyn/)
 
 add_custom_target(copy_python_tree 

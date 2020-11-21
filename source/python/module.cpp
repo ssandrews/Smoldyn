@@ -482,12 +482,13 @@ PYBIND11_MODULE(_smoldyn, m)
     //     int number, double *lowposition, double *highposition);
     m.def(
         "addSolutionMolecules",
-        [](const char *species, int number, vector<double> &lowposition,
+        [](const char *species, size_t number, vector<double> &lowposition,
             vector<double> &highposition) {
             return smolAddSolutionMolecules(
                 cursim_, species, number, &lowposition[0], &highposition[0]);
         },
-        "Adds number solution state molecules of species species to the system. They are "
+        "species"_a, "number"_a, "lowpos"_a=vector<double>(), "highpos"_a=vector<double>(),
+        "Adds given number of molecules of a species to the system. They are "
         "randomly distributed within the box that has its opposite corners defined by "
         "`lowposition` and `highposition`. Any or all of these coordinates can equal "
         "each other to place the molecules along a plane or at a point. Enter "
@@ -891,7 +892,9 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("getBoundaries", &getBoundaries);
     m.def("setBoundaries",
         py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
-        "Set boundaries using vector of (low,high) tuples");
+        "Set boundaries using vector of (low,high) tuples e.g., "
+        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)]"
+        );
     m.def("setBoundaries",
         py::overload_cast<const vector<double> &, const vector<double> &>(&setBoundaries),
         "Set boundaries using vector of low and a vector of high points");

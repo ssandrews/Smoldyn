@@ -130,7 +130,7 @@ class Species:
         self, mol: float, highpos: List[float] = [], lowpos: List[float] = []
     ):
         assert self.state == _smoldyn.MolecState.soln, (
-            "You can't use this " f"function on a Species with type {self.state}"
+            f"You can't use this function on a Species with type {self.state}"
         )
         k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"

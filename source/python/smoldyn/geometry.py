@@ -16,6 +16,7 @@ import smoldyn.types as T
 from smoldyn.config import __logger__
 from dataclasses import dataclass, field
 
+
 class Panel(object):
     """Panels are required to construct a surface. Following primitives are
     available.
@@ -96,7 +97,7 @@ class Triangle(Panel):
 
         Parameters
         ----------
-        vertices : 
+        vertices :
             vertices of triangle.
         name :
             name
@@ -109,11 +110,11 @@ class Triangle(Panel):
 
 class Sphere(Panel):
     def __init__(self, center: List[float], radius: float, name=""):
-        """Sphere 
+        """Sphere
 
         Parameters
         ----------
-        center : 
+        center :
             The center of the sphere.
         radius : float
             The radius of the sphere.
@@ -138,11 +139,11 @@ class Hemisphere(Panel):
         stacks: int,
         name: str = "",
     ):
-        """Hemisphere 
+        """Hemisphere
 
         Parameters
         ----------
-        center : 
+        center :
             The center of hemisphere
         radius : float
             The radius of the hemisphere. Enter a positive radius to have the
@@ -183,9 +184,9 @@ class Cylinder(Panel):
 
         Parameters
         ----------
-        start : 
-            Cylinder axis start point 
-        end : 
+        start :
+            Cylinder axis start point
+        end :
             Cylinder axis's end point
         radius : float
             The radius of the cylinder. If the radius is negative then the front
@@ -215,11 +216,11 @@ class Disk(Panel):
 
         Parameters
         ----------
-        center : 
+        center :
             center of the disk.
         radius : float
             radius of the disk.
-        vector: 
+        vector:
             A vector that points away from the front of the disk. The size of
             this vector is 2 for 2-D and 3 for 3-D.
         name : optional
@@ -255,7 +256,7 @@ class SurfaceFaceCollection:
         Parameters
         ----------
         drawmode : str
-            `drawmode` may be “none”, “vertex”, “edge”, “face”, or combinations 
+            `drawmode` may be “none”, “vertex”, “edge”, “face”, or combinations
             of ‘v’, ‘e’, or ‘f’ for multiple renderings of vertices, edges,
             and/or faces.  2-D spheres and hemispheres are either filled or are
             outlined depending on the polygon frontcharacter. If multiple
@@ -358,7 +359,7 @@ class Surface(object):
         ----------
         panels : List[Panel]
             List of panels. A surface must have at least one.
-        name : str 
+        name : str
             name of the surface
 
         Examples
@@ -395,7 +396,7 @@ class Surface(object):
         face: str
             face of the surface: 'front', 'back', 'both'
 
-        *args and **kwargs: 
+        *args and **kwargs:
             See :py:class:`~SurfaceFaceCollection.setStyle`
 
         See Also
@@ -415,7 +416,7 @@ class Surface(object):
         face: str
             face of the surface: 'front', 'back', 'both'
 
-        *args and **kwargs: 
+        *args and **kwargs:
             See :py:func:`~SurfaceFaceCollection.addAction`
 
         See Also
@@ -471,6 +472,7 @@ class Boundaries:
     of space; these are useful for simulating a small portion of a large system
     while avoiding edge effects.
     """
+
     low: List[float]
     high: List[float]
     types: List[str] = field(default_factory=lambda: ["r"])
@@ -489,7 +491,7 @@ class Boundaries:
         assert k == _smoldyn.ErrorCode.ok, f"Failed to set boundary type: {k}"
 
 
-def setBounds(low:List[float], high:List[float], types:List[str]):
+def setBounds(low: List[float], high: List[float], types: List[str]):
     """Define system volume by setting boundaries.
 
     Parameters
