@@ -38,4 +38,5 @@ jobs:
       run: cd build && make -j2 && make wheel
     - name: ctest -j2
       run: |
+        export DISPLAY=:99.0
         cd build && xvfb-run --auto-servernum ctest --output-on-failure && make pyexamples 
