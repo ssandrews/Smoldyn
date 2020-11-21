@@ -19,8 +19,6 @@ using namespace std;
 #include "pybind11/pybind11.h"
 namespace py = pybind11;
 
-#include "SmoldynDefine.hh"
-
 #include "../Smoldyn/libsmoldyn.h"
 
 // defined in smolgraphics.c file.
