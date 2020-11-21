@@ -2488,9 +2488,18 @@ void endsimulate(simptr sim,int er) {
 
 	simLog(sim,2,"total execution time: %g seconds\n",sim->elapsedtime);
 
-	if(sim->graphss && sim->graphss->graphics>0 && !tflag && !sim->quitatend)
-		fprintf(stderr,"\nTo quit: Activate graphics window, then press shift-Q.\a\n");
-	return; }
+  // TODO: Useful when running benchmarks (work in progress)
+  // If SMOLDYN_NO_PROMPT is set by user then smoldyn quit at the
+  // end of simultion without prompting user to press shift+Q.
+  // It is useful when running tests in batch mode locally and required 
+  // for testing  examples on remote servers such as Travis CI and github actions.
+  const char* dontPrompt = getenv("SMOLDYN_NO_PROMPT");
+  if(dontPrompt != NULL && strlen(dontPrompt) > 0) 
+    sim->quitatend = 1;
+
+  if(sim->graphss && sim->graphss->graphics>0 && !tflag && !sim->quitatend)
+    fprintf(stderr,"\nTo quit: Activate graphics window, then press shift-Q.\a\n"); 
+  return; }
 
 
 /* smolsimulate */

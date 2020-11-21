@@ -197,4 +197,3 @@ double getDt()
 {
     return cursim_->dt;
 }
-
