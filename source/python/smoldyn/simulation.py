@@ -58,7 +58,7 @@ class Simulation(object):
     @accuracy.setter
     def accuracy(self, accuracy: float):
         # Deperacted?
-        warnings.DeprecationWarning("accuracy is deprecated?")
+        # warnings.DeprecationWarning("accuracy is deprecated?")
         _smoldyn.setAccuracy(accuracy)
 
     def run(self, stop=None, start=None, step=None):

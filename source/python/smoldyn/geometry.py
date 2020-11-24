@@ -109,7 +109,9 @@ class Triangle(Panel):
 
 
 class Sphere(Panel):
-    def __init__(self, center: List[float], radius: float, slices: int, stacks: int, name=""):
+    def __init__(
+        self, center: List[float], radius: float, slices: int, stacks: int, name=""
+    ):
         """Sphere
 
         Parameters
@@ -143,7 +145,7 @@ class Hemisphere(Panel):
         vector: List[float],
         slices: int,
         stacks: int,
-        name: str = ""
+        name: str = "",
     ):
         """Hemisphere
 
@@ -184,7 +186,7 @@ class Cylinder(Panel):
         radius: float,
         slices: int,
         stacks: int,
-        name=""
+        name="",
     ):
         """Cylinder
 
@@ -245,7 +247,7 @@ class SurfaceFaceCollection:
     """Collection of faces of a surface"""
 
     def __init__(self, faces: List[str], surfname):
-        self.faces: str = faces
+        self.faces: List[str] = faces
         self.surfname = surfname
 
     def setStyle(
@@ -482,7 +484,7 @@ class Boundaries:
     low: List[float]
     high: List[float]
     types: List[str] = field(default_factory=lambda: ["r"])
-    dim: field(init=False) = 0
+    dim: int = 0
 
     def __post_init__(self):
         assert len(self.low) == len(self.high), "Size mismatch."
