@@ -107,6 +107,22 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("none", MolecState::MSnone)
         .value("some", MolecState::MSsome);
 
+    py::enum_<RevParam>(m, "RevParam")
+        .value("none", RevParam::RPnone)
+        .value("irrev", RevParam::RPirrev)
+			  .value("confspread", RevParam::RPconfspread)
+			  .value("bounce", RevParam::RPbounce)
+        .value("pgem", RevParam::RPpgem)
+        .value("pgemmax", RevParam::RPpgemmax)
+        .value("pgemmaxw", RevParam::RPpgemmaxw)
+        .value("ratio", RevParam::RPratio)
+        .value("unbindrad", RevParam::RPunbindrad)
+        .value("pgem2", RevParam::RPpgem2)
+        .value("pgemmax2", RevParam::RPpgemmax2)
+        .value("ratio2", RevParam::RPratio2)
+        .value("offset", RevParam::RPoffset)
+				.value("fixed", RevParam::RPfixed);
+
     py::enum_<PanelFace>(m, "PanelFace")
         .value("front", PanelFace::PFfront)
         .value("back", PanelFace::PFback)

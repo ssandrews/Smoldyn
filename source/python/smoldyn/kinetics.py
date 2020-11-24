@@ -10,6 +10,7 @@ from typing import List
 
 import smoldyn.types as T
 from smoldyn import _smoldyn
+from smoldyn._smoldyn import RevParam
 from smoldyn.config import __logger__
 
 
@@ -136,23 +137,25 @@ class Species:
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
 
-class HalfReaction:
-    def __init__(self, subs: List[Species], prds: List[Species], k, rname=""):
-        assert len(subs) < 3, "At most two reactants are supported."
+
+class Reaction:
+    def __init__(self, name: str, subs: List[Species], prds: List[Species], rate: float=0):
+        assert len(subs) < 3, "At most two reactants are supported"
         r1 = subs[0]
         r2 = subs[1] if len(subs) == 2 else NullSpecies()
-        if not rname:
-            rname = "r%d" % id(self)
-        assert rname
+        if not name:
+            name = "r%d" % id(self)
+        assert name
+        self.name = name
         k = _smoldyn.addReaction(
-            rname,
+            name,
             r1.name,
             r1.state,
             r2.name,
             r2.state,
             [x.name for x in prds],
             [x.state for x in prds],
-            k,
+            rate,
         )
         if k != _smoldyn.ErrorCode.ok:
             __logger__.warning(f" Reactant1 : {r1}")
@@ -161,11 +164,14 @@ class HalfReaction:
             __logger__.warning(f" Products  : {prds}")
             raise RuntimeError(f"Failed to add reaction: {k}")
 
+    def productPlacement(self, method: str, parameter: float, product: Species=NullSpecies(), position: List[float]=[]):
+        assert method in ["none","irrev","confspread","bounce","pgem","pgemmax","pgemmaxw","ratio","unbindrad","pgem2","pgemmax2","ratio2","offset","fixed"]
+        print("***********",self.name)
+        k = _smoldyn.setReactionProducts(
+            self.name,
+            RevParam.__members__[method],
+            parameter,
+            product.name,
+            position)
+        assert k== _smoldyn.ErrorCode.ok, f"Failed to achieve productPlacement: {k}"
 
-class Reaction:
-    def __init__(self, subs: List[Species], prds: List[Species], kf, kb=0.0):
-        assert len(subs) < 3, "At most two reactants are supported"
-        self.forward = HalfReaction(subs, prds, kf)
-        self.backbard = None
-        if kb > 0:
-            self.backbard = HalfReaction(prds, subs, kb)

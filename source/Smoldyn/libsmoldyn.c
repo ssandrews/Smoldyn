@@ -1746,7 +1746,7 @@ extern CSTRING enum ErrorCode smolSetReactionProducts(simptr sim,const char *rea
 	rxn=sim->rxnss[order]->rxn[r];
 
 	prd=-1;
-	if(product) {
+	if(product && strlen(product)>0) {
 		i=smolGetSpeciesIndexNT(sim,product);
 		LCHECK(i>0,funcname,ECsame,NULL);
 		done=0;
