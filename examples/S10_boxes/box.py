@@ -17,5 +17,6 @@ c = sm.Species('C', state='soln', difc=1.0, color='blue', mol_list='Clist')
 
 sm.addSolutionMolecules(a.name, 1000)
 sm.addSolutionMolecules(b.name, 1000)
-r = sm.Reaction(subs=[c], prds=(a,b), kf=0.1, kb=100)
+rf = sm.Reaction(name="rf", subs=[c], prds=[a,b], rate=0.1)
+rb = sm.Reaction(name="rb", subs=[a,b], prds=[c], rate=100)
 sm.run(100, dt=0.01)

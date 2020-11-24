@@ -109,7 +109,7 @@ class Triangle(Panel):
 
 
 class Sphere(Panel):
-    def __init__(self, center: List[float], radius: float, name=""):
+    def __init__(self, center: List[float], radius: float, slices: int, stacks: int, name=""):
         """Sphere
 
         Parameters
@@ -118,15 +118,21 @@ class Sphere(Panel):
             The center of the sphere.
         radius : float
             The radius of the sphere.
+        slices : int
+            The number of slices
+        stacks : int
+            The number of stacks
         name : optional
             name
         """
         super(Sphere, self).__init__(PanelShape.sph, name=name)
         self.center = center
         self.radius = radius
+        self.slices = slices
+        self.stacks = stacks
         # Smoldyn panel
         self.axisstr = ""
-        self.pts = [*self.center, self.radius]
+        self.pts = [*self.center, self.radius, self.slices, self.stacks]
 
 
 class Hemisphere(Panel):
@@ -137,7 +143,7 @@ class Hemisphere(Panel):
         vector: List[float],
         slices: int,
         stacks: int,
-        name: str = "",
+        name: str = ""
     ):
         """Hemisphere
 
@@ -167,7 +173,7 @@ class Hemisphere(Panel):
         self.stacks = stacks
         # Smoldyn Panel
         self.axisstr = ""
-        self.pts = [*self.center, self.radius, *self.vector, self.slices, self.stack]
+        self.pts = [*self.center, self.radius, *self.vector, self.slices, self.stacks]
 
 
 class Cylinder(Panel):
@@ -178,7 +184,7 @@ class Cylinder(Panel):
         radius: float,
         slices: int,
         stacks: int,
-        name="",
+        name=""
     ):
         """Cylinder
 
