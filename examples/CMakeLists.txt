@@ -18,7 +18,7 @@ endforeach()
 # Python scripts.
 add_custom_target(pyexamples)
 file(GLOB_RECURSE PY_FILES "${CMAKE_CURRENT_SOURCE_DIR}/**.py")
-set(NOT_PY_EXAMPLES_NAME_WE regression lines)
+set(NOT_PY_EXAMPLES_NAME_WE regression lines pyscript)
 foreach(_example ${PY_FILES})
     get_filename_component(_ex_name ${_example} NAME_WE)
     # these are not example script.

@@ -7,17 +7,11 @@ __email__ = "dilawars@ncbs.res.in"
 
 from dataclasses import dataclass
 from typing import List
-
 import smoldyn.types as T
 from smoldyn import _smoldyn
 from smoldyn._smoldyn import RevParam
 from smoldyn.config import __logger__
 
-
-@dataclass
-class NullSpecies:
-    name: str = ""
-    state = _smoldyn.MolecState.__members__["all"]
 
 
 class Species:
@@ -28,7 +22,7 @@ class Species:
         self,
         name: str,
         state: str = "soln",
-        color: T.Color = "",
+        color = "",
         difc: float = 0.0,
         display_size: int = 2,
         mol_list: str = "",
@@ -52,7 +46,7 @@ class Species:
             molecule list (default '')
         """
         self.name: str = name
-        assert self.name
+        # assert self.name
 
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule: {k}"
@@ -66,12 +60,12 @@ class Species:
         self.state = _smoldyn.MolecState.__members__[state]
 
         self._difc: float = difc
-        self._color = color
-        self._size: int = display_size
+        self._color : T.Color = color
+        self._size: float = display_size
 
         self.difc: float = self._difc
         self.size: float = self._size
-        self.color: str = self._color
+        self.color = self._color
 
         self._mol_list: str = mol_list
         if mol_list:
@@ -110,7 +104,7 @@ class Species:
         self._mol_list = val
 
     @property
-    def color(self) -> str:
+    def color(self) -> T.Color:
         return self._color
 
     @color.setter
@@ -136,13 +130,20 @@ class Species:
         k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
+class NullSpecies(Species):
+
+    def __init__(self):
+        self.name = ""
+        self.state = _smoldyn.MolecState.__members__["all"]
+        # No need to call super().__init__()
+
 
 
 class Reaction:
     def __init__(self, name: str, subs: List[Species], prds: List[Species], rate: float=0):
         assert len(subs) < 3, "At most two reactants are supported"
         r1 = subs[0]
-        r2 = subs[1] if len(subs) == 2 else NullSpecies()
+        r2 = subs[1] if len(subs) == 2 else Species("", "all")
         if not name:
             name = "r%d" % id(self)
         assert name
