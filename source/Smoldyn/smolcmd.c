@@ -4486,3 +4486,4 @@ int molinpanels(simptr sim,moleculeptr mptr,int s,enum PanelShape ps) {
 		pnl=pnls[p];
 		if(Geo_PtInSphere(pos,pnl->point[0],pnl->point[1][0],dim)) return 1; }
 	return 0; }
+

@@ -224,8 +224,10 @@ extern CSTRING enum ErrorCode smolRunTimeStep(simptr sim) {
 extern CSTRING enum ErrorCode smolRunSim(simptr sim) {
 	const char *funcname="smolRunSim";
 	int er;
-
 	LCHECK(sim,funcname,ECmissing,"missing sim");
+
+        er = smolOpenOutputFiles(sim, true);
+
 	if(sim->graphss && sim->graphss->graphics>0)
 		smolsimulategl(sim);
 	else {
