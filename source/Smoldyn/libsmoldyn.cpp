@@ -1199,21 +1199,21 @@ extern CSTRING enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surfac
 	else LCHECK(i>0,funcname,ECsame,NULL);
 	LCHECK((state>=0 && state<MSMAX) || state==MSall,funcname,ECbounds,"invalid state");
 	LCHECK(action>=0 && action<=SAmult,funcname,ECbounds,"invalid action");
-	if(newspecies && strlen(newspecies) > 0) {
-    i2=smolGetSpeciesIndexNT(sim,newspecies);
-    LCHECK(i2>0,funcname,ECnonexist,"unrecognized new species name"); }
-  else
-    i2=0;
-	if(s>=0) {
-		srf=sim->srfss->srflist[s];
-		er=surfsetaction(srf,i,NULL,state,face,action,0);
-		LCHECK(!er,funcname,ECbug,"bug in surfsetaction"); }
-	else {
-		for(s=0;s<sim->srfss->nsrf;s++) {
-			srf=sim->srfss->srflist[s];
-			er=surfsetaction(srf,i,NULL,state,face,action,0);
-			LCHECK(!er,funcname,ECbug,"bug in surfsetaction"); }}
-	return ECok;
+        if(newspecies && strlen(newspecies) > 0) {
+            i2=smolGetSpeciesIndexNT(sim,newspecies);
+            LCHECK(i2>0,funcname,ECnonexist,"unrecognized new species name"); }
+        else
+            i2=0;
+        if(s>=0) {
+            srf=sim->srfss->srflist[s];
+            er=surfsetaction(srf,i,NULL,state,face,action,0);
+            LCHECK(!er,funcname,ECbug,"bug in surfsetaction"); }
+        else {
+            for(s=0;s<sim->srfss->nsrf;s++) {
+                srf=sim->srfss->srflist[s];
+                er=surfsetaction(srf,i,NULL,state,face,action,0);
+                LCHECK(!er,funcname,ECbug,"bug in surfsetaction"); }}
+        return ECok;
  failure:
 	return Liberrorcode; }
 
@@ -1300,8 +1300,21 @@ extern CSTRING int smolGetPanelIndex(simptr sim,const char *surface,enum PanelSh
 	LCHECK(strcmp(panel,"all"),funcname,ECall,"panel cannot be 'all'");
 	srf=sim->srfss->srflist[s];
 	p=-1;
+
+#if 0
 	for(ps=(enum PanelShape)0;ps<(enum PanelShape)PSMAX && p<0;ps=(enum PanelShape)(ps+1))
 		p=stringfind(srf->pname[ps],srf->npanel[ps],panel);
+#else
+        for(auto ips : AllPanels_arr) {
+            int _ips = static_cast<int>(ips);
+            p        = stringfind(srf->pname[_ips], srf->npanel[_ips], panel);
+            if(p >= 0) {
+                ps = ips;
+                break;
+            }
+        }
+#endif
+
 	LCHECK(p>=0,funcname,ECnonexist,"panel not found");
 	if(panelshapeptr) *panelshapeptr=ps;
 	return p;
@@ -1323,8 +1336,19 @@ extern CSTRING int smolGetPanelIndexNT(simptr sim,const char *surface,enum Panel
 	LCHECKNT(strcmp(panel,"all"),funcname,ECall,"panel cannot be 'all'");
 	srf=sim->srfss->srflist[s];
 	p=-1;
+#if 0
 	for(ps=(enum PanelShape)0;ps<(enum PanelShape)PSMAX && p<0;ps=(enum PanelShape)(ps+1))
 		p=stringfind(srf->pname[ps],srf->npanel[ps],panel);
+#else
+    for(auto ips : AllPanels_arr) {
+        int _ips = static_cast<int>(ips);
+        p        = stringfind(srf->pname[_ips], srf->npanel[_ips], panel);
+        if(p >= 0) {
+            ps = ips;
+            break;
+        }
+    }
+#endif
 	LCHECKNT(p>=0,funcname,ECnonexist,"panel not found");
 	if(panelshapeptr) *panelshapeptr=ps;
 	return p;
