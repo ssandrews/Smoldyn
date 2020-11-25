@@ -1,6 +1,3 @@
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/S97_libsmoldyn)
-
-
 add_custom_target(examples)
 # Script examples. Only few are added.
 set(EXAMPLE_SCRIPTS S10_boxes/box.txt S3_space/bounds2.txt)
@@ -26,7 +23,7 @@ foreach(_example ${PY_FILES})
     if("${_ex_name}" IN_LIST NOT_PY_EXAMPLES_NAME_WE)
         continue()
     endif()
-    message(STATUS "Found python example script: ${_example}.")
+    # message(STATUS "Found python example script: ${_example}.")
     get_filename_component(_ex_dir ${_example} DIRECTORY)
     add_custom_target(py${_ex_name} COMMAND
         PYTHONPATH=${CMAKE_BINARY_DIR}/py 
@@ -37,3 +34,16 @@ foreach(_example ${PY_FILES})
         VERBATIM)
     add_dependencies(pyexamples py${_ex_name})
 endforeach()
+
+include_directories(${CMAKE_SOURCE_DIR}/source/Smoldyn)
+include_directories(${CMAKE_BINARY_DIR})
+
+add_executable(test1 S97_libsmoldyn/test1.cpp)
+target_link_libraries(test1 smoldyn_shared)
+
+add_executable(testcode S97_libsmoldyn/testcode/testcode.cpp)
+target_link_libraries(testcode smoldyn_shared)
+
+enable_testing()
+add_test(NAME test_test1.cpp COMMAND $<TARGET_FILE:test1>)
+add_test(NAME test_testcode.cpp COMMAND $<TARGET_FILE:testcode>)

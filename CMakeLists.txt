@@ -157,7 +157,6 @@ endif(OPTION_VCELL)
 if(OPTION_TARGET_LIBSMOLDYN)
     list(APPEND HEADER_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.h)
     list(APPEND SRC_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.cpp)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/examples/S97_libsmoldyn)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
