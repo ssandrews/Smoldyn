@@ -131,22 +131,6 @@ PYBIND11_MODULE(_smoldyn, m)
         .value("none", MolecState::MSnone)
         .value("some", MolecState::MSsome);
 
-    py::enum_<RevParam>(m, "RevParam")
-        .value("none", RevParam::RPnone)
-        .value("irrev", RevParam::RPirrev)
-			  .value("confspread", RevParam::RPconfspread)
-			  .value("bounce", RevParam::RPbounce)
-        .value("pgem", RevParam::RPpgem)
-        .value("pgemmax", RevParam::RPpgemmax)
-        .value("pgemmaxw", RevParam::RPpgemmaxw)
-        .value("ratio", RevParam::RPratio)
-        .value("unbindrad", RevParam::RPunbindrad)
-        .value("pgem2", RevParam::RPpgem2)
-        .value("pgemmax2", RevParam::RPpgemmax2)
-        .value("ratio2", RevParam::RPratio2)
-        .value("offset", RevParam::RPoffset)
-				.value("fixed", RevParam::RPfixed);
-
     py::enum_<PanelFace>(m, "PanelFace")
         .value("front", PanelFace::PFfront)
         .value("back", PanelFace::PFback)
@@ -684,7 +668,8 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolAddSolutionMolecules(
                 cursim_, species, number, &lowposition[0], &highposition[0]);
         },
-        "species"_a, "number"_a, "lowpos"_a=vector<double>(), "highpos"_a=vector<double>(),
+        "species"_a, "number"_a, "lowpos"_a = vector<double>(),
+        "highpos"_a = vector<double>(),
         "Adds given number of molecules of a species to the system. They are "
         "randomly distributed within the box that has its opposite corners defined by "
         "`lowposition` and `highposition`. Any or all of these coordinates can equal "
@@ -1104,8 +1089,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setBoundaries",
         py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
         "Set boundaries using vector of (low,high) tuples e.g., "
-        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)]"
-        );
+        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)]");
     m.def("setBoundaries",
         py::overload_cast<vector<double> &, vector<double> &>(&setBoundaries),
         "Set boundaries using vector of low and a vector of high points");

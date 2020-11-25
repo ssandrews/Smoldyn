@@ -12,16 +12,17 @@ file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 add_library(_pysmoldyn STATIC ${SRC_FILES})
 target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
-target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
-
+target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK -fvisibility=hidden)
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
 pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
-
-target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
-    -DENABLE_PYTHON_CALLBACK)
+target_compile_options(_smoldyn PRIVATE 
+	-DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
+	-DENABLE_PYTHON_CALLBACK 
+	# https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
+	-fvisibility=hidden)
 target_include_directories(_smoldyn PRIVATE 
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)

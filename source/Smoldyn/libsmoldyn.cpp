@@ -1448,7 +1448,7 @@ extern CSTRING enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surfac
 	LCHECK(p1>=0,funcname,ECsame,NULL);
 	p2=smolGetPanelIndexNT(sim,surface2,&ps2,panel2);
 	LCHECK(p2>=0,funcname,ECsame,NULL);
-	LCHECK(!(s1==s2 && p1==p2),funcname,ECerror,"panels cannot be their own neighbors");
+	LCHECK(!(s1==s2 && p1==p2 && ps1 == ps2),funcname,ECerror,"panels cannot be their own neighbors");
 
 	pnl1=sim->srfss->srflist[s1]->panels[ps1][p1];
 	pnl2=sim->srfss->srflist[s2]->panels[ps2][p2];
@@ -1645,13 +1645,13 @@ extern CSTRING enum ErrorCode smolAddReaction(simptr sim,const char *reaction,co
 	if(reactant1 && reactant1[0]!='\0') {
 		rctident[order]=smolGetSpeciesIndexNT(sim,reactant1);
 		LCHECK(rctident[order]>0,funcname,ECsame,NULL);
-		LCHECK(rstate1>=0 && rstate1<MSMAX,funcname,ECbounds,"invalid rstate1");
+		LCHECK(rstate1>=0 && rstate1<=MSMAX,funcname,ECbounds,"invalid rstate1");
 		rctstate[order]=rstate1;
 		order++; }
 	if(reactant2 && reactant2[0]!='\0') {
 		rctident[order]=smolGetSpeciesIndexNT(sim,reactant2);
 		LCHECK(rctident[order]>0,funcname,ECsame,NULL);
-		LCHECK(rstate2>=0 && rstate2<MSMAX,funcname,ECbounds,"invalid rstate2");
+		LCHECK(rstate2>=0 && rstate2<=MSMAX,funcname,ECbounds,"invalid rstate2");
 		rctstate[order]=rstate2;
 		order++; }
 	LCHECK(nproduct>=0,funcname,ECbounds,"invalid nproduct");

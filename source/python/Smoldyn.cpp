@@ -34,7 +34,8 @@ bool connect(const py::function& func, const py::object& target, const size_t st
 {
     assert(cursim_->ncallbacks < MAX_PY_CALLBACK);
     if(cursim_->ncallbacks >= MAX_PY_CALLBACK) {
-        py::print("Error: Maximum of ", MAX_PY_CALLBACK, " are allowed.");
+        py::print("Error: Maximum of ", MAX_PY_CALLBACK,
+            " callbacks are allowed. Current number of callbacks: ", cursim_->ncallbacks);
         return false;
     }
 

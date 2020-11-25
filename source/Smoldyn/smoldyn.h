@@ -353,12 +353,18 @@ typedef struct rulesuperstruct {
 
 /********************************* Surfaces *********************************/
 
-#define PSMAX 6															// maximum number of panel shapes
+constexpr int PSMAX=6; // maximum number of panel shapes
 enum PanelFace {PFfront,PFback,PFnone,PFboth};
 enum PanelShape {PSrect,PStri,PSsph,PScyl,PShemi,PSdisk,PSall,PSnone};
+
+// NOTE: It is used in libsmoldyn.cpp
+constexpr std::array<PanelShape, 6> AllPanels_arr{PanelShape::PSrect, PanelShape::PStri,
+    PanelShape::PSsph, PanelShape::PScyl, PanelShape::PShemi, PanelShape::PSdisk};
+
+
 enum SrfAction {SAreflect,SAtrans,SAabsorb,SAjump,SAport,SAmult,SAno,SAnone,SAadsorb,SArevdes,SAirrevdes,SAflip};
-enum DrawMode {DMno=0,DMvert=1,DMedge=2,DMve=3,DMface=4,DMvf=5,DMef=6,DMvef=7,DMnone};
-enum SMLflag {SMLno=0,SMLdiffuse=1,SMLreact=2,SMLsrfbound=4};
+enum DrawMode {DMno,DMvert,DMedge,DMve,DMface,DMvf,DMef,DMvef,DMnone};
+enum SMLflag {SMLno,SMLdiffuse,SMLreact,SMLsrfbound};
 
 typedef struct surfactionstruct {
 	int *srfnewspec;						// surface convert mol. species [ms]
@@ -755,6 +761,12 @@ typedef struct simstruct {
 	unimolreactfnptr unimolreactfn;							// function for first order reactions
 	bimolreactfnptr bimolreactfn;								// function for second order reactions
 	checkwallsfnptr checkwallsfn;								// function for molecule collisions with walls
+
+#ifdef ENABLE_PYTHON_CALLBACK
+	CallbackFunc *callbacks[MAX_PY_CALLBACK];  // Python callback.
+	unsigned int ncallbacks;   // number of callbacks.
+	size_t simstep;
+#endif
 
 #ifdef OPTION_VCELL
 	VolumeSamplesPtr volumeSamplesPtr;

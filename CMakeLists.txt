@@ -16,7 +16,7 @@ endif()
 # CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
     string(TIMESTAMP STAMP "%Y%d%m")
-    set(SMOLDYN_VERSION "2.63.0dev${STAMP}")
+    set(SMOLDYN_VERSION "2.63.dev${STAMP}")
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 

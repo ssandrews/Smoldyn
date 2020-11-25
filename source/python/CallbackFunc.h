@@ -12,12 +12,12 @@
 #include <array>
 #include <string>
 
-#include "pybind11/pybind11.h"
+#include <pybind11/pybind11.h>
 namespace py = pybind11;
 
 using namespace std;
 
-class CallbackFunc {
+class __attribute__((visibility("hidden"))) CallbackFunc {
 public:
     CallbackFunc();
     ~CallbackFunc();
@@ -39,7 +39,6 @@ public:
 
     void setArgs(const py::list& args);
     py::list getArgs() const;
-
 
 private:
     /* data */

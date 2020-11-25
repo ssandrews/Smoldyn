@@ -276,6 +276,12 @@ simptr simalloc(const char *fileroot) {
 	simsetvariable(sim,"x",dblnan());
 	simsetvariable(sim,"y",dblnan());
 	simsetvariable(sim,"z",dblnan());
+
+#if ENABLE_PYTHON_CALLBACK
+    sim->ncallbacks = 0;
+    sim->simstep = 0;
+#endif
+
 	return sim;
 
  failure:
@@ -308,6 +314,13 @@ void simfree(simptr sim) {
 	for(v=0;v<sim->maxvar;v++)
 		free(sim->varnames[v]);
 	free(sim->varnames);
+
+#ifdef ENABLE_PYTHON_CALLBACK
+    for(v = 0; v < sim->ncallbacks; v++)
+        if(sim->callbacks[v])
+            free(sim->callbacks[v]);
+#endif
+
 	free(sim->varvalues);
 	free(sim->flags);
 	free(sim->filename);
@@ -2442,9 +2455,18 @@ int simulatetimestep(simptr sim) {
 
 	sim->time+=sim->dt;													// --- end of time step ---
 	simsetvariable(sim,"time",sim->time);
-
 	er=simdocommands(sim);
 	if(er) return er;
+
+#ifdef ENABLE_PYTHON_CALLBACK
+    for(unsigned int i = 0; i < sim->ncallbacks; i++) {
+        auto callback = sim->callbacks[i];
+        if(0 == (sim->simstep % callback->getStep()) && callback->isValid())
+            callback->evalAndUpdate(sim->time);
+    }
+    sim->simstep += 1;
+#endif
+
 	if(sim->time>=sim->tmax) return 1;
 	if(sim->time>=sim->tbreak) return 10;
 

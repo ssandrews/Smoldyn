@@ -1570,7 +1570,7 @@ class Simulation(object):
 
         self.__finalize_cmds__()
         k = _smoldyn.run(self.stop, self.step)
-        assert _smoldyn.ErrorCode.ok == k, k
+        assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, step=None):
         self.step = self.stop
