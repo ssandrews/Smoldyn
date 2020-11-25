@@ -13,20 +13,18 @@ from smoldyn._smoldyn import RevParam
 from smoldyn.config import __logger__
 
 
-
 class Species:
-    """Chemical species.
-    """
+    """Chemical species."""
 
     def __init__(
         self,
         name: str,
         state: str = "soln",
-        color = "",
+        color="",
         difc: float = 0.0,
         display_size: int = 2,
         mol_list: str = "",
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -34,7 +32,7 @@ class Species:
         name : str
             name of the species.
         state : str
-            state of the species. One of the following: 
+            state of the species. One of the following:
                 soln, front, back, up, down, bsoln, all, none, some
         color : str or tuple of float (r, g, b), optional
             color of the species (default 'black')
@@ -60,7 +58,7 @@ class Species:
         self.state = _smoldyn.MolecState.__members__[state]
 
         self._difc: float = difc
-        self._color : T.Color = color
+        self._color: T.Color = color
         self._size: float = display_size
 
         self.difc: float = self._difc
@@ -124,26 +122,44 @@ class Species:
     def addToSolution(
         self, mol: float, highpos: List[float] = [], lowpos: List[float] = []
     ):
-        assert self.state == _smoldyn.MolecState.soln, (
-            f"You can't use this function on a Species with type {self.state}"
-        )
+        assert (
+            self.state == _smoldyn.MolecState.soln
+        ), f"You can't use this function on a Species with type {self.state}"
         k = _smoldyn.addSolutionMolecules(self.name, mol, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
-class NullSpecies(Species):
 
+class NullSpecies(Species):
     def __init__(self):
+        # No need to call super().__init__(). This is here as a dummy object of
+        # type Species.
         self.name = ""
         self.state = _smoldyn.MolecState.__members__["all"]
-        # No need to call super().__init__()
-
 
 
 class Reaction:
-    def __init__(self, name: str, subs: List[Species], prds: List[Species], rate: float=0):
-        assert len(subs) < 3, "At most two reactants are supported"
+    """Add a reaction."""
+
+    def __init__(
+        self, name: str, subs: List[Species], prds: List[Species], rate: float = 0.0
+    ):
+        """
+
+        Parameters
+        ----------
+        name : str
+            name of the reaction.
+        subs : List[Species]
+            list of substrate (max two).
+        prds : List[Species]
+            list of products.
+        rate : float
+            rate of the reaction.
+        """
+
+        assert len(subs) <= 2, "At most two reactants are supported"
         r1 = subs[0]
-        r2 = subs[1] if len(subs) == 2 else Species("", "all")
+        r2 = subs[1] if len(subs) == 2 else NullSpecies()
         if not name:
             name = "r%d" % id(self)
         assert name
@@ -165,14 +181,31 @@ class Reaction:
             __logger__.warning(f" Products  : {prds}")
             raise RuntimeError(f"Failed to add reaction: {k}")
 
-    def productPlacement(self, method: str, parameter: float, product: Species=NullSpecies(), position: List[float]=[]):
-        assert method in ["none","irrev","confspread","bounce","pgem","pgemmax","pgemmaxw","ratio","unbindrad","pgem2","pgemmax2","ratio2","offset","fixed"]
-        print("***********",self.name)
+    def productPlacement(
+        self,
+        method: str,
+        parameter: float,
+        product: Species = NullSpecies(),
+        position: List[float] = [],
+    ):
+        assert method in [
+            "none",
+            "irrev",
+            "confspread",
+            "bounce",
+            "pgem",
+            "pgemmax",
+            "pgemmaxw",
+            "ratio",
+            "unbindrad",
+            "pgem2",
+            "pgemmax2",
+            "ratio2",
+            "offset",
+            "fixed",
+        ]
+        print("***********", self.name)
         k = _smoldyn.setReactionProducts(
-            self.name,
-            RevParam.__members__[method],
-            parameter,
-            product.name,
-            position)
-        assert k== _smoldyn.ErrorCode.ok, f"Failed to achieve productPlacement: {k}"
-
+            self.name, RevParam.__members__[method], parameter, product.name, position
+        )
+        assert k == _smoldyn.ErrorCode.ok, f"Failed to achieve productPlacement: {k}"

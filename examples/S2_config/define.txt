@@ -25,6 +25,3 @@ time_stop 100
 STEPINFO
 
 end_file
-
-
-

@@ -26,7 +26,7 @@ time_stop 1000
 time_step 0.01
 
 cmd b killmolinsphere red all
-cmd b pause
+#cmd b pause
 
 start_surface walls
 action both all reflect
@@ -56,4 +56,3 @@ mol 50 blue 20 20
 surface_mol 100 red(front) stick all all
 
 end_file
-

@@ -1,7 +1,9 @@
-add_executable(test1 test1.c)
+include_directories(${CMAKE_SOURCE_DIR}/source/Smoldyn)
+include_directories(${CMAKE_BINARY_DIR})
+add_executable(test1 test1.cpp)
 target_link_libraries(test1 smoldyn_shared)
 
-add_executable(testcode ./testcode/testcode.c)
+add_executable(testcode ./testcode/testcode.cpp)
 target_link_libraries(testcode smoldyn_shared)
 
 enable_testing()
