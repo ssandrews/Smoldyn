@@ -393,7 +393,6 @@ enum CMDcode cmdsetgraphics(simptr sim,cmdptr cmd,char *line2) {
 	else SCMDCHECK(0,"unrecognized graphics type");
 	return CMDok; }
 
-
 /* cmdsetgraphic_iter */
 enum CMDcode cmdsetgraphic_iter(simptr sim,cmdptr cmd,char *line2) {
 	int itct,iter;
@@ -2263,7 +2262,7 @@ void cmdmeansqrdispfree(cmdptr cmd) {
 
 
 /* cmdmeansqrdisp */
-enum CMDcode cmdmeansqrdisp(simptr sim,cmdptr cmd,char *line2) {
+        enum CMDcode cmdmeansqrdisp(simptr sim,cmdptr cmd,char *line2) {
 	char dimstr[STRCHAR];
 	int i,*index,j,d,itct,dim;
 	FILE *fptr;
@@ -2830,7 +2829,6 @@ enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2) {
 	if(ss==SScheck || ss==SSall) checksimparams(sim);
 	return CMDok; }
 
-
 /* cmdexecutiontime */
 enum CMDcode cmdexecutiontime(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
@@ -2866,7 +2864,6 @@ enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2) {
 		buffer=NULL; }
 	scmdflush(fptr);
 	return CMDok; }
-
 
 /* cmdwriteVTK */
 enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
@@ -4404,7 +4401,6 @@ enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
 	return CMDok; }
 
 
-
 /**********************************************************/
 /******************* internal routines ********************/
 /**********************************************************/
@@ -4490,7 +4486,3 @@ int molinpanels(simptr sim,moleculeptr mptr,int s,enum PanelShape ps) {
 		pnl=pnls[p];
 		if(Geo_PtInSphere(pos,pnl->point[0],pnl->point[1][0],dim)) return 1; }
 	return 0; }
-
-
-
-

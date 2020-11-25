@@ -1,0 +1,19 @@
+all : wheels
+
+LABEL:="dilawars/smoldyn:latest"
+
+wheels : ./Dockerfile ./build_wheels_linux.sh 
+	mkdir -p $(HOME)/wheelhouse
+	# Generate version.
+	(cd .. && docker build \
+	    --rm \
+	    -t $(LABEL) \
+	    -f devel/Dockerfile \
+	    --build-arg PYPI_PASSWORD=$(PYPI_PASSWORD) . | tee log ) 
+
+test : wheels
+	docker run -it \
+	    --env="DISPLAY" \
+	    --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
+	    --rm \
+	    dilawars/smoldyn:latest bash

@@ -29,19 +29,19 @@ extern int graphicsreadcolor(char** stringptr, double* rgba);
  *************************************/
 
 // Unique Ptr to hold simptr with custom deleter.
-//using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
+// using simptr_uptr_type_ = unique_ptr<simstruct, decltype(&smolFreeSim)>;
 
 // Collect all simptr here.
-//extern vector<simptr_uptr_type_> simptrs_;
+// extern vector<simptr_uptr_type_> simptrs_;
 extern vector<simptr> simptrs_;
 extern simptr cursim_;
 
-extern size_t         dim_;
+extern size_t dim_;
 extern vector<double> lowbounds_;
 extern vector<double> highbounds_;
-extern bool           debug_;
-extern double         curtime_;
-extern bool           initDisplay_;
+extern bool debug_;
+extern double curtime_;
+extern bool initDisplay_;
 
 extern void simfree(simptr ptr);
 
@@ -49,19 +49,22 @@ bool addToSimptrVec(simptr ptr);
 bool deleteSimptr(simptr ptr);
 
 size_t getDim();
-void   setDim(size_t dim);
+void setDim(size_t dim);
 
-void   setRandomSeed(size_t seed);
+void setRandomSeed(size_t seed);
 size_t getRandomSeed();
 
 bool initialize();
 
 // Smoldyn.
-bool run(double simtime, double dt, bool display);
-void runUntil(const double breaktime, const double dt, bool display);
+ErrorCode run(double simtime, double dt, bool display, bool overwrite);
+ErrorCode runUntil(const double breaktime, const double dt, bool display, bool overwrite);
+
+bool connect(const py::function& func, const py::object& target, const size_t step,
+    const py::list& args);
 
 ErrorCode setDt(double dt);
-double    getDt();
+double getDt();
 
 inline void cleanup()
 {
@@ -70,9 +73,9 @@ inline void cleanup()
 }
 
 void setBoundaries(const vector<pair<double, double>>& bounds);
-void setBoundaries(const vector<double>& lows, const vector<double>& highs);
+void setBoundaries(vector<double>& lows, vector<double>& highs);
 
-//std::vector<pair<double, double>> getBoundaries();
+// std::vector<pair<double, double>> getBoundaries();
 std::pair<vector<double>, vector<double>> getBoundaries();
 
 /* --------------------------------------------------------------------------*/
@@ -88,9 +91,9 @@ std::pair<vector<double>, vector<double>> getBoundaries();
 inline pair<string, string> splitPath(const string& p)
 {
     string filename, fileroot;
-    auto   pos = p.find_last_of('/');
-    fileroot   = p.substr(0, pos + 1);
-    filename   = p.substr(pos + 1);
+    auto pos = p.find_last_of('/');
+    fileroot = p.substr(0, pos + 1);
+    filename = p.substr(pos + 1);
     return {fileroot, filename};
 }
 

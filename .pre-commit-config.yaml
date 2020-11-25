@@ -1,0 +1,16 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.1.0  # Use the ref you want to point at
+  hooks:
+    - id: check-ast
+      exclude: ^docs/
+    - id: check-case-conflict
+    - id: check-merge-conflict
+
+- repo: https://github.com/psf/black
+  rev: 19.10b0
+  default_language_version:
+    python: python3.7
+  hooks:
+    - id: black
+      exclude: ^docs/

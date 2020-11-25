@@ -13,7 +13,7 @@ if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
-# CI/CD can also set this variable. If not, use the default one. 
+# CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
     string(TIMESTAMP STAMP "%Y%d%m")
     set(SMOLDYN_VERSION "2.63.dev${STAMP}")
@@ -47,6 +47,7 @@ option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
 option(OPTION_STRICT_BUILD "Treat most warnings as error and enable ASAN" OFF)
+option(OPTION_DOCS "Generate documentation" OFF)
 
 if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
@@ -141,7 +142,7 @@ set(SRC_FILES
     source/Smoldyn/smolwall.c
     )
 
-set(MAIN_FILES source/Smoldyn/smoldyn.c)
+set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
 include_directories(source/libSteve source/Smoldyn ${CMAKE_BINARY_DIR})
 
@@ -154,8 +155,9 @@ if(OPTION_VCELL)
 endif(OPTION_VCELL)
 
 if(OPTION_TARGET_LIBSMOLDYN)
-    list(APPEND HEADER_FILES source/Smoldyn/libsmoldyn.h)
-    list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.c)
+    list(APPEND HEADER_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.h)
+    list(APPEND SRC_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.cpp)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/examples/S97_libsmoldyn)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
@@ -474,32 +476,32 @@ if (OPTION_NSV)
     endif ()
 
 
-    set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/NextSubVolume/boost_include)
+    set(Boost_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/source/NextSubVolume/boost_include)
     include_directories(SYSTEM ${Boost_INCLUDE_DIR})
     message(STATUS "Boost headers found: '${Boost_INCLUDE_DIR}'")
 
-    list(APPEND SRC_FILES 
-        source/NextSubVolume/StructuredGrid.cpp
-        source/NextSubVolume/Species.cpp
-        source/NextSubVolume/ReactionEquation.cpp
-        source/NextSubVolume/NextSubvolumeMethod.cpp
-        source/NextSubVolume/Kairos.cpp
-        source/NextSubVolume/Io.cpp
-        source/NextSubVolume/Geometry.cpp
-        source/NextSubVolume/nsvc.cpp
+    list(APPEND SRC_FILES
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.cpp
         )
-    list(APPEND HEADER_FILES 
-        source/NextSubVolume/Vector.h
-        source/NextSubVolume/StructuredGrid.h
-        source/NextSubVolume/Species.h
-        source/NextSubVolume/ReactionEquation.h
-        source/NextSubVolume/NextSubvolumeMethod.h
-        source/NextSubVolume/Log.h
-        source/NextSubVolume/Kairos.h
-        source/NextSubVolume/Io.h
-        source/NextSubVolume/Geometry.h
-        source/NextSubVolume/Constants.h
-        source/NextSubVolume/nsvc.h
+    list(APPEND HEADER_FILES
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Vector.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Log.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Constants.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.h
         )
 
     message(STATUS "NSV added to source files")
@@ -548,7 +550,7 @@ if(NOT OPTION_MINGW)
     if (OPTION_TARGET_LIBSMOLDYN)
         install(TARGETS smoldyn_shared LIBRARY DESTINATION lib)
         install(TARGETS smoldyn_static ARCHIVE DESTINATION lib)
-        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h 
+        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h
             ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
             DESTINATION include)
     endif ()
@@ -557,12 +559,15 @@ endif ()
 
 
 ########## configure file #########
-
 configure_file (
     ${CMAKE_CURRENT_SOURCE_DIR}/source/smoldynconfigure.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
     )
 
+######### docs ##############
+if(OPTION_DOCS)
+    add_subdirectory(docs)
+endif(OPTION_DOCS)
 
 ########## package #########
 include(CPack)
