@@ -239,7 +239,12 @@ extern CSTRING enum ErrorCode smolRunSim(simptr sim) {
 		LCHECK(er!=7,funcname,ECnotify,"Simulation stopped by a runtime command");
 		LCHECK(er!=8,funcname,ECerror,"Simulation terminated during simulation state updating\n  Out of memory");
 		LCHECK(er!=9,funcname,ECerror,"Simulation terminated during diffusion\n  Out of memory"); }
-	return Libwarncode;
+
+        // Minor fix. If run() is called again, previous Liberrorcode does not
+        // reset to ECok but remain stuck to ECnotify.
+        if(Libwarncode == ECnotify)
+            Libwarncode = ECok;
+        return Libwarncode;
  failure:
 	return Liberrorcode; }
 
