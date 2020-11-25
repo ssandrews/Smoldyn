@@ -34,6 +34,6 @@ notifications:
     on_failure: always
 
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then (cd devel && ./build_wheels_osx.sh); fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then (cd devel && make) ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then (cd scripts && ./build_wheels_osx.sh); fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then (cd scripts && make) ; fi
 
