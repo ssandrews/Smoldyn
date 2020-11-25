@@ -5,15 +5,15 @@
 # Please report bugs and problems to support@smoldyn.org. 
 
 ########## Basic setup ##########
-
-project(smoldyn)
-
 cmake_minimum_required(VERSION 3.4)   # due to pybind11 
+
+project(smoldyn LANGUAGES CXX C)
+
 if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
 
-# CI/CD can also set this variable. If not, use the default one. 
+# CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
     string(TIMESTAMP STAMP "%Y%d%m")
     set(SMOLDYN_VERSION "2.63.dev${STAMP}")
@@ -47,6 +47,7 @@ option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
 option(OPTION_STRICT_BUILD "Treat most warnings as error and enable ASAN" OFF)
+option(OPTION_DOCS "Generate documentation" OFF)
 
 if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
@@ -84,64 +85,64 @@ message(STATUS "Option to run Libsmoldyn examples: ${OPTION_EXAMPLES}")
 ######### Core code information ###########
 
 set(HEADER_FILES
-    source/libSteve/Geometry.h
-    source/libSteve/List.h
-    source/libSteve/math2.h
-    source/libSteve/opengl2.h
-    source/libSteve/parse.h
-    source/libSteve/queue.h
-    source/libSteve/random2.h
-    source/libSteve/Rn.h
-    source/libSteve/RnSort.h
-    source/libSteve/rxnparam.h
-    source/libSteve/SimCommand.h
-    source/libSteve/Sphere.h
-    source/libSteve/string2.h
-    source/libSteve/SurfaceParam.h
-    source/libSteve/Zn.h
-    source/libSteve/SFMT/SFMT.h
-    source/Smoldyn/smoldyn.h
-    source/Smoldyn/smoldynfuncs.h
-    source/vcell/SimpleMesh.h
-    source/vcell/SimpleValueProvider.h
-    source/NextSubVolume/nsvc.h
-    source/vtk/vtkwrapper.h
-    )
+	${CMAKE_SOURCE_DIR}/source/libSteve/Geometry.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/List.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/math2.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/opengl2.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/parse.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/queue.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/random2.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/Rn.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/RnSort.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/rxnparam.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/SimCommand.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/Sphere.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/string2.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/SurfaceParam.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/Zn.h
+	${CMAKE_SOURCE_DIR}/source/libSteve/SFMT/SFMT.h
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.h
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynfuncs.h
+	${CMAKE_SOURCE_DIR}/source/vcell/SimpleMesh.h
+	${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.h
+	${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.h
+	${CMAKE_SOURCE_DIR}/source/vtk/vtkwrapper.h
+	)
 
 set(SRC_FILES
-    source/libSteve/Geometry.c
-    source/libSteve/List.c
-    source/libSteve/math2.c
-    source/libSteve/opengl2.c
-    source/libSteve/parse.c
-    source/libSteve/queue.c
-    source/libSteve/random2.c
-    source/libSteve/Rn.c
-    source/libSteve/RnSort.c
-    source/libSteve/rxnparam.c
-    source/libSteve/SimCommand.c
-    source/libSteve/Sphere.c
-    source/libSteve/string2.c
-    source/libSteve/SurfaceParam.c
-    source/libSteve/Zn.c
-    source/libSteve/SFMT/SFMT.c
-    source/Smoldyn/smolbng.c
-    source/Smoldyn/smolboxes.c
-    source/Smoldyn/smolcmd.c
-    source/Smoldyn/smolcomparts.c
-    source/Smoldyn/smolfilament.c
-    source/Smoldyn/smolgraphics.c
-    source/Smoldyn/smolmolec.c
-    source/Smoldyn/smolport.c
-    source/Smoldyn/smollattice.c
-    source/Smoldyn/smolreact.c
-    source/Smoldyn/smolrule.c
-    source/Smoldyn/smolsim.c
-    source/Smoldyn/smolsurface.c
-    source/Smoldyn/smolwall.c
-    )
+	${CMAKE_SOURCE_DIR}/source/libSteve/Geometry.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/List.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/math2.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/opengl2.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/parse.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/queue.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/random2.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/Rn.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/RnSort.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/rxnparam.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/SimCommand.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/Sphere.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/string2.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/SurfaceParam.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/Zn.c
+	${CMAKE_SOURCE_DIR}/source/libSteve/SFMT/SFMT.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
+	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
+	)
 
-set(MAIN_FILES source/Smoldyn/smoldyn.c)
+set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
 include_directories(source/libSteve source/Smoldyn ${CMAKE_BINARY_DIR})
 
@@ -154,8 +155,8 @@ if(OPTION_VCELL)
 endif(OPTION_VCELL)
 
 if(OPTION_TARGET_LIBSMOLDYN)
-    list(APPEND HEADER_FILES source/Smoldyn/libsmoldyn.h)
-    list(APPEND SRC_FILES source/Smoldyn/libsmoldyn.c)
+    list(APPEND HEADER_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.h)
+    list(APPEND SRC_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.cpp)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
 if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
@@ -474,32 +475,32 @@ if (OPTION_NSV)
     endif ()
 
 
-    set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source/NextSubVolume/boost_include)
+    set(Boost_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/source/NextSubVolume/boost_include)
     include_directories(SYSTEM ${Boost_INCLUDE_DIR})
     message(STATUS "Boost headers found: '${Boost_INCLUDE_DIR}'")
 
-    list(APPEND SRC_FILES 
-        source/NextSubVolume/StructuredGrid.cpp
-        source/NextSubVolume/Species.cpp
-        source/NextSubVolume/ReactionEquation.cpp
-        source/NextSubVolume/NextSubvolumeMethod.cpp
-        source/NextSubVolume/Kairos.cpp
-        source/NextSubVolume/Io.cpp
-        source/NextSubVolume/Geometry.cpp
-        source/NextSubVolume/nsvc.cpp
+    list(APPEND SRC_FILES
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.cpp
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.cpp
         )
-    list(APPEND HEADER_FILES 
-        source/NextSubVolume/Vector.h
-        source/NextSubVolume/StructuredGrid.h
-        source/NextSubVolume/Species.h
-        source/NextSubVolume/ReactionEquation.h
-        source/NextSubVolume/NextSubvolumeMethod.h
-        source/NextSubVolume/Log.h
-        source/NextSubVolume/Kairos.h
-        source/NextSubVolume/Io.h
-        source/NextSubVolume/Geometry.h
-        source/NextSubVolume/Constants.h
-        source/NextSubVolume/nsvc.h
+    list(APPEND HEADER_FILES
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Vector.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Log.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Constants.h
+        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.h
         )
 
     message(STATUS "NSV added to source files")
@@ -532,8 +533,9 @@ endif ()
 ########## Python module #########
 
 if (OPTION_PYTHON)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/source/pybind11-2.6.1)
-    add_subdirectory(source/python)
+    set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11-2.6.1)
+    add_subdirectory(${PYBIND11_SOURCE_DIR})
+    add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)
 endif ()
 
 
@@ -548,7 +550,7 @@ if(NOT OPTION_MINGW)
     if (OPTION_TARGET_LIBSMOLDYN)
         install(TARGETS smoldyn_shared LIBRARY DESTINATION lib)
         install(TARGETS smoldyn_static ARCHIVE DESTINATION lib)
-        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h 
+        install(FILES source/Smoldyn/libsmoldyn.h source/Smoldyn/smoldyn.h
             ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
             DESTINATION include)
     endif ()
@@ -557,19 +559,22 @@ endif ()
 
 
 ########## configure file #########
-
 configure_file (
     ${CMAKE_CURRENT_SOURCE_DIR}/source/smoldynconfigure.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
     )
 
+######### docs ##############
+if(OPTION_DOCS)
+    add_subdirectory(docs)
+endif(OPTION_DOCS)
 
 ########## package #########
 include(CPack)
 
 
 ######### Testing #############
+enable_testing()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
-    enable_testing()
     add_subdirectory(examples)
 endif ()

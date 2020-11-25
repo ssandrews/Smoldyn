@@ -1,9 +1,12 @@
-include_directories(${CMAKE_SOURCE_DIR}/../source/Smoldyn)
-add_subdirectory(S97_libsmoldyn)
-
 add_custom_target(examples)
+
+# generate script to run python script.
+configure_file(${CMAKE_SOURCE_DIR}/scripts/run_pyscript.sh.in ${CMAKE_BINARY_DIR}/run_pyscript.sh)
+set(PYSCRIPT_RUN_SCRIPT ${CMAKE_BINARY_DIR}/run_pyscript.sh)
+
 # Script examples. Only few are added.
 set(EXAMPLE_SCRIPTS S10_boxes/box.txt S3_space/bounds2.txt)
+
 foreach(_example ${EXAMPLE_SCRIPTS})
     # message(STATUS "Adding ${_example}")
     get_filename_component(_ex_name ${_example} NAME_WE)
@@ -25,14 +28,27 @@ foreach(_example ${PY_FILES})
     if("${_ex_name}" IN_LIST NOT_PY_EXAMPLES_NAME_WE)
         continue()
     endif()
-    message(STATUS "Found python example script: ${_example}.")
+    # message(STATUS "Found python example script: ${_example}.")
     get_filename_component(_ex_dir ${_example} DIRECTORY)
     add_custom_target(py${_ex_name} COMMAND
         PYTHONPATH=${CMAKE_BINARY_DIR}/py 
         MPLBACKEND=agg SMOLDYN_NO_PROMPT=1
-        ${PYTHON_EXECUTABLE} ${_example}
+        ${PYSCRIPT_RUN_SCRIPT} ${_example}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Executing ${_example} (user prompts are disabled)" 
         VERBATIM)
     add_dependencies(pyexamples py${_ex_name})
 endforeach()
+
+include_directories(${CMAKE_SOURCE_DIR}/source/Smoldyn)
+include_directories(${CMAKE_BINARY_DIR})
+
+add_executable(test1 S97_libsmoldyn/test1.cpp)
+target_link_libraries(test1 smoldyn_shared)
+
+add_executable(testcode S97_libsmoldyn/testcode/testcode.cpp)
+target_link_libraries(testcode smoldyn_shared)
+
+enable_testing()
+add_test(NAME test_test1.cpp COMMAND $<TARGET_FILE:test1>)
+add_test(NAME test_testcode.cpp COMMAND $<TARGET_FILE:testcode>)

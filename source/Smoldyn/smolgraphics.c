@@ -387,7 +387,6 @@ int checkgraphicsparams(simptr sim,int *warnptr) {
 	if(warnptr) *warnptr=warn;
 	return error; }
 
-
 /******************************************************************************/
 /******************************* structure setup ******************************/
 /******************************************************************************/
@@ -592,7 +591,6 @@ int graphicssettextitem(simptr sim,char *itemname) {
 		if(!strcmp(itemname,graphss->textitems[item])) return 3;
 	strncpy(graphss->textitems[graphss->ntextitems++],itemname,STRCHAR);
 	return 0; }
-
 
 /* graphicssetlight */
 int graphicssetlight(simptr sim,graphicsssptr graphss,int lt,enum LightParam ltparam,double *value) {
@@ -1413,7 +1411,3 @@ void smolsimulategl(simptr sim) {
 	smolsimulate(sim);
 #endif
 	return; }
-
-
-
-

@@ -11,6 +11,7 @@ using namespace std;
 #include "../libSteve/random2.h"
 
 #include "Smoldyn.h"
+#include "CallbackFunc.h"
 
 // Global variables.
 // Keep all simptrs in a vector. A user can use them for different
@@ -27,6 +28,27 @@ vector<double> highbounds_;
 bool debug_       = false;
 double curtime_   = 0.0;
 bool initDisplay_ = false;
+
+bool connect(const py::function& func, const py::object& target, const size_t step,
+    const py::list& args)
+{
+    assert(cursim_->ncallbacks < MAX_PY_CALLBACK);
+    if(cursim_->ncallbacks >= MAX_PY_CALLBACK) {
+        py::print("Error: Maximum of ", MAX_PY_CALLBACK,
+            " callbacks are allowed. Current number of callbacks: ", cursim_->ncallbacks);
+        return false;
+    }
+
+    // cleanup is the job of simfree
+    auto f = new CallbackFunc();
+    f->setFunc(func);
+    f->setStep(step);
+    f->setTarget(target);
+    f->setArgs(args);
+    cursim_->callbacks[cursim_->ncallbacks] = f;
+    cursim_->ncallbacks += 1;
+    return true;
+}
 
 bool addToSimptrVec(simptr ptr)
 {
@@ -51,14 +73,14 @@ bool deleteSimptr(simptr ptr)
 
 size_t getDim()
 {
-    return dim_;
+    assert(lowbounds_.size() == (size_t)cursim_->dim);
+    return cursim_->dim;
 }
 
 void setDim(size_t dim)
 {
-    dim_ = dim;
-    if(cursim_)
-        cursim_->dim = dim;
+    assert(cursim_);
+    cursim_->dim = dim;
 }
 
 void printSimptrNotInitWarning(const char* funcname)
@@ -109,30 +131,43 @@ bool initialize()
     }
 
     cursim_ = smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]);
+
     if(debug_)
         smolSetDebugMode(1);
     return cursim_ ? true : false;
 }
 
-void runUntil(const double breaktime, const double dt, bool display)
+ErrorCode runUntil(
+    const double breaktime, const double dt, bool display, bool overwrite = false)
 {
+    if(!cursim_) {
+        if(!initialize()) {
+            cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
+            return ECerror;
+        }
+        auto er = smolOpenOutputFiles(cursim_, overwrite);
+        if(er)
+            cerr << __FUNCTION__ << ": Simulation skipped." << endl;
+    }
+
     // If dt>0, reset dt else use the old one.
     if(dt > 0.0)
         smolSetTimeStep(cursim_, dt);
+    smolUpdateSim(cursim_);
 
     if(display && (!initDisplay_)) {
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
-    smolRunSimUntil(cursim_, breaktime);
+    return smolRunSimUntil(cursim_, breaktime);
 }
 
-bool run(double stoptime, double dt, bool display)
+ErrorCode run(double stoptime, double dt, bool display, bool overwrite = false)
 {
     if(!cursim_) {
         if(!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
-            return false;
+            return ECerror;
         }
     }
 
@@ -145,34 +180,31 @@ bool run(double stoptime, double dt, bool display)
     }
     auto r   = smolRunSim(cursim_);
     curtime_ = stoptime;
-    return r == ErrorCode::ECok;
+
+    return r;
+}
+
+void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
+{
+    lowbounds_  = lowbounds;
+    highbounds_ = highbounds;
+    assert(lowbounds.size() == highbounds.size());
+    if(cursim_)
+        simfree(cursim_);
+    cursim_ = smolNewSim(lowbounds.size(), &lowbounds[0], &highbounds[0]);
+    return;
 }
 
 void setBoundaries(const vector<pair<double, double>>& bounds)
 {
-    setDim(bounds.size());
-    lowbounds_.resize(dim_);
-    highbounds_.resize(dim_);
-    for(size_t i = 0; i < dim_; i++) {
-        lowbounds_[i]  = bounds[i].first;
-        highbounds_[i] = bounds[i].second;
+    vector<double> lowbounds, highbounds;
+    for(const auto v : bounds) {
+        lowbounds.push_back(v.first);
+        highbounds.push_back(v.second);
     }
-    initialize();
+    setBoundaries(lowbounds, highbounds);
+    return;
 }
-
-void setBoundaries(const vector<double>& lowbounds, const vector<double>& highbounds)
-{
-    assert(lowbounds.size() == highbounds.size());
-    setDim(lowbounds.size());
-    lowbounds_.resize(getDim());
-    highbounds_.resize(getDim());
-    for(size_t i = 0; i < getDim(); i++) {
-        lowbounds_[i]  = lowbounds[i];
-        highbounds_[i] = highbounds[i];
-    }
-    initialize();
-}
-
 
 pair<vector<double>, vector<double>> getBoundaries()
 {
@@ -182,7 +214,7 @@ pair<vector<double>, vector<double>> getBoundaries()
     bounds.second.resize(getDim());
 
     for(size_t i = 0; i < getDim(); i++) {
-        bounds.first[i] = lowbounds_[i];
+        bounds.first[i]  = lowbounds_[i];
         bounds.second[i] = highbounds_[i];
     }
     return bounds;
