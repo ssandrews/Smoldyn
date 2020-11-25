@@ -71,8 +71,8 @@ def build_model_smoldyn():
     r1_ = S.Reaction("open2trans", subs=[svFused], prds=[trans] * 200, kf=100.0)
     S.connect(generate_spike, update_kf, step=20)
 
-    s = S.Simulation(stop=200, step=0.001)
-    s.addGraphics("opengl", iter=20, text_display="time")
+    s = S.Simulation(stop=200, step=0.01)
+    s.addGraphics("opengl", iter=10, text_display="time")
     print('[INFO] Starting simulation ...')
     s.run()
     print("Done")
