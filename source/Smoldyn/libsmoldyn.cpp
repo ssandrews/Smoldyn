@@ -1685,7 +1685,7 @@ extern CSTRING enum ErrorCode smolAddReaction(simptr sim,const char *reaction,co
 		for(prd=0;prd<nproduct;prd++) {
 			prdident[prd]=smolGetSpeciesIndexNT(sim,productspecies[prd]);
 			LCHECK(prdident[prd]>0,funcname,ECsame,NULL);
-			LCHECK(productstates[prd]>=MSsoln && productstates[prd]<MSMAX,funcname,ECsyntax,"invalid product state"); }}
+			LCHECK(productstates[prd]>=MSsoln && productstates[prd]<=MSMAX,funcname,ECsyntax,"invalid product state"); }}
 	rxn=RxnAddReaction(sim,reaction,order,rctident,rctstate,nproduct,prdident,productstates,NULL,NULL);
 	LCHECK(rxn,funcname,ECmemory,"out of memory allocating reaction");
 

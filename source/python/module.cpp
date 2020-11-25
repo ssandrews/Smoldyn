@@ -927,6 +927,10 @@ PYBIND11_MODULE(_smoldyn, m)
             // by ourselves.
 
             size_t nprd = productStates.size();
+            if(nprd >= MAXPRODUCT) {
+                py::print("Maximum product allowed ", MAXPRODUCT, ". Given ", nprd);
+                return ErrorCode::ECbounds;
+            }
 
             vector<const char *> productSpecies(nprd);
             for(size_t i = 0; i < nprd; i++)

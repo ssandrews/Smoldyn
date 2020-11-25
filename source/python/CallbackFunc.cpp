@@ -101,4 +101,3 @@ py::list CallbackFunc::getArgs() const
 {
     return args_;
 }
-

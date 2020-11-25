@@ -12,10 +12,9 @@ r3 = sm.Reaction("r3", [fox], [], kf=10)
 rabbit.addToSolution(1000)
 fox.addToSolution(1000)
 
-s = sm.Simulation(20, step=0.001, output_files="lotvoltout.txt")
+s = sm.Simulation(10, step=0.01, output_files=["lotvoltout.txt"])
 s.setTiff("lotvolt/OpenGl")
 s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
 s.addCommand("molcount lotvoltout.txt", "i", on=0, off=5, step=0.01)
 s.addCommand("molcount stdout", "i", on=0, off=2, step=0.1)
-
 s.run()

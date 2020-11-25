@@ -28,7 +28,7 @@ r1.front.jumpTo(r2.front, True)
 r3.front.jumpTo(r4.front, True)
 
 rxt = sm.Reaction("rxn", subs=[A, B], prds=[C], kf=1, kb=0.2)
-rxt.reverse.setProductPlacement("pgemmax", param=0.2)
+rxt.reverse.setProductPlacement("pgemmax", parameter=0.2)
 
 s = sm.Simulation(2000, 0.01)
 s.addGraphics("opengl", iter=10)

@@ -266,7 +266,11 @@ typedef struct wallstruct {
 /********************************* Reactions ********************************/
 
 #define MAXORDER 3
-#define MAXPRODUCT 16
+
+// NOTE:
+// Increasing MAXPRODUCT value to 256. 
+#define MAXPRODUCT 256
+
 enum RevParam {RPnone,RPirrev,RPconfspread,RPbounce,RPpgem,RPpgemmax,RPpgemmaxw,RPratio,RPunbindrad,RPpgem2,RPpgemmax2,RPratio2,RPoffset,RPfixed};
 enum SpeciesRepresentation {SRparticle,SRlattice,SRboth,SRnone,SRfree};
 

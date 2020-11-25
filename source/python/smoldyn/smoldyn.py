@@ -103,7 +103,7 @@ class Species(object):
         name : str
             Name of the species.
         state : str
-            State of the species. One of the following: 
+            State of the species. One of the following:
                 'soln', 'front', 'back', 'up', 'down', 'bsoln', 'all', 'none','some'
         color: Color or dict of Colors
             If a single :py:class:`Color` is given, all states of this molecule will be
@@ -117,8 +117,8 @@ class Species(object):
             display size of the molecule. For the ``opengl`` graphics method, the
             this value is in pixels.  Here, numbers from 2 to 4 are
             typically good choices (default 3px).  For better graphics
-            options (opengl_good and opengl_better), the display size value is 
-            the radius with which the molecule is drawn, using the same units 
+            options (opengl_good and opengl_better), the display size value is
+            the radius with which the molecule is drawn, using the same units
             as elsewhere in the input file.
         mol_list : str, optional
             molecule list (default '')
@@ -226,7 +226,7 @@ class Species(object):
 
     @display_size.setter
     def display_size(self, size: Union[float, Dict[str, float]]):
-        """Set the display_size of the molecule. 
+        """Set the display_size of the molecule.
 
         Parameters
         ----------
@@ -335,32 +335,30 @@ class Panel(object):
         self.surface: Surface = NullSurface()
         self.neighbors = neighbors
 
-    def jumpTo(
-        self, face1: str, panel2, face2: str, bidirectional: bool = False
-    ):
+    def jumpTo(self, face1: str, panel2, face2: str, bidirectional: bool = False):
         """Add a jump reaction between two panels of the same surface.
 
         This panel has name panel1, and face face1.  A molecule that hits this
         face of the panel, and that has “jump” action for this face, gets
         translated to the face face2 of the panel panel2 (which needs to be the
-        same shape as the originating panel). 
+        same shape as the originating panel).
 
         Parameters
         ----------
         face1 : Panel
-            
+
         panel2 : to this Panel
         face2 : to this face
 
         Examples
         --------
-        
-        Smoldyn expression: 
-            jump r1 front <-> r2 front 
 
-        >>> r1.addJump('front', r2, 'front', True)   
+        Smoldyn expression:
+            jump r1 front <-> r2 front
 
-        Or, 
+        >>> r1.addJump('front', r2, 'front', True)
+
+        Or,
 
         >>> r1.front.jumpTo(r2.front, True)
         """
@@ -438,7 +436,7 @@ class Rectangle(Panel):
 
         Parameters
         ----------
-        corner : 
+        corner :
             One corner of the rectangle.
         dimensions :
             Dimensions of the rectangle e.g., for a 2D rectangle it is a list of
@@ -473,7 +471,7 @@ class Triangle(Panel):
 
         Parameters
         ----------
-        vertices : 
+        vertices :
             vertices of triangle.
         name :
             name
@@ -488,11 +486,11 @@ class Sphere(Panel):
     def __init__(
         self, center: List[float], radius: float, slices: int, stacks: int = 0, name=""
     ):
-        """Sphere 
+        """Sphere
 
         Parameters
         ----------
-        center : 
+        center :
             The center of the sphere.
         radius : float
             The radius of the sphere.
@@ -502,7 +500,7 @@ class Sphere(Panel):
             Number of stacks (latitude lines, default 0) that are used to drawing the sphere. `
             If a non-postive number is given,`slices` value is used.
         name : optional
-            name of the panel. If omitted, 0, 1, 2 etc. will be assigned. 
+            name of the panel. If omitted, 0, 1, 2 etc. will be assigned.
         """
         super().__init__(shape=_smoldyn.PanelShape.sph, name=name)
         self.center = center
@@ -525,11 +523,11 @@ class Hemisphere(Panel):
         stacks: int,
         name: str = "",
     ):
-        """Hemisphere 
+        """Hemisphere
 
         Parameters
         ----------
-        center : 
+        center :
             The center of hemisphere
         radius : float
             The radius of the hemisphere. Enter a positive radius to have the
@@ -569,9 +567,9 @@ class Cylinder(Panel):
 
         Parameters
         ----------
-        start : 
-            Cylinder axis start point 
-        end : 
+        start :
+            Cylinder axis start point
+        end :
             Cylinder axis's end point
         radius : float
             The radius of the cylinder. If the radius is negative then the front
@@ -602,11 +600,11 @@ class Disk(Panel):
 
         Parameters
         ----------
-        center : 
+        center :
             center of the disk.
         radius : float
             radius of the disk.
-        vector: 
+        vector:
             A vector that points away from the front of the disk. The size of
             this vector is 2 for 2-D and 3 for 3-D.
         name : optional
@@ -734,7 +732,7 @@ class _SurfaceFaceCollection(object):
         action : str
             The action can be  `“reflect”`, `“absorb”`, `“transmit”`, `“jump”`,
             `“port”`, or `“periodic”`.
-        new_species: 
+        new_species:
             TODO: Implement it.
             If `new_species` is entered, then the molecule changes to this new
             species upon surface collision. In addition, it’s permissible to
@@ -782,7 +780,7 @@ class Path2D(object):
 
         Parameters
         ----------
-        *points: 
+        *points:
             Points
         closed: bool
             If closed is `True`, the last point and the first point are
@@ -845,7 +843,7 @@ class Surface(object):
         ----------
         panels : List[Panel]
             List of panels. A surface must have at least one.
-        name : str 
+        name : str
             name of the surface
 
         Examples
@@ -870,7 +868,11 @@ class Surface(object):
             panel.name = panel._getName(i)
             panel.surface = self
             k = _smoldyn.addPanel(
-                self.name, panel.ctype, panel.name, panel.axisstr, panel.pts,
+                self.name,
+                panel.ctype,
+                panel.name,
+                panel.axisstr,
+                panel.pts,
             )
             assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
 
@@ -885,7 +887,7 @@ class Surface(object):
             face of the surface: 'front', 'back', 'both'
         *args:
             See :func:`_SurfaceFaceCollection.setStyle`
-        **kwargs: 
+        **kwargs:
             See :func:`_SurfaceFaceCollection.setStyle`
 
         See Also
@@ -904,7 +906,7 @@ class Surface(object):
             face of the surface: 'front', 'back', 'both'
         *args:
             See :func:`_SurfaceFaceCollection.addAction`
-        **kwargs: 
+        **kwargs:
             See :func:`_SurfaceFaceCollection.addAction`
 
         See Also
@@ -925,7 +927,7 @@ class Surface(object):
 
         Parameters
         ----------
-        species: 
+        species:
             Species to add, a Species or a tuple of (Species, MolecState)
             e.g. (A, 'front')
         N : int
@@ -961,7 +963,13 @@ class Surface(object):
             assert panel
             assert panel.ctype
             k = _smoldyn.addSurfaceMolecules(
-                sname, sstate, _n, self.name, panel.ctype, panel.name, pos,
+                sname,
+                sstate,
+                _n,
+                self.name,
+                panel.ctype,
+                panel.name,
+                pos,
             )
             assert k == _smoldyn.ErrorCode.ok, k
 
@@ -1191,8 +1199,7 @@ class Compartment(object):
 
 
 class StateMonitor(object):
-    """State Monitor
-    """
+    """State Monitor"""
 
     def __init__(self, objs, state, **kwargs):
         self.objs = objs
@@ -1226,7 +1233,7 @@ class Command(object):
         cmd: str
             command string.
         type: str
-            Type of command. Optional when `from_string` is set to `True`. Then 
+            Type of command. Optional when `from_string` is set to `True`. Then
             the type is to be included in the `cmd` string itself.
 
             Use capital letter version for integer queue.  ‘b’ or 'B' for
@@ -1312,7 +1319,7 @@ class Simulation(object):
         self, stop: float = 0.0, step: float = 0.0, quit_at_end: bool = False, **kwargs
     ):
         """
-        Class to store simulation related attributes. 
+        Class to store simulation related attributes.
 
         Parameters
         ----------
@@ -1322,7 +1329,7 @@ class Simulation(object):
             Simulation step or dt (sec)
         quit_at_end : bool
             If `True`, Smoldyn won't prompt user at the end of simulation and
-            quit. Same effect can also be achieved by setting environment variable 
+            quit. Same effect can also be achieved by setting environment variable
             `SMOLDYN_NON_INTERACTIVE` to 1.
         kwargs :
             output_files :
@@ -1343,6 +1350,8 @@ class Simulation(object):
             self.accuracry: float = kwargs["accuracy"]
 
         if self.kwargs.get("output_files", []):
+            if isinstance(self.kwargs["output_files"], str):
+                self.kwargs["output_files"] = [self.kwargs["output_files"]]
             self.setOutputFiles(self.kwargs["output_files"])
 
         # TODO : Add to documentation.
@@ -1378,7 +1387,7 @@ class Simulation(object):
         Parameters
         ----------
         outfile : Union[str, Path]
-            Output file. 
+            Output file.
         append : bool
             If `True`, append the data to the exsiting file. Default `False`.
 
@@ -1432,7 +1441,7 @@ class Simulation(object):
             boxes. Default value is 0, so that thegrid is not drawn.
         grid_color: Color
             Color of the grid. Default "white" or [1,1,1,1]
-        text_display: 
+        text_display:
             List of variables to be displayed. Or a text string containing
             variable names e.g. 'time E S ES(front)'
         """
@@ -1593,7 +1602,7 @@ class Simulation(object):
         cmd: str
             Command string.
         type: str
-            Type of command. Optional when `from_string` is set to `True`. Then 
+            Type of command. Optional when `from_string` is set to `True`. Then
             the type is to be included in the `cmd` string itself.
 
             Use capital letter version for integer queue.  ‘b’ or 'B' for
@@ -1717,7 +1726,14 @@ class HalfReaction(object):
                 prdStates.append(_toMS(x[1]))
 
         k = _smoldyn.addReaction(
-            name, r1name, r1state, r2name, r2state, prdNames, prdStates, rate,
+            name,
+            r1name,
+            r1state,
+            r2name,
+            r2state,
+            prdNames,
+            prdStates,
+            rate,
         )
         if k != _smoldyn.ErrorCode.ok:
             __logger__.warning(f" Substrates  : {subs}")
@@ -1756,28 +1772,32 @@ class HalfReaction(object):
         return len(self.subs)
 
     def setProductPlacement(
-        self, type: str, param: float = 0.0, product: str = None, pos: List[float] = []
+        self,
+        type: str,
+        parameter: float = 0.0,
+        product: str = None,
+        pos: List[float] = [],
     ):
         """Placement method and parameters for the products of reaction.
         This also affects the binding radius of the reverse reaction, as
-        explained in the manual. 
+        explained in the manual.
 
         Parameters
         ----------
         type : 'irrev' ('i'), 'pgem' ('p'), 'pgemmax' ('x')
             , 'pgemmax2' ('y'), 'ratio' ('r'), 'unbindrad' ('b')
             , 'pgem2' ('q'), 'ratio2' ('s'), 'offset' ('o'), 'fixed' ('f')
-        param : float
+        parameter : float
             Parameter value. Usually required except for type 'irrev'
         product: str, optional
             Required for type 'fixed' and 'offset'
-        pos: 
+        pos:
             Required for type 'fixed' and 'offset'
 
         Notes
         -----
         To create a “bounce” type reaction, for simulating excluded volume,
-        enter the typeas bounce.  In this case, enterno parameter for the
+        enter the type as bounce.  In this case, enterno parameter for the
         default algorithm orone parameter.The default algorithm, also entered
         with a -2 parameter, performs ballistic reflection for spherical
         molecules. Enter a parameter of -1 for an algorithm in which the reactant
@@ -1794,7 +1814,7 @@ class HalfReaction(object):
         if type in ["fixed", "offset"]:
             assert product, "Product is required"
             assert pos, "pos is required"
-        k = _smoldyn.setReactionProducts(self.name, revType, param, product, pos)
+        k = _smoldyn.setReactionProducts(self.name, revType, parameter, product, pos)
         assert k == _smoldyn.ErrorCode.ok
 
 
@@ -1832,10 +1852,10 @@ class Reaction(object):
             Reaction probability (first order reaction)
         compartment : Compartment
             Reaction compartment. If not `None`, both forward and reverse
-            reactions will be limited to this compartment. 
+            reactions will be limited to this compartment.
         surface : Surface
             Reaction surface. If not `None`, both forward and reverse
-            reactions will be limited to this surface. 
+            reactions will be limited to this surface.
         """
         self.name = f"r{id(self):d}" if not name else name
         fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
@@ -1881,7 +1901,7 @@ class Reaction(object):
 
         Parameters
         ----------
-        rules : 
+        rules :
             List of integer or string. For each product choose `1` (or
             ``"r1"``) if it should be placed on the first reactant’s surface or
             relative to that surface, and `2` (``"r2"``) if it should be placed
@@ -1920,9 +1940,9 @@ def setBounds(low: List[float], high: List[float], types: Union[str, List[str]] 
         higher limit of axes e.g. for x=100, y=100, z=90, use [100,10,90]
     types : Union[str, List[str]]
         Boundary type. 'r' for reflexive, 't' for transparent, 'a' for
-        absorbing, and 'p' for periodic boundary. Default is 'r'. 
+        absorbing, and 'p' for periodic boundary. Default is 'r'.
 
-        If a single value is given, then  it is applied to all dimensions. 
+        If a single value is given, then  it is applied to all dimensions.
         If a string is two chracter long then low and high side of boundaries
         are set different side.
 
@@ -1934,7 +1954,7 @@ def setBounds(low: List[float], high: List[float], types: Union[str, List[str]] 
 
 
 def addMoleculesToSolution(molecule, *args, **kwargs):
-    """Add molecules to the solution. 
+    """Add molecules to the solution.
 
     An alias of Species.addToSolution
 

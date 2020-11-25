@@ -11,7 +11,7 @@ bouton_ = None
 def generate_spike(t, args):
     x = random.random()
     if x < 0.1:
-        return 1 + x
+        x += 1
     return x
 
 
@@ -68,13 +68,19 @@ def build_model_smoldyn():
     bottom.setRate(sv, "front", "bsoln", rate=10, new_species=svFused)
 
     # Open vesicle turns into 1000 to 2000 or neurotransmitters.
-    r1_ = S.Reaction("open2trans", subs=[svFused], prds=[trans] * 1000, kf=100)
+    r1_ = S.Reaction("open2trans", subs=[svFused], prds=[trans] * 200, kf=100.0)
     S.connect(generate_spike, update_kf, step=20)
 
-    s = S.Simulation(stop=1000, step=0.001)
-    s.addGraphics("opengl", iter=10, text_display="time")
+    s = S.Simulation(stop=200, step=0.001)
+    s.addGraphics("opengl", iter=20, text_display="time")
+    print('[INFO] Starting simulation ...')
     s.run()
     print("Done")
 
+def main():
+    build_model_smoldyn()
 
-build_model_smoldyn()
+
+if __name__ == "__main__":
+    main()
+
