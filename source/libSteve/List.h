@@ -6,17 +6,18 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __list_h
 #define __list_h
 
-typedef struct liststructli {
-    int max;
-    int n;
-    long int *xs;
-} * listptrli;
 
-typedef struct liststructv {
-    int max;
-    int n;
-    void **xs;
-} * listptrv;
+typedef struct liststructli{
+	int max;
+	int n;
+	long int *xs;
+	} *listptrli;
+
+typedef struct liststructv{
+	int max;
+	int n;
+	void **xs;
+	} *listptrv;
 
 // Memory management
 listptrli ListAllocLI(int max);
@@ -25,16 +26,17 @@ void ListFreeLI(listptrli list);
 void ListFreeV(listptrv list);
 
 // Reading lists
-int ListMemberLI(const listptrli list, long int x);
+int ListMemberLI(const listptrli list,long int x);
 
 // Adding elements to lists
 listptrli ListReadStringLI(char *string);
-listptrli ListAppendItemLI(listptrli list, long int newitem);
-listptrv ListAppendItemV(listptrv list, void *newitem);
+listptrli ListAppendItemLI(listptrli list,long int newitem);
+listptrv ListAppendItemV(listptrv list,void *newitem);
 
 // Combining lists
-listptrli ListAppendListLI(listptrli list, const listptrli newstuff);
-int ListRemoveListLI(listptrli list, const listptrli remove);
+listptrli ListAppendListLI(listptrli list,const listptrli newstuff);
+int ListRemoveListLI(listptrli list,const listptrli remove);
+
 
 #endif
 

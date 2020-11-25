@@ -1,5 +1,5 @@
 # File to illustrate parameter scans using Python scripts
-# This file is intended to be run using pyscript.py
+# This file is intended to be run using paramscan.py
 
 ifundefine RXNRATE
   define RXNRATE 0.1

@@ -6405,7 +6405,12 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \subsection*{Modifications for version 2.63 (not released yet)}
 \item Documented Dilawar's work on Python bindings in code documentation and Libsmoldyn manual.
 \item Dilawar added test for \ttt{SMOLDYN\_NO\_PROMPT} environment variable, which is essentially the same as setting the \ttt{sim->quitatend} flag.
-\item Lots of minor fixes in the Python bindings, including fixing the Python example files.
+\item I made lots of minor fixes in the Python bindings, including fixing the Python example files. Dilawar made more fixes and also added many more Python example files.
+\item Dilawar added \ttt{smolSetMoleculeColor}, \ttt{smolSetMoleculeSize}, \ttt{smolSetIntersurfaceRules} to libsmoldyn.
+\item Lots of changes by Dilawar to scripts, including particularly for documentation. He also fixed some issues in the CMake build system.
+\item Dilawar added Python callback functionality. This includes a few minor changes in smoldyn.h, including new code in the sim structure, and a short bit of code in \ttt{simulatetimestep}, in smolsim.c; this code is in C++, so the file got renamed to smolsim.cpp.
+\item Dilawar made some minor changes in libsmoldyn.c \ttt{smolGetPanelIndex} and \ttt{smolGetPanelIndexNT} for searching for a panel in a panel list. As part of the same changes, he added a C++ array to smoldyn.h. These changed both files from C to C++. I don't understand these updates.
+
 
 \end{itemize}
 

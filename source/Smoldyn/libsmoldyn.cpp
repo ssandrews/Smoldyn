@@ -673,7 +673,7 @@ enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)
 {
     const char *funcname = "smolOpenOutputFiles";
     int err              = scmdopenfiles(sim->cmds, overwrite);
-    LCHECK(!err, funcname, ECbug, "scmdopenfiles bug");
+    LCHECK(!err, funcname, ECerror, "Unable (or forbidden) to open output files for writing");
 
     return Libwarncode;
 failure:

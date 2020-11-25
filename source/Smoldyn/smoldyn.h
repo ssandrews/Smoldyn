@@ -367,8 +367,8 @@ constexpr std::array<PanelShape, 6> AllPanels_arr{PanelShape::PSrect, PanelShape
 
 
 enum SrfAction {SAreflect,SAtrans,SAabsorb,SAjump,SAport,SAmult,SAno,SAnone,SAadsorb,SArevdes,SAirrevdes,SAflip};
-enum DrawMode {DMno,DMvert,DMedge,DMve,DMface,DMvf,DMef,DMvef,DMnone};
-enum SMLflag {SMLno,SMLdiffuse,SMLreact,SMLsrfbound};
+enum DrawMode {DMno=0,DMvert=1,DMedge=2,DMve=3,DMface=4,DMvf=5,DMef=6,DMvef=7,DMnone};
+enum SMLflag {SMLno=0,SMLdiffuse=1,SMLreact=2,SMLsrfbound=4};
 
 typedef struct surfactionstruct {
 	int *srfnewspec;						// surface convert mol. species [ms]
