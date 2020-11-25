@@ -535,6 +535,7 @@ endif ()
 if (OPTION_PYTHON)
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11-2.6.1)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
+    add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)
 endif ()
 
 
