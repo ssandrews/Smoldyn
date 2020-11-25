@@ -11,9 +11,8 @@ file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 # recompile libsmoldyn for PYTHON.
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 add_library(_pysmoldyn STATIC ${SRC_FILES})
+target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
 target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
-target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
 
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
@@ -87,10 +86,6 @@ add_custom_target(doc_api_html
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "Generating Python's API doc (HTML)"
     VERBATIM)
-
-configure_file(${CMAKE_SOURCE_DIR}/scripts/install_wheel.sh.in
-    ${CMAKE_BINARY_DIR}/install_wheel.sh)
-install(CODE "execute_process(COMMAND ${CMAKE_BINARY_DIR}/install_wheel.sh)")
 
 enable_testing()
 

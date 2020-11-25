@@ -1,9 +1,10 @@
-include_directories(${CMAKE_SOURCE_DIR}/../source/Smoldyn)
-add_subdirectory(S97_libsmoldyn)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/S97_libsmoldyn)
+
 
 add_custom_target(examples)
 # Script examples. Only few are added.
 set(EXAMPLE_SCRIPTS S10_boxes/box.txt S3_space/bounds2.txt)
+
 foreach(_example ${EXAMPLE_SCRIPTS})
     # message(STATUS "Adding ${_example}")
     get_filename_component(_ex_name ${_example} NAME_WE)

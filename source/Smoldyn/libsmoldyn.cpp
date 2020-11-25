@@ -6,7 +6,7 @@
  of the Gnu Lesser General Public License (LGPL). */
 
 #include <string.h>
-#include "../lib/List.h"
+#include "../libSteve/List.h"
 #include "opengl2.h"
 #include "SimCommand.h"
 #include "string2.h"
