@@ -22,9 +22,4 @@ s.addCommand("molcount", type="i", on=0, off=100, step=10)
 
 # Optional.
 M = sm.StateMonitor([a, b, c], "molcount")
-
 s.run()
-
-# Now getting data and printing line.
-for row in M.data():
-    print(row)

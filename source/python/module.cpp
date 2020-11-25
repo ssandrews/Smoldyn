@@ -588,8 +588,8 @@ PYBIND11_MODULE(_smoldyn, m)
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
-    m.def("addCommandFromString", [](const string &command) {
-        char *cmd = strdup(command.c_str());
+    m.def("addCommandFromString", [](char* cmd) {
+        // char *cmd = strdup(command.c_str());
         return smolAddCommandFromString(cursim_, cmd);
     });
 
