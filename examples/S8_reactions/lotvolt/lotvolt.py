@@ -1,9 +1,7 @@
 # Simulation file for Lotka-Voltera reaction
 import smoldyn
 
-s = smoldyn.Simulation(
-    [-100, -100, -10], [100, 100, 10], boundary_type="p", output_files=["lotvoltout.txt"]
-)
+s = smoldyn.Simulation([-100, -100, -10], [100, 100, 10], boundary_type="r", output_files=["lotvoltout.txt"])
 rabbit = s.addSpecies("rabbit", color="red", display_size=2, mol_list="rlist", difc=100)
 fox = s.addSpecies("fox", color="blue", display_size=3, mol_list="flist", difc=100)
 s.addMoleculePerBox(1)
@@ -20,4 +18,4 @@ s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
 s.addCommand("molcount lotvoltout.txt", "i", on=0, off=5, step=0.01)
 s.addCommand("molcount stdout", "i", on=0, off=2, step=0.1)
 
-s = s.run(20, dt=0.01)
+s = s.run(20, dt=0.001)
