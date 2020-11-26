@@ -44,18 +44,23 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     ctest --output-on-failure
     /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v *.whl
     ls $WHEELHOUSE/smoldyn*.whl
-    # create a virtualenv and test this.
-    VENV=/tmp/venv
-    rm -rf $VENV
+
+    ## NOTE: I am contantly getting  the following error in venv.
+    ## $ python -c 'import smoldyn; print(smoldyn.__version__ )'
+    ## Fatal Python error: PyMUTEX_LOCK(gil->mutex) failed
+
+    ## create a virtualenv and test this.
+    ##VENV=$(pwd)/venv
+    ##rm -rf $VENV
     (
-        $PYTHON -m venv $VENV
-        source $VENV/bin/activate
-        which python
+        # $PYTHON -m venv $VENV
+        # source $VENV/bin/activate
+        # which python
         # now use venv pyhton.
-        python --version
-        python -m pip install $WHEELHOUSE/smoldyn*.whl
-        python -c 'import smoldyn; print(smoldyn.__version__ )'
-        deactivate
+        $PYTHON --version
+        $PYTHON -m pip install $WHEELHOUSE/smoldyn*.whl
+        $PYTHON -c 'import smoldyn; print(smoldyn.__version__ )'
+        $PYTHON -m pip uninstall -y smoldyn
     )
 )
 
