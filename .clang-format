@@ -1,0 +1,50 @@
+---
+AccessModifierOffset: -4
+SortIncludes: false
+ConstructorInitializerIndentWidth: 4
+AlignEscapedNewlinesLeft: true
+AlignTrailingComments: true
+AlignAfterOpenBracket: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: true
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: true
+AlwaysBreakBeforeMultilineStrings: true
+BreakBeforeBinaryOperators: false
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializersBeforeComma: false
+BinPackParameters: true
+ColumnLimit: 90
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+DerivePointerBinding: true
+IndentCaseLabels: true
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+PenaltyBreakComment: 60
+PenaltyBreakString: 1000
+PenaltyBreakFirstLessLess: 120
+PenaltyExcessCharacter: 1000000
+PenaltyReturnTypeOnItsOwnLine: 200
+PointerBindsToType: true
+SpacesBeforeTrailingComments: 2
+Cpp11BracedListStyle: true
+Standard:        Auto
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+BreakBeforeBraces: Stroustrup
+IndentFunctionDeclarationAfterType: true
+SpacesInParentheses: false
+SpacesInAngles:  false
+SpaceInEmptyParentheses: false
+SpacesInCStyleCastParentheses: false
+SpaceAfterControlStatementKeyword: false
+SpaceBeforeAssignmentOperators: true
+ContinuationIndentWidth: 4
+Standard : C++11
+...
+

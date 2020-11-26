@@ -14,5 +14,6 @@ import argparse
 description = '''Runs smoldyn.'''
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('input', help = 'Input file')
-args_ = parser.parse_args()
-smoldyn.load_model(args_.input, "")
+parser.add_argument('rest', nargs=argparse.REMAINDER)
+parser.parse_args(namespace=args_)
+smoldyn.loadModel(args_.input, ' '.join(args_.rest))

@@ -1,27 +1,31 @@
 # python binding.
-
-if("${CMAKE_VERSION}" VERSION_LESS "3.12")
-    if(NOT PYTHON_EXECUTABLE)
-        find_package(PythonInterp REQUIRED)
-    endif()
-    find_package(PythonLibs REQUIRED)
-else()
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
-    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
-endif()
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 
 # NOTE: DO NOT change this without changing PYTHONPATH in
 # ../examples/CMakeLists.txt file.
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 
-pybind11_add_module(_smoldyn MODULE Smoldyn.cpp module.cpp)
+# recompile libsmoldyn for PYTHON.
+set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
+add_library(_pysmoldyn STATIC ${SRC_FILES})
+target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
+target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK -fvisibility=hidden)
+set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
+target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
-target_compile_options(_smoldyn PRIVATE -DSMOLDYN_VERSION=${SMOLDYN_VERSION})
+pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
+target_compile_options(_smoldyn PRIVATE 
+	-DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
+	-DENABLE_PYTHON_CALLBACK 
+	# https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
+	-fvisibility=hidden)
 target_include_directories(_smoldyn PRIVATE 
     ${PYTHON_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../pybind11/include)
+    ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
 
 set_target_properties(_smoldyn PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY $<1:${PY_SMOLDYN_OUTDIR}/smoldyn/>)
@@ -32,9 +36,8 @@ add_custom_target(copy_python_tree
   COMMENT "Copying python source tree to binary directory"
   VERBATIM)
 
-add_dependencies(_smoldyn smoldyn_static copy_python_tree)
-
-target_link_libraries(_smoldyn PRIVATE smoldyn_static)
+add_dependencies(_smoldyn _pysmoldyn copy_python_tree)
+target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 
 
 # copy setup.py.in to setup.py
@@ -84,10 +87,6 @@ add_custom_target(doc_api_html
     COMMENT "Generating Python's API doc (HTML)"
     VERBATIM)
 
-configure_file(${CMAKE_SOURCE_DIR}/scripts/install_wheel.sh.in
-    ${CMAKE_BINARY_DIR}/install_wheel.sh)
-install(CODE "execute_process(COMMAND ${CMAKE_BINARY_DIR}/install_wheel.sh)")
-
 enable_testing()
 
 ###  python tests ###
@@ -103,11 +102,24 @@ foreach(_pyscript ${TEST_SCRIPTS})
       ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
 endforeach()
 
+# Run static type checking using mypy (developer only). Works best with
+# python3.7+
+add_custom_target(lint 
+    COMMAND mypy ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+add_custom_target(lint_strict
+    COMMAND mypy --strict ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
+
+# TESTS
 enable_testing()
 add_test(NAME pytest 
     COMMAND ${PYTHON_EXECUTABLE} -m pytest 
         --ignore-glob source/pybind11-*
         ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
 set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)

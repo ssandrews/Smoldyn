@@ -890,6 +890,11 @@ C: \ttt{enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix,
 Python: \ttt{ErrorCode addOutputFile(string filename, int suffix, int append)}\\
 Declares the file called \ttt{filename} as a file for output by one or more runtime commands. Note that spaces are not permitted in the file name. If \ttt{suffix} is non-negative, then the file name is suffixed by this integer, which can be helpful for creating output file stacks. Enter \ttt{append} as 1 if any current file should simply be appended, or to 0 if any current file should be overwritten.
 
+\item[OpenOutputFiles]
+\hfill \\
+C: \ttt{enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)}\\
+Opens output files for writing. Enter \ttt{overwrite} as 1 if any existing file should be overwritten. If \ttt{overwrite} is 0 and a file with this name already exists, then Smoldyn asks the user if it should be overwritten. If the user replies no, then this function ends with an error of \ttt{ECerror}.
+
 \item[AddCommand]
 \hfill \\
 C: \ttt{enum ErrorCode smolAddCommand(simptr sim, char type, double on, double off, double step, double multiplier, char *commandstring)}\\
@@ -1016,6 +1021,17 @@ Adds \ttt{number} molecules of species \ttt{species} and state \ttt{state} to su
 C: \ttt{int smolGetMoleculeCount(simptr sim, char *species, enum MolecState state)}\\
 Python: \ttt{int getMoleculeCount(str species, MolecState state)}\\
 Returns the total number of molecules in the system that have species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Any error is returned as the error code cast as an integer.
+
+% ?? This function is redundant with SetMoleculeStyle, so I'd like to get rid of it.
+\item[SetMoleculeColor]
+\hfill \\
+C: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double *color)}\\
+
+% ?? This function is redundant with SetMoleculeStyle, so I'd like to get rid of it.
+\item[SetMoleculeSize]
+\hfill \\
+C: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size)}\\
+
 
 \item[SetMoleculeStyle]
 \hfill \\
@@ -1251,6 +1267,11 @@ Set the reaction rate to \ttt{rate}. If this value is to be interpreted as an in
 C: \ttt{enum ErrorCode smolSetReactionRegion(simptr sim, const char *reaction, const char *compartment, const char *surface)}\\
 Python: \ttt{ErrorCode setReactionRegion(str reaction, str compartment, str surface)}\\
 Limits the spatial region where a reaction can take place to the compartment \ttt{compartment} and/or the surface \ttt{surface}. To not set one of these limits, enter \ttt{compartment} and/or \ttt{surface} as \ttt{NULL}. To remove a previously set limit, enter \ttt{compartment} and/or \ttt{surface} as the empty string, ``".
+
+\item[SetReactionIntersurface]
+\hfill \\
+C: \ttt{enum ErrorCode smolSetReactionIntersurface(simptr sim, const char *reaction, int *rulelist)}\\
+Set the intersurface reaction rules for the bimolecular reaction called \ttt{reaction}. Intersurface reactions are reactions between two surface-bound molecules that are on two different surfaces. If \ttt{rulelist} is \ttt{NULL}, then this returns the reaction to the default state, which is that intersurface reactions are not allowed for this reaction. Otherwise, \ttt{rulelist} should have one entry for each product. If the entry is 1, then that product is placed on the surface with the first reactant; if it is 2, then that product is placed on the surface with the second reactant. If a reaction has no products, then create a single element in \ttt{rulelist} equal to 0 to indicate that intersurface reactions are permitted.
 
 \item[SetReactionProducts]
 \hfill \\
