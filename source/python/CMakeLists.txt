@@ -27,6 +27,8 @@ target_include_directories(_smoldyn PRIVATE
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
 
+# If generator pattern is not used here, cmake produces module in Release/Debug folders
+# which will break the wheels.
 set_target_properties(_smoldyn PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY $<1:${PY_SMOLDYN_OUTDIR}/smoldyn/>)
 
