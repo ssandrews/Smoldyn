@@ -212,45 +212,45 @@ typedef struct moleculestruct {
 	} *moleculeptr;
 
 typedef struct molsuperstruct {
-	enum StructCond condition;	// structure condition
-	struct simstruct *sim;			// simulation structure
-	int maxspecies;							// maximum number of species
-	int nspecies;								// number of species, including empty mols.
-	char **spname;							// names of molecular species [i]
-	int maxpattern;							// maximum number of patterns
-	int npattern;								// actual number of patterns
-	char **patlist;							// list of patterns [pat]
-	int **patindex;							// species indices for patterns [pat][j]
-	char **patrname;						// pattern reaction name if any [pat]
-	double **difc;							// diffusion constants [i][ms]
-	double **difstep;						// rms diffusion step [i][ms]
-	double ***difm;							// diffusion matrix [i][ms][d]
-	double ***drift;						// drift vector [i][ms][d]
-	double *****surfdrift;			// surface drift [i][ms][s][ps][d]
-	double **display;						// display size of molecule [i][ms] 
-	double ***color;						// RGB color vector [i][ms]
-	int **exist;								// flag for if molecule could exist [i][ms]
-	moleculeptr *dead;					// list of dead molecules [m]
-	int maxdlimit;							// maximum allowed size of dead list
-	int maxd;										// size of dead molecule list
-	int nd;											// total number of molecules in dead list
-	int topd;										// index for dead list; above are resurrected
-	int maxlist;								// allocated number of live lists
-	int nlist;									// number of live lists
-	int **listlookup;						// lookup table for live lists [i][ms]
-	char **listname;						// names of molecule lists [ll]
-	enum MolListType *listtype;	// types of molecule lists [ll]
-	moleculeptr **live;					// live molecule lists [ll][m]
-	int *maxl;									// size of molecule lists [ll]
-	int *nl;										// number of molecules in live lists [ll]
-	int *topl;									// live list index; above are reborn [ll]
-	int *sortl;									// live list index; above need sorting [ll]
-	int *diffuselist;						// 1 if any listed molecs diffuse [ll]
-	unsigned long serno;				// serial number for next resurrected molec.
-	int ngausstbl;							// number of elements in gausstbl
-	double *gausstbl;						// random numbers for diffusion
-	int *expand;								// expansion with rule-based modeling [i]
-	long int touch;							// counter for molecule modification
+	enum StructCond condition;  // structure condition
+	struct simstruct *sim;      // simulation structure
+	int maxspecies;             // maximum number of species
+	int nspecies;               // number of species, including empty mols.
+	char **spname;              // names of molecular species [i]
+	int maxpattern;             // maximum number of patterns
+	int npattern;               // actual number of patterns
+	char **patlist;             // list of patterns [pat]
+	int **patindex;             // species indices for patterns [pat][j]
+	char **patrname;            // pattern reaction name if any [pat]
+	double **difc;              // diffusion constants [i][ms]
+	double **difstep;           // rms diffusion step [i][ms]
+	double ***difm;             // diffusion matrix [i][ms][d]
+	double ***drift;            // drift vector [i][ms][d]
+	double *****surfdrift;      // surface drift [i][ms][s][ps][d]
+	double **display;           // display size of molecule [i][ms]
+	double ***color;            // RGB color vector [i][ms]
+	int **exist;                // flag for if molecule could exist [i][ms]
+	moleculeptr *dead;          // list of dead molecules [m]
+	int maxdlimit;              // maximum allowed size of dead list
+	int maxd;                   // size of dead molecule list
+	int nd;                     // total number of molecules in dead list
+	int topd;                   // index for dead list; above are resurrected
+	int maxlist;                // allocated number of live lists
+	int nlist;                  // number of live lists
+	int **listlookup;           // lookup table for live lists [i][ms]
+	char **listname;            // names of molecule lists [ll]
+	enum MolListType *listtype; // types of molecule lists [ll]
+	moleculeptr **live;         // live molecule lists [ll][m]
+	int *maxl;                  // size of molecule lists [ll]
+	int *nl;                    // number of molecules in live lists [ll]
+	int *topl;                  // live list index; above are reborn [ll]
+	int *sortl;                 // live list index; above need sorting [ll]
+	int *diffuselist;           // 1 if any listed molecs diffuse [ll]
+	unsigned long serno;        // serial number for next resurrected molec.
+	int ngausstbl;              // number of elements in gausstbl
+	double *gausstbl;           // random numbers for diffusion
+	int *expand;                // expansion with rule-based modeling [i]
+	long int touch;             // counter for molecule modification
 	} *molssptr;
 
 /*********************************** Walls **********************************/
