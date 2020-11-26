@@ -105,11 +105,11 @@ endforeach()
 
 # Run static type checking using mypy (developer only). Works best with
 # python3.7+
-add_custom_target(static_type_checking 
+add_custom_target(lint 
     COMMAND mypy ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-add_custom_target(static_type_checking_strict
+add_custom_target(lint_strict
     COMMAND mypy --strict ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 

@@ -268,8 +268,10 @@ typedef struct wallstruct {
 #define MAXORDER 3
 
 // NOTE:
-// Increasing MAXPRODUCT value to 256. 
-#define MAXPRODUCT 256
+// Increasing MAXPRODUCT value to 256 
+// see https://github.com/ssandrews/Smoldyn/issues/18 for details.
+// #define MAXPRODUCT 256
+constexpr size_t MAXPRODUCT=256;
 
 enum RevParam {RPnone,RPirrev,RPconfspread,RPbounce,RPpgem,RPpgemmax,RPpgemmaxw,RPratio,RPunbindrad,RPpgem2,RPpgemmax2,RPratio2,RPoffset,RPfixed};
 enum SpeciesRepresentation {SRparticle,SRlattice,SRboth,SRnone,SRfree};
