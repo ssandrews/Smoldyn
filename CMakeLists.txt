@@ -5,10 +5,9 @@
 # Please report bugs and problems to support@smoldyn.org. 
 
 ########## Basic setup ##########
+cmake_minimum_required(VERSION 3.4)   # due to pybind11 
 
 project(smoldyn)
-
-cmake_minimum_required(VERSION 3.4)   # due to pybind11 
 if(POLICY CMP0042)
     cmake_policy(SET CMP0042 NEW)
 endif()
