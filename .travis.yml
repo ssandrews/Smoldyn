@@ -7,8 +7,6 @@ matrix:
       osx_image: xcode12
     - os : osx
       osx_image: xcode11.3
-    - os : osx
-      osx_image: xcode10.3
     - os: linux
       sudo: required
     - os: windows
@@ -36,4 +34,3 @@ notifications:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then (cd scripts && ./build_wheels_osx.sh); fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then (cd scripts && make) ; fi
-
