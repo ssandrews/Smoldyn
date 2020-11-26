@@ -1,8 +1,8 @@
 add_custom_target(examples)
 
 # generate script to run python script.
-configure_file(${CMAKE_SOURCE_DIR}/scripts/run_pyscript.sh.in ${CMAKE_BINARY_DIR}/run_pyscript.sh)
-set(PYSCRIPT_RUN_SCRIPT ${CMAKE_BINARY_DIR}/run_pyscript.sh)
+configure_file(${CMAKE_SOURCE_DIR}/scripts/run_pyscript.py.in ${CMAKE_BINARY_DIR}/run_pyscript.py)
+set(PYSCRIPT_RUN_WITH_TIMEOUT ${CMAKE_BINARY_DIR}/run_pyscript.py)
 
 # Script examples. Only few are added.
 set(EXAMPLE_SCRIPTS S10_boxes/box.txt S3_space/bounds2.txt)
@@ -12,7 +12,8 @@ foreach(_example ${EXAMPLE_SCRIPTS})
     get_filename_component(_ex_name ${_example} NAME_WE)
     get_filename_component(_ex_dir ${_example} DIRECTORY)
     add_custom_target(${_ex_name} COMMAND
-        PYTHONPATH=${CMAKE_BINARY_DIR}/py ${PYTHON_EXECUTABLE} -m smoldyn ${_example}
+    PYTHONPATH=${CMAKE_BINARY_DIR}/py 
+    ${PYTHON_EXECUTABLE} -m smoldyn ${_example}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Executing ${_example}" VERBATIM)
     add_dependencies(examples ${_ex_name})
@@ -30,13 +31,17 @@ foreach(_example ${PY_FILES})
     endif()
     # message(STATUS "Found python example script: ${_example}.")
     get_filename_component(_ex_dir ${_example} DIRECTORY)
-    add_custom_target(py${_ex_name} COMMAND
+
+    # run the above script in modified environment (portable). Use 
+    # a wrapper script to timeout at 15 sec.
+    add_custom_target(py${_ex_name} COMMAND 
+	${CMAKE_COMMAND} -E env 
         PYTHONPATH=${CMAKE_BINARY_DIR}/py 
-        MPLBACKEND=agg SMOLDYN_NO_PROMPT=1
-        ${PYSCRIPT_RUN_SCRIPT} ${_example}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        MPLBACKEND=agg SMOLDYN_NO_PROMPT=1 
+	${PYTHON_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example}
         COMMENT "Executing ${_example} (user prompts are disabled)" 
-        VERBATIM)
+	VERBATIM)
+
     add_dependencies(pyexamples py${_ex_name})
 endforeach()
 
