@@ -20,7 +20,7 @@ PYTHON=/usr/local/bin/python3
 
 if [ ! -f $PYTHON ]; then
     echo "Not found $PYTHON"
-    continue
+    exit -1
 fi
 
 $PYTHON -m pip install setuptools --upgrade 
@@ -50,6 +50,8 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     (
         $PYTHON -m venv $VENV
         source $VENV/bin/activate
+        which python
+        # now use venv pyhton.
         python --version
         python -m pip install $WHEELHOUSE/smoldyn*.whl
         python -c 'import smoldyn; print(smoldyn.__version__ )'
