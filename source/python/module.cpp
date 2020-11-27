@@ -1085,6 +1085,7 @@ PYBIND11_MODULE(_smoldyn, m)
     /*********************************************************
      *  Extra function which are not avilable in the C-API.  *
      *********************************************************/
+    m.def("color2RGBA", &color2RGBA, "Convert a string to rgba tuple");
     m.def("getDim", &getDim, "Dimention of the system");
     m.def("setDim", &setDim, "Set the dimnetion of the system.");
     m.def("getSeed", &getRandomSeed);

@@ -10,10 +10,9 @@ Welcome to Smoldyn's documentation!
 
 .. warning::
 
-   Please refer to <https://smoldyn.org> for official documents.  It is
-   converted from official documentations and has formatting errors. There are
-   some additions as well which are still a work in progress.
-
+   Please refer to official documentation at <https://smoldyn.org>.  This is
+   a work in progress. These documents are converted from official documentations 
+   and have formatting errors. 
 
 .. toctree::
    :maxdepth: 3

@@ -48,7 +48,7 @@ setuptools.setup(
     license="Gnu LGPL",
     #  include_package_data=True,
     packages=setuptools.find_packages(),
-    package_data={"smoldyn": [ "_smoldyn*.so" ]},
+    package_data={"smoldyn": [ "_smoldyn*.*" ]},
     install_requires=["dataclasses;python_version=='3.6'"],
     python_requires='>=3.6',
     cmdclass={'install':InstallPlatLib},

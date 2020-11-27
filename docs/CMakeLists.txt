@@ -1,4 +1,3 @@
-# This is not used on ReadTheDocs.
 cmake_minimum_required(VERSION 3.12)
 project(smoldyn-doc LANGUAGES)
 
@@ -66,8 +65,8 @@ add_custom_target(docs ALL
 # Nice named target so we can run the job easily
 add_custom_target(Sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
 
-# LiveHTML (for developer and document write)
-add_custom_target(livehtml
+# LiveHTML (for developer and document writer)
+add_custom_target(doc_livehtml
     COMMAND sphinx-autobuild -p 0 -H 0.0.0.0 -B --delay 1 
         -b html
         ${SMOLDYN_DOC_SOURCE_DIR} ${CMAKE_BINARY_DIR}/livehtml
