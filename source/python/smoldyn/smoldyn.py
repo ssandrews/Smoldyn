@@ -899,7 +899,7 @@ class Surface(object):
         assert face in ["front", "back", "both"]
         getattr(self, face).setStyle(*args, **kwargs)
 
-    def setAction(self, face, *args, **kwargs):
+    def setAction(self, face : str, *args, **kwargs):
         """This function forwards the arguements to :func:`_SurfaceFaceCollection.setAction`.
 
         Parameters
@@ -910,6 +910,10 @@ class Surface(object):
             See :func:`_SurfaceFaceCollection.setAction`
         **kwargs:
             See :func:`_SurfaceFaceCollection.setAction`
+
+        FIXME:
+        -----
+        Improve documentation.
 
         See Also
         --------
