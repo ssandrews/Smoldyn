@@ -31,7 +31,7 @@ __all__ = [
     "Command",
     "Simulation",
     "Reaction",
-    "setBounds",
+    "BidirectionalReaction",
 ]
 
 import operator
@@ -899,27 +899,41 @@ class Surface(object):
         assert face in ["front", "back", "both"]
         getattr(self, face).setStyle(*args, **kwargs)
 
-    def setAction(self, face : str, *args, **kwargs):
-        """This function forwards the arguements to :func:`_SurfaceFaceCollection.setAction`.
+    def setAction(
+        self,
+        face: str,
+        species: Union[Species, List[Species]],
+        action: str,
+        new_species: Optional[Species] = None,
+    ):
+        """Set drawing style for the face of surface
+        (calls :func:`_SurfaceFaceCollection.setAction`)
 
         Parameters
         ----------
         face: str
             face of the surface: 'front', 'back', 'both'
-        *args:
-            See :func:`_SurfaceFaceCollection.setAction`
-        **kwargs:
-            See :func:`_SurfaceFaceCollection.setAction`
+        species :
+            List of species or a single species. DO NOT use the name of
+            species.
+        action : str
+            The action can be  `“reflect”`, `“absorb”`, `“transmit”`, `“jump”`,
+            `“port”`, or `“periodic”`.
+        new_species:
+            TODO: Implement it.
+            If `new_species` is entered, then the molecule changes to this new
+            species upon surface collision. In addition, it’s permissible to
+            enter the action as “multiple,” in which case the rates need to be
+            set with rate; alternatively, just setting the rates will
+            automatically set the action to “multiple.” The default is
+            transmission for all molecules.
 
-        FIXME:
-        -----
-        Improve documentation.
 
         See Also
         --------
         :func:`_SurfaceFaceCollection.setAction`
         """
-        getattr(self, face).setAction(*args, **kwargs)
+        getattr(self, face).setAction(species, action, new_species)
 
     @classmethod
     def addMolecules(
@@ -1320,8 +1334,7 @@ class Command(object):
         assert k == _smoldyn.ErrorCode.ok
 
 
-class HalfReaction(object):
-    # Shortcodes for types (fixme: deprecated?)
+class Reaction(object):
     __methoddict__ = dict(
         i="irrev",
         p="pgem",
@@ -1340,14 +1353,14 @@ class HalfReaction(object):
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        rate: float = -1.0,
+        rate: float,
         *,
         compartment: Compartment = None,
         surface: Surface = None,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
     ):
-        """Half Reaction (only occurs in forwared direction).
+        """Reaction (only occurs in forwared direction).
 
         Parameters
         ----------
@@ -1372,9 +1385,9 @@ class HalfReaction(object):
         self.name = "r%d" % id(self) if not name else name
         self.rate = rate
         self.subs = subs
+        self.prds = prds
         self.reaction_probability = reaction_probability
         self.binding_radius = binding_radius
-        self.prds = prds
         self.compartment = compartment
         self.surface = surface
 
@@ -1418,9 +1431,10 @@ class HalfReaction(object):
             rate,
         )
         if k != _smoldyn.ErrorCode.ok:
-            __logger__.warning(f" Substrates  : {subs}")
-            __logger__.warning(f" Products  : {prds}")
-            raise RuntimeError(f"Failed to add reaction: {k}")
+            __logger__.warning(f" Substrates: {subs}")
+            __logger__.warning(f" Products: {prds}, {prdNames}/{prdStates}")
+            raise RuntimeError(f"Failed to add reaction, ErrorCode {k}")
+
         self.setRate(rate, reaction_probability, binding_radius)
         if self.compartment is not None or self.surface is not None:
             cname = self.compartment.name if self.compartment else ""
@@ -1453,11 +1467,11 @@ class HalfReaction(object):
     def order(self):
         return len(self.subs)
 
-    def setProductPlacement(
+    def productPlacement(
         self,
         method: str,
-        parameter: float = 0.0,
-        product: str = None,
+        param: float = 0.0,
+        product: str = '',
         pos: List[float] = [],
     ):
         """Placement method and parameters for the products of reaction.
@@ -1469,7 +1483,7 @@ class HalfReaction(object):
         method : 'irrev' ('i'), 'pgem' ('p'), 'pgemmax' ('x')
             , 'pgemmax2' ('y'), 'ratio' ('r'), 'unbindrad' ('b')
             , 'pgem2' ('q'), 'ratio2' ('s'), 'offset' ('o'), 'fixed' ('f')
-        parameter : float
+        param : float
             Parameter value. Usually required except for type 'irrev'
         product: str, optional
             Required for type 'fixed' and 'offset'
@@ -1493,27 +1507,29 @@ class HalfReaction(object):
         """
         method = self.__methoddict__.get(method, method)
         revType = _smoldyn.RevParam.__members__[method]
+
         if method in ["fixed", "offset"]:
             assert product, "Product is required"
             assert pos, "pos is required"
-        k = _smoldyn.setReactionProducts(self.name, revType, parameter, product, pos)
+        k = _smoldyn.setReactionProducts(self.name, revType, param, product, pos)
         assert k == _smoldyn.ErrorCode.ok
 
 
-class Reaction(object):
+class BidirectionalReaction(object):
     def __init__(
         self,
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        kf: float = -1.0,
+        kf: float,
+        kb: float = 0.0,
+        *,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
-        kb: float = -1.0,
         compartment: Compartment = None,
         surface: Surface = None,
     ):
-        """A chemical reaction. Each reaction consists of two HalfReactions,
+        """A bidirectional chemical reaction that consists of two Reactions,
         forward  (always present) and reverse (`None` if ``kb<=0.0``).
 
         Parameters
@@ -1543,7 +1559,7 @@ class Reaction(object):
         fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
         self._kf = kf
         self._kb = kb
-        self.forward = HalfReaction(
+        self.forward = Reaction(
             fwdname,
             subs,
             prds,
@@ -1554,12 +1570,9 @@ class Reaction(object):
             reaction_probability=reaction_probability,
         )
 
-        # alias
-        setattr(self, "productPlacement", self.forward.setProductPlacement)
-
         self.reverse = None
         if self._kb > 0.0:
-            self.reverse = HalfReaction(
+            self.reverse = Reaction(
                 revname, prds, subs, self._kb, compartment=compartment, surface=surface
             )
 
@@ -1975,7 +1988,16 @@ class Simulation(object):
         self.dt = dt
         self.start = start
 
-    def run(self, stop=None, dt=None, start=None, accuracy=None, log_level: int = 3):
+    def run(
+        self,
+        stop:float,
+        *,
+        dt=None,
+        start=None,
+        accuracy=None,
+        log_level: int = 3,
+        **kwargs,
+    ):
         """run the simulation.
 
         Parameters
@@ -1988,6 +2010,9 @@ class Simulation(object):
             start (default 0.0)
         accuracy :
             accuracy
+
+        kwargs:
+            - quit_at_end
         """
 
         self.stop = float(stop)
@@ -2005,6 +2030,9 @@ class Simulation(object):
 
         # add commands after stop, dt and start are finalized.
         self.__finalize_cmds__()
+
+        if kwargs.get("quit_at_end", None) is not None:
+            self.quitAtEnd = bool(kwargs["quit_at_end"])
 
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
@@ -2109,29 +2137,69 @@ class Simulation(object):
     def addSurface(self, name: str, panels: List[Panel]) -> Surface:
         return Surface(name, panels)
 
+    def addBidirectionalReaction(
+        self,
+        name: str,
+        subs: List[SpeciesWithState],
+        prds: List[SpeciesWithState],
+        kf: float,
+        kb: float = -1.0,
+        binding_radius: float = 0.0,
+        reaction_probability: float = 0.0,
+        compartment: Compartment = None,
+        surface: Surface = None,
+    ) -> BidirectionalReaction:
+
+        return BidirectionalReaction(
+            name,
+            subs,
+            prds,
+            kf,
+            kb,
+            binding_radius=binding_radius,
+            reaction_probability=reaction_probability,
+            compartment=compartment,
+            surface=surface,
+        )
+
     def addReaction(
         self,
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        kf: float = -1.0,
-        binding_radius: float = 0.0,
-        reaction_probability: float = 0.0,
-        kb: float = -1.0,
+        rate: float,
+        *,
         compartment: Compartment = None,
         surface: Surface = None,
+        binding_radius: float = 0.0,
+        reaction_probability: float = 0.0,
     ) -> Reaction:
+        """Add a reaction (unidirectional)
+
+        See Reaction for details.
+        """
+        assert rate > 0.0, f"rate of reaction must be postive {rate}"
+
         return Reaction(
             name,
             subs,
             prds,
-            kf,
-            binding_radius,
-            reaction_probability,
-            kb,
-            compartment,
-            surface,
+            rate,
+            compartment=compartment,
+            surface=surface,
+            binding_radius=binding_radius,
+            reaction_probability=reaction_probability,
         )
+
+    def addSphere(
+        self, center: List[float], radius: float, slices: int, stacks: int = 0, name=""
+    ):
+        """Add a Sphere to Simulation
+
+        See Sphere.__init__ for details.
+        """
+
+        return Sphere(center, radius, slices, stacks, name)
 
     def connect(self, func, target, step: int, args: List[float] = []):
         """Connect a arbitrary Python function to Simulation. The function will

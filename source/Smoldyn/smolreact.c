@@ -1420,7 +1420,7 @@ int rxnsetproduct(simptr sim,int order,int r,char *erstr) {
 	er=0;
 	dim=sim->dim;
 
-	if(nprod==0) {																		// nprod==0
+    if(nprod==0) {  // nprod==0
 		if(rparamt==RPnone || rparamt==RPirrev || rparamt==RPconfspread)
 			rxn->unbindrad=0;
 		else {
@@ -1435,7 +1435,7 @@ int rxnsetproduct(simptr sim,int order,int r,char *erstr) {
 			for(d=0;d<dim;d++) dist+=rxn->prdpos[0][d]-rxn->prdpos[1][d];
 		rxn->unbindrad=sqrt(dist); }
 
-	else if(nprod==1) {																// nprod==1, all others (i.e. not offset or fixed)
+	else if(nprod==1) {    // nprod==1, all others (i.e. not offset or fixed)
 		if(rparamt==RPnone || rparamt==RPirrev || rparamt==RPconfspread) {
 			rxn->unbindrad=0;						// only 1 product so no unbinding radius
 			for(d=0;d<dim;d++) rxn->prdpos[0][d]=0; }
