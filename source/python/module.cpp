@@ -346,7 +346,7 @@ PYBIND11_MODULE(_smoldyn, m)
      ************************/
     m.def(
         "newSim",
-        [](vector<double> &lowbounds, vector<double> &highbounds) {
+        [](vector<double> &lowbounds, vector<double> &highbounds) -> simptr {
             auto sim = smolNewSim(lowbounds.size(), &lowbounds[0], &highbounds[0]);
             simptrs_.push_back(sim);
             return simptrs_.back();
@@ -588,7 +588,7 @@ PYBIND11_MODULE(_smoldyn, m)
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
-    m.def("addCommandFromString", [](char* cmd) {
+    m.def("addCommandFromString", [](char *cmd) {
         // char *cmd = strdup(command.c_str());
         return smolAddCommandFromString(cursim_, cmd);
     });
