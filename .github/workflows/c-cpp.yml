@@ -41,4 +41,4 @@ jobs:
         # From https://github.com/processing/processing/wiki/Running-without-a-Display
         sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
         export DISPLAY=":1"
-        cd build && ctest --output-on-failure && make pyexamples 
+        cd build && ctest --output-on-failure -j2
