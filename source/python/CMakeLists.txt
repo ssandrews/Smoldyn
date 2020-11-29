@@ -117,11 +117,13 @@ add_custom_target(lint_strict
 
 # TESTS
 enable_testing()
+
 add_test(NAME pytest 
-    COMMAND ${PYTHON_EXECUTABLE} -m pytest 
-        --ignore-glob source/pybind11-*
+    COMMAND 
+        ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11-*
         ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+set_tests_properties(pytest 
+    PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)

@@ -1705,7 +1705,7 @@ class Simulation(object):
         quit_at_end : bool
             If `True`, Smoldyn won't prompt user at the end of simulation and
             quit. Same effect can also be achieved by setting environment variable
-            `SMOLDYN_NON_INTERACTIVE` to 1.
+            `SMOLDYN_NO_PROMPT`.
         kwargs :
             stop: float
                 Simulation stop time
@@ -1744,7 +1744,9 @@ class Simulation(object):
         assert low, f"You must pass low bound, current value {low}"
         assert high, f"You must pass high bound, current value {high}"
 
-        self.simptr = setBounds(low, high, boundary_type)
+        self.bounds = setBounds(low, high, boundary_type)
+        self.simptr = _smoldyn.getCurSimStruct()
+
         """setBound creates a Boundary object and initialize the simulation
         structure in C++ module."""
         assert self.simptr, "Fatal error: Could not create simstruct"
@@ -1994,7 +1996,6 @@ class Simulation(object):
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
         k = _smoldyn.run(self.stop, self.dt)
-
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
@@ -2116,3 +2117,9 @@ class Simulation(object):
             compartment,
             surface,
         )
+
+
+    def connect(self, func, target, step:int, args: List[float] = []):
+        """Connect a Python function as callback
+        """
+        return _smoldyn.connect(func, target, step, args)
