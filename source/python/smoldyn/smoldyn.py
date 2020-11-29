@@ -1335,10 +1335,6 @@ class Command(object):
         self.__added__ = True
 
     def __add_command__(self):
-        __logger__.info(
-            f"Adding command: {self.cmd_type=}, {self.on=} {self.off=}"
-            f" {self.step=} {self.multiplier=} {self.cmd=}"
-        )
         k = _smoldyn.addCommand(
             self.cmd_type, self.on, self.off, self.step, self.multiplier, self.cmd
         )
