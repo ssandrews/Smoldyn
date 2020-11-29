@@ -1,9 +1,11 @@
 """smoldyn
-Python bindings.
+
+Python bindings of Smoldyn simulator..
 """
 
 from . import _smoldyn
 __version__ = _smoldyn.__version__
+
 def version():
     return __version__
 

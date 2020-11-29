@@ -2118,8 +2118,56 @@ class Simulation(object):
             surface,
         )
 
+    def connect(self, func, target, step: int, args: List[float] = []):
+        """Connect a arbitrary Python function to Simulation. The function will
+        be called at every 'step'
 
-    def connect(self, func, target, step:int, args: List[float] = []):
-        """Connect a Python function as callback
+        Parameters
+        ----------
+        func :
+            Python function to connect. It must have two arguments. The first
+            argument is always simulation time 't'. the second argument is a
+            list of float which refers to `args` (4th argument of this function)
+        target :
+            Target function or a property. The return value of the connected function 
+            i.e., func is the argument to this function.
+        step : int
+            The connected function func is called after these many simulation
+            steps.
+        args : List[float]
+            argument of func (passed by reference). Any change in this list will
+            be visible to func.
+
+        Example
+        -------
+
+        >>> import math
+        >>> s = smoldyn.Simulation(low=(0, 0), high=(10, 10))
+        >>> a = s.addSpecies("a", color="black", difc=0.1)
+        >>> avals = []
+
+        >>> def func(t, args):
+        >>>     global a, avals
+        >>>     x, y = args
+        >>>     avals.append((t, a.difc["soln"]))
+        >>>     return x * math.sin(t) + y
+
+        >>> def target(val):
+        >>>     global a
+        >>>     a.difc = val
+
+        >>> s.connect(func, target, step=10, args=[1, 1])
+        >>> s.run(100, dt=1)
+        >>> avals
+        [(1.0, 0.1),
+         (11.0, 1.8414709848078965),
+         (21.0, 9.793449296524592e-06),
+         (31.0, 1.836655638536056),
+         (41.0, 0.595962354676935),
+         (51.0, 0.841377331195291),
+         (61.0, 1.6702291758433747),
+         (71.0, 0.03388222999160706),
+         (81.0, 1.9510546532543747),
+         (91.0, 0.37011200572554614)]
         """
         return _smoldyn.connect(func, target, step, args)
