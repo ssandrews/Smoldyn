@@ -121,6 +121,8 @@ class Species(object):
 
         # Used when Simulation() is used as the top-most object, otherwise,
         # useless.
+        # FIXME, TODO: Either remove it or extend it to other objects such as
+        # addTriangle, addSphere, addHemisphere etc.
         self.__owner__: Simulation = None
 
         k = _smoldyn.addSpecies(self.name)
@@ -298,6 +300,7 @@ SpeciesWithState = Union[Species, Tuple[Species, SpeciesState]]
 class Panel(object):
     def __init__(
         self,
+        *,
         name: str = "",
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
         # neighbors: List[Panel] = [],
@@ -457,7 +460,7 @@ class Rectangle(Panel):
 
 
 class Triangle(Panel):
-    def __init__(self, vertices: Sequence[Sequence[float]] = [[]], name=""):
+    def __init__(self, *, vertices: Sequence[Sequence[float]] = [[]], name=""):
         """Triangle Panel.
 
         Parameters
@@ -475,7 +478,13 @@ class Triangle(Panel):
 
 class Sphere(Panel):
     def __init__(
-        self, center: List[float], radius: float, slices: int, stacks: int = 0, name=""
+        self,
+        *,
+        center: List[float],
+        radius: float,
+        slices: int,
+        stacks: int = 0,
+        name="",
     ):
         """Sphere
 
@@ -507,6 +516,7 @@ class Sphere(Panel):
 class Hemisphere(Panel):
     def __init__(
         self,
+        *,
         center: List[float],
         radius: float,
         vector: List[float],
@@ -547,6 +557,7 @@ class Hemisphere(Panel):
 class Cylinder(Panel):
     def __init__(
         self,
+        *,
         start: List[float],
         end: List[float],
         radius: float,
@@ -585,7 +596,7 @@ class Cylinder(Panel):
 
 class Disk(Panel):
     def __init__(
-        self, center: List[float], radius: float, vector: List[float], name=""
+        self, *, center: List[float], radius: float, vector: List[float], name=""
     ):
         """Disk
 
@@ -839,7 +850,7 @@ class Surface(object):
     way.
     """
 
-    def __init__(self, name: str, panels: List[Panel]):
+    def __init__(self, name: str, *, panels: List[Panel]):
         """
         Parameters
         ----------
@@ -935,7 +946,6 @@ class Surface(object):
         """
         getattr(self, face).setAction(species, action, new_species)
 
-    @classmethod
     def addMolecules(
         self,
         species: SpeciesWithState,
@@ -1195,7 +1205,7 @@ class Box(Partition):
 
 
 class Compartment(object):
-    def __init__(self, name: str, surface: Union[str, Surface], point: List[float]):
+    def __init__(self, name: str, *, surface: Union[str, Surface], point: List[float]):
         """Comapartment.
 
         Parameters
@@ -1353,8 +1363,8 @@ class Reaction(object):
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        rate: float,
         *,
+        rate: float = 0.0,
         compartment: Compartment = None,
         surface: Surface = None,
         binding_radius: float = 0.0,
@@ -1446,11 +1456,11 @@ class Reaction(object):
     def setRate(self, rate, reaction_probability=0.0, binding_radius=0.0):
         # if rate is negative, then we expect either binding_radius or
         # reaction_probability.
-        if rate >= 0.0:
+        if rate > 0.0:
             k = _smoldyn.setReactionRate(self.name, rate, False)
             assert k == _smoldyn.ErrorCode.ok
             return
-        if rate < 0.0:
+        if rate == 0.0:
             # check if reaction_probability is given
             if len(self.subs) < 2:
                 assert (
@@ -1462,16 +1472,54 @@ class Reaction(object):
                 assert binding_radius > 0.0, "Must set either rate of binding_radius"
                 k = _smoldyn.setReactionRate(self.name, binding_radius, True)
                 assert k == _smoldyn.ErrorCode.ok
+        else:
+            raise RuntimeError(
+                f"Are all of rate, reaction_probability, and reaction_probability set to zero?"
+            )
 
     @property
     def order(self):
         return len(self.subs)
 
+    def setIntersurface(self, rules: List[Union[int, str]]):
+        """Define `rules` to allow a bimolecular reaction operates when its
+        reactants are on different surfaces. In general, there should be as
+        many rule values as there are products for this reaction
+
+        Parameters
+        ----------
+        rules :
+            List of integer or string. For each product choose `1` (or
+            ``"r1"``) if it should be placed on the first reactant’s surface or
+            relative to that surface, and `2` (``"r2"``) if it should be placed
+            on the second reactant’s surface or relative to that surface. To
+            turn off intersurface reactions, which is the default behavior,
+            give rule_list as ``[-1]`` or ``None``.  To turn on intersurface
+            reactions for reactions that have no products, give rule_list as
+            ``[0]`` or ``[]``. This statement cannot be used together with the
+            ``setSerialNum`` function for the same reaction.
+
+        """
+        assert self.order == 2, "Bimoleculear reaction is needed."
+        assert len(rules) == len(
+            self.prds
+        ), "Length of rules should be equal to number of products"
+        rules = [-1] if rules is None else rules
+        rules = [0] if rules == [] else rules
+        _rules: List[int] = []
+
+        # r1, r2 are turned to 1, 2 etc.
+        for r in rules:
+            r = int(r[1:]) if isinstance(r, str) else int(r)
+            _rules.append(r)
+        k = _smoldyn.setReactionIntersurface(self.name, _rules)
+        assert k == _smoldyn.ErrorCode.ok
+
     def productPlacement(
         self,
         method: str,
         param: float = 0.0,
-        product: str = '',
+        product: str = "",
         pos: List[float] = [],
     ):
         """Placement method and parameters for the products of reaction.
@@ -1563,7 +1611,7 @@ class BidirectionalReaction(object):
             fwdname,
             subs,
             prds,
-            kf,
+            rate=kf,
             compartment=compartment,
             surface=surface,
             binding_radius=binding_radius,
@@ -1573,7 +1621,7 @@ class BidirectionalReaction(object):
         self.reverse = None
         if self._kb > 0.0:
             self.reverse = Reaction(
-                revname, prds, subs, self._kb, compartment=compartment, surface=surface
+                revname, prds, subs, rate=self._kb, compartment=compartment, surface=surface
             )
 
     @property
@@ -1592,40 +1640,6 @@ class BidirectionalReaction(object):
     def kb(self, val: float):
         assert self.backward
         self.backward.setRate(val)
-
-    def setIntersurface(self, rules: List[Union[int, str]]):
-        """Define `rules` to allow a bimolecular reaction operates when its
-        reactants are on different surfaces. In general, there should be as
-        many rule values as there are products for this reaction
-
-        Parameters
-        ----------
-        rules :
-            List of integer or string. For each product choose `1` (or
-            ``"r1"``) if it should be placed on the first reactant’s surface or
-            relative to that surface, and `2` (``"r2"``) if it should be placed
-            on the second reactant’s surface or relative to that surface. To
-            turn off intersurface reactions, which is the default behavior,
-            give rule_list as ``[-1]`` or ``None``.  To turn on intersurface
-            reactions for reactions that have no products, give rule_list as
-            ``[0]`` or ``[]``. This statement cannot be used together with the
-            ``setSerialNum`` function for the same reaction.
-
-        """
-        assert self.forward.order == 2, "Bimoleculear reaction is needed."
-        assert len(rules) == len(
-            self.forward.prds
-        ), "Length of rules should be equal to number of products"
-        rules = [-1] if rules is None else rules
-        rules = [0] if rules == [] else rules
-        _rules: List[int] = []
-
-        # r1, r2 are turned to 1, 2 etc.
-        for r in rules:
-            r = int(r[1:]) if isinstance(r, str) else int(r)
-            _rules.append(r)
-        k = _smoldyn.setReactionIntersurface(self.forward.name, _rules)
-        assert k == _smoldyn.ErrorCode.ok
 
 
 def setBounds(
@@ -1690,6 +1704,7 @@ class Simulation(object):
         self,
         low: List[float],
         high: List[float],
+        *,
         boundary_type: BoundType = "r",
         quit_at_end: bool = False,
         log_level: int = 3,
@@ -1726,7 +1741,6 @@ class Simulation(object):
                 Simulation start time.
             output_files :
                 Declare output files.
-
 
         See also
         --------
@@ -1990,7 +2004,7 @@ class Simulation(object):
 
     def run(
         self,
-        stop:float,
+        stop: float,
         *,
         dt=None,
         start=None,
@@ -2081,7 +2095,7 @@ class Simulation(object):
             kwargs of :func:`Command.__init__`.
         """
         if "step" not in kwargs:
-            kwargs["step"] = self.step
+            kwargs["step"] = self.dt
         c = Command(cmd, cmd_type, from_string=False, **kwargs)
         self.commands.append(c)
         return c
@@ -2134,8 +2148,8 @@ class Simulation(object):
         """See Species.addToSolution"""
         species.addToSolution(number, pos, lowpos, highpos)
 
-    def addSurface(self, name: str, panels: List[Panel]) -> Surface:
-        return Surface(name, panels)
+    def addSurface(self, name: str, *, panels: List[Panel]) -> Surface:
+        return Surface(name, panels=panels)
 
     def addBidirectionalReaction(
         self,
@@ -2143,7 +2157,8 @@ class Simulation(object):
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
         kf: float,
-        kb: float = -1.0,
+        kb: float = 0.0,
+        *,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
         compartment: Compartment = None,
@@ -2167,8 +2182,8 @@ class Simulation(object):
         name: str,
         subs: List[SpeciesWithState],
         prds: List[SpeciesWithState],
-        rate: float,
         *,
+        rate: float = 0.0,
         compartment: Compartment = None,
         surface: Surface = None,
         binding_radius: float = 0.0,
@@ -2177,14 +2192,13 @@ class Simulation(object):
         """Add a reaction (unidirectional)
 
         See Reaction for details.
-        """
-        assert rate > 0.0, f"rate of reaction must be postive {rate}"
 
+        """
         return Reaction(
             name,
             subs,
             prds,
-            rate,
+            rate=rate,
             compartment=compartment,
             surface=surface,
             binding_radius=binding_radius,
@@ -2192,14 +2206,94 @@ class Simulation(object):
         )
 
     def addSphere(
-        self, center: List[float], radius: float, slices: int, stacks: int = 0, name=""
+        self,
+        *,
+        center: List[float],
+        radius: float,
+        slices: int,
+        stacks: int = 0,
+        name="",
     ):
         """Add a Sphere to Simulation
 
         See Sphere.__init__ for details.
         """
 
-        return Sphere(center, radius, slices, stacks, name)
+        return Sphere(
+            center=center, radius=radius, slices=slices, stacks=stacks, names=name
+        )
+
+    def addTriangle(self, *, vertices: Sequence[Sequence[float]] = [[]], name=""):
+        return Triangle(vertices=vertices, name=name)
+
+    def addHemisphere(
+        self,
+        *,
+        center: List[float],
+        radius: float,
+        vector: List[float],
+        slices: int,
+        stacks: int,
+        name: str = "",
+    ):
+        """Add a Hemisphere to Simulation.
+
+        See Hemisphere.__init__ for details.
+        """
+        return Hemisphere(
+            center=center,
+            radius=radius,
+            vector=vector,
+            slices=slices,
+            stacks=stacks,
+            name=name,
+        )
+
+    def addCylinder(
+        self,
+        *,
+        start: List[float],
+        end: List[float],
+        radius: float,
+        slices: int,
+        stacks: int,
+        name: str = "",
+    ) -> Cylinder:
+        """Add a Cylinder to Simulation
+
+        See Cylinder.__init__ for details.
+        """
+        return Cylinder(
+            start=start, end=end, radius=radius, slices=slices, stacks=stacks, name=name
+        )
+
+    def addDisk(
+        self, *, center: List[float], radius: float, vector: List[float], name=""
+    ):
+        return Disk(center=center, radius=radius, vector=vector, name=name)
+
+    def addPartition(self, name: str, value):
+        """Sets the virtual partitions in the simulation volumne. Two
+        specialization is avaiable: :py:class:`MoleculePerBox`, and
+        :py:class:`Box`.
+
+        See also
+        --------
+        :py:class:`MoleculePerBox`
+        :py:class:`Box`
+        """
+        return Partition(name, value)
+
+    def addBox(self, size: float):
+        """See Box.__init__"""
+        return Box(size)
+
+    def addMoleculePerBox(self, size: float):
+        """See MoleculePerBox.__init__"""
+        return MoleculePerBox(size)
+
+    def addCompartment(self, name: str, *, surface: Union[str, Surface], point: List[float]):
+        return Compartment(name, surface=surface, point=point)
 
     def connect(self, func, target, step: int, args: List[float] = []):
         """Connect a arbitrary Python function to Simulation. The function will
