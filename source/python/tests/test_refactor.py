@@ -17,8 +17,8 @@ def test_refactor():
     s1.setStyle('both',drawmode='edge',color='green')
     s1.setAction(face='both', species=[blue, red], action='reflect')
 
-    stick = sim.addReaction(name='stick',subs=[blue,red],prds=[red,red],kf=20)
-    stick.productPlacement(method='bounce',parameter=0.6)
+    stick = sim.addReaction(name='stick',subs=[blue,red],prds=[red,red],rate=20)
+    stick.productPlacement(method='bounce', param=0.6)
     sim.setTime(dt=0.1)
     sim.setGraphics('opengl_good',1)
     sim.run(stop=100)
