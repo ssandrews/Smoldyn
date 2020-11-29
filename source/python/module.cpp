@@ -315,7 +315,8 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readonly("end_time", &simstruct::tmax, "simulation end time")
         .def_readonly("break_time", &simstruct::tbreak, "simulation break time")
         .def_readonly("dt", &simstruct::dt, "simulation time step")
-        .def_readwrite("quit_at_end", &simstruct::quitatend, "simulation quits at the end")
+        .def_readwrite(
+            "quit_at_end", &simstruct::quitatend, "simulation quits at the end")
         .def_readonly("rules", &simstruct::ruless, "rule superstructure")
         .def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
         .def_readonly("surfaces", &simstruct::srfss, "surface superstructure")
@@ -443,7 +444,6 @@ PYBIND11_MODULE(_smoldyn, m)
         [](double timestep) { return smolSetTimeStep(cursim_, timestep); });
     m.def("getTimeStep", []() { return cursim_->dt; });
 
-    // enum ErrorCode smolSetRandomSeed(simptr sim, long int seed);
     m.def(
         "setRandomSeed", [](long int seed) { return smolSetRandomSeed(cursim_, seed); });
 
@@ -581,9 +581,8 @@ PYBIND11_MODULE(_smoldyn, m)
     // off,
     //     double step, double multiplier, const char *commandstring);
     m.def("addCommand", [](char type, double on, double off, double step,
-                            double multiplier, const string &commandstring) {
-        return smolAddCommand(
-            cursim_, type, on, off, step, multiplier, commandstring.c_str());
+                            double multiplier, const char* commandstring) {
+        return smolAddCommand( cursim_, type, on, off, step, multiplier, commandstring);
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);

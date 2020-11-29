@@ -28,14 +28,12 @@ __all__ = [
     "MoleculePerBox",
     "Box",
     "Compartment",
-    "StateMonitor",
     "Command",
     "Simulation",
     "Reaction",
     "setBounds",
 ]
 
-import os
 import operator
 import functools
 import math
@@ -44,13 +42,22 @@ from dataclasses import dataclass, field
 
 from typing import Union, Tuple, List, Dict, Optional, Sequence
 
-from smoldyn.config import __logger__
+import logging
+
 from smoldyn.types import Color, BoundType, ColorType, DiffConst
 from smoldyn import _smoldyn
 
+__logger__ = logging.getLogger(__name__)
+__logger__.setLevel(logging.WARNING)
+
 # Smoldyn version
-__version__ = _smoldyn.__version__
-version = lambda: __version__
+
+
+def version():
+    return _smoldyn.__version__
+
+
+__version__: str = version()
 
 
 def _toMS(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
@@ -1212,41 +1219,15 @@ class Compartment(object):
         assert k == _smoldyn.ErrorCode.ok
 
 
-class StateMonitor(object):
-    """State Monitor"""
-
-    def __init__(self, objs, state, **kwargs):
-        self.objs = objs
-        self.state = state
-        self.t = []
-        self._start = kwargs.get("start", _smoldyn.getTimeStart())
-        self._stop = kwargs.get("stop", _smoldyn.getTimeStop())
-        self._step = kwargs.get("step", _smoldyn.getTimeStep())
-        self._multiplier = kwargs.get("multiplier", 1.0)
-        setattr(self, state, {})
-        for o in objs:
-            getattr(self, state)[o] = []
-        if state == "molcount":
-            self.initMolcount()
-
-    def initMolcount(self):
-        _smoldyn.addCommand(
-            "i", self._start, self._stop, self._step, self._multiplier, "molcount"
-        )
-
-    def data(self):
-        return _smoldyn.getData()
-
-
 class Command(object):
-    def __init__(self, cmd: str, type: str = "", **kwargs):
+    def __init__(self, cmd: str, cmd_type: str = "", **kwargs):
         """Smoldyn Command.
 
         Parameters
         ----------
         cmd: str
             command string.
-        type: str
+        cmd_type: str
             Type of command. Optional when `from_string` is set to `True`. Then
             the type is to be included in the `cmd` string itself.
 
@@ -1264,66 +1245,73 @@ class Command(object):
 
         Notes
         -----
-        See section 2.4 for the commands that are available.
+        See section 2.4 for the list of available commands.
         """
         self.__allowed_cmd_type__ = "@&aAbBeEnNiIjx"
-        self.type = type
+        self.cmd_type: str = cmd_type
         self.on = 0.0
         self.off = 0.0
         self.step = 0.0
-        self.multiplier = 0.0
+        self.multiplier = 1
         self.cmd = cmd
-        self.kwargs = dict(kwargs)
-        self.fromString = self.kwargs.get("from_string", False)
+        self.options = dict(kwargs)
+        self.fromString = self.options.get("from_string", False)
         self.__added__ = False
-        # self.__finalize__()
 
     def __finalize__(self):
-        # Intialize the command.
+        """Add this command to C++ engine.
+
+        Note
+        -----
+        This function MUST BE CALLED only after stop, dt, and step are setup
+        properly.
+        """
         assert (
-            self.type in self.__allowed_cmd_type__
-        ), f"command type {self.type} not supported."
+            self.cmd_type in self.__allowed_cmd_type__
+        ), f"command type {self.cmd_type} is not supported. Supported types {self.__allowed_cmd_type__}"
         if self.fromString:
             k = _smoldyn.addCommandFromString(self.cmd)
             assert k == _smoldyn.ErrorCode.ok
             return
-        if "@" == self.type:
+        if "@" == self.cmd_type:
             assert (
-                self.kwargs.get("time", 0.0) >= 0.0
+                self.options.get("time", 0.0) >= 0.0
             ), "Must specifiy argument time greater than 0"
-            self.on = self.off = self.kwargs["time"]
-        elif self.type in "aAbBeE":
+            self.on = self.off = self.options["time"]
+        elif self.cmd_type in "aAbBeE":
             # Run once when simulation starts. No need for 'on', 'off' and
             # 'step'
             pass
-        elif self.type in "nN":
-            assert (
-                self.kwargs.get("step", 0.0) > 0.0
-            ), "Must specify argument step greater than 0"
-            self.step = self.kwargs["step"]
-        elif self.type in "ixjI":
-            assert self.kwargs.get("on", None) is not None, (
+        elif self.cmd_type in "nN":
+            assert self.options.get("step", 0.0) > 0.0, "step must be greater than 0"
+            self.step = self.options["step"]
+        elif self.cmd_type in "ixjI":
+            assert self.options.get("on", None) is not None, (
                 "Missing argument on",
-                self.kwargs,
+                self.options,
             )
-            assert self.kwargs.get("off", None), "Missing argument off"
-            assert self.kwargs.get("step", None), "Missing argument step"
-            self.on = self.kwargs["on"]
-            self.off = self.kwargs["off"]
-            self.step = self.kwargs["step"]
-            if "x" == self.type:
-                assert self.kwargs.get(
+            assert self.options.get("off", None) is not None, "Missing argument off"
+            assert self.options.get("step", None) is not None, "Missing argument step"
+            self.on = float(self.options["on"])
+            self.off = float(self.options["off"])
+            self.step = float(self.options["step"])
+            if "x" == self.cmd_type:
+                assert self.options.get(
                     "multiplier", None
                 ), "Missing argument multiplier"
-                self.multiplier = self.kwargs["multiplier"]
+                self.multiplier = int(self.options["multiplier"])
         else:
-            raise RuntimeError(f"Command type {self.type} is unsupported")
+            raise RuntimeError(f"Command type {self.cmd_type} is unsupported")
         self.__add_command__()
         self.__added__ = True
 
     def __add_command__(self):
+        __logger__.info(
+            f"Adding command: {self.cmd_type=}, {self.on=} {self.off=}"
+            f" {self.step=} {self.multiplier=} {self.cmd=}"
+        )
         k = _smoldyn.addCommand(
-            self.type, self.on, self.off, self.step, self.multiplier, self.cmd
+            self.cmd_type, self.on, self.off, self.step, self.multiplier, self.cmd
         )
         assert k == _smoldyn.ErrorCode.ok
 
@@ -1687,6 +1675,7 @@ class Simulation(object):
         high: List[float],
         boundary_type: BoundType = "r",
         quit_at_end: bool = False,
+        log_level: int = 3,
         **kwargs,
     ):
         """Simulation class is the top-most level. An object of this class is a
@@ -1706,6 +1695,11 @@ class Simulation(object):
             If `True`, Smoldyn won't prompt user at the end of simulation and
             quit. Same effect can also be achieved by setting environment variable
             `SMOLDYN_NO_PROMPT`.
+
+        log_level: int, default 3
+            set log level for default logger.
+            1: DEBUG, 2: INFO, 3: WARNING, 4: ERROR, 5: CRITICAL
+
         kwargs :
             stop: float
                 Simulation stop time
@@ -1716,26 +1710,13 @@ class Simulation(object):
             output_files :
                 Declare output files.
 
-        Example
-        -------
-        >>> import smoldyn as S
-        >>> sim = S.Simulation(low=[-10,-10,-10],high=[10,10,10])
-        >>> blue = sim.addSpecies('blue', color='blue', difc=1, display_size=0.3)
-        >>> red = sim.addSpecies('red', color='red', difc=0, display_size=0.3)
-        >>> sim.addMolecules(blue, number=100, lowpos=[-5,-5,-5], highpos=[5,5,5])
-        >>> sim.addMolecules(red, number=1, pos=[0,0,0])
-        >>> s1 = S.Surface('membrane', panels=[S.Sphere(center=[0,0,0], radius=10, slices=10, stacks=10)])
-        >>> s1.setStyle('both', drawmode='edge', color='green')
-        >>> s1.setAction(face='both', species='all', action='reflect')
-        >>> sim.addSurface(s1)
-        >>> ...  # more objects
-        >>> sim.setGraphics('opengl_good',1)
-        >>> sim.run(stop=100)
 
         See also
         --------
         :py:_smoldyn.simptr
         """
+
+        __logger__.setLevel(10 * log_level)
 
         self.start = kwargs.get("start", 0.0)
         self.stop = kwargs.get("stop", 0.0)
@@ -1757,7 +1738,7 @@ class Simulation(object):
         self._objects = {}
         assert self.simptr, "Configuration is not initialized"
         if self.kwargs.get("accuracy", 0.0):
-            self.accuracry: float = kwargs["accuracy"]
+            self.accuracy: float = kwargs["accuracy"]
 
         if self.kwargs.get("output_files", []):
             if isinstance(self.kwargs["output_files"], str):
@@ -1811,7 +1792,14 @@ class Simulation(object):
         _smoldyn.addOutputFile(outfile.name, False, append)
 
     def __finalize_cmds__(self):
-        # Add commands to smoldyn engine.
+        """
+        Note
+        ----
+        Commands must be added after the stop time is finalized. Make sure that
+        this is called after all other parameters are set.
+
+        Add commands to smoldyn engine.
+        """
         for cmd in self.commands:
             if cmd.__added__:
                 continue
@@ -1983,26 +1971,47 @@ class Simulation(object):
         self.dt = dt
         self.start = start
 
-    def run(self, stop=None, start=None, dt=None):
-        if stop is not None:
-            self.stop = float(stop)
+    def run(self, stop=None, dt=None, start=None, accuracy=None, log_level: int = 3):
+        """run the simulation.
+
+        Parameters
+        ----------
+        stop :
+            stop time (sec)
+        dt :
+            dt (sec)
+        start :
+            start (default 0.0)
+        accuracy :
+            accuracy
+        """
+
+        self.stop = float(stop)
+
         if start is not None:
             self.start = float(start)
         if dt is not None:
             self.dt = float(dt)
+        if accuracy is not None:
+            self.accuracy = float(accuracy)
 
+        # NOTE: This must be called before we add Commands. Commands require
+        # that stop, step and dt values are avaiable to simptr.
+        _smoldyn.setSimTimes(self.start, self.stop, self.dt)
+
+        # add commands after stop, dt and start are finalized.
         self.__finalize_cmds__()
 
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
+
         k = _smoldyn.run(self.stop, self.dt)
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
-        self.dt = self.stop
         self.stop = stop
-        if step is not None:
-            self.step = step
+        if dt is not None:
+            self.dt = float(dt)
 
         self.__finalize_cmds__()
 
@@ -2014,14 +2023,14 @@ class Simulation(object):
         k = _smoldyn.displaySim()
         assert k == _smoldyn.ErrorCode.ok
 
-    def addCommand(self, cmd: str, type: str, **kwargs):
+    def addCommand(self, cmd: str, cmd_type: str, **kwargs):
         """Add command.
 
         Parameters
         ----------
         cmd: str
             Command string.
-        type: str
+        cmd_type: str
             Type of command. Optional when `from_string` is set to `True`. Then
             the type is to be included in the `cmd` string itself.
 
@@ -2041,10 +2050,11 @@ class Simulation(object):
         """
         if "step" not in kwargs:
             kwargs["step"] = self.step
-        c = Command(cmd, type, from_string=False, **kwargs)
+        c = Command(cmd, cmd_type, from_string=False, **kwargs)
         self.commands.append(c)
+        return c
 
-    def addCommandFromString(self, cmd: str):
+    def addCommandStr(self, cmd: str):
         """Add command using a single string. See the Smoldyn's User Manual for
         details.
 
@@ -2055,6 +2065,7 @@ class Simulation(object):
         """
         c = Command(cmd, from_string=True)
         self.commands.append(c)
+        return c
 
     # mapping.
     def addSpecies(
@@ -2129,7 +2140,7 @@ class Simulation(object):
             argument is always simulation time 't'. the second argument is a
             list of float which refers to `args` (4th argument of this function)
         target :
-            Target function or a property. The return value of the connected function 
+            Target function or a property. The return value of the connected function
             i.e., func is the argument to this function.
         step : int
             The connected function func is called after these many simulation
