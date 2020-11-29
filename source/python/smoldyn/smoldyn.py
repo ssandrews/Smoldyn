@@ -123,7 +123,7 @@ class Species(object):
         # useless.
         # FIXME, TODO: Either remove it or extend it to other objects such as
         # addTriangle, addSphere, addHemisphere etc.
-        self.__owner__: Simulation = None
+        self.__owner__: Optional[Simulation] = None
 
         k = _smoldyn.addSpecies(self.name)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add molecule {k}"
@@ -367,7 +367,8 @@ class Panel(object):
 
     @property
     def index(self) -> int:
-        return _smoldyn.getPanelIndexNT(self.surface.name, self.name)
+        v : int = _smoldyn.getPanelIndexNT(self.surface.name, self.name)
+        return v
 
     def toText(self):
         return f"panel {self.ctype} {self.axisstr} {' '.join(map(str,self.pts))} {self.name}".strip()
@@ -1018,7 +1019,7 @@ class Surface(object):
         else:
             sname, sstate = species.name, species.state
         state1 = _toMS(state1)
-        new_species = new_species.name if new_species else None
+        new_species_str = new_species.name if new_species else ''
         k = _smoldyn.setSurfaceRate(
             self.name,
             sname,
@@ -1026,7 +1027,7 @@ class Surface(object):
             _toMS(state1),
             _toMS(state2),
             rate,
-            new_species,
+            new_species_str,
             isinternal,
         )
         assert k == _smoldyn.ErrorCode.ok, "Failed to set rate"
@@ -1638,8 +1639,8 @@ class BidirectionalReaction(object):
 
     @kb.setter
     def kb(self, val: float):
-        assert self.backward
-        self.backward.setRate(val)
+        assert self.reverse
+        self.reverse.setRate(val)
 
 
 def setBounds(
@@ -1765,8 +1766,7 @@ class Simulation(object):
 
         self.commands: List[Command] = []
         self.kwargs = kwargs
-        # Keep all the object in this dict.
-        self._objects = {}
+
         assert self.simptr, "Configuration is not initialized"
         if self.kwargs.get("accuracy", 0.0):
             self.accuracy: float = kwargs["accuracy"]
@@ -2129,17 +2129,19 @@ class Simulation(object):
         """
         if isinstance(name, Species):
             assert (
-                name.__owner_ == self
+                name.__owner__ == self
             ), f"This Species belong to some other Simulation {name.__owner__}"
             return name
         # Create a species.
         s = Species(name, state, color, difc, display_size, mol_list)
-        s.__owner__ = s
+
+        # FIXME: Extent to other objects.
+        s.__owner__ = self
         return s
 
     def addMolecules(
         self,
-        species: SpeciesWithState,
+        species: Species,
         number: int,
         pos: List[float] = [],
         lowpos: List[float] = [],
@@ -2220,7 +2222,7 @@ class Simulation(object):
         """
 
         return Sphere(
-            center=center, radius=radius, slices=slices, stacks=stacks, names=name
+            center=center, radius=radius, slices=slices, stacks=stacks, name=name
         )
 
     def addTriangle(self, *, vertices: Sequence[Sequence[float]] = [[]], name=""):
