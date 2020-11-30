@@ -7,7 +7,7 @@ __copyright__        = "Copyright 2019-, Dilawar Singh"
 __maintainer__       = "Dilawar Singh"
 __email__            = "dilawars@ncbs.res.in"
 
-import smoldyn
+import smoldyn._smoldyn
 
 import argparse
 # Argument parser.
@@ -18,4 +18,4 @@ parser.add_argument('--overwrite', '-w', action='store_true', help="Overwrite ex
 parser.add_argument('--quit-at-end', '-q', action='store_true', help="Quit at end")
 parser.add_argument('--args', '-A', default='', type=str, help="smoldyn command line arguments")
 args = parser.parse_args()
-smoldyn.loadModel(args.input, args.args, args.overwrite, args.quit_at_end)
+smoldyn._smoldyn.loadModel(args.input, args.args, args.overwrite, args.quit_at_end)

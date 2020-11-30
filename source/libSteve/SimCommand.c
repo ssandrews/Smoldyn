@@ -677,9 +677,19 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 				fptr=fopen(str1,"r");
 				if(fptr) {
 					fclose(fptr);
+#ifdef COMPILE_AS_PY_MODULE
+                    // When built as a python module. There is no way to use
+                    // scanf (probably)?
+                    fprintf(stderr, "File '%s' already exists. Refusing to overwrite.\n", cmds->fname[fid]);
+                    fprintf(stderr, "Tip: Set `overwrite=True` in `setOutputFile` method.\n");
+                    return 1;
+#else
+                    // When compiled for c++ binary.
 					fprintf(stderr,"Overwrite existing output file '%s' (y/n)? ",cmds->fname[fid]);
 					scanf("%s",str2);
-					if(!(str2[0]=='y' || str2[0]=='Y')) return 1; }}
+					if(!(str2[0]=='y' || str2[0]=='Y')) return 1; 
+#endif
+                }}
 			if(cmds->fappend[fid]) cmds->fptr[fid]=fopen(str1,"a");
 			else cmds->fptr[fid]=fopen(str1,"w"); }
 		if(!cmds->fptr[fid]) {

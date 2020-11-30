@@ -12,7 +12,7 @@ file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 add_library(_pysmoldyn STATIC ${SRC_FILES})
 target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
-target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK -fvisibility=hidden)
+target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE -DENABLE_PYTHON_CALLBACK -fvisibility=hidden)
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
@@ -100,3 +100,24 @@ add_custom_target(lint_strict
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
+###  python tests ###
+enable_testing()
+file(GLOB TEST_SCRIPTS "${CMAKE_SOURCE_DIR}/tests/test_*.py")
+foreach(_pyscript ${TEST_SCRIPTS})
+    # message(STATUS "Adding test ${_pyscript}") 
+    get_filename_component(_test_name ${_pyscript} NAME_WE)
+    get_filename_component(_test_dir ${_pyscript} DIRECTORY)
+    add_test(NAME ${_test_name} COMMAND 
+        ${PYTHON_EXECUTABLE} ${_pyscript}
+        WORKING_DIRECTORY ${_test_dir})
+    set_tests_properties(${_test_name} PROPERTIES 
+        ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+endforeach()
+
+add_test(NAME pytest 
+    COMMAND 
+    ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11-*
+    ${CMAKE_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set_tests_properties(pytest 
+    PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")

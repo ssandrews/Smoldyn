@@ -5,12 +5,13 @@
  Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
  of the Gnu Lesser General Public License (LGPL). */
 
-#include <float.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
+#include <cstdlib>
+#include <cmath>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+
 #include "List.h"
 #include "math2.h"
 #include "opengl2.h"
@@ -20,6 +21,7 @@
 #include "string2.h"
 #include "Zn.h"
 #include <string>
+#include <limits>
 #include <sstream>
 
 #include "smoldyn.h"
@@ -241,7 +243,7 @@ simptr simalloc(const char *fileroot) {
 	sim->time=0;
 	sim->tmin=0;
 	sim->tmax=10;
-	sim->tbreak=DBL_MAX;
+	sim->tbreak=std::numeric_limits<double>::max();
 	sim->dt=1;
 	sim->quitatend=0;
 	for(order=0;order<MAXORDER;order++) sim->rxnss[order]=NULL;

@@ -381,7 +381,7 @@ void gl2Initialize(char *wname,float xlo,float xhi,float ylo,float yhi,float zlo
 
 
 /* gl2glutInit */
-void gl2glutInit(int *argc, char **argv) {
+void gl2glutInit(int *argc,char **argv) {
 #ifdef __gl_h_
 	static int done=0;
 	int defaultc=1;

@@ -70,6 +70,7 @@ r2 = smoldyn.Reaction("r2", subs=[(ES, "front")], prds=[(E, "front"), (P, "bsoln
 membrane.addMolecules((E, "front"), 100)
 
 # Output and other run-time commands
+s.setOutputFile('templateout.txt', True)
 s.addCommand(cmd="molcountheader templateout.txt", cmd_type="B")
 s.addCommand(cmd="molcount templateout.txt", cmd_type="N", step=10)
 # s.addCommandFromString('B molcountheader templateout.txt')
@@ -80,4 +81,4 @@ s.setGraphics(
     frame_thickness=1,
     text_display=["time", S, (E, "front"), (ES, "front"), P],
 )
-s = s.run(stop=10, dt=0.01, output_files=["templateout.txt"])
+s = s.run(stop=10, dt=0.01)

@@ -1,13 +1,10 @@
 """Smoldyn user API.
 """
 
-# minimum python3.7 is required for the following to work.
-# from __future__ import annotations
-
-__author__ = "Dilawar Singh"
-__copyright__ = "Copyright 2020-, Dilawar Singh"
-__maintainer__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__author__      = "Dilawar Singh"
+__copyright__   = "Copyright 2020-, Dilawar Singh"
+__maintainer__  = "Dilawar Singh"
+__email__       = "dilawars@ncbs.res.in"
 
 __all__ = [
     "__version__",
@@ -43,19 +40,23 @@ from dataclasses import dataclass, field
 from typing import Union, Tuple, List, Dict, Optional, Sequence
 
 import logging
+import inspect
 
 from smoldyn.types import Color, BoundType, ColorType, DiffConst
 from smoldyn import _smoldyn
 
+#: model file. There does not look like a beter way to find this name without
+# asking the user.
+__top_model_file__ = Path(inspect.stack()[-1].filename)
+
+# Logger
 __logger__ = logging.getLogger(__name__)
 __logger__.setLevel(logging.WARNING)
 
 # Smoldyn version
 
-
 def version():
     return _smoldyn.__version__
-
 
 __version__: str = version()
 
@@ -1471,7 +1472,7 @@ class Reaction(object):
                 assert k == _smoldyn.ErrorCode.ok
         else:
             raise RuntimeError(
-                f"Are all of rate, reaction_probability, and reaction_probability set to zero?"
+                "Are all of rate, reaction_probability, and reaction_probability set to zero?"
             )
 
     @property
@@ -1753,12 +1754,17 @@ class Simulation(object):
         assert low, f"You must pass low bound, current value {low}"
         assert high, f"You must pass high bound, current value {high}"
 
-        self.bounds = setBounds(low, high, boundary_type)
-        self.simptr = _smoldyn.getCurSimStruct()
-
         """setBound creates a Boundary object and initialize the simulation
         structure in C++ module."""
+        self.bounds = setBounds(low, high, boundary_type)
+        self.simptr = _smoldyn.getCurSimStruct()
         assert self.simptr, "Fatal error: Could not create simstruct"
+
+        # set filepath and filename at simptr
+        if __top_model_file__:
+            __top_model_file__.resolve()
+            _smoldyn.setModelpath(str(__top_model_file__))
+
 
         self.commands: List[Command] = []
         self.kwargs = kwargs
@@ -1816,7 +1822,8 @@ class Simulation(object):
         outfile = Path(outfile).resolve()
         if outfile.parent != Path("."):
             _smoldyn.setOutputPath(str(outfile.parent) + "/")
-        _smoldyn.addOutputFile(outfile.name, False, append)
+        # FIXME: Not sure what to do with second arg here.
+        _smoldyn.addOutputFile(outfile.name, 0, append)
 
     def __finalize_cmds__(self):
         """
@@ -2001,10 +2008,12 @@ class Simulation(object):
     def run(
         self,
         stop: float,
-        *,
         dt=None,
+        *,
         start=None,
         accuracy=None,
+        display:bool=True,
+        overwrite:bool=False,
         log_level: int = 3,
         **kwargs,
     ):
@@ -2020,7 +2029,10 @@ class Simulation(object):
             start (default 0.0)
         accuracy :
             accuracy
-
+        overwrite:
+            Overwrite existing data files.
+        display:
+            Show graphics (default True)
         kwargs:
             - quit_at_end
         """
@@ -2047,7 +2059,7 @@ class Simulation(object):
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
 
-        k = _smoldyn.run(self.stop, self.dt)
+        k = _smoldyn.run(self.stop, self.dt, display, overwrite=overwrite)
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
