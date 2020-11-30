@@ -216,6 +216,10 @@ elseif (APPLE)
     set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
 elseif (WIN32)
     set(WINDOWS_BUILD ON)
+    if(MSVC)
+        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    endif()
+
     message(STATUS "Compiling on a Windows computer")
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
     if (OPTION_VTK)
@@ -533,6 +537,10 @@ endif ()
 ########## Python module #########
 
 if (OPTION_PYTHON)
+    # Find python before using pybind11. There is a possibility of version mismatch later.
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11-2.6.1)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)

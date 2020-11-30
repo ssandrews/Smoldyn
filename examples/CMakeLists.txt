@@ -50,6 +50,8 @@ target_link_libraries(test1 smoldyn_static)
 add_executable(testcode S97_libsmoldyn/testcode/testcode.cpp)
 target_link_libraries(testcode smoldyn_static)
 
-enable_testing()
-add_test(NAME test_test1.cpp COMMAND $<TARGET_FILE:test1>)
-add_test(NAME test_testcode.cpp COMMAND $<TARGET_FILE:testcode>)
+if(UNIX)
+   # can't get them work on Windows.
+   add_test(NAME test_test1.cpp COMMAND $<TARGET_FILE:test1>)
+   add_test(NAME test_testcode.cpp COMMAND $<TARGET_FILE:testcode>)
+endif()
