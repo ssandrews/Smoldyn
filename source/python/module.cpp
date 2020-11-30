@@ -31,6 +31,9 @@ double r_ = 0.0;
 /* globals */
 vector<unique_ptr<CallbackFunc>> callbacks_;
 
+/* gl2glutInit */
+extern void gl2glutInit(int *argc, char **argv);
+
 /* --------------------------------------------------------------------------*/
 /**
  * @Synopsis  Convert an array of color to a tuple.
@@ -47,18 +50,21 @@ array<double, 4> pycolor(const double *f)
 }
 
 /* --------------------------------------------------------------------------*/
-/** @Synopsis  Initialize and run the simulation from given file.
+/** @Synopsis  Initialize and run a given model file.
  *
  * This function takes input file and run the simulation. This is more or less
  * same as `main()` function in smoldyn.c file.
  *
- * @Param filepath @Param flags
+ * @Param filepath
+ * @Param flags
+ * @Param wflag If 1, overwrite exsiting files.
  *
  */
 /* ----------------------------------------------------------------------------*/
-int init_and_run(const string &filepath, const string &flags)
+int init_and_run(
+    const string &filepath, const string &flags, bool wflag, bool quit_at_end = false)
 {
-    int er = 0, wflag = 0;
+    int er = 0;
     auto p = splitPath(filepath);
 
 #ifdef OPTION_VCELL
@@ -68,8 +74,9 @@ int init_and_run(const string &filepath, const string &flags)
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &cursim_, flags.c_str());
 #endif
     if(!er) {
-        // if (!tflag && cursim_->graphss && cursim_->graphss->graphics != 0)
-        // gl2glutInit(0, "");
+        cursim_->quitatend = quit_at_end;
+        if(cursim_->graphss && cursim_->graphss->graphics != 0)
+            gl2glutInit(0, nullptr);
         er = simUpdateAndDisplay(cursim_);
     }
     if(!er)
@@ -578,8 +585,8 @@ PYBIND11_MODULE(_smoldyn, m)
     // off,
     //     double step, double multiplier, const char *commandstring);
     m.def("addCommand", [](char type, double on, double off, double step,
-                            double multiplier, const char* commandstring) {
-        return smolAddCommand( cursim_, type, on, off, step, multiplier, commandstring);
+                            double multiplier, const char *commandstring) {
+        return smolAddCommand(cursim_, type, on, off, step, multiplier, commandstring);
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
@@ -1099,8 +1106,8 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("getAccuracy", [](void) { return cursim_->accur; });
 
     /* Function */
-    m.def("loadModel", &init_and_run, "filepath"_a, "args"_a = "",
-        "Load model from a txt file");
+    m.def("loadModel", &init_and_run, "filepath"_a, "flags"_a = "", "wflag"_a = false,
+        "quit_at_end"_a = false, "Load model from a txt file");
 
     /* Extra Function */
     m.def("connect", &connect, "func"_a, "target"_a, "step"_a = 1,
