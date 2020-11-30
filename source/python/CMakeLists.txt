@@ -1,7 +1,4 @@
 # python binding.
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
-set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 
 # NOTE: DO NOT change this without changing PYTHONPATH in
 # ../examples/CMakeLists.txt file.
