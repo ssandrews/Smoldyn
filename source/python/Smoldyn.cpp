@@ -60,6 +60,13 @@ bool addToSimptrVec(simptr ptr)
     return false;
 }
 
+/**
+ * @brief Delete a given simptr (use it with care).
+ *
+ * @param ptr simptr aka simstruct*
+ *
+ * @return 
+ */
 bool deleteSimptr(simptr ptr)
 {
     auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
@@ -71,6 +78,11 @@ bool deleteSimptr(simptr ptr)
     return false;
 }
 
+/**
+ * @brief Get dimension of bouds.
+ *
+ * @return 
+ */
 size_t getDim()
 {
     assert(lowbounds_.size() == (size_t)cursim_->dim);
@@ -88,6 +100,11 @@ void printSimptrNotInitWarning(const char* funcname)
     py::print("Warn:", funcname, "simptr is not initialized. set boundaries/dim first.");
 }
 
+/**
+ * @brief set seed for random number generator.
+ *
+ * @param seed
+ */
 void setRandomSeed(size_t seed)
 {
     if(!cursim_) {
@@ -97,11 +114,21 @@ void setRandomSeed(size_t seed)
     cursim_->randseed = randomize(seed);
 }
 
+/**
+ * @brief Get the random seed.
+ *
+ * @return 
+ */
 size_t getRandomSeed(void)
 {
     return cursim_->randseed;
 }
 
+/**
+ * @brief Initialize current simptr structure.
+ *
+ * @return 
+ */
 bool initialize()
 {
     if(cursim_)
@@ -145,9 +172,11 @@ ErrorCode runUntil(
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
             return ECerror;
         }
-        auto er = smolOpenOutputFiles(cursim_, overwrite);
-        if(er)
-            cerr << __FUNCTION__ << ": Simulation skipped." << endl;
+    }
+
+    auto er = smolOpenOutputFiles(cursim_, overwrite);
+    if(er != ErrorCode::ECok) {
+        cerr << __FUNCTION__ << ": Simulation skipped." << endl;
     }
 
     // If dt>0, reset dt else use the old one.
@@ -162,8 +191,20 @@ ErrorCode runUntil(
     return smolRunSimUntil(cursim_, breaktime);
 }
 
-ErrorCode run(double stoptime, double dt, bool display, bool overwrite = false)
+/**
+ * @brief Run the simulation for given time.
+ *
+ * @param stoptime, time to run (second).
+ * @param dt, step size (second)
+ * @param display, if `true`, display graphics.
+ * @param overwrite, if `true`, overwrite existing data files.
+ *
+ * @return 
+ */
+ErrorCode runSimulation(double stoptime, double dt, bool display, bool overwrite = false)
 {
+    ErrorCode er;
+
     if(!cursim_) {
         if(!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
@@ -171,19 +212,32 @@ ErrorCode run(double stoptime, double dt, bool display, bool overwrite = false)
         }
     }
 
-    smolSetSimTimes(cursim_, curtime_, stoptime, dt);
-    smolUpdateSim(cursim_);
+    er = smolOpenOutputFiles(cursim_, overwrite);
+    if(er != ErrorCode::ECok) {
+        cerr << __FUNCTION__ << ": Could not open output files." << endl;
+        return er;
+    }
+
+    er = smolSetSimTimes(cursim_, curtime_, stoptime, dt);
+    er = smolUpdateSim(cursim_);
 
     if(display && !initDisplay_) {
         smolDisplaySim(cursim_);
         initDisplay_ = true;
     }
-    auto r   = smolRunSim(cursim_);
+
+    er   = smolRunSim(cursim_);
     curtime_ = stoptime;
 
-    return r;
+    return er;
 }
 
+/**
+ * @brief Set boundary. Also see the overloaded function.
+ *
+ * @param lowbounds, lower values e.g. { xlow, ylow, zlow }.
+ * @param highbounds, High values e.g, { xhigh, yhigh, zhigh }
+ */
 void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
 {
     lowbounds_  = lowbounds;
@@ -195,6 +249,12 @@ void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
     return;
 }
 
+/**
+ * @brief Set bounds on current simulation.
+ *
+ * @param bounds, a vector of (low, high) values. For examples [(xlow, xhigh),
+ * (ylow, yhigh), (zlow, zhigh)].
+ */
 void setBoundaries(const vector<pair<double, double>>& bounds)
 {
     vector<double> lowbounds, highbounds;
@@ -206,6 +266,11 @@ void setBoundaries(const vector<pair<double, double>>& bounds)
     return;
 }
 
+/**
+ * @brief Get current simulation bounds.
+ *
+ * @return a 2-tuple of list: (low, high).
+ */
 pair<vector<double>, vector<double>> getBoundaries()
 {
     // vector<pair<double, double>> bounds(getDim());
@@ -220,12 +285,41 @@ pair<vector<double>, vector<double>> getBoundaries()
     return bounds;
 }
 
+/**
+ * @brief Set dt for current simulation.
+ *
+ * @param dt (float, second).
+ *
+ * @return ECok on success.
+ */
 ErrorCode setDt(double dt)
 {
     return smolSetTimeStep(cursim_, dt);
 }
 
+/**
+ * @brief Get dt of current simulation.
+ *
+ * @return dt (float)
+ */
 double getDt()
 {
     return cursim_->dt;
+}
+
+/**
+ * @brief Set filepath and filename on cursim_. When python scripts are used,
+ * these variables are not set my smolsimulate and related fucntions. 
+ *
+ * @param modelpath modelpath e.g. when using command `python3 ~/Work/smoldyn.py`
+ * in terminal, modelpath is set to `/home/user/Work/Smoldyn.py`.
+ *
+ * @return true.
+ */
+bool setModelpath(const string& modelpath)
+{
+    auto p = splitPath(modelpath);
+    strncpy(cursim_->filepath, p.first.c_str(), p.first.size());
+    strncpy(cursim_->filename, p.second.c_str(), p.second.size());
+    return true;
 }

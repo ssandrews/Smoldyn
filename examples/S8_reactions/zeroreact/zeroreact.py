@@ -1,15 +1,14 @@
 # Zeroth order reactions
-import smoldyn as sm
+import smoldyn 
 
-sm.setBounds(low=[0, 0, 0], high=(10, 10, 10), types="r")
-red = sm.Species("red", difc=1, color=[1, 0, 0])
-green = sm.Species("green", difc=1, color=[0, 1, 0])
-blue = sm.Species("blue", difc=1, color=[0, 0, 1])
-slow = sm.Reaction("slow", [], [red], kf=0.001)
-med = sm.Reaction("med", [], [green], kf=0.01)
-fast = sm.Reaction("fast", [], [blue], kf=0.1)
+s = smoldyn.Simulation(low=[0, 0, 0], high=(10, 10, 10), boundary_type="r")
+red = s.addSpecies("red", difc=1, color=[1, 0, 0])
+green = s.addSpecies("green", difc=1, color=[0, 1, 0])
+blue = s.addSpecies("blue", difc=1, color=[0, 0, 1])
+slow = s.addReaction("slow", [], [red], rate=0.001)
+med = s.addReaction("med", [], [green], rate=0.01)
+fast = s.addReaction("fast", [], [blue], rate=0.1)
 
-s = sm.Simulation(stop=10, step=0.01, output_files=["zeroreactout.txt"])
 s.setGraphics("opengl")
-s.addCommand("molcount zeroreactout.txt", type="e")
-s.run()
+s.addCommand("molcount zeroreactout.txt", cmd_type="e")
+s = s.run(stop=10, dt=0.01, output_files=["zeroreactout.txt"])

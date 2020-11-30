@@ -56,8 +56,9 @@ size_t getRandomSeed();
 
 bool initialize();
 
+
 // Smoldyn.
-ErrorCode run(double simtime, double dt, bool display, bool overwrite);
+ErrorCode runSimulation(double simtime, double dt, bool display, bool overwrite);
 ErrorCode runUntil(const double breaktime, const double dt, bool display, bool overwrite);
 
 bool connect(const py::function& func, const py::object& target, const size_t step,
@@ -77,6 +78,8 @@ void setBoundaries(vector<double>& lows, vector<double>& highs);
 
 // std::vector<pair<double, double>> getBoundaries();
 std::pair<vector<double>, vector<double>> getBoundaries();
+
+bool setModelpath(const string& modelpath);
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -103,5 +106,6 @@ inline array<double, 4> color2RGBA(char* color)
     graphicsreadcolor(&color, &rgba[0]);
     return rgba;
 }
+
 
 #endif /* end of include guard: SIMULTION_H */

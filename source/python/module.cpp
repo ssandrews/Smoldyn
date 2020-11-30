@@ -24,15 +24,15 @@ using namespace std;
 
 using namespace pybind11::literals;  // for _a
 
-// Defined in SimCommand.c file.
-extern int scmdopenfiles(cmdssptr cmds, int overwrite);
-
 extern vector<vector<double>> &getData();
 
 double r_ = 0.0;
 
 /* globals */
 vector<unique_ptr<CallbackFunc>> callbacks_;
+
+/* gl2glutInit */
+extern void gl2glutInit(int *argc, char **argv);
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -50,19 +50,22 @@ array<double, 4> pycolor(const double *f)
 }
 
 /* --------------------------------------------------------------------------*/
-/** @Synopsis  Initialize and run the simulation from given file.
+/** @Synopsis  Initialize and run a given model file.
  *
  * This function takes input file and run the simulation. This is more or less
  * same as `main()` function in smoldyn.c file.
  *
- * @Param filepath @Param flags
+ * @Param filepath
+ * @Param flags
+ * @Param wflag If 1, overwrite exsiting files.
  *
  */
 /* ----------------------------------------------------------------------------*/
-int init_and_run(const string &filepath, const string &flags)
+int init_and_run(
+    const string &filepath, const string &flags, bool wflag, bool quit_at_end = false)
 {
-    int er = 0, wflag = 0;
-    auto p = splitPath(filepath);
+    int  er = 0;
+    auto p  = splitPath(filepath);
 
 #ifdef OPTION_VCELL
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &cursim_, flags.c_str(),
@@ -71,12 +74,11 @@ int init_and_run(const string &filepath, const string &flags)
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &cursim_, flags.c_str());
 #endif
     if(!er) {
-        // if (!tflag && cursim_->graphss && cursim_->graphss->graphics != 0)
-        // gl2glutInit(0, "");
+        cursim_->quitatend = quit_at_end;
+        if(cursim_->graphss && cursim_->graphss->graphics != 0) gl2glutInit(0, nullptr);
         er = simUpdateAndDisplay(cursim_);
     }
-    if(!er)
-        er = smolOpenOutputFiles(cursim_, wflag);
+    if(!er) er = smolOpenOutputFiles(cursim_, wflag);
     if(er) {
         simLog(cursim_, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
@@ -281,8 +283,7 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("specularLightColor",
             [](const graphicssuperstruct &st) {
                 vector<array<double, 4>> light(MAXLIGHTS);
-                for(size_t i = 0; i < MAXLIGHTS; i++)
-                    light[i] = pycolor(st.speclight[i]);
+                for(size_t i = 0; i < MAXLIGHTS; i++) light[i] = pycolor(st.speclight[i]);
                 return light;
             })  // specular light color [lt][c]
         .def("lightPosition",
@@ -295,10 +296,16 @@ PYBIND11_MODULE(_smoldyn, m)
     py::class_<simstruct>(m, "simstruct")
         //.def(py::init<>())
         .def_readonly("condition", &simstruct::condition, "Structure condition")
+
+        // Python user can write these values.
         .def_readwrite("logfile", &simstruct::logfile, "configuration file path")
         .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
         .def_readwrite("filename", &simstruct::filename, "configuration file name")
         .def_readwrite("flags", &simstruct::flags, "command-line options from user")
+        .def_readwrite(
+            "quit_at_end", &simstruct::quitatend, "simulation quits at the end")
+
+        // These are readonly.
         .def_readonly(
             "start_time", &simstruct::clockstt, "clock starting time of simulation")
         .def_readonly(
@@ -308,25 +315,23 @@ PYBIND11_MODULE(_smoldyn, m)
             "event_count", &simstruct::eventcount, "counter for simulation events")
         .def_readonly("max_var", &simstruct::maxvar, "allocated user-settable variables")
         .def_readonly("nvar", &simstruct::nvar, "number of user-settable variables")
-        .def_readonly("dim", &simstruct::dim, " dimensionality of space.")
-        .def_readonly("accuracy", &simstruct::accur, " accuracy, on scale from 0 to 10")
-        .def_readonly("time", &simstruct::time, " current time in simulation")
-        .def_readonly("start_time", &simstruct::tmin, " simulation start time")
-        .def_readonly("end_time", &simstruct::tmax, " simulation end time")
-        .def_readonly("break_time", &simstruct::tbreak, " simulation break time")
-        .def_readonly("dt", &simstruct::dt, " simulation time step")
-        .def_readwrite(
-            "quit_at_end", &simstruct::quitatend, " simulation quits at the end")
-        .def_readonly("rules", &simstruct::ruless, " rule superstructure")
-        .def_readonly("molecuels", &simstruct::mols, " molecule superstructure")
-        .def_readonly("surfaces", &simstruct::srfss, " surface superstructure")
-        .def_readonly("boxs", &simstruct::boxs, " box superstructure")
-        .def_readonly("cmpts", &simstruct::cmptss, " compartment superstructure")
-        .def_readonly("ports", &simstruct::portss, " port superstructure")
-        .def_readonly("lattices", &simstruct::latticess, " lattice superstructure")
-        .def_readonly("bionets", &simstruct::bngss, " bionetget superstructure")
-        .def_readonly("filaments", &simstruct::filss, " filament superstructure")
-        .def_readonly("commands", &simstruct::cmds, " command superstructure")
+        .def_readonly("dim", &simstruct::dim, "dimensionality of space.")
+        .def_readonly("accuracy", &simstruct::accur, "accuracy, on scale from 0 to 10")
+        .def_readonly("time", &simstruct::time, "current time in simulation")
+        .def_readonly("start_time", &simstruct::tmin, "simulation start time")
+        .def_readonly("end_time", &simstruct::tmax, "simulation end time")
+        .def_readonly("break_time", &simstruct::tbreak, "simulation break time")
+        .def_readonly("dt", &simstruct::dt, "simulation time step")
+        .def_readonly("rules", &simstruct::ruless, "rule superstructure")
+        .def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
+        .def_readonly("surfaces", &simstruct::srfss, "surface superstructure")
+        .def_readonly("boxs", &simstruct::boxs, "box superstructure")
+        .def_readonly("cmpts", &simstruct::cmptss, "compartment superstructure")
+        .def_readonly("ports", &simstruct::portss, "port superstructure")
+        .def_readonly("lattices", &simstruct::latticess, "lattice superstructure")
+        .def_readonly("bionets", &simstruct::bngss, "bionetget superstructure")
+        .def_readonly("filaments", &simstruct::filss, "filament superstructure")
+        .def_readonly("commands", &simstruct::cmds, "command superstructure")
         .def_readonly(
             "graphics", &simstruct::graphss, py::return_value_policy::reference);
 
@@ -346,7 +351,7 @@ PYBIND11_MODULE(_smoldyn, m)
      ************************/
     m.def(
         "newSim",
-        [](vector<double> &lowbounds, vector<double> &highbounds) {
+        [](vector<double> &lowbounds, vector<double> &highbounds) -> simptr {
             auto sim = smolNewSim(lowbounds.size(), &lowbounds[0], &highbounds[0]);
             simptrs_.push_back(sim);
             return simptrs_.back();
@@ -383,8 +388,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def(
         "clearAllSimStructs",
         []() {
-            for(auto v : simptrs_)
-                deleteSimptr(v);
+            for(auto v : simptrs_) deleteSimptr(v);
             simptrs_.clear();
             deleteSimptr(cursim_);
         },
@@ -399,7 +403,8 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("displaySim", [](void) { return smolDisplaySim(cursim_); });
 
     // Extra (not in C api).
-    m.def("run", &run, "stoptime"_a, "dt"_a, "display"_a = true, "overwrite"_a = false);
+    m.def("run", &runSimulation, "stoptime"_a, "dt"_a, "display"_a = true,
+        "overwrite"_a = false);
     m.def("runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true,
         "overwrite"_a = false);
 
@@ -444,7 +449,6 @@ PYBIND11_MODULE(_smoldyn, m)
         [](double timestep) { return smolSetTimeStep(cursim_, timestep); });
     m.def("getTimeStep", []() { return cursim_->dt; });
 
-    // enum ErrorCode smolSetRandomSeed(simptr sim, long int seed);
     m.def(
         "setRandomSeed", [](long int seed) { return smolSetRandomSeed(cursim_, seed); });
 
@@ -574,7 +578,7 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix,
     // int append);
-    m.def("addOutputFile", [](char *filename, bool suffix, bool append) {
+    m.def("addOutputFile", [](char *filename, int suffix, bool append) {
         return smolAddOutputFile(cursim_, filename, suffix, append);
     });
 
@@ -582,13 +586,12 @@ PYBIND11_MODULE(_smoldyn, m)
     // off,
     //     double step, double multiplier, const char *commandstring);
     m.def("addCommand", [](char type, double on, double off, double step,
-                            double multiplier, const string &commandstring) {
-        return smolAddCommand(
-            cursim_, type, on, off, step, multiplier, commandstring.c_str());
+                            double multiplier, const char *commandstring) {
+        return smolAddCommand(cursim_, type, on, off, step, multiplier, commandstring);
     });
 
     // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
-    m.def("addCommandFromString", [](char* cmd) {
+    m.def("addCommandFromString", [](char *cmd) {
         // char *cmd = strdup(command.c_str());
         return smolAddCommandFromString(cursim_, cmd);
     });
@@ -912,14 +915,14 @@ PYBIND11_MODULE(_smoldyn, m)
     //         *reactant2, enum MolecState rstate2, int nproduct, const char
     //         **productspecies, enum MolecState *productstates, double rate);
     m.def("addReaction",
-        [](const char *reaction,                // Name of the reaction.
-            const char *reactant1,              // First reactant
-            MolecState rstate1,                 // First reactant state
-            const char *reactant2,              // Second reactant.
-            MolecState rstate2,                 // second reactant state.
-            vector<string> &productSpeciesStr,  // product species.
-            vector<MolecState> &productStates,  // product state.
-            double rate                         // rate
+        [](const char *         reaction,           // Name of the reaction.
+            const char *        reactant1,          // First reactant
+            MolecState          rstate1,            // First reactant state
+            const char *        reactant2,          // Second reactant.
+            MolecState          rstate2,            // second reactant state.
+            vector<string> &    productSpeciesStr,  // product species.
+            vector<MolecState> &productStates,      // product state.
+            double              rate                // rate
         ) {
             // NOTE: Can't use vector<const char*> in the function argument.
             // We'll runinto wchar_t vs char* issue from python2/python3
@@ -1015,8 +1018,7 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("addPortMolecule", [](const char *port, int nmolec, const char *species,
                                  vector<vector<double>> &pos) {
         std::vector<double *> ptrs;
-        for(auto &vec : pos)
-            ptrs.push_back(vec.data());
+        for(auto &vec : pos) ptrs.push_back(vec.data());
         return smolAddPortMolecules(cursim_, port, nmolec, species, ptrs.data());
     });
 
@@ -1091,6 +1093,12 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("getSeed", &getRandomSeed);
     m.def("setSeed", &setRandomSeed);
     m.def("getBoundaries", &getBoundaries);
+
+    // Set model path on simptr
+    m.def(
+        "setModelpath", &setModelpath, "modelpath"_a, "Set model path on current simptr");
+
+    // Set boundaries
     m.def("setBoundaries",
         py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
         "Set boundaries using vector of (low,high) tuples e.g., "
@@ -1098,14 +1106,17 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setBoundaries",
         py::overload_cast<vector<double> &, vector<double> &>(&setBoundaries),
         "Set boundaries using vector of low and a vector of high points");
+
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);
+
+    /* set accuracy */
     m.def("setAccuracy", [](double accuracy) { cursim_->accur = accuracy; });
     m.def("getAccuracy", [](void) { return cursim_->accur; });
 
     /* Function */
-    m.def("loadModel", &init_and_run, "filepath"_a, "args"_a = "",
-        "Load model from a txt file");
+    m.def("loadModel", &init_and_run, "filepath"_a, "flags"_a = "", "wflag"_a = false,
+        "quit_at_end"_a = false, "Load model from a txt file");
 
     /* Extra Function */
     m.def("connect", &connect, "func"_a, "target"_a, "step"_a = 1,

@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org. 
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.4)   # due to pybind11 
+cmake_minimum_required(VERSION 3.12)   # due to better Python support 
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -176,7 +176,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 if(OPTION_STRICT_BUILD)
-    add_definitions(-Wall)
+    add_definitions(-Wall -Werror)
     # add_definitions(-Wno-format-truncation)
     # See https://stackoverflow.com/a/14132910/1805129
     add_definitions(-Wno-uninitialized)
@@ -216,6 +216,10 @@ elseif (APPLE)
     set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
 elseif (WIN32)
     set(WINDOWS_BUILD ON)
+    if(MSVC)
+        add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    endif()
+
     message(STATUS "Compiling on a Windows computer")
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
     if (OPTION_VTK)
@@ -533,6 +537,10 @@ endif ()
 ########## Python module #########
 
 if (OPTION_PYTHON)
+    # Find python before using pybind11. There is a possibility of version mismatch later.
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11-2.6.1)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)
@@ -578,3 +586,4 @@ enable_testing()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
     add_subdirectory(examples)
 endif ()
+

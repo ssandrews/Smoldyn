@@ -1420,7 +1420,7 @@ int rxnsetproduct(simptr sim,int order,int r,char *erstr) {
 	er=0;
 	dim=sim->dim;
 
-	if(nprod==0) {																		// nprod==0
+    if(nprod==0) {  // nprod==0
 		if(rparamt==RPnone || rparamt==RPirrev || rparamt==RPconfspread)
 			rxn->unbindrad=0;
 		else {
@@ -1435,7 +1435,7 @@ int rxnsetproduct(simptr sim,int order,int r,char *erstr) {
 			for(d=0;d<dim;d++) dist+=rxn->prdpos[0][d]-rxn->prdpos[1][d];
 		rxn->unbindrad=sqrt(dist); }
 
-	else if(nprod==1) {																// nprod==1, all others (i.e. not offset or fixed)
+	else if(nprod==1) {    // nprod==1, all others (i.e. not offset or fixed)
 		if(rparamt==RPnone || rparamt==RPirrev || rparamt==RPconfspread) {
 			rxn->unbindrad=0;						// only 1 product so no unbinding radius
 			for(d=0;d<dim;d++) rxn->prdpos[0][d]=0; }
@@ -2488,7 +2488,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 	while(more) {			// product list
 		CHECKS((itct=sscanf(line2,"%s %s",nm,nm1))>=1,"failed to read product");
 		if(strcmp(nm,"0")) {
-			CHECKS(nprod+1<MAXPRODUCT,"exceeded allowed number of reaction products");
+			CHECKS(size_t(nprod+1)<MAXPRODUCT,"exceeded allowed number of reaction products");
 			er=molstring2pattern(nm,&ms,pattern,2);
 			CHECKS(er!=-1,"BUG: reading reaction");
 			CHECKS(er!=-2,"mismatched or improper parentheses around reactant state");

@@ -1,7 +1,4 @@
 # python binding.
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
-set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
 
 # NOTE: DO NOT change this without changing PYTHONPATH in
 # ../examples/CMakeLists.txt file.
@@ -12,17 +9,37 @@ file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 add_library(_pysmoldyn STATIC ${SRC_FILES})
 target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
-target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK -fvisibility=hidden)
+
+# COMPILE_AS_PY_MODULE changes the behaviour of libSteve at a few places
+# especially where scanf is used for user input.
+target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE)
+
+# Enables PYTHON_CALLBACK extention.
+target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
+
+# This is suggested by pybind11: reduces binary size and disables some warnings.
+target_compile_options(_pysmoldyn PRIVATE -fvisibility=hidden)
+
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
+# Usually run it on github actions and other CI. 
+# FIXME: If it comes your way, comment it out.
+if(WINDOWS_BUILD)
+    add_custom_command(TARGET _pysmoldyn PRE_BUILD
+        COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest wheel numpy setuptools --user
+        COMMENT "Installing build dependencies on Windows"
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        VERBATIM)
+endif()
+
 pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
 target_compile_options(_smoldyn PRIVATE 
-	-DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
-	-DENABLE_PYTHON_CALLBACK 
-	# https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
-	-fvisibility=hidden)
+    -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
+    -DENABLE_PYTHON_CALLBACK 
+    # https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
+    -fvisibility=hidden)
 target_include_directories(_smoldyn PRIVATE 
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
@@ -89,21 +106,6 @@ add_custom_target(doc_api_html
     COMMENT "Generating Python's API doc (HTML)"
     VERBATIM)
 
-enable_testing()
-
-###  python tests ###
-file(GLOB TEST_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.py")
-foreach(_pyscript ${TEST_SCRIPTS})
-    message(STATUS "Adding test ${_pyscript}") 
-    get_filename_component(_test_name ${_pyscript} NAME_WE)
-    get_filename_component(_test_dir ${_pyscript} DIRECTORY)
-    add_test(NAME ${_test_name} COMMAND 
-        ${PYTHON_EXECUTABLE} ${_pyscript}
-        WORKING_DIRECTORY ${_test_dir})
-    set_tests_properties(${_test_name} PROPERTIES 
-      ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
-endforeach()
-
 # Run static type checking using mypy (developer only). Works best with
 # python3.7+
 add_custom_target(lint 
@@ -115,13 +117,24 @@ add_custom_target(lint_strict
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
-# TESTS
+###  python tests ###
 enable_testing()
-add_test(NAME pytest 
-    COMMAND ${PYTHON_EXECUTABLE} -m pytest 
-        --ignore-glob source/pybind11-*
-        ${CMAKE_SOURCE_DIR}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_tests_properties(pytest PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+file(GLOB TEST_SCRIPTS "${CMAKE_SOURCE_DIR}/tests/test_*.py")
+foreach(_pyscript ${TEST_SCRIPTS})
+    # message(STATUS "Adding test ${_pyscript}") 
+    get_filename_component(_test_name ${_pyscript} NAME_WE)
+    get_filename_component(_test_dir ${_pyscript} DIRECTORY)
+    add_test(NAME ${_test_name} COMMAND 
+        ${PYTHON_EXECUTABLE} ${_pyscript}
+        WORKING_DIRECTORY ${_test_dir})
+    set_tests_properties(${_test_name} PROPERTIES 
+        ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+endforeach()
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME pytest 
+    COMMAND 
+    ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11-*
+    ${CMAKE_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set_tests_properties(pytest 
+    PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")

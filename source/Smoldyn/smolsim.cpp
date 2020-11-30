@@ -5,12 +5,14 @@
  Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
  of the Gnu Lesser General Public License (LGPL). */
 
-#include <float.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
+#include <cfloat>
+#include <cstdlib>
+#include <cmath>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+
 #include "List.h"
 #include "math2.h"
 #include "opengl2.h"
@@ -292,7 +294,7 @@ simptr simalloc(const char *fileroot) {
 
 /* simfree */
 void simfree(simptr sim) {
-	int dim,order,maxsrf,v;
+	int dim,order,maxsrf;
 
 	if(!sim) return;
 	dim=sim->dim;
@@ -311,12 +313,12 @@ void simfree(simptr sim) {
 	rulessfree(sim->ruless);
 	for(order=0;order<MAXORDER;order++) rxnssfree(sim->rxnss[order]);
 
-	for(v=0;v<sim->maxvar;v++)
+	for(size_t v=0;v<(size_t)sim->maxvar;v++)
 		free(sim->varnames[v]);
 	free(sim->varnames);
 
 #ifdef ENABLE_PYTHON_CALLBACK
-    for(v = 0; v < sim->ncallbacks; v++)
+    for(size_t v = 0; v < sim->ncallbacks; v++)
         if(sim->callbacks[v])
             free(sim->callbacks[v]);
 #endif
@@ -2514,10 +2516,10 @@ void endsimulate(simptr sim,int er) {
 
 	simLog(sim,2,"total execution time: %g seconds\n",sim->elapsedtime);
 
-  // TODO: Useful when running benchmarks (work in progress)
+  // TODO: Useful when running benchmarks 
   // If SMOLDYN_NO_PROMPT is set by user then smoldyn quit at the
   // end of simultion without prompting user to press shift+Q.
-  // It is useful when running tests in batch mode locally and required 
+  // It is useful when running tests in batch mode locally. And it is essential 
   // for testing  examples on remote servers such as Travis CI and github actions.
   const char* dontPrompt = getenv("SMOLDYN_NO_PROMPT");
   if(dontPrompt != NULL && strlen(dontPrompt) > 0) 

@@ -4,12 +4,12 @@ This does not work with pytest
 __author__ = "Dilawar Singh"
 __email__ = "dilawars@ncbs.res.in"
 
-import smoldyn as S
+import smoldyn
 import random
 import math
 
 random.seed(0)
-S.seed = 0
+smoldyn.seed = 0
 
 # First argument is always t.
 a, avals = None, []
@@ -43,11 +43,10 @@ def update_difc(val):
 
 def test_connect():
     global a, avals
-    S.setBounds(low=(0, 0), high=(10, 10))
-    a = S.Species("a", color="black", difc=0.1)
-    S.connect(new_dif, update_difc, step=10, args=[1, 1])
-    s = S.Simulation(100, 1)
-    s.run()
+    s = smoldyn.Simulation(low=(0, 0), high=(10, 10))
+    a = s.addSpecies("a", color="black", difc=0.1)
+    s.connect(new_dif, update_difc, step=10, args=[1, 1])
+    s.run(100, dt=1)
     for a, b in zip(avals[1:], expected_a[1:]):
         print(a, b)
         assert math.isclose(a[1], b[1], rel_tol=1e-6, abs_tol=1e-6), (a[1], b[1])

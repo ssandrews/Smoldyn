@@ -34,4 +34,3 @@ reaction r2 rabbit + fox -> fox + fox 8000
 reaction r3 fox -> 0 10
 
 end_file
-

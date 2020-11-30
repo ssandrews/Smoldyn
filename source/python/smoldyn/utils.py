@@ -34,5 +34,7 @@ def color2RGBA(colorname:str) -> Tuple[float,float,float,float]:
         A tuple of 4 values between 0 and 1.0 (red, green, blue, alpha)
     """
     if __matplotlib_found__:
-        return colors.to_rgba(colorname)
-    return _smoldyn.color2RGBA(colorname)
+        clr : Tuple[float, float, float, float] = colors.to_rgba(colorname)
+    else:
+        clr = _smoldyn.color2RGBA(colorname)
+    return clr

@@ -40,7 +40,7 @@ of the Gnu Lesser General Public License (LGPL). */
 		return (float)genrand_real2(); }
 
 	inline static float randOCF(void) {
-		return 1.0-(float)genrand_real2(); }
+		return float(1.0)-(float)genrand_real2(); }
 
 	inline static float randOOF(void) {
 		return (float)genrand_real3(); }
@@ -159,13 +159,13 @@ inline static double radrandsphCCD(double r) {
 	return r*pow(randCCD(),1.0/3.0); }
 
 inline static float radrandsphCCF(float r) {
-	return r*pow(randCCF(),(float)(1.0/3.0)); }
+	return (float)r*pow(randCCF(),(float)(1.0/3.0)); }
 
 inline static double thetarandCCD(void) {
 	return acos(1.0-2.0*randCCD()); }
 
 inline static float thetarandCCF(void) {
-	return acos(1.0-2.0*randCCF()); }
+	return (float) acos(1.0-2.0*randCCF()); }
 
 
 double unirandsumCCD(int n,double m,double s);
