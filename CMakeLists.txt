@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org. 
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.4)   # due to pybind11 
+cmake_minimum_required(VERSION 3.12)   # due to better Python support 
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -176,7 +176,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 if(OPTION_STRICT_BUILD)
-    add_definitions(-Wall)
+    add_definitions(-Wall -Werror)
     # add_definitions(-Wno-format-truncation)
     # See https://stackoverflow.com/a/14132910/1805129
     add_definitions(-Wno-uninitialized)

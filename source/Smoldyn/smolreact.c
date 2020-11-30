@@ -2488,7 +2488,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 	while(more) {			// product list
 		CHECKS((itct=sscanf(line2,"%s %s",nm,nm1))>=1,"failed to read product");
 		if(strcmp(nm,"0")) {
-			CHECKS(nprod+1<MAXPRODUCT,"exceeded allowed number of reaction products");
+			CHECKS(size_t(nprod+1)<MAXPRODUCT,"exceeded allowed number of reaction products");
 			er=molstring2pattern(nm,&ms,pattern,2);
 			CHECKS(er!=-1,"BUG: reading reaction");
 			CHECKS(er!=-2,"mismatched or improper parentheses around reactant state");

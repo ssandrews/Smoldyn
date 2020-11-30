@@ -659,7 +659,7 @@ int scmdsetfsuffix(cmdssptr cmds,const char *fname,int i) {
 /* scmdopenfiles */
 int scmdopenfiles(cmdssptr cmds,int overwrite) {
 	int fid;
-	char str1[STRCHAR],str2[STRCHAR];
+	char str1[STRCHAR];
 	FILE *fptr;
 
 	if(!cmds) return 0;
@@ -685,6 +685,7 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
                     return 1;
 #else
                     // When compiled for c++ binary.
+                    char str2[STRCHAR];
 					fprintf(stderr,"Overwrite existing output file '%s' (y/n)? ",cmds->fname[fid]);
 					scanf("%s",str2);
 					if(!(str2[0]=='y' || str2[0]=='Y')) return 1; 

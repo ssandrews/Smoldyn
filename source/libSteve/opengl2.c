@@ -111,7 +111,7 @@ void KeyPush(unsigned char key,int x,int y) {
 		glGetIntegerv(GL_VIEWPORT,viewport);
 		w=viewport[2];
 		h=viewport[3];
-		snprintf(str,STRCHAR,"%s%%0%ii.tif",TiffName,(int)log10((double)TiffNumMax)+1);
+		snprintf(str,2*STRCHAR,"%s%%0%ii.tif",TiffName,(int)log10((double)TiffNumMax)+1);
 		str[2*STRCHAR-1]='\0';
 		snprintf(name,STRCHAR,str,TiffNumber);
 		name[2*STRCHAR-1]='\0';

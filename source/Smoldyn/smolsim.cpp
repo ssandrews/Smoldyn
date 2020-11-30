@@ -294,7 +294,7 @@ simptr simalloc(const char *fileroot) {
 
 /* simfree */
 void simfree(simptr sim) {
-	int dim,order,maxsrf,v;
+	int dim,order,maxsrf;
 
 	if(!sim) return;
 	dim=sim->dim;
@@ -313,12 +313,12 @@ void simfree(simptr sim) {
 	rulessfree(sim->ruless);
 	for(order=0;order<MAXORDER;order++) rxnssfree(sim->rxnss[order]);
 
-	for(v=0;v<sim->maxvar;v++)
+	for(size_t v=0;v<(size_t)sim->maxvar;v++)
 		free(sim->varnames[v]);
 	free(sim->varnames);
 
 #ifdef ENABLE_PYTHON_CALLBACK
-    for(v = 0; v < sim->ncallbacks; v++)
+    for(size_t v = 0; v < sim->ncallbacks; v++)
         if(sim->callbacks[v])
             free(sim->callbacks[v]);
 #endif
