@@ -12,7 +12,17 @@ file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 add_library(_pysmoldyn STATIC ${SRC_FILES})
 target_include_directories(_pysmoldyn PRIVATE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
-target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE -DENABLE_PYTHON_CALLBACK -fvisibility=hidden)
+
+# COMPILE_AS_PY_MODULE changes the behaviour of libSteve at a few places
+# especially where scanf is used for user input.
+target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE)
+
+# Enables PYTHON_CALLBACK extention.
+target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
+
+# This is suggested by pybind11: reduces binary size and disables some warnings.
+target_compile_options(_pysmoldyn PRIVATE -fvisibility=hidden)
+
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
