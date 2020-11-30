@@ -11,14 +11,10 @@ C = s.addSpecies("C", difc=1, color="blue")
 A.addToSolution(200, pos=[10, 50])
 B.addToSolution(200, pos=[90, 50])
 
-s1 = s.addSphere(center=[50, 50], radius=20, slices=50)
+s1 = smoldyn.Sphere(center=[50, 50], radius=20, slices=50)
 ball = s.addSurface("ball", panels=[s1])
 
-## Both styles are acceptable.
-
-# ball.both.setAction([A, B, C], "reflect")
 ball.setAction('both', [A, B, C], "reflect")
-# ball.both.setStyle(color=[0, 0.5, 0], thickness=1)
 ball.setStyle('both', color=[0, 0.5, 0], thickness=1)
 
 r1 = smoldyn.Rectangle([0, 0], dimensions=[100], axis="+0", name="r1")
@@ -32,20 +28,18 @@ sides = s.addSurface("sides", panels=[r1, r2, r3, r4])
 sides.setAction('front', [A, B, C], 'jump')
 sides.setAction('back', [A, B, C], 'reflect')
 
-sides.front.setStyle(color=[0.2, 0, 0])
-sides.back.setStyle(color=[0, 0, 0.5])
-sides.both.setStyle(thickness=1)
+sides.setStyle('front', color=[0.2, 0, 0])
+sides.setStyle('back', color=[0, 0, 0.5])
+sides.setStyle('both', thickness=1)
 
 ## Both styles are equivalent.
-r1.front.jumpTo(r2.front, True)
-r3.front.jumpTo(r4.front, True)
-#r1.jumpTo('front', r2, 'front', True)
-#r3.jumpTo('front', r4, 'front', True)
+# r1.front.jumpTo(r2.front, True)
+r1.jumpTo('front', r2, 'front', True)
+r3.jumpTo('front', r4, 'front', True)
 
 # One can also use s.addBidirectionalReaction and refer to `forward` and
 # `reverse` fields.
 r1 = s.addReaction("rfwd", subs=[A, B], prds=[C], rate=1)
-
 r2 = s.addReaction("rback", subs=[C], prds=[A, B], rate=0.2)
 r2.productPlacement("pgemmax", param=0.2)
 

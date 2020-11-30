@@ -1,10 +1,10 @@
 """Smoldyn user API.
 """
 
-__author__      = "Dilawar Singh"
-__copyright__   = "Copyright 2020-, Dilawar Singh"
-__maintainer__  = "Dilawar Singh"
-__email__       = "dilawars@ncbs.res.in"
+__author__ = "Dilawar Singh"
+__copyright__ = "Copyright 2020-, Dilawar Singh"
+__maintainer__ = "Dilawar Singh"
+__email__ = "dilawars@ncbs.res.in"
 
 __all__ = [
     "__version__",
@@ -55,8 +55,10 @@ __logger__.setLevel(logging.WARNING)
 
 # Smoldyn version
 
+
 def version():
     return _smoldyn.__version__
+
 
 __version__: str = version()
 
@@ -357,7 +359,14 @@ class Panel(object):
 
         >>> r1.front.jumpTo(r2.front, True)
         """
-        return getattr(self, face1).jumpTo(getattr(panel2, face2))
+        jfrom = getattr(self, face1)
+        assert jfrom, f"Could not locate {face1} on {panel1}."
+        assert isinstance(jfrom, _PanelFace)
+        jto = getattr(panel2, face2)
+        assert jto, f"Could not locate {face2} on {panel2}."
+        assert isinstance(jto, _PanelFace)
+
+        return jfrom.jumpTo(jto, bidirectional)
 
     def __str__(self):
         return f"<{self.name} type={self.ctype} index={self.index}>"
@@ -368,7 +377,7 @@ class Panel(object):
 
     @property
     def index(self) -> int:
-        v : int = _smoldyn.getPanelIndexNT(self.surface.name, self.name)
+        v: int = _smoldyn.getPanelIndexNT(self.surface.name, self.name)
         return v
 
     def toText(self):
@@ -642,9 +651,11 @@ class _PanelFace(object):
         assert (
             self.panel.surface == toface.panel.surface
         ), "Both panels must have same surface"
-        ## print(111, self.panel.surface.name, self.panel.name
-        ##         , self.name, toface.panel.name,
-        ##         toface.name, bidirectional)
+        __logger__.debug(
+            f"{self.panel.surface.name}, {self.panel.name} "
+            f", {self.name}, {toface.panel.name}, {toface.name}, "
+            f"{bidirectional}"
+        )
         k = _smoldyn.setPanelJump(
             self.panel.surface.name,
             self.panel.name,
@@ -1020,7 +1031,7 @@ class Surface(object):
         else:
             sname, sstate = species.name, species.state
         state1 = _toMS(state1)
-        new_species_str = new_species.name if new_species else ''
+        new_species_str = new_species.name if new_species else ""
         k = _smoldyn.setSurfaceRate(
             self.name,
             sname,
@@ -1619,7 +1630,12 @@ class BidirectionalReaction(object):
         self.reverse = None
         if self._kb > 0.0:
             self.reverse = Reaction(
-                revname, prds, subs, rate=self._kb, compartment=compartment, surface=surface
+                revname,
+                prds,
+                subs,
+                rate=self._kb,
+                compartment=compartment,
+                surface=surface,
             )
 
     @property
@@ -1764,7 +1780,6 @@ class Simulation(object):
         if __top_model_file__:
             __top_model_file__.resolve()
             _smoldyn.setModelpath(str(__top_model_file__))
-
 
         self.commands: List[Command] = []
         self.kwargs = kwargs
@@ -2012,8 +2027,8 @@ class Simulation(object):
         *,
         start=None,
         accuracy=None,
-        display:bool=True,
-        overwrite:bool=False,
+        display: bool = True,
+        overwrite: bool = False,
         log_level: int = 3,
         **kwargs,
     ):
@@ -2215,68 +2230,6 @@ class Simulation(object):
             reaction_probability=reaction_probability,
         )
 
-    def addSphere(
-        self,
-        *,
-        center: List[float],
-        radius: float,
-        slices: int,
-        stacks: int = 0,
-        name="",
-    ):
-        """Add a Sphere to Simulation
-
-        See Sphere.__init__ for details.
-        """
-
-        return Sphere(
-            center=center, radius=radius, slices=slices, stacks=stacks, name=name
-        )
-
-    def addTriangle(self, *, vertices: Sequence[Sequence[float]] = [[]], name=""):
-        return Triangle(vertices=vertices, name=name)
-
-    def addHemisphere(
-        self,
-        *,
-        center: List[float],
-        radius: float,
-        vector: List[float],
-        slices: int,
-        stacks: int,
-        name: str = "",
-    ):
-        """Add a Hemisphere to Simulation.
-
-        See Hemisphere.__init__ for details.
-        """
-        return Hemisphere(
-            center=center,
-            radius=radius,
-            vector=vector,
-            slices=slices,
-            stacks=stacks,
-            name=name,
-        )
-
-    def addCylinder(
-        self,
-        *,
-        start: List[float],
-        end: List[float],
-        radius: float,
-        slices: int,
-        stacks: int,
-        name: str = "",
-    ) -> Cylinder:
-        """Add a Cylinder to Simulation
-
-        See Cylinder.__init__ for details.
-        """
-        return Cylinder(
-            start=start, end=end, radius=radius, slices=slices, stacks=stacks, name=name
-        )
-
     def addDisk(
         self, *, center: List[float], radius: float, vector: List[float], name=""
     ):
@@ -2302,7 +2255,9 @@ class Simulation(object):
         """See MoleculePerBox.__init__"""
         return MoleculePerBox(size)
 
-    def addCompartment(self, name: str, *, surface: Union[str, Surface], point: List[float]):
+    def addCompartment(
+        self, name: str, *, surface: Union[str, Surface], point: List[float]
+    ):
         return Compartment(name, surface=surface, point=point)
 
     def connect(self, func, target, step: int, args: List[float] = []):
