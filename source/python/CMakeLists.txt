@@ -89,21 +89,6 @@ add_custom_target(doc_api_html
     COMMENT "Generating Python's API doc (HTML)"
     VERBATIM)
 
-enable_testing()
-
-###  python tests ###
-file(GLOB TEST_SCRIPTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.py")
-foreach(_pyscript ${TEST_SCRIPTS})
-    message(STATUS "Adding test ${_pyscript}") 
-    get_filename_component(_test_name ${_pyscript} NAME_WE)
-    get_filename_component(_test_dir ${_pyscript} DIRECTORY)
-    add_test(NAME ${_test_name} COMMAND 
-        ${PYTHON_EXECUTABLE} ${_pyscript}
-        WORKING_DIRECTORY ${_test_dir})
-    set_tests_properties(${_test_name} PROPERTIES 
-      ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
-endforeach()
-
 # Run static type checking using mypy (developer only). Works best with
 # python3.7+
 add_custom_target(lint 
@@ -115,15 +100,3 @@ add_custom_target(lint_strict
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
-# TESTS
-enable_testing()
-
-add_test(NAME pytest 
-    COMMAND 
-        ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11-*
-        ${CMAKE_SOURCE_DIR}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_tests_properties(pytest 
-    PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
