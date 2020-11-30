@@ -24,12 +24,22 @@ set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
+# Usually run it on github actions and other CI. 
+# FIXME: If it comes your way, comment it out.
+if(WINDOWS_BUILD)
+     add_custom_command(TARGET _pysmoldyn PRE_BUILD
+	 COMMAND ${PYTHON_EXECUTABLE} -m pip install wheel numpy setuptools --user
+         COMMENT "Installing build dependencies on Windows"
+	 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+         VERBATIM)
+endif()
+
 pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
 target_compile_options(_smoldyn PRIVATE 
-	-DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
-	-DENABLE_PYTHON_CALLBACK 
-	# https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
-	-fvisibility=hidden)
+    -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
+    -DENABLE_PYTHON_CALLBACK 
+    # https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
+    -fvisibility=hidden)
 target_include_directories(_smoldyn PRIVATE 
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
