@@ -142,6 +142,19 @@ Alternatively, the Mac distribution comes with a Python wheel, called something 
 
 For Windows, ``pip install smoldyn'' seems to work initially, but it doesn't install the necessary compiled code, so it doesn't actually run, yet.
 
+\section{Command line flags}
+
+The Python interface offers the following command line flags:
+
+\begin{longtable}[c]{ll}
+Flags & Function\\
+\hline
+\ttt{input} & Load input file\\
+\ttt{--overwrite}, \ttt{-w} & Overwrite any existing data file\\
+\ttt{--quit-at-end}, \ttt{-q} & Quit when the simulation is complete\\
+\ttt{--args}, \ttt{-A} & Smoldyn command line arguments
+\end{longtable}
+
 \section{Files}
 
 After building Smoldyn (assuming you were in \ttt{/path/to/Smoldyn-official/build} directory when you ran \ttt{make} command), the python module ends up in the \ttt{/path/to/Smoldyn-official/build/py} directory. The module can be imported into Python from this directory. Add this directory to your

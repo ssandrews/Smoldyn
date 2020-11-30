@@ -547,9 +547,10 @@ This section focuses on the code in the source/python directory, essentially all
 
 \begin{description}
 
-\item[\ttt{int init\_and\_run(const string \&filepath, const string \&flags)}]
+\item[\ttt{int}]
+\ttt{init\_and\_run(const string \&filepath, const string \&flags, bool wflag, bool quit\_at\_end = false)}]
 \hfill \\
-Send in the filepath, including both the path and the filename in \ttt{filepath} and the Smoldyn flags in \ttt{flags}. This passes these things on to \ttt{simInitAndLoad} and \ttt{simUpdateAndDisplay} (both in smolsim.c). Here, \ttt{cursim\_} is the current simulation structure. This also opens output files and runs the simulation with \ttt{smolsimulate} or \ttt{smolsimulategl}, as appropriate. At the end, it frees the simulation structure and returns. Returns 0 for success or an error code for failure. This function is an alternate point of entry to \ttt{main}, from my smoldyn.c code.
+Send in the filepath, including both the path and the filename in \ttt{filepath} and the Smoldyn flags in \ttt{flags}. In addition, \ttt{wflag} is another copy of the suppress warnings flag, perhaps only for whether output files should be overwritten, and \ttt{quit\_at\_end} is a flag for whether Smoldyn should just quit when the simulation is done. This function passes these things on to \ttt{simInitAndLoad} and \ttt{simUpdateAndDisplay} (both in smolsim.c). Here, \ttt{cursim\_} is the current simulation structure. This also opens output files and runs the simulation with \ttt{smolsimulate} or \ttt{smolsimulategl}, as appropriate. At the end, it frees the simulation structure and returns. Returns 0 for success or an error code for failure. This function is an alternate point of entry to \ttt{main}, from my smoldyn.c code.
 
 \item[\ttt{PYBIND11\_MODULE(\_smoldyn, m)}]
 \hfill \\
@@ -565,6 +566,11 @@ Most of the the functions in Smoldyn.cpp are simple utilities, which really shou
 The Smoldyn.h header file includes global variables and declarations for all of these functions. In addition, Smoldyn.h includes a few inline utility functions, including \ttt{splitPath} for splitting a filename path into separate root and filename strings (used in module.cpp \ttt{init\_and\_run}) and \ttt{color2RGBA} for converting a color string to RGBA numbers (this calls my graphicsreadcolor function).
 
 \begin{description}
+
+\item[\ttt{bool}]
+\ttt{connect(const py::function\& func, const py::object\& target, const size\_t step, const py::list\& args)}
+\hfill \\
+Creates a python callback for the Smoldyn main simulation loop. \ttt{func} is the function to be called, \ttt{target} is some sort of target for it (I don't know what this is), \ttt{step} is the number of time steps between callbacks, and \ttt{args} are arguments for the function that is called.
 
 \item[\ttt{bool addToSimptrVec(simptr ptr)}]
 \hfill \\
@@ -623,6 +629,75 @@ Sets the simulation time step.
 \hfill \\
 Returns the simulation time step.
 
+\item[\ttt{bool setModelpath(const string\& modelpath)}]
+\hfill \\
+This takes in the path for the model, including the model filename, and splits it into the path and filename separately. It then assigns the results to the current simulation filepath and filename. The function always returns true.
+
+\end{description}
+
+% Callbackfunc.cpp and Callbackfunc.h
+\section{Callbackfunc.cpp and Callbackfunc.h}
+
+These files include the code for the Python callback functions. Use things like \ttt{setFuncName}, \ttt{setStep}, \ttt{setTarget}, \ttt{setFunc}, and \ttt{setArgs} to register and set up callback functions.
+
+\begin{description}
+
+\item[\ttt{CallbackFunc::CallbackFunc()}]
+\hfill \\
+Constructor.
+
+\item[\ttt{CallbackFunc::~CallbackFunc()}]
+\hfill \\
+Destructor.
+
+\item[\ttt{bool CallbackFunc::evalAndUpdate(double t)}]
+\hfill \\
+Evaluate the callback function at time \ttt{t}. This also calls the target function if there is one, and otherwise uses a ``magic string'', which I didn't understand.
+
+\item[\ttt{bool CallbackFunc::isValid() const}]
+\hfill \\
+Returns whether the callback function has a size greater than zero, meaning that it's valid.
+
+\item[\ttt{void CallbackFunc::setFunc(const py::function\& func)}]
+\hfill \\
+Sets the callback function to \ttt{func}.
+
+\item[\ttt{py::function CallbackFunc::getFunc() const}]
+\hfill \\
+Gets and returns the callback function.
+
+\item[\ttt{void CallbackFunc::setFuncName(const string\& fname)}]
+\hfill \\
+Sets the callback function name to \ttt{name}.
+
+\item[\ttt{string CallbackFunc::getFuncName() const}]
+\hfill \\
+Gets and returns the callback function name.
+
+\item[\ttt{void CallbackFunc::setStep(size\_t step)}]
+\hfill \\
+Sets the step size for the callback function to \ttt{step}.
+
+\item[\ttt{size\_t CallbackFunc::getStep() const}]
+\hfill \\
+Gets and returns the stepsize for the callback function.
+
+\item[\ttt{void CallbackFunc::setTarget(const py::handle\& target)}]
+\hfill \\
+Sets the target function for the callback function to \ttt{target}.
+
+\item[\ttt{py::handle CallbackFunc::getTarget() const}]
+\hfill \\
+Gets and returns the target for the callback function.
+
+\item[\ttt{void CallbackFunc::setArgs(const py::list\& args)}]
+\hfill \\
+Sets the arguments for the callback function to the list \ttt{args}.
+
+\item[\ttt{py::list CallbackFunc::getArgs() const}]
+\hfill \\
+Gets the arguments for the callback function.
+
 \end{description}
 
 % Python scripts in smoldyn directory
@@ -634,31 +709,19 @@ This file just imports all of the other python files. So, I think that importing
 
 \subsection*{\_\_main\_\_.py}
 
-This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. I don't fully understand what's here, but it's short and seems to work. The \ttt{load\_model} function might be in utils.py, or maybe that's just another instance of something similar and with the same name.
+This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. The \ttt{load\_model} function might be in utils.py, or maybe that's just another instance of something similar and with the same name.
 
-\subsection*{config.py}
+\subsection*{smoldyn.py}
 
-This imports the logging standard library and tells it to run event logging using the debug level.
-
-\subsection*{geometry.py}
-
-This file defines the classes \ttt{Panel}, \ttt{Rectangle}, \ttt{Triangle}, \ttt{Sphere}, \ttt{Hemisphere}, \ttt{Cylinder}, \ttt{Disk}, \ttt{SurfaceFaceCollection}, \ttt{Surface}, \ttt{Port}, \ttt{Boundaries}, \ttt{Partition}, \ttt{MoleculePerBox}, and \ttt{Box}.
-
-\subsection*{kinetics.py}
-
-This file defines the classes \ttt{Species}, \ttt{HalfReaction}, and \ttt{Reaction}, including lots of functionality for them. This is part of the object-oriented API.
-
-\subsection*{simulation.py}
-
-A state monitor and top-level simulation object for the object-oriented interface.
+This file creates the ``user API'' for the Python bindings. In the process, it defines all of the user API classes, and the setting and getting functions.
 
 \subsection*{types.py}
 
-This declares a color type as a union of a string name, and a RGBA vector.
+This declares a color type as a union of a string name, and a RGBA vector. It also defines the class \ttt{Color}, which can convert name to RGBA.
 
 \subsection*{utils.py}
 
-This defines a \ttt{load\_model} function with a path and arguments, which then sends the information onto the compiled Smoldyn code.
+This defines a \ttt{load\_model} function with a path and arguments, which then sends the information onto the compiled Smoldyn code. It also converts colors from string to RGBA, using matplotlib if available or Smoldyn color conversion if not.
 
 
 % Chapter: Files, macros, variables, etc.
