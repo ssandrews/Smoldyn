@@ -33,7 +33,7 @@ for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
             -DPython3_EXECUTABLE=$PYTHON \
             -DPython3_LIBRARY=$PYLIB \
             -DSMOLDYN_VERSION=${SMOLDYN_VERSION}
-        make -j`nproc` VERBOSE=1
+        make -j`nproc` 
         make wheel 
         export PYTHONPATH=$(pwd)/py
         $PYTHON -m smoldyn $SCRIPT_DIR/../examples/S4_molecules/mollist.txt
