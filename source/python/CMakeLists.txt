@@ -24,16 +24,6 @@ set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
-# Usually run it on github actions and other CI. 
-# FIXME: If it comes your way, comment it out.
-if(WINDOWS_BUILD)
-    add_custom_command(TARGET _pysmoldyn PRE_BUILD
-        COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest wheel numpy setuptools --user
-        COMMENT "Installing build dependencies on Windows"
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        VERBATIM)
-endif()
-
 pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
 target_compile_options(_smoldyn PRIVATE 
     -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
@@ -97,14 +87,6 @@ add_custom_target(pydevel
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "RUNNING: python3 setup.py develop --user"
     VERBATIM)
-
-# add_custom_target(doc_api_html
-#     DEPENDS _smoldyn
-#     COMMAND sphinx-build ${CMAKE_CURRENT_SOURCE_DIR}/docs/source
-#         ${PY_SMOLDYN_OUTDIR}/html
-#     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-#     COMMENT "Generating Python's API doc (HTML)"
-#     VERBATIM)
 
 # Run static type checking using mypy (developer only). Works best with
 # python3.7+
