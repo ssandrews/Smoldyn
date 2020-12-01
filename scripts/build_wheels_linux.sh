@@ -11,12 +11,11 @@ rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
 SMOLDYN_VERSION=$(bash ${SCRIPT_DIR}/get_version.sh)
 
-PYDIR37=/opt/python/cp36-cp36m/
 PYDIR37=/opt/python/cp37-cp37m/
 PYDIR38=/opt/python/cp38-cp38/
 PYDIR39=/opt/python/cp39-cp39/
 
-for PYDIR in $PYDIR39 $PYDIR38 $PYDIR37 $PYDIR36; do
+for PYDIR in $PYDIR39 $PYDIR38 $PYDIR37; do
     PYTHON=$PYDIR/bin/python
 
     # dependencies
