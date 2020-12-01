@@ -1788,10 +1788,7 @@ class Simulation(object):
         if self.kwargs.get("accuracy", 0.0):
             self.accuracy: float = kwargs["accuracy"]
 
-        if self.kwargs.get("output_files", []):
-            if isinstance(self.kwargs["output_files"], str):
-                self.kwargs["output_files"] = [self.kwargs["output_files"]]
-            self.setOutputFiles(self.kwargs["output_files"])
+        self.setOutputFiles(self.kwargs.get("output_files", []))
 
         # TODO : Add to documentation.
         self.quitAtEnd = quit_at_end
@@ -1815,6 +1812,7 @@ class Simulation(object):
         --------
         setOutputFile
         """
+        assert isinstance(outfiles, (list, tuple)), "Expecting a list of files"
         for outfile in outfiles:
             self.setOutputFile(outfile, append)
 

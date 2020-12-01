@@ -10,6 +10,6 @@ med = s.addReaction("med", [], [green], rate=0.01)
 fast = s.addReaction("fast", [], [blue], rate=0.1)
 
 s.setGraphics("opengl")
-s.setOutputFiles("zeroreactout.txt")
+s.setOutputFile("zeroreactout.txt")
 s.addCommand("molcount zeroreactout.txt", cmd_type="e")
 s = s.run(stop=10, dt=0.01, output_files=["zeroreactout.txt"])
