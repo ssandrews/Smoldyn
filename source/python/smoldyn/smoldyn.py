@@ -360,7 +360,7 @@ class Panel(object):
         >>> r1.front.jumpTo(r2.front, True)
         """
         jfrom = getattr(self, face1)
-        assert jfrom, f"Could not locate {face1} on {panel1}."
+        assert jfrom, f"Could not locate {face1} on {self}."
         assert isinstance(jfrom, _PanelFace)
         jto = getattr(panel2, face2)
         assert jto, f"Could not locate {face2} on {panel2}."
@@ -1788,10 +1788,7 @@ class Simulation(object):
         if self.kwargs.get("accuracy", 0.0):
             self.accuracy: float = kwargs["accuracy"]
 
-        if self.kwargs.get("output_files", []):
-            if isinstance(self.kwargs["output_files"], str):
-                self.kwargs["output_files"] = [self.kwargs["output_files"]]
-            self.setOutputFiles(self.kwargs["output_files"])
+        self.setOutputFiles(self.kwargs.get("output_files", []))
 
         # TODO : Add to documentation.
         self.quitAtEnd = quit_at_end
@@ -1815,6 +1812,7 @@ class Simulation(object):
         --------
         setOutputFile
         """
+        assert isinstance(outfiles, (list, tuple)), "Expecting a list of files"
         for outfile in outfiles:
             self.setOutputFile(outfile, append)
 
@@ -1930,7 +1928,7 @@ class Simulation(object):
 
     def setTiff(
         self,
-        tiffname: Path = Path("OpenGL"),
+        tiffname: str = "OpenGL",
         minsuffix: int = 1,
         maxsuffix: int = 999,
         every: int = 5,
@@ -1939,10 +1937,9 @@ class Simulation(object):
 
         Parameters
         ----------
-        tiffname : str, Path
+        tiffname : str
             Root filename for TIFF files, which may include path information if
-            desired.  If the parent directory does not exists, it will be created.
-            Default is “OpenGL”, which leads to the first TIFF being saved as
+            desired. Default is “OpenGL”, which leads to the first TIFF being saved as
             “OpenGL001.tif”.
         minsuffix : int
             Initial suffix number of TIFF files that are saved.  Default value
@@ -1955,10 +1952,6 @@ class Simulation(object):
             ``every`` is the number of simulation timesteps that should elapse
             between subsequent snapshots.
         """
-        try:
-            Path(tiffname).parent.mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            __logger__.warning(e)
         k = _smoldyn.setTiffParams(every, str(tiffname), minsuffix, maxsuffix)
         assert k == _smoldyn.ErrorCode.ok
 
