@@ -42,4 +42,4 @@ jobs:
         run: |
             cd build
             ls 
-            python -m twine upload -u __token__ -p "$env:SMOLDYN_PYPI_TOKEN" *.whl
+            python -m twine upload -u __token__ -p "$env:SMOLDYN_PYPI_TOKEN" *.whl --skip-existing

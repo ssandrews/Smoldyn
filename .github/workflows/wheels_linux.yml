@@ -10,15 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo This job does not specify a container.
-          echo It runs directly on the virtual machine.
-        name: Run on VM
+          echo "Do nothing here"
+        name: Dummy job
   container:
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2010_x86_64
+    env:
+        SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
     steps:
       - run: |
-          echo This job does specify a container.
-          echo It runs in the container instead of the VM.
+          yum -y update
+          yum -y install freeglut-devel libtiff-devel libXmu-devel libXi-devel && yum clean all
+          cd ~
+          /opt/python/cp38-cp38/bin/python -m pip install cmake 
+          ln -s /opt/python/cp38-cp38/bin/cmake /usr/local/bin/cmake
+          ls -ltrh
+          git clone https://github.com/ssandrews/Smoldyn -b master --depth 10
+          cd Smoldyn/scripts && PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN ./build_wheels_linux.sh 
         name: Building wheel in ManuLinux container
 
