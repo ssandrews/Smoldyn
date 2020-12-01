@@ -16,22 +16,25 @@ PYDIR37=/opt/python/cp37-cp37m/
 PYDIR38=/opt/python/cp38-cp38/
 PYDIR39=/opt/python/cp39-cp39/
 
-for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
+for PYDIR in $PYDIR39 $PYDIR38 $PYDIR37 $PYDIR36; do
     PYTHON=$PYDIR/bin/python
 
     # dependencies
-    $PYTHON -m pip install twine auditwheel pytest
-    mkdir -p _build_wheel_linux
+    $PYTHON -m pip install auditwheel pytest
+    rm -rf _build_wheel_linux
+    mkdir _build_wheel_linux
     (
         cd _build_wheel_linux
-	# cmake version must be higher than 3.12
-	PYLIB=$(ls -d $PYDIR/lib/python3.*)
+	    # cmake version must be higher than 3.12
+	    PYLIB=$(ls -d $PYDIR/lib/python3.*)
+	    PYINDIR=$(ls -d $PYDIR/include/python3.*)
         cmake ../../ \
             -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \
             -DCMAKE_INSTALL_PREFIX=/usr \
-            -DPython3_EXECUTABLE=$PYTHON \
-            -DPython3_LIBRARY=$PYLIB \
+	        -DPython3_EXECUTABLE=$PYTHON \
+	        -DPython3_INCLUDE_DIR=$PYINDIR \
+	        -DPython3_LIBRARY=$PYLIB \
             -DSMOLDYN_VERSION=${SMOLDYN_VERSION}
         make -j`nproc` 
         make wheel 
@@ -48,6 +51,9 @@ for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
         rm -rf *.whl
     )
 done
+
+PYTHON=$PYDIR38/bin/python
+$PYTHON -m pip install twine
 
 ls -lh $WHEELHOUSE/*.whl
 
