@@ -40,5 +40,5 @@ jobs:
 
       - name: Upload to PyPI
         run: |
-            cd $GITHUB_WORKSPACE/build 
-            python -m pip twine upload -u __token__ -p $SMOLDYN_PYPI_TOKEN
+            cd build
+            python -m twine upload -u __token__ -p $SMOLDYN_PYPI_TOKEN *.whl
