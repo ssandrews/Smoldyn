@@ -4,15 +4,21 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 infile = Path(sys.argv[1])
 
 assert infile.exists(), f"{infile} does not exists"
 
+r = None
 try:
     r = subprocess.run([sys.executable, str(infile)], timeout=10)
-    print(r)
 except subprocess.TimeoutExpired:
     print("Timeout reached. It is OK")
+    quit(0)
 except Exception as e:
     raise e
+
+if r is None:
+    raise RuntimeError("Unsuccessful run")
+
+# Return the code of subprocess.
+quit(r.returncode)
