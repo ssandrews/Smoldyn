@@ -8,7 +8,7 @@ wheels : ./Dockerfile ./build_wheels_linux.sh
 	(cd .. && docker build \
 	    --rm \
 	    -t $(LABEL) \
-	    -f devel/Dockerfile \
+	    -f scripts/Dockerfile \
 	    --build-arg PYPI_PASSWORD=$(PYPI_PASSWORD) . | tee log ) 
 
 test : wheels

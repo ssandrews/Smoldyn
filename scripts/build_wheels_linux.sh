@@ -27,6 +27,8 @@ for PYDIR in $PYDIR36 $PYDIR37 $PYDIR38; do
 	# cmake version must be higher than 3.12
 	PYLIB=$(ls -d $PYDIR/lib/python3.*)
         cmake ../../ \
+            -DOPTION_PYTHON=ON \
+            -DOPTION_EXAMPLES=ON \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DPython3_EXECUTABLE=$PYTHON \
             -DPython3_LIBRARY=$PYLIB \
