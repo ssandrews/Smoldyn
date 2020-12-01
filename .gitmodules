@@ -1,3 +1,0 @@
-[submodule "windows/FreeGLUT"]
-	path = windows/FreeGLUT
-	url = https://github.com/dcnieho/FreeGLUT.git
