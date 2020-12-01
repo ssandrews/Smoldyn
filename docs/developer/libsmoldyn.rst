@@ -1,89 +1,75 @@
-******************
-Library libsmodyn
-******************
-
-About libsmoldyn
+About Libsmoldyn
 ================
 
-``libsmoldyn`` is a C and C++ interface to the Smoldyn simulator.
-``libsmoldyn`` is complementary to the stand-alone Smoldyn program in
-that it is a little more difficult to use, but it provides much more
-flexibility. In addition, ``libsmoldyn`` provides:
+Libsmoldyn is a C, C++, and Python interface to the Smoldyn simulator.
+Libsmoldyn is complementary to the stand-alone Smoldyn program in that
+it is a little more difficult to use, but it provides much more
+flexibility. In addition, Libsmoldyn provides: (*i*) an application
+programming interface (API) that will be relatively stable, even as
+Smoldyn is updated and improved, (*ii*) function names that are
+relatively sensible and that shouldn’t collide with other function names
+in other software, and (*iii*) reasonably thorough error checking in
+every function which helps ensure that the user is using the function in
+a sensible way and in a way that won’t crash Smoldyn.
 
-1. an application programming interface that will be relatively stable,
-   even as Smoldyn is updated and improved,
-2. function names that are relatively sensible and that shouldn’t
-   collide with other function names in other software, and
-3. reasonably thorough error checking in every function which helps
-   ensure that the user is using the function in a sensible way and in a
-   way that won’t crash Smoldyn.
+Libsmoldyn was originally written as a C API, but one that should work
+with C++ as well. Then, in 2019 and 2020, Dilawar Singh added Python
+bindings to it, which are still quite new but generally work well.
 
-I initially planned to use SWIG to provide ``libsmoldyn`` access from
-several languages but have not pursued this recently. Carlos Lopez’s
-group was adding ``libsmoldyn`` to PySB for a while, to give it Python
-accessibility, although that project is not ongoing currently.
+Libsmoldyn only barely supports graphics at present due to constraints
+imposed by the glut code library. This will be improved in a future
+version (by changing to the freeglut library, which doesn’t insist on
+controlling the main event loop, as the glut library does).
 
-``libsmoldyn`` only barely supports graphics at present due to
-constraints imposed by the glut code library. This will be improved in a
-future version (by changing to the freeglut library, which doesn’t
-insist on controlling the main event loop, as the glut library does).
-
-Compiling and linking
-=====================
+Linking with C/C++
+==================
 
 Compiling
 ---------
 
-**Header files**
+Header files
+~~~~~~~~~~~~
 
-To enable a C or C++ program to call ``libsmoldyn``, it has to include the
-``libsmoldyn`` header file. ``libsmoldyn`` comes with one header file,
-``libsmoldyn.h``, which has function declarations for all of the ``libsmoldyn``
-functions. For most ``libsmoldyn`` applications, this is the only header file
-that you will need to include. For Mac and Linux, it is typically installed to
-/usr/local/include. This is one of the standard system paths, so include it
-with
+To enable a C or C++ program to call Libsmoldyn, it has to include the
+Libsmoldyn header file. Libsmoldyn comes with one header file,
+libsmoldyn.h, which has function declarations for all of the Libsmoldyn
+functions. For most Libsmoldyn applications, this is the only header
+file that you will need to include. For Mac and Linux, it is typically
+installed to /usr/local/include. This is one of the standard system
+paths, so include it with
 
-.. code:: c
+   ``#include <libsmoldyn.h>``
 
-   #include "libsmoldyn.h"
-
-If the ``libsmoldyn.h`` header file is in some other directory or if
-your system isn’t seeing its path as a system path, then include the
-file using double quotes rather than angle brackets and/or include more
+If the libsmoldyn.h header file is in some other directory or if your
+system isn’t seeing its path as a system path, then include the file
+using double quotes rather than angle brackets and/or include more
 information about the path. For example,
+``#include "/user/local/include/libsmoldyn.h"``.
 
-.. code:: c
+Libsmoldyn.h calls a second header file, smoldyn.h, which is also
+typically installed to /usr/local/include/. If you plan to access the
+Smoldyn data structure directly, then you will also need to include it
+with ``#include <smoldyn.h>``. In general, it is safe to read from this
+data structure but it can be dangerous to write to it unless you really
+know what you are doing. Also, working with this data structure directly
+bypasses one of the benefits of using Libsmoldyn, which is that the
+interface should be relatively immune to future Smoldyn developments,
+because different aspects of the internal data structure get changed
+once in a while.
 
-   #include "libsmoldyn.h"
-
-``libsmoldyn.h`` calls a second header file, ``smoldyn.h``, which is
-also typically installed to ``/usr/local/include/``. If you plan to
-access the Smoldyn data structure directly, then you will also need to
-include it with ``#include <smoldyn.h>``. In general, it is safe to read
-from this data structure but it can be dangerous to write to it unless
-you really know what you are doing. Also, working with this data
-structure directly bypasses one of the benefits of using ``libsmoldyn``,
-which is that the interface should be relatively immune to future
-Smoldyn developments, because different aspects of the internal data
-structure get changed once in a while.
-
-The ``smoldyn.h`` header calls yet another header file,
-``smoldynconfigure.h``, which is also installed by default in
-``/usr/local/include/``. That file is automatically generated by the
-build system. It describes what Smoldyn components are included in the
-build, what system the build was compiled for, etc. This might be
-helpful to include for some applications.
+The smoldyn.h header calls yet another header file, smoldynconfigure.h,
+which is also installed by default in /usr/local/include/. That file is
+automatically generated by the build system. It describes what Smoldyn
+components are included in the build, what system the build was compiled
+for, etc. This might be helpful to include for some applications.
 
 Compiling example
------------------
+~~~~~~~~~~~~~~~~~
 
 In the ``examples/S97_libsmoldyn/testcode/`` directory, you’ll find the
 testcode.c program. To compile this source code to object code, enter:
 
-.. code:: bash
-
-   $ gcc -Wall -O0 -g -c testcode.c
+   ``gcc -Wall -O0 -g -c testcode.c``
 
 The compile flags ``-O0 -g`` aren’t necessary but can be useful for
 debugging purposes. If compiling doesn’t work at this stage, it’s
@@ -98,28 +84,28 @@ Linking the different object files together to create an executable that
 actually runs is often one of the greatest frustrations of using
 software libraries. It should be easy but usually isn’t.
 
-The ``libsmoldyn`` library can be linked statically, meaning that the
-``libsmoldyn`` code will be copied into the final result, or it can be
+The Libsmoldyn library can be linked statically, meaning that the
+Libsmoldyn code will be copied into the final result, or it can be
 linked dynamically, so that the final result will simply reference the
-``libsmoldyn`` code that is stored separately. Dynamic linking is
-somewhat more elegant in that it doesn’t create unnecessary copies of
-the compiled code. It can also be easier. On the other hand, it’s less
+Libsmoldyn code that is stored separately. Dynamic linking is somewhat
+more elegant in that it doesn’t create unnecessary copies of the
+compiled code. It can also be easier. On the other hand, it’s less
 convenient if you plan to distribute your software, because then you
-need to make sure that you distribute the ``libsmoldyn`` header file and
+need to make sure that you distribute the Libsmoldyn header file and
 library code along with your own software. Also, I can only get the gdb
-debugger to help find errors within ``libsmoldyn`` if the library is
+debugger to help find errors within Libsmoldyn if the library is
 statically linked.
 
-The ``libsmoldyn`` static library is called libsmoldyn_static.a and the
-``libsmoldyn`` dynamic library is called libsmoldyn_shared.so (on Linux;
-the .so suffix is replaced by .dylib on a Mac and by .dll on Windows).
-By default, these libraries are installed to /usr/local/lib/.
+The Libsmoldyn static library is called libsmoldyn_static.a and the
+Libsmoldyn dynamic library is called libsmoldyn_shared.so (on Linux; the
+.so suffix is replaced by .dylib on a Mac and by .dll on Windows). By
+default, these libraries are installed to /usr/local/lib/.
 
 Linking examples
-^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~
 
 Following are several example for static and dynamic linking. They are
-shown for C; if you used C++, then link with g++ instead of gcc. The
+shown for C; if you use C++, then link with g++ instead of gcc. The
 linking options for Smoldyn compiled with OpenGL are shown for
 Macintosh; these lines are simpler for other systems.
 
@@ -127,152 +113,191 @@ I have had a hard time getting static linking working on a Mac, although
 apparently it works fine on Ubuntu. The problem is that it doesn’t find
 the standard C++ library. The solution is to build the Smoldyn library
 without NSV, so that the standard C++ library isn’t needed. I also
-commented out a few ``throw`` statements from smolsim.c and libsmoldyn.c
+commented out a few “throw” statements from smolsim.c and libsmoldyn.c
 for this purpose.
 
 Static link, no OpenGL:
 
-.. code:: bash
-
-   $ gcc testcode.o /usr/local/lib/libsmoldyn_static.a -o testcode
+   ``gcc testcode.o /usr/local/lib/libsmoldyn_static.a -o testcode``
 
 Static link, with OpenGL:
 
-.. code:: bash
-
-   $ gcc testcode.o /usr/local/lib/libsmoldyn_static.a  \
-       -I/System/Library/Frameworks/OpenGL.framework/Headers \
-       -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT \
-       -framework OpenGL -framework Cocoa \
-        -L/System/Library/Frameworks/OpenGL.framework/Libraries -o testcode \
-       -ltiff
+   ``gcc testcode.o /usr/local/lib/libsmoldyn_static.a -I/System/Library/Frameworks/OpenGL.framework/Headers -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT -framework OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries -o testcode -ltiff``
 
 Dynamic link, no OpenGL:
 
-.. code:: bash
-
-   $ gcc testcode.o -o testcode -lsmoldyn_shared`
+   ``gcc testcode.o -o testcode -lsmoldyn_shared``
 
 Dynamic link, with OpenGL:
 
-.. code:: bash
+   ``gcc test1.o -L/usr/local/lib -I/System/Library/Frameworks/OpenGL.framework/Headers -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT -framework OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 -lsmoldyn_shared -ltiff``
 
-   $ gcc test1.o -L/usr/local/lib \
-        -I/System/Library/Frameworks/OpenGL.framework/Headers \
-        -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT \
-        -framework OpenGL -framework Cocoa \
-        -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 \
-        -lsmoldyn_shared -ltiff
+Use with Python
+===============
 
-Using smaller versions of ``libsmoldyn``
-----------------------------------------
+Installing
+----------
 
-As a default, Smoldyn and ``libsmoldyn`` are compiled with all of their
-components. However, they can also be compiled without OpenGL, without
-hybrid simulation (NSV) support, without LibTiff support, etc. Removing
-these components removes some aspects of the functionality, obviously,
-but can also simplify linking.
+Hopefully, you should be able to install using
 
-Following is a simple diagram for Smoldyn’s code dependencies. Each file
-depends on the files that are indented below it.
+::
 
--  Smoldyn
--  OpenGL
--  libTiff
--  zlib
--  libiconv
--  NSV
--  boost
--  VTK
+   python3 -m pip install smoldyn --user --pre
 
-To build with fewer components, you will need to run CMake to compile
-Smoldyn. This is described in more detail in the Smoldyn Code
-Documentation, but summarized here for convenience.
+This should install the smoldyn nightly package, from:
+https://pypi.org/project/smoldyn/
 
-I prefer to run CMake from a command line interface. At a command line
-interface, change directories to cmake. Every time you change CMake
-settings, you’ll probably want to do a clean build. To do so, enter
-``rm -r *``, while in the cmake directory (verify that you’re in this
-directory!), to remove any prior build results. If you’re asked about
-whether m\ ``anifest.txt`` should be removed, say yes; this file shows
-the directories where Smoldyn was installed previously, thus providing
-information for you to remove it. For a default build, enter
-``cmake ..`` A few test results will be printed out, and then
-configuring will be complete. When CMake is done, it will have written a
-lot of stuff to the cmake directory. Important files are ``Makefile``,
-which is the standard Makefile for the code and also
-``smoldynconfigure.h``, which is a C header file that the Smoldyn code
-uses for knowing what some important build parameters are.
+Alternatively, the Mac distribution comes with a Python wheel, called
+something like smoldyn-2.62-py3-none-any.whl. You should be able to
+write “pip install smoldyn...whl” and that will install it for you as
+well.
 
-Once configuring is complete, enter ``make``. Hopefully, Smoldyn will
-build, again with build files being put into the cmake directory.
-Finally, enter ``sudo make install`` and enter your password, to install
-Smoldyn to the usual place (``/usr/local/bin`` on Linux and Mac
-systems).
+For Windows, “pip install smoldyn” seems to work initially, but it
+doesn’t install the necessary compiled code, so it doesn’t actually run,
+yet.
 
-For custom builds, you need to set various options to non-default
-settings. With a command line interface, list each non-default option on
-the command line after the ``cmake ..`` start. Following are some
-helpful build options:
+Command line flags
+------------------
 
-+----------------------------+---------+----------------------------+
-| Smoldyn option             | default | effect when ON             |
-+============================+=========+============================+
-| ``-DOPTION_VCELL``         | ``OFF`` | Build for inclusion within |
-|                            |         | VCell                      |
-+----------------------------+---------+----------------------------+
-| ``-DOPTION_NSV``           | ``ON``  | Build with Next Subvolume  |
-|                            |         | support                    |
-+----------------------------+---------+----------------------------+
-| ``-DOPTION_PDE``           | ``OFF`` | Build with support for PDE |
-|                            |         | simulation                 |
-+----------------------------+---------+----------------------------+
-| ``-DOPTION_VTK``           | ``OFF`` | Build sith support for VTK |
-|                            |         | visualization              |
-+----------------------------+---------+----------------------------+
-| ``-DOPTION_STATIC``        | ``OFF`` | Build using static         |
-|                            |         | libraries                  |
-+----------------------------+---------+----------------------------+
-| ``-DOPTION_USE_OPENGL``    | ``ON``  | Build with graphics        |
-|                            |         | support                    |
-+----------------------------+---------+----------------------------+
-| ``-DOPTION_USE_LIBTIFF``   | ``ON``  | Build with LibTiff support |
-+----------------------------+---------+----------------------------+
-| `                          | ``ON``  | Build stand-alone Smoldyn  |
-| `-DOPTION_TARGET_SMOLDYN`` |         | program                    |
-+----------------------------+---------+----------------------------+
-| ``-D                       | ``OFF`` | Build ``libsmoldyn``       |
-| OPTION_TARGET_LIBSMOLDYN`` |         | library                    |
-+----------------------------+---------+----------------------------+
+The Python interface offers the following command line flags:
 
-+--------------------------+-------------+--------------------------+
-| CMake option             | default     | function                 |
-+==========================+=============+==========================+
-| ``-DCMAKE_BUILD_TYPE``   | ``Release`` | Choose CMake build type  |
-+--------------------------+-------------+--------------------------+
-| ``-DCMAKE                | clang       | Compile with specific    |
-| _CXX_COMPILER:FILEPATH`` |             | compiler                 |
-+--------------------------+-------------+--------------------------+
+======================== ====================================
+Flags                    Function
+======================== ====================================
+``input``                Load input file
+``–overwrite``, ``-w``   Overwrite any existing data file
+``–quit-at-end``, ``-q`` Quit when the simulation is complete
+``–args``, ``-A``        Smoldyn command line arguments
+======================== ====================================
 
-For example, the following line builds Smoldyn and ``libsmoldyn`` for
-debugging and without the hybrid simulation support:
+Files
+-----
 
-.. code:: bash
+After building Smoldyn (assuming you were in
+``/path/to/Smoldyn-official/build`` directory when you ran ``make``
+command), the python module ends up in the
+``/path/to/Smoldyn-official/build/py`` directory. The module can be
+imported into Python from this directory. Add this directory to your
+``PYTHONPATH`` temporarily with
+``export PTYHONPATH=/path/to/Smoldyn-official/build/py:$PYTHONPATH``.
+With this, the module can be accessed from any directory.
 
-   $ cmake .. -DCMAKE_BUILD_TYPE=Debug -DOPTION_TARGET_LIBSMOLDYN=ON -DOPTION_NSV=OFF
+Note that it’s possible to see where the library is imported from by
+checking ``smoldyn.__file__`` while in Python. For example,
+
+::
+
+   >>> import smoldyn
+   >>> print(smoldyn.__file__)
+   /home/dilawars/Work/FORKES/Smoldyn-official/build/py/smoldyn/__init__.py
+
+Python-specific functionality
+-----------------------------
+
+Python offers a callback function that enables Smoldyn setup functions
+to be called repeatedly and automatically. Following is the text from
+Dilawar’s description.
+
+Suppose I have the following function which generates a noisy value
+using the current time ``t`` and a list of arguments ``args``.
+
+::
+
+   def computeVm(t, args):
+       x, y = args 
+       return math.sin(t) + x * y + random.random()
+
+And I have a molecular species ``ca``.
+
+::
+
+   import smoldyn
+   ca = smoldyn.Species('ca', difc=1, color='blue', display_size=1)
+
+Then the following connect the output of function computeVm to ca.difc
+parameter. This is called every 10th step.
+
+::
+
+   smoldyn.connect(computeVm, "ca.difc", step=10, args=[1,2.1])
+
+In smoldyn.connect function, both source and target must be global
+variables. In the example below, I made a a global variable before I
+used it in connect. Else there will be a runtime error.
+
+::
+
+   import smoldyn as S
+   import random
+
+   a = None
+
+   def new_dif(t, args):
+       global a
+       x, y = args
+       print(a.difc)
+       return t + random.random()
+
+   def test_connect():
+       global a
+       S.setBounds(low=(0, 0), high=(10, 10))
+       a = S.Species("a", color="red", difc=1)
+       S.connect(new_dif, "a.difc", step=10, args=[0, 1])
+       s = S.Simulation(100, 1)
+       s.run()
+       print("All done")
+
+   test_connect()
+
+Also accepts a function.
+
+::
+
+   def new_dif(t, args):
+       global a, avals
+       x, y = args
+       # note that b.difc is not still updated.
+       avals.append((t, a.difc["soln"]))
+       return x * math.sin(t) + y
+
+   def update_difc(val):
+       global a
+       a.difc = val
+
+   def test_connect():
+       global a, avals
+       S.setBounds(low=(0, 0), high=(10, 10))
+       a = S.Species("a", color="black", difc=0.1)
+       S.connect(new_dif, update_difc, step=10, args=[1, 1])
+       s = S.Simulation(100, 1)
+       s.run()
+       for a, b in zip(avals[1:], expected_a[1:]):
+           print(a, b)
+           assert math.isclose(a[1], b[1], rel_tol=1e-6, abs_tol=1e-6), (a[1], b[1])
+
+   test_connect()
+
+Dilawar created some nice examples of this in use with a pre-synaptic
+bouton with N synaptic vesicles. These vesicles fuse with the bottom of
+the bouton (red surface). Upon fusion, one vesicle releases 1000
+neurotransmitters which decay with time-constant :math:`\tau`.
+
+The rate of release is controlled by a function. This is set by
+smoldyn.connect. The function generates s spike 0 or 1, if the value is
+1 the rate is set to 1000 else it is 0.
 
 Error trapping
----------------
+==============
 
-Every function in ``libsmoldyn`` checks that its input values are
-acceptable and also that no errors arise in the function execution.
-These errors are returned to the host library in a number of ways. Most
-``libsmoldyn`` functions (e.g. ``smolRunSim``) return any error codes
-directly, which makes it easy to see if an error arose. However, a few
-functions (e.g. ``smolNewSim``) return other types of values and so
-return some other indication of success or failure (e.g. ``NULL``). In
-addition, some functions can raise warnings, which indicate that
-behavior is unusual but not incorrect.
+Every function in Libsmoldyn checks that its input values are acceptable
+and also that no errors arise in the function execution. These errors
+are returned to the host library in a number of ways. Most Libsmoldyn
+functions (e.g. ``smolRunSim``) return any error codes directly, which
+makes it easy to see if an error arose. However, a few functions (e.g.
+``smolNewSim``) return other types of values and so return some other
+indication of success or failure (e.g. ``NULL``). In addition, some
+functions can raise warnings, which indicate that behavior is unusual
+but not incorrect.
 
 For all of these errors and warnings, get the details of the problem
 using the function ``smolGetError``, which will return the error code,
@@ -281,15 +306,15 @@ string. This will also clear the error, if desired. If errors are not
 cleared, they are left until they are overwritten by subsequent errors.
 Warnings are also left until they are cleared or overwritten.
 
-When writing code, it can be helpful to put ``libsmoldyn`` into its
+When writing code, it can be helpful to put Libsmoldyn into its
 debugging mode using the ``smolSetDebugMode`` function. Doing this
 causes any errors that arise to be displayed to stderr.
 
 The possible error codes are declared in libsmoldyn.h with:
 
-.. code:: c
+::
 
-   enum ErrorCode {ECok=0,ECnotify=-1,ECwarning=-2,ECnonexist=-3,ECall=-4,ECmissing=-5,ECbounds=-6,ECsyntax=-7,ECerror=-8,ECmemory=-9,ECbug=-10,ECsame=-11};
+   enum ErrorCode {ECok=0, ECnotify=-1, ECwarning=-2, ECnonexist=-3, ECall=-4, ECmissing=-5, ECbounds=-6, ECsyntax=-7, ECerror=-8, ECmemory=-9, ECbug=-10, ECsame=-11}
 
 Their interpretations are:
 
@@ -308,7 +333,7 @@ Their interpretations are:
 | -4    | ``ECsame``     | error code should be unchanged from a     |
 |       |                | prior code                                |
 +-------+----------------+-------------------------------------------+
-| -5    | ``ECall``      | an argument of ``all`` was found and may  |
+| -5    | ``ECall``      | an argument of “all" was found and may    |
 |       |                | not be permitted                          |
 +-------+----------------+-------------------------------------------+
 | -6    | ``ECmissing``  | a necessary function input parameter is   |
@@ -332,396 +357,565 @@ Their interpretations are:
 Error checking system internal to libsmoldyn.c
 ----------------------------------------------
 
-This section describes how to write ``libsmoldyn`` functions using error
-checking. While it is an essential part of all ``libsmoldyn`` functions,
-these details are not important for most ``libsmoldyn`` users.
+This section describes how to write Libsmoldyn functions using error
+checking. While it is an essential part of all Libsmoldyn functions,
+these details are not important for most Libsmoldyn users.
 
-1. The first line of every ``libsmoldyn`` function should be
-   ``const char     *funcname="``\ *function_name*\ \`\ ``;``. This name
-   will be returned with any error message to tell the user where the
-   error arose.
+#. The first line of every Libsmoldyn function should be
+   ``const char *funcname="``\ *function_name*\ ``";``. This name will
+   be returned with any error message to tell the user where the error
+   arose.
 
-2. Within the function, check for warnings or errors with the ``LCHECK``
-   macro. The macro format is
-   ``LCHECK(``\ *condition*\ ``,funcname,``\ *error_code*\ ``,"``\ *message*\ \`\ ``);``.
-   This checks that the test *condition* is true, and issues a
-   notification, warning, or error when this is not the case. The
+#. Within the function, check for warnings or errors with either the
+   ``LCHECK`` or ``LCHECKNT`` macros. In both cases, the macro format is
+   ``LCHECK(``\ *condition*\ ``, funcname,``\ *error_code*\ ``, "``\ *message*\ ``");``.
+   The macros check that the test *condition* is true, and calls either
+   ``smolSetError`` or ``smolSetErrorNT`` to deal with it if not. The
    *message* should be a descriptive message that is under 256
-   characters in length.
+   characters in length. Use the regular version (not the “no throw” or
+   “NT”) version for errors that arise within the function, and the “NT”
+   version for errors that arise is subroutines of the function, so that
+   only a single error message is displayed to the output.
 
-3. Most functions return an ``enum ErrorCode``. If this is the case for
-   your function, and your function might return a notification and/or a
-   warning, then end the main body of the function with
-   ``return     libwarncode;``. If it cannot return a notification or a
+#. Most functions return an “\ ``enum ErrorCode``". If this is the case
+   for your function, and your function might return a notification
+   and/or a warning, then end the main body of the function with
+   ``return libwarncode;``. If it cannot return a notification or a
    warning, then end it with ``return ECok;``. Finally, if it does not
-   return an \`\ ``enum     ErrorCode``, then it needs to return some
-   other error condition that will tell the user to check for errors
-   using ``smolGetError``.
+   return an “\ ``enum ErrorCode``", then it needs to return some other
+   error condition that will tell the user to check for errors using
+   ``smolGetError``.
 
-4. After the main body of the function, add a goto target called
+#. After the main body of the function, add a goto target called
    ``failure:``.
 
-5. Assuming the function returns an \`\ ``enum ErrorCode``", end the
+#. Assuming the function returns an “\ ``enum ErrorCode``", end the
    function with ``return liberrorcode;``.
 
 The ``smolSetTimeStep`` function provides an excellent and simple
-example of how ``libsmoldyn`` functions typically address errors. It is:
+example of how Libsmoldyn functions typically address errors. It is:
 
-.. code:: c
+   ::
 
-   enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
-       const char *funcname="smolSetTimeStep";
+      enum ErrorCode smolSetTimeStep(simptr sim, double timestep) {
+          const char *funcname="smolSetTimeStep";
 
-       LCHECK(sim,funcname,ECmissing,"missing sim");
-       LCHECK(timestep>0,funcname,ECbounds,"timestep is not > 0");
-       simsettime(sim,timestep,3);
-       return ECok;
-    failure:
-       return liberrorcode; }
+          LCHECK(sim, funcname, ECmissing, "missing sim");
+          LCHECK(timestep>0, funcname, ECbounds, "timestep is not > 0");
+          simsettime(sim, timestep, 3);
+          return ECok;
+       failure:
+          return liberrorcode; }
 
 The ``smolGet...Index`` functions are worth a comment. Each of these
 functions returns the index of an item, such as a species or a surface,
 based on the name of the item. If the name is not found or other errors
 arise, then these functions return the error code, cast as an integer.
-Also, if the name is ``all``, then these functions return the error code
-``ECall`` and set the error string
-``species cannot be ‘all’", or equivalent. A typical use of these functions is seen in``\ smolSetSpeciesMobility`,
-which includes the following code:
+Also, if the name is “all", then these functions return the error code
+``ECall`` and set the error string “species cannot be ‘all’", or
+equivalent. A typical use of these functions is seen in
+``smolSetSpeciesMobility``, which includes the following code:
 
-.. code:: c
+   ::
 
-   i=smolGetSpeciesIndex(sim,species);
-   if(i==(int)ECall) smolClearError();
-   else LCHECK(i>0,funcname,ECsame,NULL);
+      i=smolGetSpeciesIndex(sim, species);
+      if(i==(int)ECall) smolClearError();
+      else LCHECK(i>0, funcname, ECsame, NULL);
 
-In this particular case, this function permits an input of ``all``, so
-it clears errors that arise from this return value, and leaves ``i`` as
-a negative value for later use.
+In this particular case, this function permits an input of “all", so it
+clears errors that arise from this return value, and leaves ``i`` as a
+negative value for later use.
 
-``libsmoldyn`` quick function guide
-====================================
+Libsmoldyn quick function guide
+===============================
 
-The ``libsmoldyn`` functions correspond relatively closely to the
-Smoldyn language statements, although not perfectly. However, all
-functionality should be available using either method. The following
-table lists the correspondences. Statements preceded by asterisks need
-to be either entered in statement blocks or preceded by the statement’s
-context (e.g. with ``surface`` *name*). Where correspondence does not
-apply, the table lists ``N/A``.
+The Libsmoldyn functions correspond relatively closely to the Smoldyn
+language statements, although not perfectly. However, all functionality
+should be available using either method. The following table lists the
+correspondences. Statements preceded by asterisks need to be either
+entered in statement blocks or preceded by the statement’s context (e.g.
+with ``surface`` *name*). Where correspondence does not apply, the table
+lists “N/A". The Libsmoldyn functions are available either through the
+C/C++ API or through the Python API, with essentially identical input
+styles. The Python functions listed here use a more object-oriented
+approach. Here, “S” is short for smoldyn, arising for example as
+``import smoldyn as S``.
 
-+----------------------+----------------------------------------------+
-| Statement            | ``libsmoldyn`` function                      |
-+======================+==============================================+
-| ``#``                | N/A                                          |
-+----------------------+----------------------------------------------+
-| ``/* ... */``        | N/A                                          |
-+----------------------+----------------------------------------------+
-| read_file            | ``smolLoadSimFromFile``,                     |
-|                      | ``smolReadConfigString``                     |
-+----------------------+----------------------------------------------+
-| end_file             | N/A                                          |
-+----------------------+----------------------------------------------+
-| define               | N/A                                          |
-+----------------------+----------------------------------------------+
-| define_global        | N/A                                          |
-+----------------------+----------------------------------------------+
-| undefine             | N/A                                          |
-+----------------------+----------------------------------------------+
-| ifdefine             | N/A                                          |
-+----------------------+----------------------------------------------+
-| ifundefine           | N/A                                          |
-+----------------------+----------------------------------------------+
-| else                 | N/A                                          |
-+----------------------+----------------------------------------------+
-| endif                | N/A                                          |
-+----------------------+----------------------------------------------+
-| display_define       | N/A                                          |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolSetError``                             |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetError``                             |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolClearError``                           |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolSetDebugMode``                         |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolErrorCodeToString``                    |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| dim                  | ``smolNewSim``                               |
-+----------------------+----------------------------------------------+
-| boundaries           | ``smolNewSim``, ``smolSetBoundaryType``      |
-+----------------------+----------------------------------------------+
-| low_wall             | ``smolNewSim``, ``smolSetBoundaryType``      |
-+----------------------+----------------------------------------------+
-| high_wall            | ``smolNewSim``, ``smolSetBoundaryType``      |
-+----------------------+----------------------------------------------+
-| time_start           | ``smolSetSimTimes``, ``smolSetTimeStart``    |
-+----------------------+----------------------------------------------+
-| time_stop            | ``smolSetSimTimes``, ``smolSetTimeStop``     |
-+----------------------+----------------------------------------------+
-| time_step            | ``smolSetSimTimes``, ``smolSetTimeStep``     |
-+----------------------+----------------------------------------------+
-| time_now             | ``smolSetTimeNow``                           |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| species              | ``smolAddSpecies``                           |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetSpeciesIndex``                      |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetSpeciesName``                       |
-+----------------------+----------------------------------------------+
-| difc                 | ``smolSetSpeciesMobility``                   |
-+----------------------+----------------------------------------------+
-| difm                 | ``smolSetSpeciesMobility``                   |
-+----------------------+----------------------------------------------+
-| drift                | ``smolSetSpeciesMobility``                   |
-+----------------------+----------------------------------------------+
-| mol                  | ``smolAddSolutionMolecules``                 |
-+----------------------+----------------------------------------------+
-| surface_mol          | ``smolAddSurfaceMolecules``                  |
-+----------------------+----------------------------------------------+
-| compartment_mol      | ``smolAddCompartmentMolecules``              |
-+----------------------+----------------------------------------------+
-| molecule_lists       | ``smolAddMolList``                           |
-+----------------------+----------------------------------------------+
-| mol_list             | ``smolAddSpecies``, ``smolSetMolList``       |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetMolListIndex``                      |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetMolListName``                       |
-+----------------------+----------------------------------------------+
-| max_mol              | ``smolSetMaxMolecules``                      |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetMoleculeCount``                     |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| graphics             | ``smolSetGraphicsParams``                    |
-+----------------------+----------------------------------------------+
-| graphic_iter         | ``smolSetGraphicsParams``                    |
-+----------------------+----------------------------------------------+
-| graphic_delay        | ``smolSetGraphicsParams``                    |
-+----------------------+----------------------------------------------+
-| frame_thickness      | ``smolSetFrameStyle``                        |
-+----------------------+----------------------------------------------+
-| frame_color          | ``smolSetFrameStyle``                        |
-+----------------------+----------------------------------------------+
-| grid_thickness       | ``smolSetGridStyle``                         |
-+----------------------+----------------------------------------------+
-| grid_color           | ``smolSetGridStyle``                         |
-+----------------------+----------------------------------------------+
-| background_color     | ``smolSetBackgroundStyle``                   |
-+----------------------+----------------------------------------------+
-| display_size         | ``smolSetMoleculeStyle``                     |
-+----------------------+----------------------------------------------+
-| color                | ``smolSetMoleculeStyle``                     |
-+----------------------+----------------------------------------------+
-| tiff_iter            | ``smolSetTiffParams``                        |
-+----------------------+----------------------------------------------+
-| tiff_name            | ``smolSetTiffParams``                        |
-+----------------------+----------------------------------------------+
-| tiff_min             | ``smolSetTiffParams``                        |
-+----------------------+----------------------------------------------+
-| tiff_max             | ``smolSetTiffParams``                        |
-+----------------------+----------------------------------------------+
-| light                | ``smolSetLightParams``                       |
-+----------------------+----------------------------------------------+
-| text_color           | ``smolSetTextStyle``                         |
-+----------------------+----------------------------------------------+
-| text_display         | ``smolAddTextDisplay``                       |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| output_root          | ``smolSetOutputPath``                        |
-+----------------------+----------------------------------------------+
-| output_files         | ``smolAddOutputFile``                        |
-+----------------------+----------------------------------------------+
-| append_files         | ``smolAddOutputFile``                        |
-+----------------------+----------------------------------------------+
-| output_file_number   | ``smolAddOutputFile``                        |
-+----------------------+----------------------------------------------+
-| cmd                  | ``smolAddCommand``,                          |
-|                      | ``smolAddCommandFromString``                 |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| start_surface        | ``smolAddSurface``                           |
-+----------------------+----------------------------------------------+
-| new_surface          | ``smolAddSurface``                           |
-+----------------------+----------------------------------------------+
-| \* name              | ``smolAddSurface``                           |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetSurfaceIndex``                      |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetSurfaceName``                       |
-+----------------------+----------------------------------------------+
-| action               | ``smolSetSurfaceAction``                     |
-+----------------------+----------------------------------------------+
-| rate                 | ``smolSetSurfaceRate``                       |
-+----------------------+----------------------------------------------+
-| rate_internal        | ``smolSetSurfaceRate``                       |
-+----------------------+----------------------------------------------+
-| color                | ``smolSetSurfaceFaceStyle``,                 |
-|                      | ``smolSetSurfaceEdgeStyle``                  |
-+----------------------+----------------------------------------------+
-| thickness            | ``smolSetSurfaceEdgeStyle``                  |
-+----------------------+----------------------------------------------+
-| stipple              | ``smolSetSurfaceEdgeStyle``                  |
-+----------------------+----------------------------------------------+
-| polygon              | ``smolSetSurfaceFaceStyle``                  |
-+----------------------+----------------------------------------------+
-| shininess            | ``smolSetSurfaceFaceStyle``                  |
-+----------------------+----------------------------------------------+
-| panel                | ``smolAddPanel``                             |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetPanelIndex``                        |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetPanelName``                         |
-+----------------------+----------------------------------------------+
-| jump                 | ``smolSetPanelJump``                         |
-+----------------------+----------------------------------------------+
-| neighbors            | ``smolAddPanelNeighbor``                     |
-+----------------------+----------------------------------------------+
-| unbounded_emitter    | ``smolAddSurfaceUnboundedEmitter``           |
-+----------------------+----------------------------------------------+
-| end_surface          | N/A                                          |
-+----------------------+----------------------------------------------+
-| epsilon              | ``smolSetSurfaceSimParams``                  |
-+----------------------+----------------------------------------------+
-| margin               | ``smolSetSurfaceSimParams``                  |
-+----------------------+----------------------------------------------+
-| neighbor_dist        | ``smolSetSurfaceSimParams``                  |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| start_compartment    | ``smolAddCompartment``                       |
-+----------------------+----------------------------------------------+
-| new_compartment      | ``smolAddCompartment``                       |
-+----------------------+----------------------------------------------+
-| \* name              | ``smolAddCompartment``                       |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetCompartmentIndex``                  |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetCompartmentName``                   |
-+----------------------+----------------------------------------------+
-| surface              | ``smolAddCompartmentSurface``                |
-+----------------------+----------------------------------------------+
-| point                | ``smolAddCompartmentPoint``                  |
-+----------------------+----------------------------------------------+
-| compartment          | ``smolAddCompartmentLogic``                  |
-+----------------------+----------------------------------------------+
-| end_compartment      | N/A                                          |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| reaction             | ``smolAddReaction``                          |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetReactionIndex``                     |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetReactionName``                      |
-+----------------------+----------------------------------------------+
-| reaction_cmpt        | ``smolSetReactionRegion``                    |
-+----------------------+----------------------------------------------+
-| reaction_surface     | ``smolSetReactionRegion``                    |
-+----------------------+----------------------------------------------+
-| reaction_rate        | ``smolAddReaction``, ``smolSetReactionRate`` |
-+----------------------+----------------------------------------------+
-| confspread_radius    | ``smolSetReactionRate``                      |
-+----------------------+----------------------------------------------+
-| binding_radius       | ``smolSetReactionRate``                      |
-+----------------------+----------------------------------------------+
-| reaction_probability | ``smolSetReactionRate``                      |
-+----------------------+----------------------------------------------+
-| reaction_production  | ``smolSetReactionRate``                      |
-+----------------------+----------------------------------------------+
-| reaction_permit      | not supported                                |
-+----------------------+----------------------------------------------+
-| reaction_forbid      | not supported                                |
-+----------------------+----------------------------------------------+
-| product_placement    | ``smolSetReactionProducts``                  |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| start_port           | ``smolAddPort``                              |
-+----------------------+----------------------------------------------+
-| new_port             | ``smolAddPort``                              |
-+----------------------+----------------------------------------------+
-| \* name              | ``smolAddPort``                              |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetPortIndex``                         |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetPortName``                          |
-+----------------------+----------------------------------------------+
-| surface              | ``smolAddPort``                              |
-+----------------------+----------------------------------------------+
-| face                 | ``smolAddPort``                              |
-+----------------------+----------------------------------------------+
-| end_port             | N/A                                          |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolAddPortMolecules``                     |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolGetPortMolecules``                     |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| rand_seed            | ``smolSetRandomSeed``                        |
-+----------------------+----------------------------------------------+
-| accuracy             | not supported                                |
-+----------------------+----------------------------------------------+
-| molperbox            | ``smolSetPartitions``                        |
-+----------------------+----------------------------------------------+
-| boxsize              | ``smolSetPartitions``                        |
-+----------------------+----------------------------------------------+
-| gauss_table_size     | not supported                                |
-+----------------------+----------------------------------------------+
-| epsilon              | ``smolSetSurfaceSimParams``                  |
-+----------------------+----------------------------------------------+
-| margin               | ``smolSetSurfaceSimParams``                  |
-+----------------------+----------------------------------------------+
-| neighbor_dist        | ``smolSetSurfaceSimParams``                  |
-+----------------------+----------------------------------------------+
-| pthreads             | not supported                                |
-+----------------------+----------------------------------------------+
-|                      |                                              |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolUpdateSim``                            |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolRunTimeStep``                          |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolRunSim``                               |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolRunSimUntil``                          |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolFreeSim``                              |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolDisplaySim``                           |
-+----------------------+----------------------------------------------+
-| N/A                  | ``smolPrepareSimFromFile``                   |
-+----------------------+----------------------------------------------+
++----------------------+----------------------+----------------------+
+| Statement            | Libsmoldyn function  | Python function      |
++======================+======================+======================+
+| **About the input**  |                      |                      |
++----------------------+----------------------+----------------------+
+| #                    | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| /\* ... \*/          | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| read_file            | ``LoadSimFromFile``  |                      |
++----------------------+----------------------+----------------------+
+|                      | ``ReadConfigString`` |                      |
++----------------------+----------------------+----------------------+
+| end_file             | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| define               | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| define_global        | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| undefine             | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| ifdefine             | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| ifundefine           | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| else                 | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| endif                | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| display_define       | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``SetError``         |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetError``         |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``ClearError``       |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``SetDebugMode``     |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | `                    |                      |
+|                      | `ErrorCodeToString`` |                      |
++----------------------+----------------------+----------------------+
+| **Space and time**   |                      |                      |
++----------------------+----------------------+----------------------+
+| dim                  | ``NewSim``           |                      |
++----------------------+----------------------+----------------------+
+| boundaries           | ``NewSim``           |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetBoundaryType``  |                      |
++----------------------+----------------------+----------------------+
+| low_wall             | ``NewSim``           |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetBoundaryType``  |                      |
++----------------------+----------------------+----------------------+
+| high_wall            | ``NewSim``           |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetBoundaryType``  |                      |
++----------------------+----------------------+----------------------+
+| time_start           | ``SetSimTimes``      |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetTimeStart``     |                      |
++----------------------+----------------------+----------------------+
+| time_stop            | ``SetSimTimes``      |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetTimeStop``      |                      |
++----------------------+----------------------+----------------------+
+| time_step            | ``SetSimTimes``      |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetTimeStep``      |                      |
++----------------------+----------------------+----------------------+
+| time_now             | ``SetTimeNow``       |                      |
++----------------------+----------------------+----------------------+
+| **Molecules**        |                      |                      |
++----------------------+----------------------+----------------------+
+| species              | ``AddSpecies``       | ``S.Species``        |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetSpeciesIndex``  |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetSpeciesName``   |                      |
++----------------------+----------------------+----------------------+
+| difc                 | ``                   | *species*\ ``.difc`` |
+|                      | SetSpeciesMobility`` |                      |
++----------------------+----------------------+----------------------+
+| difm                 | ``                   |                      |
+|                      | SetSpeciesMobility`` |                      |
++----------------------+----------------------+----------------------+
+| drift                | ``                   |                      |
+|                      | SetSpeciesMobility`` |                      |
++----------------------+----------------------+----------------------+
+| mol                  | ``Ad                 | *species*            |
+|                      | dSolutionMolecules`` | \ ``.addToSolution`` |
++----------------------+----------------------+----------------------+
+| surface_mol          | ``A                  |                      |
+|                      | ddSurfaceMolecules`` |                      |
++----------------------+----------------------+----------------------+
+| compartment_mol      | ``AddCo              |                      |
+|                      | mpartmentMolecules`` |                      |
++----------------------+----------------------+----------------------+
+| molecule_lists       | ``AddMolList``       |                      |
++----------------------+----------------------+----------------------+
+| mol_list             | ``AddSpecies``       |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetMolList``       | *spe                 |
+|                      |                      | cies*\ ``.mol_list`` |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetMolListIndex``  |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetMolListName``   |                      |
++----------------------+----------------------+----------------------+
+| max_mol              | ``SetMaxMolecules``  |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetMoleculeCount`` |                      |
++----------------------+----------------------+----------------------+
+| **Graphics**         |                      |                      |
++----------------------+----------------------+----------------------+
+| graphics             | `                    |                      |
+|                      | `SetGraphicsParams`` |                      |
++----------------------+----------------------+----------------------+
+| graphic_iter         | `                    |                      |
+|                      | `SetGraphicsParams`` |                      |
++----------------------+----------------------+----------------------+
+| graphic_delay        | `                    |                      |
+|                      | `SetGraphicsParams`` |                      |
++----------------------+----------------------+----------------------+
+| frame_thickness      | ``SetFrameStyle``    |                      |
++----------------------+----------------------+----------------------+
+| frame_color          | ``SetFrameStyle``    |                      |
++----------------------+----------------------+----------------------+
+| grid_thickness       | ``SetGridStyle``     |                      |
++----------------------+----------------------+----------------------+
+| grid_color           | ``SetGridStyle``     |                      |
++----------------------+----------------------+----------------------+
+| background_color     | ``                   |                      |
+|                      | SetBackgroundStyle`` |                      |
++----------------------+----------------------+----------------------+
+| display_size         | ``SetMoleculeStyle`` | *spe                 |
+|                      |                      | cies*\ ``.setStyle`` |
++----------------------+----------------------+----------------------+
+|                      |                      | *species*\ ``.size`` |
++----------------------+----------------------+----------------------+
+| color                | ``SetMoleculeStyle`` | *                    |
+|                      |                      | species*\ ``.color`` |
++----------------------+----------------------+----------------------+
+| tiff_iter            | ``SetTiffParams``    |                      |
++----------------------+----------------------+----------------------+
+| tiff_name            | ``SetTiffParams``    |                      |
++----------------------+----------------------+----------------------+
+| tiff_min             | ``SetTiffParams``    |                      |
++----------------------+----------------------+----------------------+
+| tiff_max             | ``SetTiffParams``    |                      |
++----------------------+----------------------+----------------------+
+| light                | ``SetLightParams``   |                      |
++----------------------+----------------------+----------------------+
+| text_color           | ``SetTextStyle``     |                      |
++----------------------+----------------------+----------------------+
+| text_display         | ``AddTextDisplay``   |                      |
++----------------------+----------------------+----------------------+
+| **Run-time           |                      |                      |
+| commands**           |                      |                      |
++----------------------+----------------------+----------------------+
+| output_root          | ``SetOutputPath``    |                      |
++----------------------+----------------------+----------------------+
+| output_files         | ``AddOutputFile``    |                      |
++----------------------+----------------------+----------------------+
+| append_files         | ``AddOutputFile``    |                      |
++----------------------+----------------------+----------------------+
+| output_file_number   | ``AddOutputFile``    |                      |
++----------------------+----------------------+----------------------+
+| cmd                  | ``AddCommand``       |                      |
++----------------------+----------------------+----------------------+
+|                      | ``Ad                 |                      |
+|                      | dCommandFromString`` |                      |
++----------------------+----------------------+----------------------+
+| **Surfaces**         |                      |                      |
++----------------------+----------------------+----------------------+
+| start_surface        | ``AddSurface``       |                      |
++----------------------+----------------------+----------------------+
+| new_surface          | ``AddSurface``       |                      |
++----------------------+----------------------+----------------------+
+| \* name              | ``AddSurface``       |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetSurfaceIndex``  |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetSurfaceName``   |                      |
++----------------------+----------------------+----------------------+
+| \* action            | ``SetSurfaceAction`` |                      |
++----------------------+----------------------+----------------------+
+| \* rate              | ``SetSurfaceRate``   |                      |
++----------------------+----------------------+----------------------+
+| \* rate_internal     | ``SetSurfaceRate``   |                      |
++----------------------+----------------------+----------------------+
+| \* color             | ``S                  |                      |
+|                      | etSurfaceFaceStyle`` |                      |
++----------------------+----------------------+----------------------+
+|                      | ``S                  |                      |
+|                      | etSurfaceEdgeStyle`` |                      |
++----------------------+----------------------+----------------------+
+| \* thickness         | ``S                  |                      |
+|                      | etSurfaceEdgeStyle`` |                      |
++----------------------+----------------------+----------------------+
+| \* stipple           | ``S                  |                      |
+|                      | etSurfaceEdgeStyle`` |                      |
++----------------------+----------------------+----------------------+
+| \* polygon           | ``S                  |                      |
+|                      | etSurfaceFaceStyle`` |                      |
++----------------------+----------------------+----------------------+
+| \* shininess         | ``S                  |                      |
+|                      | etSurfaceFaceStyle`` |                      |
++----------------------+----------------------+----------------------+
+| \* panel             | ``AddPanel``         |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetPanelIndex``    |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetPanelName``     |                      |
++----------------------+----------------------+----------------------+
+| \* jump              | ``SetPanelJump``     |                      |
++----------------------+----------------------+----------------------+
+| \* neighbors         | ``AddPanelNeighbor`` |                      |
++----------------------+----------------------+----------------------+
+| \* unbounded_emitter | ``AddSurfa           |                      |
+|                      | ceUnboundedEmitter`` |                      |
++----------------------+----------------------+----------------------+
+| \* end_surface       | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| epsilon              | ``S                  |                      |
+|                      | etSurfaceSimParams`` |                      |
++----------------------+----------------------+----------------------+
+| margin               | ``S                  |                      |
+|                      | etSurfaceSimParams`` |                      |
++----------------------+----------------------+----------------------+
+| neighbor_dist        | ``S                  |                      |
+|                      | etSurfaceSimParams`` |                      |
++----------------------+----------------------+----------------------+
+| **Compartments**     |                      |                      |
++----------------------+----------------------+----------------------+
+| start_compartment    | ``AddCompartment``   |                      |
++----------------------+----------------------+----------------------+
+| new_compartment      | ``AddCompartment``   |                      |
++----------------------+----------------------+----------------------+
+| \* name              | ``AddCompartment``   |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``G                  |                      |
+|                      | etCompartmentIndex`` |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``                   |                      |
+|                      | GetCompartmentName`` |                      |
++----------------------+----------------------+----------------------+
+| \* surface           | ``Add                |                      |
+|                      | CompartmentSurface`` |                      |
++----------------------+----------------------+----------------------+
+| \* point             | ``A                  |                      |
+|                      | ddCompartmentPoint`` |                      |
++----------------------+----------------------+----------------------+
+| \* compartment       | ``A                  |                      |
+|                      | ddCompartmentLogic`` |                      |
++----------------------+----------------------+----------------------+
+| \* end_compartment   | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| **Reactions**        |                      |                      |
++----------------------+----------------------+----------------------+
+| reaction             | ``AddReaction``      | ``S.Reaction``       |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetReactionIndex`` |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetReactionName``  |                      |
++----------------------+----------------------+----------------------+
+| reaction_cmpt        | `                    |                      |
+|                      | `SetReactionRegion`` |                      |
++----------------------+----------------------+----------------------+
+| reaction_surface     | `                    |                      |
+|                      | `SetReactionRegion`` |                      |
++----------------------+----------------------+----------------------+
+| reaction_rate        | ``AddReaction``      |                      |
++----------------------+----------------------+----------------------+
+|                      | ``SetReactionRate``  |                      |
++----------------------+----------------------+----------------------+
+| confspread_radius    | ``SetReactionRate``  |                      |
++----------------------+----------------------+----------------------+
+| binding_radius       | ``SetReactionRate``  |                      |
++----------------------+----------------------+----------------------+
+| reaction_probability | ``SetReactionRate``  |                      |
++----------------------+----------------------+----------------------+
+| reaction_production  | ``SetReactionRate``  |                      |
++----------------------+----------------------+----------------------+
+| reaction_permit      | not supported        |                      |
++----------------------+----------------------+----------------------+
+| reaction_forbid      | not supported        |                      |
++----------------------+----------------------+----------------------+
+| product_placement    | ``S                  |                      |
+|                      | etReactionProducts`` |                      |
++----------------------+----------------------+----------------------+
+| **Ports**            |                      |                      |
++----------------------+----------------------+----------------------+
+| start_port           | ``AddPort``          |                      |
++----------------------+----------------------+----------------------+
+| new_port             | ``AddPort``          |                      |
++----------------------+----------------------+----------------------+
+| \* name              | ``AddPort``          |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetPortIndex``     |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetPortName``      |                      |
++----------------------+----------------------+----------------------+
+| \* surface           | ``AddPort``          |                      |
++----------------------+----------------------+----------------------+
+| \* face              | ``AddPort``          |                      |
++----------------------+----------------------+----------------------+
+| \* end_port          | N/A                  |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``AddPortMolecules`` |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``GetPortMolecules`` |                      |
++----------------------+----------------------+----------------------+
+| **Simulation         |                      |                      |
+| settings**           |                      |                      |
++----------------------+----------------------+----------------------+
+| rand_seed            | ``SetRandomSeed``    |                      |
++----------------------+----------------------+----------------------+
+| accuracy             | not supported        |                      |
++----------------------+----------------------+----------------------+
+| molperbox            | ``SetPartitions``    |                      |
++----------------------+----------------------+----------------------+
+| boxsize              | ``SetPartitions``    |                      |
++----------------------+----------------------+----------------------+
+| gauss_table_size     | not supported        |                      |
++----------------------+----------------------+----------------------+
+| epsilon              | ``S                  |                      |
+|                      | etSurfaceSimParams`` |                      |
++----------------------+----------------------+----------------------+
+| margin               | ``S                  |                      |
+|                      | etSurfaceSimParams`` |                      |
++----------------------+----------------------+----------------------+
+| neighbor_dist        | ``S                  |                      |
+|                      | etSurfaceSimParams`` |                      |
++----------------------+----------------------+----------------------+
+| pthreads             | not supported        |                      |
++----------------------+----------------------+----------------------+
+| **Libdyn actions**   |                      |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``UpdateSim``        |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``RunTimeStep``      |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``RunSim``           |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``RunSimUntil``      |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``FreeSim``          |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``DisplaySim``       |                      |
++----------------------+----------------------+----------------------+
+| N/A                  | ``                   |                      |
+|                      | PrepareSimFromFile`` |                      |
++----------------------+----------------------+----------------------+
 
-``libsmoldyn`` header file
-==========================
+Data structures and declarations
+================================
 
-Following is the entire ``libsmoldyn`` header file, ``libsmoldyn.h``.
-This lists all of the function declarations. If there is a discrepancy
-between declarations listed here and those listed in following sections,
-the ones shown here are almost certainly the correct ones. This file
-references smoldyn.h, which lists all of the data structure declarations
-and enumerated type definitions.
+Enumerations
+------------
+
+In C, enumerations are already defined, so they can be used as is. Here
+is an example of using an enumerated error code as an argument,
+
+::
+
+   smolErrorCodeToString(ECwarning, mystring)
+
+In Python, enumerations are most easily dealt with by defining a
+variable for the enumerated list and then choosing from it. Here is an
+example,
+
+::
+
+   import smoldyn._smoldyn as S
+   EC=S.ErrorCode
+   S.errorCodeToString(EC.warning, mystring)
+
+Surface actions (SrfAction)
+
+========= ========== ======== ==============================
+Statement Libsmoldyn Python   Notes
+========= ========== ======== ==============================
+reflect   SAreflect  reflect  
+transmit  SAtrans    trans    
+absorb    SAabsorb   absorb   
+jump      SAjump     jump     
+port      SAport     port     
+multiple  SAmult     mult     multiple actions
+N/A       SAno       no       static surface-bound molecules
+N/A       SAnone     none     none of the other options
+N/A       SAadsorb   adsorb   internal use only
+N/A       SArevdes   revdes   internal use only
+N/A       SAirrevdes irrevdes internal use only
+N/A       SAflip     flip     internal use only
+========= ========== ======== ==============================
+
+Molecule state (MolecState)
+
+========= ========== ====== =====================================
+Statement Libsmoldyn Python Notes
+========= ========== ====== =====================================
+soln      MSsoln     soln   
+front     MSfront    front  
+back      MSback     back   
+up        MSup       up     
+down      MSdown     down   
+bsoln     MSbsoln    bsoln  pseudo-state for surface interactions
+all       MSall      all    for model creation by user
+N/A       MSnone     none   internal use only
+========= ========== ====== =====================================
+
+Panel face (PanelFace)
+
+========= ========== ====== ==========================
+Statement Libsmoldyn Python Notes
+========= ========== ====== ==========================
+front     PFfront    front  
+back      PFback     back   
+N/A       PFnone     none   internal use only
+both      PFboth     both   for model creation by user
+========= ========== ====== ==========================
+
+Panel shape (PanelShape)
+
+========= ========== ====== ==========================
+Statement Libsmoldyn Python Notes
+========= ========== ====== ==========================
+rect      PSrect     rect   rectangle
+tri       PStri      tri    triangle
+sph       PSsph      sph    sphere
+cyl       PScyl      cyl    cylinder
+hemi      PShemi     hemi   hemisphere
+disk      PSdisk     disk   disk
+all       PSall      all    for model creation by user
+N/A       PSnone     none   internal use only
+========= ========== ====== ==========================
+
+Libsmoldyn error code (ErrorCode)
+
+========= ========== ======== =========
+Statement Libsmoldyn Python   Notes
+========= ========== ======== =========
+N/A       ECok       ok       value 0
+N/A       ECnotify   notify   value -1
+N/A       ECwarning  warning  value -2
+N/A       ECnonexist nonexist value -3
+N/A       ECall      all      value -4
+N/A       ECmissing  missing  value -5
+N/A       ECbounds   bounds   value -6
+N/A       ECsyntax   syntax   value -7
+N/A       ECerror    error    value -8
+N/A       ECmemory   memory   value -9
+N/A       ECbug      bug      value -10
+N/A       ECsame     same     value -11
+N/A       ECwildcard wildcard value -12
+========= ========== ======== =========
+
+Libsmoldyn header file
+----------------------
+
+The Libsmoldyn header file is libsmoldyn.h. It lists all of the function
+declarations. This file references smoldyn.h, which lists all of the
+data structure declarations and enumerated type definitions.
 
 If you compiled and installed Smoldyn using the default configuration,
-both files should be in your ``/usr/local/include/smoldyn`` directory.
-Also in this directory is the ``smoldyn_config.h`` file. This file was
-used for compiling Smoldyn and ``libsmoldyn`` but is not needed
-afterwards. Nevertheless, it’s copied to the /usr/local/include/smoldyn
-directory so that programs that call ``libsmoldyn`` can know what
-options ``libsmoldyn`` was built with.
+both files should be in your /usr/local/include/smoldyn directory. Also
+in this directory is the smoldyn_config.h file. This file was used for
+compiling Smoldyn and Libsmoldyn but is not needed afterwards.
+Nevertheless, it’s copied to the /usr/local/include/smoldyn directory so
+that programs that call Libsmoldyn can know what options Libsmoldyn was
+built with.
 
-``libsmoldyn`` functions
-========================
+Libsmoldyn functions
+====================
 
 General comments
 ----------------
@@ -731,92 +925,166 @@ structure. This means, for example, that all functions that return
 strings do not allocate these strings themselves, but instead write the
 string text to memory that the library user allocated and gave to the
 function. All strings are fixed at ``STRCHAR`` characters, where this
-constant is defined in ``string2.h`` to 256 characters.
+constant is defined in string2.h to 256 characters.
 
 Miscellaneous
 -------------
 
--  ``double smolGetVersion(void);`` Returns the Smoldyn version number.
+GetVersion
+   | 
+   | C: ``double smolGetVersion(void)``
+   | Python: ``float getVersion()``
+   | Returns the Smoldyn version number.
 
 Errors
 ------
 
--  | ``void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring);``
-   | This function is probably not useful for most users. Sets the
-     ``libsmoldyn`` error code to ``errorcode``, error function to
+SetError
+   | 
+   | C:
+     ``void smolSetError(const char *errorfunction, enum ErrorCode errorcode, const char *errorstring)``
+   | C:
+     ``void smolSetErrorNT(const char *errorfunction, enum ErrorCode errorcode, const char *errorstring)``
+   | Python: N/A
+   | These functions are probably not useful for most users. Sets the
+     Libsmoldyn error code to ``errorcode``, error function to
      ``errorfunction``, and error string to ``errorstring``. The sole
      exception is if ``errorcode`` is ``ECsame`` then this does nothing
      and simply returns. Back to it’s normal operation, this also either
-     sets or clears the ``libsmoldyn`` warning code, as appropriate. If
+     sets or clears the Libsmoldyn warning code, as appropriate. If
      ``errorstring`` is entered as ``NULL``, this clears the current
-     error string, and similarly for ``errorfunction``.
+     error string, and similarly for ``errorfunction``. For the regular
+     version without the “NT”, if the library is being run in debug
+     mode, then this function prints the notification, warning, or error
+     out to stderr. It would also ideally throw exceptions if the error
+     code is more severe than the ``LibThrowThreshold`` value, but this
+     throwing doesn’t work at present because throwing exceptions to the
+     host code is incompatible with static linking.
 
--  | ``enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int clearerror);``
-   | Returns the current ``libsmoldyn`` error code directly, returns the
+   The “NT” version is the “no throw” version, which is the same as the
+   regular version but doesn’t display messages to stderr and doesn’t
+   throw exceptions. In general, library functions should call
+   ``smolSetError`` for errors caught by that function itself, and
+   ``smolSetErrorNT`` for errors caught by subroutines of that function,
+   so that each error only leads to a single call of ``smolSetError``.
+
+GetError
+   | 
+   | C:
+     ``enum ErrorCode smolGetError(char *errorfunction, char *errorstring, int clearerror)``
+   | Python: N/A
+   | Returns the current LibSmoldyn error code directly, returns the
      function where the error occurred in ``errorfunction`` if it is not
      ``NULL``, and returns the error string in ``errorstring`` if it is
      not ``NULL``. Set ``clearerror`` to 1 to clear the error and 0 to
      leave any error condition unchanged.
 
--  ``void smolClearError(void);``
+ClearError
+   | 
+   | C: ``void smolClearError(void)``
+   | Python: N/A
+   | Clears any error condition.
 
-   Clears any error condition.
+SetDebugMode
+   | 
+   | C: ``void smolSetDebugMode(int debugmode)``
+   | Python: ``setDebugMode(int debugmode)``
+   | Enter ``debugmode`` as 1 to enable debugging and 0 to disable
+     debugging. When debug mode is turned on, all errors are displayed
+     to stderr, as are all cleared errors. By turning on debug mode, you
+     can often avoid checking for errors with additional code and you
+     also typically don’t need to call ``smolGetError``.
 
--  ``void smolSetDebugMode(int debugmode);``
-
-   Enter ``debugmode`` as 1 to enable debugging and 0 to disable
-   debugging. When debug mode is turned on, all errors are displayed to
-   stderr, as are all cleared errors. By turning on debug mode, you can
-   often avoid checking for errors with additional code and you also
-   typically don’t need to call ``smolGetError``.
-
--  ``char* smolErrorCodeTostring(enum ErrorCode erc,char *string);``
-
-   Returns a string both directly and in ``string`` that corresponds to
-   the error code in ``erc``. For example, if ``erc`` is ``ECmemory``,
-   this returns the string ``memory``.
+ErrorCodeToString
+   | 
+   | C:
+     ``char* smolErrorCodeToString(enum ErrorCode erc, char *string)``
+   | Python: ``str errorCodeToString(enum ErrorCode erc, str string)``
+   | Returns a string both directly and in ``string`` that corresponds
+     to the error code in ``erc``. For example, if ``erc`` is
+     ``ECmemory``, this returns the string “memory". To do: The string
+     is not needed or used in the Python version.
 
 Sim structure
 -------------
 
--  | ``simptr smolNewSim(int dim,double *lowbounds,double *highbounds);``
+NewSim
+   | 
+   | C:
+     ``simptr smolNewSim(int dim, double *lowbounds, double *highbounds)``
+   | Python:
+     ``simptr newSim(int dim, List[float] lowbounds, List[float] highbounds)``
    | Creates and returns a new sim structure. The structure is
      initialized for a ``dim`` dimensional system that has boundaries
      defined by the points ``lowbounds`` and ``highbounds``. Boundaries
      are transmitting (modify them with ``smolSetBoundaryType``).
      Returns ``NULL`` upon failure.
+   | **Python to do:** there’s no need for the dim parameter because
+     it’s redundant with vector lengths.
 
--  | ``enum ErrorCode smolUpdateSim(simptr sim);``
+UpdateSim
+   | 
+   | C: ``enum ErrorCode smolUpdateSim(simptr sim)``
+   | Python: ``ErrorCode updateSim()``
    | Updates the simulation structure. This calculates all simulation
      parameters from physical parameters, sorts lists, and generally
      does everything required to make a simulation ready to run. It may
      be called multiple times.
+   | **Python to do:** doesn’t work. Python wants no argument, but
+     Libsmoldyn then complains about no argument.
 
--  | ``enum ErrorCode smolRunTimeStep(simptr sim);``
+RunTimeStep
+   | 
+   | C: ``enum ErrorCode smolRunTimeStep(simptr sim)``
+   | Python: ``ErrorCode runTimeStep()``
    | Runs one time step of the simulation. Returns an error if the
      simulation terminates unexpectedly during this time step or a
      warning if it terminates normally.
+   | **Python to do:** doesn’t work. Python wants no argument, but
+     Libsmoldyn then complains about no argument.
 
--  | ``enum ErrorCode smolRunSim(simptr sim);``
+RunSim
+   | 
+   | C: ``enum ErrorCode smolRunSim(simptr sim)``
+   | Python: ``ErrorCode runSim()``
+   | Python: ``run(stop=None, start=None, step=None)``
    | Runs the simulation until it terminates. Returns an error if the
      simulation terminates unexpectedly during this time step or a
      warning if it terminates normally.
+   | **Python to do:** doesn’t work. Python wants no argument, but
+     Libsmoldyn then complains about no argument.
 
--  | ``enum ErrorCode smolRunSimUntil(simptr sim,double breaktime);``
+RunSimUntil
+   | 
+   | C: ``enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)``
+   | Python: ``ErrorCode runSimUntil(float breaktime)``
+   | Python: ``runUntil(t, dt)``
    | Runs the simulation either until it terminates or until the
      simulation time equals or exceeds ``breaktime``.
+   | **Python to do:** doesn’t work. Python wants no argument, but
+     Libsmoldyn then complains about no argument.
 
--  | ``enum ErrorCode smolFreeSim(simptr sim);``
+FreeSim
+   | 
+   | C: ``enum ErrorCode smolFreeSim(simptr sim)``
+   | Python: ``ErrorCode freeSim()``
    | Frees the simulation data structure.
 
--  | ``enum ErrorCode smolDisplaySim(simptr sim);``
+DisplaySim
+   | 
+   | C: ``enum ErrorCode smolDisplaySim(simptr sim)``
+   | Python: ``ErrorCode displaySim()``
    | Displays all relevant information about the simulation system to
      stdout.
 
 Read configuration file
 -----------------------
 
--  | ``simptr smolPrepareSimFromFile(char *filepath,char *filename,char *flags);``
+PrepareSimFromFile
+   | 
+   | C:
+     ``simptr smolPrepareSimFromFile(char *filepath, char *filename, char *flags)``
+   | Python: ``simptr prepareSimFromFile(str filename, str flags)``
    | Reads the Smoldyn configuration file that is at ``filepath`` and
      has file name ``filename``, sets it up, and outputs simulation
      diagnostics to stdout. Returns the sim structure, or ``NULL`` if an
@@ -826,7 +1094,11 @@ Read configuration file
      After this function runs successfully, it should be possible to
      call ``smolRunSim`` or ``smolRunTimeStep``.
 
--  | ``enum ErrorCode smolLoadSimFromFile(char *filepath,char *filename,simptr *simpointer,char *flags);``
+LoadSimFromFile
+   | 
+   | C:
+     ``enum ErrorCode smolLoadSimFromFile(char *filepath, char *filename, simptr *simpointer, char *flags)``
+   | Python: ``ErrorCode loadSimFromFile(str filename, str flags)``
    | Loads part or all of a sim structure from the file that is at
      ``filepath`` and has file name ``filename``. Send in ``simpointer``
      as a pointer to sim, where sim may be an existing simulation
@@ -837,7 +1109,12 @@ Read configuration file
      report. After this function runs successfully, call
      ``smolUpdateSim`` to calculate simulation parameters.
 
--  | ``enum ErrorCode smolReadConfigString(simptr sim,char *statement,char *parameters);``
+ReadConfigString
+   | 
+   | C:
+     ``enum ErrorCode smolReadConfigString(simptr sim, char *statement, char *parameters)``
+   | Python:
+     ``ErrorCode readConfigString(str statement, str parameters)``
    | Reads and processes what would normally be a single line of a
      configuration file. The first word of the line is the statement
      name, entered here as ``statement``, while the rest of the line is
@@ -845,63 +1122,123 @@ Read configuration file
      spaces. The same parser is used as for normal Smoldyn configuration
      files. This function does not make use of block style input
      formatting, such as for surface definitions. This means that a new
-     surface needs to declared with ``new_surface`` **name** and all
-     subsequent surface definitions need to start with surface **name**.
-     Analogous rules apply to compartments and port.
+     surface needs to declared with “\ ``new_surface`` *name*" and all
+     subsequent surface definitions need to start with “\ ``surface``
+     *name*". Analogous rules apply to compartments and port.
 
 Simulation settings
 -------------------
 
--  | ``enum ErrorCode smolSetSimTimes(simptr sim,double timestart,double timestop,double timestep);``
+SetSimTimes
+   | 
+   | C:
+     ``enum ErrorCode smolSetSimTimes(simptr sim, double timestart, double timestop, double timestep)``
+   | Python:
+     ``ErrorCode setSimTimes(float timestart, float timestop, float timestep)``
    | Sets all of the simulation time parameters to the values entered
-     here. In addition the simulation time ``now`` is set to
+     here. In addition the simulation “time now" is set to
      ``timestart``.
 
--  | ``enum ErrorCode smolSetTimeStart(simptr sim,double timestart);``
+SetTimeStart
+   | 
+   | C:
+     ``enum ErrorCode smolSetTimeStart(simptr sim, double timestart)``
+   | Python: ``ErrorCode setTimeStart(float timestart)``
    | Sets the simulation starting time.
 
--  | ``enum ErrorCode smolSetTimeStop(simptr sim,double timestop);``
+SetTimeStop
+   | 
+   | C: ``enum ErrorCode smolSetTimeStop(simptr sim, double timestop)``
+   | Python: ``ErrorCode setTimeStop(float timestop)``
    | Sets the simulation stopping time.
 
--  ``enum ErrorCode smolSetTimeNow(simptr sim,double timenow);`` Sets
-   the simulation current time.
+SetTimeNow
+   | 
+   | C: ``enum ErrorCode smolSetTimeNow(simptr sim, double timenow)``
+   | Python: ``ErrorCode setTimeNow(float timenow)``
+   | Sets the simulation current time.
 
--  ``enum ErrorCode smolSetTimeStep(simptr sim,double timestep);`` Sets
-   the simulation time step, which must be greater than 0.
+SetTimeStep
+   | 
+   | C: ``enum ErrorCode smolSetTimeStep(simptr sim, double timestep)``
+   | Python: ``ErrorCode setTimeStep(float timestep)``
+   | Sets the simulation time step, which must be greater than 0.
 
--  ``enum ErrorCode smolSetRandomSeed(simptr sim,double seed);`` Sets
-   the random number generator seed to ``seed`` if ``seed`` is at least
-   0, and sets it to the current time value if ``seed`` is less than 0.
+SetRandomSeed
+   | 
+   | C: ``enum ErrorCode smolSetRandomSeed(simptr sim, double seed)``
+   | Python: ``ErrorCode setRandomSeed(int seed)``
+   | Sets the random number generator seed to ``seed`` if ``seed`` is at
+     least 0, and sets it to the current time value if ``seed`` is less
+     than 0.
 
--  ``enum ErrorCode smolSetPartitions(simptr sim,char *method,double value);``
-   Sets the virtual partitions in the simulation volume. Enter
-   ``method`` as ``molperbox`` and then enter ``value`` with the
-   requested number of molecules per partition volume; the default,
-   which is used if this function is not called at all, is a target of 4
-   molecules per box. Or, enter ``method`` as ``boxsize`` and enter
-   ``value`` with the requested partition spacing. In this latter case,
-   the actual partition spacing may be larger or smaller than the
-   requested value in order to fit an integer number of partitions into
-   each coordinate of the simulation volume.
+SetAccuracy
+   | 
+   | C: not supported
+   | Python: ``accuracy(accuracy: float)``
+   | Sets or gets the simulation accuracy.
+
+SetPartitions
+   | 
+   | C:
+     ``enum ErrorCode smolSetPartitions(simptr sim, char *method, double value)``
+   | Python: ``ErrorCode setPartitions(str method, float value)``
+   | Python: ``Partition(name: str, value: float)``
+   | Sets the virtual partitions in the simulation volume. Enter
+     ``method`` as “molperbox" and then enter ``value`` with the
+     requested number of molecules per partition volume; the default,
+     which is used if this function is not called at all, is a target of
+     4 molecules per box. Or, enter ``method`` as “boxsize" and enter
+     ``value`` with the requested partition spacing. In this latter
+     case, the actual partition spacing may be larger or smaller than
+     the requested value in order to fit an integer number of partitions
+     into each coordinate of the simulation volume.
+
+   The second Python option is its own class. I think this should be
+   removed because partitions aren’t physical objects and so don’t
+   really make sense here.
+
+MoleculePerBox
+   | 
+   | Python: ``MoleculePerBox(size: float)``
+   | This is only available in Python. Again, I think this should be
+     removed because partitions aren’t physical objects.
+
+Box
+   | 
+   | Python: ``Box(size: float)``
+   | This is only available in Python. Again, I think this should be
+     removed because partitions aren’t physical objects.
 
 Graphics
 --------
 
--  | ``enum ErrorCode smolSetGraphicsParams(simptr sim,char *method,int timesteps,double delay);``
+SetGraphicsParams
+   | 
+   | C:
+     ``enum ErrorCode smolSetGraphicsParams(simptr sim, char *method, int timesteps, double delay)``
+   | Python:
+     ``ErrorCode setGraphicsParams(str method, int timesteps, int delay)``
+   | Python: ``setGraphics(method: str, timestep: int, delay: int = 0)``
    | Sets basic simulation graphics parameters. Enter ``method`` as
-     ``none`` for no graphics (the default), ``opengl`` for fast but
-     minimal OpenGL graphics, ``opengl_good`` for improved OpenGL
-     graphics, ``opengl_better`` for fairly good OpenGL graphics, or as
-     ``NULL`` to not set this parameter currently. Enter ``timesteps``
-     with a positive integer to set the number of simulation time steps
-     between graphics renderings (1 is the default) or with a negative
-     number to not set this parameter currently. Enter ``delay`` as a
-     non-negative number to set the minimum number of milliseconds that
-     must elapse between subsequent graphics renderings in order to
-     improve visualization (0 is the default) or as a negative number to
-     not set this parameter currently.
+     “none" for no graphics (the default), “opengl" for fast but minimal
+     OpenGL graphics, “opengl_good" for improved OpenGL graphics,
+     “opengl_better" for fairly good OpenGL graphics, or as ``NULL`` to
+     not set this parameter currently. Enter ``timesteps`` with a
+     positive integer to set the number of simulation time steps between
+     graphics renderings (1 is the default) or with a negative number to
+     not set this parameter currently. Enter ``delay`` as a non-negative
+     number to set the minimum number of milliseconds that must elapse
+     between subsequent graphics renderings in order to improve
+     visualization (0 is the default) or as a negative number to not set
+     this parameter currently.
 
--  | ``enum ErrorCode smolSetTiffParams(simptr sim,int timesteps,char *tiffname,int lowcount,int highcount);``
+SetTiffParams
+   | 
+   | C:
+     ``enum ErrorCode smolSetTiffParams(simptr sim, int timesteps, char *tiffname, int lowcount, int highcount)``
+   | Python:
+     ``ErrorCode setTiffParams(int timesteps, str tiffname, int lowcount, int highcount)``
    | Sets parameters for the automatic collection of TIFF format
      snapshots of the graphics window. ``timesteps`` is the number of
      simulation timesteps that should elapse between subsequent
@@ -913,56 +1250,87 @@ Graphics
      and/or ``highcount`` to not set these parameters, and enter
      ``NULL`` for ``tiffname`` to not set the file name.
 
--  | ``enum ErrorCode smolSetLightParams(simptr sim,int lightindex,double *ambient,double *diffuse,double *specular,double *position);``
+SetLightParams
+   | 
+   | C:
+     ``enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double *ambient, double *diffuse, double *specular, double *position)``
+   | Python:
+     ``ErrorCode smolSetLightParams(int lightindex, List[float] ambient, List[float] diffuse, List[float] specular, List[float] position)``
    | Sets the lighting parameters that are used for the rendering method
-     ``opengl_better``. Enter ``lightindex`` as -1 for the global
-     ambient light (in which case ``diffuse``, ``specular``, and
-     ``position`` should all be ``NULL``) or as 0 to 8 for one of the 8
-     light sources. For each light source, you can specify the 4-value
-     color vector for the light’s ambient, diffuse, and specular
-     properties (all values should be between 0 and 1). You can also
-     specify the 3-dimensional position for the light. To not set a
-     property, just enter the respective vector as ``NULL``.
+     “opengl_better". Enter ``lightindex`` as -1 for the global ambient
+     light (in which case ``diffuse``, ``specular``, and ``position``
+     should all be ``NULL``) or as 0 to 8 for one of the 8 light
+     sources. For each light source, you can specify the 4-value color
+     vector for the light’s ambient, diffuse, and specular properties
+     (all values should be between 0 and 1). You can also specify the
+     3-dimensional position for the light. To not set a property, just
+     enter the respective vector as ``NULL``.
 
--  | ``enum ErrorCode smolSetBackgroundStyle(simptr sim,double *color);``
+SetBackgroundStyle
+   | 
+   | C:
+     ``enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color)``
+   | Python: ``ErrorCode setBackgroundStyle(string color)``
    | Sets the color of the graphics display background. ``color`` is a
-     4-value vector with red, green, blue, and alpha values.
+     4-value vector with red, green, blue, and alpha values (or, in
+     Python, a color word).
 
--  | ``enum ErrorCode smolSetFrameStyle(simptr sim,double thickness,double *color);``
+SetFrameStyle
+   | 
+   | C:
+     ``enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double *color)``
+   | Python: ``ErrorCode setFrameStyle(float thickness, string color)``
    | Sets the thickness and the color of the wire frame that outlines
      the simulation system in the graphics window. Enter ``thickness``
      as 0 for no frame, as a positive number for the number of points in
      thickness, or as a negative number to not set this parameter. Enter
      ``color`` as a 4-value vector with the frame color, or as ``NULL``
-     to not set it.
+     to not set it (or, in Python, a color word).
 
--  | ``enum ErrorCode smolSetGridStyle(simptr sim,double thickness,double *color);``
+SetGridStyle
+   | 
+   | C:
+     ``enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double *color)``
+   | Python: ``ErrorCode setGridStyle(float thickness, string color)``
    | Sets the thickness and the color of a grid that shows where the
      partitions are that separate Smoldyn’s virtual boxes. Enter
      ``thickness`` as 0 for no grid, as a positive number for the number
      of points in thickness, or as a negative number to not set this
      parameter. Enter ``color`` as a 4-value vector with the grid color,
-     or as ``NULL`` to not set it.
+     or as ``NULL`` to not set it (or, in Python, a color word).
 
--  | ``enum ErrorCode  smolSetTextStyle(simptr sim,double *color);``
+SetTextStyle
+   | 
+   | C: ``enum ErrorCode smolSetTextStyle(simptr sim, double *color)``
+   | Python: ``ErrorCode setTextStyle(string color)``
    | Sets the color of any text that is displayed to the graphics
      window. ``color`` is a 4-value vector with red, green, blue, and
-     alpha values.
+     alpha values (or, in Python, a color word).
 
--  | ``enum ErrorCode smolAddTextDisplay(simptr sim,char *item);``
+AddTextDisplay
+   | 
+   | C: ``enum ErrorCode smolAddTextDisplay(simptr sim, char *item)``
+   | Python: ``ErrorCode addTextDisplay(string item)``
    | Adds ``item`` to the list of things that Smoldyn should display as
-     text to the graphics window. Currently supported options are
-     ``time`` and the names of species and, optionally, their states.
-     For species and states, the graphics window shows the number of
-     molecules.
+     text to the graphics window. Currently supported options are “time"
+     and the names of species and, optionally, their states. For species
+     and states, the graphics window shows the number of molecules.
 
 Runtime commands
 ----------------
 
--  | ``enum ErrorCode smolSetOutputPath(simptr sim,char *path);``
+SetOutputPath
+   | 
+   | C: ``enum ErrorCode smolSetOutputPath(simptr sim, char *path)``
+   | Python: ``ErrorCode setOutputPath(string path)``
    | Sets the file path for text output files to ``path``.
 
--  | ``enum ErrorCode  smolAddOutputFile(simptr sim,char *filename,int suffix,int append);``
+AddOutputFile
+   | 
+   | C:
+     ``enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix, int append)``
+   | Python:
+     ``ErrorCode addOutputFile(string filename, int suffix, int append)``
    | Declares the file called ``filename`` as a file for output by one
      or more runtime commands. Note that spaces are not permitted in the
      file name. If ``suffix`` is non-negative, then the file name is
@@ -971,7 +1339,22 @@ Runtime commands
      simply be appended, or to 0 if any current file should be
      overwritten.
 
--  | ``enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,char *commandstring);``
+OpenOutputFiles
+   | 
+   | C:
+     ``enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)``
+   | Opens output files for writing. Enter ``overwrite`` as 1 if any
+     existing file should be overwritten. If ``overwrite`` is 0 and a
+     file with this name already exists, then Smoldyn asks the user if
+     it should be overwritten. If the user replies no, then this
+     function ends with an error of ``ECerror``.
+
+AddCommand
+   | 
+   | C:
+     ``enum ErrorCode smolAddCommand(simptr sim, char type, double on, double off, double step, double multiplier, char *commandstring)``
+   | Python:
+     ``ErrorCode addCommand(string type, float on, float off, float step, float multiplier, string commandstring)``
    | Adds a run-time command to the simulation, including its timing
      instructions. This function should generally be called after
      ``smolSetSimTimes`` to make sure that command times get set
@@ -984,7 +1367,10 @@ Runtime commands
    | ``type`` | meaning  | ``on``   | ``off``  | ``step`` | ``mult   |
    |          |          |          |          |          | iplier`` |
    +==========+==========+==========+==========+==========+==========+
-   |          |          |          |          |          |          |
+   | **Co     |          |          |          |          |          |
+   | ntinuous |          |          |          |          |          |
+   | time     |          |          |          |          |          |
+   | queue**  |          |          |          |          |          |
    +----------+----------+----------+----------+----------+----------+
    | ``b``    | before   | -        | -        | -        | -        |
    |          | si       |          |          |          |          |
@@ -1006,7 +1392,10 @@ Runtime commands
    |          | i        |          |          | step     |          |
    |          | ntervals |          |          |          |          |
    +----------+----------+----------+----------+----------+----------+
-   |          |          |          |          |          |          |
+   | *        |          |          |          |          |          |
+   | *Integer |          |          |          |          |          |
+   | time     |          |          |          |          |          |
+   | queue**  |          |          |          |          |          |
    +----------+----------+----------+----------+----------+----------+
    | ``B``    | before   | -        | -        | -        | -        |
    |          | si       |          |          |          |          |
@@ -1036,67 +1425,124 @@ Runtime commands
    |          | step     |          |          |          |          |
    +----------+----------+----------+----------+----------+----------+
 
--  | ``enum ErrorCode``
-   | ``smolAddCommandFromString(simptr sim,char *string);``
+AddCommandFromString
+   | 
+   | C:
+     ``enum ErrorCode smolAddCommandFromString(simptr sim, char *string)``
+   | Python: ``ErrorCode addCommandFromString(str string)``
    | Defines a runtime command, including its execution timing
      parameters, from the string ``string``. This string should be
      identical to ones used in configuration files, except that they do
-     not include the ``cmd`` statement.
+     not include the “cmd" statement.
 
 Molecules
 ---------
 
--  | ``enum ErrorCode smolAddSpecies(simptr sim,char *species,char *mollist);``
+AddSpecies
+   | 
+   | C:
+     ``enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)``
+   | Python: ``ErrorCode addSpecies(str species, str mollist)``
+   | Python:
+     ``Species name: str, state: str = "soln", color: T.Color = "", difc: float = 0.0, display_size: int = 2, mol_list: str = ""``
    | Adds a molecular species named ``species`` to the system. If you
      have already created species lists and want all states of this
      species to live in a specific list, then enter it in ``mollist``;
      otherwise, enter ``mollist`` as ``NULL`` or an empty string to
      request default behavior.
 
--  | ``int smolGetSpeciesIndex(simptr sim,char *species);``
+GetSpeciesIndex
+   | 
+   | C: ``int smolGetSpeciesIndex(simptr sim, char *species)``
+   | C: ``int smolGetSpeciesIndexNT(simptr sim, char *species)``
+   | Python: ``int getSpeciesIndex(str species)``
    | Returns the species index that corresponds to the species named
      ``species``. Upon failure, this function returns an error code cast
-     as an integer.
+     as an integer. The “NT” version is identical, but doesn’t throw
+     exceptions or print errors to stderr.
 
--  | ``char* smolGetSpeciesName(simptr sim,int speciesindex,char *species);``
+GetSpeciesName
+   | 
+   | C:
+     ``char* smolGetSpeciesName(simptr sim, int speciesindex, char *species)``
+   | Python: ``str getSpeciesName(int speciesindex, str species)``
    | Returns the species name that corresponds to the species index in
      ``speciesindex``. The name is returned both in ``species`` and
      directly, where the latter simplifies function use. Upon failure,
      this function returns ``NULL``.
 
--  | ``enum ErrorCode smolSetSpeciesMobility(simptr sim,char *species,enum MolecState     state,double difc,double *drift,double *difmatrix);``
+SetSpeciesMobility
+   | 
+   | C:
+     ``enum ErrorCode smolSetSpeciesMobility(simptr sim, char *species, enum MolecState state, double difc, double *drift, double *difmatrix)``
+   | Python:
+     ``ErrorCode setSpeciesMobility(str species, MolecState state, float difc, List[float] drift, List[float] difmatrix)``
+   | Python: *species*\ ``.difc``
    | Sets any or all of the mobility coefficients for species
-     ``species`` (which may be ``all``) and state ``state`` (which may
-     be ``MSall``). ``difc`` is the isotropic diffusion coefficient,
+     ``species`` (which may be “all") and state ``state`` (which may be
+     ``MSall``). ``difc`` is the isotropic diffusion coefficient,
      ``drift`` is the drift vector, and ``difmatrix`` is the square of
      the anisotropic diffusion matrix (see the User’s manual). To not
      set coefficients, enter a negative number in ``difc`` and/or enter
      a ``NULL`` pointer in the other inputs, respectively.
 
--  | ``int smolAddMolList(simptr sim,char *mollist);``
+   The last version shown can also be used to get the diffusion
+   coefficient for a species.
+
+AddMolList
+   | 
+   | C: ``int smolAddMolList(simptr sim, char *mollist)``
+   | Python: ``int addMolList(str mollist)``
    | Adds a new molecule list, named ``mollist``, to the system.
 
--  | ``int smolGetMolListIndex(simptr sim,char *mollist);``
+GetMolListIndex
+   | 
+   | C: ``int smolGetMolListIndex(simptr sim, char *mollist)``
+   | C: ``int smolGetMolListIndexNT(simptr sim, char *mollist)``
+   | Python: ``int getMolListIndex(str mollist)``
    | Returns the list index that corresponds to the list named
-     ``mollist``.
+     ``mollist``. The “NT” version is identical but doesn’t throw
+     exceptions or print errors to the stderr output.
 
--  | ``char* smolGetMolListName(simptr sim,int mollistindex,char *mollist);``
+GetMolListName
+   | 
+   | C:
+     ``char* smolGetMolListName(simptr sim, int mollistindex, char *mollist)``
+   | Python: ``str getMolListName(int mollistindex, str mollist)``
    | Returns the molecule list name that corresponds to the molecule
      list with index ``mollistindex``. The name is returned both in
      ``mollist`` and directly. On error, this function ``NULL``.
 
--  | ``enum ErrorCode smolSetMolList(simptr sim,char *species,enum MolecState state,char     *mollist);``
-   | Sets the molecule list for species ``species`` (which may be
-     ``all``) and state ``state`` (which may be ``MSall``) to molecule
-     list ``mollist``.
+SetMolList
+   | 
+   | C:
+     ``enum ErrorCode smolSetMolList(simptr sim, char *species, enum MolecState state, char *mollist)``
+   | Python:
+     ``ErrorCode setMolList(str species, MolecState state, str mollist)``
+   | Python: *species*\ ``.mol_list``
+   | Sets the molecule list for species ``species`` (which may be “all")
+     and state ``state`` (which may be ``MSall``) to molecule list
+     ``mollist``.
 
--  | ``enum ErrorCode smolSetMaxMolecules(simptr sim,int maxmolecules);``
+   The last version can either set or retrieve the molecule list.
+
+SetMaxMolecules
+   | 
+   | C: ``smolSetMaxMolecules(simptr sim, int maxmolecules)``
+   | Python: ``setMaxMolecules(int maxmolecules)``
    | Sets the maximum number of molecules that can simultaneously exist
      in a system to ``maxmolecules``. At present, this function needs to
      be called for a simulation to run, although it will become optional
      once dynamic molecule memory allocation has been written.
 
--  | ``enum ErrorCode  smolAddSolutionMolecules(simptr sim,char *species,int number,double *lowposition,double *highposition);``
+AddSolutionMolecules
+   | 
+   | C:
+     ``enum ErrorCode smolAddSolutionMolecules(simptr sim, char *species, int number, double *lowposition, double *highposition)``
+   | Python:
+     ``ErrorCode addSolutionMolecules(str species, int number, List[float] lowposition, List[float] highposition)``
+   | Python:
+     *species*\ ``.addToSolution(mol: float, highpos: List[float] = [], lowpos: List[float] = [])``
    | Adds ``number`` solution state molecules of species ``species`` to
      the system. They are randomly distributed within the box that has
      its opposite corners defined by ``lowposition`` and
@@ -1106,38 +1552,84 @@ Molecules
      that the respective corner is equal to that corner of the entire
      system volume.
 
--  | ``enum ErrorCode smolAddCompartmentMolecules(simptr sim,char *species,int number,char *compartment);``
+AddCompartmentMolecules
+   | 
+   | C:
+     ``enum ErrorCode smolAddCompartmentMolecules(simptr sim, char *species, int number, char *compartment)``
+   | Python:
+     ``ErrorCode addCompartmentMolecules(str species, int number, str compartment)``
    | Adds ``number`` solution state molecules of species ``species`` to
      the compartment ``compartment``. Molecules are randomly distributed
      within the compartment.
 
--  | ``enum ErrorCode smolAddSurfaceMolecules(simptr sim,int speciesindex,enum MolecState state,int number,int surface,enum PanelShape panelshape,int panel,double *position);``
+AddSurfaceMolecules
+   | 
+   | C:
+     ``enum ErrorCode smolAddSurfaceMolecules(simptr sim, int speciesindex, enum MolecState state, int number, int surface, enum PanelShape panelshape, int panel, double *position)``
+   | Python:
+     ``ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)``
    | Adds ``number`` molecules of species ``species`` and state
      ``state`` to surface(s) in the system. It is permissible for
-     ``surface`` to be ``all``, ``panelshape`` to be PSall, and/or
-     ``panel`` to be ``all``. If you want molecules at a specific
+     ``surface`` to be “all", ``panelshape`` to be PSall, and/or
+     ``panel`` to be “all". If you want molecules at a specific
      position, then you need to enter a specific surface, panel shape,
      and panel, and then enter the position in ``position``.
 
--  | ``int smolGetMoleculeCount(simptr sim,char *species,enum MolecState state);``
+GetMoleculeCount
+   | 
+   | C:
+     ``int smolGetMoleculeCount(simptr sim, char *species, enum MolecState state)``
+   | Python: ``int getMoleculeCount(str species, MolecState state)``
    | Returns the total number of molecules in the system that have
-     species ``species`` (``all`` is permitted) and state ``state``
+     species ``species`` (“all" is permitted) and state ``state``
      (``MSall`` is permitted). Any error is returned as the error code
      cast as an integer.
 
--  | ``enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color);``
+SetMoleculeColor
+   | 
+   | C:
+     ``enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double *color)``
+
+SetMoleculeSize
+   | 
+   | C:
+     ``enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size)``
+
+SetMoleculeStyle
+   | 
+   | C:
+     ``enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size, double *color)``
+   | Python:
+     ``ErrorCode setMoleculeStyle(str species, MolecState state, float size, List[float] color)``
+   | Python: *species*\ ``.setStyle``
+   | Python: *species*\ ``.color``
+   | Python: *species*\ ``.size``
    | Sets the graphical display parameters for molecules of species
-     ``species`` (``all`` is permitted) and state ``state`` (``MSall``
-     is permitted). Enter ``size`` with the drawing size (in pixels if
-     graphics method is ``opengl`` and in simulation system length units
+     ``species`` (“all" is permitted) and state ``state`` (``MSall`` is
+     permitted). Enter ``size`` with the drawing size (in pixels if
+     graphics method is “opengl" and in simulation system length units
      for better drawing methods) or with a negative number to not set
      the size. Enter ``color`` with the 3-value color vector or with
-     ``NULL`` to not set the color.
+     ``NULL`` to not set the color (or, in Python, a color word).
 
 Surfaces
 --------
 
--  | ``enum ErrorCode smolSetBoundaryType(simptr sim,int dimension,int highside,char type);``
+Boundaries
+   | 
+   | Python:
+     ``Boundaries(low: List[float], high: List[float], types: List[str] = field(default_factory=lambda: ["r"]), dim: field(init=False) = 0)``
+   | Python: ``setBounds()``
+   | This functionality is only available in Python. There is a class
+     called ``Boundaries`` and a function called ``setBounds``. They do
+     basically the same thing.
+
+SetBoundaryType
+   | 
+   | C:
+     ``enum ErrorCode smolSetBoundaryType(simptr sim, int dimension, int highside, char type)``
+   | Python:
+     ``ErrorCode setBoundaryType(int dimension, int highside, str type)``
    | Sets the molecule interaction properties for a system boundary that
      bounds the ``dimension`` axis. Enter ``dimension`` as -1 to
      indicate all dimensions. Set ``highside`` to 0 for the lower
@@ -1148,28 +1640,56 @@ Surfaces
      no surfaces are declared; otherwise all boundaries are transmitting
      regardless of what’s entered here.
 
--  | ``int smolAddSurface(simptr sim,char *surface);``
+AddSurface
+   | 
+   | C: ``int smolAddSurface(simptr sim, char *surface)``
+   | Python: ``int addSurface(str surface)``
    | Adds a surface called ``surface`` to the system.
 
--  | ``int smolGetSurfaceIndex(simptr sim,char *surface);``
+GetSurfaceIndex
+   | 
+   | C: ``int smolGetSurfaceIndex(simptr sim, char *surface)``
+   | C: ``int smolGetSurfaceIndexNT(simptr sim, char *surface)``
+   | Python: ``int getSurfaceIndex(str surface)``
    | Returns the surface index that corresponds to the surface named
      ``surface``. The index is non-negative. On failure, this returns an
-     error code cast as an integer.
+     error code cast as an integer. The “NT” version is identical but
+     errors aren’t printed to the stderr output and don’t throw
+     exceptions.
 
--  | ``char*  smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);``
+GetSurfaceName
+   | 
+   | C:
+     ``char* smolGetSurfaceName(simptr sim, int surfaceindex, char *surface)``
+   | Python: ``str getSurfaceName(int surfaceindex, str surface)``
    | Returns the surface name for surface number ``surfaceindex`` both
      directly and in the ``surface`` string. On failure, this returns
      ``NULL``.
 
--  | ``enum ErrorCode smolSetSurfaceAction(simptr sim,char *surface,enum PanelFace face,char *species,enum MolecState state,enum SrfAction action);``
+SetSurfaceAction
+   | 
+   | C:
+     ``enum ErrorCode smolSetSurfaceAction(simptr sim, char *surface, enum PanelFace face, char *species, enum MolecState state, enum SrfAction action, char *newspecies)``
+   | Python:
+     ``ErrorCode setSurfaceAction(str surface, PanelFace face, str species, MolecState state, SrfAction action)``
+   | Python:
+     *surface*\ ``.addAction(face, species: Union[Species, str], action: str, new_spec=None)``
    | Sets the action that should happen when a molecule of species
-     ``species`` (may be ``all``) and state ``state`` (may be ``MSall``)
+     ``species`` (may be “all") and state ``state`` (may be ``MSall``)
      diffuses into face ``face`` (may be ``PFboth``) of surface
-     ``surface``. The action is set to ``action``.
+     ``surface``. The action is set to ``action``. Enter ``newspecies``
+     to the name of a new species if the molecule should change species,
+     or as either ``NULL`` or an empty string if it should not change
+     species.
 
--  | ``enum ErrorCode smolSetSurfaceRate(simptr sim,char *surface,char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,char *newspecies,int isinternal);``
+SetSurfaceRate
+   | 
+   | C:
+     ``enum ErrorCode smolSetSurfaceRate(simptr sim, char *surface, char *species, enum MolecState state, enum MolecState state1, enum MolecState state2, double rate, char *newspecies, int isinternal)``
+   | Python:
+     ``ErrorCode setSurfaceRate(str surface, str species, MolecState state, MolecState state1, MolecState state2, float rate, str newspecies, int isinternal)``
    | Sets the surface interaction rate(s) for surface ``surface`` (may
-     be ``all``) and species ``species`` (may be ``all``) and state
+     be “all") and species ``species`` (may be “all") and state
      ``state``. The transition being considered is from ``state1`` to
      ``state2`` (this function uses the tri-state format for describing
      surface interactions, shown below). The interaction rate is set to
@@ -1184,81 +1704,124 @@ Surfaces
      italics, then the corresponding combination of states is not a
      permitted input.
 
-   ================= ========= ========== ========== ===========
-   interaction class           action                
-   \                 ``state`` ``state1`` ``state2`` 
-   \                 soln      soln       soln       *reflect*
-   \                 "         "          bsoln      transmit
-   collision from    "         "          bound      adsorb
-   solution state    "         bsoln      soln       transmit
-   \                 "         "          bsoln      *reflect*
-   \                 "         "          bound      adsorb
-   \                 "         bound      soln       desorb
-   action from       "         "          bsoln      desorb
-   bound state       "         "          bound      *no change*
-   \                 "         "          bound’     flip
-   \                 bound     soln       soln       *reflect*
-   \                 "         "          bsoln      transmit
-   \                 "         "          bound      hop
-   collision from    "         "          bound’     hop
-   bound state       "         bsoln      soln       transmit
-   \                 "         "          bsoln      *reflect*
-   \                 "         "          bound      hop
-   \                 "         "          bound’     hop
-   \                 "         bound      soln       desorb
-   action from       "         "          bsoln      desorb
-   bound state       "         "          bound      *no change*
-   \                 "         "          bound’     flip
-   impossible        "         bound’     any        *nonsense*
-   ================= ========= ========== ========== ===========
+   ================= =============== ========== ========== ===========
+   interaction class tristate format                       action
+   \                 ``state``       ``state1`` ``state2`` 
+   \                 soln            soln       soln       *reflect*
+   \                 "               "          bsoln      transmit
+   collision from    "               "          bound      adsorb
+   solution state    "               bsoln      soln       transmit
+   \                 "               "          bsoln      *reflect*
+   \                 "               "          bound      adsorb
+   \                 "               bound      soln       desorb
+   action from       "               "          bsoln      desorb
+   bound state       "               "          bound      *no change*
+   \                 "               "          bound’     flip
+   \                 bound           soln       soln       *reflect*
+   \                 "               "          bsoln      transmit
+   \                 "               "          bound      hop
+   collision from    "               "          bound’     hop
+   bound state       "               bsoln      soln       transmit
+   \                 "               "          bsoln      *reflect*
+   \                 "               "          bound      hop
+   \                 "               "          bound’     hop
+   \                 "               bound      soln       desorb
+   action from       "               "          bsoln      desorb
+   bound state       "               "          bound      *no change*
+   \                 "               "          bound’     flip
+   impossible        "               bound’     any        *nonsense*
+   ================= =============== ========== ========== ===========
 
--  | ``int``
-   | ``smolAddPanel(simptr sim,char *surface,enum PanelShape     panelshape,char *panel,char *axisstring,double *params);``
+AddPanel
+   | 
+   | C:
+     ``int smolAddPanel(simptr sim, char *surface, enum PanelShape panelshape, char *panel, char *axisstring, double *params)``
+   | Python:
+     ``int addPanel(str surface, PanelShape panelshape, str panel, str axisstring, List[float] params)``
    | Adds or modifies a panel of shape ``panelshape`` of surface
      ``surface``. ``axisstring`` lists any text parameters for the
      panel, which in practice is only a single word that gives the
-     orientation of a rectangle panel (e.g. ``+0`` or ``-y``).
-     ``params`` lists the numerical parameters for the panel location,
-     size, and drawing characteristics. These are exactly the same
-     parameters that are listed for the ``panel`` statement in Smoldyn
-     configuration files, with the sole exception that the first
-     rectangle ``parameter`` is actually a string that is entered in
-     ``axisstring``. ``panelname`` is an optional parameter for naming
-     the panel; if it is included and is not an empty string, the panel
-     is named ``panelname``. If this panel name was already used by a
-     panel of the same shape, then this function overwrites that panel’s
-     data with the new data. If the name was already used by a panel
-     with a different shape, then this creates an error, and if the name
-     was not used before, then a new panel is created. To use default
-     panel naming, send in ``panelname`` as either ``NULL`` or as an
-     empty string. In the latter case, ``panelname`` is returned with
-     the newly assigned default name.
+     orientation of a rectangle panel (e.g. “+0" or “-y"). ``params``
+     lists the numerical parameters for the panel location, size, and
+     drawing characteristics. These are exactly the same parameters that
+     are listed for the “panel" statement in Smoldyn configuration
+     files, with the sole exception that the first rectangle “parameter"
+     is actually a string that is entered in ``axisstring``.
+     ``panelname`` is an optional parameter for naming the panel; if it
+     is included and is not an empty string, the panel is named
+     ``panelname``. If this panel name was already used by a panel of
+     the same shape, then this function overwrites that panel’s data
+     with the new data. If the name was already used by a panel with a
+     different shape, then this creates an error, and if the name was
+     not used before, then a new panel is created. To use default panel
+     naming, send in ``panelname`` as either ``NULL`` or as an empty
+     string. In the latter case, ``panelname`` is returned with the
+     newly assigned default name.
 
--  | ``int``
-   | ``smolGetPanelIndex(simptr sim,char *surface,enum PanelShape     *panelshapeptr,char *panel);``
+   In Python, each panel shape is a separate class. These classes are:
+
+   -  Rectangle: corner: List[float], dimensions: List[float], axis:
+      str, name=""
+
+   -  Triangle: vertices: List[List[float]] = [[]], name=""
+
+   -  Sphere: center: List[float], radius: float, slices: int, stacks:
+      int, name=""
+
+   -  Hemisphere: center: List[float], radius: float, vector:
+      List[float], slices: int, stacks: int, name: str = ""
+
+   -  Cylinder: start: List[float], end: List[float], radius: float,
+      slices: int, stacks: int, name=""
+
+   -  Disk: center: List[float], radius: float, vector: List[float],
+      name=""
+
+GetPanelIndex
+   | 
+   | C:
+     ``int smolGetPanelIndex(simptr sim, char *surface, enum PanelShape *panelshapeptr, char *panel)``
+   | C:
+     ``int smolGetPanelIndexNT(simptr sim, char *surface, enum PanelShape *panelshapeptr, char *panel)``
+   | Python:
+     ``int getPanelIndex(str surface, PanelShape *panelshapeptr, str panel)``
    | Returns the panel index for the panel called ``panel`` on surface
      ``surface``. If ``panelshapeptr`` is not ``NULL``, this also
      returns the panel shape in ``panelshapeptr``. On failure, this
-     returns the error code cast as an integer.
+     returns the error code cast as an integer. The “NT” version is
+     identical but errors aren’t printed to the stderr output and don’t
+     cause exceptions to be thrown.
 
--  | ``char*``
-   | ``smolGetPanelName(simptr sim,char *surface,enum PanelShape     panelshape,int panelindex,char *panel);``
+GetPanelName
+   | 
+   | C:
+     ``char* smolGetPanelName(simptr sim, char *surface, enum PanelShape panelshape, int panelindex, char *panel)``
+   | Python:
+     ``str getPanelName(str surface, PanelShape panelshape, int panelindex, str panel)``
    | Returns the name of the panel that is in surface ``surface``, has
      shape ``panelshape``, and has index ``panelindex``, both directly
      and in the string ``panel``. On failure, this returns ``NULL``.
 
--  | ``enum ErrorCode``
-   | ``smolSetPanelJump(simptr sim,const char *surface,const char     *panel1,enum PanelFace face1,const char *panel2,enum PanelFace     face2,int isbidirectional);``
+SetPanelJump
+   | 
+   | C:
+     ``enum ErrorCode smolSetPanelJump(simptr sim, const char *surface, const char *panel1, enum PanelFace face1, const char *panel2, enum PanelFace face2, int isbidirectional)``
+   | Python:
+     ``ErrorCode setPanelJump(str surface, str panel1, PanelFace face1, str panel2, PanelFace face2, int isbidirectional)``
    | Sets a jumping link between face ``face1`` of panel ``panel1`` and
      face ``face2`` of panel ``panel2`` of surface ``surface``. The link
      goes from ``panel1`` to ``panel2`` if ``bidirectional`` is entered
      as 0 and goes in both directions if ``bidirectional`` is entered as
      1. None of the surface, panel, or face entries is allowed to be
-     ``all``. This does not set the actions of any species to ``jump``,
+     “all". This does not set the actions of any species to “jump",
      which has to be done using the ``smolSetSurfaceAction`` function.
 
--  | ``enum ErrorCode``
-   | ``smolAddSurfaceUnboundedEmitter(simptr sim,const char *surface,enum     PanelFace face,const char *species,double emitamount,double     *emitposition);``
+AddSurfaceUnboundedEmitter
+   | 
+   | C:
+     ``enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim, const char *surface, enum PanelFace face, const char *species, double emitamount, double *emitposition)``
+   | Python:
+     ``ErrorCode addSurfaceUnboundedEmitter(str surface, PanelFace face, str species, float emitamount, List[float] emitposition)``
    | Adds information about a point molecular source so that face
      ``face`` of surface ``surface`` can have its absorption properties
      calculated so that the molecular concentrations will become the
@@ -1267,35 +1830,48 @@ Surfaces
      a rate of ``emitamount`` and is at location ``emitposition``. The
      emission rate does not need to be in absolute units, but only has
      to be correct relative to other unbounded emitters. None of the
-     inputs to this function are allowed to be ``all``.
+     inputs to this function are allowed to be “all".
 
--  | ``enum ErrorCode``
-   | ``smolSetSurfaceSimParams(simptr sim,const char *parameter,double     value);``
+SetSurfaceSimParams
+   | 
+   | C:
+     ``enum ErrorCode smolSetSurfaceSimParams(simptr sim, const char *parameter, double value)``
+   | Python:
+     ``ErrorCode setSurfaceSimParams(str parameter, float value)``
    | Sets the surface simulation parameter named with ``parameter`` to
-     value ``value``. The possible parameters are ``epsilon``,
-     ``margin``, and ``neighbordist``. In all cases, the defaults are
-     nearly always good, although this function allows them to be
-     modified if desired. Epsilon is the maximum distance away from a
-     surface that Smoldyn is allowed to place a surface-bound molecule.
-     Margin is the distance inside from the edge of a surface panel that
-     Smoldyn will place surface-bound molecules that hop onto this
-     panel. Neighbor distance is the maximum distance over which
-     surface-bound molecules are allowed to hop to transition from one
-     panel to a neighboring panel.
+     value ``value``. The possible parameters are “epsilon", “margin",
+     and “neighbordist". In all cases, the defaults are nearly always
+     good, although this function allows them to be modified if desired.
+     Epsilon is the maximum distance away from a surface that Smoldyn is
+     allowed to place a surface-bound molecule. Margin is the distance
+     inside from the edge of a surface panel that Smoldyn will place
+     surface-bound molecules that hop onto this panel. Neighbor distance
+     is the maximum distance over which surface-bound molecules are
+     allowed to hop to transition from one panel to a neighboring panel.
 
--  | ``enum ErrorCode``
-   | ``smolAddPanelNeighbor(simptr sim,const char *surface1,const char     *panel1,const char *surface2,const char *panel2,int reciprocal);``
+AddPanelNeighbor
+   | 
+   | C:
+     ``enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1, const char *panel1, const char *surface2, const char *panel2, int reciprocal)``
+   | Python:
+     ``ErrorCode addPanelNeighbor(str surface1, str panel1, str surface2, str panel2, int reciprocal)``
    | Adds panel ``panel2`` of surface ``surface2`` as a neighbor of
      panel ``panel1`` or surface ``surface1``, meaning that
      surface-bound molecules will be allowed to diffuse from ``panel1``
      to ``panel2``. These are not allowed to be the same panel. Also,
-     ``all`` values are not permitted. Otherwise, essentially any
-     possible entries are legitimate. If surface-bound molecules should
-     also be allowed to diffuse from ``panel2`` to ``panel1``, enter
+     “all" values are not permitted. Otherwise, essentially any possible
+     entries are legitimate. If surface-bound molecules should also be
+     allowed to diffuse from ``panel2`` to ``panel1``, enter
      ``reciprocal`` as 1; if not, enter ``reciprocal`` as 0.
 
--  | ``enum ErrorCode``
-   | ``smolSetSurfaceStyle(simptr sim,const char *surface,enum PanelFace     face,enum DrawMode mode,double thickness,double *color,int     stipplefactor,int stipplepattern,double shininess);``
+SetSurfaceStyle
+   | 
+   | C:
+     ``enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface, enum PanelFace face, enum DrawMode mode, double thickness, double *color, int stipplefactor, int stipplepattern, double shininess)``
+   | Python:
+     ``ErrorCode setSurfaceStyle(str surface, PanelFace face, DrawMode mode, float thickness, List[float] color, int stipplefactor, int stipplepattern, float shininess)``
+   | Python:
+     *surface*\ ``.setStyle(face, drawmode: str, color: T.Color = "", thickness: float = 1, stipplefactor: int = -1, stipplepattern: int = -1, shininess: int = -1,)``
    | Sets the graphics output style for face ``face`` of surface
      ``surface``. ``mode`` is the drawing mode; enter it as ``DMnone``
      to not set this parameter and otherwise enter it as ``DMno`` to not
@@ -1304,49 +1880,72 @@ Surfaces
      size or line width for drawing vertices or edges, or can be entered
      as a negative number to not set this parameter. ``color`` is the
      4-value color vector for the surface, or can be entered as ``NULL``
-     to not set this parameter. ``stipplefactor`` is the repeat distance
-     for the entire edge stippling pattern, or can be entered as a
-     negative number to not set it. ``stipplepattern`` is the edge
-     stippling pattern, which needs to be between 0 and 0xFFFF, or can
-     be entered as -1 to not set this parameter. And ``shininess`` is
-     the surface shininess, for use with lighting in the
-     ``opengl_better`` graphics display option, or can be entered as -1
-     to not set this parameter. The parameters ``thickness``,
-     ``stipplefactor``, and ``stipplepattern`` only apply to edge style
-     drawing modes and ignore any input in the ``face`` entry. The
-     ``shininess`` parameter only applies to the face style drawing
-     modes.
+     to not set this parameter (or, in Python, a color word).
+     ``stipplefactor`` is the repeat distance for the entire edge
+     stippling pattern, or can be entered as a negative number to not
+     set it. ``stipplepattern`` is the edge stippling pattern, which
+     needs to be between 0 and 0xFFFF, or can be entered as -1 to not
+     set this parameter. And ``shininess`` is the surface shininess, for
+     use with lighting in the “opengl_better" graphics display option,
+     or can be entered as -1 to not set this parameter. The parameters
+     ``thickness``, ``stipplefactor``, and ``stipplepattern`` only apply
+     to edge style drawing modes and ignore any input in the ``face``
+     entry. The ``shininess`` parameter only applies to the face style
+     drawing modes.
 
 Compartments
 ------------
 
--  | ``int``
-   | ``smolAddCompartment(simptr sim,char *compartment);``
+AddCompartment
+   | 
+   | C: ``int smolAddCompartment(simptr sim, char *compartment)``
+   | Python: ``int addCompartment(str compartment)``
    | Adds a compartment called ``compartment`` to the system.
 
--  | ``int``
-   | ``smolGetCompartmentIndex(simptr sim,char *compartment)``
+GetCompartmentIndex
+   | 
+   | C: ``int smolGetCompartmentIndex(simptr sim, char *compartment)``
+   | C: ``int smolGetCompartmentIndexNT(simptr sim, char *compartment)``
+   | Python: ``int getCompartmentIndex(str compartment)``
    | Returns the index of the compartment named ``compartment``. On
-     failure, this returns an error code cast as an integer.
+     failure, this returns an error code cast as an integer. The “NT”
+     version is identical but errors aren’t printed to the stderr output
+     or cause exceptions to be thrown.
 
--  | ``char*``
-   | ``smolGetCompartmentName(simptr sim,int compartmentindex,char     *compartment)``
+GetCompartmentName
+   | 
+   | C:
+     ``char* smolGetCompartmentName(simptr sim, int compartmentindex, char *compartment)``
+   | Python:
+     ``str getCompartmentName(int compartmentindex, str compartment)``
    | Returns the name of the compartment that has index
      ``compartmentindex`` both directly and in the string
      ``compartment``. Returns ``NULL`` if an error arises.
 
--  | ``enum ErrorCode``
-   | ``smolAddCompartmentSurface(simptr sim,char *compartment,char     *surface);``
+AddCompartmentSurface
+   | 
+   | C:
+     ``enum ErrorCode smolAddCompartmentSurface(simptr sim, char *compartment, char *surface)``
+   | Python:
+     ``ErrorCode addCompartmentSurface(str compartment, str surface)``
    | Adds surface ``surface`` as one of the bounding surfaces of
      compartment ``compartment``.
 
--  | ``enum ErrorCode``
-   | ``smolAddCompartmentPoint(simptr sim,char *compartment,double     *point);``
+AddCompartmentPoint
+   | 
+   | C:
+     ``enum ErrorCode smolAddCompartmentPoint(simptr sim, char *compartment, double *point)``
+   | Python:
+     ``ErrorCode addCompartmentPoint(str compartment, List[float] point)``
    | Adds ``point`` as one of the interior-defining points of
      compartment ``compartment``.
 
--  | ``enum ErrorCode``
-   | ``smolAddCompartmentLogic(simptr sim,char *compartment,enum CmptLogic     logic,char *compartment2);``
+AddCompartmentLogic
+   | 
+   | C:
+     ``enum ErrorCode smolAddCompartmentLogic(simptr sim, char *compartment, enum CmptLogic logic, char *compartment2)``
+   | Python:
+     ``ErrorCode addCompartmentLogic(str compartment, CmptLogic logic, str compartment2)``
    | Modifies the current definition of compartment ``compartment``
      using a logical rule specified in ``logic`` and the definition of
      ``compartment2``.
@@ -1354,8 +1953,14 @@ Compartments
 Reactions
 ---------
 
--  | ``enum ErrorCode``
-   | ``smolAddReaction(simptr sim,const char *reaction,const char     *reactant1,enum MolecState rstate1,const char *reactant2,enum     MolecState rstate2,int nproduct,const char **productspecies,enum     MolecState *productstates,double rate);``
+AddReaction
+   | 
+   | C:
+     ``enum ErrorCode smolAddReaction(simptr sim, const char *reaction, const char *reactant1, enum MolecState rstate1, const char *reactant2, enum MolecState rstate2, int nproduct, const char **productspecies, enum MolecState *productstates, double rate)``
+   | Python:
+     ``ErrorCode addReaction(str reaction, str reactant1, MolecState rstate1, str reactant2, MolecState rstate2, int nproduct, List[str] productspecies, List[MolecState] productstates, float rate)``
+   | Python:
+     ``Reaction(subs: List[Species], prds: List[Species], kf, kb=0.0)``
    | Adds reaction named ``reaction`` to the system. This reaction can
      have up to two reactants, whose species are listed in ``reactant1``
      and ``reactant2`` and whose states are listed in ``rstate1`` and
@@ -1366,24 +1971,37 @@ Reactions
      their states in ``productstates``. To set the reaction rate, enter
      it in ``rate``; otherwise, enter ``rate`` as a negative number.
 
--  | ``int``
-   | ``smolGetReactionIndex(simptr sim,int *orderptr,char *reaction);``
+GetReactionIndex
+   | C:
+     ``int smolGetReactionIndex(simptr sim, int *orderptr, char *reaction)``
+   | C:
+     ``int smolGetReactionIndexNT(simptr sim, int *orderptr, char *reaction)``
+   | Python: ``int getReactionIndex(List[int] orderptr, str reaction)``
    | Returns the index and order for the reaction that is named
      ``reaction``. If the order is known, send in ``orderptr`` pointing
      to this value. If it is not known, send in ``orderptr`` equal to
      either ``NULL`` or pointing to a negative number; in this case, it
      will be returned pointing to the reaction order, if the reaction
      was found. On failure, this returns the error code, cast as an
-     integer.
+     integer. The “NT” version is identical but errors don’t get
+     displayed to the stderr output or cause exceptions to be thrown.
 
--  | ``char*``
-   | ``smolGetReactionName(simptr sim,int order,int reactionindex,char     *reaction);``
+GetReactionName
+   | 
+   | C:
+     ``char* smolGetReactionName(simptr sim, int order, int reactionindex, char *reaction)``
+   | Python:
+     ``str getReactionName(int order, int reactionindex, str reaction)``
    | Returns the name of the reaction that has reaction order ``order``
      and index ``reactionindex`` in the string ``reaction``. Also
      returns the result directly. Returns ``NULL`` if an error arises.
 
--  | ``enum ErrorCode``
-   | ``smolSetReactionRate(simptr sim,int order,char *reaction,double     rate,int isinternal);``
+SetReactionRate
+   | 
+   | C:
+     ``enum ErrorCode smolSetReactionRate(simptr sim, int order, char *reaction, double rate, int isinternal)``
+   | Python:
+     ``ErrorCode setReactionRate(int order, str reaction, float rate, int isinternal)``
    | Set the reaction rate to ``rate``. If this value is to be
      interpreted as an internal reaction rate parameter, meaning the
      production rate for zeroth order reactions, the reaction
@@ -1393,69 +2011,77 @@ Reactions
      ``rate`` parameter of the ``smolAddReaction`` function, although
      that doesn’t cope with internal rate values.
 
--  | ``enum ErrorCode``
-   | ``smolSetReactionRegion(simptr sim,const char *reaction,const char     *compartment,const char *surface);``
+SetReactionRegion
+   | 
+   | C:
+     ``enum ErrorCode smolSetReactionRegion(simptr sim, const char *reaction, const char *compartment, const char *surface)``
+   | Python:
+     ``ErrorCode setReactionRegion(str reaction, str compartment, str surface)``
    | Limits the spatial region where a reaction can take place to the
      compartment ``compartment`` and/or the surface ``surface``. To not
      set one of these limits, enter ``compartment`` and/or ``surface``
      as ``NULL``. To remove a previously set limit, enter
-     ``compartment`` and/or ``surface`` as the empty string, \`".
+     ``compartment`` and/or ``surface`` as the empty string, “".
 
--  | ``enum ErrorCode``
-   | ``smolSetReactionProducts(simptr sim,const char *reaction,enum     RevParam method,double parameter,const char *product,double     *position);``
+SetReactionIntersurface
+   | 
+   | C:
+     ``enum ErrorCode smolSetReactionIntersurface(simptr sim, const char *reaction, int *rulelist)``
+   | Set the intersurface reaction rules for the bimolecular reaction
+     called ``reaction``. Intersurface reactions are reactions between
+     two surface-bound molecules that are on two different surfaces. If
+     ``rulelist`` is ``NULL``, then this returns the reaction to the
+     default state, which is that intersurface reactions are not allowed
+     for this reaction. Otherwise, ``rulelist`` should have one entry
+     for each product. If the entry is 1, then that product is placed on
+     the surface with the first reactant; if it is 2, then that product
+     is placed on the surface with the second reactant. If a reaction
+     has no products, then create a single element in ``rulelist`` equal
+     to 0 to indicate that intersurface reactions are permitted.
+
+SetReactionProducts
+   | 
+   | C:
+     ``enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction, enum RevParam method, double parameter, const char *product, double *position)``
+   | Python:
+     ``ErrorCode setReactionProducts(str reaction, RevParam method, float parameter, str product, List[float] position)``
    | Sets the reaction product parameters for reaction ``reaction``. At
      a minimum, the ``method`` reversible parameter is required. Most of
      these methods require a single parameter, entered in ``parameter``.
      A few methods also require a product, in ``product`` and the
      relative position of this product in ``position``.
 
-   +----------------+----------------+----------------+----------------+
-   | ``method``     | ``parameter``  | ``product``    | ``position``   |
-   +================+================+================+================+
-   | ``RPnone``     | -              | -              | -              |
-   +----------------+----------------+----------------+----------------+
-   | ``RPirrev``    | -              | -              | -              |
-   +----------------+----------------+----------------+----------------+
-   | ``             | -              | -              | -              |
-   | RPconfspread`` |                |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPbounce``   | (:raw-late     | -              | -              |
-   |                | x:`\sigma`\_u) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPpgem``     | (:raw          | -              | -              |
-   |                | -latex:`\phi`) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPpgemmax``  | (:raw-latex:   | -              | -              |
-   |                | `\phi`\_{max}) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPpgemmaxw`` | (:raw-latex:   | -              | -              |
-   |                | `\phi`\_{max}) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPratio``    | (:raw          | -              | -              |
-   |                | -latex:`\sigma |                |                |
-   |                | `\_u/:raw-late |                |                |
-   |                | x:`\sigma`\_b) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | `              | (:raw-late     | -              | -              |
-   | `RPunbindrad`` | x:`\sigma`\_u) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPpgem2``    | (:raw          | -              | -              |
-   |                | -latex:`\phi`) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPpgemmax2`` | (:raw-latex:   | -              | -              |
-   |                | `\phi`\_{max}) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPratio2``   | (:raw          | -              | -              |
-   |                | -latex:`\sigma |                |                |
-   |                | `\_u/:raw-late |                |                |
-   |                | x:`\sigma`\_b) |                |                |
-   +----------------+----------------+----------------+----------------+
-   | ``RPoffset``   | -              | product number | relative       |
-   |                |                |                | position       |
-   +----------------+----------------+----------------+----------------+
-   | ``RPfixed``    | -              | product number | relative       |
-   |                |                |                | position       |
-   +----------------+----------------+----------------+----------------+
+   +------------------+---------------------------+----------------+-------------------+
+   | ``method``       | ``parameter``             | ``product``    | ``position``      |
+   +==================+===========================+================+===================+
+   | ``RPnone``       | -                         | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPirrev``      | -                         | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPconfspread`` | -                         | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPbounce``     | :math:`\sigma_u`          | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPpgem``       | :math:`\phi`              | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPpgemmax``    | :math:`\phi_{max}`        | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPpgemmaxw``   | :math:`\phi_{max}`        | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPratio``      | :math:`\sigma_u/\sigma_b` | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPunbindrad``  | :math:`\sigma_u`          | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPpgem2``      | :math:`\phi`              | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPpgemmax2``   | :math:`\phi_{max}`        | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPratio2``     | :math:`\sigma_u/\sigma_b` | -              | -                 |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPoffset``     | -                         | product number | relative position |
+   +------------------+---------------------------+----------------+-------------------+
+   | ``RPfixed``      | -                         | product number | relative position |
+   +------------------+---------------------------+----------------+-------------------+
 
    If ``method`` is ``RPbounce``, then a negative number for the
    ``parameter`` indicates default bounce behavior, which is that
@@ -1465,22 +2091,39 @@ Reactions
 Ports
 -----
 
--  | ``enum ErrorCode``
-   | ``smolAddPort(simptr sim,const char *port,const char *surface,enum     PanelFace face);``
+AddPort
+   | 
+   | C:
+     ``enum ErrorCode smolAddPort(simptr sim, const char *port, const char *surface, enum PanelFace face)``
+   | Python:
+     ``ErrorCode addPort(str port, str surface, PanelFace face)``
+   | Python:
+     ``Port(name: str, surface: Union[Surface, str], panel: str)``
    | Adds a port to the simulation. The port will be named ``port`` and
      will port at the ``face`` face of surface ``surface``.
 
--  | ``int``
-   | ``smolGetPortIndex(simptr sim,const char *port);``
-   | Returns the index of the port named ``port``.
+GetPortIndex
+   | 
+   | C: ``int smolGetPortIndex(simptr sim, const char *port)``
+   | C: ``int smolGetPortIndexNT(simptr sim, const char *port)``
+   | Python: ``int getPortIndex(str port)``
+   | Returns the index of the port named ``port``. The “NT” version is
+     identical but errors don’t get displayed to the stderr output or
+     cause exceptions to be thrown.
 
--  | ``char*``
-   | ``smolGetPortName(simptr sim,int portindex,char *port);``
+GetPortName
+   | 
+   | C: ``char* smolGetPortName(simptr sim, int portindex, char *port)``
+   | Python: ``str getPortName(int portindex, str port)``
    | Returns the name of the port with index ``portindex``, both
      directly and in ``port``.
 
--  | ``enum ErrorCode``
-   | ``smolAddPortMolecules(simptr sim,const char *port,int nmolec,const     char *species,double **positions);``
+AddPortMolecules
+   | 
+   | C:
+     ``enum ErrorCode smolAddPortMolecules(simptr sim, const char *port, int nmolec, const char *species, double **positions)``
+   | Python:
+     ``ErrorCode addPortMolecules(str port, int nmolec, str species, List[float] positions)``
    | Adds ``nmolec`` molecules to Smoldyn’s import buffer of port
      ``port``. These molecules will all have species ``species`` and
      state ``MSsoln``. Enter ``positions`` as ``NULL`` to have the
@@ -1489,13 +2132,93 @@ Ports
      those specific initial positions. These initial positions should be
      close to the porting surface, and on the Smoldyn system side of it.
 
--  | ``int``
-   | ``smolGetPortMolecules(simptr sim,const char *port,const char     *species,enum MolecState state,int remove);``
+GetPortMolecules
+   | 
+   | C:
+     ``int smolGetPortMolecules(simptr sim, const char *port, const char *species, enum MolecState state, int remove)``
+   | Python:
+     ``int getPortMolecules(str port, str species, MolecState state, int remove)``
    | Returns the number of molecules that are in Smoldyn’s export buffer
      of port ``port``. Enter ``species`` with the species of the
-     molecules that should be retrieved, or ``all`` for all species.
-     Enter ``state`` with the states of the molecules that should be
+     molecules that should be retrieved, or “all" for all species. Enter
+     ``state`` with the states of the molecules that should be
      retrieved, or ``MSall`` for all states. Enter ``remove`` with 1 to
      remove molecules from the export buffer after they are retrieved or
      with 0 to leave them in the buffer. If an error arises, this
      returns the error code cast as an integer.
+
+Lattices
+--------
+
+AddLattice
+   | 
+   | C:
+     ``enum ErrorCode smolAddLattice(simptr sim,const char *lattice,const double *min,const double *max,const double *dx,const char *btype)``
+   | Python:
+     ``ErrorCode AddLattice(str lattice,List[float] min,List[float] max,List[float] dx,str btype)``
+   | Adds a lattice to the simulation for hybrid operation. The lattice
+     is named ``lattice`` and extends from ``min`` to ``max``, with
+     lattice spacing ``dx``. The boundary types are given with
+     ``btype``, which is a string of either ‘r’ characters for
+     reflective boundary or ‘p’ characters for periodic boundary, with
+     one character for each dimension and the dimensions listed in order
+     (e.g. “rrp” is reflective on the :math:`x` and :math:`y` axes and
+     periodic on the :math:`z` axis).
+
+GetLatticeIndex
+   | 
+   | C: ``int smolGetLatticeIndex(simptr sim,const char *lattice)``
+   | C: ``int smolGetLatticeIndexNT(simptr sim,const char *lattice)``
+   | Python: ``int GetLatticeIndex(str lattice)``
+   | Returns the index of the lattice named ``lattice``. The “NT”
+     version is identical but errors don’t get displayed to the stderr
+     output or cause exceptions to be thrown.
+
+GetLatticeName
+   | 
+   | C:
+     ``char *smolGetLatticeName(simptr sim,int latticeindex,char *lattice)``
+   | Python: ``str getLatticeName(int latticeindex, str lattice)``
+   | Returns the name of the lattice with index ``latticeindex``, both
+     directly and in ``lattice``.
+
+AddLatticeMolecules
+   | 
+   | C:
+     ``enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition)``
+   | Python:
+     ``ErrorCode AddLatticeMolecules(str lattice, str species, int number, List[float] lowposition, List[float] highposition)``
+   | Adds ``number`` molecules of species ``species`` to the lattice
+     named ``lattice``, randomly positioned over the volume extending
+     from ``lowposition`` to ``highposition``. These molecules will all
+     have state ``MSsoln``.
+
+AddLatticePort
+   | 
+   | C:
+     ``enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const char *port)``
+   | Python: ``ErrorCode AddLatticePort(str lattice, str port)``
+   | Connects port ``port`` with lattice ``lattice``, so that molecules
+     can transition across this port between the particle-based
+     simulation region and the lattice-based simulation region.
+
+AddLatticeSpecies
+   | 
+   | C:
+     ``enum ErrorCode smolAddLatticeSpecies(simptr sim,const char *lattice, const char *species)``
+   | Python: ``ErrorCode AddLatticeSpecies(str lattice, str species)``
+   | Not all particle-based Smoldyn species are necessarily listed in a
+     lattice portion of space, so use this function to add species to
+     the lattice region of space. Clearly, the lattice is ``lattice``
+     and the species being added is ``species``.
+
+AddLatticeReaction
+   | 
+   | C:
+     ``enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice, const char *reaction, const int move)``
+   | Python:
+     ``ErrorCode AddLatticeReaction(str lattice, str reaction, int move)``
+   | Not all particle-based Smoldyn reactions are necessarily listed in
+     a lattice portion of space, so use this function to add reactions
+     to the lattice region of space. Clearly, the lattice is ``lattice``
+     and the reaction being added is ``reaction``.

@@ -98,13 +98,13 @@ add_custom_target(pydevel
     COMMENT "RUNNING: python3 setup.py develop --user"
     VERBATIM)
 
-add_custom_target(doc_api_html
-    DEPENDS _smoldyn
-    COMMAND sphinx-build ${CMAKE_CURRENT_SOURCE_DIR}/docs/source
-        ${PY_SMOLDYN_OUTDIR}/html
-    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "Generating Python's API doc (HTML)"
-    VERBATIM)
+# add_custom_target(doc_api_html
+#     DEPENDS _smoldyn
+#     COMMAND sphinx-build ${CMAKE_CURRENT_SOURCE_DIR}/docs/source
+#         ${PY_SMOLDYN_OUTDIR}/html
+#     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
+#     COMMENT "Generating Python's API doc (HTML)"
+#     VERBATIM)
 
 # Run static type checking using mypy (developer only). Works best with
 # python3.7+
