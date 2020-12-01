@@ -41,4 +41,5 @@ jobs:
            SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
         run: |
             cd build
-            python -m twine upload -u __token__ -p "$SMOLDYN_PYPI_TOKEN" *.whl
+            ls 
+            python -m twine upload -u __token__ -p "$env:SMOLDYN_PYPI_TOKEN" *.whl
