@@ -39,6 +39,7 @@ jobs:
       - name: Upload to PyPI
         env:
            SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
+        if: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
         run: |
             cd build
             ls 
