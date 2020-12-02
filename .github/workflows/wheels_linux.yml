@@ -6,12 +6,6 @@ on:
     branches: [ master ]
       
 jobs:
-  vm:
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo "Do nothing here"
-        name: Dummy job
   container:
     runs-on: ubuntu-latest
     container: quay.io/pypa/manylinux2010_x86_64
