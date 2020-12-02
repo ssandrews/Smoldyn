@@ -37,6 +37,8 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     echo "Building wheel for $PLATFORM"
     ls -ltr
     cmake ../.. \
+        -DOPTION_PYTHON=ON \
+        -DOPTION_EXAMPLES=ON \
         -DSMOLDYN_VERSION:STRING=${SMOLDYN_VERSION} \
         -DPython3_EXECUTABLE=$PYTHON
     make -j4 

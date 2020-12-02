@@ -24,8 +24,10 @@ set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
-# Usually run it on github actions and other CI. 
 # FIXME: If it comes your way, comment it out.
+# Patchwork: It usually run on github actions and other CI (for Windows only).
+# Its very hard to locate correct version of Python on every cloud based CI. 
+# So let cmake install the dependencies at build time.
 if(WINDOWS_BUILD)
     add_custom_command(TARGET _pysmoldyn PRE_BUILD
         COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest wheel numpy setuptools --user
@@ -98,14 +100,6 @@ add_custom_target(pydevel
     COMMENT "RUNNING: python3 setup.py develop --user"
     VERBATIM)
 
-add_custom_target(doc_api_html
-    DEPENDS _smoldyn
-    COMMAND sphinx-build ${CMAKE_CURRENT_SOURCE_DIR}/docs/source
-        ${PY_SMOLDYN_OUTDIR}/html
-    WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "Generating Python's API doc (HTML)"
-    VERBATIM)
-
 # Run static type checking using mypy (developer only). Works best with
 # python3.7+
 add_custom_target(lint 
@@ -133,7 +127,7 @@ endforeach()
 
 add_test(NAME pytest 
     COMMAND 
-    ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11-*
+    ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11*
     ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 set_tests_properties(pytest 
