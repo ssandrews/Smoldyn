@@ -24,7 +24,7 @@ jobs:
           /opt/python/cp38-cp38/bin/python -m pip install cmake 
           ln -s /opt/python/cp38-cp38/bin/cmake /usr/local/bin/cmake
           cd ~ && tree
-          git clone https://github.com/dilawar/Smoldyn -b master --depth 10
+          git clone https://github.com/ssandrews/Smoldyn -b master --depth 10
           cd Smoldyn/scripts && PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN ./build_wheels_linux.sh 
         name: Building wheel in ManuLinux container
 
