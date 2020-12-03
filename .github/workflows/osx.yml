@@ -1,0 +1,15 @@
+name: OSX Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build, test and deploy
+      run: cd ./scripts && ./build_wheels_osx.sh

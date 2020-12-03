@@ -25,12 +25,17 @@ To release a new version of pybind11:
   - Update ``PYBIND11_VERSION_MAJOR`` etc. in
     ``include/pybind11/detail/common.h``. PATCH should be a simple integer.
   - Update ``pybind11/_version.py`` (match above)
-  - Ensure that all the information in ``setup.py`` is up-to-date.
+  - Ensure that all the information in ``setup.cfg`` is up-to-date, like
+    supported Python versions.
   - Add release date in ``docs/changelog.rst``.
+      - Check to make sure
+        `needs-changelog <https://github.com/pybind/pybind11/pulls?q=is%3Apr+is%3Aclosed+label%3A%22needs+changelog%22>`_
+        issues are entered in the changelog (clear the label when done).
   - ``git add`` and ``git commit``, ``git push``. **Ensure CI passes**. (If it
     fails due to a known flake issue, either ignore or restart CI.)
-- Add a release branch if this is a new minor version
-  - ``git checkout -b vX.Y``, ``git push -u origin vX.Y``
+- Add a release branch if this is a new minor version, or update the existing release branch if it is a patch version
+  - New branch: ``git checkout -b vX.Y``, ``git push -u origin vX.Y``
+  - Update branch: ``git checkout vX.Y``, ``git merge <release branch>``, ``git push``
 - Update tags (optional; if you skip this, the GitHub release makes a
   non-annotated tag for you)
   - ``git tag -a vX.Y.Z -m 'vX.Y.Z release'``.
@@ -56,10 +61,19 @@ To release a new version of pybind11:
   - Update version macros in ``include/pybind11/detail/common.h`` (set PATCH to
     ``0.dev1`` and increment MINOR).
   - Update ``_version.py`` to match
-  - Add a plot for in-development updates in ``docs/changelog.rst``.
+  - Add a spot for in-development updates in ``docs/changelog.rst``.
   - ``git add``, ``git commit``, ``git push``
 
 If a version branch is updated, remember to set PATCH to ``1.dev1``.
+
+If you'd like to bump homebrew, run:
+
+.. code-block::
+
+    brew bump-formula-pr --url https://github.com/pybind/pybind11/archive/vX.Y.Z.tar.gz
+
+Conda-forge should automatically make a PR in a few hours, and automatically
+merge it if there are no issues.
 
 
 Manual packaging

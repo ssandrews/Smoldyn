@@ -127,7 +127,7 @@ endforeach()
 
 add_test(NAME pytest 
     COMMAND 
-    ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11-*
+    ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11*
     ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 set_tests_properties(pytest 

@@ -6,6 +6,12 @@ Changelog
 Starting with version 1.8.0, pybind11 releases use a `semantic versioning
 <http://semver.org>`_ policy.
 
+v2.6.2 (TBA, not yet released)
+------------------------------
+
+* Details to follow here
+
+
 v2.6.1 (Nov 11, 2020)
 ---------------------
 
@@ -14,7 +20,7 @@ v2.6.1 (Nov 11, 2020)
   and ``eval`` in pure Python.
   `#2616 <https://github.com/pybind/pybind11/pull/2616>`_
 
-* ``setup_helpers`` will no longer set a minimum macOS version lower than the
+* ``setup_helpers`` will no longer set a minimum macOS version higher than the
   current version.
   `#2622 <https://github.com/pybind/pybind11/pull/2622>`_
 
