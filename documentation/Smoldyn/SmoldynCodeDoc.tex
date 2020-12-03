@@ -475,6 +475,13 @@ For version 2.62 and maybe future versions, I'm compiling the Windows version on
 
 I haven't figured out how to build alternate targets yet. The CMake documentation for build\_command (and an email from Ciaran) suggests that this might be possible with ``cmake .. --target wheel'', but this doesn't work for me. Also, the Microsoft documentation at \url{https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2019} say that I can build with ``msbuild smoldyn.sln -target:wheel''. This doesn't seem totally wrong, but it says that the target doesn't exist. Yet another approach is to change directories to build/source/python and enter ``msbuild wheel.vcxproj''. This seemed promising for me but led to the error ``invalid command `bdist\_wheel''', which a Google search seemed to suggest arose from not using pip. Also, I can't seem to figure out how to get pip to work on that computer, so perhaps that's the problem.
 
+Here is some more advice, from Dilawar on 11/26/20.
+\begin{itemize}
+\item \ttt{cmake .. -DOPTION\_PYTHON=ON -DOPTION\_EXAMPLES=ON}
+\item \ttt{cmake --build . --config Release}
+\item \ttt{ctest -C Release}
+\end{itemize}
+The build step should install the wheel.
 
 % Unit and regression testing
 \section{Unit and regression testing}

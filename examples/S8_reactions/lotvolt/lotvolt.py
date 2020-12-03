@@ -20,4 +20,13 @@ s.setOutputFile("lotvoltout.txt")
 s.addCommand("molcount lotvoltout.txt", "i", on=0, off=20, step=0.01)
 s.addCommand("molcount stdout", "i", on=0, off=20, step=0.1)
 
-s = s.run(20, dt=0.001, overwrite=True)
+s = s.run(5, dt=0.001, overwrite=True)
+
+
+# graph of results. This doesn't run because Python quits first.
+import matplotlib.pyplot as plt
+import numpy as np
+t,rabbit,fox = np.loadtxt("lotvoltout.txt",unpack=True)
+plt.plot(t,rabbit,'r-',t,fox,'b-')
+plt.show()
+
