@@ -10,6 +10,7 @@
 #include "opengl2.h"
 #include "SimCommand.h"
 #include "string2.h"
+#include "List.h"
 
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
@@ -651,7 +652,7 @@ extern CSTRING enum ErrorCode smolSetOutputPath(simptr sim,const char *path) {
 
 /* smolAddOutputFile */
 extern CSTRING enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix,int append) {
-	const char *funcname="smolSetOutputFile";
+	const char *funcname="smolAddOutputFile";
 	int er;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -663,6 +664,21 @@ extern CSTRING enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int su
 		er=scmdsetfsuffix(sim->cmds,filename,suffix);
 		LCHECK(!er,funcname,ECbug,"scmdsetfsuffix bug"); }
 
+	return Libwarncode;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolAddOutputData */
+extern CSTRING enum ErrorCode smolAddOutputData(simptr sim,char *dataname) {
+	const char *funcname="smolAddOutputData";
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(dataname,funcname,ECmissing,"missing dataname");
+	LCHECK(!strchr(dataname,' '),funcname,ECwarning,"only first word of dataname is used");
+	er=scmdsetdnames(sim->cmds,dataname);
+	LCHECK(!er,funcname,ECmemory,"allocating dataname");
 	return Libwarncode;
  failure:
 	return Liberrorcode; }
@@ -718,7 +734,37 @@ extern CSTRING enum ErrorCode smolAddCommandFromString(simptr sim,char *string) 
  failure:
 	return Liberrorcode; }
 
-	
+
+/* smolGetOutputData */
+extern CSTRING enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,double **array,int erase) {
+	const char *funcname="smolGetOutputData";
+	int did,i,j;
+	listptrdd list;
+	double *datacopy;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(dataname,funcname,ECmissing,"missing dataname");
+	LCHECK(nrow && ncol && array,funcname,ECmissing,"missing pointer for returned data");
+	LCHECK(sim->cmds && sim->cmds->ndata>0,funcname,ECerror,"no data files in the sim");
+	did=stringfind(sim->cmds->dname,sim->cmds->ndata,dataname);
+	LCHECK(did>=0,funcname,ECerror,"no data file of the requested name");
+	list=sim->cmds->data[did];
+
+	datacopy=(double*) calloc(list->nrow*list->ncol,sizeof(double));
+	LCHECK(datacopy,funcname,ECmemory,"out of memory");
+	for(i=0;i<list->nrow;i++)
+		for(j=0;j<list->ncol;j++)
+			datacopy[i*list->ncol+j]=list->data[i*list->maxcol+j];
+	*nrow=list->nrow;
+	*ncol=list->ncol;
+	*array=datacopy;
+	if(erase) ListClearDD(list);
+
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
 /******************************************************************************/
 /********************************* Molecules **********************************/
 /******************************************************************************/

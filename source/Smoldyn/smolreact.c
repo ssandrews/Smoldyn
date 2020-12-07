@@ -2621,7 +2621,7 @@ failure:
 
 /* doreact */
 int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,int m1,int ll2,int m2,double *pos,panelptr rxnpnl) {
-	int order,prd,d,nprod,dim,calc,dorxnlog,prd2;
+	int order,prd,d,nprod,dim,calc,dorxnlog,prd2,er;
 	long int pserno;
 	unsigned long long sernolist[MAXPRODUCT];
 	double dc1,dc2,x,dist,pvalue;
@@ -2828,9 +2828,9 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 			if(dorxnlog==0 && (ListMemberLI(rxn->logserno,mptr->serno&0xFFFFFFFF) || (mptr->serno>0xFFFFFFF && ListMemberLI(rxn->logserno,mptr->serno>>32))))
 				dorxnlog=1;
 			if(dorxnlog==1) {
-				fptr=scmdgetfptr(sim->cmds,rxn->logfile);
-				if(!fptr) {
-					simLog(sim,8,"cannot write to reaction log filename '%s'\n",rxn->logfile);
+				er=scmdgetfptr(sim->cmds,rxn->logfile,1,&fptr,NULL);
+				if(er==-1) {
+					simLog(sim,8,"reaction log filename '%s' is undeclared\n",rxn->logfile);
 					dorxnlog=-1; }
 				else {
 					scmdfprintf(sim->cmds,fptr,"%g %s",sim->time,rxn->rname);

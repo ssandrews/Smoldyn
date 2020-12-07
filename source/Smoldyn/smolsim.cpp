@@ -1309,7 +1309,13 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=1,"out of memory in output_files");
 		CHECKS(er!=2,"error reading file name");
 		CHECKS(er!=4,"BUG: variable cmds became NULL"); }
-	
+
+	else if(!strcmp(word,"output_data")) {				// output_data
+		er=scmdsetdnames(sim->cmds,line2);
+		CHECKS(er!=1,"out of memory in output_data");
+		CHECKS(er!=2,"error reading data variable name");
+		CHECKS(er!=4,"BUG: variable cmds became NULL"); }
+
 	else if(!strcmp(word,"output_precision")) {		// output_precision
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
 		CHECKS(itct==1,"format for output_precision: value");

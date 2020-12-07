@@ -582,6 +582,11 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddOutputFile(cursim_, filename, suffix, append);
     });
 
+	// enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
+    m.def("addOutputData", [](char *dataname) {
+			return smolAddOutputData(cursim_, dataname);
+    });
+
     // enum ErrorCode smolAddCommand(simptr sim, char type, double on, double
     // off,
     //     double step, double multiplier, const char *commandstring);

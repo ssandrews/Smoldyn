@@ -104,6 +104,7 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdexecutiontime(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2);
 
 enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2);
 
@@ -242,6 +243,7 @@ enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"executiontime")) return cmdexecutiontime(sim,cmd,line2);
 	else if(!strcmp(word,"writeVTK")) return cmdwriteVTK(sim,cmd,line2);
 	else if(!strcmp(word,"printLattice")) return cmdprintLattice(sim,cmd,line2);
+	else if(!strcmp(word,"printdata")) return cmdprintdata(sim,cmd,line2);
 
 	// system manipulation
 	else if(!strcmp(word,"set")) return cmdset(sim,cmd,line2);
@@ -422,17 +424,25 @@ enum CMDcode cmdupdategraphics(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdoverwrite */
 enum CMDcode cmdoverwrite(simptr sim,cmdptr cmd,char *line2) {
+	int er;
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
 	SCMDCHECK(line2,"missing argument");
-	SCMDCHECK(scmdoverwrite(sim->cmds,line2),"failed to open file");
+	er=scmdoverwrite(sim->cmds,line2);
+	SCMDCHECK(er!=1,"file not declared");
+	SCMDCHECK(er!=2,"failed to open file for writing");
 	return CMDok; }
 
 
 /* cmdincrementfile */
 enum CMDcode cmdincrementfile(simptr sim,cmdptr cmd,char *line2) {
+	int er;
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
 	SCMDCHECK(line2,"missing argument");
-	SCMDCHECK(scmdincfile(sim->cmds,line2),"failed to increment file");
+	er=scmdincfile(sim->cmds,line2);
+	SCMDCHECK(er!=1,"file name not declared");
+	SCMDCHECK(er!=2,"failed to open new file for writing");
 	return CMDok; }
 
 
@@ -644,13 +654,14 @@ enum CMDcode cmdif(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdwarnescapee */
 enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2) {
-	int i,escape,*index;
+	int i,escape,*index,er;
 	enum MolecState ms;
-	static FILE *fptr=NULL;
 	moleculeptr mptr;
 	double *pos,*posx,*via;
-	static int inscan=0;
 	char string[STRCHAR];
+	static int inscan=0;
+	static FILE *fptr=NULL;
+	static int dataid=-1;
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -662,8 +673,8 @@ enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(i!=-4) {
 		inscan=1;
@@ -681,20 +692,27 @@ enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2) {
 		escape=!posinsystem(sim,posx);
 		if(!escape) {
 			via=mptr->via;
-			if(sim->dim==1) scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s %g to %g via %g\n",sim->time,molserno2string(mptr->serno,string),posx[0],pos[0],via[0]);
-			else if(sim->dim==2) scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g) to (%g,%g) via (%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],pos[0],pos[1],via[0],via[1]);
-			else scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g,%g) to (%g,%g,%g) via (%g,%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]); }}
+			if(sim->dim==1) {
+				scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s %g to %g via %g\n",sim->time,molserno2string(mptr->serno,string),posx[0],pos[0],via[0]);
+				scmdappenddata(cmd->cmds,dataid,1,5,sim->time,(double)(mptr->serno),posx[0],pos[0],via[0]); }
+			else if(sim->dim==2) {
+				scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g) to (%g,%g) via (%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],pos[0],pos[1],via[0],via[1]);
+				scmdappenddata(cmd->cmds,dataid,1,8,sim->time,(double)(mptr->serno),posx[0],posx[1],pos[0],pos[1],via[0],via[1]); }
+			else {
+				scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g,%g) to (%g,%g,%g) via (%g,%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]);
+				scmdappenddata(cmd->cmds,dataid,1,11,sim->time,(double)(mptr->serno),posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]); }}}
 	return CMDok; }
 
 
 /* cmdecho */
 enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2) {
+	int er;
 	FILE *fptr;
 	char *termqt,str[STRCHAR];
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2=strchr(line2,'"'),"no starting quote on string");
 	strncpy(str,line2+1,STRCHAR-1);
@@ -711,12 +729,12 @@ enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2) {
 enum CMDcode cmdevaluate(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	double answer;
-	int it,er;
+	int it,er,dataid;
 	char erstr[STRCHAR];
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing item to evaluate");
 	it=strmathsscanf(line2,"%mlg",sim->varnames,sim->varvalues,sim->nvar,&answer);
@@ -724,6 +742,7 @@ enum CMDcode cmdevaluate(simptr sim,cmdptr cmd,char *line2) {
 		er=strmatherror(erstr,1);
 		SCMDCHECK(!er,"%s",erstr); }
 	scmdfprintf(cmd->cmds,fptr,"%g\n",answer);
+	scmdappenddata(cmd->cmds,dataid,1,1,answer);
 	scmdflush(fptr);
 	return CMDok; }
 
@@ -731,11 +750,11 @@ enum CMDcode cmdevaluate(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountheader */
 enum CMDcode cmdmolcountheader(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int i;
+	int i,er;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
 	SCMDCHECK(sim->mols,"molecules are undefined");
 	scmdfprintf(cmd->cmds,fptr,"time");
 	for(i=1;i<sim->mols->nspecies;i++)
@@ -748,7 +767,7 @@ enum CMDcode cmdmolcountheader(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcount */
 enum CMDcode cmdmolcount(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int i,nspecies,*ctlat,ilat;
+	int i,nspecies,*ctlat,ilat,er,dataid;
 	latticeptr lat;
 	moleculeptr mptr;
 	static int inscan=0,*ct=NULL;
@@ -757,8 +776,8 @@ enum CMDcode cmdmolcount(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 
 	SCMDCHECK(cmd->i1!=-1,"error on setup");					// failed before, don't try again
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	SCMDCHECK(sim->mols,"molecules are undefined");
 
 	nspecies=sim->mols->nspecies;
@@ -796,7 +815,10 @@ enum CMDcode cmdmolcount(simptr sim,cmdptr cmd,char *line2) {
 				ct[i]+=ctlat[i]; }}}
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-	for(i=1;i<nspecies;i++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+	for(i=1;i<nspecies;i++) {
+		scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -897,7 +919,7 @@ double fnmolcountonsurf(void *voidsim,char *erstr,char *line2) {
 /* cmdmolcountinbox */
 enum CMDcode cmdmolcountinbox(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int d,dim,itct,i,nspecies;
+	int d,dim,itct,i,nspecies,er,dataid;
 	moleculeptr mptr;
 	static double low[3]={0,0,0},high[3]={0,0,0};
 	static int inscan=0,*ct;
@@ -913,8 +935,8 @@ enum CMDcode cmdmolcountinbox(simptr sim,cmdptr cmd,char *line2) {
 		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&low[d],&high[d]);
 		SCMDCHECK(itct==2,"read failure");
 		line2=strnword(line2,3); }
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	nspecies=sim->mols->nspecies;
 	if(cmd->i1!=nspecies) {														// allocate counter if required
@@ -932,7 +954,10 @@ enum CMDcode cmdmolcountinbox(simptr sim,cmdptr cmd,char *line2) {
 	inscan=0;
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-	for(i=1;i<nspecies;i++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+	for(i=1;i<nspecies;i++) {
+		scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -950,7 +975,7 @@ enum CMDcode cmdmolcountincmpt(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	char nm[STRCHAR];
 	compartssptr cmptss;
-	int itct,c,i,nspecies;
+	int itct,c,i,nspecies,er,dataid;
 	moleculeptr mptr;
 	static compartptr cmpt=NULL;
 	static int inscan=0,*ct;
@@ -969,9 +994,9 @@ enum CMDcode cmdmolcountincmpt(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(c>=0,"compartment name not recognized");
 	cmpt=cmptss->cmptlist[c];
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
-	
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
+
 	nspecies=sim->mols->nspecies;
 	if(cmd->i1!=nspecies) {														// allocate counter if required
 		cmdv1free(cmd);
@@ -988,7 +1013,10 @@ enum CMDcode cmdmolcountincmpt(simptr sim,cmdptr cmd,char *line2) {
 	inscan=0;
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-	for(i=1;i<nspecies;i++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+	for(i=1;i<nspecies;i++) {
+		scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -1004,7 +1032,7 @@ enum CMDcode cmdmolcountincmpts(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	char nm[STRCHAR];
 	compartssptr cmptss;
-	int itct,c,i,ic;
+	int itct,c,i,ic,er,dataid;
 	moleculeptr mptr;
 	static int inscan=0,*ct,ncmpt,nspecies;
 	static compartptr cmptlist[16];
@@ -1027,8 +1055,8 @@ enum CMDcode cmdmolcountincmpts(simptr sim,cmdptr cmd,char *line2) {
 		cmptlist[ic]=cmptss->cmptlist[c];
 		line2=strnword(line2,2);
 		SCMDCHECK(line2,"missing argument"); }
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	nspecies=sim->mols->nspecies;
 	if(cmd->i1!=nspecies) {														// allocate counter if required
@@ -1046,8 +1074,11 @@ enum CMDcode cmdmolcountincmpts(simptr sim,cmdptr cmd,char *line2) {
 	inscan=0;
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
 	for(i=1;i<nspecies*ncmpt;i++) 
-		if(i%nspecies!=0) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+		if(i%nspecies!=0) {
+			scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -1064,7 +1095,7 @@ enum CMDcode cmdmolcountincmpt2(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	char nm[STRCHAR],state[STRCHAR];
 	compartssptr cmptss;
-	int itct,c,i,nspecies;
+	int itct,c,i,nspecies,er,dataid;
 	moleculeptr mptr;
 	enum MolecState ms;
 	static compartptr cmpt;
@@ -1087,8 +1118,8 @@ enum CMDcode cmdmolcountincmpt2(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(ms!=MSbsoln,"bsoln molecule state not permitted");
 	cmpt=cmptss->cmptlist[c];
 	line2=strnword(line2,3);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	nspecies=sim->mols->nspecies;
 	if(cmd->i1!=nspecies) {														// allocate counter if required
@@ -1106,7 +1137,10 @@ enum CMDcode cmdmolcountincmpt2(simptr sim,cmdptr cmd,char *line2) {
 	inscan=0;
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-	for(i=1;i<nspecies;i++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+	for(i=1;i<nspecies;i++) {
+		scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -1122,7 +1156,7 @@ enum CMDcode cmdmolcountonsurf(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	char nm[STRCHAR];
 	surfacessptr srfss;
-	int itct,s,i,nspecies;
+	int itct,s,i,nspecies,er,dataid;
 	moleculeptr mptr;
 	static int inscan=0,*ct;
 	static surfaceptr srf;
@@ -1141,8 +1175,8 @@ enum CMDcode cmdmolcountonsurf(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(s>=0,"surface name '%s' not recognized",nm);
 	srf=srfss->srflist[s];
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	nspecies=sim->mols->nspecies;
 	if(cmd->i1!=nspecies) {														// allocate counter if required
@@ -1160,7 +1194,10 @@ enum CMDcode cmdmolcountonsurf(simptr sim,cmdptr cmd,char *line2) {
 	inscan=0;
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-	for(i=1;i<nspecies;i++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+	for(i=1;i<nspecies;i++) {
+		scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -1174,7 +1211,7 @@ enum CMDcode cmdmolcountonsurf(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspace */
 enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int dim,i,itct,ax2,d,bin,average,*ctlat,ilat,*index,j;
+	int dim,i,itct,ax2,d,bin,average,*ctlat,ilat,*index,j,er,dataid;
 	enum MolecState ms;
 	char axisstr[STRCHAR];
 	moleculeptr mptr;
@@ -1224,8 +1261,8 @@ enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==1,"cannot read average number");
 	SCMDCHECK(average>=0,"illegal average value");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(cmd->i1!=nbin) {														// allocate counter if required
 		cmdv1free(cmd);
@@ -1264,11 +1301,17 @@ enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 
 	if(average<=1) {
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-		for(bin=0;bin<nbin;bin++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin]);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+		for(bin=0;bin<nbin;bin++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin]);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[bin]); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	else if(cmd->invoke%average==0) {
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-		for(bin=0;bin<nbin;bin++) scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin])/(double)average);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+		for(bin=0;bin<nbin;bin++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin])/(double)average);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)(ct[bin])/(double)average); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	scmdflush(fptr);
 	return CMDok;
@@ -1286,7 +1329,7 @@ enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspace2d */
 enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int dim,i,itct,d,bin,average,*index,curaxis,bin1,bin2;
+	int dim,i,itct,d,bin,average,*index,curaxis,bin1,bin2,er,dataid;
 	enum MolecState ms;
 	char axisstr[STRCHAR];
 	moleculeptr mptr;
@@ -1350,8 +1393,8 @@ enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==1,"cannot read average number");
 	SCMDCHECK(average>=0,"illegal average value");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(cmd->i1!=nbin1*nbin2) {											// allocate counter if required
 		cmdv1free(cmd);
@@ -1373,13 +1416,22 @@ enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 
 	if(average<=1 || cmd->invoke%average==0) {
 		scmdfprintf(cmd->cmds,fptr,"%g\n",sim->time);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
 		for(bin2=0;bin2<nbin2;bin2++) {
 			bin1=0;
-			if(average<=1) scmdfprintf(cmd->cmds,fptr,"%i",ct[bin2*nbin1+bin1]);
-			else scmdfprintf(cmd->cmds,fptr,"%g",(double)(ct[bin2*nbin1+bin1]/(double)average));
+			if(average<=1) {
+				scmdfprintf(cmd->cmds,fptr,"%i",ct[bin2*nbin1+bin1]);
+				scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[bin2*nbin1+bin1]); }
+			else {
+				scmdfprintf(cmd->cmds,fptr,"%g",(double)(ct[bin2*nbin1+bin1]/(double)average));
+				scmdappenddata(cmd->cmds,dataid,0,1,(double)(ct[bin2*nbin1+bin1]/(double)average)); }
 			for(bin1=1;bin1<nbin1;bin1++) {
-				if(average<=1) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin2*nbin1+bin1]);
-				else scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin2*nbin1+bin1]/(double)average)); }
+				if(average<=1) {
+					scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin2*nbin1+bin1]);
+					scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[bin2*nbin1+bin1]); }
+				else {
+					scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin2*nbin1+bin1]/(double)average));
+					scmdappenddata(cmd->cmds,dataid,0,1,(double)(ct[bin2*nbin1+bin1]/(double)average)); }}
 			scmdfprintf(cmd->cmds,fptr,"\n"); }
 		scmdflush(fptr); }
 
@@ -1401,7 +1453,7 @@ enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspaceradial */
 enum CMDcode cmdmolcountspaceradial(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int i,itct,d,bin,average,*index;
+	int i,itct,d,bin,average,*index,er,dataid;
 	enum MolecState ms;
 	double radius,molrad;
 	moleculeptr mptr;
@@ -1436,8 +1488,8 @@ enum CMDcode cmdmolcountspaceradial(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==1,"cannot read average number");
 	SCMDCHECK(average>=0,"illegal average value");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(cmd->i1!=nbin) {														// allocate counter if required
 		cmdv1free(cmd);
@@ -1460,11 +1512,17 @@ enum CMDcode cmdmolcountspaceradial(simptr sim,cmdptr cmd,char *line2) {
 
 	if(average<=1) {
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-		for(bin=0;bin<nbin;bin++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin]);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+		for(bin=0;bin<nbin;bin++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin]);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[bin]); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	else if(cmd->invoke%average==0) {
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-		for(bin=0;bin<nbin;bin++) scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin])/(double)average);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+		for(bin=0;bin<nbin;bin++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin])/(double)average);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)(ct[bin])/(double)average); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	scmdflush(fptr);
 	return CMDok;
@@ -1485,7 +1543,7 @@ enum CMDcode cmdmolcountspaceradial(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspacepolarangle */
 enum CMDcode cmdmolcountspacepolarangle(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int i,itct,d,bin,average,*index;
+	int i,itct,d,bin,average,*index,er,dataid;
 	enum MolecState ms;
 	double radiusmin,radiusmax,molrad,poleleninv,angle;
 	moleculeptr mptr;
@@ -1524,8 +1582,8 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==1,"cannot read average number");
 	SCMDCHECK(average>=0,"illegal average value");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(cmd->i1!=nbin) {														// allocate counter if required
 		cmdv1free(cmd);
@@ -1560,11 +1618,17 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim,cmdptr cmd,char *line2) {
 
 	if(average<=1) {
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-		for(bin=0;bin<nbin;bin++) scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin]);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+		for(bin=0;bin<nbin;bin++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%i",ct[bin]);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[bin]); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	else if(cmd->invoke%average==0) {
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
-		for(bin=0;bin<nbin;bin++) scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin])/(double)average);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
+		for(bin=0;bin<nbin;bin++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%g",(double)(ct[bin])/(double)average);
+			scmdappenddata(cmd->cmds,dataid,0,1,(double)(ct[bin])/(double)average); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	scmdflush(fptr);
 	return CMDok;
@@ -1591,7 +1655,7 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim,cmdptr cmd,char *line2) {
 /* cmdradialdistribution */
 enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int dim,i1,itct,d,bin,average,*index1,i,ll,m,wrap[DIMMAX];
+	int dim,i1,itct,d,bin,average,*index1,i,ll,m,wrap[DIMMAX],er,dataid;
 	enum MolecState ms1,mslo,mshi,ms;
 	moleculeptr mptr,mptr2;
 	boxptr bptr;
@@ -1627,8 +1691,8 @@ enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
 	SCMDCHECK(average>=0,"illegal average value");
 	line2=strnword(line2,4);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(cmd->i1!=nbin) {														// allocate counter if required
 		cmdv1free(cmd);
@@ -1670,11 +1734,13 @@ enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2) {
 	if(average<=1 || cmd->invoke%average==0) {
 		if(average<1) average=1;
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
 		for(bin=0;bin<nbin;bin++) {
 			if(dim==1) rdf=(double)ct[bin]/((double)mcount*scale2);
 			else if(dim==2) rdf=(double)ct[bin]/((double)mcount*scale2*(2*bin+1));			// (bin+1)^2-bin^2=(2*bin+1)
 			else rdf=(double)ct[bin]/((double)mcount*scale2*(3*bin*bin+3*bin+1));		// (bin+1)^3-bin^3=(3*bin^2+3*bin+1)
-			scmdfprintf(cmd->cmds,fptr,"%,%g",rdf); }
+			scmdfprintf(cmd->cmds,fptr,"%,%g",rdf);
+			scmdappenddata(cmd->cmds,dataid,0,1,rdf);	}
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	scmdflush(fptr);
 	return CMDok;
@@ -1703,7 +1769,7 @@ enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2) {
 /* cmdradialdistribution2 */
 enum CMDcode cmdradialdistribution2(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int dim,i1,itct,d,bin,average,*index1,i,ll,m,wrap[DIMMAX];
+	int dim,i1,itct,d,bin,average,*index1,i,ll,m,wrap[DIMMAX],er,dataid;
 	enum MolecState ms1,mslo,mshi,ms;
 	moleculeptr mptr,mptr2;
 	boxptr bptr;
@@ -1745,8 +1811,8 @@ enum CMDcode cmdradialdistribution2(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
 	SCMDCHECK(average>=0,"illegal average value");
 	line2=strnword(line2,4);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	if(cmd->i1!=nbin) {														// allocate counter if required
 		cmdv1free(cmd);
@@ -1788,11 +1854,13 @@ enum CMDcode cmdradialdistribution2(simptr sim,cmdptr cmd,char *line2) {
 	if(average<=1 || cmd->invoke%average==0) {
 		if(average<1) average=1;
 		scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
+		scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
 		for(bin=0;bin<nbin;bin++) {
 			if(dim==1) rdf=(double)ct[bin]/((double)mcount*scale2);
 			else if(dim==2) rdf=(double)ct[bin]/((double)mcount*scale2*(2*bin+1));			// (bin+1)^2-bin^2=(2*bin+1)
 			else rdf=(double)ct[bin]/((double)mcount*scale2*(3*bin*bin+3*bin+1));		// (bin+1)^3-bin^3=(3*bin^2+3*bin+1)
-			scmdfprintf(cmd->cmds,fptr,"%,%g",rdf); }
+			scmdfprintf(cmd->cmds,fptr,"%,%g",rdf);
+			scmdappenddata(cmd->cmds,dataid,0,1,rdf); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
 	scmdflush(fptr);
 	return CMDok;
@@ -1823,7 +1891,7 @@ enum CMDcode cmdradialdistribution2(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspecies */
 enum CMDcode cmdmolcountspecies(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int i,*index,count;
+	int i,*index,count,er,dataid;
 	enum MolecState ms;
 	
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -1834,11 +1902,12 @@ enum CMDcode cmdmolcountspecies(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	count=(i==-4)?0:molcount(sim,i,index,ms,-1);
 	scmdfprintf(cmd->cmds,fptr,"%g%,%i\n",sim->time,count);
+	scmdappenddata(cmd->cmds,dataid,1,2,sim->time,(double)count);
 	scmdflush(fptr);
 	return CMDok; }
 
@@ -1846,13 +1915,14 @@ enum CMDcode cmdmolcountspecies(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmolcountspecieslist */
 enum CMDcode cmdmolcountspecieslist(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int i,*index,count;
+	int i,*index,count,er,dataid;
 	enum MolecState ms;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
 	while((line2=strnword(line2,2))) {
 		i=molstring2index1(sim,line2,&ms,&index);
 		SCMDCHECK(i!=-1,"species is missing or cannot be read");
@@ -1861,7 +1931,8 @@ enum CMDcode cmdmolcountspecieslist(simptr sim,cmdptr cmd,char *line2) {
 		SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 		SCMDCHECK(i!=-7,"error allocating memory");
 		count=(i==-4)?0:molcount(sim,i,index,ms,-1);
-		scmdfprintf(cmd->cmds,fptr,"%,%i",count); }
+		scmdfprintf(cmd->cmds,fptr,"%,%i",count);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)count); }
 
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
@@ -1871,7 +1942,7 @@ enum CMDcode cmdmolcountspecieslist(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmollistsize */
 enum CMDcode cmdmollistsize(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	int ll,itct;
+	int ll,itct,er,dataid;
 	char listname[STRCHAR];
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -1881,27 +1952,29 @@ enum CMDcode cmdmollistsize(simptr sim,cmdptr cmd,char *line2) {
 	ll=stringfind(sim->mols->listname,sim->mols->nlist,listname);
 	SCMDCHECK(ll>=0,"molecule list name not recognized");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	scmdfprintf(cmd->cmds,fptr,"%g%,%i\n",sim->time,sim->mols->nl[ll]);
+	scmdappenddata(cmd->cmds,dataid,1,2,sim->time,(double)(sim->mols->nl[ll]));
 	scmdflush(fptr);
 	return CMDok; }
 
 
 /* cmdlistmols */
 enum CMDcode cmdlistmols(simptr sim,cmdptr cmd,char *line2) {
-	int d;
+	int d,er;
 	char string[STRCHAR];
 	moleculeptr mptr;
 	static FILE *fptr;
 	static int inscan=0;
+	static int dataid=-1;
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 	SCMDCHECK(sim->mols,"molecules are undefined");
 
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	inscan=1;
 	molscancmd(sim,-1,NULL,MSall,cmd,cmdlistmols);
@@ -1913,26 +1986,29 @@ enum CMDcode cmdlistmols(simptr sim,cmdptr cmd,char *line2) {
  scanportion:
 	mptr=(moleculeptr) line2;
 	scmdfprintf(cmd->cmds,fptr,"%s(%s)",sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string));
-	for(d=0;d<sim->dim;d++)
+	scmdappenddata(cmd->cmds,dataid,1,2,(double)(mptr->ident),(double)(mptr->mstate));
+	for(d=0;d<sim->dim;d++) {
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
 	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
+	scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));
 	return CMDok; }
 
 
 /* cmdlistmols2 */
 enum CMDcode cmdlistmols2(simptr sim,cmdptr cmd,char *line2) {
-	int d;
+	int d,er;
 	moleculeptr mptr;
 	static FILE *fptr;
-	static int inscan=0,invk;
+	static int inscan=0,invk,dataid=-1;
 	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 	SCMDCHECK(sim->mols,"molecules are undefined");
 
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	invk=cmd?cmd->invoke:0;
 
 	inscan=1;
@@ -1945,19 +2021,22 @@ enum CMDcode cmdlistmols2(simptr sim,cmdptr cmd,char *line2) {
  scanportion:
 	mptr=(moleculeptr) line2;
 	scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
-	for(d=0;d<sim->dim;d++)
+	scmdappenddata(cmd->cmds,dataid,1,3,(double)invk,(double)(mptr->ident),(double)(mptr->mstate));
+	for(d=0;d<sim->dim;d++) {
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
 	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
+	scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));
 	return CMDok; }
 
 
 /* cmdlistmols3 */
 enum CMDcode cmdlistmols3(simptr sim,cmdptr cmd,char *line2) {
-	int i,*index,d;
+	int i,*index,d,er;
 	moleculeptr mptr;
 	enum MolecState ms;
 	static FILE *fptr;
-	static int inscan=0,invk;
+	static int inscan=0,invk,dataid=-1;
 	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
@@ -1970,8 +2049,8 @@ enum CMDcode cmdlistmols3(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	invk=cmd?cmd->invoke:0;
 
 	if(i!=-4) {
@@ -1985,19 +2064,22 @@ enum CMDcode cmdlistmols3(simptr sim,cmdptr cmd,char *line2) {
  scanportion:
 	mptr=(moleculeptr) line2;
 	scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
-	for(d=0;d<sim->dim;d++)
+	scmdappenddata(cmd->cmds,dataid,1,3,(double)invk,(double)(mptr->ident),(double)(mptr->mstate));
+	for(d=0;d<sim->dim;d++) {
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
 	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
+	scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));
 	return CMDok; }
 
 
 /* cmdlistmols4 */
 enum CMDcode cmdlistmols4(simptr sim,cmdptr cmd,char *line2) {
-	int i,d,*index;
+	int i,d,*index,er;
 	moleculeptr mptr;
 	enum MolecState ms;
 	static FILE *fptr;
-	static int inscan=0,invk;
+	static int inscan=0,invk,dataid=-1;
 	char string[STRCHAR];
 
 	if(inscan) goto scanportion;
@@ -2010,8 +2092,8 @@ enum CMDcode cmdlistmols4(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	invk=cmd?cmd->invoke:0;
 
 	if(i!=-4) {
@@ -2025,22 +2107,25 @@ enum CMDcode cmdlistmols4(simptr sim,cmdptr cmd,char *line2) {
  scanportion:
 	mptr=(moleculeptr) line2;
 	scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
-	for(d=0;d<sim->dim;d++)
+	scmdappenddata(cmd->cmds,dataid,1,3,(double)invk,(double)(mptr->ident),(double)(mptr->mstate));
+	for(d=0;d<sim->dim;d++) {
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]+mptr->posoffset[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]+mptr->posoffset[d]); }
 	scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
+	scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));
 	return CMDok; }
 
 
 /* cmdlistmolscmpt */
 enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2) {
-	int i,*index,c,itct,d;
+	int i,*index,c,itct,d,er;
 	moleculeptr mptr;
 	enum MolecState ms;
 	char cname[STRCHAR],string[STRCHAR];
 	compartssptr cmptss;
 	static FILE *fptr;
 	static compartptr cmpt;
-	static int inscan=0,invk;
+	static int inscan=0,invk,dataid=-1;
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -2061,8 +2146,8 @@ enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(c>=0,"compartment name not recognized");
 	cmpt=cmptss->cmptlist[c];
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 	invk=cmd?cmd->invoke:0;
 
 	if(i!=-4) {
@@ -2077,19 +2162,22 @@ enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2) {
 	mptr=(moleculeptr) line2;
 	if(posincompart(sim,mptr->pos,cmpt,0)) {
 		scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
-		for(d=0;d<sim->dim;d++)
+		scmdappenddata(cmd->cmds,dataid,1,3,(double)invk,(double)(mptr->ident),(double)(mptr->mstate));
+		for(d=0;d<sim->dim;d++) {
 			scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
-		scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string)); }
+			scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
+		scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));	}
 	return CMDok; }
 
 
 /* cmdmolpos */
 enum CMDcode cmdmolpos(simptr sim,cmdptr cmd,char *line2) {
-	int i,d,*index;
+	int i,d,*index,er;
 	moleculeptr mptr;
 	enum MolecState ms;
 	static FILE *fptr;
-	static int inscan=0;
+	static int inscan=0,dataid=-1;
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -2101,10 +2189,11 @@ enum CMDcode cmdmolpos(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
+	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
 	if(i!=-4) {
 		inscan=1;
 		molscancmd(sim,i,index,ms,cmd,cmdmolpos);
@@ -2116,19 +2205,20 @@ enum CMDcode cmdmolpos(simptr sim,cmdptr cmd,char *line2) {
 
  scanportion:
 	mptr=(moleculeptr) line2;
-	for(d=0;d<sim->dim;d++)
+	for(d=0;d<sim->dim;d++) {
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
 	return CMDok; }
 
 
 /* cmdtrackmol */
 enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2) {
-	int itct,d,c;
+	int itct,d,c,er;
 	moleculeptr mptr;
 	char string[STRCHAR];
 	static FILE *fptr;
 	static unsigned long long serno;
-	static int inscan=0;
+	static int inscan=0,dataid=-1;
 
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
@@ -2138,8 +2228,8 @@ enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2) {
 	serno=molstring2serno(string);
 	SCMDCHECK(serno>0,"cannot read molecule serial number");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	inscan=1;
 	molscancmd(sim,-1,NULL,MSall,cmd,cmdtrackmol);
@@ -2153,22 +2243,27 @@ enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2) {
 	if(!(mptr->serno==serno || (serno<0xFFFFFFFF && (mptr->serno&0xFFFFFFFF)==serno) || (serno<0xFFFFFFFF && mptr->serno>0xFFFFFFFF && (mptr->serno)>>32==serno)))
 		return CMDok;
 	scmdfprintf(cmd->cmds,fptr,"%g%,%s%,%s",sim->time,sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string));
+	scmdappenddata(cmd->cmds,dataid,1,3,sim->time,(double)(mptr->ident),(double)(mptr->mstate));
 	scmdfprintf(cmd->cmds,fptr,"%,%s",molserno2string(mptr->serno,string));
-	for(d=0;d<sim->dim;d++)
+	scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));
+	for(d=0;d<sim->dim;d++) {
 		scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
 	if(sim->cmptss)
 		for(c=0;c<sim->cmptss->ncmpt;c++) {
-			if(posincompart(sim,mptr->pos,sim->cmptss->cmptlist[c],0))
+			if(posincompart(sim,mptr->pos,sim->cmptss->cmptlist[c],0)) {
 				scmdfprintf(cmd->cmds,fptr,"%,in");
-			else
-				scmdfprintf(cmd->cmds,fptr,"%,out"); }
+				scmdappenddata(cmd->cmds,dataid,0,1,(double)1.0); }
+			else {
+				scmdfprintf(cmd->cmds,fptr,"%,out");
+				scmdappenddata(cmd->cmds,dataid,0,1,(double)0.0); }}
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	return CMDstop; }
 
 
 /* cmdmolmoments */
 enum CMDcode cmdmolmoments(simptr sim,cmdptr cmd,char *line2) {
-	int i,*index,d,d2,dim;
+	int i,*index,d,d2,dim,er,dataid;
 	FILE *fptr;
 	moleculeptr mptr;
 	enum MolecState ms;
@@ -2185,8 +2280,8 @@ enum CMDcode cmdmolmoments(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
 	SCMDCHECK(i!=-7,"error allocating memory");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	dim=sim->dim;
 	ctr=0;
@@ -2202,10 +2297,14 @@ enum CMDcode cmdmolmoments(simptr sim,cmdptr cmd,char *line2) {
 		inscan=0; }
 
 	scmdfprintf(cmd->cmds,fptr,"%g%,%i",sim->time,ctr);
-	for(d=0;d<dim;d++) scmdfprintf(cmd->cmds,fptr,"%,%g",v1[d]);
+	scmdappenddata(cmd->cmds,dataid,1,2,sim->time,(double)ctr);
+	for(d=0;d<dim;d++) {
+		scmdfprintf(cmd->cmds,fptr,"%,%g",v1[d]);
+		scmdappenddata(cmd->cmds,dataid,0,1,v1[d]); }
 	for(d=0;d<dim;d++)
-		for(d2=0;d2<dim;d2++)
+		for(d2=0;d2<dim;d2++) {
 			scmdfprintf(cmd->cmds,fptr,"%,%g",m1[d*dim+d2]/ctr);
+			scmdappenddata(cmd->cmds,dataid,0,1,m1[d*dim+d2]/ctr); }
 	scmdfprintf(cmd->cmds,fptr,"\n");
 	scmdflush(fptr);
 	return CMDok;
@@ -2224,11 +2323,12 @@ enum CMDcode cmdmolmoments(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdsavesim */
 enum CMDcode cmdsavesim(simptr sim,cmdptr cmd,char *line2) {
+	int er;
 	FILE *fptr;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
 	if(line2) {
 		strcutwhite(line2,2); }
 
@@ -2264,7 +2364,7 @@ void cmdmeansqrdispfree(cmdptr cmd) {
 /* cmdmeansqrdisp */
         enum CMDcode cmdmeansqrdisp(simptr sim,cmdptr cmd,char *line2) {
 	char dimstr[STRCHAR];
-	int i,*index,j,d,itct,dim;
+	int i,*index,j,d,itct,dim,er,dataid;
 	FILE *fptr;
 	double r2,diff,**v2;
 	long int *v1;
@@ -2294,8 +2394,8 @@ void cmdmeansqrdispfree(cmdptr cmd) {
 	else msddim=3;
 	SCMDCHECK(msddim<sim->dim,"invalid dimension value");
 	line2=strnword(line2,2);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	SCMDCHECK(cmd->i2!=2,"error on setup");					// failed before, don't try again
 
@@ -2334,6 +2434,8 @@ void cmdmeansqrdispfree(cmdptr cmd) {
 		inscan=0; }
 
 	scmdfprintf(cmd->cmds,fptr,"%g%,%g%,%g\n",sim->time,sum/ctr,sum4/ctr);
+	scmdappenddata(cmd->cmds,dataid,1,3,sim->time,sum/ctr,sum4/ctr);
+
 	scmdflush(fptr);
 	return CMDok;
 
@@ -2367,7 +2469,7 @@ void cmdmeansqrdispfree(cmdptr cmd) {
 /* cmdmeansqrdisp2 */
 enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 	char dimstr[STRCHAR];
-	int i,j,d,itct,dim,msddim,maxmoment,mom,*index;
+	int i,j,d,itct,dim,msddim,maxmoment,mom,*index,er,dataid;
 	FILE *fptr;
 	moleculeptr mptr;
 	double sum[17];
@@ -2405,9 +2507,9 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(maxmoment>0,"maxmoment has to be at least 1");
 	SCMDCHECK(maxmoment<=16,"max_moment cannot exceed 16");
 	line2=strnword(line2,5);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
-  
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
+
 	SCMDCHECK(cmd->i2!=2,"error on setup");					// failed before, don't try again
   
 	dim=sim->dim;
@@ -2468,8 +2570,10 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
   
 	if(sum[0]>0) {
 		scmdfprintf(cmd->cmds,fptr,"%g%,%g",sim->time,sum[0]);					// display results
+		scmdappenddata(cmd->cmds,dataid,1,2,sim->time,sum[0]);
 		for(mom=1;mom<=maxmoment;mom++) {
-			scmdfprintf(cmd->cmds,fptr,"%,%g",sum[mom]/sum[0]); }
+			scmdfprintf(cmd->cmds,fptr,"%,%g",sum[mom]/sum[0]);
+			scmdappenddata(cmd->cmds,dataid,0,1,sum[mom]/sum[0]); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
   
 	for(j=0;j<cmd->i3;j++) {							// stop tracking expired molecules
@@ -2521,7 +2625,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 /* cmdmeansqrdisp3 */
 enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 	char dimstr[STRCHAR];
-	int i,j,d,itct,dim,msddim,*index;
+	int i,j,d,itct,dim,msddim,*index,er,dataid;
 	FILE *fptr;
 	moleculeptr mptr;
 	double sum,wgt;
@@ -2557,8 +2661,8 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==4,"cannot read start, report, max_mol, or change information");
 	SCMDCHECK(maxmol>0,"max_mol has to be at least 1");
 	line2=strnword(line2,5);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
   line2=strnword(line2,2);
   SCMDCHECK(change<=0 || line2,"missing task to be accomplished if change is small");
   
@@ -2626,7 +2730,8 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
   else sum/=2.0;
 
   scmdfprintf(cmd->cmds,fptr,"%g%,%i%,%g\n",sim->time,ctr,sum/wgt);					// display results
-  
+	scmdappenddata(cmd->cmds,dataid,1,3,sim->time,(double)ctr,sum/wgt);
+
 	for(j=0;j<cmd->i3;j++) {							// stop tracking expired molecules
 		if(v2[j][0]==0 || v2[j][0]==2.0) {
 			v1[j]=v1[cmd->i3-1];
@@ -2680,7 +2785,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdresidencetime */
 enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
-	int i,j,d,itct,summaryout,listout,*index;
+	int i,j,d,itct,summaryout,listout,*index,er,dataid;
 	FILE *fptr;
 	moleculeptr mptr;
 	double sum;
@@ -2706,9 +2811,9 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==5,"cannot read start, report, summary_out, list_out, or max_mol information");
 	SCMDCHECK(maxmol>0,"max_mol has to be at least 1");
 	line2=strnword(line2,6);
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
-  
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
+
 	SCMDCHECK(cmd->i2!=2,"error on setup");					// failed before, don't try again
 
 	if(!cmd->i2) {										// test for first run
@@ -2755,12 +2860,14 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
 		if((reportchar=='e' && v2[j][0]==3.0) || (reportchar=='r' && v2[j][0]==2.0)) { // molecule should be recorded
       ctr++;
       sum+=sim->time-v2[j][1];
-      if(listout>0 && cmd->invoke>0 && cmd->invoke%listout==0)
-        scmdfprintf(cmd->cmds,fptr,"%li%,%g\n",v1[j],sim->time-v2[j][1]); }}
+      if(listout>0 && cmd->invoke>0 && cmd->invoke%listout==0) {
+        scmdfprintf(cmd->cmds,fptr,"%li%,%g\n",v1[j],sim->time-v2[j][1]);
+        scmdappenddata(cmd->cmds,dataid,1,2,(double)v1[j],sim->time-v2[j][1]); }}}
   
-  if(summaryout>0 && cmd->invoke>0 && cmd->invoke%summaryout==0)
-    scmdfprintf(cmd->cmds,fptr,"%g%,%i%,%g\n",sim->time,ctr,sum/ctr);					// display results
-  
+  if(summaryout>0 && cmd->invoke>0 && cmd->invoke%summaryout==0) {
+    scmdfprintf(cmd->cmds,fptr,"%g%,%i%,%g\n",sim->time,ctr,sum/(double)ctr);		// display results
+		scmdappenddata(cmd->cmds,dataid,1,3,sim->time,(double)ctr,sum/(double)ctr); }
+
 	for(j=0;j<cmd->i3;j++) {							// stop tracking expired molecules
 		if(v2[j][0]==0 || v2[j][0]==2.0) {
 			v1[j]=v1[cmd->i3-1];
@@ -2831,13 +2938,15 @@ enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdexecutiontime */
 enum CMDcode cmdexecutiontime(simptr sim,cmdptr cmd,char *line2) {
+	int er,dataid;
 	FILE *fptr;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	scmdfprintf(cmd->cmds,fptr,"%g%,%g\n",sim->time,sim->elapsedtime+difftime(time(NULL),sim->clockstt));
+	scmdappenddata(cmd->cmds,dataid,1,2,sim->time,sim->elapsedtime+difftime(time(NULL),sim->clockstt));
 
 	scmdflush(fptr);
 	return CMDok; }
@@ -2848,11 +2957,11 @@ enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	latticeptr lattice;
 	char *buffer;
-	int n,i;
+	int n,i,er;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
 
 	n=sim->latticess->nlattice;
 	buffer=NULL;
@@ -2864,6 +2973,7 @@ enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2) {
 		buffer=NULL; }
 	scmdflush(fptr);
 	return CMDok; }
+
 
 /* cmdwriteVTK */
 enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
@@ -2920,6 +3030,47 @@ enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
 	mptr=(moleculeptr) line2;
 	vtkAddPoint(grid,mptr->pos[0],mptr->pos[1],mptr->pos[2],(long int)(mptr->serno&0xFFFFFFFF),mptr->ident);
 #endif
+	return CMDok; }
+
+
+/* cmdprintdata */
+enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2) {
+	FILE *fptr;
+	int itct,er,did,dataid,i,j,erase;
+	listptrdd list;
+	cmdssptr cmds;
+	char dname[STRCHAR];
+
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
+
+	cmds=sim->cmds;
+	SCMDCHECK(line2,"missing data name");
+	itct=sscanf(line2,"%s",dname);
+	SCMDCHECK(itct==1,"cannot read data name");
+	SCMDCHECK(cmds->ndata,"no data files have been declared");
+	did=stringfind(cmds->dname,cmds->ndata,dname);
+	SCMDCHECK(did>=0,"data name not recognized");
+	list=cmds->data[did];
+
+	line2=strnword(line2,2);
+	er=scmdgetfptr(cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"output file or data name not recognized");
+
+	erase=0;
+	if(line2 && (line2=strnword(line2,2))) {
+		itct=sscanf(line2,"%i",&erase);
+		SCMDCHECK(itct==1,"erase value needs to be 0 or 1"); }
+
+	for(i=0;i<list->nrow;i++) {
+		for(j=0;j<list->ncol;j++) {
+			scmdfprintf(cmds,fptr,"%g",list->data[i*list->maxcol+j]);
+			if(j<list->ncol-1) scmdfprintf(cmds,fptr,"%,");
+			scmdappenddata(cmds,dataid,j==0?1:0,1,list->data[i*list->maxcol+j]); }
+		scmdfprintf(cmds,fptr,"\n"); }
+	scmdflush(fptr);
+
+	if(erase) ListClearDD(list);
+
 	return CMDok; }
 
 

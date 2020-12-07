@@ -9,6 +9,7 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "queue.h"
 #include "stdio.h"
 #include "string2.h"
+#include "List.h"
 
 #define SFNCHECK(A,...) if(!(A)) {if(erstr) snprintf(erstr,STRCHAR*sizeof(erstr),__VA_ARGS__);return dblnan();} else (void)0
 #define SCMDCHECK(A,...) if(!(A)) {if(cmd) snprintf(cmd->erstr,STRCHAR*sizeof(cmd->erstr),__VA_ARGS__);return CMDwarn;} else (void)0
@@ -39,6 +40,7 @@ typedef struct cmdsuperstruct {
 	enum CMDcode (*cmdfn)(void*,cmdptr,char*);	// function that runs commands
 	void *cmdfnarg;				// function argument (e.g. sim)
 	int iter;							// number of times integer commands have run
+	double flag;					// global command structure flag
 	int maxfile;					// number of files allocated
 	int nfile;						// number of output files
 	char root[STRCHAR];		// file path
@@ -47,9 +49,12 @@ typedef struct cmdsuperstruct {
 	int *fsuffix;					// file suffix [fid]
 	int *fappend;					// 0 for overwrite, 1 for append [fid]
 	FILE **fptr;					// file pointers [fid]
-	double flag;					// global command structure flag
 	int precision;				// precision for output commands
 	char outformat;				// output format, 's' or 'c'
+	int maxdata;					// number of data lists allocated
+	int ndata;						// number of data lists used
+	char **dname;					// data list names [did]
+	listptrdd *data;			// data lists
 	} *cmdssptr;
 
 // non-file functions
@@ -73,14 +78,19 @@ double scmdreadflag(cmdssptr cmds);
 void scmdsetprecision(cmdssptr cmds,int precision);
 int scmdsetoutputformat(cmdssptr cmds,char *format);
 
+// data functions
+
+int scmdsetdnames(cmdssptr cmds,char *str);
+void scmdappenddata(cmdssptr cmds,int dataid,int newrow, int narg, ...);
+
 // file functions
 int scmdsetfroot(cmdssptr cmds,const char *root);
 int scmdsetfnames(cmdssptr cmds,char *str,int append);
 int scmdsetfsuffix(cmdssptr cmds,const char *fname,int i);
 int scmdopenfiles(cmdssptr cmds,int overwrite);
-FILE *scmdoverwrite(cmdssptr cmds,char *line2);
-FILE *scmdincfile(cmdssptr cmds,char *line2);
-FILE *scmdgetfptr(cmdssptr cmds,char *line2);
+int scmdoverwrite(cmdssptr cmds,char *line2);
+int scmdincfile(cmdssptr cmds,char *line2);
+int scmdgetfptr(cmdssptr cmds,char *line2,int outstyle,FILE **fptrptr,int *dataidptr);
 int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...);
 void scmdflush(FILE *fptr);
 

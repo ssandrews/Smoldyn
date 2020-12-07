@@ -32,7 +32,7 @@ reaction r3 fox -> 0 10
 mol 1000 rabbit u u u
 mol 1000 fox u u u
 
-cmd B pause
+#cmd B pause
 #output_files lotvoltout.txt
 #cmd i 0 5 0.01 molcount lotvoltout.txt
 #output_files stdout

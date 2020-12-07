@@ -95,10 +95,12 @@ enum ErrorCode smolAddTextDisplay(simptr sim,char *item);
 
 enum ErrorCode smolSetOutputPath(simptr sim,const char *path);
 enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix,int append);
+enum ErrorCode smolAddOutputData(simptr sim,char *dataname);
 enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite);
 //?? needs function for setting output precision
 enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring);
 enum ErrorCode smolAddCommandFromString(simptr sim,char *string);
+enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,double **array,int erase);
 
 /********************************* Molecules **********************************/
 
