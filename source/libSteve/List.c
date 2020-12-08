@@ -4,6 +4,7 @@ Copyright 2015 by Steven Andrews.  This work is distributed under the terms
 of the Gnu Lesser General Public License (LGPL). */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "List.h"
 #include "string2.h"
 
@@ -61,6 +62,42 @@ int ListExpandV(listptrv list,int spaces) {
 	return 0; }
 
 
+/* ListExpandDD */
+int ListExpandDD(listptrdd list,int addrows,int addcols) {
+	double *newdata;
+	int newmaxrow,newmaxcol,newnrow,newncol,i,j;
+
+	newmaxrow=list->maxrow+addrows;
+	newmaxcol=list->maxcol+addcols;
+	if(newmaxrow==0 || newmaxcol==0) {
+		newdata=NULL;
+		newmaxrow=0;
+		newmaxcol=0;
+		newnrow=0;
+		newncol=0; }
+	else {
+		newdata=(double*) calloc(newmaxrow*newmaxcol,sizeof (double));
+		if(!newdata) return 1;
+		for(i=0;i<newmaxrow;i++)
+			for(j=0;j<newmaxcol;j++) {
+				if(i<list->nrow && j<list->ncol)
+					newdata[i*newmaxcol+j]=list->data[i*list->maxcol+j];
+				else
+					newdata[i*newmaxcol+j]=0; }
+		newnrow=(list->nrow<=newmaxrow) ? list->nrow:newmaxrow;
+		newncol=(list->ncol<=newmaxcol) ? list->ncol:newmaxcol; }
+
+	free(list->data);
+	list->data=newdata;
+	list->maxrow=newmaxrow;
+	list->maxcol=newmaxcol;
+	list->nrow=newnrow;
+	list->ncol=newncol;
+	if(list->nextcol>=list->maxcol)
+		list->nextcol=list->maxcol-1;
+	return 0; }
+
+
 /****************************************************************************/
 /***************************** Memory management ****************************/
 /****************************************************************************/
@@ -100,6 +137,26 @@ listptrv ListAllocV(int max) {
 	return list; }
 
 
+/* ListAllocDD */
+listptrdd ListAllocDD(int maxrow,int maxcol) {
+	listptrdd list;
+	int er;
+
+	list=(listptrdd) malloc(sizeof(struct liststructdd));
+	if(!list) return NULL;
+	list->maxrow=0;
+	list->maxcol=0;
+	list->nrow=0;
+	list->ncol=0;
+	list->nextcol=0;
+	list->data=NULL;
+	er=ListExpandDD(list,maxrow,maxcol);
+	if(er) {
+		ListFreeDD(list);
+		return NULL; }
+	return list; }
+
+
 /* ListFreeLI */
 void ListFreeLI(listptrli list) {
 	if(list) {
@@ -112,6 +169,14 @@ void ListFreeLI(listptrli list) {
 void ListFreeV(listptrv list) {
 	if(list) {
 		free(list->xs);
+		free(list); }
+	return; }
+
+
+/* ListFreeDD */
+void ListFreeDD(listptrdd list) {
+	if(list) {
+		free(list->data);
 		free(list); }
 	return; }
 
@@ -188,6 +253,53 @@ listptrv ListAppendItemV(listptrv list,void *newitem) {
 	return list; }
 
 
+/* ListAppendItemsDDv */
+listptrdd ListAppendItemsDDv(listptrdd list, int newrow, int narg, va_list items) {
+	int er,i,j,k;
+
+	if(!narg) return list;
+
+	er=0;
+	if(!list) {
+		list=ListAllocDD(1,narg);
+		if(!list) return NULL; }
+	else if(newrow && list->nrow==list->maxrow) // add rows, and columns if needed
+		er=ListExpandDD(list,list->nrow+1,(narg>list->maxcol) ? narg-list->maxcol:0);
+	else if(newrow && narg>list->maxcol)				// add columns
+		er=ListExpandDD(list,0,narg-list->maxcol);
+	else if(!newrow && narg+list->nextcol>list->maxcol)	// add columns
+		er=ListExpandDD(list,0,narg+list->nextcol-list->maxcol);
+	if(er) return NULL;
+
+	if(newrow || list->nrow==0) {
+		i=list->nrow;
+		j=0;
+		list->nrow++;
+		if(narg>list->ncol) list->ncol=narg;
+		list->nextcol=narg; }
+	else {
+		i=list->nrow-1;
+		j=list->nextcol;
+		if(j+narg>list->ncol) list->ncol=j+narg;
+		list->nextcol+=narg; }
+
+	for(k=0;k<narg;k++)
+		list->data[i*list->maxcol+j+k]=va_arg(items,double);
+
+	return list; }
+
+
+/* ListAppendItemsDD */
+listptrdd ListAppendItemsDD(listptrdd list, int newrow, int narg, ...) {
+	va_list items;
+
+	va_start(items,narg);
+	list=ListAppendItemsDDv(list,newrow,narg,items);
+	va_end(items);
+	return list; }
+
+
+
 /****************************************************************************/
 /******************************* Combining lists ****************************/
 /****************************************************************************/
@@ -234,4 +346,37 @@ int ListRemoveListLI(listptrli list,const listptrli remove) {
 	return count; }
 
 
+/* ListClearDD */
+void ListClearDD(listptrdd list) {
+	list->nrow=0;
+	list->ncol=0;
+	list->nextcol=0;
+	return; }
 
+
+/**************************************************/
+/****** List output ***************************/
+/************************************************/
+
+/* ListPrintDD */
+void ListPrintDD(listptrdd list) {
+	int i,j;
+
+	printf("\n---- List -----\n");
+	if(!list) {
+		printf("No list\n");
+		return; }
+	printf("List type: dd\n");
+	printf("Allocated for %i rows and %i columns\n",list->maxrow,list->maxcol);
+	printf("Currently %i rows and %i columns\n",list->nrow,list->ncol);
+	printf("Next column for adding to: %i\n",list->nextcol);
+	printf("Data:\n");
+	if(list->data)
+		for(i=0;i<list->nrow;i++) {
+			for(j=0;j<list->ncol;j++)
+				printf(" %.3g",list->data[i*list->maxcol+j]);
+			printf("\n"); }
+	else
+		printf("Data element is NULL\n");
+	printf("--------------\n");
+	return; }

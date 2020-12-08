@@ -101,11 +101,15 @@ cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *cmdfnarg,co
 
 	cmds=(cmdssptr) malloc(sizeof(struct cmdsuperstruct));
 	if(!cmds) return NULL;
+
 	cmds->cmd=NULL;
 	cmds->cmdi=NULL;
 	cmds->cmdfn=cmdfn;
 	cmds->cmdfnarg=cmdfnarg;
 	cmds->iter=0;
+
+	cmds->flag=0;
+
 	cmds->maxfile=0;
 	cmds->nfile=0;
 	if(root) {
@@ -117,9 +121,13 @@ cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *cmdfnarg,co
 	cmds->fsuffix=NULL;
 	cmds->fappend=NULL;
 	cmds->fptr=NULL;
-	cmds->flag=0;
 	cmds->precision=-1;
 	cmds->outformat='s';
+
+	cmds->maxdata=0;
+	cmds->ndata=0;
+	cmds->dname=NULL;
+	cmds->data=NULL;
 	return cmds; }
 
 
@@ -127,7 +135,7 @@ cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *cmdfnarg,co
 void scmdssfree(cmdssptr cmds) {
 	cmdptr cmd;
 	void *voidptr;
-	int fid;
+	int fid,did;
 
 	if(!cmds) return;
 
@@ -146,13 +154,18 @@ void scmdssfree(cmdssptr cmds) {
 	for(fid=0;fid<cmds->nfile;fid++)
 		if(cmds->fptr && cmds->fptr[fid]) fclose(cmds->fptr[fid]);
 	free(cmds->fptr);
-
 	for(fid=0;fid<cmds->maxfile;fid++)
 		if(cmds->fname) free(cmds->fname[fid]);
 	free(cmds->fname);
-
 	free(cmds->fsuffix);
 	free(cmds->fappend);
+
+	for(did=0;did<cmds->maxdata;did++) {
+		if(cmds->dname) free(cmds->dname[did]);
+		if(cmds->data) ListFreeDD(cmds->data[did]); }
+	free(cmds->dname);
+	free(cmds->data);
+
 	free(cmds);
 	return; }
 
@@ -458,7 +471,7 @@ int scmdnextcmdtime(cmdssptr cmds,double time,Q_LONGLONG iter,enum CMDcode type,
 
 /* scmdoutput */
 void scmdoutput(cmdssptr cmds) {
-	int fid,i;
+	int fid,i,did;
 	queue cmdq;
 	cmdptr cmd;
 	void* voidptr;
@@ -482,6 +495,13 @@ void scmdoutput(cmdssptr cmds) {
 		else {
 			scmdcatfname(cmds,fid,string);
 			SCMDPRINTF(2,"  %s (file %s): %s\n",cmds->fname[fid],cmds->fptr[fid]?"open":"closed",string); }}
+	if(cmds->ndata) {
+		SCMDPRINTF(2," Output data table names:\n"); }
+	else
+		SCMDPRINTF(2," No output data tables\n");
+	for(did=0;did<cmds->ndata;did++)
+		SCMDPRINTF(2,"  %s\n",cmds->dname[did]);
+
 
 	cmdq=cmds->cmd;
 	if(cmdq) {
@@ -512,11 +532,12 @@ void scmdoutput(cmdssptr cmds) {
 
 /* scmdwritecommands */
 void scmdwritecommands(cmdssptr cmds,FILE *fptr,char *filename) {
-	int i,fid;
+	int i,fid,did;
 	cmdptr cmd;
 	void *voidptr;
 	char string2[STRCHAR];
 
+	if(!fptr) return;
 	fprintf(fptr,"# Command parameters\n");
 	if(strlen(cmds->froot)) fprintf(fptr,"output_root %s\n",cmds->froot);
 
@@ -530,6 +551,12 @@ void scmdwritecommands(cmdssptr cmds,FILE *fptr,char *filename) {
 		for(fid=0;fid<cmds->nfile;fid++)
 			if(cmds->fsuffix[fid])
 				fprintf(fptr,"output_file_number %s %i\n",cmds->fname[fid],cmds->fsuffix[fid]); }
+
+	if(cmds->ndata) {
+		fprintf(fptr,"output_data");
+		for(did=0;did<cmds->ndata;did++)
+			fprintf(fptr," %s",cmds->dname[did]);
+		fprintf(fptr,"\n"); }
 
 	i=-1;
 	if(cmds->cmdi)
@@ -569,6 +596,66 @@ int scmdsetoutputformat(cmdssptr cmds,char *format) {
 	else if(!strcmp(format,"csv") || !strcmp(format,"CSV")) cmds->outformat='c';
 	else return 1;
 	return 0; }
+
+
+/*********** Data functions *************/
+
+/* scmdsetdnames */
+int scmdsetdnames(cmdssptr cmds,char *str) {
+	int did,itct,n,newmaxdata;
+	char **newdname;
+	listptrdd *newdata;
+
+	if(!cmds) return 4;
+	n=wordcount(str);
+
+	if(cmds->ndata+n > cmds->maxdata) {
+		newmaxdata=cmds->maxdata+n;
+
+		newdname=(char**) calloc(newmaxdata,sizeof(char*));
+		if(!newdname) return 1;
+		for(did=0;did<cmds->maxdata;did++)
+			newdname[did]=cmds->dname[did];
+		for(;did<newmaxdata;did++)
+			newdname[did]=NULL;
+		for(did=cmds->maxdata;did<newmaxdata;did++) {
+			newdname[did]=EmptyString();
+			if(!newdname[did]) return 1; }
+
+		newdata=(listptrdd*) calloc(newmaxdata,sizeof(listptrdd));
+		if(!newdata) return 1;
+		for(did=0;did<cmds->maxdata;did++)
+			newdata[did]=cmds->data[did];
+		for(;did<newmaxdata;did++)
+			newdata[did]=NULL;
+
+		cmds->maxdata=newmaxdata;
+		free(cmds->dname);
+		cmds->dname=newdname;
+		free(cmds->data);
+		cmds->data=newdata; }
+
+	while(str) {
+		did=cmds->ndata;
+		itct=sscanf(str,"%s",cmds->dname[did]);
+		if(itct!=1) return 2;
+		cmds->ndata++;
+		str=strnword(str,2); }
+
+	return 0; }
+
+
+/* scmdappenddata */
+void scmdappenddata(cmdssptr cmds,int dataid,int newrow, int narg, ...) {
+	va_list arguments;
+	listptrdd data;
+
+	if(dataid<0) return;
+	va_start(arguments,narg);
+	data=ListAppendItemsDDv(cmds->data[dataid],newrow,narg,arguments);
+	va_end(arguments);
+	if(data) cmds->data[dataid]=data;
+	return; }
 
 
 /************** file functions **************/	
@@ -678,80 +765,107 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 				if(fptr) {
 					fclose(fptr);
 #ifdef COMPILE_AS_PY_MODULE
-                    // When built as a python module. There is no way to use
-                    // scanf (probably)?
-                    fprintf(stderr, "File '%s' already exists. Refusing to overwrite.\n", cmds->fname[fid]);
-                    fprintf(stderr, "Tip: Set `overwrite=True` in `setOutputFile` method.\n");
-                    return 1;
+					// When built as a python module. There is no way to use scanf (probably)?
+					fprintf(stderr, "File '%s' already exists. Refusing to overwrite.\n", cmds->fname[fid]);
+					fprintf(stderr, "Tip: Set `overwrite=True` in `setOutputFile` method.\n");
+					return 1;
 #else
-                    // When compiled for c++ binary.
-                    char str2[STRCHAR];
+					// When compiled for c++ binary.
+					char str2[STRCHAR];
 					fprintf(stderr,"Overwrite existing output file '%s' (y/n)? ",cmds->fname[fid]);
 					scanf("%s",str2);
 					if(!(str2[0]=='y' || str2[0]=='Y')) return 1; 
 #endif
-                }}
+					}}
 			if(cmds->fappend[fid]) cmds->fptr[fid]=fopen(str1,"a");
-			else cmds->fptr[fid]=fopen(str1,"w"); }
-		if(!cmds->fptr[fid]) {
-			SCMDPRINTF(7,"Failed to open file '%s' for writing\n",cmds->fname[fid]);
-			return 1; }}
+			else cmds->fptr[fid]=fopen(str1,"w");
+			if(!cmds->fptr[fid]) {
+				SCMDPRINTF(7,"Failed to open file '%s' for writing\n",cmds->fname[fid]);
+				return 1; }}}
 
 	return 0; }
 
 
 /* scmdoverwrite */
-FILE *scmdoverwrite(cmdssptr cmds,char *line2) {
+int scmdoverwrite(cmdssptr cmds,char *line2) {
 	int itct,fid;
 	static char fname[STRCHAR],str1[STRCHAR];
 
-	if(!line2) return NULL;
+	if(!line2) return 0;
 	itct=sscanf(line2,"%s",fname);
-	if(itct!=1) return NULL;
+	if(itct!=1) return 0;
+	if(!strcmp(fname,"stdout") || !strcmp(fname,"stderr")) return 0;
+
 	fid=stringfind(cmds->fname,cmds->nfile,fname);
-	if(fid<0) return NULL;
-	if(strcmp(cmds->fname[fid],"stdout") && strcmp(cmds->fname[fid],"stderr")) {
-		fclose(cmds->fptr[fid]);
-		scmdcatfname(cmds,fid,str1);
-		cmds->fptr[fid]=fopen(str1,"w"); }
-	return cmds->fptr[fid]; }
+	if(fid<0) return 1;
+	fclose(cmds->fptr[fid]);
+	scmdcatfname(cmds,fid,str1);
+	cmds->fptr[fid]=fopen(str1,"w");
+	if(!cmds->fptr[fid]) return 2;
+	return 0; }
 
 
 /* scmdincfile */
-FILE *scmdincfile(cmdssptr cmds,char *line2) {
+int scmdincfile(cmdssptr cmds,char *line2) {
 	int itct,fid;
 	static char fname[STRCHAR],str1[STRCHAR];
 
-	if(!line2) return NULL;
+	if(!line2) return 0;
 	itct=sscanf(line2,"%s",fname);
-	if(itct!=1) return NULL;
+	if(itct!=1) return 0;
+	if(!strcmp(fname,"stdout") || !strcmp(fname,"stderr")) return 0;
+
 	fid=stringfind(cmds->fname,cmds->nfile,fname);
-	if(fid<0) return NULL;
-	if(strcmp(cmds->fname[fid],"stdout") && strcmp(cmds->fname[fid],"stderr")) {
-		fclose(cmds->fptr[fid]);
-		cmds->fsuffix[fid]++;
-		scmdcatfname(cmds,fid,str1);
-		if(cmds->fappend[fid])
-			cmds->fptr[fid]=fopen(str1,"a");
-		else
-			cmds->fptr[fid]=fopen(str1,"w"); }
-	return cmds->fptr[fid]; }
+	if(fid<0) return 1;
+	fclose(cmds->fptr[fid]);
+	cmds->fsuffix[fid]++;
+	scmdcatfname(cmds,fid,str1);
+	if(cmds->fappend[fid])
+		cmds->fptr[fid]=fopen(str1,"a");
+	else
+		cmds->fptr[fid]=fopen(str1,"w");
+	if(!cmds->fptr[fid]) return 2;
+	return 0; }
 
 
 /* scmdgetfptr */
-FILE *scmdgetfptr(cmdssptr cmds,char *line2) {
-	int itct,fid;
-	static char fname[STRCHAR];
+int scmdgetfptr(cmdssptr cmds,char *line2,int outstyle,FILE **fptrptr,int *dataidptr) {
+	int itct,fid,did;
+	char name[STRCHAR];
 
-	if(!line2) return stdout;
-	itct=sscanf(line2,"%s",fname);
-	if(itct!=1) return NULL;
-	if(!strcmp(fname,"stdout")) return stdout;
-	if(!strcmp(fname,"stderr")) return stderr;
-	if(!cmds) return NULL;
-	fid=stringfind(cmds->fname,cmds->nfile,fname);
-	if(fid<0) return NULL;
-	return cmds->fptr[fid]; }
+	if(fptrptr) *fptrptr=NULL;
+	if(dataidptr) *dataidptr=-1;
+	if(outstyle==0 || !line2) return 0;
+
+	fid=did=-1;
+	itct=sscanf(line2,"%s",name);
+	if(itct!=1) return 0;
+	if(fptrptr && !strcmp(name,"stdout")) *fptrptr=stdout;
+	else if(fptrptr && !strcmp(name,"stderr")) *fptrptr=stderr;
+	else {
+		if(fptrptr) fid=stringfind(cmds->fname,cmds->nfile,name);
+		if(dataidptr) did=stringfind(cmds->dname,cmds->ndata,name); }
+	if(fptrptr && *fptrptr && outstyle&1);
+	else if(fid>=0 && outstyle&1) *fptrptr=cmds->fptr[fid];
+	else if(did>=0 && outstyle&2) *dataidptr=did;
+	else return -1;
+	if(outstyle<3) return 1;
+
+	line2=strnword(line2,2);
+	if(!line2) return 1;
+
+	fid=did=-1;
+	itct=sscanf(line2,"%s",name);
+	if(itct!=1) return 1;
+	else if(fptrptr && !(*fptrptr) && !strcmp(name,"stdout")) *fptrptr=stdout;
+	else if(fptrptr && !(*fptrptr) && !strcmp(name,"stderr")) *fptrptr=stderr;
+	else if(fptrptr && !(*fptrptr)) fid=stringfind(cmds->fname,cmds->nfile,name);
+	else if(dataidptr && *dataidptr<0)	did=stringfind(cmds->dname,cmds->ndata,name);
+	if(fid>=0) *fptrptr=cmds->fptr[fid];
+	else if(did>=0) *dataidptr=did;
+	else return 1;	// got 1 good answer, word 2 doesn't make sense
+
+	return 2; }
 
 
 /* scmdfprintf */
@@ -759,7 +873,8 @@ int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...) {
 	char message[STRCHARLONG],newformat[STRCHAR],replacestr[STRCHAR];
 	va_list arguments;
 	int code;
-	
+
+	if(!fptr) return 0;
 	strncpy(newformat,format,STRCHAR-1);
 	newformat[STRCHAR-1]='\0';
 	if(!cmds) {
@@ -781,6 +896,6 @@ int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...) {
 
 /* scmdflush */
 void scmdflush(FILE *fptr) {
-	fflush(fptr);
+	if(fptr) fflush(fptr);
 	return; }
 

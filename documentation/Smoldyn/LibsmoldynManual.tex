@@ -904,6 +904,12 @@ C/C++: \ttt{enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suf
 Python low-level: \ttt{ErrorCode addOutputFile(string filename, int suffix, int append)}\\
 Declares the file called \ttt{filename} as a file for output by one or more runtime commands. Note that spaces are not permitted in the file name. If \ttt{suffix} is non-negative, then the file name is suffixed by this integer, which can be helpful for creating output file stacks. Enter \ttt{append} as 1 if any current file should simply be appended, or to 0 if any current file should be overwritten.
 
+\item[AddOutputData]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddOutputData(simptr sim, char *dataname)}\\
+Python low-level: \ttt{ErrorCode addOutputData(string dataname)}\\
+Declares the data table called \ttt{dataname}, enabling output into it by one or more runtime commands. Spaces are not permitted in the data name.
+
 \item[OpenOutputFiles]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)}\\
@@ -939,6 +945,12 @@ Adds a run-time command to the simulation, including its timing instructions. Th
 C/C++: \ttt{enum ErrorCode smolAddCommandFromString(simptr sim, char *string)}\\
 Python low-level: \ttt{ErrorCode addCommandFromString(str string)}\\
 Defines a runtime command, including its execution timing parameters, from the string \ttt{string}. This string should be identical to ones used in configuration files, except that they do not include the ``cmd" statement.
+
+\item[getOutputData]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,char *array,int erase)}\\
+Python low-level: vector<vector<double>> getOutputData(str dataname, bool erase)\\
+Returns data that have been recorded by an observation command (e.g. molcount). Send in the name of the data in \ttt{dataname} and pointers to variables that will receive the data in: \ttt{nrow}, for the number of rows, \ttt{ncol}, for the number of columns, and \ttt{array}, for the data themselves. The data are copied over in this function from the original into the array that is returned, with the result that the data in the array can be modified as desired. \textit{The array needs to be freed by the host code.} All values in this data table are doubles, which is appropriate for some things but not so good for things like species names and molecule states. The array represents a 2D table as a single vector so to read the item at row \ttt{i} and column \ttt{j}, use \ttt{array[i*ncol+j]}. Set \ttt{erase} to 1 for the original data to be cleared after it is copied over.
 
 \end{description}
 

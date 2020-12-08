@@ -557,11 +557,15 @@ This section focuses on the code in the source/python directory, essentially all
 \item[\ttt{int}]
 \ttt{init\_and\_run(const string \&filepath, const string \&flags, bool wflag, bool quit\_at\_end = false)}]
 \hfill \\
-Send in the filepath, including both the path and the filename in \ttt{filepath} and the Smoldyn flags in \ttt{flags}. In addition, \ttt{wflag} is another copy of the suppress warnings flag, perhaps only for whether output files should be overwritten, and \ttt{quit\_at\_end} is a flag for whether Smoldyn should just quit when the simulation is done. This function passes these things on to \ttt{simInitAndLoad} and \ttt{simUpdateAndDisplay} (both in smolsim.c). Here, \ttt{cursim\_} is the current simulation structure. This also opens output files and runs the simulation with \ttt{smolsimulate} or \ttt{smolsimulategl}, as appropriate. At the end, it frees the simulation structure and returns. Returns 0 for success or an error code for failure. This function is an alternate point of entry to \ttt{main}, from my smoldyn.c code.
+This function is an alternate point of entry to \ttt{main}, from my smoldyn.c code. It is called by \ttt{PYBIND11\_MODULE} with the \ttt{loadModel} low-level Python function.
+
+Send in the filepath, including both the path and the filename in \ttt{filepath} and the Smoldyn flags in \ttt{flags}. In addition, \ttt{wflag} is another copy of the suppress warnings flag, perhaps only for whether output files should be overwritten, and \ttt{quit\_at\_end} is a flag for whether Smoldyn should just quit when the simulation is done. This function passes these things on to \ttt{simInitAndLoad} and \ttt{simUpdateAndDisplay} (both in smolsim.c). Here, \ttt{cursim\_} is the current simulation structure. This also opens output files and runs the simulation with \ttt{smolsimulate} or \ttt{smolsimulategl}, as appropriate. At the end, it frees the simulation structure and returns. Returns 0 for success or an error code for failure.
 
 \item[\ttt{PYBIND11\_MODULE(\_smoldyn, m)}]
 \hfill \\
-This function exposes the enumerated types, the members of the simulation structure, and the C API to the Python interface. Most of this function is simply a wrapper of the C API. The python functions created at the end of this function are not in the C API, but probably should be. Most of their code is in Smoldyn.cpp.
+This is a macro that creates a function for the interface between C code and Python. From the website \url{https://pybind11.readthedocs.io/en/stable/basics.html}, with some edits to make it apply to the code here: ``The \ttt{PYBIND11\_MODULE()} macro creates a function that will be called when an \ttt{import} statement is issued from within Python. The module name (\ttt{\_smoldyn}) is given as the first macro argument. The second argument (\ttt{m}) defines a variable of type \ttt{py::module\_} which is the main interface for creating bindings. The method \ttt{module\_::def()} generates binding code that exposes the Smoldyn functions to Python.''
+
+This code exposes the enumerated types, the members of the simulation structure, and the C API to the Python interface. Most of this function is simply a wrapper of the C API. The python functions created at the end of this function are not in the C API, but probably should be. Most of their code is in Smoldyn.cpp.
 
 \end{description}
 
@@ -4768,12 +4772,13 @@ Each command is written with a similar structure. As an example, here is \ttt{cm
 
 \begin{lstlisting}
 enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2) {
+	int er;
 	FILE *fptr;
 	char *termqt,str[STRCHAR];
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-	fptr=scmdgetfptr(sim->cmds,line2);
-	SCMDCHECK(fptr,"file name not recognized");
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2=strchr(line2,'"'),"no starting quote on string");
 	strncpy(str,line2+1,STRCHAR-1);
@@ -5060,6 +5065,10 @@ Prints information about the lattices to the a file. This would be better as par
 \item[\ttt{enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
 Outputs VTK data for the current simulation state.
+
+\item[\ttt{enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2);}]
+\hfill \\
+Prints out a data array to a file, another data array, or stdout.
 
 \item[\underline{system manipulation}]
 
@@ -6480,6 +6489,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Lots of changes by Dilawar to scripts, including particularly for documentation. He also fixed some issues in the CMake build system.
 \item Dilawar added Python callback functionality. This includes a few minor changes in smoldyn.h, including new code in the sim structure, and a short bit of code in \ttt{simulatetimestep}, in smolsim.c; this code is in C++, so the file got renamed to smolsim.cpp.
 \item Dilawar made some minor changes in libsmoldyn.c \ttt{smolGetPanelIndex} and \ttt{smolGetPanelIndexNT} for searching for a panel in a panel list. As part of the same changes, he added a C++ array to smoldyn.h. These changed both files from C to C++. I don't understand these updates.
+\item Added data tables to the command superstructure, so that output data can be stored internally rather than only in external files. As part of this, wrote double-double list types in Lists.c, added several functions to support data arrays in SimCommand.c, edited all observation commands to work with the new function calls and also to enable data storage where possible, added statement ``output\_data'' and command ``printdata'', edited reaction logging in smolreact.c, added Libsmoldyn functions \ttt{smolAddOutputData} and \ttt{smolGetOutputData}.
 
 
 \end{itemize}
