@@ -1746,15 +1746,18 @@ class Simulation(object):
             set log level for default logger.
             1: DEBUG, 2: INFO, 3: WARNING, 4: ERROR, 5: CRITICAL
 
-        kwargs :
-            stop: float
-                Simulation stop time
-            dt: float
-                Simulation dt
-            start : float
-                Simulation start time.
-            output_files :
-                Declare output files.
+        Other Parameters
+        ----------------
+        stop: `float`
+            Simulation stop time
+        dt: `float`
+            Simulation dt
+        start : `float`
+            Simulation start time.
+        output_files :
+            Declare output files that can be used in addCommand string.
+        seed: `int`
+            Set the random seed for the simulation.
 
         See also
         --------
@@ -1794,6 +1797,10 @@ class Simulation(object):
         self.quitAtEnd = quit_at_end
         """Note: One can also set SMOLDYN_NO_PROMPT to achieve the same
         effect."""
+
+        if kwargs.get('seed', -1) >= 0:
+            self.randomSeed = int(kwargs['seed'])
+
 
     def setOutputFiles(self, outfiles: List[str], append=True):
         """Declaration of filenames that can be used for output of simulation
@@ -2006,8 +2013,14 @@ class Simulation(object):
         _smoldyn.setAccuracy(accuracy)
 
     @property
-    def data(self):
-        return _smoldyn.getData()
+    def seed(self) -> int:
+        """Get the random seed."""
+        return int(_smoldyn.getRandomSeed())
+
+    @seed.setter
+    def seed(self, x: int):
+        """Set the random seed"""
+        _smoldyn.setRandomSeed(int(x))
 
     def setTime(self, dt: float, start: float = 0.0):
         self.dt = dt
@@ -2306,3 +2319,4 @@ class Simulation(object):
          (91.0, 0.37011200572554614)]
         """
         return _smoldyn.connect(func, target, step, args)
+

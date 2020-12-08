@@ -51,7 +51,6 @@ bool deleteSimptr(simptr ptr);
 size_t getDim();
 void setDim(size_t dim);
 
-void setRandomSeed(size_t seed);
 size_t getRandomSeed();
 
 bool initialize();
