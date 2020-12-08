@@ -19,4 +19,6 @@ s.addCommand(cmd="molcount mydata", cmd_type="E")
 
 s = s.run(stop=10, dt=0.01)
 
-data = smoldyn.getOutputData('mydata')
+data = smoldyn.getOutputData('mydata',0)
+
+print(data)
