@@ -15,10 +15,18 @@ B.addToSolution(1, pos=[50,50,50])
 smoldyn.addOutputData('mydata')
 s.addCommand(cmd="molcount mydata", cmd_type="E")
 
+# Graphics need to be commented out for the plotting to work
 # s.setGraphics( "opengl" )
 
-s = s.run(stop=10, dt=0.01)
+s = s.run(stop=20, dt=0.01)
 
 data = smoldyn.getOutputData('mydata',0)
 
-print(data)
+import matplotlib.pyplot as plt
+import numpy as np
+
+dataT = np.array(data).T.tolist()
+plt.plot(dataT[0],dataT[1])
+plt.xlabel("time")
+plt.ylabel("red molecules")
+plt.show()
