@@ -20,7 +20,7 @@ s.addCommand(cmd="molcount mydata", cmd_type="E")
 
 s = s.run(stop=20, dt=0.01)
 
-data = smoldyn.getOutputData('mydata',0)
+data = smoldyn.getOutputData('mydata', 0)
 
 import matplotlib.pyplot as plt
 import numpy as np

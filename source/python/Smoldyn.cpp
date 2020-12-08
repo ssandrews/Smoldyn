@@ -101,26 +101,16 @@ void printSimptrNotInitWarning(const char* funcname)
 }
 
 /**
- * @brief set seed for random number generator.
- *
- * @param seed
- */
-void setRandomSeed(size_t seed)
-{
-    if(!cursim_) {
-        printSimptrNotInitWarning(__FUNCTION__);
-        return;
-    }
-    cursim_->randseed = randomize(seed);
-}
-
-/**
  * @brief Get the random seed.
  *
  * @return 
  */
 size_t getRandomSeed(void)
 {
+    if(!cursim_) {
+        printSimptrNotInitWarning(__FUNCTION__);
+        return -1;
+    }
     return cursim_->randseed;
 }
 

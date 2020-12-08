@@ -9,9 +9,10 @@ __date__ = "2020-06-30"
 
 import smoldyn
 
-smoldyn.setSeed(0)
-
 sim = smoldyn.Simulation(low=[0, 0, 0], high=[100, 100, 100])
+
+# Set it after Simulation object is created.
+sim.seed = 0
 
 spRed = sim.addSpecies("red", color="red", difc=3, display_size=3)
 spRed.addToSolution(20, highpos=[10, 50, 50])

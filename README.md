@@ -1,4 +1,4 @@
-![C/C++ CI](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg) [![Build Status](https://travis-ci.org/dilawar/Smoldyn.svg?branch=master)](https://travis-ci.org/dilawar/Smoldyn) [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn)
+![C/C++ CI](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg) [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn)
 
 # Smoldyn
 
