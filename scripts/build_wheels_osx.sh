@@ -9,6 +9,8 @@ brew install freeglut || echo "Failed to install freeglut"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+export PATH=/usr/local/bin:$PATH
+
 SMOLDYN_VERSION=$(bash $SCRIPT_DIR/get_version.sh)
 
 WHEELHOUSE=$HOME/wheelhouse
@@ -16,7 +18,7 @@ rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
 
 # Always prefer brew version.
-PYTHON=/usr/local/bin/python3
+PYTHON=$(which python3)
 
 if [ ! -f $PYTHON ]; then
     echo "Not found $PYTHON"
