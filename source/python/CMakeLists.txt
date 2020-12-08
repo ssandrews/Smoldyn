@@ -24,10 +24,10 @@ set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
-# FIXME: If it comes your way, comment it out.
-# Patchwork: It usually run on github actions and other CI (for Windows only).
+# FIXME: If it comes in your way, comment it out.
+# FIXME: FOllowing runs on github actions and other CI (for Windows only).
 # Its very hard to locate correct version of Python on every cloud based CI. 
-# So let cmake install the dependencies at build time.
+# So I let cmake install the dependencies at build time.
 if(WINDOWS_BUILD)
     add_custom_command(TARGET _pysmoldyn PRE_BUILD
         COMMAND ${PYTHON_EXECUTABLE} -m pip install pytest wheel numpy setuptools --user
@@ -127,6 +127,7 @@ endforeach()
 
 add_test(NAME pytest 
     COMMAND 
+    ${PYTHON_EXECUTABLE} -m pip install pytest --user
     ${PYTHON_EXECUTABLE} -m pytest --ignore-glob source/pybind11*
     ${CMAKE_SOURCE_DIR}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
