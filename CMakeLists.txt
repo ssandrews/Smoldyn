@@ -539,8 +539,6 @@ endif ()
 if (OPTION_PYTHON)
     # Find python before using pybind11. There is a possibility of version mismatch later.
     find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
-    set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)

@@ -26,7 +26,7 @@ foreach(_example ${PY_FILES})
     add_custom_target(py${_ex_name} 
         COMMAND 
             ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/py MPLBACKEND=agg SMOLDYN_NO_PROMPT=1 
-            ${PYTHON_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example}
+            ${Python3_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example}
         COMMENT "Executing ${_example} (user prompts are disabled)" 
         VERBATIM)
 
@@ -34,7 +34,7 @@ foreach(_example ${PY_FILES})
 
     # add to ctest as well.
     add_test(NAME test_${_ex_name} 
-        COMMAND ${PYTHON_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example})
+        COMMAND ${Python3_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example})
 
     set_tests_properties(test_${_ex_name} PROPERTIES 
             ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/py;MPLBACKEND=agg;SMOLDYN_NO_PROMPT=1")

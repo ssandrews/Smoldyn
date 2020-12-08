@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <exception>
 #include <map>
 
 using namespace std;
@@ -23,8 +24,6 @@ using namespace std;
 #include "CallbackFunc.h"
 
 using namespace pybind11::literals;  // for _a
-
-extern vector<vector<double>> &getData();
 
 double r_ = 0.0;
 
@@ -310,7 +309,7 @@ PYBIND11_MODULE(_smoldyn, m)
             "start_time", &simstruct::clockstt, "clock starting time of simulation")
         .def_readonly(
             "elapsed_time", &simstruct::elapsedtime, "elapsed time of simulation")
-        .def_readonly("seed", &simstruct::randseed, "random number generator seed")
+        .def_readonly("randseed", &simstruct::randseed, "random number generator seed")
         .def_readonly(
             "event_count", &simstruct::eventcount, "counter for simulation events")
         .def_readonly("max_var", &simstruct::maxvar, "allocated user-settable variables")
@@ -582,10 +581,9 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddOutputFile(cursim_, filename, suffix, append);
     });
 
-	// enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
-    m.def("addOutputData", [](char *dataname) {
-			return smolAddOutputData(cursim_, dataname);
-    });
+    // enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
+    m.def("addOutputData",
+        [](char *dataname) { return smolAddOutputData(cursim_, dataname); });
 
     // enum ErrorCode smolAddCommand(simptr sim, char type, double on, double
     // off,
@@ -603,16 +601,16 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,
     // double **array,int erase)
-    m.def("getOutputData", [](char *dataname, bool erase) {
-			int nrow,ncol;
-			double *array;
+    m.def("getOutputData", [](char *dataname, bool erase) -> vector<vector<double>> {
+        int     nrow, ncol;
+        double *array;
 
-      smolGetOutputData(cursim_, dataname, &nrow, &ncol, &array, erase);
-			std::vector<vector<double>> cppdata(nrow);
-      for(int i=0;i<nrow;i++)
-				cppdata[i] = vector<double>(array+i*ncol,array+(i+1)*ncol);
-			free(array);
-			return cppdata;
+        smolGetOutputData(cursim_, dataname, &nrow, &ncol, &array, erase);
+        std::vector<vector<double>> cppdata(nrow);
+        for(int i = 0; i < nrow; i++)
+            cppdata[i] = vector<double>(array + i * ncol, array + (i + 1) * ncol);
+        free(array);
+        return cppdata;
     });
 
     /***************
@@ -1107,24 +1105,24 @@ PYBIND11_MODULE(_smoldyn, m)
      *  Extra function which are not avilable in the C-API.  *
      *********************************************************/
     m.def("color2RGBA", &color2RGBA, "Convert a string to rgba tuple");
-    m.def("getDim", &getDim, "Dimention of the system");
-    m.def("setDim", &setDim, "Set the dimnetion of the system.");
-    m.def("getSeed", &getRandomSeed);
-    m.def("setSeed", &setRandomSeed);
+    m.def("getDim", &getDim, "Get dimensions of the system");
+    m.def("setDim", &setDim, "Set dimensions of the system.");
+    m.def("getRandomSeed", &getRandomSeed, "Get the seed of the internal RNG");
     m.def("getBoundaries", &getBoundaries);
 
     // Set model path on simptr
-    m.def(
-        "setModelpath", &setModelpath, "modelpath"_a, "Set model path on current simptr");
+    m.def("setModelpath", &setModelpath, "modelpath"_a,
+        "Set model path for current Simulation (for internal use)");
 
     // Set boundaries
     m.def("setBoundaries",
         py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
-        "Set boundaries using vector of (low,high) tuples e.g., "
-        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)]");
+        "Set the simulation boundaries using a vector of  tuples (low,high) e.g., "
+        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)].");
     m.def("setBoundaries",
         py::overload_cast<vector<double> &, vector<double> &>(&setBoundaries),
-        "Set boundaries using vector of low and a vector of high points");
+        "Set the simulation boundaries using vectors of low and high points e.g., "
+        "[xlow, ylow, zlow], [xhigh, yhigh, zhigh].");
 
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);

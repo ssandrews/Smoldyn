@@ -11,7 +11,7 @@ def test_library():
     """
     S.setBoundaries(([-50, 50], [-50, 50]))
     assert S.getDim() == 2
-    S.setSeed(1)
+    S.setRandomSeed(1)
     print('Bounds', S.getBoundaries())
 
     S.setPartitions("molperbox", 4);
