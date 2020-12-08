@@ -949,7 +949,7 @@ Defines a runtime command, including its execution timing parameters, from the s
 \item[getOutputData]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,char *array,int erase)}\\
-Python: N/A\\
+Python low-level: vector<vector<double>> getOutputData(str dataname, bool erase)\\
 Returns data that have been recorded by an observation command (e.g. molcount). Send in the name of the data in \ttt{dataname} and pointers to variables that will receive the data in: \ttt{nrow}, for the number of rows, \ttt{ncol}, for the number of columns, and \ttt{array}, for the data themselves. The data are copied over in this function from the original into the array that is returned, with the result that the data in the array can be modified as desired. \textit{The array needs to be freed by the host code.} All values in this data table are doubles, which is appropriate for some things but not so good for things like species names and molecule states. The array represents a 2D table as a single vector so to read the item at row \ttt{i} and column \ttt{j}, use \ttt{array[i*ncol+j]}. Set \ttt{erase} to 1 for the original data to be cleared after it is copied over.
 
 \end{description}

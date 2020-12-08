@@ -601,6 +601,20 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddCommandFromString(cursim_, cmd);
     });
 
+    // enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,
+    // double **array,int erase)
+    m.def("getOutputData", [](char *dataname, bool erase) {
+			int nrow,ncol;
+			double *array;
+
+      smolGetOutputData(cursim_, dataname, &nrow, &ncol, &array, erase);
+			std::vector<vector<double>> cppdata(nrow);
+      for(int i=0;i<nrow;i++)
+				cppdata[i] = vector<double>(array+i*ncol,array+(i+1)*ncol);
+			free(array);
+			return cppdata;
+    });
+
     /***************
      *  Molecules  *
      ***************/
