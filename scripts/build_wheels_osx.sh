@@ -11,8 +11,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 export PATH=/usr/local/bin:$PATH
 
-SMOLDYN_VERSION=$(bash $SCRIPT_DIR/get_version.sh)
-
 WHEELHOUSE=$HOME/wheelhouse
 rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
@@ -31,6 +29,7 @@ $PYTHON -m pip install numpy --upgrade
 $PYTHON -m pip install delocate --upgrade
 $PYTHON -m pip install twine  --upgrade
 $PYTHON -m pip install pytest  --upgrade
+$PYTHON -m pip install matplotlib  --upgrade
 
 PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform())")
 
@@ -41,7 +40,6 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     cmake ../.. \
         -DOPTION_PYTHON=ON \
         -DOPTION_EXAMPLES=ON \
-        -DSMOLDYN_VERSION:STRING=${SMOLDYN_VERSION} \
         -DPython3_EXECUTABLE=$PYTHON
     make -j4 
     make wheel

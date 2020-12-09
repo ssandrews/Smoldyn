@@ -9,8 +9,6 @@ WHEELHOUSE=${1-$HOME/wheelhouse}
 echo "Path to store wheels : $WHEELHOUSE"
 rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
-SMOLDYN_VERSION=$(bash ${SCRIPT_DIR}/get_version.sh)
-
 PYDIR37=/opt/python/cp37-cp37m/
 PYDIR38=/opt/python/cp38-cp38/
 PYDIR39=/opt/python/cp39-cp39/
@@ -33,8 +31,7 @@ for PYDIR in $PYDIR39 $PYDIR38 $PYDIR37; do
             -DCMAKE_INSTALL_PREFIX=/usr \
 	        -DPython3_EXECUTABLE=$PYTHON \
 	        -DPython3_INCLUDE_DIR=$PYINDIR \
-	        -DPython3_LIBRARY=$PYLIB \
-            -DSMOLDYN_VERSION=${SMOLDYN_VERSION}
+	        -DPython3_LIBRARY=$PYLIB 
         make -j`nproc` 
         make wheel 
         export PYTHONPATH=$(pwd)/py
