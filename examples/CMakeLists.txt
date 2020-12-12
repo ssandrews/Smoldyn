@@ -33,10 +33,13 @@ foreach(_example ${PY_FILES})
     add_dependencies(pyexamples py${_ex_name})
 
     # add to ctest as well.
-    add_test(NAME test_${_ex_name} 
+    add_test(NAME example_${_ex_name} 
         COMMAND ${Python3_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example})
 
-    set_tests_properties(test_${_ex_name} PROPERTIES 
+    # MPLBACKEND=agg : makes sure that X11 is not needed while testing on CI.
+    # SMOLDYN_NO_PROMPT=1 : makes sure that shiftQ is not needed to be pressed by
+    # anyone at the end of simulation.
+    set_tests_properties(example_${_ex_name} PROPERTIES 
             ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/py;MPLBACKEND=agg;SMOLDYN_NO_PROMPT=1")
 
 endforeach()

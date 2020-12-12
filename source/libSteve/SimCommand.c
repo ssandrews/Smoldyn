@@ -767,7 +767,7 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 #ifdef COMPILE_AS_PY_MODULE
 					// When built as a python module. There is no way to use scanf (probably)?
 					fprintf(stderr, "File '%s' already exists. Refusing to overwrite.\n", cmds->fname[fid]);
-					fprintf(stderr, "Tip: Set `overwrite=True` in `setOutputFile` method.\n");
+					fprintf(stderr, "Tip: pass `overwrite=True` to `run()` method.\n");
 					return 1;
 #else
 					// When compiled for c++ binary.

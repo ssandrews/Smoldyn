@@ -1,5 +1,5 @@
 # Zeroth order reactions
-import smoldyn 
+import smoldyn
 
 s = smoldyn.Simulation(low=[0, 0, 0], high=(10, 10, 10), boundary_type="r")
 red = s.addSpecies("red", difc=1, color=[1, 0, 0])
@@ -12,4 +12,4 @@ fast = s.addReaction("fast", [], [blue], rate=0.1)
 s.setGraphics("opengl")
 s.setOutputFile("zeroreactout.txt")
 s.addCommand("molcount zeroreactout.txt", cmd_type="e")
-s = s.run(stop=10, dt=0.01, output_files=["zeroreactout.txt"])
+s = s.run(stop=10, dt=0.01, overwrite=True)

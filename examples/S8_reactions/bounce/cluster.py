@@ -15,7 +15,7 @@ red.addToSolution(1,pos=[0,0,0])
 rxn = s.addReaction(name='stick',subs=[blue,red],prds=[red,red], rate=20)
 rxn.productPlacement(method='bounce', param=0.6)
 
-smoldyn.addOutputData('counts')
+s.addOutputData('counts')
 s.addCommand(cmd="molcount counts", cmd_type="E")
 
 s.setGraphics('opengl_good',1)
@@ -25,7 +25,7 @@ s.run(200, dt=0.1)
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = smoldyn.getOutputData('counts', 0)
+data = s.getOutputData('counts', 0)
 
 dataT = np.array(data).T.tolist()
 plt.plot(dataT[0],dataT[2],"r")
