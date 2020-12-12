@@ -946,16 +946,18 @@ int surfexpandmollist(surfaceptr srf,int newmax,int ll) {
 	int *newmaxmol,*newnmol;
 
 	if(ll<0) {
+		if(newmax<=srf->maxmollist) return 0;
+
 		CHECKMEM(newmaxmol=(int*) calloc(newmax,sizeof(int)));
-		for(ll=0;ll<srf->nmollist;ll++) newmaxmol[ll]=srf->maxmol[ll];
+		for(ll=0;ll<srf->maxmollist;ll++) newmaxmol[ll]=srf->maxmol[ll];
 		for(;ll<newmax;ll++) newmaxmol[ll]=0;
 
 		CHECKMEM(newnmol=(int*) calloc(newmax,sizeof(int)));
-		for(ll=0;ll<srf->nmollist;ll++) newnmol[ll]=srf->nmol[ll];
+		for(ll=0;ll<srf->maxmollist;ll++) newnmol[ll]=srf->nmol[ll];
 		for(;ll<newmax;ll++) newnmol[ll]=0;
 
 		CHECKMEM(newmol=(moleculeptr**) calloc(newmax,sizeof(moleculeptr*)));
-		for(ll=0;ll<srf->nmollist;ll++) newmol[ll]=srf->mol[ll];
+		for(ll=0;ll<srf->maxmollist;ll++) newmol[ll]=srf->mol[ll];
 		for(;ll<newmax;ll++) newmol[ll]=NULL;
 
 		free(srf->maxmol);
@@ -964,11 +966,11 @@ int surfexpandmollist(surfaceptr srf,int newmax,int ll) {
 		srf->maxmol=newmaxmol;
 		srf->nmol=newnmol;
 		srf->mol=newmol;
-		srf->nmollist=newmax;
+		srf->maxmollist=newmax;
 		return 0; }
 
 	CHECKMEM(newmolll=(moleculeptr*) calloc(newmax,sizeof(moleculeptr)));
-	for(m=0;m<srf->nmol[ll] && m<newmax;m++) newmolll[m]=srf->mol[ll][m];
+	for(m=0;m<srf->maxmol[ll] && m<newmax;m++) newmolll[m]=srf->mol[ll][m];
 	for(;m<newmax;m++) newmolll[m]=NULL;
 
 	free(srf->mol[ll]);
@@ -1031,6 +1033,7 @@ surfaceptr surfacealloc(surfaceptr srf,int oldmaxspecies,int maxspecies,int dim)
 		srf->nemitter[PFfront]=srf->nemitter[PFback]=NULL;
 		srf->emitteramount[PFfront]=srf->emitteramount[PFback]=NULL;
 		srf->emitterpos[PFfront]=srf->emitterpos[PFback]=NULL;
+		srf->maxmollist=0;
 		srf->nmollist=0;
 		srf->maxmol=NULL;
 		srf->nmol=NULL;
@@ -1134,7 +1137,7 @@ void surfacefree(surfaceptr srf,int maxspecies) {
 	free(srf->action);
 
 	if(srf->mol) {
-		for(ll=0;ll<srf->nmollist;ll++)
+		for(ll=0;ll<srf->maxmollist;ll++)
 			free(srf->mol[ll]);
 		free(srf->mol); }
 	free(srf->maxmol);
@@ -1268,6 +1271,7 @@ void surfaceoutput(simptr sim) {
 	simLog(sim,2," Surface epsilon, margin, and neighbor distances: %g %g %g\n",srfss->epsilon,srfss->margin,srfss->neighdist);
 
 	if(sim->mols) {
+		simLog(sim,1," Local max species record: %i\n",srfss->maxspecies);
 		simLog(sim,2," Molecule lists checked after diffusion:");
 		for(ll=0;ll<srfss->nmollist;ll++)
 			if(srfss->srfmollist[ll]&SMLdiffuse) simLog(sim,2," %s",sim->mols->listname[ll]);
@@ -1276,9 +1280,11 @@ void surfaceoutput(simptr sim) {
 		for(ll=0;ll<srfss->nmollist;ll++)
 			if(srfss->srfmollist[ll]&SMLreact) simLog(sim,2," %s",sim->mols->listname[ll]);
 		simLog(sim,2,"\n");
+		simLog(sim,1," Local molecule list record: %i lists of %i allocated\n",srfss->nmollist,srfss->maxmollist);
 		simLog(sim,2," Molecule lists checked for surface-bound molecules:");
 		for(ll=0;ll<srfss->nmollist;ll++)
-			if(srfss->srfmollist[ll]&SMLsrfbound) simLog(sim,2," %s",sim->mols->listname[ll]);
+			if(srfss->srfmollist[ll]&SMLsrfbound)
+				simLog(sim,2," %s",sim->mols->listname[ll]);
 		simLog(sim,2,"\n"); }
 
 	simLog(sim,2," Surfaces allocated: %i, surfaces defined: %i\n\n",srfss->maxsrf,srfss->nsrf);
@@ -1357,6 +1363,10 @@ void surfaceoutput(simptr sim) {
 							for(d=1;d<dim;d++)
 								simLog(sim,2,",%g",srf->emitterpos[face][i][emit][d]);
 							simLog(sim,2,")\n"); }}}
+
+		simLog(sim,1,"  number of molecule lists: %i of %i allocated\n",srf->nmollist,srf->maxmollist);
+		for(ll=0;ll<srf->nmollist;ll++)
+			simLog(sim,1,"   list %s has %i molecules of %i allocated\n",sim->mols->listname[ll],srf->nmol[ll],srf->maxmol[ll]);
 		
 		jumpfrnt=jumpback=0;
 		if(srf->action) {
@@ -3671,11 +3681,14 @@ int surfupdatelists(simptr sim) {
 				newsrfmollist=(enum SMLflag*) calloc(maxmollist,sizeof(enum SMLflag));
 				if(!newsrfmollist) return 1; }
 			else newsrfmollist=NULL;
-			for(ll=0;ll<maxmollist;ll++)
+			for(ll=0;ll<srfss->maxmollist;ll++)
+				newsrfmollist[ll]=srfss->srfmollist[ll];
+			for(;ll<maxmollist;ll++)
 				newsrfmollist[ll]=SMLno;
 			free(srfss->srfmollist);
 			srfss->srfmollist=newsrfmollist;
 			srfss->maxmollist=maxmollist; }
+
 		srfss->nmollist=sim->mols->nlist;
 
 		if(srfss->nmollist) {														// set srfmollist flags
@@ -3725,6 +3738,7 @@ int surfupdatelists(simptr sim) {
 		for(s=0;s<srfss->nsrf;s++) {						// set up molecule lists for individual surfaces
 			srf=srfss->srflist[s];
 			er=surfexpandmollist(srf,sim->mols->maxlist,-1);
+			srf->nmollist=sim->mols->nlist;
 			if(er) return 1; }}
 
 	return 0; }

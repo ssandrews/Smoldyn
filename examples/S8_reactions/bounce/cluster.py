@@ -9,15 +9,27 @@ import smoldyn
 s = smoldyn.Simulation(low=[-10,-10,-10], high=[10,10,10])
 blue = s.addSpecies('blue',color='blue',difc=1,display_size=0.3)
 red = s.addSpecies('red',color='red',difc=0,display_size=0.3)
-blue.addToSolution(100,lowpos=[-5,-5,-5],highpos=[5,5,5])
-red.addToSolution(1,lowpos=[0,0,0],highpos=[0,0,0])
-
-s1 = s.addSurface('membrane', panels=[smoldyn.Sphere(center=[0,0,0],radius=10,slices=10,stacks=10)])
-s1.setStyle('both', drawmode='edge',color='green')
-s1.setAction('both', species=[blue, red], action='reflect')
+blue.addToSolution(200)
+red.addToSolution(1,pos=[0,0,0])
 
 rxn = s.addReaction(name='stick',subs=[blue,red],prds=[red,red], rate=20)
 rxn.productPlacement(method='bounce', param=0.6)
 
+smoldyn.addOutputData('counts')
+s.addCommand(cmd="molcount counts", cmd_type="E")
+
 s.setGraphics('opengl_good',1)
-s.run(100, dt=0.1)
+
+s.run(200, dt=0.1)
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+data = smoldyn.getOutputData('counts', 0)
+
+dataT = np.array(data).T.tolist()
+plt.plot(dataT[0],dataT[2],"r")
+plt.xlabel("time")
+plt.ylabel("red molecules")
+plt.show()
+

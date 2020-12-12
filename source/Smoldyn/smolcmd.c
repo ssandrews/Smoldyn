@@ -4486,7 +4486,7 @@ enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmddiffusecmpt */
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
-	int itct,dim,c,code,d,valid,pt,is,nsample;
+	int itct,dim,c,code,d,valid,pt,is,nsample,attempts;
 	compartssptr cmptss;
 	compartptr cmpt,cmptbound;
 	char cname[STRCHAR];
@@ -4528,26 +4528,30 @@ enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
 		cmptbound=NULL;
 		radius=0; }
 
-	for(d=0;d<dim;d++)
-		translate[d]=stddev[d]*gaussrandD();
-
-	if(!cmptbound)
-		comparttranslate(sim,cmpt,code,translate);
+	if(!cmptbound) {
+		for(d=0;d<dim;d++)
+			translate[d]=stddev[d]*gaussrandD();
+		valid=1; }
 	else {
-		valid=1;
-		for(pt=0;pt<cmpt->npts && valid;pt++)
-			for(is=0;is<nsample && valid;is++) {
-				if(dim==1) samplept[0]=(coinrandD(0.5)==0)?-radius:radius;
-				else if(dim==2) circlerandD(samplept,radius);
-				else sphererandCCD(samplept,radius,radius);
-				for(d=0;d<dim;d++)
-					testpt[d]=cmpt->points[pt][d]+samplept[d];
-				if(!posincompart(sim,testpt,cmptbound,0)) {
-					valid=0;
+		valid=0;
+		attempts=0;
+		while(!valid && attempts<10) {
+			valid=1;
+			attempts++;
+			for(d=0;d<dim;d++)
+				translate[d]=stddev[d]*gaussrandD();
+			for(pt=0;pt<cmpt->npts && valid;pt++)
+				for(is=0;is<nsample && valid;is++) {
+					if(dim==1) samplept[0]=(coinrandD(0.5)==0)?-radius:radius;
+					else if(dim==2) circlerandD(samplept,radius);
+					else sphererandCCD(samplept,radius,radius);
 					for(d=0;d<dim;d++)
-						translate[d]=-samplept[d]/radius*stddev[d]; }}
+						testpt[d]=cmpt->points[pt][d]+samplept[d]+translate[d];
+					if(!posincompart(sim,testpt,cmptbound,0)) {
+						valid=0; }}}}
 
-		comparttranslate(sim,cmpt,code,translate); }
+	if(valid)
+		comparttranslate(sim,cmpt,code,translate);
 
 	return CMDok; }
 

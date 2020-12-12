@@ -899,7 +899,6 @@ int reassignmolecs(simptr sim,int diffusing,int reborn) {
 	surfaceptr srf;
 
 	if(!sim->mols) return 0;
-	if(sim->boxs->nbox==1) return 0;
 	boxss=sim->boxs;
 	srfss=sim->srfss;
 

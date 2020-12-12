@@ -429,6 +429,7 @@ typedef struct surfacestruct {
 	int *nemitter[2];						// number of emitters [face][i]
 	double **emitteramount[2];	// emitter amounts [face][i][emit]
 	double ***emitterpos[2];		// emitter positions [face][i][emit][d]
+	int maxmollist;							// allocated number of molecule live lists
 	int nmollist;								// number of molecule live lists
 	int *maxmol;								// allocated size of live lists [ll]
 	int *nmol;									// number of molecules in live lists [ll]

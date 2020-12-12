@@ -714,13 +714,11 @@ Gets the arguments for the callback function.
 % Python scripts in smoldyn directory
 \section{Python scripts in smoldyn directory}
 
+I tried to determine which scripts get imported and in what order by adding print statements to the beginning of them. If I start a Python session and then enter ``import smoldyn'', it runs the following scripts, in order: \_\_init\_\_.py, smoldyn.py, types.py, utils.py. My understanding is that each of these imports the next in sequence, so \_\_init\_\_.py imports smoldyn.py, which then imports types.py, which then imports utils.py. Running a Python Smoldyn simulation goes through the same files when the ``import smoldyn'' statement is reached, and they are not imported again, at least from the top. It doesn't appear that \_\_main\_\_.py is ever imported at all. The files are listed below in the same order that they actually imported.
+
 \subsection*{\_\_init\_\_.py}
 
-This file just imports all of the other python files. So, I think that importing just this is sufficient for importing everything.
-
-\subsection*{\_\_main\_\_.py}
-
-This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. The \ttt{load\_model} function might be in utils.py, or maybe that's just another instance of something similar and with the same name.
+This file only has a few lines since it's only role is to import smoldyn.py. When I'm in a Python session and enter ``smoldyn.\_\_file\_\_'', the result is a path to the \_\_init\_\_.py file, again showing that this is the top-level file.
 
 \subsection*{smoldyn.py}
 
@@ -733,6 +731,24 @@ This declares a color type as a union of a string name, and a RGBA vector. It al
 \subsection*{utils.py}
 
 This defines a \ttt{load\_model} function with a path and arguments, which then sends the information onto the compiled Smoldyn code. It also converts colors from string to RGBA, using matplotlib if available or Smoldyn color conversion if not.
+
+\subsection*{\_\_main\_\_.py}
+
+This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. This file includes the Python command-line options, including ``overwrite'', ``quit-at-end'', and ``args''. However, I added print statements in here and they were never printed out, so it's not clear to me that this code ever runs. As a result, I can't figure out how to use these options.
+
+% Python module after building
+\section{Python module after building}
+
+After building Smoldyn, in the build directory at \ttt{/path/to/Smoldyn/build}, the python module ends up at \ttt{/path/to/Smoldyn/build/py}. The actual code that runs is in the \ttt{smoldyn} subdirectory of this location, but that's not directly relevant. The module can be imported into Python from this directory (\ttt{.../build/py}). Add this directory to your \ttt{PYTHONPATH} temporarily with \ttt{export PYTHONPATH=/path/to/Smoldyn/build/py:\$PYTHONPATH}. With this, the module can be accessed from any directory. Also, somehow, it's possible to add the module directory to sys.path, which is then a permanent solution.
+
+Note that it's possible to see where the library is imported from by checking
+\verb|smoldyn.__file__| while in Python. For example,
+
+\begin{verbatim}
+>>> import smoldyn
+>>> print(smoldyn.__file__)
+/home/dilawars/Work/FORKES/Smoldyn/build/py/smoldyn/__init__.py
+\end{verbatim}
 
 
 % Chapter: Files, macros, variables, etc.
@@ -5198,11 +5214,11 @@ This command expands or contracts the entire system, including all molecule posi
 
 \item[\ttt{enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
-This command translates a compartment, including dealing with molecule displacements. All of the work is done by \ttt{cmpttranslate}.
+This command translates a compartment, including dealing with molecule displacements. All of the work is done by \ttt{comparttranslate}.
 
 \item[\ttt{enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
-This command diffuses a compartment, including dealing with molecule displacements. All of the work is done by \ttt{cmpttranslate}.
+This command diffuses a compartment, including dealing with molecule displacements. All of the work is done by \ttt{comparttranslate}. For bounded diffusion, a move that would lead to an illegal location is rejected, and diffusion is attempted again, up to 10 times; if there are 10 failures, then the compartment simply isn't moved at all during that command call.
 
 \item[\underline{Internal functions}]
 
@@ -6490,7 +6506,9 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Dilawar added Python callback functionality. This includes a few minor changes in smoldyn.h, including new code in the sim structure, and a short bit of code in \ttt{simulatetimestep}, in smolsim.c; this code is in C++, so the file got renamed to smolsim.cpp.
 \item Dilawar made some minor changes in libsmoldyn.c \ttt{smolGetPanelIndex} and \ttt{smolGetPanelIndexNT} for searching for a panel in a panel list. As part of the same changes, he added a C++ array to smoldyn.h. These changed both files from C to C++. I don't understand these updates.
 \item Added data tables to the command superstructure, so that output data can be stored internally rather than only in external files. As part of this, wrote double-double list types in Lists.c, added several functions to support data arrays in SimCommand.c, edited all observation commands to work with the new function calls and also to enable data storage where possible, added statement ``output\_data'' and command ``printdata'', edited reaction logging in smolreact.c, added Libsmoldyn functions \ttt{smolAddOutputData} and \ttt{smolGetOutputData}.
-
+\item Fixed bugs in \ttt{cmddiffusecmpt}.
+\item Added \ttt{maxmollist} element to surface structure because memory management here was sloppy, which led to errors.
+\item Fixed some bugs with \ttt{reassignmolecs} function. First of all, it's now called as the system is set up, before the simulation starts. Also, it now runs even if there is only 1 box, which is a little less efficient in rare cases, but more reliable.
 
 \end{itemize}
 
@@ -6501,6 +6519,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 % Bugs and issues to fix
 \section{Bugs and issues to fix}
 \begin{itemize}
+\item The \ttt{comparttranslate} function isn't written well for molecules that get squeezed. What's needed is to write a second version of \ttt{checksurfaces1mol} that explicitly accounts for surface motion, rather than to just use this function, which is written for molecule motion, in the surface's moving reference frame.
 \item Surfaces now have lists of molecules adsorbed to them. The code would be faster if these lists were used as appropriate, such as for checking the actions of surface-bound molecules.
 \item Smoldyn shouldn't terminate if pattern or species name is over-length during on-the-fly expansion, but ignore it and issue a warning.
 \item Should expand length from STRCHAR to STRCHARLONG for patterns because they are for reactions too.

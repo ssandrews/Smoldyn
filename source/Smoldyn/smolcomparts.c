@@ -1238,7 +1238,7 @@ void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate) {
 	if(code&2) {	// translate surface-bound molecules
 		for(s=0;s<cmpt->nsrf;s++) {
 			srf=cmpt->surflist[s];
-			for(ll=0;ll<srf->nmollist;ll++)
+			for(ll=0;ll<srf->nmollist;ll++) {
 				for(m=0;m<srf->nmol[ll];m++) {
 					mptr=srf->mol[ll][m];
 					if(mptr->ident) {
@@ -1248,7 +1248,7 @@ void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate) {
 						if(ms==MSfront) face1=PFfront;
 						else if(ms==MSback) face1=PFback;
 						else face1=PFnone;
-						fixpt2panel(mptr->pos,mptr->pnl,dim,face1,epsilon); }}}}
+						fixpt2panel(mptr->pos,mptr->pnl,dim,face1,epsilon); }}}}}
 
 	if(code&4 || code&8) {	// translate molecules
 		for(ll=0;ll<mols->nlist;ll++)

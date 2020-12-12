@@ -2256,7 +2256,10 @@ int simupdate(simptr sim) {
 	if(sim->graphss && sim->graphss->condition!=SCok) {
 		er=simupdate(sim);
 		CHECK(!er); }
-		
+
+	er=reassignmolecs(sim,0,0);
+	CHECK(!er);
+
 	simsetcondition(sim,SCok,1);
 	recurs=0;
 
