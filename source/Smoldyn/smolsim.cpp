@@ -2140,8 +2140,8 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 
 		else if(!strcmp(word,"start_bng")) {					// start_bng
 			er=loadbng(sim,&pfp,line2);
-      if(er) return 1;
-      er=bngupdate(sim); }
+                        if(er) return 1;
+                        er=bngupdate(sim); }
 
 		else if(!strcmp(word,"start_filament")) {			// start_filament
 			er=filload(sim,&pfp,line2); }

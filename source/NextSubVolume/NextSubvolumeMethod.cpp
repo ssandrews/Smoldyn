@@ -144,8 +144,8 @@ ReactionEquation ReactionList::pick_random_reaction(const double rand) {
 		last_sum_propensities = sum_propensities;
 	}
 
-	std::cerr << "ERROR: should have picked a reaction. rand is either not 0->1 or total_propensity != sum of propensities!!!!!!" << std::endl;
-	exit(-1);
+	throw std::runtime_error("ERROR: should have picked a reaction. rand is either not 0->1 or total_propensity != sum of propensities!!!!!!");
+	// exit(-1);
 	//std::cout << "returning reaction with lhs.size() = " << reactions[n].size()<<std::endl;
 	//		const double scaled_rand = (rand_times_total_propensity - sum_propensities)/(total_propensity-sum_propensities);
 	//		return ReactionEquation(reactions[n].lhs,reactions[n].pick_random_rhs(rand));

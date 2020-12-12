@@ -31,6 +31,7 @@ def test_data_output():
 
     # FIXME: Prints only upto 10 (2 iterations rather than 100)
     s.setOutputFile("box.dat")
+    s.setGraphics("opengl")
     c = s.addCommand("molcount box.dat", cmd_type="i", on=0, off=100, step=10)
     s.run(100, dt=0.1, overwrite=True)
     print("Simulation over")

@@ -12,9 +12,11 @@
 #ifndef SIMULTION_H
 #define SIMULTION_H
 
+
 #include <sstream>
 #include <map>
 using namespace std;
+
 
 #include "pybind11/pybind11.h"
 namespace py = pybind11;
@@ -34,14 +36,14 @@ extern int graphicsreadcolor(char** stringptr, double* rgba);
 // Collect all simptr here.
 // extern vector<simptr_uptr_type_> simptrs_;
 extern vector<simptr> simptrs_;
-extern simptr cursim_;
+extern simptr         cursim_;
 
-extern size_t dim_;
+extern size_t         dim_;
 extern vector<double> lowbounds_;
 extern vector<double> highbounds_;
-extern bool debug_;
-extern double curtime_;
-extern bool initDisplay_;
+extern bool           debug_;
+extern double         curtime_;
+extern bool           initDisplay_;
 
 extern void simfree(simptr ptr);
 
@@ -49,12 +51,11 @@ bool addToSimptrVec(simptr ptr);
 bool deleteSimptr(simptr ptr);
 
 size_t getDim();
-void setDim(size_t dim);
+void   setDim(size_t dim);
 
 size_t getRandomSeed();
 
 bool initialize();
-
 
 // Smoldyn.
 ErrorCode runSimulation(double simtime, double dt, bool display, bool overwrite);
@@ -64,7 +65,7 @@ bool connect(const py::function& func, const py::object& target, const size_t st
     const py::list& args);
 
 ErrorCode setDt(double dt);
-double getDt();
+double    getDt();
 
 inline void cleanup()
 {
@@ -93,9 +94,9 @@ bool setModelpath(const string& modelpath);
 inline pair<string, string> splitPath(const string& p)
 {
     string filename, fileroot;
-    auto pos = p.find_last_of('/');
-    fileroot = p.substr(0, pos + 1);
-    filename = p.substr(pos + 1);
+    auto   pos = p.find_last_of('/');
+    fileroot   = p.substr(0, pos + 1);
+    filename   = p.substr(pos + 1);
     return {fileroot, filename};
 }
 
@@ -105,6 +106,5 @@ inline array<double, 4> color2RGBA(char* color)
     graphicsreadcolor(&color, &rgba[0]);
     return rgba;
 }
-
 
 #endif /* end of include guard: SIMULTION_H */

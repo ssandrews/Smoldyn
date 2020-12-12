@@ -1801,6 +1801,10 @@ class Simulation(object):
         if kwargs.get("seed", -1) >= 0:
             self.randomSeed = int(kwargs["seed"])
 
+        if log_level <= 0:
+            self.simptr.flag = self.simptr.flag + 'q'
+
+
     def setOutputFiles(self, outfiles: List[str], append=True):
         """Declaration of filenames that can be used for output of simulation
         results.  Spaces are not permitted in these names.  Any previous files
@@ -2057,6 +2061,7 @@ class Simulation(object):
             - quit_at_end
         """
 
+        _smoldyn.setCurSimStruct(self.simptr)
         self.stop = float(stop)
 
         if start is not None:
@@ -2083,6 +2088,7 @@ class Simulation(object):
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
+        _smoldyn.setCurSimStruct(self.simptr)
         self.stop = stop
         if dt is not None:
             self.dt = float(dt)

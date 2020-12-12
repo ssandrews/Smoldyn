@@ -602,7 +602,7 @@ int main(void) {
 	else if(dim==3) nmax=(int) (vol/(4.0/3.0*PI*rmin*rmin*rmin));
 	nmax*=2;
 	spheres=(double*)calloc(4*nmax,sizeof(double));
-	if(!spheres) {printf("memory allocation error\n");exit(0);}
+	if(!spheres) {printf("memory allocation error\n");return(0);}
 	for(i=0;i<4*nmax;i++) spheres[i]=0;
 	n=0;
 	printf("Generating crowders...\n");
