@@ -2,9 +2,7 @@
 """
 
 __author__ = "Dilawar Singh"
-__copyright__ = "Copyright 2020-, Dilawar Singh"
-__maintainer__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 
 __all__ = [
     "__version__",
@@ -40,13 +38,15 @@ from dataclasses import dataclass, field
 from typing import Union, Tuple, List, Dict, Optional, Sequence
 
 import logging
-import inspect
 
 from smoldyn.types import Color, BoundType, ColorType, DiffConst
 from smoldyn import _smoldyn
 
-#: model file. There does not look like a beter way to find this name without
-# asking the user.
+# Path of model file.
+# It does not look like there is a beter way to find this path out
+# automatically. This is needed by simptr.
+import inspect
+
 __top_model_file__ = Path(inspect.stack()[-1].filename)
 
 # Logger
@@ -1798,9 +1798,8 @@ class Simulation(object):
         """Note: One can also set SMOLDYN_NO_PROMPT to achieve the same
         effect."""
 
-        if kwargs.get('seed', -1) >= 0:
-            self.randomSeed = int(kwargs['seed'])
-
+        if kwargs.get("seed", -1) >= 0:
+            self.randomSeed = int(kwargs["seed"])
 
     def setOutputFiles(self, outfiles: List[str], append=True):
         """Declaration of filenames that can be used for output of simulation
@@ -2266,6 +2265,44 @@ class Simulation(object):
     ):
         return Compartment(name, surface=surface, point=point)
 
+    def addOutputData(self, dataname: str) -> None:
+        """Declares the data table called `dataname`, enabling output into it by
+        one or more runtime commands. Spaces are not permitted in the dataname.
+
+        Parameters
+        ----------
+        dataname : str
+            dataname (spaces are not allowed)
+
+        Returns
+        -------
+        None
+
+        """
+        assert " " not in dataname, f"spaces not allowed in dataname: '{dataname}'"
+        r = _smoldyn.addOutputData(dataname)
+        assert r == _smoldyn.ErrorCode.ok, f"Failed to add output data {r}"
+
+    def getOutputData(self, dataname: str, erase: bool = True) -> List[List[float]]:
+        """Returns data that have been recorded by an observation command (e.g. molcount).
+
+        Parameters
+        ----------
+        dataname : str
+            dataname
+
+        erase: bool
+            When set to `True`, the original data is cleared after a copy  of data
+            is returned to the user.
+
+        Returns
+        -------
+        List[List[float]]
+            A matrix of float.
+        """
+        assert " " not in dataname, f"Must not contain spaces: '{dataname}'"
+        return _smoldyn.getOutputData(dataname, erase)
+
     def connect(self, func, target, step: int, args: List[float] = []):
         """Connect a arbitrary Python function to Simulation. The function will
         be called at every 'step'
@@ -2319,4 +2356,3 @@ class Simulation(object):
          (91.0, 0.37011200572554614)]
         """
         return _smoldyn.connect(func, target, step, args)
-

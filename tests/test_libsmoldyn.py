@@ -1,53 +1,55 @@
-__author__           = "Dilawar Singh"
-__copyright__        = "Copyright 2019-, Dilawar Singh"
-__maintainer__       = "Dilawar Singh"
-__email__            = "dilawars@ncbS.reS.in"
+"""Some tests for CPP API.
 
-# Test only extension module.
-import smoldyn as S
+"""
+
+__author__           = "Dilawar Singh"
+__email__            = "dilawars@ncbs.res.in"
+
+# Test only the extension module. It has to be imported by the user.
+import smoldyn._smoldyn as CppApi
 
 def test_library():
     """We test the C API here
     """
-    S.setBoundaries(([-50, 50], [-50, 50]))
-    assert S.getDim() == 2
-    S.setRandomSeed(1)
-    print('Bounds', S.getBoundaries())
+    CppApi.setBoundaries(([-50, 50], [-50, 50]))
+    assert CppApi.getDim() == 2
+    CppApi.setRandomSeed(1)
+    print('Bounds', CppApi.getBoundaries())
 
-    S.setPartitions("molperbox", 4);
-    S.setPartitions("boxsize", 12.5);
+    CppApi.setPartitions("molperbox", 4);
+    CppApi.setPartitions("boxsize", 12.5);
 
-    S.addSpecies("ACA")
-    S.addSpecies("ATP")
-    S.addSpecies("cAMP")
-    S.addSpecies("cAR1")
+    CppApi.addSpecies("ACA")
+    CppApi.addSpecies("ATP")
+    CppApi.addSpecies("cAMP")
+    CppApi.addSpecies("cAR1")
 
-    MS = S.MolecState     # enum MolcState
-    SA = S.SrfAction      # enum SrfAction
-    PF = S.PanelFace      # enum PanelFace
-    PS = S.PanelShape     # enum PanelShape
+    MS = CppApi.MolecState     # enum MolcState
+    SA = CppApi.SrfAction      # enum SrfAction
+    PF = CppApi.PanelFace      # enum PanelFace
+    PS = CppApi.PanelShape     # enum PanelShape
 
-    S.setSpeciesMobility("ACA", MS.all, 1.0)
-    S.setSpeciesMobility("ATP", MS.all, 1.0)
-    S.setSpeciesMobility("cAMP", MS.all, 1.0)
-    S.setSpeciesMobility("cAR1", MS.all, 1.0)
+    CppApi.setSpeciesMobility("ACA", MS.all, 1.0)
+    CppApi.setSpeciesMobility("ATP", MS.all, 1.0)
+    CppApi.setSpeciesMobility("cAMP", MS.all, 1.0)
+    CppApi.setSpeciesMobility("cAR1", MS.all, 1.0)
 
     # Adding surface.
-    S.addSurface("Membrane00")
-    S.setSurfaceAction("Membrane00", PF.both, "ATP", MS.soln, SA.reflect,"")
+    CppApi.addSurface("Membrane00")
+    CppApi.setSurfaceAction("Membrane00", PF.both, "ATP", MS.soln, SA.reflect,"")
 
     params = [-20.0, 20.0, 10.0, 20.0, 20.0]
-    S.addPanel("Membrane00", PS.sph, "", "", params)
+    CppApi.addPanel("Membrane00", PS.sph, "", "", params)
 
-    S.addCompartment("Cell00")
-    S.addCompartmentSurface("Cell00", "Membrane00")
-    S.addCompartmentPoint("Cell00", params)
-    S.addSurfaceMolecules("ACA", MS.down, 30, "Membrane00", PS.all, "all", [])
-    S.addSurfaceMolecules("cAR1", MS.up, 30, "Membrane00", PS.all, "all", [])
-    S.addReaction("r100", "", MS.all, "", MS.all, ["ATP"], [MS.soln], 0.02)
-    S.setReactionRegion("r100", "Cell00", "");
+    CppApi.addCompartment("Cell00")
+    CppApi.addCompartmentSurface("Cell00", "Membrane00")
+    CppApi.addCompartmentPoint("Cell00", params)
+    CppApi.addSurfaceMolecules("ACA", MS.down, 30, "Membrane00", PS.all, "all", [])
+    CppApi.addSurfaceMolecules("cAR1", MS.up, 30, "Membrane00", PS.all, "all", [])
+    CppApi.addReaction("r100", "", MS.all, "", MS.all, ["ATP"], [MS.soln], 0.02)
+    CppApi.setReactionRegion("r100", "Cell00", "");
 
-    S.run(200, dt=0.01, display=True)
+    CppApi.run(200, dt=0.01, display=True)
 
 
 def main():

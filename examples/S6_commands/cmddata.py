@@ -1,6 +1,6 @@
 # Python version of cmddata.txt
 
-import smoldyn 
+import smoldyn
 
 s = smoldyn.Simulation(low=[0, 0, 0], high=[100, 100, 100])
 
@@ -12,15 +12,15 @@ r1 = s.addReaction("r1", subs=[R], prds=[], rate=0.1 )
 R.addToSolution(400)
 B.addToSolution(1, pos=[50,50,50])
 
-smoldyn.addOutputData('mydata')
+s.addOutputData('mydata')
 s.addCommand(cmd="molcount mydata", cmd_type="E")
 
 # Graphics need to be commented out for the plotting to work
 # s.setGraphics( "opengl" )
 
-s = s.run(stop=20, dt=0.01)
+s.run(stop=20, dt=0.01)
 
-data = smoldyn.getOutputData('mydata', 0)
+data = s.getOutputData('mydata', 0)
 
 import matplotlib.pyplot as plt
 import numpy as np

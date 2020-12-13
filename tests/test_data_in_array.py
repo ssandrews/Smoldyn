@@ -2,7 +2,7 @@
 # Author: Steve
 # Modified by: Dilawar
 
-import smoldyn 
+import smoldyn
 import math
 
 
@@ -23,11 +23,11 @@ def test_data():
 
     R.addToSolution(400)
     B.addToSolution(1, pos=[50,50,50])
-    smoldyn.addOutputData('mydata')
+    s.addOutputData('mydata')
     s.addCommand(cmd="molcount mydata", cmd_type="E")
     # s.setGraphics( "opengl" )
-    s = s.run(stop=10, dt=0.01)
-    data = smoldyn.getOutputData('mydata', 0)
+    s.run(stop=10, dt=0.01)
+    data = s.getOutputData('mydata', 0)
     assert len(data) == 1001, len(data)
     assert len(data[0]) == 3, len(data[0])
     assert data[0] == [0.0, 400.0, 1.0], data[0]
