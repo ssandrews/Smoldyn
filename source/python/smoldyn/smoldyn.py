@@ -2022,6 +2022,7 @@ class Simulation(object):
         _smoldyn.setRandomSeed(int(x))
 
     def setTime(self, dt: float, start: float = 0.0):
+        _smoldyn.setCurSimStruct(self.simptr)
         self.dt = dt
         self.start = start
 
@@ -2057,6 +2058,8 @@ class Simulation(object):
             - quit_at_end
         """
 
+        _smoldyn.setCurSimStruct(self.simptr)
+
         self.stop = float(stop)
 
         if start is not None:
@@ -2083,6 +2086,9 @@ class Simulation(object):
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
+        """runUntil
+        """
+        _smoldyn.setCurSimStruct(self.simptr)
         self.stop = stop
         if dt is not None:
             self.dt = float(dt)
@@ -2301,6 +2307,7 @@ class Simulation(object):
             A matrix of float.
         """
         assert " " not in dataname, f"Must not contain spaces: '{dataname}'"
+        _smoldyn.setCurSimStruct(self.simptr)
         return _smoldyn.getOutputData(dataname, erase)
 
     def connect(self, func, target, step: int, args: List[float] = []):

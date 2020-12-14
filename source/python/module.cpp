@@ -361,7 +361,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // properly.
     // FIXME: Tests are not exhaustive.
     m.def(
-        "setCurSimStruct", [](simstruct *const ptr) { cursim_ = ptr; },
+        "setCurSimStruct", [](simstruct * ptr) { cursim_ = ptr; },
         "change current simstruct");
     m.def(
         "getCurSimStruct",
