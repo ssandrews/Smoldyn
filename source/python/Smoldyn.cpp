@@ -202,6 +202,8 @@ ErrorCode runSimulation(double stoptime, double dt, bool display, bool overwrite
         }
     }
 
+    gl2glutInit(0, NULL);
+
     er = smolOpenOutputFiles(cursim_, overwrite);
     if(er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not open output files." << endl;

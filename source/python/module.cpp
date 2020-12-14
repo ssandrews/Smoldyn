@@ -30,9 +30,6 @@ double r_ = 0.0;
 /* globals */
 vector<unique_ptr<CallbackFunc>> callbacks_;
 
-/* gl2glutInit */
-extern void gl2glutInit(int *argc, char **argv);
-
 /* --------------------------------------------------------------------------*/
 /**
  * @Synopsis  Convert an array of color to a tuple.

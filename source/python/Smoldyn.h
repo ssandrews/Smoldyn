@@ -23,6 +23,9 @@ namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"
 
+/* gl2glutInit */
+extern void gl2glutInit(int *argc, char **argv);
+
 // defined in smolgraphics.c file.
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
