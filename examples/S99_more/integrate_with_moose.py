@@ -2,10 +2,17 @@
 
 import smoldyn
 import math
-import moose
 import numpy as np
-import rdesigneur as rd
-import gnuplotlib as gp
+
+try:
+    import moose
+    import rdesigneur as rd
+    import gnuplotlib as gp
+except Exception:
+    print('[WARN] MOOSE/gnuplotlib are missing. To install'
+          ' $ python3 -m pip install pymoose --pre --user '
+          ' $ python3 -m pip install gnuplotlib')
+    quit(0)
 
 g1_ = gp.gnuplotlib(title="MOOSE simualtion: Soma")
 
