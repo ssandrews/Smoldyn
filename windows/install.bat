@@ -27,7 +27,8 @@ copy "%FROMDIR%lib\libsmoldyn_static.lib" "%DESTDIR%lib"
 copy "%FROMDIR%lib\libsmoldyn_shared.dll" "%DESTDIR%lib"
 
 echo Installing Python bindings
-pip install "%FROMDIR%bin\smoldyn*.whl"
+where pip /q
+if %ERRORLEVEL% == 0 (pip install "%FROMDIR%bin\smoldyn*.whl") else (echo WARNING: Not installing Python bindings because pip cannot be found)
 
 echo Adding Smoldyn directory to local and system path
 echo.%PATH% > "%DESTDIR%PATH_old.txt"
