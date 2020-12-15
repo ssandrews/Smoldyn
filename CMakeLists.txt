@@ -14,9 +14,10 @@ if(POLICY CMP0042)
 endif()
 
 # CI/CD can also set this variable. If not, use the default one.
+set(SMOLDYN_VERSION 2.63)
 if(NOT SMOLDYN_VERSION)
     string(TIMESTAMP STAMP "%Y%m%d")
-    set(SMOLDYN_VERSION "2.63a1.dev${STAMP}")
+    set(SMOLDYN_VERSION "2.64.dev${STAMP}")
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
