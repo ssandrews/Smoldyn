@@ -25,6 +25,13 @@ cp include/smoldynconfigure.h /usr/local/include
 cp lib/libsmoldyn_static.a /usr/local/lib
 cp lib/libsmoldyn_shared.dylib /usr/local/lib
 
+echo "Installing Python bindings"
+if command -v pip &> /dev/null; then
+	pip install bin/smoldyn*.whl
+else
+ echo "WARNING: Python bindings not installed because pip utility not found"
+fi
+
 echo "Installation complete"
 
 if [[ $PATH != */usr/local/bin* ]]

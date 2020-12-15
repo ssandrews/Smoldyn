@@ -12,7 +12,7 @@ examples - a folder of Smoldyn configuration files
 
 -------- What installing does -------
 
-A default Smoldyn installation installs the following files:
+Default Smoldyn installation installs the following files:
 - smoldyn executable to /usr/local/bin (this is the main Smoldyn software)
 - SmolCrowd executable to /usr/local/bin (utility program creates crowded volumes)
 - wrl2smol executable to /usr/local/bin (utility program converts VRML output to Smoldyn input)
@@ -22,6 +22,7 @@ A default Smoldyn installation installs the following files:
 - libsmoldyn_static.a static library to /usr/local/lib (for calling Smoldyn as a library)
 - libsmoldyn_shared.dylib dynamic library to /usr/local/lib (for calling Smoldyn as a library)
 - Minimal BioNetGen files in /usr/local/bin/BioNetGen
+- Python bindings for Smoldyn to standard place using pip utility
 
 
 --------------- Uninstalling Smoldyn -------------

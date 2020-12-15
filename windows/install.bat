@@ -26,6 +26,9 @@ copy "%FROMDIR%include\smoldynconfigure.h" "%DESTDIR%include"
 copy "%FROMDIR%lib\libsmoldyn_static.lib" "%DESTDIR%lib"
 copy "%FROMDIR%lib\libsmoldyn_shared.dll" "%DESTDIR%lib"
 
+echo Installing Python bindings
+pip install "%FROMDIR%bin\smoldyn*.whl"
+
 echo Adding Smoldyn directory to local and system path
 echo.%PATH% > "%DESTDIR%PATH_old.txt"
 echo.%PATH% | find /I "Smoldyn">Nul && (echo.already in PATH) || (setx /m PATH "%PATH%;%DESTDIR%;")

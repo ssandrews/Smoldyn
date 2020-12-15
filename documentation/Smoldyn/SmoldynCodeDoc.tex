@@ -45,8 +45,8 @@ breakatwhitespace=false
 
 
 
-\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.62}
-\date{\copyright October, 2020}
+\title{\textbf{Smoldyn Code Documentation} \\ \large for Smoldyn version 2.63}
+\date{\copyright December, 2020}
 \author{Steve Andrews}
 \maketitle
 
@@ -165,13 +165,15 @@ Getting the code for these dependencies has ranged from easy to impossible, so m
 
 \begin{description}
 
-\item[glut] is complicated. It's part of the standard OpenGL libraries on Macs, but doesn't seem to be standard on Windows. Also, glut itself is obsolete, having been replaced by freeglut, which is a superset of glut; nevertheless, the glut.h header file is supposed to be used, unless one wants functions that are only available in freeglut.
+\item[glut] is complicated. It's part of the standard OpenGL libraries on Macs, but doesn't seem to be standard on Windows. Also, glut itself is obsolete, having been replaced by, which is a superset of glut; nevertheless, the glut.h header file is supposed to be used, unless one wants functions that are only available in freeglut.
 
 For Windows with MSVC, I downloaded freeglut 3.2.1 from \url{http://freeglut.sourceforge.net} and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. These work in Smoldyn but aren't ideal. I then found that I can create the release versions of the library with the same CMake step and then ``msbuild freeglut.sln /p:Configuration=Release''. I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download.
 
-For Windows with MinGW, I found that the MinGW cross-compiler download that I use (see below) has freeglut included in its collection of libraries. Thus, I link that that. Everything seems to work and Smoldyn builds well, but the resulting smoldyn.exe doesn't actually run.
+For Windows with MinGW, I found that the MinGW cross-compiler download that I use (see below) has freeglut included in its collection of libraries. Thus, I link to that. Everything seems to work and Smoldyn builds well, but the resulting smoldyn.exe doesn't actually run.
 
 To address this, I also tried to compile the freeglut 3.2.1 download on a Windows computer but with the MinGW compiler. This didn't work. Thus, instead, I downloaded the freeglut 3.2.1 source code to my Mac and cross-compiled it for Windows using ``cmake .. -DCMAKE\_TOOLCHAIN\_FILE=../Toolchain-mingw32.cmake''. This actually worked and produced libfreeglut\_static.a, libfreeglut.dll.a, libfreeglut.dll, and many more files. I was able to build Smoldyn while linking to these files, but the result was the same as before in that I got smoldyn.exe just fine, but it didn't run.
+
+For Mac, I've been using regular glut, not freeglut, which works easily but has the drawback that control never returns to Smoldyn after it is handed over to \ttt{glutmainloop}. To address this, I installed freeglut using MacPorts, which was trivial. However, entering \ttt{port contents freeglut} showed the files that were installed, and none were a static library. I tried for a while to link to it anyhow using the CMakeLists.txt file, without luck. Next, I downloaded freeglut from \url{http://freeglut.sourceforge.net}, as I did for Windows, and tried to build using CMake. This failed at the linking stage. There was a prior report of it not working for Macs, with the same error and no solution given, so this seems to be a building bug and not easily fixed.
 
 \item[libtiff] is optional. It is used for saving graphics images as TIFF files.
 
@@ -734,7 +736,7 @@ This defines a \ttt{load\_model} function with a path and arguments, which then 
 
 \subsection*{\_\_main\_\_.py}
 
-This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. This file includes the Python command-line options, including ``overwrite'', ``quit-at-end'', and ``args''. However, I added print statements in here and they were never printed out, so it's not clear to me that this code ever runs. As a result, I can't figure out how to use these options.
+This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. This file includes the Python command-line options, including ``overwrite'', ``quit-at-end'', and ``args''. This code doesn't necessarily run. According to Dilawar, if Smoldyn is started with ``python3 -m smoldyn template.txt'', then this will execute the \_\_main\_\_.py file, with command line arguments passed to it. Here, the Python package is being used as a proxy for the Smoldyn executable.
 
 % Python module after building
 \section{Python module after building}
@@ -6497,7 +6499,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Cross-compiling from Mac to Windows with MinGW works again, but not with graphics, so this was used for the SmolCrowd and wrl2smol utilities, but not for Smoldyn.
 \item Dilawar added several things that I haven't addressed yet: Travis continuous integration, Doxygen, readthedocs website compatibility, and several scripts.
 
-\subsection*{Modifications for version 2.63 (not released yet)}
+\subsection*{Modifications for version 2.63 (released 12/15/20)}
 \item Documented Dilawar's work on Python bindings in code documentation and Libsmoldyn manual.
 \item Dilawar added test for \ttt{SMOLDYN\_NO\_PROMPT} environment variable, which is essentially the same as setting the \ttt{sim->quitatend} flag.
 \item I made lots of minor fixes in the Python bindings, including fixing the Python example files. Dilawar made more fixes and also added many more Python example files.
@@ -6509,6 +6511,8 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Fixed bugs in \ttt{cmddiffusecmpt}.
 \item Added \ttt{maxmollist} element to surface structure because memory management here was sloppy, which led to errors.
 \item Fixed some bugs with \ttt{reassignmolecs} function. First of all, it's now called as the system is set up, before the simulation starts. Also, it now runs even if there is only 1 box, which is a little less efficient in rare cases, but more reliable.
+\item Tried to get freeglut to work, without success.
+\item Added Chapter 15 to user's manual on Python bindings.
 
 \end{itemize}
 

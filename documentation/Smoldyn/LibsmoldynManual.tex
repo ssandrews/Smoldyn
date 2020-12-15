@@ -64,8 +64,8 @@
 
 
 
-\title{\textbf{Libsmoldyn User's Manual} \\ \large for Smoldyn version 2.62}
-\date{\copyright October, 2020}
+\title{\textbf{Libsmoldyn User's Manual} \\ \large for Smoldyn version 2.63}
+\date{\copyright December, 2020}
 \author{Steve Andrews}
 \maketitle
 
@@ -192,11 +192,11 @@ s = s.run(stop=10, dt=0.01)
 
 \textit{13-14.} Entering the author and email address with double underscores follows good Python form.
 
-\textit{16.} Import the Smoldyn Python API with \ttt{import smoldyn}.
+\textit{16.} Import the Smoldyn Python API with \ttt{import smoldyn}. If you want the low-level Python API, then import it with \ttt{import smoldyn.\_smoldyn}.
 
 \textit{18-21.} This file defines some variables, which are just regular variables and not part of Smoldyn at all. The file uses upper case variable names to stay consistent with the stand-alone Smoldyn example file with the same name, but this isn't really the best convention in Python.
 
-\textit{23-24.} All models start by creating a Simulation object, which includes the boundaries of the system space; the format is . The dimensionality of the space, whether 1D, 2D, or 3D, is inferred from the number of boundary coordinates given. Smoldyn actually tracks molecules outside of this volume, too, but it runs most efficiently if most of the action in the simulation occurs within the system volume. It's possible to create multiple simulation objects if you want.
+\textit{23-24.} All models start by creating a Simulation object, which includes the boundaries of the system space. The dimensionality of the space, whether 1D, 2D, or 3D, is inferred from the number of boundary coordinates given. Smoldyn actually tracks molecules outside of this volume, too, but it runs most efficiently if most of the action in the simulation occurs within the system volume. It's possible to create multiple simulation objects if you want.
 
 \textit{26-32.} Add species to a simulation with \textit{sim}.\ttt{addSpecies}. Each species is required to have a name. The diffusion coefficient, given with \ttt{difc}, defaults to a value of 0, such as for the ``E'' species. The color, which is only used for graphical output, can often be given with a simple assignment, such as \ttt{color='green'}. However, that's not used here because these molecules can have multiple states, including in solution or bound to the surface. Instead, the colors are specified here with \ttt{dict()} functions, showing that these colors apply to all of the molecule states. Similarly, the \ttt{display\_size} argument is only used for graphical output, and is given with \ttt{dict()} functions here because of the multiple states.
 
