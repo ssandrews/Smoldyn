@@ -17,4 +17,9 @@ rm /usr/local/include/smoldynconfigure.h
 rm /usr/local/lib/libsmoldyn_static.a
 rm /usr/local/lib/libsmoldyn_shared.dylib
 
+echo "Uninstalling Python bindings"
+if command -v pip &> /dev/null; then
+	pip uninstall smoldyn
+fi
+
 echo "Uninstallation complete"

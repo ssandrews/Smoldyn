@@ -109,7 +109,7 @@ double sincD(double x)	{
 
 
 float sinc(float x)	{
-	return (x==0)?float(1):float(sin(x)/x);	}
+	return (x==0) ? (float)(1):(float)(sin(x)/x);	}
 
 
 double boxD(double x)	{

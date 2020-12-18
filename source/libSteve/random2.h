@@ -40,7 +40,7 @@ of the Gnu Lesser General Public License (LGPL). */
 		return (float)genrand_real2(); }
 
 	inline static float randOCF(void) {
-		return float(1.0)-(float)genrand_real2(); }
+		return (float)(1.0)-(float)genrand_real2(); }
 
 	inline static float randOOF(void) {
 		return (float)genrand_real3(); }

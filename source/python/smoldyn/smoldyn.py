@@ -1402,7 +1402,7 @@ class Reaction(object):
             given)
         """
         self.name = "r%d" % id(self) if not name else name
-        self.rate = rate
+        self.__rate = 0.0
         self.subs = subs
         self.prds = prds
         self.reaction_probability = reaction_probability
@@ -1462,14 +1462,24 @@ class Reaction(object):
             k = _smoldyn.setReactionRegion(self.name, cname, sname)
             assert k == _smoldyn.ErrorCode.ok
 
+    @property
+    def rate(self):
+        return self.__rate
+
+    @rate.setter
+    def rate(self, rate: float):
+        if rate != self.__rate:
+            self.__rate = rate
+            self.setRate(rate)
+
     def setRate(self, rate, reaction_probability=0.0, binding_radius=0.0):
         # if rate is negative, then we expect either binding_radius or
-        # reaction_probability.
-        if rate > 0.0:
+        # reaction_probability. A reaction can have zero rate.
+        if rate >= 0.0:
             k = _smoldyn.setReactionRate(self.name, rate, False)
             assert k == _smoldyn.ErrorCode.ok
             return
-        if rate == 0.0:
+        elif rate < 0.0:
             # check if reaction_probability is given
             if len(self.subs) < 2:
                 assert (
@@ -1483,7 +1493,7 @@ class Reaction(object):
                 assert k == _smoldyn.ErrorCode.ok
         else:
             raise RuntimeError(
-                "Are all of rate, reaction_probability, and reaction_probability set to zero?"
+                "Rate is negative and reaction_probability or reaction_probability set to zero?"
             )
 
     @property
@@ -2026,6 +2036,7 @@ class Simulation(object):
         _smoldyn.setRandomSeed(int(x))
 
     def setTime(self, dt: float, start: float = 0.0):
+        _smoldyn.setCurSimStruct(self.simptr)
         self.dt = dt
         self.start = start
 
@@ -2062,6 +2073,7 @@ class Simulation(object):
         """
 
         _smoldyn.setCurSimStruct(self.simptr)
+
         self.stop = float(stop)
 
         if start is not None:
@@ -2088,6 +2100,8 @@ class Simulation(object):
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
+        """runUntil
+        """
         _smoldyn.setCurSimStruct(self.simptr)
         self.stop = stop
         if dt is not None:
@@ -2307,6 +2321,7 @@ class Simulation(object):
             A matrix of float.
         """
         assert " " not in dataname, f"Must not contain spaces: '{dataname}'"
+        _smoldyn.setCurSimStruct(self.simptr)
         return _smoldyn.getOutputData(dataname, erase)
 
     def connect(self, func, target, step: int, args: List[float] = []):

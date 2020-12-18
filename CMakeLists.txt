@@ -14,9 +14,16 @@ if(POLICY CMP0042)
 endif()
 
 # CI/CD can also set this variable. If not, use the default one.
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(COMMAND ${GIT_EXECUTABLE} describe --always HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        RESULT_VARIABLE SMOLDYN_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 if(NOT SMOLDYN_VERSION)
     string(TIMESTAMP STAMP "%Y%m%d")
-    set(SMOLDYN_VERSION "2.63a1.dev${STAMP}")
+    set(SMOLDYN_VERSION "2.64.dev${STAMP}")
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
