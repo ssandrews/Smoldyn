@@ -289,12 +289,16 @@ PYBIND11_MODULE(_smoldyn, m)
         ;
 
     /* simptr */
+
+    // NOTE: we only expose simple variables as as int, float, string etc
+    // which are supported by pybind11 out of the box. If you want ot expose a
+    // struct, make sure a python binding is available.
     py::class_<simstruct>(m, "simstruct")
-        //.def(py::init<>())
-        .def_readonly("condition", &simstruct::condition, "Structure condition")
+        .def(py::init<>())
+        //.def_readonly("condition", &simstruct::condition, "Structure condition")
 
         // Python user can write these values.
-        .def_readwrite("logfile", &simstruct::logfile, "configuration file path")
+        //.def_readwrite("logfile", &simstruct::logfile, "configuration file path")
         .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
         .def_readwrite("filename", &simstruct::filename, "configuration file name")
         .def_readwrite("flags", &simstruct::flags, "command-line options from user")
@@ -318,18 +322,19 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readonly("end_time", &simstruct::tmax, "simulation end time")
         .def_readonly("break_time", &simstruct::tbreak, "simulation break time")
         .def_readonly("dt", &simstruct::dt, "simulation time step")
-        .def_readonly("rules", &simstruct::ruless, "rule superstructure")
-        .def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
-        .def_readonly("surfaces", &simstruct::srfss, "surface superstructure")
-        .def_readonly("boxs", &simstruct::boxs, "box superstructure")
-        .def_readonly("cmpts", &simstruct::cmptss, "compartment superstructure")
-        .def_readonly("ports", &simstruct::portss, "port superstructure")
-        .def_readonly("lattices", &simstruct::latticess, "lattice superstructure")
-        .def_readonly("bionets", &simstruct::bngss, "bionetget superstructure")
-        .def_readonly("filaments", &simstruct::filss, "filament superstructure")
-        .def_readonly("commands", &simstruct::cmds, "command superstructure")
-        .def_readonly(
-            "graphics", &simstruct::graphss, py::return_value_policy::reference);
+        //.def_readonly("rules", &simstruct::ruless, "rule superstructure")
+        //.def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
+        //.def_readonly("surfaces", &simstruct::srfss, "surface superstructure")
+        //.def_readonly("boxs", &simstruct::boxs, "box superstructure")
+        //.def_readonly("cmpts", &simstruct::cmptss, "compartment superstructure")
+        //.def_readonly("ports", &simstruct::portss, "port superstructure")
+        //.def_readonly("lattices", &simstruct::latticess, "lattice superstructure")
+        //.def_readonly("bionets", &simstruct::bngss, "bionetget superstructure")
+        //.def_readonly("filaments", &simstruct::filss, "filament superstructure")
+        //.def_readonly("commands", &simstruct::cmds, "command superstructure")
+        //.def_readonly( "graphics", &simstruct::graphss,
+        //py::return_value_policy::reference)
+        ;
 
     /*******************
      *  Miscellaneous  *
@@ -358,7 +363,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // properly.
     // FIXME: Tests are not exhaustive.
     m.def(
-        "setCurSimStruct", [](simstruct * ptr) { cursim_ = ptr; },
+        "setCurSimStruct", [](simstruct *ptr) { cursim_ = ptr; },
         "change current simstruct");
     m.def(
         "getCurSimStruct",
