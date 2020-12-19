@@ -21,6 +21,7 @@ using namespace std;
 #include "../libSteve/SimCommand.h"
 #include "../Smoldyn/smoldynfuncs.h"
 #include "Smoldyn.h"
+#include "Simulation.h"
 #include "CallbackFunc.h"
 
 using namespace pybind11::literals;  // for _a
@@ -302,25 +303,24 @@ PYBIND11_MODULE(_smoldyn, m)
         .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
         .def_readwrite("filename", &simstruct::filename, "configuration file name")
         .def_readwrite("flags", &simstruct::flags, "command-line options from user")
-        .def_readwrite(
-            "quit_at_end", &simstruct::quitatend, "simulation quits at the end")
+        .def_readwrite("quitatend", &simstruct::quitatend, "simulation quits at the end")
 
         // These are readonly.
         .def_readonly(
-            "start_time", &simstruct::clockstt, "clock starting time of simulation")
+            "clockstt", &simstruct::clockstt, "clock starting time of simulation")
         .def_readonly(
-            "elapsed_time", &simstruct::elapsedtime, "elapsed time of simulation")
+            "elapsedtime", &simstruct::elapsedtime, "elapsed time of simulation")
         .def_readonly("randseed", &simstruct::randseed, "random number generator seed")
         .def_readonly(
-            "event_count", &simstruct::eventcount, "counter for simulation events")
-        .def_readonly("max_var", &simstruct::maxvar, "allocated user-settable variables")
+            "eventcount", &simstruct::eventcount, "counter for simulation events")
+        .def_readonly("maxvar", &simstruct::maxvar, "allocated user-settable variables")
         .def_readonly("nvar", &simstruct::nvar, "number of user-settable variables")
         .def_readonly("dim", &simstruct::dim, "dimensionality of space.")
         .def_readonly("accuracy", &simstruct::accur, "accuracy, on scale from 0 to 10")
         .def_readonly("time", &simstruct::time, "current time in simulation")
-        .def_readonly("start_time", &simstruct::tmin, "simulation start time")
-        .def_readonly("end_time", &simstruct::tmax, "simulation end time")
-        .def_readonly("break_time", &simstruct::tbreak, "simulation break time")
+        .def_readonly("tmin", &simstruct::tmin, "simulation start time")
+        .def_readonly("tmax", &simstruct::tmax, "simulation end time")
+        .def_readonly("tbreak", &simstruct::tbreak, "simulation break time")
         .def_readonly("dt", &simstruct::dt, "simulation time step")
         //.def_readonly("rules", &simstruct::ruless, "rule superstructure")
         //.def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
@@ -333,8 +333,18 @@ PYBIND11_MODULE(_smoldyn, m)
         //.def_readonly("filaments", &simstruct::filss, "filament superstructure")
         //.def_readonly("commands", &simstruct::cmds, "command superstructure")
         //.def_readonly( "graphics", &simstruct::graphss,
-        //py::return_value_policy::reference)
+        // py::return_value_policy::reference)
         ;
+
+    /**
+     * @brief Simulation class. This represents a self-contained model. Each
+     * objec to this class keeps its own simptr.
+     */
+    py::class_<Simulation>(m, "Simulation")
+        .def(py::init<vector<double>&, vector<double>&, vector<string>&>())
+        .def_property_readonly("simptr", &Simulation::getSimptr, py::return_value_policy::reference);
+        ;
+
 
     /*******************
      *  Miscellaneous  *
@@ -394,6 +404,9 @@ PYBIND11_MODULE(_smoldyn, m)
             deleteSimptr(cursim_);
         },
         "Clear all simptrs (excluding the one in use)");
+    m.def(
+        "numSimStructs", []() { return simptrs_.size(); },
+        "Number of simulation structs.");
     m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_); });
     m.def("runSim", [](void) { return smolRunSim(cursim_); });
     m.def("runSimUntil", [](double breaktime, bool overwrite) {
@@ -1120,11 +1133,13 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setBoundaries",
         py::overload_cast<const vector<pair<double, double>> &>(&setBoundaries),
         "Set the simulation boundaries using a vector of  tuples (low,high) e.g., "
-        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)].");
+        "[(xlow, xhigh), (ylow, yhigh), (zlow, zhigh)].",
+        py::return_value_policy::reference);
     m.def("setBoundaries",
         py::overload_cast<vector<double> &, vector<double> &>(&setBoundaries),
         "Set the simulation boundaries using vectors of low and high points e.g., "
-        "[xlow, ylow, zlow], [xhigh, yhigh, zhigh].");
+        "[xlow, ylow, zlow], [xhigh, yhigh, zhigh].",
+        py::return_value_policy::reference);
 
     m.def("getDt", &getDt);
     m.def("setDt", &setDt);

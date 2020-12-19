@@ -22,12 +22,12 @@ vector<simptr> simptrs_;
 // This is the current simptr in use.
 simptr cursim_;
 
-size_t dim_ = 0;
+size_t         dim_ = 0;
 vector<double> lowbounds_;
 vector<double> highbounds_;
-bool debug_       = false;
-double curtime_   = 0.0;
-bool initDisplay_ = false;
+bool           debug_       = false;
+double         curtime_     = 0.0;
+bool           initDisplay_ = false;
 
 bool connect(const py::function& func, const py::object& target, const size_t step,
     const py::list& args)
@@ -65,7 +65,7 @@ bool addToSimptrVec(simptr ptr)
  *
  * @param ptr simptr aka simstruct*
  *
- * @return 
+ * @return
  */
 bool deleteSimptr(simptr ptr)
 {
@@ -81,7 +81,7 @@ bool deleteSimptr(simptr ptr)
 /**
  * @brief Get dimension of bouds.
  *
- * @return 
+ * @return
  */
 size_t getDim()
 {
@@ -103,7 +103,7 @@ void printSimptrNotInitWarning(const char* funcname)
 /**
  * @brief Get the random seed.
  *
- * @return 
+ * @return
  */
 size_t getRandomSeed(void)
 {
@@ -117,12 +117,11 @@ size_t getRandomSeed(void)
 /**
  * @brief Initialize current simptr structure.
  *
- * @return 
+ * @return
  */
 bool initialize()
 {
-    if(cursim_)
-        return true;
+    if(cursim_) return true;
     if(getDim() <= 0 || getDim() > 3) {
         cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim() << endl;
         return false;
@@ -149,8 +148,7 @@ bool initialize()
 
     cursim_ = smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]);
 
-    if(debug_)
-        smolSetDebugMode(1);
+    if(debug_) smolSetDebugMode(1);
     return cursim_ ? true : false;
 }
 
@@ -170,8 +168,7 @@ ErrorCode runUntil(
     }
 
     // If dt>0, reset dt else use the old one.
-    if(dt > 0.0)
-        smolSetTimeStep(cursim_, dt);
+    if(dt > 0.0) smolSetTimeStep(cursim_, dt);
     smolUpdateSim(cursim_);
 
     if(display && (!initDisplay_)) {
@@ -189,7 +186,7 @@ ErrorCode runUntil(
  * @param display, if `true`, display graphics.
  * @param overwrite, if `true`, overwrite existing data files.
  *
- * @return 
+ * @return
  */
 ErrorCode runSimulation(double stoptime, double dt, bool display, bool overwrite = false)
 {
@@ -218,7 +215,7 @@ ErrorCode runSimulation(double stoptime, double dt, bool display, bool overwrite
         initDisplay_ = true;
     }
 
-    er   = smolRunSim(cursim_);
+    er       = smolRunSim(cursim_);
     curtime_ = stoptime;
 
     return er;
@@ -230,15 +227,15 @@ ErrorCode runSimulation(double stoptime, double dt, bool display, bool overwrite
  * @param lowbounds, lower values e.g. { xlow, ylow, zlow }.
  * @param highbounds, High values e.g, { xhigh, yhigh, zhigh }
  */
-void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
+simptr setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
 {
     lowbounds_  = lowbounds;
     highbounds_ = highbounds;
     assert(lowbounds.size() == highbounds.size());
-    if(cursim_)
-        simfree(cursim_);
     cursim_ = smolNewSim(lowbounds.size(), &lowbounds[0], &highbounds[0]);
-    return;
+    // And store it in a vector and return the index.
+    simptrs_.push_back(cursim_);
+    return simptrs_.back();
 }
 
 /**
@@ -247,15 +244,14 @@ void setBoundaries(vector<double>& lowbounds, vector<double>& highbounds)
  * @param bounds, a vector of (low, high) values. For examples [(xlow, xhigh),
  * (ylow, yhigh), (zlow, zhigh)].
  */
-void setBoundaries(const vector<pair<double, double>>& bounds)
+simptr setBoundaries(const vector<pair<double, double>>& bounds)
 {
     vector<double> lowbounds, highbounds;
     for(const auto v : bounds) {
         lowbounds.push_back(v.first);
         highbounds.push_back(v.second);
     }
-    setBoundaries(lowbounds, highbounds);
-    return;
+    return setBoundaries(lowbounds, highbounds);
 }
 
 /**
@@ -284,24 +280,18 @@ pair<vector<double>, vector<double>> getBoundaries()
  *
  * @return ECok on success.
  */
-ErrorCode setDt(double dt)
-{
-    return smolSetTimeStep(cursim_, dt);
-}
+ErrorCode setDt(double dt) { return smolSetTimeStep(cursim_, dt); }
 
 /**
  * @brief Get dt of current simulation.
  *
  * @return dt (float)
  */
-double getDt()
-{
-    return cursim_->dt;
-}
+double getDt() { return cursim_->dt; }
 
 /**
  * @brief Set filepath and filename on cursim_. When python scripts are used,
- * these variables are not set my smolsimulate and related fucntions. 
+ * these variables are not set my smolsimulate and related fucntions.
  *
  * @param modelpath modelpath e.g. when using command `python3 ~/Work/smoldyn.py`
  * in terminal, modelpath is set to `/home/user/Work/Smoldyn.py`.

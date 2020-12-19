@@ -1150,9 +1150,10 @@ class Boundaries:
     high: List[float]
     types: BoundType = field(default_factory=lambda: "r")
     dim: int = 0
-    create_new_simstruct: bool = True
+    simptr : _smoldyn.simstruct = None
 
-    def __post_init__(self) -> _smoldyn.simstruct:
+
+    def __post_init__(self):
         """Set bounds. When bounds are successfully set, simptr structure is
         initialized.
         """
@@ -1166,14 +1167,11 @@ class Boundaries:
 
         self.dim = len(self.low)
 
-        """If new_sim_ptr is set, create a new simptr and return it.
-        """
-        if self.create_new_simstruct:
-            simptr = _smoldyn.newSim(self.low, self.high)
-            assert simptr, "Failed to allocate a new simptr"
-            _smoldyn.setCurSimStruct(simptr)
 
-        _smoldyn.setBoundaries(self.low, self.high)
+        self.simptr = _smoldyn.setBoundaries(self.low, self.high)
+        assert self.simptr, "Failed to allocate a new simptr"
+        assert self.simptr == _smoldyn.getCurSimStruct(), "Failed to set cursimptr"
+
         assert _smoldyn.getDim() == self.dim, (_smoldyn.getDim(), self.dim)
         for _d, _t in zip(range(self.dim), self.types):
             if len(_t) == 1:
@@ -1185,7 +1183,6 @@ class Boundaries:
                     assert (
                         k == _smoldyn.ErrorCode.ok
                     ), f"Failed to set boundary type: {k}"
-        return _smoldyn.getCurSimStruct()
 
 
 @dataclass
@@ -1711,7 +1708,7 @@ def addMoleculesToSolution(molecule, *args, **kwargs):
     molecule.addMoleculesToSolution(*args, **kwargs)
 
 
-class Simulation(object):
+class Simulation(_smoldyn.Simulation):
     """Simulation is the top-level class.
 
     Note
@@ -1782,12 +1779,15 @@ class Simulation(object):
 
         assert low, f"You must pass low bound, current value {low}"
         assert high, f"You must pass high bound, current value {high}"
+        if isinstance(boundary_type, str):
+            if len(boundary_type) == 1:
+                boundary_type = boundary_type * len(low)
+            boundary_type = list(boundary_type)
+        super().__init__(low, high, boundary_type)
 
-        """setBound creates a Boundary object and initialize the simulation
-        structure in C++ module."""
-        self.bounds = setBounds(low, high, boundary_type)
-        self.simptr = _smoldyn.getCurSimStruct()
         assert self.simptr, "Fatal error: Could not create simstruct"
+        _smoldyn.setCurSimStruct(self.simptr)
+        assert self.simptr == _smoldyn.getCurSimStruct(), "Current simptr is not set properly"
 
         # set filepath and filename at simptr
         if __top_model_file__:
@@ -2011,11 +2011,11 @@ class Simulation(object):
 
     @property
     def quitAtEnd(self):
-        return self.simptr.quit_at_end
+        return self.simptr.quitatend
 
     @quitAtEnd.setter
     def quitAtEnd(self, val: bool):
-        self.simptr.quit_at_end = val
+        self.simptr.quitatend = val
 
     @property
     def accuracy(self):

@@ -76,8 +76,8 @@ inline void cleanup()
     simptrs_.clear();
 }
 
-void setBoundaries(const vector<pair<double, double>>& bounds);
-void setBoundaries(vector<double>& lows, vector<double>& highs);
+simptr setBoundaries(const vector<pair<double, double>>& bounds);
+simptr setBoundaries(vector<double>& lows, vector<double>& highs);
 
 // std::vector<pair<double, double>> getBoundaries();
 std::pair<vector<double>, vector<double>> getBoundaries();

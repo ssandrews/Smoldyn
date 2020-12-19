@@ -294,6 +294,7 @@ simptr simalloc(const char *fileroot) {
 
 /* simfree */
 void simfree(simptr sim) {
+    printf("Calling simfree\n");
 	int dim,order,maxsrf;
 
 	if(!sim) return;

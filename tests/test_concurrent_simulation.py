@@ -85,28 +85,35 @@ def sim2():
     sim.addCommand(cmd="molcount data", cmd_type='E')
     return sim
 
-def print_simptrs(p1, p2):
-    for x in dir(p1):
-        a = (getattr(p1, x))
-        b = (getattr(p2, x))
-        print(x, a, b)
+def print_simptrs(*ptrs):
+    print('=====')
+    for x in dir(ptrs[0]):
+        if '__' in x[:2]:
+            continue
+        print(f'\t{x}', end=' ')
+        for p in ptrs:
+            print(getattr(p, x), end=' ')
+        print('')
 
 
 def main():
     s1 = sim1()
+    p1 = s1.simptr
+    assert 1 == smoldyn._smoldyn.numSimStructs()
+
     s2 = sim2()
+    assert 2 == smoldyn._smoldyn.numSimStructs()
+    p2 = s2.simptr
+    assert p1 != p2
     assert s1.simptr != s2.simptr
     assert s1 != s2
-
-    p1 = s1.simptr
-    p2 = s2.simptr
 
     t = time.time()
     s1.run(100, dt=0.01, overwrite=True)
     print('[INFO] First simulation is over.')
-    print(s1.getOutputData('data'))
+    #  print(s1.getOutputData('data'))
 
-    print_simptrs(p1, p2)
+    print('====')
     s2.run(100, dt=0.01, overwrite=True)
     print('[INFO] Second simulation is over.')
     print(f"[INFO] Took time {time.time()-t} sec")
