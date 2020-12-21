@@ -2448,8 +2448,8 @@ int simulatetimestep(simptr sim) {
 	if(sim->latticess) {
 		er=latticeruntimestep(sim);
 		if(er) return 12;
-    er=molsort(sim,1);
-    if(er) return 6; }
+        er=molsort(sim,1);
+        if(er) return 6; }
 
 	if(sim->srfss) {
 		for(ll=0;ll<sim->srfss->nmollist;ll++)
@@ -2465,19 +2465,20 @@ int simulatetimestep(simptr sim) {
 	er=filDynamics(sim);
 	if(er) return 11;
 
+#ifdef ENABLE_PYTHON_CALLBACK
+        for(unsigned int i = 0; i < sim->ncallbacks; i++) {
+            auto callback = sim->callbacks[i];
+            if((0 == (sim->simstep % callback->getStep())) && callback->isValid()) {
+                callback->evalAndUpdate(sim->time);
+            }
+        }
+        sim->simstep += 1;
+#endif
 	sim->time+=sim->dt;													// --- end of time step ---
 	simsetvariable(sim,"time",sim->time);
 	er=simdocommands(sim);
 	if(er) return er;
 
-#ifdef ENABLE_PYTHON_CALLBACK
-    for(unsigned int i = 0; i < sim->ncallbacks; i++) {
-        auto callback = sim->callbacks[i];
-        if(0 == (sim->simstep % callback->getStep()) && callback->isValid())
-            callback->evalAndUpdate(sim->time);
-    }
-    sim->simstep += 1;
-#endif
 
 	if(sim->time>=sim->tmax) return 1;
 	if(sim->time>=sim->tbreak) return 10;

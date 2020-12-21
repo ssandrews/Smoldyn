@@ -2072,8 +2072,6 @@ class Simulation(_smoldyn.Simulation):
             - quit_at_end
         """
 
-        _smoldyn.setCurSimStruct(self.simptr)
-
         self.stop = float(stop)
 
         if start is not None:
@@ -2096,7 +2094,7 @@ class Simulation(_smoldyn.Simulation):
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
 
-        k = _smoldyn.run(self.stop, self.dt, display, overwrite=overwrite)
+        k = super().run(self.stop, self.dt, display, overwrite=overwrite)
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
@@ -2376,4 +2374,4 @@ class Simulation(_smoldyn.Simulation):
          (81.0, 1.9510546532543747),
          (91.0, 0.37011200572554614)]
         """
-        return _smoldyn.connect(func, target, step, args)
+        return super().connect(func, target, step, args)

@@ -64,9 +64,6 @@ bool initialize();
 ErrorCode runSimulation(double simtime, double dt, bool display, bool overwrite);
 ErrorCode runUntil(const double breaktime, const double dt, bool display, bool overwrite);
 
-bool connect(const py::function& func, const py::object& target, const size_t step,
-    const py::list& args);
-
 ErrorCode setDt(double dt);
 double    getDt();
 

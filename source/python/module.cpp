@@ -72,10 +72,12 @@ int init_and_run(
 #endif
     if(!er) {
         cursim_->quitatend = quit_at_end;
-        if(cursim_->graphss && cursim_->graphss->graphics != 0) gl2glutInit(0, nullptr);
+        if(cursim_->graphss && cursim_->graphss->graphics != 0)
+            gl2glutInit(0, nullptr);
         er = simUpdateAndDisplay(cursim_);
     }
-    if(!er) er = smolOpenOutputFiles(cursim_, wflag);
+    if(!er)
+        er = smolOpenOutputFiles(cursim_, wflag);
     if(er) {
         simLog(cursim_, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
@@ -280,7 +282,8 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("specularLightColor",
             [](const graphicssuperstruct &st) {
                 vector<array<double, 4>> light(MAXLIGHTS);
-                for(size_t i = 0; i < MAXLIGHTS; i++) light[i] = pycolor(st.speclight[i]);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    light[i] = pycolor(st.speclight[i]);
                 return light;
             })  // specular light color [lt][c]
         .def("lightPosition",
@@ -341,10 +344,15 @@ PYBIND11_MODULE(_smoldyn, m)
      * objec to this class keeps its own simptr.
      */
     py::class_<Simulation>(m, "Simulation")
-        .def(py::init<vector<double>&, vector<double>&, vector<string>&>())
-        .def_property_readonly("simptr", &Simulation::getSimptr, py::return_value_policy::reference);
-        ;
-
+        .def(py::init<vector<double> &, vector<double> &, vector<string> &>())
+        .def_property_readonly(
+            "simptr", &Simulation::getSimptr, py::return_value_policy::reference)
+        // Extra (not in C api).
+        .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = true,
+            "overwrite"_a = false)
+        .def("connect", &Simulation::connect)
+        .def(
+            "setCurrentSimptr", [](const Simulation &sim) { cursim_ = sim.getSimptr(); });
 
     /*******************
      *  Miscellaneous  *
@@ -399,14 +407,15 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def(
         "clearAllSimStructs",
         []() {
-            for(auto v : simptrs_) deleteSimptr(v);
+            for(auto v : simptrs_)
+                deleteSimptr(v);
             simptrs_.clear();
             deleteSimptr(cursim_);
         },
         "Clear all simptrs (excluding the one in use)");
     m.def(
         "numSimStructs", []() { return simptrs_.size(); },
-        "Number of simulation structs.");
+        "Number of Simulation structs.");
     m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_); });
     m.def("runSim", [](void) { return smolRunSim(cursim_); });
     m.def("runSimUntil", [](double breaktime, bool overwrite) {
@@ -1050,7 +1059,8 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("addPortMolecule", [](const char *port, int nmolec, const char *species,
                                  vector<vector<double>> &pos) {
         std::vector<double *> ptrs;
-        for(auto &vec : pos) ptrs.push_back(vec.data());
+        for(auto &vec : pos)
+            ptrs.push_back(vec.data());
         return smolAddPortMolecules(cursim_, port, nmolec, species, ptrs.data());
     });
 
@@ -1151,10 +1161,6 @@ PYBIND11_MODULE(_smoldyn, m)
     /* Function */
     m.def("loadModel", &init_and_run, "filepath"_a, "flags"_a = "", "wflag"_a = false,
         "quit_at_end"_a = false, "Load model from a txt file");
-
-    /* Extra Function */
-    m.def("connect", &connect, "func"_a, "target"_a, "step"_a = 1,
-        "args"_a = std::vector<double>());
 
     /* attributes */
     m.attr("__version__") = VERSION;  // Version is set by CMAKE

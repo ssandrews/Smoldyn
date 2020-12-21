@@ -99,10 +99,10 @@ def print_simptrs(*ptrs):
 def main():
     s1 = sim1()
     p1 = s1.simptr
-    assert 1 == smoldyn._smoldyn.numSimStructs()
+    #  assert 1 == smoldyn._smoldyn.numSimStructs(), smoldyn._smoldyn.numSimStructs()
 
     s2 = sim2()
-    assert 2 == smoldyn._smoldyn.numSimStructs()
+    #  assert 2 == smoldyn._smoldyn.numSimStructs(), smoldyn._smoldyn.numSimStructs()
     p2 = s2.simptr
     assert p1 != p2
     assert s1.simptr != s2.simptr
@@ -111,7 +111,7 @@ def main():
     t = time.time()
     s1.run(100, dt=0.01, overwrite=True)
     print('[INFO] First simulation is over.')
-    #  print(s1.getOutputData('data'))
+    print(s1.getOutputData('data'))
 
     print('====')
     s2.run(100, dt=0.01, overwrite=True)

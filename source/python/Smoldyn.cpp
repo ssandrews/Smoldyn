@@ -29,27 +29,6 @@ bool           debug_       = false;
 double         curtime_     = 0.0;
 bool           initDisplay_ = false;
 
-bool connect(const py::function& func, const py::object& target, const size_t step,
-    const py::list& args)
-{
-    assert(cursim_->ncallbacks < MAX_PY_CALLBACK);
-    if(cursim_->ncallbacks >= MAX_PY_CALLBACK) {
-        py::print("Error: Maximum of ", MAX_PY_CALLBACK,
-            " callbacks are allowed. Current number of callbacks: ", cursim_->ncallbacks);
-        return false;
-    }
-
-    // cleanup is the job of simfree
-    auto f = new CallbackFunc();
-    f->setFunc(func);
-    f->setStep(step);
-    f->setTarget(target);
-    f->setArgs(args);
-    cursim_->callbacks[cursim_->ncallbacks] = f;
-    cursim_->ncallbacks += 1;
-    return true;
-}
-
 bool addToSimptrVec(simptr ptr)
 {
     auto p = std::find(simptrs_.begin(), simptrs_.end(), ptr);
@@ -121,7 +100,8 @@ size_t getRandomSeed(void)
  */
 bool initialize()
 {
-    if(cursim_) return true;
+    if(cursim_)
+        return true;
     if(getDim() <= 0 || getDim() > 3) {
         cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim() << endl;
         return false;
@@ -148,7 +128,8 @@ bool initialize()
 
     cursim_ = smolNewSim(getDim(), &lowbounds_[0], &highbounds_[0]);
 
-    if(debug_) smolSetDebugMode(1);
+    if(debug_)
+        smolSetDebugMode(1);
     return cursim_ ? true : false;
 }
 
@@ -168,7 +149,8 @@ ErrorCode runUntil(
     }
 
     // If dt>0, reset dt else use the old one.
-    if(dt > 0.0) smolSetTimeStep(cursim_, dt);
+    if(dt > 0.0)
+        smolSetTimeStep(cursim_, dt);
     smolUpdateSim(cursim_);
 
     if(display && (!initDisplay_)) {
@@ -280,14 +262,20 @@ pair<vector<double>, vector<double>> getBoundaries()
  *
  * @return ECok on success.
  */
-ErrorCode setDt(double dt) { return smolSetTimeStep(cursim_, dt); }
+ErrorCode setDt(double dt)
+{
+    return smolSetTimeStep(cursim_, dt);
+}
 
 /**
  * @brief Get dt of current simulation.
  *
  * @return dt (float)
  */
-double getDt() { return cursim_->dt; }
+double getDt()
+{
+    return cursim_->dt;
+}
 
 /**
  * @brief Set filepath and filename on cursim_. When python scripts are used,
