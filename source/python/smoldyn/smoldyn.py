@@ -1913,15 +1913,15 @@ class Simulation(_smoldyn.Simulation):
             List of variables to be displayed. Or a text string containing
             variable names e.g. 'time E S ES(front)'
         """
-        k = _smoldyn.setGraphicsParams(method, iter, delay)
+        k = super().setGraphicsParams(method, iter, delay)
         assert k == _smoldyn.ErrorCode.ok
-        k = _smoldyn.setBackgroundStyle(bg_color)
+        k = super().setBackgroundStyle(Color(bg_color).rgba)
         assert k == _smoldyn.ErrorCode.ok
-        k = _smoldyn.setFrameStyle(frame_thickness, frame_color)
+        k = super().setFrameStyle(frame_thickness, Color(frame_color).rgba)
         assert k == _smoldyn.ErrorCode.ok
 
         if grid_thickness > 0 and grid_color != bg_color:
-            k = _smoldyn.setGridStyle(grid_thickness, grid_color)
+            k = super().setGridStyle(grid_thickness, Color(grid_color).rgba)
             assert k == _smoldyn.ErrorCode.ok
 
         self.setText(text_display)
@@ -1943,10 +1943,10 @@ class Simulation(_smoldyn.Simulation):
         for item in text_display:
             if not item:
                 continue
-            k = _smoldyn.addTextDisplay(self.__todisp_text__(item))
+            k = super().addTextDisplay(self.__todisp_text__(item))
             assert k == _smoldyn.ErrorCode.ok, f"Failed to set '{item}'"
 
-        k = _smoldyn.setTextStyle(Color(color).rgba)
+        k = super().setTextStyle(Color(color).rgba)
         assert k == _smoldyn.ErrorCode.ok, "Failed to set text color"
 
     def setTiff(

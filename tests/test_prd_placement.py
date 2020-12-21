@@ -1,12 +1,9 @@
-"""Test the Simulation class.
-"""
-
 __author__ = "Dilawar Singh"
 __email__ = "dilawar@subcom.tech"
 
 import smoldyn as S
 
-def test_refactor():
+def test_prd_pacement():
     sim = S.Simulation(low=[-10,-10,-10],high=[10,10,10], quit_at_end=1)
     blue = sim.addSpecies(name='blue',color='blue',difc=1,display_size=0.3)
     red = sim.addSpecies(name='red',color='red',difc=0,display_size=0.3)
@@ -19,12 +16,11 @@ def test_refactor():
 
     stick = sim.addReaction(name='stick',subs=[blue,red],prds=[red,red],rate=20)
     stick.productPlacement(method='bounce', param=0.6)
-    sim.setTime(dt=0.1)
-    sim.setGraphics('opengl_good',1)
-    sim.run(stop=100)
+    sim.setGraphics('opengl_good', 1)
+    sim.run(stop=100, dt=0.1)
 
 def main():
-    test_refactor()
+    test_prd_pacement()
 
 if __name__ == '__main__':
     main()

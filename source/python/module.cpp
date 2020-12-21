@@ -352,11 +352,14 @@ PYBIND11_MODULE(_smoldyn, m)
             "overwrite"_a = false)
         .def("connect", &Simulation::connect)
         .def("addCommand", &Simulation::addCommand)
-        // Graphics.
         .def("addCommandFromString", &Simulation::addCommandFromString)
+        // Graphics.
         .def("setGraphicsParams", &Simulation::setGraphicsParams)
+        .def("setBackgroundStyle", &Simulation::setBackgroundStyle)
         .def("setFrameStyle", &Simulation::setFrameStyle)
         .def("setGridStyle", &Simulation::setGridStyle)
+        .def("addTextDisplay", &Simulation::addTextDisplay)
+        .def("setTextStyle", &Simulation::setTextStyle)
         // data
         .def("getOutputData", &Simulation::getOutputData)
         .def("addOutputData", &Simulation::addOutputData);
@@ -484,63 +487,25 @@ PYBIND11_MODULE(_smoldyn, m)
 
     // enum ErrorCode smolSetPartitions(simptr sim, const char *method, double
     // value);
-    m.def(
-        "setPartitions",
-        [](const char *method, double value) {
-            return smolSetPartitions(cursim_, method, value);
-        },
-        R"""( Sets the
-            virtual partitions in the simulation volume. Enter method as
-            molperbox and then enter value with the requested number of
-            molecules per partition volume; the default, which is used if this
-            function is not called at all, is a target of 4 molecules per box.
-            Or, enter method as boxsize and enter value with the requested
-            partition spacing. In this latter case, the actual partition
-            spacing may be larger or smaller than the requested value in order
-            to fit an integer number of partitions into each coordinate of the
-            simulation volume.)""");
+    m.def("setPartitions", [](const char *method, double value) {
+        return smolSetPartitions(cursim_, method, value);
+    });
 
     /*********************************
      *  Graphics related functions.  *
      *********************************/
     // enum ErrorCode smolSetGraphicsParams(simptr sim, const char *method, int
     // timesteps, int delay);
-    m.def(
-        "setGraphicsParams",
-        [](const char *method, int timestep, int delay) {
-            return smolSetGraphicsParams(cursim_, method, timestep, delay);
-        },
-        "Sets basic simulation graphics parameters. Enter method as \"\" for no graphics "
-        "(the default), \"opengl\" for fast but minimal OpenGL graphics, \"opengl_good\" "
-        "for "
-        "improved OpenGL graphics, \"opengl_better\" for fairly good OpenGL graphics, or "
-        "as "
-        "\"nullptr\" to not set this parameter currently. Enter timesteps with a "
-        "positive "
-        "integer to set the number of simulation time steps between graphics renderings "
-        "(1 is the default) or with a negative number to not set this parameter "
-        "currently. Enter delay as a non-negative number to set the minimum number of "
-        "milliseconds that must elapse between subsequent graphics renderings in order "
-        "to improve visualization (0 is the default) or as a negative number to not set "
-        "this parameter currently.");
+    m.def("setGraphicsParams", [](const char *method, int timestep, int delay) {
+        return smolSetGraphicsParams(cursim_, method, timestep, delay);
+    });
 
     // enum ErrorCode smolSetTiffParams(simptr sim, int timesteps,
     //     const char *tiffname, int lowcount, int highcount);
-    m.def(
-        "setTiffParams",
+    m.def("setTiffParams",
         [](int timesteps, const char *tiffname, int lowcount, int highcount) {
             return smolSetTiffParams(cursim_, timesteps, tiffname, lowcount, highcount);
-        },
-        "Sets parameters for the automatic collection of TIFF format snapshots of the "
-        "graphics window. timesteps is the number of simulation timesteps that should "
-        "elapse between subsequent snapshots, tiffname is the root filename of the "
-        "output TIFF files, lowcount is a number that is appended to the filename of the "
-        "first snapshot and which is then incremented for subsequent snapshots, and "
-        "highcount is the last numbered file that will be collected. Enter negative "
-        "numbers for timesteps, lowcount, and/or highcount to not set these parameters, "
-        "and enter NULL for tiffname to not set the file name."
-
-    );
+        });
 
     // enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double
     // *ambient,

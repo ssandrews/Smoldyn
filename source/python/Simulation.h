@@ -54,7 +54,7 @@ public:
     ~Simulation()
     {
         if(sim_)
-            delete sim_;
+            simfree(sim_);
     }
 
     simptr getSimptr() const
@@ -198,25 +198,19 @@ public:
         return smolSetGraphicsParams(sim_, method, timestep, delay);
     }
 
-    inline ErrorCode setFrameStyle(double thickness, char* color)
+    inline ErrorCode setFrameStyle(double thickness, array<double, 4>& rgba)
     {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
         return smolSetFrameStyle(sim_, thickness, &rgba[0]);
     }
 
-    inline ErrorCode setGridStyle(double thickness, char* color)
+    inline ErrorCode setBackgroundStyle(array<double, 4>& rgba)
     {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
-        return smolSetGridStyle(sim_, thickness, &rgba[0]);
+        return smolSetBackgroundStyle(cursim_, &rgba[0]);
     }
 
-    inline ErrorCode setTextStyle(char* color)
+    inline ErrorCode setGridStyle(double thickness, array<double, 4>& rgba)
     {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
-        return smolSetTextStyle(sim_, &rgba[0]);
+        return smolSetGridStyle(sim_, thickness, &rgba[0]);
     }
 
     inline ErrorCode setTextStyle(array<double, 4>& rgba)
