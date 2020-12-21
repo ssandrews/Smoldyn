@@ -347,16 +347,19 @@ PYBIND11_MODULE(_smoldyn, m)
         .def(py::init<vector<double> &, vector<double> &, vector<string> &>())
         .def_property_readonly(
             "simptr", &Simulation::getSimptr, py::return_value_policy::reference)
-        // Extra (not in C api).
+        .def("setSimTimes", &Simulation::setSimTimes)
         .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = true,
             "overwrite"_a = false)
         .def("connect", &Simulation::connect)
         .def("addCommand", &Simulation::addCommand)
+        // Graphics.
         .def("addCommandFromString", &Simulation::addCommandFromString)
+        .def("setGraphicsParams", &Simulation::setGraphicsParams)
+        .def("setFrameStyle", &Simulation::setFrameStyle)
+        .def("setGridStyle", &Simulation::setGridStyle)
+        // data
         .def("getOutputData", &Simulation::getOutputData)
-        .def("addOutputData", &Simulation::addOutputData)
-        .def(
-            "setCurrentSimptr", [](const Simulation &sim) { cursim_ = sim.getSimptr(); });
+        .def("addOutputData", &Simulation::addOutputData);
 
     /*******************
      *  Miscellaneous  *

@@ -2086,7 +2086,7 @@ class Simulation(_smoldyn.Simulation):
 
         # NOTE: This must be called before we add Commands. Commands require
         # that stop, step and dt values are avaiable to simptr.
-        _smoldyn.setSimTimes(self.start, self.stop, self.dt)
+        super().setSimTimes(self.start, self.stop, self.dt)
 
         # add commands after stop, dt and start are finalized.
         self.__finalize_cmds__()
