@@ -11,8 +11,11 @@ import smoldyn._smoldyn as CppApi
 def test_library():
     """We test the C API here
     """
+    # This initialize a simulation structure. Rest of the calls, operate on it.
+    # This must be the first call.
     CppApi.setBoundaries([-50, -50], [50, 50])
     assert CppApi.getDim() == 2
+
     CppApi.setRandomSeed(1)
     print('Bounds', CppApi.getBoundaries())
 

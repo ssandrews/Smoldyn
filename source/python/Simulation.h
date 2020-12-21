@@ -108,7 +108,7 @@ public:
     }
 
     /**
-     * @brief Set filepath and filename on cursim_->getSimPtr(). When python scripts are
+     * @brief Set filepath and filename on sim_->getSimPtr(). When python scripts are
      * used, these variables are not set my smolsimulate and related fucntions.
      *
      * @param modelpath modelpath e.g. when using command `python3 ~/Work/smoldyn.py`
@@ -165,6 +165,35 @@ public:
         curtime_ = stoptime;
 
         return er;
+    }
+
+    ErrorCode runUntil(
+        const double breaktime, const double dt, bool display, bool overwrite = false)
+    {
+        assert(sim_);
+
+        if(!sim_) {
+            if(! initialize()) {
+                cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
+                return ECerror;
+            }
+        }
+
+        auto er = smolOpenOutputFiles(sim_, overwrite);
+        if(er != ErrorCode::ECok) {
+            cerr << __FUNCTION__ << ": Simulation skipped." << endl;
+        }
+
+        // If dt>0, reset dt else use the old one.
+        if(dt > 0.0)
+            smolSetTimeStep(sim_, dt);
+        smolUpdateSim(sim_);
+
+        if(display && (!initDisplay_)) {
+            smolDisplaySim(sim_);
+            initDisplay_ = true;
+        }
+        return smolRunSimUntil(sim_, breaktime);
     }
 
     bool connect(const py::function& func, const py::object& target, const size_t step,

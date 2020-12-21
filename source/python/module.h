@@ -32,10 +32,6 @@ Simulation* cursim_;
 
 size_t getRandomSeed();
 
-// Smoldyn.
-ErrorCode runSimulation(double simtime, double dt, bool display, bool overwrite);
-ErrorCode runUntil(const double breaktime, const double dt, bool display, bool overwrite);
-
 ErrorCode setDt(double dt);
 double    getDt();
 

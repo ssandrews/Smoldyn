@@ -59,89 +59,13 @@ void printSimptrNotInitWarning(const char *funcname)
 size_t getRandomSeed(void)
 {
     assert(cursim_);
-    assert(cursim_->isValid());
+    assert(true == cursim_->isValid());
 
     if(!cursim_->getSimPtr()) {
         printSimptrNotInitWarning(__FUNCTION__);
         return -1;
     }
     return cursim_->getSimPtr()->randseed;
-}
-
-ErrorCode runUntil(
-    const double breaktime, const double dt, bool display, bool overwrite = false)
-{
-    static bool initDisplay_ = false;
-
-    assert(cursim_);
-
-    if(!cursim_->getSimPtr()) {
-
-        if(!cursim_->initialize()) {
-            cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
-            return ECerror;
-        }
-    }
-
-    auto er = smolOpenOutputFiles(cursim_->getSimPtr(), overwrite);
-    if(er != ErrorCode::ECok) {
-        cerr << __FUNCTION__ << ": Simulation skipped." << endl;
-    }
-
-    // If dt>0, reset dt else use the old one.
-    if(dt > 0.0)
-        smolSetTimeStep(cursim_->getSimPtr(), dt);
-    smolUpdateSim(cursim_->getSimPtr());
-
-    if(display && (!initDisplay_)) {
-        smolDisplaySim(cursim_->getSimPtr());
-        initDisplay_ = true;
-    }
-    return smolRunSimUntil(cursim_->getSimPtr(), breaktime);
-}
-
-/**
- * @brief Run the simulation for given time.
- *
- * @param stoptime, time to run (second).
- * @param dt, step size (second)
- * @param display, if `true`, display graphics.
- * @param overwrite, if `true`, overwrite existing data files.
- *
- * @return
- */
-ErrorCode runSimulation(double stoptime, double dt, bool display, bool overwrite = false)
-{
-    ErrorCode   er;
-    static bool initDisplay_ = false;
-
-    if(!cursim_->getSimPtr()) {
-        if(!cursim_->initialize()) {
-            cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
-            return ECerror;
-        }
-    }
-
-    gl2glutInit(0, NULL);
-
-    er = smolOpenOutputFiles(cursim_->getSimPtr(), overwrite);
-    if(er != ErrorCode::ECok) {
-        cerr << __FUNCTION__ << ": Could not open output files." << endl;
-        return er;
-    }
-
-    er = smolSetSimTimes(cursim_->getSimPtr(), cursim_->getCurtime(), stoptime, dt);
-    er = smolUpdateSim(cursim_->getSimPtr());
-
-    if(display && !initDisplay_) {
-        smolDisplaySim(cursim_->getSimPtr());
-        initDisplay_ = true;
-    }
-
-    er = smolRunSim(cursim_->getSimPtr());
-    cursim_->setCurtime(stoptime);
-
-    return er;
 }
 
 /**
@@ -499,8 +423,8 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("getSimPtr", &Simulation::getSimPtr, py::return_value_policy::reference)
         // Simulation related.
         .def("setSimTimes", &Simulation::setSimTimes)
-        .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = 1,
-            "overwrite"_a = 1)
+        .def("run", &Simulation::run)
+        .def("runUntil", &Simulation::runUntil)
         .def("addCommand", &Simulation::addCommand)
         .def("addCommandFromString", &Simulation::addCommandFromString)
         // Graphics.
@@ -512,178 +436,151 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("setTextStyle", &Simulation::setTextStyle)
         // data
         .def("getOutputData", &Simulation::getOutputData)
-        .def("addOutputData", &Simulation::addOutputData);
+        .def("addOutputData", &Simulation::addOutputData)
+        /*************************
+         *  Simulation settings  *
+         *************************/
+        // enum ErrorCode smolSetSimTimes(
+        //         simptr sim, double timestart, double timestop, double timestep);
+        .def("setSimTimes",
+            [](Simulation &sim, double timestart, double timestop, double timestep) {
+                return smolSetSimTimes(sim.getSimPtr(), timestart, timestop, timestep);
+            })
 
-    /*******************
-     *  Miscellaneous  *
-     *******************/
-    m.def("getVersion", &smolGetVersion);
+        // enum ErrorCode smolSetTimeStart(simptr sim, double timestart);
+        .def("setTimeStart",
+            [](Simulation &sim, double time) {
+                return smolSetTimeStart(sim.getSimPtr(), time);
+            })
+        .def("getTimeStart", [](Simulation &sim) { return sim.getSimPtr()->tmin; })
 
-    /************
-     *  Errors  *
-     ************/
-    m.def("setDebugMode", &smolSetDebugMode);
-    m.def("errorCodeToString", &smolErrorCodeToString);
+        // enum ErrorCode smolSetTimeStop(simptr sim, double timestop);
+        .def("setTimeStop",
+            [](Simulation &sim, double timestop) {
+                return smolSetTimeStop(sim.getSimPtr(), timestop);
+            })
+        .def("getTimeStop", [](Simulation &sim) { return sim.getSimPtr()->tmax; })
 
-    /************************
-     *  Sim struture (use with care).
-     ************************/
-    m.def("setCurSim", [](simptr sim) {
-        if(!cursim_)
-            cursim_ = new Simulation(sim);
-        else
-            cursim_->setSimPtr(sim);
-    });
-    m.def(
-        "newSim",
-        [](vector<double> &lowbounds, vector<double> &highbounds) -> simptr {
-            return setBoundaries(lowbounds, highbounds);
-        },
-        py::return_value_policy::reference);
-    m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_->getSimPtr()); });
-    m.def("runSim", [](void) { return smolRunSim(cursim_->getSimPtr()); });
-    m.def("runSimUntil", [](double breaktime, bool overwrite) {
-        return smolRunSimUntil(cursim_->getSimPtr(), breaktime);
-    });
+        // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
+        .def("setTimeNow",
+            [](Simulation &sim, double timenow) {
+                return smolSetTimeNow(sim.getSimPtr(), timenow);
+            })
 
-    m.def("freeSim", [](void) { return smolFreeSim(cursim_->getSimPtr()); });
-    m.def("displaySim", [](void) { return smolDisplaySim(cursim_->getSimPtr()); });
+        // enum ErrorCode smolSetTimeStep(simptr sim, double timestep);
+        .def("setTimeStep",
+            [](Simulation &sim, double timestep) {
+                return smolSetTimeStep(sim.getSimPtr(), timestep);
+            })
+        .def("getTimeStep", [](Simulation &sim) { return sim.getSimPtr()->dt; })
+
+        .def("setRandomSeed",
+            [](Simulation &sim, long int seed) {
+                return smolSetRandomSeed(sim.getSimPtr(), seed);
+            })
+
+        // enum ErrorCode smolSetPartitions(simptr sim, const char *method, double
+        // value);
+        .def("setPartitions",
+            [](Simulation &sim, const char *method, double value) {
+                return smolSetPartitions(sim.getSimPtr(), method, value);
+            })
+
+        /*********************************
+         *  Graphics related functions.  *
+         *********************************/
+        // enum ErrorCode smolSetGraphicsParams(simptr sim, const char *method, int
+        // timesteps, int delay);
+        .def("setGraphicsParams",
+            [](Simulation &sim, const char *method, int timestep, int delay) {
+                return smolSetGraphicsParams(sim.getSimPtr(), method, timestep, delay);
+            })
+
+        // enum ErrorCode smolSetTiffParams(simptr sim, int timesteps,
+        //     const char *tiffname, int lowcount, int highcount);
+        .def("setTiffParams",
+            [](Simulation &sim, int timesteps, const char *tiffname, int lowcount,
+                int highcount) {
+                return smolSetTiffParams(
+                    sim.getSimPtr(), timesteps, tiffname, lowcount, highcount);
+            })
+
+        // enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double
+        // *ambient,
+        //     double *diffuse, double *specular, double *position);
+        .def("setLightParams",
+            [](Simulation &sim, int lightindex, vector<double> &ambient,
+                vector<double> &diffuse, vector<double> &specular,
+                vector<double> &position) {
+                return smolSetLightParams(sim.getSimPtr(), lightindex, &ambient[0],
+                    &diffuse[0], &specular[0], &position[0]);
+            })
+
+        // enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color);
+        .def("setBackgroundStyle",
+            [](Simulation &sim, char *color) {
+                array<double, 4> rgba = {0, 0, 0, 1.0};
+                graphicsreadcolor(&color, &rgba[0]);
+                // cout << "debug: Setting background color " << rgba[0] << ' ' << rgba[1]
+                // << ' '
+                // << rgba[2] << ' ' << rgba[3] << endl;
+                return smolSetBackgroundStyle(sim.getSimPtr(), &rgba[0]);
+            })
+        .def("setBackgroundStyle",
+            [](Simulation &sim, array<double, 4> rgba) {
+                return smolSetBackgroundStyle(sim.getSimPtr(), &rgba[0]);
+            })
+
+        // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
+        // *color);
+        .def("setFrameStyle",
+            [](Simulation &sim, double thickness, char *color) {
+                array<double, 4> rgba = {0, 0, 0, 1.0};
+                graphicsreadcolor(&color, &rgba[0]);
+                return smolSetFrameStyle(sim.getSimPtr(), thickness, &rgba[0]);
+            })
+
+        .def("setFrameStyle",
+            [](Simulation &sim, double thickness, array<double, 4> &rgba) {
+                return smolSetFrameStyle(sim.getSimPtr(), thickness, &rgba[0]);
+            })
+
+        // enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double
+        // *color);
+        .def("setGridStyle",
+            [](Simulation &sim, double thickness, char *color) {
+                array<double, 4> rgba = {0, 0, 0, 1.0};
+                graphicsreadcolor(&color, &rgba[0]);
+                return smolSetGridStyle(sim.getSimPtr(), thickness, &rgba[0]);
+            })
+
+        .def("setGridStyle",
+            [](Simulation &sim, double thickness, array<double, 4> &rgba) {
+                return smolSetGridStyle(sim.getSimPtr(), thickness, &rgba[0]);
+            })
+
+        // enum ErrorCode smolSetTextStyle(simptr sim, double *color);
+        .def("setTextStyle",
+            [](Simulation &sim, char *color) {
+                array<double, 4> rgba = {0, 0, 0, 1.0};
+                graphicsreadcolor(&color, &rgba[0]);
+                return smolSetTextStyle(sim.getSimPtr(), &rgba[0]);
+            })
+        .def("setTextStyle",
+            [](Simulation &sim, array<double, 4> &rgba) {
+                return smolSetTextStyle(sim.getSimPtr(), &rgba[0]);
+            })
+
+        // enum ErrorCode smolAddTextDisplay(simptr sim, char *item);
+        .def("addTextDisplay", [](Simulation &sim, char *item) {
+            return smolAddTextDisplay(sim.getSimPtr(), item);
+        });
 
     // Extra (not in C api).
-    m.def("run", &runSimulation, "stoptime"_a, "dt"_a, "display"_a = true,
-        "overwrite"_a = false);
-    m.def("runUntil", &runUntil, "breaktime"_a, "dt"_a = 0.0, "display"_a = true,
-        "overwrite"_a = false);
-
-    /*****************************
-     *  Read configuration file  *
-     *****************************/
-    m.def("prepareSimFromFile", [](const char *filepath, const char *flags) {
-        auto path = splitPath(string(filepath));
-        return smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
-    });
-    m.def("loadSimFromFile", [](const string &filepath, const char *flags) {
-        auto   p   = splitPath(filepath);
-        simptr sim = cursim_->getSimPtr();
-        return smolLoadSimFromFile(p.first.c_str(), p.second.c_str(), &sim, flags);
-    });
-    m.def("readConfigString", [](const char *statement, char *params) {
-        return smolReadConfigString(cursim_->getSimPtr(), statement, params);
-    });
-
-    /*************************
-     *  Simulation settings  *
-     *************************/
-    // enum ErrorCode smolSetSimTimes(
-    //         simptr sim, double timestart, double timestop, double timestep);
-    m.def("setSimTimes", [](double timestart, double timestop, double timestep) {
-        return smolSetSimTimes(cursim_->getSimPtr(), timestart, timestop, timestep);
-    });
-
-    // enum ErrorCode smolSetTimeStart(simptr sim, double timestart);
-    m.def("setTimeStart",
-        [](double time) { return smolSetTimeStart(cursim_->getSimPtr(), time); });
-    m.def("getTimeStart", []() { return cursim_->getSimPtr()->tmin; });
-
-    // enum ErrorCode smolSetTimeStop(simptr sim, double timestop);
-    m.def("setTimeStop",
-        [](double timestop) { return smolSetTimeStop(cursim_->getSimPtr(), timestop); });
-    m.def("getTimeStop", []() { return cursim_->getSimPtr()->tmax; });
-
-    // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
-    m.def("setTimeNow",
-        [](double timenow) { return smolSetTimeNow(cursim_->getSimPtr(), timenow); });
-
-    // enum ErrorCode smolSetTimeStep(simptr sim, double timestep);
-    m.def("setTimeStep",
-        [](double timestep) { return smolSetTimeStep(cursim_->getSimPtr(), timestep); });
-    m.def("getTimeStep", []() { return cursim_->getSimPtr()->dt; });
-
-    m.def("setRandomSeed",
-        [](long int seed) { return smolSetRandomSeed(cursim_->getSimPtr(), seed); });
-
-    // enum ErrorCode smolSetPartitions(simptr sim, const char *method, double
-    // value);
-    m.def("setPartitions", [](const char *method, double value) {
-        return smolSetPartitions(cursim_->getSimPtr(), method, value);
-    });
-
-    /*********************************
-     *  Graphics related functions.  *
-     *********************************/
-    // enum ErrorCode smolSetGraphicsParams(simptr sim, const char *method, int
-    // timesteps, int delay);
-    m.def("setGraphicsParams", [](const char *method, int timestep, int delay) {
-        return smolSetGraphicsParams(cursim_->getSimPtr(), method, timestep, delay);
-    });
-
-    // enum ErrorCode smolSetTiffParams(simptr sim, int timesteps,
-    //     const char *tiffname, int lowcount, int highcount);
-    m.def("setTiffParams",
-        [](int timesteps, const char *tiffname, int lowcount, int highcount) {
-            return smolSetTiffParams(
-                cursim_->getSimPtr(), timesteps, tiffname, lowcount, highcount);
+    m.def("run",
+        [](double stoptime, double dt, bool display = true, bool overwrite = false) {
+            cursim_->run(stoptime, dt, display, overwrite);
         });
-
-    // enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double
-    // *ambient,
-    //     double *diffuse, double *specular, double *position);
-    m.def("setLightParams",
-        [](int lightindex, vector<double> &ambient, vector<double> &diffuse,
-            vector<double> &specular, vector<double> &position) {
-            return smolSetLightParams(cursim_->getSimPtr(), lightindex, &ambient[0],
-                &diffuse[0], &specular[0], &position[0]);
-        });
-
-    // enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color);
-    m.def("setBackgroundStyle", [](char *color) {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
-        // cout << "debug: Setting background color " << rgba[0] << ' ' << rgba[1] << ' '
-        // << rgba[2] << ' ' << rgba[3] << endl;
-        return smolSetBackgroundStyle(cursim_->getSimPtr(), &rgba[0]);
-    });
-    m.def("setBackgroundStyle", [](array<double, 4> rgba) {
-        return smolSetBackgroundStyle(cursim_->getSimPtr(), &rgba[0]);
-    });
-
-    // enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double
-    // *color);
-    m.def("setFrameStyle", [](double thickness, char *color) {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
-        return smolSetFrameStyle(cursim_->getSimPtr(), thickness, &rgba[0]);
-    });
-
-    m.def("setFrameStyle", [](double thickness, array<double, 4> &rgba) {
-        return smolSetFrameStyle(cursim_->getSimPtr(), thickness, &rgba[0]);
-    });
-
-    // enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double
-    // *color);
-    m.def("setGridStyle", [](double thickness, char *color) {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
-        return smolSetGridStyle(cursim_->getSimPtr(), thickness, &rgba[0]);
-    });
-
-    m.def("setGridStyle", [](double thickness, array<double, 4> &rgba) {
-        return smolSetGridStyle(cursim_->getSimPtr(), thickness, &rgba[0]);
-    });
-
-    // enum ErrorCode smolSetTextStyle(simptr sim, double *color);
-    m.def("setTextStyle", [](char *color) {
-        array<double, 4> rgba = {0, 0, 0, 1.0};
-        graphicsreadcolor(&color, &rgba[0]);
-        return smolSetTextStyle(cursim_->getSimPtr(), &rgba[0]);
-    });
-    m.def("setTextStyle", [](array<double, 4> &rgba) {
-        return smolSetTextStyle(cursim_->getSimPtr(), &rgba[0]);
-    });
-
-    // enum ErrorCode smolAddTextDisplay(simptr sim, char *item);
-    m.def("addTextDisplay",
-        [](char *item) { return smolAddTextDisplay(cursim_->getSimPtr(), item); });
 
     /***********************
      *  Runtime commands.  *
@@ -1249,9 +1146,71 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("setAccuracy", [](double accuracy) { cursim_->getSimPtr()->accur = accuracy; });
     m.def("getAccuracy", [](void) { return cursim_->getSimPtr()->accur; });
 
+#if 0
+    /* Try forwaring to Simulation class */
+    m.def("__getattr__", [](const char *key) {
+        py::print("Accessing ", key);
+        auto obj = py::cast(cursim_);
+        if(py::hasattr(obj, key)) {
+            py::print("    Found. calling ");
+            return py::getattr(obj, key);
+        }
+    });
+#endif
+
     /* Function */
     m.def("loadModel", &init_and_run, "filepath"_a, "flags"_a = "", "wflag"_a = 0,
         "quit_at_end"_a = 1, "Load model from a txt file");
+
+    /*******************
+     *  Miscellaneous  *
+     *******************/
+    m.def("getVersion", &smolGetVersion);
+
+    /************
+     *  Errors  *
+     ************/
+    m.def("setDebugMode", &smolSetDebugMode);
+    m.def("errorCodeToString", &smolErrorCodeToString);
+
+    /*****************************
+     *  Read configuration file  *
+     *****************************/
+    m.def("prepareSimFromFile", [](const char *filepath, const char *flags) {
+        auto path = splitPath(string(filepath));
+        return smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
+    });
+    m.def("loadSimFromFile", [](const string &filepath, const char *flags) {
+        auto   p   = splitPath(filepath);
+        simptr sim = cursim_->getSimPtr();
+        return smolLoadSimFromFile(p.first.c_str(), p.second.c_str(), &sim, flags);
+    });
+    m.def("readConfigString", [](const char *statement, char *params) {
+        return smolReadConfigString(cursim_->getSimPtr(), statement, params);
+    });
+
+    /************************
+     *  Sim struture (use with care).
+     ************************/
+    m.def("setCurSim", [](simptr sim) {
+        if(!cursim_)
+            cursim_ = new Simulation(sim);
+        else
+            cursim_->setSimPtr(sim);
+    });
+    m.def(
+        "newSim",
+        [](vector<double> &lowbounds, vector<double> &highbounds) -> simptr {
+            return setBoundaries(lowbounds, highbounds);
+        },
+        py::return_value_policy::reference);
+    m.def("runTimeStep", [](void) { return smolRunTimeStep(cursim_->getSimPtr()); });
+    m.def("runSim", [](void) { return smolRunSim(cursim_->getSimPtr()); });
+    m.def("runSimUntil", [](double breaktime, bool overwrite) {
+        return smolRunSimUntil(cursim_->getSimPtr(), breaktime);
+    });
+
+    m.def("displaySim", [](void) { return smolDisplaySim(cursim_->getSimPtr()); });
 
     /* attributes */
     m.attr("__version__") = VERSION;  // Version is set by CMAKE
