@@ -1787,16 +1787,16 @@ class Simulation(_smoldyn.Simulation):
             boundary_type = list(boundary_type)
         super().__init__(low, high, boundary_type)
 
+        self.simptr = super().getSimPtr()
         assert self.simptr, "Fatal error: Could not create simstruct"
-        _smoldyn.setCurSimStruct(self.simptr)
-        assert (
-            self.simptr == _smoldyn.getCurSimStruct()
-        ), "Current simptr is not set properly"
+
+        # FIXME: This is essential till we move everything under Simulation()
+        _smoldyn.setCurSim(self.simptr)
 
         # set filepath and filename at simptr
         if __top_model_file__:
             __top_model_file__.resolve()
-            _smoldyn.setModelpath(str(__top_model_file__))
+            super().setModelpath(str(__top_model_file__))
 
         self.commands: List[Command] = []
         self.kwargs = kwargs
@@ -2037,11 +2037,6 @@ class Simulation(_smoldyn.Simulation):
     def seed(self, x: int):
         """Set the random seed"""
         _smoldyn.setRandomSeed(int(x))
-
-    def setTime(self, dt: float, start: float = 0.0):
-        _smoldyn.setCurSimStruct(self.simptr)
-        self.dt = dt
-        self.start = start
 
     def run(
         self,

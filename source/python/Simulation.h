@@ -10,12 +10,14 @@
 #include <iostream>
 using namespace std;
 
-#include "../source/Smoldyn/libsmoldyn.h"
-#include "../source/libSteve/opengl2.h"
+#include "../Smoldyn/libsmoldyn.h"
+#include "../libSteve/opengl2.h"
+
+#include "util.h"
 
 #include "pybind11/pybind11.h"
 
-#include "Simulation.h"
+extern void simfree(simptr ptr);
 
 using namespace std;
 
@@ -30,18 +32,18 @@ public:
     Simulation(vector<double>& low, vector<double>& high, vector<string>& boundary_type)
         : low_(low),
           high_(high),
-          dim_(low.size()),
           boundary_type_(boundary_type),
           curtime_(0.0),
           initDisplay_(false),
           debug_(false)
     {
         assert(low.size() == high.size());
-        dim_ = low.size();
+
         sim_ = smolNewSim(low.size(), &low[0], &high[0]);
+        assert(sim_);
 
         // for _d, _t in zip(range(self.dim), self.types):
-        for(size_t d = 0; d < dim_; d++) {
+        for(size_t d = 0; d < getDim(); d++) {
             string t = boundary_type[d];
             if(t.size() == 1)
                 smolSetBoundaryType(sim_, d, -1, t[0]);
@@ -51,27 +53,28 @@ public:
         }
     }
 
+    Simulation(simptr sim) : sim_(sim), debug_(false), initDisplay_(false), curtime_(0.0)
+    {
+    }
+
     ~Simulation()
     {
         if(sim_)
             simfree(sim_);
     }
 
-    simptr getSimptr() const
-    {
-        return sim_;
-    }
-
     size_t getDim() const
     {
-        return dim_;
+        assert(sim_->dim >= 0);
+        return (size_t)sim_->dim;
     }
 
     bool initialize()
     {
         if(sim_)
             return true;
-        if(getDim() <= 0 || getDim() > 3) {
+
+        if(getDim() == 0 || getDim() > 3) {
             cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim()
                  << endl;
             return false;
@@ -97,10 +100,29 @@ public:
         }
 
         sim_ = smolNewSim(getDim(), &low_[0], &high_[0]);
+        assert(sim_);
 
         if(debug_)
             smolSetDebugMode(1);
         return sim_ ? true : false;
+    }
+
+    /**
+     * @brief Set filepath and filename on cursim_->getSimPtr(). When python scripts are
+     * used, these variables are not set my smolsimulate and related fucntions.
+     *
+     * @param modelpath modelpath e.g. when using command `python3 ~/Work/smoldyn.py`
+     * in terminal, modelpath is set to `/home/user/Work/Smoldyn.py`.
+     *
+     * @return true.
+     */
+    bool setModelpath(const string& modelpath)
+    {
+        assert(sim_);
+        auto p = splitPath(modelpath);
+        strncpy(sim_->filepath, p.first.c_str(), p.first.size());
+        strncpy(sim_->filename, p.second.c_str(), p.second.size());
+        return true;
     }
 
     bool run(double stoptime, double dt, bool display = true, bool overwrite = false)
@@ -123,7 +145,16 @@ public:
         }
 
         er = smolSetSimTimes(sim_, curtime_, stoptime, dt);
+        if(er != ErrorCode::ECok) {
+            cerr << __FUNCTION__ << ": Could not set sim times." << endl;
+            return er;
+        }
+
         er = smolUpdateSim(sim_);
+        if(er != ErrorCode::ECok) {
+            cerr << __FUNCTION__ << ": Could not update simstruct." << endl;
+            return er;
+        }
 
         if(display && !initDisplay_) {
             smolDisplaySim(sim_);
@@ -205,7 +236,7 @@ public:
 
     inline ErrorCode setBackgroundStyle(array<double, 4>& rgba)
     {
-        return smolSetBackgroundStyle(cursim_, &rgba[0]);
+        return smolSetBackgroundStyle(sim_, &rgba[0]);
     }
 
     inline ErrorCode setGridStyle(double thickness, array<double, 4>& rgba)
@@ -223,10 +254,47 @@ public:
         return smolAddTextDisplay(sim_, item);
     }
 
-protected:
+    // get the pointer
+    inline simptr getSimPtr()
+    {
+        assert(sim_);
+        return sim_;
+    }
+
+    // set the pointer.
+    void setSimPtr(simptr sim)
+    {
+        sim_ = sim;
+    }
+
+    void setCurtime(double curtime)
+    {
+        curtime_ = curtime;
+    }
+
+    double getCurtime() const
+    {
+        return curtime_;
+    }
+
+    bool isValid()
+    {
+        return sim_ ? true : false;
+    }
+
+    pair<vector<double>, vector<double>> getBoundaries(void)
+    {
+        vector<double> low;
+        vector<double> high;
+        for(size_t d = 0; d < sim_->dim; d++) {
+            low.push_back(sim_->wlist[2 * d]->pos);
+            high.push_back(sim_->wlist[2 * d + 1]->pos);
+        }
+        return make_pair(low, high);
+    }
+
 private:
     simptr         sim_;
-    size_t         dim_;
     vector<string> boundary_type_;
     vector<double> low_;
     vector<double> high_;

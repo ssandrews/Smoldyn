@@ -11,7 +11,7 @@ import smoldyn._smoldyn as CppApi
 def test_library():
     """We test the C API here
     """
-    CppApi.setBoundaries(([-50, 50], [-50, 50]))
+    CppApi.setBoundaries([-50, -50], [50, 50])
     assert CppApi.getDim() == 2
     CppApi.setRandomSeed(1)
     print('Bounds', CppApi.getBoundaries())

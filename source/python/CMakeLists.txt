@@ -43,7 +43,7 @@ if(WINDOWS_BUILD)
         VERBATIM)
 endif()
 
-pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
+pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp module.cpp)
 target_compile_options(_smoldyn PRIVATE 
     -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
     -DENABLE_PYTHON_CALLBACK 
