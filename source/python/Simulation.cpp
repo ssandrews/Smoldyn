@@ -148,3 +148,34 @@ bool Simulation::connect(const py::function& func, const py::object& target,
     return true;
 }
 
+// enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
+ErrorCode Simulation::addOutputData(char* dataname)
+{
+    return smolAddOutputData(sim_, dataname);
+}
+
+ErrorCode Simulation::addCommand(char type, double on, double off, double step,
+    double multiplier, const char* commandstring)
+{
+    return smolAddCommand(sim_, type, on, off, step, multiplier, commandstring);
+}
+
+ErrorCode Simulation::addCommandFromString(char* cmd)
+{
+    return smolAddCommandFromString(sim_, cmd);
+}
+
+vector<vector<double>> Simulation::getOutputData(char* dataname, bool erase)
+{
+    int     nrow, ncol;
+    double* array;
+
+    smolGetOutputData(sim_, dataname, &nrow, &ncol, &array, erase);
+    cout << "nrows = " << nrow << " ncol " << ncol << endl;
+    std::vector<vector<double>> cppdata(nrow);
+    for(int i = 0; i < nrow; i++)
+        cppdata[i] = vector<double>(array + i * ncol, array + (i + 1) * ncol);
+    free(array);
+    return cppdata;
+}
+

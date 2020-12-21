@@ -1150,8 +1150,7 @@ class Boundaries:
     high: List[float]
     types: BoundType = field(default_factory=lambda: "r")
     dim: int = 0
-    simptr : _smoldyn.simstruct = None
-
+    simptr: _smoldyn.simstruct = None
 
     def __post_init__(self):
         """Set bounds. When bounds are successfully set, simptr structure is
@@ -1166,7 +1165,6 @@ class Boundaries:
             self.types = self.types * len(self.low)
 
         self.dim = len(self.low)
-
 
         self.simptr = _smoldyn.setBoundaries(self.low, self.high)
         assert self.simptr, "Failed to allocate a new simptr"
@@ -1258,7 +1256,7 @@ class Compartment(object):
 
 
 class Command(object):
-    def __init__(self, cmd: str, cmd_type: str = "", **kwargs):
+    def __init__(self, cmd: str, cmd_type, simulation, **kwargs):
         """Smoldyn Command.
 
         Parameters
@@ -1281,12 +1279,16 @@ class Command(object):
             on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
             starting iteration and stopping iteration.
 
+        simulation:
+            Object of _smoldyn.Simulation class
+
         Notes
         -----
         See section 2.4 for the list of available commands.
         """
         self.__allowed_cmd_type__ = "@&aAbBeEnNiIjx"
         self.cmd_type: str = cmd_type
+        self.simulation: _smoldyn.Simulation = simulation
         self.on = 0.0
         self.off = 0.0
         self.step = 0.0
@@ -1308,7 +1310,7 @@ class Command(object):
             self.cmd_type in self.__allowed_cmd_type__
         ), f"command type {self.cmd_type} is not supported. Supported types {self.__allowed_cmd_type__}"
         if self.fromString:
-            k = _smoldyn.addCommandFromString(self.cmd)
+            k = super().addCommandFromString(self.cmd)
             assert k == _smoldyn.ErrorCode.ok
             return
         if "@" == self.cmd_type:
@@ -1344,7 +1346,7 @@ class Command(object):
         self.__added__ = True
 
     def __add_command__(self):
-        k = _smoldyn.addCommand(
+        k = self.simulation.addCommand(
             self.cmd_type, self.on, self.off, self.step, self.multiplier, self.cmd
         )
         assert k == _smoldyn.ErrorCode.ok
@@ -1787,7 +1789,9 @@ class Simulation(_smoldyn.Simulation):
 
         assert self.simptr, "Fatal error: Could not create simstruct"
         _smoldyn.setCurSimStruct(self.simptr)
-        assert self.simptr == _smoldyn.getCurSimStruct(), "Current simptr is not set properly"
+        assert (
+            self.simptr == _smoldyn.getCurSimStruct()
+        ), "Current simptr is not set properly"
 
         # set filepath and filename at simptr
         if __top_model_file__:
@@ -1812,8 +1816,7 @@ class Simulation(_smoldyn.Simulation):
             self.randomSeed = int(kwargs["seed"])
 
         if log_level <= 0:
-            self.simptr.flag = self.simptr.flag + 'q'
-
+            self.simptr.flag = self.simptr.flag + "q"
 
     def setOutputFiles(self, outfiles: List[str], append=True):
         """Declaration of filenames that can be used for output of simulation
@@ -2098,8 +2101,7 @@ class Simulation(_smoldyn.Simulation):
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
     def runUntil(self, stop, dt=None):
-        """runUntil
-        """
+        """runUntil"""
         _smoldyn.setCurSimStruct(self.simptr)
         self.stop = stop
         if dt is not None:
@@ -2142,7 +2144,7 @@ class Simulation(_smoldyn.Simulation):
         """
         if "step" not in kwargs:
             kwargs["step"] = self.dt
-        c = Command(cmd, cmd_type, from_string=False, **kwargs)
+        c = Command(cmd, cmd_type, simulation=super(), from_string=False, **kwargs)
         self.commands.append(c)
         return c
 
@@ -2155,7 +2157,7 @@ class Simulation(_smoldyn.Simulation):
         cmd : str
             Command string
         """
-        c = Command(cmd, from_string=True)
+        c = Command(cmd, cmd_type="", simulation=super(), from_string=True)
         self.commands.append(c)
         return c
 
@@ -2298,7 +2300,7 @@ class Simulation(_smoldyn.Simulation):
 
         """
         assert " " not in dataname, f"spaces not allowed in dataname: '{dataname}'"
-        r = _smoldyn.addOutputData(dataname)
+        r = super().addOutputData(dataname)
         assert r == _smoldyn.ErrorCode.ok, f"Failed to add output data {r}"
 
     def getOutputData(self, dataname: str, erase: bool = True) -> List[List[float]]:
@@ -2319,8 +2321,7 @@ class Simulation(_smoldyn.Simulation):
             A matrix of float.
         """
         assert " " not in dataname, f"Must not contain spaces: '{dataname}'"
-        _smoldyn.setCurSimStruct(self.simptr)
-        return _smoldyn.getOutputData(dataname, erase)
+        return super().getOutputData(dataname, erase)
 
     def connect(self, func, target, step: int, args: List[float] = []):
         """Connect a arbitrary Python function to Simulation. The function will

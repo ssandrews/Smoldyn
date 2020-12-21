@@ -31,6 +31,13 @@ public:
     bool connect(const py::function& func, const py::object& target, const size_t step,
         const py::list& args);
 
+    ErrorCode addCommandFromString(char* cmd);
+    ErrorCode addCommand(char type, double on, double off, double step, double multiplier,
+        const char* commandstring);
+
+    ErrorCode              addOutputData(char* dataname);
+    vector<vector<double>> getOutputData(char* dataname, bool erase);
+
 protected:
 private:
     simptr         sim_;

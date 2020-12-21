@@ -351,6 +351,10 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("run", &Simulation::run, "stoptime"_a, "dt"_a, "display"_a = true,
             "overwrite"_a = false)
         .def("connect", &Simulation::connect)
+        .def("addCommand", &Simulation::addCommand)
+        .def("addCommandFromString", &Simulation::addCommandFromString)
+        .def("getOutputData", &Simulation::getOutputData)
+        .def("addOutputData", &Simulation::addOutputData)
         .def(
             "setCurrentSimptr", [](const Simulation &sim) { cursim_ = sim.getSimptr(); });
 
@@ -605,10 +609,6 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolAddOutputFile(cursim_, filename, suffix, append);
     });
 
-    // enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
-    m.def("addOutputData",
-        [](char *dataname) { return smolAddOutputData(cursim_, dataname); });
-
     // enum ErrorCode smolAddCommand(simptr sim, char type, double on, double
     // off,
     //     double step, double multiplier, const char *commandstring);
@@ -621,20 +621,6 @@ PYBIND11_MODULE(_smoldyn, m)
     m.def("addCommandFromString", [](char *cmd) {
         // char *cmd = strdup(command.c_str());
         return smolAddCommandFromString(cursim_, cmd);
-    });
-
-    // enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,
-    // double **array,int erase)
-    m.def("getOutputData", [](char *dataname, bool erase) -> vector<vector<double>> {
-        int     nrow, ncol;
-        double *array;
-
-        smolGetOutputData(cursim_, dataname, &nrow, &ncol, &array, erase);
-        std::vector<vector<double>> cppdata(nrow);
-        for(int i = 0; i < nrow; i++)
-            cppdata[i] = vector<double>(array + i * ncol, array + (i + 1) * ncol);
-        free(array);
-        return cppdata;
     });
 
     /***************
