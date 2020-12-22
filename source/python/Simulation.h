@@ -17,8 +17,6 @@ using namespace std;
 
 #include "pybind11/pybind11.h"
 
-extern void simfree(simptr ptr);
-
 using namespace std;
 
 /*! \class Simulation
@@ -32,7 +30,6 @@ public:
     Simulation(vector<double>& low, vector<double>& high, vector<string>& boundary_type)
         : low_(low),
           high_(high),
-          boundary_type_(boundary_type),
           curtime_(0.0),
           initDisplay_(false),
           debug_(false)
@@ -42,7 +39,8 @@ public:
         sim_ = smolNewSim(low.size(), &low[0], &high[0]);
         assert(sim_);
 
-        // for _d, _t in zip(range(self.dim), self.types):
+        assert(boundary_type.size() == getDim());
+
         for(size_t d = 0; d < getDim(); d++) {
             string t = boundary_type[d];
             if(t.size() == 1)
@@ -53,14 +51,16 @@ public:
         }
     }
 
-    Simulation(simptr sim) : sim_(sim), debug_(false), initDisplay_(false), curtime_(0.0)
+    Simulation(simptr sim)
+        : sim_(sim), initDisplay_(false), debug_(false), curtime_(0.0)
     {
+        // Just copy the simptr.
+        // FIXME: I am forgetting anything here.
     }
 
     ~Simulation()
     {
-        if(sim_)
-            simfree(sim_);
+        smolFreeSim(sim_);
     }
 
     size_t getDim() const
@@ -207,7 +207,9 @@ public:
             return false;
         }
 
-        // cleanup is the job of simfree
+        // Note: cleanup is the job of simfree.
+        // I thought of using unique_ptr here but then gave up on that idea.
+        // simfree is already being used for cleaning up.
         auto f = new CallbackFunc();
         f->setFunc(func);
         f->setStep(step);
@@ -216,71 +218,6 @@ public:
         sim_->callbacks[sim_->ncallbacks] = f;
         sim_->ncallbacks += 1;
         return true;
-    }
-
-    // enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
-    inline ErrorCode addOutputData(char* dataname)
-    {
-        return smolAddOutputData(sim_, dataname);
-    }
-
-    inline ErrorCode addCommand(char type, double on, double off, double step,
-        double multiplier, const char* commandstring)
-    {
-        return smolAddCommand(sim_, type, on, off, step, multiplier, commandstring);
-    }
-
-    inline ErrorCode addCommandFromString(char* cmd)
-    {
-        return smolAddCommandFromString(sim_, cmd);
-    }
-
-    inline ErrorCode setSimTimes(double timestart, double timestop, double timestep)
-    {
-        return smolSetSimTimes(sim_, timestart, timestop, timestep);
-    }
-
-    vector<vector<double>> getOutputData(char* dataname, bool erase)
-    {
-        int     nrow, ncol;
-        double* array;
-
-        smolGetOutputData(sim_, dataname, &nrow, &ncol, &array, erase);
-        std::vector<vector<double>> cppdata(nrow);
-        for(int i = 0; i < nrow; i++)
-            cppdata[i] = vector<double>(array + i * ncol, array + (i + 1) * ncol);
-        free(array);
-        return cppdata;
-    }
-
-    inline ErrorCode setGraphicsParams(const char* method, int timestep, int delay)
-    {
-        return smolSetGraphicsParams(sim_, method, timestep, delay);
-    }
-
-    inline ErrorCode setFrameStyle(double thickness, array<double, 4>& rgba)
-    {
-        return smolSetFrameStyle(sim_, thickness, &rgba[0]);
-    }
-
-    inline ErrorCode setBackgroundStyle(array<double, 4>& rgba)
-    {
-        return smolSetBackgroundStyle(sim_, &rgba[0]);
-    }
-
-    inline ErrorCode setGridStyle(double thickness, array<double, 4>& rgba)
-    {
-        return smolSetGridStyle(sim_, thickness, &rgba[0]);
-    }
-
-    inline ErrorCode setTextStyle(array<double, 4>& rgba)
-    {
-        return smolSetTextStyle(sim_, &rgba[0]);
-    }
-
-    inline ErrorCode addTextDisplay(char* item)
-    {
-        return smolAddTextDisplay(sim_, item);
     }
 
     // get the pointer
@@ -324,7 +261,6 @@ public:
 
 private:
     simptr         sim_;
-    vector<string> boundary_type_;
     vector<double> low_;
     vector<double> high_;
     double         curtime_;

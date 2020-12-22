@@ -34,7 +34,6 @@
 
 #ifdef ENABLE_PYTHON_CALLBACK
 #include "../python/CallbackFunc.h"
-extern std::vector<CallbackFunc> callbacks_;
 #endif
 
 /******************************************************************************/
