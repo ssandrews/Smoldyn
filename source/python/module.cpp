@@ -1121,18 +1121,6 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("displaySim",
             [](Simulation &sim) { return smolDisplaySim(sim.getSimPtr()); });
 
-#if 0
-    /* Try forwaring to Simulation class */
-    m.def("__getattr__", [](const char *key) {
-        py::print("Accessing ", key);
-        auto obj = py::cast(cursim_);
-        if(py::hasattr(obj, key)) {
-            py::print("    Found. calling ");
-            return py::getattr(obj, key);
-        }
-    });
-#endif
-
     /* Function */
     m.def("loadModel", &init_and_run, "filepath"_a, "flags"_a = "", "wflag"_a = 0,
         "quit_at_end"_a = 1, "Load model from a txt file");
@@ -1141,6 +1129,7 @@ PYBIND11_MODULE(_smoldyn, m)
      *  Miscellaneous  *
      *******************/
     m.def("getVersion", &smolGetVersion);
+    m.def("color2RGBA", &color2RGBA);
 
     /************
      *  Errors  *
