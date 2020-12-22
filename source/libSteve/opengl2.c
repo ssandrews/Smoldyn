@@ -103,7 +103,8 @@ void KeyPush(unsigned char key,int x,int y) {
 	if(key=='Q') {
 		if(Gl2PauseState==2) {
 			if(FreeFunc) (*FreeFunc)(FreePointer);
-			return; }
+                        exit(0);
+			}
 		else Gl2PauseState=2; }
 	else if(key==' ' && Gl2PauseState==0) Gl2PauseState=1;
 	else if(key==' ' && Gl2PauseState==1) Gl2PauseState=0;
