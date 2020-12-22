@@ -14,9 +14,9 @@ red = s.addSpecies("red", difc=dict(all=0.1), color=dict(all="red"))
 green = s.addSpecies("green", difc=dict(all=0.1), color=dict(all="green"))
 blue = s.addSpecies("blue", difc=dict(all=0.1), color=dict(all="blue"))
 
-h1 = smoldyn.Hemisphere(name="h1", center=[-3, 0, 0], radius=2, vector=[1, 0, 0], slices=10, stacks=5)
-h2 = smoldyn.Hemisphere(center=[3, 0, 0], radius=2, vector=[-1, 0, 0], slices=10, stacks=5, name="h2")
-c1 = smoldyn.Cylinder(start=[-3, 0, 0], end=[3, 0, 0], radius=2, slices=10, stacks=5, name="c1")
+h1 = s.addHemisphere(name="h1", center=[-3, 0, 0], radius=2, vector=[1, 0, 0], slices=10, stacks=5)
+h2 = s.addHemisphere(center=[3, 0, 0], radius=2, vector=[-1, 0, 0], slices=10, stacks=5, name="h2")
+c1 = s.addCylinder(start=[-3, 0, 0], end=[3, 0, 0], radius=2, slices=10, stacks=5, name="c1")
 ecoli = s.addSurface("ecoli", panels=[h1, h2, c1])
 ecoli.setStyle("both", drawmode="edge", color="black")
 

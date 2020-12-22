@@ -86,7 +86,7 @@ trans = s.addSpecies("trans", color="red", difc=10000, display_size=2)
 s.addReaction("decay", subs=[trans], prds=[], rate=math.log(2)/20e-3)
 
 # BOUTON
-path = smoldyn.Path2D((1000, 0), (550, 1000), (450, 1000), (0, 0))
+path = s.addPath2D((1000, 0), (550, 1000), (450, 1000), (0, 0))
 bouton_ = s.addSurface("bouton", panels=path.panels)
 bouton_.setStyle('both', color="blue")
 bouton_.setAction('both', [sv], "reflect")

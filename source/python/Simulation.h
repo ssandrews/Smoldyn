@@ -116,7 +116,7 @@ public:
      *
      * @return true.
      */
-    bool setModelpath(const string& modelpath)
+    inline bool setModelpath(const string& modelpath)
     {
         assert(sim_);
         auto p = splitPath(modelpath);
@@ -125,7 +125,7 @@ public:
         return true;
     }
 
-    bool run(double stoptime, double dt, bool display = true, bool overwrite = false)
+    inline ErrorCode runSim(double stoptime, double dt, bool display, bool overwrite)
     {
         ErrorCode er;
 
@@ -167,13 +167,13 @@ public:
         return er;
     }
 
-    ErrorCode runUntil(
-        const double breaktime, const double dt, bool display, bool overwrite = false)
+    inline ErrorCode runUntil(
+        const double breaktime, const double dt, bool display, bool overwrite)
     {
         assert(sim_);
 
         if(!sim_) {
-            if(! initialize()) {
+            if(!initialize()) {
                 cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
                 return ECerror;
             }
@@ -196,8 +196,8 @@ public:
         return smolRunSimUntil(sim_, breaktime);
     }
 
-    bool connect(const py::function& func, const py::object& target, const size_t step,
-        const py::list& args)
+    inline bool connect(const py::function& func, const py::object& target,
+        const size_t step, const py::list& args)
     {
         assert(sim_->ncallbacks < MAX_PY_CALLBACK);
         if(sim_->ncallbacks >= MAX_PY_CALLBACK) {
@@ -219,23 +219,23 @@ public:
     }
 
     // enum ErrorCode smolAddOutputData(simptr sim, char *dataname);
-    ErrorCode addOutputData(char* dataname)
+    inline ErrorCode addOutputData(char* dataname)
     {
         return smolAddOutputData(sim_, dataname);
     }
 
-    ErrorCode addCommand(char type, double on, double off, double step, double multiplier,
-        const char* commandstring)
+    inline ErrorCode addCommand(char type, double on, double off, double step,
+        double multiplier, const char* commandstring)
     {
         return smolAddCommand(sim_, type, on, off, step, multiplier, commandstring);
     }
 
-    ErrorCode addCommandFromString(char* cmd)
+    inline ErrorCode addCommandFromString(char* cmd)
     {
         return smolAddCommandFromString(sim_, cmd);
     }
 
-    ErrorCode setSimTimes(double timestart, double timestop, double timestep)
+    inline ErrorCode setSimTimes(double timestart, double timestop, double timestep)
     {
         return smolSetSimTimes(sim_, timestart, timestop, timestep);
     }

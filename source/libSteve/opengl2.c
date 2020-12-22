@@ -404,7 +404,7 @@ void gl2glutInit(int *argc,char **argv) {
         // When a window is closed by use, return from
         // the main loop and do not terminate the
         // program.
-        glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+        /** glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS); */
         /** glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION); */
 #endif
 	return; }

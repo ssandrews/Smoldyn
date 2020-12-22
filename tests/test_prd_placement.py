@@ -10,7 +10,7 @@ def test_prd_pacement():
     sim.addMolecules(blue,number=100,lowpos=[-5,-5,-5],highpos=[5,5,5])
     sim.addMolecules(red,number=1,pos=[0,0,0])
 
-    s1 = sim.addSurface('membrane',panels=[S.Sphere(center=[0,0,0],radius=10,slices=10,stacks=10)])
+    s1 = sim.addSurface('membrane',panels=[sim.addSphere(center=[0,0,0],radius=10,slices=10,stacks=10)])
     s1.setStyle('both',drawmode='edge',color='green')
     s1.setAction(face='both', species=[blue, red], action='reflect')
 

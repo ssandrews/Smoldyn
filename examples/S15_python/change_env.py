@@ -1,7 +1,7 @@
 # Original author: Upinder Bhalla, NCBS Bangalore
 # Modified by Dilawar Singh for smoldyn integration.
 
-import smoldyn 
+import smoldyn
 import random
 import math
 
@@ -47,7 +47,7 @@ def build_model_smoldyn():
     decay = s.addReaction("decay", subs=[trans], prds=[], rate=math.log(2) / 20e-3)
 
     # BOUTON
-    path = smoldyn.Path2D((1000, 0), (1000, 1000), (0, 1000), (0, 0))
+    path = s.addPath2D((1000, 0), (1000, 1000), (0, 1000), (0, 0))
     bouton_ = s.addSurface("bouton", panels=path.panels)
     bouton_.setStyle('both', color="blue")
     bouton_.setAction('both', [sv], "reflect")

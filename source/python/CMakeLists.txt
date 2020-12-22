@@ -130,5 +130,5 @@ foreach(_pyscript ${TEST_SCRIPTS})
         ${Python3_EXECUTABLE} ${_pyscript}
         WORKING_DIRECTORY ${_test_dir})
     set_tests_properties(${_test_name} PROPERTIES 
-        ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+        ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")
 endforeach()

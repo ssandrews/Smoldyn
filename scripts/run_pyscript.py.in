@@ -2,15 +2,18 @@
 
 import subprocess
 import sys
+import os
 from pathlib import Path
 
 infile = Path(sys.argv[1])
 
 assert infile.exists(), f"{infile} does not exists"
 
+env = {**os.environ, 'SMOLDYN_NO_PROMPT':"1", 'MPLBACKEND':'Agg'}
+
 r = None
 try:
-    r = subprocess.run([sys.executable, str(infile)], timeout=10)
+    r = subprocess.run([sys.executable, str(infile)], timeout=10, env=env)
 except subprocess.TimeoutExpired:
     print("Timeout reached. It is OK")
     quit(0)

@@ -23,12 +23,12 @@ def sim1():
     blue.addToSolution(50, pos=(20, 20))
 
     # Construct a closed path in 2D.
-    p = smoldyn.Path2D((0, 0), (100, 0), (100, 100), (0, 100), closed=True)
+    p = s.addPath2D((0, 0), (100, 0), (100, 100), (0, 100), closed=True)
     walls = s.addSurface("walls", panels=p.panels)
     walls.setAction("both", [red, yellow, blue], "reflect")
     walls.setStyle("both", color="black")
 
-    sph = smoldyn.Sphere(center=(50, 50), radius=20, slices=20)
+    sph = s.addSphere(center=(50, 50), radius=20, slices=20)
     surf = s.addSurface("stick", panels=[sph])
     surf.setRate(red, "fsoln", "front", rate=10, revrate=1)
     surf.setRate(yellow, "bsoln", "back", rate=10, revrate=1)
@@ -58,11 +58,11 @@ def sim2():
     sim.addMolecules(spGreen, 20, highpos=[10, 50, 50])
 
     # Add Surfaces
-    r1 = smoldyn.Rectangle(corner=[100, 0, 0], dimensions=[100, 100], axis="-x")
-    r2 = smoldyn.Rectangle(corner=[0, 0, 0], dimensions=[100, 100], axis="+y")
-    r3 = smoldyn.Rectangle(corner=[0, 100, 0], dimensions=[100, 100], axis="-y")
-    r4 = smoldyn.Rectangle(corner=[0, 0, 0], dimensions=[100, 100], axis="+z")
-    r5 = smoldyn.Rectangle(corner=[0, 0, 100], dimensions=[100, 100], axis="-z")
+    r1 = sim.addRectangle(corner=[100, 0, 0], dimensions=[100, 100], axis="-x")
+    r2 = sim.addRectangle(corner=[0, 0, 0], dimensions=[100, 100], axis="+y")
+    r3 = sim.addRectangle(corner=[0, 100, 0], dimensions=[100, 100], axis="-y")
+    r4 = sim.addRectangle(corner=[0, 0, 0], dimensions=[100, 100], axis="+z")
+    r5 = sim.addRectangle(corner=[0, 0, 100], dimensions=[100, 100], axis="-z")
 
     s1 = sim.addSurface("walls", panels=[r1, r2, r3, r4, r5])
     # s1.both.setStyle(drawmode='edge')
@@ -70,7 +70,7 @@ def sim2():
     s1.setAction("both", [spRed, spGreen], "reflect")
 
     # portsurf
-    rr = smoldyn.Rectangle(corner=[0, 0, 0], dimensions=[100, 100], axis="+x")
+    rr = sim.addRectangle(corner=[0, 0, 0], dimensions=[100, 100], axis="+x")
     portSurf = sim.addSurface("portsurf", panels=[rr])
     portSurf.setStyle("front", drawmode="face", color="gray")
     portSurf.setStyle("back", drawmode="face", color=[0.2, 0, 0, 1])
@@ -78,8 +78,8 @@ def sim2():
     portSurf.setAction("back", [spRed, spGreen], "reflect")
 
     # Ports
-    smoldyn.Port("testport", surface=portSurf, panel="front")
-    # FIXME:
+    sim.addPort(name="testport", surface=portSurf, panel="front")
+
     #  sim.setGraphics("opengl", 20)
     sim.addOutputData("data2")
     sim.addCommand(cmd="molcount data2", cmd_type='E')

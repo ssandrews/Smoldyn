@@ -8,7 +8,7 @@ __author__ = "Dilawar Singh"
 __email__ = "dilawars@ncbs.res.in"
 
 import smoldyn
- 
+
 s = smoldyn.Simulation(low=[0, 0], high=[100, 100])
 red = s.addSpecies("red", color="red", difc=dict(all=3, front=0), display_size=5)
 yellow = s.addSpecies("yellow", color="black", difc=dict(soln=3, back=1), display_size=5)
@@ -19,7 +19,7 @@ yellow.addToSolution(50, pos=(50, 50))
 blue.addToSolution(50, pos=(20, 20))
 
 # Construct a closed path in 2D.
-p = smoldyn.Path2D((0, 0), (100, 0), (100, 100), (0, 100), closed=True)
+p = s.addPath2D((0, 0), (100, 0), (100, 100), (0, 100), closed=True)
 walls = s.addSurface("walls", panels=p.panels)
 walls.setAction('both', [red, yellow, blue], "reflect")
 walls.setStyle('both', color="black")
