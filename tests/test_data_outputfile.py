@@ -4,6 +4,7 @@
 
 import smoldyn as sm
 import numpy as np
+import os.path
 
 def test_data_output():
     s = sm.Simulation(low=[0, 0, 0], high=[100, 100, 100], boundary_type="ppp")
@@ -27,6 +28,10 @@ def test_data_output():
     print("Simulation over")
 
     # Now read the box.dat and verify the results.
+    # On OSX, it may not work. Homebrew python is a shell script which chdir to
+    # script dir before running it. I.e., box.dat would not be found easily.
+    if not os.path.exists('box.dat'):
+        quit(0)
     data = np.loadtxt("box.dat")
     assert data.shape == (11, 4), data.shape
     expected = [50.036, 590.727, 590.727, 409.272]
