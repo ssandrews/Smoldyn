@@ -26,7 +26,7 @@ target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
 
 # A custom target to install dependencies. Useful on various CI
 add_custom_target(install_deps 
-    COMMAND ${Python3_EXECUTABLE} -m pip install pytest wheel numpy setuptools --user
+    COMMAND ${Python3_EXECUTABLE} -m pip install wheel numpy setuptools --user
     COMMENT "Installing Python modules for testing"
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM)
@@ -37,13 +37,13 @@ add_custom_target(install_deps
 # So I let cmake install the dependencies at build time.
 if(WINDOWS_BUILD)
     add_custom_command(TARGET _pysmoldyn PRE_BUILD
-        COMMAND ${Python3_EXECUTABLE} -m pip install pytest wheel numpy setuptools --user
+        COMMAND ${Python3_EXECUTABLE} -m pip install wheel numpy setuptools --user
         COMMENT "Installing build dependencies on Windows"
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
         VERBATIM)
 endif()
 
-pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp Smoldyn.cpp module.cpp)
+pybind11_add_module(_smoldyn MODULE CallbackFunc.cpp module.cpp)
 target_compile_options(_smoldyn PRIVATE 
     -DSMOLDYN_VERSION=${SMOLDYN_VERSION} 
     -DENABLE_PYTHON_CALLBACK 
@@ -130,13 +130,5 @@ foreach(_pyscript ${TEST_SCRIPTS})
         ${Python3_EXECUTABLE} ${_pyscript}
         WORKING_DIRECTORY ${_test_dir})
     set_tests_properties(${_test_name} PROPERTIES 
-        ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR}")
+        ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")
 endforeach()
-
-add_test(NAME pytest 
-    COMMAND 
-    ${Python3_EXECUTABLE} -m pytest --ignore-glob source/pybind11*
-    ${CMAKE_SOURCE_DIR}
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_tests_properties(pytest 
-    PROPERTIES ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")

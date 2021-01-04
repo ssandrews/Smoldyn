@@ -103,7 +103,8 @@ void KeyPush(unsigned char key,int x,int y) {
 	if(key=='Q') {
 		if(Gl2PauseState==2) {
 			if(FreeFunc) (*FreeFunc)(FreePointer);
-			exit(0); }
+                        exit(0);
+			}
 		else Gl2PauseState=2; }
 	else if(key==' ' && Gl2PauseState==0) Gl2PauseState=1;
 	else if(key==' ' && Gl2PauseState==1) Gl2PauseState=0;
@@ -400,6 +401,12 @@ void gl2glutInit(int *argc,char **argv) {
 		glutInit(&defaultc,(char**) defaultv);
 		free(defaultv[0]);
 		free(defaultv); }
+
+        // When a window is closed by use, return from
+        // the main loop and do not terminate the
+        // program.
+        /** glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS); */
+        /** glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION); */
 #endif
 	return; }
 

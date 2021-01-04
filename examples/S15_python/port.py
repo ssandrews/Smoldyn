@@ -1,4 +1,4 @@
-"""Simple bouncing molecules in 3-D system. This file is translated from 
+"""Simple bouncing molecules in 3-D system. This file is translated from
 port.txt file.
 """
 
@@ -19,7 +19,7 @@ spRed.addToSolution(20, highpos=[10, 50, 50])
 # sim.addMolecules(spRed, 20, highpos=[10,50,50])
 
 spGreen = sim.addSpecies("green", color="green", difc=1, display_size=3)
-# spGreen.addToSolution(10)         
+# spGreen.addToSolution(10)
 sim.addMolecules(spGreen, 20, highpos=[10,50,50])
 
 # Add Surfaces
@@ -43,6 +43,6 @@ portSurf.setAction('front', [spRed, spGreen], "port")
 portSurf.setAction('back', [spRed, spGreen], "reflect")
 
 # Ports
-testport = smoldyn.Port("testport", surface=portSurf, panel="front")
+testport = sim.addPort(name="testport", surface=portSurf, panel="front")
 sim.setGraphics("opengl", 20)
 sim.run(dt=0.01, stop=100)
