@@ -1,10 +1,6 @@
 name: Windows Build
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
   build:
@@ -36,6 +32,7 @@ jobs:
 
     - name: Upload to PyPI
       shell: bash
+      if : ${{ github.ref == 'master' }}
       env:
         SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
       run: |
