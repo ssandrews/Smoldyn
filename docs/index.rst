@@ -21,7 +21,6 @@ Welcome to Smoldyn's documentation!
    user/user_manual
    python/api
    developer/index
-   SmolEmulate <other/emulate-doc>
    C/C++ API <doxygen/html/index>
 
 

@@ -16,13 +16,375 @@ Libsmoldyn was originally written as a C API, but one that should work
 with C++ as well. Then, in 2019 and 2020, Dilawar Singh added Python
 bindings to it, which are still quite new but generally work well.
 
-Libsmoldyn only barely supports graphics at present due to constraints
-imposed by the glut code library. This will be improved in a future
-version (by changing to the freeglut library, which doesn’t insist on
-controlling the main event loop, as the glut library does).
+Use with Python
+===============
 
-Linking with C/C++
-==================
+Installing
+----------
+
+It’s best to install Smoldyn twice. First, download the latest package
+from http://www.smoldyn.org and run the install script. This will
+install the stand-alone program, the C/C++ libraries, and the BioNetGen
+code, and will also give you the documentation and example files.
+
+Next, install the Python components from PyPI with:
+
+::
+
+   pip install smoldyn
+
+If this doesn’t work, then a different possibility is:
+
+::
+
+   python3 -m pip install smoldyn --user --pre
+
+Either of these should install the smoldyn nightly package, from:
+https://pypi.org/project/smoldyn/. For Windows, Python is often called
+“py”, so try this if the above doesn’t work (or your computer asks you
+to download Python from the Windows store, which probably isn’t
+necessary). For those who are curious, the “-m” option means to run pip
+as a python module, the “–user” option means to install to the user
+directory, and the “–pre” option means to include pre-release versions.
+Feel free to try more or fewer options, of course. Also, some other
+useful pip options are: “pip uninstall smoldyn”, “pip cache purge” (pip
+installs from its cached version if it already has one, so this is
+useful if you want to force it to download the online version), and “pip
+search smoldyn”.
+
+Alternatively, the Mac distribution, downloaded from
+http://www.smoldyn.org/downloads/ comes with a Python wheel, called
+something like smoldyn-2.62-py3-none-any.whl. After installing with the
+software with the “install.sh” script, you should be able to write “pip
+install smoldyn...whl” and that will install it for you as well.
+
+After installing, it might just run. If not, then the next challenge is
+to get your system to know that it’s allowed to run the files. There are
+a few ways to do this. (1) You can navigate to one directory above where
+the “\__init__.py” file gets stored and work from there. To try this
+out, go there and start Python; then try ``import smoldyn`` and see if
+it works. (2) You can set ``PYTHONPATH`` environment variable to the
+install location. However, this only works for the current command-line
+session and needs to be reset for the next one. To see its current
+value, for Mac or Linux, enter ``echo $PYTHONPATH``. (3) You can modify
+your sys.path variable to include a path to the install location, which
+then lasts for new command-line sessions as well. To see its current
+value, start Python and enter: ``import sys; print(sys.path)``.
+
+Current limitations
+-------------------
+
+The Python interface has a few limitations that users should be aware
+of. We are working on fixing them.
+
+**Rule-based modeling.** Rule-based modeling support, including both
+BioNetGen and Smoldyn wildcards, has not been added to Libsmoldyn yet,
+including its Python API.
+
+**Hybrid simulation**. Smoldyn has built-in support for multiscale
+simulation in which part of the model volume is simulated with
+particle-based methods and part with spatial Gillespie methods. These
+parts are typically adjacent to each other but can also overlap. This
+functionality has not been added to Libsmoldyn yet, including its Python
+API.
+
+**Python quits after simulation if graphics are used.** A particular
+benefit of running Smoldyn through the Python interface is that the
+simulation and data analysis code can be included in the same Python
+file. Unfortunately, Smoldyn displays its graphical output using the
+OpenGL glut library, which never returns control to the calling program
+(Smoldyn) once it has been started. As a result, quitting OpenGL leads
+to a termination of the Python session, so no further Python code gets
+run. The only good solution for now is to display graphics while
+developing a simulation, and then re-run simulations with graphics
+turned off when collecting quantitative data. Note that the random
+number seed can be set to the same value in each case so that the
+simulation will be exactly the same.
+
+**TIFF output doesn’t work on some computers.** For some reason, Smoldyn
+cannot output TIFF files when run through the Python interface, at least
+on some computers. The Smoldyn code itself runs just fine, but it calls
+the ``TIFFOpen`` function in the libtiff library, which somehow refuses
+to open a new TIFF file. Alternative options for exporting graphics are:
+(1) rewrite the model without the Python interface, (2) save the current
+model and state using the savesim command, and then run that using the
+stand-alone Smoldyn software (i.e. the Smoldyn application, without the
+Python interface), (3) pause the simulation and capture the graphics
+using a screen grab, (4) use the VTK graphical output option. Yet
+another option is to convince a Smoldyn developer to add png export
+support for Smoldyn, such as with the “Tiny PNG Output” project, which
+looks fairly easy but hasn’t been done yet.
+
+Python API example
+------------------
+
+The following example, ``template.py``, is from the examples directory
+in the Smoldyn download. It simulates a Michaelis-Menten reaction in
+which substrates and products diffuse freely within a circular membrane
+(it’s simulated in two dimensions, for simplicity) and enzymes are bound
+to the membrane.
+
+::
+
+   """Template for writing Smoldyn model in Python
+
+   Use standard docstring to list basic file information here, including your
+   name, the development date, what this file does, the model name if you want
+   one, units used, the file version, distribution terms, etc.
+
+   Enzymatic reactions on a surface, by Steve Andrews, October 2009. Modified by
+   Dilawar Singh, 2020. This model is in the public domain. Units are microns and seconds.
+   The model was published in Andrews (2012) Methods for Molecular Biology, 804:519.
+   It executes a Michaelis-Menten reaction within and on the surface of a 2D circle.
+   """
+
+   __author__ = "Dilawar Singh"
+   __email__ = "dilawars@ncbs.res.in"
+
+   import smoldyn 
+
+   # Model parameters
+   K_FWD = 0.001    # substrate-enzyme association reaction rate
+   K_BACK = 1       # complex dissociation reaction rate
+   K_PROD = 1       # complex reaction rate to product
+
+   # Simulation starts with declaring a Simulation object with the system boundaries.
+   s = smoldyn.Simulation(low=[-1, -1], high=[1, 1])
+
+   # Molecular species and their properties
+   # Species: S=substrate, E=enzyme, ES=complex, P=product
+   # Type `help(smoldyn.Species)` in Python console to see all parameters.
+   S = s.addSpecies("S", difc=3, color=dict(all="green"), display_size=dict(all=0.02))
+   E = s.addSpecies("E", color=dict(all="darkred"), display_size=dict(all=0.03))
+   P = s.addSpecies("P", difc=3, color=dict(all="darkblue"), display_size=dict(all=0.02))
+   ES = s.addSpecies("ES", color=dict(all="orange"), display_size=dict(all=0.03))
+
+   # Surfaces in and their properties. Each surface requires at least one panel.
+   # Add action to `both` faces for surface. You can also use `front` or `back`
+   # as well. Here, `all` molecules reflect at both surface faces.
+   sph1 = smoldyn.Sphere(center=(0, 0), radius=1, slices=50)
+   membrane = s.addSurface("membrane", panels=[sph1])
+   membrane.setAction('both', [S, E, P, ES], "reflect")
+   membrane.setStyle('both', color="black", thickness=1)
+
+   # Define a compartment, which is region inside the 'membrane' surface.
+   inside = s.addCompartment(name="inside", surface=membrane, point=[0, 0])
+
+   # Chemical reactions. Here, E + S <-> ES -> P
+   r1 = s.addBidirectionalReaction(
+       "r1", subs=[(E,"front"), (S,"bsoln")], prds=[(ES,"front")], kf=K_FWD, kb=K_BACK)
+   r1.reverse.productPlacement("pgemmax", 0.2)
+
+   r2 = s.addReaction(
+       "r2", subs=[(ES, "front")], prds=[(E, "front"), (P, "bsoln")], rate=K_PROD)
+
+   # Place molecules for initial condition
+   inside.addMolecules(S, 500)
+   membrane.addMolecules((E, "front"), 100)
+
+   # Output and other run-time commands
+   s.setOutputFile('templateout.txt', True)
+   s.addCommand(cmd="molcountheader templateout.txt", cmd_type="B")
+   s.addCommand(cmd="molcount templateout.txt", cmd_type="N", step=10)
+
+   s.setGraphics(
+       "opengl_good", bg_color="white", frame_thickness=1,
+       text_display=["time", S, (E, "front"), (ES, "front"), P] )
+   s = s.run(stop=10, dt=0.01)
+
+*1-11.* The file starts with a docstring, which is a useful way to
+provide information about the model, authors, etc. Smoldyn does not
+handle units at all, so it’s the user’s responsibility to make sure that
+all units are consistent with each other. The best approach is simply to
+make sure that all lengths use the same units, such as nanometers or
+microns, and all times use the same units, such as milliseconds. This
+also applies to derived units, such as volumes and rate constants.
+
+*13-14.* Entering the author and email address with double underscores
+follows good Python form.
+
+*16.* Import the Smoldyn Python API with ``import smoldyn``. If you want
+the low-level Python API, then import it with
+``import smoldyn._smoldyn``.
+
+*18-21.* This file defines some variables, which are just regular
+variables and not part of Smoldyn at all. The file uses upper case
+variable names to stay consistent with the stand-alone Smoldyn example
+file with the same name, but this isn’t really the best convention in
+Python.
+
+*23-24.* All models start by creating a Simulation object, which
+includes the boundaries of the system space. The dimensionality of the
+space, whether 1D, 2D, or 3D, is inferred from the number of boundary
+coordinates given. Smoldyn actually tracks molecules outside of this
+volume, too, but it runs most efficiently if most of the action in the
+simulation occurs within the system volume. It’s possible to create
+multiple simulation objects if you want.
+
+*26-32.* Add species to a simulation with *sim*.\ ``addSpecies``. Each
+species is required to have a name. The diffusion coefficient, given
+with ``difc``, defaults to a value of 0, such as for the “E” species.
+The color, which is only used for graphical output, can often be given
+with a simple assignment, such as ``color=’green’``. However, that’s not
+used here because these molecules can have multiple states, including in
+solution or bound to the surface. Instead, the colors are specified here
+with ``dict()`` functions, showing that these colors apply to all of the
+molecule states. Similarly, the ``display_size`` argument is only used
+for graphical output, and is given with ``dict()`` functions here
+because of the multiple states.
+
+*34-40.* This model includes surface, called “membrane”. This surface is
+composed of one circular panel, which is called a sphere here because
+Smoldyn names its panels based on analogous 3D shapes. The panel is
+created first by defining its center and radius. The “slices” parameter
+refers to how many sides should be drawn on the circle for graphical
+output, since Smoldyn doesn’t actually draw perfect circles. Internally,
+a circle or sphere is defined using the mathematical definition of a
+circle or sphere, so it doesn’t have flat sides. Each surface has a
+front and back face; for a spherical panel, as used here, the front face
+is the outside by default. After defining the panel, the code defines a
+surface and the panel is added to it. Then, the surface actions are
+defined, meaning what happens to molecules that diffuse into it. In this
+case, for both the front and back faces of the surface, any molecule of
+the given list of species (which happens to be all of them) is reflected
+back toward where it came from. Finally, the surface drawing style is
+defined, here showing that both the front and back faces should be black
+and have a thickness of 1 pixel.
+
+*42-43.* Compartments are regions of space that are bounded by surfaces,
+in this case “membrane”. Also, they have “interior-defining points”,
+which define which side of the surface represents the inside of the
+compartment.
+
+*45-51.* Chemical reactions have names, substrates, products, and rate
+constants. Here, each of the substrates and products are listed with
+both species and states, although states are assumed to be solution if
+not given. Because the front face of a spherical panel is the outside,
+the fact that the substrates enter from the back side of the surface is
+specified by specifying that they have “bsoln” states, meaning in
+solution on the back side. The products are similar. For reversible
+reactions, there is always some probability that the two product
+molecules of one of the reaction directions will diffuse back together
+and bind back together again, which is called a geminate recombination.
+It’s not essential, but it’s good practice to tell Smoldyn how likely
+this recombination should be. Here, it’s set to a maximum probability of
+0.2, which generally works well.
+
+*53-55.* Add molecules to the simulation with the ``addMolecules``
+function, where its used here both for adding molecules into the
+compartment and onto the surface.
+
+*57-60.* Run-time commands are used for manipulating or observing the
+simulated system as it runs, effectively acting as the experimenter. In
+this case, an output file is declared, called “templateout.txt”. Then,
+right before the simulation runs, given by command type ‘B’, the command
+called “molcountheader” is run with parameter “templateout.txt”, which
+is the file name that it should write to. This prints out a header for
+the molcount command, which is just a list of species names. The other
+command is type ‘N’, which means that it runs every :math:`n` time
+steps, which is this case is every 10 steps. It is the “molcount”
+command with parameter “templateout.txt”, which prints out the number of
+each molecule type to the same file.
+
+*62-64.* Smoldyn run-time graphics show the simulation as it runs,
+always using the OpenGL library. Here, the “opengl_good” method is used,
+which produces nice output but without any lighting effects. The
+background color is white and the frame thickness is 1. Also, this
+statement says to show text on the graphics window listing the time and
+numbers of the different molecule types.
+
+*65.* Finally, the simulation is run, here for 10 time units in steps of
+0.01 time units.
+
+Callback functions
+------------------
+
+Python offers a callback function that enables Smoldyn setup functions
+to be called repeatedly and automatically.
+
+For example, suppose we have the following function, ``computeVm``,
+which generates a noisy value using the current time, ``t``, and a list
+of arguments, ``args``. Also, we have a molecular species, ``ca``. The
+output of the ``computeVm`` function can be connected to the ca.difc
+parameter, which is called every 10th step in this case.
+
+::
+
+   def computeVm(t, args):
+       x, y = args 
+       return math.sin(t) + x * y + random.random()
+   ...
+   import smoldyn
+   sim = smoldyn.simulation(low=[0, 0], high=[10, 10])
+   ca = sim.addSpecies('ca', difc=1, color='blue', display_size=1)
+   ...
+   sim.connect(func = computeVm, target = 'ca.difc', step=10, args=[1,2.1])
+
+Both source and target in the connect function must be global variables.
+In the example below, a global variable is made before it is used it in
+connect because otherwise there would be a runtime error.
+
+::
+
+   import smoldyn
+   import random
+
+   a = None
+
+   def new_dif(t, args):
+       global a
+       x, y = args
+       print(a.difc)
+       return t + random.random()
+
+   def test_connect():
+       global a
+       sim = smoldyn.Simulation(low=(0, 0), high=(10, 10))
+       a = sim.addSpecies('a', color='red', difc=1)
+       sim.connect(func = new_dif, target = 'a.difc', step=10, args=[0, 1])
+       sim.run(100, 1)
+       print('All done')
+
+   test_connect()
+
+The following example shows that connect accepts a function.
+
+::
+
+   def new_dif(t, args):
+       global a, avals
+       x, y = args
+       # note that b.difc is not still updated.
+       avals.append((t, a.difc["soln"]))
+       return x * math.sin(t) + y
+
+   def update_difc(val):
+       global a
+       a.difc = val
+
+   def test_connect():
+       global a, avals
+       sim = smoldyn.Simulation(low=(0, 0), high=(10, 10))
+       a = sim.addSpecies('a', color='black', difc=0.1)
+       sim.connect(new_dif, update_difc, step=10, args=[1, 1])
+       sim.run(100,1)
+       for a, b in zip(avals[1:], expected_a[1:]):
+           print(a, b)
+           assert math.isclose(a[1], b[1], rel_tol=1e-6, abs_tol=1e-6), (a[1], b[1])
+
+   test_connect()
+
+Additional examples of ``connect`` are included in
+examples/S99_more/change_env.py, which simulates a pre-synaptic bouton
+with :math:`N` synaptic vesicles. These vesicles fuse with the bottom of
+the bouton (red surface). Upon fusion, one vesicle releases 1000
+neurotransmitters which decay with time-constant :math:`\tau`. The rate
+of release is controlled by a function that is set by ``connect``. The
+function generates a spike 0 or 1; if the value is 1, the rate is set to
+1000, else it is 0.
+
+Use with C/C++
+==============
 
 Compiling
 ---------
@@ -38,7 +400,9 @@ file that you will need to include. For Mac and Linux, it is typically
 installed to /usr/local/include. This is one of the standard system
 paths, so include it with
 
-   ``#include <libsmoldyn.h>``
+::
+
+   #include <libsmoldyn.h>
 
 If the libsmoldyn.h header file is in some other directory or if your
 system isn’t seeing its path as a system path, then include the file
@@ -132,162 +496,23 @@ Dynamic link, with OpenGL:
 
    ``gcc test1.o -L/usr/local/lib -I/System/Library/Frameworks/OpenGL.framework/Headers -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT -framework OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 -lsmoldyn_shared -ltiff``
 
-Use with Python
-===============
+Memory management
+-----------------
 
-Installing
-----------
+None of the Libsmoldyn functions allocate memory, except within the
+simulation data structure. This means, for example, that all functions
+that return strings do not allocate these strings themselves, but
+instead write the string text to memory that the library user allocated
+and gave to the function. That memory clearly needs to be freed, by the
+library user, when it is done being used. When the simulation is
+complete, the simulation data structure should be freed, which will
+automatically free all substructures in the process.
 
-Hopefully, you should be able to install using
-
-::
-
-   python3 -m pip install smoldyn --user --pre
-
-This should install the smoldyn nightly package, from:
-https://pypi.org/project/smoldyn/
-
-Alternatively, the Mac distribution comes with a Python wheel, called
-something like smoldyn-2.62-py3-none-any.whl. You should be able to
-write “pip install smoldyn...whl” and that will install it for you as
-well.
-
-For Windows, “pip install smoldyn” seems to work initially, but it
-doesn’t install the necessary compiled code, so it doesn’t actually run,
-yet.
-
-Command line flags
-------------------
-
-The Python interface offers the following command line flags:
-
-======================== ====================================
-Flags                    Function
-======================== ====================================
-``input``                Load input file
-``–overwrite``, ``-w``   Overwrite any existing data file
-``–quit-at-end``, ``-q`` Quit when the simulation is complete
-``–args``, ``-A``        Smoldyn command line arguments
-======================== ====================================
-
-Files
------
-
-After building Smoldyn (assuming you were in
-``/path/to/Smoldyn-official/build`` directory when you ran ``make``
-command), the python module ends up in the
-``/path/to/Smoldyn-official/build/py`` directory. The module can be
-imported into Python from this directory. Add this directory to your
-``PYTHONPATH`` temporarily with
-``export PTYHONPATH=/path/to/Smoldyn-official/build/py:$PYTHONPATH``.
-With this, the module can be accessed from any directory.
-
-Note that it’s possible to see where the library is imported from by
-checking ``smoldyn.__file__`` while in Python. For example,
-
-::
-
-   >>> import smoldyn
-   >>> print(smoldyn.__file__)
-   /home/dilawars/Work/FORKES/Smoldyn-official/build/py/smoldyn/__init__.py
-
-Python-specific functionality
------------------------------
-
-Python offers a callback function that enables Smoldyn setup functions
-to be called repeatedly and automatically. Following is the text from
-Dilawar’s description.
-
-Suppose I have the following function which generates a noisy value
-using the current time ``t`` and a list of arguments ``args``.
-
-::
-
-   def computeVm(t, args):
-       x, y = args 
-       return math.sin(t) + x * y + random.random()
-
-And I have a molecular species ``ca``.
-
-::
-
-   import smoldyn
-   ca = smoldyn.Species('ca', difc=1, color='blue', display_size=1)
-
-Then the following connect the output of function computeVm to ca.difc
-parameter. This is called every 10th step.
-
-::
-
-   smoldyn.connect(computeVm, "ca.difc", step=10, args=[1,2.1])
-
-In smoldyn.connect function, both source and target must be global
-variables. In the example below, I made a a global variable before I
-used it in connect. Else there will be a runtime error.
-
-::
-
-   import smoldyn as S
-   import random
-
-   a = None
-
-   def new_dif(t, args):
-       global a
-       x, y = args
-       print(a.difc)
-       return t + random.random()
-
-   def test_connect():
-       global a
-       S.setBounds(low=(0, 0), high=(10, 10))
-       a = S.Species("a", color="red", difc=1)
-       S.connect(new_dif, "a.difc", step=10, args=[0, 1])
-       s = S.Simulation(100, 1)
-       s.run()
-       print("All done")
-
-   test_connect()
-
-Also accepts a function.
-
-::
-
-   def new_dif(t, args):
-       global a, avals
-       x, y = args
-       # note that b.difc is not still updated.
-       avals.append((t, a.difc["soln"]))
-       return x * math.sin(t) + y
-
-   def update_difc(val):
-       global a
-       a.difc = val
-
-   def test_connect():
-       global a, avals
-       S.setBounds(low=(0, 0), high=(10, 10))
-       a = S.Species("a", color="black", difc=0.1)
-       S.connect(new_dif, update_difc, step=10, args=[1, 1])
-       s = S.Simulation(100, 1)
-       s.run()
-       for a, b in zip(avals[1:], expected_a[1:]):
-           print(a, b)
-           assert math.isclose(a[1], b[1], rel_tol=1e-6, abs_tol=1e-6), (a[1], b[1])
-
-   test_connect()
-
-Dilawar created some nice examples of this in use with a pre-synaptic
-bouton with N synaptic vesicles. These vesicles fuse with the bottom of
-the bouton (red surface). Upon fusion, one vesicle releases 1000
-neurotransmitters which decay with time-constant :math:`\tau`.
-
-The rate of release is controlled by a function. This is set by
-smoldyn.connect. The function generates s spike 0 or 1, if the value is
-1 the rate is set to 1000 else it is 0.
+Nearly all strings are fixed at ``STRCHAR`` characters, where this
+constant is defined in string2.h to 256 characters.
 
 Error trapping
-==============
+--------------
 
 Every function in Libsmoldyn checks that its input values are acceptable
 and also that no errors arise in the function execution. These errors
@@ -306,9 +531,10 @@ string. This will also clear the error, if desired. If errors are not
 cleared, they are left until they are overwritten by subsequent errors.
 Warnings are also left until they are cleared or overwritten.
 
-When writing code, it can be helpful to put Libsmoldyn into its
-debugging mode using the ``smolSetDebugMode`` function. Doing this
-causes any errors that arise to be displayed to stderr.
+When writing code that calls Libsmoldyn, it can be helpful to put
+Libsmoldyn into its debugging mode using the ``smolSetDebugMode``
+function. Doing this causes any errors that arise to be displayed to
+stderr.
 
 The possible error codes are declared in libsmoldyn.h with:
 
@@ -354,8 +580,8 @@ Their interpretations are:
 |       |                | possible                                  |
 +-------+----------------+-------------------------------------------+
 
-Error checking system internal to libsmoldyn.c
-----------------------------------------------
+Error checking internal to libsmoldyn.c
+---------------------------------------
 
 This section describes how to write Libsmoldyn functions using error
 checking. While it is an essential part of all Libsmoldyn functions,
@@ -426,378 +652,230 @@ In this particular case, this function permits an input of “all", so it
 clears errors that arise from this return value, and leaves ``i`` as a
 negative value for later use.
 
-Libsmoldyn quick function guide
-===============================
+C/C++ and low-level Python API
+==============================
 
-The Libsmoldyn functions correspond relatively closely to the Smoldyn
+Quick function guide
+--------------------
+
+Most Libsmoldyn functions correspond relatively closely to the Smoldyn
 language statements, although not perfectly. However, all functionality
 should be available using either method. The following table lists the
 correspondences. Statements preceded by asterisks need to be either
 entered in statement blocks or preceded by the statement’s context (e.g.
 with ``surface`` *name*). Where correspondence does not apply, the table
 lists “N/A". The Libsmoldyn functions are available either through the
-C/C++ API or through the Python API, with essentially identical input
-styles. The Python functions listed here use a more object-oriented
-approach. Here, “S” is short for smoldyn, arising for example as
-``import smoldyn as S``.
+C/C++ API or through the low-level Python API, with essentially
+identical input styles.
 
-+----------------------+----------------------+----------------------+
-| Statement            | Libsmoldyn function  | Python function      |
-+======================+======================+======================+
-| **About the input**  |                      |                      |
-+----------------------+----------------------+----------------------+
-| #                    | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| /\* ... \*/          | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| read_file            | ``LoadSimFromFile``  |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``ReadConfigString`` |                      |
-+----------------------+----------------------+----------------------+
-| end_file             | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| define               | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| define_global        | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| undefine             | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| ifdefine             | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| ifundefine           | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| else                 | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| endif                | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| display_define       | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``SetError``         |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetError``         |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``ClearError``       |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``SetDebugMode``     |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | `                    |                      |
-|                      | `ErrorCodeToString`` |                      |
-+----------------------+----------------------+----------------------+
-| **Space and time**   |                      |                      |
-+----------------------+----------------------+----------------------+
-| dim                  | ``NewSim``           |                      |
-+----------------------+----------------------+----------------------+
-| boundaries           | ``NewSim``           |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetBoundaryType``  |                      |
-+----------------------+----------------------+----------------------+
-| low_wall             | ``NewSim``           |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetBoundaryType``  |                      |
-+----------------------+----------------------+----------------------+
-| high_wall            | ``NewSim``           |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetBoundaryType``  |                      |
-+----------------------+----------------------+----------------------+
-| time_start           | ``SetSimTimes``      |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetTimeStart``     |                      |
-+----------------------+----------------------+----------------------+
-| time_stop            | ``SetSimTimes``      |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetTimeStop``      |                      |
-+----------------------+----------------------+----------------------+
-| time_step            | ``SetSimTimes``      |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetTimeStep``      |                      |
-+----------------------+----------------------+----------------------+
-| time_now             | ``SetTimeNow``       |                      |
-+----------------------+----------------------+----------------------+
-| **Molecules**        |                      |                      |
-+----------------------+----------------------+----------------------+
-| species              | ``AddSpecies``       | ``S.Species``        |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetSpeciesIndex``  |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetSpeciesName``   |                      |
-+----------------------+----------------------+----------------------+
-| difc                 | ``                   | *species*\ ``.difc`` |
-|                      | SetSpeciesMobility`` |                      |
-+----------------------+----------------------+----------------------+
-| difm                 | ``                   |                      |
-|                      | SetSpeciesMobility`` |                      |
-+----------------------+----------------------+----------------------+
-| drift                | ``                   |                      |
-|                      | SetSpeciesMobility`` |                      |
-+----------------------+----------------------+----------------------+
-| mol                  | ``Ad                 | *species*            |
-|                      | dSolutionMolecules`` | \ ``.addToSolution`` |
-+----------------------+----------------------+----------------------+
-| surface_mol          | ``A                  |                      |
-|                      | ddSurfaceMolecules`` |                      |
-+----------------------+----------------------+----------------------+
-| compartment_mol      | ``AddCo              |                      |
-|                      | mpartmentMolecules`` |                      |
-+----------------------+----------------------+----------------------+
-| molecule_lists       | ``AddMolList``       |                      |
-+----------------------+----------------------+----------------------+
-| mol_list             | ``AddSpecies``       |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetMolList``       | *spe                 |
-|                      |                      | cies*\ ``.mol_list`` |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetMolListIndex``  |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetMolListName``   |                      |
-+----------------------+----------------------+----------------------+
-| max_mol              | ``SetMaxMolecules``  |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetMoleculeCount`` |                      |
-+----------------------+----------------------+----------------------+
-| **Graphics**         |                      |                      |
-+----------------------+----------------------+----------------------+
-| graphics             | `                    |                      |
-|                      | `SetGraphicsParams`` |                      |
-+----------------------+----------------------+----------------------+
-| graphic_iter         | `                    |                      |
-|                      | `SetGraphicsParams`` |                      |
-+----------------------+----------------------+----------------------+
-| graphic_delay        | `                    |                      |
-|                      | `SetGraphicsParams`` |                      |
-+----------------------+----------------------+----------------------+
-| frame_thickness      | ``SetFrameStyle``    |                      |
-+----------------------+----------------------+----------------------+
-| frame_color          | ``SetFrameStyle``    |                      |
-+----------------------+----------------------+----------------------+
-| grid_thickness       | ``SetGridStyle``     |                      |
-+----------------------+----------------------+----------------------+
-| grid_color           | ``SetGridStyle``     |                      |
-+----------------------+----------------------+----------------------+
-| background_color     | ``                   |                      |
-|                      | SetBackgroundStyle`` |                      |
-+----------------------+----------------------+----------------------+
-| display_size         | ``SetMoleculeStyle`` | *spe                 |
-|                      |                      | cies*\ ``.setStyle`` |
-+----------------------+----------------------+----------------------+
-|                      |                      | *species*\ ``.size`` |
-+----------------------+----------------------+----------------------+
-| color                | ``SetMoleculeStyle`` | *                    |
-|                      |                      | species*\ ``.color`` |
-+----------------------+----------------------+----------------------+
-| tiff_iter            | ``SetTiffParams``    |                      |
-+----------------------+----------------------+----------------------+
-| tiff_name            | ``SetTiffParams``    |                      |
-+----------------------+----------------------+----------------------+
-| tiff_min             | ``SetTiffParams``    |                      |
-+----------------------+----------------------+----------------------+
-| tiff_max             | ``SetTiffParams``    |                      |
-+----------------------+----------------------+----------------------+
-| light                | ``SetLightParams``   |                      |
-+----------------------+----------------------+----------------------+
-| text_color           | ``SetTextStyle``     |                      |
-+----------------------+----------------------+----------------------+
-| text_display         | ``AddTextDisplay``   |                      |
-+----------------------+----------------------+----------------------+
-| **Run-time           |                      |                      |
-| commands**           |                      |                      |
-+----------------------+----------------------+----------------------+
-| output_root          | ``SetOutputPath``    |                      |
-+----------------------+----------------------+----------------------+
-| output_files         | ``AddOutputFile``    |                      |
-+----------------------+----------------------+----------------------+
-| append_files         | ``AddOutputFile``    |                      |
-+----------------------+----------------------+----------------------+
-| output_file_number   | ``AddOutputFile``    |                      |
-+----------------------+----------------------+----------------------+
-| cmd                  | ``AddCommand``       |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``Ad                 |                      |
-|                      | dCommandFromString`` |                      |
-+----------------------+----------------------+----------------------+
-| **Surfaces**         |                      |                      |
-+----------------------+----------------------+----------------------+
-| start_surface        | ``AddSurface``       |                      |
-+----------------------+----------------------+----------------------+
-| new_surface          | ``AddSurface``       |                      |
-+----------------------+----------------------+----------------------+
-| \* name              | ``AddSurface``       |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetSurfaceIndex``  |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetSurfaceName``   |                      |
-+----------------------+----------------------+----------------------+
-| \* action            | ``SetSurfaceAction`` |                      |
-+----------------------+----------------------+----------------------+
-| \* rate              | ``SetSurfaceRate``   |                      |
-+----------------------+----------------------+----------------------+
-| \* rate_internal     | ``SetSurfaceRate``   |                      |
-+----------------------+----------------------+----------------------+
-| \* color             | ``S                  |                      |
-|                      | etSurfaceFaceStyle`` |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``S                  |                      |
-|                      | etSurfaceEdgeStyle`` |                      |
-+----------------------+----------------------+----------------------+
-| \* thickness         | ``S                  |                      |
-|                      | etSurfaceEdgeStyle`` |                      |
-+----------------------+----------------------+----------------------+
-| \* stipple           | ``S                  |                      |
-|                      | etSurfaceEdgeStyle`` |                      |
-+----------------------+----------------------+----------------------+
-| \* polygon           | ``S                  |                      |
-|                      | etSurfaceFaceStyle`` |                      |
-+----------------------+----------------------+----------------------+
-| \* shininess         | ``S                  |                      |
-|                      | etSurfaceFaceStyle`` |                      |
-+----------------------+----------------------+----------------------+
-| \* panel             | ``AddPanel``         |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetPanelIndex``    |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetPanelName``     |                      |
-+----------------------+----------------------+----------------------+
-| \* jump              | ``SetPanelJump``     |                      |
-+----------------------+----------------------+----------------------+
-| \* neighbors         | ``AddPanelNeighbor`` |                      |
-+----------------------+----------------------+----------------------+
-| \* unbounded_emitter | ``AddSurfa           |                      |
-|                      | ceUnboundedEmitter`` |                      |
-+----------------------+----------------------+----------------------+
-| \* end_surface       | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| epsilon              | ``S                  |                      |
-|                      | etSurfaceSimParams`` |                      |
-+----------------------+----------------------+----------------------+
-| margin               | ``S                  |                      |
-|                      | etSurfaceSimParams`` |                      |
-+----------------------+----------------------+----------------------+
-| neighbor_dist        | ``S                  |                      |
-|                      | etSurfaceSimParams`` |                      |
-+----------------------+----------------------+----------------------+
-| **Compartments**     |                      |                      |
-+----------------------+----------------------+----------------------+
-| start_compartment    | ``AddCompartment``   |                      |
-+----------------------+----------------------+----------------------+
-| new_compartment      | ``AddCompartment``   |                      |
-+----------------------+----------------------+----------------------+
-| \* name              | ``AddCompartment``   |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``G                  |                      |
-|                      | etCompartmentIndex`` |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``                   |                      |
-|                      | GetCompartmentName`` |                      |
-+----------------------+----------------------+----------------------+
-| \* surface           | ``Add                |                      |
-|                      | CompartmentSurface`` |                      |
-+----------------------+----------------------+----------------------+
-| \* point             | ``A                  |                      |
-|                      | ddCompartmentPoint`` |                      |
-+----------------------+----------------------+----------------------+
-| \* compartment       | ``A                  |                      |
-|                      | ddCompartmentLogic`` |                      |
-+----------------------+----------------------+----------------------+
-| \* end_compartment   | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| **Reactions**        |                      |                      |
-+----------------------+----------------------+----------------------+
-| reaction             | ``AddReaction``      | ``S.Reaction``       |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetReactionIndex`` |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetReactionName``  |                      |
-+----------------------+----------------------+----------------------+
-| reaction_cmpt        | `                    |                      |
-|                      | `SetReactionRegion`` |                      |
-+----------------------+----------------------+----------------------+
-| reaction_surface     | `                    |                      |
-|                      | `SetReactionRegion`` |                      |
-+----------------------+----------------------+----------------------+
-| reaction_rate        | ``AddReaction``      |                      |
-+----------------------+----------------------+----------------------+
-|                      | ``SetReactionRate``  |                      |
-+----------------------+----------------------+----------------------+
-| confspread_radius    | ``SetReactionRate``  |                      |
-+----------------------+----------------------+----------------------+
-| binding_radius       | ``SetReactionRate``  |                      |
-+----------------------+----------------------+----------------------+
-| reaction_probability | ``SetReactionRate``  |                      |
-+----------------------+----------------------+----------------------+
-| reaction_production  | ``SetReactionRate``  |                      |
-+----------------------+----------------------+----------------------+
-| reaction_permit      | not supported        |                      |
-+----------------------+----------------------+----------------------+
-| reaction_forbid      | not supported        |                      |
-+----------------------+----------------------+----------------------+
-| product_placement    | ``S                  |                      |
-|                      | etReactionProducts`` |                      |
-+----------------------+----------------------+----------------------+
-| **Ports**            |                      |                      |
-+----------------------+----------------------+----------------------+
-| start_port           | ``AddPort``          |                      |
-+----------------------+----------------------+----------------------+
-| new_port             | ``AddPort``          |                      |
-+----------------------+----------------------+----------------------+
-| \* name              | ``AddPort``          |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetPortIndex``     |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetPortName``      |                      |
-+----------------------+----------------------+----------------------+
-| \* surface           | ``AddPort``          |                      |
-+----------------------+----------------------+----------------------+
-| \* face              | ``AddPort``          |                      |
-+----------------------+----------------------+----------------------+
-| \* end_port          | N/A                  |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``AddPortMolecules`` |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``GetPortMolecules`` |                      |
-+----------------------+----------------------+----------------------+
-| **Simulation         |                      |                      |
-| settings**           |                      |                      |
-+----------------------+----------------------+----------------------+
-| rand_seed            | ``SetRandomSeed``    |                      |
-+----------------------+----------------------+----------------------+
-| accuracy             | not supported        |                      |
-+----------------------+----------------------+----------------------+
-| molperbox            | ``SetPartitions``    |                      |
-+----------------------+----------------------+----------------------+
-| boxsize              | ``SetPartitions``    |                      |
-+----------------------+----------------------+----------------------+
-| gauss_table_size     | not supported        |                      |
-+----------------------+----------------------+----------------------+
-| epsilon              | ``S                  |                      |
-|                      | etSurfaceSimParams`` |                      |
-+----------------------+----------------------+----------------------+
-| margin               | ``S                  |                      |
-|                      | etSurfaceSimParams`` |                      |
-+----------------------+----------------------+----------------------+
-| neighbor_dist        | ``S                  |                      |
-|                      | etSurfaceSimParams`` |                      |
-+----------------------+----------------------+----------------------+
-| pthreads             | not supported        |                      |
-+----------------------+----------------------+----------------------+
-| **Libdyn actions**   |                      |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``UpdateSim``        |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``RunTimeStep``      |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``RunSim``           |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``RunSimUntil``      |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``FreeSim``          |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``DisplaySim``       |                      |
-+----------------------+----------------------+----------------------+
-| N/A                  | ``                   |                      |
-|                      | PrepareSimFromFile`` |                      |
-+----------------------+----------------------+----------------------+
-
-Data structures and declarations
-================================
+====================================== ==============================
+Statement                              Function
+====================================== ==============================
+**About the input**                    
+#                                      N/A
+/\* ... \*/                            N/A
+read_file                              ``LoadSimFromFile``
+\                                      ``ReadConfigString``
+end_file                               N/A
+quit_at_end                            
+define                                 N/A
+define_global                          N/A
+undefine                               N/A
+ifdefine                               N/A
+ifundefine                             N/A
+else                                   N/A
+endif                                  N/A
+display_define                         N/A
+variable                               N/A
+N/A                                    ``SetError``
+N/A                                    ``GetError``
+N/A                                    ``ClearError``
+N/A                                    ``SetDebugMode``
+N/A                                    ``ErrorCodeToString``
+**Space and time**                     
+dim                                    ``NewSim``
+boundaries                             ``NewSim``
+\                                      ``SetBoundaryType``
+low_wall                               ``NewSim``
+\                                      ``SetBoundaryType``
+high_wall                              ``NewSim``
+\                                      ``SetBoundaryType``
+time_start                             ``SetSimTimes``
+\                                      ``SetTimeStart``
+time_stop                              ``SetSimTimes``
+\                                      ``SetTimeStop``
+time_step                              ``SetSimTimes``
+\                                      ``SetTimeStep``
+time_now                               ``SetTimeNow``
+**Molecules**                          
+species                                ``AddSpecies``
+species_group                          
+N/A                                    ``GetSpeciesIndex``
+N/A                                    ``GetSpeciesName``
+difc                                   ``SetSpeciesMobility``
+difc_rule                              
+difm                                   ``SetSpeciesMobility``
+difm_rule                              
+drift                                  ``SetSpeciesMobility``
+drift_rule                             
+surface_drift                          
+surface_drift_rule                     
+mol                                    ``AddSolutionMolecules``
+surface_mol                            ``AddSurfaceMolecules``
+compartment_mol                        ``AddCompartmentMolecules``
+molecule_lists                         ``AddMolList``
+mol_list                               ``AddSpecies``
+\                                      ``SetMolList``
+mol_list_rule                          
+N/A                                    ``GetMolListIndex``
+N/A                                    ``GetMolListName``
+max_mol                                ``SetMaxMolecules``
+N/A                                    ``GetMoleculeCount``
+**Graphics**                           
+graphics                               ``SetGraphicsParams``
+graphic_iter                           ``SetGraphicsParams``
+graphic_delay                          ``SetGraphicsParams``
+quit_at_end                            
+frame_thickness                        ``SetFrameStyle``
+frame_color                            ``SetFrameStyle``
+grid_thickness                         ``SetGridStyle``
+grid_color                             ``SetGridStyle``
+background_color                       ``SetBackgroundStyle``
+display_size                           ``SetMoleculeStyle``
+color                                  ``SetMoleculeStyle``
+tiff_iter                              ``SetTiffParams``
+tiff_name                              ``SetTiffParams``
+tiff_min                               ``SetTiffParams``
+tiff_max                               ``SetTiffParams``
+light                                  ``SetLightParams``
+text_color                             ``SetTextStyle``
+text_display                           ``AddTextDisplay``
+**Run-time commands**                  
+output_root                            ``SetOutputPath``
+output_files                           ``AddOutputFile``
+output_data                            
+output_precision                       
+append_files                           ``AddOutputFile``
+output_file_number                     ``AddOutputFile``
+output_format                          
+cmd                                    ``AddCommand``
+\                                      ``AddCommandFromString``
+**Surfaces**                           
+start_surface                          ``AddSurface``
+new_surface                            ``AddSurface``
+\* name                                ``AddSurface``
+N/A                                    ``GetSurfaceIndex``
+N/A                                    ``GetSurfaceName``
+\* action                              ``SetSurfaceAction``
+\* action_rule                         
+\* rate                                ``SetSurfaceRate``
+\* rate_rule                           
+\* rate_internal                       ``SetSurfaceRate``
+\* rate_internal_rule                  
+\* neighbor_action                     
+\* color                               ``SetSurfaceFaceStyle``
+\                                      ``SetSurfaceEdgeStyle``
+\* thickness                           ``SetSurfaceEdgeStyle``
+\* stipple                             ``SetSurfaceEdgeStyle``
+\* polygon                             ``SetSurfaceFaceStyle``
+\* shininess                           ``SetSurfaceFaceStyle``
+\* panel                               ``AddPanel``
+N/A                                    ``GetPanelIndex``
+N/A                                    ``GetPanelName``
+\* jump                                ``SetPanelJump``
+\* neighbors                           ``AddPanelNeighbor``
+\* unbounded_emitter                   ``AddSurfaceUnboundedEmitter``
+\* end_surface                         N/A
+epsilon                                ``SetSurfaceSimParams``
+margin                                 ``SetSurfaceSimParams``
+neighbor_dist                          ``SetSurfaceSimParams``
+**Compartments**                       
+start_compartment                      ``AddCompartment``
+new_compartment                        ``AddCompartment``
+\* name                                ``AddCompartment``
+N/A                                    ``GetCompartmentIndex``
+N/A                                    ``GetCompartmentName``
+\* surface                             ``AddCompartmentSurface``
+\* point                               ``AddCompartmentPoint``
+\* compartment                         ``AddCompartmentLogic``
+\* end_compartment                     N/A
+**Reactions**                          
+reaction                               ``AddReaction``
+N/A                                    ``GetReactionIndex``
+N/A                                    ``GetReactionName``
+reaction compartment=...               ``SetReactionRegion``
+reaction surface=...                   ``SetReactionRegion``
+reaction_rule                          
+reaction_rate                          ``AddReaction``
+\                                      ``SetReactionRate``
+reaction_multiplicity                  
+confspread_radius                      ``SetReactionRate``
+binding_radius                         ``SetReactionRate``
+reaction_probability                   ``SetReactionRate``
+reaction_chi                           
+reaction_production                    ``SetReactionRate``
+product_placement                      ``SetReactionProducts``
+expand_rules                           
+reaction_serialnum                     
+reaction_intersurface                  
+reaction_log                           
+reaction_log_off                       
+**Ports**                              
+start_port                             ``AddPort``
+new_port                               ``AddPort``
+\* name                                ``AddPort``
+N/A                                    ``GetPortIndex``
+N/A                                    ``GetPortName``
+\* surface                             ``AddPort``
+\* face                                ``AddPort``
+\* end_port                            N/A
+N/A                                    ``AddPortMolecules``
+N/A                                    ``GetPortMolecules``
+**Rule-based modeling with BioNetGen** 
+start_bng                              
+end_bng                                
+name                                   
+BNG2_path                              
+multiply unimolecular_rate             
+multiply bimolcular_rate               
+monomer                                
+monomers                               
+monomer_difc                           
+monomer_display_size                   
+monomer_color                          
+monomer_state                          
+expand_rules                           
+**Lattices**                           
+start_lattice                          
+\* name                                
+\* type                                
+\* port                                
+\* boundaries                          
+\* lengthscale                         
+\* species                             
+\* make_particle                       
+\* reaction                            
+\* reaction move                       
+\* mol                                 
+\* end_lattice                         
+**Simulation settings**                
+random_seed                            ``SetRandomSeed``
+accuracy                               not supported
+molperbox                              ``SetPartitions``
+boxsize                                ``SetPartitions``
+gauss_table_size                       not supported
+epsilon                                ``SetSurfaceSimParams``
+margin                                 ``SetSurfaceSimParams``
+neighbor_dist                          ``SetSurfaceSimParams``
+**Libsmoldyn actions**                 
+N/A                                    ``UpdateSim``
+N/A                                    ``RunTimeStep``
+N/A                                    ``RunSim``
+N/A                                    ``RunSimUntil``
+N/A                                    ``FreeSim``
+N/A                                    ``DisplaySim``
+N/A                                    ``PrepareSimFromFile``
+====================================== ==============================
 
 Enumerations
 ------------
@@ -899,40 +977,12 @@ N/A       ECsame     same     value -11
 N/A       ECwildcard wildcard value -12
 ========= ========== ======== =========
 
-Libsmoldyn header file
-----------------------
-
-The Libsmoldyn header file is libsmoldyn.h. It lists all of the function
-declarations. This file references smoldyn.h, which lists all of the
-data structure declarations and enumerated type definitions.
-
-If you compiled and installed Smoldyn using the default configuration,
-both files should be in your /usr/local/include/smoldyn directory. Also
-in this directory is the smoldyn_config.h file. This file was used for
-compiling Smoldyn and Libsmoldyn but is not needed afterwards.
-Nevertheless, it’s copied to the /usr/local/include/smoldyn directory so
-that programs that call Libsmoldyn can know what options Libsmoldyn was
-built with.
-
-Libsmoldyn functions
-====================
-
-General comments
-----------------
-
-None of the functions allocate memory, except within the simulation data
-structure. This means, for example, that all functions that return
-strings do not allocate these strings themselves, but instead write the
-string text to memory that the library user allocated and gave to the
-function. All strings are fixed at ``STRCHAR`` characters, where this
-constant is defined in string2.h to 256 characters.
-
 Miscellaneous
 -------------
 
 GetVersion
    | 
-   | C: ``double smolGetVersion(void)``
+   | C/C++: ``double smolGetVersion(void)``
    | Python: ``float getVersion()``
    | Returns the Smoldyn version number.
 
@@ -941,9 +991,9 @@ Errors
 
 SetError
    | 
-   | C:
+   | C/C++:
      ``void smolSetError(const char *errorfunction, enum ErrorCode errorcode, const char *errorstring)``
-   | C:
+   | C/C++:
      ``void smolSetErrorNT(const char *errorfunction, enum ErrorCode errorcode, const char *errorstring)``
    | Python: N/A
    | These functions are probably not useful for most users. Sets the
@@ -970,7 +1020,7 @@ SetError
 
 GetError
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolGetError(char *errorfunction, char *errorstring, int clearerror)``
    | Python: N/A
    | Returns the current LibSmoldyn error code directly, returns the
@@ -981,13 +1031,13 @@ GetError
 
 ClearError
    | 
-   | C: ``void smolClearError(void)``
+   | C/C++: ``void smolClearError(void)``
    | Python: N/A
    | Clears any error condition.
 
 SetDebugMode
    | 
-   | C: ``void smolSetDebugMode(int debugmode)``
+   | C/C++: ``void smolSetDebugMode(int debugmode)``
    | Python: ``setDebugMode(int debugmode)``
    | Enter ``debugmode`` as 1 to enable debugging and 0 to disable
      debugging. When debug mode is turned on, all errors are displayed
@@ -997,7 +1047,7 @@ SetDebugMode
 
 ErrorCodeToString
    | 
-   | C:
+   | C/C++:
      ``char* smolErrorCodeToString(enum ErrorCode erc, char *string)``
    | Python: ``str errorCodeToString(enum ErrorCode erc, str string)``
    | Returns a string both directly and in ``string`` that corresponds
@@ -1010,32 +1060,33 @@ Sim structure
 
 NewSim
    | 
-   | C:
-     ``simptr smolNewSim(int dim, double *lowbounds, double *highbounds)``
+   | Python: *sim* =
+     ``Simulation(low = List[float],high = List[float])``
    | Python:
      ``simptr newSim(int dim, List[float] lowbounds, List[float] highbounds)``
+   | C/C++:
+     ``simptr smolNewSim(int dim, double *lowbounds, double *highbounds)``
    | Creates and returns a new sim structure. The structure is
      initialized for a ``dim`` dimensional system that has boundaries
      defined by the points ``lowbounds`` and ``highbounds``. Boundaries
      are transmitting (modify them with ``smolSetBoundaryType``).
      Returns ``NULL`` upon failure.
-   | **Python to do:** there’s no need for the dim parameter because
-     it’s redundant with vector lengths.
 
 UpdateSim
    | 
-   | C: ``enum ErrorCode smolUpdateSim(simptr sim)``
+   | Python: N/A
    | Python: ``ErrorCode updateSim()``
+   | C/C++: ``enum ErrorCode smolUpdateSim(simptr sim)``
    | Updates the simulation structure. This calculates all simulation
      parameters from physical parameters, sorts lists, and generally
      does everything required to make a simulation ready to run. It may
      be called multiple times.
-   | **Python to do:** doesn’t work. Python wants no argument, but
-     Libsmoldyn then complains about no argument.
+   | **Python low-level to do:** doesn’t work. Python wants no argument,
+     but Libsmoldyn then complains about no argument.
 
 RunTimeStep
    | 
-   | C: ``enum ErrorCode smolRunTimeStep(simptr sim)``
+   | C/C++: ``enum ErrorCode smolRunTimeStep(simptr sim)``
    | Python: ``ErrorCode runTimeStep()``
    | Runs one time step of the simulation. Returns an error if the
      simulation terminates unexpectedly during this time step or a
@@ -1045,7 +1096,7 @@ RunTimeStep
 
 RunSim
    | 
-   | C: ``enum ErrorCode smolRunSim(simptr sim)``
+   | C/C++: ``enum ErrorCode smolRunSim(simptr sim)``
    | Python: ``ErrorCode runSim()``
    | Python: ``run(stop=None, start=None, step=None)``
    | Runs the simulation until it terminates. Returns an error if the
@@ -1056,7 +1107,8 @@ RunSim
 
 RunSimUntil
    | 
-   | C: ``enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)``
+   | C/C++:
+     ``enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)``
    | Python: ``ErrorCode runSimUntil(float breaktime)``
    | Python: ``runUntil(t, dt)``
    | Runs the simulation either until it terminates or until the
@@ -1066,13 +1118,13 @@ RunSimUntil
 
 FreeSim
    | 
-   | C: ``enum ErrorCode smolFreeSim(simptr sim)``
+   | C/C++: ``enum ErrorCode smolFreeSim(simptr sim)``
    | Python: ``ErrorCode freeSim()``
    | Frees the simulation data structure.
 
 DisplaySim
    | 
-   | C: ``enum ErrorCode smolDisplaySim(simptr sim)``
+   | C/C++: ``enum ErrorCode smolDisplaySim(simptr sim)``
    | Python: ``ErrorCode displaySim()``
    | Displays all relevant information about the simulation system to
      stdout.
@@ -1082,7 +1134,7 @@ Read configuration file
 
 PrepareSimFromFile
    | 
-   | C:
+   | C/C++:
      ``simptr smolPrepareSimFromFile(char *filepath, char *filename, char *flags)``
    | Python: ``simptr prepareSimFromFile(str filename, str flags)``
    | Reads the Smoldyn configuration file that is at ``filepath`` and
@@ -1096,7 +1148,7 @@ PrepareSimFromFile
 
 LoadSimFromFile
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolLoadSimFromFile(char *filepath, char *filename, simptr *simpointer, char *flags)``
    | Python: ``ErrorCode loadSimFromFile(str filename, str flags)``
    | Loads part or all of a sim structure from the file that is at
@@ -1111,7 +1163,7 @@ LoadSimFromFile
 
 ReadConfigString
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolReadConfigString(simptr sim, char *statement, char *parameters)``
    | Python:
      ``ErrorCode readConfigString(str statement, str parameters)``
@@ -1131,7 +1183,7 @@ Simulation settings
 
 SetSimTimes
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetSimTimes(simptr sim, double timestart, double timestop, double timestep)``
    | Python:
      ``ErrorCode setSimTimes(float timestart, float timestop, float timestep)``
@@ -1141,32 +1193,36 @@ SetSimTimes
 
 SetTimeStart
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetTimeStart(simptr sim, double timestart)``
    | Python: ``ErrorCode setTimeStart(float timestart)``
    | Sets the simulation starting time.
 
 SetTimeStop
    | 
-   | C: ``enum ErrorCode smolSetTimeStop(simptr sim, double timestop)``
+   | C/C++:
+     ``enum ErrorCode smolSetTimeStop(simptr sim, double timestop)``
    | Python: ``ErrorCode setTimeStop(float timestop)``
    | Sets the simulation stopping time.
 
 SetTimeNow
    | 
-   | C: ``enum ErrorCode smolSetTimeNow(simptr sim, double timenow)``
+   | C/C++:
+     ``enum ErrorCode smolSetTimeNow(simptr sim, double timenow)``
    | Python: ``ErrorCode setTimeNow(float timenow)``
    | Sets the simulation current time.
 
 SetTimeStep
    | 
-   | C: ``enum ErrorCode smolSetTimeStep(simptr sim, double timestep)``
+   | C/C++:
+     ``enum ErrorCode smolSetTimeStep(simptr sim, double timestep)``
    | Python: ``ErrorCode setTimeStep(float timestep)``
    | Sets the simulation time step, which must be greater than 0.
 
 SetRandomSeed
    | 
-   | C: ``enum ErrorCode smolSetRandomSeed(simptr sim, double seed)``
+   | C/C++:
+     ``enum ErrorCode smolSetRandomSeed(simptr sim, double seed)``
    | Python: ``ErrorCode setRandomSeed(int seed)``
    | Sets the random number generator seed to ``seed`` if ``seed`` is at
      least 0, and sets it to the current time value if ``seed`` is less
@@ -1174,13 +1230,13 @@ SetRandomSeed
 
 SetAccuracy
    | 
-   | C: not supported
+   | C/C++: not supported
    | Python: ``accuracy(accuracy: float)``
    | Sets or gets the simulation accuracy.
 
 SetPartitions
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetPartitions(simptr sim, char *method, double value)``
    | Python: ``ErrorCode setPartitions(str method, float value)``
    | Python: ``Partition(name: str, value: float)``
@@ -1215,7 +1271,7 @@ Graphics
 
 SetGraphicsParams
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetGraphicsParams(simptr sim, char *method, int timesteps, double delay)``
    | Python:
      ``ErrorCode setGraphicsParams(str method, int timesteps, int delay)``
@@ -1235,7 +1291,7 @@ SetGraphicsParams
 
 SetTiffParams
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetTiffParams(simptr sim, int timesteps, char *tiffname, int lowcount, int highcount)``
    | Python:
      ``ErrorCode setTiffParams(int timesteps, str tiffname, int lowcount, int highcount)``
@@ -1252,7 +1308,7 @@ SetTiffParams
 
 SetLightParams
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double *ambient, double *diffuse, double *specular, double *position)``
    | Python:
      ``ErrorCode smolSetLightParams(int lightindex, List[float] ambient, List[float] diffuse, List[float] specular, List[float] position)``
@@ -1268,7 +1324,7 @@ SetLightParams
 
 SetBackgroundStyle
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color)``
    | Python: ``ErrorCode setBackgroundStyle(string color)``
    | Sets the color of the graphics display background. ``color`` is a
@@ -1277,7 +1333,7 @@ SetBackgroundStyle
 
 SetFrameStyle
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetFrameStyle(simptr sim, double thickness, double *color)``
    | Python: ``ErrorCode setFrameStyle(float thickness, string color)``
    | Sets the thickness and the color of the wire frame that outlines
@@ -1289,7 +1345,7 @@ SetFrameStyle
 
 SetGridStyle
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetGridStyle(simptr sim, double thickness, double *color)``
    | Python: ``ErrorCode setGridStyle(float thickness, string color)``
    | Sets the thickness and the color of a grid that shows where the
@@ -1301,7 +1357,8 @@ SetGridStyle
 
 SetTextStyle
    | 
-   | C: ``enum ErrorCode smolSetTextStyle(simptr sim, double *color)``
+   | C/C++:
+     ``enum ErrorCode smolSetTextStyle(simptr sim, double *color)``
    | Python: ``ErrorCode setTextStyle(string color)``
    | Sets the color of any text that is displayed to the graphics
      window. ``color`` is a 4-value vector with red, green, blue, and
@@ -1309,7 +1366,8 @@ SetTextStyle
 
 AddTextDisplay
    | 
-   | C: ``enum ErrorCode smolAddTextDisplay(simptr sim, char *item)``
+   | C/C++:
+     ``enum ErrorCode smolAddTextDisplay(simptr sim, char *item)``
    | Python: ``ErrorCode addTextDisplay(string item)``
    | Adds ``item`` to the list of things that Smoldyn should display as
      text to the graphics window. Currently supported options are “time"
@@ -1321,13 +1379,13 @@ Runtime commands
 
 SetOutputPath
    | 
-   | C: ``enum ErrorCode smolSetOutputPath(simptr sim, char *path)``
+   | C/C++: ``enum ErrorCode smolSetOutputPath(simptr sim, char *path)``
    | Python: ``ErrorCode setOutputPath(string path)``
    | Sets the file path for text output files to ``path``.
 
 AddOutputFile
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suffix, int append)``
    | Python:
      ``ErrorCode addOutputFile(string filename, int suffix, int append)``
@@ -1339,9 +1397,18 @@ AddOutputFile
      simply be appended, or to 0 if any current file should be
      overwritten.
 
+AddOutputData
+   | 
+   | C/C++:
+     ``enum ErrorCode smolAddOutputData(simptr sim, char *dataname)``
+   | Python: ``ErrorCode addOutputData(string dataname)``
+   | Declares the data table called ``dataname``, enabling output into
+     it by one or more runtime commands. Spaces are not permitted in the
+     data name.
+
 OpenOutputFiles
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)``
    | Opens output files for writing. Enter ``overwrite`` as 1 if any
      existing file should be overwritten. If ``overwrite`` is 0 and a
@@ -1351,7 +1418,7 @@ OpenOutputFiles
 
 AddCommand
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddCommand(simptr sim, char type, double on, double off, double step, double multiplier, char *commandstring)``
    | Python:
      ``ErrorCode addCommand(string type, float on, float off, float step, float multiplier, string commandstring)``
@@ -1427,7 +1494,7 @@ AddCommand
 
 AddCommandFromString
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddCommandFromString(simptr sim, char *string)``
    | Python: ``ErrorCode addCommandFromString(str string)``
    | Defines a runtime command, including its execution timing
@@ -1435,16 +1502,37 @@ AddCommandFromString
      identical to ones used in configuration files, except that they do
      not include the “cmd" statement.
 
+getOutputData
+   | 
+   | C/C++:
+     ``enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,char *array,int erase)``
+   | Python: vector<vector<double>> getOutputData(str dataname, bool
+     erase)
+   | Returns data that have been recorded by an observation command
+     (e.g. molcount). Send in the name of the data in ``dataname`` and
+     pointers to variables that will receive the data in: ``nrow``, for
+     the number of rows, ``ncol``, for the number of columns, and
+     ``array``, for the data themselves. The data are copied over in
+     this function from the original into the array that is returned,
+     with the result that the data in the array can be modified as
+     desired. *The array needs to be freed by the host code.* All values
+     in this data table are doubles, which is appropriate for some
+     things but not so good for things like species names and molecule
+     states. The array represents a 2D table as a single vector so to
+     read the item at row ``i`` and column ``j``, use
+     ``array[i*ncol+j]``. Set ``erase`` to 1 for the original data to be
+     cleared after it is copied over.
+
 Molecules
 ---------
 
 AddSpecies
    | 
-   | C:
-     ``enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)``
-   | Python: ``ErrorCode addSpecies(str species, str mollist)``
    | Python:
-     ``Species name: str, state: str = "soln", color: T.Color = "", difc: float = 0.0, display_size: int = 2, mol_list: str = ""``
+     *sim.*\ ``addSpecies(name: str, state: str = "soln", color: T.Color = "", difc: float = 0.0, display_size: int = 2, mol_list: str = ""``
+   | Python: ``ErrorCode addSpecies(str species, str mollist)``
+   | C/C++:
+     ``enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)``
    | Adds a molecular species named ``species`` to the system. If you
      have already created species lists and want all states of this
      species to live in a specific list, then enter it in ``mollist``;
@@ -1453,8 +1541,8 @@ AddSpecies
 
 GetSpeciesIndex
    | 
-   | C: ``int smolGetSpeciesIndex(simptr sim, char *species)``
-   | C: ``int smolGetSpeciesIndexNT(simptr sim, char *species)``
+   | C/C++: ``int smolGetSpeciesIndex(simptr sim, char *species)``
+   | C/C++: ``int smolGetSpeciesIndexNT(simptr sim, char *species)``
    | Python: ``int getSpeciesIndex(str species)``
    | Returns the species index that corresponds to the species named
      ``species``. Upon failure, this function returns an error code cast
@@ -1463,7 +1551,7 @@ GetSpeciesIndex
 
 GetSpeciesName
    | 
-   | C:
+   | C/C++:
      ``char* smolGetSpeciesName(simptr sim, int speciesindex, char *species)``
    | Python: ``str getSpeciesName(int speciesindex, str species)``
    | Returns the species name that corresponds to the species index in
@@ -1473,7 +1561,7 @@ GetSpeciesName
 
 SetSpeciesMobility
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetSpeciesMobility(simptr sim, char *species, enum MolecState state, double difc, double *drift, double *difmatrix)``
    | Python:
      ``ErrorCode setSpeciesMobility(str species, MolecState state, float difc, List[float] drift, List[float] difmatrix)``
@@ -1491,14 +1579,14 @@ SetSpeciesMobility
 
 AddMolList
    | 
-   | C: ``int smolAddMolList(simptr sim, char *mollist)``
+   | C/C++: ``int smolAddMolList(simptr sim, char *mollist)``
    | Python: ``int addMolList(str mollist)``
    | Adds a new molecule list, named ``mollist``, to the system.
 
 GetMolListIndex
    | 
-   | C: ``int smolGetMolListIndex(simptr sim, char *mollist)``
-   | C: ``int smolGetMolListIndexNT(simptr sim, char *mollist)``
+   | C/C++: ``int smolGetMolListIndex(simptr sim, char *mollist)``
+   | C/C++: ``int smolGetMolListIndexNT(simptr sim, char *mollist)``
    | Python: ``int getMolListIndex(str mollist)``
    | Returns the list index that corresponds to the list named
      ``mollist``. The “NT” version is identical but doesn’t throw
@@ -1506,7 +1594,7 @@ GetMolListIndex
 
 GetMolListName
    | 
-   | C:
+   | C/C++:
      ``char* smolGetMolListName(simptr sim, int mollistindex, char *mollist)``
    | Python: ``str getMolListName(int mollistindex, str mollist)``
    | Returns the molecule list name that corresponds to the molecule
@@ -1515,7 +1603,7 @@ GetMolListName
 
 SetMolList
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetMolList(simptr sim, char *species, enum MolecState state, char *mollist)``
    | Python:
      ``ErrorCode setMolList(str species, MolecState state, str mollist)``
@@ -1528,7 +1616,7 @@ SetMolList
 
 SetMaxMolecules
    | 
-   | C: ``smolSetMaxMolecules(simptr sim, int maxmolecules)``
+   | C/C++: ``smolSetMaxMolecules(simptr sim, int maxmolecules)``
    | Python: ``setMaxMolecules(int maxmolecules)``
    | Sets the maximum number of molecules that can simultaneously exist
      in a system to ``maxmolecules``. At present, this function needs to
@@ -1537,7 +1625,7 @@ SetMaxMolecules
 
 AddSolutionMolecules
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddSolutionMolecules(simptr sim, char *species, int number, double *lowposition, double *highposition)``
    | Python:
      ``ErrorCode addSolutionMolecules(str species, int number, List[float] lowposition, List[float] highposition)``
@@ -1554,7 +1642,7 @@ AddSolutionMolecules
 
 AddCompartmentMolecules
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddCompartmentMolecules(simptr sim, char *species, int number, char *compartment)``
    | Python:
      ``ErrorCode addCompartmentMolecules(str species, int number, str compartment)``
@@ -1564,7 +1652,7 @@ AddCompartmentMolecules
 
 AddSurfaceMolecules
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddSurfaceMolecules(simptr sim, int speciesindex, enum MolecState state, int number, int surface, enum PanelShape panelshape, int panel, double *position)``
    | Python:
      ``ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)``
@@ -1577,7 +1665,7 @@ AddSurfaceMolecules
 
 GetMoleculeCount
    | 
-   | C:
+   | C/C++:
      ``int smolGetMoleculeCount(simptr sim, char *species, enum MolecState state)``
    | Python: ``int getMoleculeCount(str species, MolecState state)``
    | Returns the total number of molecules in the system that have
@@ -1587,17 +1675,17 @@ GetMoleculeCount
 
 SetMoleculeColor
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double *color)``
 
 SetMoleculeSize
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size)``
 
 SetMoleculeStyle
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size, double *color)``
    | Python:
      ``ErrorCode setMoleculeStyle(str species, MolecState state, float size, List[float] color)``
@@ -1626,7 +1714,7 @@ Boundaries
 
 SetBoundaryType
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetBoundaryType(simptr sim, int dimension, int highside, char type)``
    | Python:
      ``ErrorCode setBoundaryType(int dimension, int highside, str type)``
@@ -1642,14 +1730,14 @@ SetBoundaryType
 
 AddSurface
    | 
-   | C: ``int smolAddSurface(simptr sim, char *surface)``
+   | C/C++: ``int smolAddSurface(simptr sim, char *surface)``
    | Python: ``int addSurface(str surface)``
    | Adds a surface called ``surface`` to the system.
 
 GetSurfaceIndex
    | 
-   | C: ``int smolGetSurfaceIndex(simptr sim, char *surface)``
-   | C: ``int smolGetSurfaceIndexNT(simptr sim, char *surface)``
+   | C/C++: ``int smolGetSurfaceIndex(simptr sim, char *surface)``
+   | C/C++: ``int smolGetSurfaceIndexNT(simptr sim, char *surface)``
    | Python: ``int getSurfaceIndex(str surface)``
    | Returns the surface index that corresponds to the surface named
      ``surface``. The index is non-negative. On failure, this returns an
@@ -1659,7 +1747,7 @@ GetSurfaceIndex
 
 GetSurfaceName
    | 
-   | C:
+   | C/C++:
      ``char* smolGetSurfaceName(simptr sim, int surfaceindex, char *surface)``
    | Python: ``str getSurfaceName(int surfaceindex, str surface)``
    | Returns the surface name for surface number ``surfaceindex`` both
@@ -1668,7 +1756,7 @@ GetSurfaceName
 
 SetSurfaceAction
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetSurfaceAction(simptr sim, char *surface, enum PanelFace face, char *species, enum MolecState state, enum SrfAction action, char *newspecies)``
    | Python:
      ``ErrorCode setSurfaceAction(str surface, PanelFace face, str species, MolecState state, SrfAction action)``
@@ -1684,7 +1772,7 @@ SetSurfaceAction
 
 SetSurfaceRate
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetSurfaceRate(simptr sim, char *surface, char *species, enum MolecState state, enum MolecState state1, enum MolecState state2, double rate, char *newspecies, int isinternal)``
    | Python:
      ``ErrorCode setSurfaceRate(str surface, str species, MolecState state, MolecState state1, MolecState state2, float rate, str newspecies, int isinternal)``
@@ -1734,7 +1822,7 @@ SetSurfaceRate
 
 AddPanel
    | 
-   | C:
+   | C/C++:
      ``int smolAddPanel(simptr sim, char *surface, enum PanelShape panelshape, char *panel, char *axisstring, double *params)``
    | Python:
      ``int addPanel(str surface, PanelShape panelshape, str panel, str axisstring, List[float] params)``
@@ -1779,9 +1867,9 @@ AddPanel
 
 GetPanelIndex
    | 
-   | C:
+   | C/C++:
      ``int smolGetPanelIndex(simptr sim, char *surface, enum PanelShape *panelshapeptr, char *panel)``
-   | C:
+   | C/C++:
      ``int smolGetPanelIndexNT(simptr sim, char *surface, enum PanelShape *panelshapeptr, char *panel)``
    | Python:
      ``int getPanelIndex(str surface, PanelShape *panelshapeptr, str panel)``
@@ -1794,7 +1882,7 @@ GetPanelIndex
 
 GetPanelName
    | 
-   | C:
+   | C/C++:
      ``char* smolGetPanelName(simptr sim, char *surface, enum PanelShape panelshape, int panelindex, char *panel)``
    | Python:
      ``str getPanelName(str surface, PanelShape panelshape, int panelindex, str panel)``
@@ -1804,7 +1892,7 @@ GetPanelName
 
 SetPanelJump
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetPanelJump(simptr sim, const char *surface, const char *panel1, enum PanelFace face1, const char *panel2, enum PanelFace face2, int isbidirectional)``
    | Python:
      ``ErrorCode setPanelJump(str surface, str panel1, PanelFace face1, str panel2, PanelFace face2, int isbidirectional)``
@@ -1818,7 +1906,7 @@ SetPanelJump
 
 AddSurfaceUnboundedEmitter
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim, const char *surface, enum PanelFace face, const char *species, double emitamount, double *emitposition)``
    | Python:
      ``ErrorCode addSurfaceUnboundedEmitter(str surface, PanelFace face, str species, float emitamount, List[float] emitposition)``
@@ -1834,7 +1922,7 @@ AddSurfaceUnboundedEmitter
 
 SetSurfaceSimParams
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetSurfaceSimParams(simptr sim, const char *parameter, double value)``
    | Python:
      ``ErrorCode setSurfaceSimParams(str parameter, float value)``
@@ -1851,7 +1939,7 @@ SetSurfaceSimParams
 
 AddPanelNeighbor
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1, const char *panel1, const char *surface2, const char *panel2, int reciprocal)``
    | Python:
      ``ErrorCode addPanelNeighbor(str surface1, str panel1, str surface2, str panel2, int reciprocal)``
@@ -1866,7 +1954,7 @@ AddPanelNeighbor
 
 SetSurfaceStyle
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface, enum PanelFace face, enum DrawMode mode, double thickness, double *color, int stipplefactor, int stipplepattern, double shininess)``
    | Python:
      ``ErrorCode setSurfaceStyle(str surface, PanelFace face, DrawMode mode, float thickness, List[float] color, int stipplefactor, int stipplepattern, float shininess)``
@@ -1898,14 +1986,16 @@ Compartments
 
 AddCompartment
    | 
-   | C: ``int smolAddCompartment(simptr sim, char *compartment)``
+   | C/C++: ``int smolAddCompartment(simptr sim, char *compartment)``
    | Python: ``int addCompartment(str compartment)``
    | Adds a compartment called ``compartment`` to the system.
 
 GetCompartmentIndex
    | 
-   | C: ``int smolGetCompartmentIndex(simptr sim, char *compartment)``
-   | C: ``int smolGetCompartmentIndexNT(simptr sim, char *compartment)``
+   | C/C++:
+     ``int smolGetCompartmentIndex(simptr sim, char *compartment)``
+   | C/C++:
+     ``int smolGetCompartmentIndexNT(simptr sim, char *compartment)``
    | Python: ``int getCompartmentIndex(str compartment)``
    | Returns the index of the compartment named ``compartment``. On
      failure, this returns an error code cast as an integer. The “NT”
@@ -1914,7 +2004,7 @@ GetCompartmentIndex
 
 GetCompartmentName
    | 
-   | C:
+   | C/C++:
      ``char* smolGetCompartmentName(simptr sim, int compartmentindex, char *compartment)``
    | Python:
      ``str getCompartmentName(int compartmentindex, str compartment)``
@@ -1924,7 +2014,7 @@ GetCompartmentName
 
 AddCompartmentSurface
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddCompartmentSurface(simptr sim, char *compartment, char *surface)``
    | Python:
      ``ErrorCode addCompartmentSurface(str compartment, str surface)``
@@ -1933,7 +2023,7 @@ AddCompartmentSurface
 
 AddCompartmentPoint
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddCompartmentPoint(simptr sim, char *compartment, double *point)``
    | Python:
      ``ErrorCode addCompartmentPoint(str compartment, List[float] point)``
@@ -1942,7 +2032,7 @@ AddCompartmentPoint
 
 AddCompartmentLogic
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddCompartmentLogic(simptr sim, char *compartment, enum CmptLogic logic, char *compartment2)``
    | Python:
      ``ErrorCode addCompartmentLogic(str compartment, CmptLogic logic, str compartment2)``
@@ -1955,7 +2045,7 @@ Reactions
 
 AddReaction
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddReaction(simptr sim, const char *reaction, const char *reactant1, enum MolecState rstate1, const char *reactant2, enum MolecState rstate2, int nproduct, const char **productspecies, enum MolecState *productstates, double rate)``
    | Python:
      ``ErrorCode addReaction(str reaction, str reactant1, MolecState rstate1, str reactant2, MolecState rstate2, int nproduct, List[str] productspecies, List[MolecState] productstates, float rate)``
@@ -1972,9 +2062,9 @@ AddReaction
      it in ``rate``; otherwise, enter ``rate`` as a negative number.
 
 GetReactionIndex
-   | C:
+   | C/C++:
      ``int smolGetReactionIndex(simptr sim, int *orderptr, char *reaction)``
-   | C:
+   | C/C++:
      ``int smolGetReactionIndexNT(simptr sim, int *orderptr, char *reaction)``
    | Python: ``int getReactionIndex(List[int] orderptr, str reaction)``
    | Returns the index and order for the reaction that is named
@@ -1988,7 +2078,7 @@ GetReactionIndex
 
 GetReactionName
    | 
-   | C:
+   | C/C++:
      ``char* smolGetReactionName(simptr sim, int order, int reactionindex, char *reaction)``
    | Python:
      ``str getReactionName(int order, int reactionindex, str reaction)``
@@ -1998,7 +2088,7 @@ GetReactionName
 
 SetReactionRate
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetReactionRate(simptr sim, int order, char *reaction, double rate, int isinternal)``
    | Python:
      ``ErrorCode setReactionRate(int order, str reaction, float rate, int isinternal)``
@@ -2013,7 +2103,7 @@ SetReactionRate
 
 SetReactionRegion
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetReactionRegion(simptr sim, const char *reaction, const char *compartment, const char *surface)``
    | Python:
      ``ErrorCode setReactionRegion(str reaction, str compartment, str surface)``
@@ -2025,7 +2115,7 @@ SetReactionRegion
 
 SetReactionIntersurface
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetReactionIntersurface(simptr sim, const char *reaction, int *rulelist)``
    | Set the intersurface reaction rules for the bimolecular reaction
      called ``reaction``. Intersurface reactions are reactions between
@@ -2041,7 +2131,7 @@ SetReactionIntersurface
 
 SetReactionProducts
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolSetReactionProducts(simptr sim, const char *reaction, enum RevParam method, double parameter, const char *product, double *position)``
    | Python:
      ``ErrorCode setReactionProducts(str reaction, RevParam method, float parameter, str product, List[float] position)``
@@ -2093,7 +2183,7 @@ Ports
 
 AddPort
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddPort(simptr sim, const char *port, const char *surface, enum PanelFace face)``
    | Python:
      ``ErrorCode addPort(str port, str surface, PanelFace face)``
@@ -2104,8 +2194,8 @@ AddPort
 
 GetPortIndex
    | 
-   | C: ``int smolGetPortIndex(simptr sim, const char *port)``
-   | C: ``int smolGetPortIndexNT(simptr sim, const char *port)``
+   | C/C++: ``int smolGetPortIndex(simptr sim, const char *port)``
+   | C/C++: ``int smolGetPortIndexNT(simptr sim, const char *port)``
    | Python: ``int getPortIndex(str port)``
    | Returns the index of the port named ``port``. The “NT” version is
      identical but errors don’t get displayed to the stderr output or
@@ -2113,14 +2203,15 @@ GetPortIndex
 
 GetPortName
    | 
-   | C: ``char* smolGetPortName(simptr sim, int portindex, char *port)``
+   | C/C++:
+     ``char* smolGetPortName(simptr sim, int portindex, char *port)``
    | Python: ``str getPortName(int portindex, str port)``
    | Returns the name of the port with index ``portindex``, both
      directly and in ``port``.
 
 AddPortMolecules
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddPortMolecules(simptr sim, const char *port, int nmolec, const char *species, double **positions)``
    | Python:
      ``ErrorCode addPortMolecules(str port, int nmolec, str species, List[float] positions)``
@@ -2134,7 +2225,7 @@ AddPortMolecules
 
 GetPortMolecules
    | 
-   | C:
+   | C/C++:
      ``int smolGetPortMolecules(simptr sim, const char *port, const char *species, enum MolecState state, int remove)``
    | Python:
      ``int getPortMolecules(str port, str species, MolecState state, int remove)``
@@ -2152,7 +2243,7 @@ Lattices
 
 AddLattice
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddLattice(simptr sim,const char *lattice,const double *min,const double *max,const double *dx,const char *btype)``
    | Python:
      ``ErrorCode AddLattice(str lattice,List[float] min,List[float] max,List[float] dx,str btype)``
@@ -2167,8 +2258,9 @@ AddLattice
 
 GetLatticeIndex
    | 
-   | C: ``int smolGetLatticeIndex(simptr sim,const char *lattice)``
-   | C: ``int smolGetLatticeIndexNT(simptr sim,const char *lattice)``
+   | C/C++: ``int smolGetLatticeIndex(simptr sim,const char *lattice)``
+   | C/C++:
+     ``int smolGetLatticeIndexNT(simptr sim,const char *lattice)``
    | Python: ``int GetLatticeIndex(str lattice)``
    | Returns the index of the lattice named ``lattice``. The “NT”
      version is identical but errors don’t get displayed to the stderr
@@ -2176,7 +2268,7 @@ GetLatticeIndex
 
 GetLatticeName
    | 
-   | C:
+   | C/C++:
      ``char *smolGetLatticeName(simptr sim,int latticeindex,char *lattice)``
    | Python: ``str getLatticeName(int latticeindex, str lattice)``
    | Returns the name of the lattice with index ``latticeindex``, both
@@ -2184,7 +2276,7 @@ GetLatticeName
 
 AddLatticeMolecules
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition)``
    | Python:
      ``ErrorCode AddLatticeMolecules(str lattice, str species, int number, List[float] lowposition, List[float] highposition)``
@@ -2195,7 +2287,7 @@ AddLatticeMolecules
 
 AddLatticePort
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddLatticePort(simptr sim, const char *lattice, const char *port)``
    | Python: ``ErrorCode AddLatticePort(str lattice, str port)``
    | Connects port ``port`` with lattice ``lattice``, so that molecules
@@ -2204,7 +2296,7 @@ AddLatticePort
 
 AddLatticeSpecies
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddLatticeSpecies(simptr sim,const char *lattice, const char *species)``
    | Python: ``ErrorCode AddLatticeSpecies(str lattice, str species)``
    | Not all particle-based Smoldyn species are necessarily listed in a
@@ -2214,7 +2306,7 @@ AddLatticeSpecies
 
 AddLatticeReaction
    | 
-   | C:
+   | C/C++:
      ``enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice, const char *reaction, const int move)``
    | Python:
      ``ErrorCode AddLatticeReaction(str lattice, str reaction, int move)``

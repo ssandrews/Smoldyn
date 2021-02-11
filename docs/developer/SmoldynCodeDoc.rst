@@ -1,8 +1,4 @@
-**************************
-Smoldyn Code Documentation
-**************************
-
-Programmer's introduction
+Programmer’s introduction
 =========================
 
 What is Smoldyn?
@@ -100,130 +96,323 @@ results that can approach exactness is important because it enables
 modelers to understand and quantify their simulation errors.
 
 Smoldyn code and build system
------------------------------
+=============================
 
-github
-------
-
-As of version 2.57, Smoldyn’s official code respository is github at
-ssandrews/Smoldyn_Official (github has several other versions of Smoldyn
-as well). I am still new to github, so there are many features there
-that I don’t understand yet.
-
-Code merging
+Repositories
 ------------
 
-Here are some options for merging code.
+Primary site
+~~~~~~~~~~~~
 
-Minimalist text based merging
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Smoldyn’s primary website is http://www.smoldyn.org. This website has
+information about the software and offers downloads of the current
+release, whether as pre-compiled versions or tar/zip/tgz files with the
+source code and other parts of the package.
 
-``mydir-"../../../gccCode/Library"``
-   | 
-   | set variable
+Source code
+~~~~~~~~~~~
 
-``diff Geometry.c $mydir``
-   | 
-   | compares local version with version in $mydir, and prints out
-     differences.
+Smoldyn’s code repository is github at
+https://github.com/ssandrews/Smoldyn. This repository was named
+Smoldyn_Official from its first github upload with version 2.57, up to
+version 2.62.dev, and was then renamed to just Smoldyn. Prior code
+repositories used Subversion servers that are now discontinued. I also
+started a SourceForge account at some point for Smoldyn, which I have
+not maintained. There are several other github repositories that have
+Smoldyn in their names, all of which are for the same overall software,
+but are not maintained by myself and don’t have the official releases.
 
-``grep -n ’Geo_Sphere_Normal’ ../Smoldyn/source/*.c``
-   | 
-   | finds all lines of Smoldyn source code that call Geo_Sphere_Normal.
+Documentation
+~~~~~~~~~~~~~
 
-GUI applications
-^^^^^^^^^^^^^^^^
+The most current documentation is included in the download package as
+Word and pdf files for the User’s Manual and as LaTeX and pdf files for
+the code documentation (this file).
 
-XCode offers FileMerge.app, which is at
-/Developer/Applications/Utilities/FileMerge.app. It’s very easy to use.
+Also, Dilawar Singh started a readthedocs website for Smoldyn at
+https://readthedocs.org/projects/smoldyn/downloads/. I’ll try to
+maintain that site but, for now, it’s not as current as the
+documentation that’s packaged with the downloads. In addition, note that
+the documentation is stored on the same github site as the code, so if
+you really want the latest un-released documentation, then you can get
+it at the github site.
 
-Alternatively, Eclipse, at `www.eclipse.org <www.eclipse.org>`__ works
-well.
+Yet another readthedocs website is
+https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html.
 
-Source code dependencies
-------------------------
+Python
+~~~~~~
 
-Code dependencies are shown below in a tree structure, such that the
-each file depends on the files that are indented below it. Note that the
-default Smoldyn configuration does not use either pthreads or
-Libmoleculizer, which results in many fewer code dependencies. Also,
-Smoldyn still builds and runs without its dependencies, but simply
-offers fewer features.
+Dilawar started a PyPI site for Smoldyn at
+https://pypi.org/project/smoldyn/. I’m not sure if it includes the
+latest code through nightly builds, or if it takes manual upload. If the
+latter, then this doesn’t include the latest code.
+
+.. _source-code-1:
+
+Source code
+-----------
+
+Source directories
+~~~~~~~~~~~~~~~~~~
+
+All of Smoldyn’s code is in subdirectories within the “source”
+directory. These subdirectories and their contents are listed below.
+
+There is also one file in the source directory, which is
+smoldynconfigure.h.in. This file is used as a template by the CMake
+build system for creating a header file that describes the actual build
+configuration.
+
+BioNetGen
+   I think this is the complete BioNetGen download, from about 2016.
+   Smoldyn uses the BNG2.pl perl file for rule-based modeling when using
+   the BNG language. This code is not included in Smoldyn during
+   building, but a link is made to this file. Also, this entire
+   BioNetGen directory gets copied to an install location (typically
+   /usr/local/bin for Mac or Linux) when Smoldyn is installed. (This
+   copying occurs if installing with the install script, but it doesn’t
+   appear to happen if installing using the “make install” target in the
+   CMake build process.)
+
+libSteve
+   This is a library of code that I wrote, which is used throughout the
+   Smoldyn software. All of it is plain C, but can be compiled as C++ as
+   well. Essentially none of the code here is specifically for Smoldyn
+   or, more importantly, essentially none of the code here calls
+   functions that are part of the core Smoldyn program (e.g. smolsim.c,
+   smolreact.c, etc.). I think that the sole exception is SimCommand.c,
+   which can call smolcmd.c but can also be run without calling it. In
+   addition to the code that I wrote, the SFMT directory contains code
+   for the Mersenne Twister random number generator, which I did not
+   write.
+
+MSVClibs
+   These are headers and libraries needed for compiling Smoldyn with the
+   MSVC compiler, on Windows. All of the code here was downloaded on a
+   Windows computer, compiled with MSVC, and then copied over to this
+   directory. This code is only used when compiling with MSVC. Not all
+   of the code here is actually used.
+
+NextSubVolume
+   This is code that Martin Robinson wrote for hybrid Smoldyn, for
+   simulating adjacent spatial regions with differing levels of detail.
+   It is only used when building with the “OPTION_NSV” option turned on.
+
+pybind11
+   This is an external library on which Smoldyn’s Python bindings are
+   built. It has its own CMakeLists.txt file. I have not modified
+   anything in here, and I think it is just the pybind11 download with
+   no modifications.
+
+python
+   This directory has all of Dilawar’s code for Smoldyn’s Python
+   bindings. It has its own CMakeLists.txt file, which I have not tried
+   to understand.
+
+SmolCrowd
+   This is not compiled into Smoldyn, but a separate text-based utility.
+   It generates random crowders for importing into Smoldyn configuration
+   files.
+
+Smoldyn
+   This directory includes the core of the Smoldyn program. Essentially
+   all of the code here has a “.c” suffix, becuase it was originally
+   written in C and is still mostly just C. However, some files have
+   slight C++ additions, so I now compile it with a C++ compiler. The
+   file smoldynlib.py was written by Sean Garbett in 2013 and appears to
+   be a Python interface for libSmoldyn. I haven’t used it.
+
+SmolEmulate
+   This is a separate utility, which is not compiled into Smoldyn. It
+   emulates Smoldyn algorithms, for calibrating reaction rates. This
+   code evolved from versions that I wrote to derive 3D reaction
+   parameters for the Andrews and Bray, 2004 paper, and then to derive
+   1D surface interaction parameters for the Andrews, 2009 paper. It
+   also supports 2D reactions, but I haven’t finished that work yet (as
+   of 2020).
+
+vcell
+   This directory containts code used for linking Smoldyn into VCell. It
+   was written by the VCell team, and I just keep it here for future use
+   by them.
+
+vtk
+   This is a wrapper for an external library for the VTK visualization
+   toolkit. It’s used by the NSV code. I’m not sure if VTK needs to be
+   installed on the host computer for Smoldyn to offer VTK
+   functionality.
+
+wrl2smol
+   This is another utility that is not compiled into Smoldyn. It
+   converts VRML language triangle data into Smoldyn style triangle
+   input.
+
+Dependencies
+~~~~~~~~~~~~
+
+As much as possible, Smoldyn is compiled statically so that its
+dependencies are automatically included in the binary distributions.
+However, if you compile Smoldyn yourself, then you may need to get them.
+
+Smoldyn’s code dependencies have changed some over time, but are mostly
+shown below in a tree structure, such that the each file depends on the
+files that are indented below it. This tree might not be fully accurate
+for the current version. As much as possible, Smoldyn builds and runs
+without its dependencies, but offers fewer features if they aren’t
+available. In particular, I’ve struggled some with getting some of them
+to work on Windows.
 
 | ̄̄̄̄̄ Smoldyn
 | OpenGL
+| OpenGL-glut
 | libTiff
 | zlib
 | libiconv
 | NSV
 | VTK
+| pybind11
 
-While some of the dependency code was included in the Smoldyn source
-distribution up to version 2.26, it is no longer included for versions
-2.27 and newer versions. As a result, you need to get it yourself (or
-use a pre-compiled Smoldyn version). They are all fairly
-straightforward.
+Getting the code for these dependencies has ranged from easy to
+impossible, so my approaches to solve these issues are listed below.
 
-libtiff is from http://download.osgeo.org/libtiff/. I got version 3.9.6,
-which is the latest of the 3.9 series. Because I didn’t want the zlib
-dependency of libtiff, I configured with “./configure –disable-zlib",
-and then entered “make" and “sudo make install" as usual.
+glut
+   is complicated. It’s part of the standard OpenGL libraries on Macs,
+   but doesn’t seem to be standard on Windows. Also, glut itself is
+   obsolete, having been replaced by, which is a superset of glut;
+   nevertheless, the glut.h header file is supposed to be used, unless
+   one wants functions that are only available in freeglut.
 
-libiconv is from http://www.gnu.org/software/libiconv/. I got version
-1.14. I configured with “./configure –enable-static" so that I’d get the
-static library.
+   For Windows with MSVC, I downloaded freeglut 3.2.1 from
+   http://freeglut.sourceforge.net and built it on a Windows computer
+   using the Visual Studio compiler. To build, I created and then moved
+   to a build directory, entered “cmake ..”, and entered “msbuild
+   freeglut.sln”. This created the files lib/Debug/freeglutd.lib,
+   lib/Debug/freeglut_staticd.lib, and bin/Debug/freeglutd.dll. The “d”
+   characters show that these are the debug versions of the library.
+   These work in Smoldyn but aren’t ideal. I then found that I can
+   create the release versions of the library with the same CMake step
+   and then “msbuild freeglut.sln /p:Configuration=Release”. I put the
+   compiled libraries in the source/MSVClibs directory, along with a
+   header file from the same freeglut download.
 
-libXML++ is from http://libxmlplusplus.sourceforge.net/. While you can
-try to get a recent version, this is likely to be a major mistake
-because it has loads of dependencies, and those have dependencies, and
-so on. Instead, get libXML++ version 1.0.5. This is fully sufficient,
-and it works well. After downloading, extract the archive, change to the
-libxml++-1.0.5 directory, enter “./configure", “make", and “sudo make
-install". This was straightforward for me.
+   For Windows with MinGW, I found that the MinGW cross-compiler
+   download that I use (see below) has freeglut included in its
+   collection of libraries. Thus, I link to that. Everything seems to
+   work and Smoldyn builds well, but the resulting smoldyn.exe doesn’t
+   actually run.
 
-vtk is from http://www.vtk.org/VTK/resources/software.html. I downloaded
-version 5.10.1. To build it, I created subdirectory called “build"
-within the vtk download directory, changed to the build directory, and
-entered "cmake .." followed by "make". This is a very large package
-which took about a half hour to build. Lots of warnings were emitted,
-but the build completed successfully. Then, "sudo make install"
-installed the result. Quite a lot of files were installed.
+   To address this, I also tried to compile the freeglut 3.2.1 download
+   on a Windows computer but with the MinGW compiler. This didn’t work.
+   Thus, instead, I downloaded the freeglut 3.2.1 source code to my Mac
+   and cross-compiled it for Windows using “cmake ..
+   -DCMAKE_TOOLCHAIN_FILE=../Toolchain-mingw32.cmake”. This actually
+   worked and produced libfreeglut_static.a, libfreeglut.dll.a,
+   libfreeglut.dll, and many more files. I was able to build Smoldyn
+   while linking to these files, but the result was the same as before
+   in that I got smoldyn.exe just fine, but it didn’t run.
 
-For GPU Smoldyn, you will need some other things too. First is the CUDA
-library, which is from NVIDIA at
-https://developer.nvidia.com/cuda-downloads. This downloaded and
-installed itself. Next is the GLEW library (OpenGL Extension Wrangler
-library), which is from http://glew.sourceforge.net. This builds with
-simply “make" and “make install" (no “./configure" required). Next, the
-CUDPP library is from http://code.google.com/p/cudpp/. It builds with
-CMake (make a build directory, change to that directory, enter “cmake
-..", “make", and “sudo make install"). For some reason, my build did not
-install the cudpp_config.h file, so I had to do so by hand. From the
-CUDPP build directory, I entered “sudo cp ../include/cudpp_config.h
-/usr/local/include/" and that fixed problems.
+   For Mac, I’ve been using regular glut, not freeglut, which works
+   easily but has the drawback that control never returns to Smoldyn
+   after it is handed over to ``glutmainloop``. To address this, I
+   installed freeglut using MacPorts, which was trivial. However,
+   entering ``port contents freeglut`` showed the files that were
+   installed, and none were a static library. I tried for a while to
+   link to it anyhow using the CMakeLists.txt file, without luck. Next,
+   I downloaded freeglut from http://freeglut.sourceforge.net, as I did
+   for Windows, and tried to build using CMake. This failed at the
+   linking stage. There was a prior report of it not working for Macs,
+   with the same error and no solution given, so this seems to be a
+   building bug and not easily fixed.
 
-The Boost library is from http://www.boost.org/users/download/. This
-doesn’t get installed with an installer, but instead the whole directory
-gets copied over. It didn’t work when I put it in a system location, but
-did work when I copied the “boost" subdirectory into the GPU code
-directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
+libtiff
+   is optional. It is used for saving graphics images as TIFF files.
 
-Building with CMake (versions 2.27 and higher)
-----------------------------------------------
+   For Mac, I downloaded version 3.9.6, which was the latest of the 3.9
+   series, from http://download.osgeo.org/libtiff/. Because I didn’t
+   want the zlib dependency of libtiff, I configured with “./configure
+   –disable-zlib", and then entered “make" and “sudo make install" as
+   usual.
 
-Smoldyn built using the GNU Autoconf, Automake, and Libtool tools
-through version 2.26. These GNU tools are remarkably arcane so I
-switched to CMake for versions 2.27 and above, which has been a vast
-improvement. I maintained the AutoTools documentation through version
-2.31 and then removed it.
+   For Windows with MSVC, I downloaded version 3.8.0 from
+   http://download.osgeo.org/libtiff/, but it required Autotools to
+   compile, which didn’t work for me on Windows. So, I downloaded
+   version 4.1.0, which uses CMake. It already has a “build” directory,
+   so I worked in a new directory called “mybuild”. I configured using
+   the option “cmake .. -DBUILD_SHARED_LIBS=FALSE” and built with
+   “msbuild tiff.sln /p:Configuration=Release”. This created the
+   libraries, libtiff/Release/tiff.lib and libtiff/Release/tiffxx.lib. I
+   copied these libraries over to source/MSVClibs, and also included
+   several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The
+   result works.
 
-Building requires CMake, which can be downloaded from
-http://www.cmake.org. I use version 2.87, but any version above 2.8
-should work. CMake installs trivially (at least on Mac), with a standard
+libiconv
+   is a library that converts between different character encodings. I
+   don’t know why it’s necessary, or even if it is necessary (the
+   default Smoldyn build option settings have the iconv option turned
+   off), but I cared about it at some point. I downloaded it from
+   http://www.gnu.org/software/libiconv/. I got version 1.14. I
+   configured with “./configure –enable-static" so that I’d get the
+   static library.
+
+libXML++
+   is a wrapper for the libxml2 XML parser. Again, I don’t know why it’s
+   necessary or even if it is necessary, but I cared about it at some
+   point. It might have been a dependency for libMoleculizer, which was
+   a disasterous Smoldyn module that I eventually got rid of.
+
+   Anyhow, I downloaded libXML++ from
+   http://libxmlplusplus.sourceforge.net/. While more recent versions
+   are available, this is likely to be a major mistake because they have
+   loads of dependencies, and the dependencies have dependencies, and so
+   on. Instead, get libXML++ version 1.0.5. This is fully sufficient,
+   and it works well. After downloading, extract the archive, change to
+   the libxml++-1.0.5 directory, enter “./configure", “make", and “sudo
+   make install". This was straightforward for me.
+
+vtk
+   is the Visualization Toolkit, useful for graphical visualization.
+   This functionality was added to Smoldyn with the NSV addition, but
+   I’m not sure if it only applies to the NSV portion of Smoldyn, or to
+   all graphics.
+
+   I downloaded my Mac version from
+   http://www.vtk.org/VTK/resources/software.html, getting version
+   5.10.1. To build it, I created subdirectory called “build" within the
+   vtk download directory, changed to the build directory, and entered
+   "cmake .." followed by "make". This is a very large package which
+   took about a half hour to build. Lots of warnings were emitted, but
+   the build completed successfully. Then, "sudo make install" installed
+   the result. Quite a lot of files were installed. As part of including
+   VTK in the project, there is a “source/vtk” directory within Smoldyn,
+   which has just a few files.
+
+   For Windows, I downloaded VTK from https://vtk.org/download/, getting
+   the VTK-9.0.1.tar.gz file. I then extracted at the command line with
+   “tar -xvcf VTK-9.0.1.tar.gz”, created a build subdirectory, moved
+   into it, and ran “cmake ..” and “msbuild VTK.sln”. This required
+   almost 3 hours to build on my very slow Windows computer. I copied
+   the build directory over to “source/VTKlibs”, and planned to link it
+   in, following advice at
+   https://vtk.org/Wiki/VTK/Tutorials/CMakeListsFile. However, I
+   discovered that this VTK build directory is truly enormous (3.8 Gb)
+   and it offers very little additional capability to Smoldyn, so I
+   decided to leave it out for the Windows build.
+
+CMake build system
+------------------
+
+Basic building
+~~~~~~~~~~~~~~
+
+Smoldyn builds with CMake, which can be downloaded from
+http://www.cmake.org. I use version 3.16, but any version above 3.4
+should work (lower versions don’t work due to requirements from
+pybind11). CMake installs trivially (at least on Mac), with a standard
 installer and no building required.
 
-You can run CMake from either a command line interface (my preference)
-or with a GUI. At a command line interface, change directories to cmake.
+CMake can be run from either a command line interface (my preference) or
+with a GUI. At a command line interface, change directories to cmake.
 Every time you change CMake settings, you’ll probably want to do a clean
 build. To do so, enter “rm -r \*", while in the cmake directory (verify
 that you’re in this directory!), to remove any prior build results. If
@@ -236,13 +425,27 @@ use the CMake GUI. It can be started by entering “cmake-gui" at a
 command line. Either way, when CMake is done, it will have written a lot
 of stuff to the cmake directory. Important files are “Makefile", which
 is the standard Makefile for the code and also smoldynconfigure.h, which
-is a C header file that the Smoldyn code uses for knowing what some
-important build parameters are.
+is a C header file that the Smoldyn code uses for knowing what the build
+parameters are. On Windows with the MSVC compiler, there’s no makefile,
+but smoldyn.sln instead; this is the “solution” file for compiling.
 
-Once configuring is complete, enter “make". Hopefully, Smoldyn will
-build, again with build files being put into the cmake directory.
-Finally, enter “sudo make install" and enter your password, to install
-Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
+Once configuring is complete, enter “make" (on Mac or Linux, or “msbuild
+smoldyn.sln /p:Configuration=Release” on Windows with MSVC). Hopefully,
+Smoldyn will build, again with build files being put into the cmake
+directory. Smoldyn can be run at this point. If you want to install,
+enter “sudo make install" and enter your password, to install Smoldyn to
+the usual place (/usr/local/bin on Linux and Mac systems).
+
+Here is the summary of the building process:
+
+::
+
+   > cd Smoldyn
+   > mkdir build
+   > cd build       # empty the directory if necessary with: rm -r *
+   > cmake ..       # add any options here
+   > make
+   > sudo make install
 
 For custom builds, you need to set various options to non-default
 settings. This is straightforward in the CMake GUI. There, you just
@@ -253,21 +456,30 @@ press return to select the default, or enter in values of your choice.
 Finally, you can also list each non-default option directly on the
 command line (preceded with a ‘D’, presumably for define).
 
-Following are some helpful build options:
+Following are all of the build options in the Smoldyn CMake files, plus
+some of the more helpful standard ones.
 
 +--------------------------+-------------+--------------------------+
 | Smoldyn option           | default     | effect when ON           |
++==========================+=============+==========================+
+| ``-DSMOLDYN_VERSION``    | 2.62.dev    | Smoldyn version number   |
++--------------------------+-------------+--------------------------+
+| ``-                      | ``ON``      | Build stand-alone        |
+| DOPTION_TARGET_SMOLDYN`` |             | Smoldyn program          |
++--------------------------+-------------+--------------------------+
+| ``-DOP                   | ``ON``      | Build LibSmoldyn library |
+| TION_TARGET_LIBSMOLDYN`` |             |                          |
 +--------------------------+-------------+--------------------------+
 | ``-DOPTION_VCELL``       | ``OFF``     | Build for inclusion      |
 |                          |             | within VCell             |
 +--------------------------+-------------+--------------------------+
+| ``-DOPTION_MINGW``       | ``OFF``     | Build for MinGW compiler |
+|                          |             | (not working currently)  |
++--------------------------+-------------+--------------------------+
 | ``-DOPTION_NSV``         | ``ON``      | Build with Next          |
 |                          |             | Subvolume support        |
 +--------------------------+-------------+--------------------------+
-| ``-DOPTION_PDE``         | ``OFF``     | Build with support for   |
-|                          |             | PDE simulation           |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_VTK``         | ``OFF``     | Build with support for   |
+| ``-DOPTION_VTK``         | ``ON``      | Build with support for   |
 |                          |             | VTK visualization        |
 +--------------------------+-------------+--------------------------+
 | ``-DOPTION_STATIC``      | ``OFF``     | Build using static       |
@@ -276,109 +488,496 @@ Following are some helpful build options:
 | ``-DOPTION_USE_OPENGL``  | ``ON``      | Build with graphics      |
 |                          |             | support                  |
 +--------------------------+-------------+--------------------------+
-| ``-DOPTION_USE_LIBTIFF`` | ``ON``      | Build with LibTiff       |
+| ``-DOPTION_USE_LIBTIFF`` | ``ON``      | Build with libtiff       |
 |                          |             | support                  |
 +--------------------------+-------------+--------------------------+
-| ``-                      | ``ON``      | Build stand-alone        |
-| DOPTION_TARGET_SMOLDYN`` |             | Smoldyn program          |
+| ``-DOPTION_USE_ICONV``   | ``OFF``     | Build with Libiconv      |
+|                          |             | support (use default)    |
 +--------------------------+-------------+--------------------------+
-| ``-DOP                   | ``OFF``     | Build LibSmoldyn library |
-| TION_TARGET_LIBSMOLDYN`` |             |                          |
+| ``-DOPTION_USE_ZLIB``    | ``OFF``     | Build with zlib support  |
+|                          |             | (use default)            |
++--------------------------+-------------+--------------------------+
+| ``-DOPTION_PYTHON``      | ``ON``      | Build Python module      |
++--------------------------+-------------+--------------------------+
+| ``-DOPTION_EXAMPLES``    | ``OFF``     | Run Libsmoldyn tests     |
++--------------------------+-------------+--------------------------+
+| `                        | ``OFF``     | Treat warnings as errors |
+| `-DOPTION_STRICT_BUILD`` |             | and enable address       |
+|                          |             | sanitizer                |
 +--------------------------+-------------+--------------------------+
 | CMake option             | default     | function                 |
 +--------------------------+-------------+--------------------------+
 | ``-DCMAKE_BUILD_TYPE``   | ``Release`` | Choose CMake build type  |
 +--------------------------+-------------+--------------------------+
-|                          |             |                          |
+| options are: ``None``,   |             |                          |
+| ``Debug``, ``Release``,  |             |                          |
+| ``RelWithDebInfo``, and  |             |                          |
+| ``MinSizeRel``           |             |                          |
 +--------------------------+-------------+--------------------------+
 | ``-DCMAKE                | clang       | Compile with specific    |
 | _CXX_COMPILER:FILEPATH`` |             | compiler                 |
 +--------------------------+-------------+--------------------------+
-|                          |             |                          |
+| for example:             |             |                          |
+| /usr/bin/g++             |             |                          |
++--------------------------+-------------+--------------------------+
+| ``                       | None        | Cross-compiling          |
+| -DCMAKE_TOOLCHAIN_FILE`` |             | toolchain file           |
++--------------------------+-------------+--------------------------+
+| for example:             |             |                          |
+| ..                       |             |                          |
+| /Toolchain-mingw32.cmake |             |                          |
 +--------------------------+-------------+--------------------------+
 
-Building Windows versions
--------------------------
+CMake build system code
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Cross-compiling with MinGW
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+The CMake code for Smoldyn, in CMakeLists.txt in the top-most directory,
+is relatively straightforward, but has still caused me vastly more grief
+than it should have. For that reason, this section gives a detailed look
+at the cmake code, focusing particularly on the variable definitions.
+
+Some aspects of this file use somewhat deprecated approaches. For
+example, it uses the “use_directories” statement, but one is supposed to
+use “target_use_directories” instead. The advantage to the latter
+approach is that it’s better about keeping variables within their scope,
+but this file is simple enough that I’m not bothering to change things.
+
+Basic setup
+   | 
+   | Defines the project name, lists the CMake minimum version number,
+     and sets the Smoldyn version number. Also tells CMake which version
+     of C++ to use.
+
+   ====================== =============================
+   Variable               Description
+   ====================== =============================
+   ``SMOLDYN_VERSION``    Smoldyn version number string
+   ``CMAKE_CXX_STANDARD`` C++ version number
+   ====================== =============================
+
+Targets to build
+   Whether to build Smoldyn, Libsmoldyn, or both.
+
+   ============================ ==================================
+   Variable                     Description
+   ============================ ==================================
+   ``OPTION_TARGET_SMOLDYN``    Create stand-along Smoldyn program
+   ``OPTION_TARGET_LIBSMOLDYN`` Create LibSmoldyn library
+   ============================ ==================================
+
+Compiling options
+   Most of the compiling options are listed here. They determine which
+   components to include and what the code is being built for. The
+   default values listed in the code sometimes get overridden later in
+   this same section, depending on other settings. Hopefully, the code
+   outputs a warning if a user-requested value gets overridden.
+
+   ====================== ================================================
+   Variable               Description
+   ====================== ================================================
+   ``OPTION_VCELL``       Compile Smoldyn for VCell
+   ``OPTION_MINGW``       Cross-compile for Windows using MinGW compiler
+   ``OPTION_NSV``         Compile Smoldyn with NextSubvolume functionality
+   ``OPTION_VTK``         Compile Smoldyn with VTK functionality
+   ``OPTION_STATIC``      Compile Smoldyn with static libraries
+   ``OPTION_USE_OPENGL``  Build with OpenGL support
+   ``OPTION_USE_ZLIB``    Build with Zlib support
+   ``OPTION_USE_LIBTIFF`` Whether to include the LibTIFF library
+   ``OPTION_USE_ICONV``   Whether to include the Libiconv library
+   ``OPTION_PYTHON``      Build Python module
+   ``OPTION_EXAMPLES``    Run Libsmoldyn tests
+   ``OPTION_LATTICE``     Whether to build lattice code
+   ``HAVE_ZLIB``          Already have Zlib library
+   ``HAVE_ICONV``         Already have Libiconv library
+   ====================== ================================================
+
+Core code information
+   This section lists all of the Smoldyn header files and source files,
+   plus a few extra header files from some of the optional features
+   (e.g. vtkwrapper.h). Some of the source files are only included for
+   some of the options. All of the source and main files properties are
+   set to the C++ language, which is necessary because most of them have
+   a “.c” ending (note that this setting only applies to the files
+   listed so far, and does not apply to any subsequently listed files).
+   The include directories are set here to all of the directories with
+   header files.
+
+   ================ ========================
+   Variable         Description
+   ================ ========================
+   ``HEADER_FILES`` List of all header files
+   ``SRC_FILES``    List of all source files
+   ``MAIN_FILES``   Name of the main file
+   ================ ========================
+
+Compiler flags
+   This section sets most of the compiler flags for the build. It starts
+   by determining what type of build this is, where the options are
+   ‘Release’, ‘Debug’, ‘None’, ‘RelWithDebInfo’, and ‘MinSizeRel’; it
+   sets the value to ‘Release’ as a default. This is a built-in CMake
+   variable, so CMake defines several compiler flags automatically based
+   on this build type, without them needing to be set here. This section
+   also addresses the strict-build option, setting the build type to
+   “Debug” and setting ``CMAKE_CXX_FLAGS_DEBUG`` and
+   ``CMAKE_LINKER_FLAGS_DEBUG`` to address sanitizing options. However,
+   neither neither variable is used anywhere else in this file, so I’m
+   questioning if it actually does anything useful. Next, this section
+   creates a list of possible build platforms and goes through the list
+   of possible platforms, adding to the compiler flags as needed as it
+   goes along. As far as this is concerned, “MinGW” means cross-compile
+   from Mac to Windows using the MinGW compiler, and “Windows” means
+   compile on Windows using the Visual Studio compiler. This section
+   also sets the path to the BNG2 perl script.
+
+   ==================== ===================================
+   Variable             Description
+   ==================== ===================================
+   ``CMAKE_BUILD_TYPE`` Build type (default: Release)
+   ``CMAKE_C_FLAGS``    C compiler flags string
+   ``CMAKE_CXX_FLAGS``  C++ compiler flags string
+   ``DEP_LIBS``         Library dependencies for linking
+   ``VCELL_BUILD``      Build for VCell (ON or OFF)
+   ``APPLE_BUILD``      Build for Apple (ON or OFF)
+   ``NIX_BUILD``        Build for Unix or Linux (ON or OFF)
+   ``MINGW_BUILD``      Build for MinGW (ON or OFF)
+   ``WINDOWS_BUILD``    Build for Windows (ON or OFF)
+   ``BNG2_PATH``        Path to BNG2 perl script
+   ==================== ===================================
+
+OpenGL (gl and glu, not glut)
+   OpenGL is a bit of a challenge to include correctly, and platform
+   dependent. The gl and glu libraries are usually built in, while the
+   glut library is not necessarily, so this section just focuses on the
+   gl and glu libraries. OpenGL is becoming deprecated, but I still use
+   it, so this code starts by stating that it uses legacy preferences.
+   The ``include(FindOpenGL)`` statement is used where possible; it
+   automatically defines the variables ``OPENGL_FOUND``,
+   ``OPENGL_INCLUDE_DIR``, and ``OPENGL_LIBRARIES``. However, the code
+   overrides the include directories for Windows because the automatic
+   system doesn’t seem to find the built-in gl.h header file, and a
+   different version of the header file from the Smoldyn directory seems
+   to work well.
+
+   ====================== ================================= ===============
+   Variable               Description                       Purpose
+   ====================== ================================= ===============
+   ``HAVE_OPEN_GL``       TRUE if available, FALSE if not   smoldynconfig.h
+   ``HAVE_GL_H``          TRUE for header file gl.h         smoldynconfig.h
+   ``HAVE_GL_GL_H``       TRUE for header file GL/gl.h      smoldynconfig.h
+   ``HAVE_OPENGL_GL_H``   TRUE for header file OpenGL/gl.h  smoldynconfig.h
+   ``HAVE_GLU_H``         TRUE for header file glu.h        smoldynconfig.h
+   ``HAVE_GL_GLU_H``      TRUE for header file GL/glu.h     smoldynconfig.h
+   ``HAVE_OPENGL_GLU_H``  TRUE for header file OpenGL/glu.h smoldynconfig.h
+   ``OPENGL_FOUND``       TRUE if OpenGL is found           local only
+   ``OPENGL_INCLUDE_DIR`` Include directory                 local only
+   ``OPENGL_LIBRARIES``   OpenGL Library directory          local only
+   ``GLU32_LIBRARIES``    glu library directory             local only
+   ``DEP_LIBS``           Library dependencies for linking  Appended
+   ====================== ================================= ===============
+
+OpenGL glut
+   The OpenGL glut libraries are found and added next. They are standard
+   libraries on Mac and Linux, but aren’t included on Windows. As a
+   result, this uses the freeglut library for Windows, using a version
+   provided with the Smoldyn package. From the freeglut documentation,
+   one is supposed to use glut.h if only glut functionality is wanted,
+   and freeglut.h is additional functionality is used that is only
+   supported by freeglut; thus, this should only use glut.h, although
+   parts of it incorrectly use freeglut.h. The ``include(FindGLUT)``
+   statement is used where possible; it automatically defines the
+   variables ``GLUT_FOUND``, ``GLUT_INCLUDE_DIR``, and
+   ``GLUT_LIBRARIES``.
+
+   +------------------------+------------------------------------+-----------------+
+   | Variable               | Description                        | Purpose         |
+   +========================+====================================+=================+
+   | ``HAVE_GLUT_H``        | TRUE for header file gutl.h        | smoldynconfig.h |
+   +------------------------+------------------------------------+-----------------+
+   | ``HAVE_GL_GLUT_H``     | TRUE for header file GL/gutl.h     | smoldynconfig.h |
+   +------------------------+------------------------------------+-----------------+
+   | ``HAVE_GLUT_GLUT_H``   | TRUE for header file GLUT/gutl.h   | smoldynconfig.h |
+   +------------------------+------------------------------------+-----------------+
+   | ``HAVE_GL_FREEGLUT_H`` | TRUE for header file GL/freeglut.h | smoldynconfig.h |
+   +------------------------+------------------------------------+-----------------+
+   | ``GLUT_FOUND)``        | TRUE if glut is found              | local only      |
+   +------------------------+------------------------------------+-----------------+
+   | ``GLUT_INCLUDE_DIR``   | Include directory                  | local only      |
+   +------------------------+------------------------------------+-----------------+
+   | ``GLUT_LIBRARIES``     | glut library directory             | local only      |
+   +------------------------+------------------------------------+-----------------+
+   | ``DEP_LIBS``           | Library dependencies for linking   | Appended        |
+   +------------------------+------------------------------------+-----------------+
+
+LibX11
+   This section used to add the LibX11 library, which was apparently
+   only needed for a static build on a Mac. However, the section is
+   fully commented out at present, so it presumably wasn’t needed.
+
+LibTiff
+   This section adds the LibTiff library, to enable the user to save
+   TIFF format images of the simulation. I haven’t been able to get
+   LibTiff to work correctly on Windows yet, so this section only
+   applies to non-Windows systems.
+
+   ==================== ==========================================
+   Variable             Description
+   ==================== ==========================================
+   ``HAVE_LIBTIFF``     TRUE if LibTiff is found, FALSE if not
+   ``TIFF_INCLUDE_DIR`` Include directory
+   ``TIFF_LIBRARY``     Library directory
+   ``DEP_LIBS``         Appended: library dependencies for linking
+   ==================== ==========================================
+
+Zlib
+   This section adds the Zlib library.
+
+   ===================== ==========================================
+   Variable              Description
+   ===================== ==========================================
+   ``HAVE_ZLIB``         TRUE if Zlib is found, FALSE if not
+   ``ZLIB_INCLUDE_DIRS`` Include directory
+   ``ZLIB_LIBRARIES``    Library directory
+   ``DEP_LIBS``          Appended: library dependencies for linking
+   ===================== ==========================================
+
+Libiconv
+   This section adds the Libiconv library.
+
+   ====================== ==========================================
+   Variable               Description
+   ====================== ==========================================
+   ``HAVE_INCONV``        TRUE if Libiconv is found, FALSE if not
+   ``ICONV_INCLUDE_DIRS`` Include directory
+   ``ICONV_LIBRARIES``    Library directory
+   ``DEP_LIBS``           Appended: library dependencies for linking
+   ====================== ==========================================
+
+VTK
+   This section adds the VTK library, used for saving graphical output
+   to VTK format files. The VTK source code is in the Smoldyn source/vtk
+   subdirectory.
+
+   ==================== ==========================================
+   Variable             Description
+   ==================== ==========================================
+   ``VTK_FOUND``        TRUE if VTK is found, FALSE if not
+   ``VTK_INCLUDE_DIRS`` Include directory
+   ``DEP_LIBS``         Appended: library dependencies for linking
+   ==================== ==========================================
+
+NextSubvolume
+   This section adds the code for hybrid simulation using lattices,
+   which is the nsv code written by Martin Robinson. All of the source
+   code is in the Smoldyn subdirectory source/NextSubVolume. This
+   section used to call the CMakeLists file in source/NextSubVolume with
+   the add_subdirectory statement, but then I simplified the build by
+   moving all of that source into this CMakeLists.txt file. The result
+   is a fairly simple build. This section adds code for signal.h if
+   MinGW is used, and adds a boost include directory. It also appends
+   the lists of source files and header files with the NSV code.
+
+   +-----------------------+---------------------------------------------+
+   | Variable              | Description                                 |
+   +=======================+=============================================+
+   | ``SIGNAL_H_DIR``      | Directory to signal.h, only for MinGW       |
+   +-----------------------+---------------------------------------------+
+   | ``Boost_INCLUDE_DIR`` | Include directory for Boost, which is in    |
+   |                       | the NSV source                              |
+   +-----------------------+---------------------------------------------+
+   | ``SRC_FILES``         | Appended: Smoldyn source files              |
+   +-----------------------+---------------------------------------------+
+   | ``HEADER_FILES``      | Appended: Smoldyn header files              |
+   +-----------------------+---------------------------------------------+
+
+Targets
+   Here, the target building is set up. The two targets are Smoldyn and
+   Libsmoldyn. Smoldyn has an executable, with source files, main files,
+   and header files. Libsmoldyn comes in both shared and static
+   versions, both of which have source files and header files. No
+   variables are defined here.
+
+Python module
+   This section simply adds two CMake subdirectories, for pybind11 and
+   the python code that Dilawar Singh wrote.
+
+Install
+   This section describes how to install the software. Just the Smoldyn
+   executable is installed if that is the only target. If the Libsmoldyn
+   target is built as well, then this also installs: the shared and
+   static Libsmoldyn library files and the header files: libsmoldyn.h,
+   smoldyn.h, smoldynconfigure.h.
+
+Package
+   This was an effort to create a nice package with CPack. I haven’t
+   finished this topic yet.
+
+Testing
+   Here are a few tests of Libsmoldyn. This section adds the examples
+   subdirectory.
+
+CMake subdirectories
+~~~~~~~~~~~~~~~~~~~~
+
+The CMakeLists file lists a few subdirectories.
+
+(1) The subdirectory “source/pybind11” includes the pybind11 library,
+which offers “Seamless operability between C++11 and Python... pybind11
+is a lightweight header-only library that exposes C++ types in Python
+and vice versa, mainly to create Python bindings of existing C++ code”.
+It is widely used and can be downloaded from github. It does not require
+pre-compiling like the other dependencies because it is compiled with
+the rest of Smoldyn. There is no custom code here, but only code from
+the pybind11 project.
+
+(2) The subdirectory “source/python” includes Python binding code and
+was written, by Dilawar, specifically for Smoldyn.
+
+(3) The subdirectory “examples” is for automatic testing, which has been
+partially set up but not completed. To run these examples, enter “make
+examples”.
+
+Several different targets can be built. The core software has the
+Smoldyn and LibSmoldyn targets, which are selected or unselected using
+the CMake options ``OPTION_TARGET_SMOLDYN`` and
+``OPTION_TARGET_LIBSMOLDYN``, described above. I’m not sure if
+``smoldyn_static`` and ``smoldyn_shared`` qualify as targets or not, but
+they are both built as part of LibSmoldyn. When building, these targets
+create a Smoldyn executable, called just smoldyn on a Mac or smoldyn.exe
+on Windows, and static and shared libraries called libsmoldyn_static.a
+and libsmoldyn_shared.dylib on a Mac. Also, one can write
+``make install``, although this isn’t really a different target. In
+addition, ``make examples`` does some testing.
+
+Within the python subdirectory, additional targets are: ``wheel``,
+``pyinstall``, ``pyinstall_venv``, ``pyuninstall``, ``pydevel``, and
+``doc_api_html``. I don’t think that most of these targets need to be
+called specifically, but are instead called automatically when running
+just “make”. These targets are fairly simple, just running a line of
+Python code in most cases.
+
+Cross-compiling for Windows with MinGW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Smoldyn was cross-compiled for Windows from Mac using MinGW up to
 version 2.58, although it didn’t work well for the last several of those
-versions; version 2.59 used a different build system; see below. The
-following text was written to describe this cross-compiling and has not
-been updated since then.
+versions. Versions 2.59 to 2.61 used a different build system in which I
+copied source code files from Mac to Windows and then built on a Windows
+computer using my own compile script and the MinGW compiler. For version
+2.62, I downloaded the MSVC compiler and returned to using CMake, but
+now running on the Windows computer. I’d like to get back to
+cross-compiling, but it’s not working currently. Following are
+cross-compiling notes.
 
-Getting cross-compiling set up can be a major challenge, but I’ll
-describe what worked for me here. First of all, I got MinGW from
-MacPorts using “port install mingw-w64”. This installed the meta-package
-mingw-w64, along with two sets of other packages: i686-w64-mingw32-...
-and x86_64-w64-mingw32-..., where the ... refers to the following 5
-endings: binutils, crt, gcc, headers, and winpthreads.
+In one failed attempt, I got MinGW from MacPorts using “port install
+mingw-w64”. This installed the meta-package mingw-w64, along with two
+sets of other packages: i686-w64-mingw32-... and x86_64-w64-mingw32-...,
+where the ... refers to the following 5 endings: binutils, crt, gcc,
+headers, and winpthreads. The i686-w64-mingw32-gcc compiler sort of
+works, but not really. I wrote the standard hello.c, which compiled
+nicely on my Mac with “gcc -Wall hello.c -o hello”. To cross-compile, I
+tried to compile with “i686-w64-mingw32-gcc -Wall hello.c -o hello.exe”
+but this returned the error message “i686-w64-mingw32-gcc: error trying
+to exec ’cc1’: execvp: No such file or directory”. However, this did
+work when I prefaced the instruction with “sudo” and then entered my
+password. This clearly implied that the issue had to do with
+permissions, but I was never able to figure out what was wrong and my
+query to Stack Overflow about this was useless.
 
-I initially thought that the i686-w64-mingw32-gcc was the compiler that
-I was supposed to use. In fact, it sort of works, but not really. I
-wrote the standard hello.c, which compiled nicely on my Mac with “gcc
--Wall hello.c -o hello”. To cross-compile, I tried to compile with
-“i686-w64-mingw32-gcc -Wall hello.c -o hello.exe” but this returned the
-error message “i686-w64-mingw32-gcc: error trying to exec ’cc1’: execvp:
-No such file or directory”. However, this did work when I prefaced the
-instruction with “sudo” and then entered my password. This clearly
-implied that the issue had to do with permissions, but I was never able
-to figure out what was wrong and my query to Stack Overflow about this
-was useless.
-
-When I finally switched to compiling with the x86_64-w64-mingw32-gcc
-compiler, using the line “x86_64-w64-mingw32-gcc -Wall hello.c -o
-hello.exe”, then this worked perfectly without permission issues. I
-don’t understand why the MacPorts MinGW download has the i686... and the
-x86... sets of files, which seem like reasonably parallel sets of files,
-of which only the x86... ones seem to be useful, but that’s how it is.
+I had success with MinGW when I switched to compiling with the
+x86_64-w64-mingw32-gcc compiler, which I also downloaded with MacPorts
+(this didn’t work in 2018 and 2019, but magically did again in 2020). It
+installed files with the same root but ending in -binutils, -ctr,
+-headers, and -winpthreads. Compiling hello world using the line
+“x86_64-w64-mingw32-gcc -Wall hello.c -o hello.exe” worked without
+permission issues. This also successfully built the wrl2smol utility
+with simply “x86_64-w64-mingw32-gcc -Wall ../source/wrl2smol/wrl2smol.c
+-o wrl2smol.exe”. It works excellently with non-graphics applications,
+including wrl2smol, SmolCrowd, and Smoldyn without OpenGL. Adding in
+OpenGL still builds properly, but the result won’t run on a Windows
+computer, returning an error that it won’t run. Debugging this with a
+tool called “Dependency walker” indicated that lots of Windows libraries
+were missing, such as “api-ms-win-appmodel-runtime”. I wasn’t able to
+solve the problem.
 
 Part of the MacPorts MinGW download is a lot of library code that’s
 pre-compiled for MinGW. The useful portions seem to be in
 /opt/local/x86_64-w64-mingw32/include/ for the header files and
 /opt/local/x86_64-w64-mingw32/lib/ for the source files. These include
-most of the libraries that Smoldyn uses. However, it doesn’t include
-GLUT. I downloaded the “freeglut 3.0.0 MinGW Package” from
+most of the libraries that Smoldyn uses. It didn’t used to include glut,
+but the 2020 version does. Back when it didn’t include glut, I
+downloaded the “freeglut 3.0.0 MinGW Package” from
 https://www.transmissionzero.co.uk/software/freeglut-devel/. The
-download is in the Smoldyn source directory, from which I copied the
+download was in the Smoldyn source directory, from which I copied the
 include and lib directory contents to the /opt/local/x86_64-w64-mingw32
 directories.
 
-I copied the i386 tiff*.h files from MinGW directory to
-/opt/local/x86...include directory. They seem ok, but they’re clearly
-for a different architecture. I also tried the i386 libtiff.a static
-libtiff library, but Smoldyn building complained that it wasn’t
-compatible. I also tried downloading libtiff.a from many different
-websites, but got the same result every time, that they weren’t
-compatible. I’m giving up for now on offering tiff support for Windows.
+For Libtiff, I had several failed attempts. I copied the i386 tiff*.h
+files from MinGW directory to /opt/local/x86...include directory. They
+seem ok, but they’re clearly for a different architecture. I also tried
+the i386 libtiff.a static libtiff library, but Smoldyn building
+complained that it wasn’t compatible. I also tried downloading libtiff.a
+from many different websites, but got the same result every time, that
+they weren’t compatible. I gave up on offering tiff support for Windows,
+but I now think that I might be able to download the Libtiff source code
+and cross-compile myself. I successfully compiled the Libtiff source
+code on Windows with MSVC, but haven’t tried yet for MinGW.
 
-The cross-compiled Smoldyn version wasn’t working during 2018 and into 2019, so
-I put major effort into fixing it during May, 2019, starting at version 2.58.
-The effort failed badly. At first, I was able to successfully cross-compile
-Hello World, a similar minimalist file that included OpenGL calls, and Smoldyn
-without graphics, but I couldn’t compile Smoldyn with graphics. In the process,
-I discovered that the freeglut website listed above at
-www.transmissionzero.co.uk had good advice for compiling with OpenGL. After
-quite a lot of failed attempts, I decided to update my mingw compiler on my
-Mac, in case that was the problem. However, updating it just ruined everything
-totally, so cross-compiling no longer worked at all for anything. The i686
-version of MinGW was broken and the x86 version returned “dyld: Library not
-loaded: /opt/local/lib/libisl.19.dylib; Referenced from:
-/opt/local/libexec/gcc/x86_64-w64-mingw32/8.3.0/cc1; Reason: image not found”,
-even for Hello World. I gave up.
+Building for Windows on Windows with MinGW
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Building Windows version on a Windows computer with MinGW
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+I think I have two different versions of MinGW on my Windows computer.
+For the second one, I downloaded MinGW using the mingw-get-setup.exe
+installer, from osdn.net, which was remarkably hard to figure out. I
+next ran “mingw-get.exe install mingw32-gcc” and it seemed to install
+the compiler.
 
-As of version 2.59, I am building Windows versions on a Windows computer
-with MinGW. I haven’t figured out CMake there yet, so I copy the
-smoldynconfigure.h file and all of the source files to the Windows
-computer, compile, copy the .exe file back to the Mac, and continue with
-the build process. I’m distributing old version of SmolCrowd and
+For versions 2.59 to 2.61, I built Windows versions on a Windows
+computer with MinGW. I hadn’t figured out CMake there yet, so I copied
+the smoldynconfigure.h file and all of the source files to the Windows
+computer, compiled, copied the .exe file back to the Mac, and continued
+with the build process. I distributed old version of SmolCrowd and
 wrl2smol in the Windows package (they only change very rarely, so the
-old ones are also the current ones).
+old ones were also the current ones).
+
+Building for Windows on Windows with Visual C
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For version 2.62 and maybe future versions, I’m compiling the Windows
+version on a Windows computer using the Visual C compiler (MSVC). After
+lots of work, this now functions using the CMake build system. The
+method starts with creating a build directory, as usual (I haven’t
+figured out how to remove all of the contents of the build directory, so
+I clean it out by moving up to the Smoldyn directory, removing build
+with “rmdir /s build”, and then recreating it with “mkdir build”, “cd
+build”). Then, in the build directory, “cmake ..” as usual, with any
+options, and “msbuild smoldyn.sln /p:Configuration=Release”. The final
+option is essential because Visual Studio ignores the CMake directive to
+make this a release build, creating a debug build instead, which then
+needs to link to debug libraries that most people don’t have. This
+option tells Visual Studio that it should actually be a release build.
+
+I haven’t figured out how to build alternate targets yet. The CMake
+documentation for build_command (and an email from Ciaran) suggests that
+this might be possible with “cmake .. –target wheel”, but this doesn’t
+work for me. Also, the Microsoft documentation at
+https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2019
+say that I can build with “msbuild smoldyn.sln -target:wheel”. This
+doesn’t seem totally wrong, but it says that the target doesn’t exist.
+Yet another approach is to change directories to build/source/python and
+enter “msbuild wheel.vcxproj”. This seemed promising for me but led to
+the error “invalid command ‘bdist_wheel’”, which a Google search seemed
+to suggest arose from not using pip. Also, I can’t seem to figure out
+how to get pip to work on that computer, so perhaps that’s the problem.
+
+Here is some more advice, from Dilawar on 11/26/20.
+
+-  ``cmake .. -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON``
+
+-  ``cmake –build . –config Release``
+
+-  ``ctest -C Release``
+
+The build step should install the wheel.
 
 Unit and regression testing
 ---------------------------
@@ -411,79 +1010,97 @@ To add a new unit test to the regression testing suite, simply make sure
 that the unit test runs relatively quickly (a few seconds) and has no
 text output. Then, copy and paste the top few lines from any of the
 current unit tests (e.g. bounce2.txt), so that the new unit test will
-output molecule positions. Finally, list the unit test name in the
-Python script.
+output molecule positions or other relevant output. Finally, list the
+unit test name in the Python script.
 
-Python bindings
----------------
+GPU Smoldyn
+-----------
 
-There are a lot of additions for building with the Python bindings (all
-added by Dilawar Singh). Following is the list of the CMake variables,
-which was updated slightly when adding Python bindings.
+Two versions of GPU Smoldyn have been written, one by Lorenzo Dematté,
+and one by Denis Gladkov. I never managed to get either of them to work.
+However, here are some dependencies that I downloaded while trying to
+get Denis’s version to work
 
-+--------------------------+-------------+--------------------------+
-| Smoldyn option           | default     | effect when ON           |
-+--------------------------+-------------+--------------------------+
-| ``-DSMOLDYN_VERSION``    | ``3.0``     | Smoldyn version number   |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_VCELL``       | ``OFF``     | Build for inclusion      |
-|                          |             | within VCell             |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_NSV``         | ``ON``      | Build with Next          |
-|                          |             | Subvolume support        |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_PDE``         | ``OFF``     | Build with support for   |
-|                          |             | PDE simulation           |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_VTK``         | ``OFF``     | Build with support for   |
-|                          |             | VTK visualization        |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_STATIC``      | ``OFF``     | Build using static       |
-|                          |             | libraries                |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_USE_OPENGL``  | ``ON``      | Build with graphics      |
-|                          |             | support                  |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_USE_LIBTIFF`` | ``ON``      | Build with LibTiff       |
-|                          |             | support                  |
-+--------------------------+-------------+--------------------------+
-| ``-                      | ``ON``      | Build stand-alone        |
-| DOPTION_TARGET_SMOLDYN`` |             | Smoldyn program          |
-+--------------------------+-------------+--------------------------+
-| ``-DOP                   | ``ON``      | Build LibSmoldyn library |
-| TION_TARGET_LIBSMOLDYN`` |             |                          |
-+--------------------------+-------------+--------------------------+
-| ``-DOPTION_PYTHON``      | ``ON``      | Build Python module      |
-+--------------------------+-------------+--------------------------+
-| CMake option             | default     | function                 |
-+--------------------------+-------------+--------------------------+
-| ``-DCMAKE_BUILD_TYPE``   | ``Release`` | Choose CMake build type  |
-+--------------------------+-------------+--------------------------+
-|                          |             |                          |
-+--------------------------+-------------+--------------------------+
-| ``-DCMAKE                | clang       | Compile with specific    |
-| _CXX_COMPILER:FILEPATH`` |             | compiler                 |
-+--------------------------+-------------+--------------------------+
-|                          |             |                          |
-+--------------------------+-------------+--------------------------+
+For GPU Smoldyn, you will need some other things too. First is the CUDA
+library, which is from NVIDIA at
+https://developer.nvidia.com/cuda-downloads. This downloaded and
+installed itself. Next is the GLEW library (OpenGL Extension Wrangler
+library), which is from http://glew.sourceforge.net. This builds with
+simply “make" and “make install" (no “./configure" required). Next, the
+CUDPP library is from http://code.google.com/p/cudpp/. It builds with
+CMake (make a build directory, change to that directory, enter “cmake
+..", “make", and “sudo make install"). For some reason, my build did not
+install the cudpp_config.h file, so I had to do so by hand. From the
+CUDPP build directory, I entered “sudo cp ../include/cudpp_config.h
+/usr/local/include/" and that fixed problems.
 
-The CMakeLists file has a few subdirectories. (1) It includes one for the NSV
-code. (2) The subdirectory “source/external/pybind11” includes a the pybind11
-library, which offers “Seamless operability between C++11 and Python...
-pybind11 is a lightweight header-only library that exposes C++ types in Python
-and vice versa, mainly to create Python bindings of existing C++ code”. It is
-widely used and can be downloaded from github.  It does not require
-pre-compiling like the other dependencies because it is compiled with the rest
-of Smoldyn. There is no custom code here, but only code from the pybind11
-project. (3) Another subdirectory is “source/python”, which includes the new
-Python binding code and was written, by Dilawar, specifically for Smoldyn. (4)
-Another is “examples”, which is for automatic testing, which has been partially
-set up but not completed.
+The Boost library is from http://www.boost.org/users/download/. This
+doesn’t get installed with an installer, but instead the whole directory
+gets copied over. It didn’t work when I put it in a system location, but
+did work when I copied the “boost" subdirectory into the GPU code
+directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
 
-The new top-level CMakeLists file now has partially complete
-documentation generation with Doxygen. It reads the file
-docs/Doxyfile.in to build the documentation. I don’t know where the
-results get put.
+Code techniques and tricks
+--------------------------
+
+Formatting
+~~~~~~~~~~
+
+I like a very compact source code style, where the indentation shows the
+code depth rather than the braces. It just was that way for the most
+part, but then the VCell team added code in their style, and then
+Dilawar reformatted the code to yet another style. I figured out how to
+partially revert to my style, and also standardize others’ additions. I
+use the “uncrustify” software, which I downloaded from SourceForge at
+https://sourceforge.net/projects/uncrustify/. The package currently
+resides in my Smoldyn top level directory. I wrote a configuration file
+called ssa.cfg, which I use to format code; it is in the uncrustify
+directory.
+
+To reformat smolreact.c, enter:
+``uncrustify -c ../../uncrustify/ssa.cfg smolreact.c``. This creates a
+new file, smolreact.c.uncrustify. However, this still leaves lots of
+things that I like to fix. First, remove closing braces on their own
+lines. To do so, do a find and replace, first replace all “}” with “}”,
+repeating as many times as necessary. Then replace all “\\n}” with “}”.
+Another thing to look for is multi-line for statements. It would be nice
+if these could be removed by uncrustify, but it doesn’t.
+
+Code merging
+~~~~~~~~~~~~
+
+Here are some options for merging code.
+
+Minimalist text based merging can be done as follows:
+
+``mydir="../../../gccCode/Library"``
+   | 
+   | set variable
+
+``diff Geometry.c $mydir``
+   | 
+   | compares local version with version in $mydir, and prints out
+     differences.
+
+``grep -n ’Geo_Sphere_Normal’ ../Smoldyn/source/*.c``
+   | 
+   | finds all lines of Smoldyn source code that call Geo_Sphere_Normal.
+
+Alternatively, XCode offers FileMerge.app, which is at
+/Developer/Applications/Utilities/FileMerge.app. It’s very easy to use.
+Yet another option is Eclipse, at `www.eclipse.org <www.eclipse.org>`__,
+which works well.
+
+.. _documentation-1:
+
+Documentation
+-------------
+
+Smoldyn is documented in three hand-written files, which are the User’s
+Manual, the LibSmoldyn user’s manual, and this programmers
+documentation. In addition, it has partially complete documentation
+generation with Doxygen. It reads the file docs/Doxyfile.in to build the
+documentation. I don’t know where the results get put.
 
 Other files in the docs directory are markdown file versions of the
 Smoldyn documentation that I wrote. Dilawar made them from the original
@@ -493,6 +1110,9 @@ then edited them manaully. The mkdocs file generates a website from the
 the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar’s
 readthedocs web site shows the results.
 
+Continuous Integration
+----------------------
+
 Another new directory is called “scripts”. It includes development
 related scripts for building Smoldyn on online platforms like Travis,
 Open Build Service, OSX, and docker. I don’t believe that these are
@@ -500,12 +1120,323 @@ complete yet. The build_wheels_osx.sh script has stuff about homebrew,
 which I avoid, so this is going to take some work before I’ll want to
 run it.
 
-The source directory includes two new subdirectories, which are pybind11
-and python. The former is just downloaded from github, described above.
-The latter is Dilawar’s work.
+Python binding code
+===================
 
-Files, macros, variables, etc.
-------------------------------
+This section focuses on the code in the source/python directory,
+essentially all of which was written by Dilawar Singh. Most of this code
+is in C++ but it’s here to support the Python bindings.
+
+module.cpp
+----------
+
+``int``
+   | ``init_and_run(const string &filepath, const string &flags, bool wflag, bool quit_at_end = false)``]
+   | This function is an alternate point of entry to ``main``, from my
+     smoldyn.c code. It is called by ``PYBIND11_MODULE`` with the
+     ``loadModel`` low-level Python function.
+
+   Send in the filepath, including both the path and the filename in
+   ``filepath`` and the Smoldyn flags in ``flags``. In addition,
+   ``wflag`` is another copy of the suppress warnings flag, perhaps only
+   for whether output files should be overwritten, and ``quit_at_end``
+   is a flag for whether Smoldyn should just quit when the simulation is
+   done. This function passes these things on to ``simInitAndLoad`` and
+   ``simUpdateAndDisplay`` (both in smolsim.c). Here, ``cursim_`` is the
+   current simulation structure. This also opens output files and runs
+   the simulation with ``smolsimulate`` or ``smolsimulategl``, as
+   appropriate. At the end, it frees the simulation structure and
+   returns. Returns 0 for success or an error code for failure.
+
+``PYBIND11_MODULE(_smoldyn, m)``
+   | 
+   | This is a macro that creates a function for the interface between C
+     code and Python. From the website
+     https://pybind11.readthedocs.io/en/stable/basics.html, with some
+     edits to make it apply to the code here: “The ``PYBIND11_MODULE()``
+     macro creates a function that will be called when an ``import``
+     statement is issued from within Python. The module name
+     (``_smoldyn``) is given as the first macro argument. The second
+     argument (``m``) defines a variable of type ``py::module_`` which
+     is the main interface for creating bindings. The method
+     ``module_::def()`` generates binding code that exposes the Smoldyn
+     functions to Python.”
+
+   This code exposes the enumerated types, the members of the simulation
+   structure, and the C API to the Python interface. Most of this
+   function is simply a wrapper of the C API. The python functions
+   created at the end of this function are not in the C API, but
+   probably should be. Most of their code is in module.h.
+
+   Also, module.cpp has simple utilities, which really should be in the
+   C API but weren’t added to it. Most of these functions are called by
+   the ``PYBIND11_MODULE`` function. Many of these functions could also
+   be usefully merged into the ``PYBIND11_MODULE`` code to improve
+   overall simplicity.
+
+   The module.h header file includes global variables and declarations
+   for all of these functions.
+
+util.h
+------
+
+util.h includes a few inline utility functions, including ``splitPath``
+for splitting a filename path into separate root and filename strings
+(used in module.cpp ``init_and_run``) and ``color2RGBA`` for converting
+a color string to RGBA numbers (this calls my graphicsreadcolor
+function).
+
+Simulation.h
+------------
+
+``bool``
+   | ``connect(const py::function& func, const py::object& target, const size_t step, const py::list& args)``
+   | Creates a python callback for the Smoldyn main simulation loop.
+     ``func`` is the function to be called, ``target`` is some sort of
+     target for it (I don’t know what this is), ``step`` is the number
+     of time steps between callbacks, and ``args`` are arguments for the
+     function that is called.
+
+``bool addToSimptrVec(simptr ptr)``
+   | 
+   | Adds ``ptr``, which is a simulation pointer, to the list of
+     simulation pointers called ``simptrs_``, which is declared as a
+     global variable in this file. Doesn’t do anything if the pointer
+     was already in the list. Returns true if it was added and false if
+     it was already there.
+
+``bool deleteSimptr(simptr ptr)``
+   | 
+   | Searches for ``ptr`` in the list of simulation pointers
+     ``simptrs_``. If found, it is deleted. Also, the memory is cleared.
+     Returns true if found and deleted and false if not found.
+
+``size_t getDim()``
+   | 
+   | Returns the simulation dimensionality, using the value in the
+     global ``dim_`` variable. This should probably be a C API function
+     as well.
+
+``void setDim(size_t dim)``
+   | 
+   | Sets the dimensionality of the current simulation structure, as
+     well as the global ``dim_`` variable. This function should only be
+     called when a simulation structure is first being set up.
+     Otherwise, it is a dangerous function because lots of memory
+     allocation in the simulation structure depends on the
+     dimensionality, so really shouldn’t be modified without completely
+     erasing and rebuilding the simulation structure.
+
+``void printSimptrNotInitWarning(const char* funcname)``
+   | 
+   | Simply prints a warning to say that the function named ``funcname``
+     is complaining about the simptr not being initialized.
+
+``void setRandomSeed(size_t seed)``
+   | 
+   | Sets the random number seed for the current simulation to ``seed``
+     if this value is greater than or equal to 0, or to a randomly
+     chosen value otherwise. This could be but isn’t a wrapper for the C
+     API function of the same name.
+
+``size_t getRandomSeed(void)``
+   | 
+   | Returns the current random number seed. This should be in C API.
+
+``bool initialize()``
+   | 
+   | This creates a new simulation structure, putting it into the global
+     variable ``cursim_``, using information stored in other global
+     variables ``lowbounds``, ``highbounds``, and ``dim`` (this last one
+     is retrieved through getDim). Returns true for success or false for
+     failure.
+
+``void runUntil(const double breaktime, const double dt, bool display)``
+   | 
+   | Runs the simulation until time ``breaktime`` using time step
+     ``dt``. Output is sent to the display if ``display`` is true. This
+     is a wrapper for ``smolRunSimUntil``.
+
+``bool run(double stoptime, double dt, bool display)``
+   | 
+   | Runs the simulation up to time ``stoptime``. This is a wrapper for
+     ``smolRunSim``.
+
+``void setBoundaries(const vector<pair<double, double>>& bounds)``
+``void setBoundaries(const vector<double>& lowbounds, const vector<double>& highbounds)``
+   | 
+   | Both functions set the boundaries for a simulation by writing them
+     to global variables and then calling ``initialize`` to add them to
+     the simulation structure.
+
+``pair<vector<double>, vector<double>> getBoundaries()``
+   | 
+   | Gets and returns the boundaries.
+
+``ErrorCode setDt(double dt)``
+   | 
+   | Sets the simulation time step.
+
+``ErrorCode getDt(double dt)``
+   | 
+   | Returns the simulation time step.
+
+``bool setModelpath(const string& modelpath)``
+   | 
+   | This takes in the path for the model, including the model filename,
+     and splits it into the path and filename separately. It then
+     assigns the results to the current simulation filepath and
+     filename. The function always returns true.
+
+Callbackfunc.cpp and Callbackfunc.h
+-----------------------------------
+
+These files include the code for the Python callback functions. Use
+things like ``setFuncName``, ``setStep``, ``setTarget``, ``setFunc``,
+and ``setArgs`` to register and set up callback functions.
+
+``CallbackFunc::CallbackFunc()``
+   | 
+   | Constructor.
+
+``CallbackFunc:: CallbackFunc()``
+   | 
+   | Destructor.
+
+``bool CallbackFunc::evalAndUpdate(double t)``
+   | 
+   | Evaluate the callback function at time ``t``. This also calls the
+     target function if there is one, and otherwise uses a “magic
+     string”, which I didn’t understand.
+
+``bool CallbackFunc::isValid() const``
+   | 
+   | Returns whether the callback function has a size greater than zero,
+     meaning that it’s valid.
+
+``void CallbackFunc::setFunc(const py::function& func)``
+   | 
+   | Sets the callback function to ``func``.
+
+``py::function CallbackFunc::getFunc() const``
+   | 
+   | Gets and returns the callback function.
+
+``void CallbackFunc::setFuncName(const string& fname)``
+   | 
+   | Sets the callback function name to ``name``.
+
+``string CallbackFunc::getFuncName() const``
+   | 
+   | Gets and returns the callback function name.
+
+``void CallbackFunc::setStep(size_t step)``
+   | 
+   | Sets the step size for the callback function to ``step``.
+
+``size_t CallbackFunc::getStep() const``
+   | 
+   | Gets and returns the stepsize for the callback function.
+
+``void CallbackFunc::setTarget(const py::handle& target)``
+   | 
+   | Sets the target function for the callback function to ``target``.
+
+``py::handle CallbackFunc::getTarget() const``
+   | 
+   | Gets and returns the target for the callback function.
+
+``void CallbackFunc::setArgs(const py::list& args)``
+   | 
+   | Sets the arguments for the callback function to the list ``args``.
+
+``py::list CallbackFunc::getArgs() const``
+   | 
+   | Gets the arguments for the callback function.
+
+Python scripts in smoldyn directory
+-----------------------------------
+
+I tried to determine which scripts get imported and in what order by
+adding print statements to the beginning of them. If I start a Python
+session and then enter “import smoldyn”, it runs the following scripts,
+in order: \__init__.py, smoldyn.py, types.py, utils.py. My understanding
+is that each of these imports the next in sequence, so \__init__.py
+imports smoldyn.py, which then imports types.py, which then imports
+utils.py. Running a Python Smoldyn simulation goes through the same
+files when the “import smoldyn” statement is reached, and they are not
+imported again, at least from the top. It doesn’t appear that
+\__main__.py is ever imported at all. The files are listed below in the
+same order that they actually imported.
+
+\__init__.py
+~~~~~~~~~~~~
+
+This file only has a few lines since it’s only role is to import
+smoldyn.py. When I’m in a Python session and enter “smoldyn.__file_\_”,
+the result is a path to the \__init__.py file, again showing that this
+is the top-level file.
+
+smoldyn.py
+~~~~~~~~~~
+
+This file creates the “user API” for the Python bindings. In the
+process, it defines all of the user API classes, and the setting and
+getting functions.
+
+types.py
+~~~~~~~~
+
+This declares a color type as a union of a string name, and a RGBA
+vector. It also defines the class ``Color``, which can convert name to
+RGBA.
+
+utils.py
+~~~~~~~~
+
+This defines a ``load_model`` function with a path and arguments, which
+then sends the information onto the compiled Smoldyn code. It also
+converts colors from string to RGBA, using matplotlib if available or
+Smoldyn color conversion if not.
+
+\__main__.py
+~~~~~~~~~~~~
+
+This file parses the command line arguments using the argparse standard
+library and then runs the model using ``smoldyn.load_model()``. This
+file includes the Python command-line options, including “overwrite”,
+“quit-at-end”, and “args”. This code doesn’t necessarily run. According
+to Dilawar, if Smoldyn is started with “python3 -m smoldyn
+template.txt”, then this will execute the \__main__.py file, with
+command line arguments passed to it. Here, the Python package is being
+used as a proxy for the Smoldyn executable.
+
+Python module after building
+----------------------------
+
+After building Smoldyn, in the build directory at
+``/path/to/Smoldyn/build``, the python module ends up at
+``/path/to/Smoldyn/build/py``. The actual code that runs is in the
+``smoldyn`` subdirectory of this location, but that’s not directly
+relevant. The module can be imported into Python from this directory
+(``.../build/py``). Add this directory to your ``PYTHONPATH``
+temporarily with
+``export PYTHONPATH=/path/to/Smoldyn/build/py:$PYTHONPATH``. With this,
+the module can be accessed from any directory. Also, somehow, it’s
+possible to add the module directory to sys.path, which is then a
+permanent solution.
+
+Note that it’s possible to see where the library is imported from by
+checking ``smoldyn.__file__`` while in Python. For example,
+
+::
+
+   >>> import smoldyn
+   >>> print(smoldyn.__file__)
+   /home/dilawars/Work/FORKES/Smoldyn/build/py/smoldyn/__init__.py
+
+C code: files, macros, variables, etc.
+======================================
 
 The Smoldyn code is separated into several sets of files. (1) Library
 files, such as math2.c, are general-purpose C library files, nearly all
@@ -530,9 +1461,9 @@ documented here and in part I of the documentation.
 Smoldyn source files
 --------------------
 
--------------- ---------------------------------------------
+============== =============================================
 file           function
--------------- ---------------------------------------------
+============== =============================================
 smolboxes.c    virtual boxes
 smolcmd.c      runtime interpreter commands
 smolcomparts.c compartments
@@ -545,12 +1476,12 @@ smolreact.c    reactions
 smolsim.c      simulation structure and high level functions
 smolsurface.c  surfaces
 smolwall.c     walls
--------------- ---------------------------------------------
+============== =============================================
 
 Constants and global variables
 ------------------------------
 
-smoldyn.h
+*smoldyn.h*
    | 
 
 ``#define SMOLDYN_VERSION 2.16 // current Smoldyn version number``
@@ -575,7 +1506,7 @@ smoldyn.h
      computation; and SClists is for structure lists and maybe also
      parameters need computation.
 
-smoldyn.c
+*smoldyn.c*
    | 
 
 ``simptr Sim;``
@@ -620,7 +1551,7 @@ also quite out of date.
 
 +-----------------+---------------------+----------------------------+
 | variable        | type                | use                        |
-+-----------------+---------------------+----------------------------+
++=================+=====================+============================+
 | ``a``           | ``double``          | binding radius for         |
 |                 |                     | bimolecular reaction       |
 +-----------------+---------------------+----------------------------+
@@ -876,8 +1807,8 @@ also quite out of date.
 | ``wptr``        | ``wallptr``         | pointer to wall            |
 +-----------------+---------------------+----------------------------+
 
-Structures and functions
-------------------------
+C Code: structures and functions
+================================
 
 Smoldyn is written in C, with a C style. The proper maintenance of
 structures, which are described below, is a central aspect of the
@@ -1172,9 +2103,9 @@ identifies the newly reborn molecules in the live lists by setting
 
 Example of the lists:
 
------ ------------- ------------------- ----------
+===== ============= =================== ==========
 index ``live[0]``   ``live[1]``         ``dead``
------ ------------- ------------------- ----------
+===== ============= =================== ==========
 8     ?             ?                   ``maxd`` ?
 7     ``maxl[0]`` ? ?                   -
 6     -             ?                   -
@@ -1184,9 +2115,9 @@ index ``live[0]``   ``live[1]``         ``dead``
 2     2             ``topl[1],nl[1]`` - ``topd`` 1
 1     ``topl[0]`` 1 0                   0
 0     0             3                   0
------ ------------- ------------------- ----------
+===== ============= =================== ==========
 
-Here, each list has ``max``\ -8, and so is indexed with ``m`` from 0 to
+Here, each list has ``max``\ =8, and so is indexed with ``m`` from 0 to
 7. A ‘?’ is memory that is not part of that which was allocated, a ‘-’
 is a ``NULL`` value, a ‘0’ is an empty molecule, and other numbers are
 other identities (‘1’ and ‘2’ are mobile, whereas ‘3’ is immobile). The
@@ -1211,8 +2142,8 @@ separates the molecules that were there on the prior time step that have
 smaller indices from those that were created in the last time step,
 called the reborn molecules, which have higher indices.
 
-enumerated type functions
---------------------------
+*enumerated type functions*
+   | 
 
 ``enum MolecState molstring2ms(char *string);``
    | 
@@ -1239,11 +2170,9 @@ enumerated type functions
      type ``mlt``. The string needs to be pre-allocaed; it is returned
      to allow function nesting.
 
-
-**low level utilities**
-
+*low level utilities*
 ``char *molserno2string(unsigned long long serno,char *string);``
-   |
+   | 
    | Writes the molecule serial number to a pre-allocated string,
      returning the pointer to that string. If the serial number is not a
      concatenated number, then just writes that number to the string. If
@@ -1280,15 +2209,15 @@ enumerated type functions
    deal with bitcodes are ``rxnstring2sernocode`` and
    ``rxnsernocode2string``.
 
-   ----- ---- ---------------------------------
+   ===== ==== =================================
    bits  mask use
-   ----- ---- ---------------------------------
+   ===== ==== =================================
    1,2,3 0xE0 not used
    4     0x10 0 for right side, 1 for left side
    5     0x08 1 for p, 0 for r or new
    6     0x04 1 for r, 0 for p or new
    7,8   0x03 which p or r, or 1 for new
-   ----- ---- ---------------------------------
+   ===== ==== =================================
 
 ``int molismobile(simptr sim,int species,enum MolecState ms);``
    | 
@@ -1534,9 +2463,7 @@ enumerated type functions
    the molecule ``touch`` value to show that molecules have been
    touched.
 
-set structure values
----------------------
-
+*set structure values*
 ``int molssetgausstable(simptr sim,int size);``
    | 
    | Sets the size of the Gaussian look-up table to ``size`` and also
@@ -1608,9 +2535,9 @@ set structure values
    | Sets the list lookup table value to live list number ``ll`` for
      molecule ``ident`` and state ``ms``. For multiple species, enter
      them in ``index`` using the pattern header. Special codes are also
-     possible in the ``ident`` input: ``ident--7`` implies all diffusing
-     molecules, and ``ident--8`` implies all non-diffusing molecules.
-     Using ``ms-MSall`` implies all states. Note that the ``listlookup``
+     possible in the ``ident`` input: ``ident=-7`` implies all diffusing
+     molecules, and ``ident=-8`` implies all non-diffusing molecules.
+     Using ``ms=MSall`` implies all states. Note that the ``listlookup``
      element is defined for both ``MSsoln`` and ``MSbsoln``, and they
      are always set to the same values.
 
@@ -1691,8 +2618,7 @@ set structure values
      ``ms1`` and/or ``ms2`` to be the ``MSbsoln`` state. Also, enter
      ``i1`` and/or ``i2`` as 0 to not include it in the sum.
 
-**memory management**
-
+*memory management*
 ``moleculeptr molalloc(int dim);``
    | 
    | ``molalloc`` allocates and initiallizes a new ``moleculestruct``.
@@ -1797,8 +2723,7 @@ set structure values
    | ``molssfree`` frees both a superstructure of molecules and all the
      molecules in all its lists.
 
-**data structure output**
-
+*data structure output*
 ``void molssoutput(simptr sim);``
    | 
    | ``molssoutput`` prints all the parameters in a molecule
@@ -1827,8 +2752,7 @@ set structure values
      number of errors and, if ``warnptr`` is not ``NULL``, the number of
      warnings in ``warnptr``.
 
-**structure setup**
-
+*structure setup*
 ``int molenablemols(simptr sim,int maxspecies);``
    | 
    | Enables molecules. This function can be called multiple times.
@@ -1898,9 +2822,9 @@ set structure values
      parameters for the new species. If there is one parent, the new
      values are the same as those for the parent. If there are two
      parents, the new diffusion coefficient is
-     :math:`D_{new}-(D_1^{-3}+D_2^{-3})^{-1/3}`, the new display size is
-     :math:`r_{new}-(r_1^3+r_2^3)^{1/3}`, and the new color is
-     :math:`rgb_{new}-(r_1rgb_1+r_2rgb_2)/(r_1+r_2)`, where :math:`D` is
+     :math:`D_{new}=(D_1^{-3}+D_2^{-3})^{-1/3}`, the new display size is
+     :math:`r_{new}=(r_1^3+r_2^3)^{1/3}`, and the new color is
+     :math:`rgb_{new}=(r_1rgb_1+r_2rgb_2)/(r_1+r_2)`, where :math:`D` is
      a diffusion coefficient, :math:`r` is a display size, and
      :math:`rgb` is one of the red-green-blue color values. This is the
      same scheme used in smolbng.c.
@@ -1935,9 +2859,7 @@ set structure values
      individual molecules (i.e. sorting and boxes). Returns 0 for
      success, or 1 for insufficient memory.
 
-adding and removing molecules
------------------------------
-
+*adding and removing molecules*
 ``void molkill(simptr sim,moleculeptr mptr,int ll,int m);``
    | 
    | Kills a molecule from one of the live lists. ``mptr`` is a pointer
@@ -2010,8 +2932,7 @@ adding and removing molecules
      ``cmpt``. Returns 0 for success, 2 if a random point cannot be
      found, or 3 if there aren’t enough available molecules.
 
-**core simulation functions**
-
+*core simulation functions*
 ``int molsort(simptr sim,int onlydead2live);``
    | 
    | Sorts molecules between live and dead lists, and between live
@@ -2041,8 +2962,8 @@ adding and removing molecules
    zero length and that there’s nothing more to do there. Finally, the
    function sets the ``sortl`` indices to equal the ``nl`` indices, to
    show that all of the molecules in the live lists have been sorted.
-   Thus, at the end, ``topl`` :math:`\leq` ``sortl`` - ``nl``, where the
-   sublist from ``topl`` and ``nl`` is the reborn list. Also, ``topd`` -
+   Thus, at the end, ``topl`` :math:`\leq` ``sortl`` = ``nl``, where the
+   sublist from ``topl`` and ``nl`` is the reborn list. Also, ``topd`` =
    ``nd``, showing that there is no resurrected list.
 
    On occasion, it’s helpful to set the ``onlydead2live`` option to 1.
@@ -2110,14 +3031,14 @@ superstructure. A simulation always has 2\*\ ``dim`` walls.
 wall. The type may be one of four characters, representing the four
 possible boundary conditions.
 
----- -----------
+==== ===========
 type boundary
----- -----------
+==== ===========
 r    reflecting
 p    periodic
 a    absorbing
 t    transparent
----- -----------
+==== ===========
 
 Pointers to the opposite walls are used for wrap-around diffusion, but
 are simply references. There is no superstructure of walls, but, instead
@@ -2128,9 +3049,7 @@ coordinate, the next pair are for the 1 coordinate, and so on up to the
 space, and are not configured well to act as membranes. Wall behaviors
 are completely ignored if any membranes are declared.
 
-
-**low level utilities**
-
+*low level utilities*
 ``void systemrandpos(simptr sim,double *pos);``
    | 
    | Returns a random point within the system volume, chosen with a
@@ -2167,16 +3086,14 @@ are completely ignored if any membranes are declared.
      accounted for using ``wpcode``, which is the wrapping code for the
      box that ``pos1`` is in. This code needs to be entered. If it’s not
      known, then find the box pointer for the two positions with
-     ``bptr1-pos2box(sim,pos1)`` and similarly for ``pos2``, then set
+     ``bptr1=pos2box(sim,pos1)`` and similarly for ``pos2``, then set
      ``b2`` to be the index of ``bptr2`` within the list
      ``bptr1->neigh``, and finally use ``bptr1->wpneigh[b2]`` as
      ``wpcode``. Also, ``vect`` needs to be entered as a
      ``dim``-dimensional vector of doubles. It is returned as the vector
      from ``pos1`` to ``pos2``, while accounting for wrapping.
 
-Memory management functions
----------------------------
-
+*memory management*
 ``wallptr wallalloc(void);``
    | 
    | ``wallalloc`` allocates and initializes a new wall. The pointer to
@@ -2197,8 +3114,7 @@ Memory management functions
    | ``wallsfree`` frees an array of 2\*\ ``dim`` walls, including the
      walls.
 
-**data structure output**
-
+*data structure output*
 ``void walloutput(simptr sim);``
    | 
    | ``walloutput`` prints the wall structure information, including
@@ -2218,8 +3134,7 @@ Memory management functions
      total number of errors and, if ``warnptr`` is not ``NULL``, the
      number of warnings in ``warnptr``.
 
-**structure setup**
-
+*structure setup*
 ``int walladd(simptr sim,int d,int highside,double pos,char type);``
    | 
    | Adds a wall to the system. If no walls have been added yet, this
@@ -2239,8 +3154,7 @@ Memory management functions
      ``highside`` with a negative number to indicate “all" dimensions
      and/or system sides.
 
-**core simulation functions**
-
+*core simulation functions*
 ``void checkwalls(simptr sim,int ll,int reborn,boxptr bptr);``
    | 
    | ``checkwalls`` does the reflection, wrap-around, or absorption of
@@ -2264,7 +3178,7 @@ structures. There is a reaction superstructure for each reaction order
 separate structure for each reaction.
 
 enumerated types
-----------------
+~~~~~~~~~~~~~~~~
 
 Following are the enumerated types and the structures.
 
@@ -2284,7 +3198,7 @@ configuration file. The enumerated type ``RevParam`` lists the possible
 “reversible parameter types" that are allowed.
 
 reaction structure
-------------------
+~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -2418,7 +3332,7 @@ is not stored, but instead the cumulative probability for the events is
 stored. Both methods are accurate.
 
 reaction superstructure
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -2471,28 +3385,27 @@ or molecule list combinations, need to be checked to find reactions of
 this order.
 
 packed species identities
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Several of the structure elements use packed values, which can be
 performed with ``rxnpackident`` and similar functions. Alternatively,
 they can be done directly according to the following scheme:
 
---------- ------------------------- ------------- --------------------
-item      examples                  ``order`` - 1 ``order`` - 2
---------- ------------------------- ------------- --------------------
+========= ========================= ============= ====================
+item      examples                  ``order`` = 1 ``order`` = 2
+========= ========================= ============= ====================
 identity  ``nrxn[i]``, ``table[i]`` ``i1``        ``i1*maxspecies+i2``
 state     ``permit[ms]``            ``ms1``       ``ms1*MSMAX1+ms2``
 live list ``rxnmollist[ll]``        ``ll1``       ``ll1*maxlist+ll2``
---------- ------------------------- ------------- --------------------
+========= ========================= ============= ====================
 
 See the Wildcards section of the Code Design section for an explanation
 of how reactions are set up and expanded.
 
 reaction functions
-------------------
+~~~~~~~~~~~~~~~~~~
 
-**enumerated types**
-
+*enumerated types*
 ``enum RevParam rxnstring2rp(char *string);``
    | 
    | Converts string to enumerated ``RevParam`` type. This reads either
@@ -2517,8 +3430,7 @@ reaction functions
      word in ``string`` that can be displayed. Unrecognized inputs, as
      well as ``SRnone``, get returned as “none”.
 
-**low level utilities**
-
+*low level utilities*
 ``int``
    | ``readrxnname(simptr sim,const char *rname,int *orderptr,rxnptr *rxnpt,listptrv *vlistptr,int rxntype);``
    | Using a reaction name in ``rname``, this looks for it in one of
@@ -2636,8 +3548,7 @@ reaction functions
      a long int, which is probably a few more than 7). See the
      descriptions for ``rxnstring2sernocode`` and ``molfindserno``.
 
-**memory management**
-
+*memory management*
 ``rxnptr rxnalloc(int order);``
    | 
    | Allocates and initializes a reaction structure of order ``order``.
@@ -2675,8 +3586,7 @@ reaction functions
      Returns 0 for success or, if memory could not be allocated, 1 plus
      the order of the superstructure where the failure occurred.
 
-**data structure output**
-
+*data structure output*
 ``void rxnoutput(simptr sim,int order);``
    | 
    | Displays the contents of a reaction superstructure for order
@@ -2698,9 +3608,7 @@ reaction functions
      total number of errors and, if ``warnptr`` is not ``NULL``, the
      number of warnings in ``warnptr``.
 
-parameter calculations
-^^^^^^^^^^^^^^^^^^^^^^^
-
+*parameter calculations*
 ``int rxnsetrate(simptr sim,int order,int r,char *erstr);``
    | 
    | Sets the internal reaction rate parameters for reaction ``r`` of
@@ -2726,11 +3634,11 @@ parameter calculations
    any previously listed possible reactions for this reactant were not
    chosen. First, this computes the unconditional probability. For this,
    if there is only one reaction possible, then the reaction probability
-   is :math:`prob-1-exp(-rate \cdot dt)`. However, other reaction
+   is :math:`prob=1-exp(-rate \cdot dt)`. However, other reaction
    channels affect the probability because, over a finite time step, the
    reactant may get used up before it has a chance to react in this
    reaction. The solution is in Andrews and Bray, 2004, eq. 14, which is
-   :math:`prob-(rate/sum)[1-exp(-sum \cdot dt)]`, where :math:`sum` is
+   :math:`prob=(rate/sum)[1-exp(-sum \cdot dt)]`, where :math:`sum` is
    the sum of all of the reaction channel rates. Next, this probability
    is conditioned as follows. Consider a reactant, A, which reacts to
    product B\ :math:`_1` with probability :math:`p_{1}`, to product
@@ -2739,12 +3647,12 @@ parameter calculations
    taken with probability :math:`p'_1`; if that is not taken, then the
    next path is taken with probability :math:`p'_2`; if that is not
    taken, then the next path is taken with probability :math:`p'_3`,
-   etc. Since there is no prior condition, :math:`p_1-p'_1`. The
+   etc. Since there is no prior condition, :math:`p_1=p'_1`. The
    probability that path 2 is actually taken is
-   :math:`p_2-p'_{2}(1-p_1)` because it is the probability that event 2
+   :math:`p_2=p'_{2}(1-p_1)` because it is the probability that event 2
    happens and that path 1 was not chosen. The probability that path 3
-   is actually taken is :math:`p_3-p'_{3}(1-p_1)(1-p_2)`. Thus, for
-   example, :math:`p'_3-p_3/(1-p_1)(1-p_2)`. Here, ``product`` is the
+   is actually taken is :math:`p_3=p'_{3}(1-p_1)(1-p_2)`. Thus, for
+   example, :math:`p'_3=p_3/(1-p_1)(1-p_2)`. Here, ``product`` is the
    probability that prior paths were not taken and ``prob`` is the
    probability that a certain path is taken (e.g. :math:`p_1` or
    :math:`p_2`).
@@ -2814,25 +3722,65 @@ parameter calculations
    value (the other coordinates are not touched at all, and nor should
    they be used). The following table is for reactions with 2 products.
 
-   .. csv-table::
-     :header: "rparamt", "rparam", "unbindrad", "prdpos"
-
-     RPnone , - , 0 for irrev., error for rev. , 0
-     RPirrev , - , 0 , 0
-     RPconfspread , - , 0 , 0
-     RPbounce , σ_(u) , σ_(u) , sum is σ_(u)
-     , -1 , -1 , sum is σ_(b)
-     , -2 , -2 (?) , 0 (?)
-     RPpgem , ϕ , σ_(u) , difference is σ_(u)
-     RPpgemmax , ϕ_(max) , σ_(u) , difference is σ_(u)
-     RPpgemmaxw , ϕ_(max) , σ_(u) , difference is σ_(u)
-     RPratio , σ_(u)/σ_(b), σ_(u) , difference is σ_(u)
-     RPunbindrad , σ_(u) , σ_(u) , difference is σ_(u)
-     RPpgem2 , ϕ , σ_(u) , difference is σ_(u)
-     RPpgemmax2 , ϕ_(max) , σ_(u) , difference is σ_(u)
-     RPratio2 , σ_(u)/σ_(b), σ_(u) , difference is σ_(u)
-     RPoffset , - , set from prdpos , unchanged
-     RPfixed , - , set from prdpos , unchanged
+   +----------------+----------------+----------------+----------------+
+   | ``rparamt``    | ``rparam``     | ``unbindrad``  | ``prdpos``     |
+   +================+================+================+================+
+   | ``RPnone``     | -              | 0 for irrev.,  | 0              |
+   |                |                | error for rev. |                |
+   +----------------+----------------+----------------+----------------+
+   | ``RPirrev``    | -              | 0              | 0              |
+   +----------------+----------------+----------------+----------------+
+   | ``             | -              | 0              | 0              |
+   | RPconfspread`` |                |                |                |
+   +----------------+----------------+----------------+----------------+
+   | ``RPbounce``   | :m             | :m             | sum is         |
+   |                | ath:`\sigma_u` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   |                | -1             | -1             | sum is         |
+   |                |                |                | :m             |
+   |                |                |                | ath:`\sigma_b` |
+   +----------------+----------------+----------------+----------------+
+   |                | -2             | -2 (?)         | 0 (?)          |
+   +----------------+----------------+----------------+----------------+
+   | ``RPpgem``     | :math:`\phi`   | :m             | difference is  |
+   |                |                | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPpgemmax``  | :mat           | :m             | difference is  |
+   |                | h:`\phi_{max}` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPpgemmaxw`` | :mat           | :m             | difference is  |
+   |                | h:`\phi_{max}` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPratio``    | :math:`\sig    | :m             | difference is  |
+   |                | ma_u/\sigma_b` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | `              | :m             | :m             | difference is  |
+   | `RPunbindrad`` | ath:`\sigma_u` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPpgem2``    | :math:`\phi`   | :m             | difference is  |
+   |                |                | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPpgemmax2`` | :mat           | :m             | difference is  |
+   |                | h:`\phi_{max}` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPratio2``   | :math:`\sig    | :m             | difference is  |
+   |                | ma_u/\sigma_b` | ath:`\sigma_u` | :m             |
+   |                |                |                | ath:`\sigma_u` |
+   +----------------+----------------+----------------+----------------+
+   | ``RPoffset``   | -              | set from       | unchanged      |
+   |                |                | ``prdpos``     |                |
+   +----------------+----------------+----------------+----------------+
+   | ``RPfixed``    | -              | set from       | unchanged      |
+   |                |                | ``prdpos``     |                |
+   +----------------+----------------+----------------+----------------+
 
    \* For ``RPbounce``, both product positions are positive and are set
    for a cumulative vector length of the unbinding radius if the
@@ -2870,7 +3818,7 @@ parameter calculations
    because a reaction can only happen along a single reaction channel,
    so these are exclusive probabilities. At the end, ``sum`` is the
    total probability that a reaction happens. Then, inversion of the
-   equation, :math:`sum-1-exp(-ratesum \cdot dt)` gives the sum of all
+   equation, :math:`sum=1-exp(-ratesum \cdot dt)` gives the sum of all
    the rate constants. From this, the rate constant for this particular
    reaction is computed.
 
@@ -2902,8 +3850,7 @@ parameter calculations
      are counted, which ignores the ``permit`` reaction structure
      element.
 
-**structure set up**
-
+*structure set up*
 ``void rxnsetcondition(simptr sim,int order,enum StructCond cond,int upgrade);``
    | 
    | Sets the reaction superstructure condition, for order ``order``, to
@@ -2974,7 +3921,7 @@ parameter calculations
 
    +------------------+---------------------------+----------------+-------------------+
    | ``rparamt``      | ``rparam``                | ``prd``        | ``pos``           |
-   +------------------+---------------------------+----------------+-------------------+
+   +==================+===========================+================+===================+
    | ``RPnone``       | -                         | -              | -                 |
    +------------------+---------------------------+----------------+-------------------+
    | ``RPirrev``      | -                         | -              | -                 |
@@ -3213,9 +4160,7 @@ parameter calculations
      structure was not sufficiently set up. This may be run at at
      start-up or afterwards.
 
-reaction parsing function
---------------------------
-
+*reaction parsing function*
 ``int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr);``
    | 
    | Parses reaction statement in configuration file. This code was in
@@ -3223,8 +4168,7 @@ reaction parsing function
      became too long and complicated, so it got moved to its own
      function. It’s only called by ``simreadstring``.
 
-**core simulation functions**
-
+*core simulation functions*
 ``int``
    | ``doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,int m1,int ll2,int m2,double *pos,panelptr rxnpnl);``
    | Executes a reaction that has already been determined to have
@@ -3324,8 +4268,8 @@ reaction parsing function
    | Identifies likely bimolecular reactions, sending ones that probably
      occur to ``morebireact`` for permission testing and reacting.
      ``neigh`` tells the routine whether to consider only reactions
-     between neighboring boxes (``neigh``\ -1) or only reactions within
-     a box (``neigh``\ -0). The former are relatively slow and so can be
+     between neighboring boxes (``neigh``\ =1) or only reactions within
+     a box (``neigh``\ =0). The former are relatively slow and so can be
      ignored for qualitative simulations by choosing a lower simulation
      accuracy value. In cases where walls are periodic, it is possible
      to have reactions over the system walls. The function returns 0 for
@@ -3348,7 +4292,10 @@ Reaction rules are typically only useful in combination with wildcard
 characters. See the Wildcards section of the Code Design chapter for the
 definitive description of the reaction rules.
 
-**enumerated types**
+.. _enumerated-types-1:
+
+enumerated types
+~~~~~~~~~~~~~~~~
 
 The only enumerated type in the rules definitions is the ``RuleType``:
 
@@ -3363,7 +4310,7 @@ specify a certain type of definition, which may be to create reactions,
 set diffusion coefficients, etc.
 
 rule structure
---------------
+~~~~~~~~~~~~~~
 
 ::
 
@@ -3402,7 +4349,7 @@ data structure for different types of rules.
 
 +----------------+----------------+----------------+--------------+
 | type           | rate           | ``detailsi``   | ``detailsf`` |
-+----------------+----------------+----------------+--------------+
++================+================+================+==============+
 | ``RTreaction`` | rate constant  | react. states, | ``NULL``     |
 |                |                | prod. states,  |              |
 |                |                | compart.,      |              |
@@ -3445,7 +4392,7 @@ data structure for different types of rules.
 +----------------+----------------+----------------+--------------+
 
 rule superstructure
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -3472,10 +4419,9 @@ stored here and referred to when updating is required. The
 on-the-fly rule generation is desired.
 
 rule functions
---------------
+~~~~~~~~~~~~~~
 
-**enumerated types**
-
+*enumerated types*
 ``enum RuleType rulestring2rt(const char *string);``
    | 
    | Converts string to enumerated ``RuleType`` type. This reads full
@@ -3487,8 +4433,7 @@ rule functions
      pre-allocated. Unrecognized rule types are converted to “none”. The
      string is returned to simplify function cascading.
 
-**memory management**
-
+*memory management*
 ``ruleptr rulealloc();``
    | 
    | Allocates a new rule structure. All pointers are initiallized to
@@ -3515,8 +4460,7 @@ rule functions
    | 
    | Frees a rule superstructure, including all of its contents.
 
-**data structure output**
-
+*data structure output*
 ``void ruleoutput(simptr sim);``
    | 
    | Outputs information about the rules, including the rule
@@ -3532,8 +4476,7 @@ rule functions
    | This checks to make sure that rule parameters are reasonable. There
      are no checks at all here yet.
 
-**structure set up**
-
+*structure set up*
 ``int``
    | ``RuleAddRule(simptr sim,enum RuleType type,const char *rname,const char *pattern,const enum MolecState *rctstate,const enum MolecState *prdstate,double rate,const int *detailsi,const double *detailsf);``
    | Adds a rule to the list of rules. Enter the rule type in ``type``.
@@ -3560,7 +4503,7 @@ rule functions
 
    +----------------+----------------+----------------+--------------+
    | type           | rate           | detailsi       | detailsf     |
-   +----------------+----------------+----------------+--------------+
+   +================+================+================+==============+
    | ``RTreaction`` | rate constant  | 0:             | ``NULL``     |
    |                |                | compartment,   |              |
    |                |                | 1: surface     |              |
@@ -3596,8 +4539,7 @@ rule functions
    |                |                | new species    |              |
    +----------------+----------------+----------------+--------------+
 
-**core simulation functions**
-
+*core simulation functions*
 ``int RuleExpandRules(simptr sim,int iterations);``
    | 
    | Expands the rules by ``iterations`` iterations. Also,
@@ -3645,7 +4587,7 @@ other shapes. A single surface can contain many panels of multiple
 shapes.
 
 Surface geometry
-----------------
+~~~~~~~~~~~~~~~~
 
 The table below lists the types of panels and key aspects of how they
 are stored internally. Panel locations and sizes, plus some drawing
@@ -3664,183 +4606,202 @@ below, ``p`` is used for point, and ``f`` is used for front.
 
 Table: Properties of panels
 
-+---+--------------------+--------------------+--------------------+
-|   | 1D                 | 2D                 | 3D                 |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    |                    |
-+---+--------------------+--------------------+--------------------+
-|   | ``npts`` - 1       | ``npts`` - 4       | ``npts`` - 8       |
-+---+--------------------+--------------------+--------------------+
-|   | ``p[0][0]`` -      | ``p[0][0…1]`` -    | ``p[0…3][0…2]``    |
-|   | location           | start              |                    |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[1][0…1]`` -    | - corners          |
-|   |                    | end                |                    |
-+---+--------------------+--------------------+--------------------+
-|   |                    | parallel to an     | parallel to an     |
-|   |                    | axis               | axis               |
-+---+--------------------+--------------------+--------------------+
-|   |                    | front is on right  | front has CCW      |
-|   |                    |                    | winding            |
-+---+--------------------+--------------------+--------------------+
-|   | ``f[0]`` -         | ``f[0]`` -         | ``f[0]`` -         |
-|   | :math:`\pm`\ 1     | :math:`\pm`\ 1     | :math:`\pm`\ 1     |
-+---+--------------------+--------------------+--------------------+
-|   | (+ for facing +0)  | (+ for facing      | (+ for facing      |
-|   |                    | +axis)             | +axis)             |
-+---+--------------------+--------------------+--------------------+
-|   | ``f[1]`` - 0       | ``f[1]`` - perp.   | ``f[1]`` - perp.   |
-|   | (perp. axis)       | axis (0,1)         | axis (0,1,2)       |
-+---+--------------------+--------------------+--------------------+
-|   | ``f[2]`` -         | ``f[2]`` -         | ``f[2]`` - axis    |
-|   | undefined          | parallel axis      | parallel           |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | to edge from point |
-|   |                    |                    | 0 to point 1       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[2]`` - normal  | ``p[4]`` - normal  |
-|   |                    | for end 0          | for 0-1 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[3]`` - normal  | ``p[5]`` - normal  |
-|   |                    | for end 1          | for 1-2 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[6]`` - normal  |
-|   |                    |                    | for 2-3 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[7]`` - normal  |
-|   |                    |                    | for 3-0 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    |                    |
-+---+--------------------+--------------------+--------------------+
-|   | ``npts`` - 1       | ``npts`` - 4       | ``npts`` - 6       |
-+---+--------------------+--------------------+--------------------+
-|   | ``p[0][0]`` -      | ``p[0][0…1]`` -    | ``p[0…2][0…2]``    |
-|   | location           | start              |                    |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[1][0…1]`` -    | - corners          |
-|   |                    | end                |                    |
-+---+--------------------+--------------------+--------------------+
-|   | ``f[0]`` -         | front is on right  | front has CCW      |
-|   | :math:`\pm`\ 1     |                    | winding            |
-+---+--------------------+--------------------+--------------------+
-|   | (+1 for facing +0) | ``f[0…1]`` -       | ``f[0…2]`` -       |
-|   |                    | normal vect.       | normal vect.       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[2]`` - normal  | ``p[3]`` - normal  |
-|   |                    | for end 0          | for 0-1 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[3]`` - normal  | ``p[4]`` - normal  |
-|   |                    | for end 1          | for 1-2 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[5]`` - normal  |
-|   |                    |                    | for 2-0 edge       |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    |                    |
-+---+--------------------+--------------------+--------------------+
-|   | ``npts`` - 2       | ``npts`` - 2       | ``npts`` - 2       |
-+---+--------------------+--------------------+--------------------+
-|   | ``p[0][0]`` -      | ``p[0][0…1]`` -    | ``p[0][0…2]`` -    |
-|   | center             | center             | center             |
-+---+--------------------+--------------------+--------------------+
-|   | ``p[1][0]`` -      | ``p[1][0]`` -      | ``p[1][0]`` -      |
-|   | radius             | radius             | radius             |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[1][1]`` -      | ``p[1][1]`` -      |
-|   |                    | slices             | slices             |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[1][2]`` -      |
-|   |                    |                    | stacks             |
-+---+--------------------+--------------------+--------------------+
-|   | ``f[0]`` -         | ``f[0]`` -         | ``f[0]`` -         |
-|   | :math:`\pm`\ 1     | :math:`\pm`\ 1     | :math:`\pm`\ 1     |
-+---+--------------------+--------------------+--------------------+
-|   | (+ for front       | (+ for front       | (+ for front       |
-|   | outside)           | outside)           | outside)           |
-+---+--------------------+--------------------+--------------------+
-|   | ``f[1…2]`` -       | ``f[1…2]`` -       | ``f[1…2]`` -       |
-|   | undefined          | undefined          | undefined          |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    |                    |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``npts`` - 5       | ``npts`` - 5       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[0][0…1]`` -    | ``p[0][0…2]`` -    |
-|   |                    | start center       | start center       |
-+---+--------------------+--------------------+--------------------+
-|   | not allowed        | ``p[1][0…1]`` -    | ``p[1][0…2]`` -    |
-|   |                    | stop center        | stop center        |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[2][0]`` -      | ``p[2][0]`` -      |
-|   |                    | radius             | radius             |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[2][1]`` -      |
-|   |                    |                    | slices             |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``f[0…1]`` - norm. | ``p[2][2]`` -      |
-|   |                    | right vect.        | stacks             |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``f[2]`` -         | ``f[2]`` -         |
-|   |                    | :math:`\pm`\ 1     | :math:`\pm`\ 1     |
-+---+--------------------+--------------------+--------------------+
-|   |                    | (+ for front       | (+ for front       |
-|   |                    | outside)           | outside)           |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``f[0…1]`` -       |
-|   |                    |                    | undefined          |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[3]`` - normal  | ``p[3]`` - normal  |
-|   |                    | for end 0          | for end 0          |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[4]`` - normal  | ``p[4]`` - normal  |
-|   |                    | for end 1          | for end 1          |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    |                    |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``npts`` - 3       | ``npts`` - 3       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[0][0…1]`` -    | ``p[0][0…2]`` -    |
-|   |                    | center             | center             |
-+---+--------------------+--------------------+--------------------+
-|   | not allowed        | ``p[1][0]`` -      | ``p[1][0]`` -      |
-|   |                    | radius             | radius             |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[1][1]`` -      | ``p[1][1]`` -      |
-|   |                    | slices             | slices             |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[1][2]`` -      |
-|   |                    |                    | stacks             |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[2][0…1]`` -    | ``p[2][0…2]`` -    |
-|   |                    | outward vect.      | outward vect.      |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``f[0]`` -         | ``f[0]`` -         |
-|   |                    | :math:`\pm`\ 1     | :math:`\pm`\ 1     |
-+---+--------------------+--------------------+--------------------+
-|   |                    | (+ for front       | (+ for front       |
-|   |                    | outside)           | outside)           |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``f[1…2]`` -       | ``f[1…2]`` -       |
-|   |                    | undefined          | undefined          |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    |                    |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``npts`` - 2       | ``npts`` - 2       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``p[0][0…1]`` -    | ``p[0][0…2]`` -    |
-|   |                    | center             | center             |
-+---+--------------------+--------------------+--------------------+
-|   | not allowed        | ``p[1][0]`` -      | ``p[1][0]`` -      |
-|   |                    | radius             | radius             |
-+---+--------------------+--------------------+--------------------+
-|   |                    |                    | ``p[1][1]`` -      |
-|   |                    |                    | slices             |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``f[0…1]`` -       | ``f[0…2]`` -       |
-|   |                    | normal vect.       | normal vect.       |
-+---+--------------------+--------------------+--------------------+
-|   |                    | ``f[2]`` -         |                    |
-|   |                    | undefined          |                    |
-+---+--------------------+--------------------+--------------------+
++----------------+----------------+----------------+----------------+
+|                | 1D             | 2D             | 3D             |
++================+================+================+================+
+| **rectangles,  |                |                |                |
+| ps = PSrect**  |                |                |                |
++----------------+----------------+----------------+----------------+
+|                | ``npts`` = 1   | ``npts`` = 4   | ``npts`` = 8   |
++----------------+----------------+----------------+----------------+
+|                | ``p[0][0]`` =  | ``p[0][0…1]``  | `              |
+|                | location       | = start        | `p[0…3][0…2]`` |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[1][0…1]``  | = corners      |
+|                |                | = end          |                |
++----------------+----------------+----------------+----------------+
+|                |                | parallel to an | parallel to an |
+|                |                | axis           | axis           |
++----------------+----------------+----------------+----------------+
+|                |                | front is on    | front has CCW  |
+|                |                | right          | winding        |
++----------------+----------------+----------------+----------------+
+|                | ``f[0]`` =     | ``f[0]`` =     | ``f[0]`` =     |
+|                | :math:`\pm`\ 1 | :math:`\pm`\ 1 | :math:`\pm`\ 1 |
++----------------+----------------+----------------+----------------+
+|                | (+ for facing  | (+ for facing  | (+ for facing  |
+|                | +0)            | +axis)         | +axis)         |
++----------------+----------------+----------------+----------------+
+|                | ``f[1]`` = 0   | ``f[1]`` =     | ``f[1]`` =     |
+|                | (perp. axis)   | perp. axis     | perp. axis     |
+|                |                | (0,1)          | (0,1,2)        |
++----------------+----------------+----------------+----------------+
+|                | ``f[2]`` =     | ``f[2]`` =     | ``f[2]`` =     |
+|                | undefined      | parallel axis  | axis parallel  |
++----------------+----------------+----------------+----------------+
+|                |                |                | to edge from   |
+|                |                |                | point 0 to     |
+|                |                |                | point 1        |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[2]`` =     | ``p[4]`` =     |
+|                |                | normal for end | normal for 0-1 |
+|                |                | 0              | edge           |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[3]`` =     | ``p[5]`` =     |
+|                |                | normal for end | normal for 1-2 |
+|                |                | 1              | edge           |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[6]`` =     |
+|                |                |                | normal for 2-3 |
+|                |                |                | edge           |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[7]`` =     |
+|                |                |                | normal for 3-0 |
+|                |                |                | edge           |
++----------------+----------------+----------------+----------------+
+| **triangles,   |                |                |                |
+| ps = PStri**   |                |                |                |
++----------------+----------------+----------------+----------------+
+|                | ``npts`` = 1   | ``npts`` = 4   | ``npts`` = 6   |
++----------------+----------------+----------------+----------------+
+|                | ``p[0][0]`` =  | ``p[0][0…1]``  | `              |
+|                | location       | = start        | `p[0…2][0…2]`` |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[1][0…1]``  | = corners      |
+|                |                | = end          |                |
++----------------+----------------+----------------+----------------+
+|                | ``f[0]`` =     | front is on    | front has CCW  |
+|                | :math:`\pm`\ 1 | right          | winding        |
++----------------+----------------+----------------+----------------+
+|                | (+1 for facing | ``f[0…1]`` =   | ``f[0…2]`` =   |
+|                | +0)            | normal vect.   | normal vect.   |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[2]`` =     | ``p[3]`` =     |
+|                |                | normal for end | normal for 0-1 |
+|                |                | 0              | edge           |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[3]`` =     | ``p[4]`` =     |
+|                |                | normal for end | normal for 1-2 |
+|                |                | 1              | edge           |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[5]`` =     |
+|                |                |                | normal for 2-0 |
+|                |                |                | edge           |
++----------------+----------------+----------------+----------------+
+| **spheres, ps  |                |                |                |
+| = PSsph**      |                |                |                |
++----------------+----------------+----------------+----------------+
+|                | ``npts`` = 2   | ``npts`` = 2   | ``npts`` = 2   |
++----------------+----------------+----------------+----------------+
+|                | ``p[0][0]`` =  | ``p[0][0…1]``  | ``p[0][0…2]``  |
+|                | center         | = center       | = center       |
++----------------+----------------+----------------+----------------+
+|                | ``p[1][0]`` =  | ``p[1][0]`` =  | ``p[1][0]`` =  |
+|                | radius         | radius         | radius         |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[1][1]`` =  | ``p[1][1]`` =  |
+|                |                | slices         | slices         |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[1][2]`` =  |
+|                |                |                | stacks         |
++----------------+----------------+----------------+----------------+
+|                | ``f[0]`` =     | ``f[0]`` =     | ``f[0]`` =     |
+|                | :math:`\pm`\ 1 | :math:`\pm`\ 1 | :math:`\pm`\ 1 |
++----------------+----------------+----------------+----------------+
+|                | (+ for front   | (+ for front   | (+ for front   |
+|                | outside)       | outside)       | outside)       |
++----------------+----------------+----------------+----------------+
+|                | ``f[1…2]`` =   | ``f[1…2]`` =   | ``f[1…2]`` =   |
+|                | undefined      | undefined      | undefined      |
++----------------+----------------+----------------+----------------+
+| **cylinders,   |                |                |                |
+| ps = PScyl**   |                |                |                |
++----------------+----------------+----------------+----------------+
+|                |                | ``npts`` = 5   | ``npts`` = 5   |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[0][0…1]``  | ``p[0][0…2]``  |
+|                |                | = start center | = start center |
++----------------+----------------+----------------+----------------+
+|                | not allowed    | ``p[1][0…1]``  | ``p[1][0…2]``  |
+|                |                | = stop center  | = stop center  |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[2][0]`` =  | ``p[2][0]`` =  |
+|                |                | radius         | radius         |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[2][1]`` =  |
+|                |                |                | slices         |
++----------------+----------------+----------------+----------------+
+|                |                | ``f[0…1]`` =   | ``p[2][2]`` =  |
+|                |                | norm. right    | stacks         |
+|                |                | vect.          |                |
++----------------+----------------+----------------+----------------+
+|                |                | ``f[2]`` =     | ``f[2]`` =     |
+|                |                | :math:`\pm`\ 1 | :math:`\pm`\ 1 |
++----------------+----------------+----------------+----------------+
+|                |                | (+ for front   | (+ for front   |
+|                |                | outside)       | outside)       |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``f[0…1]`` =   |
+|                |                |                | undefined      |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[3]`` =     | ``p[3]`` =     |
+|                |                | normal for end | normal for end |
+|                |                | 0              | 0              |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[4]`` =     | ``p[4]`` =     |
+|                |                | normal for end | normal for end |
+|                |                | 1              | 1              |
++----------------+----------------+----------------+----------------+
+| **hemispheres, |                |                |                |
+| ps = PShemi**  |                |                |                |
++----------------+----------------+----------------+----------------+
+|                |                | ``npts`` = 3   | ``npts`` = 3   |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[0][0…1]``  | ``p[0][0…2]``  |
+|                |                | = center       | = center       |
++----------------+----------------+----------------+----------------+
+|                | not allowed    | ``p[1][0]`` =  | ``p[1][0]`` =  |
+|                |                | radius         | radius         |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[1][1]`` =  | ``p[1][1]`` =  |
+|                |                | slices         | slices         |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[1][2]`` =  |
+|                |                |                | stacks         |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[2][0…1]``  | ``p[2][0…2]``  |
+|                |                | = outward      | = outward      |
+|                |                | vect.          | vect.          |
++----------------+----------------+----------------+----------------+
+|                |                | ``f[0]`` =     | ``f[0]`` =     |
+|                |                | :math:`\pm`\ 1 | :math:`\pm`\ 1 |
++----------------+----------------+----------------+----------------+
+|                |                | (+ for front   | (+ for front   |
+|                |                | outside)       | outside)       |
++----------------+----------------+----------------+----------------+
+|                |                | ``f[1…2]`` =   | ``f[1…2]`` =   |
+|                |                | undefined      | undefined      |
++----------------+----------------+----------------+----------------+
+| **disks, ps =  |                |                |                |
+| PSdisk**       |                |                |                |
++----------------+----------------+----------------+----------------+
+|                |                | ``npts`` = 2   | ``npts`` = 2   |
++----------------+----------------+----------------+----------------+
+|                |                | ``p[0][0…1]``  | ``p[0][0…2]``  |
+|                |                | = center       | = center       |
++----------------+----------------+----------------+----------------+
+|                | not allowed    | ``p[1][0]`` =  | ``p[1][0]`` =  |
+|                |                | radius         | radius         |
++----------------+----------------+----------------+----------------+
+|                |                |                | ``p[1][1]`` =  |
+|                |                |                | slices         |
++----------------+----------------+----------------+----------------+
+|                |                | ``f[0…1]`` =   | ``f[0…2]`` =   |
+|                |                | normal vect.   | normal vect.   |
++----------------+----------------+----------------+----------------+
+|                |                | ``f[2]`` =     |                |
+|                |                | undefined      |                |
++----------------+----------------+----------------+----------------+
 
 To add a new panel shape, several things need to be done. Add the panel
 shape name to ``PanelShape`` and increment the ``#define`` constant
@@ -3856,7 +4817,7 @@ relatively easy, although some math likely needs to be done for a couple
 of them. Finally, check and document.
 
 Molecule-surface interactions
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Molecule-surface interactions arise when a molecule collides with a
 surface, or when a surface-bound molecule undergoes a spontaneous state
@@ -3891,29 +4852,29 @@ become necessary. The following table lists the states used in the
 action details data structure and their meanings. Conversions are given
 in later tables.
 
------------------ ------- --------- ------- --------
-interaction class         action            
-\                 ``ms1`` ``face1`` ``ms2`` 
-\                 soln    front     fsoln   reflect
-\                 "       "         bsoln   transmit
-collision from    "       "         bound   adsorb
-solution state    "       back      fsoln   transmit
-\                 "       "         bsoln   reflect
-\                 "       "         bound   adsorb
-impossible        "       none      any     
-\                 bound   front     fsoln   reflect
-\                 "       "         bsoln   transmit
-\                 "       "         bound   hop
-collision from    "       "         bound’  hop
-bound state       "       back      fsoln   transmit
-\                 "       "         bsoln   reflect
-\                 "       "         bound   hop
-\                 "       "         bound’  hop
-\                 "       none      fsoln   desorb
-action from       "       "         bsoln   desorb
-bound state       "       "         bound   no
-\                 "       "         bound’  flip
------------------ ------- --------- ------- --------
+================= ============== ========= ======= ========
+interaction class forward states                   action
+\                 ``ms1``        ``face1`` ``ms2`` 
+\                 soln           front     fsoln   reflect
+\                 "              "         bsoln   transmit
+collision from    "              "         bound   adsorb
+solution state    "              back      fsoln   transmit
+\                 "              "         bsoln   reflect
+\                 "              "         bound   adsorb
+impossible        "              none      any     
+\                 bound          front     fsoln   reflect
+\                 "              "         bsoln   transmit
+\                 "              "         bound   hop
+collision from    "              "         bound’  hop
+bound state       "              back      fsoln   transmit
+\                 "              "         bsoln   reflect
+\                 "              "         bound   hop
+\                 "              "         bound’  hop
+\                 "              none      fsoln   desorb
+action from       "              "         bsoln   desorb
+bound state       "              "         bound   no
+\                 "              "         bound’  flip
+================= ============== ========= ======= ========
 
 For the most part, surface-bound molecules cannot be absorbed, jumped,
 or ported, using the same surface. The exception is that if a
@@ -3941,7 +4902,7 @@ porting coefficient is about :math:`0.86s/\Delta t`, where :math:`s` is
 the rms step length and :math:`\Delta t` is the time step.
 
 Surface data structures
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -3949,8 +4910,8 @@ Surface data structures
    enum PanelFace {PFfront,PFback,PFnone,PFboth};
    enum PanelShape {PSrect,PStri,PSsph,PScyl,PShemi,PSdisk,PSall,PSnone};
    enum SrfAction {SAreflect,SAtrans,SAabsorb,SAjump,SAport,SAmult,SAno,SAnone,SAadsorb,SArevdes,SAirrevdes,SAflip};
-   enum DrawMode {DMno-0,DMvert-1,DMedge-2,DMve-3,DMface-4,DMvf-5,DMef-6,DMvef-7,DMnone};
-   enum SMLflag {SMLno-0,SMLdiffuse-1,SMLreact-2,SMLsrfbound-4};
+   enum DrawMode {DMno=0,DMvert=1,DMedge=2,DMve=3,DMface=4,DMvf=5,DMef=6,DMvef=7,DMnone};
+   enum SMLflag {SMLno=0,SMLdiffuse=1,SMLreact=2,SMLsrfbound=4};
 
 Panel faces can be front or back, and there are also enumerations for
 both and none. For version 2.19, I changed the enumeration sequence to
@@ -4228,7 +5189,7 @@ development, and provided minimal accuracy improvements, so I got rid of
 them. Now, only direct collisions are detected and dealt with.
 
 Function interdependence
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Following is a partial listing of what functions call what other
 functions. This is incomplete but could be completed relatively easily
@@ -4283,10 +5244,9 @@ if necessary.
 | ``surfenablesurfaces`` if needed, see above
 
 Surface functions
------------------
+~~~~~~~~~~~~~~~~~
 
-**enumerated types**
-
+*enumerated types*
 ``enum PanelFace surfstring2face(char *string);``
    | 
    | Converts panel face ``string`` to an enumerated panel face type.
@@ -4342,8 +5302,7 @@ Surface functions
      abbreviated drawing mode names. ``string`` is returned to allow for
      function nesting.
 
-**low level utilities**
-
+*low level utilities*
 ``int readsurfacename(simptr sim,char *str,enum PanelShape *psptr,int *pptr);``
    | 
    | Reads the first word of string ``str`` to parse the surface name
@@ -4457,45 +5416,60 @@ Surface functions
      as the ``ms1`` and ``face1`` information in the value pointed to by
      ``ms3ptr``. This returns values from the following table.
 
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | interaction class |         | action    |         |          |          |             |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | ``ms1`` | ``face1`` | ``ms2`` |          | function | ``*ms3ptr`` |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | soln    | front     | fsoln   | reflect  | 1        | fsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bsoln   | transmit | 0        | fsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | collision from    | "       | "         | bound   | adsorb   | 0        | fsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | solution state    | "       | back      | fsoln   | transmit | 0        | bsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bsoln   | reflect  | 1        | bsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bound   | adsorb   | 0        | bsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | impossible        | "       | none      | any     |          | 0        | none        |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | bound   | front     | fsoln   | reflect  | 1        | fsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bsoln   | transmit | 0        | fsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | collision from    | "       | "         | bound’  | hop      | 0        | fsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | bound state       | "       | back      | fsoln   | transmit | 0        | bsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bsoln   | reflect  | 1        | bsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bound’  | hop      | 0        | bsoln       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | action from       | "       | none      | fsoln   | desorb   | 0        | bound       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   | bound state       | "       | "         | bsoln   | desorb   | 0        | bound       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bound   | no       | 1        | bound       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
-   |                   | "       | "         | bound’  | flip     | 0        | bound       |
-   +-------------------+---------+-----------+---------+----------+----------+-------------+
+   +---------+---------+---------+---------+---------+---------+---------+
+   | inte    | forward |         |         | action  | return  |         |
+   | raction | states  |         |         |         | values  |         |
+   | class   |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | ``ms1`` | ``      | ``ms2`` |         | f       | ``*m    |
+   |         |         | face1`` |         |         | unction | s3ptr`` |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | soln    | front   | fsoln   | reflect | 1       | fsoln   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bsoln   | t       | 0       | fsoln   |
+   |         |         |         |         | ransmit |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | co      | "       | "       | bound   | adsorb  | 0       | fsoln   |
+   | llision |         |         |         |         |         |         |
+   | from    |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | s       | "       | back    | fsoln   | t       | 0       | bsoln   |
+   | olution |         |         |         | ransmit |         |         |
+   | state   |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bsoln   | reflect | 1       | bsoln   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bound   | adsorb  | 0       | bsoln   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | imp     | "       | none    | any     |         | 0       | none    |
+   | ossible |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | bound   | front   | fsoln   | reflect | 1       | fsoln   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bsoln   | t       | 0       | fsoln   |
+   |         |         |         |         | ransmit |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | co      | "       | "       | bound’  | hop     | 0       | fsoln   |
+   | llision |         |         |         |         |         |         |
+   | from    |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | bound   | "       | back    | fsoln   | t       | 0       | bsoln   |
+   | state   |         |         |         | ransmit |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bsoln   | reflect | 1       | bsoln   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bound’  | hop     | 0       | bsoln   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | action  | "       | none    | fsoln   | desorb  | 0       | bound   |
+   | from    |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   | bound   | "       | "       | bsoln   | desorb  | 0       | bound   |
+   | state   |         |         |         |         |         |         |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bound   | no      | 1       | bound   |
+   +---------+---------+---------+---------+---------+---------+---------+
+   |         | "       | "       | bound’  | flip    | 0       | bound   |
+   +---------+---------+---------+---------+---------+---------+---------+
 
 ``void``
    | ``srfreverseaction(enum MolecState ms1,enum PanelFace face1,enum MolecState ms2,enum MolecState *ms3ptr,enum PanelFace *face2ptr,enum MolecState *ms4ptr);``
@@ -4517,46 +5491,66 @@ Surface functions
      surface-bound molecules to interact with other surfaces that they
      cross. The following table shows the input and output values.
 
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | interaction class |         | action    |         |          |          |             |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | ``ms1`` | ``face1`` | ``ms2`` |          | function | ``*ms3ptr`` |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | soln    | front     | fsoln   | reflect  | 1        | fsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bsoln   | transmit | 0        | fsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | collision from    | "       | "         | bound   | adsorb   | 0        | fsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | solution state    | "       | back      | fsoln   | transmit | 0        | bsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bsoln   | reflect  | 1        | bsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bound   | adsorb   | 0        | bsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | impossible        | "       | none      | any     |          | 0        | none        |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | bound   | front     | fsoln   | reflect  | 1        | fsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bsoln   | transmit | 0        | fsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | collision from    | "       | "         | bound’  | hop      | 0        | fsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | bound state       | "       | back      | fsoln   | transmit | 0        | bsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bsoln   | reflect  | 1        | bsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bound’  | hop      | 0        | bsoln       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | action from       | "       | none      | fsoln   | desorb   | 0        | bound       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    | bound state       | "       | "         | bsoln   | desorb   | 0        | bound       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bound   | no       | 1        | bound       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-    |                   | "       | "         | bound’  | flip     | 0        | bound       |
-    +-------------------+---------+-----------+---------+----------+----------+-------------+
-
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | i     | fo    |       |       | a     | re    |       |       |
+   | ntera | rward |       |       | ction | verse |       |       |
+   | ction | s     |       |       |       | s     |       |       |
+   | class | tates |       |       |       | tates |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | ``    | ``fa  | ``    |       | ``    | ``fa  | ``    |
+   |       | ms1`` | ce1`` | ms2`` |       | ms3`` | ce2`` | ms4`` |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | soln  | front | fsoln | re    | soln  | front | fsoln |
+   |       |       |       |       | flect |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | bsoln | tra   | soln  | back  | fsoln |
+   |       |       |       |       | nsmit |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | coll  | "     | "     | bound | bind  | bound | none  | fsoln |
+   | ision |       |       |       |       |       |       |       |
+   | from  |       |       |       |       |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | sol   | "     | back  | fsoln | tra   | soln  | front | bsoln |
+   | ution |       |       |       | nsmit |       |       |       |
+   | state |       |       |       |       |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | bsoln | re    | soln  | back  | bsoln |
+   |       |       |       |       | flect |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | bound | bind  | bound | none  | bsoln |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | impos | "     | none  | any   | impos | none  | none  | none  |
+   | sible |       |       |       | sible |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | bound | front | fsoln | re    | bound | front | fsoln |
+   |       |       |       |       | flect |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | bsoln | tra   | bound | back  | fsoln |
+   |       |       |       |       | nsmit |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | coll  | "     | "     | b     | hop   | *bo   | *     | *b    |
+   | ision |       |       | ound’ |       | und’* | both* | ound* |
+   | from  |       |       |       |       |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | bound | "     | back  | fsoln | tra   | bound | front | bsoln |
+   | state |       |       |       | nsmit |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | bsoln | re    | bound | back  | bsoln |
+   |       |       |       |       | flect |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | b     | hop   | *bo   | *     | *b    |
+   |       |       |       | ound’ |       | und’* | both* | ound* |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | a     | "     | none  | fsoln | d     | soln  | front | bound |
+   | ction |       |       |       | esorb |       |       |       |
+   | from  |       |       |       |       |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   | bound | "     | "     | bsoln | d     | soln  | back  | bound |
+   | state |       |       |       | esorb |       |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
+   |       | "     | "     | b     | flip  | b     | none  | bound |
+   |       |       |       | ound’ |       | ound’ |       |       |
+   +-------+-------+-------+-------+-------+-------+-------+-------+
 
    The italicized rows for the “reverse states" columns indicate that a
    bound-state molecule collided with a new surface and then hopped to
@@ -4582,10 +5576,10 @@ Surface functions
      but still make logical sense and so they are converted here.
 
    +-------+-------+-------+-------+-------+-------+-------+-------+
-   | i     |       | a     |       |       |       |       |       |
-   | ntera |       | ction |       |       |       |       |       |
-   | ction |       |       |       |       |       |       |       |
-   | class |       |       |       |       |       |       |       |
+   | i     | tri   |       |       | a     | index |       |       |
+   | ntera | state |       |       | ction | f     |       |       |
+   | ction | f     |       |       |       | ormat |       |       |
+   | class | ormat |       |       |       |       |       |       |
    +-------+-------+-------+-------+-------+-------+-------+-------+
    |       | `     | ``    | ``    |       | ``    | ``f   | ``    |
    |       | `ms`` | ms1`` | ms2`` |       | ms3`` | ace`` | ms4`` |
@@ -4688,8 +5682,7 @@ Surface functions
      an action is ordered as: ``SAtrans`` < ``SAmult`` < ``SAreflect`` <
      ``SAjump`` < ``SAabsorb`` < ``SAport``.
 
-**memory management**
-
+*memory management*
 ``surfaceactionptr surfaceactionalloc(int species);``
    | 
    | Allocates a surface action structure for storing action details,
@@ -4812,8 +5805,7 @@ Surface functions
      contents in it, including all of the surfaces and all of their
      panels.
 
-**data structure output**
-
+*data structure output*
 ``void surfaceoutput(simptr sim);``
    | 
    | Prints out information about all surfaces, including the surface
@@ -4830,8 +5822,7 @@ Surface functions
    | Checks some surface parameters. Many more should be checked as
      well, although those haven’t been written yet.
 
-**structure set up**
-
+*structure set up*
 ``int surfenablesurfaces(simptr sim,int maxsurf);``
    | 
    | Allocates and sets up the surface superstructure for a maximum of
@@ -5101,7 +6092,7 @@ Surface functions
      function ``surfacerate``. Returned rates will be between 0 and
      ``MAX_DBL``. Error codes are returned with negative numbers: -1
      indicates that the input situation is impossible (i.e.
-     ``ms1-MSsoln`` and ``face-PFnone``), or that input data are
+     ``ms1=MSsoln`` and ``face=PFnone``), or that input data are
      unavailable (i.e. the surface action isn’t ``SAmult`` or the action
      details aren’t recorded for this action); -2 indicates that the
      interaction probabilities haven’t been computed yet in the action
@@ -5207,8 +6198,7 @@ Surface functions
    | 
    | Sets up or updates surface data structures.
 
-**core simulation functions**
-
+*core simulation functions*
 ``enum PanelFace``
    | ``panelside(double* pt,panelptr pnl,int dim,double *distptr,int strict,int useoldpos);``
    | Returns the side of the panel ``pnl`` that point ``pt`` is on. If
@@ -5255,9 +6245,9 @@ Surface functions
      is towards ``pt2``, and the contents of ``crossptr`` will be the
      crossing position on the line, which is between 0 and 1 inclusive.
      The type of crossing can be determined by looking at the returned
-     ``face`` values. (1) If ``face1!-face2``, then the line crosses the
+     ``face`` values. (1) If ``face1!=face2``, then the line crosses the
      panel exactly once and the contents of ``cross2`` are undefined.
-     (2) if ``face1--face2``, then the line crosses the panel exactly
+     (2) if ``face1==face2``, then the line crosses the panel exactly
      twice (implying a curved panel) for which the first crossing will
      be recorded in ``crsspt`` and ``crossptr`` and the latter in
      ``cross2ptr``. Suppose the line crosses a hemisphere in such a way
@@ -5313,30 +6303,64 @@ Surface functions
    ``Geo_LineExitLine2`` using this line. This function was new in
    Smoldyn 2.37.
 
-   -- ----------- ----------------------- -------------------------
-   \  1D          2D                      3D
-   -- ----------- ----------------------- -------------------------
-   \                                      
-   \  1           1 for ``p[0]``          1 for ``p[0]`` - ``p[1]``
-   \              2 for ``p[1]``          2 for ``p[1]`` - ``p[2]``
-   \                                      3 for ``p[2]`` - ``p[3]``
-   \                                      4 for ``p[3]`` - ``p[0]``
-   \                                      
-   \  1           1 for ``p[0]``          1 for ``p[0]`` - ``p[1]``
-   \              2 for ``p[1]``          2 for ``p[1]`` - ``p[2]``
-   \                                      3 for ``p[2]`` - ``p[3]``
-   \                                      
-   \  1           1                       1
-   \                                      
-   \  not allowed 1 for ``p[0]``          1 for ``p[0]``
-   \              2 for ``p[1]``          2 for ``p[1]``
-   \                                      
-   \  not allowed 1 for cw end            1
-   \              2 for ccw end           
-   \                                      
-   \  not allowed 1 for end cw of normal  1
-   \              2 for end ccw of normal 
-   -- ----------- ----------------------- -------------------------
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | 1D          | 2D              | 3D              |
+   +=================+=============+=================+=================+
+   | **rectangles,   |             |                 |                 |
+   | ps = PSrect**   |             |                 |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | 1           | 1 for ``p[0]``  | 1 for ``p[0]``  |
+   |                 |             |                 | - ``p[1]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             | 2 for ``p[1]``  | 2 for ``p[1]``  |
+   |                 |             |                 | - ``p[2]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             |                 | 3 for ``p[2]``  |
+   |                 |             |                 | - ``p[3]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             |                 | 4 for ``p[3]``  |
+   |                 |             |                 | - ``p[0]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   | **triangles, ps |             |                 |                 |
+   | = PStri**       |             |                 |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | 1           | 1 for ``p[0]``  | 1 for ``p[0]``  |
+   |                 |             |                 | - ``p[1]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             | 2 for ``p[1]``  | 2 for ``p[1]``  |
+   |                 |             |                 | - ``p[2]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             |                 | 3 for ``p[2]``  |
+   |                 |             |                 | - ``p[3]``      |
+   +-----------------+-------------+-----------------+-----------------+
+   | **spheres, ps = |             |                 |                 |
+   | PSsph**         |             |                 |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | 1           | 1               | 1               |
+   +-----------------+-------------+-----------------+-----------------+
+   | **cylinders, ps |             |                 |                 |
+   | = PScyl**       |             |                 |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | not allowed | 1 for ``p[0]``  | 1 for ``p[0]``  |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             | 2 for ``p[1]``  | 2 for ``p[1]``  |
+   +-----------------+-------------+-----------------+-----------------+
+   | **hemispheres,  |             |                 |                 |
+   | ps = PShemi**   |             |                 |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | not allowed | 1 for cw end    | 1               |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             | 2 for ccw end   |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   | **disks, ps =   |             |                 |                 |
+   | PSdisk**        |             |                 |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 | not allowed | 1 for end cw of | 1               |
+   |                 |             | normal          |                 |
+   +-----------------+-------------+-----------------+-----------------+
+   |                 |             | 2 for end ccw   |                 |
+   |                 |             | of normal       |                 |
+   +-----------------+-------------+-----------------+-----------------+
 
 ``void``
    | ``paneledgenormal(panelptr pnl,double *pnledgept,int dim,int edgenum,double *normal)``
@@ -5720,14 +6744,14 @@ for wrapping towards the high side. This might be clearer in the Zn.c
 documentation. The neighbors that are listed depend on the requested
 simulation accuracy:
 
------------------ --------- -----------
+================= ========= ===========
 accuracy          neighbors wrap-around
------------------ --------- -----------
+================= ========= ===========
 :math:`<`\ 3      none      no
 3 to :math:`<`\ 6 nearest   no
 6 to :math:`<`\ 9 nearest   yes
 :math:`<`\ 9      all       yes
------------------ --------- -----------
+================= ========= ===========
 
 Boxes also have lists of molecules, allocated to size ``maxmol[ll]`` and
 filled from 0 to ``nmol[ll]-1``) that correspond to the master molecule
@@ -5774,7 +6798,7 @@ convert between box addresses and indices. The box index along the
 
 ::
 
-   indx[d]-(int)((x[d]-min[d])/size[d]);
+   indx[d]=(int)((x[d]-min[d])/size[d]);
 
 where integer conversion takes care of the truncation. Because of this,
 a box includes the points that are exactly on the low edge, but not
@@ -5785,13 +6809,12 @@ box number as b,
 
 ::
 
-   for(b-0,d-0;d<dim;d++)   b-side[d]*b+indx[d];
+   for(b=0,d=0;d<dim;d++)  b=side[d]*b+indx[d];
 
 Converting the box number to the indices can also be done, but the Zn.c
 routine is easiest for this.
 
-**low level utilities**
-
+*low level utilities*
 ``void box2pos(simptr sim,boxptr bptr,double *poslo,double *poshi);``
    | 
    | Given a pointer to a box in ``bptr``, this returns the coordinate
@@ -5859,8 +6882,7 @@ routine is easiest for this.
    correctly account for system volumes that didn’t start at (0,0,0)
    and/or that didn’t use periodic boundary conditions.
 
-**memory management**
-
+*memory management*
 ``boxptr boxalloc(int dim,int nlist);``
    | 
    | ``boxalloc`` allocates and minimally initiallizes a new
@@ -5914,8 +6936,7 @@ routine is easiest for this.
    | 
    | Frees a box superstructure, including the boxes.
 
-**data structure output**
-
+*data structure output*
 ``void boxoutput(boxssptr boxs,int blo,int bhi,int dim);``
    | 
    | This displays the details of virtual boxes in the box
@@ -5935,8 +6956,7 @@ routine is easiest for this.
    | Checks and displays warning about various box parameters such as
      molecules per box, box sizes, and number of panels in each box.
 
-**structure set up**
-
+*structure set up*
 ``void boxsetcondition(boxssptr boxs,enum StructCond cond,int upgrade);``
    | 
    | Sets the box superstructure condition to ``cond``, if appropriate.
@@ -5975,8 +6995,7 @@ routine is easiest for this.
    | 
    | Sets up or updates box data structures.
 
-**core simulation functions**
-
+*core simulation functions*
 ``boxptr line2nextbox(simptr sim,double *pt1,double *pt2,boxptr bptr);``
    | 
    | Given a line segment which is defined by the starting point ``pt1``
@@ -6001,7 +7020,7 @@ routine is easiest for this.
    messy, but I think it works.
 
    Near the end of the function is a line that checks if
-   ``crsmin--1.01``. This is true only if there is no next box, despite
+   ``crsmin==1.01``. This is true only if there is no next box, despite
    the fact that ``pos2box``, in the first line, said that there was
    one. It can arise from round-off error.
 
@@ -6054,7 +7073,8 @@ Thus, for example, a cell cytoplasm compartment can be defined with the
 logic equation: equal to the cell compartment and not the nucleus
 compartment.
 
-**Data structures**
+Data structures
+~~~~~~~~~~~~~~~
 
 ::
 
@@ -6097,8 +7117,7 @@ This structure contains information about all of the compartments.
 condition is the current condition of the superstructure and sim is a
 pointer to the simulation structure that owns this superstructure.
 
-**enumerated types**
-
+*enumerated types*
 ``enum CmptLogic compartstring2cl(char *string);``
    | 
    | Converts compartment logic symbol string to an enumerated
@@ -6113,8 +7132,7 @@ pointer to the simulation structure that owns this superstructure.
      “equal", “equalnot", “and", “or", “xor", “andnot", “ornot" or
      “none". ``string`` is returned to allow for function nesting.
 
-**low level utilities**
-
+*low level utilities*
 ``int posincompart(simptr sim,double *pos,compartptr cmpt,int useoldpos);``
    | 
    | Tests if position ``pos`` is in compartment ``cmpt``, returning 1
@@ -6131,8 +7149,7 @@ pointer to the simulation structure that owns this superstructure.
      Returns 0 and a valid position, unless a point cannot be found, in
      which case this returns 1.
 
-**memory management**
-
+*memory management*
 ``compartptr compartalloc(void);``
    | 
    | Allocates memory for a compartment. All arrays are set to ``NULL``,
@@ -6156,8 +7173,7 @@ pointer to the simulation structure that owns this superstructure.
    | Frees a compartment superstructure, including all compartments and
      everything within them.
 
-**data structure output**
-
+*data structure output*
 ``void compartoutput(simptr sim);``
    | 
    | Displays all important information about all compartments to
@@ -6173,8 +7189,7 @@ pointer to the simulation structure that owns this superstructure.
    | 
    | This checks a few compartment parameters.
 
-**structure set up**
-
+*structure set up*
 ``void compartsetcondition(compartssptr cmptss,enum StructCond cond,int upgrade);``
    | 
    | Sets the compartment superstructure condition to ``cond``, if
@@ -6245,12 +7260,12 @@ pointer to the simulation structure that owns this superstructure.
    ``volfrac2``, equal to 0 and the latter is for the actual volume
    fraction :math:`>`\ 0.
 
-   ------------------------ --- ----- ------- -------
-   \                                          
-   \                            -2    -1      0 to 1
-   ``bptr`` was in ``cmpt`` yes 0 / 0 2 / 0,3 2 / 0,3
-   ``(bc<-cmpt->nbox)``     no  0 / 1 0 / 1   0 / 1
-   ------------------------ --- ----- ------- -------
+   ======================== === ==================== ======= =======
+   \                            value of ``volfrac``         
+   \                            -2                   -1      0 to 1
+   ``bptr`` was in ``cmpt`` yes 0 / 0                2 / 0,3 2 / 0,3
+   ``(bc<=cmpt->nbox)``     no  0 / 1                0 / 1   0 / 1
+   ======================== === ==================== ======= =======
 
 ``compartptr``
    | ``compartreadstring(simptr sim,compartptr cmpt,char *word,char *line2,char *erstr);``
@@ -6287,8 +7302,7 @@ pointer to the simulation structure that owns this superstructure.
    | 
    | Sets up or updates all portions of compartment data structures.
 
-**core simulation functions**
-
+*core simulation functions*
 ``void comparttranslate(simptr sim,compartptr cmpt,int code,double *translate);``
    | 
    | Translates compartment ``cmpt`` by the displacement given in
@@ -6339,7 +7353,10 @@ Smoldyn simulations.
 As much as possible, the code for ports is very analogous to the code
 for compartments.
 
-**Data structures**
+.. _data-structures-1:
+
+Data structures
+~~~~~~~~~~~~~~~
 
 ::
 
@@ -6364,8 +7381,7 @@ This structure contains information about all ports. ``condition`` is
 the current condition of the superstructure and ``sim`` is a pointer to
 the simulation structure that owns this superstructure.
 
-**memory management**
-
+*memory management*
 ``portptr portalloc(void);``
    | 
    | Allocates memory for a port. Pointers are set to ``NULL`` and
@@ -6388,8 +7404,7 @@ the simulation structure that owns this superstructure.
    | 
    | Frees a port superstructure, including all ports.
 
-**data structure output**
-
+*data structure output*
 ``void portoutput(simptr sim);``
    | 
    | Displays all important information about all ports to stdout.
@@ -6403,8 +7418,7 @@ the simulation structure that owns this superstructure.
    | 
    | This checks a few port parameters.
 
-**structure set up**
-
+*structure set up*
 ``void portsetcondition(portssptr portss,enum StructCond cond,int upgrade);``
    | 
    | Sets the port superstructure condition to ``cond``, if appropriate.
@@ -6466,8 +7480,7 @@ the simulation structure that owns this superstructure.
    | 
    | Sets up or updates all port data structure components.
 
-**core simulation functions**
-
+*core simulation functions*
 ``int portgetmols(simptr sim,portptr port,int ident,enum MolecState ms,int remove);``
    | 
    | Returns the number of molecules of type ``ident`` (use -1 for all
@@ -6530,46 +7543,49 @@ the rest of Smoldyn. The code in smollattice.c is always compiled,
 regardless of compiling options, but if the ``LATTICE`` configuration
 variable is undefined, then all calls to the nsv code are disabled.
 
-**Data structures**
+.. _data-structures-2:
+
+Data structures
+~~~~~~~~~~~~~~~
 
 ::
 
    enum LatticeType {LATTICEnone,LATTICEnsv,LATTICEpde};
 
    typedef struct latticestruct {
-     struct latticesuperstruct *latticess; // lattice superstructure
-     char *latticename;          // lattice name (reference, not owned)
-     enum LatticeType type;      // type of lattice
-     double min[DIMMAX];         // lower spatial boundaries
-     double max[DIMMAX];         // upper spatial boundaries
-     double dx[DIMMAX];          // lattice lengthscale (subvolume width)
-     char btype[DIMMAX];         // boundary type (r)eflective or (p)eriodic
-     portptr port;               // interface port (ref.)
-     int **convert;    // convert to particle at port, 0 or 1 [lat.species][face] ??
-     int maxreactions;           // maximum number of reactions
-     int nreactions;             // number of reactions
-     rxnptr *reactionlist;       // list of reactions
-     int *reactionmove;          // 0 or 1 for moving reactions
-     maxsurfaces??
-     nsurfaces??
-     surfacelist??
-     int maxspecies;             // maximum number of species
-     int nspecies;               // number of species
-     int *species_index;                   // species indices
-     int *maxmols;               // allocated size of molecule list [lat.species]
-     int *nmols;                 // number of individual molecules [lat.species]
-     double*** mol_positions;    // molecule positions [lat.species][nmols][dim]
-     NextSubvolumeMethod* nsv;     // nsv class
-     NextSubvolumeMethod* pde;     // pde class
+    struct latticesuperstruct *latticess;  // lattice superstructure
+    char *latticename;     // lattice name (reference, not owned)
+    enum LatticeType type;   // type of lattice
+    double min[DIMMAX];     // lower spatial boundaries
+    double max[DIMMAX];     // upper spatial boundaries
+    double dx[DIMMAX];     // lattice lengthscale (subvolume width)
+    char btype[DIMMAX];     // boundary type (r)eflective or (p)eriodic
+    portptr port;        // interface port (ref.)
+    int **convert;  // convert to particle at port, 0 or 1 [lat.species][face] ??
+    int maxreactions;      // maximum number of reactions
+    int nreactions;       // number of reactions
+    rxnptr *reactionlist;    // list of reactions
+    int *reactionmove;     // 0 or 1 for moving reactions
+    maxsurfaces??
+    nsurfaces??
+    surfacelist??
+    int maxspecies;       // maximum number of species
+    int nspecies;        // number of species
+    int *species_index;                    // species indices
+    int *maxmols;        // allocated size of molecule list [lat.species]
+    int *nmols;         // number of individual molecules [lat.species]
+    double*** mol_positions;  // molecule positions [lat.species][nmols][dim]
+    NextSubvolumeMethod* nsv;      // nsv class
+    NextSubvolumeMethod* pde;      // pde class
        } *latticeptr;
 
    typedef struct latticesuperstruct {
-     enum StructCond condition;    // structure condition
-     struct simstruct *sim;            // simulation structure
-     int maxlattice;                           // maximum number of lattices
-     int nlattice;                             // actual number of lattices
-     char **latticenames;              // lattice names
-     latticeptr *latticelist;      // list of lattices
+    enum StructCond condition; // structure condition
+    struct simstruct *sim;         // simulation structure
+    int maxlattice;                            // maximum number of lattices
+    int nlattice;                              // actual number of lattices
+    char **latticenames;               // lattice names
+    latticeptr *latticelist;       // list of lattices
        } *latticessptr;
 
 These structures contain information about all lattices. Starting with
@@ -6616,9 +7632,10 @@ this because I didn’t think these molecules had precise positions. The
 ``nsv`` and ``pde`` pointers point to classes in the core NSV and PDE
 code (the PDE code isn’t included yet).
 
+Functions
+~~~~~~~~~
 
-**memory management**
-
+*memory management*
 ``latticeptr latticealloc(int dim);``
    | 
    | Allocates memory for a lattice assuming a ``dim`` dimensional
@@ -6663,8 +7680,7 @@ code (the PDE code isn’t included yet).
    | 
    | Free a lattice superstructure and all of its contents.
 
-**data structure output**
-
+*data structure output*
 ``void latticeoutput(simptr sim);``
    | 
    | Outputs the contents of the lattice superstructure and all of the
@@ -6682,8 +7698,7 @@ code (the PDE code isn’t included yet).
    | Checks the lattice parameters, sending output to the simLog
      function along with the appropriate error level.
 
-**structure set up**
-
+*structure set up*
 ``void latticesetcondition(latticessptr latticess,enum StructCond cond,int upgrade);``
    | 
    | Sets the lattice superstructure condition to ``cond``, if
@@ -6804,16 +7819,13 @@ code (the PDE code isn’t included yet).
      is essentially identical to ones with similar names in other code
      modules.
 
-**core simulation functions**
-
+*core simulation functions*
 ``int latticeruntimestep(simptr sim);``
    | 
    | Runs the lattice NSV code for one simulation time step for each
      lattice. Returns 0.
 
-NSV functions, in nsvc.cpp
----------------------------
-
+*NSV functions, in nsvc.cpp*
 ``void nsv_init();``
    | 
    | Initializes the Kairos simulation engine.
@@ -6896,7 +7908,7 @@ Filaments (functions in smolfilament.c)
 Filament support is in progress.
 
 Data structures declared in smoldyn.h
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -7045,20 +8057,20 @@ condition element and a pointer up the heirarchy to the simulation
 structure.
 
 Filament math
--------------
+~~~~~~~~~~~~~
 
 Following are the basic equations for the filament relative angles
 (:math:`\mathbf{A}`, ``dcm``), absolute angles (:math:`\mathbf{B}`,
 ``adcm``), and positions (:math:`\mathbf{x}`, ``xyz``).
 
-:math:`\mathbf{B}_0 - \mathbf{A}_0`
+:math:`\mathbf{B}_0 = \mathbf{A}_0`
 
-:math:`\mathbf{B}_i - \mathbf{A}_i \cdot \mathbf{B}_{i-1}`
+:math:`\mathbf{B}_i = \mathbf{A}_i \cdot \mathbf{B}_{i-1}`
 
-:math:`\mathbf{B}_i - \mathbf{A}^T_{i+1} \cdot \mathbf{B}_{i+1}`
+:math:`\mathbf{B}_i = \mathbf{A}^T_{i+1} \cdot \mathbf{B}_{i+1}`
 
-Function declarations
----------------------
+Function declarations.
+~~~~~~~~~~~~~~~~~~~~~~
 
 As much as possible, functions are declared locally rather than in the
 smoldynfuncs.h header file. This simplifies the code reading because it
@@ -7074,8 +8086,7 @@ are only called internally.
    Local. Converts filament dynamics string to enumerated dynamics type.
    Returns ``DTnone`` for unrecognized input.
 
-**low level utilities**
-
+*low level utilities*
 ``double filRandomLength(const filamenttypeptr filtype,double thickness,double sigmamult);``
    | 
    | Local. Returns a random segment length using the mechanics
@@ -7102,7 +8113,7 @@ are only called internally.
      segment to compute to, or as -1 to indicate that calculation should
      end at the end of the filament. The equation is
 
-   .. math:: E_{stretch} - \sum_{s} \frac{thk_s k_{len} (l_s - l_{std})^2}{2}
+   .. math:: E_{stretch} = \sum_{s} \frac{thk_s k_{len} (l_s - l_{std})^2}{2}
 
 ``double filBendEnergy(filamentptr fil,int seg1,int seg2);``
    | 
@@ -7112,7 +8123,7 @@ are only called internally.
      segment to compute to, or as -1 to indicate that calculation should
      end at the end of the filament. The equation is
 
-   .. math:: E_{bend}-\sum_{s-1}^{n} \frac{thk_{s-1}+thk_s}{2} \frac{k_y(a_y-a_{y,std})^2+k_p(a_p-a_{p,std})^2+k_r(a_r-a_{r,std})^2}{2}
+   .. math:: E_{bend}=\sum_{s=1}^{n} \frac{thk_{s-1}+thk_s}{2} \frac{k_y(a_y-a_{y,std})^2+k_p(a_p-a_{p,std})^2+k_r(a_r-a_{r,std})^2}{2}
 
    The first term in the sum computes the average thickness of the
    segment in front of and behind the bend. The other term is the
@@ -7133,8 +8144,7 @@ are only called internally.
    results, empty beads/segments may get moved multiple times in a
    single array shift.
 
-**Memory management**
-
+*Memory management*
 ``beadptr beadalloc();``
    | 
    | Allocates memory for a single bead and initializes this bead.
@@ -7185,8 +8195,7 @@ are only called internally.
    | 
    | Fres a filament superstructure and all of the structures within it.
 
-**Data structure output**
-
+*Data structure output*
 ``void filtypeoutput(filamenttypeptr filtype,int dim);``
    Outputs all of the key information about a filament type to the
    display.
@@ -7210,9 +8219,7 @@ are only called internally.
    | Checks filament parameters to make sure they are all reasonable.
      This function isn’t written yet.
 
-Filament manipulation
-----------------------
-
+*Filament manipulation*
 ``int``
    | ``filAddSegment(filamentptr fil,double *x,double length,double *angle,double thickness,char endchar);``
    | Adds a segment to filament ``fil``. If this is the first segment,
@@ -7230,21 +8237,21 @@ Filament manipulation
      front, then ``angle`` is the angle from the new segment to the
      coordinate system.
 
-   For the first segment: :math:`\mathbf{x}_0-\texttt{x}`,
-   :math:`\mathbf{x}_1-\mathbf{x}_0 + l_0 \mathbf{B}^T_0 \cdot \mathbf{\hat{x}}`
+   For the first segment: :math:`\mathbf{x}_0=\texttt{x}`,
+   :math:`\mathbf{x}_1=\mathbf{x}_0 + l_0 \mathbf{B}^T_0 \cdot \mathbf{\hat{x}}`
 
    For segments added to the back, with index :math:`i`:
-   :math:`\mathbf{a}_i - \texttt{angle}`,
-   :math:`\mathbf{A}_i - DCM(\mathbf{a}_i)`,
-   :math:`\mathbf{B}_i - \mathbf{A}_i \cdot \mathbf{B}_{i-1}`,
-   :math:`\mathbf{x}_{i+1} - \mathbf{x}_i + l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}`
+   :math:`\mathbf{a}_i = \texttt{angle}`,
+   :math:`\mathbf{A}_i = DCM(\mathbf{a}_i)`,
+   :math:`\mathbf{B}_i = \mathbf{A}_i \cdot \mathbf{B}_{i-1}`,
+   :math:`\mathbf{x}_{i+1} = \mathbf{x}_i + l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}`
 
    For segments added to the front, with index :math:`i` (typically
    equal to 0):
-   :math:`\mathbf{B}_i - \mathbf{A}_{i+1}^T \cdot \mathbf{B}_{i+1}`,
-   :math:`\mathbf{A}_i - \mathbf{B}_i`
-   :math:`\mathbf{a}_i - XYZ(\mathbf{B}_i)`,
-   :math:`\mathbf{x}_i - \mathbf{x}_{i+1} - l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}`
+   :math:`\mathbf{B}_i = \mathbf{A}_{i+1}^T \cdot \mathbf{B}_{i+1}`,
+   :math:`\mathbf{A}_i = \mathbf{B}_i`
+   :math:`\mathbf{a}_i = XYZ(\mathbf{B}_i)`,
+   :math:`\mathbf{x}_i = \mathbf{x}_{i+1} - l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}`
 
 ``int filRemoveSegment(filamentptr fil,char endchar);``
    | 
@@ -7255,7 +8262,7 @@ Filament manipulation
 ``void filTranslate(filamentptr fil,const double *vect,char func)``
    | 
    | Translates an entire filament. Enter ``vect`` with a 3-D vector and
-     ``func`` with ‘-’ for translate to the given posiition, with ‘-’
+     ``func`` with ‘=’ for translate to the given posiition, with ‘-’
      for to subtract the value of ``vect`` from the current position,
      and with ‘+’ to add the value of ``vect`` to the current position.
 
@@ -7284,9 +8291,7 @@ Filament manipulation
    | 
    | This copies all of the values in a filament to another filament.
 
-Structure set up
-----------------
-
+*Structure set up*
 ``void filsetcondition(filamentssptr filss,enum StructCond cond,int upgrade);``
    | 
    | Local. This function sets the condition of the filament
@@ -7383,8 +8388,7 @@ Structure set up
 ``int filsupdate(simptr sim);``
    | 
 
-**Core simulation functions**
-
+*Core simulation functions*
 ``int filMonomerXSurface(simptr sim,filamentptr fil,char endchar);``
    | 
 
@@ -7411,25 +8415,25 @@ when Smoldyn encounters rules within an input file, it will
 automatically call BioNetGen, BioNetGen will expand the rules into a
 .net file, and Smoldyn will read the .net file into Smoldyn structures.
 
-Data structures declared in smoldyn.h
+*Data structures declared in smoldyn.h*
 
 ::
 
    typedef struct bngstruct {
        struct bngsuperstruct *bngss; // bng superstructure
-       char *bngname;              // bng name
-     int bngindex;               // index of this bng structure
-     
-       int maxparams;              // maximum number of numeric parameters
-       int nparams;                // actual number of numeric parameters
-       char **paramnames;          // names of parameters [index]
-     char **paramstrings;        // strings for parameter values [index]
-       double *paramvalues;        // actual parameter values [index]
-     
-     int maxmonomer;             // maximum number of monomers
-     int nmonomer;               // actual number of monomers
-     char **monomernames;        // names of monomers [index]
-     int *monomercount;          // monomer count work space [index]
+       char *bngname;       // bng name
+    int bngindex;        // index of this bng structure
+    
+       int maxparams;       // maximum number of numeric parameters
+       int nparams;        // actual number of numeric parameters
+       char **paramnames;     // names of parameters [index]
+    char **paramstrings;    // strings for parameter values [index]
+       double *paramvalues;    // actual parameter values [index]
+    
+    int maxmonomer;       // maximum number of monomers
+    int nmonomer;        // actual number of monomers
+    char **monomernames;    // names of monomers [index]
+    int *monomercount;     // monomer count work space [index]
        double *monomerdifc;                // diffusion coefficient of monomer [index]
        double *monomerdisplaysize; // display size of monomer [index]
        double **monomercolor;          // color of monomer [index][RGB]
@@ -7438,34 +8442,34 @@ Data structures declared in smoldyn.h
        enum SrfAction ***monomeraction;    // monomer surface actions [index][srf][face]
        surfactionptr ***monomeractdetails; // monomer action details [index][srf][face]
 
-       int maxbspecies;            // maximum number of bng species
-       int nbspecies;              // actual number of bng species
-       char **bsplongnames;        // complete bng species names [index]
-     char **bspshortnames;       // shortened bng species names [index]
+       int maxbspecies;      // maximum number of bng species
+       int nbspecies;       // actual number of bng species
+       char **bsplongnames;    // complete bng species names [index]
+    char **bspshortnames;    // shortened bng species names [index]
        enum MolecState *bspstate;  // default species state [index]
-       char **bspcountstr;         // strings for initial bng species counts [index]
-     double *bspcount;           // actual initial bng species counts [index]
-     int *spindex;               // smoldyn index of this species [index]
+       char **bspcountstr;     // strings for initial bng species counts [index]
+    double *bspcount;      // actual initial bng species counts [index]
+    int *spindex;        // smoldyn index of this species [index]
 
-       int maxbrxns;               // maximum number of bng reactions
-       int nbrxns;                 // acutal number of bng reactions
-       char **brxnreactstr;        // strings for reactants [index]
-       char **brxnprodstr;         // strings for products [index]
-     char **brxnratestr;         // strings for reaction rates [index]
-     int **brxnreact;            // reactant bng species indices [index][rct]
-     int **brxnprod;             // product bng species indices [index][prd]
-     int *brxnorder;             // order of bng reaction [index]
-     int *brxnnprod;             // number of products of bng reaction [index]
-     rxnptr *brxn;               // pointer to this reaction [index]
+       int maxbrxns;        // maximum number of bng reactions
+       int nbrxns;         // acutal number of bng reactions
+       char **brxnreactstr;    // strings for reactants [index]
+       char **brxnprodstr;     // strings for products [index]
+    char **brxnratestr;     // strings for reaction rates [index]
+    int **brxnreact;      // reactant bng species indices [index][rct]
+    int **brxnprod;       // product bng species indices [index][prd]
+    int *brxnorder;       // order of bng reaction [index]
+    int *brxnnprod;       // number of products of bng reaction [index]
+    rxnptr *brxn;        // pointer to this reaction [index]
    } *bngptr;
 
    typedef struct bngsuperstruct {
        enum StructCond condition;  // structure condition
        struct simstruct *sim;          // simulation structure
-       int maxbng;                 // maximum number of bng networks
-       int nbng;                   // actual number of bng networks
-       char **bngnames;            // names of bng networks
-       bngptr *bnglist;            // list of bng networks
+       int maxbng;         // maximum number of bng networks
+       int nbng;          // actual number of bng networks
+       char **bngnames;      // names of bng networks
+       bngptr *bnglist;      // list of bng networks
    } *bngssptr;
 
 Superstucture description. As usual, ``condition`` tells about whether
@@ -7535,15 +8539,14 @@ species numbers (as opposed to Smoldyn species numbers) in the
 is added to the main Smoldyn program, the pointer to the reaction data
 structure for this reaction is stored in ``brxn``.
 
-Function declarations. As much as possible, the smolbng functions are
+*Function declarations.* As much as possible, the smolbng functions are
 declared locally rather than in the smoldynfuncs.h header file. This
 simplifies the code reading because it clarifies which functions might
 be called externally versus those that are only called internally.
 Below, all functions are labeled as either “Local" or “Global" to
 indicate this status.
 
-**Memory management functions**
-
+*Memory management functions*
 ``void bngallocsurfacedata(bngptr bng,int maxsurface);``
    | 
    | This allocates memory for the surface action elements for the
@@ -7585,8 +8588,7 @@ indicate this status.
    | 
    | Local. Frees a bng superstructure, including all of its contents.
 
-**Data structure output**
-
+*Data structure output*
 ``void bngoutput(simptr sim);``
    | 
    | Global. Outputs the contents of the bng superstructure and all bng
@@ -7597,9 +8599,7 @@ indicate this status.
    | Global. Checks that the bng parameters are reasonable. This does
      very little at present.
 
-Structure set up - bng
------------------------
-
+*Structure set up - bng*
 ``void bngsetcondition(bngssptr bngss,enum StructCond cond,int upgrade);``
    | 
    | Local. This function sets the condition of the bng superstructure.
@@ -7637,9 +8637,7 @@ Structure set up - bng
    | Local. Sets the bng superstructure ``BNG2path`` element to the
      string entered in ``path``. Returns 0.
 
-Structure set up - parameters
-------------------------------
-
+*Structure set up - parameters*
 ``int bngparseparameter(bngptr bng,int index);``
    | 
    | Local. Parses the parameter value string for the parameter with
@@ -7659,9 +8657,7 @@ Structure set up - parameters
      failure to allocate memory, or -2 for a math parsing error; in the
      last case, the error message can be found using ``strmatherror``.
 
-Structure set up - monomers
-----------------------------
-
+*Structure set up - monomers*
 ``int bngaddmonomer(bngptr bng,const char *name,enum MolecState ms);``
    | 
    | Local. Adds a monomer, or modifies an existing monomer, in a bng
@@ -7709,9 +8705,7 @@ Structure set up - monomers
      and initializes the diffusion coefficient. Returns 0 for success,
      -1 if out of memory, or -2 for invalid monomer name.
 
-Structure set up - species
----------------------------
-
+*Structure set up - species*
 ``int bngmakeshortname(bngptr bng,int index,int totalmn,int hasmods);``
    | 
    | Local. Generates a short name for a bspecies, saving it in
@@ -7754,7 +8748,7 @@ Structure set up - species
      species has only 1 monomer, then the diffusion coefficient is that
      of the monomer. Otherwise, it is a weighted average of the monomer
      diffusion coefficients using the equation
-     :math:`D_{species} - (\sum_{i} D_i^{-3})^{-1/3}` where
+     :math:`D_{species} = (\sum_{i} D_i^{-3})^{-1/3}` where
      :math:`D_{species}` is the diffusion coefficient of the species and
      :math:`D_i` is the diffusion coefficient of the :math:`i`\ th
      monomer within the species. This function is only called by
@@ -7769,7 +8763,7 @@ Structure set up - species
      has only 1 monomer, then the display size is the display size of
      that monomer. Otherwise, it is a weighted average of the monomer
      display sizes using the equation
-     :math:`S_{species} - (\sum_{i} S_i^{3})^{1/3}` where
+     :math:`S_{species} = (\sum_{i} S_i^{3})^{1/3}` where
      :math:`S_{species}` is the display size of the species and
      :math:`S_i` is the display size of the :math:`i`\ th monomer within
      the species. This function is only called by ``bngparsespecies``.
@@ -7830,8 +8824,7 @@ Structure set up - species
      Returns 0 for success or the same error codes as
      ``bngparsespecies`` for failure.
 
-**Structure set up - reactions**
-
+*Structure set up - reactions*
 ``int bngparsereaction(bngptr bng,int index);``
    | 
    | Local. Parses the reaction with index ``index``. This reads the bng
@@ -7854,8 +8847,7 @@ Structure set up - species
      Returns 0 for success, 1 for failure to allocate memory, or 2 for
      inability to parse the rate string.
 
-**Structure set up - reactions**
-
+*Structure set up - reactions*
 ``int bngaddgroup(bngptr bng,int gindex,const char *gname,const char *specieslist);``
    | 
    | Adds a group, created in the .bngl file with “begin observables"
@@ -7869,9 +8861,7 @@ Structure set up - species
      converts the bng species indices to Smoldyn species indices and
      sends the results to ``moladdspeciesgroup`` for group creation.
 
-Structure set up - high level functions
-----------------------------------------
-
+*Structure set up - high level functions*
 ``int bngrunBNGL2(bngptr bng,char *filename,char *outname);``
    | 
    | Local. This runs the BNG2.pl program on the BNGL file called
@@ -7910,7 +8900,8 @@ Structure set up - high level functions
      calls the ``bngupdatelists`` and ``bngupdateparams`` functions to
      carry out the updating tasks.
 
-**Core simulation functions**
+*Core simulation functions*
+   | 
 
 No core simulation functions.
 
@@ -7920,7 +8911,7 @@ Complexes (not written yet)
 It’s becoming increasingly apparent that Smoldyn needs to support
 macromolecular complexes. This section presents documentation for code
 that hasn’t been written yet in the hopes that this will provide a
-design for the code once there is time to write it. Data structures
+design for the code once there is time to write it. *Data structures*
 
 Each individual complex is listed with a complexstruct, and this
 complexstruct lists each of its monomers individually in a
@@ -7997,7 +8988,7 @@ posts a need for graphical update on occasion with
 ``glutPostRedisplay``. Meanwhile, ``RenderScene`` is just a wrapper for
 ``RenderSim``, which actually draws the entire graphical output. The
 summary is: initialization is done in ``smolsimulategl`` and drawing is
-done by ``RenderSim``. Data structure
+done by ``RenderSim``. *Data structure*
 
 ::
 
@@ -8005,7 +8996,7 @@ done by ``RenderSim``. Data structure
    enum LightParam {LPambient,LPdiffuse,LPspecular,LPposition,LPon,LPoff,LPauto,LPnone};
 
    typedef struct graphicssuperstruct {
-       int graphics;                               // graphics: 0-none, 1-opengl, 2-good opengl
+       int graphics;                               // graphics: 0=none, 1=opengl, 2=good opengl
        int currentit;                          // current number of simulation time steps
        int graphicit;                          // number of time steps per graphics update
        unsigned int graphicdelay;      // minimum delay (in ms) for graphics updates
@@ -8027,8 +9018,7 @@ done by ``RenderSim``. Data structure
        double lightpos[MAXLIGHTS][3];   // light positions [lt][d]
        } *graphicsssptr;
 
-**enumerated types**
-
+*enumerated types*
 ``enum LightParam graphicsstring2lp(char *string);``
    | 
    | Converts a string to an enumerated light parameter.
@@ -8038,8 +9028,7 @@ done by ``RenderSim``. Data structure
    | Converts an enumerated light parameter to a string. The string is
      returned.
 
-**low level utilities**
-
+*low level utilities*
 ``int graphicsreadcolor(char **stringptr,double *rgba);``
    | 
    | Reads the text of the string that ``stringptr`` points to, to find
@@ -8067,8 +9056,7 @@ done by ``RenderSim``. Data structure
      recognized, 5 if an alpha value was given but can’t be parsed, or 6
      if the listed alpha value is out of range.
 
-**memory management**
-
+*memory management*
 ``graphicsssptr graphssalloc(void)``
    | 
    | Allocates and intializes the graphics superstructure. No OpenGL
@@ -8078,8 +9066,7 @@ done by ``RenderSim``. Data structure
    | 
    | Frees a graphics superstructure.
 
-**data structure output**
-
+*data structure output*
 ``void graphssoutput(simptr sim)``
    | 
    | Displays all graphics parameters from the graphics superstructure
@@ -8098,8 +9085,7 @@ done by ``RenderSim``. Data structure
      ``warnptr``, if ``warnptr`` isn’t ``NULL``. At present, this
      doesn’t check anything, but just returns two zeros.
 
-**structure setup**
-
+*structure setup*
 ``void graphicssetcondition(graphicsssptr graphss,enum StructCond cond,int upgrade);``
    | 
    | Sets the graphics superstructure condition to ``cond``, if
@@ -8224,9 +9210,7 @@ done by ``RenderSim``. Data structure
      that input parameters are legitimate. Returns 0 for success or 1 if
      memory could not be allocated for the graphics superstructure.
 
-structure update functions
----------------------------
-
+*structure update functions*
 ``int graphicsupdateinit(simptr sim);``
    | 
    | Performs basic graphics initialization. This calls ``gl2glutInit``
@@ -8253,8 +9237,7 @@ structure update functions
      ``graphicsupdatelists``, and/or ``graphicsupdateparams``, depending
      on the amount of updating required.
 
-**core simulation functions**
-
+*core simulation functions*
 ``void RenderSurfaces(simptr sim)``
    | 
    | Draws all surfaces in the simulation using OpenGL graphics. The 3-D
@@ -8278,16 +9261,15 @@ structure update functions
      other functions for most of the work, although it draws the frame
      and the grid itself.
 
-Top level OpenGL functions
----------------------------
-
-Both ``RenderScene`` and ``TimerFunction`` are declared locally, rather than in
-smoldynfuncs.h. This makes them invisible outside of this source file.  They
-are callback functions for OpenGL. In addition, the ``Sim`` variable is
-declared as a global variable, with the scope of this file. It is here because
-OpenGL does not allow ``void*`` pointers to be passed through to all callback
-functions, so making it a global variable enables the callback functions to
-access the simulation data structure.
+*Top level OpenGL functions*
+   Both ``RenderScene`` and ``TimerFunction`` are declared locally,
+   rather than in smoldynfuncs.h. This makes them invisible outside of
+   this source file. They are callback functions for OpenGL. In
+   addition, the ``Sim`` variable is declared as a global variable, with
+   the scope of this file. It is here because OpenGL does not allow
+   ``void*`` pointers to be passed through to all callback functions, so
+   making it a global variable enables the callback functions to access
+   the simulation data structure.
 
 ``void RenderScene(void);``
    | 
@@ -8311,11 +9293,11 @@ access the simulation data structure.
    +-------------+-------------+----------+-------------+-------------+
    | `           | ``state``   | gl2State | meaning     | next state  |
    | `oldstate`` |             |          |             |             |
-   +-------------+-------------+----------+-------------+-------------+
+   +=============+=============+==========+=============+=============+
    | 1           | -           | 0        | leave pause | (0 - 0)     |
    |             |             |          | state       |             |
    +-------------+-------------+----------+-------------+-------------+
-   | 0           | 0           | 0        | continue    | (0 -simstep |
+   | 0           | 0           | 0        | continue    | (0 =simstep |
    |             |             |          | simulating  | 0)          |
    +-------------+-------------+----------+-------------+-------------+
    | -           | :           | -        | stop the    | (- -1 -)    |
@@ -8348,8 +9330,10 @@ is to be run as well as pointers to each of the component structures and
 superstructures. It also contains some scratch space for functions to
 use as they wish.
 
+.. _data-structures-3:
+
 Data structures
----------------
+~~~~~~~~~~~~~~~
 
 ::
 
@@ -8460,8 +9444,12 @@ smoldyn.h header file and the SimCommand.h header file.
 Finally, the simulation structure lists the function pointers for the
 core simulation algorithms.
 
-**enumerated types**
+.. _functions-1:
 
+Functions
+~~~~~~~~~
+
+*enumerated types*
 ``enum SmolStruct simstring2ss(char *string)``
    | 
    | Returns the enumerated simulation structure type that corresponds
@@ -8480,8 +9468,7 @@ core simulation algorithms.
      condition input in ``string``, which needs to be pre-allocated. The
      address of the string is returned to allow for function nesting.
 
-**low level utilities**
-
+*low level utilities*
 ``double simversionnumber(void);``
    | 
    | Returns the version number of Smoldyn. This reads the ``VERSION``
@@ -8494,8 +9481,7 @@ core simulation algorithms.
      least 0, and sets it to the current time value if ``seed`` is less
      than 0.
 
-**memory management**
-
+*memory management*
 ``simptr simalloc(char *root)``
    | 
    | Allocates a simulation structure. Essentially everything, including
@@ -8524,8 +9510,7 @@ core simulation algorithms.
      ``spaces`` spaces. This allocates memory, copies over existing
      variables, and clears new ones as needed.
 
-**data structure output**
-
+*data structure output*
 ``void simLog(simptr sim,int importance,const char* format, ...)``
    | 
    | All text output should be sent to this function. As a default, it
@@ -8541,7 +9526,7 @@ core simulation algorithms.
    +----------------+----------------+----------------+----------------+
    | ``importance`` | meaning        | example        | flags and      |
    |                |                |                | display        |
-   +----------------+----------------+----------------+----------------+
+   +================+================+================+================+
    | 0              | debugging      |                | v enables      |
    |                | output         |                |                |
    +----------------+----------------+----------------+----------------+
@@ -8604,13 +9589,14 @@ core simulation algorithms.
      standard output, although this does not affect continuation of the
      program. Returns the number of errors.
 
-**structure set up**
-
-Initialization procedures are meant to be called once at the beginning of the
-program to allocate and set up the necessary structures. These routines call
-memory allocation procedures as needed. ``simupdate`` is the only one of these
-routines that should ever need to be called externally, since it calls the
-other functions as needed.
+*structure set up*
+   | 
+   | Initialization procedures are meant to be called once at the
+     beginning of the program to allocate and set up the necessary
+     structures. These routines call memory allocation procedures as
+     needed. ``simupdate`` is the only one of these routines that should
+     ever need to be called externally, since it calls the other
+     functions as needed.
 
 ``int simsetpthreads(simptr sim,int number);``
    | 
@@ -8700,33 +9686,35 @@ other functions as needed.
 ``int simupdate(simptr sim,char *erstr)``
    | 
    | Updates all parts of the simulation structure. This is called on
-     start up by ``setupsim``, and may be called at anytime afterwards.
-     It returns 0 for success or 1 for failure. In the latter case, a
-     string that describes the error should be returned in ``erstr``.
+     start up by ``simUpdateAndDisplay``, and may be called at anytime
+     afterwards. It returns 0 for success or 1 for failure. In the
+     latter case, a string that describes the error should be returned
+     in ``erstr``.
 
-``int setupsim(char *root,char *name,simptr *smptr,char *flags)``
+``int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags)``
    | 
-   | ``setupsim`` sets up and loads values for all the structures as
-     well as global variables. This routine calls the other
+   | ``simInitAndLoad`` sets up and loads values for all the structures
+     as well as global variables. This routine calls the other
      initialization routines, so they do not have to be called from
      elsewhere. It also displays the status to stdout and calls output
      routines for each structure, allowing verification of the
-     initiallization. Normally, send in ``root`` and ``name`` with
-     strings for the path and name of the input file and send in
-     ``smptr`` (pointer to a simulation structure) pointing to a
-     ``NULL``. ``flags`` is a string of command-line flags. This returns
-     0 for correct operation and 1 for an error. If it succeeds,
-     ``smptr`` is returned pointing to a fully set up simulation
-     structure. Otherwise, ``smptr`` is set to ``NULL`` and an error
-     messages is displayed on stderr. In the alternate use, send in
-     ``root`` and ``name`` as ``NULL`` and send in ``smptr`` pointing to
-     a partially set up simulation structure; it should be set up to the
-     same extent that it is after it is returned from ``loadsim``. With
-     this alternate input, this function will finish setting up the
-     simulation structure.
+     initiallization. Send in ``fileroot`` and ``filename`` with strings
+     for the path and name of the input file and send in ``smptr``
+     (pointer to a simulation structure) pointing to a ``NULL``.
+     ``flags`` is a string of command-line flags. This returns 0 for
+     correct operation and 1 for an error. If it succeeds, ``smptr`` is
+     returned pointing to a fully set up simulation structure.
+     Otherwise, ``smptr`` is set to ``NULL`` and an error messages is
+     displayed on stderr. If ``smptr`` does not point to ``NULL``, then
+     this simply returns without doing anything.
 
-**core simulation functions**
+``int simUpdateAndDisplay(simptr sim)``
+   | 
+   | This calls ``simupdate`` to update all aspects of the simulation
+     structure and then outputs the diagnostics output along with any
+     warnings or errors. Returns 0 for success or 1 for failure.
 
+*core simulation functions*
 ``int simdocommands(simptr sim);``
    | 
    | Performs all commands that should happen at the current time. This
@@ -8779,66 +9767,70 @@ other functions as needed.
      essentially nothing other than running ``simulatetimestep`` until
      the simulation terminates or stops due to reaching the break time.
 
-
 Commands (functions in smolcmd.c)
 ---------------------------------
 
 Writing commands
------------------
+~~~~~~~~~~~~~~~~
 
-Command strings are not parsed, checked, or even looked at during simulation
-initialization. Instead, they are run by the command interpreter during the
-simulation. Command routines are given complete freedom to look at and/or
-modify any part of a simulation structure or sub-structure. This, of course,
-also gives commands the ability to crash the computer program, so they need to
-be written carefully to prevent this. Every command is sent a pointer to the
-simulation structure in sim, as well as a string of command parameters in
-``line2``.
+Command strings are not parsed, checked, or even looked at during
+simulation initialization. Instead, they are run by the command
+interpreter during the simulation. Command routines are given complete
+freedom to look at and/or modify any part of a simulation structure or
+sub-structure. This, of course, also gives commands the ability to crash
+the computer program, so they need to be written carefully to prevent
+this. Every command is sent a pointer to the simulation structure in
+sim, as well as a string of command parameters in ``line2``.
 
-To write a command, do the following steps, which can be done in any order.
+To write a command, do the following steps, which can be done in any
+order:
 
-- Write a description of the new command that will go into the reference
-  section of the user’s manual.
+-  Write a description of the new command that will go into the
+   reference section of the user’s manual.
 
-- In smolcmd.c, add a new declaration to the top of the file for the command,
-  which looks like.
-  ::
+-  In smolcmd.c, add a new declaration to the top of the file for the
+   command, which looks like:
+
+   ::
 
       enum CMDcode cmdname(simptr sim,cmdptr cmd,char *line2);
 
-- The first function of smolcmd.c is ``docommand``. In it, add an ``else if``
-  line for the new command. It looks like.
-  ::
+-  The first function of smolcmd.c is ``docommand``. In it, add an
+   ``else if`` line for the new command. It looks like:
+
+   ::
 
       else if(!strcmp(word,"name")) return cmdname(sim,cmd,line2);
 
-- Write the function for the new command, modeling it on the command functions
-  currently in smolcmd.c. See below.
+-  Write the function for the new command, modeling it on the command
+   functions currently in smolcmd.c. See below.
 
 -  Proofread the function and test the command.
 
--  Write documentation about the command for this section of this manual.
+-  Write documentation about the command for this section of this
+   manual.
 
 -  Mention the command in the modifications portion of this manual.
 
-
 Each command is written with a similar structure. As an example, here is
-``cmdecho``.
+``cmdecho``:
+
 ::
 
    enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2) {
+       int er;
        FILE *fptr;
        char *termqt,str[STRCHAR];
 
        if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
-       fptr-scmdgetfptr(sim->cmds,line2);
-       SCMDCHECK(fptr,"file name not recognized");
-       line2-strnword(line2,2);
-       SCMDCHECK(line2-strchr(line2,'"'),"no starting quote on string");
+       er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+       SCMDCHECK(er!=-1,"file name not recognized");
+       line2=strnword(line2,2);
+       SCMDCHECK(line2=strchr(line2,'"'),"no starting quote on string");
        strncpy(str,line2+1,STRCHAR-1);
-       str[STRCHAR-1]-'\0';
-       SCMDCHECK(termqt-strchr(str,'"'),"no terminal quote on string");
-       *termqt-'\0';
+       str[STRCHAR-1]='\0';
+       SCMDCHECK(termqt=strchr(str,'"'),"no terminal quote on string");
+       *termqt='\0';
        strbslash2escseq(str);
        scmdfprintf(cmd->cmds,fptr,"%s",str);
        scmdflush(fptr);
@@ -8906,32 +9898,33 @@ to the command to actually do whatever needs to be done with the
 identified molecules. This leads to a more complicated command
 structure, of which an example is in ``cmdifincmpt``, which calls
 another command if there are some number of molecules in a specified
-compartment. Here is part of its listing.
+compartment. Here is part of its listing:
+
 ::
 
    enum CMDcode cmdifincmpt(simptr sim,cmdptr cmd,char *line2) {
        ... variable declarations ...
        moleculeptr mptr;
-       static compartptr cmpt-NULL;
-       static int inscan-0,count-0;
+       static compartptr cmpt=NULL;
+       static int inscan=0,count=0;
 
        if(inscan) goto scanportion;
        if(line2 && !strcmp(line2,"cmdtype")) return conditionalcmdtype(sim,cmd,4);
 
-       cmptss-sim->cmptss;
+       cmptss=sim->cmptss;
        ... parsing of line2 ...
-       cmpt-cmptss->cmptlist[c];
+       cmpt=cmptss->cmptlist[c];
 
-       count-0;
-       inscan-1;
+       count=0;
+       inscan=1;
        molscan(sim,i,index,ms,cmd,cmdifincmpt);
-       inscan-0;
-       if((ch--'<' && count<min) || (ch--'-' && count--min) || (ch--'>' && count>min))
+       inscan=0;
+       if((ch=='<' && count<min) || (ch=='=' && count==min) || (ch=='>' && count>min))
            return docommand(sim,cmd,line2);
        return CMDok;
 
     scanportion:
-       mptr-(moleculeptr) line2;
+       mptr=(moleculeptr) line2;
        if(posincompart(sim,mptr->pos,cmpt)) count++;
        return CMDok; }
 
@@ -8958,7 +9951,7 @@ what it needs to do and returns ``CMDok`` to indicuate that the task is
 complete.
 
 Externally accessible function
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Not all functions are listed here because many of them don’t require any
 more description than what is already given in the Smoldyn User Manual.
@@ -8978,11 +9971,9 @@ more description than what is already given in the Smoldyn User Manual.
    simulation termination, and ``CMDpause`` for simulation pausing.
 
 Individual command functions
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-simulation control
-------------------
-
+*simulation control*
 ``enum CMDcode cmdstop(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Returns a value of 2, meaning that the simulation should stop. Any
@@ -9022,9 +10013,7 @@ simulation control
    | 
    | Sets the number of iterations between each graphics update.
 
-file manipulation
-------------------
-
+*file manipulation*
 ``enum CMDcode cmdoverwrite(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Overwrites a prior output file. See the user manual.
@@ -9038,9 +10027,7 @@ file manipulation
    | 
    | Sets the random number seed.
 
-conditional
------------
-
+*conditional*
 ``enum CMDcode cmdifflag(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Runs the command in ``line2`` depending on value of the command
@@ -9089,9 +10076,7 @@ conditional
    | Runs a command if one value is greater than, less than, or equal to
      another value.
 
-observation commands
----------------------
-
+*observation commands*
 ``enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Checks for molecules that escaped from the system and displays
@@ -9329,9 +10314,11 @@ observation commands
    | 
    | Outputs VTK data for the current simulation state.
 
-system manipulation
---------------------
+``enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2);``
+   | 
+   | Prints out a data array to a file, another data array, or stdout.
 
+*system manipulation*
 ``enum CMDcode cmdset(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Reads ``line2`` to extract the first word and the rest of the line.
@@ -9460,7 +10447,7 @@ system manipulation
      After reading two molecule names from ``line2``, this routine then
      reads the cosine wave frequency and phase shift, then calculates
      the probability using the function
-     :math:`prob-0.5*(1.0-cos(freq*\texttt{sim->time}+shift))`.
+     :math:`prob=0.5*(1.0-cos(freq*\texttt{sim->time}+shift))`.
 
 ``enum CMDcode cmdreact1(simptr sim,cmdptr cmd,char *line2);``
    | 
@@ -9558,17 +10545,18 @@ system manipulation
    | 
    | This command translates a compartment, including dealing with
      molecule displacements. All of the work is done by
-     ``cmpttranslate``.
+     ``comparttranslate``.
 
 ``enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);``
    | 
    | This command diffuses a compartment, including dealing with
      molecule displacements. All of the work is done by
-     ``cmpttranslate``.
+     ``comparttranslate``. For bounded diffusion, a move that would lead
+     to an illegal location is rejected, and diffusion is attempted
+     again, up to 10 times; if there are 10 failures, then the
+     compartment simply isn’t moved at all during that command call.
 
-Internal functions
--------------------
-
+*Internal functions*
 ``void cmdv1free(cmdptr cmd);``
    | 
    | Frees array ``cmd->v1``.
@@ -9627,16 +10615,13 @@ the shell. This source code file is not included in Libsmoldyn.
    | ``main`` is a simple routine that provides an entry point to the
      program from the shell. It checks the command line arguments,
      prints a greeting, inputs the configuration file name from the
-     user, and then calls ``setupsim`` to load the configuration file
-     and set up all the structures. If all goes well, it calls
-     ``simulate`` or ``simulategl`` to run the simulation. At the end,
-     it returns to the shell.
-
-
-.. code_design:
+     user, and then calls ``simInitAndLoad`` to load the configuration
+     file and set up all the structures. If all goes well, it calls
+     ``smolsimulate`` or ``smolsimulategl`` to run the simulation. At
+     the end, it returns to the shell.
 
 Code design
-============
+===========
 
 This chapter describes interactions between different portions of the
 code. The code is, and may always be, in flux. While I try to maintain
@@ -9654,7 +10639,7 @@ functions that call the preceding functions.
 
 +---------------------+------------------------------+---------------+
 | structure           | allocation                   | freeing       |
-+---------------------+------------------------------+---------------+
++=====================+==============================+===============+
 | moleculestruct      | molalloc                     | molfree       |
 +---------------------+------------------------------+---------------+
 |                     | molexpandlist                | molssfree     |
@@ -9665,7 +10650,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim, ?                   |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim, ?                  |               |
+|                     | simInitAndLoad, ?            |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9678,7 +10663,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9690,7 +10675,8 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim, simupdate           |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim; setupsim,          |               |
+|                     | simInitAndLoad;              |               |
+|                     | simInitAndLoad,              |               |
 |                     | simulatetimestep             |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
@@ -9704,7 +10690,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | simupdate, loadsim           |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9719,7 +10705,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9729,7 +10715,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim (reaction,..)        | simfree       |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9742,7 +10728,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim, ?                   |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9757,7 +10743,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9769,7 +10755,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9781,7 +10767,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9793,7 +10779,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | simupdate                    | simfree       |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9806,7 +10792,8 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim, simupdate           |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim, setupsim           |               |
+|                     | simInitAndLoad,              |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9819,7 +10806,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9830,7 +10817,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9842,7 +10829,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9852,7 +10839,7 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
@@ -9865,13 +10852,13 @@ functions that call the preceding functions.
 +---------------------+------------------------------+---------------+
 |                     | loadsim                      |               |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 |                     |                              |               |
 +---------------------+------------------------------+---------------+
 | simstruct           | simalloc                     | simfree       |
 +---------------------+------------------------------+---------------+
-|                     | setupsim                     |               |
+|                     | simInitAndLoad               |               |
 +---------------------+------------------------------+---------------+
 
 Data structure preparation and updating
@@ -10006,7 +10993,11 @@ sequence of simulation algorithms is:
 +------------------------------------------+-------+------------+----------+---------+
 |                                          |       |            |          |         |
 +------------------------------------------+-------+------------+----------+---------+
+| --------------                           |       |            |          |         |
 |                                          |       |            |          |         |
+| time :math:`=t`                          |       |            |          |         |
+|                                          |       |            |          |         |
+| --------------                           |       |            |          |         |
 +------------------------------------------+-------+------------+----------+---------+
 | observe and manipulate system            | er    | ok         | bad      | ok      |
 +------------------------------------------+-------+------------+----------+---------+
@@ -10014,7 +11005,11 @@ sequence of simulation algorithms is:
 +------------------------------------------+-------+------------+----------+---------+
 | graphics are drawn                       | n/a   | ok         | ok       | ok      |
 +------------------------------------------+-------+------------+----------+---------+
-|                                          | ok    | ok         | ok       |         |
+| --------------                           |       | ok         | ok       | ok      |
+|                                          |       |            |          |         |
+| start/end of ``simulatetimestep``        |       |            |          |         |
+|                                          |       |            |          |         |
+| --------------                           |       |            |          |         |
 +------------------------------------------+-------+------------+----------+---------+
 | **diffusion**                            |       |            |          |         |
 +------------------------------------------+-------+------------+----------+---------+
@@ -10042,7 +11037,11 @@ sequence of simulation algorithms is:
 +------------------------------------------+-------+------------+----------+---------+
 | assign again                             | 2     | ok         | ok       | ok      |
 +------------------------------------------+-------+------------+----------+---------+
+| --------------                           |       |            |          |         |
 |                                          |       |            |          |         |
+| time :math:`=t+\Delta t`                 |       |            |          |         |
+|                                          |       |            |          |         |
+| --------------                           |       |            |          |         |
 +------------------------------------------+-------+------------+----------+---------+
 
 The overall picture is that the simulation sequence is: diffusion,
@@ -10079,10 +11078,8 @@ reactant).
 Wildcards, species groups, and patterns
 ---------------------------------------
 
-.. todo: Not written yet.
-
 Patterns
---------
+~~~~~~~~
 
 Most of Smoldyn’s treatment of wildcards, species groups, and patterns
 is in the molecules and reactions portion of the code. The basic idea is
@@ -10122,7 +11119,7 @@ important information about the list. The header occupies the first
 
 +---------+------------+---------------------------------------------+
 | element | name       | meaning                                     |
-+---------+------------+---------------------------------------------+
++=========+============+=============================================+
 | 0       | PDalloc    | allocated sublist size including header     |
 |         |            | values                                      |
 +---------+------------+---------------------------------------------+
@@ -10165,7 +11162,7 @@ for “AD" and “XD" species, and elements 12 to 19 would be empty. The
 list of results is sorted in ascending order.
 
 Control flow and functions - species names
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The entry point for most functions that deal with species names that are
 provided by the user is ``molstring2index1``. This function takes a
@@ -10199,7 +11196,7 @@ list of species, which it both stores and returns in ``index``. At the
 end, ``molstring2index1`` returns the index variable.
 
 Reaction rule storage
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Reaction rules are stored within the reaction superstructure. A
 simulation can have up to three reaction superstructures, corresponding
@@ -10237,7 +11234,7 @@ are simply stored here and referred to when updating is required. The
 on-the-fly rule generation is desired.
 
 Control flow and functions - reactions
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Reactions are initially added to a simulation when the ``simreadstring``
 function encounters a “reaction" or “reaction_rule" word in a
@@ -10307,7 +11304,7 @@ After this, Smoldyn continues on to read more lines from the input file,
 possibly repeating the same procedure if another reaction is entered.
 
 Control and flow - network generation
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Reaction rule expansion occurs through the ``RuleExpandRules`` function.
 This function is called if the user uses the “expand_rules” statement,
@@ -10337,7 +11334,7 @@ Smoldyn modifications
 =====================
 
 Modifications for version 1.5 (released 7/03)
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added hierarchical configuration file name support.
 
@@ -10400,7 +11397,7 @@ Modifications for version 1.5 (released 7/03)
    parameters are reasonable.
 
 Modifications for version 1.51 (released 9/5/03)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a minor bug in ``doreact`` which allowed the molecule
    superstructure indices to become illegal if not enough molecules were
@@ -10442,7 +11439,7 @@ Modifications for version 1.51 (released 9/5/03)
    ``table`` elements.
 
 Modifications for version 1.52 (released 10/24/03)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed comments in rxnparam.h and rxnparam.c, but no changes in
    code.
@@ -10486,7 +11483,7 @@ Modifications for version 1.52 (released 10/24/03)
 -  Renamed the “test files" folder to “test_files".
 
 Modifications for version 1.53 (released 2/9/04)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Cleaned up commands a little more by writing routine ``getfptr`` in
    smollib2.c and calling it from commands that save data, rather than
@@ -10524,7 +11521,7 @@ Modifications for version 1.53 (released 2/9/04)
    it was paused is now displayed to the text window.
 
 Modifications for version 1.54 (released 3/3/04)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Swapped order of commands and OpenGL drawing so that commands are
    executed before displaying results. Also wrote section 3.2 of the
@@ -10534,7 +11531,7 @@ Modifications for version 1.54 (released 3/3/04)
    and added the reactW set of test files.
 
 Modifications for version 1.55 (released 8/20/04)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Improved graphics manipulations and added ability to save image as a
    TIFF file. This is not documented yet.
@@ -10553,7 +11550,7 @@ Modifications for version 1.55 (released 8/20/04)
    ``SCMDCHECK``.
 
 Modifications for version 1.56 (released 1/14/05)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Made lots of changes in opengl2.c.
 
@@ -10574,12 +11571,12 @@ Modifications for version 1.56 (released 1/14/05)
    files.
 
 Modifications for version 1.57 (released 2/17/05)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added command ``setrateint``.
 
 Modifications for version 1.58 (released 7/22/05)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed 2-D graphics so they a border is now shown again around the
    simulation volume.
@@ -10593,18 +11590,18 @@ Modifications for version 1.58 (released 7/22/05)
 -  Added position ranges to ``mol`` command.
 
 Modifications for version 1.59 (released 8/26/05)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Random number seed is now stored and is displayed before a simulation
    starts.
 
 Modifications for version 1.60 (not released, but given to Karen 9/30/05)
--------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a small bug in ``checkparams``.
 
 Modifications for version 1.70 (released 5/17/06)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added reflective, absorbing, and transparent surfaces for 1 to 3
    dimensions with panel shapes that can be: rectangle, triangle, and
@@ -10633,7 +11630,7 @@ Modifications for version 1.70 (released 5/17/06)
    after reactions.
 
 Modifications for version 1.71 (released 12/8/06)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added ``glutInit`` call to ``main`` function in smoldyn.c.
 
@@ -10676,7 +11673,7 @@ Modifications for version 1.71 (released 12/8/06)
    surfaces.
 
 Modifications for version 1.72 (released 2/26/07)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Finally got reflective surfaces to stop leaking diffusing molecules.
    This involved many changes in the surface code sections.
@@ -10696,7 +11693,7 @@ Modifications for version 1.72 (released 2/26/07)
 -  Updated ``savesim`` command to accomodate surface changes.
 
 Modifications for version 1.73 (released 9/25/07)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Trivial bug fixed in ``loadsurface``, fixed minor bug regarding
    periodic surfaces.
@@ -10725,7 +11722,7 @@ Modifications for version 1.73 (released 9/25/07)
 -  Improvements to Makefiles and improvement of compiling advice.
 
 Modifications for version 1.74 (released 10/22/07)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Coincident surfaces have defined behavior.
 
@@ -10753,7 +11750,7 @@ Modifications for version 1.74 (released 10/22/07)
    ``polygon_back``, and ``polygon_both`` with ``polygon``.
 
 Modifications for version 1.75 (released 11/6/07)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added surface-bound molecules. This has involved changes in the
    molecule superstructure, surface structures, panel structures, and
@@ -10796,7 +11793,7 @@ Modifications for version 1.75 (released 11/6/07)
 -  Starting adding a user manual section to the documentation.
 
 Modifications for version 1.76 (released 11/7/07)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Split smollib.c and smollib.h source code files into smolload.c,
    smolrun.c, and their headers. Also, moved some functions from
@@ -10810,7 +11807,7 @@ Modifications for version 1.76 (released 11/7/07)
    counters.
 
 Modifications for version 1.77 (released 11/18/07)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Overall, few changes that affect users.
 
@@ -10828,7 +11825,7 @@ Modifications for version 1.77 (released 11/18/07)
    may help for parallelization.
 
 Modifications for version 1.78 (released 11/29/07)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Minor changes with graphics.
 
@@ -10883,7 +11880,7 @@ Modifications for version 1.78 (released 11/29/07)
 -  Added command ``molcountinbox``.
 
 Modifications for version 1.79 (released 12/6/07)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed several bugs in ``scmdexecute``. Commands no longer execute
    repeatedly after the simulation is finished.
@@ -10920,7 +11917,7 @@ Modifications for version 1.79 (released 12/6/07)
    non-commercial use and modification of the code" to LGPL.
 
 Modifications for version 1.80 (released 12/22/07)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed the exiting code some so ‘Q’ quits the program.
 
@@ -10958,7 +11955,7 @@ Modifications for version 1.80 (released 12/22/07)
    some changes, as did various other functions.
 
 Modifications for version 1.81 (released 1/22/08)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed developing environments from Macintosh Codewarrior to
    Macintosh gcc with XCode as an editor.
@@ -11003,7 +12000,7 @@ Modifications for version 1.81 (released 1/22/08)
    new and improved example files.
 
 Modifications for version 1.82 (released 2/28/08)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed ``readmolname`` so now a name without a state implies
    ``MSsoln`` rather than ``MSall``, as it was before.
@@ -11021,7 +12018,7 @@ Modifications for version 1.82 (released 2/28/08)
    products frequently escaped the simulation volume.
 
 Modifications for version 1.83 (released 3/14/08)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed minor bug with allosteric reactions.
 
@@ -11040,7 +12037,7 @@ Modifications for version 1.83 (released 3/14/08)
 -  Added drift to molecular motions.
 
 Modifications for version 1.84 (released 4/11/08)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a very minor bug in ``line2nextbox`` function.
 
@@ -11069,7 +12066,7 @@ Modifications for version 1.84 (released 4/11/08)
 -  Added order 0 and order 1 compartment reactions.
 
 Modifications for version 1.85 (released 6/3/08)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed command execution timing for ‘x’ type commands so that they
    do not execute any more often than the simulation time step.
@@ -11116,7 +12113,7 @@ Modifications for version 1.85 (released 6/3/08)
    included changes in smoldyn.h, smolreact.c, and the documentation.
 
 Modifications for version 1.86 (released 11/17/08)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Small progress on implementing accurate adsorption algorithms.
 
@@ -11138,14 +12135,14 @@ Modifications for version 1.86 (released 11/17/08)
    commands did not interact with surfaces.
 
 Modifications for version 1.87 (released 12/7/08)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a minor bug in line parsing.
 
 -  Vastly improved the wrl2smol utility program.
 
 Modifications for version 1.88 (released 1/16/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added accurate adsorption, desorption, and partial transmission
    algorithms.
@@ -11174,7 +12171,7 @@ Modifications for version 1.88 (released 1/16/09)
    compartments.
 
 Modifications for version 1.89 (released 2/11/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Wrote documentation for “simulation settings" and started
    documentation for “network generation".
@@ -11221,7 +12218,7 @@ Modifications for version 1.89 (released 2/11/09)
    have excluded volume.
 
 Modifications for version 2.00 (released 2/17/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a trivial bug so that the ``time_start`` statement now sets
    both the start time and the current time.
@@ -11231,7 +12228,7 @@ Modifications for version 2.00 (released 2/17/09)
    tremendous number of other improvements.
 
 Modifications for version 2.01 (released 3/3/09)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a bug with compartment volume calculations, and improved
    compartment setup. Renamed ``compartaddbox`` to ``compartupdatebox``,
@@ -11258,7 +12255,7 @@ Modifications for version 2.01 (released 3/3/09)
    and 3-D panel shapes for basic functionality.
 
 Modifications for version 2.02 (released 5/5/09)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed ``molcount`` function so that it now works for unsorted
    molecule lists as well as for sorted molecule lists. This will affect
@@ -11281,7 +12278,7 @@ Modifications for version 2.02 (released 5/5/09)
 -  Added command ``meansqrdisp2``.
 
 Modifications for version 2.03 (released 5/22/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed build system from a simple makefile to the GNU
    Autoconf/Automake system. This works for many systems but not all.
@@ -11292,7 +12289,7 @@ Modifications for version 2.03 (released 5/22/09)
 -  Added support for libMoleculizer, which includes a lot of new code.
 
 Modifications for version 2.04 (released 6/27/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Lots of improvements to the same changes that were made for version
    2.03. Now, all of these features appear to be stable and the build
@@ -11305,7 +12302,7 @@ Modifications for version 2.04 (released 6/27/09)
    it run a little faster.
 
 Modifications for version 2.05 (released 7/23/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Improved Smoldyn build system so that it now works for most Mac and
    Linux platforms.
@@ -11320,7 +12317,7 @@ Modifications for version 2.05 (released 7/23/09)
    which would hurt development of the Smoldyn project.
 
 Modifications for version 2.06 (released 11/6/09)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Lots of code cleanup, including formatting changes, removal of unused
    variables, adding function declarations, etc.
@@ -11352,7 +12349,7 @@ Modifications for version 2.06 (released 11/6/09)
 -  New release shell script.
 
 Modifications for version 2.07 (released 11/17/09)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Trivial updates to ``surface_mol`` and ``compartment_mol`` (to
    support 0 molecules)
@@ -11381,7 +12378,7 @@ Modifications for version 2.07 (released 11/17/09)
 -  Fixed a minor bug with ``neighbor_dist`` statement.
 
 Modifications for version 2.08 (unofficially released 11/20/09)
----------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a bug for reactions between 2 surface-bound molecules, where
    the destination panel was sometimes wrong.
@@ -11389,7 +12386,7 @@ Modifications for version 2.08 (unofficially released 11/20/09)
 -  Cleaned up release files some.
 
 Modifications for version 2.09 (released 1/6/10)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Nathan fixed “make dist" build function.
 
@@ -11421,7 +12418,7 @@ Modifications for version 2.09 (released 1/6/10)
    without opengl support. Re-released 1/20/10.
 
 Modifications for version 2.10 (released 3/24/10)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Lots of work on libmoleculizer. Mostly rewrote smolmoleculizer.c
    file, and redid most of the Smoldyn moleculizer data structures. More
@@ -11435,12 +12432,12 @@ Modifications for version 2.10 (released 3/24/10)
    the file.
 
 Modifications for version 2.11 (released 5/4/10)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Nathan added ``-lglut`` flag to standard configure for building.
 
 Modifications for version 2.12 (released 6/10/10)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Changed panel input so that a panel can be input multiple times and
    the new data will overwrite the old.
@@ -11454,7 +12451,7 @@ Modifications for version 2.12 (released 6/10/10)
    allow “empty" as a molecule species.
 
 Modifications for version 2.13 (released 7/15/10)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed reaction output slightly, so that activation-limited reaction
    rate is displayed and binding radius is not displayed for order 1
@@ -11478,7 +12475,7 @@ Modifications for version 2.13 (released 7/15/10)
    needed though.
 
 Modifications for version 2.14 (released 7/18/10)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed ``#ifdef`` portion of queue.h so that it will compile on
    Windows correctly.
@@ -11486,7 +12483,7 @@ Modifications for version 2.14 (released 7/18/10)
 -  Added default product placement parameter for continuation reactions.
 
 Modifications for version 2.15 (released 7/20/10)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed bug that I just introduced for version 2.14 with default
    product placement parameter for continuation reactions.
@@ -11494,7 +12491,7 @@ Modifications for version 2.15 (released 7/20/10)
 -  Fixed bug that didn’t allow libmoleculizer to run.
 
 Modifications for version 2.16 (released 9/24/10)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added statement ``expand_network``.
 
@@ -11507,7 +12504,7 @@ Modifications for version 2.16 (released 9/24/10)
    for surface crossings.
 
 Modifications for version 2.17 (released 11/19/10)
---------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added compile flag ``-lGLU`` to configure.ac file, which seems to be
    necessary for Ubuntu systems.
@@ -11517,14 +12514,14 @@ Modifications for version 2.17 (released 11/19/10)
    ``experfcD(SQRT2*c1)`` to expand the input domain.
 
 Modifications for version 2.18 (released 1/6/11)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a small bug in ``molchangeident`` function. Before, panel data
    was retained for molecules that desorbed to ``MSbsoln``, whereas it
    should not have been.
 
 Modifications for version 2.19 (released 2/11/11)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Converted programmer’s documentation from Word to LaTeX.
 
@@ -11576,7 +12573,7 @@ Modifications for version 2.19 (released 2/11/11)
 -  Added “–define" option for command line.
 
 Modifications for version 2.20 (released 3/4/11)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed bug which causes crashes if species change at surface was to
    “empty".
@@ -11596,7 +12593,7 @@ Modifications for version 2.20 (released 3/4/11)
 -  Added display_define statement.
 
 Modifications for version 2.21 (released 3/11/11)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed bugs in Geometry.c for nearest triangle column and nearest
    triangle points.
@@ -11622,7 +12619,7 @@ Modifications for version 2.21 (released 3/11/11)
 -  Improved SmolCrowd user interface.
 
 Modifications for version 2.22 (released 3/22/11)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Fixed a trivial mistake in opengl2.c that I created in version 2.21
    that arose when compiling without opengl.
@@ -11632,7 +12629,7 @@ Modifications for version 2.22 (released 3/22/11)
    libsmoldyn directory to the Subversion site and distribution.
 
 Modifications for version 2.23 (released 6/24/11)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Wrote most of libsmoldyn.h and libsmoldyn.c.
 
@@ -11713,7 +12710,7 @@ Modifications for version 2.23 (released 6/24/11)
    ``movemol2closepanel``.
 
 Modifications for version 2.24 (released 7/27/11)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Modularized graphics input, so all assignments are now made in
    smolgraphics functions rather than directly in ``simreadstring``.
@@ -11778,7 +12775,7 @@ Modifications for version 2.24 (released 7/27/11)
    AutoTools stuff for SWIG code.
 
 Modifications for version 2.25 (released 9/26/11)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  In configure.ac file, line 278, swapped sequence of a couple of
    lines. For version 2.24, the 3 lines starting with
@@ -11786,7 +12783,7 @@ Modifications for version 2.25 (released 9/26/11)
    starting with ``OPENGL_CFLAGS``. I swapped this sequence. See e-mail
    9/13 with Pascal Bochet regarding compiling on Ubuntu. Apparently,
    this change did not fix his problem, but instead he added
-   “LIBS-"-lglut -lGLU"" to his ./configure line and that worked.
+   “LIBS="-lglut -lGLU"" to his ./configure line and that worked.
 
 -  Added functions ``surfexpandmaxspecies`` and ``rxnexpandmaxspecies``,
    and also edited ``molenablemols`` and ``rxnssalloc``. This should fix
@@ -11794,7 +12791,7 @@ Modifications for version 2.25 (released 9/26/11)
    using max_species.
 
 Modifications for version 2.26 (released 3/2/12)
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Added some support for species name entry using enhanced wildcards.
    This included new matching functions in string2.c, a logic expansion
@@ -11818,7 +12815,7 @@ Modifications for version 2.26 (released 3/2/12)
    sometimes got overlooked.
 
 Modifications for version 2.27 (released 7/26/12)
--------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  Merging in VCell changes.
 
@@ -11921,7 +12918,9 @@ Modifications for version 2.27 (released 7/26/12)
    from adequate. It did not cross-compile for Windows and the compiled
    version did not work on Mac OS 10.5.
 
-.. rubric:: Modifications for version 2.28 (released 8/28/12)
+   .. rubric:: Modifications for version 2.28 (released 8/28/12)
+      :name: modifications-for-version-2.28-released-82812
+      :class: unnumbered
 
 -  Fixed a bug in ``morebireact``, in smolreact.c, where molecule
    positions were moved to account for periodic boundary wrapping, but
@@ -11942,7 +12941,9 @@ Modifications for version 2.27 (released 7/26/12)
    However, I went through the files and verified that there are no
    other changes.
 
-.. rubric:: Modifications for version 2.29 (released 4/10/13)
+   .. rubric:: Modifications for version 2.29 (released 4/10/13)
+      :name: modifications-for-version-2.29-released-41013
+      :class: unnumbered
 
 -  Fixed a minor bug in ``molismobile``, in smolmol.c, which caused bugs
    for some species with surface drifts.
@@ -11970,7 +12971,9 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added extern "C" stuff to libsmoldyn.h.
 
-.. rubric:: Modifications for version 2.30 (released 8/21/13)
+   .. rubric:: Modifications for version 2.30 (released 8/21/13)
+      :name: modifications-for-version-2.30-released-82113
+      :class: unnumbered
 
 -  Fixed a bug in ``Geo_Cyl2Rect``, in the Geometry library. It was
    causing leaking surfaces.
@@ -11996,7 +12999,9 @@ Modifications for version 2.27 (released 7/26/12)
    license. Also, I think that NSF and other funding agencies prefer
    LGPL.
 
-.. rubric:: Modifications for version 2.31 (released 9/9/13)
+   .. rubric:: Modifications for version 2.31 (released 9/9/13)
+      :name: modifications-for-version-2.31-released-9913
+      :class: unnumbered
 
 -  Added command called setreactionratemolcount.
 
@@ -12007,7 +13012,9 @@ Modifications for version 2.27 (released 7/26/12)
    coefficients based on molecule lifetimes and also so it works with
    all states of a species.
 
-.. rubric:: Modifications for version 2.32 (released 8/29/14)
+   .. rubric:: Modifications for version 2.32 (released 8/29/14)
+      :name: modifications-for-version-2.32-released-82914
+      :class: unnumbered
 
 -  Overhaul of wildcard support. This included work on the wildcard
    match and substitute functions in string2.c, addition of pattern data
@@ -12053,7 +13060,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed a minor bug in which the “keypress" command would cause crashes
    if the simulation was run without OpenGL support.
 
-.. rubric:: Modifications for version 2.33 (released 10/9/14)
+   .. rubric:: Modifications for version 2.33 (released 10/9/14)
+      :name: modifications-for-version-2.33-released-10914
+      :class: unnumbered
 
 -  Fixed a minor but important bug in changemolident.
 
@@ -12069,7 +13078,9 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added cmdtrackmol function.
 
-.. rubric:: Modifications for version 2.34 (released 1/8/15)
+   .. rubric:: Modifications for version 2.34 (released 1/8/15)
+      :name: modifications-for-version-2.34-released-1815
+      :class: unnumbered
 
 -  Nearly complete BNG conversion code.
 
@@ -12081,7 +13092,9 @@ Modifications for version 2.27 (released 7/26/12)
    lattice space only get placed into first subvolume. This leads to
    more accurate diffusion results.
 
-.. rubric:: Modifications for version 2.35 (released 4/23/15)
+   .. rubric:: Modifications for version 2.35 (released 4/23/15)
+      :name: modifications-for-version-2.35-released-42315
+      :class: unnumbered
 
 -  Fixed substantial bugs in ``rxnsetrate`` and ``rxncalcrate``, in
    smolreact.c. The bug was that unimolecular reactions that had
@@ -12091,7 +13104,9 @@ Modifications for version 2.27 (released 7/26/12)
    happen) for the second and subsequent reactions incorrectly. This was
    only a problem with relatively high reaction probabilities.
 
-.. rubric:: Modifications for version 2.36 (released 6/9/15)
+   .. rubric:: Modifications for version 2.36 (released 6/9/15)
+      :name: modifications-for-version-2.36-released-6915
+      :class: unnumbered
 
 -  Fixed a bug in ``doreact`` in which bounce reactions did not work
    when both reactants had exactly the same locations.
@@ -12101,7 +13116,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  All output commands now flush the output buffer after the command is
    done.
 
-.. rubric:: Modifications for version 2.37 (released 10/7/15)
+   .. rubric:: Modifications for version 2.37 (released 10/7/15)
+      :name: modifications-for-version-2.37-released-10715
+      :class: unnumbered
 
 -  Fixed a bug in parse.c in which global definitions weren’t being
    passed to upstream files.
@@ -12134,7 +13151,9 @@ Modifications for version 2.27 (released 7/26/12)
    this. This addition, and the reaction_serialnum addition, should make
    it much easier to do particle tracking simulations.
 
-.. rubric:: Modifications for version 2.38 (released 10/22/15)
+   .. rubric:: Modifications for version 2.38 (released 10/22/15)
+      :name: modifications-for-version-2.38-released-102215
+      :class: unnumbered
 
 -  Added line to cmake file to enable building for Macs with OS 10.5 or
    above.
@@ -12207,7 +13226,9 @@ Modifications for version 2.27 (released 7/26/12)
    bounce type reactions to jump between surface panels. This was caused
    by incorrect setting of the new panel value.
 
-.. rubric:: Modifications for version 2.39 (released 1/15/16)
+   .. rubric:: Modifications for version 2.39 (released 1/15/16)
+      :name: modifications-for-version-2.39-released-11516
+      :class: unnumbered
 
 -  Fixed a bug in ``Geo_NearestTrianglePt2``, which led to incorrect
    answers for points that were outside of the triangle. This fixed a
@@ -12235,7 +13256,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed minor bugs in ``meansqrdisp``, ``meansqrdisp2``, and
    ``meansqrdisp3`` which did not allow computations for all axes.
 
-.. rubric:: Modifications for version 2.40 (released 3/22/16)
+   .. rubric:: Modifications for version 2.40 (released 3/22/16)
+      :name: modifications-for-version-2.40-released-32216
+      :class: unnumbered
 
 -  This is somewhat of a beta release, since a lot of things have
    changed and not all are documented or fully tested.
@@ -12275,7 +13298,9 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Started updating the user’s manual, but there’s much more to be done.
 
-.. rubric:: Modifications for version 2.41 (released 4/8/16)
+   .. rubric:: Modifications for version 2.41 (released 4/8/16)
+      :name: modifications-for-version-2.41-released-4816
+      :class: unnumbered
 
 -  Fixed a trivial bug that caused crashes.
 
@@ -12294,7 +13319,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Improved the Windows installation script. It might not work yet, but
    it’s probably closer.
 
-.. rubric:: Modifications for version 2.42 (released 4/29/16)
+   .. rubric:: Modifications for version 2.42 (released 4/29/16)
+      :name: modifications-for-version-2.42-released-42916
+      :class: unnumbered
 
 -  Added command for radial distribution function, also including a
    ``boxscan`` function.
@@ -12307,7 +13334,9 @@ Modifications for version 2.27 (released 7/26/12)
    different behavior, but that’s because of the expanded output, not
    different simulation results.
 
-.. rubric:: Modifications for version 2.43 (released 5/18/16)
+   .. rubric:: Modifications for version 2.43 (released 5/18/16)
+      :name: modifications-for-version-2.43-released-51816
+      :class: unnumbered
 
 -  Renamed Smoldyn_doc1 to SmoldynUsersManual, and split Smoldyn_doc2 to
    SmoldynCodeDoc and LibsmoldynManual.
@@ -12317,7 +13346,9 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added gaussiansource and molcountspace2d commands.
 
-.. rubric:: Modifications for version 2.44 (released 6/27/16)
+   .. rubric:: Modifications for version 2.44 (released 6/27/16)
+      :name: modifications-for-version-2.44-released-62716
+      :class: unnumbered
 
 -  Added reversible reaction definitions. In the process, moved reaction
    parsing to the new function ``rxnparsereaction`` and added function
@@ -12326,7 +13357,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed release.sh slightly so that freeglut.dll is included in the
    windows release.
 
-.. rubric:: Modifications for version 2.45 (released 7/15/16)
+   .. rubric:: Modifications for version 2.45 (released 7/15/16)
+      :name: modifications-for-version-2.45-released-71516
+      :class: unnumbered
 
 -  Fixed bugs in equilmol and modulatemol where they returned the wrong
    probabilities. These were caused by the change to using molscan in
@@ -12349,7 +13382,9 @@ Modifications for version 2.27 (released 7/26/12)
    compartment boundaries, and that there is at least one compartment on
    either side of the port.
 
-.. rubric:: Modifications for version 2.46 (released 7/30/16)
+   .. rubric:: Modifications for version 2.46 (released 7/30/16)
+      :name: modifications-for-version-2.46-released-73016
+      :class: unnumbered
 
 -  Added section S94_archive to the examples files. It currently has
    files for my 2016 Bioinformatics paper.
@@ -12369,7 +13404,9 @@ Modifications for version 2.27 (released 7/26/12)
    regression tests that all agree with the BioNetGen expansion, making
    them validated models.
 
-.. rubric:: Modifications for version 2.47 (released 8/30/16)
+   .. rubric:: Modifications for version 2.47 (released 8/30/16)
+      :name: modifications-for-version-2.47-released-83016
+      :class: unnumbered
 
 -  Added a new rules section to the code. This includes a rules portion
    of the data structure, the smolrules.c file, and functions in that
@@ -12412,7 +13449,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed a compiling bug in smolmolec.c in which const char\* was being
    converted to char\* in a strchr function.
 
-.. rubric:: Modifications for version 2.48 (released 11/16/16)
+   .. rubric:: Modifications for version 2.48 (released 11/16/16)
+      :name: modifications-for-version-2.48-released-111616
+      :class: unnumbered
 
 -  Fixed a minor bug in ``strmathsscanf``.
 
@@ -12425,7 +13464,9 @@ Modifications for version 2.27 (released 7/26/12)
    because not doing this causes crashes. It’s likely required before
    other things, but I didn’t modify others.
 
-.. rubric:: Modifications for version 2.49 (released 2/17/17)
+   .. rubric:: Modifications for version 2.49 (released 2/17/17)
+      :name: modifications-for-version-2.49-released-21717
+      :class: unnumbered
 
 -  Fixed bugs in molcount and molcountspace commands that arose if
    lattice species didn’t align with Smoldyn species.
@@ -12447,7 +13488,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Added function parsing to string2.c, so Smoldyn now recognizes sqrt,
    sin, cosh, etc.
 
-.. rubric:: Modifications for version 2.50 (released 2/27/17)
+   .. rubric:: Modifications for version 2.50 (released 2/27/17)
+      :name: modifications-for-version-2.50-released-22717
+      :class: unnumbered
 
 -  Added infrastructure for Smoldyn functions. This involved the command
    ``cmdevaluate``, the functions ``fnmolcount``, ``molscanfn``,
@@ -12472,7 +13515,9 @@ Modifications for version 2.27 (released 7/26/12)
    molecules were touched. It lets functions not recompute if the touch
    value is the same as it was during a prior call.
 
-.. rubric:: Modifications for version 2.51 (released 3/15/17)
+   .. rubric:: Modifications for version 2.51 (released 3/15/17)
+      :name: modifications-for-version-2.51-released-31517
+      :class: unnumbered
 
 -  Fixed a bug in which surface-bound molecules could leak through
    another surface. The problem was that the surface-bound molecule code
@@ -12491,12 +13536,16 @@ Modifications for version 2.27 (released 7/26/12)
    result works well, but it is still conceivable to have molecule leaks
    in rare situations.
 
-.. rubric:: Modifications for version 2.52 (released 5/16/17)
+   .. rubric:: Modifications for version 2.52 (released 5/16/17)
+      :name: modifications-for-version-2.52-released-51617
+      :class: unnumbered
 
 -  Martin Robinson fixed a minor bug in smolcmd.c that had to do with
    the lattice code.
 
-.. rubric:: Modifications for version 2.53 (released 5/25/17)
+   .. rubric:: Modifications for version 2.53 (released 5/25/17)
+      :name: modifications-for-version-2.53-released-52517
+      :class: unnumbered
 
 -  Fixed minor bugs in smolcmd.c that had to do with the lattice code.
    Part of the version 2.49 modifications was that I “fixed bugs in
@@ -12517,7 +13566,9 @@ Modifications for version 2.27 (released 7/26/12)
    determine which address to choose for the functions because their
    names are overloaded.
 
-.. rubric:: Modifications for version 2.54 (released 8/27/17)
+   .. rubric:: Modifications for version 2.54 (released 8/27/17)
+      :name: modifications-for-version-2.54-released-82717
+      :class: unnumbered
 
 -  Added a line to ``molpatternindex`` that sets the ``PDrule`` element
    of the ``index`` variable if update is requested, ``index`` already
@@ -12533,7 +13584,9 @@ Modifications for version 2.27 (released 7/26/12)
    with the same beginning and ending points. Added surfacedrift2 and 3
    to the regression files because these were the ones that failed.
 
-.. rubric:: Modifications for version 2.55 (released 7/16/18)
+   .. rubric:: Modifications for version 2.55 (released 7/16/18)
+      :name: modifications-for-version-2.55-released-71618
+      :class: unnumbered
 
 -  Added a ‘time’ option to the ``random_seed`` statement for setting
    the value to the current time.
@@ -12572,7 +13625,9 @@ Modifications for version 2.27 (released 7/26/12)
    another part of this change, ``molismobile`` now allows for a
    ``MSbsoln`` input.
 
-.. rubric:: Modifications for version 2.56 (released 9/18/18)
+   .. rubric:: Modifications for version 2.56 (released 9/18/18)
+      :name: modifications-for-version-2.56-released-91818
+      :class: unnumbered
 
 -  Fixed a bug that arose when the system was expanded and then some
    molecules were killed. System expansion triggered boxupdateparams
@@ -12613,7 +13668,9 @@ Modifications for version 2.27 (released 7/26/12)
    and requested reaction rates yet. In particular, it has trouble with
    the pgem, pgemmax, and pgemmaxw reverse parameters.
 
-.. rubric:: Modifications for version 2.57 (released 3/21/19)
+   .. rubric:: Modifications for version 2.57 (released 3/21/19)
+      :name: modifications-for-version-2.57-released-32119
+      :class: unnumbered
 
 -  Moved Smoldyn source from the Fred Hutchinson Center’s “hedgehog”
    subversion server to github, where it is called “Smoldyn_Official”.
@@ -12632,7 +13689,9 @@ Modifications for version 2.27 (released 7/26/12)
    molecule serial numbers to ``unsigned long long``, but left most
    other serial number values as ``long int``.
 
-.. rubric:: Modifications for version 2.58 (released 3/29/19)
+   .. rubric:: Modifications for version 2.58 (released 3/29/19)
+      :name: modifications-for-version-2.58-released-32919
+      :class: unnumbered
 
 -  Fixed minor bug in string2.c that caused loss of numerical precision
    when using ``strmathsscanf``.
@@ -12660,7 +13719,9 @@ Modifications for version 2.27 (released 7/26/12)
    so that this dll is copied when Smoldyn is installed. This will
    hopefully fix an error that Kevin Chen told me about.
 
-.. rubric:: Modifications for version 2.59 (released 5/15/19)
+   .. rubric:: Modifications for version 2.59 (released 5/15/19)
+      :name: modifications-for-version-2.59-released-51519
+      :class: unnumbered
 
 -  Trivial changes to the code to remove compiler errors and warnings.
 
@@ -12671,7 +13732,9 @@ Modifications for version 2.27 (released 7/26/12)
    computer. This still doesn’t support LibTiff or NSV but at least it
    does work.
 
-.. rubric:: Modifications for version 2.60 (released 6/7/19)
+   .. rubric:: Modifications for version 2.60 (released 6/7/19)
+      :name: modifications-for-version-2.60-released-6719
+      :class: unnumbered
 
 -  Further improvements on Windows support. This release now builds
    SmolCrowd and wrl2smol on a Windows computer. It also uses static
@@ -12685,7 +13748,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Fixed a trivial bug for the “stipple” statement, which was trying to
    read hex code with the math parser.
 
-.. rubric:: Modifications for version 2.61 (released 7/22/19)
+   .. rubric:: Modifications for version 2.61 (released 7/22/19)
+      :name: modifications-for-version-2.61-released-72219
+      :class: unnumbered
 
 -  Rewrote boxscansphere, which is called by the commands
    radialdistribution and radialdistribution2. This function only worked
@@ -12703,18 +13768,100 @@ Modifications for version 2.27 (released 7/26/12)
    effectively the edge of simulated space, at least for determining
    what panels are in what boxes.
 
-.. rubric:: Modifications for version 2.62 (not released yet)
+   .. rubric:: Modifications for version 2.62 (released 10/14/20)
+      :name: modifications-for-version-2.62-released-101420
+      :class: unnumbered
 
 -  Extended the pointsource, volumesource, and gaussiansource commands
    so that they now allow non-integer numbers of molecules to be
    requested. If a non-integer value is requested, these functions
    choose a Poisson-distributed random number of molecules.
 
-The wish/to do list
+-  Windows version is now compiled with MSVC and includes support for
+   hybrid simulation with NSV package and saving images with LibTiff.
+
+-  Added Python support, which was mostly Dilawar Singh’s work. This
+   includes the pybind11 library and new Python code. The pre-compiled
+   Mac version now comes with a Python wheel. The Python wheel can also
+   be downloaded from PyPI with pip. This also included substantial
+   editing of the Libsmoldyn documentation.
+
+-  Substantial CMakeLists.txt clean-up, along with updates to the build
+   system documentation.
+
+-  Cross-compiling from Mac to Windows with MinGW works again, but not
+   with graphics, so this was used for the SmolCrowd and wrl2smol
+   utilities, but not for Smoldyn.
+
+-  Dilawar added several things that I haven’t addressed yet: Travis
+   continuous integration, Doxygen, readthedocs website compatibility,
+   and several scripts.
+
+   .. rubric:: Modifications for version 2.63 (released 12/15/20)
+      :name: modifications-for-version-2.63-released-121520
+      :class: unnumbered
+
+-  Documented Dilawar’s work on Python bindings in code documentation
+   and Libsmoldyn manual.
+
+-  Dilawar added test for ``SMOLDYN_NO_PROMPT`` environment variable,
+   which is essentially the same as setting the ``sim->quitatend`` flag.
+
+-  I made lots of minor fixes in the Python bindings, including fixing
+   the Python example files. Dilawar made more fixes and also added many
+   more Python example files.
+
+-  Dilawar added ``smolSetMoleculeColor``, ``smolSetMoleculeSize``,
+   ``smolSetIntersurfaceRules`` to libsmoldyn.
+
+-  Lots of changes by Dilawar to scripts, including particularly for
+   documentation. He also fixed some issues in the CMake build system.
+
+-  Dilawar added Python callback functionality. This includes a few
+   minor changes in smoldyn.h, including new code in the sim structure,
+   and a short bit of code in ``simulatetimestep``, in smolsim.c; this
+   code is in C++, so the file got renamed to smolsim.cpp.
+
+-  Dilawar made some minor changes in libsmoldyn.c ``smolGetPanelIndex``
+   and ``smolGetPanelIndexNT`` for searching for a panel in a panel
+   list. As part of the same changes, he added a C++ array to smoldyn.h.
+   These changed both files from C to C++. I don’t understand these
+   updates.
+
+-  Added data tables to the command superstructure, so that output data
+   can be stored internally rather than only in external files. As part
+   of this, wrote double-double list types in Lists.c, added several
+   functions to support data arrays in SimCommand.c, edited all
+   observation commands to work with the new function calls and also to
+   enable data storage where possible, added statement “output_data” and
+   command “printdata”, edited reaction logging in smolreact.c, added
+   Libsmoldyn functions ``smolAddOutputData`` and ``smolGetOutputData``.
+
+-  Fixed bugs in ``cmddiffusecmpt``.
+
+-  Added ``maxmollist`` element to surface structure because memory
+   management here was sloppy, which led to errors.
+
+-  Fixed some bugs with ``reassignmolecs`` function. First of all, it’s
+   now called as the system is set up, before the simulation starts.
+   Also, it now runs even if there is only 1 box, which is a little less
+   efficient in rare cases, but more reliable.
+
+-  Tried to get freeglut to work, without success.
+
+-  Added Chapter 15 to user’s manual on Python bindings.
+
+The wish/ to do list
 ====================
 
 Bugs and issues to fix
 ----------------------
+
+-  The ``comparttranslate`` function isn’t written well for molecules
+   that get squeezed. What’s needed is to write a second version of
+   ``checksurfaces1mol`` that explicitly accounts for surface motion,
+   rather than to just use this function, which is written for molecule
+   motion, in the surface’s moving reference frame.
 
 -  Surfaces now have lists of molecules adsorbed to them. The code would
    be faster if these lists were used as appropriate, such as for
@@ -12769,7 +13916,7 @@ Desired features
 ----------------
 
 Libsmoldyn
-----------
+~~~~~~~~~~
 
 -  Test libsmoldyn.
 
@@ -12786,7 +13933,7 @@ Libsmoldyn
 -  Finish swigging for Python, and then swig for R and Octave.
 
 Code acceleration
------------------
+~~~~~~~~~~~~~~~~~
 
 -  There are lots of little tweaks that could be made to speed up the
    code. For example:
@@ -12809,7 +13956,7 @@ Code acceleration
    roots and trig. functions, as possible.
 
 Electrostatics
---------------
+~~~~~~~~~~~~~~
 
 -  Arnd Pralle wants Smoldyn to simulate electrostatic interactions. At
    first, I was thinking that this would be a big pain. But then I
@@ -12826,18 +13973,18 @@ Electrostatics
    chemical reactions at short distances.
 
 BioNetGen
----------
+~~~~~~~~~
 
 -  Need to finish groups stuff. More testing would be good, too.
 
 Math
-----
+~~~~
 
 -  Add functions that have parentheses, such as sin(x) and atan2(x,y).
    Also add a molcount function.
 
 Commands
---------
+~~~~~~~~
 
 -  Commands need to be overhauled. They need to be modularized, they
    need to support wildcards, and they need to be able to export data to
@@ -12877,7 +14024,7 @@ Commands
    of simulation variables could be printed with a user-defined format.
 
 Distribution
-------------
+~~~~~~~~~~~~
 
 -  Sourceforge. The account has been set up but needs code, etc. Then, I
    should e-mail everyone who might be interested to invite them to join
@@ -12910,7 +14057,7 @@ Distribution
    Fink, etc. code databases. This has be done to some extent.
 
 Core Smoldyn
-------------
+~~~~~~~~~~~~
 
 -  Add a surface panel shape called a holey sphere. This would be a
    sphere but with as many holes as desired. It could serve as a neuron
@@ -12936,7 +14083,7 @@ Core Smoldyn
 -  Check bimolecular reaction rates for surface-bound molecules.
 
 Graphics and I/O
-----------------
+~~~~~~~~~~~~~~~~
 
 -  Off-screen rendering would be very helpful. Two options seem most
    promising. (1) Off-screen rendering with OpenGL. This requires a
@@ -12965,14 +14112,14 @@ Graphics and I/O
    reactions, molecules, etc. Species removal would be harder.
 
 Code improvements
------------------
+~~~~~~~~~~~~~~~~~
 
 -  First order reactions would be more efficient with an event queue
    rather than a probabilistic likelihood at each time step.
 
 -  I think I see two ways to improve performance in ``checksurfaces``:
-   (1) instead of ``for(bptr1-pos2box...)``, do
-   ``for(bptr1-mptr->box,...)``. (2) End this same box loop when
+   (1) instead of ``for(bptr1=pos2box...)``, do
+   ``for(bptr1=mptr->box,...)``. (2) End this same box loop when
    ``crossmin<2``.
 
 -  Speed for 3D systems can be improved by always checking for 3D first,
@@ -12990,7 +14137,7 @@ Code improvements
    probabilities.
 
 Major additions
----------------
+~~~~~~~~~~~~~~~
 
 -  Fibers (such as DNA, actin, microtubules, MinD, FtsZ, etc.),
    fiber-bound molecules, etc. Also, membrane-bound polymers would be
