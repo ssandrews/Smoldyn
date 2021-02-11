@@ -18,7 +18,8 @@ Welcome to Smoldyn's documentation!
    :maxdepth: 3
    :caption: Table of Contents
 
-   user/user_manual
+   user/index
+
    python/api
    developer/index
    C/C++ API <doxygen/html/index>

@@ -7,6 +7,7 @@ __email__ = "dilawar.s.rajput@gmail.com"
 __all__ = [
     "__version__",
     "version",
+    "Simulation",
     "Species",
     "Panel",
     "Triangle",
@@ -23,7 +24,6 @@ __all__ = [
     "Box",
     "Compartment",
     "Command",
-    "Simulation",
     "Reaction",
     "BidirectionalReaction",
 ]
