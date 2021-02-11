@@ -19,10 +19,12 @@ Welcome to Smoldyn's documentation!
    :caption: Table of Contents
 
    user/index
+   examples/index
 
    python/api
    developer/index
    C/C++ API <doxygen/html/index>
+
 
 
 Indices and tables

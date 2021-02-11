@@ -79,13 +79,7 @@ int init_and_run(
 {
     int  er = 0;
     auto p  = splitPath(filepath);
-
-    vector<double> low   = {0, 0, 0};
-    vector<double> high  = {1, 1, 1};
-    vector<string> btype = {"r", "r", "r"};
-    Simulation     sim(low, high, btype);
-
-    simptr psim = sim.getSimPtr();
+    simptr cursim_ = nullptr; 
 
 #ifdef OPTION_VCELL
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str(),

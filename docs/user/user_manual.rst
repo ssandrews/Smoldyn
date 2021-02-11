@@ -1,11 +1,10 @@
 Smoldyn User’s Manual
 
-for Smoldyn version 2.63, © December 2020
+| Version 2.63
+| 
 
-Steve Andrews
-
-Part I. Using Smoldyn
-=====================
+Part I. Using Smoldyn\ **                     **
+============================
 
 1. Introduction
 ---------------
@@ -51,7 +50,7 @@ half of the manual is a reference section which lists all statements and
 commands. The first portions of the other chapters provide helpful
 introductions on additional topics. Later portions of those chapters
 present advanced material that you may want to learn if you continue
-with Smoldyn.
+with Smoldyn
 
 Installing Smoldyn
 ~~~~~~~~~~~~~~~~~~
@@ -146,15 +145,13 @@ If you have administrator privileges
    characters). If this happens, revert the variable using the file
    PATH_old.txt, where the installer saves the existing PATH variable
    before modifying it.
-
-If you get a warning saying that Python binding are not installed
-because it couldn’t find pip, that’s not a problem. If you find that you
-want the Python bindings at some point, then install pip and re-run the
-install script.
-
-2. Exit the command prompt as administrator, and start a new command
+   If you get a warning saying that Python binding are not installed
+   because it couldn’t find pip, that’s not a problem. If you find that
+   you want the Python bindings at some point, then install pip and
+   re-run the install script.
+6. Exit the command prompt as administrator, and start a new command
    prompt, not as administrator.
-3. Test Smoldyn by typing “smoldyn examples/S1_intro/bounce3.txt”.
+7. Test Smoldyn by typing “smoldyn examples/S1_intro/bounce3.txt”.
 
 If you don’t have administrator privileges
 
@@ -268,8 +265,6 @@ Various building options are possible with the CMake build system, of
 which the most important are as follows. In all cases, append these to
 the “cmake ..” command.
 
-+-------------------------------+-------------------------------------+
-|                               |                                     |
 +-------------------------------+-------------------------------------+
 | -DCMAKE_BUILD_TYPE=...        | Choose CMake build type             |
 |                               |                                     |

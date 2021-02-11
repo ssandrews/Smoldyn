@@ -15,6 +15,7 @@ import os
 #
 sdir_ = Path(__file__).parent.resolve()
 sys.path.insert(0, str(sdir_ / ".." / "source" / "python"))
+sys.path.insert(0, str(sdir_ / ".." / "examples" / "S15_python"))
 
 assert Path(os.getcwd()) == sdir_, f"This script can only run {sdir_}"
 
@@ -63,6 +64,7 @@ extensions = [
     "sphinx.ext.imgmath",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
     "sphinxcontrib.programoutput",
     "sphinxcontrib.inlinesyntaxhighlight",
     "sphinx.ext.autosectionlabel",

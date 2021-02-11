@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 project(smoldyn-doc LANGUAGES)
 
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 #
 # A target to convert odt and tex files in documentations format to rst format
 # convert ../documentation/Smoldyn/SmoldynUsersManual.odt to rst
@@ -17,6 +19,12 @@ add_custom_command(OUTPUT ${USER_MANUAL_RST_AUTO}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     VERBATIM)
 add_custom_target(gen_user_manual DEPENDS ${USER_MANUAL_RST_AUTO})
+
+# install dependencies
+add_custom_command(TARGET gen_user_manual PRE_BUILD
+    COMMAND ${Python3_EXECUTABLE} -m pip install -r 
+        ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt
+    COMMENT "Installing dependencies." VERBATIM)
 
 #
 # Convert all tex files to rst 
@@ -35,6 +43,7 @@ foreach(_tex_file ${DOC_TEX_FILES})
         VERBATIM)
     add_custom_target(${_name_file} ALL DEPENDS ${_output_rst_file})
 endforeach()
+
 
 
 #
@@ -102,6 +111,15 @@ add_custom_target(docs ALL
 
 # Nice named target so we can run the job easily
 add_custom_target(Sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
+
+##
+## Convert example scripts to rst
+##
+#add_custom_command(TARGET docs PRE_BUILD
+#    COMMAND sphinx-apidoc -o ${CMAKE_CURRENT_SOURCE_DIR}/examples
+#        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/S15_python
+#    COMMENT "Generating rst files from example files"
+#    VERBATIM)
 
 # LiveHTML (for developer and document writer)
 add_custom_target(doc_livehtml
