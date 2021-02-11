@@ -1,7 +1,7 @@
 Developer Documents
 ####################
 
-.. include:: about-codebase.rst
-.. include:: libsmoldyn.rst
+.. include:: SmoldynCodeDoc.rst
+.. include:: Libsmoldynmanual.rst
 .. include:: notes.rst
 

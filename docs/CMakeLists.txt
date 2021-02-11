@@ -2,17 +2,45 @@ cmake_minimum_required(VERSION 3.12)
 project(smoldyn-doc LANGUAGES)
 
 #
-# A target to convert docx and tex files in documentations format to rst format
+# A target to convert odt and tex files in documentations format to rst format
+# convert ../documentation/Smoldyn/SmoldynUsersManual.odt to rst
 #
-add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/docs/user/user_manual.rst
-    COMMAND pandoc -f docx ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.docx -o docs/user/user_manual.rst
-    MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.docx
-    COMMENT "Converting user manual (docx) to rst."
-    VERBATIM)
+set(USER_MANUAL_ODT
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.odt)
+set(USER_MANUAL_RST_AUTO
+    ${CMAKE_CURRENT_SOURCE_DIR}/../docs/user/user_manual.rst)
 
+add_custom_command(OUTPUT ${USER_MANUAL_RST_AUTO}
+    COMMAND pandoc -f odt ${USER_MANUAL_ODT} -o ${USER_MANUAL_RST_AUTO}
+    MAIN_DEPENDENCY ${USER_MANUAL_ODT}
+    COMMENT "Converting ${USER_MANUAL_ODT} -> ${USER_MANUAL_RST_AUTO}"
+    VERBATIM)
+add_custom_target(doc_user_manual ALL DEPENDS ${USER_MANUAL_RST_AUTO})
+
+#
+# Convert all tex files to rst 
+# 
+set(DOC_TEX_FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/LibsmoldynManual.tex
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynCodeDoc.tex
+    )
+foreach(_tex_file ${DOC_TEX_FILES})
+    message(STATUS "  [doc] Converting ${_tex_file} to rst")
+    get_filename_component(_name_file ${_tex_file} NAME_WE)
+    set(_output_rst_file "${CMAKE_CURRENT_SOURCE_DIR}/developer/${_name_file}.rst")
+    add_custom_command(OUTPUT ${_output_rst_file}
+        COMMAND pandoc -f latex ${_tex_file} -o ${_output_rst_file}
+        MAIN_DEPENDENCY ${_tex_file}
+        COMMENT "[doc] converting ${_tex_file} to ${_output_rst_file}"
+        VERBATIM)
+    add_custom_target(${_name_file} ALL DEPENDS ${_output_rst_file})
+endforeach()
+
+
+#
 # This is based on an excellent tutorial by Sy Brand
 # https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
-
+#
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
 
 find_package(Perl REQUIRED)
@@ -66,6 +94,7 @@ add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
 
 # Generate doc using Sphinx and doxygen.
 add_custom_target(docs ALL 
+    DEPENDS _smoldyn
     COMMAND READTHEDOCS=True ${SPHINX_EXECUTABLE} -b html
         ${SPHINX_SOURCE} ${SPHINX_BUILD}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}

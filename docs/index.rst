@@ -19,9 +19,8 @@ Welcome to Smoldyn's documentation!
    :caption: Table of Contents
 
    user/user_manual
-   user/user_manual_python
-   developer/index
    python/api
+   developer/index
    SmolEmulate <other/emulate-doc>
    C/C++ API <doxygen/html/index>
 

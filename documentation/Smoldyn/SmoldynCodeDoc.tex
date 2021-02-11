@@ -567,7 +567,11 @@ Send in the filepath, including both the path and the filename in \ttt{filepath}
 \hfill \\
 This is a macro that creates a function for the interface between C code and Python. From the website \url{https://pybind11.readthedocs.io/en/stable/basics.html}, with some edits to make it apply to the code here: ``The \ttt{PYBIND11\_MODULE()} macro creates a function that will be called when an \ttt{import} statement is issued from within Python. The module name (\ttt{\_smoldyn}) is given as the first macro argument. The second argument (\ttt{m}) defines a variable of type \ttt{py::module\_} which is the main interface for creating bindings. The method \ttt{module\_::def()} generates binding code that exposes the Smoldyn functions to Python.''
 
-This code exposes the enumerated types, the members of the simulation structure, and the C API to the Python interface. Most of this function is simply a wrapper of the C API. The python functions created at the end of this function are not in the C API, but probably should be. Most of their code is in module.h.
+This code exposes the enumerated types, the members of the simulation
+structure, and the C API to the Python interface. Most of this function is
+simply a wrapper of the C API. The python functions created at the end of this
+function are not in the C API, but probably should be. Most of their code is in
+module.h.
 
 Also, module.cpp has simple utilities, which really should be in the C API but weren't added to it. Most of these functions are called by the \ttt{PYBIND11\_MODULE} function. Many of these functions could also be usefully merged into the \ttt{PYBIND11\_MODULE} code to improve overall simplicity.
 
