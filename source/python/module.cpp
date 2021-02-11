@@ -37,12 +37,14 @@ double r_ = 0.0;
  * @Returns
  */
 /* ----------------------------------------------------------------------------*/
-array<double, 4> pycolor(const double *f) {
+array<double, 4> pycolor(const double *f)
+{
     array<double, 4> c = {f[0], f[1], f[2], f[3]};
     return c;
 }
 
-void printSimptrNotInitWarning(const char *funcname) {
+void printSimptrNotInitWarning(const char *funcname)
+{
     py::print("Warn:", funcname, "simptr is not initialized. set boundaries/dim first.");
 }
 
@@ -51,7 +53,8 @@ void printSimptrNotInitWarning(const char *funcname) {
  *
  * @return
  */
-size_t getRandomSeed(Simulation &sim) {
+size_t getRandomSeed(Simulation &sim)
+{
     if(!sim.getSimPtr()) {
         printSimptrNotInitWarning(__FUNCTION__);
         return -1;
@@ -72,7 +75,8 @@ size_t getRandomSeed(Simulation &sim) {
  */
 /* ----------------------------------------------------------------------------*/
 int init_and_run(
-    const string &filepath, const string &flags, bool wflag, bool quit_at_end = false) {
+    const string &filepath, const string &flags, bool wflag, bool quit_at_end = false)
+{
     int  er = 0;
     auto p  = splitPath(filepath);
 
@@ -85,7 +89,7 @@ int init_and_run(
 
 #ifdef OPTION_VCELL
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str(),
-                        new SimpleValueProviderFactory(), new SimpleMesh());
+        new SimpleValueProviderFactory(), new SimpleMesh());
 #else
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str());
 #endif
@@ -99,13 +103,15 @@ int init_and_run(
         er = smolOpenOutputFiles(sim.getSimPtr(), wflag);
     if(er) {
         simLog(sim.getSimPtr(), 4, "%sSimulation skipped\n", er ? "\n" : "");
-    } else {
+    }
+    else {
         fflush(stdout);
         fflush(stderr);
         if(!sim.getSimPtr()->graphss || sim.getSimPtr()->graphss->graphics == 0) {
             er = smolsimulate(sim.getSimPtr());
             endsimulate(sim.getSimPtr(), er);
-        } else {
+        }
+        else {
             smolsimulategl(sim.getSimPtr());
         }
     }
@@ -116,199 +122,208 @@ int init_and_run(
     return er;
 }
 
-PYBIND11_MODULE(_smoldyn, m) {
+/**
+ * @brief Definition of Python module _smoldyn.
+ *
+ * @param _smoldyn (name of the module)
+ * @param m
+ */
+PYBIND11_MODULE(_smoldyn, m)
+{
     // py::options options;
     // options.disable_function_signatures();
 
     m.doc() = R"pbdoc(
-        Python interface of smoldyn simulator.
+        Low level Python interface for the smoldyn simulator. This module is not 
+        meant for direct user interaction. The user api defined in smoldyn/smoldyn.py 
+        uses this module to create an user friendly API.
     )pbdoc";
 
     py::enum_<SrfAction>(m, "SrfAction")
-    .value("reflect", SrfAction::SAreflect)
-    .value("trans", SrfAction::SAtrans)
-    .value("absorb", SrfAction::SAabsorb)
-    .value("jump", SrfAction::SAjump)
-    .value("port", SrfAction::SAport)
-    .value("mult", SrfAction::SAmult)
-    .value("no", SrfAction::SAno)
-    .value("none", SrfAction::SAnone)
-    .value("adsorb", SrfAction::SAadsorb)
-    .value("revdes", SrfAction::SArevdes)
-    .value("irrevdes", SrfAction::SAirrevdes)
-    .value("flip", SrfAction::SAflip);
+        .value("reflect", SrfAction::SAreflect)
+        .value("trans", SrfAction::SAtrans)
+        .value("absorb", SrfAction::SAabsorb)
+        .value("jump", SrfAction::SAjump)
+        .value("port", SrfAction::SAport)
+        .value("mult", SrfAction::SAmult)
+        .value("no", SrfAction::SAno)
+        .value("none", SrfAction::SAnone)
+        .value("adsorb", SrfAction::SAadsorb)
+        .value("revdes", SrfAction::SArevdes)
+        .value("irrevdes", SrfAction::SAirrevdes)
+        .value("flip", SrfAction::SAflip);
 
     py::enum_<MolecState>(m, "MolecState")
-    .value("soln", MolecState::MSsoln)
-    .value("front", MolecState::MSfront)
-    .value("back", MolecState::MSback)
-    .value("up", MolecState::MSup)
-    .value("down", MolecState::MSdown)
-    .value("fsoln", MolecState::MSsoln)  // fsoln is really soln
-    .value("bsoln", MolecState::MSbsoln)
-    .value("all", MolecState::MSall)
-    .value("none", MolecState::MSnone)
-    .value("some", MolecState::MSsome);
+        .value("soln", MolecState::MSsoln)
+        .value("front", MolecState::MSfront)
+        .value("back", MolecState::MSback)
+        .value("up", MolecState::MSup)
+        .value("down", MolecState::MSdown)
+        .value("fsoln", MolecState::MSsoln)  // fsoln is really soln
+        .value("bsoln", MolecState::MSbsoln)
+        .value("all", MolecState::MSall)
+        .value("none", MolecState::MSnone)
+        .value("some", MolecState::MSsome);
 
     py::enum_<PanelFace>(m, "PanelFace")
-    .value("front", PanelFace::PFfront)
-    .value("back", PanelFace::PFback)
-    .value("none", PanelFace::PFnone)
-    .value("both", PanelFace::PFboth);
+        .value("front", PanelFace::PFfront)
+        .value("back", PanelFace::PFback)
+        .value("none", PanelFace::PFnone)
+        .value("both", PanelFace::PFboth);
 
     py::enum_<PanelShape>(m, "PanelShape")
-    .value("rect", PanelShape::PSrect)
-    .value("tri", PanelShape::PStri)
-    .value("sph", PanelShape::PSsph)
-    .value("cyl", PanelShape::PScyl)
-    .value("hemi", PanelShape::PShemi)
-    .value("disk", PanelShape::PSdisk)
-    .value("all", PanelShape::PSall)
-    .value("none", PanelShape::PSnone);
+        .value("rect", PanelShape::PSrect)
+        .value("tri", PanelShape::PStri)
+        .value("sph", PanelShape::PSsph)
+        .value("cyl", PanelShape::PScyl)
+        .value("hemi", PanelShape::PShemi)
+        .value("disk", PanelShape::PSdisk)
+        .value("all", PanelShape::PSall)
+        .value("none", PanelShape::PSnone);
 
     /* Error codes.  */
     py::enum_<ErrorCode>(m, "ErrorCode")
-    .value("ok", ErrorCode::ECok)
-    .value("notify", ErrorCode::ECnotify)
-    .value("warning", ErrorCode::ECwarning)
-    .value("nonexist", ErrorCode::ECnonexist)
-    .value("all", ErrorCode::ECall)
-    .value("missing", ErrorCode::ECmissing)
-    .value("bounds", ErrorCode::ECbounds)
-    .value("syntax", ErrorCode::ECsyntax)
-    .value("error", ErrorCode::ECerror)
-    .value("memory", ErrorCode::ECmemory)
-    .value("bug", ErrorCode::ECbug)
-    .value("same", ErrorCode::ECsame)
-    .value("wildcard", ErrorCode::ECwildcard);
+        .value("ok", ErrorCode::ECok)
+        .value("notify", ErrorCode::ECnotify)
+        .value("warning", ErrorCode::ECwarning)
+        .value("nonexist", ErrorCode::ECnonexist)
+        .value("all", ErrorCode::ECall)
+        .value("missing", ErrorCode::ECmissing)
+        .value("bounds", ErrorCode::ECbounds)
+        .value("syntax", ErrorCode::ECsyntax)
+        .value("error", ErrorCode::ECerror)
+        .value("memory", ErrorCode::ECmemory)
+        .value("bug", ErrorCode::ECbug)
+        .value("same", ErrorCode::ECsame)
+        .value("wildcard", ErrorCode::ECwildcard);
 
     py::enum_<DrawMode>(m, "DrawMode")
-    .value("no", DrawMode::DMno)
-    .value("vert", DrawMode::DMvert)
-    .value("edge", DrawMode::DMedge)
-    .value("ve", DrawMode::DMve)
-    .value("face", DrawMode::DMface)
-    .value("vf", DrawMode::DMvf)
-    .value("ef", DrawMode::DMef)
-    .value("vef", DrawMode::DMvef)
-    .value("none", DrawMode::DMnone);
+        .value("no", DrawMode::DMno)
+        .value("vert", DrawMode::DMvert)
+        .value("edge", DrawMode::DMedge)
+        .value("ve", DrawMode::DMve)
+        .value("face", DrawMode::DMface)
+        .value("vf", DrawMode::DMvf)
+        .value("ef", DrawMode::DMef)
+        .value("vef", DrawMode::DMvef)
+        .value("none", DrawMode::DMnone);
 
     py::enum_<SMLflag>(m, "SMLflag")
-    .value("no", SMLflag::SMLno)
-    .value("diffuse", SMLflag::SMLdiffuse)
-    .value("react", SMLflag::SMLreact)
-    .value("srfbound", SMLflag::SMLsrfbound);
+        .value("no", SMLflag::SMLno)
+        .value("diffuse", SMLflag::SMLdiffuse)
+        .value("react", SMLflag::SMLreact)
+        .value("srfbound", SMLflag::SMLsrfbound);
 
     py::enum_<RevParam>(m, "RevParam")
-    .value("none", RevParam::RPnone)
-    .value("irrev", RevParam::RPirrev)
-    .value("confspread", RevParam::RPconfspread)
-    .value("bounce", RevParam::RPbounce)
-    .value("pgem", RevParam::RPpgem)
-    .value("pgemmax", RevParam::RPpgemmax)
-    .value("pgemmaxw", RevParam::RPpgemmaxw)
-    .value("ratio", RevParam::RPratio)
-    .value("unbindrad", RevParam::RPunbindrad)
-    .value("pgem2", RevParam::RPpgem2)
-    .value("pgemmax2", RevParam::RPpgemmax2)
-    .value("ratio2", RevParam::RPratio2)
-    .value("offset", RevParam::RPoffset)
-    .value("fixed", RevParam::RPfixed);
+        .value("none", RevParam::RPnone)
+        .value("irrev", RevParam::RPirrev)
+        .value("confspread", RevParam::RPconfspread)
+        .value("bounce", RevParam::RPbounce)
+        .value("pgem", RevParam::RPpgem)
+        .value("pgemmax", RevParam::RPpgemmax)
+        .value("pgemmaxw", RevParam::RPpgemmaxw)
+        .value("ratio", RevParam::RPratio)
+        .value("unbindrad", RevParam::RPunbindrad)
+        .value("pgem2", RevParam::RPpgem2)
+        .value("pgemmax2", RevParam::RPpgemmax2)
+        .value("ratio2", RevParam::RPratio2)
+        .value("offset", RevParam::RPoffset)
+        .value("fixed", RevParam::RPfixed);
 
     py::enum_<SpeciesRepresentation>(m, "SpeciesRepresentation")
-    .value("particle", SpeciesRepresentation::SRparticle)
-    .value("lattice", SpeciesRepresentation::SRlattice)
-    .value("both", SpeciesRepresentation::SRboth)
-    .value("none", SpeciesRepresentation::SRnone)
-    .value("free", SpeciesRepresentation::SRfree);
+        .value("particle", SpeciesRepresentation::SRparticle)
+        .value("lattice", SpeciesRepresentation::SRlattice)
+        .value("both", SpeciesRepresentation::SRboth)
+        .value("none", SpeciesRepresentation::SRnone)
+        .value("free", SpeciesRepresentation::SRfree);
 
     /* callback */
     py::class_<CallbackFunc>(m, "CallbackFunc")
-    .def(py::init<>())
-    .def_property("func", &CallbackFunc::getFuncName, &CallbackFunc::setFuncName)
-    .def("evalAndUpdate", &CallbackFunc::evalAndUpdate);
+        .def(py::init<>())
+        .def_property("func", &CallbackFunc::getFuncName, &CallbackFunc::setFuncName)
+        .def("evalAndUpdate", &CallbackFunc::evalAndUpdate);
 
     /* graphics */
     py::class_<graphicssuperstruct>(m, "Graphics")
-    .def_readonly(
-        "condition", &graphicssuperstruct::condition)  // structure condition
-    .def_readonly("method",
-                  &graphicssuperstruct::graphics)  // graphics: 0=none, 1=opengl, 2=good opengl
-    .def_readonly(
-        "runmode", &graphicssuperstruct::runmode)  // 0=Smoldyn, 1=Libsmoldyn
-    .def_readonly("currentIter",
-                  &graphicssuperstruct::currentit)  // current number of simulation time steps
-    .def_readonly("graphicIter",
-                  &graphicssuperstruct::graphicit)  // number of time steps per graphics update
-    .def_readonly(
-        "graphicDelay", &graphicssuperstruct::graphicdelay)  // minimum delay (in ms)
-    // for graphics updates
-    .def_readonly("tiffIter",
-                  &graphicssuperstruct::tiffit)  // number of time steps per tiff save
-    .def_readonly("framePoints",
-                  &graphicssuperstruct::framepts)  // thickness of frame for graphics
-    .def_readonly("gridPoints",
-                  &graphicssuperstruct::gridpts)  // thickness of virtual box grid for graphics
-    .def_readonly("frameColor", &graphicssuperstruct::framecolor)  // frame color [c]
-    .def_property_readonly("gridColor",
-    [](const graphicssuperstruct &st) {
-        return pycolor(st.gridcolor);
-    })  // grid color [c]
-    .def_property_readonly("bgColor",
-    [](const graphicssuperstruct &st) {
-        return pycolor(st.backcolor);
-    })  // background color [c]
-    .def_property_readonly("textColor",
-    [](const graphicssuperstruct &st) {
-        return pycolor(st.textcolor);
-    })  // text color [c]
-    .def_readonly("maxTextItems",
-                  &graphicssuperstruct::maxtextitems)  // allocated size of item list
-    .def_readonly(
-        "nTextItems", &graphicssuperstruct::ntextitems)  // actual size of item list
-    .def_property_readonly("textItems",
-    [](const graphicssuperstruct &gst) {
-        vector<std::string> txt(gst.ntextitems, "");
-        for(int i = 0; i < gst.ntextitems; i++) {
-            const char *t = gst.textitems[i];
-            txt[i]        = std::string(t);
-        }
-        return txt;
-    })
-    // .def_readonly(
-    //     "roomstate", &graphicssuperstruct::roomstate)  // on, off, or auto (on)
-    .def_property_readonly("globalAmbientLightColor",
-    [](const graphicssuperstruct &st) {
-        return pycolor(st.ambiroom);
-    })  // global ambient light [c]
-    // .def_readonly("lightstate",
-    //     &graphicssuperstruct::lightstate)  // on, off, or auto (off) [lt]
-    .def_property_readonly("ambientLightColor",
-    [](const graphicssuperstruct &st) {
-        vector<array<double, 4>> ambient(MAXLIGHTS);
-        for(size_t i = 0; i < MAXLIGHTS; i++)
-            ambient[i] = pycolor(st.ambilight[i]);
-        return ambient;
-    })
-    .def_property_readonly("diffuseLightColor",
-    [](const graphicssuperstruct &st) {
-        vector<array<double, 4>> difflight(MAXLIGHTS);
-        for(size_t i = 0; i < MAXLIGHTS; i++)
-            difflight[i] = pycolor(st.difflight[i]);
-        return difflight;
-    })  // diffuse light color [lt][c]
-    .def("specularLightColor",
-    [](const graphicssuperstruct &st) {
-        vector<array<double, 4>> light(MAXLIGHTS);
-        for(size_t i = 0; i < MAXLIGHTS; i++)
-            light[i] = pycolor(st.speclight[i]);
-        return light;
-    })  // specular light color [lt][c]
-    .def("lightPosition",
-    [](const graphicssuperstruct &st, size_t lindex) {
-        return st.lightpos[lindex];
-    })  // light positions [lt][d]
-    ;
+        .def_readonly(
+            "condition", &graphicssuperstruct::condition)  // structure condition
+        .def_readonly("method",
+            &graphicssuperstruct::graphics)  // graphics: 0=none, 1=opengl, 2=good opengl
+        .def_readonly(
+            "runmode", &graphicssuperstruct::runmode)  // 0=Smoldyn, 1=Libsmoldyn
+        .def_readonly("currentIter",
+            &graphicssuperstruct::currentit)  // current number of simulation time steps
+        .def_readonly("graphicIter",
+            &graphicssuperstruct::graphicit)  // number of time steps per graphics update
+        .def_readonly(
+            "graphicDelay", &graphicssuperstruct::graphicdelay)  // minimum delay (in ms)
+        // for graphics updates
+        .def_readonly("tiffIter",
+            &graphicssuperstruct::tiffit)  // number of time steps per tiff save
+        .def_readonly("framePoints",
+            &graphicssuperstruct::framepts)  // thickness of frame for graphics
+        .def_readonly("gridPoints",
+            &graphicssuperstruct::gridpts)  // thickness of virtual box grid for graphics
+        .def_readonly("frameColor", &graphicssuperstruct::framecolor)  // frame color [c]
+        .def_property_readonly("gridColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.gridcolor);
+            })  // grid color [c]
+        .def_property_readonly("bgColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.backcolor);
+            })  // background color [c]
+        .def_property_readonly("textColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.textcolor);
+            })  // text color [c]
+        .def_readonly("maxTextItems",
+            &graphicssuperstruct::maxtextitems)  // allocated size of item list
+        .def_readonly(
+            "nTextItems", &graphicssuperstruct::ntextitems)  // actual size of item list
+        .def_property_readonly("textItems",
+            [](const graphicssuperstruct &gst) {
+                vector<std::string> txt(gst.ntextitems, "");
+                for(int i = 0; i < gst.ntextitems; i++) {
+                    const char *t = gst.textitems[i];
+                    txt[i]        = std::string(t);
+                }
+                return txt;
+            })
+        // .def_readonly(
+        //     "roomstate", &graphicssuperstruct::roomstate)  // on, off, or auto (on)
+        .def_property_readonly("globalAmbientLightColor",
+            [](const graphicssuperstruct &st) {
+                return pycolor(st.ambiroom);
+            })  // global ambient light [c]
+        // .def_readonly("lightstate",
+        //     &graphicssuperstruct::lightstate)  // on, off, or auto (off) [lt]
+        .def_property_readonly("ambientLightColor",
+            [](const graphicssuperstruct &st) {
+                vector<array<double, 4>> ambient(MAXLIGHTS);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    ambient[i] = pycolor(st.ambilight[i]);
+                return ambient;
+            })
+        .def_property_readonly("diffuseLightColor",
+            [](const graphicssuperstruct &st) {
+                vector<array<double, 4>> difflight(MAXLIGHTS);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    difflight[i] = pycolor(st.difflight[i]);
+                return difflight;
+            })  // diffuse light color [lt][c]
+        .def("specularLightColor",
+            [](const graphicssuperstruct &st) {
+                vector<array<double, 4>> light(MAXLIGHTS);
+                for(size_t i = 0; i < MAXLIGHTS; i++)
+                    light[i] = pycolor(st.speclight[i]);
+                return light;
+            })  // specular light color [lt][c]
+        .def("lightPosition",
+            [](const graphicssuperstruct &st, size_t lindex) {
+                return st.lightpos[lindex];
+            })  // light positions [lt][d]
+        ;
 
     /* simptr */
 
@@ -316,46 +331,46 @@ PYBIND11_MODULE(_smoldyn, m) {
     // which are supported by pybind11 out of the box. If you want ot expose a
     // struct, make sure a python binding is available.
     py::class_<simstruct>(m, "simstruct")
-    .def(py::init<>())
-    //.def_readonly("condition", &simstruct::condition, "Structure condition")
+        .def(py::init<>())
+        //.def_readonly("condition", &simstruct::condition, "Structure condition")
 
-    // Python user can write these values.
-    //.def_readwrite("logfile", &simstruct::logfile, "configuration file path")
-    .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
-    .def_readwrite("filename", &simstruct::filename, "configuration file name")
-    .def_readwrite("flags", &simstruct::flags, "command-line options from user")
-    .def_readwrite("quitatend", &simstruct::quitatend, "simulation quits at the end")
+        // Python user can write these values.
+        //.def_readwrite("logfile", &simstruct::logfile, "configuration file path")
+        .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
+        .def_readwrite("filename", &simstruct::filename, "configuration file name")
+        .def_readwrite("flags", &simstruct::flags, "command-line options from user")
+        .def_readwrite("quitatend", &simstruct::quitatend, "simulation quits at the end")
 
-    // These are readonly.
-    .def_readonly(
-        "clockstt", &simstruct::clockstt, "clock starting time of simulation")
-    .def_readonly(
-        "elapsedtime", &simstruct::elapsedtime, "elapsed time of simulation")
-    .def_readonly("randseed", &simstruct::randseed, "random number generator seed")
-    .def_readonly(
-        "eventcount", &simstruct::eventcount, "counter for simulation events")
-    .def_readonly("maxvar", &simstruct::maxvar, "allocated user-settable variables")
-    .def_readonly("nvar", &simstruct::nvar, "number of user-settable variables")
-    .def_readonly("dim", &simstruct::dim, "dimensionality of space.")
-    .def_readonly("accuracy", &simstruct::accur, "accuracy, on scale from 0 to 10")
-    .def_readonly("time", &simstruct::time, "current time in simulation")
-    .def_readonly("tmin", &simstruct::tmin, "simulation start time")
-    .def_readonly("tmax", &simstruct::tmax, "simulation end time")
-    .def_readonly("tbreak", &simstruct::tbreak, "simulation break time")
-    .def_readonly("dt", &simstruct::dt, "simulation time step")
-    //.def_readonly("rules", &simstruct::ruless, "rule superstructure")
-    //.def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
-    //.def_readonly("surfaces", &simstruct::srfss, "surface superstructure")
-    //.def_readonly("boxs", &simstruct::boxs, "box superstructure")
-    //.def_readonly("cmpts", &simstruct::cmptss, "compartment superstructure")
-    //.def_readonly("ports", &simstruct::portss, "port superstructure")
-    //.def_readonly("lattices", &simstruct::latticess, "lattice superstructure")
-    //.def_readonly("bionets", &simstruct::bngss, "bionetget superstructure")
-    //.def_readonly("filaments", &simstruct::filss, "filament superstructure")
-    //.def_readonly("commands", &simstruct::cmds, "command superstructure")
-    //.def_readonly( "graphics", &simstruct::graphss,
-    // py::return_value_policy::reference)
-    ;
+        // These are readonly.
+        .def_readonly(
+            "clockstt", &simstruct::clockstt, "clock starting time of simulation")
+        .def_readonly(
+            "elapsedtime", &simstruct::elapsedtime, "elapsed time of simulation")
+        .def_readonly("randseed", &simstruct::randseed, "random number generator seed")
+        .def_readonly(
+            "eventcount", &simstruct::eventcount, "counter for simulation events")
+        .def_readonly("maxvar", &simstruct::maxvar, "allocated user-settable variables")
+        .def_readonly("nvar", &simstruct::nvar, "number of user-settable variables")
+        .def_readonly("dim", &simstruct::dim, "dimensionality of space.")
+        .def_readonly("accuracy", &simstruct::accur, "accuracy, on scale from 0 to 10")
+        .def_readonly("time", &simstruct::time, "current time in simulation")
+        .def_readonly("tmin", &simstruct::tmin, "simulation start time")
+        .def_readonly("tmax", &simstruct::tmax, "simulation end time")
+        .def_readonly("tbreak", &simstruct::tbreak, "simulation break time")
+        .def_readonly("dt", &simstruct::dt, "simulation time step")
+        //.def_readonly("rules", &simstruct::ruless, "rule superstructure")
+        //.def_readonly("molecuels", &simstruct::mols, "molecule superstructure")
+        //.def_readonly("surfaces", &simstruct::srfss, "surface superstructure")
+        //.def_readonly("boxs", &simstruct::boxs, "box superstructure")
+        //.def_readonly("cmpts", &simstruct::cmptss, "compartment superstructure")
+        //.def_readonly("ports", &simstruct::portss, "port superstructure")
+        //.def_readonly("lattices", &simstruct::latticess, "lattice superstructure")
+        //.def_readonly("bionets", &simstruct::bngss, "bionetget superstructure")
+        //.def_readonly("filaments", &simstruct::filss, "filament superstructure")
+        //.def_readonly("commands", &simstruct::cmds, "command superstructure")
+        //.def_readonly( "graphics", &simstruct::graphss,
+        // py::return_value_policy::reference)
+        ;
 
     /**
      * @brief Simulation class. Also see Simulation.h
@@ -1145,7 +1160,7 @@ PYBIND11_MODULE(_smoldyn, m) {
 
     /* Function */
     m.def("loadModel", &init_and_run, "filepath"_a, "flags"_a = "", "wflag"_a = 0,
-          "quit_at_end"_a = 1, "Load model from a txt file");
+        "quit_at_end"_a = 1, "Load model from a txt file");
 
     /*******************
      *  Miscellaneous  *
