@@ -2,7 +2,7 @@ Smoldyn User’s Manual
 
 for Smoldyn version 2.63, © December 2020
 
-**Steve Andrews**
+Steve Andrews
 
 Part I. Using Smoldyn
 =====================
@@ -97,7 +97,7 @@ More advice:
    Python 3 is to enter “python3” and then let your computer download
    and install developer tools.
 
-**If installation failed**
+If installation failed
 
 Type “smoldyn -V”. This should run Smoldyn just enough to print out the
 version number. If this works, then you have Smoldyn and it runs, but
@@ -126,7 +126,7 @@ Windows
    version. Your browser may warn you about the dangers of downloading
    software, but this file is almost certainly okay.
 
-*If you have administrator privileges*
+If you have administrator privileges
 
 2. Extract the zip file. Do this by right-clicking on the icon of the
    downloaded file and selecting “extract to smoldyn-2.xx-windows”. This
@@ -156,7 +156,7 @@ install script.
    prompt, not as administrator.
 3. Test Smoldyn by typing “smoldyn examples/S1_intro/bounce3.txt”.
 
-*If you don’t have administrator privileges*
+If you don’t have administrator privileges
 
 2. Extract the zip file to the desired location. Do this by
    right-clicking on the icon of the downloaded file and selecting
@@ -171,7 +171,7 @@ install script.
    Smoldyn should work just as well as if it was installed, but you will
    need to be in this directory to run it.
 
-*If installation failed*
+If installation failed
 
 If you get errors due to missing dll files, look in the dll directory in
 the Smoldyn download. If the needed dll file is in there, then simply
@@ -1513,7 +1513,7 @@ graphed, where it is shown that *x*-values diffuse slowly, *y*-values
 don’t diffuse at all, and *z*-values diffuse rapidly. The means and
 variances agree well with theory.
 
-**Drift**
+Drift
 
 In addition to diffusion, molecules can drift, meaning that they move
 with a fixed speed and in a fixed direction. Up to version 2.26, drift
@@ -1667,7 +1667,7 @@ precedence over the ‘|’ operator so, for example, “a|b&c” represents any
 of: a, bc, and cb. On the other hand, {a|b}&c represents any of: ac, bc,
 ca, and cb. The following table summarizes Smoldyn’s wildcard options.
 
-*symbolmeaningmatching examplereaction example*
+symbolmeaningmatching examplereaction example
 
 ?any 1 characterA? matches Ax and AyA? + B -> A?B
 
@@ -1746,7 +1746,7 @@ below. Note that it is possible to rotate the system about either the
 viewing axes with the arrow keys, or about the object axes with the x,
 y, and z keys.
 
-*Key pressdimensionsfunction*
+Key pressdimensionsfunction
 
 space1,2,3toggle pause mode between on and off
 
@@ -1997,9 +1997,9 @@ S6_commands/cmdtime2.txt.
 
 The following table shows the command timing options.
 
-*codeparametersexecution timing*
+codeparametersexecution timing
 
-*continuous time queue*
+continuous time queue
 
 bruns once, before simulation starts
 
@@ -2011,7 +2011,7 @@ i\ *on off dt*\ runs every *dt*, from ≥ *on* until ≤ *off*
 
 x\ *on off dt xt*\ geometric progression
 
-*integer queue*
+integer queue
 
 Bruns once, before simulation starts
 
@@ -2918,7 +2918,7 @@ Statements about reactions
 
 The following table summarizes the statements about reactions.
 
-*statement*
+statement
 
 reaction *rname* *reactant*\ :sub:`1` + *reactant*\ :sub:`2` ->
 *product*\ :sub:`1` + *product*\ :sub:`2` *rate*
@@ -3592,14 +3592,14 @@ or near an edge).
 The following table shows product parameters for reactions with multiple
 products.
 
-*Special product types*
+Special product types
 
 iirrevreaction is declared irreversible (**\ :sub:`u`\ =0).
 
 aconfspreadconformational spread reaction (entered automatically for
 you).
 
-*Use these if reversible reactions were measured at equilibrium*
+Use these if reversible reactions were measured at equilibrium
 
 ppgemprobability of geminate reaction (**).
 
@@ -3610,8 +3610,8 @@ rratiounbinding radius relative to binding radius
 
 bunbindradfixed length unbinding radius (**\ :sub:`u`).
 
-*Use these if reversible reactions were measured with all product
-removed as it was formed*
+Use these if reversible reactions were measured with all product removed
+as it was formed
 
 qpgem2probability of geminate reaction (**).
 
@@ -3913,7 +3913,7 @@ molcountincmpt2.
 
 Following are excerpts from configuration files that use compartments:
 
-*Compartment defined with surfaces and points*
+Compartment defined with surfaces and points
 
 start_compartment middle
 
@@ -3931,7 +3931,7 @@ end_compartment
 
 compartment_mol 500 red middle
 
-*Compartments defined with other compartments*
+Compartments defined with other compartments
 
 start_compartment intersection
 
@@ -4004,7 +4004,7 @@ Statements about compartments
 
 The following table summarizes the statements about compartments.
 
-*statement*
+statement
 
 max_compartment\ *int*\ (optional statement)
 
@@ -4543,7 +4543,7 @@ than the above ABBA simulation because it uses monomer modification
 sites and surface-bound molecules. The following sections discuss these
 files.
 
-*BNGL file, saved as lrm.bngl.*
+BNGL file, saved as lrm.bngl.
 
 # BioNetGen file, run in Smoldyn with surfacestatessim.txt
 
@@ -4613,7 +4613,7 @@ end model
 
 generate_network({overwrite=>1})
 
-*Smoldyn file, saved as lrmsim.txt*
+Smoldyn file, saved as lrmsim.txt
 
 # Smoldyn configuration file to run abba.bngl BioNetGen network.
 
@@ -5538,7 +5538,7 @@ a comment.
 
 /\*
 
-*text*
+text
 
 \*/
 
@@ -6999,8 +6999,8 @@ might be removed in future Smoldyn releases.
 
 *max_species int*
 
-*This tells Smoldyn to allocate this many molecule species. As of
-version 2.23, new species are allocated as needed.*
+This tells Smoldyn to allocate this many molecule species. As of version
+2.23, new species are allocated as needed.
 
 *max_names int*
 
@@ -7051,19 +7051,19 @@ by “reaction surface=sname” format.*
 
 *reaction_permit rname state*\ :sub:`1`\ *state*\ :sub:`2`
 
-*Allow reaction rname to happen for the specified reactant states, which
+Allow reaction rname to happen for the specified reactant states, which
 need to be listed in the same order in which the reactants were entered.
 This function has not proven to be useful; instead, it’s best to enter
 each reaction individually, rather than to have some reactions that
-operate on multiple states.*
+operate on multiple states.
 
 *reaction_forbid rname state*
 
 *reaction_forbid rname state*\ :sub:`1`\ *state*\ :sub:`2`
 
-*Forbid reaction rname to happen for the specified reactant states,
-which need to be listed in the same order in which the reactants were
-entered. Again, this function has not proven to be useful.*
+Forbid reaction rname to happen for the specified reactant states, which
+need to be listed in the same order in which the reactants were entered.
+Again, this function has not proven to be useful.
 
 *pthreads int*
 
@@ -7075,10 +7075,10 @@ crashes. They are also not substantially faster than the unthreaded
 versions of the same functions. Thus, use of multi-threaded operation is
 not generally recommended.*
 
-*The following reaction statements are for block-style input and are
-only supported for backward compatibility.*
+The following reaction statements are for block-style input and are only
+supported for backward compatibility.
 
-*start_reaction*
+start_reaction
 
 *start_reaction order*
 
@@ -7090,11 +7090,11 @@ sufficient reactions are declared with that statement.*
 
 *order int*
 
-*Order of the reactions being declared (0, 1, or 2).*
+Order of the reactions being declared (0, 1, or 2).
 
 *max_rxn max_rxn*
 
-*Maximum number of reactions that will be declared of the given order.*
+Maximum number of reactions that will be declared of the given order.
 
 *reactant r*\ :sub:`0`\ *r*\ :sub:`1`\ *… r*\ :sub:`nrxn–1`
 
@@ -7116,10 +7116,10 @@ only the states listed can react. States may be set to “all”.*
 
 *permit name(state) + name(state) r value*
 
-*Set permission of reaction r, for the specified reactants, to value,
+Set permission of reaction r, for the specified reactants, to value,
 which should be 0 or 1; 0 means the reaction does not happen, 1 means it
 does. The default depends on the states that were entered with the
-reactant statement, if any.*
+reactant statement, if any.
 
 *rate r rate*
 
@@ -7132,11 +7132,11 @@ constant has units of inverse time.*
 
 *confspread_radius r float*
 
-*Defines reaction r a a conformational spread reaction. This reaction
+Defines reaction r a a conformational spread reaction. This reaction
 must have two reactants and two products; upon reaction, the first
 reactant is replaced by the first product, and the second with the
 second. The reaction domain extends over the radius that is listed here
-(this is effectively a binding radius).*
+(this is effectively a binding radius).
 
 *rate_internal r float*
 
@@ -7150,7 +7150,7 @@ for conformational spread reactions.*
 
 *probability r float*
 
-*A fixed probability value for bimolecular reactions. The default value
+A fixed probability value for bimolecular reactions. The default value
 is 1, which is assumed in all rate calculations. However, this statement
 allows the user to set a different probability, which is ignored in all
 rate calculations, but can be useful in some situations. For
@@ -7158,15 +7158,15 @@ conformational spread reactions, this value can be used to directly
 enter the reaction probability at each time step, rather than letting it
 be calculated from the rate value. For simple reactions, this can be
 used to adjust the effective reaction activation energy, although the
-theory has not been derived for that yet.*
+theory has not been derived for that yet.
 
 *product r name + name + … + name*
 
 *product r name(state) + name(state) + … + name(state)*
 
-*List of products for reaction r. States for products may be entered,
+List of products for reaction r. States for products may be entered,
 which can be “solution”, “fsoln”, “bsoln”, “front”, “back”, “up”, or
-“down”; if no state is given, solution is assumed.*
+“down”; if no state is given, solution is assumed.
 
 *product_param r i*
 
@@ -7191,10 +7191,10 @@ only as an internal code to indicate that the user didn’t enter a
 product_param line, which will yield a default value of 0.2 and a
 warning.*
 
-*end_reaction*
+end_reaction
 
-*End of reaction definition. Reaction instructions are no longer
-recognized but other simulation instructions are.*
+End of reaction definition. Reaction instructions are no longer
+recognized but other simulation instructions are.
 
 2. Math operations and functions
 --------------------------------
@@ -8076,8 +8076,8 @@ Deleted, starting with Smoldyn 2.19:
 
 *setsurfcoeff surface_name species state1 state2 rate*
 
-*Sets the rate coefficient for the conversion of species from state1 to
-state2 at surface surface_name.*
+Sets the rate coefficient for the conversion of species from state1 to
+state2 at surface surface_name.
 
 settimestep *dt*
 
@@ -8449,7 +8449,7 @@ this, the GPL assures that patents cannot be used to render the program
 non-free. The precise terms and conditions for copying, distribution and
 modification follow.
 
-**TERMS AND CONDITIONS**
+TERMS AND CONDITIONS
 
 **0. Definitions.** “This License” refers to version 3 of the GNU
 General Public License. “Copyright” also means copyright-like laws that

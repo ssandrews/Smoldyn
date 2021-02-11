@@ -1,4 +1,11 @@
-.. toctree:
+############
+Installation
+############
 
-    user/user_manual
-    user/install
+.. include:: install.rst
+
+###########
+User Manual
+###########
+
+.. include:: user_manual.rst
