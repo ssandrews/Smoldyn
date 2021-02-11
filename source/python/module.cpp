@@ -79,39 +79,39 @@ int init_and_run(
 {
     int  er = 0;
     auto p  = splitPath(filepath);
-    simptr cursim_ = nullptr; 
+    simptr pSim = nullptr; 
 
 #ifdef OPTION_VCELL
-    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str(),
+    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &pSim, flags.c_str(),
         new SimpleValueProviderFactory(), new SimpleMesh());
 #else
-    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &psim, flags.c_str());
+    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &pSim, flags.c_str());
 #endif
     if(!er) {
-        sim.getSimPtr()->quitatend = quit_at_end;
-        if(sim.getSimPtr()->graphss && sim.getSimPtr()->graphss->graphics != 0)
+        pSim->quitatend = quit_at_end;
+        if(pSim->graphss && pSim->graphss->graphics != 0)
             gl2glutInit(0, nullptr);
-        er = simUpdateAndDisplay(sim.getSimPtr());
+        er = simUpdateAndDisplay(pSim);
     }
     if(!er)
-        er = smolOpenOutputFiles(sim.getSimPtr(), wflag);
+        er = smolOpenOutputFiles(pSim, wflag);
     if(er) {
-        simLog(sim.getSimPtr(), 4, "%sSimulation skipped\n", er ? "\n" : "");
+        simLog(pSim, 4, "%sSimulation skipped\n", er ? "\n" : "");
     }
     else {
         fflush(stdout);
         fflush(stderr);
-        if(!sim.getSimPtr()->graphss || sim.getSimPtr()->graphss->graphics == 0) {
-            er = smolsimulate(sim.getSimPtr());
-            endsimulate(sim.getSimPtr(), er);
+        if(!pSim->graphss || pSim->graphss->graphics == 0) {
+            er = smolsimulate(pSim);
+            endsimulate(pSim, er);
         }
         else {
-            smolsimulategl(sim.getSimPtr());
+            smolsimulategl(pSim);
         }
     }
 
-    if(psim)
-        simfree(psim);
+    if(pSim)
+        simfree(pSim);
 
     return er;
 }
