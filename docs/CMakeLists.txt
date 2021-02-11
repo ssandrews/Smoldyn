@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.12)
 project(smoldyn-doc LANGUAGES)
 
+#
+# A target to convert docx and tex files in documentations format to rst format
+#
+add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/docs/user/user_manual.rst
+    COMMAND pandoc -f docx ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.docx -o docs/user/user_manual.rst
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.docx
+    COMMENT "Converting user manual (docx) to rst."
+    VERBATIM)
+
 # This is based on an excellent tutorial by Sy Brand
 # https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
 
