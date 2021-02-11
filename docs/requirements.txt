@@ -1,5 +1,4 @@
 sphinx
---pre smoldyn
 breathe
 sphinx_rtd_theme
 commonmark
@@ -11,3 +10,4 @@ sphinxcontrib-programoutput2
 sphinxcontrib-inlinesyntaxhighlight
 sphinxcontrib-tikz
 sphinx-autodoc-typehints
+smoldyn

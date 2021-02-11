@@ -1,10 +1,5 @@
 # python binding.
 
-# NOTE: DO NOT change this without changing PYTHONPATH in
-# ../examples/CMakeLists.txt file.
-set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
-file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
-
 # recompile libsmoldyn for PYTHON.
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
 add_library(_pysmoldyn STATIC ${SRC_FILES})
@@ -56,17 +51,19 @@ target_include_directories(_smoldyn PRIVATE
 # If generator pattern is not used here, cmake produces module in Release/Debug folders
 # which will break the wheels.
 set_target_properties(_smoldyn PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY $<1:${PY_SMOLDYN_OUTDIR}/smoldyn/>)
+    LIBRARY_OUTPUT_DIRECTORY $<1:${CMAKE_CURRENT_SOURCE_DIR}/smoldyn/>)
 
-add_custom_target(copy_python_tree 
+# ../examples/CMakeLists.txt file.
+set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
+file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
+
+add_custom_command(TARGET _smoldyn POST_BUILD 
   COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/source/python/smoldyn ${PY_SMOLDYN_OUTDIR}/smoldyn
   COMMENT "Copying python source tree to binary directory"
   VERBATIM)
 
-add_dependencies(_smoldyn _pysmoldyn copy_python_tree)
 target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
-
 
 # copy setup.py.in to setup.py
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
