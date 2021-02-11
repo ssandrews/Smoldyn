@@ -9,14 +9,14 @@ brew install freeglut || echo "Failed to install freeglut"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-export PATH=/usr/local/bin:$PATH
+#export PATH=/usr/local/bin:$PATH
 
 WHEELHOUSE=$HOME/wheelhouse
 rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
 
 # Always prefer brew version.
-PYTHON=$(which python3)
+PYTHON=$(which python)
 
 if [ ! -f $PYTHON ]; then
     echo "Not found $PYTHON"
@@ -44,7 +44,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     make -j4 
     make wheel
     ctest --output-on-failure
-    /usr/local/bin/delocate-wheel -w $WHEELHOUSE -v *.whl
+    delocate-wheel -w $WHEELHOUSE -v *.whl
     ls $WHEELHOUSE/smoldyn*.whl
 
     ## NOTE: I am contantly getting  the following error in venv.

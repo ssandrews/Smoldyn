@@ -77,9 +77,9 @@ size_t getRandomSeed(Simulation &sim)
 int init_and_run(
     const string &filepath, const string &flags, bool wflag, bool quit_at_end = false)
 {
-    int  er = 0;
-    auto p  = splitPath(filepath);
-    simptr pSim = nullptr; 
+    int    er   = 0;
+    auto   p    = splitPath(filepath);
+    simptr pSim = nullptr;
 
 #ifdef OPTION_VCELL
     er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &pSim, flags.c_str(),

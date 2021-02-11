@@ -14,14 +14,16 @@ import os
 # Modify os.path so that sphinx can locate smoldyn.
 #
 sdir_ = Path(__file__).parent.resolve()
-sys.path.insert(0, str(sdir_ / ".." / "source" / "python"))
-sys.path.insert(0, str(sdir_ / ".." / "examples" / "S15_python"))
+
+# On readthecode, we don't import smoldyn from local directory.
+if os.environ.get("READTHEDOCS", None) is None:
+    sys.path.insert(0, str(sdir_ / ".." / "source" / "python"))
+    sys.path.insert(0, str(sdir_ / ".." / "examples" / "S15_python"))
 
 assert Path(os.getcwd()) == sdir_, f"This script can only run {sdir_}"
 
 print(sys.path)
 import smoldyn
-
 print(smoldyn.__version__)
 
 # RTD doesn't uinderstand cmake. Implement the cmake flow here as well. Make
