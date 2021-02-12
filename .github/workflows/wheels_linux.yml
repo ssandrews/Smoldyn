@@ -16,7 +16,7 @@ jobs:
           yum -y update
           yum -y install freeglut-devel libtiff-devel libXmu-devel libXi-devel tree && yum clean all
           cd ~ && tree
-          git clone $GITHUB_SERVER/$GITHUB_REPOSITORY -b $GITHUB_REF --depth 10
+          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY -b $GITHUB_REF --depth 10
           # git clone https://github.com/ssandrews/Smoldyn -b master --depth 10
           cd Smoldyn/scripts && PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN ./build_wheels_linux.sh 
         name: Building wheel in ManuLinux container
