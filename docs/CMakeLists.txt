@@ -1,9 +1,55 @@
 cmake_minimum_required(VERSION 3.12)
 project(smoldyn-doc LANGUAGES)
 
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+#
+# A target to convert odt and tex files in documentations format to rst format
+# convert ../documentation/Smoldyn/SmoldynUsersManual.odt to rst
+#
+set(USER_MANUAL_ODT
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.odt)
+set(USER_MANUAL_RST_AUTO
+    ${CMAKE_CURRENT_SOURCE_DIR}/../docs/user/user_manual.rst)
+
+add_custom_command(OUTPUT ${USER_MANUAL_RST_AUTO}
+    COMMAND pandoc -f odt ${USER_MANUAL_ODT} -o ${USER_MANUAL_RST_AUTO}
+    MAIN_DEPENDENCY ${USER_MANUAL_ODT}
+    COMMENT "Converting ${USER_MANUAL_ODT} -> ${USER_MANUAL_RST_AUTO}"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    VERBATIM)
+add_custom_target(gen_user_manual DEPENDS ${USER_MANUAL_RST_AUTO})
+
+# install dependencies
+add_custom_command(TARGET gen_user_manual PRE_BUILD
+    COMMAND ${Python3_EXECUTABLE} -m pip install -r 
+        ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt
+    COMMENT "Installing dependencies." VERBATIM)
+
+#
+# Convert all tex files to rst 
+# 
+set(DOC_TEX_FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/LibsmoldynManual.tex
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynCodeDoc.tex
+    )
+foreach(_tex_file ${DOC_TEX_FILES})
+    get_filename_component(_name_file ${_tex_file} NAME_WE)
+    set(_output_rst_file "${CMAKE_CURRENT_SOURCE_DIR}/developer/${_name_file}.rst")
+    add_custom_command(OUTPUT ${_output_rst_file}
+        COMMAND pandoc -f latex ${_tex_file} -o ${_output_rst_file}
+        MAIN_DEPENDENCY ${_tex_file}
+        COMMENT "  [doc] converting ${_tex_file} to ${_output_rst_file}"
+        VERBATIM)
+    add_custom_target(${_name_file} ALL DEPENDS ${_output_rst_file})
+endforeach()
+
+
+
+#
 # This is based on an excellent tutorial by Sy Brand
 # https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
-
+#
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
 
 find_package(Perl REQUIRED)
@@ -57,6 +103,7 @@ add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
 
 # Generate doc using Sphinx and doxygen.
 add_custom_target(docs ALL 
+    DEPENDS _smoldyn gen_user_manual
     COMMAND READTHEDOCS=True ${SPHINX_EXECUTABLE} -b html
         ${SPHINX_SOURCE} ${SPHINX_BUILD}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -64,6 +111,15 @@ add_custom_target(docs ALL
 
 # Nice named target so we can run the job easily
 add_custom_target(Sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
+
+##
+## Convert example scripts to rst
+##
+#add_custom_command(TARGET docs PRE_BUILD
+#    COMMAND sphinx-apidoc -o ${CMAKE_CURRENT_SOURCE_DIR}/examples
+#        ${CMAKE_CURRENT_SOURCE_DIR}/../examples/S15_python
+#    COMMENT "Generating rst files from example files"
+#    VERBATIM)
 
 # LiveHTML (for developer and document writer)
 add_custom_target(doc_livehtml

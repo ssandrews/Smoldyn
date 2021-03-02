@@ -11,11 +11,10 @@ build : ./Dockerfile ./build_wheels_linux.sh
 	    -f scripts/Dockerfile \
 	    --build-arg PYPI_PASSWORD=$(PYPI_PASSWORD) . | tee log ) 
 
-wheels : ./Dockerfile ./build_wheels_linux.sh 
+wheels : ./Dockerfile ./build_wheels_linux.sh build
 	mkdir -p $(HOME)/wheelhouse
 	# Generate version.
-	docker run -it \
-		-e PYPI_PASSWORD=$(PYPI_PASSWORD) \
+	docker run -e PYPI_PASSWORD=$(PYPI_PASSWORD) \
 		$(LABEL)
 
 

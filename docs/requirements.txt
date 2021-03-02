@@ -1,13 +1,14 @@
-sphinx==3.1.2
---pre smoldyn
+Pweave
+sphinx
 breathe
+rst_include
 sphinx_rtd_theme
 commonmark
 recommonmark
 sphinxcontrib-plantuml
-sphinxcontrib-programoutput
 sphinxcontrib-napoleon
-sphinxcontrib-napoleon
+sphinxcontrib-programoutput2
 sphinxcontrib-inlinesyntaxhighlight
 sphinxcontrib-tikz
 sphinx-autodoc-typehints
+smoldyn

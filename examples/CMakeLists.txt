@@ -24,8 +24,10 @@ foreach(_example ${PY_FILES})
     # run the above script in modified environment (portable). Use 
     # a wrapper script to timeout at 15 sec.
     add_custom_target(py${_ex_name} 
-        COMMAND 
-            ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/py MPLBACKEND=agg SMOLDYN_NO_PROMPT=1 
+        COMMAND ${CMAKE_COMMAND} -E env 
+                PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../source/python
+                MPLBACKEND=agg
+                SMOLDYN_NO_PROMPT=1 
             ${Python3_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example}
         COMMENT "Executing ${_example} (user prompts are disabled)" 
         VERBATIM)
@@ -40,7 +42,7 @@ foreach(_example ${PY_FILES})
     # SMOLDYN_NO_PROMPT=1 : makes sure that shiftQ is not needed to be pressed by
     # anyone at the end of simulation.
     set_tests_properties(example_${_ex_name} PROPERTIES 
-            ENVIRONMENT "PYTHONPATH=${CMAKE_BINARY_DIR}/py;MPLBACKEND=agg;SMOLDYN_NO_PROMPT=1")
+            ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../source/python;MPLBACKEND=agg;SMOLDYN_NO_PROMPT=1")
 
 endforeach()
 

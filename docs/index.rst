@@ -18,12 +18,13 @@ Welcome to Smoldyn's documentation!
    :maxdepth: 3
    :caption: Table of Contents
 
-   user/user_manual
-   user/user_manual_python
-   developer/index
+   user/index
+   examples/index
+
    python/api
-   SmolEmulate <other/emulate-doc>
+   developer/index
    C/C++ API <doxygen/html/index>
+
 
 
 Indices and tables
