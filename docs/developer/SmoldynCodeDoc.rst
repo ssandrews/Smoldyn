@@ -21,8 +21,9 @@ the core code, Jim Schaff and his colleagues at UCHC added some code for
 integrating Smoldyn into VCell, Nathan Addy wrote a rule-based modeling
 module called Libmoleculizer that almost worked, Lorenzo Dematte and
 Denis Gladkov independently parallelized Smoldyn to run on graphics
-processing units (GPUs), and Martin Robinson added adjacent-space hybrid
-simulation capabilities to Smoldyn.
+processing units (GPUs), Martin Robinson added adjacent-space hybrid
+simulation capabilities to Smoldyn, and Dilawar Singh added Python
+bindings to Libsmoldyn.
 
 In order to maintain and enhance Smoldyn’s value for computational
 biologists, as opposed to letting it become a hodgepodge of mismatched
@@ -263,15 +264,17 @@ without its dependencies, but offers fewer features if they aren’t
 available. In particular, I’ve struggled some with getting some of them
 to work on Windows.
 
-| ̄̄̄̄̄ Smoldyn
-| OpenGL
-| OpenGL-glut
-| libTiff
-| zlib
-| libiconv
-| NSV
-| VTK
-| pybind11
+.. container:: tabbing
+
+   | ̄̄̄̄̄ Smoldyn
+   | OpenGL
+   | OpenGL-glut
+   | libTiff
+   | zlib
+   | libiconv
+   | NSV
+   | VTK
+   | pybind11
 
 Getting the code for these dependencies has ranged from easy to
 impossible, so my approaches to solve these issues are listed below.
@@ -1096,19 +1099,119 @@ which works well.
 Documentation
 -------------
 
-Smoldyn is documented in three hand-written files, which are the User’s
-Manual, the LibSmoldyn user’s manual, and this programmers
-documentation. In addition, it has partially complete documentation
-generation with Doxygen. It reads the file docs/Doxyfile.in to build the
-documentation. I don’t know where the results get put.
+There are two documentation directories, “documentation” and “docs”.
 
-Other files in the docs directory are markdown file versions of the
-Smoldyn documentation that I wrote. Dilawar made them from the original
-pdf, tex, and docx files in the documentation folder using pandoc and
-then edited them manaully. The mkdocs file generates a website from the
-‘docs’ folder, and mkdocs.yml is the configuration file for this, using
-the tool: https://squidfunk.github.io/mkdocs-material/. Dilawar’s
-readthedocs web site shows the results.
+The “documentation” directory contains original hand-written
+documentation files for Smoldyn, it’s utility programs, and the
+libraries that Smoldyn calls. Essentially all of this was written by me
+(Steve). An exception is that the BioNetGen documentation is a published
+paper on BioNetGen by Faeder, Blinov, and Hlavacek. The documentation
+specifically for Smoldyn is within the Smoldyn subdirectory. Here are
+the User’s Manual, the LibSmoldyn user’s manual, and this programmers
+documentation, along with a few especially relevant published papers
+about Smoldyn. Unfortunately, LaTeX requires far too many files for a
+single document, but that’s just how it is.
+
+In addition to the hand-written files, this includes
+SmoldynUsersManual.odt, which is an Open Document Text file. It’s
+identical to the SmoldynUsersManual.docx original, but was converted to
+an open document format. From an email from Dilawar: “The manual.docx is
+converted to an odt file using libreoffice. I then added the outline,
+links and other metadata to the odt file to make sure that rst has a
+proper table of content and outline. The generated PDF from the odt file
+also has in-document links. I didn’t want to tweak the docx file
+directly. I use libreoffice 7.0 and it works great. There may be few
+corner cases in formatting which needed tweaking.”
+
+The “docs” directory contains many things, which generally automate
+document conversion from the hand-written files in the documentation
+directory to rst and other file formats. These procedures are run
+through the “docs/CMakeLists.txt” file. It can be used as a submodule to
+the top-level cmake file (enabled by ``-DOPTION_DOC=ON``) or run as a
+standalone cmake project i.e., ``cd docs; cmake .; make docs``. The
+CMakeLists.txt file does the following things:
+
+(1) It converts the SmoldynUsersManual.odt to rst format, which is the
+restructured text format. This format is used for Python documentation.
+This conversion is done by calling the pandoc utility, which is a
+“universal document converter”, used for converting between markup
+languages (pandoc is available for Macs through MacPorts and elsewhere).
+Pandoc is a soft dependency; if it is not found, the rst files are not
+updated and old ones are used. This way one can update the TeX, docx
+file in the documentation folder and have the rst docs in sync with
+them.
+
+(2) The CMake file installs any software dependencies that are needed,
+which are listed in the docs/requirements.txt file, using the Python pip
+utility, which seems a bit concerning because it changes the system
+without warning the user. These dependencies are (plus a few others that
+are components of the ones listed here):
+
+.. container:: description
+
+   Pweave — “A scientific report generator and a literate programming
+   tool for Python. Pweave can capture the results and plots from data
+   analysis and works well with NumPy, SciPy and matplotlib. It is able
+   to run python code from source document and include the results and
+   capture matplotlib plots in the output.”
+
+   sphinx — “Sphinx converts reStructuredText files into HTML websites
+   and other formats including PDF, EPub, Texinfo and man.”
+
+   breathe — “Breathe provides a bridge between the Sphinx and Doxygen
+   documentation systems. It is an easy way to include Doxygen
+   information in a set of documentation generated by Sphinx. The aim is
+   to produce an autodoc like support for people who enjoy using Sphinx
+   but work with languages other than Python. The system relies on the
+   Doxygen’s xml output.”
+
+   rst_include — “Since you can not include files into RST files on
+   github or PyPi, you can resolve such imports with this software. That
+   means you can locally write your RST documents (for instance with
+   pycharm) and use there the .. include: option to include other RST
+   Files or code snippets into Your Document. Afterwards, you can run
+   this software to create a monolithic README.rst that can be viewed on
+   Github or Pypi.”
+
+   commonmark — “A strongly defined, highly compatible specification of
+   Markdown. Markdown is a plain text format for writing structured
+   documents, based on formatting conventions from email and usenet.”
+
+   recommonmark — “A docutils-compatibility bridge to CommonMark,
+   enabling you to write CommonMark inside of Docutils and Sphinx
+   projects.”
+
+   smoldyn — This installs Smoldyn using pip.
+
+(3) The CMakeLists.txt file converts all tex files, which are
+LibsmoldynManual.tex and SmoldynCodeDoc.tex, to rst format. It does this
+using pandoc.
+
+(4) It runs Doxygen on all of the Smoldyn source code files to generate
+source code documentation as rst files. This step is configured by the
+Doxyfile.in file, which is just a long list of configuration switches.
+
+(5) It runs Sphinx and Breathe to convert the rst documents to html
+documents. It then runs Sphinx and Doxygen to create documentation for
+the code.
+
+(6) It uses Sphinx-autobuild to create live HTML. I’m not sure what live
+HTML is versus just HTML.
+
+Dilawar wrote: The readthedocs service runs docs/conf.py file which has
+been tweaked to run doxygen and sphinx on RTD server. The RTD website
+should have the same text as the documentation folder now, with some
+formatting issues.
+
+I ran this documentation build process, and it required lots of software
+installations first. I installed most of them using MacPorts, but some
+weren’t available there. For those, I installed using pip. The
+combination worked well. The final result was a huge number of warnings
+from the documentation tools, but essentially no errors. Actually, there
+was one error, which was that sphinx complained about a character in a
+.tex file that was not UTF-8. The solution was to search for it using
+“grep -axv ’.*’ SmoldynCodeDoc.tex”, which successfully located the
+offending character.
 
 Continuous Integration
 ----------------------
@@ -5195,53 +5298,55 @@ Following is a partial listing of what functions call what other
 functions. This is incomplete but could be completed relatively easily
 if necessary.
 
-| ̄̄̄̄̄̄ ``surfreadstring``
-| name
-| ``surfaddsurface``
-| ``surfenablesurfaces`` if needed
-| ``surfacessalloc``
-| ``surfacealloc``
-| ``emittersalloc``
-| action
-| ``surfsetaction``
-| ``surfsetcondition`` to SCparams
-| rate or rate_internal
-| ``surfsetrate``
-| ``surfaceactionalloc`` if needed
-| ``surfsetcondition`` to SCparams
-| color
-| ``surfsetcolor``
-| thickness
-| ``surfsetedgepts``
-| stipple
-| ``surfsetstipple``
-| polygon
-| ``surfsetdrawmode``
-| shininess
-| ``surfsetshiny``
-| max_panels (deprecated function)
-| ``surfsetmaxpanel``
-| ``panelsalloc``
-| panel
-| ``surfaddpanel``
-| ``panelsalloc`` if needed
-| ``emittersalloc``
-| ``surfsetcondition`` to SClists
-| ``boxsetcondition`` to SCparams
-| jump
-| ``surfsetjumppanel``
-| neighbors
-| ``surfsetneighbors``, allocates space as needed
-| unbounded_emitter
-| ``surfaddemitter``
-| ``emittersalloc`` if needed
-| ``surfsetcondition`` to SCparams
-| ``surfsetepsilon``
-| ``surfenablesurfaces`` if needed, see above
-| ``surfsetmargin``
-| ``surfenablesurfaces`` if needed, see above
-| ``surfsetneighdist``
-| ``surfenablesurfaces`` if needed, see above
+.. container:: tabbing
+
+   | ̄̄̄̄̄̄ ``surfreadstring``
+   | name
+   | ``surfaddsurface``
+   | ``surfenablesurfaces`` if needed
+   | ``surfacessalloc``
+   | ``surfacealloc``
+   | ``emittersalloc``
+   | action
+   | ``surfsetaction``
+   | ``surfsetcondition`` to SCparams
+   | rate or rate_internal
+   | ``surfsetrate``
+   | ``surfaceactionalloc`` if needed
+   | ``surfsetcondition`` to SCparams
+   | color
+   | ``surfsetcolor``
+   | thickness
+   | ``surfsetedgepts``
+   | stipple
+   | ``surfsetstipple``
+   | polygon
+   | ``surfsetdrawmode``
+   | shininess
+   | ``surfsetshiny``
+   | max_panels (deprecated function)
+   | ``surfsetmaxpanel``
+   | ``panelsalloc``
+   | panel
+   | ``surfaddpanel``
+   | ``panelsalloc`` if needed
+   | ``emittersalloc``
+   | ``surfsetcondition`` to SClists
+   | ``boxsetcondition`` to SCparams
+   | jump
+   | ``surfsetjumppanel``
+   | neighbors
+   | ``surfsetneighbors``, allocates space as needed
+   | unbounded_emitter
+   | ``surfaddemitter``
+   | ``emittersalloc`` if needed
+   | ``surfsetcondition`` to SCparams
+   | ``surfsetepsilon``
+   | ``surfenablesurfaces`` if needed, see above
+   | ``surfsetmargin``
+   | ``surfenablesurfaces`` if needed, see above
+   | ``surfsetneighdist``
+   | ``surfenablesurfaces`` if needed, see above
 
 Surface functions
 ~~~~~~~~~~~~~~~~~
@@ -10637,229 +10742,231 @@ freeing columns, the top line shows the function in which the structure
 is actually allocated or freed, while subsequent lines show the
 functions that call the preceding functions.
 
-+---------------------+------------------------------+---------------+
-| structure           | allocation                   | freeing       |
-+=====================+==============================+===============+
-| moleculestruct      | molalloc                     | molfree       |
-+---------------------+------------------------------+---------------+
-|                     | molexpandlist                | molssfree     |
-+---------------------+------------------------------+---------------+
-|                     | molsetmaxmol, molsort        | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (max_mol), ?   |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim, ?                   |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad, ?            |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| moleculesuperstruct | molssalloc                   | molssfree     |
-+---------------------+------------------------------+---------------+
-|                     | molsetmaxspecies             | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                |               |
-|                     | (max_species,..)             |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-|                     | molssetgausstable            |               |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                |               |
-|                     | (gauss_table_size),          |               |
-|                     | setupmols                    |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim, simupdate           |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad;              |               |
-|                     | simInitAndLoad,              |               |
-|                     | simulatetimestep             |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-|                     | mollistalloc                 |               |
-+---------------------+------------------------------+---------------+
-|                     | addmollist                   |               |
-+---------------------+------------------------------+---------------+
-|                     | setupmols, simreadstring     |               |
-|                     | (molecule_lists), setupports |               |
-+---------------------+------------------------------+---------------+
-|                     | simupdate, loadsim           |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| wallstruct          | wallalloc                    | wallfree      |
-+---------------------+------------------------------+---------------+
-|                     | wallsalloc                   | wallsfree     |
-+---------------------+------------------------------+---------------+
-|                     | walladd                      | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                |               |
-|                     | (boundaries,..)              |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| rxnstruct           | rxnalloc                     | rxnfree       |
-+---------------------+------------------------------+---------------+
-|                     | RxnAddReaction               | rxnssfree     |
-+---------------------+------------------------------+---------------+
-|                     | loadsim (reaction,..)        | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| rxnsuperstruct      | rxnssalloc                   | rxnssfree     |
-+---------------------+------------------------------+---------------+
-|                     | RxnAddReaction               | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (reaction,..), |               |
-|                     | loadrxn                      |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim, ?                   |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| panelstruct         | panelsalloc                  | panelfree     |
-+---------------------+------------------------------+---------------+
-|                     | surfreadstring (max_panels)  | surfacefree   |
-+---------------------+------------------------------+---------------+
-|                     | loadsurface                  | surfacessfree |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                | simfree       |
-|                     | (start_surface)              |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| surfacestruct       | surfacealloc                 | surfacefree   |
-+---------------------+------------------------------+---------------+
-|                     | surfacessalloc               | surfacessfree |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (max_surface)  | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| surfacesuperstruct  | surfacessalloc               | surfacessfree |
-+---------------------+------------------------------+---------------+
-|                     | surfenablesurfaces           | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (max_surface)  |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| boxstruct           | boxalloc                     | boxfree       |
-+---------------------+------------------------------+---------------+
-|                     | boxesalloc                   | boxesfree     |
-+---------------------+------------------------------+---------------+
-|                     | setupboxes                   | boxssfree     |
-+---------------------+------------------------------+---------------+
-|                     | simupdate                    | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| boxsuperstruct      | boxssalloc                   | boxssfree     |
-+---------------------+------------------------------+---------------+
-|                     | boxsetsize                   | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (boxsize,..),  |               |
-|                     | setupboxes                   |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim, simupdate           |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad,              |               |
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| compartstruct       | compartalloc                 | compartfree   |
-+---------------------+------------------------------+---------------+
-|                     | compartssalloc               | compartssfree |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                | simfree       |
-|                     | (max_compartment)            |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| compartsuperstruct  | compartssalloc               | compartssfree |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                | simfree       |
-|                     | (max_compartment)            |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| portstruct          | portalloc                    | portfree      |
-+---------------------+------------------------------+---------------+
-|                     | portssalloc                  | portssfree    |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (max_port)     | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| portsuperstruct     | portssalloc                  | portssfree    |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring (max_port)     | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| mzrsuperstruct      | mzrssalloc                   | mzrssfree     |
-+---------------------+------------------------------+---------------+
-|                     | mzrssload                    | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simreadstring                |               |
-|                     | (read_network_rules)         |               |
-+---------------------+------------------------------+---------------+
-|                     | loadsim                      |               |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
-|                     |                              |               |
-+---------------------+------------------------------+---------------+
-| simstruct           | simalloc                     | simfree       |
-+---------------------+------------------------------+---------------+
-|                     | simInitAndLoad               |               |
-+---------------------+------------------------------+---------------+
+.. container:: ttfamily
+
+   +---------------------+------------------------------+---------------+
+   | structure           | allocation                   | freeing       |
+   +=====================+==============================+===============+
+   | moleculestruct      | molalloc                     | molfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | molexpandlist                | molssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | molsetmaxmol, molsort        | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (max_mol), ?   |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim, ?                   |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad, ?            |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | moleculesuperstruct | molssalloc                   | molssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | molsetmaxspecies             | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                |               |
+   |                     | (max_species,..)             |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   |                     | molssetgausstable            |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                |               |
+   |                     | (gauss_table_size),          |               |
+   |                     | setupmols                    |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim, simupdate           |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad;              |               |
+   |                     | simInitAndLoad,              |               |
+   |                     | simulatetimestep             |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   |                     | mollistalloc                 |               |
+   +---------------------+------------------------------+---------------+
+   |                     | addmollist                   |               |
+   +---------------------+------------------------------+---------------+
+   |                     | setupmols, simreadstring     |               |
+   |                     | (molecule_lists), setupports |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simupdate, loadsim           |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | wallstruct          | wallalloc                    | wallfree      |
+   +---------------------+------------------------------+---------------+
+   |                     | wallsalloc                   | wallsfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | walladd                      | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                |               |
+   |                     | (boundaries,..)              |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | rxnstruct           | rxnalloc                     | rxnfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | RxnAddReaction               | rxnssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim (reaction,..)        | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | rxnsuperstruct      | rxnssalloc                   | rxnssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | RxnAddReaction               | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (reaction,..), |               |
+   |                     | loadrxn                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim, ?                   |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | panelstruct         | panelsalloc                  | panelfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | surfreadstring (max_panels)  | surfacefree   |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsurface                  | surfacessfree |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                | simfree       |
+   |                     | (start_surface)              |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | surfacestruct       | surfacealloc                 | surfacefree   |
+   +---------------------+------------------------------+---------------+
+   |                     | surfacessalloc               | surfacessfree |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (max_surface)  | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | surfacesuperstruct  | surfacessalloc               | surfacessfree |
+   +---------------------+------------------------------+---------------+
+   |                     | surfenablesurfaces           | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (max_surface)  |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | boxstruct           | boxalloc                     | boxfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | boxesalloc                   | boxesfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | setupboxes                   | boxssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | simupdate                    | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | boxsuperstruct      | boxssalloc                   | boxssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | boxsetsize                   | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (boxsize,..),  |               |
+   |                     | setupboxes                   |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim, simupdate           |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad,              |               |
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | compartstruct       | compartalloc                 | compartfree   |
+   +---------------------+------------------------------+---------------+
+   |                     | compartssalloc               | compartssfree |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                | simfree       |
+   |                     | (max_compartment)            |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | compartsuperstruct  | compartssalloc               | compartssfree |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                | simfree       |
+   |                     | (max_compartment)            |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | portstruct          | portalloc                    | portfree      |
+   +---------------------+------------------------------+---------------+
+   |                     | portssalloc                  | portssfree    |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (max_port)     | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | portsuperstruct     | portssalloc                  | portssfree    |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring (max_port)     | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | mzrsuperstruct      | mzrssalloc                   | mzrssfree     |
+   +---------------------+------------------------------+---------------+
+   |                     | mzrssload                    | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simreadstring                |               |
+   |                     | (read_network_rules)         |               |
+   +---------------------+------------------------------+---------------+
+   |                     | loadsim                      |               |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
+   |                     |                              |               |
+   +---------------------+------------------------------+---------------+
+   | simstruct           | simalloc                     | simfree       |
+   +---------------------+------------------------------+---------------+
+   |                     | simInitAndLoad               |               |
+   +---------------------+------------------------------+---------------+
 
 Data structure preparation and updating
 ---------------------------------------
@@ -10907,57 +11014,61 @@ one or more of the structure simulation parameters need updating, and
 The items that are initialized for each condition are shown below. This
 table was updated after changes for version 2.23.
 
-| ̄̄̄̄̄ ``molsupdate``
-| ``SClists (molsupdatelists)``
-| gaussian lookup table
-| ``mols->exist`` (calls ``rxnisprod`` and ``issurfprod``)
-| creates system molecule lists if none yet
-| sets any list lookup values that weren’t done yet
-| sets molecule list values for molecules in dead list
-| ``SCparams (molsupdateparams)``
-| ``mols->difstep``
-| ``mols->diffuselist``
-| ``boxesupdate``
-| ``SClists (boxesupdatelists)``
-| box superstructure (requires **walls**)
-| ``bptr->indx``
-| neighbor boxes
-| ``bptr->nwall`` and ``bptr->wlist``
-| ``SCparams (boxesupdateparams)``
-| ``bptr->npanel`` and ``bptr->panel`` (requires **surfaces**)
-| molecules in boxes (requires **molecules** and assigns ``mptr->box``)
-| ``molsort``
-| resets ``topl`` indices
-| sorts and compacts live lists (calls ``boxremovemol`` and
-  ``boxaddmol``)
-| moves molecules from resurrected to reborn lists (calls ``boxaddmol``)
-| resets ``sortl`` indices
-| ``compartsupdate``
-| ``SClists (compartsupdatelists)``
-| does nothing
-| ``SCparams (compartsupdateparams)``
-| finds boxes in compartment (requires **boxes** and **surfaces**)
-| finds box volumes and compartment volumes
-| ``rxnsupdate``
-| ``SClists (rxnsupdatelists)``
-| sets reaction molecule lists (requires **molecule lists**)
-| ``SCparams (rxnsupdateparams)``
-| sets rates (may require **compartments**)
-| sets products
-| calculates tau values
-| ``surfupdate``
-| ``SClists (surfupdatelists)``
-| allocates ``srfmollist`` arrays (requires **molecule lists**)
-| sets ``srfmollist`` values (requires **molecule lists** and calls
-  ``rxnisprod``)
-| ``SCparams (surfupdateparams)``
-| sets surface interaction probabilities (requires ``mols->difc`` and
-  ``->difstep``)
-| ``portsupdate``
-| ``SClists (portsupdatelists)``
-| sets port molecule lists (uses **molecule lists**)
-| ``SCparams (portsupdateparams)``
-| does nothing
+.. container:: tabbing
+
+   | ̄̄̄̄̄ ``molsupdate``
+   | ``SClists (molsupdatelists)``
+   | gaussian lookup table
+   | ``mols->exist`` (calls ``rxnisprod`` and ``issurfprod``)
+   | creates system molecule lists if none yet
+   | sets any list lookup values that weren’t done yet
+   | sets molecule list values for molecules in dead list
+   | ``SCparams (molsupdateparams)``
+   | ``mols->difstep``
+   | ``mols->diffuselist``
+   | ``boxesupdate``
+   | ``SClists (boxesupdatelists)``
+   | box superstructure (requires **walls**)
+   | ``bptr->indx``
+   | neighbor boxes
+   | ``bptr->nwall`` and ``bptr->wlist``
+   | ``SCparams (boxesupdateparams)``
+   | ``bptr->npanel`` and ``bptr->panel`` (requires **surfaces**)
+   | molecules in boxes (requires **molecules** and assigns
+     ``mptr->box``)
+   | ``molsort``
+   | resets ``topl`` indices
+   | sorts and compacts live lists (calls ``boxremovemol`` and
+     ``boxaddmol``)
+   | moves molecules from resurrected to reborn lists (calls
+     ``boxaddmol``)
+   | resets ``sortl`` indices
+   | ``compartsupdate``
+   | ``SClists (compartsupdatelists)``
+   | does nothing
+   | ``SCparams (compartsupdateparams)``
+   | finds boxes in compartment (requires **boxes** and **surfaces**)
+   | finds box volumes and compartment volumes
+   | ``rxnsupdate``
+   | ``SClists (rxnsupdatelists)``
+   | sets reaction molecule lists (requires **molecule lists**)
+   | ``SCparams (rxnsupdateparams)``
+   | sets rates (may require **compartments**)
+   | sets products
+   | calculates tau values
+   | ``surfupdate``
+   | ``SClists (surfupdatelists)``
+   | allocates ``srfmollist`` arrays (requires **molecule lists**)
+   | sets ``srfmollist`` values (requires **molecule lists** and calls
+     ``rxnisprod``)
+   | ``SCparams (surfupdateparams)``
+   | sets surface interaction probabilities (requires ``mols->difc`` and
+     ``->difstep``)
+   | ``portsupdate``
+   | ``SClists (portsupdatelists)``
+   | sets port molecule lists (uses **molecule lists**)
+   | ``SCparams (portsupdateparams)``
+   | does nothing
 
 Simulation algorithm sequence
 -----------------------------
