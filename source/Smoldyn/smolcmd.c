@@ -72,6 +72,7 @@ enum CMDcode cmdif(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdevaluate(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdwarnescapeecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdmolcountheader(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdmolcount(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdmolcountinbox(simptr sim,cmdptr cmd,char *line2);
@@ -210,6 +211,7 @@ enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"echo")) return cmdecho(sim,cmd,line2);
 	else if(!strcmp(word,"evaluate")) return cmdevaluate(sim,cmd,line2);
 	else if(!strcmp(word,"warnescapee")) return cmdwarnescapee(sim,cmd,line2);
+	else if(!strcmp(word,"warnescapeecmpt")) return cmdwarnescapeecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"molcountheader")) return cmdmolcountheader(sim,cmd,line2);
 	else if(!strcmp(word,"molcount")) return cmdmolcount(sim,cmd,line2);
 	else if(!strcmp(word,"molcountinbox")) return cmdmolcountinbox(sim,cmd,line2);
@@ -690,6 +692,69 @@ enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2) {
 	if(escape) {
 		posx=mptr->posx;
 		escape=!posinsystem(sim,posx);
+		if(!escape) {
+			via=mptr->via;
+			if(sim->dim==1) {
+				scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s %g to %g via %g\n",sim->time,molserno2string(mptr->serno,string),posx[0],pos[0],via[0]);
+				scmdappenddata(cmd->cmds,dataid,1,5,sim->time,(double)(mptr->serno),posx[0],pos[0],via[0]); }
+			else if(sim->dim==2) {
+				scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g) to (%g,%g) via (%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],pos[0],pos[1],via[0],via[1]);
+				scmdappenddata(cmd->cmds,dataid,1,8,sim->time,(double)(mptr->serno),posx[0],posx[1],pos[0],pos[1],via[0],via[1]); }
+			else {
+				scmdfprintf(cmd->cmds,fptr,"New escapee: %g #%s (%g,%g,%g) to (%g,%g,%g) via (%g,%g,%g)\n",sim->time,molserno2string(mptr->serno,string),posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]);
+				scmdappenddata(cmd->cmds,dataid,1,11,sim->time,(double)(mptr->serno),posx[0],posx[1],posx[2],pos[0],pos[1],pos[2],via[0],via[1],via[2]); }}}
+	return CMDok; }
+
+
+/* cmdwarnescapeecmpt */
+enum CMDcode cmdwarnescapeecmpt(simptr sim,cmdptr cmd,char *line2) {
+	int i,escape,*index,er,itct,c;
+	enum MolecState ms;
+	moleculeptr mptr;
+	compartssptr cmptss;
+	double *pos,*posx,*via;
+	char string[STRCHAR],nm[STRCHAR];
+	static int inscan=0;
+	static compartptr cmpt=NULL;
+	static FILE *fptr=NULL;
+	static int dataid=-1;
+
+	if(inscan) goto scanportion;
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
+
+	i=molstring2index1(sim,line2,&ms,&index);
+	SCMDCHECK(i!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i!=-3,"cannot read molecule state value");
+	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
+	SCMDCHECK(i!=-7,"error allocating memory");
+	line2=strnword(line2,2);
+	cmptss=sim->cmptss;
+	SCMDCHECK(cmptss,"no compartments defined");
+	SCMDCHECK(line2,"missing argument");
+	itct=sscanf(line2,"%s",nm);
+	SCMDCHECK(itct==1,"cannot read argument");
+	c=stringfind(cmptss->cnames,cmptss->ncmpt,nm);
+	SCMDCHECK(c>=0,"compartment name not recognized");
+	cmpt=cmptss->cmptlist[c];
+	line2=strnword(line2,2);
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
+
+	if(i!=-4) {
+		inscan=1;
+		molscancmd(sim,i,index,ms,cmd,cmdwarnescapeecmpt);
+		inscan=0;
+		scmdflush(fptr); }
+	return CMDok;
+
+ scanportion:
+	mptr=(moleculeptr)line2;
+	pos=mptr->pos;
+	escape=!posincompart(sim,pos,cmpt,0);
+	if(escape) {
+		posx=mptr->posx;
+		escape=!posincompart(sim,posx,cmpt,0);
 		if(!escape) {
 			via=mptr->via;
 			if(sim->dim==1) {

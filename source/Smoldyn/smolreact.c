@@ -2762,7 +2762,7 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 				for(d=0;d<dim;d++)
 					mptr->posx[d]=mptr->pos[d]=rxnpos[d];
 				if(ms==MSsoln) mptr->pnl=mptr->pnlx=NULL;
-				else mptr->pnl=mptr->pnlx=rxnpnl; }}
+				else mptr->pnl=mptr->pnlx=rxnpnl; }}	// end of bouce option
 
 		else {
 			for(d=0;d<dim;d++) mptr->posx[d]=rxnpos[d];
@@ -2818,6 +2818,19 @@ int doreact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll1,in
 
 			if(mptr->mstate!=MSsoln)
 				movemol2closepanel(sim,mptr);
+			else if(rxnpnl) {
+				if(ms==MSsoln) {
+					mptr->mstate=MSfront;
+					mptr->pnl=rxnpnl;
+					movemol2closepanel(sim,mptr);
+					mptr->mstate=MSsoln;
+					mptr->pnl=NULL; }
+				else {
+					mptr->mstate=MSback;
+					mptr->pnl=rxnpnl;
+					movemol2closepanel(sim,mptr);
+					mptr->mstate=MSsoln;
+					mptr->pnl=NULL; }}
 
 			if(rxn->prdserno) {												// set product serial numbers
 				pserno=rxn->prdserno[prd];

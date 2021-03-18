@@ -2985,7 +2985,7 @@ If the closest panel point is within \ttt{margin} of the edge or a corner, even 
 Finds the closest point that is on the surface \ttt{srf} to the test point \ttt{testpt} and returns it in \ttt{pnlpt} if \ttt{pnlpt} is not \ttt{NULL}.. This also returns the panel that that point is on, in \ttt{pnlptr}, if \ttt{panelptr} is not \ttt{NULL}. It returns the distance between \ttt{testpt} and \ttt{pnlpt}, which should always be positive. If this returns a negative number, that means that the surface has no panels. If \ttt{bptr} is entered as \ttt{NULL}, then this searches over all panels on the listed surface, but if \ttt{bptr} is entered pointing to a box, then this only searches the panels that are in that box. \ttt{pnlpt} is allowed to be the same pointer as \ttt{testpt}.
 
 \item[\ttt{void}]
-\ttt{movemol2closepanel(simptr sim,moleculeptr mptr,int dim,double epsilon,double neighdist,double margin);}
+\ttt{movemol2closepanel(simptr sim,moleculeptr mptr);}
 \hfill \\
 Checks to see if surface-bound molecule \ttt{mptr} is within the area of the finite panel \ttt{mptr->pnl} (i.e. over or under the panel, ignoring the position relative to the plane of the panel). If it isn't, this sees if \ttt{mptr} is over a neighboring panel and if so, this puts \ttt{mptr->pos} on the neighboring panel at the correct location. At the end, and regardless of whether the molecule changed panels or not, the molecule position is fixed to the correct face of its panel using \ttt{fixpt2panel}. If the molecule needs to be moved parallel to the plane of a panel, whether back to its original panel or onto a new panel, then it is inset from the edge by distance \ttt{margin}. This function should only be called if the system dimensionality is 2 or 3.
 
@@ -5007,6 +5007,10 @@ Runs a command if one value is greater than, less than, or equal to another valu
 \hfill \\
 Checks for molecules that escaped from the system and displays information about them.
 
+\item[\ttt{enum CMDcode cmdwarnescapeecmpt(simptr sim,cmdptr cmd,char *line2);}]
+\hfill \\
+Checks for molecules that escaped from a compartment and displays information about them.
+
 \item[\ttt{enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
 Echos a string of text to the filename that is given.
@@ -6564,6 +6568,13 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Fixed some bugs with \ttt{reassignmolecs} function. First of all, it's now called as the system is set up, before the simulation starts. Also, it now runs even if there is only 1 box, which is a little less efficient in rare cases, but more reliable.
 \item Tried to get freeglut to work, without success.
 \item Added Chapter 15 to user's manual on Python bindings.
+
+\subsection*{Modifications for version 2.64 (not released yet)}
+\item Dilawar rewrote the documentation conversions, in the docs directory.
+\item Added \ttt{warnescapeecmpt} command.
+\item Fixed a minor bug in which reversible reactions that took place on surfaces led to an initial unbinding separation that didn't address surface crossing, which led to products leaking across the surface.
+\item Converted the User's manual from Word to LaTeX.
+\item Merged the Libsmoldyn user's manual into the regular user's manual.
 
 \end{itemize}
 
