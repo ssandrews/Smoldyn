@@ -127,16 +127,16 @@ Documentation
 ~~~~~~~~~~~~~
 
 The most current documentation is included in the download package as
-Word and pdf files for the User’s Manual and as LaTeX and pdf files for
-the code documentation (this file).
+LaTeX and pdf files for the User’s Manual and code documentation (this
+file).
 
 Also, Dilawar Singh started a readthedocs website for Smoldyn at
 https://readthedocs.org/projects/smoldyn/downloads/. I’ll try to
-maintain that site but, for now, it’s not as current as the
-documentation that’s packaged with the downloads. In addition, note that
-the documentation is stored on the same github site as the code, so if
-you really want the latest un-released documentation, then you can get
-it at the github site.
+maintain that site but it may not be as current as the documentation
+that’s packaged with the downloads. In addition, note that the
+documentation is stored on the same github site as the code, so if you
+really want the latest un-released documentation, then you can get it at
+the github site.
 
 Yet another readthedocs website is
 https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html.
@@ -1103,31 +1103,20 @@ There are two documentation directories, “documentation” and “docs”.
 
 The “documentation” directory contains original hand-written
 documentation files for Smoldyn, it’s utility programs, and the
-libraries that Smoldyn calls. Essentially all of this was written by me
-(Steve). An exception is that the BioNetGen documentation is a published
-paper on BioNetGen by Faeder, Blinov, and Hlavacek. The documentation
-specifically for Smoldyn is within the Smoldyn subdirectory. Here are
-the User’s Manual, the LibSmoldyn user’s manual, and this programmers
-documentation, along with a few especially relevant published papers
-about Smoldyn. Unfortunately, LaTeX requires far too many files for a
-single document, but that’s just how it is.
-
-In addition to the hand-written files, this includes
-SmoldynUsersManual.odt, which is an Open Document Text file. It’s
-identical to the SmoldynUsersManual.docx original, but was converted to
-an open document format. From an email from Dilawar: “The manual.docx is
-converted to an odt file using libreoffice. I then added the outline,
-links and other metadata to the odt file to make sure that rst has a
-proper table of content and outline. The generated PDF from the odt file
-also has in-document links. I didn’t want to tweak the docx file
-directly. I use libreoffice 7.0 and it works great. There may be few
-corner cases in formatting which needed tweaking.”
+libraries that Smoldyn calls. Essentially all of these files were
+written by me (Steve). An exception is that the BioNetGen documentation
+is a published paper on BioNetGen by Faeder, Blinov, and Hlavacek. The
+documentation specifically for Smoldyn is within the Smoldyn
+subdirectory. Here are the User’s Manual, figures for it, and this
+programmer’s documentation, along with a few especially relevant
+published papers about Smoldyn. Unfortunately, LaTeX requires far too
+many files for a single document, but that’s just how it is.
 
 The “docs” directory contains many things, which generally automate
 document conversion from the hand-written files in the documentation
 directory to rst and other file formats. These procedures are run
 through the “docs/CMakeLists.txt” file. It can be used as a submodule to
-the top-level cmake file (enabled by ``-DOPTION_DOC=ON``) or run as a
+the top-level cmake file (enabled by ``-DOPTION_DOCS=ON``) or run as a
 standalone cmake project i.e., ``cd docs; cmake .; make docs``. The
 CMakeLists.txt file does the following things:
 
@@ -1212,6 +1201,9 @@ was one error, which was that sphinx complained about a character in a
 .tex file that was not UTF-8. The solution was to search for it using
 “grep -axv ’.*’ SmoldynCodeDoc.tex”, which successfully located the
 offending character.
+
+Running “sudo make install” writes the documentation to
+/usr/local/share/doc/smoldyn-doc/sphinx.
 
 Continuous Integration
 ----------------------
@@ -6614,7 +6606,7 @@ Surface functions
      pointer as ``testpt``.
 
 ``void``
-   | ``movemol2closepanel(simptr sim,moleculeptr mptr,int dim,double epsilon,double neighdist,double margin);``
+   | ``movemol2closepanel(simptr sim,moleculeptr mptr);``
    | Checks to see if surface-bound molecule ``mptr`` is within the area
      of the finite panel ``mptr->pnl`` (i.e. over or under the panel,
      ignoring the position relative to the plane of the panel). If it
@@ -10185,6 +10177,11 @@ Individual command functions
 ``enum CMDcode cmdwarnescapee(simptr sim,cmdptr cmd,char *line2);``
    | 
    | Checks for molecules that escaped from the system and displays
+     information about them.
+
+``enum CMDcode cmdwarnescapeecmpt(simptr sim,cmdptr cmd,char *line2);``
+   | 
+   | Checks for molecules that escaped from a compartment and displays
      information about them.
 
 ``enum CMDcode cmdecho(simptr sim,cmdptr cmd,char *line2);``
@@ -13961,6 +13958,22 @@ Modifications for version 2.27 (released 7/26/12)
 -  Tried to get freeglut to work, without success.
 
 -  Added Chapter 15 to user’s manual on Python bindings.
+
+   .. rubric:: Modifications for version 2.64 (not released yet)
+      :name: modifications-for-version-2.64-not-released-yet
+      :class: unnumbered
+
+-  Dilawar rewrote the documentation conversions, in the docs directory.
+
+-  Added ``warnescapeecmpt`` command.
+
+-  Fixed a minor bug in which reversible reactions that took place on
+   surfaces led to an initial unbinding separation that didn’t address
+   surface crossing, which led to products leaking across the surface.
+
+-  Converted the User’s manual from Word to LaTeX.
+
+-  Merged the Libsmoldyn user’s manual into the regular user’s manual.
 
 The wish/ to do list
 ====================

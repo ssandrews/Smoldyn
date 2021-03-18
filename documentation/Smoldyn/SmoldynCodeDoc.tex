@@ -93,9 +93,9 @@ Smoldyn's code repository is github at https://github.com/ssandrews/Smoldyn. Thi
 
 \subsection{Documentation}
 
-The most current documentation is included in the download package as Word and pdf files for the User's Manual and as LaTeX and pdf files for the code documentation (this file).
+The most current documentation is included in the download package as LaTeX and pdf files for the User's Manual and code documentation (this file).
 
-Also, Dilawar Singh started a readthedocs website for Smoldyn at \url{https://readthedocs.org/projects/smoldyn/downloads/}. I'll try to maintain that site but, for now, it's not as current as the documentation that's packaged with the downloads. In addition, note that the documentation is stored on the same github site as the code, so if you really want the latest un-released documentation, then you can get it at the github site.
+Also, Dilawar Singh started a readthedocs website for Smoldyn at \url{https://readthedocs.org/projects/smoldyn/downloads/}. I'll try to maintain that site but it may not be as current as the documentation that's packaged with the downloads. In addition, note that the documentation is stored on the same github site as the code, so if you really want the latest un-released documentation, then you can get it at the github site.
 
 Yet another readthedocs website is \url{https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html}.
 
@@ -539,11 +539,9 @@ Alternatively, XCode offers FileMerge.app, which is at /Developer/Applications/U
 
 There are two documentation directories, ``documentation'' and ``docs''.
 
-The ``documentation'' directory contains original hand-written documentation files for Smoldyn, it's utility programs, and the libraries that Smoldyn calls. Essentially all of this was written by me (Steve). An exception is that the BioNetGen documentation is a published paper on BioNetGen by Faeder, Blinov, and Hlavacek. The documentation specifically for Smoldyn is within the Smoldyn subdirectory. Here are the User's Manual, the LibSmoldyn user's manual, and this programmers documentation, along with a few especially relevant published papers about Smoldyn. Unfortunately, LaTeX requires far too many files for a single document, but that's just how it is.
+The ``documentation'' directory contains original hand-written documentation files for Smoldyn, it's utility programs, and the libraries that Smoldyn calls. Essentially all of these files were written by me (Steve). An exception is that the BioNetGen documentation is a published paper on BioNetGen by Faeder, Blinov, and Hlavacek. The documentation specifically for Smoldyn is within the Smoldyn subdirectory. Here are the User's Manual, figures for it, and this programmer's documentation, along with a few especially relevant published papers about Smoldyn. Unfortunately, LaTeX requires far too many files for a single document, but that's just how it is.
 
-In addition to the hand-written files, this includes SmoldynUsersManual.odt, which is an Open Document Text file. It's identical to the SmoldynUsersManual.docx original, but was converted to an open document format. From an email from Dilawar: ``The manual.docx is converted to an odt file using libreoffice. I then added the outline, links and other metadata to the odt file to make sure that rst has a proper table of content and outline. The generated PDF from the odt file also has in-document links. I didn't want to tweak the docx file directly. I use libreoffice 7.0 and it works great. There may be few corner cases in formatting which needed tweaking.''
-
-The ``docs'' directory contains many things, which generally automate document conversion from the hand-written files in the documentation directory to rst and other file formats. These procedures are run through the ``docs/CMakeLists.txt'' file. It can be used as a submodule to the top-level cmake file (enabled by \ttt{-DOPTION\_DOC=ON}) or run as a standalone cmake project i.e., \ttt{cd docs; cmake .; make docs}. The CMakeLists.txt file does the following things:
+The ``docs'' directory contains many things, which generally automate document conversion from the hand-written files in the documentation directory to rst and other file formats. These procedures are run through the ``docs/CMakeLists.txt'' file. It can be used as a submodule to the top-level cmake file (enabled by \ttt{-DOPTION\_DOCS=ON}) or run as a standalone cmake project i.e., \ttt{cd docs; cmake .; make docs}. The CMakeLists.txt file does the following things:
 
 (1) It converts the SmoldynUsersManual.odt to rst format, which is the restructured text format. This format is used for Python documentation. This conversion is done by calling the pandoc utility, which is a ``universal document converter'', used for converting between markup languages (pandoc is available for Macs through MacPorts and elsewhere). Pandoc is a soft dependency; if it is not found, the rst files are not updated and old ones are used. This way one can update the TeX, docx file in the documentation folder and have the rst docs in sync with them.
 

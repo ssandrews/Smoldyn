@@ -87,6 +87,7 @@ message(STATUS "Option to include OpenGL support: ${OPTION_USE_OPENGL}")
 message(STATUS "Option to include LibTiff: ${OPTION_USE_LIBTIFF}")
 message(STATUS "Option to incude Python module: ${OPTION_PYTHON}")
 message(STATUS "Option to run Libsmoldyn examples: ${OPTION_EXAMPLES}")
+message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
 ######### Core code information ###########

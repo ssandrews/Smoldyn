@@ -505,7 +505,7 @@ The following table summarizes the statements that deal with the configuration f
 Statement & meaning\\
 \hline\\
 \ttt{\#} & single-line comment\\
-\ttt{/*} É \ttt{*/} & multi-line comment\\
+\ttt{/*} ... \ttt{*/} & multi-line comment\\
 \ttt{read\_file} \param{filename} & read filename, and then return\\
 \ttt{end\_file} & end of this file\\
 \ttt{define} \param{key substitution} & local macro replacement text\\
@@ -674,17 +674,17 @@ The following table summarizes the statements about molecules.
 \begin{longtable}[c]{ll}
 Statement & function\\
 \hline \\
-\ttt{species} $name_1\ name_2\ É\ name_n$ & names of species\\
+\ttt{species} $name_1\ name_2\ ...\ name_n$ & names of species\\
 \ttt{difc} $species(state)\ value$ & diffusion coefficient\\
-\ttt{difm} $species(state)\ m_0\ m_1\ É\ m_{dim*dim-1}$ & diffusion matrix\\
-\ttt{drift} $species(state)\ v_0\ v_1\ É\ v_{dim1}$ & global drift vector\\
+\ttt{difm} $species(state)\ m_0\ m_1\ ...\ m_{dim*dim-1}$ & diffusion matrix\\
+\ttt{drift} $species(state)\ v_0\ v_1\ ...\ v_{dim1}$ & global drift vector\\
 \ttt{surface\_drift} $species(state)\ surface\ pshape\ v_0\ v_1$ & surface-relative drift vector\\
-\ttt{mol} $nmol\ species\ pos_0\ pos_1\ É\ pos_{dim-1}$ & solution molecules placed in system\\
+\ttt{mol} $nmol\ species\ pos_0\ pos_1\ ...\ pos_{dim-1}$ & solution molecules placed in system\\
 \multicolumn{2}{l}{
-\ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel\ [pos_0\ pos_1\ É\ pos_{dim-1}]$}\\
+\ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel\ [pos_0\ pos_1\ ...\ pos_{dim-1}]$}\\
  & surface-bound molecules placed in system\\
 \ttt{compartment\_mol} $nmol\ species\ compartment$ & molecules placed in compartment\\
-\ttt{molecule\_lists} $listname_1\ listname_2\ É$ & names of molecule lists\\
+\ttt{molecule\_lists} $listname_1\ listname_2\ ...$ & names of molecule lists\\
 \ttt{mol\_list} $species(state)\ listname$ & assignment of molecule to a list
 \end{longtable}
 
@@ -918,9 +918,9 @@ The following table summarizes the statements used for commands.
 Statement & function\\
 \hline\\
 \ttt{output\_root} $str$ & root of path for text output\\
-\ttt{output\_files} $str_1\ str_2\ É\ str_n$ & file names for text output\\
+\ttt{output\_files} $str_1\ str_2\ ...\ str_n$ & file names for text output\\
 \ttt{output\_precision} $int$ & precision for numerical output\\
-\ttt{append\_files} $str_1\ str_2\ É\ str_n$ & file names for text output\\
+\ttt{append\_files} $str_1\ str_2\ ...\ str_n$ & file names for text output\\
 \ttt{output\_file\_number} $int$ & starting suffix number for file name\\
 \ttt{output\_format} $str$ & output format; either ssv or csv\\
 \ttt{cmd b,a,e} $string$ & command run times and strings\\
@@ -1040,13 +1040,13 @@ Statement & function\\
 \ttt{polygon} $face\ drawmode$\\
 \ttt{shininess} $face\ value$\\
 \ttt{max\_panels} $char\ int$ & (optional)\\
-\ttt{panel} $char\ float\ É\ float$\\
-\ttt{panel} $char\ float\ É\ float\ name$\\
+\ttt{panel} $char\ float\ ...\ float$\\
+\ttt{panel} $char\ float\ ...\ float\ name$\\
 \ttt{jump} $name\ face\ ->\ name_2\ face_2$\\
 \ttt{jump} $name\ face\ <->\ name_2\ face_2$\\
-\ttt{neighbors} $panel\ neigh_1\ neigh_2\ É$\\
+\ttt{neighbors} $panel\ neigh_1\ neigh_2\ ...$\\
 \multicolumn{2}{l}{
-\ttt{unbounded\_diffusion} $face\ species\ amount\ pos_0\ pos_1\ É\ pos_{dim-1}$}\\
+\ttt{unbounded\_diffusion} $face\ species\ amount\ pos_0\ pos_1\ ...\ pos_{dim-1}$}\\
 \ttt{end\_surface}
 \end{longtable}
 
@@ -2069,7 +2069,7 @@ Statement & Description\\
 \ttt{lengthscale} $x_1\ x_2\ x_3$ & partition spacing for lattice subvolumes\\
 \ttt{species} $species_1\ species_2\ ...$ & species that the lattice should recognize\\
 \ttt{reaction} $[move]\ reaction_1\ reaction_2\ ...$ & reactions that the lattice should recognize\\
-\ttt{mol} $nmol\ name\ pos_0\ pos_1\ É\ pos_{dim-1}$ & starting molecules in the lattice space\\
+\ttt{mol} $nmol\ name\ pos_0\ pos_1\ ...\ pos_{dim-1}$ & starting molecules in the lattice space\\
 \ttt{end\_lattice} & end the lattice block
 \end{longtable}
 
@@ -2830,7 +2830,7 @@ Another starting time of simulation. Default value is equal to \ttt{time\_start}
 
 \begin{description}
 
-\item{\ttt{species} $name_1\ name_2\ É\ name_n$}
+\item{\ttt{species} $name_1\ name_2\ ...\ name_n$}
 
 Names of one of more molecular species present in the system. Standard naming conventions are followed, in that the name should start with a letter and spaces are not permitted.
 
@@ -2844,28 +2844,28 @@ Defines a group of species called $group$ and adds $species_1$, $species_2$, and
 
 Isotropic diffusion coefficient of molecule type $species$. Default value is 0. The state, which is optional, refers to the surface-bound state of the molecule: solution, front, back, up, or down; if omitted, only the solution state is set with this statement. $name$ may be ``all'' and/or $state$ may be ``all'' to set diffusion coefficients for multiple species at once. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
-\item{\ttt{difm} $species\ float_0\ float_1\ É\ float_{dim*dim-1}$\\
-\ttt{difm} $species(state)\ float_0\ float_1\ É\ float_{dim*dim-1}$\\
-\ttt{difm\_rule} $species(state)\ float_0\ float_1\ É\ float_{dim*dim-1}$}
+\item{\ttt{difm} $species\ float_0\ float_1\ ...\ float_{dim*dim-1}$\\
+\ttt{difm} $species(state)\ float_0\ float_1\ ...\ float_{dim*dim-1}$\\
+\ttt{difm\_rule} $species(state)\ float_0\ float_1\ ...\ float_{dim*dim-1}$}
 
 Square root of diffusion matrix of $species$ and maybe state $state$ (the dot product of this matrix and itself is the anisotropic diffusion matrix). The matrix has $dim^2$ terms ($dim$ is the system dimensionality), listed row by row of the matrix; the matrix is supposed to be symmetric. If this line is not entered, isotropic diffusion is assumed, which leads to a faster runtime. While a matrix is used for diffusion if one is given, the value stored with \ttt{difc} is used for reaction rate calculations. If \ttt{difc} is not entered, the trace of the square of this matrix, divided by the system dimensionality, is used as a proxy for the isotropic diffusion coefficient to allow reaction rates to be estimated. This line is most useful for restricting diffusion to a plane or a line, in which case the square root of the diffusion coefficient is given for each diagonal element of the matrix where there is diffusion and 0s are place on diagonal elements for axes where diffusion is not possible, as well as on off-diagonal elements. $species$ and or $state$ may be ``all'' to set diffusion matrices for multiple species at once. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
-\item{\ttt{drift} $species\ float_0\ float_1\ É\ float_{dim-1}$\\
-\ttt{drift} $species(state)\ float_0\ float_1\ É\ float_{dim-1}$\\
-\ttt{drift\_rule} $species(state)\ float_0\ float_1\ É\ float_{dim-1}$}
+\item{\ttt{drift} $species\ float_0\ float_1\ ...\ float_{dim-1}$\\
+\ttt{drift} $species(state)\ float_0\ float_1\ ...\ float_{dim-1}$\\
+\ttt{drift\_rule} $species(state)\ float_0\ float_1\ ...\ float_{dim-1}$}
 
 Drift velocity vector for molecules of type $species$ and maybe state $state$. The vector has $dim$ terms ($dim$ is the system dimensionality). If this line is not entered, there is no net drift. $species$ and/or $state$ may be ``all'' to set drift vectors for multiple species at once. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
-\item{\ttt{surface\_drift} $species(state)\ surface\ panel-shape\ float_0\ É\ float_{dim-2}$\\
-\ttt{surface\_drift\_rule} $species(state)\ surface\ panel-shape\ float_0\ É\ float_{dim-2}$}
+\item{\ttt{surface\_drift} $species(state)\ surface\ panel-shape\ float_0\ ...\ float_{dim-2}$\\
+\ttt{surface\_drift\_rule} $species(state)\ surface\ panel-shape\ float_0\ ...\ float_{dim-2}$}
 
 Drift velocity vector for molecules of type $species$ and state $state$, relative to the local coordinates of the panel to which these molecules are bound. The vector has $dim-1$ terms ($dim$ is the system dimensionality), which are for the natural coordinate system of the local panel. $species$ and/or $state$ may be ``all'' to set drift vectors for multiple species and surface-bound states at once. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
-\item{\ttt{mol} $nmol\ species\ pos_0\ pos_1\ É\ pos_{dim-1}$}
+\item{\ttt{mol} $nmol\ species\ pos_0\ pos_1\ ...\ pos_{dim-1}$}
 
 Simulation starts with $nmol$ type $species$ molecules at location $pos$. Each of the $dim$ elements of the position may be a number to give the actual position of the molecule or molecules; or the letter ``u'' to indicate that the position for each molecule should be a random value between the bounding walls, chosen from a uniform density; or a position range which is given as two numbers separated with a hyphen.
 
-\item{\ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel\ pos_0\ pos_1\ É\ pos_{dim-1}$\\
+\item{\ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel\ pos_0\ pos_1\ ...\ pos_{dim-1}$\\
 \ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel$}
 
 Creates surface-bound molecules. $nmol$ molecules of type $species$ are created on the surface named $surface$, on the panel with shape $pshape$ and name $panel$. They are all put in state $state$, which can be ``front'', ``back'', ``up'', or ``down''. If additional text is entered, it needs to be the Cartesian coordinates of the molecules, all of which are put at the same spot and on the same panel. If the coordinates are not given, the molecules are placed randomly on the surface with a constant density, on average. For randomly placed molecules, it is permissible to enter ``all'' for the panel, the $pshape$, and/or the surface.
@@ -2874,7 +2874,7 @@ Creates surface-bound molecules. $nmol$ molecules of type $species$ are created 
 
 Creates $nmol$ solution-phase molecules of type $species$ in the compartment named $compartment$.
 
-\item{\ttt{molecule\_lists} $listname_1\ listname_2\ É$}
+\item{\ttt{molecule\_lists} $listname_1\ listname_2\ ...$}
 
 Creates and names a set of molecule lists, for molecules that are in the system. This statement may be called multiple times.
 
@@ -2985,7 +2985,7 @@ Turns on text display of the listed items, which are listed as strings. Possible
 
 Root of path where text output should be saved. Spaces are permitted. Output files are saved in the same folder as the configuration file, modified by this string. See the description for \ttt{output\_files}. Make sure that the destination folder has been created and that the string is terminated with a colon (and started with a colon if needed).
 
-\item{\ttt{output\_files} $str_1\ str_2\ É\ str_n$}
+\item{\ttt{output\_files} $str_1\ str_2\ ...\ str_n$}
 
 Declaration of filenames that can be used for output of simulation results. Spaces are not permitted in these names. Any previous files with these names will be overwritten. The path for these filenames starts from the configuration file and may be modified by a root given with \ttt{output\_root}. For example, if the configuration file was called with ``folder/config.txt'' and \ttt{output\_root} was not used, then the output file ``out.txt'' will appear in the directory ``folder'' too. If the configuration file was called with ``folder/config.txt'' and the output root was given as ``results/'', then the output file goes to the results sub-directory of the directory ``folder''. The filename ``stdout'' results in output being sent to the standard output (this does not need to be declared with the \ttt{output\_files} statement).
 
@@ -3092,9 +3092,9 @@ Shininess of the surface for drawing purposes. This value can range from 0 for v
 
 Optional statement. This can be used to allocate memory for $int$ panels of shape $shape$ for this surface, although it is usually best to let Smoldyn allocate memory as needed. The shape may be ``rect'' for a rectangle, ``tri'' for a triangle, ``sph'' for a sphere, ``cyl'' for a cylinder, ``hemi'' for a hemisphere, or ``disk'' for a disk. The surface can include panels with different shapes.
 
-\item{\ttt{* panel} $shape\ float\ É\ float\ [name]$}
+\item{\ttt{* panel} $shape\ float\ ...\ float\ [name]$}
 
-Defines a new panel for the surface, where the panel has shape $shape$.  The shape may be ``rect'' for a rectangle, ``tri'' for a triangle, ``sph'' for a sphere, ``cyl'' for a cylinder, ``hemi'' for a hemisphere, or ``disk'' for a disk. Following the shape are numbers for the panel position, where these depend on the shape. At the end, it is possible to enter a string to name the panel, although this is optional (default names are the numbers 0, 1, 2, É; names are used for jump surfaces). If the name was used before, then this does not create a new panel, but modifies the existing panel.
+Defines a new panel for the surface, where the panel has shape $shape$.  The shape may be ``rect'' for a rectangle, ``tri'' for a triangle, ``sph'' for a sphere, ``cyl'' for a cylinder, ``hemi'' for a hemisphere, or ``disk'' for a disk. Following the shape are numbers for the panel position, where these depend on the shape. At the end, it is possible to enter a string to name the panel, although this is optional (default names are the numbers 0, 1, 2, ...; names are used for jump surfaces). If the name was used before, then this does not create a new panel, but modifies the existing panel.
 
 For ``rect'', enter the axis number that the rectangle is perpendicular to, preceded by a ``+'' if the panel front faces the positive axis and a ``-'' if it faces the negative axis (these signs must be entered); then enter the coordinates of a corner point; then enter the dimensions of the rectangle in sequential order of the axes, omitting the one that it is perpendicular to. These dimensions are better called displacements because they are added to the corner that is entered, so they may be positive or negative. For example, for a square in a 3-D system that is perpendicular to the y-axis, has sides of length 10 and is centered about the origin, enter: ``panel rect +1 -5 0 -5 10 10''. This same square could be entered as ``panel rect +1 5 0 5 -10 -10'', or with other descriptions. A rectangle is always perpendicular to an axis.
 
@@ -3113,11 +3113,11 @@ For ``disk'', enter the coordinates of the disk center, the radius, a vector tha
 
 Defines a molecule jumping condition for a face of a single panel. This panel has name $panel_1$, and face $face_1$. The name of a panel can be defined with the panel statement, or the default is just the shape and panel number (rect0, sph5, etc.). A molecule that hits this face of the panel, and that has ``jump'' action for this face, gets translated to the face $face_2$ of the panel $panel_2$ (which needs to be the same shape as the originating panel). A unidirectional arrow implies just jumping from the first panel to the second, whereas a double-headed arrow implies jumping in both directions.
 
-\item{\ttt{* neighbors} $panel\ neigh_1\ neigh_2\ É$}
+\item{\ttt{* neighbors} $panel\ neigh_1\ neigh_2\ ...$}
 
 Defines a list of panels that neighbor the panel named $panel$. Surface-bound molecules can only diffuse from a panel to its neighbor if the neighbors are defined in this way. This statement is unidirectional in that it only sets, for example, $neigh_1$ as a neighbor of panel $panel$ but not vice versa. If the neighboring panel is not part of the same surface as the origin panel, then specify the neighboring panel using $surface:panel$.
 
-\item{\ttt{* unbounded\_emitter} $face\ species\ amount\ pos_0\ pos_1\ É pos_{dim-1}$}
+\item{\ttt{* unbounded\_emitter} $face\ species\ amount\ pos_0\ pos_1\ ... pos_{dim-1}$}
 
 Declares a molecular source for which this surface should absorb molecules so as to yield a concentration distribution that is the same as that which would arise with unbounded diffusion. This statement does not create the molecular source, but only sets the panel absorption coefficients to yield the correct concentrations, assuming the emitter is created elsewhere (such as with a command or a zeroth order reaction). $face$ is the side of the surface that faces the emitter, $species$ is the emitted molecular species, $amount$ is the emission rate (it only matters if there is more than one emitter for this surface and species, and then it is only the relative rates of the different emitters that matters), and $pos$ is the system-dimensional position of the emitter. This statement is designed to be used with all emitters strictly inside a closed surface and all of them with positive amount values; however, neither of these criteria are checked, so other options can be used although no promises are made regarding their behaviors.
 
@@ -3387,7 +3387,7 @@ Causes all molecules of the listed species to be converted from lattice represen
 
 List of reactions that should be used in the lattice region of space. These reactions need to have been fully defined previously in the particle region of space. Rather than listing all reactions, the keyword ``all'' can be used to state that all of the current particle-side reactions should also be functional on the lattice side. If the keyword ``move'' is given in the list, as in the latter form above, then all subsequent listed reactions are ``moved'' to the lattice side, meaning that they are functional on the lattice side but become non-functional on the particle side. In this case, they are still defined on the particle side, but are simply disabled.
 
-\item{\ttt{* mol} $nmol\ name\ pos_0\ pos_1\ É\ pos_{dim-1}$}
+\item{\ttt{* mol} $nmol\ name\ pos_0\ pos_1\ ...\ pos_{dim-1}$}
 
 This adds molecules to the starting state of the simulation in the lattice region of space. This statement is essentially identical to the statement with the same name that is in the particle portion of the configuration file. The lattice regions starts with $nmol$ type $name$ molecules at location $pos$. Each of the $dim$ elements of the position may be a number to give the actual position of the molecule or molecules; or the letter ``u'' to indicate that the position for each molecule should be a random value between the bounding walls, chosen from a uniform density; or a position range which is given as two numbers separated with a hyphen.
 
@@ -3574,7 +3574,7 @@ Each time this command is executed, one line of display is printed to the listed
 
 Each time this command is executed, one line of display is printed to the listed file, giving the time and the number of molecules that are within the compartment $compartment$ for each molecular species. Only solution-phase molecules are listed. The ordering used is the same as was given in the \ttt{species} statement.
 
-\item{\ttt{molcountincmpts} $compartment_1\ compartment_1\ É\ compartment_n\ filename$}
+\item{\ttt{molcountincmpts} $compartment_1\ compartment_1\ ...\ compartment_n\ filename$}
 
 Each time this command is executed, one line of display is printed to the listed file, giving the time and the number of molecules that are within each of the compartments listed, for each molecular species. Up to 16 compartments may be listed. Only solution-phase molecules are reported to the output. The molecule ordering used is the same as was given in the species statement.
 
@@ -3786,11 +3786,11 @@ Equilibrate these molecules. All molecules of type $species_1$ and $species_2$ w
 
 Molecules of type $species_1$ are replaced with ones of type $species_2$ with probability $prob$. States are optional and are solution by default; neither species nor states may be ``all''. $prob$ can be a function of the molecule location using its $x$, $y$, and $z$ values.
 
-\item{\ttt{replacexyzmol} $species(state)\ pos_0\ pos_1\ É\ pos_{dim-1}$}
+\item{\ttt{replacexyzmol} $species(state)\ pos_0\ pos_1\ ...\ pos_{dim-1}$}
 
 If there is a non-diffusing molecule at exactly position $pos$, it is replaced with one of type $species$. This command stops after one molecule is found. $state$ is optional and may not be ``all''; default is solution.
 
-\item{\ttt{replacevolmol} $species_1(state_1)\ species_2(state_2)\ frac\ pos_{0,low}\ pos_{0,high}\ pos_{1,low}\ pos_{1,high}\ É\ pos_{dim-1,high}$}
+\item{\ttt{replacevolmol} $species_1(state_1)\ species_2(state_2)\ frac\ pos_{0,low}\ pos_{0,high}\ pos_{1,low}\ pos_{1,high}\ ...\ pos_{dim-1,high}$}
 
 Fraction $frac$ molecules of type $species_1$ in the volume bounded by $pos_{low}$, $pos_{high}$ are replaced with ones of type $species_2$. States are optional and are solution by default; neither species nor states may be ``all''. $frac$ can be a function of the molecule location using its $x$, $y$, and $z$ values.
 

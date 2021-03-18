@@ -7,17 +7,17 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 # A target to convert odt and tex files in documentations format to rst format
 # convert ../documentation/Smoldyn/SmoldynUsersManual.odt to rst
 #
-set(USER_MANUAL_ODT
-    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.odt)
-set(USER_MANUAL_RST_AUTO
-    ${CMAKE_CURRENT_SOURCE_DIR}/../docs/user/user_manual.rst)
-
-add_custom_command(OUTPUT ${USER_MANUAL_RST_AUTO}
-    COMMAND pandoc -f odt ${USER_MANUAL_ODT} -o ${USER_MANUAL_RST_AUTO}
-    MAIN_DEPENDENCY ${USER_MANUAL_ODT}
-    COMMENT "Converting ${USER_MANUAL_ODT} -> ${USER_MANUAL_RST_AUTO}"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    VERBATIM)
+#set(USER_MANUAL_ODT
+#    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.odt)
+#set(USER_MANUAL_RST_AUTO
+#    ${CMAKE_CURRENT_SOURCE_DIR}/../docs/user/user_manual.rst)
+#
+#add_custom_command(OUTPUT ${USER_MANUAL_RST_AUTO}
+#    COMMAND pandoc -f odt ${USER_MANUAL_ODT} -o ${USER_MANUAL_RST_AUTO}
+#    MAIN_DEPENDENCY ${USER_MANUAL_ODT}
+#    COMMENT "Converting ${USER_MANUAL_ODT} -> ${USER_MANUAL_RST_AUTO}"
+#    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#    VERBATIM)
 add_custom_target(gen_user_manual DEPENDS ${USER_MANUAL_RST_AUTO})
 
 # install dependencies
@@ -30,7 +30,7 @@ add_custom_command(TARGET gen_user_manual PRE_BUILD
 # Convert all tex files to rst 
 # 
 set(DOC_TEX_FILES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/LibsmoldynManual.tex
+    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynManual.tex
     ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynCodeDoc.tex
     )
 foreach(_tex_file ${DOC_TEX_FILES})
