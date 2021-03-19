@@ -10,21 +10,20 @@ Welcome to Smoldyn's documentation!
 
 .. warning::
 
-   Please refer to official documentation at <https://smoldyn.org>.  This is
-   a work in progress. These documents are converted from official documentations 
-   and have formatting errors. 
+   Please refer to official documentation at <https://smoldyn.org>. This is a 
+   work in progress. 
 
 .. toctree::
    :maxdepth: 3
    :caption: Table of Contents
 
-   user/index
-   examples/index
+   User Manual <Smoldyn/SmoldynManual>
+   Installation <user/install>
+   Examples <examples/index>
 
-   python/api
-   developer/index
+   Python API <python/api>
+   Developer Manual <Smoldyn/SmoldynCodeDoc>
    C/C++ API <doxygen/html/index>
-
 
 
 Indices and tables
@@ -33,4 +32,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

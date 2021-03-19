@@ -1,7 +1,5 @@
 % Smoldyn User's manual
-
-\documentclass {book}
-
+\documentclass {scrbook}
 
 % packages
 \usepackage{longtable}
@@ -71,8 +69,8 @@
 \pretolerance=10000
 
 
-
-\title{\textbf{Smoldyn User's Manual} \\ \large for Smoldyn version 2.64}
+\title{Smoldyn User's Manual}
+\subtitle{Version 2.64}
 \date{\copyright March, 2021}
 \author{Steve Andrews}
 \maketitle
@@ -81,7 +79,7 @@
 
 
 % Part I: Getting Started
-\addcontentsline{toc}{chapter}{Part I: Getting Started}
+\part{Getting Started}
 
 % Introduction
 \chapter{Introduction}
@@ -230,7 +228,7 @@ From a command line, run Smoldyn by entering smoldyn followed by the name of you
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image1}
+\includegraphics[height=5 cm]{figures/image1.png}
 \caption{Graphical output of template.txt.}
 \label{fig:template}
 \end{figure}
@@ -424,7 +422,7 @@ This chapter has presented most of what you know to read and write Smoldyn input
 If you start using Smoldyn for actual research, then it is important that you understand what the software is actually doing. It is also helpful to learn about Smoldyn's more advanced features, how to automate simulations, and what makes simulations fast or slow. The rest of this manual addresses these topics.
 
 % Part II: Smoldyn Components
-\addcontentsline{toc}{chapter}{Part II: Smoldyn Components}
+\part{Smoldyn Components}
 
 % The Configuration File
 \chapter{The Configuration File}
@@ -612,9 +610,9 @@ Isotropic diffusion rates were tested quantitatively with the diffi.txt configur
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image5}
-\includegraphics[height=5 cm]{figures/image6}
-\includegraphics[height=5 cm]{figures/image7}
+\includegraphics[height=5 cm]{figures/image5.png}
+\includegraphics[height=5 cm]{figures/image6.png}
+\includegraphics[height=5 cm]{figures/image7.png}
 \caption{Output from file diffi.txt showing quantiatively accurate isotropic diffusion.}
 \label{fig:diffi}
 \end{figure}
@@ -640,9 +638,9 @@ Results are shown below
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image13}
-\includegraphics[height=5 cm]{figures/image14}
-\includegraphics[height=5 cm]{figures/image15}
+\includegraphics[height=5 cm]{figures/image13.png}
+\includegraphics[height=5 cm]{figures/image14.png}
+\includegraphics[height=5 cm]{figures/image15.png}
 \caption{Output from diffa.txt showing quantitatively accurate anisotropic diffusion.}
 \label{fig:diffa}
 \end{figure}
@@ -785,9 +783,9 @@ The following images show Smoldyn's graphics for 1D, 2D, and 3D systems, made wi
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image16}
-\includegraphics[height=5 cm]{figures/image17}
-\includegraphics[height=5 cm]{figures/image18}
+\includegraphics[height=5 cm]{figures/image16.png}
+\includegraphics[height=5 cm]{figures/image17.png}
+\includegraphics[height=5 cm]{figures/image18.png}
 \caption{Output from graphics1.txt, graphics2.txt, and graphics3.txt showing some graphics options.}
 \label{fig:graphics1}
 \end{figure}
@@ -1068,8 +1066,8 @@ Surface sticking rates were tested with the example file stickrate.txt. Here, a 
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image21}
-\includegraphics[height=5 cm]{figures/image22}
+\includegraphics[height=5 cm]{figures/image21.png}
+\includegraphics[height=5 cm]{figures/image22.png}
 \caption{Output from stickrate.txt, showing quantitatively accurate adsorption.}
 \label{fig:stickrate}
 \end{figure}
@@ -1086,8 +1084,8 @@ The figure below shows results from the emitter1.txt Smoldyn simulation, in whic
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=4 cm]{figures/image25}
-\includegraphics[height=5 cm]{figures/image26}
+\includegraphics[height=4 cm]{figures/image25.png}
+\includegraphics[height=5 cm]{figures/image26.png}
 \caption{Output from emitter1.txt, showing quantitatively accurate effective unbounded diffusion.}
 \label{fig:emitter1}
 \end{figure}
@@ -1187,7 +1185,7 @@ As seen in the figure below, simulation results conform closely to corresponding
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image29}
+\includegraphics[height=5 cm]{figures/image29.png}
 \caption{Output from zeroreact.txt, showing quantitatively accurate zeroth order reactions.}
 \label{fig:zeroreact}
 \end{figure}
@@ -1226,8 +1224,8 @@ Analogous equations hold for C and D. Simulation results closely matched these t
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image34}
-\includegraphics[height=5 cm]{figures/image35}
+\includegraphics[height=5 cm]{figures/image34.png}
+\includegraphics[height=5 cm]{figures/image35.png}
 \caption{Output from unireact1.txt and unireactn.txt, showing quantitatively accurate first order reactions.}
 \label{fig:unireact1}
 \end{figure}
@@ -1255,8 +1253,8 @@ Activation-limited reactions follow the mass action kinetics shown in the equati
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image38}
-\includegraphics[height=5 cm]{figures/image39}
+\includegraphics[height=5 cm]{figures/image38.png}
+\includegraphics[height=5 cm]{figures/image39.png}
 \caption{Output from bireactAB.txt and bireactAA.txt, showing quantitatively accurate second order reactions.}
 \label{fig:bireactAB}
 \end{figure}
@@ -1284,8 +1282,8 @@ Diffusion-limited reactions can be simulated well by Smoldyn. The example file b
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image41}
-\includegraphics[height=5 cm]{figures/image42}
+\includegraphics[height=5 cm]{figures/image41.png}
+\includegraphics[height=5 cm]{figures/image42.png}
 \caption{Output from bireactABB.txt, showing accurate diffusion-limited reactions.}
 \label{fig:bireactABB}
 \end{figure}
@@ -1304,7 +1302,7 @@ where $n_A(0)$ is the initial number of A molecules. It was verified that the si
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image45}
+\includegraphics[height=5 cm]{figures/image45.png}
 \caption{Output from equil.txt, showing accurate reversible reactions and equilibrium.}
 \label{fig:equil}
 \end{figure}
@@ -1376,9 +1374,9 @@ This involves several statements that make the simulation run efficiently. Graph
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image53}
-\includegraphics[height=5 cm]{figures/image54}
-\includegraphics[height=5 cm]{figures/image55}
+\includegraphics[height=5 cm]{figures/image53.png}
+\includegraphics[height=5 cm]{figures/image54.png}
+\includegraphics[height=5 cm]{figures/image55.png}
 \caption{Output from lotvolt.txt, showing a simple reaction network with Lotka-Volterra dynamics.}
 \label{fig:lotvolt}
 \end{figure}
@@ -1415,8 +1413,8 @@ While it is simplistic for most conformational spread situations, it leads to a 
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image56}
-\includegraphics[height=5 cm]{figures/image57}
+\includegraphics[height=5 cm]{figures/image56.png}
+\includegraphics[height=5 cm]{figures/image57.png}
 \caption{Output from confspread.txt, showing accurate conformational spread interactions.}
 \label{fig:confspread}
 \end{figure}
@@ -1439,8 +1437,8 @@ A second example involves a crowded system and is in the same directory and the 
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image58}
-\includegraphics[height=5 cm]{figures/image59}
+\includegraphics[height=5 cm]{figures/image58.png}
+\includegraphics[height=5 cm]{figures/image59.png}
 \caption{Output from bounce.txt and crowding.txt, showing excluded volume for surface-bound and solution phase molecules.}
 \label{fig:crowding}
 \end{figure}
@@ -1595,8 +1593,8 @@ These files are in the examples folder in S9\_compartments. The first is called 
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image62}
-\includegraphics[height=5 cm]{figures/image63}
+\includegraphics[height=5 cm]{figures/image62.png}
+\includegraphics[height=5 cm]{figures/image63.png}
 \caption{Output from compart.txt and compartlogic.txt, showing behavior of compartments.}
 \label{fig:compart}
 \end{figure}
@@ -2439,7 +2437,7 @@ else LCHECK(i>0, funcname, ECsame, NULL);
 In this particular case, this function permits an input of ``all", so it clears errors that arise from this return value, and leaves \ttt{i} as a negative value for later use.
 
 % Part III: Reference
-\addcontentsline{toc}{chapter}{Part III: Reference}
+\part{Reference}
 
 % Math operations and functions
 \chapter{Math operations and functions}

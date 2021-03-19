@@ -4,33 +4,36 @@ project(smoldyn-doc LANGUAGES)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 #
-# Convert TeX files to rst 
+# Convert TeX files to rst. Some TeX files uses `docs/Smoldyn/figures` folder
+# for images. To make sure that pandoc coverted rst file can find these images,
+# we generate the rst files in the same directory. This is the simplest
+# solution I could think of without writing a filter.
 # 
-set(USER_MANUAL_TEX ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynManual.tex)
-set(USER_MANUAL_RST ${CMAKE_CURRENT_SOURCE_DIR}/user/user_manual.rst)
+add_custom_target(TeX2RST COMMENT "Dummy target to convert all TeX to RST files")
 
-add_custom_command(OUTPUT ${USER_MANUAL_RST}
-    COMMAND pandoc -f latex ${USER_MANUAL_TEX} -o ${USER_MANUAL_RST}
-    MAIN_DEPENDENCY ${USER_MANUAL_TEX}
-    COMMENT "  [doc] converting ${USER_MANUAL_TEX} to ${USER_MANUAL_RST}"
-    VERBATIM)
+set(DOC_TEX_FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Smoldyn/SmoldynManual.tex
+    ${CMAKE_CURRENT_SOURCE_DIR}/Smoldyn/SmoldynCodeDoc.tex
+    )
+foreach(_tex_file ${DOC_TEX_FILES})
+    get_filename_component(_name_file ${_tex_file} NAME_WE)
+    get_filename_component(_dir_file ${_tex_file} DIRECTORY)
+    set(_tgt ${_name_file})
+    set(_output_rst_file "${_dir_file}/${_name_file}.rst")
+    add_custom_target(${_tgt} 
+        COMMAND pandoc -f latex --standalone ${_tex_file} -o ${_output_rst_file}
+        BYPRODUCTS ${_output_rst_file}
+        MAIN_DEPENDENCY ${_tex_file}
+        COMMENT " [doc] converting ${_tex_file} to ${_output_rst_file}"
+        VERBATIM)
+    add_dependencies(TeX2RST ${_tgt})
+endforeach()
 
-set(CODE_DOC_TEX ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynCodeDoc.tex)
-set(CODE_DOC_RST ${CMAKE_CURRENT_SOURCE_DIR}/developer/SmoldynCodeDoc.rst)
-
-add_custom_command(OUTPUT ${CODE_DOC_RST}
-    COMMAND pandoc -f latex ${CODE_DOC_TEX} -o ${CODE_DOC_RST}
-    MAIN_DEPENDENCY ${CODE_DOC_RST}
-    COMMENT "  [doc] converting ${CODE_DOC_TEX} to ${CODE_DOC_RST}"
-    VERBATIM)
-
-
-add_custom_target(gen_user_manual DEPENDS ${USER_MANUAL_RST})
 
 #
 # install dependencies before converting TeX to RST.
 #
-add_custom_command(TARGET gen_user_manual PRE_BUILD
+add_custom_command(TARGET TeX2RST PRE_BUILD
     COMMAND ${Python3_EXECUTABLE} -m pip install -r 
         ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt
     COMMENT "Installing dependencies." VERBATIM)
@@ -66,7 +69,7 @@ add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
     VERBATIM)
 
 # Nice named target so we can run the job easily
-add_custom_target(Doxygen ALL DEPENDS ${DOXYGEN_INDEX_FILE})
+add_custom_target(Doxygen ALL DEPENDS ${DOXYGEN_INDEX_FILE} _smoldyn)
 
 set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
 set(SPHINX_BUILD ${CMAKE_BINARY_DIR}/sphinx)
@@ -92,7 +95,7 @@ add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
 
 # Generate doc using Sphinx and doxygen.
 add_custom_target(docs ALL 
-    DEPENDS _smoldyn gen_user_manual
+    DEPENDS _smoldyn TeX2RST
     COMMAND READTHEDOCS=True ${SPHINX_EXECUTABLE} -b html
         ${SPHINX_SOURCE} ${SPHINX_BUILD}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
