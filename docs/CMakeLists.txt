@@ -4,47 +4,36 @@ project(smoldyn-doc LANGUAGES)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 #
-# A target to convert odt and tex files in documentations format to rst format
-# convert ../documentation/Smoldyn/SmoldynUsersManual.odt to rst
-#
-#set(USER_MANUAL_ODT
-#    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynUsersManual.odt)
-#set(USER_MANUAL_RST_AUTO
-#    ${CMAKE_CURRENT_SOURCE_DIR}/../docs/user/user_manual.rst)
-#
-#add_custom_command(OUTPUT ${USER_MANUAL_RST_AUTO}
-#    COMMAND pandoc -f odt ${USER_MANUAL_ODT} -o ${USER_MANUAL_RST_AUTO}
-#    MAIN_DEPENDENCY ${USER_MANUAL_ODT}
-#    COMMENT "Converting ${USER_MANUAL_ODT} -> ${USER_MANUAL_RST_AUTO}"
-#    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-#    VERBATIM)
-add_custom_target(gen_user_manual DEPENDS ${USER_MANUAL_RST_AUTO})
+# Convert TeX files to rst 
+# 
+set(USER_MANUAL_TEX ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynManual.tex)
+set(USER_MANUAL_RST ${CMAKE_CURRENT_SOURCE_DIR}/user/user_manual.rst)
 
-# install dependencies
+add_custom_command(OUTPUT ${USER_MANUAL_RST}
+    COMMAND pandoc -f latex ${USER_MANUAL_TEX} -o ${USER_MANUAL_RST}
+    MAIN_DEPENDENCY ${USER_MANUAL_TEX}
+    COMMENT "  [doc] converting ${USER_MANUAL_TEX} to ${USER_MANUAL_RST}"
+    VERBATIM)
+
+set(CODE_DOC_TEX ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynCodeDoc.tex)
+set(CODE_DOC_RST ${CMAKE_CURRENT_SOURCE_DIR}/developer/SmoldynCodeDoc.rst)
+
+add_custom_command(OUTPUT ${CODE_DOC_RST}
+    COMMAND pandoc -f latex ${CODE_DOC_TEX} -o ${CODE_DOC_RST}
+    MAIN_DEPENDENCY ${CODE_DOC_RST}
+    COMMENT "  [doc] converting ${CODE_DOC_TEX} to ${CODE_DOC_RST}"
+    VERBATIM)
+
+
+add_custom_target(gen_user_manual DEPENDS ${USER_MANUAL_RST})
+
+#
+# install dependencies before converting TeX to RST.
+#
 add_custom_command(TARGET gen_user_manual PRE_BUILD
     COMMAND ${Python3_EXECUTABLE} -m pip install -r 
         ${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt
     COMMENT "Installing dependencies." VERBATIM)
-
-#
-# Convert all tex files to rst 
-# 
-set(DOC_TEX_FILES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynManual.tex
-    ${CMAKE_CURRENT_SOURCE_DIR}/../documentation/Smoldyn/SmoldynCodeDoc.tex
-    )
-foreach(_tex_file ${DOC_TEX_FILES})
-    get_filename_component(_name_file ${_tex_file} NAME_WE)
-    set(_output_rst_file "${CMAKE_CURRENT_SOURCE_DIR}/developer/${_name_file}.rst")
-    add_custom_command(OUTPUT ${_output_rst_file}
-        COMMAND pandoc -f latex ${_tex_file} -o ${_output_rst_file}
-        MAIN_DEPENDENCY ${_tex_file}
-        COMMENT "  [doc] converting ${_tex_file} to ${_output_rst_file}"
-        VERBATIM)
-    add_custom_target(${_name_file} ALL DEPENDS ${_output_rst_file})
-endforeach()
-
-
 
 #
 # This is based on an excellent tutorial by Sy Brand
