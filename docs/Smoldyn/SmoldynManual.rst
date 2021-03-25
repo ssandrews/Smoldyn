@@ -3670,99 +3670,105 @@ in these cases is mass action kinetics correct and is the reaction rate
 constant actually constant. The precise experimental assumptions are
 clarified with the following examples.
 
-1. A + B :math:`\rightarrow` C
+.. container:: description
 
-The rate constant is assumed to have been measured at steady state,
-starting with a well-mixed system of A and B. No product parameter is
-required. At steady-state, the simulation matches mass action kinetics.
+   1. A + B :math:`\rightarrow` C
 
-2. X :math:`\rightarrow` A + B
+   The rate constant is assumed to have been measured at steady state,
+   starting with a well-mixed system of A and B. No product parameter is
+   required. At steady-state, the simulation matches mass action
+   kinetics.
 
-There is no bimolecular reaction, so no binding radius is calculated.
-The default unbinding radius is 0, although it is possible to define a
-different one. If the product parameter type is ``pgem``, ``pgem2``,
-``ratio``, or ``ratio2``, an error is returned due to the lack of a
-binding radius. If the parameter type is not given or is ``irrev``,
-``pgemmax``, or ``pgemmax2``, the unbinding radius is set to 0. If it is
-``unbindrad``, ``fixed``, or ``offset``, the requested separation is
-used. At steady-state, the simulation matches mass action kinetics.
+   2. X :math:`\rightarrow` A + B
 
-3. A + B :math:`\leftrightarrow` C
+   There is no bimolecular reaction, so no binding radius is calculated.
+   The default unbinding radius is 0, although it is possible to define
+   a different one. If the product parameter type is ``pgem``,
+   ``pgem2``, ``ratio``, or ``ratio2``, an error is returned due to the
+   lack of a binding radius. If the parameter type is not given or is
+   ``irrev``, ``pgemmax``, or ``pgemmax2``, the unbinding radius is set
+   to 0. If it is ``unbindrad``, ``fixed``, or ``offset``, the requested
+   separation is used. At steady-state, the simulation matches mass
+   action kinetics.
 
-If the reversible parameter is ``pgem``, ``pgemmax``, ``unbindrad``, or
-``ratio``, the forward rate constant is assumed to have been measured
-using just this system of reactions after the system had reached
-equilibrium. The product parameter is used to yield the correct
-probability of geminate recombination if possible, or the desired
-unbinding radius. In this case, the simulation matches mass action
-kinetics at equilibrium. If the product parameter is ``pgem2``,
-``pgemmax2``, ``ratio2``, ``offset``, ``fixed``, or ``irrev``, then it
-is assumed that the forward rate constant was measured at steady-state
-and with all C removed as it was formed, thus preventing any geminate
-reactions. The unbinding radius is set as requested, using the binding
-radius if needed. In this case, the simulated forward reaction rate is
-higher than requested due to geminate rebindings.
+   3. A + B :math:`\leftrightarrow` C
 
-4. A + B :math:`\leftrightarrow` C :math:`\rightarrow` Y
+   If the reversible parameter is ``pgem``, ``pgemmax``, ``unbindrad``,
+   or ``ratio``, the forward rate constant is assumed to have been
+   measured using just this system of reactions after the system had
+   reached equilibrium. The product parameter is used to yield the
+   correct probability of geminate recombination if possible, or the
+   desired unbinding radius. In this case, the simulation matches mass
+   action kinetics at equilibrium. If the product parameter is
+   ``pgem2``, ``pgemmax2``, ``ratio2``, ``offset``, ``fixed``, or
+   ``irrev``, then it is assumed that the forward rate constant was
+   measured at steady-state and with all C removed as it was formed,
+   thus preventing any geminate reactions. The unbinding radius is set
+   as requested, using the binding radius if needed. In this case, the
+   simulated forward reaction rate is higher than requested due to
+   geminate rebindings.
 
-The second reaction is ignored for determining parameters for A + B.
-Instead, the first reaction is considered as though the rates were
-determined experimentally using just the system given in example 3. If
-the product parameter is ``pgem``, ``pgemmax``, ``ratio``, or
-``unbindrad``, the simulated reaction rate for the forward reaction A +
-B :math:`\rightarrow` C will be lower than the requested rate because
-there are fewer geminate reactions than there would be with the
-equilibrium system. Alternatively, it will be higher than the requested
-rate if the product parameter is ``pgem2``, ``pgemmax2``, ``ratio2``,
-``offset``, ``fixed``, or ``irrev``, because there are some geminate
-reactions.
+   4. A + B :math:`\leftrightarrow` C :math:`\rightarrow` Y
 
-5. X :math:`\rightarrow` A + B :math:`\leftrightarrow` C
+   The second reaction is ignored for determining parameters for A + B.
+   Instead, the first reaction is considered as though the rates were
+   determined experimentally using just the system given in example 3.
+   If the product parameter is ``pgem``, ``pgemmax``, ``ratio``, or
+   ``unbindrad``, the simulated reaction rate for the forward reaction A
+   + B :math:`\rightarrow` C will be lower than the requested rate
+   because there are fewer geminate reactions than there would be with
+   the equilibrium system. Alternatively, it will be higher than the
+   requested rate if the product parameter is ``pgem2``, ``pgemmax2``,
+   ``ratio2``, ``offset``, ``fixed``, or ``irrev``, because there are
+   some geminate reactions.
 
-The binding radius for the second reaction is treated as in example 1,
-without consideration of the first reaction. The unbinding radius for
-the first reaction is found using the binding radius of the second
-reaction. Here, product parameters ``pgem`` and ``pgem2`` are
-equivalent, ``pgemmax`` and ``pgemmax2`` are equivalent, and ``ratio``
-and ``ratio2`` are equivalent. The actual reaction rate for the second
-reaction, found with a simulation, will be higher than the requested
-value due to geminate rebindings that occur after the dissociation of X
-molecules.
+   5. X :math:`\rightarrow` A + B :math:`\leftrightarrow` C
 
-6. X :math:`\rightarrow` A + B :math:`\leftrightarrow` C
+   The binding radius for the second reaction is treated as in example
+   1, without consideration of the first reaction. The unbinding radius
+   for the first reaction is found using the binding radius of the
+   second reaction. Here, product parameters ``pgem`` and ``pgem2`` are
+   equivalent, ``pgemmax`` and ``pgemmax2`` are equivalent, and
+   ``ratio`` and ``ratio2`` are equivalent. The actual reaction rate for
+   the second reaction, found with a simulation, will be higher than the
+   requested value due to geminate rebindings that occur after the
+   dissociation of X molecules.
 
-The A + B :math:`\leftrightarrow` C binding and unbinding radii are
-treated as in example 3. Another unbinding radius is required for the
-first reaction, which is found as in example 5, using the binding radius
-from the second reaction. Mass action kinetics are not followed.
+   6. X :math:`\rightarrow` A + B :math:`\leftrightarrow` C
 
-7. X :math:`\leftrightarrow` A + B :math:`\leftrightarrow` C
+   The A + B :math:`\leftrightarrow` C binding and unbinding radii are
+   treated as in example 3. Another unbinding radius is required for the
+   first reaction, which is found as in example 5, using the binding
+   radius from the second reaction. Mass action kinetics are not
+   followed.
 
-The binding radii and unbinding radii for each bimolecular reaction are
-found as in example 3, independent of the other bimolecular reaction.
-The simulated rates may be different from those requested because of
-differing unbinding radii.
+   7. X :math:`\leftrightarrow` A + B :math:`\leftrightarrow` C
 
-8. X :math:`\rightarrow` A + B :math:`\rightarrow` C, A + B
-:math:`\rightarrow` D
+   The binding radii and unbinding radii for each bimolecular reaction
+   are found as in example 3, independent of the other bimolecular
+   reaction. The simulated rates may be different from those requested
+   because of differing unbinding radii.
 
-The binding radii for the two bimolecular reactions are each found as in
-example 1. The unbinding radius for the first reaction cannot be
-determined uniquely, because the two forward reactions from A + B are
-equivalent and are likely to have different binding radii. Smoldyn picks
-the binding radius for the first forward reaction that is listed. Thus,
-if the product parameter for dissociation of X is ``pgem``, the
-requested geminate rebinding probability will be found for the reaction
-A + B :math:`\rightarrow` C, but a different value will be found for the
-reaction A + B :math:`\rightarrow` D.
+   8. X :math:`\rightarrow` A + B :math:`\rightarrow` C, A + B
+   :math:`\rightarrow` D
 
-9. C :math:`\leftrightarrow` A + B :math:`\leftrightarrow` C
+   The binding radii for the two bimolecular reactions are each found as
+   in example 1. The unbinding radius for the first reaction cannot be
+   determined uniquely, because the two forward reactions from A + B are
+   equivalent and are likely to have different binding radii. Smoldyn
+   picks the binding radius for the first forward reaction that is
+   listed. Thus, if the product parameter for dissociation of X is
+   ``pgem``, the requested geminate rebinding probability will be found
+   for the reaction A + B :math:`\rightarrow` C, but a different value
+   will be found for the reaction A + B :math:`\rightarrow` D.
 
-This reaction scheme might represent two different pathways by which A
-and B can bind to form an identical complex. However, Smoldyn cannot
-tell which reverse reaction corresponds to which forwards reaction.
-Instead, for both determining the binding and unbinding radii, it uses
-the first reverse reaction that is listed.
+   9. C :math:`\leftrightarrow` A + B :math:`\leftrightarrow` C
+
+   This reaction scheme might represent two different pathways by which
+   A and B can bind to form an identical complex. However, Smoldyn
+   cannot tell which reverse reaction corresponds to which forwards
+   reaction. Instead, for both determining the binding and unbinding
+   radii, it uses the first reverse reaction that is listed.
 
 The general principle for calculating binding radii is that Smoldyn
 first looks to see if a reaction is directly reversible (i.e. as in
@@ -5192,108 +5198,113 @@ the membrane.
    64      text_display=["time", S, (E, "front"), (ES, "front"), P] )
    65  s = s.run(stop=10, dt=0.01)
 
-1-11. The file starts with a docstring, which is a useful way to provide
-information about the model, authors, etc. Smoldyn does not handle units
-at all, so it’s the user’s responsibility to make sure that all units
-are consistent with each other. The best approach is simply to make sure
-that all lengths use the same units, such as nanometers or microns, and
-all times use the same units, such as milliseconds. This also applies to
-derived units, such as volumes and rate constants.
+.. container:: description
 
-13-14. Entering the author and email address with double underscores
-follows good Python form.
+   1-11. The file starts with a docstring, which is a useful way to
+   provide information about the model, authors, etc. Smoldyn does not
+   handle units at all, so it’s the user’s responsibility to make sure
+   that all units are consistent with each other. The best approach is
+   simply to make sure that all lengths use the same units, such as
+   nanometers or microns, and all times use the same units, such as
+   milliseconds. This also applies to derived units, such as volumes and
+   rate constants.
 
-16. Import the Smoldyn Python API with “import smoldyn”. If you want the
-low-level Python API, then import it with “import smoldyn._smoldyn”.
+   13-14. Entering the author and email address with double underscores
+   follows good Python form.
 
-18-21. This file defines some variables, which are just regular
-variables and not part of Smoldyn at all. The file uses upper case
-variable names to stay consistent with the stand-alone Smoldyn example
-file with the same name, but this isn’t really the best convention in
-Python.
+   16. Import the Smoldyn Python API with “import smoldyn”. If you want
+   the low-level Python API, then import it with “import
+   smoldyn._smoldyn”.
 
-23-24. All models start by creating a Simulation object, which includes
-the boundaries of the system space. The dimensionality of the space,
-whether 1D, 2D, or 3D, is inferred from the number of boundary
-coordinates given. Smoldyn actually tracks molecules outside of this
-volume, too, but it runs most efficiently if most of the action in the
-simulation occurs within the system volume. It’s possible to create
-multiple simulation objects if you want.
+   18-21. This file defines some variables, which are just regular
+   variables and not part of Smoldyn at all. The file uses upper case
+   variable names to stay consistent with the stand-alone Smoldyn
+   example file with the same name, but this isn’t really the best
+   convention in Python.
 
-26-32. Add species to a simulation with “sim.addSpecies”. Each species
-is required to have a name. The diffusion coefficient, given with
-“difc”, defaults to a value of 0, such as for the “E” species. The
-color, which is only used for graphical output, can often be given with
-a simple assignment, such as “color=’green”’. However, that’s not used
-here because these molecules can have multiple states, including in
-solution or bound to the surface. Instead, the colors are specified here
-with “dict()” functions, showing that these colors apply to all of the
-molecule states. Similarly, the “display_size” argument is only used for
-graphical output, and is given with “dict()” functions here because of
-the multiple states.
+   23-24. All models start by creating a Simulation object, which
+   includes the boundaries of the system space. The dimensionality of
+   the space, whether 1D, 2D, or 3D, is inferred from the number of
+   boundary coordinates given. Smoldyn actually tracks molecules outside
+   of this volume, too, but it runs most efficiently if most of the
+   action in the simulation occurs within the system volume. It’s
+   possible to create multiple simulation objects if you want.
 
-34-40. This model includes surface, called “membrane”. This surface is
-composed of one circular panel, which is called a sphere here because
-Smoldyn names its panels based on analogous 3D shapes. The panel is
-created first by defining its center and radius. The “slices” parameter
-refers to how many sides should be drawn on the circle for graphical
-output, since Smoldyn doesn’t actually draw perfect circles. Internally,
-a circle or sphere is defined using the mathematical definition of a
-circle or sphere, so it doesn’t have flat sides. Each surface has a
-front and back face; for a spherical panel, as used here, the front face
-is the outside by default. After defining the panel, the code defines a
-surface and the panel is added to it. Then, the surface actions are
-defined, meaning what happens to molecules that diffuse into it. In this
-case, for both the front and back faces of the surface, any molecule of
-the given list of species (which happens to be all of them) is reflected
-back toward where it came from. Finally, the surface drawing style is
-defined, here showing that both the front and back faces should be black
-and have a thickness of 1 pixel.
+   26-32. Add species to a simulation with “sim.addSpecies”. Each
+   species is required to have a name. The diffusion coefficient, given
+   with “difc”, defaults to a value of 0, such as for the “E” species.
+   The color, which is only used for graphical output, can often be
+   given with a simple assignment, such as “color=’green”’. However,
+   that’s not used here because these molecules can have multiple
+   states, including in solution or bound to the surface. Instead, the
+   colors are specified here with “dict()” functions, showing that these
+   colors apply to all of the molecule states. Similarly, the
+   “display_size” argument is only used for graphical output, and is
+   given with “dict()” functions here because of the multiple states.
 
-42-43. Compartments are regions of space that are bounded by surfaces,
-in this case “membrane”. Also, they have “interior-defining points”,
-which define which side of the surface represents the inside of the
-compartment.
+   34-40. This model includes surface, called “membrane”. This surface
+   is composed of one circular panel, which is called a sphere here
+   because Smoldyn names its panels based on analogous 3D shapes. The
+   panel is created first by defining its center and radius. The
+   “slices” parameter refers to how many sides should be drawn on the
+   circle for graphical output, since Smoldyn doesn’t actually draw
+   perfect circles. Internally, a circle or sphere is defined using the
+   mathematical definition of a circle or sphere, so it doesn’t have
+   flat sides. Each surface has a front and back face; for a spherical
+   panel, as used here, the front face is the outside by default. After
+   defining the panel, the code defines a surface and the panel is added
+   to it. Then, the surface actions are defined, meaning what happens to
+   molecules that diffuse into it. In this case, for both the front and
+   back faces of the surface, any molecule of the given list of species
+   (which happens to be all of them) is reflected back toward where it
+   came from. Finally, the surface drawing style is defined, here
+   showing that both the front and back faces should be black and have a
+   thickness of 1 pixel.
 
-45-51. Chemical reactions have names, substrates, products, and rate
-constants. Here, each of the substrates and products are listed with
-both species and states, although states are assumed to be solution if
-not given. Because the front face of a spherical panel is the outside,
-the fact that the substrates enter from the back side of the surface is
-specified by specifying that they have “bsoln” states, meaning in
-solution on the back side. The products are similar. For reversible
-reactions, there is always some probability that the two product
-molecules of one of the reaction directions will diffuse back together
-and bind back together again, which is called a geminate recombination.
-It’s not essential, but it’s good practice to tell Smoldyn how likely
-this recombination should be. Here, it’s set to a maximum probability of
-0.2, which generally works well.
+   42-43. Compartments are regions of space that are bounded by
+   surfaces, in this case “membrane”. Also, they have “interior-defining
+   points”, which define which side of the surface represents the inside
+   of the compartment.
 
-53-55. Add molecules to the simulation with the “addMolecules” function,
-where its used here both for adding molecules into the compartment and
-onto the surface.
+   45-51. Chemical reactions have names, substrates, products, and rate
+   constants. Here, each of the substrates and products are listed with
+   both species and states, although states are assumed to be solution
+   if not given. Because the front face of a spherical panel is the
+   outside, the fact that the substrates enter from the back side of the
+   surface is specified by specifying that they have “bsoln” states,
+   meaning in solution on the back side. The products are similar. For
+   reversible reactions, there is always some probability that the two
+   product molecules of one of the reaction directions will diffuse back
+   together and bind back together again, which is called a geminate
+   recombination. It’s not essential, but it’s good practice to tell
+   Smoldyn how likely this recombination should be. Here, it’s set to a
+   maximum probability of 0.2, which generally works well.
 
-57-60. Run-time commands are used for manipulating or observing the
-simulated system as it runs, effectively acting as the experimenter. In
-this case, an output file is declared, called “templateout.txt”. Then,
-right before the simulation runs, given by command type ‘B’, the command
-called “molcountheader” is run with parameter “templateout.txt”, which
-is the file name that it should write to. This prints out a header for
-the molcount command, which is just a list of species names. The other
-command is type ‘N’, which means that it runs every n time steps, which
-is this case is every 10 steps. It is the “molcount” command with
-parameter “templateout.txt”, which prints out the number of each
-molecule type to the same file.
+   53-55. Add molecules to the simulation with the “addMolecules”
+   function, where its used here both for adding molecules into the
+   compartment and onto the surface.
 
-62-64. Smoldyn run-time graphics show the simulation as it runs, always
-using the OpenGL library. Here, the “opengl_good” method is used, which
-produces nice output but without any lighting effects. The background
-color is white and the frame thickness is 1. Also, this statement says
-to show text on the graphics window listing the time and numbers of the
-different molecule types.
+   57-60. Run-time commands are used for manipulating or observing the
+   simulated system as it runs, effectively acting as the experimenter.
+   In this case, an output file is declared, called “templateout.txt”.
+   Then, right before the simulation runs, given by command type ‘B’,
+   the command called “molcountheader” is run with parameter
+   “templateout.txt”, which is the file name that it should write to.
+   This prints out a header for the molcount command, which is just a
+   list of species names. The other command is type ‘N’, which means
+   that it runs every n time steps, which is this case is every 10
+   steps. It is the “molcount” command with parameter “templateout.txt”,
+   which prints out the number of each molecule type to the same file.
 
-65. Finally, the simulation is run, here for 10 time units in steps of
-0.01 time units.
+   62-64. Smoldyn run-time graphics show the simulation as it runs,
+   always using the OpenGL library. Here, the “opengl_good” method is
+   used, which produces nice output but without any lighting effects.
+   The background color is white and the frame thickness is 1. Also,
+   this statement says to show text on the graphics window listing the
+   time and numbers of the different molecule types.
+
+   65. Finally, the simulation is run, here for 10 time units in steps
+   of 0.01 time units.
 
 Callback functions
 ~~~~~~~~~~~~~~~~~~
@@ -5931,541 +5942,566 @@ Statements
 Statements about the configuration file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``#`` :math:`text`
+.. container:: description
 
-Single-line comment. A ``#`` symbol indicates that the rest of the line
-is a comment.
+   ``#`` :math:`text`
 
-``/*`` :math:`text` ``*/``
+   Single-line comment. A ``#`` symbol indicates that the rest of the
+   line is a comment.
 
-Multi-line comment. All lines between ``/*`` and the following ``*/``
-are ignored. These must be the first “words” on a line. Additional text
-on these lines is ignored as well. In future versions, the syntax of
-these may be changed so as to be identical to C-style block comments.
+   ``/*`` :math:`text` ``*/``
 
-``read_file`` :math:`filename`
+   Multi-line comment. All lines between ``/*`` and the following ``*/``
+   are ignored. These must be the first “words” on a line. Additional
+   text on these lines is ignored as well. In future versions, the
+   syntax of these may be changed so as to be identical to C-style block
+   comments.
 
-Read some other configuration file, returning to the present one when
-that one has been read.
+   ``read_file`` :math:`filename`
 
-``end_file``
+   Read some other configuration file, returning to the present one when
+   that one has been read.
 
-End of configuration file. This line is optional (but good programming
-practice), as Smoldyn can also just read until the file ends.
+   ``end_file``
 
-``quit_at_end`` :math:`value`
+   End of configuration file. This line is optional (but good
+   programming practice), as Smoldyn can also just read until the file
+   ends.
 
-Use a :math:`value` of “yes” to tell the simulator to quit the program
-at the end of the simulation, during simulations that use graphics. This
-has no effect if simulations do not use graphics. Use “no” to turn this
-off, which is the default behavior. This same behavior can also be
-achieved by creating and setting the shell environment variable
-``SMOLDYN_NO_PROMPT`` to any value.
+   ``quit_at_end`` :math:`value`
 
-``define`` :math:`key\ substitution`
+   Use a :math:`value` of “yes” to tell the simulator to quit the
+   program at the end of the simulation, during simulations that use
+   graphics. This has no effect if simulations do not use graphics. Use
+   “no” to turn this off, which is the default behavior. This same
+   behavior can also be achieved by creating and setting the shell
+   environment variable ``SMOLDYN_NO_PROMPT`` to any value.
 
-Definition of macro replacement text. Throughout the remainder of this
-configuration file, but not files that are called by it, all incidents
-of the string :math:`key` are replaced with the string
-:math:`substitution` before further parsing is performed. It is
-permissible to not include any substitution text.
+   ``define`` :math:`key\ substitution`
 
-``define_global`` :math:`key\ substitution`
+   Definition of macro replacement text. Throughout the remainder of
+   this configuration file, but not files that are called by it, all
+   incidents of the string :math:`key` are replaced with the string
+   :math:`substitution` before further parsing is performed. It is
+   permissible to not include any substitution text.
 
-Definition of macro replacement text, which is identical to ``define``,
-except that this definition applies throughout both this file and all
-files that are called by it. Global definitions can also be entered on
-the command line using the ``–define`` option.
+   ``define_global`` :math:`key\ substitution`
 
-``undefine`` :math:`key`
+   Definition of macro replacement text, which is identical to
+   ``define``, except that this definition applies throughout both this
+   file and all files that are called by it. Global definitions can also
+   be entered on the command line using the ``–define`` option.
 
-Removes a macro substitution definition that was made previously,
-whether global or local. Global undefines apply to this file and all
-files that are called by it, but not to a file that called this one.
-Entering :math:`key` as “all” undefines all definitions.
+   ``undefine`` :math:`key`
 
-``ifdefine`` :math:`key`
+   Removes a macro substitution definition that was made previously,
+   whether global or local. Global undefines apply to this file and all
+   files that are called by it, but not to a file that called this one.
+   Entering :math:`key` as “all” undefines all definitions.
 
-The following lines of the configuration file are read only if
-:math:`key` is a term that was defined with ``define`` or
-``define_global`` (or was defined automatically, which includes
-``FILEROOT``). Reading, or not reading, continues to any ``else``
-statement. The end of the condition is given with the ``endif``
-statement.
+   ``ifdefine`` :math:`key`
 
-``ifundefine`` :math:`key`
+   The following lines of the configuration file are read only if
+   :math:`key` is a term that was defined with ``define`` or
+   ``define_global`` (or was defined automatically, which includes
+   ``FILEROOT``). Reading, or not reading, continues to any ``else``
+   statement. The end of the condition is given with the ``endif``
+   statement.
 
-This is identical to ``ifdefine``, except that reading continues only if
-:math:`key` has not been defined.
+   ``ifundefine`` :math:`key`
 
-``else``
+   This is identical to ``ifdefine``, except that reading continues only
+   if :math:`key` has not been defined.
 
-This is the else condition which is supposed to follow an ``ifdefine``
-or ``ifundefine`` statement.
+   ``else``
 
-``endif``
+   This is the else condition which is supposed to follow an
+   ``ifdefine`` or ``ifundefine`` statement.
 
-This ends a condition that is started by an ``ifdefine`` or
-``ifundefine`` statement.
+   ``endif``
 
-``display_define``
+   This ends a condition that is started by an ``ifdefine`` or
+   ``ifundefine`` statement.
 
-Causes all current definitions to be displayed to the standard output.
-This is only useful for debugging define issues in configuration files.
+   ``display_define``
+
+   Causes all current definitions to be displayed to the standard
+   output. This is only useful for debugging define issues in
+   configuration files.
 
 Statements about variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``variable`` :math:`var = value`
+.. container:: description
 
-Sets the value of variable :math:`var` to :math:`value`, which needs to
-evaluate to a numerical value. Note that spaces and the equals sign are
-required.
+   ``variable`` :math:`var = value`
+
+   Sets the value of variable :math:`var` to :math:`value`, which needs
+   to evaluate to a numerical value. Note that spaces and the equals
+   sign are required.
 
 Statements about space and time
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``dim`` :math:`dim`
+.. container:: description
 
-Dimensionality of the system, between 1 and 3.
+   ``dim`` :math:`dim`
 
-``boundaries`` :math:`dim\ pos_1\ pos_2`
-``boundaries`` :math:`dim\ pos_1\ pos_2\ type`
+   Dimensionality of the system, between 1 and 3.
 
-Creates lower and upper boundaries to define the simulation volume on
-dimension :math:`dim`. The :math:`dim` value should be “x”, “y”, or “z”
-(however, 0, 1, and 2 work as well). These boundaries are located at
-:math:`pos_1` and :math:`pos_2`. Using the first format, which is
-advised for systems that include surfaces, boundaries are created that
-are transparent to molecules, meaning that they do not contain or
-otherwise interact with molecules. Surfaces need to be defined to keep
-molecules in the system. The second format is preferable for systems
-that do not include any surfaces. In this case, the boundary type can be
-“r” for reflective, “t” for transparent, “a” for absorbing, or “p” for
-periodic. For most purposes, this statement replaces the ``low_wall``
-and ``high_wall`` statements.
+   ``boundaries`` :math:`dim\ pos_1\ pos_2`
+   ``boundaries`` :math:`dim\ pos_1\ pos_2\ type`
 
-``low_wall`` :math:`dim\ pos\ type`
+   Creates lower and upper boundaries to define the simulation volume on
+   dimension :math:`dim`. The :math:`dim` value should be “x”, “y”, or
+   “z” (however, 0, 1, and 2 work as well). These boundaries are located
+   at :math:`pos_1` and :math:`pos_2`. Using the first format, which is
+   advised for systems that include surfaces, boundaries are created
+   that are transparent to molecules, meaning that they do not contain
+   or otherwise interact with molecules. Surfaces need to be defined to
+   keep molecules in the system. The second format is preferable for
+   systems that do not include any surfaces. In this case, the boundary
+   type can be “r” for reflective, “t” for transparent, “a” for
+   absorbing, or “p” for periodic. For most purposes, this statement
+   replaces the ``low_wall`` and ``high_wall`` statements.
 
-This statement has been largely superseded by boundaries. This creates a
-lower boundary for the simulation volume. This wall is perpendicular to
-the dimension :math:`dim` (“x”, “y”, or “z”) such that all locations
-between :math:`pos` and the position of the corresponding upper boundary
-are considered to be within the simulation volume. The type of wall is
-given in :math:`type`, which should be one of four single letter codes:
-“r” means a reflecting wall, “p” means a periodic wall (also called
-wrap-around or toroidal), “a” means an absorbing wall, and “t” means a
-transparent wall. Transparent walls imply an unbounded system and may
-lead to slow simulations. If any surfaces are defined for the
-simulation, then walls still must be entered to define the system
-volume, but these walls are essentially non-functional (the sole
-exception is that reactions can occur across periodic walls). Additional
-surfaces need to be defined to serve as the system boundaries.
+   ``low_wall`` :math:`dim\ pos\ type`
 
-``high_wall`` :math:`dim\ pos\ type`
+   This statement has been largely superseded by boundaries. This
+   creates a lower boundary for the simulation volume. This wall is
+   perpendicular to the dimension :math:`dim` (“x”, “y”, or “z”) such
+   that all locations between :math:`pos` and the position of the
+   corresponding upper boundary are considered to be within the
+   simulation volume. The type of wall is given in :math:`type`, which
+   should be one of four single letter codes: “r” means a reflecting
+   wall, “p” means a periodic wall (also called wrap-around or
+   toroidal), “a” means an absorbing wall, and “t” means a transparent
+   wall. Transparent walls imply an unbounded system and may lead to
+   slow simulations. If any surfaces are defined for the simulation,
+   then walls still must be entered to define the system volume, but
+   these walls are essentially non-functional (the sole exception is
+   that reactions can occur across periodic walls). Additional surfaces
+   need to be defined to serve as the system boundaries.
 
-This statement has been largely superseded by boundaries. This is
-identical to the definition for ``low_wall``, although this creates the
-upper boundary for the simulation volume.
+   ``high_wall`` :math:`dim\ pos\ type`
 
-``time_start`` :math:`time`
+   This statement has been largely superseded by boundaries. This is
+   identical to the definition for ``low_wall``, although this creates
+   the upper boundary for the simulation volume.
 
-Starting point for simulated time.
+   ``time_start`` :math:`time`
 
-``time_stop`` :math:`time`
+   Starting point for simulated time.
 
-Stopping time of simulation, using simulated time. The simulation
-continues past the ``time_stop`` value by less than one time step.
+   ``time_stop`` :math:`time`
 
-``time_step`` :math:`time`
+   Stopping time of simulation, using simulated time. The simulation
+   continues past the ``time_stop`` value by less than one time step.
 
-Time step for the simulation. Longer values lead to a faster runtime,
-while shorter values lead to higher accuracy. Also, longer values lead
-to bimolecular reactions that behave more as though they are activation
-limited, rather than diffusion limited.
+   ``time_step`` :math:`time`
 
-``time_now`` :math:`time`
+   Time step for the simulation. Longer values lead to a faster runtime,
+   while shorter values lead to higher accuracy. Also, longer values
+   lead to bimolecular reactions that behave more as though they are
+   activation limited, rather than diffusion limited.
 
-Another starting time of simulation. Default value is equal to
-``time_start``. If this time is before ``time_start``, the simulation
-starts at ``time_start``; otherwise, it starts at ``time_now``.
+   ``time_now`` :math:`time`
+
+   Another starting time of simulation. Default value is equal to
+   ``time_start``. If this time is before ``time_start``, the simulation
+   starts at ``time_start``; otherwise, it starts at ``time_now``.
 
 .. _statements-about-molecules-1:
 
 Statements about molecules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``species`` :math:`name_1\ name_2\ ...\ name_n`
+.. container:: description
 
-Names of one of more molecular species present in the system. Standard
-naming conventions are followed, in that the name should start with a
-letter and spaces are not permitted.
+   ``species`` :math:`name_1\ name_2\ ...\ name_n`
 
-``species_group`` :math:`group\ species_1\ species_2\ ...`
+   Names of one of more molecular species present in the system.
+   Standard naming conventions are followed, in that the name should
+   start with a letter and spaces are not permitted.
 
-Defines a group of species called :math:`group` and adds
-:math:`species_1`, :math:`species_2`, and potentially other species to
-this group. Empty groups are allowed. Any number of species can be
-added. If the group already exists, the named species will be added to
-the existing group. These groups can be used in most statements and
-commands that have species inputs, where they enable operations on
-multiple species at once. However, they cannot be used in reactions.
+   ``species_group`` :math:`group\ species_1\ species_2\ ...`
 
-``difc`` :math:`species\ value`
-``difc`` :math:`species(state)\ value`
-``difc_rule`` :math:`species(state)\ value`
+   Defines a group of species called :math:`group` and adds
+   :math:`species_1`, :math:`species_2`, and potentially other species
+   to this group. Empty groups are allowed. Any number of species can be
+   added. If the group already exists, the named species will be added
+   to the existing group. These groups can be used in most statements
+   and commands that have species inputs, where they enable operations
+   on multiple species at once. However, they cannot be used in
+   reactions.
 
-Isotropic diffusion coefficient of molecule type :math:`species`.
-Default value is 0. The state, which is optional, refers to the
-surface-bound state of the molecule: solution, front, back, up, or down;
-if omitted, only the solution state is set with this statement.
-:math:`name` may be “all” and/or :math:`state` may be “all” to set
-diffusion coefficients for multiple species at once. If the rule form is
-used (generally with wildcard characters), then the statement is not
-applied immediately but is stored for use during rule expansion; during
-rule expansion, it is applied to all species that match the given
-species pattern.
+   ``difc`` :math:`species\ value`
+   ``difc`` :math:`species(state)\ value`
+   ``difc_rule`` :math:`species(state)\ value`
 
-``difm`` :math:`species\ float_0\ float_1\ ...\ float_{dim*dim-1}`
-``difm``
-:math:`species(state)\ float_0\ float_1\ ...\ float_{dim*dim-1}`
-``difm_rule``
-:math:`species(state)\ float_0\ float_1\ ...\ float_{dim*dim-1}`
+   Isotropic diffusion coefficient of molecule type :math:`species`.
+   Default value is 0. The state, which is optional, refers to the
+   surface-bound state of the molecule: solution, front, back, up, or
+   down; if omitted, only the solution state is set with this statement.
+   :math:`name` may be “all” and/or :math:`state` may be “all” to set
+   diffusion coefficients for multiple species at once. If the rule form
+   is used (generally with wildcard characters), then the statement is
+   not applied immediately but is stored for use during rule expansion;
+   during rule expansion, it is applied to all species that match the
+   given species pattern.
 
-Square root of diffusion matrix of :math:`species` and maybe state
-:math:`state` (the dot product of this matrix and itself is the
-anisotropic diffusion matrix). The matrix has :math:`dim^2` terms
-(:math:`dim` is the system dimensionality), listed row by row of the
-matrix; the matrix is supposed to be symmetric. If this line is not
-entered, isotropic diffusion is assumed, which leads to a faster
-runtime. While a matrix is used for diffusion if one is given, the value
-stored with ``difc`` is used for reaction rate calculations. If ``difc``
-is not entered, the trace of the square of this matrix, divided by the
-system dimensionality, is used as a proxy for the isotropic diffusion
-coefficient to allow reaction rates to be estimated. This line is most
-useful for restricting diffusion to a plane or a line, in which case the
-square root of the diffusion coefficient is given for each diagonal
-element of the matrix where there is diffusion and 0s are place on
-diagonal elements for axes where diffusion is not possible, as well as
-on off-diagonal elements. :math:`species` and or :math:`state` may be
-“all” to set diffusion matrices for multiple species at once. If the
-rule form is used (generally with wildcard characters), then the
-statement is not applied immediately but is stored for use during rule
-expansion; during rule expansion, it is applied to all species that
-match the given species pattern.
+   ``difm`` :math:`species\ float_0\ float_1\ ...\ float_{dim*dim-1}`
+   ``difm``
+   :math:`species(state)\ float_0\ float_1\ ...\ float_{dim*dim-1}`
+   ``difm_rule``
+   :math:`species(state)\ float_0\ float_1\ ...\ float_{dim*dim-1}`
 
-``drift`` :math:`species\ float_0\ float_1\ ...\ float_{dim-1}`
-``drift`` :math:`species(state)\ float_0\ float_1\ ...\ float_{dim-1}`
-``drift_rule``
-:math:`species(state)\ float_0\ float_1\ ...\ float_{dim-1}`
+   Square root of diffusion matrix of :math:`species` and maybe state
+   :math:`state` (the dot product of this matrix and itself is the
+   anisotropic diffusion matrix). The matrix has :math:`dim^2` terms
+   (:math:`dim` is the system dimensionality), listed row by row of the
+   matrix; the matrix is supposed to be symmetric. If this line is not
+   entered, isotropic diffusion is assumed, which leads to a faster
+   runtime. While a matrix is used for diffusion if one is given, the
+   value stored with ``difc`` is used for reaction rate calculations. If
+   ``difc`` is not entered, the trace of the square of this matrix,
+   divided by the system dimensionality, is used as a proxy for the
+   isotropic diffusion coefficient to allow reaction rates to be
+   estimated. This line is most useful for restricting diffusion to a
+   plane or a line, in which case the square root of the diffusion
+   coefficient is given for each diagonal element of the matrix where
+   there is diffusion and 0s are place on diagonal elements for axes
+   where diffusion is not possible, as well as on off-diagonal elements.
+   :math:`species` and or :math:`state` may be “all” to set diffusion
+   matrices for multiple species at once. If the rule form is used
+   (generally with wildcard characters), then the statement is not
+   applied immediately but is stored for use during rule expansion;
+   during rule expansion, it is applied to all species that match the
+   given species pattern.
 
-Drift velocity vector for molecules of type :math:`species` and maybe
-state :math:`state`. The vector has :math:`dim` terms (:math:`dim` is
-the system dimensionality). If this line is not entered, there is no net
-drift. :math:`species` and/or :math:`state` may be “all” to set drift
-vectors for multiple species at once. If the rule form is used
-(generally with wildcard characters), then the statement is not applied
-immediately but is stored for use during rule expansion; during rule
-expansion, it is applied to all species that match the given species
-pattern.
+   ``drift`` :math:`species\ float_0\ float_1\ ...\ float_{dim-1}`
+   ``drift``
+   :math:`species(state)\ float_0\ float_1\ ...\ float_{dim-1}`
+   ``drift_rule``
+   :math:`species(state)\ float_0\ float_1\ ...\ float_{dim-1}`
 
-``surface_drift``
-:math:`species(state)\ surface\ panel-shape\ float_0\ ...\ float_{dim-2}`
-``surface_drift_rule``
-:math:`species(state)\ surface\ panel-shape\ float_0\ ...\ float_{dim-2}`
+   Drift velocity vector for molecules of type :math:`species` and maybe
+   state :math:`state`. The vector has :math:`dim` terms (:math:`dim` is
+   the system dimensionality). If this line is not entered, there is no
+   net drift. :math:`species` and/or :math:`state` may be “all” to set
+   drift vectors for multiple species at once. If the rule form is used
+   (generally with wildcard characters), then the statement is not
+   applied immediately but is stored for use during rule expansion;
+   during rule expansion, it is applied to all species that match the
+   given species pattern.
 
-Drift velocity vector for molecules of type :math:`species` and state
-:math:`state`, relative to the local coordinates of the panel to which
-these molecules are bound. The vector has :math:`dim-1` terms
-(:math:`dim` is the system dimensionality), which are for the natural
-coordinate system of the local panel. :math:`species` and/or
-:math:`state` may be “all” to set drift vectors for multiple species and
-surface-bound states at once. If the rule form is used (generally with
-wildcard characters), then the statement is not applied immediately but
-is stored for use during rule expansion; during rule expansion, it is
-applied to all species that match the given species pattern.
+   ``surface_drift``
+   :math:`species(state)\ surface\ panel-shape\ float_0\ ...\ float_{dim-2}`
+   ``surface_drift_rule``
+   :math:`species(state)\ surface\ panel-shape\ float_0\ ...\ float_{dim-2}`
 
-``mol`` :math:`nmol\ species\ pos_0\ pos_1\ ...\ pos_{dim-1}`
+   Drift velocity vector for molecules of type :math:`species` and state
+   :math:`state`, relative to the local coordinates of the panel to
+   which these molecules are bound. The vector has :math:`dim-1` terms
+   (:math:`dim` is the system dimensionality), which are for the natural
+   coordinate system of the local panel. :math:`species` and/or
+   :math:`state` may be “all” to set drift vectors for multiple species
+   and surface-bound states at once. If the rule form is used (generally
+   with wildcard characters), then the statement is not applied
+   immediately but is stored for use during rule expansion; during rule
+   expansion, it is applied to all species that match the given species
+   pattern.
 
-Simulation starts with :math:`nmol` type :math:`species` molecules at
-location :math:`pos`. Each of the :math:`dim` elements of the position
-may be a number to give the actual position of the molecule or
-molecules; or the letter “u” to indicate that the position for each
-molecule should be a random value between the bounding walls, chosen
-from a uniform density; or a position range which is given as two
-numbers separated with a hyphen.
+   ``mol`` :math:`nmol\ species\ pos_0\ pos_1\ ...\ pos_{dim-1}`
 
-``surface_mol``
-:math:`nmol\ species(state)\ surface\ pshape\ panel\ pos_0\ pos_1\ ...\ pos_{dim-1}`
-``surface_mol`` :math:`nmol\ species(state)\ surface\ pshape\ panel`
+   Simulation starts with :math:`nmol` type :math:`species` molecules at
+   location :math:`pos`. Each of the :math:`dim` elements of the
+   position may be a number to give the actual position of the molecule
+   or molecules; or the letter “u” to indicate that the position for
+   each molecule should be a random value between the bounding walls,
+   chosen from a uniform density; or a position range which is given as
+   two numbers separated with a hyphen.
 
-Creates surface-bound molecules. :math:`nmol` molecules of type
-:math:`species` are created on the surface named :math:`surface`, on the
-panel with shape :math:`pshape` and name :math:`panel`. They are all put
-in state :math:`state`, which can be “front”, “back”, “up”, or “down”.
-If additional text is entered, it needs to be the Cartesian coordinates
-of the molecules, all of which are put at the same spot and on the same
-panel. If the coordinates are not given, the molecules are placed
-randomly on the surface with a constant density, on average. For
-randomly placed molecules, it is permissible to enter “all” for the
-panel, the :math:`pshape`, and/or the surface.
+   ``surface_mol``
+   :math:`nmol\ species(state)\ surface\ pshape\ panel\ pos_0\ pos_1\ ...\ pos_{dim-1}`
+   ``surface_mol`` :math:`nmol\ species(state)\ surface\ pshape\ panel`
 
-``compartment_mol`` :math:`nmol\ species\ compartment`
+   Creates surface-bound molecules. :math:`nmol` molecules of type
+   :math:`species` are created on the surface named :math:`surface`, on
+   the panel with shape :math:`pshape` and name :math:`panel`. They are
+   all put in state :math:`state`, which can be “front”, “back”, “up”,
+   or “down”. If additional text is entered, it needs to be the
+   Cartesian coordinates of the molecules, all of which are put at the
+   same spot and on the same panel. If the coordinates are not given,
+   the molecules are placed randomly on the surface with a constant
+   density, on average. For randomly placed molecules, it is permissible
+   to enter “all” for the panel, the :math:`pshape`, and/or the surface.
 
-Creates :math:`nmol` solution-phase molecules of type :math:`species` in
-the compartment named :math:`compartment`.
+   ``compartment_mol`` :math:`nmol\ species\ compartment`
 
-``molecule_lists`` :math:`listname_1\ listname_2\ ...`
+   Creates :math:`nmol` solution-phase molecules of type :math:`species`
+   in the compartment named :math:`compartment`.
 
-Creates and names a set of molecule lists, for molecules that are in the
-system. This statement may be called multiple times.
+   ``molecule_lists`` :math:`listname_1\ listname_2\ ...`
 
-``mol_list`` :math:`species\ listname`
-``mol_list`` :math:`species(state)\ listname`
-``mol_list_rule`` :math:`species(state)\ listname`
+   Creates and names a set of molecule lists, for molecules that are in
+   the system. This statement may be called multiple times.
 
-Assigns all molecules that are in the system and of type :math:`species`
-and state :math:`state` (if :math:`state` is not specified, then only
-the solution state is assigned) to the list called :math:`listname`. If
-the rule form is used (generally with wildcard characters), then the
-statement is not applied immediately but is stored for use during rule
-expansion; during rule expansion, it is applied to all species that
-match the given species pattern.
+   ``mol_list`` :math:`species\ listname`
+   ``mol_list`` :math:`species(state)\ listname`
+   ``mol_list_rule`` :math:`species(state)\ listname`
 
-``max_mol`` :math:`int`
+   Assigns all molecules that are in the system and of type
+   :math:`species` and state :math:`state` (if :math:`state` is not
+   specified, then only the solution state is assigned) to the list
+   called :math:`listname`. If the rule form is used (generally with
+   wildcard characters), then the statement is not applied immediately
+   but is stored for use during rule expansion; during rule expansion,
+   it is applied to all species that match the given species pattern.
 
-Optional statement (it was required up to version 2.22). This tells
-Smoldyn to terminate if more than this many molecules end up being used
-for the simulation.
+   ``max_mol`` :math:`int`
+
+   Optional statement (it was required up to version 2.22). This tells
+   Smoldyn to terminate if more than this many molecules end up being
+   used for the simulation.
 
 Statements about graphics
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``graphics`` :math:`str`
+.. container:: description
 
-Type of graphics to use during the simulation. The options are “none”
-for no graphics, “opengl” for basic and fast OpenGL graphics,
-“opengl_good” for fair quality OpenGL graphics, and “opengl_better” for
-pretty good graphics. Runtime gets slower with better quality. If this
-line is not entered, no graphics are shown.
+   ``graphics`` :math:`str`
 
-``graphic_iter`` :math:`int`
+   Type of graphics to use during the simulation. The options are “none”
+   for no graphics, “opengl” for basic and fast OpenGL graphics,
+   “opengl_good” for fair quality OpenGL graphics, and “opengl_better”
+   for pretty good graphics. Runtime gets slower with better quality. If
+   this line is not entered, no graphics are shown.
 
-Number of time steps that should be run between each update of the
-graphics. Default value is 1.
+   ``graphic_iter`` :math:`int`
 
-``graphic_delay`` :math:`float`
+   Number of time steps that should be run between each update of the
+   graphics. Default value is 1.
 
-Minimum amount of time in milliseconds that Smoldyn should pause between
-successive graphics updates. Default is 0.
+   ``graphic_delay`` :math:`float`
 
-``quit_at_end`` :math:`yes/no`
+   Minimum amount of time in milliseconds that Smoldyn should pause
+   between successive graphics updates. Default is 0.
 
-Whether Smoldyn should quit running as soon as the simulation is
-complete or not. Enter ``yes`` (or 1) if it should and ``no`` (or 0) if
-not. The same behavior can be achieved by creating and setting the shell
-environment variable ``SMOLDYN_NO_PROMPT``.
+   ``quit_at_end`` :math:`yes/no`
 
-``frame_thickness`` :math:`int`
+   Whether Smoldyn should quit running as soon as the simulation is
+   complete or not. Enter ``yes`` (or 1) if it should and ``no`` (or 0)
+   if not. The same behavior can be achieved by creating and setting the
+   shell environment variable ``SMOLDYN_NO_PROMPT``.
 
-Thickness of the frame that is drawn around the simulation volume, in
-points. Default value is 2.
+   ``frame_thickness`` :math:`int`
 
-``frame_color`` :math:`color\ [alpha]` ``frame_color``
-:math:`red\ green\ blue\ [alpha]`
+   Thickness of the frame that is drawn around the simulation volume, in
+   points. Default value is 2.
 
-Color of the frame. All values should be between 0 and 1; use all 0s for
-black and all 1s for white (default). The :math:`alpha` value is
-optional and also useless.
+   ``frame_color`` :math:`color\ [alpha]` ``frame_color``
+   :math:`red\ green\ blue\ [alpha]`
 
-``grid_thickness`` :math:`int`
+   Color of the frame. All values should be between 0 and 1; use all 0s
+   for black and all 1s for white (default). The :math:`alpha` value is
+   optional and also useless.
 
-Thickness of the grid lines that can be drawn to show the virtual boxes.
-Default value is 0, so that the grid is not drawn.
+   ``grid_thickness`` :math:`int`
 
-``grid_color`` :math:`color\ [alpha]`
-``grid_color`` :math:`red\ green\ blue\ [alpha]`
+   Thickness of the grid lines that can be drawn to show the virtual
+   boxes. Default value is 0, so that the grid is not drawn.
 
-Color of the grid. All values should be between 0 and 1; use all 0s for
-black and all 1s for white (default). The :math:`alpha` value is
-optional and also useless.
+   ``grid_color`` :math:`color\ [alpha]`
+   ``grid_color`` :math:`red\ green\ blue\ [alpha]`
 
-``background_color`` :math:`color\ [alpha]`
-``background_color`` :math:`red\ green\ blue\ [alpha]`
+   Color of the grid. All values should be between 0 and 1; use all 0s
+   for black and all 1s for white (default). The :math:`alpha` value is
+   optional and also useless.
 
-Color of the background. All values should be between 0 and 1; use all
-0s for black and all 1s for white (default). The :math:`alpha` value is
-optional and may not work anyhow.
+   ``background_color`` :math:`color\ [alpha]`
+   ``background_color`` :math:`red\ green\ blue\ [alpha]`
 
-``display_size`` :math:`species\ float`
-``display_size`` :math:`species(state)\ float`
-``display_size_rule`` :math:`species(state)\ float`
+   Color of the background. All values should be between 0 and 1; use
+   all 0s for black and all 1s for white (default). The :math:`alpha`
+   value is optional and may not work anyhow.
 
-Size of molecule of type :math:`species` for display to the graphical
-output. If the surface :math:`state` is omitted, as in the first form
-shown, this display size applies to all molecule states; otherwise it
-applies to only the state listed. These states may be “solution”,
-“front”, “back”, “up”, “down”, or “all”. The default value is 3,
-indicating that each molecule is displayed with a small square; 0
-indicates that a molecule should not be displayed and larger numbers
-yield larger squares. If the rule form is used (generally with wildcard
-characters), then the statement is not applied immediately but is stored
-for use during rule expansion; during rule expansion, it is applied to
-all species that match the given species pattern.
+   ``display_size`` :math:`species\ float`
+   ``display_size`` :math:`species(state)\ float`
+   ``display_size_rule`` :math:`species(state)\ float`
 
-``color`` :math:`species(state)\ color\ [alpha]`
-``color`` :math:`species(state)\ red\ green\ blue\ [alpha]`
-``color_rule`` :math:`species(state)\ red\ green\ blue\ [alpha]`
+   Size of molecule of type :math:`species` for display to the graphical
+   output. If the surface :math:`state` is omitted, as in the first form
+   shown, this display size applies to all molecule states; otherwise it
+   applies to only the state listed. These states may be “solution”,
+   “front”, “back”, “up”, “down”, or “all”. The default value is 3,
+   indicating that each molecule is displayed with a small square; 0
+   indicates that a molecule should not be displayed and larger numbers
+   yield larger squares. If the rule form is used (generally with
+   wildcard characters), then the statement is not applied immediately
+   but is stored for use during rule expansion; during rule expansion,
+   it is applied to all species that match the given species pattern.
 
-Color for displaying molecules of type :math:`species`. If the surface
-:math:`state` is omitted, this color applies to just the solution state.
-States may be “solution”, “front”, “back”, “up”, “down”, or “all”.
-Colors can be words, or can be given with red, green, and blue values,
-each of which should be between 0 and 1. Default values are 0 for each
-parameter, which is black. Entering :math:`alpha` is optional and
-useless. If the rule form is used (generally with wildcard characters),
-then the statement is not applied immediately but is stored for use
-during rule expansion; during rule expansion, it is applied to all
-species that match the given species pattern.
+   ``color`` :math:`species(state)\ color\ [alpha]`
+   ``color`` :math:`species(state)\ red\ green\ blue\ [alpha]`
+   ``color_rule`` :math:`species(state)\ red\ green\ blue\ [alpha]`
 
-``tiff_iter`` :math:`int`
+   Color for displaying molecules of type :math:`species`. If the
+   surface :math:`state` is omitted, this color applies to just the
+   solution state. States may be “solution”, “front”, “back”, “up”,
+   “down”, or “all”. Colors can be words, or can be given with red,
+   green, and blue values, each of which should be between 0 and 1.
+   Default values are 0 for each parameter, which is black. Entering
+   :math:`alpha` is optional and useless. If the rule form is used
+   (generally with wildcard characters), then the statement is not
+   applied immediately but is stored for use during rule expansion;
+   during rule expansion, it is applied to all species that match the
+   given species pattern.
 
-Number of time steps that should be run between each automatic saving of
-a TIFF file. Default value is 0, meaning that TIFFs should not be saved
-automatically.
+   ``tiff_iter`` :math:`int`
 
-``tiff_name`` :math:`name`
+   Number of time steps that should be run between each automatic saving
+   of a TIFF file. Default value is 0, meaning that TIFFs should not be
+   saved automatically.
 
-Root filename for TIFF files, which may include path information if
-desired. Default is ``OpenGL``, which leads to the first TIFF being
-saved as “OpenGL001.tif”.
+   ``tiff_name`` :math:`name`
 
-``tiff_min`` :math:`int`
+   Root filename for TIFF files, which may include path information if
+   desired. Default is ``OpenGL``, which leads to the first TIFF being
+   saved as “OpenGL001.tif”.
 
-Initial suffix number of TIFF files that are saved. Default value is 1.
+   ``tiff_min`` :math:`int`
 
-``tiff_max`` :math:`int`
+   Initial suffix number of TIFF files that are saved. Default value is
+   1.
 
-Largest possible suffix number of TIFF files that are saved. Once this
-value has been reached, additional TIFFs cannot be saved. Default value
-is 999.
+   ``tiff_max`` :math:`int`
 
-``light`` :math:`number\ parameter\ color\ [value4]`
-``light``
-:math:`number\ parameter\ value_1\ value_2\ value_3\ [value_4]`
+   Largest possible suffix number of TIFF files that are saved. Once
+   this value has been reached, additional TIFFs cannot be saved.
+   Default value is 999.
 
-Set the parameters for a light source, for use with “opengl_better”
-quality graphics. The light :math:`number` should be between 0 and 7.
-The :math:`parameter` may be one of four strings: “ambient”, “diffuse”,
-“specular”, or “position”. The first three parameters are for the
-light’s colors, which are then specified with either a word or in the
-:math:`value`\ s as red, green, blue, and optionally alpha. The last
-parameter type is for the light’s 3-dimensional position, which is
-specified as :math:`x`, :math:`y`, and :math:`z` in the
-:math:`value`\ s. Lights specified this way are automatically enabled
-(turned on).
+   ``light`` :math:`number\ parameter\ color\ [value4]`
+   ``light``
+   :math:`number\ parameter\ value_1\ value_2\ value_3\ [value_4]`
 
-``text_color`` :math:`color`
-``text_color`` :math:`red\ green\ blue`
+   Set the parameters for a light source, for use with “opengl_better”
+   quality graphics. The light :math:`number` should be between 0 and 7.
+   The :math:`parameter` may be one of four strings: “ambient”,
+   “diffuse”, “specular”, or “position”. The first three parameters are
+   for the light’s colors, which are then specified with either a word
+   or in the :math:`value`\ s as red, green, blue, and optionally alpha.
+   The last parameter type is for the light’s 3-dimensional position,
+   which is specified as :math:`x`, :math:`y`, and :math:`z` in the
+   :math:`value`\ s. Lights specified this way are automatically enabled
+   (turned on).
 
-Color for text displayed on the graphics window.
+   ``text_color`` :math:`color`
+   ``text_color`` :math:`red\ green\ blue`
 
-``text_display`` :math:`item_1\ item_2\ ...`
+   Color for text displayed on the graphics window.
 
-Turns on text display of the listed items, which are listed as strings.
-Possible items are “time”, which is the simulation time, and species
-names and states (entered as :math:`species(state)`), for which the
-number of molecules of that species and state are displayed. Wildcards
-are permitted.
+   ``text_display`` :math:`item_1\ item_2\ ...`
+
+   Turns on text display of the listed items, which are listed as
+   strings. Possible items are “time”, which is the simulation time, and
+   species names and states (entered as :math:`species(state)`), for
+   which the number of molecules of that species and state are
+   displayed. Wildcards are permitted.
 
 Statements about run-time commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``output_root`` :math:`str`
+.. container:: description
 
-Root of path where text output should be saved. Spaces are permitted.
-Output files are saved in the same folder as the configuration file,
-modified by this string. See the description for ``output_files``. Make
-sure that the destination folder has been created and that the string is
-terminated with a colon (and started with a colon if needed).
+   ``output_root`` :math:`str`
 
-``output_files`` :math:`str_1\ str_2\ ...\ str_n`
+   Root of path where text output should be saved. Spaces are permitted.
+   Output files are saved in the same folder as the configuration file,
+   modified by this string. See the description for ``output_files``.
+   Make sure that the destination folder has been created and that the
+   string is terminated with a colon (and started with a colon if
+   needed).
 
-Declaration of filenames that can be used for output of simulation
-results. Spaces are not permitted in these names. Any previous files
-with these names will be overwritten. The path for these filenames
-starts from the configuration file and may be modified by a root given
-with ``output_root``. For example, if the configuration file was called
-with “folder/config.txt” and ``output_root`` was not used, then the
-output file “out.txt” will appear in the directory “folder” too. If the
-configuration file was called with “folder/config.txt” and the output
-root was given as “results/”, then the output file goes to the results
-sub-directory of the directory “folder”. The filename “stdout” results
-in output being sent to the standard output (this does not need to be
-declared with the ``output_files`` statement).
+   ``output_files`` :math:`str_1\ str_2\ ...\ str_n`
 
-``output_data`` :math:`str_1\ str_2\ ...\ str_n`
+   Declaration of filenames that can be used for output of simulation
+   results. Spaces are not permitted in these names. Any previous files
+   with these names will be overwritten. The path for these filenames
+   starts from the configuration file and may be modified by a root
+   given with ``output_root``. For example, if the configuration file
+   was called with “folder/config.txt” and ``output_root`` was not used,
+   then the output file “out.txt” will appear in the directory “folder”
+   too. If the configuration file was called with “folder/config.txt”
+   and the output root was given as “results/”, then the output file
+   goes to the results sub-directory of the directory “folder”. The
+   filename “stdout” results in output being sent to the standard output
+   (this does not need to be declared with the ``output_files``
+   statement).
 
-Declaration of data names that can be used for output of simulation
-results. These are like output files but are stored in memory rather
-than as separate files, and they go away when Smoldyn ends. These data
-files are primarily designed for use with Libsmoldyn, as opposed to the
-stand-alone software.
+   ``output_data`` :math:`str_1\ str_2\ ...\ str_n`
 
-``output_precision`` :math:`int`
+   Declaration of data names that can be used for output of simulation
+   results. These are like output files but are stored in memory rather
+   than as separate files, and they go away when Smoldyn ends. These
+   data files are primarily designed for use with Libsmoldyn, as opposed
+   to the stand-alone software.
 
-The precision that will be used for numerical output from commands,
-meaning the number of digits displayed after a decimal point. Enter a
-negative number for the default and a positive number for fixed
-precision. For example, if you enter 5, then the output format string
-will be “%.5g”.
+   ``output_precision`` :math:`int`
 
-``append_files`` :math:`str_1\ str_2\ ...\ str_n`
+   The precision that will be used for numerical output from commands,
+   meaning the number of digits displayed after a decimal point. Enter a
+   negative number for the default and a positive number for fixed
+   precision. For example, if you enter 5, then the output format string
+   will be “%.5g”.
 
-Identical to ``output_file``, except that the prior contents of these
-files are not overwritten, but are appended to.
+   ``append_files`` :math:`str_1\ str_2\ ...\ str_n`
 
-``output_file_number`` :math:`int`
+   Identical to ``output_file``, except that the prior contents of these
+   files are not overwritten, but are appended to.
 
-Starting number of output file name. The default is 0, meaning that no
-number is appended to a name (e.g. the file name “out.txt” is saved as
-“out.txt”). A value larger than 0 leads to an appended file name (if 1
-is used, then “out.txt” is actually saved as “out_001.txt”). Note that
-the command ``incrementfile`` increments the file number before it runs
-the rest of the command.
+   ``output_file_number`` :math:`int`
 
-``output_format`` :math:`str`
+   Starting number of output file name. The default is 0, meaning that
+   no number is appended to a name (e.g. the file name “out.txt” is
+   saved as “out.txt”). A value larger than 0 leads to an appended file
+   name (if 1 is used, then “out.txt” is actually saved as
+   “out_001.txt”). Note that the command ``incrementfile`` increments
+   the file number before it runs the rest of the command.
 
-Set the output format for all observation commands. Options are the
-string “ssv”, which is the default, or the string “csv”.
+   ``output_format`` :math:`str`
 
-``cmd b,a,e`` :math:`string`
-``cmd @`` :math:`time\ string`
-``cmd n`` :math:`int\ string`
-``cmd i`` :math:`on\ off\ dt\ string`
-``cmd j`` :math:`on_{it}\ off_{it}\ dt_{it}\ string`
-``cmd x`` :math:`on\ off\ dt\ xt\ string`
+   Set the output format for all observation commands. Options are the
+   string “ssv”, which is the default, or the string “csv”.
 
-Declaration of a command to be run by the run-time interpreter, where
-the final portion labeled :math:`string` is the actual command. The
-character following ``cmd`` is the command type, which may be “b” for
-before the simulation, “a” for after the simulation, “e” for every time
-step during the simulation, “@” for a single command execution at time
-:math:`time`, “n” for every :math:`n`\ ’th iteration of the simulation,
-“i” for a fixed time interval, “x” for a fixed time multiplier, or “j”
-for every :math:`dt_{it}` step with a set starting iteration and
-stopping iteration. For type “i”, the command is executed over the
-period from on to off with intervals of at least :math:`dt` (the actual
-intervals will only end at the times of simulation time steps). For type
-“x”, the command is executed at :math:`on`, then :math:`on+dt`, then
-:math:`on+dt*xt`, then :math:`on+dt*xt^2`, and so forth. See section 2.4
-for the commands that are available.
+   ``cmd b,a,e`` :math:`string`
+   ``cmd @`` :math:`time\ string`
+   ``cmd n`` :math:`int\ string`
+   ``cmd i`` :math:`on\ off\ dt\ string`
+   ``cmd j`` :math:`on_{it}\ off_{it}\ dt_{it}\ string`
+   ``cmd x`` :math:`on\ off\ dt\ xt\ string`
 
-``max_cmd`` :math:`int` (obsolete statement)
+   Declaration of a command to be run by the run-time interpreter, where
+   the final portion labeled :math:`string` is the actual command. The
+   character following ``cmd`` is the command type, which may be “b” for
+   before the simulation, “a” for after the simulation, “e” for every
+   time step during the simulation, “@” for a single command execution
+   at time :math:`time`, “n” for every :math:`n`\ ’th iteration of the
+   simulation, “i” for a fixed time interval, “x” for a fixed time
+   multiplier, or “j” for every :math:`dt_{it}` step with a set starting
+   iteration and stopping iteration. For type “i”, the command is
+   executed over the period from on to off with intervals of at least
+   :math:`dt` (the actual intervals will only end at the times of
+   simulation time steps). For type “x”, the command is executed at
+   :math:`on`, then :math:`on+dt`, then :math:`on+dt*xt`, then
+   :math:`on+dt*xt^2`, and so forth. See section 2.4 for the commands
+   that are available.
 
-Maximum length of command queue. Default value is 10. As of version
-1.55, this statement is no longer needed in configuration files, because
-the command queue is now expanded as needed.
+   ``max_cmd`` :math:`int` (obsolete statement)
+
+   Maximum length of command queue. Default value is 10. As of version
+   1.55, this statement is no longer needed in configuration files,
+   because the command queue is now expanded as needed.
 
 .. _statements-about-surfaces-1:
 
@@ -6478,303 +6514,317 @@ end with ``end_surface``. These statements can also be entered directly,
 meaning not in a surface block, by preceding the statement with surface
 and then the surface name.
 
-``max_surface`` :math:`int` (obsolete statement)
+.. container:: description
 
-As of version 2.19, this statement is optional. If used, it specifies
-the maximum number of surfaces that will be defined. Each surface may
-have many panels, including disjoint panels.
+   ``max_surface`` :math:`int` (obsolete statement)
 
-``start_surface`` :math:`[name]`
+   As of version 2.19, this statement is optional. If used, it specifies
+   the maximum number of surfaces that will be defined. Each surface may
+   have many panels, including disjoint panels.
 
-Start of surface definition block. The surface name may be given with
-:math:`name`, or it may be given afterward with the ``name`` statement.
-If the name has not been used yet for a surface, then a new surface is
-started. Between this instruction and ``end_surface``, all lines need to
-pertain to surfaces. Parameters of one surface can be listed in multiple
-blocks, or parameters for many surfaces can be listed in one block.
+   ``start_surface`` :math:`[name]`
 
-``new_surface`` :math:`name`
+   Start of surface definition block. The surface name may be given with
+   :math:`name`, or it may be given afterward with the ``name``
+   statement. If the name has not been used yet for a surface, then a
+   new surface is started. Between this instruction and ``end_surface``,
+   all lines need to pertain to surfaces. Parameters of one surface can
+   be listed in multiple blocks, or parameters for many surfaces can be
+   listed in one block.
 
-Defines a new surface called :math:`name`, but does not start a surface
-block. This statement is largely redundant with ``start_surface``.
+   ``new_surface`` :math:`name`
 
-``* name`` :math:`name`
+   Defines a new surface called :math:`name`, but does not start a
+   surface block. This statement is largely redundant with
+   ``start_surface``.
 
-Name of the surface for editing. This statement is not required because
-the surface name can also be given with ``start_surface``. This
-statement gives the name of the current surface for editing, and creates
-a new surface if needed.
+   ``* name`` :math:`name`
 
-``* action`` :math:`species(state)\ face\ action\ [new\_spec]`
-``* action_rule`` :math:`species(state)\ face\ action\ [new\_spec]`
+   Name of the surface for editing. This statement is not required
+   because the surface name can also be given with ``start_surface``.
+   This statement gives the name of the current surface for editing, and
+   creates a new surface if needed.
 
-The behavior of molecules named :math:`species` (and in state
-:math:`state`, which is assumed to be solution if it’s not entered) when
-they collide with the face :math:`face` of this surface. :math:`face`
-can be “front”, “back”, or “both”. If :math:`species` is “all”, then
-this action applies to all molecules. The action can be “reflect”,
-“absorb”, “transmit”, “jump”, “port”, or “periodic.” If
-:math:`new\_spec` is entered, then the molecule changes to this new
-species upon surface collision. In addition, it’s permissible to enter
-the action as “multiple,” in which case the rates need to be set with
-``rate``; alternatively, just setting the rates will automatically set
-the action to “multiple.” The default is transmission for all molecules.
-If the rule form is used (generally with wildcard characters), then the
-statement is not applied immediately but is stored for use during rule
-expansion; during rule expansion, it is applied to all species that
-match the given species pattern.
+   ``* action`` :math:`species(state)\ face\ action\ [new\_spec]`
+   ``* action_rule`` :math:`species(state)\ face\ action\ [new\_spec]`
 
-``* rate species(state)`` :math:`state_1\ state_2\ value\ [new\_spec]`
-``* rate_rule``
-:math:`species(state)\ state_1\ state_2\ value\ [new\_spec]`
+   The behavior of molecules named :math:`species` (and in state
+   :math:`state`, which is assumed to be solution if it’s not entered)
+   when they collide with the face :math:`face` of this surface.
+   :math:`face` can be “front”, “back”, or “both”. If :math:`species` is
+   “all”, then this action applies to all molecules. The action can be
+   “reflect”, “absorb”, “transmit”, “jump”, “port”, or “periodic.” If
+   :math:`new\_spec` is entered, then the molecule changes to this new
+   species upon surface collision. In addition, it’s permissible to
+   enter the action as “multiple,” in which case the rates need to be
+   set with ``rate``; alternatively, just setting the rates will
+   automatically set the action to “multiple.” The default is
+   transmission for all molecules. If the rule form is used (generally
+   with wildcard characters), then the statement is not applied
+   immediately but is stored for use during rule expansion; during rule
+   expansion, it is applied to all species that match the given species
+   pattern.
 
-The rate constant for transitions from :math:`state_1` to
-:math:`state_2` of molecules named :math:`species` at this surface. For
-the species name, in :math:`species`, “all” is permitted; however, “all”
-is not permitted anywhere else. Usually, :math:`state` is omitted, but
-see below for where it is needed. :math:`state_1` and :math:`state_2`
-can be any of: fsoln, bsoln (in solution, hitting the front or back of
-the panel, respectively), front, back, up, or down. :math:`value` is the
-rate constant or rate coefficient. If :math:`new\_spec`, which is an
-optional parameter, is entered, then molecules change to the listed
-species at the same time as changing states. If the rule form is used
-(generally with wildcard characters), then the statement is not applied
-immediately but is stored for use during rule expansion; during rule
-expansion, it is applied to all species that match the given species
-pattern.
+   ``* rate species(state)``
+   :math:`state_1\ state_2\ value\ [new\_spec]`
+   ``* rate_rule``
+   :math:`species(state)\ state_1\ state_2\ value\ [new\_spec]`
 
-To specify interaction rates for molecules that collide with surface B,
-while diffusing along surface A, use the first :math:`state` parameter.
-In this case: :math:`state` is the starting surface-bound state on
-surface A; :math:`state_1` is fsoln to indicate collision with the front
-side of surface B or bsoln to indicate collision with the back side of
-surface B; and :math:`state_2` is fsoln or bsoln to indicate
-transmission through surface B and still bound to surface A (but cannot
-equal :math:`state_1`) or :math:`state_2` can be a surface-bound state
-to indicate that the molecule hops from surface A to surface-bound on
-surface B.
+   The rate constant for transitions from :math:`state_1` to
+   :math:`state_2` of molecules named :math:`species` at this surface.
+   For the species name, in :math:`species`, “all” is permitted;
+   however, “all” is not permitted anywhere else. Usually, :math:`state`
+   is omitted, but see below for where it is needed. :math:`state_1` and
+   :math:`state_2` can be any of: fsoln, bsoln (in solution, hitting the
+   front or back of the panel, respectively), front, back, up, or down.
+   :math:`value` is the rate constant or rate coefficient. If
+   :math:`new\_spec`, which is an optional parameter, is entered, then
+   molecules change to the listed species at the same time as changing
+   states. If the rule form is used (generally with wildcard
+   characters), then the statement is not applied immediately but is
+   stored for use during rule expansion; during rule expansion, it is
+   applied to all species that match the given species pattern.
 
-``* rate_internal``
-:math:`species(state)\ state_1\ state_2\ value\ [new\_spec]`
-``* rate_internal_rule``
-:math:`species(state)\ state_1\ state_2\ value\ [new\_spec]`
+   To specify interaction rates for molecules that collide with surface
+   B, while diffusing along surface A, use the first :math:`state`
+   parameter. In this case: :math:`state` is the starting surface-bound
+   state on surface A; :math:`state_1` is fsoln to indicate collision
+   with the front side of surface B or bsoln to indicate collision with
+   the back side of surface B; and :math:`state_2` is fsoln or bsoln to
+   indicate transmission through surface B and still bound to surface A
+   (but cannot equal :math:`state_1`) or :math:`state_2` can be a
+   surface-bound state to indicate that the molecule hops from surface A
+   to surface-bound on surface B.
 
-This is identical to ``rate``, except that a slightly different value is
-entered. Instead of entering the surface action rate, enter the
-probability of the action at each collision. Probabilities for
-reflection are ignored since they are calculated as the probability that
-the molecule does not transmit, absorb, or jump. If the rule form is
-used (generally with wildcard characters), then the statement is not
-applied immediately but is stored for use during rule expansion; during
-rule expansion, it is applied to all species that match the given
-species pattern.
+   ``* rate_internal``
+   :math:`species(state)\ state_1\ state_2\ value\ [new\_spec]`
+   ``* rate_internal_rule``
+   :math:`species(state)\ state_1\ state_2\ value\ [new\_spec]`
 
-``*neighbor_action`` :math:`action`
+   This is identical to ``rate``, except that a slightly different value
+   is entered. Instead of entering the surface action rate, enter the
+   probability of the action at each collision. Probabilities for
+   reflection are ignored since they are calculated as the probability
+   that the molecule does not transmit, absorb, or jump. If the rule
+   form is used (generally with wildcard characters), then the statement
+   is not applied immediately but is stored for use during rule
+   expansion; during rule expansion, it is applied to all species that
+   match the given species pattern.
 
-Behavior of surface-bound molecules when they collide with a panel that
-is a neighbor of the panel that they are bound to. There are only two
-options: “hop” indicates that the molecule should hop onto the new panel
-with a 50% probability and stay with a 50% probability, and “stay”
-indicates that the molecule should stay on its own surface. The default
-is “stay”.
+   ``*neighbor_action`` :math:`action`
 
-``* color`` :math:`face\ color\ [alpha]`
-``* color`` :math:`face\ red\ green\ blue\ [alpha]`
+   Behavior of surface-bound molecules when they collide with a panel
+   that is a neighbor of the panel that they are bound to. There are
+   only two options: “hop” indicates that the molecule should hop onto
+   the new panel with a 50% probability and stay with a 50% probability,
+   and “stay” indicates that the molecule should stay on its own
+   surface. The default is “stay”.
 
-Color of the face :math:`face` of the surface. :math:`face` can be
-“front”, “back”, or “both”. In the first format, :math:`color` is a
-single word color, such as “red”, “green”, “magenta”, “cyan”, etc. In
-the second format, color values are numbers between 0 and 1, where 1 is
-maximum intensity a 0 is minimum (1 1 1 is white). The :math:`alpha`
-value is optional and describes the opacity of the surface. If entered,
-it also needs to be between 0 and 1, where 1 is an opaque object (the
-default) and 0 is transparent. OpenGL graphics do not work well with
-non-integer alpha values, so don’t expect good results.
+   ``* color`` :math:`face\ color\ [alpha]`
+   ``* color`` :math:`face\ red\ green\ blue\ [alpha]`
 
-``* thickness`` :math:`float`
+   Color of the face :math:`face` of the surface. :math:`face` can be
+   “front”, “back”, or “both”. In the first format, :math:`color` is a
+   single word color, such as “red”, “green”, “magenta”, “cyan”, etc. In
+   the second format, color values are numbers between 0 and 1, where 1
+   is maximum intensity a 0 is minimum (1 1 1 is white). The
+   :math:`alpha` value is optional and describes the opacity of the
+   surface. If entered, it also needs to be between 0 and 1, where 1 is
+   an opaque object (the default) and 0 is transparent. OpenGL graphics
+   do not work well with non-integer alpha values, so don’t expect good
+   results.
 
-Boldness of the surface in pixels for drawing purposes. This is only
-relevant for 1-D and 2-D simulations, and for 3-D simulations in which
-surfaces are drawn with just vertices or edges and not faces.
+   ``* thickness`` :math:`float`
 
-``* stipple`` :math:`factor\ pattern`
+   Boldness of the surface in pixels for drawing purposes. This is only
+   relevant for 1-D and 2-D simulations, and for 3-D simulations in
+   which surfaces are drawn with just vertices or edges and not faces.
 
-Stippling of the surface edges, for drawing purposes. This is only
-relevant for 3-D simulations in which surfaces are drawn with just edges
-and not faces, and with “opengl_good” or better display method. In
-:math:`factor`, which is an integer, enter the repeat distance for the
-entire stippling pattern (1 is a good choice). In :math:`pattern`, which
-is a hexadecimal integer, enter the stippling pattern between 0x0000 and
-0xFFFF. 0x00FF has long dashes, 0x0F0F has medium dashes, 0x5555 has
-dots, etc. Turn stippling off with 0xFFFF.
+   ``* stipple`` :math:`factor\ pattern`
 
-``* polygon`` :math:`face\ drawmode`
+   Stippling of the surface edges, for drawing purposes. This is only
+   relevant for 3-D simulations in which surfaces are drawn with just
+   edges and not faces, and with “opengl_good” or better display method.
+   In :math:`factor`, which is an integer, enter the repeat distance for
+   the entire stippling pattern (1 is a good choice). In
+   :math:`pattern`, which is a hexadecimal integer, enter the stippling
+   pattern between 0x0000 and 0xFFFF. 0x00FF has long dashes, 0x0F0F has
+   medium dashes, 0x5555 has dots, etc. Turn stippling off with 0xFFFF.
 
-Drawing method for the face :math:`face` of the surface. :math:`face`
-can be “front”, “back”, or “both”. :math:`drawmode` may be “none”,
-“vertex”, “edge”, “face”, or combinations of “v”, “e”, or “f” for
-multiple renderings of vertices, edges, and/or faces. 2-D spheres and
-hemispheres are either filled or are outlined depending on the polygon
-front character. If multiple renderings are chosen in 3D, then panel
-faces are shown in the requested color and other renderings are shown in
-black.
+   ``* polygon`` :math:`face\ drawmode`
 
-``* shininess`` :math:`face\ value`
+   Drawing method for the face :math:`face` of the surface. :math:`face`
+   can be “front”, “back”, or “both”. :math:`drawmode` may be “none”,
+   “vertex”, “edge”, “face”, or combinations of “v”, “e”, or “f” for
+   multiple renderings of vertices, edges, and/or faces. 2-D spheres and
+   hemispheres are either filled or are outlined depending on the
+   polygon front character. If multiple renderings are chosen in 3D,
+   then panel faces are shown in the requested color and other
+   renderings are shown in black.
 
-Shininess of the surface for drawing purposes. This value can range from
-0 for visually flat surfaces to 128 for very shiny surfaces. This is
-only relevant for some simulations.
+   ``* shininess`` :math:`face\ value`
 
-``* max_panels`` :math:`shape\ int` (obsolete statement)
+   Shininess of the surface for drawing purposes. This value can range
+   from 0 for visually flat surfaces to 128 for very shiny surfaces.
+   This is only relevant for some simulations.
 
-Optional statement. This can be used to allocate memory for :math:`int`
-panels of shape :math:`shape` for this surface, although it is usually
-best to let Smoldyn allocate memory as needed. The shape may be “rect”
-for a rectangle, “tri” for a triangle, “sph” for a sphere, “cyl” for a
-cylinder, “hemi” for a hemisphere, or “disk” for a disk. The surface can
-include panels with different shapes.
+   ``* max_panels`` :math:`shape\ int` (obsolete statement)
 
-``* panel`` :math:`shape\ float\ ...\ float\ [name]`
+   Optional statement. This can be used to allocate memory for
+   :math:`int` panels of shape :math:`shape` for this surface, although
+   it is usually best to let Smoldyn allocate memory as needed. The
+   shape may be “rect” for a rectangle, “tri” for a triangle, “sph” for
+   a sphere, “cyl” for a cylinder, “hemi” for a hemisphere, or “disk”
+   for a disk. The surface can include panels with different shapes.
 
-Defines a new panel for the surface, where the panel has shape
-:math:`shape`. The shape may be “rect” for a rectangle, “tri” for a
-triangle, “sph” for a sphere, “cyl” for a cylinder, “hemi” for a
-hemisphere, or “disk” for a disk. Following the shape are numbers for
-the panel position, where these depend on the shape. At the end, it is
-possible to enter a string to name the panel, although this is optional
-(default names are the numbers 0, 1, 2, ...; names are used for jump
-surfaces). If the name was used before, then this does not create a new
-panel, but modifies the existing panel.
+   ``* panel`` :math:`shape\ float\ ...\ float\ [name]`
 
-For “rect”, enter the axis number that the rectangle is perpendicular
-to, preceded by a “+” if the panel front faces the positive axis and a
-“-” if it faces the negative axis (these signs must be entered); then
-enter the coordinates of a corner point; then enter the dimensions of
-the rectangle in sequential order of the axes, omitting the one that it
-is perpendicular to. These dimensions are better called displacements
-because they are added to the corner that is entered, so they may be
-positive or negative. For example, for a square in a 3-D system that is
-perpendicular to the y-axis, has sides of length 10 and is centered
-about the origin, enter: “panel rect +1 -5 0 -5 10 10”. This same square
-could be entered as “panel rect +1 5 0 5 -10 -10”, or with other
-descriptions. A rectangle is always perpendicular to an axis.
+   Defines a new panel for the surface, where the panel has shape
+   :math:`shape`. The shape may be “rect” for a rectangle, “tri” for a
+   triangle, “sph” for a sphere, “cyl” for a cylinder, “hemi” for a
+   hemisphere, or “disk” for a disk. Following the shape are numbers for
+   the panel position, where these depend on the shape. At the end, it
+   is possible to enter a string to name the panel, although this is
+   optional (default names are the numbers 0, 1, 2, ...; names are used
+   for jump surfaces). If the name was used before, then this does not
+   create a new panel, but modifies the existing panel.
 
-For “tri”, enter the coordinates of the corners of the triangle. This is
-one number for 1-D; 4 for 2-D, and 9 for 3-D. For 1-D, the front of the
-triangle always faces the positive axis; rectangles are completely
-equivalent and more versatile. For 2-D, triangles are really lines and
-the front side of the line is the side on the right when traveling in
-sequential order of the points that are entered. For 3-D, the triangle
-front is determined by the winding direction of the corners: if one is
-facing the front, the points wind counterclockwise. Unlike rectangles,
-triangles do not have to be perpendicular to axes.
+   For “rect”, enter the axis number that the rectangle is perpendicular
+   to, preceded by a “+” if the panel front faces the positive axis and
+   a “-” if it faces the negative axis (these signs must be entered);
+   then enter the coordinates of a corner point; then enter the
+   dimensions of the rectangle in sequential order of the axes, omitting
+   the one that it is perpendicular to. These dimensions are better
+   called displacements because they are added to the corner that is
+   entered, so they may be positive or negative. For example, for a
+   square in a 3-D system that is perpendicular to the y-axis, has sides
+   of length 10 and is centered about the origin, enter: “panel rect +1
+   -5 0 -5 10 10”. This same square could be entered as “panel rect +1 5
+   0 5 -10 -10”, or with other descriptions. A rectangle is always
+   perpendicular to an axis.
 
-For “sph”, enter the coordinates of the sphere center followed by the
-sphere radius and some drawing information. For 1-D, the center
-coordinate is a single number and the radius is entered next. For 2-D,
-the center coordinates are 2 numbers and then enter the radius followed
-by the number of sides on the polygon that should be drawn to represent
-the circle. For 3-D, the center coordinates are 3 numbers and then enter
-the radius, followed by the number of slices (longitude lines) and
-stacks (latitude lines) that are used for drawing the sphere. In the 2-D
-and 3-D cases, the drawing entries are used only for drawing; the circle
-or sphere functions as an accurate smooth shape. For all dimensions,
-enter a positive radius to have the front of the surface on the outside
-and a negative radius for it to be on the inside.
+   For “tri”, enter the coordinates of the corners of the triangle. This
+   is one number for 1-D; 4 for 2-D, and 9 for 3-D. For 1-D, the front
+   of the triangle always faces the positive axis; rectangles are
+   completely equivalent and more versatile. For 2-D, triangles are
+   really lines and the front side of the line is the side on the right
+   when traveling in sequential order of the points that are entered.
+   For 3-D, the triangle front is determined by the winding direction of
+   the corners: if one is facing the front, the points wind
+   counterclockwise. Unlike rectangles, triangles do not have to be
+   perpendicular to axes.
 
-For “cyl”, enter the coordinates of the cylinder-axis start point and
-the cylinder-axis end point, then the radius, and then drawing
-information if appropriate. Cylinders are not permitted in 1-D. In 2-D,
-two numbers give the start point and two give the end point, followed by
-the radius. No drawing information is needed. In 3-D, enter three
-numbers for the start point, three for the end point, the radius, and
-then the number of slices and the number of stacks. For all dimensions,
-enter a positive radius to have the front of the surface on the outside
-and a negative radius for it to be on the inside.
+   For “sph”, enter the coordinates of the sphere center followed by the
+   sphere radius and some drawing information. For 1-D, the center
+   coordinate is a single number and the radius is entered next. For
+   2-D, the center coordinates are 2 numbers and then enter the radius
+   followed by the number of sides on the polygon that should be drawn
+   to represent the circle. For 3-D, the center coordinates are 3
+   numbers and then enter the radius, followed by the number of slices
+   (longitude lines) and stacks (latitude lines) that are used for
+   drawing the sphere. In the 2-D and 3-D cases, the drawing entries are
+   used only for drawing; the circle or sphere functions as an accurate
+   smooth shape. For all dimensions, enter a positive radius to have the
+   front of the surface on the outside and a negative radius for it to
+   be on the inside.
 
-For “hemi”, enter the coordinates of the hemisphere center, the radius,
-and then the vector that points straight out of the hemisphere.
-Hemispheres are not permitted in 1-D. In 2-D, the center coordinates are
-2 numbers, the radius is 1 number, the outward vector is 2 numbers, and
-finally enter the number of slices. For 3-D, the center is 3 numbers,
-the radius is 1 number, the outward vector is 3 numbers, and then enter
-2 numbers for the numbers of slices and stacks. The outward pointing
-vector does not need to be normalized to unit length. For all
-dimensions, enter a positive radius to have the front of the surface on
-the outside and a negative radius for it to be on the inside.
+   For “cyl”, enter the coordinates of the cylinder-axis start point and
+   the cylinder-axis end point, then the radius, and then drawing
+   information if appropriate. Cylinders are not permitted in 1-D. In
+   2-D, two numbers give the start point and two give the end point,
+   followed by the radius. No drawing information is needed. In 3-D,
+   enter three numbers for the start point, three for the end point, the
+   radius, and then the number of slices and the number of stacks. For
+   all dimensions, enter a positive radius to have the front of the
+   surface on the outside and a negative radius for it to be on the
+   inside.
 
-For “disk”, enter the coordinates of the disk center, the radius, a
-vector that points away from the front of the disk, and drawing
-information if appropriate. Disks are not permitted in 1-D. In 2-D, the
-center coordinates are 2 numbers, the radius is 1 number, and the normal
-vector is 2 numbers. For 3-D, the center coordinates are 3 numbers, the
-radius is 1 number, the normal vector is 3 numbers, and the number of
-drawing slices is entered last. Normal vectors do not need to have unit
-length.
+   For “hemi”, enter the coordinates of the hemisphere center, the
+   radius, and then the vector that points straight out of the
+   hemisphere. Hemispheres are not permitted in 1-D. In 2-D, the center
+   coordinates are 2 numbers, the radius is 1 number, the outward vector
+   is 2 numbers, and finally enter the number of slices. For 3-D, the
+   center is 3 numbers, the radius is 1 number, the outward vector is 3
+   numbers, and then enter 2 numbers for the numbers of slices and
+   stacks. The outward pointing vector does not need to be normalized to
+   unit length. For all dimensions, enter a positive radius to have the
+   front of the surface on the outside and a negative radius for it to
+   be on the inside.
 
-``* jump`` :math:`panel_1\ face_1`\ ``->``\ :math:`panel_2\ face_2`
-``* jump`` :math:`panel_1\ face_1`\ ``<->``\ :math:`panel_2\ face_2`
+   For “disk”, enter the coordinates of the disk center, the radius, a
+   vector that points away from the front of the disk, and drawing
+   information if appropriate. Disks are not permitted in 1-D. In 2-D,
+   the center coordinates are 2 numbers, the radius is 1 number, and the
+   normal vector is 2 numbers. For 3-D, the center coordinates are 3
+   numbers, the radius is 1 number, the normal vector is 3 numbers, and
+   the number of drawing slices is entered last. Normal vectors do not
+   need to have unit length.
 
-Defines a molecule jumping condition for a face of a single panel. This
-panel has name :math:`panel_1`, and face :math:`face_1`. The name of a
-panel can be defined with the panel statement, or the default is just
-the shape and panel number (rect0, sph5, etc.). A molecule that hits
-this face of the panel, and that has “jump” action for this face, gets
-translated to the face :math:`face_2` of the panel :math:`panel_2`
-(which needs to be the same shape as the originating panel). A
-unidirectional arrow implies just jumping from the first panel to the
-second, whereas a double-headed arrow implies jumping in both
-directions.
+   ``* jump`` :math:`panel_1\ face_1`\ ``->``\ :math:`panel_2\ face_2`
+   ``* jump`` :math:`panel_1\ face_1`\ ``<->``\ :math:`panel_2\ face_2`
 
-``* neighbors`` :math:`panel\ neigh_1\ neigh_2\ ...`
+   Defines a molecule jumping condition for a face of a single panel.
+   This panel has name :math:`panel_1`, and face :math:`face_1`. The
+   name of a panel can be defined with the panel statement, or the
+   default is just the shape and panel number (rect0, sph5, etc.). A
+   molecule that hits this face of the panel, and that has “jump” action
+   for this face, gets translated to the face :math:`face_2` of the
+   panel :math:`panel_2` (which needs to be the same shape as the
+   originating panel). A unidirectional arrow implies just jumping from
+   the first panel to the second, whereas a double-headed arrow implies
+   jumping in both directions.
 
-Defines a list of panels that neighbor the panel named :math:`panel`.
-Surface-bound molecules can only diffuse from a panel to its neighbor if
-the neighbors are defined in this way. This statement is unidirectional
-in that it only sets, for example, :math:`neigh_1` as a neighbor of
-panel :math:`panel` but not vice versa. If the neighboring panel is not
-part of the same surface as the origin panel, then specify the
-neighboring panel using :math:`surface:panel`.
+   ``* neighbors`` :math:`panel\ neigh_1\ neigh_2\ ...`
 
-``* unbounded_emitter``
-:math:`face\ species\ amount\ pos_0\ pos_1\ ... pos_{dim-1}`
+   Defines a list of panels that neighbor the panel named :math:`panel`.
+   Surface-bound molecules can only diffuse from a panel to its neighbor
+   if the neighbors are defined in this way. This statement is
+   unidirectional in that it only sets, for example, :math:`neigh_1` as
+   a neighbor of panel :math:`panel` but not vice versa. If the
+   neighboring panel is not part of the same surface as the origin
+   panel, then specify the neighboring panel using
+   :math:`surface:panel`.
 
-Declares a molecular source for which this surface should absorb
-molecules so as to yield a concentration distribution that is the same
-as that which would arise with unbounded diffusion. This statement does
-not create the molecular source, but only sets the panel absorption
-coefficients to yield the correct concentrations, assuming the emitter
-is created elsewhere (such as with a command or a zeroth order
-reaction). :math:`face` is the side of the surface that faces the
-emitter, :math:`species` is the emitted molecular species,
-:math:`amount` is the emission rate (it only matters if there is more
-than one emitter for this surface and species, and then it is only the
-relative rates of the different emitters that matters), and :math:`pos`
-is the system-dimensional position of the emitter. This statement is
-designed to be used with all emitters strictly inside a closed surface
-and all of them with positive amount values; however, neither of these
-criteria are checked, so other options can be used although no promises
-are made regarding their behaviors.
+   ``* unbounded_emitter``
+   :math:`face\ species\ amount\ pos_0\ pos_1\ ... pos_{dim-1}`
 
-``* end_surface``
+   Declares a molecular source for which this surface should absorb
+   molecules so as to yield a concentration distribution that is the
+   same as that which would arise with unbounded diffusion. This
+   statement does not create the molecular source, but only sets the
+   panel absorption coefficients to yield the correct concentrations,
+   assuming the emitter is created elsewhere (such as with a command or
+   a zeroth order reaction). :math:`face` is the side of the surface
+   that faces the emitter, :math:`species` is the emitted molecular
+   species, :math:`amount` is the emission rate (it only matters if
+   there is more than one emitter for this surface and species, and then
+   it is only the relative rates of the different emitters that
+   matters), and :math:`pos` is the system-dimensional position of the
+   emitter. This statement is designed to be used with all emitters
+   strictly inside a closed surface and all of them with positive amount
+   values; however, neither of these criteria are checked, so other
+   options can be used although no promises are made regarding their
+   behaviors.
 
-End of a block of surface definitions. Surface statements are no longer
-recognized but other simulation statements are.
+   ``* end_surface``
 
-``epsilon`` :math:`float`
+   End of a block of surface definitions. Surface statements are no
+   longer recognized but other simulation statements are.
 
-See “simulation settings” section. This is not entered in a surface
-block.
+   ``epsilon`` :math:`float`
 
-``margin`` :math:`float`
+   See “simulation settings” section. This is not entered in a surface
+   block.
 
-See “simulation settings” section. This is not entered in a surface
-block.
+   ``margin`` :math:`float`
 
-``neighbor_dist`` :math:`float`
+   See “simulation settings” section. This is not entered in a surface
+   block.
 
-See “simulation settings” section. This is not entered in a surface
-block.
+   ``neighbor_dist`` :math:`float`
+
+   See “simulation settings” section. This is not entered in a surface
+   block.
 
 .. _statements-about-compartments-1:
 
@@ -6787,253 +6837,263 @@ entered within compartment blocks, which start with
 statements can also be entered directly, preceded by the statement
 compartment and then the compartment name. Both forms are shown below.
 
-``start_compartment`` :math:`name`
+.. container:: description
 
-Start of compartment definition block. The compartment name may be given
-with :math:`name`, or it may be given afterwards with the ``name``
-statement. If the name has not been used yet for a compartment, then a
-new compartment is started. Between this instruction and
-``end_compartment``, all lines need to pertain to compartments.
-Parameters of one compartment can be listed in multiple blocks, or
-parameters for many compartments can be listed in one block.
+   ``start_compartment`` :math:`name`
 
-``new_compartment`` :math:`name`
+   Start of compartment definition block. The compartment name may be
+   given with :math:`name`, or it may be given afterwards with the
+   ``name`` statement. If the name has not been used yet for a
+   compartment, then a new compartment is started. Between this
+   instruction and ``end_compartment``, all lines need to pertain to
+   compartments. Parameters of one compartment can be listed in multiple
+   blocks, or parameters for many compartments can be listed in one
+   block.
 
-Defines a new compartment called :math:`name`, but does not start a
-compartment block. This statement is largely redundant with
-``start_compartment``.
+   ``new_compartment`` :math:`name`
 
-``* name`` :math:`name`
+   Defines a new compartment called :math:`name`, but does not start a
+   compartment block. This statement is largely redundant with
+   ``start_compartment``.
 
-Name of the compartment for editing. This statement is not required
-because the compartment name can also be given with
-``start_compartment``. This statement gives the name of the current
-compartment for editing, and creates a new compartment if needed.
+   ``* name`` :math:`name`
 
-``* surface`` :math:`surface`
+   Name of the compartment for editing. This statement is not required
+   because the compartment name can also be given with
+   ``start_compartment``. This statement gives the name of the current
+   compartment for editing, and creates a new compartment if needed.
 
-Name of a bounding surface for this compartment.
+   ``* surface`` :math:`surface`
 
-``* point`` :math:`pos_0\ ...\ pos_{dim-1}`
+   Name of a bounding surface for this compartment.
 
-An interior-defining point for this compartment.
+   ``* point`` :math:`pos_0\ ...\ pos_{dim-1}`
 
-``* compartment`` :math:`logic compartment`
+   An interior-defining point for this compartment.
 
-Logically combines the compartment being defined as it has been defined
-so far with the compartment that is listed in this statement. The logic
-options are: “equal”, “equalnot”, “and”, “andnot”, “or”, “ornot”, and
-“xor”.
+   ``* compartment`` :math:`logic compartment`
 
-``* end_compartment``
+   Logically combines the compartment being defined as it has been
+   defined so far with the compartment that is listed in this statement.
+   The logic options are: “equal”, “equalnot”, “and”, “andnot”, “or”,
+   “ornot”, and “xor”.
 
-End of a block of compartment definitions. Compartment statements are no
-longer recognized but other simulation statements are.
+   ``* end_compartment``
+
+   End of a block of compartment definitions. Compartment statements are
+   no longer recognized but other simulation statements are.
 
 .. _statements-about-reactions-1:
 
 Statements about reactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``reaction``
-:math:`rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
-``reaction``
-:math:`rname\ reactant_1\ +\ reactant_2`\ ``<->``\ :math:`product_1\ +\ product_2\ ratefwd\ raterev`
-``reaction compartment``\ :math:`=cname\ rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
-``reaction surface``\ :math:`=sname\ rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
+.. container:: description
 
-The first form defines a new reaction which is named :math:`rname`, has
-a list of reactants, a list of products, and rate equal to :math:`rate`.
-If there are no reactants, meaning that it is zeroth order, enter “0” as
-the reactant. Similarly, if there are no products, enter “0” as the sole
-product. The rate value is optional. As usual, enter species states in
-parentheses after the species names; “all” is permitted for reactant
-states, but not for product states.
+   ``reaction``
+   :math:`rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
+   ``reaction``
+   :math:`rname\ reactant_1\ +\ reactant_2`\ ``<->``\ :math:`product_1\ +\ product_2\ ratefwd\ raterev`
+   ``reaction compartment``\ :math:`=cname\ rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
+   ``reaction surface``\ :math:`=sname\ rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
 
-The second form shows that reversible reactions can be defined using
-essentially the same statement, but with ``<->`` for the arrow and,
-optionally, with two rate constants. In this case, the reaction name is
-appended with “fwd” for the forward reaction and with “rev” for the
-reverse reaction. Entering a reversible reaction in this way is
-completely equivalent to entering it as two one-way reactions; it has no
-effect on the product placement, the binding radius, or other
-parameters.
+   The first form defines a new reaction which is named :math:`rname`,
+   has a list of reactants, a list of products, and rate equal to
+   :math:`rate`. If there are no reactants, meaning that it is zeroth
+   order, enter “0” as the reactant. Similarly, if there are no
+   products, enter “0” as the sole product. The rate value is optional.
+   As usual, enter species states in parentheses after the species
+   names; “all” is permitted for reactant states, but not for product
+   states.
 
-If this reaction should only occur in a specific compartment, enter it
-with the format “``compartment=``\ :math:`cname`” (no spaces) as one of
-the first parameters. Likewise, if this reaction should only occur on a
-specific surface, enter it with the format “``surface=``\ :math:`sname`”
-as one of the first parameters. These restrictions can be combined.
+   The second form shows that reversible reactions can be defined using
+   essentially the same statement, but with ``<->`` for the arrow and,
+   optionally, with two rate constants. In this case, the reaction name
+   is appended with “fwd” for the forward reaction and with “rev” for
+   the reverse reaction. Entering a reversible reaction in this way is
+   completely equivalent to entering it as two one-way reactions; it has
+   no effect on the product placement, the binding radius, or other
+   parameters.
 
-``reaction_rule``
-:math:`rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
+   If this reaction should only occur in a specific compartment, enter
+   it with the format “``compartment=``\ :math:`cname`” (no spaces) as
+   one of the first parameters. Likewise, if this reaction should only
+   occur on a specific surface, enter it with the format
+   “``surface=``\ :math:`sname`” as one of the first parameters. These
+   restrictions can be combined.
 
-This is essentially identical to the ``reaction`` statement, including
-that it allows the same reversibility notation and compartment and
-surface restrictions. It differs in that any products that are listed
-here but that have not been declared previously using the ``species``
-statement, get created at this point. When used with wildcards, this
-statement enables rule-based modeling.
+   ``reaction_rule``
+   :math:`rname\ reactant_1\ +\ reactant_2`\ ``->``\ :math:`product_1\ +\ product_2\ rate`
 
-``reaction_rate`` :math:`rname\ rate`
+   This is essentially identical to the ``reaction`` statement,
+   including that it allows the same reversibility notation and
+   compartment and surface restrictions. It differs in that any products
+   that are listed here but that have not been declared previously using
+   the ``species`` statement, get created at this point. When used with
+   wildcards, this statement enables rule-based modeling.
 
-Sets the rate constant to rate for reaction named :math:`rname`.
+   ``reaction_rate`` :math:`rname\ rate`
 
-``reaction_multiplicity`` :math:`rname\ multiplicity`
+   Sets the rate constant to rate for reaction named :math:`rname`.
 
-Sets the multiplicity value to :math:`multiplicity` for reaction named
-:math:`rname`. This value is set to 1 by default, but can be changed if
-there are multiple different ways for a single reaction to occur. The
-requested reaction rate is multiplied by the multiplicity to give the
-total reaction rate. Internally, this is an important parameter for
-rule-based modeling, but the value should generally not be set using
-this statement.
+   ``reaction_multiplicity`` :math:`rname\ multiplicity`
 
-``confspread_radius`` :math:`rname\ rad`
+   Sets the multiplicity value to :math:`multiplicity` for reaction
+   named :math:`rname`. This value is set to 1 by default, but can be
+   changed if there are multiple different ways for a single reaction to
+   occur. The requested reaction rate is multiplied by the multiplicity
+   to give the total reaction rate. Internally, this is an important
+   parameter for rule-based modeling, but the value should generally not
+   be set using this statement.
 
-Defines reaction :math:`rname` as a conformational spread reaction. This
-reaction must have two reactants and up to two products. If it has two
-products, which is the most common case, then the first reactant gets
-replaced by the first product, and the second with the second. They keep
-their serial numbers and locations. The reaction domain extends over the
-radius that is listed here (this is effectively a binding radius). If
-this is entered, the reaction rate constant is interpreted as a first
-order rate constant.
+   ``confspread_radius`` :math:`rname\ rad`
 
-``binding_radius`` :math:`rname\ rad`
+   Defines reaction :math:`rname` as a conformational spread reaction.
+   This reaction must have two reactants and up to two products. If it
+   has two products, which is the most common case, then the first
+   reactant gets replaced by the first product, and the second with the
+   second. They keep their serial numbers and locations. The reaction
+   domain extends over the radius that is listed here (this is
+   effectively a binding radius). If this is entered, the reaction rate
+   constant is interpreted as a first order rate constant.
 
-Sets the binding radius of reaction :math:`rname` to :math:`rad`.
+   ``binding_radius`` :math:`rname\ rad`
 
-``reaction_probability`` :math:`rname\ prob`
+   Sets the binding radius of reaction :math:`rname` to :math:`rad`.
 
-A fixed probability value for unimolecular or bimolecular reactions. For
-unimolecular reactions, this is the probability of a reaction during one
-time step. For bimolecular reactions, this is the probability of a
-reaction occurring, given that the reactants are already closer than
-their binding radius. Here, the default value is 1, which is assumed in
-all rate calculations. For conformational spread reactions, this value
-can be used to directly enter the reaction probability at each time
-step, rather than letting it be calculated from the rate value. For
-regular bimolecular reactions, this can be used to adjust the effective
-reaction activation energy, although the theory has not been derived for
-that yet.
+   ``reaction_probability`` :math:`rname\ prob`
 
-``reaction_chi`` :math:`rname\ chi`
+   A fixed probability value for unimolecular or bimolecular reactions.
+   For unimolecular reactions, this is the probability of a reaction
+   during one time step. For bimolecular reactions, this is the
+   probability of a reaction occurring, given that the reactants are
+   already closer than their binding radius. Here, the default value is
+   1, which is assumed in all rate calculations. For conformational
+   spread reactions, this value can be used to directly enter the
+   reaction probability at each time step, rather than letting it be
+   calculated from the rate value. For regular bimolecular reactions,
+   this can be used to adjust the effective reaction activation energy,
+   although the theory has not been derived for that yet.
 
-The diffusion-limited fraction (:math:`\chi`) of a bimolecular reaction.
-This value is the ratio of the actual reaction rate constant to the
-diffusion-limited reaction rate constant.
+   ``reaction_chi`` :math:`rname\ chi`
 
-``reaction_production`` :math:`rname\ value`
+   The diffusion-limited fraction (:math:`\chi`) of a bimolecular
+   reaction. This value is the ratio of the actual reaction rate
+   constant to the diffusion-limited reaction rate constant.
 
-Molecule production rate for zeroth order reactions. Instead of entering
-the reaction rate with ``reaction_rate``, this allows on to enter the
-expectation number of molecules per time step in the entire simulation
-volume.
+   ``reaction_production`` :math:`rname\ value`
 
-``product_placement`` :math:`rname\ type\ parameters`
+   Molecule production rate for zeroth order reactions. Instead of
+   entering the reaction rate with ``reaction_rate``, this allows on to
+   enter the expectation number of molecules per time step in the entire
+   simulation volume.
 
-Placement method and parameters for the products of reaction rname. This
-also affects the binding radius of the reverse reaction, as explained in
-the text. The type irrev requires no parameters. Types “pgem”,
-“pgemmax”, “pgemmaxw”, “ratio”, “unbindrad”, “pgem2”, “pgemmax2”, and
-“ratio2” each require one parameter. Types “offset” and “fixed” each
-require first a product molecule name and then a :math:`dim`-dimensional
-vector as the parameter list. If multiple products are identical, then
-this placement instruction will only be applied to the first of the
-identical products. For this reason, you can also specify that this
-statement applies to the :math:`n`\ ’th product by entering the product
-name as ``product_``\ :math:`n` (e.g. ``product_2`` for the second
-product). The default placement method for reversible reactions is
-“pgemmaxw” (the terminal “w” implies that a warning will be issued) with
-a parameter of 0.2. While it is suggested that placement types be
-entered with full words, single letter codes work as well.
+   ``product_placement`` :math:`rname\ type\ parameters`
 
-To create a “bounce” type reaction, for simulating excluded volume,
-enter the :math:`type` as “bounce”. In this case, enter no parameter for
-the default algorithm or one parameter. The default algorithm, also
-entered with a -2 parameter, performs ballistic reflection for spherical
-molecules. Enter a parameter of -1 for an algorithm in which the
-reactant edges get separated by the same amount as they used to overlap,
-along their separation vector (e.g. consider two reactants each of
-radius 1, so the binding radius is set to 2; then, if the
-center-to-center distance is found to be 1.6, the molecules get
-separated to make the center-to-center distance equal to 2.4).
-Alternatively, you can use the parameter value to define the new
-separation, which should be larger than the binding radius.
+   Placement method and parameters for the products of reaction rname.
+   This also affects the binding radius of the reverse reaction, as
+   explained in the text. The type irrev requires no parameters. Types
+   “pgem”, “pgemmax”, “pgemmaxw”, “ratio”, “unbindrad”, “pgem2”,
+   “pgemmax2”, and “ratio2” each require one parameter. Types “offset”
+   and “fixed” each require first a product molecule name and then a
+   :math:`dim`-dimensional vector as the parameter list. If multiple
+   products are identical, then this placement instruction will only be
+   applied to the first of the identical products. For this reason, you
+   can also specify that this statement applies to the :math:`n`\ ’th
+   product by entering the product name as ``product_``\ :math:`n` (e.g.
+   ``product_2`` for the second product). The default placement method
+   for reversible reactions is “pgemmaxw” (the terminal “w” implies that
+   a warning will be issued) with a parameter of 0.2. While it is
+   suggested that placement types be entered with full words, single
+   letter codes work as well.
 
-``expand_rules`` :math:`iterations`
+   To create a “bounce” type reaction, for simulating excluded volume,
+   enter the :math:`type` as “bounce”. In this case, enter no parameter
+   for the default algorithm or one parameter. The default algorithm,
+   also entered with a -2 parameter, performs ballistic reflection for
+   spherical molecules. Enter a parameter of -1 for an algorithm in
+   which the reactant edges get separated by the same amount as they
+   used to overlap, along their separation vector (e.g. consider two
+   reactants each of radius 1, so the binding radius is set to 2; then,
+   if the center-to-center distance is found to be 1.6, the molecules
+   get separated to make the center-to-center distance equal to 2.4).
+   Alternatively, you can use the parameter value to define the new
+   separation, which should be larger than the binding radius.
 
-Expands all of the current reaction rules by iterations times. Enter
-iterations as -1 for expansion to continue until all rules are fully
-up-to-date (which will run for a very long time and then cause a
-termination if the rules create an infinite list of species).
+   ``expand_rules`` :math:`iterations`
 
-``reaction_serialnum`` :math:`rname\ rule\_list`
+   Expands all of the current reaction rules by iterations times. Enter
+   iterations as -1 for expansion to continue until all rules are fully
+   up-to-date (which will run for a very long time and then cause a
+   termination if the rules create an infinite list of species).
 
-Define rules for product molecule serial number assignments during
-reaction rname. There should be as many rule values as there are
-products for this reaction. The codes can be separated by “+” symbols,
-as in the reaction definition, but this isn’t required. Product options
-include: “new” for a new serial number (the default), “r1” or “r2” for
-the serial number of the first or second reactant, or “p1” to “p4” for
-the serial number of the given product, or an integer greater than zero
-for that value as the serial number. To use two-part serial numbers,
-combine these with a dot, so for example, ``r1.r2`` means that serial
-numbers for reactants 1 and 2 should be concatenated (only pairwise
-concatenation is supported). Specify a half of a two-part serial number
-by suffixing the code with “R” for the right half (the default) or “L”
-for the left half. For example, ``r1L`` and ``r1R`` are the left and
-right halves of the serial number for reactant 1. Some of these options
-can lead to multiple molecules having the same serial numbers, which is
-allowed but may lead to unexpected behavior in some runtime commands.
-This statement cannot be used together with the
-``reaction_intersurface`` statement for the same reaction.
+   ``reaction_serialnum`` :math:`rname\ rule\_list`
 
-``reaction_intersurface`` :math:`rname\ rule\_list`
+   Define rules for product molecule serial number assignments during
+   reaction rname. There should be as many rule values as there are
+   products for this reaction. The codes can be separated by “+”
+   symbols, as in the reaction definition, but this isn’t required.
+   Product options include: “new” for a new serial number (the default),
+   “r1” or “r2” for the serial number of the first or second reactant,
+   or “p1” to “p4” for the serial number of the given product, or an
+   integer greater than zero for that value as the serial number. To use
+   two-part serial numbers, combine these with a dot, so for example,
+   ``r1.r2`` means that serial numbers for reactants 1 and 2 should be
+   concatenated (only pairwise concatenation is supported). Specify a
+   half of a two-part serial number by suffixing the code with “R” for
+   the right half (the default) or “L” for the left half. For example,
+   ``r1L`` and ``r1R`` are the left and right halves of the serial
+   number for reactant 1. Some of these options can lead to multiple
+   molecules having the same serial numbers, which is allowed but may
+   lead to unexpected behavior in some runtime commands. This statement
+   cannot be used together with the ``reaction_intersurface`` statement
+   for the same reaction.
 
-Define rules to allow bimolecular reaction named :math:`rname` to
-operate when its reactants are on different surfaces. In general, there
-should be as many rule values as there are products for this reaction.
-For each product choose “r1” if it should be placed on the first
-reactant’s surface or relative to that surface, and “r2” if it should be
-placed on the second reactant’s surface or relative to that surface (the
-relative conditions are for “soln” or “bsoln” state products). The codes
-can be separated by “+” symbols, as in the reaction definition, but this
-isn’t required. To turn off intersurface reactions, which is the default
-behavior, give :math:`rule\_list` as “off”. To turn on intersurface
-reactions for reactions that have no products, give :math:`rule\_list`
-as “on”. This statement cannot be used together with the
-``reaction_serialnum`` statement for the same reaction.
+   ``reaction_intersurface`` :math:`rname\ rule\_list`
 
-``reaction_log filename`` :math:`rxnname\ serial\_numbers`
+   Define rules to allow bimolecular reaction named :math:`rname` to
+   operate when its reactants are on different surfaces. In general,
+   there should be as many rule values as there are products for this
+   reaction. For each product choose “r1” if it should be placed on the
+   first reactant’s surface or relative to that surface, and “r2” if it
+   should be placed on the second reactant’s surface or relative to that
+   surface (the relative conditions are for “soln” or “bsoln” state
+   products). The codes can be separated by “+” symbols, as in the
+   reaction definition, but this isn’t required. To turn off
+   intersurface reactions, which is the default behavior, give
+   :math:`rule\_list` as “off”. To turn on intersurface reactions for
+   reactions that have no products, give :math:`rule\_list` as “on”.
+   This statement cannot be used together with the
+   ``reaction_serialnum`` statement for the same reaction.
 
-Turns on reaction logging for all occurrences of the reaction
-:math:`rxnname` and for molecules with serial numbers that are in the
-serial number list. The logging is sent to the file called
-:math:`filename`. If the file is not “stdout”, then it should be
-declared with the ``output_files`` statement. Enter :math:`rxnname` as
-“all” if all reactions should be logged. Likewise, enter the serial
-number list as “all” if reactions with all molecules should be logged.
-In the logging file, the output will be a single line of text for each
-occurrence of the reaction with the following items: the current
-simulation time, the name of the reaction, the location of the reaction
-(2 numbers for 2D, 3 for 3D), the serial numbers of each reactant, and
-the serial numbers of each product. If you request logging for a
-specific serial number, then an entry will be created if a molecule with
-this serial number is either a reactant or a product of the reaction
-(however, if it is the second or higher product, then the log entry will
-be missing the prior product serial numbers because these are not
-recorded as they are generated). A specific reaction can only be logged
-to a single place (e.g. either standard output or some file, but not
-both at once).
+   ``reaction_log filename`` :math:`rxnname\ serial\_numbers`
 
-``reaction_log_off`` :math:`rxnname\ serial\_numbers`
+   Turns on reaction logging for all occurrences of the reaction
+   :math:`rxnname` and for molecules with serial numbers that are in the
+   serial number list. The logging is sent to the file called
+   :math:`filename`. If the file is not “stdout”, then it should be
+   declared with the ``output_files`` statement. Enter :math:`rxnname`
+   as “all” if all reactions should be logged. Likewise, enter the
+   serial number list as “all” if reactions with all molecules should be
+   logged. In the logging file, the output will be a single line of text
+   for each occurrence of the reaction with the following items: the
+   current simulation time, the name of the reaction, the location of
+   the reaction (2 numbers for 2D, 3 for 3D), the serial numbers of each
+   reactant, and the serial numbers of each product. If you request
+   logging for a specific serial number, then an entry will be created
+   if a molecule with this serial number is either a reactant or a
+   product of the reaction (however, if it is the second or higher
+   product, then the log entry will be missing the prior product serial
+   numbers because these are not recorded as they are generated). A
+   specific reaction can only be logged to a single place (e.g. either
+   standard output or some file, but not both at once).
 
-Turns off reaction logging for the reaction :math:`rxnname` and for
-molecules with serial numbers that are listed in the serial number list.
-Either or both of :math:`rxnname` and the serial number list can be
-“all”.
+   ``reaction_log_off`` :math:`rxnname\ serial\_numbers`
+
+   Turns off reaction logging for the reaction :math:`rxnname` and for
+   molecules with serial numbers that are listed in the serial number
+   list. Either or both of :math:`rxnname` and the serial number list
+   can be “all”.
 
 .. _statements-about-ports-1:
 
@@ -7046,44 +7106,47 @@ entered within port blocks, which start with ``start_port`` and end with
 preceded by the statement port and then the port name. Both forms are
 shown below.
 
-``start_port`` :math:`name`
+.. container:: description
 
-Start of port definition block. The port name may be given with
-:math:`name`, or it may be given afterward with the ``name`` statement.
-If the name has not been used yet for a port, then a new port is
-started. Between this instruction and ``end_port``, all lines need to
-pertain to ports. Parameters of one port can be listed in multiple
-blocks, or parameters for many ports can be listed in one block.
+   ``start_port`` :math:`name`
 
-``new_port`` :math:`name`
+   Start of port definition block. The port name may be given with
+   :math:`name`, or it may be given afterward with the ``name``
+   statement. If the name has not been used yet for a port, then a new
+   port is started. Between this instruction and ``end_port``, all lines
+   need to pertain to ports. Parameters of one port can be listed in
+   multiple blocks, or parameters for many ports can be listed in one
+   block.
 
-Defines a new port called :math:`name`, but does not start a port block.
-This statement is largely redundant with ``start_port``.
+   ``new_port`` :math:`name`
 
-``* name`` :math:`name`
+   Defines a new port called :math:`name`, but does not start a port
+   block. This statement is largely redundant with ``start_port``.
 
-Name of the port for editing. This statement is not required because the
-port name can also be given with ``start_port``. This statement gives
-the name of the current port for editing, and creates a new port if
-needed.
+   ``* name`` :math:`name`
 
-``* surface`` :math:`surface`
+   Name of the port for editing. This statement is not required because
+   the port name can also be given with ``start_port``. This statement
+   gives the name of the current port for editing, and creates a new
+   port if needed.
 
-Name of the porting surface for this port.
+   ``* surface`` :math:`surface`
 
-``* face`` :math:`face`
+   Name of the porting surface for this port.
 
-Face of the surface that is active for porting. Enter “front” or “back”
-for :math:`face`.
+   ``* face`` :math:`face`
 
-``* end_port``
+   Face of the surface that is active for porting. Enter “front” or
+   “back” for :math:`face`.
 
-End of a block of port definitions. Port statements are no longer
-recognized but other simulation statements are.
+   ``* end_port``
 
-``max_port`` :math:`int` (optional)
+   End of a block of port definitions. Port statements are no longer
+   recognized but other simulation statements are.
 
-Maximum number of ports that may be defined.
+   ``max_port`` :math:`int` (optional)
+
+   Maximum number of ports that may be defined.
 
 Statements for rule-based modeling with BioNetGen
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7094,95 +7157,101 @@ entered within bng blocks, which start with ``start_bng`` and end with
 preceded by the statement ``bng`` and then the bng network name. Both
 forms are shown below.
 
-``start_bng`` :math:`name`
+.. container:: description
 
-Start of BioNetGen block. The :math:`name` is the network name. It may
-be given here or it may be given afterwards with the ``name`` statement.
-If the name has not been used yet for a network, then a network is
-started. Between this instruction and ``end_bng``, all lines need to
-pertain to BioNetGen complexes. Parameters of one network can be listed
-in multiple blocks, or parameters for many networks can be listed in one
-block.
+   ``start_bng`` :math:`name`
 
-``end_bng``
+   Start of BioNetGen block. The :math:`name` is the network name. It
+   may be given here or it may be given afterwards with the ``name``
+   statement. If the name has not been used yet for a network, then a
+   network is started. Between this instruction and ``end_bng``, all
+   lines need to pertain to BioNetGen complexes. Parameters of one
+   network can be listed in multiple blocks, or parameters for many
+   networks can be listed in one block.
 
-End of a block of bng definitions. Bng statements are no longer
-recognized but other simulation statements are.
+   ``end_bng``
 
-``name`` :math:`name`
+   End of a block of bng definitions. Bng statements are no longer
+   recognized but other simulation statements are.
 
-Name of the bng network for editing. This statement is not required
-because the network name can also be given with ``start_bng``. This
-statement gives the name of the current network for editing, and creates
-a new network if needed.
+   ``name`` :math:`name`
 
-``BNG2_path`` :math:`path`
+   Name of the bng network for editing. This statement is not required
+   because the network name can also be given with ``start_bng``. This
+   statement gives the name of the current network for editing, and
+   creates a new network if needed.
 
-| Directory path and complete filename of BNG2.pl software. The default
-  path for Mac and Linux systems is /usr/local/bin/BioNetGen/BNG2.pl and
-  for Windows is C:
-| Program Files
-| Smoldyn
-| BioNetGen
-| BNG2.pl. The :math:`path` parameter is allowed to have spaces in it.
+   ``BNG2_path`` :math:`path`
 
-``multiply unimolecular_rate`` :math:`value`
-``multiply bimolecular_rate`` :math:`value`
+   | Directory path and complete filename of BNG2.pl software. The
+     default path for Mac and Linux systems is
+     /usr/local/bin/BioNetGen/BNG2.pl and for Windows is C:
+   | Program Files
+   | Smoldyn
+   | BioNetGen
+   | BNG2.pl. The :math:`path` parameter is allowed to have spaces in
+     it.
 
-Factor that will be multiplied with unimolecular and bimolecular
-reaction rates that are listed in the current network. This statement is
-useful for converting units if the rules file and Smoldyn file were
-written with different unit systems.
+   ``multiply unimolecular_rate`` :math:`value`
+   ``multiply bimolecular_rate`` :math:`value`
 
-``monomer`` :math:`monomer_1\ monomer_2\ ...`
-``monomers`` :math:`monomer_1\ monomer_2\ ...`
+   Factor that will be multiplied with unimolecular and bimolecular
+   reaction rates that are listed in the current network. This statement
+   is useful for converting units if the rules file and Smoldyn file
+   were written with different unit systems.
 
-Declares one or more monomer names. This statement is optional because
-monomer names are also inferred from the species long names and can be
-given using ``monomer_state`` or other monomer functions. This is
-primarily useful for enabling the use of the “all” designation for
-monomers in other monomer statements.
+   ``monomer`` :math:`monomer_1\ monomer_2\ ...`
+   ``monomers`` :math:`monomer_1\ monomer_2\ ...`
 
-``monomer_difc`` :math:`monomer\ difc`
+   Declares one or more monomer names. This statement is optional
+   because monomer names are also inferred from the species long names
+   and can be given using ``monomer_state`` or other monomer functions.
+   This is primarily useful for enabling the use of the “all”
+   designation for monomers in other monomer statements.
 
-The diffusion coefficient for monomer called :math:`monomer`. The
-monomer value can be a single monomer or can be “all” for all currently
-declared monomers. A monomer has a single diffusion coefficient,
-independent of its state.
+   ``monomer_difc`` :math:`monomer\ difc`
 
-``monomer_display_size`` :math:`monomer\ size`
+   The diffusion coefficient for monomer called :math:`monomer`. The
+   monomer value can be a single monomer or can be “all” for all
+   currently declared monomers. A monomer has a single diffusion
+   coefficient, independent of its state.
 
-The display size for monomer called :math:`monomer`. The monomer value
-can be a single monomer or can be “all” for all currently declared
-monomers. A monomer has a single display size, independent of its state.
+   ``monomer_display_size`` :math:`monomer\ size`
 
-``monomer_color`` :math:`monomer\ color`
-``monomer_color`` :math:`monomer\ red\ green\ blue`
+   The display size for monomer called :math:`monomer`. The monomer
+   value can be a single monomer or can be “all” for all currently
+   declared monomers. A monomer has a single display size, independent
+   of its state.
 
-The color for monomer called :math:`monomer`. The monomer value can be a
-single monomer or can be “all” for all currently declared monomers. The
-color can be either a color word or the red, green, and blue color
-values. A monomer has a single color, independent of its state.
+   ``monomer_color`` :math:`monomer\ color`
+   ``monomer_color`` :math:`monomer\ red\ green\ blue`
 
-``monomer_state`` :math:`monomer\ state`
+   The color for monomer called :math:`monomer`. The monomer value can
+   be a single monomer or can be “all” for all currently declared
+   monomers. The color can be either a color word or the red, green, and
+   blue color values. A monomer has a single color, independent of its
+   state.
 
-The default state for a monomer. States can be any of: soln (same as
-fsoln), bsoln, front, back, up, and down (this list is ordered from
-lowest to highest precedence). These states are used when Smoldyn
-assigns states to reaction products, which are often composed of many
-monomers.
+   ``monomer_state`` :math:`monomer\ state`
 
-``expand_rules`` :math:`filename`
+   The default state for a monomer. States can be any of: soln (same as
+   fsoln), bsoln, front, back, up, and down (this list is ordered from
+   lowest to highest precedence). These states are used when Smoldyn
+   assigns states to reaction products, which are often composed of many
+   monomers.
 
-Filename for a rules file written in the BNGL language, which should
-have a .bngl suffix. When Smoldyn encounters this statement, Smoldyn
-calls BNG2.pl to expand the file and save it as a .net file but does not
-then read the result. After this line, include a ``read_file`` statement
-and list the filename, now with a .net suffix, so that Smoldyn reads in
-the expanded network. There is typically very little error reporting if
-BNG2.pl encounters an error in the .bngl file. To see the errors, run
-Smoldyn with the -v command line option, for verbose operation, and then
-Smoldyn will display all of the BNG2.pl output.
+   ``expand_rules`` :math:`filename`
+
+   Filename for a rules file written in the BNGL language, which should
+   have a .bngl suffix. When Smoldyn encounters this statement, Smoldyn
+   calls BNG2.pl to expand the file and save it as a .net file but does
+   not then read the result. After this line, include a ``read_file``
+   statement and list the filename, now with a .net suffix, so that
+   Smoldyn reads in the expanded network. There is typically very little
+   error reporting if BNG2.pl encounters an error in the .bngl file. To
+   see the errors, run Smoldyn with the -v command line option, for
+   verbose operation, and then Smoldyn will display all of the BNG2.pl
+   output.
 
 Statements for lattices
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -7193,165 +7262,176 @@ end with ``end_lattice``. Most of these statements can also be entered
 directly, preceded by the statement lattice and then the lattice name.
 Both forms are shown below.
 
-``start_lattice`` :math:`name`
+.. container:: description
 
-Start of the lattice block. The lattice name may be given with
-:math:`name`, or it may be given afterwards with the ``name`` statement.
-If the name has not been used yet for a lattice, then a new lattice is
-started. Between this statement and ``end_lattice``, all lines need to
-pertain to lattices. Parameters of one lattice can be listed in multiple
-blocks, or parameters for many lattices can be listed in one block.
+   ``start_lattice`` :math:`name`
 
-``* name`` :math:`name`
+   Start of the lattice block. The lattice name may be given with
+   :math:`name`, or it may be given afterwards with the ``name``
+   statement. If the name has not been used yet for a lattice, then a
+   new lattice is started. Between this statement and ``end_lattice``,
+   all lines need to pertain to lattices. Parameters of one lattice can
+   be listed in multiple blocks, or parameters for many lattices can be
+   listed in one block.
 
-Name of the lattice for editing. This statement is not required because
-the lattice name can also be given with ``start_lattice``. This
-statement gives the name of the current lattice for editing, and creates
-a new lattice if needed.
+   ``* name`` :math:`name`
 
-``* type`` :math:`type`
+   Name of the lattice for editing. This statement is not required
+   because the lattice name can also be given with ``start_lattice``.
+   This statement gives the name of the current lattice for editing, and
+   creates a new lattice if needed.
 
-Type of the lattice. At present, this accepts two :math:`type` strings,
-“nsv” and “pde”, which stand for next-subvolume method and partial
-differential equation method, respectively. However, only the NSV method
-has been implemented, so that’s the only type that should be entered.
-This statement is optional, with NSV assumed if it is not entered.
+   ``* type`` :math:`type`
 
-``* port`` :math:`port`
+   Type of the lattice. At present, this accepts two :math:`type`
+   strings, “nsv” and “pde”, which stand for next-subvolume method and
+   partial differential equation method, respectively. However, only the
+   NSV method has been implemented, so that’s the only type that should
+   be entered. This statement is optional, with NSV assumed if it is not
+   entered.
 
-Name of the port that the lattice uses to exchange molecules with the
-particle-based simulation.
+   ``* port`` :math:`port`
 
-``* boundaries`` :math:`dim\ pos_1\ pos_2`
-``* boundaries`` :math:`dim\ pos_1\ pos_2\ type`
+   Name of the port that the lattice uses to exchange molecules with the
+   particle-based simulation.
 
-Creates lower and upper boundaries for the lattice region, where
-:math:`dim` is the dimension that is bounded in this statement,
-:math:`pos_1` is the lower bound, and :math:`pos_2` is the upper bound.
-In the second form, :math:`type` is a character that represents the
-boundary type, which may be “r” for reflective or “p” for periodic. This
-syntax is essentially identical to the ``boundaries`` statement that is
-used to define the particle-based simulation volume.
+   ``* boundaries`` :math:`dim\ pos_1\ pos_2`
+   ``* boundaries`` :math:`dim\ pos_1\ pos_2\ type`
 
-``* lengthscale`` :math:`x_1`
-``* lengthscale`` :math:`x_1\ x_2`
-``* lengthscale`` :math:`x_1\ x_2\ x_3`
+   Creates lower and upper boundaries for the lattice region, where
+   :math:`dim` is the dimension that is bounded in this statement,
+   :math:`pos_1` is the lower bound, and :math:`pos_2` is the upper
+   bound. In the second form, :math:`type` is a character that
+   represents the boundary type, which may be “r” for reflective or “p”
+   for periodic. This syntax is essentially identical to the
+   ``boundaries`` statement that is used to define the particle-based
+   simulation volume.
 
-Specifies the partition spacing within the lattice region of space. Use
-the first form for 1D systems, the second for 2D systems, and the third
-for 3D systems. The partition spacing values should be even divisors of
-the lattice dimensions that are given with the ``boundaries`` statement.
+   ``* lengthscale`` :math:`x_1`
+   ``* lengthscale`` :math:`x_1\ x_2`
+   ``* lengthscale`` :math:`x_1\ x_2\ x_3`
 
-``* species`` :math:`species_1\ species_2\ ...`
+   Specifies the partition spacing within the lattice region of space.
+   Use the first form for 1D systems, the second for 2D systems, and the
+   third for 3D systems. The partition spacing values should be even
+   divisors of the lattice dimensions that are given with the
+   ``boundaries`` statement.
 
-List of species that should be used in the lattice region of space.
-These species need to have been declared previously in the particle
-region of space. This line may be entered multiple times. Rather than
-listing all species, the “all” keyword can be used to state that all of
-the current particle-side species should also be used on the lattice
-side.
+   ``* species`` :math:`species_1\ species_2\ ...`
 
-``* make_particle`` :math:`face\ species_1\ species_2\ ...`
+   List of species that should be used in the lattice region of space.
+   These species need to have been declared previously in the particle
+   region of space. This line may be entered multiple times. Rather than
+   listing all species, the “all” keyword can be used to state that all
+   of the current particle-side species should also be used on the
+   lattice side.
 
-Causes all molecules of the listed species to be converted from lattice
-representation to particle representation if they diffuse across the
-face called :math:`face` (front, back, or both) of the lattice’s port.
+   ``* make_particle`` :math:`face\ species_1\ species_2\ ...`
 
-``* reaction`` :math:`reaction_1\ reaction_2\ ...`
-``* reaction move`` :math:`reaction_1\ reaction_2\ ...`
+   Causes all molecules of the listed species to be converted from
+   lattice representation to particle representation if they diffuse
+   across the face called :math:`face` (front, back, or both) of the
+   lattice’s port.
 
-List of reactions that should be used in the lattice region of space.
-These reactions need to have been fully defined previously in the
-particle region of space. Rather than listing all reactions, the keyword
-“all” can be used to state that all of the current particle-side
-reactions should also be functional on the lattice side. If the keyword
-“move” is given in the list, as in the latter form above, then all
-subsequent listed reactions are “moved” to the lattice side, meaning
-that they are functional on the lattice side but become non-functional
-on the particle side. In this case, they are still defined on the
-particle side, but are simply disabled.
+   ``* reaction`` :math:`reaction_1\ reaction_2\ ...`
+   ``* reaction move`` :math:`reaction_1\ reaction_2\ ...`
 
-``* mol`` :math:`nmol\ name\ pos_0\ pos_1\ ...\ pos_{dim-1}`
+   List of reactions that should be used in the lattice region of space.
+   These reactions need to have been fully defined previously in the
+   particle region of space. Rather than listing all reactions, the
+   keyword “all” can be used to state that all of the current
+   particle-side reactions should also be functional on the lattice
+   side. If the keyword “move” is given in the list, as in the latter
+   form above, then all subsequent listed reactions are “moved” to the
+   lattice side, meaning that they are functional on the lattice side
+   but become non-functional on the particle side. In this case, they
+   are still defined on the particle side, but are simply disabled.
 
-This adds molecules to the starting state of the simulation in the
-lattice region of space. This statement is essentially identical to the
-statement with the same name that is in the particle portion of the
-configuration file. The lattice regions starts with :math:`nmol` type
-:math:`name` molecules at location :math:`pos`. Each of the :math:`dim`
-elements of the position may be a number to give the actual position of
-the molecule or molecules; or the letter “u” to indicate that the
-position for each molecule should be a random value between the bounding
-walls, chosen from a uniform density; or a position range which is given
-as two numbers separated with a hyphen.
+   ``* mol`` :math:`nmol\ name\ pos_0\ pos_1\ ...\ pos_{dim-1}`
 
-``* end_lattice``
+   This adds molecules to the starting state of the simulation in the
+   lattice region of space. This statement is essentially identical to
+   the statement with the same name that is in the particle portion of
+   the configuration file. The lattice regions starts with :math:`nmol`
+   type :math:`name` molecules at location :math:`pos`. Each of the
+   :math:`dim` elements of the position may be a number to give the
+   actual position of the molecule or molecules; or the letter “u” to
+   indicate that the position for each molecule should be a random value
+   between the bounding walls, chosen from a uniform density; or a
+   position range which is given as two numbers separated with a hyphen.
 
-End of a block of lattice definitions. Lattice statements are no longer
-recognized but other simulation statements are.
+   ``* end_lattice``
+
+   End of a block of lattice definitions. Lattice statements are no
+   longer recognized but other simulation statements are.
 
 .. _statements-for-simulation-settings-1:
 
 Statements for simulation settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``random_seed`` :math:`seed`
+.. container:: description
 
-Seed for random number generator, which can be any integer. If this line
-is not entered (or if you set the :math:`seed` value to “time”), the
-current time is used as a seed, producing different sequences for each
-run. (This statement was called ``rand_seed`` through version 2.28.)
+   ``random_seed`` :math:`seed`
 
-``accuracy`` :math:`float`
+   Seed for random number generator, which can be any integer. If this
+   line is not entered (or if you set the :math:`seed` value to “time”),
+   the current time is used as a seed, producing different sequences for
+   each run. (This statement was called ``rand_seed`` through version
+   2.28.)
 
-A parameter that determines the quantitative accuracy of the simulation,
-on a scale from 0 to 10. Low values are less accurate but run faster.
-Default value is 10, for maximum accuracy. Bimolecular reactions are
-only checked for pairs of reactants that are both within the same
-virtual box when accuracy is 0 to 2.99, reactants in nearest neighboring
-boxes are considered as well when accuracy is 3 to 6.99, and reactants
-in all types of neighboring boxes are checked when accuracy is 7 to 10.
+   ``accuracy`` :math:`float`
 
-``molperbox`` :math:`float`
+   A parameter that determines the quantitative accuracy of the
+   simulation, on a scale from 0 to 10. Low values are less accurate but
+   run faster. Default value is 10, for maximum accuracy. Bimolecular
+   reactions are only checked for pairs of reactants that are both
+   within the same virtual box when accuracy is 0 to 2.99, reactants in
+   nearest neighboring boxes are considered as well when accuracy is 3
+   to 6.99, and reactants in all types of neighboring boxes are checked
+   when accuracy is 7 to 10.
 
-Virtual boxes are set up initially so the average number of molecules
-per box is no more than this value. The default value is 5. ``boxsize``
-is an alternate way of entering comparable information.
+   ``molperbox`` :math:`float`
 
-``boxsize`` :math:`float`
+   Virtual boxes are set up initially so the average number of molecules
+   per box is no more than this value. The default value is 5.
+   ``boxsize`` is an alternate way of entering comparable information.
 
-Rather than using ``molperbox`` to specify the sizes of the virtual
-boxes, ``boxsize`` can be used to request the width of the boxes. The
-actual box volumes will be no larger than the volume calculated from the
-width given here.
+   ``boxsize`` :math:`float`
 
-``gauss_table_size`` :math:`int`
+   Rather than using ``molperbox`` to specify the sizes of the virtual
+   boxes, ``boxsize`` can be used to request the width of the boxes. The
+   actual box volumes will be no larger than the volume calculated from
+   the width given here.
 
-This sets the size of a lookup table that is used to generate
-Gaussian-distributed random numbers. It needs to be an integer power of
-2. The default value is 4096, which should be appropriate for nearly all
-applications.
+   ``gauss_table_size`` :math:`int`
 
-``epsilon`` :math:`float`
+   This sets the size of a lookup table that is used to generate
+   Gaussian-distributed random numbers. It needs to be an integer power
+   of 2. The default value is 4096, which should be appropriate for
+   nearly all applications.
 
-Maximum allowed distance separation between a surface-bound molecule and
-the surface. The default value, which is extremely small, is good for
-most applications.
+   ``epsilon`` :math:`float`
 
-``margin`` :math:`float`
+   Maximum allowed distance separation between a surface-bound molecule
+   and the surface. The default value, which is extremely small, is good
+   for most applications.
 
-The distance inside of a panel edge to which Smoldyn moves surface-bound
-molecules that diffuse off of a panel. The default value, which is
-extremely small, is good for most applications.
+   ``margin`` :math:`float`
 
-``neighbor_dist`` :math:`float`
+   The distance inside of a panel edge to which Smoldyn moves
+   surface-bound molecules that diffuse off of a panel. The default
+   value, which is extremely small, is good for most applications.
 
-Maximum distance that surface-bound molecules will jump across space to
-diffuse from one panel to a neighboring panel. In Smoldyn 2.37 and
-higher versions, the default for this value is extremely small, just
-large enough to prevent round-off error. It should not need to be
-changed. In prior versions, the default value was 3 times the maximum
-rms step length of surface-bound molecules, which was necessary due to a
-different surface-bound molecule diffusion algorithm.
+   ``neighbor_dist`` :math:`float`
+
+   Maximum distance that surface-bound molecules will jump across space
+   to diffuse from one panel to a neighboring panel. In Smoldyn 2.37 and
+   higher versions, the default for this value is extremely small, just
+   large enough to prevent round-off error. It should not need to be
+   changed. In prior versions, the default value was 3 times the maximum
+   rms step length of surface-bound molecules, which was necessary due
+   to a different surface-bound molecule diffusion algorithm.
 
 .. _runtime-commands-1:
 
@@ -7361,136 +7441,144 @@ Runtime commands
 Simulation control commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``stop``
+.. container:: description
 
-Stop the simulation.
+   ``stop``
 
-``pause``
+   Stop the simulation.
 
-This puts the simulation in pause mode. If opengl graphics are used,
-continuation occurs when the user presses the spacebar. When graphics
-are not used, the user is told to press enter.
+   ``pause``
 
-``beep``
+   This puts the simulation in pause mode. If opengl graphics are used,
+   continuation occurs when the user presses the spacebar. When graphics
+   are not used, the user is told to press enter.
 
-The computer beeps when this is reached. Nothing else is done.
+   ``beep``
 
-``keypress`` :math:`char`
+   The computer beeps when this is reached. Nothing else is done.
 
-Send a signal to the graphics manipulation component of the program to
-execute the behavior that would occur when a key is pressed. For the
-arrows, and shift-arrows, the character should be “r” for right, “l” for
-left, “u” for up, “d” for down, and the respective upper case characters
-for the shift-arrows.
+   ``keypress`` :math:`char`
 
-``setflag`` :math:`number`
+   Send a signal to the graphics manipulation component of the program
+   to execute the behavior that would occur when a key is pressed. For
+   the arrows, and shift-arrows, the character should be “r” for right,
+   “l” for left, “u” for up, “d” for down, and the respective upper case
+   characters for the shift-arrows.
 
-Sets the global command flag value to :math:`number`, which can be a
-floating point value. This is generally used after a conditional
-command, and is then queried by one or more ``ifflag`` commands.
+   ``setflag`` :math:`number`
 
-``setrandseed`` :math:`seed`
+   Sets the global command flag value to :math:`number`, which can be a
+   floating point value. This is generally used after a conditional
+   command, and is then queried by one or more ``ifflag`` commands.
 
-Sets the random number seed to the specified integer value. If the seed
-listed is less than 0, the current time is used for the seed.
+   ``setrandseed`` :math:`seed`
 
-``setgraphics`` :math:`type`
+   Sets the random number seed to the specified integer value. If the
+   seed listed is less than 0, the current time is used for the seed.
 
-Sets the display graphics to type :math:`type`. If graphics were not set
-up initially, using the graphics statement, this command does nothing.
-Otherwise, options for type are “opengl” or “opengl_good”.
+   ``setgraphics`` :math:`type`
 
-``setgraphic_iter`` :math:`timesteps`
+   Sets the display graphics to type :math:`type`. If graphics were not
+   set up initially, using the graphics statement, this command does
+   nothing. Otherwise, options for type are “opengl” or “opengl_good”.
 
-Sets the graphics update interval to :math:`timesteps` time steps. This
-is only functional if graphics were set up initially, using the
-``graphics`` statement.
+   ``setgraphic_iter`` :math:`timesteps`
 
-``updategraphics``
+   Sets the graphics update interval to :math:`timesteps` time steps.
+   This is only functional if graphics were set up initially, using the
+   ``graphics`` statement.
 
-Update the graphics window.
+   ``updategraphics``
+
+   Update the graphics window.
 
 File manipulation commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``overwrite`` :math:`filename`
+.. container:: description
 
-Erases the output file called :math:`filename` but leaves it open for
-more writing.
+   ``overwrite`` :math:`filename`
 
-``incrementfile`` :math:`filename`
+   Erases the output file called :math:`filename` but leaves it open for
+   more writing.
 
-A new output file is created based upon the :math:`filename`. The first
-time this is called the filename is appended with a “\_001”, which is
-then incremented with subsequent calls to “\_002”, and so on. These
-numbers precede any suffix on the filename.
+   ``incrementfile`` :math:`filename`
+
+   A new output file is created based upon the :math:`filename`. The
+   first time this is called the filename is appended with a “\_001”,
+   which is then incremented with subsequent calls to “\_002”, and so
+   on. These numbers precede any suffix on the filename.
 
 Conditional commands
 ~~~~~~~~~~~~~~~~~~~~
 
-``if`` :math:`value_1\ symbol\ value_2\ command`
+.. container:: description
 
-Runs command command, depending on the relative values of
-:math:`value_1` and :math:`value_2`. The symbol character can be “<”,
-“>” or “=”.
+   ``if`` :math:`value_1\ symbol\ value_2\ command`
 
-``ifflag`` :math:`symbol\ number\ command`
+   Runs command command, depending on the relative values of
+   :math:`value_1` and :math:`value_2`. The symbol character can be “<”,
+   “>” or “=”.
 
-Run command :math:`command`, depending on the value of the global
-command flag. Enter :math:`symbol` as “<” if :math:`command` should be
-run if the flag value is less than :math:`number`, as “>” for the flag
-value greater than :math:`number`, and as “=” for the flag value equal
-to :math:`number`.
+   ``ifflag`` :math:`symbol\ number\ command`
 
-``ifprob`` :math:`value\ command`
+   Run command :math:`command`, depending on the value of the global
+   command flag. Enter :math:`symbol` as “<” if :math:`command` should
+   be run if the flag value is less than :math:`number`, as “>” for the
+   flag value greater than :math:`number`, and as “=” for the flag value
+   equal to :math:`number`.
 
-Run command :math:`command` with probability :math:`value`, which should
-be between 0 and 1. If you want to run multiple commands with this
-probability use the ``setflag`` and ``ifflag`` commands.
+   ``ifprob`` :math:`value\ command`
 
-``ifno`` :math:`species(state)\ command`
+   Run command :math:`command` with probability :math:`value`, which
+   should be between 0 and 1. If you want to run multiple commands with
+   this probability use the ``setflag`` and ``ifflag`` commands.
 
-Run command :math:`command` if no molecule of type :math:`species`
-remains. The molecule state :math:`state` is optional, with “solution”
-as a default. The name and/or the state may be “all”.
+   ``ifno`` :math:`species(state)\ command`
 
-``ifless`` :math:`species(state)\ num\ command`
+   Run command :math:`command` if no molecule of type :math:`species`
+   remains. The molecule state :math:`state` is optional, with
+   “solution” as a default. The name and/or the state may be “all”.
 
-Run command :math:`command` if there are fewer than :math:`num`
-molecules of type :math:`species` remaining. The molecule state
-:math:`state` is optional, with “solution” as a default. The name and/or
-the state may be “all”.
+   ``ifless`` :math:`species(state)\ num\ command`
 
-``ifmore`` :math:`species(state)\ num\ command`
+   Run command :math:`command` if there are fewer than :math:`num`
+   molecules of type :math:`species` remaining. The molecule state
+   :math:`state` is optional, with “solution” as a default. The name
+   and/or the state may be “all”.
 
-Run command :math:`command` if there are more than :math:`num` molecules
-of type :math:`species`. The molecule state :math:`state` is optional,
-with “solution” as a default. The name and/or the state may be “all”.
+   ``ifmore`` :math:`species(state)\ num\ command`
 
-``ifincmpt`` :math:`species(state)\ char\ number\ compartment\ command`
+   Run command :math:`command` if there are more than :math:`num`
+   molecules of type :math:`species`. The molecule state :math:`state`
+   is optional, with “solution” as a default. The name and/or the state
+   may be “all”.
 
-Run command :math:`command` depending on how the number of molecules of
-type :math:`species` within compartment :math:`compartment` compares
-with :math:`number`. Enter :math:`char` as “<” if :math:`command` should
-be run with less than :math:`number` molecules, as “>” for more than
-:math:`number`, or as “=” for equal to :math:`number`. A space is
-required between this symbol and :math:`number`. The molecules’ state
-:math:`state` is optional, with “solution” as a default. The species
-and/or state may be “all”.
+   ``ifincmpt``
+   :math:`species(state)\ char\ number\ compartment\ command`
 
-``ifchange`` :math:`species(state)\ char\ num\ command`
+   Run command :math:`command` depending on how the number of molecules
+   of type :math:`species` within compartment :math:`compartment`
+   compares with :math:`number`. Enter :math:`char` as “<” if
+   :math:`command` should be run with less than :math:`number`
+   molecules, as “>” for more than :math:`number`, or as “=” for equal
+   to :math:`number`. A space is required between this symbol and
+   :math:`number`. The molecules’ state :math:`state` is optional, with
+   “solution” as a default. The species and/or state may be “all”.
 
-Run command :math:`command` if the number of molecules of type
-:math:`species` changes (or doesn’t change) relative to the previous
-time this command was called. The molecule state :math:`state` is
-optional, with “solution” as a default. The name and/or the state may be
-“all”. Enter :math:`char` as “>” to respond to a difference that is
-greater than :math:`num`, “<” to respond to a difference that is less
-than :math:`num`, “=” to respond to a difference that is exactly equal
-to :math:`num`, or “!” to respond to a difference that does not equal
-:math:`num`. For example, enter :math:`char` and :math:`num as` “! 0” to
-respond to any change in molecule numbers, or as “< -10” to respond to
-any decrease that exceeds 10 molecules.
+   ``ifchange`` :math:`species(state)\ char\ num\ command`
+
+   Run command :math:`command` if the number of molecules of type
+   :math:`species` changes (or doesn’t change) relative to the previous
+   time this command was called. The molecule state :math:`state` is
+   optional, with “solution” as a default. The name and/or the state may
+   be “all”. Enter :math:`char` as “>” to respond to a difference that
+   is greater than :math:`num`, “<” to respond to a difference that is
+   less than :math:`num`, “=” to respond to a difference that is exactly
+   equal to :math:`num`, or “!” to respond to a difference that does not
+   equal :math:`num`. For example, enter :math:`char` and :math:`num as`
+   “! 0” to respond to any change in molecule numbers, or as “< -10” to
+   respond to any decrease that exceeds 10 molecules.
 
 System observation commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7499,831 +7587,862 @@ For all of the observation commands, if :math:`filename` is the last
 parameter, then it may be omitted and results will be output to
 “stdout”.
 
-``warnescapee`` :math:`species(state)\ filename`
-
-Looks for molecules of type :math:`species` that are outside the system
-boundaries, printing results to :math:`filename`. If there are none,
-nothing is printed. For each molecule that escaped during the last time
-step, this prints a line of text that says where the molecule was, where
-it is, and where it crossed the last surface. Setting :math:`species` to
-“all” allows all molecule types to be checked. This needs to be run at
-every time step to catch all escaping molecules.
-
-``warnescapeecmpt`` :math:`species(state)\ compartment\ filename`
-
-This is the same as warnescapee, but looks for molecules escaping from
-:math:`compartment`.
-
-``echo`` :math:`filename "string"`
-
-Just prints the text within double quotes to the file, without any
-terminal newline. If you want a newline, include “
-n” at the end of the string. The quotes need to be plain quotes, not
-curly quotes.
-
-``evaluate`` :math:`filename\ expression`
-
-Evaluates the given mathematical expression, printing the result to the
-file. The results are only likely to be interesting if the expression is
-one of the Smoldyn functions.
-
-``molcountheader`` :math:`filename`
-
-This prints one line of display with the word “time” and then the name
-of each molecule species. This is intended to be used as a header line
-for the ``molcount``, ``molcountinbox``, etc. commands.
-
-``molcount`` :math:`filename`
-
-Each time this command is executed, one line of display is printed to
-the listed file, giving the time and the number of molecules for each
-molecular species. Molecule states are ignored. The ordering used is the
-same as was given in the species command. This command accounts for
-molecules in lattices and their associated ports.
-
-``molcountinbox`` :math:`low_x\ high_x\ filename`
-``molcountinbox`` :math:`low_x\ high_x\ low_y\ high_y\ filename`
-``molcountinbox``
-:math:`low_x\ high_x\ low_y\ high_y\ low_z\ high_z\ filename`
-
-Each time this command is executed, one line of display is printed to
-the listed file, giving the time and the number of molecules that are
-within the box that is defined by the low and high parameter, for each
-molecular species. Molecule states are ignored. The ordering used is the
-same as was given in the species statement.
-
-``molcountincmpt`` :math:`compartment\ filename`
-
-Each time this command is executed, one line of display is printed to
-the listed file, giving the time and the number of molecules that are
-within the compartment :math:`compartment` for each molecular species.
-Only solution-phase molecules are listed. The ordering used is the same
-as was given in the ``species`` statement.
-
-``molcountincmpts``
-:math:`compartment_1\ compartment_1\ ...\ compartment_n\ filename`
-
-Each time this command is executed, one line of display is printed to
-the listed file, giving the time and the number of molecules that are
-within each of the compartments listed, for each molecular species. Up
-to 16 compartments may be listed. Only solution-phase molecules are
-reported to the output. The molecule ordering used is the same as was
-given in the species statement.
-
-``molcountincmpt2`` :math:`compartment\ state\ filename`
-
-Identical to ``molcountincmpt`` except that this counts molecules that
-are in state :math:`state`. Entering :math:`state` as “all” means that
-molecules of all states are counted. Note that the surfaces that bound a
-compartment are included in that compartment.
-
-``molcountonsurf`` :math:`surface\ filename`
-
-Each time this command is executed, one line of display is printed to
-the listed file, giving the time and the number of molecules that are
-bound to the surface :math:`surface` for each molecular species. The
-molecule state is not printed. The ordering used is the same as was
-given in the species statement.
-
-``molcountspace``
-:math:`species(state)\ axis\ low\ high\ bins\ average\ filename`
-``molcountspace``
-:math:`species(state)\ axis\ low\ high\ bins\ low\ high\ average\ filename`
-``molcountspace``
-:math:`species(state)\ axis\ low\ high\ bins\ low\ high\ low\ high\ average\ filename`
-
-This command measures a line profile of molecules. It only counts
-molecules of type :math:`species`, with an optional state specification,
-although :math:`species` and/or :math:`state` can be “all”. The line
-profile is along axis number :math:`axis`, which is “x”, “y”, or “z” (or
-a number between 0 and the system dimensionality minus 1), extends from
-:math:`low` to :math:`high`, and is composed of :math:`bins` equally
-spaced bins (i.e. it’s a histogram). These bins extend exactly from
-:math:`low` to :math:`high`, and thus do not count any molecules that
-are outside this range. For two dimensions, the line width and lateral
-position are specified with another pair of :math:`low` and :math:`high`
-values; for three dimensions, two more pairs of :math:`low` and
-:math:`high` values are required, which now specify the sides of a
-rectangular cross-section tube.
-
-To illustrate the sequence of parameters, suppose the command is used in
-a 3-D system to show concentration variation along the :math:`y`-axis.
-In this case, :math:`axis` is “y”, the first :math:`low` and
-:math:`high` indicate the ends of the measurement range along the
-:math:`y`-axis, the next :math:`low` and :math:`high` indicate the
-domain on the :math:`x`-direction, and the third :math:`low` and
-:math:`high` indicate the domain on the :math:`z`-direction. Set the
-:math:`average` input to 0 to not use averaging, in which case there is
-output at every command execution. Otherwise, this only produces an
-output every :math:`average` iterations, at which point it outputs means
-that were collected over the preceding iterations. At each output time,
-the command outputs a single line of text to :math:`filename` with the
-time followed by the numbers (or average numbers) of the specified
-molecules in each histogram bin. This command accounts for molecules in
-lattices, but not for molecules in ports.
-
-``molcountspace2d``
-:math:`species(state)\ z\ low_x\ high_x\ bins_x\ low_y\ high_y\ bins_y\ average\ filename`
-``molcountspace2d``
-:math:`species(state)\ axis\ low\ high\ bins\ low\ high\ bins\ low\ high\ average\ filename`
-
-This command measures a 2D histogram of molecules. It is identical to
-``molcountspace``, but for 2D. The area is perpendicular to the listed
-:math:`axis` (must be entered as “z” for 2D simulations and selectable
-for 3D simulations). It extends from :math:`low` to :math:`high`, and is
-composed of :math:`bins` equally spaced bins, entered separately for
-each of the two axes. For 3D simulations, region thickness is specified
-with another pair of :math:`low` and :math:`high` values. Set the
-:math:`average` input to 0 to not use averaging, in which case there is
-output at every command execution. Otherwise, this only produces an
-output every :math:`average` iterations, at which point it outputs means
-that were collected over the preceding iterations. At each output time,
-the command outputs the time to :math:`filename`, followed by a grid of
-numbers of the molecules in each histogram bin. This command does not
-account for molecules in lattices or ports.
-
-``molcountspaceradial``
-:math:`species(state)\ center_x\ radius\ bins\ average\ filename`
-``molcountspaceradial``
-:math:`species(state)\ center_x\ center_y\ radius\ bins\ average\ filename`
-``molcountspaceradial``
-:math:`species(state)\ center_x\ center_y\ center_z\ radius\ bins\ average\ filename`
-
-This command measures a radial profile of molecules. It is identical to
-``molcountspace``, except that counts molecules in radial rings, rather
-than along a line profile. It only counts molecules of type
-:math:`species`, with an optional state specification, although
-:math:`species` and/or :math:`state` can be “all”. Enter the center
-position in :math:`center`, with the number of entries equal to the
-system dimensionality, and the investigated radius in :math:`radius`.
-The histogram is comprised of :math:`bins` equally spaced bins. The
-volume investigated includes all edges. Set the :math:`average` input to
-0 to not use averaging, in which case there is output at every command
-execution. Otherwise, this only produces an output every :math:`average`
-iterations, at which point it outputs means that were collected over the
-preceding iterations. At each output time, the command outputs a single
-line of text to :math:`filename` with the time followed by the numbers
-(or average numbers) of the specified molecules in each histogram bin.
-This command does not account for molecules in lattices or ports.
-
-``molcountspacepolarangle``
-:math:`species(state)\ center_x\ center_y\ pole_x\ pole_y\ radius_{min}\ radius_{max}\ bins\ average\ filename`
-``molcountspacepolarangle``
-:math:`species(state)\ center_x\ center_y\ center_z\ pole_x\ pole_y\ pole_z\ radius_{min}\ radius_{max}\ bins\ average\ filename`
-
-This command measures a polar angle profile of molecules. It is
-identical to ``molcountspace`` (and ``molcountspaceradial``), except
-that counts molecules in angular segments, rather than along a line
-profile. It only counts molecules of type :math:`species`, with an
-optional state specification, although :math:`species` and/or
-:math:`state` can be “all”. Enter the center position in :math:`center`,
-with the number of entries equal to the system dimensionality. Enter the
-vector that points towards the pole in :math:`pole`, again with the
-number of entries equal to the system dimensionality. All molecules
-between :math:`radius_{min}` and :math:`radius_{max}` will be included;
-set either or both to -1 to remove the respective constraint. The
-histogram is composed of :math:`bins` equally spaced bins. These bins
-extend from 0 to :math:`2\pi` for a 2D system and from 0 to :math:`\pi`
-in a 3D system. The volume investigated includes all edges. Set the
-:math:`average` input to 0 to not use averaging, in which case there is
-output at every command execution. Otherwise, this only produces an
-output every :math:`average` iterations, at which point it outputs means
-that were collected over the preceding iterations. At each output time,
-the command outputs a single line of text to :math:`filename` with the
-time followed by the numbers (or average numbers) of the specified
-molecules in each histogram bin. This command does not account for
-molecules in lattices or ports.
-
-``radialdistribution``
-:math:`species_1(state)\ species_2(state)\ radius\ bins\ average\ filename`
-
-Computes the radial distribution function for molecules of
-:math:`species_2` about those of :math:`species_1`. These are allowed to
-be the same species, can include wildcards, can be “all”, etc. Enter the
-maximum radius to be considered in :math:`radius`, the number of bins in
-the histogram in :math:`bins`, the number of iterations to be averaged
-together in :math:`average` (or 0 for no averaging), and the output
-filename in :math:`filename`. Outputs the time followed by the radial
-distribution function, where the radial distribution function values are
-the average molecule densities (units of inverse volume) in each radial
-bin. Divide these results by the overall average molecule density to get
-the conventional radial distribution function, which typically
-approaches 1 for large distances. This function accounts for periodic
-boundaries if they are used.
-
-``radialdistribution2``
-:math:`species_1(state)\ species2(state)\ low_x\ high_x\ low_y\ high_y\ low_z\ high_z\ radius\ bins\ average\ filename`
-
-Identical to ``radialdistribution`` except that this also allows
-selection of a volume region. Enter the :math:`low` and :math:`high`
-values for as many dimensions as the simulation uses. This computes the
-radial distribution about all molecules of :math:`species_1` that are
-within the given volume; :math:`species_2` molecules are considered that
-are outside of this volume (up to distance :math:`radius` outside of
-it).
-
-``molcountspecies`` :math:`species(state)\ filename`
-
-Prints out a single line of text to :math:`filename` with time and the
-number of molecules of the listed species that are in state
-:math:`state`. Either or both of :math:`species` and :math:`state` may
-be “all”. If :math:`state` is not included, solution is assumed.
-
-``molcountspecieslist``
-:math:`filename\ species(state)\ species(state)\ ...\ species(state)`
-
-Prints out a single line of text to :math:`filename` with time and the
-number of molecules of each of the listed species and states. Either or
-both of :math:`species` and :math:`state` may be “all”. If :math:`state`
-is not included, solution is assumed.
-
-``mollistsize`` :math:`listname\ filename`
-
-Prints out a single line of text to :math:`filename` with the total
-number of molecules in the molecule list named :math:`listname`. This is
-allowed to be “all”.
-
-``listmols`` :math:`filename`
-
-This prints out the identity, state, location, and serial number of
-every molecule in the system to the listed file name, using a separate
-line of text for each molecule.
-
-``listmols2`` :math:`filename`
-
-This is very similar to ``listmols`` but has a slightly different output
-format. Each line of text is preceded by the “time counter”, which is an
-integer that starts at 1 and is incremented each time the routine is
-called. Also, the species and state names of molecules are not printed,
-but instead the :math:`species` and :math:`state` numbers are printed.
-
-``listmols3`` :math:`species(state)\ filename`
-
-This is identical to ``listmols2`` except that it only prints
-information about molecules of type :math:`species`. :math:`state` is
-optional; :math:`species` and/or :math:`state` can be “all”.
-
-``listmols4`` :math:`species(state)\ filename`
-
-This is identical to ``listmols3`` except that it accounts for
-wrap-arounds when displaying molecule positions. In other words, if the
-:math:`x`-axis ranges from 0 to 10, a molecule starts in the middle at
-:math:`x = 5` and diffuses to the right for a full lap, returning to the
-middle of the system, then its :math:`x` value is printed here as 15,
-rather than as 5 as it is for ``listmols3``. :math:`state` is optional;
-:math:`species` and/or :math:`state` can be “all”.
-
-``listmolscmpt`` :math:`species(state)\ cmpt\ filename`
-
-This prints out the time counter (see ``listmols2``), species, state,
-and location, and serial number of every molecule that is within
-compartment :math:`cmpt`. It only prints information about molecules of
-type :math:`species`. :math:`state` is optional; :math:`species` and/or
-:math:`state` can be “all”.
-
-``molpos`` :math:`species(state)\ filename`
-
-This prints out the time and then the positions of all molecules of type
-:math:`species` on a single line of text, to the listed
-:math:`filename`. :math:`state` is optional; :math:`species` and/or
-:math:`state` can be “all”.
-
-``trackmol`` :math:`serno\ filename`
-
-Outputs the time and the species, state, serial number, location, and
-inside vs. outside compartment status for each compartment of the single
-molecule with serial number :math:`serno`. This stops after it finds the
-first molecule with the requested serial number. This supports two-part
-serial numbers (see ``reaction_serialnum``) in which a match occurs if
-:math:`serno` exactly matches either the whole molecule serial number or
-either half of it.
-
-``molmoments`` :math:`species(state)\ filename`
-
-This prints out the positional moments of the molecule type given to the
-listed file name. All the moments are printed on a single line of text;
-they are the number of molecules, the mean position vector (dim values),
-and the variances on each axis and combination of axes (dim2 values).
-:math:`state` is optional; neither :math:`species` nor :math:`state` can
-be “all”.
-
-``savesim`` :math:`filename`
-
-This writes the complete state of the current system to the listed file
-name, in a format that can be loaded in later as a configuration file.
-Note that minor file editing is often desirable before simulating a file
-saved in this manner. In particular, the saved file will declare its own
-name as an output file name, which will erase the configuration file.
-
-``meansqrdisp`` :math:`species(state)\ dim\ filename`
-
-This function is used to measure mean square displacements (diffusion
-rates) of molecules of type :math:`species`, along dimension :math:`dim`
-(“x”, “y”, or “z”, or 0, 1, or 2) printing the results to
-:math:`filename`. When it is first invoked, it records the positions of
-all molecules of type :math:`species`. Then, and every subsequent time
-it is called, it compares the current positions of all molecules that
-still exist to the old ones, calculates the average squared displacement
-(:math:`\langle r^2 \rangle`), and prints the time and that number to a
-single line in the output file. If :math:`dim` is “all”, this sums the
-mean square displacement for all dimensions, otherwise :math:`dim`
-should be a dimension number. This accounts for periodic boundaries.
-:math:`state` is optional; neither :math:`species` nor :math:`state` can
-be “all”. This prints out three numbers in each line: time,
-:math:`\langle r^2 \rangle`, and :math:`\langle r^4 \rangle`. This
-command does not work if multiple molecules have the same serial number
-(which can only happen if you use the ``reaction_serialnum`` statement).
-For molecules with two-part serial numbers, it determines molecule
-identity based on only the right part.
-
-``meansqrdisp2``
-:math:`species(state)\ dim\ start\ report\ max\_mol\ max\_moment\ filename`
-
-This function is an expanded version of ``meansqrdisp``. As above, it
-measures mean square displacements of molecules of type :math:`species`,
-along dimension :math:`dim` (“x”, “y”, or “z”, or 0, 1, or 2), and
-prints the results to :math:`filename`. The :math:`start` and
-:math:`report` arguments control when this command starts tracking
-molecules and when it reports their mean square displacements,
-respectively. For :math:`start`, enter “i” to track molecules that exist
-when the command is initially invoked, enter “c” to track those that are
-created after the first call, and enter “a” (all) to track both sets of
-molecules. For :math:`report`, enter “e” to report on every molecule
-that is being tracked, or “r” to report on only those that reacted since
-the command was last called. In this latter case, the position that is
-used for a reacted molecule is its most recently tracked position, since
-it no longer exists. For example, if you want to see how far molecules
-diffuse between their creation in one reaction and their destruction in
-another reaction, set :math:`start` to “c” and report to “r”. Or, set
-:math:`start` to “i” and report to “e” for this function to be identical
-to ``meansqrdisp``. It can track up to :math:`max\_mol` molecules. This
-function prints out the time and then results for all moments, even and
-odd, from :math:`\langle r^0 \rangle` (the number of molecules being
-reported on) to :math:`\langle r^{max\_moment} \rangle`. This command
-accounts for periodic boundaries. :math:`state` is optional; neither
-:math:`species` nor :math:`state` can be “all”. This command does not
-work if multiple molecules have the same serial number (which can only
-happen if you use the ``reaction_serialnum`` statement). For molecules
-with two-part serial numbers, it determines molecule identity based on
-only the right part.
-
-``meansqrdisp3``
-:math:`species(state)\ dim\ start\ report\ max\_mol\ change\ filename\ command`
-
-This function is quite similar to ``meansqrdisp`` and ``meansqrdisp2``.
-It measures mean square displacements of molecules of type
-:math:`species`, along dimension :math:`dim` (“x”, “y”, or “z”, or 0, 1,
-or 2). Then, this function divides these values by the molecules’ ages
-to compute effective diffusion coefficients and prints the results to
-:math:`filename`. The effective diffusion coefficient average is
-weighted using the molecule ages, so that old molecules have
-proportionately greater weight in the average than young molecules. The
-:math:`start` and :math:`report` arguments control when this command
-starts tracking molecules and when it reports their mean square
-displacements, respectively. For :math:`start`, enter “i” to track
-molecules that exist when the command is initially invoked, enter “c” to
-track those that are created after the first call, and enter “a” (all)
-to track both sets of molecules. For :math:`report`, enter “e” to report
-on every molecule that is being tracked, or “r” to report on only those
-that reacted since the command was last called. In this latter case, the
-position that is used for a reacted molecule is its most recently
-tracked position, since it no longer exists. It can track up to
-:math:`max\_mol` molecules. This function prints out the time, the
-number of molecules reported on, and the effective diffusion
-coefficient. Note that the first command run will always output an
-effective diffusion coefficient of “NaN” (or #1.IND on Windows systems)
-due to a 0/0 division error arising from 0 displacement divided by 0
-time difference. If the effective diffusion coefficient changed less
-than :math:`change` since the last time this function was executed, then
-the command :math:`command` is run (e.g. if :math:`change` is 0.01 then
-a fractional diffusion coefficient change of 1% or less will cause
-:math:`command` to be run). See the example file called
-meansqrdisp3.txt. This command accounts for periodic boundaries. The
-:math:`species` cannot be “all”. The :math:`state` is optional. If the
-:math:`state` is “all”, then molecules for all states of this species
-must be stored in the same molecule list. No warning is issued if this
-is not the case, but some molecules simply won’t be counted. This
-command does not work if multiple molecules have the same serial number
-(which can only happen if you use the ``reaction_serialnum`` statement).
-For molecules with two-part serial numbers, it determines molecule
-identity based on only the right part.
-
-``residencetime``
-:math:`species(state)\ start\ report\ summary\_out\ list\_out\ max\_mol\ filename`
-
-This function computes residence times of individual molecules of type
-:math:`species`, thus showing how long they have existed in the system.
-As with ``meansqrdisp2`` and ``meansqrdisp3``, the :math:`start` and
-:math:`report` arguments control when this command starts tracking
-molecules and when it reports their residence times, respectively. For
-:math:`start`, enter “i” to track molecules that exist when the command
-is initially invoked, enter “c” to track those that are created after
-the first call, and enter “a” (all) to track both sets of molecules. For
-:math:`report`, enter “e” to report on every molecule that is being
-tracked, or “r” to report on only those that reacted since the command
-was last called. It can track up to :math:`max\_mol` molecules. This
-function needs to be invoked at every time step so that molecules can be
-tracked accurately. However, output may not be wanted at every time
-step, so set :math:`summary\_out` to the number of invocations between
-when this should print a summary output, with the time number of
-molecules, and mean residence time, and set :math:`list\_out` to the
-number of invocations between when this should print a list output, with
-a list of all molecules with their IDs and their current ages. In both
-cases, set values to 0 or less to not have this type of output.
-:math:`state` is optional; neither :math:`species` nor :math:`state` can
-be “all”. See the residencetime.txt example file. This command does not
-work if multiple molecules have the same serial number (which can only
-happen if you use the ``reaction_serialnum`` statement).
-
-``diagnostics`` :math:`type`
-
-Displays diagnostics about various parts of the data structures to the
-screen. These are identical to those that are displayed at program
-initialization, but for later times. The options for the type word are:
-“simulation”, “wall”, “molecule”, “surface”, “command”, “box”,
-“reaction”, “compartment”, “port”, “check”, and “all”.
-
-``executiontime`` :math:`filename`
-
-Prints a single line of text with the current simulation time and the
-number of seconds of real time that the simulation has taken to execute
-since the simulation was started.
-
-``printLattice`` :math:`filename`
-
-Displays diagnostics about all lattices.
-
-``writeVTK`` :math:`filepath/filename`
-
-Outputs VTK format data for viewing with applications such as Visit or
-Paraview. This creates a stack of files in the working directory, or
-somewhere else depending on the :math:`filepath`, for which the names
-start with filenameLattice00_00001.vtu and filenameMolecules00001.vtu,
-where :math:`filename` is the entered file name. The :math:`filepath`
-directory needs to have been created beforehand. In contrast to most
-filenames, this path and name should not be declared with the
-“output_files” statement. The :math:`filename` numbers are incremented
-for each snapshot. If molecules have two-part serial numbers, this only
-considers the right part.
-
-``printdata`` :math:`data\ filename\ [erase]`
-
-Prints data that were recorded by some other command, and stored in data
-array data, to the output :math:`filename`. Set the optional parameter
-erase to 0 to not have the original data erased after copying (the
-default) or to 1 to have the original data erased after copying.
+.. container:: description
+
+   ``warnescapee`` :math:`species(state)\ filename`
+
+   Looks for molecules of type :math:`species` that are outside the
+   system boundaries, printing results to :math:`filename`. If there are
+   none, nothing is printed. For each molecule that escaped during the
+   last time step, this prints a line of text that says where the
+   molecule was, where it is, and where it crossed the last surface.
+   Setting :math:`species` to “all” allows all molecule types to be
+   checked. This needs to be run at every time step to catch all
+   escaping molecules.
+
+   ``warnescapeecmpt`` :math:`species(state)\ compartment\ filename`
+
+   This is the same as warnescapee, but looks for molecules escaping
+   from :math:`compartment`.
+
+   ``echo`` :math:`filename "string"`
+
+   Just prints the text within double quotes to the file, without any
+   terminal newline. If you want a newline, include “
+   n” at the end of the string. The quotes need to be plain quotes, not
+   curly quotes.
+
+   ``evaluate`` :math:`filename\ expression`
+
+   Evaluates the given mathematical expression, printing the result to
+   the file. The results are only likely to be interesting if the
+   expression is one of the Smoldyn functions.
+
+   ``molcountheader`` :math:`filename`
+
+   This prints one line of display with the word “time” and then the
+   name of each molecule species. This is intended to be used as a
+   header line for the ``molcount``, ``molcountinbox``, etc. commands.
+
+   ``molcount`` :math:`filename`
+
+   Each time this command is executed, one line of display is printed to
+   the listed file, giving the time and the number of molecules for each
+   molecular species. Molecule states are ignored. The ordering used is
+   the same as was given in the species command. This command accounts
+   for molecules in lattices and their associated ports.
+
+   ``molcountinbox`` :math:`low_x\ high_x\ filename`
+   ``molcountinbox`` :math:`low_x\ high_x\ low_y\ high_y\ filename`
+   ``molcountinbox``
+   :math:`low_x\ high_x\ low_y\ high_y\ low_z\ high_z\ filename`
+
+   Each time this command is executed, one line of display is printed to
+   the listed file, giving the time and the number of molecules that are
+   within the box that is defined by the low and high parameter, for
+   each molecular species. Molecule states are ignored. The ordering
+   used is the same as was given in the species statement.
+
+   ``molcountincmpt`` :math:`compartment\ filename`
+
+   Each time this command is executed, one line of display is printed to
+   the listed file, giving the time and the number of molecules that are
+   within the compartment :math:`compartment` for each molecular
+   species. Only solution-phase molecules are listed. The ordering used
+   is the same as was given in the ``species`` statement.
+
+   ``molcountincmpts``
+   :math:`compartment_1\ compartment_1\ ...\ compartment_n\ filename`
+
+   Each time this command is executed, one line of display is printed to
+   the listed file, giving the time and the number of molecules that are
+   within each of the compartments listed, for each molecular species.
+   Up to 16 compartments may be listed. Only solution-phase molecules
+   are reported to the output. The molecule ordering used is the same as
+   was given in the species statement.
+
+   ``molcountincmpt2`` :math:`compartment\ state\ filename`
+
+   Identical to ``molcountincmpt`` except that this counts molecules
+   that are in state :math:`state`. Entering :math:`state` as “all”
+   means that molecules of all states are counted. Note that the
+   surfaces that bound a compartment are included in that compartment.
+
+   ``molcountonsurf`` :math:`surface\ filename`
+
+   Each time this command is executed, one line of display is printed to
+   the listed file, giving the time and the number of molecules that are
+   bound to the surface :math:`surface` for each molecular species. The
+   molecule state is not printed. The ordering used is the same as was
+   given in the species statement.
+
+   ``molcountspace``
+   :math:`species(state)\ axis\ low\ high\ bins\ average\ filename`
+   ``molcountspace``
+   :math:`species(state)\ axis\ low\ high\ bins\ low\ high\ average\ filename`
+   ``molcountspace``
+   :math:`species(state)\ axis\ low\ high\ bins\ low\ high\ low\ high\ average\ filename`
+
+   This command measures a line profile of molecules. It only counts
+   molecules of type :math:`species`, with an optional state
+   specification, although :math:`species` and/or :math:`state` can be
+   “all”. The line profile is along axis number :math:`axis`, which is
+   “x”, “y”, or “z” (or a number between 0 and the system dimensionality
+   minus 1), extends from :math:`low` to :math:`high`, and is composed
+   of :math:`bins` equally spaced bins (i.e. it’s a histogram). These
+   bins extend exactly from :math:`low` to :math:`high`, and thus do not
+   count any molecules that are outside this range. For two dimensions,
+   the line width and lateral position are specified with another pair
+   of :math:`low` and :math:`high` values; for three dimensions, two
+   more pairs of :math:`low` and :math:`high` values are required, which
+   now specify the sides of a rectangular cross-section tube.
+
+   To illustrate the sequence of parameters, suppose the command is used
+   in a 3-D system to show concentration variation along the
+   :math:`y`-axis. In this case, :math:`axis` is “y”, the first
+   :math:`low` and :math:`high` indicate the ends of the measurement
+   range along the :math:`y`-axis, the next :math:`low` and :math:`high`
+   indicate the domain on the :math:`x`-direction, and the third
+   :math:`low` and :math:`high` indicate the domain on the
+   :math:`z`-direction. Set the :math:`average` input to 0 to not use
+   averaging, in which case there is output at every command execution.
+   Otherwise, this only produces an output every :math:`average`
+   iterations, at which point it outputs means that were collected over
+   the preceding iterations. At each output time, the command outputs a
+   single line of text to :math:`filename` with the time followed by the
+   numbers (or average numbers) of the specified molecules in each
+   histogram bin. This command accounts for molecules in lattices, but
+   not for molecules in ports.
+
+   ``molcountspace2d``
+   :math:`species(state)\ z\ low_x\ high_x\ bins_x\ low_y\ high_y\ bins_y\ average\ filename`
+   ``molcountspace2d``
+   :math:`species(state)\ axis\ low\ high\ bins\ low\ high\ bins\ low\ high\ average\ filename`
+
+   This command measures a 2D histogram of molecules. It is identical to
+   ``molcountspace``, but for 2D. The area is perpendicular to the
+   listed :math:`axis` (must be entered as “z” for 2D simulations and
+   selectable for 3D simulations). It extends from :math:`low` to
+   :math:`high`, and is composed of :math:`bins` equally spaced bins,
+   entered separately for each of the two axes. For 3D simulations,
+   region thickness is specified with another pair of :math:`low` and
+   :math:`high` values. Set the :math:`average` input to 0 to not use
+   averaging, in which case there is output at every command execution.
+   Otherwise, this only produces an output every :math:`average`
+   iterations, at which point it outputs means that were collected over
+   the preceding iterations. At each output time, the command outputs
+   the time to :math:`filename`, followed by a grid of numbers of the
+   molecules in each histogram bin. This command does not account for
+   molecules in lattices or ports.
+
+   ``molcountspaceradial``
+   :math:`species(state)\ center_x\ radius\ bins\ average\ filename`
+   ``molcountspaceradial``
+   :math:`species(state)\ center_x\ center_y\ radius\ bins\ average\ filename`
+   ``molcountspaceradial``
+   :math:`species(state)\ center_x\ center_y\ center_z\ radius\ bins\ average\ filename`
+
+   This command measures a radial profile of molecules. It is identical
+   to ``molcountspace``, except that counts molecules in radial rings,
+   rather than along a line profile. It only counts molecules of type
+   :math:`species`, with an optional state specification, although
+   :math:`species` and/or :math:`state` can be “all”. Enter the center
+   position in :math:`center`, with the number of entries equal to the
+   system dimensionality, and the investigated radius in :math:`radius`.
+   The histogram is comprised of :math:`bins` equally spaced bins. The
+   volume investigated includes all edges. Set the :math:`average` input
+   to 0 to not use averaging, in which case there is output at every
+   command execution. Otherwise, this only produces an output every
+   :math:`average` iterations, at which point it outputs means that were
+   collected over the preceding iterations. At each output time, the
+   command outputs a single line of text to :math:`filename` with the
+   time followed by the numbers (or average numbers) of the specified
+   molecules in each histogram bin. This command does not account for
+   molecules in lattices or ports.
+
+   ``molcountspacepolarangle``
+   :math:`species(state)\ center_x\ center_y\ pole_x\ pole_y\ radius_{min}\ radius_{max}\ bins\ average\ filename`
+   ``molcountspacepolarangle``
+   :math:`species(state)\ center_x\ center_y\ center_z\ pole_x\ pole_y\ pole_z\ radius_{min}\ radius_{max}\ bins\ average\ filename`
+
+   This command measures a polar angle profile of molecules. It is
+   identical to ``molcountspace`` (and ``molcountspaceradial``), except
+   that counts molecules in angular segments, rather than along a line
+   profile. It only counts molecules of type :math:`species`, with an
+   optional state specification, although :math:`species` and/or
+   :math:`state` can be “all”. Enter the center position in
+   :math:`center`, with the number of entries equal to the system
+   dimensionality. Enter the vector that points towards the pole in
+   :math:`pole`, again with the number of entries equal to the system
+   dimensionality. All molecules between :math:`radius_{min}` and
+   :math:`radius_{max}` will be included; set either or both to -1 to
+   remove the respective constraint. The histogram is composed of
+   :math:`bins` equally spaced bins. These bins extend from 0 to
+   :math:`2\pi` for a 2D system and from 0 to :math:`\pi` in a 3D
+   system. The volume investigated includes all edges. Set the
+   :math:`average` input to 0 to not use averaging, in which case there
+   is output at every command execution. Otherwise, this only produces
+   an output every :math:`average` iterations, at which point it outputs
+   means that were collected over the preceding iterations. At each
+   output time, the command outputs a single line of text to
+   :math:`filename` with the time followed by the numbers (or average
+   numbers) of the specified molecules in each histogram bin. This
+   command does not account for molecules in lattices or ports.
+
+   ``radialdistribution``
+   :math:`species_1(state)\ species_2(state)\ radius\ bins\ average\ filename`
+
+   Computes the radial distribution function for molecules of
+   :math:`species_2` about those of :math:`species_1`. These are allowed
+   to be the same species, can include wildcards, can be “all”, etc.
+   Enter the maximum radius to be considered in :math:`radius`, the
+   number of bins in the histogram in :math:`bins`, the number of
+   iterations to be averaged together in :math:`average` (or 0 for no
+   averaging), and the output filename in :math:`filename`. Outputs the
+   time followed by the radial distribution function, where the radial
+   distribution function values are the average molecule densities
+   (units of inverse volume) in each radial bin. Divide these results by
+   the overall average molecule density to get the conventional radial
+   distribution function, which typically approaches 1 for large
+   distances. This function accounts for periodic boundaries if they are
+   used.
+
+   ``radialdistribution2``
+   :math:`species_1(state)\ species2(state)\ low_x\ high_x\ low_y\ high_y\ low_z\ high_z\ radius\ bins\ average\ filename`
+
+   Identical to ``radialdistribution`` except that this also allows
+   selection of a volume region. Enter the :math:`low` and :math:`high`
+   values for as many dimensions as the simulation uses. This computes
+   the radial distribution about all molecules of :math:`species_1` that
+   are within the given volume; :math:`species_2` molecules are
+   considered that are outside of this volume (up to distance
+   :math:`radius` outside of it).
+
+   ``molcountspecies`` :math:`species(state)\ filename`
+
+   Prints out a single line of text to :math:`filename` with time and
+   the number of molecules of the listed species that are in state
+   :math:`state`. Either or both of :math:`species` and :math:`state`
+   may be “all”. If :math:`state` is not included, solution is assumed.
+
+   ``molcountspecieslist``
+   :math:`filename\ species(state)\ species(state)\ ...\ species(state)`
+
+   Prints out a single line of text to :math:`filename` with time and
+   the number of molecules of each of the listed species and states.
+   Either or both of :math:`species` and :math:`state` may be “all”. If
+   :math:`state` is not included, solution is assumed.
+
+   ``mollistsize`` :math:`listname\ filename`
+
+   Prints out a single line of text to :math:`filename` with the total
+   number of molecules in the molecule list named :math:`listname`. This
+   is allowed to be “all”.
+
+   ``listmols`` :math:`filename`
+
+   This prints out the identity, state, location, and serial number of
+   every molecule in the system to the listed file name, using a
+   separate line of text for each molecule.
+
+   ``listmols2`` :math:`filename`
+
+   This is very similar to ``listmols`` but has a slightly different
+   output format. Each line of text is preceded by the “time counter”,
+   which is an integer that starts at 1 and is incremented each time the
+   routine is called. Also, the species and state names of molecules are
+   not printed, but instead the :math:`species` and :math:`state`
+   numbers are printed.
+
+   ``listmols3`` :math:`species(state)\ filename`
+
+   This is identical to ``listmols2`` except that it only prints
+   information about molecules of type :math:`species`. :math:`state` is
+   optional; :math:`species` and/or :math:`state` can be “all”.
+
+   ``listmols4`` :math:`species(state)\ filename`
+
+   This is identical to ``listmols3`` except that it accounts for
+   wrap-arounds when displaying molecule positions. In other words, if
+   the :math:`x`-axis ranges from 0 to 10, a molecule starts in the
+   middle at :math:`x = 5` and diffuses to the right for a full lap,
+   returning to the middle of the system, then its :math:`x` value is
+   printed here as 15, rather than as 5 as it is for ``listmols3``.
+   :math:`state` is optional; :math:`species` and/or :math:`state` can
+   be “all”.
+
+   ``listmolscmpt`` :math:`species(state)\ cmpt\ filename`
+
+   This prints out the time counter (see ``listmols2``), species, state,
+   and location, and serial number of every molecule that is within
+   compartment :math:`cmpt`. It only prints information about molecules
+   of type :math:`species`. :math:`state` is optional; :math:`species`
+   and/or :math:`state` can be “all”.
+
+   ``molpos`` :math:`species(state)\ filename`
+
+   This prints out the time and then the positions of all molecules of
+   type :math:`species` on a single line of text, to the listed
+   :math:`filename`. :math:`state` is optional; :math:`species` and/or
+   :math:`state` can be “all”.
+
+   ``trackmol`` :math:`serno\ filename`
+
+   Outputs the time and the species, state, serial number, location, and
+   inside vs. outside compartment status for each compartment of the
+   single molecule with serial number :math:`serno`. This stops after it
+   finds the first molecule with the requested serial number. This
+   supports two-part serial numbers (see ``reaction_serialnum``) in
+   which a match occurs if :math:`serno` exactly matches either the
+   whole molecule serial number or either half of it.
+
+   ``molmoments`` :math:`species(state)\ filename`
+
+   This prints out the positional moments of the molecule type given to
+   the listed file name. All the moments are printed on a single line of
+   text; they are the number of molecules, the mean position vector (dim
+   values), and the variances on each axis and combination of axes (dim2
+   values). :math:`state` is optional; neither :math:`species` nor
+   :math:`state` can be “all”.
+
+   ``savesim`` :math:`filename`
+
+   This writes the complete state of the current system to the listed
+   file name, in a format that can be loaded in later as a configuration
+   file. Note that minor file editing is often desirable before
+   simulating a file saved in this manner. In particular, the saved file
+   will declare its own name as an output file name, which will erase
+   the configuration file.
+
+   ``meansqrdisp`` :math:`species(state)\ dim\ filename`
+
+   This function is used to measure mean square displacements (diffusion
+   rates) of molecules of type :math:`species`, along dimension
+   :math:`dim` (“x”, “y”, or “z”, or 0, 1, or 2) printing the results to
+   :math:`filename`. When it is first invoked, it records the positions
+   of all molecules of type :math:`species`. Then, and every subsequent
+   time it is called, it compares the current positions of all molecules
+   that still exist to the old ones, calculates the average squared
+   displacement (:math:`\langle r^2 \rangle`), and prints the time and
+   that number to a single line in the output file. If :math:`dim` is
+   “all”, this sums the mean square displacement for all dimensions,
+   otherwise :math:`dim` should be a dimension number. This accounts for
+   periodic boundaries. :math:`state` is optional; neither
+   :math:`species` nor :math:`state` can be “all”. This prints out three
+   numbers in each line: time, :math:`\langle r^2 \rangle`, and
+   :math:`\langle r^4 \rangle`. This command does not work if multiple
+   molecules have the same serial number (which can only happen if you
+   use the ``reaction_serialnum`` statement). For molecules with
+   two-part serial numbers, it determines molecule identity based on
+   only the right part.
+
+   ``meansqrdisp2``
+   :math:`species(state)\ dim\ start\ report\ max\_mol\ max\_moment\ filename`
+
+   This function is an expanded version of ``meansqrdisp``. As above, it
+   measures mean square displacements of molecules of type
+   :math:`species`, along dimension :math:`dim` (“x”, “y”, or “z”, or 0,
+   1, or 2), and prints the results to :math:`filename`. The
+   :math:`start` and :math:`report` arguments control when this command
+   starts tracking molecules and when it reports their mean square
+   displacements, respectively. For :math:`start`, enter “i” to track
+   molecules that exist when the command is initially invoked, enter “c”
+   to track those that are created after the first call, and enter “a”
+   (all) to track both sets of molecules. For :math:`report`, enter “e”
+   to report on every molecule that is being tracked, or “r” to report
+   on only those that reacted since the command was last called. In this
+   latter case, the position that is used for a reacted molecule is its
+   most recently tracked position, since it no longer exists. For
+   example, if you want to see how far molecules diffuse between their
+   creation in one reaction and their destruction in another reaction,
+   set :math:`start` to “c” and report to “r”. Or, set :math:`start` to
+   “i” and report to “e” for this function to be identical to
+   ``meansqrdisp``. It can track up to :math:`max\_mol` molecules. This
+   function prints out the time and then results for all moments, even
+   and odd, from :math:`\langle r^0 \rangle` (the number of molecules
+   being reported on) to :math:`\langle r^{max\_moment} \rangle`. This
+   command accounts for periodic boundaries. :math:`state` is optional;
+   neither :math:`species` nor :math:`state` can be “all”. This command
+   does not work if multiple molecules have the same serial number
+   (which can only happen if you use the ``reaction_serialnum``
+   statement). For molecules with two-part serial numbers, it determines
+   molecule identity based on only the right part.
+
+   ``meansqrdisp3``
+   :math:`species(state)\ dim\ start\ report\ max\_mol\ change\ filename\ command`
+
+   This function is quite similar to ``meansqrdisp`` and
+   ``meansqrdisp2``. It measures mean square displacements of molecules
+   of type :math:`species`, along dimension :math:`dim` (“x”, “y”, or
+   “z”, or 0, 1, or 2). Then, this function divides these values by the
+   molecules’ ages to compute effective diffusion coefficients and
+   prints the results to :math:`filename`. The effective diffusion
+   coefficient average is weighted using the molecule ages, so that old
+   molecules have proportionately greater weight in the average than
+   young molecules. The :math:`start` and :math:`report` arguments
+   control when this command starts tracking molecules and when it
+   reports their mean square displacements, respectively. For
+   :math:`start`, enter “i” to track molecules that exist when the
+   command is initially invoked, enter “c” to track those that are
+   created after the first call, and enter “a” (all) to track both sets
+   of molecules. For :math:`report`, enter “e” to report on every
+   molecule that is being tracked, or “r” to report on only those that
+   reacted since the command was last called. In this latter case, the
+   position that is used for a reacted molecule is its most recently
+   tracked position, since it no longer exists. It can track up to
+   :math:`max\_mol` molecules. This function prints out the time, the
+   number of molecules reported on, and the effective diffusion
+   coefficient. Note that the first command run will always output an
+   effective diffusion coefficient of “NaN” (or #1.IND on Windows
+   systems) due to a 0/0 division error arising from 0 displacement
+   divided by 0 time difference. If the effective diffusion coefficient
+   changed less than :math:`change` since the last time this function
+   was executed, then the command :math:`command` is run (e.g. if
+   :math:`change` is 0.01 then a fractional diffusion coefficient change
+   of 1% or less will cause :math:`command` to be run). See the example
+   file called meansqrdisp3.txt. This command accounts for periodic
+   boundaries. The :math:`species` cannot be “all”. The :math:`state` is
+   optional. If the :math:`state` is “all”, then molecules for all
+   states of this species must be stored in the same molecule list. No
+   warning is issued if this is not the case, but some molecules simply
+   won’t be counted. This command does not work if multiple molecules
+   have the same serial number (which can only happen if you use the
+   ``reaction_serialnum`` statement). For molecules with two-part serial
+   numbers, it determines molecule identity based on only the right
+   part.
+
+   ``residencetime``
+   :math:`species(state)\ start\ report\ summary\_out\ list\_out\ max\_mol\ filename`
+
+   This function computes residence times of individual molecules of
+   type :math:`species`, thus showing how long they have existed in the
+   system. As with ``meansqrdisp2`` and ``meansqrdisp3``, the
+   :math:`start` and :math:`report` arguments control when this command
+   starts tracking molecules and when it reports their residence times,
+   respectively. For :math:`start`, enter “i” to track molecules that
+   exist when the command is initially invoked, enter “c” to track those
+   that are created after the first call, and enter “a” (all) to track
+   both sets of molecules. For :math:`report`, enter “e” to report on
+   every molecule that is being tracked, or “r” to report on only those
+   that reacted since the command was last called. It can track up to
+   :math:`max\_mol` molecules. This function needs to be invoked at
+   every time step so that molecules can be tracked accurately. However,
+   output may not be wanted at every time step, so set
+   :math:`summary\_out` to the number of invocations between when this
+   should print a summary output, with the time number of molecules, and
+   mean residence time, and set :math:`list\_out` to the number of
+   invocations between when this should print a list output, with a list
+   of all molecules with their IDs and their current ages. In both
+   cases, set values to 0 or less to not have this type of output.
+   :math:`state` is optional; neither :math:`species` nor :math:`state`
+   can be “all”. See the residencetime.txt example file. This command
+   does not work if multiple molecules have the same serial number
+   (which can only happen if you use the ``reaction_serialnum``
+   statement).
+
+   ``diagnostics`` :math:`type`
+
+   Displays diagnostics about various parts of the data structures to
+   the screen. These are identical to those that are displayed at
+   program initialization, but for later times. The options for the type
+   word are: “simulation”, “wall”, “molecule”, “surface”, “command”,
+   “box”, “reaction”, “compartment”, “port”, “check”, and “all”.
+
+   ``executiontime`` :math:`filename`
+
+   Prints a single line of text with the current simulation time and the
+   number of seconds of real time that the simulation has taken to
+   execute since the simulation was started.
+
+   ``printLattice`` :math:`filename`
+
+   Displays diagnostics about all lattices.
+
+   ``writeVTK`` :math:`filepath/filename`
+
+   Outputs VTK format data for viewing with applications such as Visit
+   or Paraview. This creates a stack of files in the working directory,
+   or somewhere else depending on the :math:`filepath`, for which the
+   names start with filenameLattice00_00001.vtu and
+   filenameMolecules00001.vtu, where :math:`filename` is the entered
+   file name. The :math:`filepath` directory needs to have been created
+   beforehand. In contrast to most filenames, this path and name should
+   not be declared with the “output_files” statement. The
+   :math:`filename` numbers are incremented for each snapshot. If
+   molecules have two-part serial numbers, this only considers the right
+   part.
+
+   ``printdata`` :math:`data\ filename\ [erase]`
+
+   Prints data that were recorded by some other command, and stored in
+   data array data, to the output :math:`filename`. Set the optional
+   parameter erase to 0 to not have the original data erased after
+   copying (the default) or to 1 to have the original data erased after
+   copying.
 
 System manipulation commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``set`` :math:`statement`
-
-This command lets you use essentially any statement that can be entered
-in a configuration file. The statement can, for example, create new
-reactions, add surfaces, change rate constants, etc.
-
-``pointsource`` :math:`species\ num\ pos_x`
-``pointsource`` :math:`species\ num\ pos_x\ pos_y`
-``pointsource`` :math:`species\ num\ pos_x\ pos_y\ pos_z`
-
-Creates :math:`num` new molecules of type :math:`species` and at
-location :math:`pos`. Molecule states are set to solution. This creates
-exactly :math:`num` molecules if :math:`num` is an integer and a
-Poisson-distributed random number of molecules with expected value equal
-to :math:`num` if :math:`num` is a non-integer.
-
-``volumesource``
-:math:`species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}`
-``volumesource``
-:math:`species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}`
-``volumesource``
-:math:`species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}`
-
-Creates :math:`num` new molecules of type :math:`species` and within the
-location bounded by :math:`pos_{low}` and :math:`pos_{high}`. Molecule
-states are set to solution. This creates exactly :math:`num` molecules
-if :math:`num` is an integer and a Poisson-distributed random number of
-molecules with expected value equal to :math:`num` if :math:`num` is a
-non-integer.
-
-``gaussiansource`` :math:`species\ num\ mean_x sigma_x`
-``gaussiansource`` :math:`species\ num\ mean_x sigma_x mean_y sigma_y`
-``gaussiansource``
-:math:`species\ num\ mean_x sigma_x mean_y sigma_y mean_z sigma_z`
-
-Creates :math:`num` new molecules of type :math:`species` with a
-Gaussian distribution centered at :math:`mean` and with standard
-deviation :math:`sigma` on each axis. Molecules are not placed beyond
-the system boundaries; any attempted placements are rejected and sampled
-again. Molecule states are set to solution. This creates exactly
-:math:`num` molecules if :math:`num` is an integer and a
-Poisson-distributed random number of molecules with expected value equal
-to :math:`num` if :math:`num` is a non-integer.
-
-``movesurfacemol``
-:math:`species(state)\ prob\ surface_1:panel_1\ surface_2:panel_2\ [state2]`
-
-Moves molecules of type :math:`species` and state :math:`state`, and
-which are bound to :math:`panel_1` of :math:`surface_1`, to
-:math:`panel_2` of :math:`surface_2` with probability :math:`prob`. If
-entered, the new molecular state becomes :math:`state_2`, which may be
-any state including fsoln or bsoln; otherwise the molecule state is
-unchanged. The new molecule location is at a random location on
-:math:`panel_2` (which contrasts the behavior of the ``jump``
-statement). Either or both of :math:`panel_1` and :math:`panel_2` can be
-“all” for all panels of the respective surface. Also, the species and/or
-the state may be “all”.
-
-``killmol`` :math:`species(state)`
-
-Kills all molecules of type :math:`species`. :math:`state` is optional;
-:math:`species` and/or :math:`state` may be “all”.
-
-``killmolprob`` :math:`species(state)\ prob`
-
-Kills some molecules of type :math:`species`; the probability of a
-molecule being killed is :math:`prob` (between 0 and 1). :math:`state`
-is optional; :math:`species` and/or :math:`state` may be “all”.
-:math:`prob` can be a function of the molecule location using its
-:math:`x`, :math:`y`, and :math:`z` values.
-
-``killmolinsphere`` :math:`species(state)\ surface`
-
-Kill all molecules of type :math:`species` that are in any sphere that
-is a panel of surface :math:`surface`. If :math:`surface` is “all” then
-every surface is scanned. :math:`state` is optional; :math:`species`
-and/or :math:`state` may be “all”.
-
-``killmolincmpt`` :math:`species(state)\ compartment`
-
-Kill all molecules of type :math:`species` that are in compartment
-:math:`compartment`. :math:`state` is optional; :math:`species` and/or
-:math:`state` may be “all”.
-
-``killmoloutsidesystem`` :math:`species(state)`
-
-Kill all molecules of type :math:`species` that are outside of the
-system boundaries. :math:`state` is optional; :math:`species` and/or
-:math:`state` may be “all”.
-
-``fixmolcount`` :math:`species\ num`
-
-Counts the number of solution-phase molecules of type :math:`species`.
-If this count is more than :math:`num`, then molecules of this type,
-chosen at random, are removed until :math:`num` is reached. Otherwise,
-molecules are added to random positions in the system to achieve a total
-count of :math:`num`. This function considers the entire system volume.
-
-``fixmolcountrange`` :math:`species\ low\_num\ high\_num`
-
-Exactly like ``fixmolcount``, except that the molecule count is
-unchanged if it is between :math:`low\_num` and :math:`high\_num`, and
-is otherwise modified to bring it to within the range.
-
-``fixmolcountonsurf`` :math:`species(state)\ num\ surface`
-
-Counts the number of surface-bound molecules of type :math:`species` and
-state :math:`state`. If this count is more than :math:`num`, then
-molecules of this type, chosen at random, are removed until :math:`num`
-is reached. Otherwise, molecules with the proper state are added to
-random positions on the surface to achieve a total count of :math:`num`.
-
-``fixmolcountrangeonsurf``
-:math:`species(state)\ low\_num\ high\_num\ surface`
-
-Exactly like ``fixmolcountonsurf``, except that the molecule count is
-unchanged if it is between :math:`low\_num` and :math:`high\_num`, and
-is otherwise modified to bring it to within the range.
-
-``fixmolcountincmpt`` :math:`species\ num\ compartment`
-
-Counts the number of solution-phase molecules of type :math:`species`
-and in compartment :math:`compartment`. If this count is more than
-:math:`num`, then molecules of this type, chosen at random, are removed
-until :math:`num` is reached. Otherwise, molecules are added to random
-positions in the compartment to achieve a total count of :math:`num`.
-
-``fixmolcountrangeincmpt``
-:math:`species\ low\_num\ high\_num\ compartment`
-
-Exactly like ``fixmolcountincmpt``, except that the molecule count is
-unchanged if it is between :math:`low\_num` and :math:`high\_num`, and
-is otherwise modified to bring it to within the range.
-
-``equilmol`` :math:`species_1(state_1)\ species_2(state_2)\ prob`
-
-Equilibrate these molecules. All molecules of type :math:`species_1` and
-:math:`species_2` will be randomly replaced with one of the two types,
-where type :math:`species_2` has probability :math:`prob`.
-:math:`state_1` and :math:`state_2` are optional; defaults are
-“solution”. Neither species nor states may be “all”. :math:`prob` can be
-a function of the molecule location using its :math:`x`, :math:`y`, and
-:math:`z` values.
-
-``replacemol`` :math:`species_1(state_1)\ species_2(state_2)\ prob`
-
-Molecules of type :math:`species_1` are replaced with ones of type
-:math:`species_2` with probability :math:`prob`. States are optional and
-are solution by default; neither species nor states may be “all”.
-:math:`prob` can be a function of the molecule location using its
-:math:`x`, :math:`y`, and :math:`z` values.
-
-``replacexyzmol`` :math:`species(state)\ pos_0\ pos_1\ ...\ pos_{dim-1}`
-
-If there is a non-diffusing molecule at exactly position :math:`pos`, it
-is replaced with one of type :math:`species`. This command stops after
-one molecule is found. :math:`state` is optional and may not be “all”;
-default is solution.
-
-``replacevolmol``
-:math:`species_1(state_1)\ species_2(state_2)\ frac\ pos_{0,low}\ pos_{0,high}\ pos_{1,low}\ pos_{1,high}\ ...\ pos_{dim-1,high}`
-
-Fraction :math:`frac` molecules of type :math:`species_1` in the volume
-bounded by :math:`pos_{low}`, :math:`pos_{high}` are replaced with ones
-of type :math:`species_2`. States are optional and are solution by
-default; neither species nor states may be “all”. :math:`frac` can be a
-function of the molecule location using its :math:`x`, :math:`y`, and
-:math:`z` values.
-
-``replacecmptmol``
-:math:`species_1(state_1)\ species_2(state_2)\ frac\ compartment`
-
-Fraction :math:`frac` molecules of type :math:`species_1` in the
-compartment named :math:`compartment` are replaced with ones of type
-:math:`species_2`. States are optional and are solution by default;
-neither :math:`species` nor :math:`states` may be “all”. :math:`frac`
-can be a function of the molecule location using its :math:`x`,
-:math:`y`, and :math:`z` values.
-
-``modulatemol``
-:math:`species_1(state_1)\ species_2(state_2)\ freq\ shift`
-
-Modulates molecules of types :math:`species_1` and :math:`species_2`,
-just like ``equilmol``, but with a variable probability. Every time this
-command executes, any of the two types of molecules in the system are
-replaced with a molecule of type :math:`species_1` with probability
-:math:`\cos(freq*t+shift)`, where :math:`t` is the simulation time, and
-otherwise with a molecule of type :math:`species_2`. States are optional
-and are solution by default; neither :math:`species` nor :math:`states`
-may be “all”.
-
-``react1`` :math:`species(state)\ rxn`
-
-All molecules of type :math:`species` are instantly reacted, resulting
-in the products and product placements given by the unimolecular
-reaction named :math:`rxn`. Note that :math:`species` does not have to
-be the normal reactant for reaction :math:`rxn`. The state is optional;
-:math:`species` and/or :math:`state` may be “all”.
-
-``setrateint`` :math:`rxn\ rate`
-
-Sets the internal reaction rate of the reaction named :math:`rxn` to
-:math:`rate`. See the description above for :math:`rate\_internal` for
-the meanings of :math:`rate` for the different reaction orders.
-
-``shufflemollist`` :math:`listname`
-
-Randomly shuffles the sequence of molecules in the molecule list called
-:math:`listname`. Enter “all” for all lists. This is useful for systems
-that are especially ordered or for simulations with unusually long time
-steps, because these situations may make simulation results depend on
-the molecule list sequences.
-
-``shufflereactions`` :math:`reactant_1\ reactant_2`
-
-Randomly shuffles the sequence of bimolecular reactions that reactant
-species :math:`reactant_1` and :math:`reactant_2` can undergo (all
-states are indexed together). Either or both or :math:`reactant_1` and
-:math:`reactant_2` can be “all”.
-
-``settimestep`` :math:`dt`
-
-Changes the simulation time step to :math:`dt`. This changes the
-diffusion step lengths, reaction binding and unbinding radii, and
-surface action probabilities. Caution should be used if the time step is
-increased to longer than the original value because no checks are made
-to ensure that the simulation will still yield accurate results.
-
-``porttransport`` :math:`port_1\ port_2`
-
-Transports molecules from the output buffer of :math:`port_1` to the
-input of :math:`port_2`. These may be the same ports.
-
-``excludebox`` :math:`low_x\ high_x`
-``excludebox`` :math:`low_x\ high_x\ low_y\ high_y`
-``excludebox`` :math:`low_x\ high_x\ low_y\ high_y\ low_z\ high_z`
-
-This keeps all molecules from entering a rectanguloid box within the
-system volume. Use the first form for one dimension, the second for two
-dimensions, and the third for three dimensions. Molecules that start
-within the box can stay there, but any molecule that tries to diffuse
-into the box is returned to its location at the previous time step. This
-command needs to be run at every time step to work properly.
-
-``excludesphere`` :math:`x\ rad`
-``excludesphere`` :math:`x\ y\ rad`
-``excludesphere`` :math:`x\ y\ z\ rad`
-
-This keeps all molecules from entering a sphere within the system
-volume. Use the first form for one dimension, the second for two
-dimensions, and the third for three dimensions; the coordinates given
-are the sphere center and rad is the sphere radius. Molecules that start
-within the sphere can stay there, but any molecule that tries to diffuse
-into the sphere is returned to its location at the previous time step.
-This command needs to be run at every time step to work properly.
-
-``includeecoli``
-
-An *E. coli* shape is defined as a cylinder with hemispherical endcaps,
-where the long axis of the bacterium extends the length of the
-:math:`x`-axis within the system walls and the radius of both the
-cylinder and the endcaps is half the spacing between the walls that
-bound the :math:`y`-axis. This command moves any molecule that diffuses
-out of the *E. coli* shape back to its location at the previous time
-step, or to the nearest surface of the *E. coli* if it was outside at
-the previous time step as well. This command does not need to be run at
-every time step to work properly. This only works with a 3 dimensional
-system.
-
-``setreactionratemolcount``
-:math:`rxn\ c_0\ c_1\ species_1(state_1)\ c_2\ species_2(state_2)\ ...`
-
-This sets the rate of the reaction named :math:`rxn` to: :math:`c_0`,
-plus :math:`c_1` times the number of molecules of :math:`species_1` and
-:math:`state_1`, plus :math:`c_2` times the number of molecules of
-:math:`species_2` and :math:`state_2`, plus any additional coefficients
-and species that are listed here. Species and/or states may be “all” and
-wildcards are permitted. If the reaction rate is computed to be a
-negative value, it is set to zero instead (and no warning is issued).
-
-``expandsystem`` :math:`expand_x expand_y expand_z`
-
-Expand, or contract, everything in system, which includes molecule
-locations and surfaces, about the center of the system. Expands by
-:math:`expand_x` along the :math:`x`-coordinate, by :math:`expand_y`
-along the :math:`y`-coordinate, and by :math:`expand_z` along the
-:math:`z`-coordinate. Enter as many numbers as there are dimensions.
-Each number should be 1 for no change, a number larger than 1 for
-expansion and a number smaller than 1 for contraction. Negative numbers
-perform system inversion. This command can be used, for example, to
-mimic lengthwise or diameter growth of a cell. Warning: isotropic
-expansion or contraction, in which all three expansion values are equal,
-generally works well, with no unintentional transfer of molecules across
-surfaces. However, anisotropic expansion or contraction would normally
-cause some of Smoldyn’s panel shapes to become distorted, including
-spheres, hemispheres, cylinders, and disks. Smoldyn does not support
-this, so these panels are expanded but not distorted. In the process,
-molecules often cross the surfaces unintentionally and need to be dealt
-with separately (e.g. killed off). See the expandsystem.txt example
-file.
-
-``translatecmpt`` :math:`compartment\ code\ \Delta x`
-``translatecmpt`` :math:`compartment\ code\ \Delta x\ \Delta y`
-``translatecmpt``
-:math:`compartment\ code\ \Delta x\ \Delta y\ \Delta z`
-
-Translate the compartment called :math:`compartment` by the shift value
-given in :math:`\Delta x`, :math:`\Delta y`, and :math:`\Delta z` (with
-fewer values for lower dimensions). The :math:`code` value describes
-which attributes of the compartment should be moved; add the codes for
-the individual attributes for the final code value. The individual codes
-are: 1 for translating the compartment surfaces, 2 for translating the
-molecules that are bound to those surfaces, 4 for translating the
-molecules that are within the compartment, and 8 for shifting the
-molecules that are outside of the compartment but that get bumped into
-by the moving surfaces. Thus, use a code of 15 to get all of these
-behaviors at once. With code of 4, all molecules within the compartment
-are translated, regardless of their surface actions. With code of 8, all
-molecules that a compartment surface would bump into get translated,
-unless their surface action is “transmit”. If a molecule gets
-“squeezed”, meaning that it gets bumped into by the moving compartment,
-but then gets bumped back due to some other surface, then that molecule
-will end up inside of the compartment.
-
-``diffusecmpt``
-:math:`compartment\ code\ stddev_x\ [cmpt\_bound\ radius\ nsample]`
-``diffusecmpt``
-:math:`compartment\ code\ stddev_x\ stddev_y\ [cmpt\_bound\ radius\ nsample]`
-``diffusecmpt``
-:math:`compartment\ code\ stddev_x\ stddev_y\ stddev_z\ [cmpt\_bound\ radius\ nsample]`
-
-This is similar to ``translatecmpt``, except that this translates the
-compartment by a Gaussian distributed random amount that has standard
-deviation on each axis of :math:`stddev_x`, :math:`stddev_y`, and
-:math:`stddev_z`. Also, this has three optional parameters:
-:math:`cmpt\_bound`, :math:`radius`, and :math:`nsample`. If they are
-entered, then Smoldyn keeps the diffusing compartment within the
-bounding compartment called :math:`cmpt\_bound` (assuming it was inside
-initially). It does this by computing :math:`nsample` test points that
-are on a spherical shell of radius radius around each of the
-compartment’s interior-defining points and determines if any of these
-test points would escape the bounding compartment during a move. If so,
-then the move is rejected, and Smoldyn tries again, up to 10 times. It’s
-important that radius is slightly larger than the actual distance to the
-compartment edge and that :math:`nsample` is sufficiently large to cover
-the effective surface adequately because molecule behavior is
-unpredictable if a molecule is between two reflective surfaces that end
-up crossing each other, even if only briefly and by a small amount.
+.. container:: description
+
+   ``set`` :math:`statement`
+
+   This command lets you use essentially any statement that can be
+   entered in a configuration file. The statement can, for example,
+   create new reactions, add surfaces, change rate constants, etc.
+
+   ``pointsource`` :math:`species\ num\ pos_x`
+   ``pointsource`` :math:`species\ num\ pos_x\ pos_y`
+   ``pointsource`` :math:`species\ num\ pos_x\ pos_y\ pos_z`
+
+   Creates :math:`num` new molecules of type :math:`species` and at
+   location :math:`pos`. Molecule states are set to solution. This
+   creates exactly :math:`num` molecules if :math:`num` is an integer
+   and a Poisson-distributed random number of molecules with expected
+   value equal to :math:`num` if :math:`num` is a non-integer.
+
+   ``volumesource``
+   :math:`species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}`
+   ``volumesource``
+   :math:`species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}`
+   ``volumesource``
+   :math:`species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}`
+
+   Creates :math:`num` new molecules of type :math:`species` and within
+   the location bounded by :math:`pos_{low}` and :math:`pos_{high}`.
+   Molecule states are set to solution. This creates exactly :math:`num`
+   molecules if :math:`num` is an integer and a Poisson-distributed
+   random number of molecules with expected value equal to :math:`num`
+   if :math:`num` is a non-integer.
+
+   ``gaussiansource`` :math:`species\ num\ mean_x sigma_x`
+   ``gaussiansource``
+   :math:`species\ num\ mean_x sigma_x mean_y sigma_y`
+   ``gaussiansource``
+   :math:`species\ num\ mean_x sigma_x mean_y sigma_y mean_z sigma_z`
+
+   Creates :math:`num` new molecules of type :math:`species` with a
+   Gaussian distribution centered at :math:`mean` and with standard
+   deviation :math:`sigma` on each axis. Molecules are not placed beyond
+   the system boundaries; any attempted placements are rejected and
+   sampled again. Molecule states are set to solution. This creates
+   exactly :math:`num` molecules if :math:`num` is an integer and a
+   Poisson-distributed random number of molecules with expected value
+   equal to :math:`num` if :math:`num` is a non-integer.
+
+   ``movesurfacemol``
+   :math:`species(state)\ prob\ surface_1:panel_1\ surface_2:panel_2\ [state2]`
+
+   Moves molecules of type :math:`species` and state :math:`state`, and
+   which are bound to :math:`panel_1` of :math:`surface_1`, to
+   :math:`panel_2` of :math:`surface_2` with probability :math:`prob`.
+   If entered, the new molecular state becomes :math:`state_2`, which
+   may be any state including fsoln or bsoln; otherwise the molecule
+   state is unchanged. The new molecule location is at a random location
+   on :math:`panel_2` (which contrasts the behavior of the ``jump``
+   statement). Either or both of :math:`panel_1` and :math:`panel_2` can
+   be “all” for all panels of the respective surface. Also, the species
+   and/or the state may be “all”.
+
+   ``killmol`` :math:`species(state)`
+
+   Kills all molecules of type :math:`species`. :math:`state` is
+   optional; :math:`species` and/or :math:`state` may be “all”.
+
+   ``killmolprob`` :math:`species(state)\ prob`
+
+   Kills some molecules of type :math:`species`; the probability of a
+   molecule being killed is :math:`prob` (between 0 and 1).
+   :math:`state` is optional; :math:`species` and/or :math:`state` may
+   be “all”. :math:`prob` can be a function of the molecule location
+   using its :math:`x`, :math:`y`, and :math:`z` values.
+
+   ``killmolinsphere`` :math:`species(state)\ surface`
+
+   Kill all molecules of type :math:`species` that are in any sphere
+   that is a panel of surface :math:`surface`. If :math:`surface` is
+   “all” then every surface is scanned. :math:`state` is optional;
+   :math:`species` and/or :math:`state` may be “all”.
+
+   ``killmolincmpt`` :math:`species(state)\ compartment`
+
+   Kill all molecules of type :math:`species` that are in compartment
+   :math:`compartment`. :math:`state` is optional; :math:`species`
+   and/or :math:`state` may be “all”.
+
+   ``killmoloutsidesystem`` :math:`species(state)`
+
+   Kill all molecules of type :math:`species` that are outside of the
+   system boundaries. :math:`state` is optional; :math:`species` and/or
+   :math:`state` may be “all”.
+
+   ``fixmolcount`` :math:`species\ num`
+
+   Counts the number of solution-phase molecules of type
+   :math:`species`. If this count is more than :math:`num`, then
+   molecules of this type, chosen at random, are removed until
+   :math:`num` is reached. Otherwise, molecules are added to random
+   positions in the system to achieve a total count of :math:`num`. This
+   function considers the entire system volume.
+
+   ``fixmolcountrange`` :math:`species\ low\_num\ high\_num`
+
+   Exactly like ``fixmolcount``, except that the molecule count is
+   unchanged if it is between :math:`low\_num` and :math:`high\_num`,
+   and is otherwise modified to bring it to within the range.
+
+   ``fixmolcountonsurf`` :math:`species(state)\ num\ surface`
+
+   Counts the number of surface-bound molecules of type :math:`species`
+   and state :math:`state`. If this count is more than :math:`num`, then
+   molecules of this type, chosen at random, are removed until
+   :math:`num` is reached. Otherwise, molecules with the proper state
+   are added to random positions on the surface to achieve a total count
+   of :math:`num`.
+
+   ``fixmolcountrangeonsurf``
+   :math:`species(state)\ low\_num\ high\_num\ surface`
+
+   Exactly like ``fixmolcountonsurf``, except that the molecule count is
+   unchanged if it is between :math:`low\_num` and :math:`high\_num`,
+   and is otherwise modified to bring it to within the range.
+
+   ``fixmolcountincmpt`` :math:`species\ num\ compartment`
+
+   Counts the number of solution-phase molecules of type :math:`species`
+   and in compartment :math:`compartment`. If this count is more than
+   :math:`num`, then molecules of this type, chosen at random, are
+   removed until :math:`num` is reached. Otherwise, molecules are added
+   to random positions in the compartment to achieve a total count of
+   :math:`num`.
+
+   ``fixmolcountrangeincmpt``
+   :math:`species\ low\_num\ high\_num\ compartment`
+
+   Exactly like ``fixmolcountincmpt``, except that the molecule count is
+   unchanged if it is between :math:`low\_num` and :math:`high\_num`,
+   and is otherwise modified to bring it to within the range.
+
+   ``equilmol`` :math:`species_1(state_1)\ species_2(state_2)\ prob`
+
+   Equilibrate these molecules. All molecules of type :math:`species_1`
+   and :math:`species_2` will be randomly replaced with one of the two
+   types, where type :math:`species_2` has probability :math:`prob`.
+   :math:`state_1` and :math:`state_2` are optional; defaults are
+   “solution”. Neither species nor states may be “all”. :math:`prob` can
+   be a function of the molecule location using its :math:`x`,
+   :math:`y`, and :math:`z` values.
+
+   ``replacemol`` :math:`species_1(state_1)\ species_2(state_2)\ prob`
+
+   Molecules of type :math:`species_1` are replaced with ones of type
+   :math:`species_2` with probability :math:`prob`. States are optional
+   and are solution by default; neither species nor states may be “all”.
+   :math:`prob` can be a function of the molecule location using its
+   :math:`x`, :math:`y`, and :math:`z` values.
+
+   ``replacexyzmol``
+   :math:`species(state)\ pos_0\ pos_1\ ...\ pos_{dim-1}`
+
+   If there is a non-diffusing molecule at exactly position :math:`pos`,
+   it is replaced with one of type :math:`species`. This command stops
+   after one molecule is found. :math:`state` is optional and may not be
+   “all”; default is solution.
+
+   ``replacevolmol``
+   :math:`species_1(state_1)\ species_2(state_2)\ frac\ pos_{0,low}\ pos_{0,high}\ pos_{1,low}\ pos_{1,high}\ ...\ pos_{dim-1,high}`
+
+   Fraction :math:`frac` molecules of type :math:`species_1` in the
+   volume bounded by :math:`pos_{low}`, :math:`pos_{high}` are replaced
+   with ones of type :math:`species_2`. States are optional and are
+   solution by default; neither species nor states may be “all”.
+   :math:`frac` can be a function of the molecule location using its
+   :math:`x`, :math:`y`, and :math:`z` values.
+
+   ``replacecmptmol``
+   :math:`species_1(state_1)\ species_2(state_2)\ frac\ compartment`
+
+   Fraction :math:`frac` molecules of type :math:`species_1` in the
+   compartment named :math:`compartment` are replaced with ones of type
+   :math:`species_2`. States are optional and are solution by default;
+   neither :math:`species` nor :math:`states` may be “all”. :math:`frac`
+   can be a function of the molecule location using its :math:`x`,
+   :math:`y`, and :math:`z` values.
+
+   ``modulatemol``
+   :math:`species_1(state_1)\ species_2(state_2)\ freq\ shift`
+
+   Modulates molecules of types :math:`species_1` and :math:`species_2`,
+   just like ``equilmol``, but with a variable probability. Every time
+   this command executes, any of the two types of molecules in the
+   system are replaced with a molecule of type :math:`species_1` with
+   probability :math:`\cos(freq*t+shift)`, where :math:`t` is the
+   simulation time, and otherwise with a molecule of type
+   :math:`species_2`. States are optional and are solution by default;
+   neither :math:`species` nor :math:`states` may be “all”.
+
+   ``react1`` :math:`species(state)\ rxn`
+
+   All molecules of type :math:`species` are instantly reacted,
+   resulting in the products and product placements given by the
+   unimolecular reaction named :math:`rxn`. Note that :math:`species`
+   does not have to be the normal reactant for reaction :math:`rxn`. The
+   state is optional; :math:`species` and/or :math:`state` may be “all”.
+
+   ``setrateint`` :math:`rxn\ rate`
+
+   Sets the internal reaction rate of the reaction named :math:`rxn` to
+   :math:`rate`. See the description above for :math:`rate\_internal`
+   for the meanings of :math:`rate` for the different reaction orders.
+
+   ``shufflemollist`` :math:`listname`
+
+   Randomly shuffles the sequence of molecules in the molecule list
+   called :math:`listname`. Enter “all” for all lists. This is useful
+   for systems that are especially ordered or for simulations with
+   unusually long time steps, because these situations may make
+   simulation results depend on the molecule list sequences.
+
+   ``shufflereactions`` :math:`reactant_1\ reactant_2`
+
+   Randomly shuffles the sequence of bimolecular reactions that reactant
+   species :math:`reactant_1` and :math:`reactant_2` can undergo (all
+   states are indexed together). Either or both or :math:`reactant_1`
+   and :math:`reactant_2` can be “all”.
+
+   ``settimestep`` :math:`dt`
+
+   Changes the simulation time step to :math:`dt`. This changes the
+   diffusion step lengths, reaction binding and unbinding radii, and
+   surface action probabilities. Caution should be used if the time step
+   is increased to longer than the original value because no checks are
+   made to ensure that the simulation will still yield accurate results.
+
+   ``porttransport`` :math:`port_1\ port_2`
+
+   Transports molecules from the output buffer of :math:`port_1` to the
+   input of :math:`port_2`. These may be the same ports.
+
+   ``excludebox`` :math:`low_x\ high_x`
+   ``excludebox`` :math:`low_x\ high_x\ low_y\ high_y`
+   ``excludebox`` :math:`low_x\ high_x\ low_y\ high_y\ low_z\ high_z`
+
+   This keeps all molecules from entering a rectanguloid box within the
+   system volume. Use the first form for one dimension, the second for
+   two dimensions, and the third for three dimensions. Molecules that
+   start within the box can stay there, but any molecule that tries to
+   diffuse into the box is returned to its location at the previous time
+   step. This command needs to be run at every time step to work
+   properly.
+
+   ``excludesphere`` :math:`x\ rad`
+   ``excludesphere`` :math:`x\ y\ rad`
+   ``excludesphere`` :math:`x\ y\ z\ rad`
+
+   This keeps all molecules from entering a sphere within the system
+   volume. Use the first form for one dimension, the second for two
+   dimensions, and the third for three dimensions; the coordinates given
+   are the sphere center and rad is the sphere radius. Molecules that
+   start within the sphere can stay there, but any molecule that tries
+   to diffuse into the sphere is returned to its location at the
+   previous time step. This command needs to be run at every time step
+   to work properly.
+
+   ``includeecoli``
+
+   An *E. coli* shape is defined as a cylinder with hemispherical
+   endcaps, where the long axis of the bacterium extends the length of
+   the :math:`x`-axis within the system walls and the radius of both the
+   cylinder and the endcaps is half the spacing between the walls that
+   bound the :math:`y`-axis. This command moves any molecule that
+   diffuses out of the *E. coli* shape back to its location at the
+   previous time step, or to the nearest surface of the *E. coli* if it
+   was outside at the previous time step as well. This command does not
+   need to be run at every time step to work properly. This only works
+   with a 3 dimensional system.
+
+   ``setreactionratemolcount``
+   :math:`rxn\ c_0\ c_1\ species_1(state_1)\ c_2\ species_2(state_2)\ ...`
+
+   This sets the rate of the reaction named :math:`rxn` to: :math:`c_0`,
+   plus :math:`c_1` times the number of molecules of :math:`species_1`
+   and :math:`state_1`, plus :math:`c_2` times the number of molecules
+   of :math:`species_2` and :math:`state_2`, plus any additional
+   coefficients and species that are listed here. Species and/or states
+   may be “all” and wildcards are permitted. If the reaction rate is
+   computed to be a negative value, it is set to zero instead (and no
+   warning is issued).
+
+   ``expandsystem`` :math:`expand_x expand_y expand_z`
+
+   Expand, or contract, everything in system, which includes molecule
+   locations and surfaces, about the center of the system. Expands by
+   :math:`expand_x` along the :math:`x`-coordinate, by :math:`expand_y`
+   along the :math:`y`-coordinate, and by :math:`expand_z` along the
+   :math:`z`-coordinate. Enter as many numbers as there are dimensions.
+   Each number should be 1 for no change, a number larger than 1 for
+   expansion and a number smaller than 1 for contraction. Negative
+   numbers perform system inversion. This command can be used, for
+   example, to mimic lengthwise or diameter growth of a cell. Warning:
+   isotropic expansion or contraction, in which all three expansion
+   values are equal, generally works well, with no unintentional
+   transfer of molecules across surfaces. However, anisotropic expansion
+   or contraction would normally cause some of Smoldyn’s panel shapes to
+   become distorted, including spheres, hemispheres, cylinders, and
+   disks. Smoldyn does not support this, so these panels are expanded
+   but not distorted. In the process, molecules often cross the surfaces
+   unintentionally and need to be dealt with separately (e.g. killed
+   off). See the expandsystem.txt example file.
+
+   ``translatecmpt`` :math:`compartment\ code\ \Delta x`
+   ``translatecmpt`` :math:`compartment\ code\ \Delta x\ \Delta y`
+   ``translatecmpt``
+   :math:`compartment\ code\ \Delta x\ \Delta y\ \Delta z`
+
+   Translate the compartment called :math:`compartment` by the shift
+   value given in :math:`\Delta x`, :math:`\Delta y`, and
+   :math:`\Delta z` (with fewer values for lower dimensions). The
+   :math:`code` value describes which attributes of the compartment
+   should be moved; add the codes for the individual attributes for the
+   final code value. The individual codes are: 1 for translating the
+   compartment surfaces, 2 for translating the molecules that are bound
+   to those surfaces, 4 for translating the molecules that are within
+   the compartment, and 8 for shifting the molecules that are outside of
+   the compartment but that get bumped into by the moving surfaces.
+   Thus, use a code of 15 to get all of these behaviors at once. With
+   code of 4, all molecules within the compartment are translated,
+   regardless of their surface actions. With code of 8, all molecules
+   that a compartment surface would bump into get translated, unless
+   their surface action is “transmit”. If a molecule gets “squeezed”,
+   meaning that it gets bumped into by the moving compartment, but then
+   gets bumped back due to some other surface, then that molecule will
+   end up inside of the compartment.
+
+   ``diffusecmpt``
+   :math:`compartment\ code\ stddev_x\ [cmpt\_bound\ radius\ nsample]`
+   ``diffusecmpt``
+   :math:`compartment\ code\ stddev_x\ stddev_y\ [cmpt\_bound\ radius\ nsample]`
+   ``diffusecmpt``
+   :math:`compartment\ code\ stddev_x\ stddev_y\ stddev_z\ [cmpt\_bound\ radius\ nsample]`
+
+   This is similar to ``translatecmpt``, except that this translates the
+   compartment by a Gaussian distributed random amount that has standard
+   deviation on each axis of :math:`stddev_x`, :math:`stddev_y`, and
+   :math:`stddev_z`. Also, this has three optional parameters:
+   :math:`cmpt\_bound`, :math:`radius`, and :math:`nsample`. If they are
+   entered, then Smoldyn keeps the diffusing compartment within the
+   bounding compartment called :math:`cmpt\_bound` (assuming it was
+   inside initially). It does this by computing :math:`nsample` test
+   points that are on a spherical shell of radius radius around each of
+   the compartment’s interior-defining points and determines if any of
+   these test points would escape the bounding compartment during a
+   move. If so, then the move is rejected, and Smoldyn tries again, up
+   to 10 times. It’s important that radius is slightly larger than the
+   actual distance to the compartment edge and that :math:`nsample` is
+   sufficiently large to cover the effective surface adequately because
+   molecule behavior is unpredictable if a molecule is between two
+   reflective surfaces that end up crossing each other, even if only
+   briefly and by a small amount.
 
 C/C++ and Python API
 --------------------
@@ -9839,618 +9958,642 @@ is steven.s.andrews@gmail.com.
 
 Following are the text of the LGPL and the GPL.
 
-.. container:: center
+.. container:: tiny
 
-   GNU LESSER GENERAL PUBLIC LICENSE
+   .. container:: center
 
-   Version 3, 29 June 2007
+      GNU LESSER GENERAL PUBLIC LICENSE
 
-Copyright ©2007 Free Software Foundation, Inc. http://fsf.org/. Everyone
-is permitted to copy and distribute verbatim copies of this license
-document, but changing it is not allowed.
+      Version 3, 29 June 2007
 
-This version of the GNU Lesser General Public License incorporates the
-terms and conditions of version 3 of the GNU General Public License,
-supplemented by the additional permissions listed below.
+   Copyright ©2007 Free Software Foundation, Inc. http://fsf.org/.
+   Everyone is permitted to copy and distribute verbatim copies of this
+   license document, but changing it is not allowed.
 
-0. Additional Definitions. As used herein, "this License" refers to
-version 3 of the GNU Lesser General Public License, and the "GNU GPL"
-refers to version 3 of the GNU General Public License. "The Library"
-refers to a covered work governed by this License, other than an
-Application or a Combined Work as defined below. An "Application" is any
-work that makes use of an interface provided by the Library, but which
-is not otherwise based on the Library. Defining a subclass of a class
-defined by the Library is deemed a mode of using an interface provided
-by the Library. A "Combined Work" is a work produced by combining or
-linking an Application with the Library. The particular version of the
-Library with which the Combined Work was made is also called the "Linked
-Version". The "Minimal Corresponding Source" for a Combined Work means
-the Corresponding Source for the Combined Work, excluding any source
-code for portions of the Combined Work that, considered in isolation,
-are based on the Application, and not on the Linked Version. The
-"Corresponding Application Code" for a Combined Work means the object
-code and/or source code for the Application, including any data and
-utility programs needed for reproducing the Combined Work from the
-Application, but excluding the System Libraries of the Combined Work.
+   This version of the GNU Lesser General Public License incorporates
+   the terms and conditions of version 3 of the GNU General Public
+   License, supplemented by the additional permissions listed below.
 
-1. Exception to Section 3 of the GNU GPL. You may convey a covered work
-under sections 3 and 4 of this License without being bound by section 3
-of the GNU GPL.
+   0. Additional Definitions. As used herein, "this License" refers to
+   version 3 of the GNU Lesser General Public License, and the "GNU GPL"
+   refers to version 3 of the GNU General Public License. "The Library"
+   refers to a covered work governed by this License, other than an
+   Application or a Combined Work as defined below. An "Application" is
+   any work that makes use of an interface provided by the Library, but
+   which is not otherwise based on the Library. Defining a subclass of a
+   class defined by the Library is deemed a mode of using an interface
+   provided by the Library. A "Combined Work" is a work produced by
+   combining or linking an Application with the Library. The particular
+   version of the Library with which the Combined Work was made is also
+   called the "Linked Version". The "Minimal Corresponding Source" for a
+   Combined Work means the Corresponding Source for the Combined Work,
+   excluding any source code for portions of the Combined Work that,
+   considered in isolation, are based on the Application, and not on the
+   Linked Version. The "Corresponding Application Code" for a Combined
+   Work means the object code and/or source code for the Application,
+   including any data and utility programs needed for reproducing the
+   Combined Work from the Application, but excluding the System
+   Libraries of the Combined Work.
 
-2. Conveying Modified Versions. If you modify a copy of the Library,
-and, in your modifications, a facility refers to a function or data to
-be supplied by an Application that uses the facility (other than as an
-argument passed when the facility is invoked), then you may convey a
-copy of the modified version: a) under this License, provided that you
-make a good faith effort to ensure that, in the event an Application
-does not supply the function or data, the facility still operates, and
-performs whatever part of its purpose remains meaningful, or b) under
-the GNU GPL, with none of the additional permissions of this License
-applicable to that copy.
+   1. Exception to Section 3 of the GNU GPL. You may convey a covered
+   work under sections 3 and 4 of this License without being bound by
+   section 3 of the GNU GPL.
 
-3. Object Code Incorporating Material from Library Header Files. The
-object code form of an Application may incorporate material from a
-header file that is part of the Library. You may convey such object code
-under terms of your choice, provided that, if the incorporated material
-is not limited to numerical parameters, data structure layouts and
-accessors, or small macros, inline functions and templates (ten or fewer
-lines in length), you do both of the following: a) Give prominent notice
-with each copy of the object code that the Library is used in it and
-that the Library and its use are covered by this License. b) Accompany
-the object code with a copy of the GNU GPL and this license document.
+   2. Conveying Modified Versions. If you modify a copy of the Library,
+   and, in your modifications, a facility refers to a function or data
+   to be supplied by an Application that uses the facility (other than
+   as an argument passed when the facility is invoked), then you may
+   convey a copy of the modified version: a) under this License,
+   provided that you make a good faith effort to ensure that, in the
+   event an Application does not supply the function or data, the
+   facility still operates, and performs whatever part of its purpose
+   remains meaningful, or b) under the GNU GPL, with none of the
+   additional permissions of this License applicable to that copy.
 
-4. Combined Works. You may convey a Combined Work under terms of your
-choice that, taken together, effectively do not restrict modification of
-the portions of the Library contained in the Combined Work and reverse
-engineering for debugging such modifications, if you also do each of the
-following: a) Give prominent notice with each copy of the Combined Work
-that the Library is used in it and that the Library and its use are
-covered by this License. b) Accompany the Combined Work with a copy of
-the GNU GPL and this license document. c) For a Combined Work that
-displays copyright notices during execution, include the copyright
-notice for the Library among these notices, as well as a reference
-directing the user to the copies of the GNU GPL and this license
-document. d) Do one of the following: 0) Convey the Minimal
-Corresponding Source under the terms of this License, and the
-Corresponding Application Code in a form suitable for, and under terms
-that permit, the user to recombine or relink the Application with a
-modified version of the Linked Version to produce a modified Combined
-Work, in the manner specified by section 6 of the GNU GPL for conveying
-Corresponding Source. 1) Use a suitable shared library mechanism for
-linking with the Library. A suitable mechanism is one that (a) uses at
-run time a copy of the Library already present on the user’s computer
-system, and (b) will operate properly with a modified version of the
-Library that is interface-compatible with the Linked Version. e) Provide
-Installation Information, but only if you would otherwise be required to
-provide such information under section 6 of the GNU GPL, and only to the
-extent that such information is necessary to install and execute a
-modified version of the Combined Work produced by recombining or
-relinking the Application with a modified version of the Linked Version.
-(If you use option 4d0, the Installation Information must accompany the
-Minimal Corresponding Source and Corresponding Application Code. If you
-use option 4d1, you must provide the Installation Information in the
-manner specified by section 6 of the GNU GPL for conveying Corresponding
-Source.)
+   3. Object Code Incorporating Material from Library Header Files. The
+   object code form of an Application may incorporate material from a
+   header file that is part of the Library. You may convey such object
+   code under terms of your choice, provided that, if the incorporated
+   material is not limited to numerical parameters, data structure
+   layouts and accessors, or small macros, inline functions and
+   templates (ten or fewer lines in length), you do both of the
+   following: a) Give prominent notice with each copy of the object code
+   that the Library is used in it and that the Library and its use are
+   covered by this License. b) Accompany the object code with a copy of
+   the GNU GPL and this license document.
 
-5. Combined Libraries. You may place library facilities that are a work
-based on the Library side by side in a single library together with
-other library facilities that are not Applications and are not covered
-by this License, and convey such a combined library under terms of your
-choice, if you do both of the following: a) Accompany the combined
-library with a copy of the same work based on the Library, uncombined
-with any other library facilities, conveyed under the terms of this
-License. b) Give prominent notice with the combined library that part of
-it is a work based on the Library, and explaining where to find the
-accompanying uncombined form of the same work.
+   4. Combined Works. You may convey a Combined Work under terms of your
+   choice that, taken together, effectively do not restrict modification
+   of the portions of the Library contained in the Combined Work and
+   reverse engineering for debugging such modifications, if you also do
+   each of the following: a) Give prominent notice with each copy of the
+   Combined Work that the Library is used in it and that the Library and
+   its use are covered by this License. b) Accompany the Combined Work
+   with a copy of the GNU GPL and this license document. c) For a
+   Combined Work that displays copyright notices during execution,
+   include the copyright notice for the Library among these notices, as
+   well as a reference directing the user to the copies of the GNU GPL
+   and this license document. d) Do one of the following: 0) Convey the
+   Minimal Corresponding Source under the terms of this License, and the
+   Corresponding Application Code in a form suitable for, and under
+   terms that permit, the user to recombine or relink the Application
+   with a modified version of the Linked Version to produce a modified
+   Combined Work, in the manner specified by section 6 of the GNU GPL
+   for conveying Corresponding Source. 1) Use a suitable shared library
+   mechanism for linking with the Library. A suitable mechanism is one
+   that (a) uses at run time a copy of the Library already present on
+   the user’s computer system, and (b) will operate properly with a
+   modified version of the Library that is interface-compatible with the
+   Linked Version. e) Provide Installation Information, but only if you
+   would otherwise be required to provide such information under section
+   6 of the GNU GPL, and only to the extent that such information is
+   necessary to install and execute a modified version of the Combined
+   Work produced by recombining or relinking the Application with a
+   modified version of the Linked Version. (If you use option 4d0, the
+   Installation Information must accompany the Minimal Corresponding
+   Source and Corresponding Application Code. If you use option 4d1, you
+   must provide the Installation Information in the manner specified by
+   section 6 of the GNU GPL for conveying Corresponding Source.)
 
-6. Revised Versions of the GNU Lesser General Public License. The Free
-Software Foundation may publish revised and/or new versions of the GNU
-Lesser General Public License from time to time. Such new versions will
-be similar in spirit to the present version, but may differ in detail to
-address new problems or concerns. Each version is given a distinguishing
-version number. If the Library as you received it specifies that a
-certain numbered version of the GNU Lesser General Public License "or
-any later version" applies to it, you have the option of following the
-terms and conditions either of that published version or of any later
-version published by the Free Software Foundation. If the Library as you
-received it does not specify a version number of the GNU Lesser General
-Public License, you may choose any version of the GNU Lesser General
-Public License ever published by the Free Software Foundation. If the
-Library as you received it specifies that a proxy can decide whether
-future versions of the GNU Lesser General Public License shall apply,
-that proxy’s public statement of acceptance of any version is permanent
-authorization for you to choose that version for the Library.
+   5. Combined Libraries. You may place library facilities that are a
+   work based on the Library side by side in a single library together
+   with other library facilities that are not Applications and are not
+   covered by this License, and convey such a combined library under
+   terms of your choice, if you do both of the following: a) Accompany
+   the combined library with a copy of the same work based on the
+   Library, uncombined with any other library facilities, conveyed under
+   the terms of this License. b) Give prominent notice with the combined
+   library that part of it is a work based on the Library, and
+   explaining where to find the accompanying uncombined form of the same
+   work.
 
-.. container:: center
+   6. Revised Versions of the GNU Lesser General Public License. The
+   Free Software Foundation may publish revised and/or new versions of
+   the GNU Lesser General Public License from time to time. Such new
+   versions will be similar in spirit to the present version, but may
+   differ in detail to address new problems or concerns. Each version is
+   given a distinguishing version number. If the Library as you received
+   it specifies that a certain numbered version of the GNU Lesser
+   General Public License "or any later version" applies to it, you have
+   the option of following the terms and conditions either of that
+   published version or of any later version published by the Free
+   Software Foundation. If the Library as you received it does not
+   specify a version number of the GNU Lesser General Public License,
+   you may choose any version of the GNU Lesser General Public License
+   ever published by the Free Software Foundation. If the Library as you
+   received it specifies that a proxy can decide whether future versions
+   of the GNU Lesser General Public License shall apply, that proxy’s
+   public statement of acceptance of any version is permanent
+   authorization for you to choose that version for the Library.
 
-   GNU GENERAL PUBLIC LICENSE
+   .. container:: center
 
-   Version 3, 29 June 2007
+      GNU GENERAL PUBLIC LICENSE
 
-Copyright ©2007 Free Software Foundation, Inc. http://fsf.org/. Everyone
-is permitted to copy and distribute verbatim copies of this license
-document, but changing it is not allowed.
+      Version 3, 29 June 2007
 
-Preamble. The GNU General Public License is a free, copyleft license for
-software and other kinds of works. The licenses for most software and
-other practical works are designed to take away your freedom to share
-and change the works. By contrast, the GNU General Public License is
-intended to guarantee your freedom to share and change all versions of a
-program–to make sure it remains free software for all its users. We, the
-Free Software Foundation, use the GNU General Public License for most of
-our software; it applies also to any other work released this way by its
-authors. You can apply it to your programs, too. When we speak of free
-software, we are referring to freedom, not price. Our General Public
-Licenses are designed to make sure that you have the freedom to
-distribute copies of free software (and charge for them if you wish),
-that you receive source code or can get it if you want it, that you can
-change the software or use pieces of it in new free programs, and that
-you know you can do these things. To protect your rights, we need to
-prevent others from denying you these rights or asking you to surrender
-the rights. Therefore, you have certain responsibilities if you
-distribute copies of the software, or if you modify it: responsibilities
-to respect the freedom of others. For example, if you distribute copies
-of such a program, whether gratis or for a fee, you must pass on to the
-recipients the same freedoms that you received. You must make sure that
-they, too, receive or can get the source code. And you must show them
-these terms so they know their rights. Developers that use the GNU GPL
-protect your rights with two steps: (1) assert copyright on the
-software, and (2) offer you this License giving you legal permission to
-copy, distribute and/or modify it. For the developers’ and authors’
-protection, the GPL clearly explains that there is no warranty for this
-free software. For both users’ and authors’ sake, the GPL requires that
-modified versions be marked as changed, so that their problems will not
-be attributed erroneously to authors of previous versions. Some devices
-are designed to deny users access to install or run modified versions of
-the software inside them, although the manufacturer can do so. This is
-fundamentally incompatible with the aim of protecting users’ freedom to
-change the software. The systematic pattern of such abuse occurs in the
-area of products for individuals to use, which is precisely where it is
-most unacceptable. Therefore, we have designed this version of the GPL
-to prohibit the practice for those products. If such problems arise
-substantially in other domains, we stand ready to extend this provision
-to those domains in future versions of the GPL, as needed to protect the
-freedom of users. Finally, every program is threatened constantly by
-software patents. States should not allow patents to restrict
-development and use of software on general-purpose computers, but in
-those that do, we wish to avoid the special danger that patents applied
-to a free program could make it effectively proprietary. To prevent
-this, the GPL assures that patents cannot be used to render the program
-non-free. The precise terms and conditions for copying, distribution and
-modification follow.
+   Copyright ©2007 Free Software Foundation, Inc. http://fsf.org/.
+   Everyone is permitted to copy and distribute verbatim copies of this
+   license document, but changing it is not allowed.
 
-TERMS AND CONDITIONS
+   Preamble. The GNU General Public License is a free, copyleft license
+   for software and other kinds of works. The licenses for most software
+   and other practical works are designed to take away your freedom to
+   share and change the works. By contrast, the GNU General Public
+   License is intended to guarantee your freedom to share and change all
+   versions of a program–to make sure it remains free software for all
+   its users. We, the Free Software Foundation, use the GNU General
+   Public License for most of our software; it applies also to any other
+   work released this way by its authors. You can apply it to your
+   programs, too. When we speak of free software, we are referring to
+   freedom, not price. Our General Public Licenses are designed to make
+   sure that you have the freedom to distribute copies of free software
+   (and charge for them if you wish), that you receive source code or
+   can get it if you want it, that you can change the software or use
+   pieces of it in new free programs, and that you know you can do these
+   things. To protect your rights, we need to prevent others from
+   denying you these rights or asking you to surrender the rights.
+   Therefore, you have certain responsibilities if you distribute copies
+   of the software, or if you modify it: responsibilities to respect the
+   freedom of others. For example, if you distribute copies of such a
+   program, whether gratis or for a fee, you must pass on to the
+   recipients the same freedoms that you received. You must make sure
+   that they, too, receive or can get the source code. And you must show
+   them these terms so they know their rights. Developers that use the
+   GNU GPL protect your rights with two steps: (1) assert copyright on
+   the software, and (2) offer you this License giving you legal
+   permission to copy, distribute and/or modify it. For the developers’
+   and authors’ protection, the GPL clearly explains that there is no
+   warranty for this free software. For both users’ and authors’ sake,
+   the GPL requires that modified versions be marked as changed, so that
+   their problems will not be attributed erroneously to authors of
+   previous versions. Some devices are designed to deny users access to
+   install or run modified versions of the software inside them,
+   although the manufacturer can do so. This is fundamentally
+   incompatible with the aim of protecting users’ freedom to change the
+   software. The systematic pattern of such abuse occurs in the area of
+   products for individuals to use, which is precisely where it is most
+   unacceptable. Therefore, we have designed this version of the GPL to
+   prohibit the practice for those products. If such problems arise
+   substantially in other domains, we stand ready to extend this
+   provision to those domains in future versions of the GPL, as needed
+   to protect the freedom of users. Finally, every program is threatened
+   constantly by software patents. States should not allow patents to
+   restrict development and use of software on general-purpose
+   computers, but in those that do, we wish to avoid the special danger
+   that patents applied to a free program could make it effectively
+   proprietary. To prevent this, the GPL assures that patents cannot be
+   used to render the program non-free. The precise terms and conditions
+   for copying, distribution and modification follow.
 
-0. Definitions. “This License” refers to version 3 of the GNU General
-Public License. “Copyright” also means copyright-like laws that apply to
-other kinds of works, such as semiconductor masks. “The Program” refers
-to any copyrightable work licensed under this License. Each licensee is
-addressed as “you”. “Licensees” and “recipients” may be individuals or
-organizations. To “modify” a work means to copy from or adapt all or
-part of the work in a fashion requiring copyright permission, other than
-the making of an exact copy. The resulting work is called a “modified
-version” of the earlier work or a work “based on” the earlier work. A
-“covered work” means either the unmodified Program or a work based on
-the Program. To “propagate” a work means to do anything with it that,
-without permission, would make you directly or secondarily liable for
-infringement under applicable copyright law, except executing it on a
-computer or modifying a private copy. Propagation includes copying,
-distribution (with or without modification), making available to the
-public, and in some countries other activities as well. To “convey” a
-work means any kind of propagation that enables other parties to make or
-receive copies. Mere interaction with a user through a computer network,
-with no transfer of a copy, is not conveying. An interactive user
-interface displays “Appropriate Legal Notices” to the extent that it
-includes a convenient and prominently visible feature that (1) displays
-an appropriate copyright notice, and (2) tells the user that there is no
-warranty for the work (except to the extent that warranties are
-provided), that licensees may convey the work under this License, and
-how to view a copy of this License. If the interface presents a list of
-user commands or options, such as a menu, a prominent item in the list
-meets this criterion.
+   TERMS AND CONDITIONS
 
-1. Source Code. The “source code” for a work means the preferred form of
-the work for making modifications to it. “Object code” means any
-non-source form of a work. A “Standard Interface” means an interface
-that either is an official standard defined by a recognized standards
-body, or, in the case of interfaces specified for a particular
-programming language, one that is widely used among developers working
-in that language. The “System Libraries” of an executable work include
-anything, other than the work as a whole, that (a) is included in the
-normal form of packaging a Major Component, but which is not part of
-that Major Component, and (b) serves only to enable use of the work with
-that Major Component, or to implement a Standard Interface for which an
-implementation is available to the public in source code form. A “Major
-Component”, in this context, means a major essential component (kernel,
-window system, and so on) of the specific operating system (if any) on
-which the executable work runs, or a compiler used to produce the work,
-or an object code interpreter used to run it. The “Corresponding Source”
-for a work in object code form means all the source code needed to
-generate, install, and (for an executable work) run the object code and
-to modify the work, including scripts to control those activities.
-However, it does not include the work’s System Libraries, or
-general-purpose tools or generally available free programs which are
-used unmodified in performing those activities but which are not part of
-the work. For example, Corresponding Source includes interface
-definition files associated with source files for the work, and the
-source code for shared libraries and dynamically linked subprograms that
-the work is specifically designed to require, such as by intimate data
-communication or control flow between those subprograms and other parts
-of the work. The Corresponding Source need not include anything that
-users can regenerate automatically from other parts of the Corresponding
-Source. The Corresponding Source for a work in source code form is that
-same work.
+   0. Definitions. “This License” refers to version 3 of the GNU General
+   Public License. “Copyright” also means copyright-like laws that apply
+   to other kinds of works, such as semiconductor masks. “The Program”
+   refers to any copyrightable work licensed under this License. Each
+   licensee is addressed as “you”. “Licensees” and “recipients” may be
+   individuals or organizations. To “modify” a work means to copy from
+   or adapt all or part of the work in a fashion requiring copyright
+   permission, other than the making of an exact copy. The resulting
+   work is called a “modified version” of the earlier work or a work
+   “based on” the earlier work. A “covered work” means either the
+   unmodified Program or a work based on the Program. To “propagate” a
+   work means to do anything with it that, without permission, would
+   make you directly or secondarily liable for infringement under
+   applicable copyright law, except executing it on a computer or
+   modifying a private copy. Propagation includes copying, distribution
+   (with or without modification), making available to the public, and
+   in some countries other activities as well. To “convey” a work means
+   any kind of propagation that enables other parties to make or receive
+   copies. Mere interaction with a user through a computer network, with
+   no transfer of a copy, is not conveying. An interactive user
+   interface displays “Appropriate Legal Notices” to the extent that it
+   includes a convenient and prominently visible feature that (1)
+   displays an appropriate copyright notice, and (2) tells the user that
+   there is no warranty for the work (except to the extent that
+   warranties are provided), that licensees may convey the work under
+   this License, and how to view a copy of this License. If the
+   interface presents a list of user commands or options, such as a
+   menu, a prominent item in the list meets this criterion.
 
-2. Basic Permissions. All rights granted under this License are granted
-for the term of copyright on the Program, and are irrevocable provided
-the stated conditions are met. This License explicitly affirms your
-unlimited permission to run the unmodified Program. The output from
-running a covered work is covered by this License only if the output,
-given its content, constitutes a covered work. This License acknowledges
-your rights of fair use or other equivalent, as provided by copyright
-law. You may make, run and propagate covered works that you do not
-convey, without conditions so long as your license otherwise remains in
-force. You may convey covered works to others for the sole purpose of
-having them make modifications exclusively for you, or provide you with
-facilities for running those works, provided that you comply with the
-terms of this License in conveying all material for which you do not
-control copyright. Those thus making or running the covered works for
-you must do so exclusively on your behalf, under your direction and
-control, on terms that prohibit them from making any copies of your
-copyrighted material outside their relationship with you. Conveying
-under any other circumstances is permitted solely under the conditions
-stated below. Sublicensing is not allowed; section 10 makes it
-unnecessary.
+   1. Source Code. The “source code” for a work means the preferred form
+   of the work for making modifications to it. “Object code” means any
+   non-source form of a work. A “Standard Interface” means an interface
+   that either is an official standard defined by a recognized standards
+   body, or, in the case of interfaces specified for a particular
+   programming language, one that is widely used among developers
+   working in that language. The “System Libraries” of an executable
+   work include anything, other than the work as a whole, that (a) is
+   included in the normal form of packaging a Major Component, but which
+   is not part of that Major Component, and (b) serves only to enable
+   use of the work with that Major Component, or to implement a Standard
+   Interface for which an implementation is available to the public in
+   source code form. A “Major Component”, in this context, means a major
+   essential component (kernel, window system, and so on) of the
+   specific operating system (if any) on which the executable work runs,
+   or a compiler used to produce the work, or an object code interpreter
+   used to run it. The “Corresponding Source” for a work in object code
+   form means all the source code needed to generate, install, and (for
+   an executable work) run the object code and to modify the work,
+   including scripts to control those activities. However, it does not
+   include the work’s System Libraries, or general-purpose tools or
+   generally available free programs which are used unmodified in
+   performing those activities but which are not part of the work. For
+   example, Corresponding Source includes interface definition files
+   associated with source files for the work, and the source code for
+   shared libraries and dynamically linked subprograms that the work is
+   specifically designed to require, such as by intimate data
+   communication or control flow between those subprograms and other
+   parts of the work. The Corresponding Source need not include anything
+   that users can regenerate automatically from other parts of the
+   Corresponding Source. The Corresponding Source for a work in source
+   code form is that same work.
 
-3. Protecting Users’ Legal Rights From Anti-Circumvention Law. No
-covered work shall be deemed part of an effective technological measure
-under any applicable law fulfilling obligations under article 11 of the
-WIPO copyright treaty adopted on 20 December 1996, or similar laws
-prohibiting or restricting circumvention of such measures. When you
-convey a covered work, you waive any legal power to forbid circumvention
-of technological measures to the extent such circumvention is effected
-by exercising rights under this License with respect to the covered
-work, and you disclaim any intention to limit operation or modification
-of the work as a means of enforcing, against the work’s users, your or
-third parties’ legal rights to forbid circumvention of technological
-measures.
+   2. Basic Permissions. All rights granted under this License are
+   granted for the term of copyright on the Program, and are irrevocable
+   provided the stated conditions are met. This License explicitly
+   affirms your unlimited permission to run the unmodified Program. The
+   output from running a covered work is covered by this License only if
+   the output, given its content, constitutes a covered work. This
+   License acknowledges your rights of fair use or other equivalent, as
+   provided by copyright law. You may make, run and propagate covered
+   works that you do not convey, without conditions so long as your
+   license otherwise remains in force. You may convey covered works to
+   others for the sole purpose of having them make modifications
+   exclusively for you, or provide you with facilities for running those
+   works, provided that you comply with the terms of this License in
+   conveying all material for which you do not control copyright. Those
+   thus making or running the covered works for you must do so
+   exclusively on your behalf, under your direction and control, on
+   terms that prohibit them from making any copies of your copyrighted
+   material outside their relationship with you. Conveying under any
+   other circumstances is permitted solely under the conditions stated
+   below. Sublicensing is not allowed; section 10 makes it unnecessary.
 
-4. Conveying Verbatim Copies. You may convey verbatim copies of the
-Program’s source code as you receive it, in any medium, provided that
-you conspicuously and appropriately publish on each copy an appropriate
-copyright notice; keep intact all notices stating that this License and
-any non-permissive terms added in accord with section 7 apply to the
-code; keep intact all notices of the absence of any warranty; and give
-all recipients a copy of this License along with the Program. You may
-charge any price or no price for each copy that you convey, and you may
-offer support or warranty protection for a fee.
+   3. Protecting Users’ Legal Rights From Anti-Circumvention Law. No
+   covered work shall be deemed part of an effective technological
+   measure under any applicable law fulfilling obligations under article
+   11 of the WIPO copyright treaty adopted on 20 December 1996, or
+   similar laws prohibiting or restricting circumvention of such
+   measures. When you convey a covered work, you waive any legal power
+   to forbid circumvention of technological measures to the extent such
+   circumvention is effected by exercising rights under this License
+   with respect to the covered work, and you disclaim any intention to
+   limit operation or modification of the work as a means of enforcing,
+   against the work’s users, your or third parties’ legal rights to
+   forbid circumvention of technological measures.
 
-5. Conveying Modified Source Versions. You may convey a work based on
-the Program, or the modifications to produce it from the Program, in the
-form of source code under the terms of section 4, provided that you also
-meet all of these conditions: (a) The work must carry prominent notices
-stating that you modified it, and giving a relevant date. (b) The work
-must carry prominent notices stating that it is released under this
-License and any conditions added under section 7. This requirement
-modifies the requirement in section 4 to “keep intact all notices”. (c)
-You must license the entire work, as a whole, under this License to
-anyone who comes into possession of a copy. This License will therefore
-apply, along with any applicable section 7 additional terms, to the
-whole of the work, and all its parts, regardless of how they are
-packaged. This License gives no permission to license the work in any
-other way, but it does not invalidate such permission if you have
-separately received it. (d) If the work has interactive user interfaces,
-each must display Appropriate Legal Notices; however, if the Program has
-interactive interfaces that do not display Appropriate Legal Notices,
-your work need not make them do so. A compilation of a covered work with
-other separate and independent works, which are not by their nature
-extensions of the covered work, and which are not combined with it such
-as to form a larger program, in or on a volume of a storage or
-distribution medium, is called an “aggregate” if the compilation and its
-resulting copyright are not used to limit the access or legal rights of
-the compilation’s users beyond what the individual works permit.
-Inclusion of a covered work in an aggregate does not cause this License
-to apply to the other parts of the aggregate.
+   4. Conveying Verbatim Copies. You may convey verbatim copies of the
+   Program’s source code as you receive it, in any medium, provided that
+   you conspicuously and appropriately publish on each copy an
+   appropriate copyright notice; keep intact all notices stating that
+   this License and any non-permissive terms added in accord with
+   section 7 apply to the code; keep intact all notices of the absence
+   of any warranty; and give all recipients a copy of this License along
+   with the Program. You may charge any price or no price for each copy
+   that you convey, and you may offer support or warranty protection for
+   a fee.
 
-6. Conveying Non-Source Forms. You may convey a covered work in object
-code form under the terms of sections 4 and 5, provided that you also
-convey the machine-readable Corresponding Source under the terms of this
-License, in one of these ways: (a) Convey the object code in, or
-embodied in, a physical product (including a physical distribution
-medium), accompanied by the Corresponding Source fixed on a durable
-physical medium customarily used for software interchange. (b) Convey
-the object code in, or embodied in, a physical product (including a
-physical distribution medium), accompanied by a written offer, valid for
-at least three years and valid for as long as you offer spare parts or
-customer support for that product model, to give anyone who possesses
-the object code either (1) a copy of the Corresponding Source for all
-the software in the product that is covered by this License, on a
-durable physical medium customarily used for software interchange, for a
-price no more than your reasonable cost of physically performing this
-conveying of source, or (2) access to copy the Corresponding Source from
-a network server at no charge. (c) Convey individual copies of the
-object code with a copy of the written offer to provide the
-Corresponding Source. This alternative is allowed only occasionally and
-noncommercially, and only if you received the object code with such an
-offer, in accord with subsection 6b. (d) Convey the object code by
-offering access from a designated place (gratis or for a charge), and
-offer equivalent access to the Corresponding Source in the same way
-through the same place at no further charge. You need not require
-recipients to copy the Corresponding Source along with the object code.
-If the place to copy the object code is a network server, the
-Corresponding Source may be on a different server (operated by you or a
-third party) that supports equivalent copying facilities, provided you
-maintain clear directions next to the object code saying where to find
-the Corresponding Source. Regardless of what server hosts the
-Corresponding Source, you remain obligated to ensure that it is
-available for as long as needed to satisfy these requirements. (e)
-Convey the object code using peer-to-peer transmission, provided you
-inform other peers where the object code and Corresponding Source of the
-work are being offered to the general public at no charge under
-subsection 6d. A separable portion of the object code, whose source code
-is excluded from the Corresponding Source as a System Library, need not
-be included in conveying the object code work. A “User Product” is
-either (1) a “consumer product”, which means any tangible personal
-property which is normally used for personal, family, or household
-purposes, or (2) anything designed or sold for incorporation into a
-dwelling. In determining whether a product is a consumer product,
-doubtful cases shall be resolved in favor of coverage. For a particular
-product received by a particular user, “normally used” refers to a
-typical or common use of that class of product, regardless of the status
-of the particular user or of the way in which the particular user
-actually uses, or expects or is expected to use, the product. A product
-is a consumer product regardless of whether the product has substantial
-commercial, industrial or non-consumer uses, unless such uses represent
-the only significant mode of use of the product. “Installation
-Information” for a User Product means any methods, procedures,
-authorization keys, or other information required to install and execute
-modified versions of a covered work in that User Product from a modified
-version of its Corresponding Source. The information must suffice to
-ensure that the continued functioning of the modified object code is in
-no case prevented or interfered with solely because modification has
-been made. If you convey an object code work under this section in, or
-with, or specifically for use in, a User Product, and the conveying
-occurs as part of a transaction in which the right of possession and use
-of the User Product is transferred to the recipient in perpetuity or for
-a fixed term (regardless of how the transaction is characterized), the
-Corresponding Source conveyed under this section must be accompanied by
-the Installation Information. But this requirement does not apply if
-neither you nor any third party retains the ability to install modified
-object code on the User Product (for example, the work has been
-installed in ROM). The requirement to provide Installation Information
-does not include a requirement to continue to provide support service,
-warranty, or updates for a work that has been modified or installed by
-the recipient, or for the User Product in which it has been modified or
-installed. Access to a network may be denied when the modification
-itself materially and adversely affects the operation of the network or
-violates the rules and protocols for communication across the network.
-Corresponding Source conveyed, and Installation Information provided, in
-accord with this section must be in a format that is publicly documented
-(and with an implementation available to the public in source code
-form), and must require no special password or key for unpacking,
-reading or copying.
+   5. Conveying Modified Source Versions. You may convey a work based on
+   the Program, or the modifications to produce it from the Program, in
+   the form of source code under the terms of section 4, provided that
+   you also meet all of these conditions: (a) The work must carry
+   prominent notices stating that you modified it, and giving a relevant
+   date. (b) The work must carry prominent notices stating that it is
+   released under this License and any conditions added under section 7.
+   This requirement modifies the requirement in section 4 to “keep
+   intact all notices”. (c) You must license the entire work, as a
+   whole, under this License to anyone who comes into possession of a
+   copy. This License will therefore apply, along with any applicable
+   section 7 additional terms, to the whole of the work, and all its
+   parts, regardless of how they are packaged. This License gives no
+   permission to license the work in any other way, but it does not
+   invalidate such permission if you have separately received it. (d) If
+   the work has interactive user interfaces, each must display
+   Appropriate Legal Notices; however, if the Program has interactive
+   interfaces that do not display Appropriate Legal Notices, your work
+   need not make them do so. A compilation of a covered work with other
+   separate and independent works, which are not by their nature
+   extensions of the covered work, and which are not combined with it
+   such as to form a larger program, in or on a volume of a storage or
+   distribution medium, is called an “aggregate” if the compilation and
+   its resulting copyright are not used to limit the access or legal
+   rights of the compilation’s users beyond what the individual works
+   permit. Inclusion of a covered work in an aggregate does not cause
+   this License to apply to the other parts of the aggregate.
 
-7. Additional Terms. “Additional permissions” are terms that supplement
-the terms of this License by making exceptions from one or more of its
-conditions. Additional permissions that are applicable to the entire
-Program shall be treated as though they were included in this License,
-to the extent that they are valid under applicable law. If additional
-permissions apply only to part of the Program, that part may be used
-separately under those permissions, but the entire Program remains
-governed by this License without regard to the additional permissions.
-When you convey a copy of a covered work, you may at your option remove
-any additional permissions from that copy, or from any part of it.
-(Additional permissions may be written to require their own removal in
-certain cases when you modify the work.) You may place additional
-permissions on material, added by you to a covered work, for which you
-have or can give appropriate copyright permission. Notwithstanding any
-other provision of this License, for material you add to a covered work,
-you may (if authorized by the copyright holders of that material)
-supplement the terms of this License with terms: (a) Disclaiming
-warranty or limiting liability differently from the terms of sections 15
-and 16 of this License; or (b) Requiring preservation of specified
-reasonable legal notices or author attributions in that material or in
-the Appropriate Legal Notices displayed by works containing it; or (c)
-Prohibiting misrepresentation of the origin of that material, or
-requiring that modified versions of such material be marked in
-reasonable ways as different from the original version; or (d) Limiting
-the use for publicity purposes of names of licensors or authors of the
-material; or (e) Declining to grant rights under trademark law for use
-of some trade names, trademarks, or service marks; or (f) Requiring
-indemnification of licensors and authors of that material by anyone who
-conveys the material (or modified versions of it) with contractual
-assumptions of liability to the recipient, for any liability that these
-contractual assumptions directly impose on those licensors and authors.
-All other non-permissive additional terms are considered “further
-restrictions” within the meaning of section 10. If the Program as you
-received it, or any part of it, contains a notice stating that it is
-governed by this License along with a term that is a further
-restriction, you may remove that term. If a license document contains a
-further restriction but permits relicensing or conveying under this
-License, you may add to a covered work material governed by the terms of
-that license document, provided that the further restriction does not
-survive such relicensing or conveying. If you add terms to a covered
-work in accord with this section, you must place, in the relevant source
-files, a statement of the additional terms that apply to those files, or
-a notice indicating where to find the applicable terms. Additional
-terms, permissive or non-permissive, may be stated in the form of a
-separately written license, or stated as exceptions; the above
-requirements apply either way.
+   6. Conveying Non-Source Forms. You may convey a covered work in
+   object code form under the terms of sections 4 and 5, provided that
+   you also convey the machine-readable Corresponding Source under the
+   terms of this License, in one of these ways: (a) Convey the object
+   code in, or embodied in, a physical product (including a physical
+   distribution medium), accompanied by the Corresponding Source fixed
+   on a durable physical medium customarily used for software
+   interchange. (b) Convey the object code in, or embodied in, a
+   physical product (including a physical distribution medium),
+   accompanied by a written offer, valid for at least three years and
+   valid for as long as you offer spare parts or customer support for
+   that product model, to give anyone who possesses the object code
+   either (1) a copy of the Corresponding Source for all the software in
+   the product that is covered by this License, on a durable physical
+   medium customarily used for software interchange, for a price no more
+   than your reasonable cost of physically performing this conveying of
+   source, or (2) access to copy the Corresponding Source from a network
+   server at no charge. (c) Convey individual copies of the object code
+   with a copy of the written offer to provide the Corresponding Source.
+   This alternative is allowed only occasionally and noncommercially,
+   and only if you received the object code with such an offer, in
+   accord with subsection 6b. (d) Convey the object code by offering
+   access from a designated place (gratis or for a charge), and offer
+   equivalent access to the Corresponding Source in the same way through
+   the same place at no further charge. You need not require recipients
+   to copy the Corresponding Source along with the object code. If the
+   place to copy the object code is a network server, the Corresponding
+   Source may be on a different server (operated by you or a third
+   party) that supports equivalent copying facilities, provided you
+   maintain clear directions next to the object code saying where to
+   find the Corresponding Source. Regardless of what server hosts the
+   Corresponding Source, you remain obligated to ensure that it is
+   available for as long as needed to satisfy these requirements. (e)
+   Convey the object code using peer-to-peer transmission, provided you
+   inform other peers where the object code and Corresponding Source of
+   the work are being offered to the general public at no charge under
+   subsection 6d. A separable portion of the object code, whose source
+   code is excluded from the Corresponding Source as a System Library,
+   need not be included in conveying the object code work. A “User
+   Product” is either (1) a “consumer product”, which means any tangible
+   personal property which is normally used for personal, family, or
+   household purposes, or (2) anything designed or sold for
+   incorporation into a dwelling. In determining whether a product is a
+   consumer product, doubtful cases shall be resolved in favor of
+   coverage. For a particular product received by a particular user,
+   “normally used” refers to a typical or common use of that class of
+   product, regardless of the status of the particular user or of the
+   way in which the particular user actually uses, or expects or is
+   expected to use, the product. A product is a consumer product
+   regardless of whether the product has substantial commercial,
+   industrial or non-consumer uses, unless such uses represent the only
+   significant mode of use of the product. “Installation Information”
+   for a User Product means any methods, procedures, authorization keys,
+   or other information required to install and execute modified
+   versions of a covered work in that User Product from a modified
+   version of its Corresponding Source. The information must suffice to
+   ensure that the continued functioning of the modified object code is
+   in no case prevented or interfered with solely because modification
+   has been made. If you convey an object code work under this section
+   in, or with, or specifically for use in, a User Product, and the
+   conveying occurs as part of a transaction in which the right of
+   possession and use of the User Product is transferred to the
+   recipient in perpetuity or for a fixed term (regardless of how the
+   transaction is characterized), the Corresponding Source conveyed
+   under this section must be accompanied by the Installation
+   Information. But this requirement does not apply if neither you nor
+   any third party retains the ability to install modified object code
+   on the User Product (for example, the work has been installed in
+   ROM). The requirement to provide Installation Information does not
+   include a requirement to continue to provide support service,
+   warranty, or updates for a work that has been modified or installed
+   by the recipient, or for the User Product in which it has been
+   modified or installed. Access to a network may be denied when the
+   modification itself materially and adversely affects the operation of
+   the network or violates the rules and protocols for communication
+   across the network. Corresponding Source conveyed, and Installation
+   Information provided, in accord with this section must be in a format
+   that is publicly documented (and with an implementation available to
+   the public in source code form), and must require no special password
+   or key for unpacking, reading or copying.
 
-8. Termination. You may not propagate or modify a covered work except as
-expressly provided under this License. Any attempt otherwise to
-propagate or modify it is void, and will automatically terminate your
-rights under this License (including any patent licenses granted under
-the third paragraph of section 11). However, if you cease all violation
-of this License, then your license from a particular copyright holder is
-reinstated (a) provisionally, unless and until the copyright holder
-explicitly and finally terminates your license, and (b) permanently, if
-the copyright holder fails to notify you of the violation by some
-reasonable means prior to 60 days after the cessation. Moreover, your
-license from a particular copyright holder is reinstated permanently if
-the copyright holder notifies you of the violation by some reasonable
-means, this is the first time you have received notice of violation of
-this License (for any work) from that copyright holder, and you cure the
-violation prior to 30 days after your receipt of the notice. Termination
-of your rights under this section does not terminate the licenses of
-parties who have received copies or rights from you under this License.
-If your rights have been terminated and not permanently reinstated, you
-do not qualify to receive new licenses for the same material under
-section 10.
+   7. Additional Terms. “Additional permissions” are terms that
+   supplement the terms of this License by making exceptions from one or
+   more of its conditions. Additional permissions that are applicable to
+   the entire Program shall be treated as though they were included in
+   this License, to the extent that they are valid under applicable law.
+   If additional permissions apply only to part of the Program, that
+   part may be used separately under those permissions, but the entire
+   Program remains governed by this License without regard to the
+   additional permissions. When you convey a copy of a covered work, you
+   may at your option remove any additional permissions from that copy,
+   or from any part of it. (Additional permissions may be written to
+   require their own removal in certain cases when you modify the work.)
+   You may place additional permissions on material, added by you to a
+   covered work, for which you have or can give appropriate copyright
+   permission. Notwithstanding any other provision of this License, for
+   material you add to a covered work, you may (if authorized by the
+   copyright holders of that material) supplement the terms of this
+   License with terms: (a) Disclaiming warranty or limiting liability
+   differently from the terms of sections 15 and 16 of this License; or
+   (b) Requiring preservation of specified reasonable legal notices or
+   author attributions in that material or in the Appropriate Legal
+   Notices displayed by works containing it; or (c) Prohibiting
+   misrepresentation of the origin of that material, or requiring that
+   modified versions of such material be marked in reasonable ways as
+   different from the original version; or (d) Limiting the use for
+   publicity purposes of names of licensors or authors of the material;
+   or (e) Declining to grant rights under trademark law for use of some
+   trade names, trademarks, or service marks; or (f) Requiring
+   indemnification of licensors and authors of that material by anyone
+   who conveys the material (or modified versions of it) with
+   contractual assumptions of liability to the recipient, for any
+   liability that these contractual assumptions directly impose on those
+   licensors and authors. All other non-permissive additional terms are
+   considered “further restrictions” within the meaning of section 10.
+   If the Program as you received it, or any part of it, contains a
+   notice stating that it is governed by this License along with a term
+   that is a further restriction, you may remove that term. If a license
+   document contains a further restriction but permits relicensing or
+   conveying under this License, you may add to a covered work material
+   governed by the terms of that license document, provided that the
+   further restriction does not survive such relicensing or conveying.
+   If you add terms to a covered work in accord with this section, you
+   must place, in the relevant source files, a statement of the
+   additional terms that apply to those files, or a notice indicating
+   where to find the applicable terms. Additional terms, permissive or
+   non-permissive, may be stated in the form of a separately written
+   license, or stated as exceptions; the above requirements apply either
+   way.
 
-9. Acceptance Not Required for Having Copies. You are not required to
-accept this License in order to receive or run a copy of the Program.
-Ancillary propagation of a covered work occurring solely as a
-consequence of using peer-to-peer transmission to receive a copy
-likewise does not require acceptance. However, nothing other than this
-License grants you permission to propagate or modify any covered work.
-These actions infringe copyright if you do not accept this License.
-Therefore, by modifying or propagating a covered work, you indicate your
-acceptance of this License to do so.
+   8. Termination. You may not propagate or modify a covered work except
+   as expressly provided under this License. Any attempt otherwise to
+   propagate or modify it is void, and will automatically terminate your
+   rights under this License (including any patent licenses granted
+   under the third paragraph of section 11). However, if you cease all
+   violation of this License, then your license from a particular
+   copyright holder is reinstated (a) provisionally, unless and until
+   the copyright holder explicitly and finally terminates your license,
+   and (b) permanently, if the copyright holder fails to notify you of
+   the violation by some reasonable means prior to 60 days after the
+   cessation. Moreover, your license from a particular copyright holder
+   is reinstated permanently if the copyright holder notifies you of the
+   violation by some reasonable means, this is the first time you have
+   received notice of violation of this License (for any work) from that
+   copyright holder, and you cure the violation prior to 30 days after
+   your receipt of the notice. Termination of your rights under this
+   section does not terminate the licenses of parties who have received
+   copies or rights from you under this License. If your rights have
+   been terminated and not permanently reinstated, you do not qualify to
+   receive new licenses for the same material under section 10.
 
-10. Automatic Licensing of Downstream Recipients. Each time you convey a
-covered work, the recipient automatically receives a license from the
-original licensors, to run, modify and propagate that work, subject to
-this License. You are not responsible for enforcing compliance by third
-parties with this License. An “entity transaction” is a transaction
-transferring control of an organization, or substantially all assets of
-one, or subdividing an organization, or merging organizations. If
-propagation of a covered work results from an entity transaction, each
-party to that transaction who receives a copy of the work also receives
-whatever licenses to the work the party’s predecessor in interest had or
-could give under the previous paragraph, plus a right to possession of
-the Corresponding Source of the work from the predecessor in interest,
-if the predecessor has it or can get it with reasonable efforts. You may
-not impose any further restrictions on the exercise of the rights
-granted or affirmed under this License. For example, you may not impose
-a license fee, royalty, or other charge for exercise of rights granted
-under this License, and you may not initiate litigation (including a
-cross-claim or counterclaim in a lawsuit) alleging that any patent claim
-is infringed by making, using, selling, offering for sale, or importing
-the Program or any portion of it.
+   9. Acceptance Not Required for Having Copies. You are not required to
+   accept this License in order to receive or run a copy of the Program.
+   Ancillary propagation of a covered work occurring solely as a
+   consequence of using peer-to-peer transmission to receive a copy
+   likewise does not require acceptance. However, nothing other than
+   this License grants you permission to propagate or modify any covered
+   work. These actions infringe copyright if you do not accept this
+   License. Therefore, by modifying or propagating a covered work, you
+   indicate your acceptance of this License to do so.
 
-11. Patents. A “contributor” is a copyright holder who authorizes use
-under this License of the Program or a work on which the Program is
-based. The work thus licensed is called the contributor’s “contributor
-version”. A contributor’s “essential patent claims” are all patent
-claims owned or controlled by the contributor, whether already acquired
-or hereafter acquired, that would be infringed by some manner, permitted
-by this License, of making, using, or selling its contributor version,
-but do not include claims that would be infringed only as a consequence
-of further modification of the contributor version. For purposes of this
-definition, “control” includes the right to grant patent sublicenses in
-a manner consistent with the requirements of this License. Each
-contributor grants you a non-exclusive, worldwide, royalty-free patent
-license under the contributor’s essential patent claims, to make, use,
-sell, offer for sale, import and otherwise run, modify and propagate the
-contents of its contributor version. In the following three paragraphs,
-a “patent license” is any express agreement or commitment, however
-denominated, not to enforce a patent (such as an express permission to
-practice a patent or covenant not to sue for patent infringement). To
-“grant” such a patent license to a party means to make such an agreement
-or commitment not to enforce a patent against the party. If you convey a
-covered work, knowingly relying on a patent license, and the
-Corresponding Source of the work is not available for anyone to copy,
-free of charge and under the terms of this License, through a publicly
-available network server or other readily accessible means, then you
-must either (1) cause the Corresponding Source to be so available, or
-(2) arrange to deprive yourself of the benefit of the patent license for
-this particular work, or (3) arrange, in a manner consistent with the
-requirements of this License, to extend the patent license to downstream
-recipients. “Knowingly relying” means you have actual knowledge that,
-but for the patent license, your conveying the covered work in a
-country, or your recipient’s use of the covered work in a country, would
-infringe one or more identifiable patents in that country that you have
-reason to believe are valid. If, pursuant to or in connection with a
-single transaction or arrangement, you convey, or propagate by procuring
-conveyance of, a covered work, and grant a patent license to some of the
-parties receiving the covered work authorizing them to use, propagate,
-modify or convey a specific copy of the covered work, then the patent
-license you grant is automatically extended to all recipients of the
-covered work and works based on it. A patent license is “discriminatory”
-if it does not include within the scope of its coverage, prohibits the
-exercise of, or is conditioned on the non-exercise of one or more of the
-rights that are specifically granted under this License. You may not
-convey a covered work if you are a party to an arrangement with a third
-party that is in the business of distributing software, under which you
-make payment to the third party based on the extent of your activity of
-conveying the work, and under which the third party grants, to any of
-the parties who would receive the covered work from you, a
-discriminatory patent license (a) in connection with copies of the
-covered work conveyed by you (or copies made from those copies), or (b)
-primarily for and in connection with specific products or compilations
-that contain the covered work, unless you entered into that arrangement,
-or that patent license was granted, prior to 28 March 2007. Nothing in
-this License shall be construed as excluding or limiting any implied
-license or other defenses to infringement that may otherwise be
-available to you under applicable patent law.
+   10. Automatic Licensing of Downstream Recipients. Each time you
+   convey a covered work, the recipient automatically receives a license
+   from the original licensors, to run, modify and propagate that work,
+   subject to this License. You are not responsible for enforcing
+   compliance by third parties with this License. An “entity
+   transaction” is a transaction transferring control of an
+   organization, or substantially all assets of one, or subdividing an
+   organization, or merging organizations. If propagation of a covered
+   work results from an entity transaction, each party to that
+   transaction who receives a copy of the work also receives whatever
+   licenses to the work the party’s predecessor in interest had or could
+   give under the previous paragraph, plus a right to possession of the
+   Corresponding Source of the work from the predecessor in interest, if
+   the predecessor has it or can get it with reasonable efforts. You may
+   not impose any further restrictions on the exercise of the rights
+   granted or affirmed under this License. For example, you may not
+   impose a license fee, royalty, or other charge for exercise of rights
+   granted under this License, and you may not initiate litigation
+   (including a cross-claim or counterclaim in a lawsuit) alleging that
+   any patent claim is infringed by making, using, selling, offering for
+   sale, or importing the Program or any portion of it.
 
-12. No Surrender of Others’ Freedom. If conditions are imposed on you
-(whether by court order, agreement or otherwise) that contradict the
-conditions of this License, they do not excuse you from the conditions
-of this License. If you cannot convey a covered work so as to satisfy
-simultaneously your obligations under this License and any other
-pertinent obligations, then as a consequence you may not convey it at
-all. For example, if you agree to terms that obligate you to collect a
-royalty for further conveying from those to whom you convey the Program,
-the only way you could satisfy both those terms and this License would
-be to refrain entirely from conveying the Program.
+   11. Patents. A “contributor” is a copyright holder who authorizes use
+   under this License of the Program or a work on which the Program is
+   based. The work thus licensed is called the contributor’s
+   “contributor version”. A contributor’s “essential patent claims” are
+   all patent claims owned or controlled by the contributor, whether
+   already acquired or hereafter acquired, that would be infringed by
+   some manner, permitted by this License, of making, using, or selling
+   its contributor version, but do not include claims that would be
+   infringed only as a consequence of further modification of the
+   contributor version. For purposes of this definition, “control”
+   includes the right to grant patent sublicenses in a manner consistent
+   with the requirements of this License. Each contributor grants you a
+   non-exclusive, worldwide, royalty-free patent license under the
+   contributor’s essential patent claims, to make, use, sell, offer for
+   sale, import and otherwise run, modify and propagate the contents of
+   its contributor version. In the following three paragraphs, a “patent
+   license” is any express agreement or commitment, however denominated,
+   not to enforce a patent (such as an express permission to practice a
+   patent or covenant not to sue for patent infringement). To “grant”
+   such a patent license to a party means to make such an agreement or
+   commitment not to enforce a patent against the party. If you convey a
+   covered work, knowingly relying on a patent license, and the
+   Corresponding Source of the work is not available for anyone to copy,
+   free of charge and under the terms of this License, through a
+   publicly available network server or other readily accessible means,
+   then you must either (1) cause the Corresponding Source to be so
+   available, or (2) arrange to deprive yourself of the benefit of the
+   patent license for this particular work, or (3) arrange, in a manner
+   consistent with the requirements of this License, to extend the
+   patent license to downstream recipients. “Knowingly relying” means
+   you have actual knowledge that, but for the patent license, your
+   conveying the covered work in a country, or your recipient’s use of
+   the covered work in a country, would infringe one or more
+   identifiable patents in that country that you have reason to believe
+   are valid. If, pursuant to or in connection with a single transaction
+   or arrangement, you convey, or propagate by procuring conveyance of,
+   a covered work, and grant a patent license to some of the parties
+   receiving the covered work authorizing them to use, propagate, modify
+   or convey a specific copy of the covered work, then the patent
+   license you grant is automatically extended to all recipients of the
+   covered work and works based on it. A patent license is
+   “discriminatory” if it does not include within the scope of its
+   coverage, prohibits the exercise of, or is conditioned on the
+   non-exercise of one or more of the rights that are specifically
+   granted under this License. You may not convey a covered work if you
+   are a party to an arrangement with a third party that is in the
+   business of distributing software, under which you make payment to
+   the third party based on the extent of your activity of conveying the
+   work, and under which the third party grants, to any of the parties
+   who would receive the covered work from you, a discriminatory patent
+   license (a) in connection with copies of the covered work conveyed by
+   you (or copies made from those copies), or (b) primarily for and in
+   connection with specific products or compilations that contain the
+   covered work, unless you entered into that arrangement, or that
+   patent license was granted, prior to 28 March 2007. Nothing in this
+   License shall be construed as excluding or limiting any implied
+   license or other defenses to infringement that may otherwise be
+   available to you under applicable patent law.
 
-13. Use with the GNU Affero General Public License. Notwithstanding any
-other provision of this License, you have permission to link or combine
-any covered work with a work licensed under version 3 of the GNU Affero
-General Public License into a single combined work, and to convey the
-resulting work. The terms of this License will continue to apply to the
-part which is the covered work, but the special requirements of the GNU
-Affero General Public License, section 13, concerning interaction
-through a network will apply to the combination as such.
+   12. No Surrender of Others’ Freedom. If conditions are imposed on you
+   (whether by court order, agreement or otherwise) that contradict the
+   conditions of this License, they do not excuse you from the
+   conditions of this License. If you cannot convey a covered work so as
+   to satisfy simultaneously your obligations under this License and any
+   other pertinent obligations, then as a consequence you may not convey
+   it at all. For example, if you agree to terms that obligate you to
+   collect a royalty for further conveying from those to whom you convey
+   the Program, the only way you could satisfy both those terms and this
+   License would be to refrain entirely from conveying the Program.
 
-14. Revised Versions of this License. The Free Software Foundation may
-publish revised and/or new versions of the GNU General Public License
-from time to time. Such new versions will be similar in spirit to the
-present version, but may differ in detail to address new problems or
-concerns. Each version is given a distinguishing version number. If the
-Program specifies that a certain numbered version of the GNU General
-Public License “or any later version” applies to it, you have the option
-of following the terms and conditions either of that numbered version or
-of any later version published by the Free Software Foundation. If the
-Program does not specify a version number of the GNU General Public
-License, you may choose any version ever published by the Free Software
-Foundation. If the Program specifies that a proxy can decide which
-future versions of the GNU General Public License can be used, that
-proxy’s public statement of acceptance of a version permanently
-authorizes you to choose that version for the Program. Later license
-versions may give you additional or different permissions. However, no
-additional obligations are imposed on any author or copyright holder as
-a result of your choosing to follow a later version.
+   13. Use with the GNU Affero General Public License. Notwithstanding
+   any other provision of this License, you have permission to link or
+   combine any covered work with a work licensed under version 3 of the
+   GNU Affero General Public License into a single combined work, and to
+   convey the resulting work. The terms of this License will continue to
+   apply to the part which is the covered work, but the special
+   requirements of the GNU Affero General Public License, section 13,
+   concerning interaction through a network will apply to the
+   combination as such.
 
-15. Disclaimer of Warranty. THERE IS NO WARRANTY FOR THE PROGRAM, TO THE
-EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN
-WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM
-“AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS TO THE QUALITY
-AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD THE PROGRAM PROVE
-DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
-CORRECTION.
+   14. Revised Versions of this License. The Free Software Foundation
+   may publish revised and/or new versions of the GNU General Public
+   License from time to time. Such new versions will be similar in
+   spirit to the present version, but may differ in detail to address
+   new problems or concerns. Each version is given a distinguishing
+   version number. If the Program specifies that a certain numbered
+   version of the GNU General Public License “or any later version”
+   applies to it, you have the option of following the terms and
+   conditions either of that numbered version or of any later version
+   published by the Free Software Foundation. If the Program does not
+   specify a version number of the GNU General Public License, you may
+   choose any version ever published by the Free Software Foundation. If
+   the Program specifies that a proxy can decide which future versions
+   of the GNU General Public License can be used, that proxy’s public
+   statement of acceptance of a version permanently authorizes you to
+   choose that version for the Program. Later license versions may give
+   you additional or different permissions. However, no additional
+   obligations are imposed on any author or copyright holder as a result
+   of your choosing to follow a later version.
 
-16. Limitation of Liability. IN NO EVENT UNLESS REQUIRED BY APPLICABLE
-LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER
-PARTY WHO MODIFIES AND/OR CONVEYS THE PROGRAM AS PERMITTED ABOVE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR
-CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE
-PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH
-HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGES.
+   15. Disclaimer of Warranty. THERE IS NO WARRANTY FOR THE PROGRAM, TO
+   THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED
+   IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES PROVIDE THE
+   PROGRAM “AS IS” WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR
+   IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK
+   AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD
+   THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+   SERVICING, REPAIR OR CORRECTION.
 
-17. Interpretation of Sections 15 and 16. If the disclaimer of warranty
-and limitation of liability provided above cannot be given local legal
-effect according to their terms, reviewing courts shall apply local law
-that most closely approximates an absolute waiver of all civil liability
-in connection with the Program, unless a warranty or assumption of
-liability accompanies a copy of the Program in return for a fee.
+   16. Limitation of Liability. IN NO EVENT UNLESS REQUIRED BY
+   APPLICABLE LAW OR AGREED TO IN WRITING WILL ANY COPYRIGHT HOLDER, OR
+   ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS THE PROGRAM AS PERMITTED
+   ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL,
+   INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+   INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
+   DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR
+   THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
+   PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGES.
+
+   17. Interpretation of Sections 15 and 16. If the disclaimer of
+   warranty and limitation of liability provided above cannot be given
+   local legal effect according to their terms, reviewing courts shall
+   apply local law that most closely approximates an absolute waiver of
+   all civil liability in connection with the Program, unless a warranty
+   or assumption of liability accompanies a copy of the Program in
+   return for a fee.
 
 Acknowlegements
 ---------------

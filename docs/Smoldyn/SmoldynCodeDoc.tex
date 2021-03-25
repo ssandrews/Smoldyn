@@ -42,8 +42,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.63}
-\date{\copyright December, 2020}
+\subtitle{Version 2.64}
+\date{\copyright March, 2021}
 \author{Steve Andrews}
 \maketitle
 
@@ -174,7 +174,7 @@ For Mac, I've been using regular glut, not freeglut, which works easily but has 
 
 \item[libtiff] is optional. It is used for saving graphics images as TIFF files.
 
-For Mac, I downloaded version 3.9.6, which was the latest of the 3.9 series, from \url{http://download.osgeo.org/libtiff/}. Because I didn't want the zlib dependency of libtiff, I configured with ``./configure --disable-zlib", and then entered ``make" and ``sudo make install" as usual.
+For Mac, I've installed and installed libtiff many times. MacPorts has worked, but the latest version has lots of dependencies that I didn't want. My latest approach (3/21) was to downloaded the latest version (4.2.0) from \url{http://download.osgeo.org/libtiff/}. Previously, I avoided the zlib dependency by configuring with ``./configure --disable-zlib", and then entering ``make" and ``sudo make install" as usual. This time, I created the subdirectory ``mybuild'', moved to there, and entered ``cmake .. -Dzlib=OFF -Dlibdeflate=OFF -Dpixarlog=OFF -Djpeg=OFF -Dold-jpeg=OFF -Djbig=OFF -Dlzma=OFF -Dzstd=OFF -Dwebp=OFF -Djpeg12=OFF -DBUILD\_SHARED\_LIBS=OFF''. This turned off all external codecs, which reduced dependencies, hopefully without reducing the functionality that Smoldyn needs. It also instructed cmake to configure for a static build. Afterward, I entered ``make'' and ``sudo make install'', which installed to /usr/local/include and /usr/local/lib. Then, I copied the /usr/local/include/*tiff* and /usr/local/lib/*tiff* files to the Mac/libtiff subdirectory of Smoldyn.
 
 For Windows with MSVC, I downloaded version 3.8.0 from \url{http://download.osgeo.org/libtiff/}, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. It already has a ``build'' directory, so I worked in a new directory called ``mybuild''. I configured using the option ``cmake .. -DBUILD\_SHARED\_LIBS=FALSE'' and built with ``msbuild tiff.sln /p:Configuration=Release''. This created the libraries, libtiff/Release/tiff.lib and libtiff/Release/tiffxx.lib. I copied these libraries over to source/MSVClibs, and also included several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
 
