@@ -13981,8 +13981,8 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added Chapter 15 to user’s manual on Python bindings.
 
-   .. rubric:: Modifications for version 2.64 (not released yet)
-      :name: modifications-for-version-2.64-not-released-yet
+   .. rubric:: Modifications for version 2.64 (released 3/25/21)
+      :name: modifications-for-version-2.64-released-32521
       :class: unnumbered
 
 -  Dilawar rewrote the documentation conversions, in the docs directory.
@@ -13996,6 +13996,9 @@ Modifications for version 2.27 (released 7/26/12)
 -  Converted the User’s manual from Word to LaTeX.
 
 -  Merged the Libsmoldyn user’s manual into the regular user’s manual.
+
+-  Had problems with static libtiff for Mac, so downloaded a new version
+   and put the compiled static library in Smoldyn/Mac.
 
 The wish/ to do list
 ====================

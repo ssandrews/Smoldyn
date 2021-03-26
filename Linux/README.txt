@@ -11,7 +11,7 @@ Note that if cmake fails, or you want to configure again with new cmake options 
 The following additional things are likely to be particularly useful:
 
 SmoldynQuickGuide.pdf - a 2 page Smoldyn quick reference guide, in documentation directory
-SmoldynUsersManual.pdf - the full Smoldyn User Manual, in documentation directory
+SmoldynManual.pdf - the full Smoldyn User Manual, in documentation directory
 examples - a folder of Smoldyn configuration files
 
 ------------- Necessary libraries -----------------

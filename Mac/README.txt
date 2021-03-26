@@ -6,7 +6,7 @@ To install Smoldyn, open your "Terminal" application, which is in your Applicati
 
 Particularly useful files in the download directory:
 SmoldynQuickGuide.pdf - a 2 page Smoldyn quick reference guide, in documentation directory
-SmoldynUsersManual.pdf - the full Smoldyn User Manual, in documentation directory
+SmoldynManual.pdf - the full Smoldyn User Manual, in documentation directory
 examples - a folder of Smoldyn configuration files
 
 

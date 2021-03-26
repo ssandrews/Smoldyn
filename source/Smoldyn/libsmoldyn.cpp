@@ -1,6 +1,6 @@
 /* Steven Andrews, started 10/22/2001.
  This is an application programming interface for the Smoldyn program.
- See documentation called SmoldynUsersManual.pdf and SmoldynCodeDoc.pdf, and the Smoldyn
+ See documentation called SmoldynManual.pdf and SmoldynCodeDoc.pdf, and the Smoldyn
  website, which is at www.smoldyn.org.
  Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
  of the Gnu Lesser General Public License (LGPL). */

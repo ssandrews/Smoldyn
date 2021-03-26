@@ -18,7 +18,7 @@ find_package(Git QUIET)
 if(GIT_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} describe --always HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        RESULT_VARIABLE SMOLDYN_VERSION
+#        RESULT_VARIABLE SMOLDYN_VERSION	# Commented out because this line overrides previously defined version number
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 if(NOT SMOLDYN_VERSION)
