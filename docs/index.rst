@@ -10,7 +10,7 @@ Welcome to Smoldyn's documentation!
 
 .. warning::
 
-   Please refer to official documentation at <https://smoldyn.org>. This is a 
+   Please refer to official documentation at <http://www.smoldyn.org>. This is a 
    work in progress. 
 
 .. toctree::
