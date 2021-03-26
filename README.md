@@ -1,4 +1,4 @@
-![C/C++ CI](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg) [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn)
+![C/C++ CI](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg) [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn) [![Documentation Status](https://readthedocs.org/projects/smoldyn/badge/?version=latest)](https://smoldyn.readthedocs.io/en/latest/?badge=latest)
 
 # Smoldyn
 

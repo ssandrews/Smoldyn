@@ -141,23 +141,18 @@ LaTeX and pdf files for the User’s Manual and code documentation (this
 file).
 
 Also, Dilawar Singh started a readthedocs website for Smoldyn at
-https://readthedocs.org/projects/smoldyn/downloads/. I’ll try to
-maintain that site but it may not be as current as the documentation
-that’s packaged with the downloads. In addition, note that the
-documentation is stored on the same github site as the code, so if you
-really want the latest un-released documentation, then you can get it at
-the github site.
-
-Yet another readthedocs website is
-https://smoldyn.readthedocs.io/en/latest/doxygen/html/classes.html.
+https://readthedocs.org/projects/smoldyn/. I’ll try to maintain that
+site but it may not be as current as the documentation that’s packaged
+with the downloads. In addition, note that the documentation is stored
+on the same github site as the code, so if you really want the latest
+un-released documentation, then you can get it at the github site.
 
 Python
 ~~~~~~
 
 Dilawar started a PyPI site for Smoldyn at
-https://pypi.org/project/smoldyn/. I’m not sure if it includes the
-latest code through nightly builds, or if it takes manual upload. If the
-latter, then this doesn’t include the latest code.
+https://pypi.org/project/smoldyn/. It is updated from github through
+nightly builds, so it should always be up to date.
 
 .. _source-code-1:
 
@@ -343,12 +338,12 @@ libtiff
 
    For Mac, I’ve installed and installed libtiff many times. MacPorts
    has worked, but the latest version has lots of dependencies that I
-   didn’t want. My latest approach (3/21) was to downloaded the latest
-   version (4.2.0) from http://download.osgeo.org/libtiff/. Previously,
-   I avoided the zlib dependency by configuring with “./configure
-   –disable-zlib", and then entering “make" and “sudo make install" as
-   usual. This time, I created the subdirectory “mybuild”, moved to
-   there, and entered “cmake .. -Dzlib=OFF -Dlibdeflate=OFF
+   didn’t want. My latest approach (March, 2021) was to downloaded the
+   latest version (4.2.0) from http://download.osgeo.org/libtiff/.
+   Previously, I avoided the zlib dependency by configuring with
+   “./configure –disable-zlib", and then entering “make" and “sudo make
+   install" as usual. This time, I created the subdirectory “mybuild”,
+   moved to there, and entered “cmake .. -Dzlib=OFF -Dlibdeflate=OFF
    -Dpixarlog=OFF -Djpeg=OFF -Dold-jpeg=OFF -Djbig=OFF -Dlzma=OFF
    -Dzstd=OFF -Dwebp=OFF -Djpeg12=OFF -DBUILD_SHARED_LIBS=OFF”. This
    turned off all external codecs, which reduced dependencies, hopefully
@@ -529,6 +524,9 @@ some of the more helpful standard ones.
 | `                        | ``OFF``     | Treat warnings as errors |
 | `-DOPTION_STRICT_BUILD`` |             | and enable address       |
 |                          |             | sanitizer                |
++--------------------------+-------------+--------------------------+
+| ``-DOPTION_DOCS``        | ``OFF``     | Convert documentation    |
+|                          |             | formats and run Doxygen  |
 +--------------------------+-------------+--------------------------+
 | CMake option             | default     | function                 |
 +--------------------------+-------------+--------------------------+
@@ -861,6 +859,11 @@ was written, by Dilawar, specifically for Smoldyn.
 partially set up but not completed. To run these examples, enter “make
 examples”.
 
+(4) The subdirectory “docs” is for generating documentation, meaning
+converting the manual and code documentation to web-friendly formats and
+running Doxygen on all of the code. Run this by using the
+``-DOPTION_DOCS=ON`` configure option.
+
 Several different targets can be built. The core software has the
 Smoldyn and LibSmoldyn targets, which are selected or unselected using
 the CMake options ``OPTION_TARGET_SMOLDYN`` and
@@ -1121,36 +1124,35 @@ which works well.
 Documentation
 -------------
 
-There are two documentation directories, “documentation” and “docs”.
+The documentation directory is “docs”.
 
-The “documentation” directory contains original hand-written
-documentation files for Smoldyn, it’s utility programs, and the
-libraries that Smoldyn calls. Essentially all of these files were
-written by me (Steve). An exception is that the BioNetGen documentation
-is a published paper on BioNetGen by Faeder, Blinov, and Hlavacek. The
-documentation specifically for Smoldyn is within the Smoldyn
-subdirectory. Here are the User’s Manual, figures for it, and this
-programmer’s documentation, along with a few especially relevant
-published papers about Smoldyn. Unfortunately, LaTeX requires far too
-many files for a single document, but that’s just how it is.
+This directory contains original hand-written documentation files for
+Smoldyn, it’s utility programs, and the libraries that Smoldyn calls.
+Essentially all of these files were written by me (Steve). An exception
+is that the BioNetGen documentation is a published paper on BioNetGen by
+Faeder, Blinov, and Hlavacek. The documentation specifically for Smoldyn
+is within the Smoldyn subdirectory. Here are the User’s Manual, figures
+for it, and this programmer’s documentation, along with a few especially
+relevant published papers about Smoldyn. Unfortunately, LaTeX requires
+far too many files for a single document, but that’s just how it is.
 
-The “docs” directory contains many things, which generally automate
-document conversion from the hand-written files in the documentation
-directory to rst and other file formats. These procedures are run
-through the “docs/CMakeLists.txt” file. It can be used as a submodule to
-the top-level cmake file (enabled by ``-DOPTION_DOCS=ON``) or run as a
-standalone cmake project i.e., ``cd docs; cmake .; make docs``. The
-CMakeLists.txt file does the following things:
+The “docs” directory also contains things for automatically converting
+documentation from the hand-written files to rst and other file formats.
+These procedures are run through the “docs/CMakeLists.txt” file. It can
+be used as a submodule to the top-level cmake file (enabled by
+``-DOPTION_DOCS=ON``) or run as a standalone cmake project i.e.,
+``cd docs; cmake .; make docs``. The CMakeLists.txt file does the
+following things:
 
-(1) It converts the SmoldynUsersManual.odt to rst format, which is the
-restructured text format. This format is used for Python documentation.
-This conversion is done by calling the pandoc utility, which is a
-“universal document converter”, used for converting between markup
-languages (pandoc is available for Macs through MacPorts and elsewhere).
-Pandoc is a soft dependency; if it is not found, the rst files are not
-updated and old ones are used. This way one can update the TeX, docx
-file in the documentation folder and have the rst docs in sync with
-them.
+(1) It converts the SmoldynManual.tex and SmoldynCodeDoc.tex to rst
+format, which is the restructured text format. This format is used for
+Python documentation. This conversion is done by calling the pandoc
+utility, which is a “universal document converter”, used for converting
+between markup languages (pandoc is available for Macs through MacPorts
+and elsewhere). This way one can update the LaTeX file in the
+documentation folder and have the rst docs in sync with them. Pandoc is
+a soft dependency; if it is not found, the rst files are not updated and
+old ones are used.
 
 (2) The CMake file installs any software dependencies that are needed,
 which are listed in the docs/requirements.txt file, using the Python pip
@@ -1194,19 +1196,15 @@ are components of the ones listed here):
 
    smoldyn — This installs Smoldyn using pip.
 
-(3) The CMakeLists.txt file converts all tex files, which are
-LibsmoldynManual.tex and SmoldynCodeDoc.tex, to rst format. It does this
-using pandoc.
-
-(4) It runs Doxygen on all of the Smoldyn source code files to generate
-source code documentation as rst files. This step is configured by the
+(3) It runs Doxygen on all of the source code files to generate source
+code documentation as rst files. This step is configured by the
 Doxyfile.in file, which is just a long list of configuration switches.
 
-(5) It runs Sphinx and Breathe to convert the rst documents to html
+(4) It runs Sphinx and Breathe to convert the rst documents to html
 documents. It then runs Sphinx and Doxygen to create documentation for
 the code.
 
-(6) It uses Sphinx-autobuild to create live HTML. I’m not sure what live
+(5) It uses Sphinx-autobuild to create live HTML. I’m not sure what live
 HTML is versus just HTML.
 
 Dilawar wrote: The readthedocs service runs docs/conf.py file which has
@@ -13993,12 +13991,16 @@ Modifications for version 2.27 (released 7/26/12)
    surfaces led to an initial unbinding separation that didn’t address
    surface crossing, which led to products leaking across the surface.
 
--  Converted the User’s manual from Word to LaTeX.
+-  Converted the User’s manual from Word to LaTeX and also renamed it
+   from SmoldynUsersManual to SmoldynManual.
 
 -  Merged the Libsmoldyn user’s manual into the regular user’s manual.
 
 -  Had problems with static libtiff for Mac, so downloaded a new version
    and put the compiled static library in Smoldyn/Mac.
+
+-  Minor change in CMakeLists.txt so that the version number could be
+   input from the command line.
 
 The wish/ to do list
 ====================
