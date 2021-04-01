@@ -168,7 +168,7 @@ For Windows with MinGW, I found that the MinGW cross-compiler download that I us
 
 To address this, I also tried to compile the freeglut 3.2.1 download on a Windows computer but with the MinGW compiler. This didn't work. Thus, instead, I downloaded the freeglut 3.2.1 source code to my Mac and cross-compiled it for Windows using ``cmake .. -DCMAKE\_TOOLCHAIN\_FILE=../Toolchain-mingw32.cmake''. This actually worked and produced libfreeglut\_static.a, libfreeglut.dll.a, libfreeglut.dll, and many more files. I was able to build Smoldyn while linking to these files, but the result was the same as before in that I got smoldyn.exe just fine, but it didn't run.
 
-For Mac, I've been using regular glut, not freeglut, which works easily but has the drawback that control never returns to Smoldyn after it is handed over to \ttt{glutmainloop}. To address this, I installed freeglut using MacPorts, which was trivial. However, entering \ttt{port contents freeglut} showed the files that were installed, and none were a static library. I tried for a while to link to it anyhow using the CMakeLists.txt file, without luck. Next, I downloaded freeglut from \url{http://freeglut.sourceforge.net}, as I did for Windows, and tried to build using CMake. This failed at the linking stage. There was a prior report of it not working for Macs, with the same error and no solution given, so this seems to be a building bug and not easily fixed.
+For Mac, I've been using regular glut, not freeglut, which works easily but has the drawback that control never returns to Smoldyn after it is handed over to \ttt{glutmainloop}. To address this (12/14/20), I installed freeglut using MacPorts, which was trivial. However, entering \ttt{port contents freeglut} showed the files that were installed, and none were a static library. I tried for a while to link to it anyhow using the CMakeLists.txt file, without luck. I also tried to reinstall the MacPorts version (3/29/21), with edits in the Portfile so that static libraries would be built. This seemed easy, but took a long time and didn't work out in the end. The Portfile says that static libraries should be built, but they aren't. In another attempt, I downloaded freeglut from \url{http://freeglut.sourceforge.net}, as I did for Windows, and tried to build using CMake. This failed at the linking stage. There was a prior report of it not working for Macs (see \url{https://sourceforge.net/projects/freeglut/}), with the same error and no solution given, so this seems to be a building bug and not easily fixed. The issue seems to be that Apple deprecated the GLX functions that libfreeglut depends on, so libfreeglut can no longer be built statically.
 
 \item[libtiff] is optional. It is used for saving graphics images as TIFF files.
 
@@ -446,7 +446,59 @@ The CMakeLists file lists a few subdirectories.
 
 Several different targets can be built. The core software has the Smoldyn and LibSmoldyn targets, which are selected or unselected using the CMake options \ttt{OPTION\_TARGET\_SMOLDYN} and \ttt{OPTION\_TARGET\_LIBSMOLDYN}, described above. I'm not sure if \ttt{smoldyn\_static} and \ttt{smoldyn\_shared} qualify as targets or not, but they are both built as part of LibSmoldyn. When building, these targets create a Smoldyn executable, called just smoldyn on a Mac or smoldyn.exe on Windows, and static and shared libraries called libsmoldyn\_static.a and libsmoldyn\_shared.dylib on a Mac. Also, one can write \ttt{make install}, although this isn't really a different target. In addition, \ttt{make examples} does some testing.
 
-Within the python subdirectory, additional targets are: \ttt{wheel}, \ttt{pyinstall}, \ttt{pyinstall\_venv}, \ttt{pyuninstall}, \ttt{pydevel}, and \ttt{doc\_api\_html}. I don't think that most of these targets need to be called specifically, but are instead called automatically when running just ``make''. These targets are fairly simple, just running a line of Python code in most cases.
+Within the python subdirectory, additional targets are: \ttt{wheel}, \ttt{pyinstall}, \ttt{pyinstall\_venv} (virtual environment), \ttt{pyuninstall}, \ttt{pydevel}, and \ttt{doc\_api\_html}. I don't think that most of these targets need to be called specifically, but are instead called automatically when running just ``make''. These targets are fairly simple, just running a line of Python code in most cases (it runs the setup.py program, which is somewhat involved, but carries out the installation). The \ttt{pyuninstall} line runs pip, and removes the Smoldyn version that pip installed, but not the Smoldyn version that \ttt{pyinstall} installs.
+
+
+% CMake file locations
+\subsection{CMake file locations}
+
+Running CMake from the build directory with \ttt{cmake ..} creates a lot of files in the build directory. I don't believe that it creates files anywhere else. Some notable ones are:
+\begin{itemize}
+\item \ttt{cmake\_install.cmake}. A CMake file that includes installation instructions. It's not very readable.
+\item \ttt{CMakeCache.txt}. List of variables that were defined in the CMakeLists.txt file and their values.
+\item \ttt{CMakeFiles} directory. Lots of files are in here, plus subdirectories that will be used for compiled object code.
+\item \ttt{Makefile}. The primary makefile for building.
+\item \ttt{smoldynconfigure.h}. The C configuration file that was written by CMake based on source/smoldynconfigure.h.in.
+\end{itemize}
+
+Running \ttt{make} then builds Smoldyn. As it goes along, it writes object files to build/CMakeFiles/smoldyn\_static.dif/source/...., or to other subdirectories within build/CMakeFiles. It puts the compiled results at the top-level of the build directory, where these include libsmoldyn\_shared.dylib, libsmoldyn\_static.a, and the smoldyn executable.
+
+When it gets to the Python code, it first builds the C++ target lib\_pysmoldyn.a, which appears to have exactly the same object files as the other targets, without any Python-specific files. This target gets put into the build/source/python directory. Next, CallbakcFunc.cpp and module.cpp get compiled. I think they get linked to lib\_pysmoldyn.a and then turned into \_smoldyn.cpython-39-darwin.so, which gets saved in source/python/smoldyn (this is \textit{not} within the build directory). The .so suffix is for a shared library, using the standard Linux suffix. No other files appear to get written to the source directory.
+
+Next, the Python source files (the source tree) get copied from the source directory to the appropriate places in the build directory. Then it builds the Python wheel; I'm not sure if this is a sub-portion of the copying step or the same thing. It checks for a pre-existing wheel in /Users/sandrews/Library/Python/3.9/lib/python/site-packages; it says that one is found, but that seems odd to me because I can't find any Smoldyn files in there at all. Maybe it's looking for some other wheel. In any case, it next copies the Smoldyn Python files (smoldyn.py, \_\_init\_\_.py, types.py, etc., and also the newly created \_smoldyn.cpython-39-darwin.so) over from source/python/smoldyn to the build/lib/smoldyn directory. Then, it creates a directory for the wheel and copies the same files over into there. Then, it does a bunch of stuff with egg information, although I was under the impression that eggs and wheels are alternate approaches for similar results, and weren't used together, but I guess not. After that, it creates an actual wheel file, and adds the Python files, the \_smoldyn.cpython-39-darwin.so file, and some more files with wheel metadata and similar stuff. Finally, the wheel directory is removed.
+
+By the end of the \ttt{make} step, the important files are: libsmoldyn\_shared.dylib, libsmoldyn\_static.a, the smoldyn executable, and the wheel file in the top-level build directory. One file was added to the source directory, and there are vast numbers of other files within subdirectories of the build directory, but nothing else.
+
+Next, running \ttt{sudo make install} does lots of file copying. This starts by repeating the \ttt{make} functionality, although there's no need to recompile the code since that's already done. However, this does repeat checking for the wheel, finding that it's in /Users/sandrews/Library/Python/3.9/lib/python/site-packages, even though it isn't. Then, this repeats all steps of the Python copying, wheel directory creation, egg creation, wheel creation, copying into the wheel, and removing the wheel directory.
+
+Finally, this copies files into system locations. Here is the install\_manifest.txt file, which lists all of the install files and locations:
+\begin{verbatim}
+/usr/local/bin/smoldyn
+/usr/local/lib/libsmoldyn_shared.dylib
+/usr/local/lib/libsmoldyn_static.a
+/usr/local/include/libsmoldyn.h
+/usr/local/include/smoldyn.h
+/usr/local/include/smoldynconfigure.h
+\end{verbatim}
+There's no evidence that this copies the wheel anywhere.
+
+Running \ttt{sudo make pyinstall} installs the Python code, \textit{probably to the wrong place}. This make target is listed in the source/python/CMakeLists.txt file, where is simply says to run setup.py and install in the \ttt{\$\{CMAKE\_INSTALL\_PREFIX\}} directory, which is /usr/local for me. It puts the files in /usr/local/lib/python3.9/site-packages. However, this isn't actually useful for me because my Python doesn't look there for files.
+
+Instead, run \ttt{sudo pip install smoldyn-2.64-....whl}. This installs the wheel to the correct location. For me, that is /opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/smoldyn/.
+
+% Python module after building
+\subsection{Python module after building}
+
+Rather than installing the Python module, it's also possible to import the build version into Python, directly from the build/py directory. Add this directory to your \ttt{PYTHONPATH} temporarily with \ttt{export PYTHONPATH=/path/to/Smoldyn/build/py:\$PYTHONPATH}. With this, the module can be accessed from any directory. Also, somehow, it's possible to add the module directory to sys.path, which is then a permanent solution. However, better is to actually install it with pip.
+
+Note that it's possible to see where the library is imported from by checking
+\verb|smoldyn.__file__| while in Python. For example,
+
+\begin{verbatim}
+>>> import smoldyn
+>>> print(smoldyn.__file__)
+/home/dilawars/Work/FORKES/Smoldyn/build/py/smoldyn/__init__.py
+\end{verbatim}
 
 
 % Cross-compiling for Windows with MinGW
@@ -782,20 +834,6 @@ This defines a \ttt{load\_model} function with a path and arguments, which then 
 \subsection*{\_\_main\_\_.py}
 
 This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. This file includes the Python command-line options, including ``overwrite'', ``quit-at-end'', and ``args''. This code doesn't necessarily run. According to Dilawar, if Smoldyn is started with ``python3 -m smoldyn template.txt'', then this will execute the \_\_main\_\_.py file, with command line arguments passed to it. Here, the Python package is being used as a proxy for the Smoldyn executable.
-
-% Python module after building
-\section{Python module after building}
-
-After building Smoldyn, in the build directory at \ttt{/path/to/Smoldyn/build}, the python module ends up at \ttt{/path/to/Smoldyn/build/py}. The actual code that runs is in the \ttt{smoldyn} subdirectory of this location, but that's not directly relevant. The module can be imported into Python from this directory (\ttt{.../build/py}). Add this directory to your \ttt{PYTHONPATH} temporarily with \ttt{export PYTHONPATH=/path/to/Smoldyn/build/py:\$PYTHONPATH}. With this, the module can be accessed from any directory. Also, somehow, it's possible to add the module directory to sys.path, which is then a permanent solution.
-
-Note that it's possible to see where the library is imported from by checking
-\verb|smoldyn.__file__| while in Python. For example,
-
-\begin{verbatim}
->>> import smoldyn
->>> print(smoldyn.__file__)
-/home/dilawars/Work/FORKES/Smoldyn/build/py/smoldyn/__init__.py
-\end{verbatim}
 
 
 % Chapter: Files, macros, variables, etc.

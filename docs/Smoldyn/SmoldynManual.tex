@@ -8,6 +8,7 @@
 \usepackage{hyperref}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{geometry}
 
 % settings for listings package
 \lstdefinestyle{SSAPython}{
@@ -43,23 +44,19 @@
 
 % New commands
 \newcommand {\ttt} {\texttt}
-\newcommand {\param} {\textit}
 % used for enumerate item numbers
 \newcommand\setItemnumber[1]{\setcounter{enumi}{\numexpr#1-1\relax}}
 
 \DeclareMathOperator{\erfc}{erfc}
 
-% Paper size and margins
-\setlength{\paperheight}{11in}
-\setlength{\paperwidth}{8.5in}
-
-\setlength{\topmargin}{0in}
-\setlength{\headheight}{0in}
-\setlength{\headsep}{0.25in}
-\setlength{\textheight}{9in}
-\setlength{\oddsidemargin}{0in}
-\setlength{\evensidemargin}{0in}
-\setlength{\textwidth}{6.5in}
+% Paper size and margins, using geometry package
+\geometry{
+paperwidth=8.5 in,
+paperheight=11 in,
+top=1 in,
+bottom=1 in,
+left=1 in,
+right=1 in}
 
 
 \begin{document}
@@ -445,7 +442,7 @@ line & query & Result\\
 \ttt{-V} & V & display version number and quit\\
 \ttt{-v} & v & verbose: extra parameter information is displayed\\
 \ttt{-w} & w & suppress warnings: no warnings are shown\\
-\ttt{--define }\param{x=y} &  & set a text macro definition\\
+\ttt{--define} $x=y$ &  & set a text macro definition\\
 \end{longtable}
 
 \section{Configuration file syntax}
@@ -470,7 +467,7 @@ You can use \ttt{define} statements to instruct Smoldyn to perform simple text s
 
 \ttt{define} statements can also be used for conditional configuration file reading. In this case, a definition is made as usual, although there is no need to specify any substitution text. Later in the file, the \ttt{ifdefine}, \ttt{else}, and \ttt{endif} statements lead to reading of different portions of file, depending on whether the definition was made or not. A variant of the ifdefine statement is the \ttt{ifundefine} statement. These conditional statements should work as expected if they are used in a normal sort of manner (see any programming book for basic conditional syntax), which includes support for nested \ttt{if} statements. They can also be used successfully with highly abnormal syntaxes (for example, an \ttt{else} toggles reading on or off, regardless of the presence of any preceding \ttt{ifdefine} or \ttt{ifundefine}), although this use is discouraged since it will lead to confusing configuration files, as well as files that may not be compatible with future Smoldyn releases.
 
-Text substitution can also be directed from the command line. If you include the command line option \ttt{--define}, followed by text of the form \param{key = replacement} (do not include spaces, although if you want spaces within the replacement text, then enclose it in double quotes), this is equivalent to declaring text substitution using the define\_global statement within a configuration file. For example, to the file cmdlinedefine.txt includes the macro key \ttt{RDIFC} but does not define it. To run this file, define the macro key on the command line like
+Text substitution can also be directed from the command line. If you include the command line option \ttt{--define}, followed by text of the form $key = replacement$ (do not include spaces, although if you want spaces within the replacement text, then enclose it in double quotes), this is equivalent to declaring text substitution using the define\_global statement within a configuration file. For example, to the file cmdlinedefine.txt includes the macro key \ttt{RDIFC} but does not define it. To run this file, define the macro key on the command line like
 
 $$\ttt{smoldyn examples/S2\_config/cmdlinedefine.txt --define RDIFC=5}$$
 
@@ -504,13 +501,13 @@ Statement & meaning\\
 \hline\\
 \ttt{\#} & single-line comment\\
 \ttt{/*} ... \ttt{*/} & multi-line comment\\
-\ttt{read\_file} \param{filename} & read filename, and then return\\
+\ttt{read\_file} $filename$ & read filename, and then return\\
 \ttt{end\_file} & end of this file\\
-\ttt{define} \param{key substitution} & local macro replacement text\\
-\ttt{define\_global} \param{key substitution} & global macro replacement text\\
-\ttt{undefine} \param{key} & undefine a macro substitution\\
-\ttt{ifdefine} \param{key} & start of conditional reading\\
-\ttt{ifundefine} \param{key} & start of conditional reading\\
+\ttt{define} $key\ substitution$ & local macro replacement text\\
+\ttt{define\_global} $key\ substitution$ & global macro replacement text\\
+\ttt{undefine} $key$ & undefine a macro substitution\\
+\ttt{ifdefine} $key$ & start of conditional reading\\
+\ttt{ifundefine} $key$ & start of conditional reading\\
 \ttt{else} & else condition for conditional reading\\
 \ttt{endif} & ends conditional reading\\
 \end{longtable}
@@ -553,15 +550,15 @@ The following table summarizes the statements for defining space and time.
 \begin{longtable}[c]{ll}
 Statement & function\\
 \hline\\
-\ttt{dim} \param{dim} & system dimensionality: 1, 2, or 3\\
-\ttt{boundaries} \param{dim pos1 pos2} & system boundaries on dimension \param{dim}\\
-\ttt{boundaries} \param{dim pos1 pos2} type & same, for systems without surfaces\\
-\ttt{low\_wall} \param{dim pos type} & specify single low-side boundary\\
-\ttt{high\_wall} \param{dim pos type} & specify single high-side boundary\\
-\ttt{time\_start} \param{time} & starting time of simulation\\
-\ttt{time\_stop} \param{time} & stopping time of simulation\\
-\ttt{time\_step} \param{time} & time step for the simulation\\
-\ttt{time\_now} \param{time} & current time of the simulation
+\ttt{dim} $dim$ & system dimensionality: 1, 2, or 3\\
+\ttt{boundaries} $dim\ pos_1\ pos_2$ & system boundaries on dimension $dim$\\
+\ttt{boundaries} $dim\ pos_1\ pos_2$ type & same, for systems without surfaces\\
+\ttt{low\_wall} $dim\ pos\ type$ & specify single low-side boundary\\
+\ttt{high\_wall} $dim\ pos\ type$ & specify single high-side boundary\\
+\ttt{time\_start} $time$ & starting time of simulation\\
+\ttt{time\_stop} $time$ & stopping time of simulation\\
+\ttt{time\_step} $time$ & time step for the simulation\\
+\ttt{time\_now} $time$ & current time of the simulation
 \end{longtable}
 
 \section{Technical discussion of time steps}
@@ -3500,11 +3497,11 @@ A new output file is created based upon the $filename$. The first time this is c
 
 \item{\ttt{if} $value_1\ symbol\ value_2\ command$}
 
-Runs command command, depending on the relative values of $value_1$ and $value_2$. The symbol character can be ``<'', ``>'' or ``=''.
+Runs command command, depending on the relative values of $value_1$ and $value_2$. The symbol character can be ``$<$'', ``$>$'' or ``$=$''.
 
 \item{\ttt{ifflag} $symbol\ number\ command$}
 
-Run command $command$, depending on the value of the global command flag. Enter $symbol$ as ``<'' if $command$ should be run if the flag value is less than $number$, as ``>'' for the flag value greater than $number$, and as ``='' for the flag value equal to $number$.
+Run command $command$, depending on the value of the global command flag. Enter $symbol$ as ``$<$'' if $command$ should be run if the flag value is less than $number$, as ``$>$'' for the flag value greater than $number$, and as ``$=$'' for the flag value equal to $number$.
 
 \item{\ttt{ifprob} $value\ command$}
 
@@ -3524,11 +3521,11 @@ Run command $command$ if there are more than $num$ molecules of type $species$. 
 
 \item{\ttt{ifincmpt} $species(state)\ char\ number\ compartment\ command$}
 
-Run command $command$ depending on how the number of molecules of type $species$ within compartment $compartment$ compares with $number$. Enter $char$ as ``<'' if $command$ should be run with less than $number$ molecules, as ``>'' for more than $number$, or as ``='' for equal to $number$. A space is required between this symbol and $number$. The molecules' state $state$ is optional, with ``solution'' as a default. The species and/or state may be ``all''.
+Run command $command$ depending on how the number of molecules of type $species$ within compartment $compartment$ compares with $number$. Enter $char$ as ``$<$'' if $command$ should be run with less than $number$ molecules, as ``$>$'' for more than $number$, or as ``$=$'' for equal to $number$. A space is required between this symbol and $number$. The molecules' state $state$ is optional, with ``solution'' as a default. The species and/or state may be ``all''.
 
 \item{\ttt{ifchange} $species(state)\ char\ num\ command$}
 
-Run command $command$ if the number of molecules of type $species$ changes (or doesn't change) relative to the previous time this command was called. The molecule state $state$ is optional, with ``solution'' as a default. The name and/or the state may be ``all''. Enter $char$ as ``>'' to respond to a difference that is greater than $num$, ``<'' to respond to a difference that is less than $num$, ``='' to respond to a difference that is exactly equal to $num$, or ``!'' to respond to a difference that does not equal $num$. For example, enter $char$ and $num as$ ``! 0'' to respond to any change in molecule numbers, or as ``< -10'' to respond to any decrease that exceeds 10 molecules.
+Run command $command$ if the number of molecules of type $species$ changes (or doesn't change) relative to the previous time this command was called. The molecule state $state$ is optional, with ``solution'' as a default. The name and/or the state may be ``all''. Enter $char$ as ``$>$'' to respond to a difference that is greater than $num$, ``$<$'' to respond to a difference that is less than $num$, ``$=$'' to respond to a difference that is exactly equal to $num$, or ``!'' to respond to a difference that does not equal $num$. For example, enter $char$ and $num as$ ``! 0'' to respond to any change in molecule numbers, or as ``$< -10$'' to respond to any decrease that exceeds 10 molecules.
 
 \end{description}
 
@@ -3863,10 +3860,12 @@ This is similar to \ttt{translatecmpt}, except that this translates the compartm
 \end{description}
 
 
-% Chapter: C/C++ and Python API
-\chapter{C/C++ and Python API}
+% Chapter: C/C++ and Python APIs
+\chapter{C/C++ and Python APIs}
 
+The C and C++ APIs are the same. There are two Python APIs. Import the ``high-level'' or ``user'' API with \ttt{import smoldyn}. Import the ``low-level'' or ``developer'' API with \ttt{import smoldyn.\_smoldyn}.
 
+\textit{This documentation section is correct for the C/C++ API but has many errors for the Python API. For that, use this as a guide, but also look at example files and use help(), dir(), etc. as needed.}
 
 % Enumerations
 \section{Enumerations}
@@ -3876,12 +3875,15 @@ In C, enumerations are already defined, so they can be used as is. Here is an ex
 smolErrorCodeToString(ECwarning, mystring)
 \end{lstlisting}
 
-In Python, enumerations are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example, 
+In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example, 
 \begin{lstlisting}[style=SSAC]
 import smoldyn._smoldyn as S
 EC=S.ErrorCode
-S.errorCodeToString(EC.warning, mystring)
+S.errorCodeToString(EC.warning)
 \end{lstlisting}
+For the user API, enter strings for the different enumeration possibilities.
+
+\subsection*{List of enumerations}
 
 Surface actions (SrfAction)
 \begin{longtable}[c]{llll}
@@ -3967,7 +3969,7 @@ N/A & ECwildcard & wildcard & value -12
 \item[GetVersion]
 \hfill \\
 C/C++: \ttt{double smolGetVersion(void)}\\
-Python: \ttt{float getVersion()}\\
+LL Python: \ttt{float getVersion()}\\
 Returns the Smoldyn version number.
 
 \end{description}
@@ -4001,14 +4003,14 @@ Clears any error condition.
 \item[SetDebugMode]
 \hfill \\
 C/C++: \ttt{void smolSetDebugMode(int debugmode)}\\
-Python: \ttt{setDebugMode(int debugmode)}\\
+LL Python: \ttt{setDebugMode(int debugmode)}\\
 Enter \ttt{debugmode} as 1 to enable debugging and 0 to disable debugging. When debug mode is turned on, all errors are displayed to stderr, as are all cleared errors. By turning on debug mode, you can often avoid checking for errors with additional code and you also typically don't need to call \ttt{smolGetError}.
 
 \item[ErrorCodeToString]
 \hfill \\
 C/C++: \ttt{char* smolErrorCodeToString(enum ErrorCode erc, char *string)}\\
-Python: \ttt{str errorCodeToString(enum ErrorCode erc, str string)}\\
-Returns a string both directly and in \ttt{string} that corresponds to the error code in \ttt{erc}. For example, if \ttt{erc} is \ttt{ECmemory}, this returns the string ``memory". To do: The string is not needed or used in the Python version.
+LL Python: \ttt{str errorCodeToString(enum ErrorCode erc)}\\
+Returns a string both directly and in \ttt{string} that corresponds to the error code in \ttt{erc}. For example, if \ttt{erc} is \ttt{ECmemory}, this returns the string ``memory". The Python version doesn't have a \ttt{string} input or output parameter.
 
 \end{description}
 
@@ -4017,43 +4019,39 @@ Returns a string both directly and in \ttt{string} that corresponds to the error
 
 \begin{description}
 
-\item[NewSim]
+\item[NewSim, Simulation]
 \hfill \\
-Python: \textit{sim} = \ttt{Simulation(low = List[float],high = List[float])}\\
-Python: \ttt{simptr newSim(int dim, List[float] lowbounds, List[float] highbounds)}\\
+Python: $sim$ = \ttt{smoldyn.Simulation(low = $List[float]$,high = $List[float]$)}\\
 C/C++: \ttt{simptr smolNewSim(int dim, double *lowbounds, double *highbounds)}\\
-Creates and returns a new sim structure. The structure is initialized for a \ttt{dim} dimensional system that has boundaries defined by the points \ttt{lowbounds} and \ttt{highbounds}. Boundaries are transmitting (modify them with \ttt{smolSetBoundaryType}). Returns \ttt{NULL} upon failure.
+Creates and returns a new sim structure for C and a new Simulation object for Python. The structure is initialized for a \ttt{dim} dimensional system that has boundaries defined by the points \ttt{lowbounds} and \ttt{highbounds}. Boundaries are transmitting (modify them with \ttt{smolSetBoundaryType}). Returns \ttt{NULL} upon failure.
 
 \item[UpdateSim]
 \hfill \\
 Python: N/A\\
-Python: \ttt{ErrorCode updateSim()}\\
 C/C++: \ttt{enum ErrorCode smolUpdateSim(simptr sim)}\\
 Updates the simulation structure. This calculates all simulation parameters from physical parameters, sorts lists, and generally does everything required to make a simulation ready to run. It may be called multiple times.\\
-\textbf{Python low-level to do:} doesn't work. Python wants no argument, but Libsmoldyn then complains about no argument.
 
 \item[RunTimeStep]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunTimeStep(simptr sim)}\\
-Python: \ttt{ErrorCode runTimeStep()}\\
+Python: $sim$.\ttt{runTimeStep()}\\
+Python: \ttt{ErrorCode smoldyn.Simulation.runTimeStep($sim$)}\\
 Runs one time step of the simulation. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.\\
-\textbf{Python to do:} doesn't work. Python wants no argument, but Libsmoldyn then complains about no argument.
 
 \item[RunSim]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunSim(simptr sim)}\\
-Python: \ttt{ErrorCode runSim()}\\
-Python: \ttt{run(stop=None, start=None, step=None)}\\
+Python: \ttt{ErrorCode smoldyn.Simulation.runSim($sim$)}\\
+Python: $sim$.\ttt{runSim()}\\
+Python: $sim$.\ttt{run(stop=$float$, start=$float$, step=$float$)}\\
 Runs the simulation until it terminates. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.\\
-\textbf{Python to do:} doesn't work. Python wants no argument, but Libsmoldyn then complains about no argument.
 
 \item[RunSimUntil]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)}\\
-Python: \ttt{ErrorCode runSimUntil(float breaktime)}\\
-Python: \ttt{runUntil(t, dt)}\\
+Python: \ttt{ErrorCode smoldyn.Simulation.runSimUntil(float breaktime)}\\
+Python: $sim$.\ttt{runUntil(t, dt)}\\
 Runs the simulation either until it terminates or until the simulation time equals or exceeds \ttt{breaktime}.\\
-\textbf{Python to do:} doesn't work. Python wants no argument, but Libsmoldyn then complains about no argument.
 
 \item[FreeSim]
 \hfill \\
@@ -4064,7 +4062,8 @@ Frees the simulation data structure.
 \item[DisplaySim]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolDisplaySim(simptr sim)}\\
-Python: \ttt{ErrorCode displaySim()}\\
+Python: $sim$.\ttt{displaySim()}\\
+Python: \ttt{smoldyn.Simulation.displaySim($sim$)}\\
 Displays all relevant information about the simulation system to stdout.
 
 \end{description}
@@ -4077,7 +4076,7 @@ Displays all relevant information about the simulation system to stdout.
 \item[PrepareSimFromFile]
 \hfill \\
 C/C++: \ttt{simptr smolPrepareSimFromFile(char *filepath, char *filename, char *flags)}\\
-Python: \ttt{simptr prepareSimFromFile(str filename, str flags)}\\
+Python: \ttt{smoldyn.\_smoldyn.prepareSimFromFile(str filename, str flags)}\\
 Reads the Smoldyn configuration file that is at \ttt{filepath} and has file name \ttt{filename}, sets it up, and outputs simulation diagnostics to stdout. Returns the sim structure, or \ttt{NULL} if an error occurred. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, it should be possible to call \ttt{smolRunSim} or \ttt{smolRunTimeStep}.
 
 \item[LoadSimFromFile]
@@ -4160,8 +4159,124 @@ This is only available in Python. Again, I think this should be removed because 
 Python: \ttt{Box(size: float)}\\
 This is only available in Python. Again, I think this should be removed because partitions aren't physical objects.
 
+\end{description}
+
+% Molecules
+\section{Molecules}
+
+\begin{description}
+
+\item[AddSpecies]
+\hfill \\
+Python: $sim$.\ttt{addSpecies(name=$string$, state="soln", color=$color$, difc= 0.0, display\_size = 3, mol\_list = ""}\\
+Python: \ttt{ErrorCode addSpecies(str species, str mollist)}\\
+C/C++: \ttt{enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)}\\
+Adds a molecular species named \ttt{species} to the system. If you have already created species lists and want all states of this species to live in a specific list, then enter it in \ttt{mollist}; otherwise, enter \ttt{mollist} as \ttt{NULL} or an empty string to request default behavior. In Python, just giving a simple value for a color or display size, e.g. \ttt{color="green", display\_size=4}, means that that only applies to solution state (or maybe the state that's specified here); if you want it to apply to all states then use, for example, \ttt{color=dict(all="green"), display\_size=dict(all,4)}.
+
+\item[GetSpeciesIndex]
+\hfill \\
+C/C++: \ttt{int smolGetSpeciesIndex(simptr sim, char *species)}\\
+C/C++: \ttt{int smolGetSpeciesIndexNT(simptr sim, char *species)}\\
+Python: \ttt{int getSpeciesIndex(str species)}\\
+Returns the species index that corresponds to the species named \ttt{species}. Upon failure, this function returns an error code cast as an integer. The ``NT'' version is identical, but doesn't throw exceptions or print errors to stderr.
+
+\item[GetSpeciesName]
+\hfill \\
+C/C++: \ttt{char* smolGetSpeciesName(simptr sim, int speciesindex, char *species)}\\
+Python: \ttt{str getSpeciesName(int speciesindex, str species)}\\
+Returns the species name that corresponds to the species index in \ttt{speciesindex}. The name is returned both in \ttt{species} and directly, where the latter simplifies function use. Upon failure, this function returns \ttt{NULL}.
+
+\item[SetSpeciesMobility]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesMobility(simptr sim, char *species, enum MolecState state, double difc, double *drift, double *difmatrix)}\\
+Python: \ttt{ErrorCode setSpeciesMobility(str species, MolecState state, float difc, List[float] drift, List[float] difmatrix)}\\
+Python: \textit{species}\ttt{.difc}\\
+Sets any or all of the mobility coefficients for species \ttt{species} (which may be ``all") and state \ttt{state} (which may be \ttt{MSall}). \ttt{difc} is the isotropic diffusion coefficient, \ttt{drift} is the drift vector, and \ttt{difmatrix} is the square of the anisotropic diffusion matrix (see the User's manual). To not set coefficients, enter a negative number in \ttt{difc} and/or enter a \ttt{NULL} pointer in the other inputs, respectively.
+
+The last version shown can also be used to get the diffusion coefficient for a species.
+
+
+\item[AddMolList]
+\hfill \\
+C/C++: \ttt{int smolAddMolList(simptr sim, char *mollist)}\\
+Python: \ttt{int addMolList(str mollist)}\\
+Adds a new molecule list, named \ttt{mollist}, to the system.
+
+\item[GetMolListIndex]
+\hfill \\
+C/C++: \ttt{int smolGetMolListIndex(simptr sim, char *mollist)}\\
+C/C++: \ttt{int smolGetMolListIndexNT(simptr sim, char *mollist)}\\
+Python: \ttt{int getMolListIndex(str mollist)}\\
+Returns the list index that corresponds to the list named \ttt{mollist}. The ``NT'' version is identical but doesn't throw exceptions or print errors to the stderr output.
+
+\item[GetMolListName]
+\hfill \\
+C/C++: \ttt{char* smolGetMolListName(simptr sim, int mollistindex, char *mollist)}\\
+Python: \ttt{str getMolListName(int mollistindex, str mollist)}\\
+Returns the molecule list name that corresponds to the molecule list with index \ttt{mollistindex}. The name is returned both in \ttt{mollist} and directly. On error, this function \ttt{NULL}.
+
+\item[SetMolList]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMolList(simptr sim, char *species, enum MolecState state, char *mollist)}\\
+Python: \ttt{ErrorCode setMolList(str species, MolecState state, str mollist)}\\
+Python: \textit{species}\ttt{.mol\_list}\\
+Sets the molecule list for species \ttt{species} (which may be ``all") and state \ttt{state} (which may be \ttt{MSall}) to molecule list \ttt{mollist}.
+
+The last version can either set or retrieve the molecule list.
+
+\item[SetMaxMolecules]
+\hfill \\
+C/C++: \ttt{ smolSetMaxMolecules(simptr sim, int maxmolecules)}\\
+Python: \ttt{ setMaxMolecules(int maxmolecules)}\\
+Sets the maximum number of molecules that can simultaneously exist in a system to \ttt{maxmolecules}. At present, this function needs to be called for a simulation to run, although it will become optional once dynamic molecule memory allocation has been written.
+
+\item[AddSolutionMolecules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddSolutionMolecules(simptr sim, char *species, int number, double *lowposition, double *highposition)}\\
+Python: \ttt{ErrorCode addSolutionMolecules(str species, int number, List[float] lowposition, List[float] highposition)}\\
+Python: \textit{species}\ttt{.addToSolution(mol: float, highpos: List[float] = [], lowpos: List[float] = [])}\\
+Adds \ttt{number} solution state molecules of species \ttt{species} to the system. They are randomly distributed within the box that has its opposite corners defined by \ttt{lowposition} and \ttt{highposition}. Any or all of these coordinates can equal each other to place the molecules along a plane or at a point. Enter \ttt{lowposition} and/or \ttt{highposition} as \ttt{NULL} to indicate that the respective corner is equal to that corner of the entire system volume.
+
+\item[AddCompartmentMolecules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddCompartmentMolecules(simptr sim, char *species, int number, char *compartment)}\\
+Python: \ttt{ErrorCode addCompartmentMolecules(str species, int number, str compartment)}\\
+Adds \ttt{number} solution state molecules of species \ttt{species} to the compartment \ttt{compartment}. Molecules are randomly distributed within the compartment.
+
+\item[AddSurfaceMolecules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddSurfaceMolecules(simptr sim, int speciesindex, enum MolecState state, int number, int surface, enum PanelShape panelshape, int panel, double *position)}\\
+Python: \ttt{ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)}\\
+Adds \ttt{number} molecules of species \ttt{species} and state \ttt{state} to surface(s) in the system. It is permissible for \ttt{surface} to be ``all", \ttt{panelshape} to be PSall, and/or \ttt{panel} to be ``all". If you want molecules at a specific position, then you need to enter a specific surface, panel shape, and panel, and then enter the position in \ttt{position}.
+
+\item[GetMoleculeCount]
+\hfill \\
+C/C++: \ttt{int smolGetMoleculeCount(simptr sim, char *species, enum MolecState state)}\\
+Python: \ttt{int getMoleculeCount(str species, MolecState state)}\\
+Returns the total number of molecules in the system that have species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Any error is returned as the error code cast as an integer.
+
+% ?? This function is redundant with SetMoleculeStyle, so I'd like to get rid of it.
+\item[SetMoleculeColor]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double *color)}\\
+
+% ?? This function is redundant with SetMoleculeStyle, so I'd like to get rid of it.
+\item[SetMoleculeSize]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size)}\\
+
+
+\item[SetMoleculeStyle]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size, double *color)}\\
+Python: \ttt{ErrorCode setMoleculeStyle(str species, MolecState state, float size, List[float] color)}\\
+Python: \textit{species}\ttt{.setStyle}\\
+Python: \textit{species}\ttt{.color}\\
+Python: \textit{species}\ttt{.size}\\
+Sets the graphical display parameters for molecules of species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Enter \ttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \ttt{color} with the 3-value color vector or with \ttt{NULL} to not set the color (or, in Python, a color word).
 
 \end{description}
+
 
 % Graphics
 \section{Graphics}
@@ -4286,121 +4401,6 @@ Returns data that have been recorded by an observation command (e.g. molcount). 
 
 \end{description}
 
-% Molecules
-\section{Molecules}
-
-\begin{description}
-
-\item[AddSpecies]
-\hfill \\
-Python: \textit{sim.}\ttt{addSpecies(name: str, state: str = "soln", color: T.Color = "", difc: float = 0.0, display\_size: int = 2, mol\_list: str = ""}\\
-Python: \ttt{ErrorCode addSpecies(str species, str mollist)}\\
-C/C++: \ttt{enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)}\\
-Adds a molecular species named \ttt{species} to the system. If you have already created species lists and want all states of this species to live in a specific list, then enter it in \ttt{mollist}; otherwise, enter \ttt{mollist} as \ttt{NULL} or an empty string to request default behavior.
-
-\item[GetSpeciesIndex]
-\hfill \\
-C/C++: \ttt{int smolGetSpeciesIndex(simptr sim, char *species)}\\
-C/C++: \ttt{int smolGetSpeciesIndexNT(simptr sim, char *species)}\\
-Python: \ttt{int getSpeciesIndex(str species)}\\
-Returns the species index that corresponds to the species named \ttt{species}. Upon failure, this function returns an error code cast as an integer. The ``NT'' version is identical, but doesn't throw exceptions or print errors to stderr.
-
-\item[GetSpeciesName]
-\hfill \\
-C/C++: \ttt{char* smolGetSpeciesName(simptr sim, int speciesindex, char *species)}\\
-Python: \ttt{str getSpeciesName(int speciesindex, str species)}\\
-Returns the species name that corresponds to the species index in \ttt{speciesindex}. The name is returned both in \ttt{species} and directly, where the latter simplifies function use. Upon failure, this function returns \ttt{NULL}.
-
-\item[SetSpeciesMobility]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolSetSpeciesMobility(simptr sim, char *species, enum MolecState state, double difc, double *drift, double *difmatrix)}\\
-Python: \ttt{ErrorCode setSpeciesMobility(str species, MolecState state, float difc, List[float] drift, List[float] difmatrix)}\\
-Python: \textit{species}\ttt{.difc}\\
-Sets any or all of the mobility coefficients for species \ttt{species} (which may be ``all") and state \ttt{state} (which may be \ttt{MSall}). \ttt{difc} is the isotropic diffusion coefficient, \ttt{drift} is the drift vector, and \ttt{difmatrix} is the square of the anisotropic diffusion matrix (see the User's manual). To not set coefficients, enter a negative number in \ttt{difc} and/or enter a \ttt{NULL} pointer in the other inputs, respectively.
-
-The last version shown can also be used to get the diffusion coefficient for a species.
-
-
-\item[AddMolList]
-\hfill \\
-C/C++: \ttt{int smolAddMolList(simptr sim, char *mollist)}\\
-Python: \ttt{int addMolList(str mollist)}\\
-Adds a new molecule list, named \ttt{mollist}, to the system.
-
-\item[GetMolListIndex]
-\hfill \\
-C/C++: \ttt{int smolGetMolListIndex(simptr sim, char *mollist)}\\
-C/C++: \ttt{int smolGetMolListIndexNT(simptr sim, char *mollist)}\\
-Python: \ttt{int getMolListIndex(str mollist)}\\
-Returns the list index that corresponds to the list named \ttt{mollist}. The ``NT'' version is identical but doesn't throw exceptions or print errors to the stderr output.
-
-\item[GetMolListName]
-\hfill \\
-C/C++: \ttt{char* smolGetMolListName(simptr sim, int mollistindex, char *mollist)}\\
-Python: \ttt{str getMolListName(int mollistindex, str mollist)}\\
-Returns the molecule list name that corresponds to the molecule list with index \ttt{mollistindex}. The name is returned both in \ttt{mollist} and directly. On error, this function \ttt{NULL}.
-
-\item[SetMolList]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolSetMolList(simptr sim, char *species, enum MolecState state, char *mollist)}\\
-Python: \ttt{ErrorCode setMolList(str species, MolecState state, str mollist)}\\
-Python: \textit{species}\ttt{.mol\_list}\\
-Sets the molecule list for species \ttt{species} (which may be ``all") and state \ttt{state} (which may be \ttt{MSall}) to molecule list \ttt{mollist}.
-
-The last version can either set or retrieve the molecule list.
-
-\item[SetMaxMolecules]
-\hfill \\
-C/C++: \ttt{ smolSetMaxMolecules(simptr sim, int maxmolecules)}\\
-Python: \ttt{ setMaxMolecules(int maxmolecules)}\\
-Sets the maximum number of molecules that can simultaneously exist in a system to \ttt{maxmolecules}. At present, this function needs to be called for a simulation to run, although it will become optional once dynamic molecule memory allocation has been written.
-
-\item[AddSolutionMolecules]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolAddSolutionMolecules(simptr sim, char *species, int number, double *lowposition, double *highposition)}\\
-Python: \ttt{ErrorCode addSolutionMolecules(str species, int number, List[float] lowposition, List[float] highposition)}\\
-Python: \textit{species}\ttt{.addToSolution(mol: float, highpos: List[float] = [], lowpos: List[float] = [])}\\
-Adds \ttt{number} solution state molecules of species \ttt{species} to the system. They are randomly distributed within the box that has its opposite corners defined by \ttt{lowposition} and \ttt{highposition}. Any or all of these coordinates can equal each other to place the molecules along a plane or at a point. Enter \ttt{lowposition} and/or \ttt{highposition} as \ttt{NULL} to indicate that the respective corner is equal to that corner of the entire system volume.
-
-\item[AddCompartmentMolecules]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolAddCompartmentMolecules(simptr sim, char *species, int number, char *compartment)}\\
-Python: \ttt{ErrorCode addCompartmentMolecules(str species, int number, str compartment)}\\
-Adds \ttt{number} solution state molecules of species \ttt{species} to the compartment \ttt{compartment}. Molecules are randomly distributed within the compartment.
-
-\item[AddSurfaceMolecules]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolAddSurfaceMolecules(simptr sim, int speciesindex, enum MolecState state, int number, int surface, enum PanelShape panelshape, int panel, double *position)}\\
-Python: \ttt{ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)}\\
-Adds \ttt{number} molecules of species \ttt{species} and state \ttt{state} to surface(s) in the system. It is permissible for \ttt{surface} to be ``all", \ttt{panelshape} to be PSall, and/or \ttt{panel} to be ``all". If you want molecules at a specific position, then you need to enter a specific surface, panel shape, and panel, and then enter the position in \ttt{position}.
-
-\item[GetMoleculeCount]
-\hfill \\
-C/C++: \ttt{int smolGetMoleculeCount(simptr sim, char *species, enum MolecState state)}\\
-Python: \ttt{int getMoleculeCount(str species, MolecState state)}\\
-Returns the total number of molecules in the system that have species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Any error is returned as the error code cast as an integer.
-
-% ?? This function is redundant with SetMoleculeStyle, so I'd like to get rid of it.
-\item[SetMoleculeColor]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double *color)}\\
-
-% ?? This function is redundant with SetMoleculeStyle, so I'd like to get rid of it.
-\item[SetMoleculeSize]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size)}\\
-
-
-\item[SetMoleculeStyle]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolSetMoleculeStyle(simptr sim, const char *species, enum MolecState state, double size, double *color)}\\
-Python: \ttt{ErrorCode setMoleculeStyle(str species, MolecState state, float size, List[float] color)}\\
-Python: \textit{species}\ttt{.setStyle}\\
-Python: \textit{species}\ttt{.color}\\
-Python: \textit{species}\ttt{.size}\\
-Sets the graphical display parameters for molecules of species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Enter \ttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \ttt{color} with the 3-value color vector or with \ttt{NULL} to not set the color (or, in Python, a color word).
-
-\end{description}
 
 % Surfaces
 \section{Surfaces}
@@ -4422,8 +4422,8 @@ Sets the molecule interaction properties for a system boundary that bounds the \
 \item[AddSurface]
 \hfill \\
 C/C++: \ttt{int smolAddSurface(simptr sim, char *surface)}\\
-Python: \ttt{int addSurface(str surface)}\\
-Adds a surface called \ttt{surface} to the system.
+Python: $surface$=$sim$.\ttt{addSurface(str: $surface\_name$, panels = $panel\_list$)}\\
+Adds a surface called \ttt{surface} or $surface\_name$ to the system.
 
 \item[GetSurfaceIndex]
 \hfill \\
@@ -4442,7 +4442,7 @@ Returns the surface name for surface number \ttt{surfaceindex} both directly and
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetSurfaceAction(simptr sim, char *surface, enum PanelFace face, char *species, enum MolecState state, enum SrfAction action, char *newspecies)}\\
 Python: \ttt{ErrorCode setSurfaceAction(str surface, PanelFace face, str species, MolecState state, SrfAction action)}\\
-Python: \textit{surface}\ttt{.addAction(face, species: Union[Species, str], action: str, new\_spec=None)}\\
+Python: $surface$.\ttt{setAction(face, species: Union[Species, str], action: str, new\_spec=None)}\\
 Sets the action that should happen when a molecule of species \ttt{species} (may be ``all") and state \ttt{state} (may be \ttt{MSall}) diffuses into face \ttt{face} (may be \ttt{PFboth}) of surface \ttt{surface}. The action is set to \ttt{action}. Enter \ttt{newspecies} to the name of a new species if the molecule should change species, or as either \ttt{NULL} or an empty string if it should not change species.
 
 \item[SetSurfaceRate]
@@ -4541,52 +4541,8 @@ Adds panel \ttt{panel2} of surface \ttt{surface2} as a neighbor of panel \ttt{pa
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetSurfaceStyle(simptr sim, const char *surface, enum PanelFace face, enum DrawMode mode, double thickness, double *color, int stipplefactor, int stipplepattern, double shininess)}\\
 Python: \ttt{ErrorCode setSurfaceStyle(str surface, PanelFace face, DrawMode mode, float thickness, List[float] color, int stipplefactor, int stipplepattern, float shininess)}\\
-Python: \textit{surface}\ttt{.setStyle(face, drawmode: str, color: T.Color = "", thickness: float = 1, stipplefactor: int = -1, stipplepattern: int = -1, shininess: int = -1,)}\\
+Python: $surface$.\ttt{setStyle(face, drawmode: str, color: T.Color = "", thickness: float = 1, stipplefactor: int = -1, stipplepattern: int = -1, shininess: int = -1,)}\\
 Sets the graphics output style for face \ttt{face} of surface \ttt{surface}. \ttt{mode} is the drawing mode; enter it as \ttt{DMnone} to not set this parameter and otherwise enter it as \ttt{DMno} to not draw the surface, \ttt{DMvert} for vertices, \ttt{DMedge} for edges, or \ttt{DMface} for faces. The \ttt{thickness} parameter gives the point size or line width for drawing vertices or edges, or can be entered as a negative number to not set this parameter. \ttt{color} is the 4-value color vector for the surface, or can be entered as \ttt{NULL} to not set this parameter (or, in Python, a color word). \ttt{stipplefactor} is the repeat distance for the entire edge stippling pattern, or can be entered as a negative number to not set it. \ttt{stipplepattern} is the edge stippling pattern, which needs to be between 0 and 0xFFFF, or can be entered as -1 to not set this parameter. And \ttt{shininess} is the surface shininess, for use with lighting in the ``opengl\_better" graphics display option, or can be entered as -1 to not set this parameter. The parameters \ttt{thickness}, \ttt{stipplefactor}, and \ttt{stipplepattern} only apply to edge style drawing modes and ignore any input in the \ttt{face} entry. The \ttt{shininess} parameter only applies to the face style drawing modes.
-
-\end{description}
-
-% Compartments
-\section{Compartments}
-
-\begin{description}
-
-\item[AddCompartment]
-\hfill \\
-C/C++: \ttt{int smolAddCompartment(simptr sim, char *compartment)}\\
-Python: \ttt{int addCompartment(str compartment)}\\
-Adds a compartment called \ttt{compartment} to the system.
-
-\item[GetCompartmentIndex]
-\hfill \\
-C/C++: \ttt{int smolGetCompartmentIndex(simptr sim, char *compartment)}\\
-C/C++: \ttt{int smolGetCompartmentIndexNT(simptr sim, char *compartment)}\\
-Python: \ttt{int getCompartmentIndex(str compartment)}\\
-Returns the index of the compartment named \ttt{compartment}. On failure, this returns an error code cast as an integer. The ``NT'' version is identical but errors aren't printed to the stderr output or cause exceptions to be thrown.
-
-\item[GetCompartmentName]
-\hfill \\
-C/C++: \ttt{char* smolGetCompartmentName(simptr sim, int compartmentindex, char *compartment)}\\
-Python: \ttt{str getCompartmentName(int compartmentindex, str compartment)}\\
-Returns the name of the compartment that has index \ttt{compartmentindex} both directly and in the string \ttt{compartment}. Returns \ttt{NULL} if an error arises.
-
-\item[AddCompartmentSurface]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolAddCompartmentSurface(simptr sim, char *compartment, char *surface)}\\
-Python: \ttt{ErrorCode addCompartmentSurface(str compartment, str surface)}\\
-Adds surface \ttt{surface} as one of the bounding surfaces of compartment \ttt{compartment}.
-
-\item[AddCompartmentPoint]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolAddCompartmentPoint(simptr sim, char *compartment, double *point)}\\
-Python: \ttt{ErrorCode addCompartmentPoint(str compartment, List[float] point)}\\
-Adds \ttt{point} as one of the interior-defining points of compartment \ttt{compartment}.
-
-\item[AddCompartmentLogic]
-\hfill \\
-C/C++: \ttt{enum ErrorCode smolAddCompartmentLogic(simptr sim, char *compartment, enum CmptLogic logic, char *compartment2)}\\
-Python: \ttt{ErrorCode addCompartmentLogic(str compartment, CmptLogic logic, str compartment2)}\\
-Modifies the current definition of compartment \ttt{compartment} using a logical rule specified in \ttt{logic} and the definition of \ttt{compartment2}.
 
 \end{description}
 
@@ -4659,6 +4615,52 @@ Sets the reaction product parameters for reaction \ttt{reaction}. At a minimum, 
 If \ttt{method} is \ttt{RPbounce}, then a negative number for the \ttt{parameter} indicates default bounce behavior, which is that molecules are separated by an amount that is equal to their previous overlap.
 
 \end{description}
+
+% Compartments
+\section{Compartments}
+
+\begin{description}
+
+\item[AddCompartment]
+\hfill \\
+C/C++: \ttt{int smolAddCompartment(simptr sim, char *compartment)}\\
+Python: \ttt{int addCompartment(str compartment)}\\
+Python: $compart$=$sim$.\ttt{addCompartment(name=$name$, surface=$surface$, point=$vector$)}\\
+Adds a compartment called \ttt{compartment} to the system.
+
+\item[GetCompartmentIndex]
+\hfill \\
+C/C++: \ttt{int smolGetCompartmentIndex(simptr sim, char *compartment)}\\
+C/C++: \ttt{int smolGetCompartmentIndexNT(simptr sim, char *compartment)}\\
+Python: \ttt{int getCompartmentIndex(str compartment)}\\
+Returns the index of the compartment named \ttt{compartment}. On failure, this returns an error code cast as an integer. The ``NT'' version is identical but errors aren't printed to the stderr output or cause exceptions to be thrown.
+
+\item[GetCompartmentName]
+\hfill \\
+C/C++: \ttt{char* smolGetCompartmentName(simptr sim, int compartmentindex, char *compartment)}\\
+Python: \ttt{str getCompartmentName(int compartmentindex, str compartment)}\\
+Returns the name of the compartment that has index \ttt{compartmentindex} both directly and in the string \ttt{compartment}. Returns \ttt{NULL} if an error arises.
+
+\item[AddCompartmentSurface]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddCompartmentSurface(simptr sim, char *compartment, char *surface)}\\
+Python: \ttt{ErrorCode addCompartmentSurface(str compartment, str surface)}\\
+Adds surface \ttt{surface} as one of the bounding surfaces of compartment \ttt{compartment}.
+
+\item[AddCompartmentPoint]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddCompartmentPoint(simptr sim, char *compartment, double *point)}\\
+Python: \ttt{ErrorCode addCompartmentPoint(str compartment, List[float] point)}\\
+Adds \ttt{point} as one of the interior-defining points of compartment \ttt{compartment}.
+
+\item[AddCompartmentLogic]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddCompartmentLogic(simptr sim, char *compartment, enum CmptLogic logic, char *compartment2)}\\
+Python: \ttt{ErrorCode addCompartmentLogic(str compartment, CmptLogic logic, str compartment2)}\\
+Modifies the current definition of compartment \ttt{compartment} using a logical rule specified in \ttt{logic} and the definition of \ttt{compartment2}.
+
+\end{description}
+
 
 % Ports
 \section{Ports}

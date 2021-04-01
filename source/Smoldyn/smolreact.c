@@ -1033,6 +1033,7 @@ int checkrxnparams(simptr sim,int *warnptr) {
 
 	error=warn=0;
 	dim=sim->dim;
+	if(!sim->mols) return 0;
 	nspecies=sim->mols->nspecies;
 	mols=sim->mols;
 	spname=sim->mols->spname;
