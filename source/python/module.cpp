@@ -27,6 +27,7 @@ using namespace std;
 using namespace pybind11::literals;  // for _a
 
 double r_ = 0.0;
+char tempstring[256];
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -1166,7 +1167,9 @@ PYBIND11_MODULE(_smoldyn, m)
      *  Errors  *
      ************/
     m.def("setDebugMode", &smolSetDebugMode);
-    m.def("errorCodeToString", &smolErrorCodeToString);
+    m.def("errorCodeToString", [](ErrorCode err) {
+			return smolErrorCodeToString(err,tempstring);
+			});
 
     /*****************************
      *  Read configuration file  *
