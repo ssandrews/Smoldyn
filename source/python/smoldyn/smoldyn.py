@@ -302,7 +302,7 @@ class Panel(object):
         *,
         name: str = "",
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
-        neighbors: List['Panel'] = [],
+        neighbors: List["Panel"] = [],
         simulation: Optional[_smoldyn.Simulation] = None,
     ):
         """Panels are components of a surface. One or more Panels are requried
@@ -327,7 +327,7 @@ class Panel(object):
         self.surface: Surface = NullSurface()
         self.neighbors = neighbors
 
-    def _setSimulation(self, simulation : _smoldyn.Simulation):
+    def _setSimulation(self, simulation: _smoldyn.Simulation):
         assert simulation
         self.simulation = simulation
         self.front.simulation = simulation
@@ -463,7 +463,9 @@ class Rectangle(Panel):
         name : optional
             name of the panel.
         """
-        super().__init__(simulation=simulation, shape=_smoldyn.PanelShape.rect, name=name)
+        super().__init__(
+            simulation=simulation, shape=_smoldyn.PanelShape.rect, name=name
+        )
         self.corner = corner
         self.dimensions = dimensions
         assert axis[0] in "+-", "axis must precede by '+' or '-'"
@@ -574,7 +576,9 @@ class Hemisphere(Panel):
         name : optional
             name
         """
-        super().__init__(simulation=simulation, shape=_smoldyn.PanelShape.hemi, name=name)
+        super().__init__(
+            simulation=simulation, shape=_smoldyn.PanelShape.hemi, name=name
+        )
         self.center = center
         self.radius = radius
         self.vector = vector
@@ -615,7 +619,9 @@ class Cylinder(Panel):
         name : optional
             name
         """
-        super().__init__(simulation=simulation, shape=_smoldyn.PanelShape.cyl, name=name)
+        super().__init__(
+            simulation=simulation, shape=_smoldyn.PanelShape.cyl, name=name
+        )
         self.start: List[float] = start
         self.end: List[float] = end
         self.radius: float = radius
@@ -650,7 +656,9 @@ class Disk(Panel):
         name : optional
             name
         """
-        super().__init__(simulation=simulation, shape=_smoldyn.PanelShape.disk, name=name)
+        super().__init__(
+            simulation=simulation, shape=_smoldyn.PanelShape.disk, name=name
+        )
         self.center = center
         self.radius = radius
         self.vector = vector
@@ -873,7 +881,10 @@ class Path2D(object):
                     )
                 length = x2 - x1 if y2 == y1 else y2 - y1
                 p = Rectangle(
-                    simulation=self.simulation, corner=(x1, y1), dimensions=[length], axis=axis
+                    simulation=self.simulation,
+                    corner=(x1, y1),
+                    dimensions=[length],
+                    axis=axis,
                 )
                 __logger__.info(f"Added a Rectangle {p}")
                 self.panels.append(p)
@@ -1777,6 +1788,9 @@ class Simulation(_smoldyn.Simulation):
         assert high, f"You must pass high bound, current value {high}"
         if isinstance(boundary_type, str):
             if len(boundary_type) == 1:
+                assert len(low) == len(
+                    high
+                ), f"dimension mismatch {len(low)} != {len(high)}"
                 boundary_type = boundary_type * len(low)
             boundary_type = list(boundary_type)
         super().__init__(low, high, boundary_type)
@@ -2292,7 +2306,7 @@ class Simulation(_smoldyn.Simulation):
             A matrix of float.
         """
         assert " " not in dataname, f"Must not contain spaces: '{dataname}'"
-        y : List[List[float]] = super().getOutputData(dataname, erase)
+        y: List[List[float]] = super().getOutputData(dataname, erase)
         return y
 
     def connect(self, func, target, step: int, args: List[float] = []):
