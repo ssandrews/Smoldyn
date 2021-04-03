@@ -27,7 +27,7 @@ using namespace std;
 using namespace pybind11::literals;  // for _a
 
 double r_ = 0.0;
-char tempstring[256];
+char   tempstring[256];
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -383,6 +383,8 @@ PYBIND11_MODULE(_smoldyn, m)
      */
     py::class_<Simulation>(m, "Simulation")
     .def(py::init<vector<double> &, vector<double> &, vector<string> &>())
+    .def(py::init<const char*, const char*>())
+
     // Connect a python callback function.
     .def("connect", &Simulation::connect)
     // utility functions.
@@ -1167,9 +1169,8 @@ PYBIND11_MODULE(_smoldyn, m)
      *  Errors  *
      ************/
     m.def("setDebugMode", &smolSetDebugMode);
-    m.def("errorCodeToString", [](ErrorCode err) {
-			return smolErrorCodeToString(err,tempstring);
-			});
+    m.def("errorCodeToString",
+        [](ErrorCode err) { return smolErrorCodeToString(err, tempstring); });
 
     /*****************************
      *  Read configuration file  *

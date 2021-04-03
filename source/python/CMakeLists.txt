@@ -57,11 +57,12 @@ set_target_properties(_smoldyn PROPERTIES
 set(PY_SMOLDYN_OUTDIR ${CMAKE_BINARY_DIR}/py)
 file(MAKE_DIRECTORY ${PY_SMOLDYN_OUTDIR})
 
-add_custom_command(TARGET _smoldyn POST_BUILD 
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/source/python/smoldyn ${PY_SMOLDYN_OUTDIR}/smoldyn
-  COMMENT "Copying python source tree to binary directory"
-  VERBATIM)
+add_custom_target(copy_python_tree ALL 
+    DEPENDS _smoldyn
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/source/python/smoldyn ${PY_SMOLDYN_OUTDIR}/smoldyn
+    COMMENT "Copying python source tree to binary directory"
+    VERBATIM)
 
 target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 
