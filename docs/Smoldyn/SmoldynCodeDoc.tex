@@ -558,11 +558,37 @@ The Boost library is from \url{http://www.boost.org/users/download/}. This doesn
 % Code techniques and tricks
 \section{Code techniques and tricks}
 
+\subsection{New releases}
+
+To release a new version, there are many things to do.
+\begin{itemize}
+
+\item Go through any libSteve documentation that has changed and print to pdf all of the new files.
+
+\item Describe the changes in the history section of this code documentation.
+
+\item Update the version number in: (1) the top-level CMakeLists.txt file, (2) the Code documentation, (3) the User's manual, (4) the release shell script.
+
+\item Run the regression tests using the latest version number and confirm that all results are correct.
+
+\item Run my release shell script (it's not on git and is customized for my computer system, but I'm happy to share it with others if they want).
+
+\item Commit changes to github. Tag the commit. Example: \ttt{git tag -a v2.65 -m "release Version 2.65"; git push origin v2.65}.
+
+\item Update the www.smoldyn.org webpage. Upload the new files, delete the old files, and update the index.html and download.html web pages.
+
+\end{itemize}
+
 \subsection{Formatting}
 
-I like a very compact source code style, where the indentation shows the code depth rather than the braces. It just was that way for the most part, but then the VCell team added code in their style, and then Dilawar reformatted the code to yet another style. I figured out how to partially revert to my style, and also standardize others' additions. I use the ``uncrustify'' software, which I downloaded from SourceForge at \url{https://sourceforge.net/projects/uncrustify/}. The package currently resides in my Smoldyn top level directory. I wrote a configuration file called ssa.cfg, which I use to format code; it is in the uncrustify directory.
+I like a very compact C source code style, where the indentation shows the code depth rather than the braces. It just was that way for the most part, but then the VCell team added code in their style, and then Dilawar reformatted the code to yet another style. I figured out how to partially revert to my style, and also standardize others' additions. I use the ``uncrustify'' software, which I downloaded from SourceForge at \url{https://sourceforge.net/projects/uncrustify/}. The package currently resides in my Smoldyn top level directory. I wrote a configuration file called ssa.cfg, which I use to format code; it is in the uncrustify directory.
 
-To reformat smolreact.c, enter: \ttt{uncrustify -c ../../uncrustify/ssa.cfg smolreact.c}. This creates a new file, smolreact.c.uncrustify. However, this still leaves lots of things that I like to fix. First, remove closing braces on their own lines. To do so, do a find and replace, first replace all `` \}'' with ``\}'', repeating as many times as necessary. Then replace all ``\textbackslash n\}'' with ``\}''. Another thing to look for is multi-line for statements. It would be nice if these could be removed by uncrustify, but it doesn't.
+As an example, to reformat smolreact.c, enter: \ttt{uncrustify -c ../../uncrustify/ssa.cfg smolreact.c}. This creates a new file, smolreact.c.uncrustify. However, this still leaves lots of things that I like to fix. First, remove closing braces on their own lines. To do so, do a find and replace, first replace all `` \}'' with ``\}'', repeating as many times as necessary. Then replace all ``\textbackslash n\}'' with ``\}''. Another thing to look for is multi-line for statements. It would be nice if these could be removed by uncrustify, but it doesn't.
+
+For the Python code, Dilawar uses the black software, available at \url{https://pypi.org/project/black/}. He says that if I change the Python code, just run \ttt{black filename.py} to auto-format the code, thus keeping the format consistent.
+
+Similarly, he uses clang-format for C++ files, but is less worried about format consistency there.
+
 
 \subsection{Code merging}
 
