@@ -14,16 +14,28 @@ if(POLICY CMP0042)
 endif()
 
 # CI/CD can also set this variable. If not, use the default one.
-find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(COMMAND ${GIT_EXECUTABLE} describe --always HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-#        RESULT_VARIABLE SMOLDYN_VERSION	# Commented out because this line overrides previously defined version number
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif()
 if(NOT SMOLDYN_VERSION)
-    string(TIMESTAMP STAMP "%Y%m%d")
-    set(SMOLDYN_VERSION "2.64.dev${STAMP}")
+    find_package(Git QUIET)
+    if(GIT_FOUND)
+        # Is the current commit tagged? If yes, this command will return the
+        # tag else it returns empty. If a valid tag is found, then use it for a
+        # release.
+        execute_process(COMMAND ${GIT_EXECUTABLE} tag --points-at HEAD
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE SMOLDYN_TAG	
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(SMOLDYN_TAG)
+            # drop v from the tag to get the version info.
+            string(SUBSTRING ${SMOLDYN_TAG} 1 -1 SMOLDYN_VERSION)
+            message(STATUS " -- Found a release tag ${SMOLDYN_TAG}")
+        else()
+            # nightly release / upcoming release preview. 
+            # NOTE: Change is appropriately after a release. Can't find a good
+            # way to automate this process.
+            string(TIMESTAMP STAMP "%Y%m%d")
+            set(SMOLDYN_VERSION "2.65dev${STAMP}")
+        endif()
+    endif()
 endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
