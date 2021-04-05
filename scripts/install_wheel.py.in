@@ -25,11 +25,10 @@ cmd = [
     "-m",
     "pip",
     "install",
+    "--verbose",
     wheel_file,
-    "--no-deps",
-    "--prefix",
-    "@CMAKE_INSTALL_PREFIX@",
-]
+    "--no-deps" ]
+
 print(f"-- Executing {' '.join(cmd)}")
 print(f"-- If this is not what you want, please install the {wheel_file} yourself.")
 out = subprocess.check_output(cmd, text=True)
