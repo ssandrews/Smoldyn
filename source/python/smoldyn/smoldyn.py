@@ -1823,6 +1823,23 @@ class Simulation(_smoldyn.Simulation):
         if log_level <= 0:
             self.simptr.flag = self.simptr.flag + "q"
 
+    @classmethod
+    def fromFile(cls, path: Union[Path, str], arg: str = ""):
+        """Create `_smoldyn.Simulation` object from model file.
+
+        Parameters
+        ----------
+        path : T.Union[Path, str]
+            path
+        arg : str
+            arg
+        """
+        #  return _smoldyn.Simulation(str(path), arg)
+        obj = cls.__new__(cls)
+        super(Simulation, obj).__init__(str(path), arg)
+        obj.simptr = obj.getSimPtr()
+        return obj
+
     def setOutputFiles(self, outfiles: List[str], append=True):
         """Declaration of filenames that can be used for output of simulation
         results.  Spaces are not permitted in these names.  Any previous files
