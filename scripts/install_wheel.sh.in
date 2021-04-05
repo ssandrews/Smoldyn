@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-@PYTHON_EXECUTABLE@ -m pip install smoldyn*.whl \
-    --no-deps \
-    --prefix $DESTDIR/@CMAKE_INSTALL_PREFIX@

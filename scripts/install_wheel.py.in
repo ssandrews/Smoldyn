@@ -1,0 +1,24 @@
+import os
+import sys
+import subprocess
+from pathlib import Path
+
+wheels = list(Path(__file__).parent.glob("smoldyn*.whl"))
+assert wheels and len(wheels) > 0
+
+wheel_file = str(wheels[-1])
+print(f"[INFO] Installing wheel {wheel_file}")
+cmd = [
+    sys.executable,
+    "-m",
+    "pip",
+    "install",
+    wheel_file,
+    "--no-deps",
+    "--prefix",
+    "@CMAKE_INSTALL_PREFIX@",
+]
+print(f"-- Executing {' '.join(cmd)}")
+print(f"-- If this is not what you want, please install the {wheel_file} yourself.")
+out = subprocess.check_output(cmd, text=True)
+print(out)
