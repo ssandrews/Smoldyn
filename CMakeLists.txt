@@ -33,7 +33,7 @@ if(NOT SMOLDYN_VERSION)
             # NOTE: Change is appropriately after a release. Can't find a good
             # way to automate this process.
             string(TIMESTAMP STAMP "%Y%m%d")
-            set(SMOLDYN_VERSION "2.65dev${STAMP}")
+            set(SMOLDYN_VERSION "2.65.dev${STAMP}")
         endif()
     endif()
 endif()
@@ -581,7 +581,6 @@ if(NOT OPTION_MINGW)
             ${CMAKE_CURRENT_BINARY_DIR}/smoldynconfigure.h
             DESTINATION include)
     endif ()
-
 endif ()
 
 
