@@ -1,10 +1,22 @@
 import os
 import sys
 import subprocess
+import site
 from pathlib import Path
 
 wheels = list(Path(__file__).parent.glob("smoldyn*.whl"))
 assert wheels and len(wheels) > 0
+
+if "@CMAKE_INSTALL_PREFIX@" not in site.PREFIXES:
+    print(
+        f"[WARN] @CMAKE_INSTALL_PREFIX@ is not a valid --prefix. "
+        "Valid --prefix locations are: {site.PREFIXES}"
+    )
+    print(
+        f"[WARN] I am going to install the wheel to this location. You can"
+        " modify PYTHONPATH to point to the installation location later. "
+    )
+
 
 wheel_file = str(wheels[-1])
 print(f"[INFO] Installing wheel {wheel_file}")
