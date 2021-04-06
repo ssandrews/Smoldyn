@@ -13,7 +13,7 @@ random.seed(0)
 smoldyn.seed = 0
 
 # First argument is always t.
-a, b = None, None
+spa, spb = None, None
 avals, bvals = [], []
 
 expected_a = [
@@ -53,53 +53,61 @@ expected_b = [
 ]
 
 
+def tuple_isclose(a, b) -> bool:
+    res = True
+    for _a, _b in zip(a, b):
+        if not math.isclose(_a, _b):
+            res = False
+    return res
+
+
 def new_dif_1(t, args):
-    global a, avals
+    global spa, avals
     print("calling new_dif_1")
     x, y = args
     # note that a.difc is not still updated.
-    avals.append((t, a.difc["soln"]))
+    avals.append((t, spa.difc["soln"]))
     return t + random.random()
 
 
 def new_dif_2(t, args):
-    global b, bvals
+    global spb, bvals
     print("calling new_dif_2")
     x, y = args
     # note that b.difc is not still updated.
-    bvals.append((t, b.difc["soln"]))
+    bvals.append((t, spb.difc["soln"]))
     return x * math.sin(t) + y
 
 
 def test_connect_1():
-    global a, avals
+    global spa, avals
     s = smoldyn.Simulation(low=(0, 0), high=(10, 10))
-    a = s.addSpecies("a", color="black", difc=0.1)
-    s.connect(new_dif_1, "a.difc", step=10, args=[1, 1])
+    spa = s.addSpecies("a", color="black", difc=0.1)
+    s.connect(new_dif_1, "spa.difc", step=10, args=[1, 1])
     s.run(200, dt=1)
     assert len(avals) == len(expected_a)
-    for a, b in zip(avals, expected_a):
-        print('test_connect_1', a, b)
-        assert math.isclose(a[1], b[1]), (a, b)
+    for _x, _y in zip(avals, expected_a):
+        print("test_connect_1", _x, _y)
+        assert tuple_isclose(_x, _y), (_x, _y)
 
 
 def test_connect_2():
-    global b, bvals
+    global spb, bvals
     s1 = smoldyn.Simulation(low=(0, 0), high=(10, 10))
-    b = s1.addSpecies("b", color="blue", difc=1)
-    s1.connect(new_dif_2, "b.difc", step=1, args=[1, 1])
+    spb = s1.addSpecies("b", color="blue", difc=1)
+    s1.connect(new_dif_2, "spb.difc", step=1, args=[1, 1])
     s1.run(stop=100, dt=10)
     assert len(bvals) == len(expected_b)
-    for a, b in zip(bvals, expected_b):
-        print("test_connect_2", a, b)
-        assert math.isclose(a[1], b[1]), (a, b)
+    for _x, _y in zip(bvals, expected_b):
+        print("test_connect_2", _x, _y)
+        assert tuple_isclose(_x, _y), (_x, _y)
 
 
 def main():
     global avals, bvals
-    print('==== test connect 1')
+    print("==== test connect 1")
     test_connect_1()
-    print('==== test connect 2')
+    print("==== test connect 2")
     test_connect_2()
 
 
