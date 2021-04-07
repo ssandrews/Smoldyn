@@ -1780,10 +1780,6 @@ class Simulation(_smoldyn.Simulation):
 
         __logger__.setLevel(10 * log_level)
 
-        self.start = kwargs.get("start", 0.0)
-        self.stop = kwargs.get("stop", 0.0)
-        self.dt = kwargs.get("dt", 0.0)
-
         assert low, f"You must pass low bound, current value {low}"
         assert high, f"You must pass high bound, current value {high}"
         if isinstance(boundary_type, str):
@@ -1793,7 +1789,15 @@ class Simulation(_smoldyn.Simulation):
                 ), f"dimension mismatch {len(low)} != {len(high)}"
                 boundary_type = boundary_type * len(low)
             boundary_type = list(boundary_type)
+
         super().__init__(low, high, boundary_type)
+
+        # Surprisingly, following does not work with super(), see 
+        # https://stackoverflow.com/q/10810369/1805129
+        # super().start = kwargs.get("start", 0.0)
+        self.start = kwargs.get("start", 0.0)
+        self.stop = kwargs.get("stop", 0.0)
+        self.dt = kwargs.get("dt", 0.0)
 
         self.simptr = super().getSimPtr()
         assert self.simptr, "Fatal error: Could not create simstruct"
@@ -1836,7 +1840,7 @@ class Simulation(_smoldyn.Simulation):
         """
         #  return _smoldyn.Simulation(str(path), arg)
         obj = cls.__new__(cls)
-        path = Path(path).resolve()    # critical.
+        path = Path(path).resolve()  # critical.
         super(Simulation, obj).__init__(str(path), arg)
         obj.simptr = obj.getSimPtr()
         return obj
