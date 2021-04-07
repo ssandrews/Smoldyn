@@ -2145,37 +2145,45 @@ void molssoutput(simptr sim) {
 		simLog(sim,2," %s:\n",mols->spname[i]);
 		simLog(sim,1,"  states used:");
 		sum=0;
-		for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
-			if(mols->exist[i][ms]) {
-				sum++;
-				simLog(sim,1," %s",molms2string(ms,string)); }
+		if(mols->exist && mols->exist[i]) {
+			for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
+				if(mols->exist[i][ms]) {
+					sum++;
+					simLog(sim,1," %s",molms2string(ms,string)); }}
 		if(!sum) simLog(sim,1," none");
 		simLog(sim,1,"\n");
 
 		same=1;
-		for(ms=(enum MolecState)(0);ms<MSMAX && same;ms=(enum MolecState)(ms+1)) {
-			if(mols->difc[i][ms]!=mols->difc[i][MSsoln]) same=0;
-			if(mols->difm[i][ms] && !mols->difm[i][MSsoln]) same=0;
-			if(!mols->difm[i][ms] && mols->difm[i][MSsoln]) same=0;
-			if(mols->drift[i][ms] && !mols->drift[i][MSsoln]) same=0;
-			if(!mols->drift[i][ms] && mols->drift[i][MSsoln]) same=0;
-			if(mols->listlookup[i][ms]!=mols->listlookup[i][MSsoln]) same=0; }
-		if(same) {
-			if(mols->difstep[i][MSsoln]>maxstep) maxstep=mols->difstep[i][MSsoln];
-			simLog(sim,2,"  all states: difc=%g, rms step=%g",mols->difc[i][MSsoln],mols->difstep[i][MSsoln]);
-			if(mols->difm[i][MSsoln]) simLog(sim,2," (anisotropic)");
-			if(mols->drift[i][MSsoln]) simLog(sim,2," (drift)");
-			if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][MSsoln]]);
-			simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,MSall,-1)); }
-		else {
-			for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
-				if(mols->exist[i][ms]) {
-					if(mols->difstep[i][ms]>maxstep) maxstep=mols->difstep[i][ms];
-					simLog(sim,2,"  %s: difc=%g, rms step=%g",molms2string(ms,string),mols->difc[i][ms],mols->difstep[i][ms]);
-					if(mols->difm[i][ms]) simLog(sim,2," (anisotropic)");
-					if(mols->drift[i][ms]) simLog(sim,2," (drift)");
-					if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][ms]]);
-					simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,ms,-1)); }}
+		if(mols->difc && mols->difc[i] && mols->difm && mols->difm[i] && mols->drift && mols->drift[i] && mols->listlookup && mols->listlookup[i] && mols->difstep && mols->difstep[i]) {
+			for(ms=(enum MolecState)(0);ms<MSMAX && same;ms=(enum MolecState)(ms+1)) {
+				if(mols->difc[i][ms]!=mols->difc[i][MSsoln]) same=0;
+				if(mols->difm[i][ms] && !mols->difm[i][MSsoln]) same=0;
+				if(!mols->difm[i][ms] && mols->difm[i][MSsoln]) same=0;
+				if(mols->drift[i][ms] && !mols->drift[i][MSsoln]) same=0;
+				if(!mols->drift[i][ms] && mols->drift[i][MSsoln]) same=0;
+				if(mols->listlookup[i][ms]!=mols->listlookup[i][MSsoln]) same=0; }
+			if(same) {
+				if(mols->difstep[i][MSsoln]>maxstep) maxstep=mols->difstep[i][MSsoln];
+				simLog(sim,2,"  all states: difc=%g, rms step=%g",mols->difc[i][MSsoln],mols->difstep[i][MSsoln]);
+				if(mols->difm[i][MSsoln]) simLog(sim,2," (anisotropic)");
+				if(mols->drift[i][MSsoln]) simLog(sim,2," (drift)");
+				if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][MSsoln]]);
+				if(mols->condition>SClists)
+					simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,MSall,-1));
+				else
+					simLog(sim,2,"\n"); }
+			else {
+				for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
+					if(mols->exist && mols->exist[i] && mols->exist[i][ms]) {
+						if(mols->difstep[i][ms]>maxstep) maxstep=mols->difstep[i][ms];
+						simLog(sim,2,"  %s: difc=%g, rms step=%g",molms2string(ms,string),mols->difc[i][ms],mols->difstep[i][ms]);
+						if(mols->difm[i][ms]) simLog(sim,2," (anisotropic)");
+						if(mols->drift[i][ms]) simLog(sim,2," (drift)");
+						if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][ms]]);
+						if(mols->condition>SClists)
+							simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,ms,-1));
+						else
+							simLog(sim,2,"\n"); }}}
 
 		if(mols->surfdrift && mols->surfdrift[i]) {
 			simLog(sim,2,"  surface drift:\n");
@@ -2191,7 +2199,7 @@ void molssoutput(simptr sim) {
 									else simLog(sim,2,"=(%g,%g)",mols->surfdrift[i][ms][s][ps][0],mols->surfdrift[i][ms][s][ps][1]); }
 					simLog(sim,2,"\n"); }}
 
-		if(sim->graphss) {
+		if(sim->graphss && mols->color && mols->color[i] && mols->display && mols->display[i]) {
 			same=1;
 			for(ms=(enum MolecState)(0);ms<MSMAX && same;ms=(enum MolecState)(ms+1)) {
 				if(mols->display[i][ms]!=mols->display[i][MSsoln]) same=0;
@@ -2205,7 +2213,7 @@ void molssoutput(simptr sim) {
 				else simLog(sim,2," not displayed to graphics\n"); }
 			else {
 				for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
-					if(mols->exist[i][ms]) {
+					if(mols->exist && mols->exist[i] && mols->exist[i][ms]) {
 						simLog(sim,2,"  %s:",molms2string(ms,string));
 						if(mols->display[i][ms])
 							simLog(sim,2," color= %g,%g,%g, display size= %g\n",mols->color[i][ms][0],mols->color[i][ms][1],mols->color[i][ms][2],mols->display[i][ms]);
@@ -2349,30 +2357,31 @@ int checkmolparams(simptr sim,int *warnptr) {
 		warn++;
 		simLog(sim,7," WARNING: molecule structure %s\n",simsc2string(mols->condition,string)); }
 
-	for(ll=0;ll<mols->nlist;ll++) {				// check molecule list sorting
-		for(m=0;m<mols->nl[ll];m++) {
-			mptr=mols->live[ll][m];
-			if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in live list %i at %i\n",ll,m);}
-			else if(mptr->list!=mols->listlookup[mptr->ident][mptr->mstate]) {error++;simLog(sim,10," SMOLDYN BUG: molecule list value for species %i (%s) is %i but should be %i\n",mptr->ident,molms2string(mptr->mstate,string),mptr->list,mols->listlookup[mptr->ident][mptr->mstate]);}
-			else if(mptr->list!=ll) {warn++;simLog(sim,9," WARNING: mis-sorted molecule in live list %i at %i\n",ll,m);}
-			else if(!mptr->ident) {warn++;simLog(sim,5," WARNING: empty molecule in live list %i at %i\n",ll,m);} }
-		for(;m<mols->maxl[ll];m++) {
-			mptr=mols->live[ll][m];
-			if(mptr) {error++;simLog(sim,10," SMOLDYN BUG: misplaced molecule in live list %i at %i\n",ll,m);} }}
+	if(mols->condition>SClists) {				// check molecule list sorting
+		for(ll=0;ll<mols->nlist;ll++) {
+			for(m=0;m<mols->nl[ll];m++) {
+				mptr=mols->live[ll][m];
+				if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in live list %i at %i\n",ll,m);}
+				else if(mptr->list!=mols->listlookup[mptr->ident][mptr->mstate]) {error++;simLog(sim,10," SMOLDYN BUG: molecule list value for species %i (%s) is %i but should be %i\n",mptr->ident,molms2string(mptr->mstate,string),mptr->list,mols->listlookup[mptr->ident][mptr->mstate]);}
+				else if(mptr->list!=ll) {warn++;simLog(sim,9," WARNING: mis-sorted molecule in live list %i at %i\n",ll,m);}
+				else if(!mptr->ident) {warn++;simLog(sim,5," WARNING: empty molecule in live list %i at %i\n",ll,m);} }
+			for(;m<mols->maxl[ll];m++) {
+				mptr=mols->live[ll][m];
+				if(mptr) {error++;simLog(sim,10," SMOLDYN BUG: misplaced molecule in live list %i at %i\n",ll,m);} }}
 
-	for(m=0;m<mols->topd;m++) {
-		mptr=mols->dead[m];
-		if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in dead list at %i\n",m);}
-		else if(mptr->list!=-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in dead list at %i (species %i, serno %s)\n",m,mptr->ident,molserno2string(mptr->serno,string));}
-		else if(mptr->ident) {error++;simLog(sim,10," SMOLDYN BUG: live molecule in dead list at %i\n",m);} }
-	for(;m<mols->nd;m++) {
-		mptr=mols->dead[m];
-		if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in resurrected list at %i\n",m);}
-		else if(mptr->list==-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in resurrected list at %i\n",m);}
-		else if(!mptr->ident) {error++;simLog(sim,10," BUG: dead molecule in resurrected list at %i\n",m);} }
-	for(;m<mols->maxd;m++) {
-		mptr=mols->dead[m];
-		if(mptr) {error++;simLog(sim,10," SMOLDYN BUG: misplaced molecule in dead list at %i\n",m);} }
+		for(m=0;m<mols->topd;m++) {
+			mptr=mols->dead[m];
+			if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in dead list at %i\n",m);}
+			else if(mptr->list!=-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in dead list at %i (species %i, serno %s)\n",m,mptr->ident,molserno2string(mptr->serno,string));}
+			else if(mptr->ident) {error++;simLog(sim,10," SMOLDYN BUG: live molecule in dead list at %i\n",m);} }
+		for(;m<mols->nd;m++) {
+			mptr=mols->dead[m];
+			if(!mptr) {error++;simLog(sim,10," SMOLDYN BUG: NULL molecule in resurrected list at %i\n",m);}
+			else if(mptr->list==-1) {error++;simLog(sim,10," SMOLDYN BUG: mis-sorted molecule in resurrected list at %i\n",m);}
+			else if(!mptr->ident) {error++;simLog(sim,10," BUG: dead molecule in resurrected list at %i\n",m);} }
+		for(;m<mols->maxd;m++) {
+			mptr=mols->dead[m];
+			if(mptr) {error++;simLog(sim,10," SMOLDYN BUG: misplaced molecule in dead list at %i\n",m);} }}
 
 	for(ll=0;ll<mols->nlist;ll++)
 		for(m=0;m<mols->nl[ll];m++)	{									// check for molecules outside system

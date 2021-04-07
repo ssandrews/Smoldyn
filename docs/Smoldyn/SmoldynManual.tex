@@ -2076,9 +2076,9 @@ Libsmoldyn is a C, C++, and Python interface to the Smoldyn simulator. It comple
 
 \section{Installing}
 
-It's best to install Smoldyn twice. First, download the latest package from \url{http://www.smoldyn.org} and run the install script. This will install the stand-alone program, the C/C++ libraries, and the BioNetGen code, and will also give you the documentation and example files.
+The best method is to download the latest package from \url{http://www.smoldyn.org} and run the install script. This will install the stand-alone program, the C/C++ libraries, and the BioNetGen code, and will also give you the documentation and example files. If you have pip installed, then it will also install the Python bindings.
 
-Next, install the Python components from PyPI with:
+Anothor option is to install the Python components from PyPI with:
 \begin{lstlisting}[style=SSAC]
 pip install smoldyn
 \end{lstlisting}
@@ -2087,8 +2087,6 @@ If this doesn't work, then a different possibility is:
 python3 -m pip install smoldyn --user --pre
 \end{lstlisting}
 Either of these should install the smoldyn nightly package, from: \url{https://pypi.org/project/smoldyn/}. For Windows, Python is often called ``py'', so try this if the above doesn't work (or your computer asks you to download Python from the Windows store, which probably isn't necessary). For those who are curious, the ``-m'' option means to run pip as a python module, the ``--user'' option means to install to the user directory, and the ``--pre'' option means to include pre-release versions. Feel free to try more or fewer options, of course. Also, some other useful pip options are: ``pip uninstall smoldyn'', ``pip cache purge'' (pip installs from its cached version if it already has one, so this is useful if you want to force it to download the online version), and ``pip search smoldyn''.
-
-Alternatively, the Mac distribution, downloaded from \url{http://www.smoldyn.org/downloads/} comes with a Python wheel, called something like smoldyn-2.62-py3-none-any.whl. After installing with the software with the ``install.sh'' script, you should be able to write ``pip install smoldyn...whl'' and that will install it for you as well.
 
 After installing, it might just run. If not, then the next challenge is to get your system to know that it's allowed to run the files. There are a few ways to do this. (1) You can navigate to one directory above where the ``\_\_init\_\_.py'' file gets stored and work from there. To try this out, go there and start Python; then try \ttt{import smoldyn} and see if it works. (2) You can set \ttt{PYTHONPATH} environment variable to the install location. However, this only works for the current command-line session and needs to be reset for the next one. To see its current value, for Mac or Linux, enter \ttt{echo \$PYTHONPATH}. (3) You can modify your sys.path variable to include a path to the install location, which then lasts for new command-line sessions as well. To see its current value, start Python and enter: \ttt{import sys; print(sys.path)}.
 
@@ -2210,6 +2208,39 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 \item{65.} Finally, the simulation is run, here for 10 time units in steps of 0.01 time units.
 
 \end{description}
+
+% User and low-level APIs
+\section{User and low-level APIs}
+
+Smoldyn's Python API is divided into two portions. The user API, imported with \ttt{import smoldyn}, is what most people will use most of the time and is the one that's demonstrated above in the example simulation. The low-level API, imported with \ttt{import smoldyn.\_smoldyn}, is more of a wrapper for the C API, with much less Pythonic syntax and user friendliness.
+
+One difference between the APIs is that the low-level API tends to group the simulation into a simulation pointer, whereas the user API tends to group the simulation into a simulation object, of which the pointer is one of its components. These are shown below,
+
+\begin{lstlisting}[style=SSAPython]
+>>> import smoldyn
+>>> import smoldyn._smoldyn as S
+>>> s1 = smoldyn.Simulation([0, 0], [10, 10])
+>>> s1
+<smoldyn.smoldyn.Simulation object at 0x10b5b0950>
+>>> s1.simptr
+<smoldyn._smoldyn.simstruct object at 0x102bc1af0>
+\end{lstlisting}
+
+There are several way to read in a simulation from a file. The best approach is:
+\begin{lstlisting}[style=SSAPython]
+>>> s2 = smoldyn.Simulation.fromFile("Min1.txt", "")
+<smoldyn.smoldyn.Simulation object at 0x1010019a0>
+\end{lstlisting}
+
+Alternate, but less good, approaches are:
+\begin{lstlisting}[style=SSAPython]
+>>> s3 = S.Simulation("Min1.txt", "")
+>>> s3
+<smoldyn._smoldyn.Simulation object at 0x10925ee70>
+>>> sptr =S.prepareSimFromFile("Min1.txt","")
+>>> s4 = smoldyn.Simulation.fromSimptr(sptr) # supposed to work but function doesn't exist
+\end{lstlisting}
+Note (4/5/21): the \ttt{smoldyn.Simulation.fromSimptr()} function doesn't appear to exist. Also, a problem is that only one file can be loaded in because attempting to load in more than one file, regardless of the method used, leads to an error message.
 
 % Callback functions
 \section{Callback functions}
@@ -2535,7 +2566,9 @@ surface\_drift \\ % NEW
 surface\_drift\_rule \\ % NEW
 mol & \ttt{AddSolutionMolecules}\\
 surface\_mol & \ttt{AddSurfaceMolecules}\\
+ & $surface$.\ttt{addMolecules}\\
 compartment\_mol & \ttt{AddCompartmentMolecules}\\
+ & $compartment$.\ttt{addMolecules}\\
 molecule\_lists & \ttt{AddMolList}\\
 mol\_list & \ttt{AddSpecies}\\
 & \ttt{SetMolList}\\
@@ -2570,13 +2603,14 @@ text\_display & \ttt{AddTextDisplay}\\
 \hline
 output\_root & \ttt{SetOutputPath}\\
 output\_files & \ttt{AddOutputFile}\\
-output\_data \\ % NEW
+output\_data & \ttt{AddOutputData} \\ % NEW
 output\_precision \\ % NEW
 append\_files & \ttt{AddOutputFile}\\
 output\_file\_number & \ttt{AddOutputFile}\\
 output\_format \\ % NEW
 cmd & \ttt{AddCommand}\\
 & \ttt{AddCommandFromString}\\
+N/A & \ttt{getOutputData}\\
 \hline
 \multicolumn{2}{l}{\hspace{0.3in}\textbf{Surfaces}}\\
 \hline
@@ -4241,12 +4275,14 @@ Adds \ttt{number} solution state molecules of species \ttt{species} to the syste
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolAddCompartmentMolecules(simptr sim, char *species, int number, char *compartment)}\\
 Python: \ttt{ErrorCode addCompartmentMolecules(str species, int number, str compartment)}\\
+Python: $compartment$.\ttt{addMolecules(species,number)}\\
 Adds \ttt{number} solution state molecules of species \ttt{species} to the compartment \ttt{compartment}. Molecules are randomly distributed within the compartment.
 
 \item[AddSurfaceMolecules]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolAddSurfaceMolecules(simptr sim, int speciesindex, enum MolecState state, int number, int surface, enum PanelShape panelshape, int panel, double *position)}\\
 Python: \ttt{ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)}\\
+Python: $surface$.\ttt{addMolecules((species, state), number)}\\
 Adds \ttt{number} molecules of species \ttt{species} and state \ttt{state} to surface(s) in the system. It is permissible for \ttt{surface} to be ``all", \ttt{panelshape} to be PSall, and/or \ttt{panel} to be ``all". If you want molecules at a specific position, then you need to enter a specific surface, panel shape, and panel, and then enter the position in \ttt{position}.
 
 \item[GetMoleculeCount]

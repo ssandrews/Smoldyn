@@ -2224,7 +2224,7 @@ int simupdate(simptr sim) {
 		simLog(sim,2," setting up graphics\n");
 	er=graphicsupdate(sim);
 	CHECK(er!=1);
-	
+
 	if(sim->mols && sim->mols->condition!=SCok) {
 		er=simupdate(sim);
 		CHECK(!er); }
