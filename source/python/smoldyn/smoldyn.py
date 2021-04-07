@@ -1836,6 +1836,7 @@ class Simulation(_smoldyn.Simulation):
         """
         #  return _smoldyn.Simulation(str(path), arg)
         obj = cls.__new__(cls)
+        path = Path(path).resolve()    # critical.
         super(Simulation, obj).__init__(str(path), arg)
         obj.simptr = obj.getSimPtr()
         return obj
