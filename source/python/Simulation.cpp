@@ -3,6 +3,8 @@
  *    Description:  Simulation class.
  */
 
+#include "Command.h"
+
 #include "Simulation.h"
 
 using namespace std;
@@ -106,7 +108,7 @@ Simulation::initialize()
  *
  * @return true.
  */
-inline bool
+bool
 Simulation::setModelpath(const string& modelpath)
 {
     assert(sim_);
@@ -116,7 +118,7 @@ Simulation::setModelpath(const string& modelpath)
     return true;
 }
 
-inline ErrorCode
+ErrorCode
 Simulation::runSim(double stoptime, double dt, bool display, bool overwrite)
 {
     ErrorCode er;
@@ -159,7 +161,7 @@ Simulation::runSim(double stoptime, double dt, bool display, bool overwrite)
     return er;
 }
 
-inline ErrorCode
+ErrorCode
 Simulation::runUntil(const double breaktime,
                      const double dt,
                      bool display,
@@ -191,7 +193,7 @@ Simulation::runUntil(const double breaktime,
     return smolRunSimUntil(sim_, breaktime);
 }
 
-inline bool
+bool
 Simulation::connect(const py::function& func,
                     const py::object& target,
                     const size_t step,
@@ -220,8 +222,8 @@ Simulation::connect(const py::function& func,
 }
 
 // get the pointer
-inline simptr
-Simulation::getSimPtr()
+simptr
+Simulation::getSimPtr() const
 {
     assert(sim_);
     return sim_;
@@ -262,4 +264,33 @@ Simulation::getBoundaries(void)
         high.push_back(sim_->wlist[2 * d + 1]->pos);
     }
     return make_pair(low, high);
+}
+
+void
+Simulation::addCommand(const string& cmd, char cmd_type, py::kwargs kwargs = {})
+{
+    // py::print("Command '", cmd, "/", cmd_type, "' with options ", kwargs);
+
+    map<string, double> options;
+    if (!kwargs)
+        options = kwargs.cast<map<string, double>>();
+
+    auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, options);
+    commands_.push_back(std::move(c));
+}
+
+void
+Simulation::addCommandStr(char* cmd)
+{
+    // py::print("Adding command", cmd , cmd_type, " with options ", options);
+    auto c = make_unique<Command>(getSimPtr(), cmd);
+    commands_.push_back(std::move(c));
+}
+
+void
+Simulation::finalizeCommands()
+{
+    for (auto& c : commands_)
+        if (!c->isFinalized())
+            c->finalize();
 }

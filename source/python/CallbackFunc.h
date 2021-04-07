@@ -8,8 +8,8 @@
 #ifndef CALLBACKFUNC_H_XGBEYLQ3
 #define CALLBACKFUNC_H_XGBEYLQ3
 
-#include <functional>
 #include <array>
+#include <functional>
 #include <string>
 
 #include <pybind11/pybind11.h>
@@ -17,8 +17,9 @@ namespace py = pybind11;
 
 using namespace std;
 
-class CallbackFunc {
-public:
+class CallbackFunc
+{
+  public:
     CallbackFunc();
     ~CallbackFunc();
 
@@ -40,7 +41,7 @@ public:
     void setArgs(const py::list& args);
     py::list getArgs() const;
 
-private:
+  private:
     /* data */
     double val_;
     std::string funcName_;

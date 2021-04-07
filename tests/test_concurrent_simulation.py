@@ -41,7 +41,7 @@ def sim1():
     # s.setGraphics("opengl")
     s.addCommand("killmolinsphere red all", "b")
     s.addOutputData("data1")
-    s.addCommand(cmd="molcount data1", cmd_type='E')
+    s.addCommand("molcount data1", 'E')
     return s
 
 
@@ -82,7 +82,7 @@ def sim2():
 
     #  sim.setGraphics("opengl", 20)
     sim.addOutputData("data2")
-    sim.addCommand(cmd="molcount data2", cmd_type='E')
+    sim.addCommand("molcount data2", 'E')
     return sim
 
 def main():

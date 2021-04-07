@@ -29,7 +29,7 @@ def test_simptr_simobj():
     assert s2.stop == 500
     assert s2.dt == 0.002
     s2.addOutputData('moments')
-    s2.addCommand(cmd="molmoments MinD_ATP(front) moments", cmd_type="N", step=10)
+    s2.addCommand("molmoments MinD_ATP(front) moments", "N", step=10)
 
 
 

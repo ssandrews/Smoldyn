@@ -41,7 +41,7 @@ char tempstring[256];
 array<double, 4>
 pycolor(const double* f)
 {
-    array<double, 4> c = {f[0], f[1], f[2], f[3]};
+    array<double, 4> c = { f[0], f[1], f[2], f[3] };
     return c;
 }
 
@@ -489,6 +489,7 @@ PYBIND11_MODULE(_smoldyn, m)
         "stop",
         [](Simulation& sim) { return sim.getSimPtr()->tmax; },
         [](Simulation& sim, double timestop) {
+            assert(timestop > 0.0);
             return smolSetTimeStop(sim.getSimPtr(), timestop);
         })
 
@@ -497,6 +498,7 @@ PYBIND11_MODULE(_smoldyn, m)
         "dt",
         [](Simulation& sim) { return sim.getSimPtr()->dt; },
         [](Simulation& sim, double timestep) {
+            assert(timestep > 0.0);
             return smolSetTimeStep(sim.getSimPtr(), timestep);
         })
 
@@ -570,7 +572,7 @@ PYBIND11_MODULE(_smoldyn, m)
       // enum ErrorCode smolSetBackgroundStyle(simptr sim, double *color);
       .def("setBackgroundStyle",
            [](Simulation& sim, char* color) {
-               array<double, 4> rgba = {0, 0, 0, 1.0};
+               array<double, 4> rgba = { 0, 0, 0, 1.0 };
                graphicsreadcolor(&color, &rgba[0]);
                // cout << "debug: Setting background color " << rgba[0] << ' '
                // << rgba[1]
@@ -587,7 +589,7 @@ PYBIND11_MODULE(_smoldyn, m)
       // *color);
       .def("setFrameStyle",
            [](Simulation& sim, double thickness, char* color) {
-               array<double, 4> rgba = {0, 0, 0, 1.0};
+               array<double, 4> rgba = { 0, 0, 0, 1.0 };
                graphicsreadcolor(&color, &rgba[0]);
                return smolSetFrameStyle(sim.getSimPtr(), thickness, &rgba[0]);
            })
@@ -601,7 +603,7 @@ PYBIND11_MODULE(_smoldyn, m)
       // *color);
       .def("setGridStyle",
            [](Simulation& sim, double thickness, char* color) {
-               array<double, 4> rgba = {0, 0, 0, 1.0};
+               array<double, 4> rgba = { 0, 0, 0, 1.0 };
                graphicsreadcolor(&color, &rgba[0]);
                return smolSetGridStyle(sim.getSimPtr(), thickness, &rgba[0]);
            })
@@ -614,7 +616,7 @@ PYBIND11_MODULE(_smoldyn, m)
       // enum ErrorCode smolSetTextStyle(simptr sim, double *color);
       .def("setTextStyle",
            [](Simulation& sim, char* color) {
-               array<double, 4> rgba = {0, 0, 0, 1.0};
+               array<double, 4> rgba = { 0, 0, 0, 1.0 };
                graphicsreadcolor(&color, &rgba[0]);
                return smolSetTextStyle(sim.getSimPtr(), &rgba[0]);
            })
@@ -646,28 +648,11 @@ PYBIND11_MODULE(_smoldyn, m)
                  sim.getSimPtr(), filename, suffix, append);
            })
 
-      // enum ErrorCode smolAddCommand(simptr sim, char type, double on,
-      // double off,
-      //     double step, double multiplier, const char *commandstring);
-      .def(
-        "addCommand",
-        [](Simulation& sim,
-           char type,
-           double on,
-           double off,
-           double step,
-           double multiplier,
-           const char* commandstring) {
-            return smolAddCommand(
-              sim.getSimPtr(), type, on, off, step, multiplier, commandstring);
-        })
-
-      // enum ErrorCode smolAddCommandFromString(simptr sim, char *string);
-      .def("addCommandFromString",
-           [](Simulation& sim, char* cmd) {
-               // char *cmd = strdup(command.c_str());
-               return smolAddCommandFromString(sim.getSimPtr(), cmd);
-           })
+      /****************
+       * Commands *
+       ****************/
+      .def("addCommand", &Simulation::addCommand)
+      .def("finalizeCommands", &Simulation::finalizeCommands)
 
       /***************
        *  Molecules  *
@@ -990,7 +975,7 @@ PYBIND11_MODULE(_smoldyn, m)
       //                enum PanelShape *panelshapeptr, const char *panel);
       .def("getPanelIndex",
            [](Simulation& sim, const char* surface, const char* panel) {
-               PanelShape panelshape{PanelShape::PSnone};
+               PanelShape panelshape{ PanelShape::PSnone };
                return smolGetPanelIndex(
                  sim.getSimPtr(), surface, &panelshape, panel);
            })
@@ -999,7 +984,7 @@ PYBIND11_MODULE(_smoldyn, m)
       //                enum PanelShape *panelshapeptr, const char *panel);
       .def("getPanelIndexNT",
            [](Simulation& sim, const char* surface, const char* panel) {
-               PanelShape panelshape{PanelShape::PSnone};
+               PanelShape panelshape{ PanelShape::PSnone };
                return smolGetPanelIndexNT(
                  sim.getSimPtr(), surface, &panelshape, panel);
            })
@@ -1091,7 +1076,7 @@ PYBIND11_MODULE(_smoldyn, m)
               int stipplefactor,
               int stipplepattern,
               double shininess) {
-               array<double, 4> rgba = {0, 0, 0, 1.0};
+               array<double, 4> rgba = { 0, 0, 0, 1.0 };
                graphicsreadcolor(&color, &rgba[0]);
                return smolSetSurfaceStyle(sim.getSimPtr(),
                                           surface,
