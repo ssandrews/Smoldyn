@@ -23,7 +23,14 @@ def test_simptr_simobj():
 
     assert s2
     assert s2.getSimPtr() and s2.getSimPtr() == s2.simptr
+
     print(s2.start, s2.stop, s2.dt)
+    assert s2.start == 0.0
+    assert s2.stop == 500
+    assert s2.dt == 0.002
+    s2.addOutputData('moments')
+    s2.addCommand(cmd="molmoments MinD_ATP(front) moments", cmd_type="N", step=10)
+
 
 
 if __name__ == "__main__":

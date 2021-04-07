@@ -1,7 +1,6 @@
 ---
 BasedOnStyle: Mozilla
 ColumnLimit: '80'
-Cpp11BracedListStyle: 'true'
 IndentWidth: '4'
 TabWidth: '4'
 UseTab: Never
