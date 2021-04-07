@@ -1399,12 +1399,12 @@ void smolsimulategl(simptr sim) {
 #ifdef __gl_h_
 	int er;
 
-	glutDisplayFunc(RenderScene);
 	glutTimerFunc((unsigned int)0,TimerFunction,0);
 	Sim=sim;
 	sim->clockstt=time(NULL);
 	er=simdocommands(sim);
 	if(er) endsimulate(sim,er);
+	glutDisplayFunc(RenderScene);
 	glutMainLoop();
 #else
 	simLog(sim,5,"Graphics are unavailable, so performing non-graphics simulation.\n");

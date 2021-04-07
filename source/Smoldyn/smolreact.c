@@ -1211,9 +1211,12 @@ int checkrxnparams(simptr sim,int *warnptr) {
 				simLog(sim,5," WARNING: order 1 reaction %s time constant is only %g times longer than the simulation time step\n",rxn->rname,rxn->tau/sim->dt);
 				warn++; }}
 
-	minboxsize=sim->boxs->size[0];
-	for(d=1;d<dim;d++)
-		if(sim->boxs->size[d]<minboxsize) minboxsize=sim->boxs->size[d];
+	if(sim->boxs) {
+		minboxsize=sim->boxs->size[0];
+		for(d=1;d<dim;d++)
+			if(sim->boxs->size[d]<minboxsize) minboxsize=sim->boxs->size[d]; }
+	else
+		minboxsize=0;
 
 	rxnss=sim->rxnss[2];															// order 2 reactions
 	if(rxnss) {
@@ -1224,7 +1227,7 @@ int checkrxnparams(simptr sim,int *warnptr) {
 				else simLog(sim,5," WARNING: reaction rate not set for reaction order 2, name %s\n",rxn->rname);
 				rxn->bindrad2=0;
 				warn++; }
-			else if(sqrt(rxn->bindrad2)>minboxsize) {
+			else if(minboxsize>0 && sqrt(rxn->bindrad2)>minboxsize) {
 				if(rxn->rparamt==RPconfspread) simLog(sim,5," WARNING: confspread radius for order 2 reaction %s is larger than box dimensions\n",rxn->rname);
 				else if(rxn->rparamt==RPbounce) simLog(sim,5," WARNING: bounce radius for order 2 reaction %s is larger than box dimensions\n",rxn->rname);
 				else simLog(sim,5," WARNING: binding radius for order 2 reaction %s is larger than box dimensions\n",rxn->rname);
