@@ -1,19 +1,38 @@
 ## Changelog
 
-### 2.64 (3/24/21) 
+### 2.65 (unreleased)
 
-- Fixed minor bugs with reactions on surfaces, converted user's manual to
-  LaTeX, and merged Libsmoldyn manual with regular manual.
+https://github.com/ssandrews/Smoldyn/compare/v2.64...v2.65
 
-### 2.63
+- 
+- (developer) Major refactoring in `Simulation` class (#50, #51, #52). `smoldyn.Command` is
+  moved to C++ (now available as `_smoldyn.Command`). This does not change the
+  API.
 
--  Improved Python bindings, added Python example files, and fixed bug with
-   moving surfaces.
+### 2.64 (3/24/21)  
+
+https://github.com/ssandrews/Smoldyn/compare/v2.63...v2.64
+
+- Added support for creating concurrent simulation in one Python script (see
+  `smoldyn.Simulation` class).
+- Fixed minor bugs with reactions on surfaces.
+- Converted user's manual to LaTeX
+- Merged Libsmoldyn manual with regular manual.
+- Update to readthedocs.
+
+### 2.63 (12/16/20) 
+
+https://github.com/ssandrews/Smoldyn/compare/v2.62...v2.63
+
+- Improved Python bindings.
+- Added Python example files.
+- Fixed bug with moving surfaces.
 
 ### 2.62 (10/14/20) 
 
-- Added Python bindings, improved Windows build now with MSVC, subtantial build
-  system refactoring.
+- Added Python bindings.
+- Improved Windows build now with MSVC.
+- Subtantial build system refactoring for other platforms as well.
 
 ## Old releases (pre Github)
 
