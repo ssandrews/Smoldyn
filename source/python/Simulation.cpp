@@ -134,13 +134,6 @@ ErrorCode Simulation::runSim(double stoptime, double dt, bool display,
         return er;
     }
 
-    er = smolSetSimTimes(sim_, curtime_, stoptime, dt);
-    if (er != ErrorCode::ECok)
-    {
-        cerr << __FUNCTION__ << ": Could not set sim times." << endl;
-        return er;
-    }
-
     er = smolUpdateSim(sim_);
     if (er != ErrorCode::ECok)
     {

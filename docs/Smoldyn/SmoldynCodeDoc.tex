@@ -1347,7 +1347,7 @@ Sets the \ttt{exist} element of the molecule superstructure for identity \ttt{id
 
 \item[\ttt{int molcount(simptr sim,int i,enum MolecState ms,int max);}]
 \hfill \\
-Counts the number of molecules of type \ttt{i} and state \ttt{ms} currently in the simulation. If \ttt{max} is -1 it is ignored, and otherwise the counting stops as soon as \ttt{max} is reached. Either or both of \ttt{i} and \ttt{ms} can be set to ``all"; enter \ttt{i} as a negative number and enter \ttt{ms} as \ttt{MSall}. All molecule lists and the dead list are checked; porting lists are included. This function returns correct molecule counts whether molecule lists have been sorted since recent changes or not. It runs fastest if molecule lists have been sorted. If \ttt{i} is less than zero, this implies all species; if \ttt{i} is greater than zero, this implies that specific species; and if \ttt{i} equals zero, this implies that the \ttt{index} entry should be used instead. In this last case, enter lists of species using \ttt{index}, using the standard index pattern header.
+Counts the number of molecules of type \ttt{i} and state \ttt{ms} currently in the simulation. If \ttt{max} is -1 it is ignored, and otherwise the counting stops as soon as \ttt{max} is reached. Either or both of \ttt{i} and \ttt{ms} can be set to ``all"; enter \ttt{i} as a negative number and enter \ttt{ms} as \ttt{MSall}. All molecule lists and the dead list are checked; porting lists are included. This function returns correct molecule counts whether molecule lists have been sorted since recent changes or not. It runs fastest if molecule lists have been sorted. If \ttt{i} is less than zero, this implies all species; if \ttt{i} is greater than zero, this implies that specific species; and if \ttt{i} equals zero, this implies that the \ttt{index} entry should be used instead. In this last case, enter lists of species using \ttt{index}, using the standard index pattern header. This function returns 0 if the molecule superstructure still has an ``SCinit'' condition, regardless of whether there are molecules in it or not.
 
 This function is essentially the same exact thing several times in a row, for the different input cases and with slightly different outer loops. This could be substantially shortened, but is done this way for better speed. This function requires that the \ttt{index} list be sorted.
 
@@ -6635,6 +6635,11 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Merged the Libsmoldyn user's manual into the regular user's manual.
 \item Had problems with static libtiff for Mac, so downloaded a new version and put the compiled static library in Smoldyn/Mac.
 \item Minor change in CMakeLists.txt so that the version number could be input from the command line.
+
+\subsection*{Modifications for version 2.65 (not released yet)}
+\item Dilawar moved some functionality from smoldyn.py to module.cpp, in order to support loading simulations from files using Python.
+\item Fixed sevreral bugs that arose when displaying diagnostics with partially set up structures.
+\item Dilawar added a changelog.md file to the package.
 
 \end{itemize}
 

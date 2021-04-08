@@ -1102,6 +1102,7 @@ int molcount(simptr sim,int i,int *index,enum MolecState ms,int max) {
 
 	mols=sim->mols;
 	if(!mols) return 0;
+	if(mols->condition==SCinit) return 0;
 	if(max<0) max=INT_MAX;
 	count=0;
 
@@ -2168,10 +2169,7 @@ void molssoutput(simptr sim) {
 				if(mols->difm[i][MSsoln]) simLog(sim,2," (anisotropic)");
 				if(mols->drift[i][MSsoln]) simLog(sim,2," (drift)");
 				if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][MSsoln]]);
-				if(mols->condition>SClists)
-					simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,MSall,-1));
-				else
-					simLog(sim,2,"\n"); }
+				simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,MSall,-1)); }
 			else {
 				for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
 					if(mols->exist && mols->exist[i] && mols->exist[i][ms]) {
@@ -2180,10 +2178,7 @@ void molssoutput(simptr sim) {
 						if(mols->difm[i][ms]) simLog(sim,2," (anisotropic)");
 						if(mols->drift[i][ms]) simLog(sim,2," (drift)");
 						if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][ms]]);
-						if(mols->condition>SClists)
-							simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,ms,-1));
-						else
-							simLog(sim,2,"\n"); }}}
+						simLog(sim,2,", number=%i\n",molcount(sim,i,NULL,ms,-1)); }}}
 
 		if(mols->surfdrift && mols->surfdrift[i]) {
 			simLog(sim,2,"  surface drift:\n");
