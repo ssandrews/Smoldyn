@@ -2049,7 +2049,7 @@ class Simulation(_smoldyn.Simulation):
     ) -> Species:
         """Add species to Simulation
 
-        See smoldyn.Species docs.
+        See :class:`smoldyn.Species` docs.
         """
         # Create a species.
         s = Species(super(), name, state, color, difc, display_size, mol_list)
@@ -2063,10 +2063,11 @@ class Simulation(_smoldyn.Simulation):
         lowpos: List[float] = [],
         highpos: List[float] = [],
     ):
-        """See Species.addToSolution"""
+        """See :func:`Species.addToSolution`"""
         species.addToSolution(number, pos, lowpos, highpos)
 
     def addSurface(self, name: str, *, panels: List[Panel]) -> Surface:
+        """See :class:`Surface` docs"""
         return Surface(simulation=super(), name=name, panels=panels)
 
     def addBidirectionalReaction(
