@@ -2140,8 +2140,7 @@ class Simulation(_smoldyn.Simulation):
         """
         if "step" not in kwargs:
             kwargs["step"] = self.dt
-        k = super().addCommand(cmd, cmd_type, **kwargs)
-        assert k == _smoldyn.ErrorCode.ok, k
+        super().addCommand(cmd, cmd_type[0], **kwargs)
 
     def addCommandStr(self, cmd: str):
         """Add command using a single string. See the Smoldyn's User Manual for
@@ -2152,8 +2151,7 @@ class Simulation(_smoldyn.Simulation):
         cmd : str
             Command string
         """
-        c = super().addCommandStr(cmd)
-        assert k == _smoldyn.ErrorCode.ok, k
+        super().addCommandStr(cmd)
 
     # mapping.
     def addSpecies(

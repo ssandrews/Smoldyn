@@ -34,7 +34,11 @@ Command::~Command() {}
 
 void Command::finalize()
 {
-    assert(__allowed_cmd_type__.find_first_of(cmd_type_) != string::npos);
+    if (__allowed_cmd_type__.find_first_of(cmd_type_) == string::npos)
+    {
+        cerr << "Command type '" << cmd_type_ << "' is not supported." << endl;
+        throw std::runtime_error("invalid command type");
+    }
 
     char *cmd = strdup(cmd_.c_str());
 
@@ -72,9 +76,9 @@ bool Command::isFinalized() const { return added_; }
 
 ErrorCode Command::addCommand()
 {
-    std::cout << "Adding" << cmd_ << " " << cmd_type_
-              << "on, off, step, multiplier" << on_ << off_ << step_
-              << multiplier_ << endl;
+    // std::cout << "Adding" << cmd_ << " " << cmd_type_
+    //           << "on, off, step, multiplier" << on_ << off_ << step_
+    //           << multiplier_ << endl;
     return smolAddCommand(sim_, cmd_type_, on_, off_, step_, multiplier_,
                           cmd_.c_str());
 }

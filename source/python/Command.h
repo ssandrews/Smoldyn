@@ -18,7 +18,7 @@ namespace py = pybind11;
 #include "../Smoldyn/libsmoldyn.h"
 #include "../Smoldyn/smoldyn.h"
 
-const std::string __allowed_cmd_type__("@&aAbBeEbBiIjx");
+const std::string __allowed_cmd_type__("@&aAbBeEnNiIjx");
 
 using namespace std;
 
