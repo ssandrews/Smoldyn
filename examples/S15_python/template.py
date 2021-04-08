@@ -56,8 +56,8 @@ membrane.addMolecules((E, "front"), 100)
 
 # Output and other run-time commands
 s.setOutputFile('templateout.txt', True)
-s.addCommand(cmd="molcountheader templateout.txt", cmd_type="B")
-s.addCommand(cmd="molcount templateout.txt", cmd_type="N", step=10)
+s.addCommand("molcountheader templateout.txt", "B")
+s.addCommand("molcount templateout.txt", "N", step=10)
 
 s.setGraphics(
     "opengl_good", bg_color="white", frame_thickness=1,

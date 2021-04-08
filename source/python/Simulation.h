@@ -86,7 +86,7 @@ class Simulation
     pair<vector<double>, vector<double>> getBoundaries(void);
 
     // Commands
-    void addCommand(const string& cmd, char cmd_type, py::kwargs kwargs);
+    void addCommand(const string& cmd, char cmd_type, const map<string, double>& kwargs);
     void addCommandStr(char* cmd);
     void finalizeCommands();
 

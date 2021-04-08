@@ -267,15 +267,10 @@ Simulation::getBoundaries(void)
 }
 
 void
-Simulation::addCommand(const string& cmd, char cmd_type, py::kwargs kwargs = {})
+Simulation::addCommand(const string& cmd, char cmd_type, const map<string, double>& kwargs)
 {
     // py::print("Command '", cmd, "/", cmd_type, "' with options ", kwargs);
-
-    map<string, double> options;
-    if (!kwargs)
-        options = kwargs.cast<map<string, double>>();
-
-    auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, options);
+    auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, kwargs);
     commands_.push_back(std::move(c));
 }
 

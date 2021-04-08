@@ -1254,7 +1254,7 @@ class Compartment(object):
 ## class Command(object):
 ##     def __init__(self, simulation: _smoldyn.Simulation, cmd: str, cmd_type, **kwargs):
 ##         """Smoldyn Command.
-## 
+##
 ##         Parameters
 ##         ----------
 ##         cmd: str
@@ -1262,7 +1262,7 @@ class Compartment(object):
 ##         cmd_type: str
 ##             Type of command. Optional when `from_string` is set to `True`. Then
 ##             the type is to be included in the `cmd` string itself.
-## 
+##
 ##             Use capital letter version for integer queue.  ‘b’ or 'B' for
 ##             before the simulation.  ‘a’ or 'A' for after the simulation.  ‘e’
 ##             or 'E' for every time step during the simulation.  ‘@’ or '&' for a
@@ -1274,10 +1274,10 @@ class Compartment(object):
 ##             The command is executed at on, then on+dt, then on+dt*xt, then
 ##             on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
 ##             starting iteration and stopping iteration.
-## 
+##
 ##         simulation:
 ##             Object of _smoldyn.Simulation class
-## 
+##
 ##         Notes
 ##         -----
 ##         See section 2.4 for the list of available commands.
@@ -1293,10 +1293,10 @@ class Compartment(object):
 ##         self.options = dict(kwargs)
 ##         self.fromString = self.options.get("from_string", False)
 ##         self.__added__ = False
-## 
+##
 ##     def __finalize__(self):
 ##         """Add this command to C++ engine.
-## 
+##
 ##         Note
 ##         -----
 ##         This function MUST BE CALLED only after stop, dt, and step are setup
@@ -1340,7 +1340,7 @@ class Compartment(object):
 ##             raise RuntimeError(f"Command type {self.cmd_type} is unsupported")
 ##         self.__add_command__()
 ##         self.__added__ = True
-## 
+##
 ##     def __add_command__(self):
 ##         k = self.simulation.addCommand(
 ##             self.cmd_type, self.on, self.off, self.step, self.multiplier, self.cmd
@@ -2113,49 +2113,47 @@ class Simulation(_smoldyn.Simulation):
         k = super().displaySim()
         assert k == _smoldyn.ErrorCode.ok
 
-    ## def addCommand(self, cmd: str, cmd_type: str, **kwargs):
-    ##     """Add command.
+    def addCommand(self, cmd: str, cmd_type: str, **kwargs):
+        """Add command.
 
-    ##     Parameters
-    ##     ----------
-    ##     cmd: str
-    ##         Command string.
-    ##     cmd_type: str
-    ##         Type of command. Optional when `from_string` is set to `True`. Then
-    ##         the type is to be included in the `cmd` string itself.
+        Parameters
+        ----------
+        cmd: str
+            Command string.
+        cmd_type: str
+            Type of command. Optional when `from_string` is set to `True`. Then
+            the type is to be included in the `cmd` string itself.
 
-    ##         Use capital letter version for integer queue.  ‘b’ or 'B' for
-    ##         before the simulation.  ‘a’ or 'A' for after the simulation.  ‘e’
-    ##         or 'E' for every time step during the simulation.  ‘@’ or '&' for a
-    ##         single command execution at time `time`.  ‘n’ or 'N' for every n’th
-    ##         iteration of the simulation.  ‘i’ or 'I' for a fixed time interval.
-    ##         The command is executed over the period from on to off with
-    ##         intervals of at least dt (the actual intervals will only end at the
-    ##         times of simulation time steps).  ‘x’ for a fixed time multiplier.
-    ##         The command is executed at on, then on+dt, then on+dt*xt, then
-    ##         on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
-    ##         starting iteration and stopping iteration.
-    ##     kwargs: dict
-    ##         kwargs of :func:`Command.__init__`.
-    ##     """
-    ##     if "step" not in kwargs:
-    ##         kwargs["step"] = self.dt
-    ##     c = _smoldyn.Command(super(), cmd, cmd_type, from_string=False, **kwargs)
-    ##     self.commands.append(c)
-    ##     return c
+            Use capital letter version for integer queue.  ‘b’ or 'B' for
+            before the simulation.  ‘a’ or 'A' for after the simulation.  ‘e’
+            or 'E' for every time step during the simulation.  ‘@’ or '&' for a
+            single command execution at time `time`.  ‘n’ or 'N' for every n’th
+            iteration of the simulation.  ‘i’ or 'I' for a fixed time interval.
+            The command is executed over the period from on to off with
+            intervals of at least dt (the actual intervals will only end at the
+            times of simulation time steps).  ‘x’ for a fixed time multiplier.
+            The command is executed at on, then on+dt, then on+dt*xt, then
+            on+dt*xt2, and so forth.  ‘j’ for every ``dtit`` step with a set
+            starting iteration and stopping iteration.
+        kwargs: dict
+            kwargs of :func:`Command.__init__`.
+        """
+        if "step" not in kwargs:
+            kwargs["step"] = self.dt
+        k = super().addCommand(cmd, cmd_type, **kwargs)
+        assert k == _smoldyn.ErrorCode.ok, k
 
-    ## def addCommandStr(self, cmd: str):
-    ##     """Add command using a single string. See the Smoldyn's User Manual for
-    ##     details.
+    def addCommandStr(self, cmd: str):
+        """Add command using a single string. See the Smoldyn's User Manual for
+        details.
 
-    ##     Parameters
-    ##     ----------
-    ##     cmd : str
-    ##         Command string
-    ##     """
-    ##     c = Command(super(), cmd, cmd_type="", from_string=True)
-    ##     self.commands.append(c)
-    ##     return c
+        Parameters
+        ----------
+        cmd : str
+            Command string
+        """
+        c = super().addCommandStr(cmd)
+        assert k == _smoldyn.ErrorCode.ok, k
 
     # mapping.
     def addSpecies(
