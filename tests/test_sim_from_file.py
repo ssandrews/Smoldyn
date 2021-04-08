@@ -17,8 +17,6 @@ def test_simptr_simobj():
     assert s1.simptr.dt > 0.0
 
     modelfile = sdir / ".." / "examples" / "S99_more" / "Min" / "Min1.txt"
-    #  s2 = S.Simulation(str(modelfile), "")  # type: _smoldyn.Simulation
-    # or, recommended.
     s2 = smoldyn.Simulation.fromFile(modelfile, "")  # type: Simulation
 
     assert s2
