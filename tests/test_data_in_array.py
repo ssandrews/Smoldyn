@@ -24,7 +24,7 @@ def test_data():
     R.addToSolution(400)
     B.addToSolution(1, pos=[50,50,50])
     s.addOutputData('mydata')
-    s.addCommand(cmd="molcount mydata", cmd_type="E")
+    s.addCommand("molcount mydata", "E")
     # s.setGraphics( "opengl" )
     s.run(stop=10, dt=0.01)
     data = s.getOutputData('mydata', 0)

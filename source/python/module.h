@@ -7,9 +7,8 @@
 #include <map>
 using namespace std;
 
-#include "util.h"
-
 #include "pybind11/pybind11.h"
+#include "util.h"
 
 namespace py = pybind11;
 
@@ -22,6 +21,6 @@ extern void gl2glutInit(int* argc, char** argv);
 extern int graphicsreadcolor(char** stringptr, double* rgba);
 
 ErrorCode setDt(double dt);
-double    getDt();
+double getDt();
 
 #endif /* end of include guard: MODULE_H */

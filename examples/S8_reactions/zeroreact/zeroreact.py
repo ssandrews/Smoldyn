@@ -11,5 +11,5 @@ fast = s.addReaction("fast", [], [blue], rate=0.1)
 
 s.setGraphics("opengl")
 s.setOutputFile("zeroreactout.txt")
-s.addCommand("molcount zeroreactout.txt", cmd_type="e")
+s.addCommand("molcount zeroreactout.txt", "e")
 s = s.run(stop=10, dt=0.01, overwrite=True)
