@@ -1618,15 +1618,22 @@ def addMoleculesToSolution(molecule, *args, **kwargs):
 
 
 class Simulation(_smoldyn.Simulation):
-    """Simulation is the top-level class.
+    """Simulation class. A :class:`Simulation` object is an unit of simulation.
+    it is recommended to create a :class:`Simulation` object for every standalone
+    model.
 
     Note
     ----
 
-    Every model starts with a Simulation object which has its unique simstruct.
-    User create Smoldyn objects as she likes but they are only active when they
-    are added to a Simulation object. The purpose behind it to create
-    independent Simulation in one script.
+    Every model starts with a Simulation object which has its unique
+    :class:`simstruct`. Note that a user can create as many arbitrary smoldyn 
+    objects as one likes but these objects become active only when they
+    are added to a :class:`Simulation` object.
+
+    See also
+    --------
+
+    :class:`_smoldyn.Simulation`
 
     """
 
@@ -1640,8 +1647,8 @@ class Simulation(_smoldyn.Simulation):
         log_level: int = 3,
         **kwargs,
     ):
-        """Simulation class is the top-most level. An object of this class is a
-        self-contained model.
+        """Simulation class is a container for a complete model. An object of
+        this class is a stand-alone self-contained model.
 
         Parameters
         ----------
@@ -1694,7 +1701,6 @@ class Simulation(_smoldyn.Simulation):
 
         super().__init__(low, high, boundary_type)
 
-        self.simptr = super().getSimPtr()
         assert self.simptr, "Fatal error: Could not create simstruct"
 
         # set filepath and filename at simptr
@@ -1702,16 +1708,14 @@ class Simulation(_smoldyn.Simulation):
             __top_model_file__.resolve()
             super().setModelpath(str(__top_model_file__))
 
-        self.kwargs = kwargs
-
         assert self.simptr, "Configuration is not initialized"
-        if self.kwargs.get("accuracy", 0.0):
+        if kwargs.get("accuracy", 0.0):
             self.accuracy: float = kwargs["accuracy"]
 
-        self.setOutputFiles(self.kwargs.get("output_files", []))
+        self.setOutputFiles(kwargs.get("output_files", []))
 
         # TODO : Add to documentation.
-        self.quitAtEnd = quit_at_end
+        self.quitatend = quit_at_end
         """Note: One can also set SMOLDYN_NO_PROMPT to achieve the same
         effect."""
 
@@ -1720,6 +1724,7 @@ class Simulation(_smoldyn.Simulation):
 
         if log_level <= 0:
             self.simptr.flag = self.simptr.flag + "q"
+
 
     @classmethod
     def fromFile(cls, path: Union[Path, str], arg: str = ""):
@@ -1736,7 +1741,6 @@ class Simulation(_smoldyn.Simulation):
         obj = cls.__new__(cls)
         path = Path(path).resolve()  # critical.
         super(Simulation, obj).__init__(str(path), arg)
-        obj.simptr = obj.getSimPtr()
         return obj
 
     def setOutputFiles(self, outfiles: List[str], append=True):
@@ -1919,32 +1923,6 @@ class Simulation(_smoldyn.Simulation):
         k = super().setLightParams(index, ambient, diffuse, specular, pos)
         assert k == _smoldyn.ErrorCode.ok
 
-    @property
-    def quitAtEnd(self):
-        return self.simptr.quitatend
-
-    @quitAtEnd.setter
-    def quitAtEnd(self, val: bool):
-        self.simptr.quitatend = val
-
-    @property
-    def accuracy(self):
-        return super().getAccuracy()
-
-    @accuracy.setter
-    def accuracy(self, accuracy: float):
-        super().setAccuracy(accuracy)
-
-    @property
-    def seed(self) -> int:
-        """Get the random seed."""
-        return int(super().getRandomSeed())
-
-    @seed.setter
-    def seed(self, x: int):
-        """Set the random seed"""
-        super().setRandomSeed(int(x))
-
     def run(
         self,
         stop: float,
@@ -1962,9 +1940,9 @@ class Simulation(_smoldyn.Simulation):
         Parameters
         ----------
         stop :
-            stop time (sec)
+            stop time
         dt :
-            dt (sec)
+            dt
         start :
             start (default 0.0)
         accuracy :
@@ -1991,7 +1969,7 @@ class Simulation(_smoldyn.Simulation):
         # add commands after stop, dt and start are finalized.
         super().finalizeCommands()
 
-        self.quitAtEnd = quit_at_end
+        self.quitatend = quit_at_end
 
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"

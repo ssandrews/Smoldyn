@@ -430,9 +430,12 @@ PYBIND11_MODULE(_smoldyn, m)
         .def("connect", &Simulation::connect)
 
         // utility functions.
-        .def("setModelpath", &Simulation::setModelpath)
         .def("getSimPtr", &Simulation::getSimPtr,
-             py::return_value_policy::reference)
+             py::return_value_policy::reference_internal)
+        .def_property_readonly("simptr", &Simulation::getSimPtr,
+                               py::return_value_policy::reference_internal)
+
+        .def("setModelpath", &Simulation::setModelpath)
         .def("getBoundaries", &Simulation::getBoundaries)
 
         // Simulation extra.
@@ -501,6 +504,21 @@ PYBIND11_MODULE(_smoldyn, m)
             "accuracy", [](Simulation &sim) { return sim.getSimPtr()->accur; },
             [](Simulation &sim, double accuracy) {
                 sim.getSimPtr()->accur = accuracy;
+            })
+
+        /* set seed */
+        .def_property(
+            "seed", [](Simulation &sim) { return sim.getSimPtr()->randseed; },
+            [](Simulation &sim, int seed) {
+                smolSetRandomSeed(sim.getSimPtr(), seed);
+            })
+
+        /* quit at end */
+        .def_property(
+            "quitatend",
+            [](const Simulation &sim) { return sim.getSimPtr()->quitatend; },
+            [](const Simulation &sim, bool quitatend) {
+                sim.getSimPtr()->quitatend = quitatend;
             })
 
         // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
