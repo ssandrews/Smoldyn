@@ -32,7 +32,7 @@ Command::Command(const simptr sim, const string &cmd, char cmd_type,
 
 Command::~Command() {}
 
-void Command::finalize()
+void Command::addCommandToSimptr()
 {
     if (__allowed_cmd_type__.find_first_of(cmd_type_) == string::npos)
     {
@@ -72,7 +72,7 @@ void Command::finalize()
     added_ = true;
 }
 
-bool Command::isFinalized() const { return added_; }
+bool Command::isAddedToSimptr() const { return added_; }
 
 ErrorCode Command::addCommand()
 {
