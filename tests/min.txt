@@ -1,4 +1,6 @@
-# File Min1.txt, by Steve Andrews, 11/2009.
+# THIS FILE IS MEANT FOR TESTING. 
+# Modified from the file Min1.txt, by Steve Andrews, 11/2009.
+
 # E. coli Min system, based on Huang, Meir, Wingreen (HMW)
 # This file is HMW system exactly, plus surface diffusion
 # units are micron, second
@@ -27,14 +29,6 @@ define TIME_STOP	500	# stopping time
 #define KICK_START	1	# start with MinD_ATP at an end
 
 random_seed 1
-
-graphics opengl
-graphic_iter 100
-
-#tiff_name movie/MinMovie
-#tiff_iter 200
-#tiff_min 1
-#tiff_max 200
 
 dim 3
 boundaries 0 -L_PARAM L_PARAM
@@ -105,13 +99,6 @@ else
   surface_mol NUMBER_MIND MinD_ATP(front) membrane hemi hemi1
 endif
 compartment_mol NUMBER_MINE MinE cell
-
-
-#output_files MinSave.txt FILEROOTout.txt
-#cmd B pause
-#cmd i 0 TIME_STOP 100 overwrite MinSave.txt
-#cmd i 0 TIME_STOP 100 savesim MinSave.txt
-#cmd i 0 TIME_STOP 2 molmoments MinD_ATP(front) FILEROOTout.txt
 
 end_file
 
