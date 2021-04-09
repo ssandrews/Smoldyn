@@ -257,6 +257,6 @@ void Simulation::addCommandStr(char *cmd)
 void Simulation::finalizeCommands()
 {
     for (auto &c : commands_)
-        if (!c->isFinalized())
-            c->finalize();
+        if (!c->isAddedToSimptr())
+            c->addCommandToSimptr();
 }
