@@ -242,21 +242,28 @@ pair<vector<double>, vector<double>> Simulation::getBoundaries(void)
 void Simulation::addCommand(const string &cmd, char cmd_type,
                             const map<string, double> &kwargs)
 {
-    printf("*** Simulation.cpp Simulation::addCommand A\n");//??
+    printf("*** Simulation.cpp Simulation::addCommand A\n"); //??
     auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, kwargs);
+    c->addCommandToSimptr();
+
+    // Don't call any method on c after this statement. std::move(c) will
+    // invalidate c.
     commands_.push_back(std::move(c));
-    printf("*** Simulation.cpp Simulation::addCommand B\n");//??
+    // printf("*** Simulation.cpp Simulation::addCommand B\n"); //??
 }
 
 void Simulation::addCommandStr(char *cmd)
 {
     auto c = make_unique<Command>(getSimPtr(), cmd);
+    c->addCommandToSimptr();
     commands_.push_back(std::move(c));
 }
 
+#if 0
 void Simulation::finalizeCommands()
 {
     for (auto &c : commands_)
         if (!c->isAddedToSimptr())
             c->addCommandToSimptr();
 }
+#endif

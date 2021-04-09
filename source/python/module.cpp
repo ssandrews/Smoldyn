@@ -663,8 +663,6 @@ PYBIND11_MODULE(_smoldyn, m)
                  return sim.addCommand(cmd, cmd_type, options);
              })
 
-        .def("finalizeCommands", &Simulation::finalizeCommands)
-
         /***************
          *  Molecules  *
          ***************/

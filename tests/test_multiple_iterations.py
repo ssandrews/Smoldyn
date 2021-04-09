@@ -4,35 +4,27 @@ __email__ = "dilawar@subcom.tech"
 from pathlib import Path
 
 import smoldyn
-import smoldyn._smoldyn as S
 
 sdir = Path(__file__).parent
 
-
 def test_multiple_iteration():
-    s1 = smoldyn.Simulation([0, 0], [10, 10])
-    assert s1
-    assert s1.getSimPtr()
-    assert s1.simptr == s1.getSimPtr()
-    assert s1.simptr.dt > 0.0
-
     modelfile = sdir / "min.txt" 
-    s2 = smoldyn.Simulation.fromFile(modelfile, "")  # type: Simulation
+    s = smoldyn.Simulation.fromFile(modelfile)  # type: Simulation
 
-    assert s2
-    assert s2.getSimPtr() and s2.getSimPtr() == s2.simptr
+    assert s
+    assert s.getSimPtr() and s.getSimPtr() == s.simptr
 
-    print(s2.start, s2.stop, s2.dt)
-    assert s2.start == 0.0
-    assert s2.stop == 500
-    assert s2.dt == 0.002
-    s2.addOutputData('moments')
-    s2.addCommand("molmoments MinD_ATP(front) moments", "N", step=2)
+    print(s.start, s.stop, s.dt)
+    assert s.start == 0.0
+    assert s.stop == 500
+    assert s.dt == 0.002
+    s.addOutputData('moments')
+    s.addCommand("molmoments MinD_ATP(front) moments", "N", step=2)
     
     for i in range(10):
         print(f'Running iteration {i}')
-        s2.run(stop=(i+1)*10, dt=1, start=(i*10))
-        data = s2.getOutputData('moments')
+        s.run(stop=(i+1)*10, dt=1, start=(i*10))
+        data = s.getOutputData('moments')
         assert data, f"No data is returned."
         for line in data:
             print(line)
