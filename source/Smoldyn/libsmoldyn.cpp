@@ -702,7 +702,10 @@ extern CSTRING enum ErrorCode smolAddCommand(simptr sim,char type,double on,doub
 	int er;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
+	printf("*** libsmoldyn.cpp: smolAddCommand A\n");//??
 	er=scmdaddcommand(sim->cmds,type,sim->tmin,sim->tmax,sim->dt,on,off,step,multiplier,commandstring);
+	printf("*** libsmoldyn.cpp: smolAddCommand B\n");//??
+	scmdoutput(sim->cmds);//??
 	LCHECK(er!=1,funcname,ECmemory,"out of memory creating command");
 	LCHECK(er!=2,funcname,ECbug,"missing sim->cmds");
 	LCHECK(er!=5,funcname,ECbounds,"step needs to be >0");
