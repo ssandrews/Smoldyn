@@ -397,7 +397,6 @@ enum CMDcode scmdexecute(cmdssptr cmds,double time,double simdt,Q_LONGLONG iter,
 			if(code1==CMDwarn) {
 				if(strlen(cmd->erstr)) SCMDPRINTF(7,"command '%s' error: %s\n",cmd->str,cmd->erstr);
 				else SCMDPRINTF(7,"error with command: '%s'\n",cmd->str); }
-            // This takes care of step time being too small to begin with.
 			dt=(cmd->dt>=simdt)?cmd->dt:simdt;
 			if(cmd->on+dt<=cmd->off && !donow && (code1==CMDok || code1==CMDpause)) {
 				cmd->on+=dt;
