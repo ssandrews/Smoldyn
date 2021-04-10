@@ -108,7 +108,7 @@ compartment_mol NUMBER_MINE MinE cell
 
 
 #output_files MinSave.txt FILEROOTout.txt
-#cmd B pause
+cmd B pause
 #cmd i 0 TIME_STOP 100 overwrite MinSave.txt
 #cmd i 0 TIME_STOP 100 savesim MinSave.txt
 #cmd i 0 TIME_STOP 2 molmoments MinD_ATP(front) FILEROOTout.txt

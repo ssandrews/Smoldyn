@@ -250,7 +250,6 @@ pair<vector<double>, vector<double>> Simulation::getBoundaries(void)
 void Simulation::addCommand(const string &cmd, char cmd_type,
                             const map<string, double> &kwargs)
 {
-    printf("*** Simulation.cpp Simulation::addCommand A\n"); //??
     auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, kwargs);
     c->addCommandToSimptr();
 
