@@ -134,6 +134,14 @@ ErrorCode Simulation::runSim(double stoptime, double dt, bool display,
         return er;
     }
 
+    auto er1 = smolSetTimeStep(sim_, dt);
+    auto er2 = smolSetTimeStop(sim_, stoptime);
+    if (er1 != ErrorCode::ECok || er2 != ErrorCode::ECok)
+    {
+        cerr << __FUNCTION__ << ": Could not update simtimes." << endl;
+        return er;
+    }
+
     er = smolUpdateSim(sim_);
     if (er != ErrorCode::ECok)
     {
@@ -259,11 +267,3 @@ void Simulation::addCommandStr(char *cmd)
     commands_.push_back(std::move(c));
 }
 
-#if 0
-void Simulation::finalizeCommands()
-{
-    for (auto &c : commands_)
-        if (!c->isAddedToSimptr())
-            c->addCommandToSimptr();
-}
-#endif
