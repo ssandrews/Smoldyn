@@ -450,11 +450,16 @@ PYBIND11_MODULE(_smoldyn, m)
 
                  smolGetOutputData(sim.getSimPtr(), dataname, &nrow, &ncol,
                                    &array, erase);
+                 assert(array);
                  std::vector<vector<double>> cppdata(nrow);
-                 for (int i = 0; i < nrow; i++)
-                     cppdata[i] = vector<double>(array + i * ncol,
-                                                 array + (i + 1) * ncol);
-                 free(array);
+                 if (nrow > 0 && ncol > 0)
+                 {
+                     for (int i = 0; i < nrow; i++)
+                         cppdata[i] = vector<double>(array + i * ncol,
+                                                     array + (i + 1) * ncol);
+                 }
+                 if (array)
+                     free(array);
                  return cppdata;
              })
 

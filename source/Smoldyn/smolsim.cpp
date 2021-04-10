@@ -241,9 +241,9 @@ simptr simalloc(const char *fileroot) {
 	sim->accur=10;
 	sim->time=0;
 	sim->tmin=0;
-	sim->tmax=10;
+	sim->tmax=DBL_MAX;
 	sim->tbreak=DBL_MAX;
-	sim->dt=1;
+	sim->dt=0;
 	sim->quitatend=0;
 	for(order=0;order<MAXORDER;order++) sim->rxnss[order]=NULL;
 	sim->ruless=NULL;

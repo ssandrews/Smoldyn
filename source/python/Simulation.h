@@ -84,7 +84,6 @@ class Simulation
     void addCommand(const string &cmd, char cmd_type,
                     const map<string, double> &kwargs);
     void addCommandStr(char *cmd);
-    // void finalizeCommands();
 
   private:
     simptr sim_;

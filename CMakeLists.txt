@@ -40,7 +40,7 @@ endif()
 message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
 
 set(CMAKE_CXX_STANDARD 14)
-
+set(CMAKE_C_STANDARD 14)
 
 ######### Targets to build ###########
 

@@ -99,7 +99,7 @@ def main():
 
     data1 = s1.getOutputData('data1')
     data2 = s2.getOutputData('data2')
-    assert len(data1) == len(data2) == 1001
+    assert len(data1) == len(data2) == 1002, (len(data1), len(data2))
     print(data1)
     print(data2)
 

@@ -1652,10 +1652,6 @@ class Simulation(_smoldyn.Simulation):
 
         Parameters
         ----------
-        stop: float
-            Simulation stop time.
-        step: float
-            Simulation step (dt)
         low:
             Lower bound.
         high:
