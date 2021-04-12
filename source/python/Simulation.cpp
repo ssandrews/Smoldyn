@@ -134,6 +134,14 @@ ErrorCode Simulation::runSim(double stoptime, double dt, bool display,
         return er;
     }
 
+    auto er1 = smolSetTimeStep(sim_, dt);
+    auto er2 = smolSetTimeStop(sim_, stoptime);
+    if (er1 != ErrorCode::ECok || er2 != ErrorCode::ECok)
+    {
+        cerr << __FUNCTION__ << ": Could not update simtimes." << endl;
+        return er;
+    }
+
     er = smolUpdateSim(sim_);
     if (er != ErrorCode::ECok)
     {
@@ -242,21 +250,19 @@ pair<vector<double>, vector<double>> Simulation::getBoundaries(void)
 void Simulation::addCommand(const string &cmd, char cmd_type,
                             const map<string, double> &kwargs)
 {
-    printf("*** Simulation.cpp Simulation::addCommand A\n");//??
     auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, kwargs);
+    c->addCommandToSimptr();
+
+    // Don't call any method on c after this statement. std::move(c) will
+    // invalidate c.
     commands_.push_back(std::move(c));
-    printf("*** Simulation.cpp Simulation::addCommand B\n");//??
+    // printf("*** Simulation.cpp Simulation::addCommand B\n"); //??
 }
 
 void Simulation::addCommandStr(char *cmd)
 {
     auto c = make_unique<Command>(getSimPtr(), cmd);
+    c->addCommandToSimptr();
     commands_.push_back(std::move(c));
 }
 
-void Simulation::finalizeCommands()
-{
-    for (auto &c : commands_)
-        if (!c->isFinalized())
-            c->finalize();
-}

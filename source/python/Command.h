@@ -26,7 +26,8 @@ using namespace std;
  *  \brief Create command.
  *
  */
-class Command {
+class Command
+{
   public:
     Command(const simptr sim, const string &cmd);
 
@@ -35,9 +36,10 @@ class Command {
 
     ~Command();
 
-    void finalize();
-    bool isFinalized() const;
     ErrorCode addCommand();
+
+    void addCommandToSimptr();
+    bool isAddedToSimptr() const;
 
   private:
     const simptr sim_;

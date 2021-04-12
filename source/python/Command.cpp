@@ -16,7 +16,14 @@ Command::Command(const simptr sim, const string &cmd)
 {
     on_ = 0.0;
     off_ = 0.0;
-    step_ = sim->dt;
+
+    // NOTE: Don't use step_ = sim_->dt here because sim_->dt can change after
+    // initializing and adding command. The C API takes care of making sure
+    // that step_ is at least as bit as simulation dt during run time.
+    // If we use step_=sim_->dt here then we have to *make sure* that every
+    // time sim_->dt is changed during the simulation, we update step_ value
+    // and update the simptr->cmds etc.
+    step_ = 0.0;
     multiplier_ = 1;
     added_ = false;
 }
@@ -32,7 +39,7 @@ Command::Command(const simptr sim, const string &cmd, char cmd_type,
 
 Command::~Command() {}
 
-void Command::finalize()
+void Command::addCommandToSimptr()
 {
     if (__allowed_cmd_type__.find_first_of(cmd_type_) == string::npos)
     {
@@ -72,13 +79,15 @@ void Command::finalize()
     added_ = true;
 }
 
-bool Command::isFinalized() const { return added_; }
+bool Command::isAddedToSimptr() const { return added_; }
 
 ErrorCode Command::addCommand()
 {
-    // std::cout << "Adding" << cmd_ << " " << cmd_type_
-    //           << "on, off, step, multiplier" << on_ << off_ << step_
-    //           << multiplier_ << endl;
+#if 0
+    std::cout << "Adding " << cmd_ << " " << cmd_type_ << "on=" << on_
+              << " off=" << off_ << " step=" << step_
+              << " multiplier=" << multiplier_ << endl;
+#endif
     return smolAddCommand(sim_, cmd_type_, on_, off_, step_, multiplier_,
                           cmd_.c_str());
 }

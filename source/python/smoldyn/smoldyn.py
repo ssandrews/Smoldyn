@@ -1626,7 +1626,7 @@ class Simulation(_smoldyn.Simulation):
     ----
 
     Every model starts with a Simulation object which has its unique
-    :class:`simstruct`. Note that a user can create as many arbitrary smoldyn 
+    :class:`simstruct`. Note that a user can create as many arbitrary smoldyn
     objects as one likes but these objects become active only when they
     are added to a :class:`Simulation` object.
 
@@ -1652,10 +1652,6 @@ class Simulation(_smoldyn.Simulation):
 
         Parameters
         ----------
-        stop: float
-            Simulation stop time.
-        step: float
-            Simulation step (dt)
         low:
             Lower bound.
         high:
@@ -1724,7 +1720,6 @@ class Simulation(_smoldyn.Simulation):
 
         if log_level <= 0:
             self.simptr.flag = self.simptr.flag + "q"
-
 
     @classmethod
     def fromFile(cls, path: Union[Path, str], arg: str = ""):
@@ -1962,12 +1957,7 @@ class Simulation(_smoldyn.Simulation):
         if accuracy is not None:
             self.accuracy = float(accuracy)
 
-        # NOTE: This must be called before we add Commands. Commands require
-        # that stop, step and dt values are avaiable to simptr.
         super().setSimTimes(self.start, self.stop, self.dt)
-
-        # add commands after stop, dt and start are finalized.
-        super().finalizeCommands()
 
         self.quitatend = quit_at_end
 
@@ -1982,8 +1972,6 @@ class Simulation(_smoldyn.Simulation):
         self.stop = stop
         if dt is not None:
             self.dt = float(dt)
-
-        self.__finalize_cmds__()
 
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
@@ -2021,7 +2009,6 @@ class Simulation(_smoldyn.Simulation):
             kwargs of :func:`_smoldyn.Command()`.
 
         """
-
         if "step" not in kwargs:
             kwargs["step"] = self.dt
         super().addCommand(cmd, cmd_type[0], **kwargs)

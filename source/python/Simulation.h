@@ -33,12 +33,11 @@ class Simulation
 {
 
   public:
-    Simulation(vector<double>& low,
-               vector<double>& high,
-               vector<string>& boundary_type);
+    Simulation(vector<double> &low, vector<double> &high,
+               vector<string> &boundary_type);
 
     // Factory function.
-    Simulation(const char* filepath, const char* flags);
+    Simulation(const char *filepath, const char *flags);
 
     ~Simulation();
 
@@ -57,19 +56,15 @@ class Simulation
      *
      * @return true.
      */
-    bool setModelpath(const string& modelpath);
+    bool setModelpath(const string &modelpath);
 
     ErrorCode runSim(double stoptime, double dt, bool display, bool overwrite);
 
-    ErrorCode runUntil(const double breaktime,
-                       const double dt,
-                       bool display,
+    ErrorCode runUntil(const double breaktime, const double dt, bool display,
                        bool overwrite);
 
-    bool connect(const py::function& func,
-                 const py::object& target,
-                 const size_t step,
-                 const py::list& args);
+    bool connect(const py::function &func, const py::object &target,
+                 const size_t step, const py::list &args);
 
     // get the pointer
     simptr getSimPtr() const;
@@ -86,9 +81,9 @@ class Simulation
     pair<vector<double>, vector<double>> getBoundaries(void);
 
     // Commands
-    void addCommand(const string& cmd, char cmd_type, const map<string, double>& kwargs);
-    void addCommandStr(char* cmd);
-    void finalizeCommands();
+    void addCommand(const string &cmd, char cmd_type,
+                    const map<string, double> &kwargs);
+    void addCommandStr(char *cmd);
 
   private:
     simptr sim_;

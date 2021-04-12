@@ -2,8 +2,9 @@ import smoldyn
 import smoldyn._smoldyn as S
 import numpy
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-sim=smoldyn.Simulation.fromFile("Min1.txt","")
+sim=smoldyn.Simulation.fromFile(Path(__file__).parent / "Min1.txt","")
 
 #sim=smoldyn.Simulation(low=[-2,-0.5,-0.5],high=[2,0.5,0.5])
 
@@ -29,7 +30,7 @@ sim=smoldyn.Simulation.fromFile("Min1.txt","")
 #membrane.addMolecules((MinD_ATP,'up'),4000)
 
 sim.addOutputData('moments')
-#sim.addCommand(cmd="molmoments MinD_ATP(front) moments", cmd_type="N", step=10)
+sim.addCommand(cmd="molmoments MinD_ATP(front) moments", cmd_type="N", step=10)
 
 value = 0.0015
 sigma = value/20
@@ -41,7 +42,7 @@ for it in range(5):
 	S.Simulation.setReactionRate(sim,"rxn1b",value,0)
 	S.Simulation.setSimTimes(sim,0,10,0.005)		# Stop time should be 100, but use 10 for testing
 	print("*** MinOptimize.py about to add command")
-	sim.addCommand(cmd="molmoments MinD_ATP(front) moments", cmd_type="N", step=10)
+	#sim.addCommand(cmd="molmoments MinD_ATP(front) moments", cmd_type="N", step=10)
 	print("*** MinOptimize.py done with add command")
 	print("=====================================================================")
 	sim.display()
