@@ -443,51 +443,9 @@ endif(OPTION_VTK)
 ####### Option: Build with NextSubvolume ##########
 
 if (OPTION_NSV)
-    #add_subdirectory(source/NextSubVolume)
-    #list(APPEND DEP_LIBS nsv)
+    add_subdirectory(source/NextSubVolume)
+    list(APPEND DEP_LIBS nsv)
     include_directories(source/NextSubVolume)
-    #include_directories(${VTK_INCLUDE_DIRS})
-
-    if (OPTION_MINGW)
-        find_path(SIGNAL_H_DIR signal.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
-        if (SIGNAL_H_DIR)
-            message(STATUS "signal.h found: '${SIGNAL_H_DIR}'")
-        else ()
-            message(FATAL_ERROR "signal.h not found")
-        endif ()
-        include_directories(${SIGNAL_H_DIR})
-    endif ()
-
-
-    set(Boost_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/source/NextSubVolume/boost_include)
-    include_directories(SYSTEM ${Boost_INCLUDE_DIR})
-    message(STATUS "Boost headers found: '${Boost_INCLUDE_DIR}'")
-
-    list(APPEND SRC_FILES
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.cpp
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.cpp
-        )
-    list(APPEND HEADER_FILES
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Vector.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/StructuredGrid.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Species.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/ReactionEquation.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/NextSubvolumeMethod.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Log.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Kairos.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Io.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Geometry.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/Constants.h
-        ${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.h
-        )
-
-    message(STATUS "NSV added to source files")
 
 endif (OPTION_NSV)
 
