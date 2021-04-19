@@ -104,49 +104,8 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
 ######### Core code information ###########
-
-set(HEADER_FILES
-	${CMAKE_SOURCE_DIR}/source/libSteve/Geometry.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/List.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/math2.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/opengl2.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/parse.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/queue.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/random2.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/Rn.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/RnSort.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/rxnparam.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/SimCommand.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/Sphere.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/string2.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/SurfaceParam.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/Zn.h
-	${CMAKE_SOURCE_DIR}/source/libSteve/SFMT/SFMT.h
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.h
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynfuncs.h
-	${CMAKE_SOURCE_DIR}/source/vcell/SimpleMesh.h
-	${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.h
-	${CMAKE_SOURCE_DIR}/source/NextSubVolume/nsvc.h
-	${CMAKE_SOURCE_DIR}/source/vtk/vtkwrapper.h
-	)
-
+add_subdirectory(source/libSteve)
 set(SRC_FILES
-	${CMAKE_SOURCE_DIR}/source/libSteve/Geometry.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/List.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/math2.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/opengl2.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/parse.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/queue.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/random2.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/Rn.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/RnSort.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/rxnparam.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/SimCommand.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/Sphere.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/string2.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/SurfaceParam.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/Zn.c
-	${CMAKE_SOURCE_DIR}/source/libSteve/SFMT/SFMT.c
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
@@ -537,15 +496,20 @@ endif (OPTION_NSV)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
+    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS} Steve)
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
     add_library(smoldyn_shared SHARED ${SRC_FILES} ${HEADER_FILES})
     add_library(smoldyn_static STATIC ${SRC_FILES} ${HEADER_FILES})
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
+
     target_link_libraries(smoldyn_shared ${DEP_LIBS})
-    target_link_libraries(smoldyn_static ${DEP_LIBS})
+    target_link_libraries(smoldyn_shared Steve)
+
+    target_link_libraries(smoldyn_static ${DEP_LIBS} Steve)
+    target_link_libraries(smoldyn_static Steve)
+
     if (APPLE_BUILD)
         set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
     elseif (WINDOWS_BUILD)
