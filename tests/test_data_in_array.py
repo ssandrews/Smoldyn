@@ -31,7 +31,7 @@ def test_data():
     s.run(stop=10, dt=0.01)
     print(s.stop, s.dt)
     data = s.getOutputData("mydata", 0)
-    assert len(data) == 1002, len(data)
+    assert len(data) == 1001, len(data)
     assert len(data[0]) == 3, len(data[0])
     assert data[0] == [0.0, 400.0, 1.0], data[0]
     assert is_close(data[-1], [10.0, 142.0, 1.0]), data[-1]

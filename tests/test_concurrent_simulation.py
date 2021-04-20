@@ -99,9 +99,11 @@ def main():
 
     data1 = s1.getOutputData('data1')
     data2 = s2.getOutputData('data2')
-    assert len(data1) == len(data2) == 1002, (len(data1), len(data2))
-    print(data1)
-    print(data2)
+    assert len(data1) == len(data2) == 1001, (len(data1), len(data2))
+    for l1 in data1:
+        print(l1)
+    for l2 in data2:
+        print(l2)
 
 
 if __name__ == "__main__":
