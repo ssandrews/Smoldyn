@@ -537,7 +537,8 @@ int simsettime(simptr sim,double time,int code) {
 			sim->dt=time;
 			molsetcondition(sim->mols,SCparams,0);
 			rxnsetcondition(sim,-1,SCparams,0);
-			surfsetcondition(sim->srfss,SCparams,0); }
+			surfsetcondition(sim->srfss,SCparams,0);
+			scmdsetcondition(sim->cmds,1,0); }
 		else er=2; }
 	else if(code==4) sim->tbreak=time;
 	else er=1;
@@ -1344,25 +1345,14 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"cmd")) {								// cmd
 		CHECKS((simsettime(sim,0,-1)&14)==14,"need to set simulation times before calling cmd");
-		er=scmdstr2cmd(sim->cmds,line2,sim->tmin,sim->tmax,sim->dt,varnames,varvalues,nvar);
+		er=scmdstr2cmd(sim->cmds,line2,varnames,varvalues,nvar);
 		CHECKS(er!=1,"out of memory in cmd");
 		CHECKS(er!=2,"BUG: no command superstructure for cmd");
 		CHECKS(er!=3,"cmd format: type [on off dt] string");
-		CHECKS(er!=4,"command string is missing");
-		CHECKS(er!=5,"cmd time step needs to be >0");
-		CHECKS(er!=6,"command timing type character not recognized");
-		CHECKS(er!=7,"insertion of command in queue failed");
-		CHECKS(er!=8,"cmd time multiplier needs to be >1"); }
+		CHECKS(er!=6,"command timing type character not recognized"); }
 
 	else if(!strcmp(word,"max_cmd")) {						// max_cmd
-		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
-		CHECKS(itct==1,"max_cmd needs to be an integer");
-		CHECKS(i1>=0,"max_cmd needs to be >=0");
-		er=scmdqalloc(sim->cmds,i1);
-		CHECKS(er!=1,"insufficient memory");
-		CHECKS(er!=2,"SMOLDYN BUG: scmdqalloc");
-		CHECKS(er!=3,"max_cmd can only be called once");
-		CHECKS(!strnword(line2,2),"unexpected text following max_cmd"); }
+		CHECKS(0,"max_cmd is an obsolete statement. It simply needs to be removed."); }
 
 	// surfaces
 
@@ -2259,6 +2249,10 @@ int simupdate(simptr sim) {
 	er=reassignmolecs(sim,0,0);
 	CHECK(!er);
 
+	if(sim->cmds && sim->cmds->condition!=3) {
+		er=scmdupdatecommands(sim->cmds,sim->tmin,sim->tmax,sim->dt);
+		CHECK(!er); }
+
 	simsetcondition(sim,SCok,1);
 	recurs=0;
 
@@ -2493,6 +2487,7 @@ void endsimulate(simptr sim,int er) {
 	tflag=strchr(sim->flags,'t')?1:0;
 	scmdpop(sim->cmds,sim->tmax);
 	scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
+	scmdsetcondition(sim->cmds,0,0);
 
 	simLog(sim,2,"\n");
 	if(er==1) simLog(sim,2,"Simulation complete\n");

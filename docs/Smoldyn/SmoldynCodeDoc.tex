@@ -6640,6 +6640,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Dilawar moved some functionality from smoldyn.py to module.cpp, in order to support loading simulations from files using Python.
 \item Fixed sevreral bugs that arose when displaying diagnostics with partially set up structures.
 \item Dilawar added a changelog.md file to the package.
+\item Changed SimCommand.c and .h, so that commands are now added to a list of templates rather than directly to the command queues. Also added a condition element to the superstructure, telling whether commands have been added to the queues or not.
 
 \end{itemize}
 

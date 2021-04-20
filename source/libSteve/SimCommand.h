@@ -18,6 +18,8 @@ enum CMDcode {CMDok,CMDwarn,CMDpause,CMDstop,CMDabort,CMDnone,CMDcontrol,CMDobse
 
 typedef struct cmdstruct {
 	struct cmdsuperstruct *cmds;	// owning command superstructure
+	struct cmdstruct *twin;				// pointer to same command elsewhere
+	char timing;					// timing character (e.g. B, A, i, @, x)
 	double on;						// first command run time
 	double off;						// last command run time
 	double dt;						// time interval between commands
@@ -35,6 +37,10 @@ typedef struct cmdstruct {
 	} *cmdptr;
 
 typedef struct cmdsuperstruct {
+	int condition;				// 0=new, 1=update time, 2=new command, 3=ready
+	int maxcmdlist;				// allocated size of command list
+	int ncmdlist;					// actual size of command list
+	cmdptr *cmdlist;			// list of all added commands
 	queue cmd;						// queue of normal run-time commands
 	queue cmdi;						// queue of integer time commands
 	enum CMDcode (*cmdfn)(void*,cmdptr,char*);	// function that runs commands
@@ -58,15 +64,12 @@ typedef struct cmdsuperstruct {
 	} *cmdssptr;
 
 // non-file functions
-char *scmdcode2string(enum CMDcode code,char *string);
-cmdptr scmdalloc(void);
-void scmdfree(cmdptr cmd);
 cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *cmdfnarg,const char *root);
 void scmdssfree(cmdssptr cmds);
-int scmdqalloc(cmdssptr cmds,int n);
-int scmdqalloci(cmdssptr cmds,int n);
-int scmdaddcommand(cmdssptr cmds,char ch,double tmin,double tmax,double dt,double on,double off,double step,double multiplier,const char *commandstring);
-int scmdstr2cmd(cmdssptr cmds,char *line2,double tmin,double tmax,double dt,char **varnames,double *varvalues,int nvar);
+void scmdsetcondition(cmdssptr cmds,int cond,int upgrade);
+int scmdaddcommand(cmdssptr cmds,char timing,double on,double off,double step,double multiplier,const char *commandstring);
+int scmdstr2cmd(cmdssptr cmds,char *line2,char **varnames,double *varvalues,int nvar);
+int scmdupdatecommands(cmdssptr cmds,double tmin,double tmax,double dt);
 void scmdpop(cmdssptr cmds,double t);
 enum CMDcode scmdexecute(cmdssptr cmds,double time,double simdt,Q_LONGLONG iter,int donow);
 enum CMDcode scmdcmdtype(cmdssptr cmds,cmdptr cmd);
@@ -75,6 +78,7 @@ void scmdoutput(cmdssptr cmds);
 void scmdwritecommands(cmdssptr cmds,FILE *fptr,char *filename);
 void scmdsetflag(cmdssptr cmds,double flag);
 double scmdreadflag(cmdssptr cmds);
+void scmdsetcondition(cmdssptr cmds,int condition);
 void scmdsetprecision(cmdssptr cmds,int precision);
 int scmdsetoutputformat(cmdssptr cmds,char *format);
 
