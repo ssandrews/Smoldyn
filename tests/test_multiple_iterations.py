@@ -25,8 +25,9 @@ def test_multiple_iteration():
         print(f"\n\n=============================\nRunning iteration {i}")
         s.run(stop=(i + 1) * 10, dt=1, start=(i * 10))
         data = s.getOutputData("moments")
-        print(data)
-        assert data, "No data is returned."
+        for l in data:
+            print(l)
+        assert data, "No data returned."
         assert len(data) == 6, len(data)  # 6 first iteration, 5 afterwards.
 
 
