@@ -703,13 +703,10 @@ extern CSTRING enum ErrorCode smolAddCommand(simptr sim,char type,double on,doub
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	printf("*** libsmoldyn.cpp: smolAddCommand A\n");//??
-	er=scmdaddcommand(sim->cmds,type,sim->tmin,sim->tmax,sim->dt,on,off,step,multiplier,commandstring);
+	er=scmdaddcommand(sim->cmds,type,on,off,step,multiplier,commandstring);
 	LCHECK(er!=1,funcname,ECmemory,"out of memory creating command");
 	LCHECK(er!=2,funcname,ECbug,"missing sim->cmds");
-	LCHECK(er!=5,funcname,ECbounds,"step needs to be >0");
-	LCHECK(er!=6,funcname,ECsyntax,"command type is not recognized");
-	LCHECK(er!=7,funcname,ECmemory,"out of memory adding command to queue");
-	LCHECK(er!=8,funcname,ECbounds,"multiplier needs to be >1");
+	LCHECK(er!=3,funcname,ECsyntax,"missing command string");
 	return ECok;
  failure:
 	return Liberrorcode; }
@@ -722,14 +719,11 @@ extern CSTRING enum ErrorCode smolAddCommandFromString(simptr sim,char *string) 
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	LCHECK(string,funcname,ECmissing,"missing string");
-	er=scmdstr2cmd(sim->cmds,string,sim->tmin,sim->tmax,sim->dt,NULL,NULL,0);
+	er=scmdstr2cmd(sim->cmds,string,NULL,NULL,0);
 	LCHECK(er!=1,funcname,ECmemory,"out of memory in cmd");
 	LCHECK(er!=2,funcname,ECbug,"BUG: no command superstructure for cmd");
 	LCHECK(er!=3,funcname,ECsyntax,"cmd format: type [on off dt] string");
-	LCHECK(er!=4,funcname,ECmissing,"command string is missing");
 	LCHECK(er!=5,funcname,ECbounds,"cmd time step needs to be >0");
-	LCHECK(er!=6,funcname,ECsyntax,"command timing type character not recognized");
-	LCHECK(er!=7,funcname,ECerror,"insertion of command in queue failed");
 	LCHECK(er!=8,funcname,ECbounds,"cmd time multiplier needs to be >1");
 	return ECok;
  failure:
