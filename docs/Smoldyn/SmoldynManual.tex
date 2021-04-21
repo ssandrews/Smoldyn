@@ -4117,6 +4117,7 @@ Reads the Smoldyn configuration file that is at \ttt{filepath} and has file name
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolLoadSimFromFile(char *filepath, char *filename, simptr *simpointer, char *flags)}\\
 Python: \ttt{ErrorCode loadSimFromFile(str filename, str flags)}\\
+Python: \ttt{smoldyn.Simulation.fromFile(str filename,str flags)}\\
 Loads part or all of a sim structure from the file that is at \ttt{filepath} and has file name \ttt{filename}. Send in \ttt{simpointer} as a pointer to sim, where sim may be an existing simulation structure that this function will append or \ttt{NULL} if it is to be created by this function. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, call \ttt{smolUpdateSim} to calculate simulation parameters.
 
 \item[ReadConfigString]

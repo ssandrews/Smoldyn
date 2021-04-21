@@ -564,12 +564,16 @@ void scmdoutput(cmdssptr cmds) {
 			timing=cmd->timing;
 			SCMDPRINTF(2,"  %c",timing);
 			if(strchr("baBAEe",timing));
-			else if(strchr("@&",timing))
+			else if(strchr("@",timing))
 				SCMDPRINTF(2," time: %g",cmd->on);
+			else if(strchr("&",timing))
+				SCMDPRINTF(2," iteration: %i",cmd->oni);
 			else if(strchr("Nn",timing))
-				SCMDPRINTF(2," every: %g",cmd->dt);
-			else if(strchr("iIj",timing))
+				SCMDPRINTF(2," every: %i",cmd->dti);
+			else if(strchr("i",timing))
 				SCMDPRINTF(2," from: %g to: %g step: %g",cmd->on,cmd->off,cmd->dt);
+			else if(strchr("Ij",timing))
+				SCMDPRINTF(2," from: %i to: %i step: %i",cmd->oni,cmd->offi,cmd->dti);
 			else if(strchr("x",timing))
 				SCMDPRINTF(2," from: %g to: %g step: %g mult: %g",cmd->on,cmd->off,cmd->dt,cmd->xt);
 			SCMDPRINTF(2," '%s' (%s)\n",cmd->str,scmdcode2string(scmdcmdtype(cmds,cmd),string)); }}

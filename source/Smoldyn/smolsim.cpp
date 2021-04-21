@@ -2485,9 +2485,6 @@ void endsimulate(simptr sim,int er) {
 	gl2State(2);
 	//qflag=strchr(sim->flags,'q')?1:0;
 	tflag=strchr(sim->flags,'t')?1:0;
-	scmdpop(sim->cmds,sim->tmax);
-	scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
-	scmdsetcondition(sim->cmds,0,0);
 
 	simLog(sim,2,"\n");
 	if(er==1) simLog(sim,2,"Simulation complete\n");
@@ -2545,5 +2542,8 @@ int smolsimulate(simptr sim) {
 	er=simdocommands(sim);
 	if(!er)
 		while((er=simulatetimestep(sim))==0);
+	scmdpop(sim->cmds,sim->tmax);
+	scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
+	scmdsetcondition(sim->cmds,0,0);
 	sim->elapsedtime+=difftime(time(NULL),sim->clockstt);
 	return er; }
