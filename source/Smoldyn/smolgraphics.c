@@ -14,6 +14,7 @@
 #include "opengl2.h"
 #include "Rn.h"
 #include "string2.h"
+#include "../libSteve/SimCommand.h"
 
 #ifdef OPTION_NSV
   #include "nsvc.h"
