@@ -953,7 +953,8 @@ int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...) {
 	va_list arguments;
 	int code;
 
-	if(!fptr) return 0;
+	if(!fptr)
+		fptr=stdout;		// This may not be portable across all compilers
 	strncpy(newformat,format,STRCHAR-1);
 	newformat[STRCHAR-1]='\0';
 	if(!cmds) {

@@ -412,8 +412,8 @@ void simsystemoutput(simptr sim) {
 	scmdoutput(sim->cmds);
 	boxssoutput(sim);
 	if(vflag)
-		boxoutput(sim->boxs,0,sim->boxs->nbox,sim->dim);
-//		boxoutput(sim->boxs,0,20,sim->dim);
+//		boxoutput(sim->boxs,0,sim->boxs->nbox,sim->dim);
+		boxoutput(sim->boxs,0,10,sim->dim);
 	for(order=0;order<MAXORDER;order++)
 		rxnoutput(sim,order);
 	ruleoutput(sim);
@@ -1344,7 +1344,6 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,3),"unexpected text following output_file_number"); }
 
 	else if(!strcmp(word,"cmd")) {								// cmd
-		CHECKS((simsettime(sim,0,-1)&14)==14,"need to set simulation times before calling cmd");
 		er=scmdstr2cmd(sim->cmds,line2,varnames,varvalues,nvar);
 		CHECKS(er!=1,"out of memory in cmd");
 		CHECKS(er!=2,"BUG: no command superstructure for cmd");
