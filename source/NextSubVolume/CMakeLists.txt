@@ -37,10 +37,13 @@ if(VTK_VERSION VERSION_GREATER_EQUAL "8.0.0")
     message(FATAL_ERROR "Only vtk version 7.x is supported")
 endif()
 
-include(${VTK_USE_FILE})
+if(OPTION_VTK)
+    include(${VTK_USE_FILE})
+endif()
+
 add_library(nsv STATIC ${NSV_SRC_FILES})
 set_target_properties(nsv PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(nsv PRIVATE ${VTK_LIBRARIES})
-
-#vtk_module_autoinit(TARGETS nsv MODULES ${VTK_LIBRARIES})
+if(OPTION_VTK) 
+    target_link_libraries(nsv PRIVATE ${VTK_LIBRARIES})
+endif()
