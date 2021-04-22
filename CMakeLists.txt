@@ -9,17 +9,12 @@ cmake_minimum_required(VERSION 3.12)   # due to better Python support
 
 project(smoldyn LANGUAGES CXX C)
 
-if(POLICY CMP0042)
-    cmake_policy(SET CMP0042 NEW)
-endif()
-
 # CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
     find_package(Git QUIET)
     if(GIT_FOUND)
         # Is the current commit tagged? If yes, this command will return the
-        # tag else it returns empty. If a valid tag is found, then use it for a
-        # release.
+        # tag else it returns empty. When a tag is found, it is a release.
         execute_process(COMMAND ${GIT_EXECUTABLE} tag --points-at HEAD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE SMOLDYN_TAG	
@@ -105,6 +100,8 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 ######### Core code information ###########
 add_subdirectory(source/libSteve)
+list(APPEND DEP_LIBS Steve)
+
 set(SRC_FILES
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
@@ -446,7 +443,6 @@ if (OPTION_NSV)
     add_subdirectory(source/NextSubVolume)
     list(APPEND DEP_LIBS nsv)
     include_directories(source/NextSubVolume)
-
 endif (OPTION_NSV)
 
 
@@ -454,7 +450,7 @@ endif (OPTION_NSV)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS} Steve)
+    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
@@ -463,10 +459,10 @@ if (OPTION_TARGET_LIBSMOLDYN)
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     target_link_libraries(smoldyn_shared ${DEP_LIBS})
-    target_link_libraries(smoldyn_shared Steve)
+    target_link_libraries(smoldyn_shared)
 
-    target_link_libraries(smoldyn_static ${DEP_LIBS} Steve)
-    target_link_libraries(smoldyn_static Steve)
+    target_link_libraries(smoldyn_static ${DEP_LIBS})
+    target_link_libraries(smoldyn_static)
 
     if (APPLE_BUILD)
         set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")

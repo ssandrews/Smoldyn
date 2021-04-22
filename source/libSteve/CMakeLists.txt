@@ -20,7 +20,9 @@ add_library(Steve STATIC ${SRC_FILES})
 
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX)
 
-target_include_directories(Steve PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Smoldyn
-                                         ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Steve PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../Smoldyn
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(Steve PROPERTIES POSITION_INDEPENDENT_CODE ON)
