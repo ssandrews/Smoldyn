@@ -1,4 +1,4 @@
-name: Linux Build
+name: Ubuntu
 
 on: [push]
 
@@ -20,6 +20,7 @@ jobs:
       run: |
         sudo apt -y update
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
+        sudo apt -y install libvtk7-dev vtk7
         sudo apt -y install xvfb
     - name: configure
       run: | 
@@ -28,7 +29,10 @@ jobs:
         $PYTHON -c "import sys; print(sys.version)"
         $PYTHON -m pip install pytest matplotlib numpy wheel
         mkdir build && cd build 
-        cmake -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DPython3_EXECUTABLE=$PYTHON ..
+        cmake -DOPTION_PYTHON=ON \
+            -DOPTION_EXAMPLES=ON \
+            -DOPTION_VTK=ON \
+            -DPython3_EXECUTABLE=$PYTHON ..
     - name: make
       run: |
           cd build && make -j2 && make wheel && sudo make install

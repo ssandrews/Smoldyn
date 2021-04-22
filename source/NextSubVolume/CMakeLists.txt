@@ -28,13 +28,19 @@ set(NSV_SRC_FILES
 if(OPTION_VTK)
     add_definitions(-DHAVE_VTK)
     find_package(VTK REQUIRED)
+    message(STATUS "-- VTK_VERSION: ${VTK_VERSION}")
     include_directories(${CMAKE_SOURCE_DIR}/source/vtk)
     list(APPEND NSV_SRC_FILES ${CMAKE_SOURCE_DIR}/source/vtk/vtkwrapper.cpp)
 endif(OPTION_VTK)
 
+if(VTK_VERSION VERSION_GREATER_EQUAL "8.0.0")
+    message(FATAL_ERROR "Only vtk version 7.x is supported")
+endif()
 
+include(${VTK_USE_FILE})
 add_library(nsv STATIC ${NSV_SRC_FILES})
 set_target_properties(nsv PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(nsv PRIVATE ${VTK_LIBRARIES})
-vtk_module_autoinit(TARGETS nsv MODULES ${VTK_LIBRARIES})
+
+#vtk_module_autoinit(TARGETS nsv MODULES ${VTK_LIBRARIES})

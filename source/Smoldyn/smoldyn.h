@@ -32,7 +32,7 @@ using namespace std;
 
 
 #ifdef OPTION_VTK
-  #include "vtkwrapper.h"
+  #include "../source/vtk/vtkwrapper.h"
 #endif
 
 #ifdef OPTION_VCELL
