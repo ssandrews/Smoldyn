@@ -49,12 +49,12 @@ class Command
 
     char cmd_type_;
     map<string, double> options_;
+    bool from_string_;
 
     double on_;
     double off_;
     double step_;
     size_t multiplier_;
-    bool from_string_;
     bool added_;
 };
 
