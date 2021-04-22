@@ -9,6 +9,8 @@ cmake_minimum_required(VERSION 3.12)   # due to better Python support
 
 project(smoldyn LANGUAGES CXX C)
 
+set(CMAKE_MOUDLE_PATHS "${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MOUDLE_PATHS}")
+
 # CI/CD can also set this variable. If not, use the default one.
 if(NOT SMOLDYN_VERSION)
     find_package(Git QUIET)
@@ -71,10 +73,6 @@ if (OPTION_VCELL)
     set(HAVE_ICONV FALSE)
 endif ()
 
-if (OPTION_STATIC)
-#    set(OPTION_USE_ZLIB ON)
-endif ()
-
 if (OPTION_PYTHON)
     if(NOT OPTION_TARGET_LIBSMOLDYN)
         set(OPTION_TARGET_LIBSMOLDYN ON)
@@ -99,9 +97,23 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
 ######### Core code information ###########
+
+# 
+# Target libSteve
+#
 add_subdirectory(source/libSteve)
 list(APPEND DEP_LIBS Steve)
 
+#
+# Source files for main target smoldyn and libsmodyn. Also these sources are
+# recompiled for python module _smoldyn.*.so with a slightly different set of
+# flags. Hence, a list. This list is used in source/python/CMakeLists.txt file
+# as well.
+#
+# TODO: May be a good idea to create libSmoldyn and link it statically to the
+# python module and smoldyn binary. This way we don't have to compile it
+# twice.
+#
 set(SRC_FILES
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
 	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
@@ -125,14 +137,13 @@ include_directories(source/libSteve source/Smoldyn ${CMAKE_BINARY_DIR})
 
 if(OPTION_VCELL)
     list(APPEND SRC_FILES
-        source/Smoldyn/smoldynhybrid.c
-        source/vcell/SimpleMesh.cpp
-        source/vcell/SimpleValueProvider.cpp )
+        ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynhybrid.c
+        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleMesh.cpp
+        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.cpp )
     include_directories(source/vcell)
 endif(OPTION_VCELL)
 
 if(OPTION_TARGET_LIBSMOLDYN)
-    list(APPEND HEADER_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.h)
     list(APPEND SRC_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.cpp)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
@@ -286,10 +297,6 @@ if (OPTION_USE_OPENGL)
         find_file(HAVE_GL_GLUT_H GL/glut.h PATHS ${MINGWDIR}/include)
         find_path(GLUT_INCLUDE_DIR glut.h PATHS ${MINGWDIR}/include/GL)
         find_library(GLUT_LIBRARIES libfreeglut_static.a PATHS ${MINGWDIR}/lib)
-#   elseif(OPTION_STATIC)
-#       find_file(HAVE_GL_FREEGLUT_H GL/freeglut.h)
-#       find_path(GLUT_INCLUDE_DIR GL/freeglut.h)
-#       find_library(GLUT_LIBRARIES libglut.a)
     elseif (WINDOWS_BUILD)
         add_compile_definitions(FREEGLUT_STATIC)
         find_path(GLUT_INCLUDE_DIR GL/glut.h source/MSVClibs NO_DEFAULT_PATH)
@@ -417,26 +424,6 @@ if(OPTION_USE_ICONV)
 endif(OPTION_USE_ICONV)
 
 
-####### Option: Build with VTK ##########
-
-if(OPTION_VTK)
-    add_definitions(-DHAVE_VTK)
-    find_package(VTK REQUIRED)
-    if(VTK_FOUND)
-        message(STATUS "Found VTK: '${VTK_INCLUDE_DIRS}'")
-    else()
-        message(FATAL_ERROR "VTK not found")
-    endif()
-
-    include_directories(source/vtk ${VTK_INCLUDE_DIRS})
-
-    list(APPEND SRC_FILES source/vtk/vtkwrapper.cpp)
-    list(APPEND HEADER_FILES source/vtk/vtkwrapper.h)
-    list(APPEND DEP_LIBS ${VTK_LIBRARIES})
-
-endif(OPTION_VTK)
-
-
 ####### Option: Build with NextSubvolume ##########
 
 if (OPTION_NSV)
@@ -449,13 +436,13 @@ endif (OPTION_NSV)
 ####### Targets ##########
 
 if (OPTION_TARGET_SMOLDYN)
-    add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} ${HEADER_FILES})
+    add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES})
     target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
-    add_library(smoldyn_shared SHARED ${SRC_FILES} ${HEADER_FILES})
-    add_library(smoldyn_static STATIC ${SRC_FILES} ${HEADER_FILES})
+    add_library(smoldyn_shared SHARED ${SRC_FILES})
+    add_library(smoldyn_static STATIC ${SRC_FILES})
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     target_link_libraries(smoldyn_shared ${DEP_LIBS})
@@ -471,6 +458,7 @@ if (OPTION_TARGET_LIBSMOLDYN)
         set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
     endif ()
 endif ()
+
 
 
 ########## Python module #########
