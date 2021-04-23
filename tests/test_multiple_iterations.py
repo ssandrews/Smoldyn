@@ -29,8 +29,8 @@ def test_multiple_iteration():
         for l in data:
             print(l)
         assert data, "No data returned."
-        assert len(data) == 6, len(data)  # 6 first iteration, 5 afterwards.
-        # assert not np.ma.allequal(data[1], data[-1]), (data[1], data[-1])
+        assert len(data) == 6, len(data)  
+        assert not np.ma.allequal(data[1], data[-1]), (data[1], data[-1])
 
 
 if __name__ == "__main__":

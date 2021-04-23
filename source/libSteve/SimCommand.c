@@ -35,7 +35,7 @@ int scmdcmdlistalloc(cmdssptr cmds,int newspaces);
 int scmdqalloc(cmdssptr cmds,int n);
 int scmdqalloci(cmdssptr cmds,int n);
 
-void scmddocommandtiming(cmdptr cmd,double tmin,double tmax,double dt);
+void scmddocommandtiming(cmdptr cmd,double tmin,double tmax,double dt,int iter);
 
 
 /* ***** Utility functions ***** */
@@ -351,7 +351,7 @@ int scmdstr2cmd(cmdssptr cmds,char *line2,char **varnames,double *varvalues,int 
 
 
 /* scmddocommandtiming */
-void scmddocommandtiming(cmdptr cmd,double tmin,double tmax,double dt) {
+void scmddocommandtiming(cmdptr cmd,double tmin,double tmax,double dt,int iter) {
 	char timing;
 
 	timing=cmd->timing;
@@ -370,21 +370,21 @@ void scmddocommandtiming(cmdptr cmd,double tmin,double tmax,double dt) {
 		if(cmd->on<tmin) cmd->on=tmin;
 		if(cmd->off>tmax) cmd->off=tmax; }
 	else if(timing=='B') {
-		cmd->oni=cmd->offi=-1;
+		cmd->oni=cmd->offi=iter-1;
 		cmd->dti=1; }
 	else if(timing=='A') {
-		cmd->oni=cmd->offi=(Q_LONGLONG)((tmax-tmin)/dt+0.5)+1;
+		cmd->oni=cmd->offi=iter+(Q_LONGLONG)((tmax-tmin)/dt+0.5)+1;
 		cmd->dti=1; }
 	else if(timing=='&');
 	else if(strchr("Ij",timing)) {
-		if(cmd->oni<0) cmd->oni=1; }
+		if(cmd->oni<0) cmd->oni=iter+1; }
 	else if(strchr("Ee",timing)) {
-		cmd->oni=0;
-		cmd->offi=(Q_LONGLONG)((tmax-tmin)/dt+0.5);
+		cmd->oni=iter;
+		cmd->offi=iter+(Q_LONGLONG)((tmax-tmin)/dt+0.5);
 		cmd->dti=1; }
 	else if(strchr("Nn",timing)) {
-		cmd->oni=0;
-		cmd->offi=(Q_LONGLONG)((tmax-tmin)/dt+0.5); }
+		cmd->oni=iter;
+		cmd->offi=iter+(Q_LONGLONG)((tmax-tmin)/dt+0.5); }
 
 	return; }
 
@@ -420,7 +420,7 @@ int scmdupdatecommands(cmdssptr cmds,double tmin,double tmax,double dt) {
 			cmd=scmdalloc();
 			if(!cmd) return 1;
 			scmdcopycommand(cmdtemplate,cmd);
-			scmddocommandtiming(cmd,tmin,tmax,dt);
+			scmddocommandtiming(cmd,tmin,tmax,dt,cmds->iter);
 			timing=cmd->timing;
 			if(strchr("ba@ix",timing)) {
 				if(!cmds->cmd)
@@ -440,7 +440,7 @@ int scmdupdatecommands(cmdssptr cmds,double tmin,double tmax,double dt) {
 		else if(cmds->condition==1) {
 			cmd=cmdtemplate->twin;
 			if(cmd)
-				scmddocommandtiming(cmd,tmin,tmax,dt); }}
+				scmddocommandtiming(cmd,tmin,tmax,dt,cmds->iter); }}
 
 	scmdsetcondition(cmds,3,1);
 	return 0; }

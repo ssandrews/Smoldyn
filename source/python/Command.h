@@ -46,6 +46,7 @@ class Command
   private:
     const simptr sim_;
     const string cmd_;
+    bool from_string_;
 
     char cmd_type_;
     map<string, double> options_;
