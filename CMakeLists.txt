@@ -61,8 +61,14 @@ option(OPTION_USE_LIBTIFF "Build with LibTiff support" ON)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
-option(OPTION_STRICT_BUILD "Treat most warnings as error and enable ASAN" OFF)
 option(OPTION_DOCS "Generate documentation" OFF)
+
+
+#
+# Developer options.
+#
+option(OPTION_STRICT_BUILD "Treat most warnings as error." OFF)
+option(OPTION_ASAN "Enable Address Sanitizer" OFF)
 
 if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
@@ -154,15 +160,19 @@ if (NOT CMAKE_BUILD_TYPE)
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
 endif ()
 
+if(OPTION_ASAN)
+    # Address sanitizer
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+endif()
+
 if(OPTION_STRICT_BUILD)
-    add_definitions(-Wall -Werror)
+    add_definitions(-Wall -Werror -Wextra)
     # add_definitions(-Wno-format-truncation)
     # See https://stackoverflow.com/a/14132910/1805129
     add_definitions(-Wno-uninitialized)
-    # Address sanitizer
-    set(CMAKE_BUILD_TYPE Debug)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-    set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+    add_definitions(-Wno-unused-parameter)
+    add_definitions(-Wno-unused-but-set-parameter)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
