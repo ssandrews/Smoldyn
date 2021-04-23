@@ -28,7 +28,7 @@ def test_multiple_iteration():
         for l in data:
             print(l)
         assert data, "No data returned."
-        assert len(data) == 6, len(data)  # 6 first iteration, 5 afterwards.
+        assert len(data) == 6, len(data)  
 
 
 if __name__ == "__main__":
