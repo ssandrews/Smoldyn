@@ -58,7 +58,6 @@ option(OPTION_VTK "Compile Smoldyn with VTK functionality" OFF)
 option(OPTION_STATIC "Compile Smoldyn with static libraries" OFF)
 option(OPTION_USE_OPENGL "Build with OpenGL support" ON)
 option(OPTION_USE_LIBTIFF "Build with LibTiff support" ON)
-option(OPTION_USE_ICONV "Build with Libiconv support" OFF)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
@@ -69,8 +68,6 @@ if (OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
     set(OPTION_USE_ZLIB OFF)
     set(HAVE_ZLIB TRUE)
-    set(OPTION_USE_ICONV OFF)
-    set(HAVE_ICONV FALSE)
 endif ()
 
 if (OPTION_PYTHON)
@@ -97,12 +94,6 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
 ######### Core code information ###########
-
-# 
-# Target libSteve
-#
-add_subdirectory(source/libSteve)
-list(APPEND DEP_LIBS Steve)
 
 #
 # Source files for main target smoldyn and libsmodyn. Also these sources are
@@ -397,33 +388,6 @@ if(OPTION_USE_ZLIB)
 endif(OPTION_USE_ZLIB)
 
 
-####### Option: Build with iconv ##########
-
-if(OPTION_USE_ICONV)
-    if(OPTION_MINGW)
-        find_path(ICONV_INCLUDE_DIRS iconv.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
-        find_library(ICONV_LIBRARIES libiconv.a PATHS ${MINGWDIR}/lib NO_DEFAULT_PATH)
-    elseif(OPTION_STATIC)
-        find_path(ICONV_INCLUDE_DIRS iconv.h)
-        find_library(ICONV_LIBRARIES libiconv.a)
-    else()
-        find_path(ICONV_INCLUDE_DIRS iconv.h)
-        find_library(ICONV_LIBRARIES NAMES iconv)
-    endif()
-
-    if(ICONV_INCLUDE_DIRS AND ICONV_LIBRARIES)
-        set(HAVE_ICONV TRUE)
-        message(STATUS "Found Libiconv: '${ICONV_INCLUDE_DIRS}', '${ICONV_LIBRARIES}'")
-    else()
-        set(HAVE_ICONV FALSE)
-        message(FATAL_ERROR "Libiconv not found")
-    endif()
-
-    include_directories(${ICONV_INCLUDE_DIRS})
-    list(APPEND DEP_LIBS ${ICONV_LIBRARIES})
-endif(OPTION_USE_ICONV)
-
-
 ####### Option: Build with NextSubvolume ##########
 
 if (OPTION_NSV)
@@ -434,6 +398,9 @@ endif (OPTION_NSV)
 
 
 ####### Targets ##########
+ 
+add_subdirectory(source/libSteve)
+list(APPEND DEP_LIBS Steve)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES})
