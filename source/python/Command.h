@@ -50,7 +50,6 @@ class Command
 
     char cmd_type_;
     map<string, double> options_;
-    bool from_string_;
 
     double on_;
     double off_;
