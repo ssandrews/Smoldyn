@@ -106,7 +106,7 @@ int init_and_run(const string &filepath, const string &flags, bool wflag,
     {
         fflush(stdout);
         fflush(stderr);
-        if (!pSim->graphss || pSim->graphss->graphics == 0)
+        if (!pSim->graphss || pSim->graphss->graphics == 0 || strchr(pSim->flags,'t'))
         {
             er = smolsimulate(pSim);
             endsimulate(pSim, er);

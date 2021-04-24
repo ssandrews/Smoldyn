@@ -22,13 +22,13 @@ define L_PARAM2		1.5	# half of cell length minus radius
 define NUMBER_MIND	4000	# number of MinD in cell
 define NUMBER_MINE	1400	# number of MinE in cell
 
-define TIME_STOP	1	# stopping time
+define TIME_STOP	100	# stopping time
 
 #define KICK_START	1	# start with MinD_ATP at an end
 
 
-#graphics opengl
-#graphic_iter 100
+graphics opengl
+graphic_iter 100
 
 dim 3
 boundaries 0 -L_PARAM L_PARAM

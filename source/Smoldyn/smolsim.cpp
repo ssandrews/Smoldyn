@@ -2079,6 +2079,7 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 	strncpy(sim->filepath,fileroot,STRCHAR);
 	strncpy(sim->filename,filename,STRCHAR);
 	strncpy(sim->flags,flags,STRCHAR);
+	strcpy(SimFlags,flags);
 	done=0;
 	pfp=Parse_Start(fileroot,filename,errstring);
 	CHECKS(pfp,"%s",errstring);
