@@ -239,7 +239,7 @@ pair<vector<double>, vector<double>> Simulation::getBoundaries(void)
 {
     vector<double> low;
     vector<double> high;
-    for (size_t d = 0; d < sim_->dim; d++)
+    for (size_t d = 0; d < (size_t) sim_->dim; d++)
     {
         low.push_back(sim_->wlist[2 * d]->pos);
         high.push_back(sim_->wlist[2 * d + 1]->pos);
