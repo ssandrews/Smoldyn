@@ -5,6 +5,7 @@ all : ubuntu
 
 ubuntu : Dockerfile.ubuntu
 	cd .. && docker build -t smoldyn/ubuntu:latest . -f .ci/$<
+	docker run -it smoldyn/ubuntu:latest 
 
 ubuntu_test : ubuntu
 	cd .. && docker run -it smoldyn/ubuntu:latest bash

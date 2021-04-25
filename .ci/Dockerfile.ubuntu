@@ -3,7 +3,7 @@ MAINTAINER dilawars@subcom.tech
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update -y && apt install -y cmake vim-nox neovim g++ vtk7 libvtk7-dev 
 RUN apt update -y && apt install -y freeglut3-dev
-ADD . /app
+COPY . /app
 WORKDIR /app
 RUN ls /app -ltrh
 CMD cd /app && mkdir -p __build && cd __build && cmake .. && make -j2
