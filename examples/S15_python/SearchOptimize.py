@@ -33,7 +33,8 @@ best = 1000
 oldvalue = value
 for it in range(10):
 	value += sigma * (numpy.random.randint(2)-0.5)
-	S.Simulation.setSurfaceRate(s, "membrane" ,"protein", "soln", "bsoln", "back", value, "protein", False)
+        # also see smoldyn.Simulation.setRate function.
+	S.Simulation.setSurfaceRate(s, "membrane" ,"protein", S.MolecState.soln,S.MolecState.bsoln, S.MolecState.back, value, "protein", False)
 	s.run(stop=100,dt=0.01)
 	data=s.getOutputData("output",0)
 	test=data[0][0]
