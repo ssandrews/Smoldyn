@@ -41,7 +41,7 @@ message(STATUS "Smoldyn version is set to: '${SMOLDYN_VERSION}'")
 # NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
 # nice to use them. Most compilers support C++17 these days.
 #
-set(CMAKE_CXX_STANDARD 14 REQUIRED)
+set(CMAKE_CXX_STANDARD 14)
 
 
 ######### Targets to build ###########
