@@ -6,4 +6,4 @@ RUN apt update -y && apt install -y freeglut3-dev
 ADD . /app
 WORKDIR /app
 RUN ls /app -ltrh
-RUN cd /app && mkdir -p __build && cd __build && cmake .. && make -j2
+CMD cd /app && mkdir -p __build && cd __build && cmake .. && make -j2
