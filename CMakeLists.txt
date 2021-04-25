@@ -2,16 +2,18 @@
 # Written by Steve Andrews, April 16, 2012. Updated by Steve Andrews since then.
 # This file, and other files of the Smoldyn project, are licensed with LGPL license.
 # The primary Smoldyn web site is http://www.smoldyn.org.
-# Please report bugs and problems to support@smoldyn.org. 
+# Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.12)   # due to better Python support 
+cmake_minimum_required(VERSION 3.12)   # due to better Python support
 
 project(smoldyn LANGUAGES CXX C)
 
-set(CMAKE_MOUDLE_PATHS "${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MOUDLE_PATHS}")
+# Custom scripts to find some modules such as VTK.
+list(APPEND CMAKE_MODULE_PATHS ${CMAKE_SOURCE_DIR}/cmake)
 
-# CI/CD can also set this variable. If not, use the default one.
+# CI/CD can also set version string. If not, set using git tags or current
+# date.
 if(NOT SMOLDYN_VERSION)
     find_package(Git QUIET)
     if(GIT_FOUND)
@@ -19,24 +21,27 @@ if(NOT SMOLDYN_VERSION)
         # tag else it returns empty. When a tag is found, it is a release.
         execute_process(COMMAND ${GIT_EXECUTABLE} tag --points-at HEAD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE SMOLDYN_TAG	
+            OUTPUT_VARIABLE SMOLDYN_TAG
             OUTPUT_STRIP_TRAILING_WHITESPACE)
         if(SMOLDYN_TAG)
             # drop v from the tag to get the version info.
             string(SUBSTRING ${SMOLDYN_TAG} 1 -1 SMOLDYN_VERSION)
             message(STATUS " -- Found a release tag ${SMOLDYN_TAG}")
         else()
-            # nightly release / upcoming release preview. 
-            # NOTE: Change is appropriately after a release. Can't find a good
-            # way to automate this process.
+            # nightly release.
             string(TIMESTAMP STAMP "%Y%m%d")
             set(SMOLDYN_VERSION "2.65.dev${STAMP}")
         endif()
     endif()
 endif()
-message(STATUS "Smoldyn version set to: '${SMOLDYN_VERSION}'")
+message(STATUS "Smoldyn version is set to: '${SMOLDYN_VERSION}'")
 
-set(CMAKE_CXX_STANDARD 14)
+#
+# Must use a C++14 compatible compiler (gcc>=5.x).
+# NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
+# nice to use them. Most compilers support C++17 these days.
+#
+set(CMAKE_CXX_STANDARD 14 REQUIRED)
 
 
 ######### Targets to build ###########
@@ -65,7 +70,8 @@ option(OPTION_DOCS "Generate documentation" OFF)
 
 
 #
-# Developer options.
+# Developer options. Enables Address Sanitizer to detects memory leak etc. Most
+# memory leaks are in GL interface.
 #
 option(OPTION_STRICT_BUILD "Treat most warnings as error." OFF)
 option(OPTION_ASAN "Enable Address Sanitizer" OFF)
@@ -408,7 +414,7 @@ endif (OPTION_NSV)
 
 
 ####### Targets ##########
- 
+
 add_subdirectory(source/libSteve)
 list(APPEND DEP_LIBS Steve)
 
@@ -487,4 +493,3 @@ enable_testing()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
     add_subdirectory(examples)
 endif ()
-
