@@ -4283,7 +4283,7 @@ Adds \ttt{number} solution state molecules of species \ttt{species} to the compa
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolAddSurfaceMolecules(simptr sim, int speciesindex, enum MolecState state, int number, int surface, enum PanelShape panelshape, int panel, double *position)}\\
 Python: \ttt{ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)}\\
-Python: $surface$.\ttt{addMolecules((species, state), number)}\\
+Python: $surface$.\ttt{addMolecules((species, state), N=$number$, pos=$position$)}\\
 Adds \ttt{number} molecules of species \ttt{species} and state \ttt{state} to surface(s) in the system. It is permissible for \ttt{surface} to be ``all", \ttt{panelshape} to be PSall, and/or \ttt{panel} to be ``all". If you want molecules at a specific position, then you need to enter a specific surface, panel shape, and panel, and then enter the position in \ttt{position}.
 
 \item[GetMoleculeCount]

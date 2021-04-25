@@ -20,7 +20,7 @@
 	#include "SimpleMesh.h"
 #endif
 
-#define LCHECK(A,B,C,D) if(!(A)) {smolSetError(B,C,D);if(C<ECwarning) goto failure;} else (void)0
+#define LCHECK(A,B,C,D) if(!(A)) {smolSetError(B,C,D,sim?sim->flags:"");if(C<ECwarning) goto failure;} else (void)0
 #define LCHECKNT(A,B,C,D) if(!(A)) {smolSetErrorNT(B,C,D);if(C<ECwarning) goto failure;} else (void)0
 
 #ifdef __cplusplus
@@ -66,7 +66,7 @@ extern CSTRING void smolSetThrowing(int corethreshold,int libthreshold) {
 
 
 /* smolSetError */
-extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring) {
+extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring,const char *flags) {
 	char string[STRCHAR];
 //	int severity;
 
@@ -84,8 +84,9 @@ extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorc
 //??	if(LibThrowThreshold<severity) throw;	//?? This is disabled for now because I can't link libsmoldyn statically if not
 
 	if(Libdebugmode && Liberrorfunction[0]!='\0') {
-		if(Liberrorcode==ECnotify)
-			fprintf(stderr,"Libsmoldyn notification from %s: %s\n",Liberrorfunction,Liberrorstring);
+		if(Liberrorcode==ECnotify) {
+			if(!strchr(flags,'q'))
+				fprintf(stderr,"Libsmoldyn notification from %s: %s\n",Liberrorfunction,Liberrorstring); }
 		else if(Liberrorcode==ECwarning)
 			fprintf(stderr,"Libsmoldyn warning in %s: %s\n",Liberrorfunction,Liberrorstring);
 		else
@@ -225,11 +226,12 @@ extern CSTRING enum ErrorCode smolRunTimeStep(simptr sim) {
 extern CSTRING enum ErrorCode smolRunSim(simptr sim) {
 	const char *funcname="smolRunSim";
 	int er;
+
 	LCHECK(sim,funcname,ECmissing,"missing sim");
+	er=smolOpenOutputFiles(sim, true);
+	LCHECK(!er,funcname,ECerror,"Cannot open output files for writing");
 
-        er = smolOpenOutputFiles(sim, true);
-
-	if(sim->graphss && sim->graphss->graphics>0)
+	if(sim->graphss && sim->graphss->graphics>0 && !strchr(sim->flags,'t'))
 		smolsimulategl(sim);
 	else {
 		er=smolsimulate(sim);
@@ -256,20 +258,13 @@ extern CSTRING enum ErrorCode smolRunSim(simptr sim) {
 extern CSTRING enum ErrorCode smolRunSimUntil(simptr sim,double breaktime) {
 	const char *funcname="smolRunSimUntil";
 	int er;
+	double stoptime;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
+	stoptime=sim->tmax;
 	simsettime(sim,breaktime,4);
-	er=smolsimulate(sim);
-
-	LCHECK(er!=1,funcname,ECnotify,"Simulation complete");
-	LCHECK(er!=2,funcname,ECerror,"Simulation terminated during molecule assignment\n  Out of memory");
-	LCHECK(er!=3,funcname,ECerror,"Simulation terminated during order 0 reaction\n  Not enough molecules allocated");
-	LCHECK(er!=4,funcname,ECerror,"Simulation terminated during order 1 reaction\n  Not enough molecules allocated");
-	LCHECK(er!=5,funcname,ECerror,"Simulation terminated during order 2 reaction\n  Not enough molecules allocated");
-	LCHECK(er!=6,funcname,ECerror,"Simulation terminated during molecule sorting\n  Out of memory");
-	LCHECK(er!=7,funcname,ECnotify,"Simulation stopped by a runtime command");
-	LCHECK(er!=8,funcname,ECerror,"Simulation terminated during simulation state updating\n  Out of memory");
-	LCHECK(er!=9,funcname,ECerror,"Simulation terminated during diffusion\n  Out of memory");
+	er=smolRunSim(sim);
+	simsettime(sim,stoptime,4);
 	return Libwarncode;
  failure:
 	return Liberrorcode; }
@@ -327,6 +322,7 @@ extern CSTRING enum ErrorCode smolLoadSimFromFile(const char *filepath,const cha
 	char emptystring[STRCHAR];
 	simptr sim;
 	
+	sim=NULL;
 	LCHECK(filename,funcname,ECmissing,"missing filename");
 	LCHECK(simpointer,funcname,ECmissing,"missing simpointer");
 

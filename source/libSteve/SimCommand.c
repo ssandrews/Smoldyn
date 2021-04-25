@@ -914,12 +914,14 @@ int scmdgetfptr(cmdssptr cmds,char *line2,int outstyle,FILE **fptrptr,int *datai
 
 	if(fptrptr) *fptrptr=NULL;
 	if(dataidptr) *dataidptr=-1;
-	if(outstyle==0 || !line2) return 0;
+	if(outstyle==0) return 0;
 
 	fid=did=-1;
-	itct=sscanf(line2,"%s",name);
-	if(itct!=1) return 0;
-	if(fptrptr && !strcmp(name,"stdout")) *fptrptr=stdout;
+	itct=0;
+	if(line2)
+		itct=sscanf(line2,"%s",name);
+	if(itct!=1) *fptrptr=stdout;
+	else if(fptrptr && !strcmp(name,"stdout")) *fptrptr=stdout;
 	else if(fptrptr && !strcmp(name,"stderr")) *fptrptr=stderr;
 	else {
 		if(fptrptr) fid=stringfind(cmds->fname,cmds->nfile,name);
@@ -953,8 +955,7 @@ int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...) {
 	va_list arguments;
 	int code;
 
-	if(!fptr)
-		fptr=stdout;		// This may not be portable across all compilers
+	if(!fptr) return 0;
 	strncpy(newformat,format,STRCHAR-1);
 	newformat[STRCHAR-1]='\0';
 	if(!cmds) {

@@ -47,7 +47,7 @@ double         smolGetVersion(void);
 
 void           smolSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*,...));
 void           smolSetThrowing(int corethreshold,int libthreshold);
-void           smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring);
+void           smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring,const char *flags);
 void           smolSetErrorNT(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring);
 enum ErrorCode smolGetError(char *errorfunction,char *errorstring,int clearerror);
 void           smolClearError(void);
