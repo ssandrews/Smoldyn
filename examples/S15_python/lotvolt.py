@@ -13,7 +13,7 @@ r3 = s.addReaction("r3", subs=[fox], prds=[], rate=10)
 rabbit.addToSolution(1000)
 fox.addToSolution(1000)
 
-s.setTiff("OpenGl")
+#s.setTiff("OpenGl")
 s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
 
 s.setOutputFile("lotvoltout.txt")

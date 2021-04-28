@@ -467,9 +467,9 @@ You can use \ttt{define} statements to instruct Smoldyn to perform simple text s
 
 \ttt{define} statements can also be used for conditional configuration file reading. In this case, a definition is made as usual, although there is no need to specify any substitution text. Later in the file, the \ttt{ifdefine}, \ttt{else}, and \ttt{endif} statements lead to reading of different portions of file, depending on whether the definition was made or not. A variant of the ifdefine statement is the \ttt{ifundefine} statement. These conditional statements should work as expected if they are used in a normal sort of manner (see any programming book for basic conditional syntax), which includes support for nested \ttt{if} statements. They can also be used successfully with highly abnormal syntaxes (for example, an \ttt{else} toggles reading on or off, regardless of the presence of any preceding \ttt{ifdefine} or \ttt{ifundefine}), although this use is discouraged since it will lead to confusing configuration files, as well as files that may not be compatible with future Smoldyn releases.
 
-Text substitution can also be directed from the command line. If you include the command line option \ttt{--define}, followed by text of the form $key = replacement$ (do not include spaces, although if you want spaces within the replacement text, then enclose it in double quotes), this is equivalent to declaring text substitution using the define\_global statement within a configuration file. For example, to the file cmdlinedefine.txt includes the macro key \ttt{RDIFC} but does not define it. To run this file, define the macro key on the command line like
+Text substitution can also be directed from the command line. If you include the command line option \ttt{--define}, followed by text of the form $key = replacement$ (do not include spaces, although if you want spaces within the replacement text, then enclose it in double quotes), this is equivalent to declaring text substitution using the define\_global statement within a configuration file. For example, to the file cmdlinedefine.txt includes the macro key \ttt{RDIFC} but does not define it. To run this file, define the macro key on the command line like\\
 
-$$\ttt{smoldyn examples/S2\_config/cmdlinedefine.txt --define RDIFC=5}$$
+\ttt{smoldyn examples/S2\_config/cmdlinedefine.txt --define RDIFC=5}\\
 
 This feature simplifies running multiple simulations through a shell script. Essentially any number of definitions can be made this way. If the same key text is defined both on the command line and in the configuration file, the former takes priority.
 
@@ -2074,6 +2074,8 @@ Statement & Description\\
 
 Libsmoldyn is a C, C++, and Python interface to the Smoldyn simulator. It complements the stand-alone Smoldyn program in that it is a little more difficult to use, but it provides much more flexibility. Libsmoldyn provides: (1) an application programming interface (API) that will be relatively stable, even as Smoldyn is updated and improved, (2) function names that are relatively sensible and that shouldn't collide with other function names in other software, and (3) reasonably thorough error checking in every function which helps ensure that the user is using the function in a sensible way and in a way that won't crash Smoldyn. Libsmoldyn was originally written as a C API, but should work with C++ as well. It also offers Python bindings, which are still quite new but generally work well and are more convenient for most applications.
 
+The remainder of this chapter describes some aspects of these interfaces in detail, but doesn't give a comprehensive list of the functionality. For that, refer to Chapter \ref{ch:APIReference}, in the Reference section.
+
 \section{Installing}
 
 The best method is to download the latest package from \url{http://www.smoldyn.org} and run the install script. This will install the stand-alone program, the C/C++ libraries, and the BioNetGen code, and will also give you the documentation and example files. If you have pip installed, then it will also install the Python bindings.
@@ -2098,11 +2100,11 @@ The Python interface has a few limitations that users should be aware of. We are
 
 \item{Rule-based modeling}. Rule-based modeling support, including both BioNetGen and Smoldyn wildcards, has not been added to Libsmoldyn yet, including its Python API.
 
-\textbf{Hybrid simulation}. Smoldyn has built-in support for multiscale simulation in which part of the model volume is simulated with particle-based methods and part with spatial Gillespie methods. These parts are typically adjacent to each other but can also overlap. This functionality has not been added to Libsmoldyn yet, including its Python API.
+\item{Hybrid simulation}. Smoldyn has built-in support for multiscale simulation in which part of the model volume is simulated with particle-based methods and part with spatial Gillespie methods. These parts are typically adjacent to each other but can also overlap. This functionality has not been added to Libsmoldyn yet, including its Python API.
 
 \item{Python quits after simulation if graphics are used}. A benefit of running Smoldyn through the Python interface is that the simulation and data analysis code can be included in the same Python file. Unfortunately, the OpenGL glut library that Smoldyn uses to display its graphical output does not return control to Smoldyn after the user quits the graphics but returns to the operating system, making it impossible to continue with further Python code. The only good solution for now is to display graphics while developing a simulation, and then re-run simulations with graphics turned off when collecting quantitative data. Note that the random number seed can be set to the same value in each case so that the simulation will be exactly the same.
 
-\textbf{TIFF output doesn't work on some computers.} For some reason, Smoldyn cannot output TIFF files when run through the Python interface, at least on some computers. The Smoldyn code itself runs just fine, but it calls the \ttt{TIFFOpen} function in the libtiff library, which somehow refuses to open a new TIFF file. Alternative options for exporting graphics are: (1) rewrite the model without the Python interface, (2) save the current model and state using the savesim command, and then run that using the stand-alone Smoldyn software (i.e. the Smoldyn application, without the Python interface), (3) pause the simulation and capture the graphics using a screen grab, (4) use the VTK graphical output option. Yet another option is to convince a Smoldyn developer to add png export support for Smoldyn, such as with the ``Tiny PNG Output'' project, which looks fairly easy but hasn't been done yet.
+\item{TIFF output doesn't work on some computers.} For some reason, Smoldyn cannot output TIFF files when run through the Python interface, at least on some computers. The Smoldyn code itself runs just fine, but it calls the \ttt{TIFFOpen} function in the libtiff library, which somehow refuses to open a new TIFF file. Alternative options for exporting graphics are: (1) rewrite the model without the Python interface, (2) save the current model and state using the savesim command, and then run that using the stand-alone Smoldyn software (i.e. the Smoldyn application, without the Python interface), (3) pause the simulation and capture the graphics using a screen grab, (4) use the VTK graphical output option. Yet another option is to convince a Smoldyn developer to add png export support for Smoldyn, such as with the ``Tiny PNG Output'' project, which looks fairly easy but hasn't been done yet.
 
 \end{itemize}
 
@@ -2119,9 +2121,9 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 5   one, units used, the file version, distribution terms, etc.
 6   
 7   Enzymatic reactions on a surface, by Steve Andrews, October 2009. Modified by
-8   Dilawar Singh, 2020. This model is in the public domain. Units are microns and seconds.
-9   The model was published in Andrews (2012) Methods for Molecular Biology, 804:519.
-10  It executes a Michaelis-Menten reaction within and on the surface of a 2D circle.
+8   Dilawar Singh, 2020. Model is public domain. Units are microns and seconds.
+9   It was published in Andrews (2012) Methods for Molecular Biology, 804:519.
+10  It executes a Michaelis-Menten reaction within and on a 2D circle.
 11  """
 12   
 13  __author__ = "Dilawar Singh"
@@ -2157,12 +2159,12 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 43  inside = s.addCompartment(name="inside", surface=membrane, point=[0, 0])
 44  
 45  # Chemical reactions. Here, E + S <-> ES -> P
-46  r1 = s.addBidirectionalReaction(
-47      "r1", subs=[(E,"front"), (S,"bsoln")], prds=[(ES,"front")], kf=K_FWD, kb=K_BACK)
+46  r1 = s.addBidirectionalReaction("r1", subs=[(E,"front"), (S,"bsoln")], 
+47       prds=[(ES,"front")], kf=K_FWD, kb=K_BACK)
 48  r1.reverse.productPlacement("pgemmax", 0.2)
 49  
-50  r2 = s.addReaction(
-51      "r2", subs=[(ES, "front")], prds=[(E, "front"), (P, "bsoln")], rate=K_PROD)
+50  r2 = s.addReaction("r2", subs=[(ES, "front")], prds=[(E, "front"),
+51       (P, "bsoln")], rate=K_PROD)
 52  
 53  # Place molecules for initial condition
 54  inside.addMolecules(S, 500)
@@ -2209,10 +2211,10 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 
 \end{description}
 
-% User and low-level APIs
-\section{User and low-level APIs}
+% User and low-level Python APIs
+\section{User and low-level Python APIs}
 
-Smoldyn's Python API is divided into two portions. The user API, imported with \ttt{import smoldyn}, is what most people will use most of the time and is the one that's demonstrated above in the example simulation. The low-level API, imported with \ttt{import smoldyn.\_smoldyn}, is more of a wrapper for the C API, with much less Pythonic syntax and user friendliness.
+Smoldyn's Python API is divided into two portions. The user API, imported with \ttt{import smoldyn}, is what most people will use most of the time and is the one that's demonstrated above in the example simulation. The low-level API, imported with \ttt{import smoldyn.\_smoldyn}, is more of a wrapper for the C API, with less Pythonic syntax and user friendliness.
 
 One difference between the APIs is that the low-level API tends to group the simulation into a simulation pointer, whereas the user API tends to group the simulation into a simulation object, of which the pointer is one of its components. These are shown below,
 
@@ -2228,24 +2230,28 @@ One difference between the APIs is that the low-level API tends to group the sim
 
 There are several way to read in a simulation from a file. The best approach is:
 \begin{lstlisting}[style=SSAPython]
->>> s2 = smoldyn.Simulation.fromFile("Min1.txt", "")
+>>> s2 = smoldyn.Simulation.fromFile("/path/to/Min1.txt", "")
 <smoldyn.smoldyn.Simulation object at 0x1010019a0>
 \end{lstlisting}
+Note the \ttt{/path/to/} part of the file path. In Python, the current working directory starts as the directory that you launch Python from, so you can leave off this path portion of the directory if the simulation file is in the same directory that you started in. However, as soon as this line runs, the working directory shifts over to the location of the Smoldyn Python code, which means that it won't run a second time. Thus, for the second round, you need to use the complete file path. You can get the current working directory with \ttt{import os; os.getcwd()}. You can also supposedly get the directory for a specific file, here called Min1.txt, with \ttt{import pathlib; pathlib.Path("Min1.txt").resolve()}. However, I've found that this often returns an incorrect path.
 
-Alternate, but less good, approaches are:
+Alternate approaches for loading a file are:
 \begin{lstlisting}[style=SSAPython]
 >>> s3 = S.Simulation("Min1.txt", "")
 >>> s3
 <smoldyn._smoldyn.Simulation object at 0x10925ee70>
->>> sptr =S.prepareSimFromFile("Min1.txt","")
->>> s4 = smoldyn.Simulation.fromSimptr(sptr) # supposed to work but function doesn't exist
+>>> sptr =S.prepareSimFromFile("/path/to/Min1.txt","")
+>>> sptr
+<smoldyn._smoldyn.simstruct object at 0x10f832970>
 \end{lstlisting}
-Note (4/5/21): the \ttt{smoldyn.Simulation.fromSimptr()} function doesn't appear to exist. Also, a problem is that only one file can be loaded in because attempting to load in more than one file, regardless of the method used, leads to an error message.
+%>>> s4 = smoldyn.Simulation.fromSimptr(sptr) # function doesn't exist
+This last approach isn't actually very helpful because it returns a simstruct object rather than a simulation object, and there's no way to convert from the former to the latter.
+
 
 % Callback functions
 \section{Callback functions}
 
-The Python API offers a callback function that enables Smoldyn setup functions to be called repeatedly and automatically.
+The Python API offers a callback function that enables Smoldyn setup functions to be called repeatedly and automatically during a simulation. For example, this could be used to tell the simulation about external environmental parameters that change over the course of a simulation.
 
 For example, suppose we have the following function, ``computeVm'', which generates a noisy value using the current time, ``t'', and a list of arguments, ``args''. Also, we have a molecular species, ``ca''. The output of the ``computeVm'' function can be connected to the ``ca.difc'' parameter, which is called every 10th step in this case.
 
@@ -2261,7 +2267,7 @@ ca = sim.addSpecies('ca', difc=1, color='blue', display_size=1)
 sim.connect(func = computeVm, target = 'ca.difc', step=10, args=[1,2.1])
 \end{lstlisting}
 
-Both source and target in the connect function must be global variables. In the example below, a global variable is made before it is used it in connect because otherwise there would be a runtime error.
+Both source and target in the \ttt{connect} function must be global variables. In the example below, a global variable is made before it is used in \ttt{connect} because otherwise there would be a runtime error.
 
 \begin{lstlisting}[style=SSAPython]
 import smoldyn
@@ -3896,16 +3902,16 @@ This is similar to \ttt{translatecmpt}, except that this translates the compartm
 
 % Chapter: C/C++ and Python APIs
 \chapter{C/C++ and Python APIs}
+\label{ch:APIReference}
 
-The C and C++ APIs are the same. There are two Python APIs. Import the ``high-level'' or ``user'' API with \ttt{import smoldyn}. Import the ``low-level'' or ``developer'' API with \ttt{import smoldyn.\_smoldyn}.
-
-\textit{This documentation section is correct for the C/C++ API but has many errors for the Python API. For that, use this as a guide, but also look at example files and use help(), dir(), etc. as needed.}
+The C and C++ APIs are the same. There are two Python APIs. Import the ``high-level'' or ``user'' API with \ttt{import smoldyn}. Import the ``low-level'' or ``developer'' API with \ttt{import smoldyn.\_smoldyn}. This documentation section is comprehensive for the C/C++ API but not for the Python API. For that, use this as a guide, but also look at example files, use help(), dir(), etc. as needed, and try the readthedocs webpage.
 
 % Enumerations
 \section{Enumerations}
 
-In C, enumerations are already defined, so they can be used as is. Here is an example of using an enumerated error code as an argument, 
+In C, enumerations are defined in the smoldyn.h header file, so they can be used once that it included. Here is an example of using an enumerated error code as an argument, 
 \begin{lstlisting}[style=SSAC]
+#include <libsmoldyn.h>
 smolErrorCodeToString(ECwarning, mystring)
 \end{lstlisting}
 
@@ -4003,8 +4009,8 @@ N/A & ECwildcard & wildcard & value -12
 \item[GetVersion]
 \hfill \\
 C/C++: \ttt{double smolGetVersion(void)}\\
-LL Python: \ttt{float getVersion()}\\
-Returns the Smoldyn version number.
+Python: \ttt{smoldyn.version()}; \ttt{smoldyn.\_\_version\_\_}; \ttt{S.getVersion()}\\
+Returns the Smoldyn version. The C/C++ and low-level Python options just return the base version number, while the other versions return a more complete version string.
 
 \end{description}
 
@@ -4037,14 +4043,14 @@ Clears any error condition.
 \item[SetDebugMode]
 \hfill \\
 C/C++: \ttt{void smolSetDebugMode(int debugmode)}\\
-LL Python: \ttt{setDebugMode(int debugmode)}\\
+Python: \ttt{S.setDebugMode(int debugmode)}\\
 Enter \ttt{debugmode} as 1 to enable debugging and 0 to disable debugging. When debug mode is turned on, all errors are displayed to stderr, as are all cleared errors. By turning on debug mode, you can often avoid checking for errors with additional code and you also typically don't need to call \ttt{smolGetError}.
 
 \item[ErrorCodeToString]
 \hfill \\
 C/C++: \ttt{char* smolErrorCodeToString(enum ErrorCode erc, char *string)}\\
-LL Python: \ttt{str errorCodeToString(enum ErrorCode erc)}\\
-Returns a string both directly and in \ttt{string} that corresponds to the error code in \ttt{erc}. For example, if \ttt{erc} is \ttt{ECmemory}, this returns the string ``memory". The Python version doesn't have a \ttt{string} input or output parameter.
+Python: $string$\ttt{ = S.errorCodeToString(S.ErrorCode erc)}\\
+Returns a string both directly and in \ttt{string} that corresponds to the error code in \ttt{erc}. For example, if \ttt{erc} is \ttt{ECmemory}, this returns the string ``memory". The Python version doesn't have a \ttt{string} input or output parameter, but simply returns the string.
 
 \end{description}
 
@@ -4055,37 +4061,35 @@ Returns a string both directly and in \ttt{string} that corresponds to the error
 
 \item[NewSim, Simulation]
 \hfill \\
-Python: $sim$ = \ttt{smoldyn.Simulation(low = $List[float]$,high = $List[float]$)}\\
 C/C++: \ttt{simptr smolNewSim(int dim, double *lowbounds, double *highbounds)}\\
-Creates and returns a new sim structure for C and a new Simulation object for Python. The structure is initialized for a \ttt{dim} dimensional system that has boundaries defined by the points \ttt{lowbounds} and \ttt{highbounds}. Boundaries are transmitting (modify them with \ttt{smolSetBoundaryType}). Returns \ttt{NULL} upon failure.
+Python: $sim$ = \ttt{smoldyn.Simulation(low = $List[float]$, high = $List[float]$, boundary\_type = $string$, quit\_at\_end = $bool$, log\_level = $int$)}\\
+Creates and returns a new sim structure for C and a new Simulation object for Python. The structure is initialized for a \ttt{dim} dimensional system that has boundaries defined by the points \ttt{lowbounds} and \ttt{highbounds}. Boundaries are transmitting for the C version (modify them with \ttt{smolSetBoundaryType}). Returns \ttt{NULL} upon failure. For the Python version, the dimensionality is inferred from the vector sizes. The default boundary is reflecting (use \ttt{"r"} for reflecting, \ttt{"p"} for periodic, \ttt{"t"} for transmitting, or \ttt{"a"} for absorbing; you can also have different boundary conditions for different sides). Enter \ttt{quit\_at\_end} as either true or false. Also, \ttt{log\_level} describes what level of importance output should be sent to the display, where 1 is verbose, 2 is standard, 3 is warnings and above, 4 is warnings and above, and 5 is critical information only.
 
 \item[UpdateSim]
 \hfill \\
 Python: N/A\\
 C/C++: \ttt{enum ErrorCode smolUpdateSim(simptr sim)}\\
-Updates the simulation structure. This calculates all simulation parameters from physical parameters, sorts lists, and generally does everything required to make a simulation ready to run. It may be called multiple times.\\
+Updates the simulation structure. This calculates all simulation parameters from physical parameters, sorts lists, and generally does everything required to make a simulation ready to run. It may be called multiple times.
 
 \item[RunTimeStep]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunTimeStep(simptr sim)}\\
-Python: $sim$.\ttt{runTimeStep()}\\
-Python: \ttt{ErrorCode smoldyn.Simulation.runTimeStep($sim$)}\\
-Runs one time step of the simulation. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.\\
+Python: $sim$.\ttt{runTimeStep()}; \ttt{S.Simulation.runTimeStep($sim$)}\\
+Runs one time step of the simulation. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
 
 \item[RunSim]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunSim(simptr sim)}\\
-Python: \ttt{ErrorCode smoldyn.Simulation.runSim($sim$)}\\
-Python: $sim$.\ttt{runSim()}\\
-Python: $sim$.\ttt{run(stop=$float$, start=$float$, step=$float$)}\\
-Runs the simulation until it terminates. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.\\
+Python: $sim$.\ttt{run(stop=$float$, dt=$float$, start=$float$, display=$bool$, overwrite=$bool$, accuracy=$int$, log\_level=$int$, quit\_at\_end=$bool$)}; $sim$.\ttt{runSim()}; \ttt{smoldyn.Simulation.runSim($sim$)}\\
+Runs the simulation until it terminates. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
+
+The Python version allows inputs of the start time, stop time, and time step, along with whether the simulation details should be displayed to the standard output before the simulation runs, whether output files should be overwritten, the simulation accuracy level (10 is for maximum accuracy), the level of output logging (2 is the default), and whether the simulation should quit at the end.
 
 \item[RunSimUntil]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunSimUntil(simptr sim, double breaktime)}\\
-Python: \ttt{ErrorCode smoldyn.Simulation.runSimUntil(float breaktime)}\\
-Python: $sim$.\ttt{runUntil(t, dt)}\\
-Runs the simulation either until it terminates or until the simulation time equals or exceeds \ttt{breaktime}.\\
+Python: $sim$.\ttt{runUntil(t, dt)}; \ttt{ErrorCode smoldyn.Simulation.runSimUntil(float breaktime)}\\
+Runs the simulation either until it terminates or until the simulation time equals or exceeds \ttt{breaktime}.
 
 \item[FreeSim]
 \hfill \\
@@ -4096,8 +4100,7 @@ Frees the simulation data structure.
 \item[DisplaySim]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolDisplaySim(simptr sim)}\\
-Python: $sim$.\ttt{displaySim()}\\
-Python: \ttt{smoldyn.Simulation.displaySim($sim$)}\\
+Python: $sim$.\ttt{displaySim()}; \ttt{smoldyn.Simulation.displaySim($sim$)}; \ttt{S.Simulation.displaySim($sim$)}\\
 Displays all relevant information about the simulation system to stdout.
 
 \end{description}
@@ -4110,21 +4113,20 @@ Displays all relevant information about the simulation system to stdout.
 \item[PrepareSimFromFile]
 \hfill \\
 C/C++: \ttt{simptr smolPrepareSimFromFile(char *filepath, char *filename, char *flags)}\\
-Python: \ttt{smoldyn.\_smoldyn.prepareSimFromFile(str filename, str flags)}\\
+Python: \ttt{S.prepareSimFromFile(str filename, str flags)}\\
 Reads the Smoldyn configuration file that is at \ttt{filepath} and has file name \ttt{filename}, sets it up, and outputs simulation diagnostics to stdout. Returns the sim structure, or \ttt{NULL} if an error occurred. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, it should be possible to call \ttt{smolRunSim} or \ttt{smolRunTimeStep}.
 
 \item[LoadSimFromFile]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolLoadSimFromFile(char *filepath, char *filename, simptr *simpointer, char *flags)}\\
-Python: \ttt{ErrorCode loadSimFromFile(str filename, str flags)}\\
-Python: \ttt{smoldyn.Simulation.fromFile(str filename,str flags)}\\
+Python: \ttt{smoldyn.Simulation.fromFile(str filename,str flags)}; \ttt{S.Simulation.loadSimFromFile(str filename, str flags)}\\
 Loads part or all of a sim structure from the file that is at \ttt{filepath} and has file name \ttt{filename}. Send in \ttt{simpointer} as a pointer to sim, where sim may be an existing simulation structure that this function will append or \ttt{NULL} if it is to be created by this function. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, call \ttt{smolUpdateSim} to calculate simulation parameters.
 
 \item[ReadConfigString]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolReadConfigString(simptr sim, char *statement, char *parameters)}\\
-Python: \ttt{ErrorCode readConfigString(str statement, str parameters)}\\
-Reads and processes what would normally be a single line of a configuration file. The first word of the line is the statement name, entered here as \ttt{statement}, while the rest of the line is entered as \ttt{parameters}. Separate different parameters with spaces. The same parser is used as for normal Smoldyn configuration files. This function does not make use of block style input formatting, such as for surface definitions. This means that a new surface needs to declared with ``\ttt{new\_surface} \emph{name}" and all subsequent surface definitions need to start with ``\ttt{surface} \emph{name}". Analogous rules apply to compartments and port.
+Python: \ttt{ErrorCode S.Simulation.readConfigString(sim,str statement, str parameters)}\\
+\textit{This function doesn't work currently in either the C or Python APIs.} Reads and processes what would normally be a single line of a configuration file. The first word of the line is the statement name, entered here as \ttt{statement}, while the rest of the line is entered as \ttt{parameters}. Separate different parameters with spaces. The same parser is used as for normal Smoldyn configuration files. This function does not make use of block style input formatting, such as for surface definitions. This means that a new surface needs to declared with ``\ttt{new\_surface} \emph{name}" and all subsequent surface definitions need to start with ``\ttt{surface} \emph{name}". Analogous rules apply to compartments and port.
 
 \end{description}
 
@@ -4136,63 +4138,60 @@ Reads and processes what would normally be a single line of a configuration file
 \item[SetSimTimes]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetSimTimes(simptr sim, double timestart, double timestop, double timestep)}\\
-Python: \ttt{ErrorCode setSimTimes(float timestart, float timestop, float timestep)}\\
+Python: \ttt{S.Simulation.setSimTimes(sim, float timestart, float timestop, float timestep)}\\
 Sets all of the simulation time parameters to the values entered here. In addition the simulation ``time now" is set to \ttt{timestart}.
 
 \item[SetTimeStart]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetTimeStart(simptr sim, double timestart)}\\
-Python: \ttt{ErrorCode setTimeStart(float timestart)}\\
+Python: N/A\\
 Sets the simulation starting time.
 
 \item[SetTimeStop]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetTimeStop(simptr sim, double timestop)}\\
-Python: \ttt{ErrorCode setTimeStop(float timestop)}\\
+Python: N/A\\
 Sets the simulation stopping time.
 
 \item[SetTimeNow]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetTimeNow(simptr sim, double timenow)}\\
-Python: \ttt{ErrorCode setTimeNow(float timenow)}\\
+Python: \ttt{S.Simulation.setTimeNow(sim, float timenow)}\\
 Sets the simulation current time.
 
 \item[SetTimeStep]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetTimeStep(simptr sim, double timestep)}\\
-Python: \ttt{ErrorCode setTimeStep(float timestep)}\\
+Python: N/A\\
 Sets the simulation time step, which must be greater than 0.
 
 \item[SetRandomSeed]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetRandomSeed(simptr sim, double seed)}\\
-Python: \ttt{ErrorCode setRandomSeed(int seed)}\\
+Python: \ttt{S.Simulation.setRandomSeed(sim, int seed)}\\
 Sets the random number generator seed to \ttt{seed} if \ttt{seed} is at least 0, and sets it to the current time value if \ttt{seed} is less than 0.
 
 \item[SetAccuracy]
 \hfill \\
 C/C++: not supported\\
-Python: \ttt{accuracy(accuracy: float)}\\
+Python: N/A\\
 Sets or gets the simulation accuracy.
 
 \item[SetPartitions]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetPartitions(simptr sim, char *method, double value)}\\
-Python: \ttt{ErrorCode setPartitions(str method, float value)}\\
-Python: \ttt{Partition(name: str, value: float)}\\
+Python: \ttt{S.Simulation.setPartitions(sim, str method, float value)}\\
 Sets the virtual partitions in the simulation volume. Enter \ttt{method} as ``molperbox" and then enter \ttt{value} with the requested number of molecules per partition volume; the default, which is used if this function is not called at all, is a target of 4 molecules per box. Or, enter \ttt{method} as ``boxsize" and enter \ttt{value} with the requested partition spacing. In this latter case, the actual partition spacing may be larger or smaller than the requested value in order to fit an integer number of partitions into each coordinate of the simulation volume.
-
-The second Python option is its own class. I think this should be removed because partitions aren't physical objects and so don't really make sense here.
 
 \item[MoleculePerBox]
 \hfill \\
 Python: \ttt{MoleculePerBox(size: float)}\\
-This is only available in Python. Again, I think this should be removed because partitions aren't physical objects.
+This is only available in Python. I think this should be removed because partitions aren't physical objects.
 
-\item[Box]
+\item[Box, addBox]
 \hfill \\
 Python: \ttt{Box(size: float)}\\
-This is only available in Python. Again, I think this should be removed because partitions aren't physical objects.
+This is only available in Python. I think this should be removed because partitions aren't physical objects.
 
 \end{description}
 
@@ -4203,22 +4202,20 @@ This is only available in Python. Again, I think this should be removed because 
 
 \item[AddSpecies]
 \hfill \\
-Python: $sim$.\ttt{addSpecies(name=$string$, state="soln", color=$color$, difc= 0.0, display\_size = 3, mol\_list = ""}\\
-Python: \ttt{ErrorCode addSpecies(str species, str mollist)}\\
 C/C++: \ttt{enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)}\\
-Adds a molecular species named \ttt{species} to the system. If you have already created species lists and want all states of this species to live in a specific list, then enter it in \ttt{mollist}; otherwise, enter \ttt{mollist} as \ttt{NULL} or an empty string to request default behavior. In Python, just giving a simple value for a color or display size, e.g. \ttt{color="green", display\_size=4}, means that that only applies to solution state (or maybe the state that's specified here); if you want it to apply to all states then use, for example, \ttt{color=dict(all="green"), display\_size=dict(all,4)}.
+Python: $sim$.\ttt{addSpecies(name=$string$, state="soln", color=$color$, difc= 0.0, display\_size = 3, mol\_list = "")}; \ttt{S.Simulation.addSpecies(sim, str species, str mollist)}\\
+Adds a molecular species named \ttt{species} to the system. If you have already created species lists and want all states of this species to live in a specific list, then enter it in \ttt{mollist}; otherwise, enter \ttt{mollist} as \ttt{NULL} or an empty string to request default behavior. In Python, just giving a simple value for a color, display size, or color, e.g. \ttt{color="green", display\_size=4}, means that that only applies to solution state. If you want it to apply to all states then use, for example, \ttt{color=dict(all="green"), display\_size=dict(all,4)}. The molecule list does not need to be declared beforehand for the user-API Python version, but does for the low-level API version.
 
 \item[GetSpeciesIndex]
 \hfill \\
-C/C++: \ttt{int smolGetSpeciesIndex(simptr sim, char *species)}\\
-C/C++: \ttt{int smolGetSpeciesIndexNT(simptr sim, char *species)}\\
-Python: \ttt{int getSpeciesIndex(str species)}\\
+C/C++: \ttt{int smolGetSpeciesIndex(simptr sim, char *species)}; \ttt{int smolGetSpeciesIndexNT(simptr sim, char *species)}\\
+Python: \ttt{S.Simulation.getSpeciesIndex(sim, str species)}\\
 Returns the species index that corresponds to the species named \ttt{species}. Upon failure, this function returns an error code cast as an integer. The ``NT'' version is identical, but doesn't throw exceptions or print errors to stderr.
 
 \item[GetSpeciesName]
 \hfill \\
 C/C++: \ttt{char* smolGetSpeciesName(simptr sim, int speciesindex, char *species)}\\
-Python: \ttt{str getSpeciesName(int speciesindex, str species)}\\
+Python: \ttt{S.Simulation.getSpeciesName(sim, int speciesindex, str species)}\\
 Returns the species name that corresponds to the species index in \ttt{speciesindex}. The name is returned both in \ttt{species} and directly, where the latter simplifies function use. Upon failure, this function returns \ttt{NULL}.
 
 \item[SetSpeciesMobility]

@@ -4,7 +4,7 @@
 
 import smoldyn as sm
 
-s = sm.Simulation(low=[0, 0, 0], high=[100, 100, 100], boundarY_type="ppp")
+s = sm.Simulation(low=[0, 0, 0], high=[100, 100, 100], boundary_type="ppp")
 s.addBox(size=10)
 
 # declaration of species A, B, and C with attributes.
