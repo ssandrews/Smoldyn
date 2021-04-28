@@ -1,5 +1,5 @@
 [![ManyLinux2011](https://github.com/ssandrews/Smoldyn/actions/workflows/wheels_linux.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/wheels_linux.yml)
-![Linux](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg)
+[![Linux](https://github.com/dilawar/Smoldyn/actions/workflows/linux.yml/badge.svg)](https://github.com/dilawar/Smoldyn/actions/workflows/linux.yml)
 [![OSX](https://github.com/ssandrews/Smoldyn/actions/workflows/osx.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/osx.yml)
 [![Windows](https://github.com/ssandrews/Smoldyn/actions/workflows/windows.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/windows.yml)
 [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn)
