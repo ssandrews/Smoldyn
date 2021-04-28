@@ -1,4 +1,9 @@
-![C/C++ CI](https://github.com/ssandrews/Smoldyn-official/workflows/C/C++%20CI/badge.svg) [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn) [![Documentation Status](https://readthedocs.org/projects/smoldyn/badge/?version=latest)](https://smoldyn.readthedocs.io/en/latest/?badge=latest)
+[![ManyLinux2011](https://github.com/ssandrews/Smoldyn/actions/workflows/wheels_linux.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/wheels_linux.yml)
+[![Linux](https://github.com/dilawar/Smoldyn/actions/workflows/linux.yml/badge.svg)](https://github.com/dilawar/Smoldyn/actions/workflows/linux.yml)
+[![OSX](https://github.com/ssandrews/Smoldyn/actions/workflows/osx.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/osx.yml)
+[![Windows](https://github.com/ssandrews/Smoldyn/actions/workflows/windows.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/windows.yml)
+[![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn)
+[![Documentation Status](https://readthedocs.org/projects/smoldyn/badge/?version=latest)](https://smoldyn.readthedocs.io/en/latest/?badge=latest)
 
 # Smoldyn
 
@@ -15,4 +20,3 @@ I welcome new contributions to the code. However, I also want to maintain
 Smoldyn's current design philosophy, so please contact me before writing new
 code so that we can discuss how additions can be made most useful. I am at
 steven.s.andrews@gmail.com.
-

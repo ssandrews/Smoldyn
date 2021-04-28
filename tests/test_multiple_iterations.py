@@ -2,6 +2,7 @@ __author__ = "Dilawar Singh"
 __email__ = "dilawar@subcom.tech"
 
 from pathlib import Path
+import numpy as np
 
 import smoldyn
 
@@ -29,6 +30,7 @@ def test_multiple_iteration():
             print(l)
         assert data, "No data returned."
         assert len(data) == 6, len(data)  
+        assert not np.ma.allequal(data[1], data[-1]), (data[1], data[-1])
 
 
 if __name__ == "__main__":
