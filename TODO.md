@@ -1,8 +1,8 @@
 ## To do list for Python API
 
-- [ ] Creating new simulation (e.g. s=Simulation([0,0],[10,10]))
+- [x] Creating new simulation (e.g. s=Simulation([0,0],[10,10]))
 
-The quit_at_end and log_level inputs don't appear to work.
+The quit_at_end and log_level inputs don't appear to work. Fixed by 3fa3da017 .
 
 - [ ] UpdateSim
 
