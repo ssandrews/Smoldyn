@@ -716,9 +716,10 @@ PYBIND11_MODULE(_smoldyn, m)
       // char *smolGetSpeciesName(simptr sim, int speciesindex, char
       // *species);
       .def("getSpeciesName",
-           [](Simulation& sim, int speciesindex, char* species) {
-               return smolGetSpeciesName(
-                 sim.getSimPtr(), speciesindex, species);
+           [](Simulation& sim, int speciesindex) {
+               char species[128];
+               smolGetSpeciesName(sim.getSimPtr(), speciesindex, species);
+               return std::string(species);
            })
 
       // enum ErrorCode smolSetSpeciesMobility(simptr sim, const char
@@ -1470,9 +1471,8 @@ PYBIND11_MODULE(_smoldyn, m)
            })
 
       /*********************************************************
-       *  Extra function which are not avilable in the C-API.  *
+       * Simulation related                                    *
        *********************************************************/
-
       .def("runTimeStep",
            [](Simulation& sim) { return smolRunTimeStep(sim.getSimPtr()); })
       .def("runSim",
@@ -1484,15 +1484,6 @@ PYBIND11_MODULE(_smoldyn, m)
 
       .def("displaySim",
            [](Simulation& sim) { return smolDisplaySim(sim.getSimPtr()); });
-
-    /* Function */
-    m.def("loadModel",
-          &init_and_run,
-          "filepath"_a,
-          "flags"_a = "",
-          "wflag"_a = 0,
-          "quit_at_end"_a = 1,
-          "Load model from a txt file");
 
     /*******************
      *  Miscellaneous  *
@@ -1515,6 +1506,15 @@ PYBIND11_MODULE(_smoldyn, m)
         return smolPrepareSimFromFile(
           path.first.c_str(), path.second.c_str(), flags);
     });
+
+    /* Function */
+    m.def("loadModel",
+          &init_and_run,
+          "filepath"_a,
+          "flags"_a = "",
+          "wflag"_a = 0,
+          "quit_at_end"_a = 1,
+          "Load model from a txt file");
 
     /* attributes */
     m.attr("__version__") = VERSION; // Version is set by CMAKE

@@ -4,10 +4,12 @@
 
 The quit_at_end and log_level inputs don't appear to work. Fixed by 3fa3da017 .
 
-- [ ] UpdateSim
+- [x] UpdateSim
 
 This is a C/C++ API function but not in Python. It would be very useful to
 expose this to Python, too.
+
+Fixed by a3a27c32
 
 - [ ] runTimeStep
 
@@ -16,24 +18,30 @@ but it isn't showing graphics or outputting any results, so I'm not sure what's
 wrong. I don't think that I've checked the C/C++ library for this function, so
 the problem might be in there.
 
-- [ ] run
+- [x] run
 
 The log_level input doesn't appear to work.
 
-- [ ] fromSimptr
+Fixed by 3fa3da017
+
+- [x] fromSimptr
 
 At present, it's possible to load a model using prepareSimFromFile, but doing
 so returns a simstruct object. There needs to be a way to convert this to a
 Simulation object.
 
+See `Simulation.loadSimFromFile`.
 
-- [ ]  loadSimFromFile
+
+- [x]  loadSimFromFile
 
 The version of this used as smoldyn.Simulation.fromFile() works well. However,
 there's also the low-level API function loadSimFromFile, which I can't seem to
 get to work. As part of this, I'm not sure what variable the simulation is
 supposed to go into because the function returns an error code rather than a
 simstruct object.
+
+This has been fixed by https://github.com/ssandrews/Smoldyn/pull/62
 
 
 - [ ] getSpeciesName
