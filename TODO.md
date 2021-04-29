@@ -64,4 +64,4 @@ just virtual partitions within the simulation volume that are only there to
 accelerate the code. Thus, this is a simulation setting, not something that's
 added to the model.
 
-Added deprecation warning for now
+Added deprecation warning for now (e4465b1e)

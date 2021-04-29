@@ -5,7 +5,7 @@
 https://github.com/ssandrews/Smoldyn/compare/v2.64...v2.65
 
 - `Box`, `addBox` and `moleculePerBox` are deprecated. Use `setPartition`
-  instead.
+  instead (e4465b1e5).
 - (developer) Major refactoring in `Simulation` class (#50, #51, #52). `smoldyn.Command` is
   moved to C++ (now available as `_smoldyn.Command`). This does not change the
   API.
