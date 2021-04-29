@@ -107,7 +107,7 @@ enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,d
 enum ErrorCode smolAddSpecies(simptr sim,const char *species,const char *mollist);
 int            smolGetSpeciesIndex(simptr sim,const char *species);
 int            smolGetSpeciesIndexNT(simptr sim,const char *species);
-char*          smolGetSpeciesName(simptr sim,int speciesindex,char *species);
+void          smolGetSpeciesName(simptr sim,int speciesindex,char *species);
 enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix);
 enum ErrorCode smolSetMoleculeColor(simptr sim, const char *species, enum MolecState state, double *color);
 enum ErrorCode smolSetMoleculeSize(simptr sim, const char *species, enum MolecState state, double size);
@@ -189,6 +189,6 @@ enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice,const char 
 #ifdef __cplusplus
 }
 #endif
-		
+
 
 #endif

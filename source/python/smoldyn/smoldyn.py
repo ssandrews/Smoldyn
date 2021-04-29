@@ -30,6 +30,7 @@ __all__ = [
 import operator
 import functools
 import math
+import warnings
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -1602,11 +1603,19 @@ class Partition(object):
 
 class MoleculePerBox(Partition):
     def __init__(self, simulation: _smoldyn.Simulation, size: float):
+        warnings.warn(
+            "MoleculePerBox is deprecated. Please use setPartitions in the future",
+            DeprecationWarning,
+        )
         super().__init__(simulation, "molperbox", size)
 
 
 class Box(Partition):
     def __init__(self, simulation: _smoldyn.Simulation, size):
+        warnings.warn(
+            "Box is deprecated. Please use setPartitions in the future",
+            DeprecationWarning,
+        )
         super().__init__(simulation, "boxsize", size)
 
 
@@ -2129,10 +2138,20 @@ class Simulation(_smoldyn.Simulation):
 
     def addBox(self, size: float):
         """See Box.__init__"""
+
+        warnings.warn(
+            "This function is deprecated. Please use setPartitions in the future",
+            DeprecationWarning,
+        )
         return Box(super(), size)
 
     def addMoleculePerBox(self, size: float):
         """See MoleculePerBox.__init__"""
+
+        warnings.warn(
+            "This function is deprecated. Please use setPartitions in the future",
+            DeprecationWarning,
+        )
         return MoleculePerBox(super(), size)
 
     def addCompartment(

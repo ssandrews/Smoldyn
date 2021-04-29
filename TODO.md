@@ -44,16 +44,24 @@ simstruct object.
 This has been fixed by https://github.com/ssandrews/Smoldyn/pull/62
 
 
-- [ ] getSpeciesName
+- [x] getSpeciesName
 
 This function requires a string as its last parameter, but shouldn't because
 it's not used.
 
+Fixed by 4d20a64c06880a1cb8b3cb4260899eb3cd45b2d7. I didnt read the API
+function carefully. Last argument was used to store the name of species and was
+also returned. That made is bit confusing. In this fix, it changed the return
+type to void and last argument i.e., a char* is used to store the name of the
+species.
 
-- [ ] addBox, Box, moleculePerBox
+
+- [x] addBox, Box, moleculePerBox
 
 I'd like to remove and/or rename these functions, changing to just
 setPartitions. The reason is that boxes aren't physical objects but are really
 just virtual partitions within the simulation volume that are only there to
 accelerate the code. Thus, this is a simulation setting, not something that's
 added to the model.
+
+Added deprecation warning for now

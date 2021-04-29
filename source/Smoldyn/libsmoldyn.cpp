@@ -321,7 +321,7 @@ extern CSTRING enum ErrorCode smolLoadSimFromFile(const char *filepath,const cha
 	int er;
 	char emptystring[STRCHAR];
 	simptr sim;
-	
+
 	sim=NULL;
 	LCHECK(filename,funcname,ECmissing,"missing filename");
 	LCHECK(simpointer,funcname,ECmissing,"missing simpointer");
@@ -346,7 +346,7 @@ extern CSTRING enum ErrorCode smolLoadSimFromFile(const char *filepath,const cha
 /* smolReadConfigString */
 extern CSTRING enum ErrorCode smolReadConfigString(simptr sim,const char *statement,char *parameters) {
 	return ECok; }
-	
+
 //?? Commented out to force compile
 /*
 	const char *funcname="smolReadConfigString";
@@ -824,7 +824,7 @@ extern CSTRING int smolGetSpeciesIndexNT(simptr sim,const char *species) {
 
 
 /* smolGetSpeciesName */
-extern CSTRING char *smolGetSpeciesName(simptr sim,int speciesindex,char *species) {
+extern CSTRING void smolGetSpeciesName(simptr sim,int speciesindex,char *species) {
 	const char *funcname="smolGetSpeciesName";
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
@@ -833,9 +833,8 @@ extern CSTRING char *smolGetSpeciesName(simptr sim,int speciesindex,char *specie
 	LCHECK(speciesindex<sim->mols->nspecies,funcname,ECnonexist,"species doesn't exist");
 	LCHECK(species,funcname,ECmissing,"missing species");
 	strcpy(species,sim->mols->spname[speciesindex]);
-	return species;
  failure:
-	return NULL; }
+	return; }
 
 
 /* smolSetSpeciesMobility */
@@ -1131,7 +1130,7 @@ extern CSTRING enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *specie
 	LCHECK((state>=0 && state<MSMAX) || state==MSall,funcname,ECsyntax,"invalid state");
 
 	if(size>0) molsetdisplaysize(sim,i,NULL,state,size);
-	
+
 	if(color) {
 		for(c=0;c<3;c++)
 			LCHECK(color[c]>=0 && color[c]<=1,funcname,ECbounds,"color value out of bounds");
@@ -1466,7 +1465,7 @@ extern CSTRING enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const ch
 	srf=sim->srfss->srflist[s];
 	er=surfaddemitter(srf,face,i,emitamount,emitposition,sim->dim);
 	LCHECK(!er,funcname,ECmemory,"out of memory allocating unbounded emitter");
-	
+
 	return ECok;
  failure:
 	return Liberrorcode; }
@@ -1505,7 +1504,7 @@ extern CSTRING enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surfac
 	int s1,s2,p1,p2,er;
 	panelptr pnl1,pnl2;
 	enum PanelShape ps1,ps2;
-	
+
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	s1=smolGetSurfaceIndexNT(sim,surface1);
 	LCHECK(s1>=0,funcname,ECsame,NULL);
@@ -1524,7 +1523,7 @@ extern CSTRING enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surfac
 	if(reciprocal) {
 		er=surfsetneighbors(pnl2,&pnl1,1,1);
 		LCHECK(!er,funcname,ECmemory,"out of memory adding panel neighbor"); }
-	
+
 	return ECok;
 failure:
 	return Liberrorcode; }
@@ -1914,7 +1913,7 @@ extern CSTRING enum ErrorCode smolSetReactionProducts(simptr sim,const char *rea
 	const char *funcname="smolSetReactionProducts";
 	int order,r,done,prd,i,er;
 	rxnptr rxn;
-	
+
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	order=-1;
 	r=smolGetReactionIndexNT(sim,&order,reaction);
@@ -2221,6 +2220,3 @@ extern CSTRING enum ErrorCode smolAddLatticeReaction(simptr sim,const char *latt
 	return ECok;
  failure:
 	return Liberrorcode; }
-
-
-
