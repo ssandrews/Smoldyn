@@ -135,8 +135,8 @@ PYBIND11_MODULE(_smoldyn, m)
     // options.disable_function_signatures();
 
     m.doc() = R"pbdoc(
-        Low level Python interface for the smoldyn simulator. This module is not 
-        meant for direct user interaction. The user api defined in smoldyn/smoldyn.py 
+        Low level Python interface for the smoldyn simulator. This module is not
+        meant for direct user interaction. The user api defined in smoldyn/smoldyn.py
         uses this module to create an user friendly API.
     )pbdoc";
 
@@ -520,6 +520,7 @@ PYBIND11_MODULE(_smoldyn, m)
             "quitatend",
             [](const Simulation &sim) { return sim.getSimPtr()->quitatend; },
             [](const Simulation &sim, bool quitatend) {
+                // py::print("Calling quitatend", quitatend);
                 sim.getSimPtr()->quitatend = quitatend;
             })
 

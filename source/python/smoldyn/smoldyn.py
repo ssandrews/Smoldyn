@@ -35,7 +35,6 @@ from dataclasses import dataclass
 
 from typing import Union, Tuple, List, Dict, Optional, Sequence
 
-import logging
 
 from smoldyn.types import Color, BoundType, ColorType, DiffConst
 from smoldyn import _smoldyn
@@ -48,15 +47,21 @@ import inspect
 __top_model_file__ = Path(inspect.stack()[-1].filename)
 
 # Logger
+import logging
+
 __logger__ = logging.getLogger(__name__)
-__logger__.setLevel(logging.WARNING)
-# Smoldyn version
+ch = logging.StreamHandler()
+ch.setLevel(logging.WARNING)
+ch.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
+__logger__.addHandler(ch)
 
 
 def version():
+    """Get version"""
     return _smoldyn.__version__
 
 
+# alias of version()
 __version__: str = version()
 
 
@@ -1643,7 +1648,6 @@ class Simulation(_smoldyn.Simulation):
         high: List[float],
         *,
         boundary_type: BoundType = "r",
-        quit_at_end: bool = False,
         log_level: int = 3,
         **kwargs,
     ):
@@ -1656,10 +1660,6 @@ class Simulation(_smoldyn.Simulation):
             Lower bound.
         high:
             Higher bound.
-        quit_at_end : bool
-            If `True`, Smoldyn won't prompt user at the end of simulation and
-            quit. Same effect can also be achieved by setting environment variable
-            `SMOLDYN_NO_PROMPT`.
 
         log_level: int, default 3
             set log level for default logger.
@@ -1683,7 +1683,12 @@ class Simulation(_smoldyn.Simulation):
         :py:_smoldyn.simptr
         """
 
-        __logger__.setLevel(10 * log_level)
+        # https://stackoverflow.com/a/50886750/1805129
+        logging.getLogger(__name__).setLevel(10 * log_level)
+        for handler in __logger__.handlers:
+            handler.setLevel(10 * log_level)
+
+        __logger__.info(f"Setting logging level to {log_level}")
 
         assert low, f"You must pass low bound, current value {low}"
         assert high, f"You must pass high bound, current value {high}"
@@ -1710,16 +1715,8 @@ class Simulation(_smoldyn.Simulation):
 
         self.setOutputFiles(kwargs.get("output_files", []))
 
-        # TODO : Add to documentation.
-        self.quitatend = quit_at_end
-        """Note: One can also set SMOLDYN_NO_PROMPT to achieve the same
-        effect."""
-
         if kwargs.get("seed", -1) >= 0:
             self.randomSeed = int(kwargs["seed"])
-
-        if log_level <= 0:
-            self.simptr.flag = self.simptr.flag + "q"
 
     @classmethod
     def fromFile(cls, path: Union[Path, str], arg: str = ""):
@@ -1948,7 +1945,9 @@ class Simulation(_smoldyn.Simulation):
             Show graphics (default True)
         quit_at_end:
             When set to `True`, smoldyn won't ask for Shift+Q at the end of simulation
-            to close the OpenGL window.
+            to close the OpenGL window. Same effect can be achieved by setting
+            the environment variable SMOLDYN_NO_PROMPT. It is useful for
+            running tests in batch mode.
         """
 
         self.stop = float(stop)
