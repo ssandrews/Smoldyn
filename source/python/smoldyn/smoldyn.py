@@ -1976,6 +1976,10 @@ class Simulation(_smoldyn.Simulation):
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
         super().runUntil(self.stop, self.dt)
 
+    def updateSim(self):
+        """updateSim"""
+        super().updateSim()
+
     def display(self):
         k = super().displaySim()
         assert k == _smoldyn.ErrorCode.ok
