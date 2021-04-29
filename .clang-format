@@ -1,8 +1,0 @@
----
-BasedOnStyle: Mozilla
-ColumnLimit: '80'
-IndentWidth: '4'
-TabWidth: '4'
-UseTab: Never
-
-...

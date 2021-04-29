@@ -8,7 +8,6 @@ __copyright__ = "Copyright 2019-, Dilawar Singh"
 __maintainer__ = "Dilawar Singh"
 __email__ = "dilawar.s.rajput@gmail.com"
 
-import os
 import setuptools
 from setuptools.command.install import install
 from pathlib import Path
@@ -23,17 +22,20 @@ class InstallPlatLib(install):
         if self.distribution.has_ext_modules():
             self.install_lib = self.install_platlib
 
-# See  https://stackoverflow.com/a/36886459/1805129 
+
+# See  https://stackoverflow.com/a/36886459/1805129
 class BinaryDistribution(setuptools.Distribution):
-    """Always force a binray distribution. 
-    """
+    """Always force a binray distribution."""
+
     def is_pure(self):
         return False
+
     def has_ext_modules(foo):
         return True
 
-readme = ''
-with open(Path("@CMAKE_SOURCE_DIR@") / 'README.md') as f:
+
+readme = ""
+with open(Path("@CMAKE_SOURCE_DIR@") / "README.md") as f:
     readme = f.read()
 
 setuptools.setup(
@@ -48,12 +50,12 @@ setuptools.setup(
     license="Gnu LGPL",
     #  include_package_data=True,
     packages=setuptools.find_packages(),
-    package_data={"smoldyn": [ "_smoldyn*.*" ]},
+    package_data={"smoldyn": ["_smoldyn*.*"]},
     install_requires=["dataclasses;python_version=='3.6'"],
-    python_requires='>=3.6',
-    cmdclass={'install':InstallPlatLib},
+    python_requires=">=3.6",
+    cmdclass={"install": InstallPlatLib},
     distclass=BinaryDistribution,
-    classifiers=[ 
+    classifiers=[
         "Programming Language :: Python :: 3",
     ],
 )
