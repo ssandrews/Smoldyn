@@ -268,7 +268,7 @@ typedef struct wallstruct {
 #define MAXORDER 3
 
 // NOTE:
-// Increasing MAXPRODUCT value to 256 
+// Increasing MAXPRODUCT value to 256
 // see https://github.com/ssandrews/Smoldyn/issues/18 for details.
 // #define MAXPRODUCT 256
 constexpr size_t MAXPRODUCT=256;
@@ -627,7 +627,7 @@ typedef struct bngstruct {
   int bngindex;               // index of this bng structure
 	double unirate;							// multiplier for unimolecular rxn rates
 	double birate;							// multiplier for bimolecular rxn rates
-  
+
 	int maxparams;              // maximum number of numeric parameters
 	int nparams;                // actual number of numeric parameters
 	char **paramnames;          // names of parameters [index]
@@ -746,7 +746,7 @@ typedef struct simstruct {
 	double tmax;								// simulation end time
 	double tbreak;							// simulation break time
 	double dt;									// simulation time step
-	int quitatend;							// simulation quits at the end
+	bool quitatend;							// simulation quits at the end
 	rxnssptr rxnss[MAXORDER];		// reaction superstructures
 	rulessptr ruless;						// rule superstructure
 	molssptr mols;							// molecule superstructure
@@ -837,4 +837,3 @@ typedef struct simstruct {
 
 
 #endif
-

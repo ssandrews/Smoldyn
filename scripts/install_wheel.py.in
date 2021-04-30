@@ -1,4 +1,3 @@
-import os
 import sys
 import subprocess
 import site
@@ -9,26 +8,23 @@ assert wheels and len(wheels) > 0
 
 if "@CMAKE_INSTALL_PREFIX@" not in site.PREFIXES:
     print(
+        "\n\n===================================================="
         f"[WARN] @CMAKE_INSTALL_PREFIX@ is not a valid --prefix. "
-        "Valid --prefix locations are: {site.PREFIXES}"
+        f"Valid --prefix locations are: {site.PREFIXES}"
     )
     print(
-        f"[WARN] I am going to install the wheel to this location. You can"
+        "\n\n===================================================="
+        "[WARN] I am going to install the wheel to this location. You can"
         " modify PYTHONPATH to point to the installation location later. "
     )
 
 
 wheel_file = str(wheels[-1])
+assert Path(wheel_file).resolve().exists()
 print(f"[INFO] Installing wheel {wheel_file}")
-cmd = [
-    sys.executable,
-    "-m",
-    "pip",
-    "install",
-    "--verbose",
-    wheel_file,
-    "--no-deps" ]
+cmd = [sys.executable, "-m", "pip", "install", "--verbose", wheel_file, "--no-deps"]
 
+print("\n\n=====================================================")
 print(f"-- Executing {' '.join(cmd)}")
 print(f"-- If this is not what you want, please install the {wheel_file} yourself.")
 out = subprocess.check_output(cmd, text=True)
