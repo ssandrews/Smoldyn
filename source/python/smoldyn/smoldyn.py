@@ -1975,15 +1975,28 @@ class Simulation(_smoldyn.Simulation):
         k = super().runSim(self.stop, self.dt, display, overwrite)
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
-    def runUntil(self, stop, dt=None):
-        """runUntil"""
+    def runUntil(self, stop, dt, display: bool = True, overwrite: bool = False):
+        """Run simulation until a given time.
+
+        Parameters
+        ----------
+        stop :
+            stop
+        dt :
+            dt
+
+        display : bool
+            Enable gui display (default `True`)?
+
+        overwrite : bool
+            Overwrite existing data (default `False`)?
+        """
         self.stop = stop
-        if dt is not None:
-            self.dt = float(dt)
+        self.dt = float(dt)
 
         assert self.dt > 0.0, f"dt can't be <= 0.0! dt={self.dt}"
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
-        super().runUntil(self.stop, self.dt)
+        super().runUntil(self.stop, self.dt, display, overwrite)
 
     def updateSim(self):
         """updateSim"""
