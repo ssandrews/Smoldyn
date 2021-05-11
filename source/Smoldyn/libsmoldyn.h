@@ -8,16 +8,6 @@
 #ifndef __libsmoldyn_h__
 #define __libsmoldyn_h__
 
-/* The following Swig directives are only read by the swig program */
-#ifdef SWIG
-%module libsmoldyn
-%{
-#define SWIG_FILE_WITH_INIT
-#include "libsmoldyn.h"
-%}
-#endif
-
-
 #include "smoldyn.h"
 
 enum ErrorCode {
