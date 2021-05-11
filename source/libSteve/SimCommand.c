@@ -718,6 +718,8 @@ int scmdsetdnames(cmdssptr cmds,char *str) {
 		did=cmds->ndata;
 		itct=sscanf(str,"%s",cmds->dname[did]);
 		if(itct!=1) return 2;
+		if(cmds->data[did])
+			ListClearDD(cmds->data[did]);
 		cmds->ndata++;
 		str=strnword(str,2); }
 

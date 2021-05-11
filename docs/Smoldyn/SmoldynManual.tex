@@ -42,6 +42,23 @@
 \setlength\LTleft\parindent
 \setlength\LTright\fill
 
+% Allow line breaks in \texttt mode at periods and open brackets
+\renewcommand{\texttt}[1]{%
+  \begingroup
+  \ttfamily
+  \begingroup\lccode`~=`/\lowercase{\endgroup\def~}{/\discretionary{}{}{}}%
+  \begingroup\lccode`~=`[\lowercase{\endgroup\def~}{[\discretionary{}{}{}}%
+  \begingroup\lccode`~=`.\lowercase{\endgroup\def~}{.\discretionary{}{}{}}%
+  \catcode`/=\active\catcode`[=\active\catcode`.=\active
+  \scantokens{#1\noexpand}%
+  \endgroup
+}
+% Following is a different way to allow line breaks, this time between any character. But, no spaces
+% are allowed within the \ttt{} braces, which I decided that I didn't want.
+%\usepackage{seqsplit}
+%\newcommand{\ttt}[1]{{\ttfamily\seqsplit{#1}}}
+
+
 % New commands
 \newcommand {\ttt} {\texttt}
 % used for enumerate item numbers
@@ -2080,7 +2097,7 @@ The remainder of this chapter describes some aspects of these interfaces in deta
 
 The best method is to download the latest package from \url{http://www.smoldyn.org} and run the install script. This will install the stand-alone program, the C/C++ libraries, and the BioNetGen code, and will also give you the documentation and example files. If you have pip installed, then it will also install the Python bindings.
 
-Anothor option is to install the Python components from PyPI with:
+Another option is to install the Python components from PyPI with:
 \begin{lstlisting}[style=SSAC]
 pip install smoldyn
 \end{lstlisting}
@@ -2099,8 +2116,6 @@ The Python interface has a few limitations that users should be aware of. We are
 \begin{itemize}
 
 \item{Rule-based modeling}. Rule-based modeling support, including both BioNetGen and Smoldyn wildcards, has not been added to Libsmoldyn yet, including its Python API.
-
-\item{Hybrid simulation}. Smoldyn has built-in support for multiscale simulation in which part of the model volume is simulated with particle-based methods and part with spatial Gillespie methods. These parts are typically adjacent to each other but can also overlap. This functionality has not been added to Libsmoldyn yet, including its Python API.
 
 \item{Python quits after simulation if graphics are used}. A benefit of running Smoldyn through the Python interface is that the simulation and data analysis code can be included in the same Python file. Unfortunately, the OpenGL glut library that Smoldyn uses to display its graphical output does not return control to Smoldyn after the user quits the graphics but returns to the operating system, making it impossible to continue with further Python code. The only good solution for now is to display graphics while developing a simulation, and then re-run simulations with graphics turned off when collecting quantitative data. Note that the random number seed can be set to the same value in each case so that the simulation will be exactly the same.
 
@@ -2216,7 +2231,10 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 
 Smoldyn's Python API is divided into two portions. The user API, imported with \ttt{import smoldyn}, is what most people will use most of the time and is the one that's demonstrated above in the example simulation. The low-level API, imported with \ttt{import smoldyn.\_smoldyn}, is more of a wrapper for the C API, with less Pythonic syntax and user friendliness.
 
-One difference between the APIs is that the low-level API tends to group the simulation into a simulation pointer, whereas the user API tends to group the simulation into a simulation object, of which the pointer is one of its components. These are shown below,
+% Creating new simulations
+\section{Creating new simulations}
+
+Create a new simulation from scratch by defining the system boundaries with \ttt{smoldyn.Simulation}, or load a simulation from a file with \ttt{smoldyn.Simulation.fromFile}, as shown below. Each of these options returns a Simulation object.
 
 \begin{lstlisting}[style=SSAPython]
 >>> import smoldyn
@@ -2224,29 +2242,15 @@ One difference between the APIs is that the low-level API tends to group the sim
 >>> s1 = smoldyn.Simulation([0, 0], [10, 10])
 >>> s1
 <smoldyn.smoldyn.Simulation object at 0x10b5b0950>
->>> s1.simptr
-<smoldyn._smoldyn.simstruct object at 0x102bc1af0>
-\end{lstlisting}
-
-There are several way to read in a simulation from a file. The best approach is:
-\begin{lstlisting}[style=SSAPython]
->>> s2 = smoldyn.Simulation.fromFile("/path/to/Min1.txt", "")
+>>> import os
+>>> mindir = os.getcwd() + "/Min1.txt"
+>>> s2 = smoldyn.Simulation.fromFile(mindir, "")
 <smoldyn.smoldyn.Simulation object at 0x1010019a0>
 \end{lstlisting}
-Note the \ttt{/path/to/} part of the file path. In Python, the current working directory starts as the directory that you launch Python from, so you can leave off this path portion of the directory if the simulation file is in the same directory that you started in. However, as soon as this line runs, the working directory shifts over to the location of the Smoldyn Python code, which means that it won't run a second time. Thus, for the second round, you need to use the complete file path. You can get the current working directory with \ttt{import os; os.getcwd()}. You can also supposedly get the directory for a specific file, here called Min1.txt, with \ttt{import pathlib; pathlib.Path("Min1.txt").resolve()}. However, I've found that this often returns an incorrect path.
 
-Alternate approaches for loading a file are:
-\begin{lstlisting}[style=SSAPython]
->>> s3 = S.Simulation("Min1.txt", "")
->>> s3
-<smoldyn._smoldyn.Simulation object at 0x10925ee70>
->>> sptr =S.prepareSimFromFile("/path/to/Min1.txt","")
->>> sptr
-<smoldyn._smoldyn.simstruct object at 0x10f832970>
-\end{lstlisting}
-%>>> s4 = smoldyn.Simulation.fromSimptr(sptr) # function doesn't exist
-This last approach isn't actually very helpful because it returns a simstruct object rather than a simulation object, and there's no way to convert from the former to the latter.
+The \ttt{fromFile} option uses the absolute path of the file, which isn't always necessary, but is advised because the Smoldyn loading functions change the working directory, making it unreliable. You can also supposedly get the directory for a specific file, here called Min1.txt, with \ttt{import pathlib; pathlib.Path("Min1.txt").resolve()}, but I've found that this can return an incorrect path.
 
+As an aside, the Python Simulation object is not the same as the C/C++ simulation pointer. The latter can be accessed with \ttt{s1.simptr}.
 
 % Callback functions
 \section{Callback functions}
@@ -3904,7 +3908,7 @@ This is similar to \ttt{translatecmpt}, except that this translates the compartm
 \chapter{C/C++ and Python APIs}
 \label{ch:APIReference}
 
-The C and C++ APIs are the same. There are two Python APIs. Import the ``high-level'' or ``user'' API with \ttt{import smoldyn}. Import the ``low-level'' or ``developer'' API with \ttt{import smoldyn.\_smoldyn}. This documentation section is comprehensive for the C/C++ API but not for the Python API. For that, use this as a guide, but also look at example files, use help(), dir(), etc. as needed, and try the readthedocs webpage.
+The C and C++ APIs are the same. There are two Python APIs. Import the ``high-level'' or ``user'' API with \ttt{import smoldyn}. Import the ``low-level'' or ``developer'' API with \ttt{import smoldyn.\_smoldyn}. This documentation section is comprehensive for the C/C++ API but not for the Python API. For that, use this as a guide, but also look at example files, use \ttt{help()}, \ttt{dir()}, etc. as needed, and try the readthedocs webpage. Also, note that many functions can be accessed in multiple different ways; for example, you can run a simulation with $sim$\ttt{.run()} or $sim$\ttt{.runSim()} or \ttt{smoldyn.Simulation.runSim($sim$)}. For the most part, this documentation only shows the single recommended approach because that leads to more readable code.
 
 % Enumerations
 \section{Enumerations}
@@ -4114,12 +4118,12 @@ Displays all relevant information about the simulation system to stdout.
 \hfill \\
 C/C++: \ttt{simptr smolPrepareSimFromFile(char *filepath, char *filename, char *flags)}\\
 Python: \ttt{S.prepareSimFromFile(str filename, str flags)}\\
-Reads the Smoldyn configuration file that is at \ttt{filepath} and has file name \ttt{filename}, sets it up, and outputs simulation diagnostics to stdout. Returns the sim structure, or \ttt{NULL} if an error occurred. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, it should be possible to call \ttt{smolRunSim} or \ttt{smolRunTimeStep}.
+Reads the Smoldyn configuration file that is at \ttt{filepath} and has file name \ttt{filename}, sets it up, and outputs simulation diagnostics to stdout. Returns the sim structure, or \ttt{NULL} if an error occurred. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, it should be possible to call \ttt{smolRunSim} or \ttt{smolRunTimeStep}. This function is available in Python but is not useful because it returns a simstruct object rather than a Simulation object, and it's not possible to convert from the former to the latter.
 
 \item[LoadSimFromFile]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolLoadSimFromFile(char *filepath, char *filename, simptr *simpointer, char *flags)}\\
-Python: \ttt{smoldyn.Simulation.fromFile(str filename,str flags)}; \ttt{S.Simulation.loadSimFromFile(str filename, str flags)}\\
+Python: \ttt{smoldyn.Simulation(str filename,str flags)}; \ttt{smoldyn.Simulation.fromFile(str filename,str flags)}; \ttt{S.Simulation.loadSimFromFile(str filename, str flags)}\\
 Loads part or all of a sim structure from the file that is at \ttt{filepath} and has file name \ttt{filename}. Send in \ttt{simpointer} as a pointer to sim, where sim may be an existing simulation structure that this function will append or \ttt{NULL} if it is to be created by this function. \ttt{flags} are the command line flags that are entered for normal Smoldyn use. Either or both of \ttt{filepath} and \ttt{flags} can be sent in as \ttt{NULL} if there is nothing to report. After this function runs successfully, call \ttt{smolUpdateSim} to calculate simulation parameters.
 
 \item[ReadConfigString]
