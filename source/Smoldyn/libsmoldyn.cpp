@@ -37,6 +37,9 @@ char Liberrorstring[STRCHAR]="";
 int Libdebugmode=1;
 int LibThrowThreshold=11;
 
+PanelShape AllPanels_arr[6] = {PanelShape::PSrect, PanelShape::PStri,
+    PanelShape::PSsph, PanelShape::PScyl, PanelShape::PShemi, PanelShape::PSdisk};
+
 
 /******************************************************************************/
 /******************************* Miscellaneous ********************************/

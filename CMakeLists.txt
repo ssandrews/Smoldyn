@@ -42,6 +42,7 @@ message(STATUS "Smoldyn version is set to: '${SMOLDYN_VERSION}'")
 # nice to use them. Most compilers support C++17 these days.
 #
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 11)
 
 
 ######### Targets to build ###########
