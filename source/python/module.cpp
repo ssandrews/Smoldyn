@@ -1375,8 +1375,14 @@ PYBIND11_MODULE(_smoldyn, m)
       /*********************************************************
        * Simulation related                                    *
        *********************************************************/
-      .def(
-        "runTimeStep", [](Simulation& sim) { return smolRunTimeStep(sim.getSimPtr()); })
+      .def("runTimeStep",
+        [](Simulation& sim) {
+            if (sim.getSimPtr()->dt == 0.0) {
+                py::print("Please set the dt to non-zero value");
+                return ErrorCode::ECmissing;
+            }
+            return smolRunTimeStep(sim.getSimPtr());
+        })
       .def("runSim", [](Simulation& sim) { return smolRunSim(sim.getSimPtr()); })
       .def("runSimUntil",
         [](Simulation& sim, double breaktime, bool overwrite) {
