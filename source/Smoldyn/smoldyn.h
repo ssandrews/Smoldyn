@@ -365,7 +365,7 @@ enum PanelFace {PFfront,PFback,PFnone,PFboth};
 enum PanelShape {PSrect,PStri,PSsph,PScyl,PShemi,PSdisk,PSall,PSnone};
 
 // NOTE: It is used in libsmoldyn.cpp
-static PanelShape AllPanels_arr[6] = {PanelShape::PSrect, PanelShape::PStri,
+enum PanelShape AllPanels_arr[6] = {PanelShape::PSrect, PanelShape::PStri,
     PanelShape::PSsph, PanelShape::PScyl, PanelShape::PShemi, PanelShape::PSdisk};
 
 
