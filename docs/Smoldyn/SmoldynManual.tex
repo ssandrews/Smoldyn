@@ -207,6 +207,7 @@ Various building options are possible with the CMake build system, of which the 
 \ttt{-DOPTION\_USE\_ZLIB=OFF} & Build without ZLib support\\
 \ttt{-OPTION\_TARGET\_SMOLDYN=OFF} & Don't build stand-alone Smoldyn program\\
 \ttt{-DOPTION\_TARGET\_LIBSMOLDYN=ON} & Build LibSmoldyn library\\
+\ttt{-DOPTION\_PYTHON=ON} & Build Python API\\
 \ttt{-DOPTION\_NSV=ON} & Build with next subvolume support\\
 \ttt{-DOPTION\_VTK=ON} & Build with VTK output support\\
 \end{longtable}
@@ -3900,6 +3901,10 @@ Translate the compartment called $compartment$ by the shift value given in $\Del
 \ttt{diffusecmpt} $compartment\ code\ stddev_x\ stddev_y\ stddev_z\ [cmpt\_bound\ radius\ nsample]$}
 
 This is similar to \ttt{translatecmpt}, except that this translates the compartment by a Gaussian distributed random amount that has standard deviation on each axis of $stddev_x$, $stddev_y$, and $stddev_z$. Also, this has three optional parameters: $cmpt\_bound$, $radius$, and $nsample$. If they are entered, then Smoldyn keeps the diffusing compartment within the bounding compartment called $cmpt\_bound$ (assuming it was inside initially). It does this by computing $nsample$ test points that are on a spherical shell of radius radius around each of the compartment's interior-defining points and determines if any of these test points would escape the bounding compartment during a move. If so, then the move is rejected, and Smoldyn tries again, up to 10 times. It's important that radius is slightly larger than the actual distance to the compartment edge and that $nsample$ is sufficiently large to cover the effective surface adequately because molecule behavior is unpredictable if a molecule is between two reflective surfaces that end up crossing each other, even if only briefly and by a small amount. 
+
+\item{\ttt{longrangeforce} $species_1(state)\ species_2(state)\ mobility_1\ mobility_2\ rad_{min}\ rad_{max}\ equation$}
+
+This simulates a long range force between molecules of $species_1$ and $species_2$, moving them in response to it. The force is computed from $equation$. This equation needs to be a function of $r$, which is the radius. For example, it could be \ttt{-4*r\^{}(-2)+2*r\^{}(-4)}, where \ttt{r} represents the distance between two molecules; do not include any spaces in the equation. Negative values represent attractive forces, and note that exponents will probably be negative for most physically reasonable forces. This equation applies for all separations between $rad_{min}$ and $rad_{max}$, and the force is zero elsewhere. For computational efficiency, it's a good idea to keep $rad_{max}$ reasonably small. Molecules of $species_1$ move distance $mobility_1 \Delta t$ times the force, while those of $species_2$ move $mobility_2 \Delta t$ times the force, where $\Delta t$ is the simulation time step. Except in very unusual circumstances, both mobilities should be positive values. Note that this accounts for the simulation time step, which is unusual for commands. However, it does not account for the command being run at wide intervals, such as every 2, 3, or 4 time steps. Instead, to be quantitatively accurate, it needs to run at every time step (or run it every $n$ time steps, and multiply the force or mobility by $n$).
 
 \end{description}
 

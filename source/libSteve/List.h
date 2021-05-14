@@ -29,13 +29,24 @@ typedef struct liststructdd{
 	double *data;
 	} *listptrdd;
 
+typedef struct liststructULVD4{
+	int max;
+	int n;
+	unsigned long long *dataul;
+	void **datav;
+	double **datad4;
+	} *listptrULVD4;
+
+
 // Memory management
 listptrli ListAllocLI(int max);
 listptrv ListAllocV(int max);
 listptrdd ListAllocDD(int maxrow,int maxcol);
+listptrULVD4 ListAllocULVD4(int max);
 void ListFreeLI(listptrli list);
 void ListFreeV(listptrv list);
 void ListFreeDD(listptrdd list);
+void ListFreeULVD4(listptrULVD4 list);
 
 // Reading lists
 int ListMemberLI(const listptrli list,long int x);
@@ -46,6 +57,10 @@ listptrli ListAppendItemLI(listptrli list,long int newitem);
 listptrv ListAppendItemV(listptrv list,void *newitem);
 listptrdd ListAppendItemsDDv(listptrdd list, int newrow, int narg, va_list items);
 listptrdd ListAppendItemsDD(listptrdd list, int newrow, int narg, ...);
+int ListInsertItemULVD4(listptrULVD4 list,unsigned long long xdataul,void *xdatav,const double *xdatad4,int mode);
+
+// Removing elements from lists
+void List_CleanULVD4(listptrULVD4 list);
 
 // Combining lists
 listptrli ListAppendListLI(listptrli list,const listptrli newstuff);

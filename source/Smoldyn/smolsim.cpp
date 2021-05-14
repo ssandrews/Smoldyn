@@ -277,6 +277,7 @@ simptr simalloc(const char *fileroot) {
 	simsetvariable(sim,"x",dblnan());
 	simsetvariable(sim,"y",dblnan());
 	simsetvariable(sim,"z",dblnan());
+	simsetvariable(sim,"r",dblnan());
 
 #if ENABLE_PYTHON_CALLBACK
     sim->ncallbacks = 0;
@@ -385,9 +386,10 @@ void simoutput(simptr sim) {
 	if(sim->accur<10) simLog(sim,2," Accuracy level: %g\n",sim->accur);
 	else simLog(sim,1," Accuracy level: %g\n",sim->accur);
 	simLog(sim,2," Random number seed: %li\n",sim->randseed);
-	if(sim->nvar>0)
-		simLog(sim,2," %i variable%s defined:\n",sim->nvar,sim->nvar>1?"s":"");
-	for(v=0;v<sim->nvar;v++)
+	simLog(sim,sim->nvar>5?2:1," %i variable%s defined:\n",sim->nvar,sim->nvar>1?"s":"");
+	for(v=0;v<sim->nvar && v<5;v++)
+		simLog(sim,1,"  %s = %g\n",sim->varnames[v],sim->varvalues[v]);
+	for(;v<sim->nvar;v++)
 		simLog(sim,2,"  %s = %g\n",sim->varnames[v],sim->varvalues[v]);
 
 	simLog(sim,2," Time from %g to %g step %g\n",sim->tmin,sim->tmax,sim->dt);
@@ -582,7 +584,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"variable format: name = value");
 		CHECKS(strcmp(nm,"time"),"'time' cannot be used as a variable name; it is pre-defined as the simulation time");
-		CHECKS(strcmp(nm,"x") && strcmp(nm,"y") && strcmp(nm,"z"),"x, y, and z are reserved variable names");
+		CHECKS(strcmp(nm,"x") && strcmp(nm,"y") && strcmp(nm,"z") && strcmp(nm,"r"),"x, y, z, and r are reserved variable names");
 		CHECKS(strokname(nm),"variable name has to start with a letter and then be alphanumeric with optional underscores");
 		line2=strnword(line2,2);
 		CHECKS(line2,"variable format: name = value");
