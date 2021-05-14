@@ -1,8 +1,8 @@
 import smoldyn
 import smoldyn._smoldyn as S
-import os
+from pathlib import Path
 
-workingdir = os.getcwd()
+scriptdir = Path(__file__).parent
 
 print("Smoldyn version = ",smoldyn.version())
 
@@ -21,7 +21,7 @@ print("========= Here is the updated sim1: ==========")
 sim1.displaySim()
 print("==================================")
 
-minpath = workingdir + '/Min1.txt'
+minpath = scriptdir / 'Min1.txt'
 print("======== Loading Min1.txt into sim2 =======")
 print("Path to Min1.txt file: ",minpath)
 
@@ -30,6 +30,5 @@ sim2 = smoldyn.Simulation.fromFile(minpath,"")
 print("Running sim2")
 sim2.run(stop=10,dt=0.005)
 
-print("==== Now using runUntil ===="
+print("==== Now using runUntil ====")
 sim2.runUntil(20,0.005)
-

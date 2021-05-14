@@ -49,6 +49,9 @@ endforeach()
 include_directories(${CMAKE_SOURCE_DIR}/source/Smoldyn)
 include_directories(${CMAKE_BINARY_DIR})
 
+add_executable(test1c S97_libsmoldyn/test1.c)
+target_link_libraries(test1c smoldyn_static)
+
 add_executable(test1 S97_libsmoldyn/test1.cpp)
 target_link_libraries(test1 smoldyn_static)
 
@@ -56,9 +59,10 @@ add_executable(testcode S97_libsmoldyn/testcode/testcode.cpp)
 target_link_libraries(testcode smoldyn_static)
 
 if(UNIX)
-   # can't get them work on Windows.
+   # can't get them to work on Windows.
    add_test(NAME test_test1.cpp COMMAND $<TARGET_FILE:test1>)
+   add_test(NAME test_test1.c COMMAND $<TARGET_FILE:test1c>)
    add_test(NAME test_testcode.cpp COMMAND $<TARGET_FILE:testcode>)
-   set_tests_properties(test_test1.cpp test_testcode.cpp PROPERTIES
+   set_tests_properties(test_test1.cpp test_test1.c test_testcode.cpp PROPERTIES
        ENVIRONMENT SMOLDYN_NO_PROMPT=1)
 endif()
