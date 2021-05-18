@@ -14,10 +14,12 @@ set(NOT_PY_EXAMPLES_NAME_WE regression lines pyscript)
 
 foreach(_example ${PY_FILES})
     get_filename_component(_ex_name ${_example} NAME_WE)
+
     # these are not example script.
     if("${_ex_name}" IN_LIST NOT_PY_EXAMPLES_NAME_WE)
         continue()
     endif()
+
     # message(STATUS "Found python example script: ${_example}.")
     get_filename_component(_ex_dir ${_example} DIRECTORY)
 
@@ -30,6 +32,7 @@ foreach(_example ${PY_FILES})
                 SMOLDYN_NO_PROMPT=1
             ${Python3_EXECUTABLE} ${PYSCRIPT_RUN_WITH_TIMEOUT} ${_example}
         COMMENT "Executing ${_example} (user prompts are disabled)"
+        WORKING_DIRECTORY ${_ex_dir}
         VERBATIM)
 
     add_dependencies(pyexamples py${_ex_name})
