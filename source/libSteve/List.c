@@ -98,6 +98,54 @@ int ListExpandDD(listptrdd list,int addrows,int addcols) {
 	return 0; }
 
 
+/* ListExpandULVD4 */
+int ListExpandULVD4(listptrULVD4 list,int addrows) {
+	unsigned long long *newdataul;
+	void **newdatav;
+	double **newdatad4;
+	int newmax,newn,i;
+
+	newmax=list->max+addrows;
+	if(newmax==0) {
+		newdataul=NULL;
+		newdatav=NULL;
+		newdatad4=NULL;
+		newn=0; }
+	else {
+		newdataul=(unsigned long long*) calloc(newmax,sizeof(unsigned long long));
+		newdatav=(void**) calloc(newmax,sizeof(void*));
+		newdatad4=(double**) calloc(newmax,sizeof(double*));
+		if(!newdataul || !newdatav || !newdatad4) return 1;
+		for(i=0;i<list->n && i<newmax;i++) {
+			newdataul[i]=list->dataul[i];
+			newdatav[i]=list->datav[i];
+			newdatad4[i]=list->datad4[i]; }
+		for(;i<newmax;i++) {
+			newdataul[i]=0;
+			newdatav[i]=NULL;
+			newdatad4[i]=NULL; }
+		for(i=list->n;i<newmax;i++) {
+			newdatad4[i]=(double*) calloc(4,sizeof(double));
+			if(!newdatad4[i]) return 1;
+			newdatad4[i][0]=newdatad4[i][1]=newdatad4[i][2]=newdatad4[i][3]=0; }
+		newn=(list->n<=newmax) ? list->n:newmax; }
+
+	free(list->dataul);
+	free(list->datav);
+	if(newmax<list->max) {
+		for(i=newmax;i<list->max;i++)
+			free(list->datad4[i]); }
+	free(list->datad4);
+
+	list->dataul=newdataul;
+	list->datav=newdatav;
+	list->datad4=newdatad4;
+	list->max=newmax;
+	list->n=newn;
+
+	return 0; }
+
+
 /****************************************************************************/
 /***************************** Memory management ****************************/
 /****************************************************************************/
@@ -157,6 +205,25 @@ listptrdd ListAllocDD(int maxrow,int maxcol) {
 	return list; }
 
 
+/* ListAllocULVD4 */
+listptrULVD4 ListAllocULVD4(int max) {
+	listptrULVD4 list;
+	int er;
+
+	list=(listptrULVD4) malloc(sizeof(struct liststructULVD4));
+	if(!list) return NULL;
+	list->max=0;
+	list->n=0;
+	list->dataul=NULL;
+	list->datav=NULL;
+	list->datad4=NULL;
+	er=ListExpandULVD4(list,max);
+	if(er) {
+		ListFreeULVD4(list);
+		return NULL; }
+	return list; }
+
+
 /* ListFreeLI */
 void ListFreeLI(listptrli list) {
 	if(list) {
@@ -178,6 +245,21 @@ void ListFreeDD(listptrdd list) {
 	if(list) {
 		free(list->data);
 		free(list); }
+	return; }
+
+
+/* ListFreeULVD4 */
+void ListFreeULVD4(listptrULVD4 list) {
+	int i;
+
+	if(!list) return;
+	for(i=0;i<list->max;i++)
+		free(list->datad4[i]);
+	free(list->dataul);
+	free(list->datav);
+	free(list->datad4);
+	free(list);
+
 	return; }
 
 
@@ -298,6 +380,71 @@ listptrdd ListAppendItemsDD(listptrdd list, int newrow, int narg, ...) {
 	va_end(items);
 	return list; }
 
+
+int ListInsertItemULVD4(listptrULVD4 list,unsigned long long xdataul,void *xdatav,const double *xdatad4,int mode) {
+	int jl,jm,ju,er,inlist;
+	double *temp;
+
+	jl=-1;
+	ju=list->n;
+	while(ju-jl > 1) {
+		jm=(ju+jl)>>1;
+		if(xdataul >= list->dataul[jm])	jl=jm;
+		else	ju=jm; }	// at the end, jl is the item, or one below where it goes
+
+	inlist=(jl>=0 && list->dataul[jl]==xdataul);
+	if(mode==0) return inlist ? jl:-1;
+	if(mode==1 && inlist) return jl;
+
+	if(list->n==list->max) {
+		er=ListExpandULVD4(list,list->max+1);
+		if(er) return -2; }
+
+	temp=list->datad4[list->n];
+	for(jm=list->n;jm>jl+1;jm--) {
+		list->dataul[jm]=list->dataul[jm-1];
+		list->datav[jm]=list->datav[jm-1];
+		list->datad4[jm]=list->datad4[jm-1]; }
+	list->dataul[jm]=xdataul;
+	list->datav[jm]=xdatav;
+	temp[0]=xdatad4[0];
+	temp[1]=xdatad4[1];
+	temp[2]=xdatad4[2];
+	temp[3]=xdatad4[3];
+	list->datad4[jm]=temp;
+	list->n++;
+
+	return jm; }
+
+
+
+/****************************************************************************/
+/***************************** Removing elements ********************/
+/****************************************************************************/
+
+
+/* List_CleanULVD4 */
+void List_CleanULVD4(listptrULVD4 list) {
+	int ifrom,ito;
+	double *temp;
+
+	ifrom=0;
+	ito=0;
+	for(ifrom=0;ifrom<list->n;ifrom++) {
+		if(list->datav[ifrom]) {
+			if(ifrom>ito) {
+				list->dataul[ito]=list->dataul[ifrom];
+				list->datav[ito]=list->datav[ifrom];
+				temp=list->datad4[ito];
+				list->datad4[ito]=list->datad4[ifrom];
+				list->dataul[ifrom]=0;
+				list->datav[ifrom]=NULL;
+				temp[0]=temp[1]=temp[2]=temp[3]=0;
+				list->datad4[ifrom]=temp; }
+			ito++; }}
+	list->n=ito;
+
+	return; }
 
 
 /****************************************************************************/

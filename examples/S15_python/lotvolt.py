@@ -1,5 +1,8 @@
 # Simulation file for Lotka-Voltera reaction
 import smoldyn
+from pathlib import Path
+
+scriptdir = Path(__file__).parent
 
 s = smoldyn.Simulation([-100, -100, -10], [100, 100, 10], boundary_type="p")
 rabbit = s.addSpecies("rabbit", color="red", display_size=2, mol_list="rlist", difc=100)
@@ -14,7 +17,7 @@ rabbit.addToSolution(1000)
 fox.addToSolution(1000)
 
 #s.setTiff("OpenGl")
-s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
+#s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
 
 s.setOutputFile("lotvoltout.txt")
 s.addCommand("molcount lotvoltout.txt", "i", on=0, off=20, step=0.01)
@@ -22,11 +25,10 @@ s.addCommand("molcount stdout", "i", on=0, off=20, step=0.1)
 
 s = s.run(5, dt=0.001, overwrite=True)
 
-
 # graph of results. This doesn't run because Python quits first.
 import matplotlib.pyplot as plt
 import numpy as np
-t,rabbit,fox = np.loadtxt("lotvoltout.txt",unpack=True)
+t,rabbit,fox = np.loadtxt(scriptdir / "lotvoltout.txt",unpack=True)
 plt.plot(t,rabbit,'r-',t,fox,'b-')
 plt.show()
 

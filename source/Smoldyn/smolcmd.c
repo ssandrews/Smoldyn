@@ -145,6 +145,7 @@ enum CMDcode cmdsetreactionratemolcount(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdexpandsystem(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);
 
 // Smoldyn function declarations
 double fnmolcount(void *voidsim,char *erstr,char *line2);
@@ -153,6 +154,7 @@ double fnmolcountonsurf(void *voidsim,char *erstr,char *line2);
 // internal functions
 void cmdv1free(cmdptr cmd);
 void cmdv1v2free(cmdptr cmd);
+void cmdListULVD4free(cmdptr cmd);
 enum CMDcode conditionalcmdtype(simptr sim,cmdptr cmd,int nparam);
 int insideecoli(double *pos,double *ofst,double rad,double length);
 void putinecoli(double *pos,double *ofst,double rad,double length);
@@ -166,13 +168,13 @@ void cmdmeansqrdispfree(cmdptr cmd);
 
 
 /* docommand */
-enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line) {
+enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	simptr sim;
 	char word[STRCHAR],*line2;
 	int itct;
 
-	if(!cmdfnarg) return CMDok;
-	sim=(simptr) cmdfnarg;
+	if(!simvd) return CMDok;
+	sim=(simptr) simvd;
 	if(!line) return CMDok;
 	itct=sscanf(line,"%s",word);
 	if(itct<=0) return CMDok;
@@ -283,6 +285,7 @@ enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"expandsystem")) return cmdexpandsystem(sim,cmd,line2);
 	else if(!strcmp(word,"translatecmpt")) return cmdtranslatecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"diffusecmpt")) return cmddiffusecmpt(sim,cmd,line2);
+	else if(!strcmp(word,"longrangeforce")) return cmdlongrangeforce(sim,cmd,line2);
 
 #ifdef VCELL
 	// vcell commands
@@ -4621,6 +4624,132 @@ enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
 	return CMDok; }
 
 
+/* cmdlongrangeforce */
+enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
+	int itct,i,j,j2,ll,d,dim,wrap[DIMMAX],m,duplicate;
+	enum MolecState ms;
+	moleculeptr mptr,mptr2;
+	double dt,mobility,dist,delta[DIMMAX],force;
+	boxptr bptr;
+
+	static int inscan=0,i1,i2,*index1,*index2,rvar,lllo,llhi;
+	static enum MolecState ms1,ms2,mslo,mshi;
+	static double mobility1,mobility2,rmin,rmax,forcemag,syswidth[DIMMAX],force0[4]={0,0,0,0};
+	static char eqstring[STRCHAR];
+	static listptrULVD4 moleclist;
+
+	if(inscan) goto scanportion;
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
+
+	i1=molstring2index1(sim,line2,&ms1,&index1);
+	SCMDCHECK(i1!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i1!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i1!=-3,"cannot read molecule state value");
+	SCMDCHECK(i1!=-4,"molecule name not recognized");
+	SCMDCHECK(i1!=-7,"error allocating memory");
+	line2=strnword(line2,2);
+	i2=molstring2index1(sim,line2,&ms2,&index2);
+	SCMDCHECK(i2!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i2!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i2!=-3,"cannot read molecule state value");
+	SCMDCHECK(i2!=-4,"molecule name not recognized");
+	SCMDCHECK(i2!=-7,"error allocating memory");
+	line2=strnword(line2,2);
+	SCMDCHECK(line2,"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation");
+	itct=strmathsscanf(line2,"%mlg %mlg %mlg %mlg %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
+	SCMDCHECK(itct==5,"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation");
+	SCMDCHECK(rmin>0,"minimum radius needs to be >0");
+	SCMDCHECK(rmax>=0,"maximum radius needs to be >=0");
+
+	dim=sim->dim;
+	if(strhasname(eqstring,"r"))
+		rvar=1;
+	else {
+		rvar=0;
+		forcemag=strmatheval(eqstring,Varnames,Varvalues,Nvar);
+		SCMDCHECK(forcemag==forcemag,"cannot compute equation value"); }
+
+	lllo=llhi=-1;
+	if(ms2<MSMAX) {
+		mslo=ms2;
+		mshi=(enum MolecState)(ms2+1); }
+	else {
+		mslo=(enum MolecState) 0;
+		mshi=(enum MolecState) MSMAX; }
+	for(i=0;i<index2[PDnresults];i++)
+		for(ms=mslo;ms<mshi;ms=(enum MolecState)(ms+1)) {
+			ll=sim->mols->listlookup[index2[PDMAX+i]][ms];
+			if(ll<lllo || lllo==-1) lllo=ll;
+			if(ll>=llhi || llhi==-1) llhi=ll+1; }
+
+	if(!cmd->v1) {
+		cmd->v1=(void*) ListAllocULVD4(256);	// start with 256 molecules, and expand as needed
+		SCMDCHECK(cmd->v1,"memory allocation error");
+		cmd->freefn=&cmdListULVD4free; }
+
+	moleclist=(listptrULVD4) cmd->v1;
+	for(j=0;j<moleclist->n;j++) {
+		moleclist->datad4[j][3]=0;
+		for(d=0;d<dim;d++)
+			moleclist->datad4[j][d]=0; }
+
+	for(d=0;d<dim;d++)
+		syswidth[d]=sim->wlist[2*d+1]->pos-sim->wlist[2*d]->pos;
+
+	inscan=1;
+	molscancmd(sim,i1,index1,ms1,cmd,cmdlongrangeforce);
+	inscan=0;
+
+	dt=sim->dt;
+	for(i=0;i<moleclist->n;i++) {
+		if(moleclist->datad4[i][3]==0)
+			moleclist->datav[i]=NULL;
+		else {
+			mptr=(moleculeptr) moleclist->datav[i];
+			mobility=molismatch(mptr,i1,index1,ms1)?mobility1:mobility2;
+			for(d=0;d<dim;d++)
+				mptr->pos[d]+=moleclist->datad4[i][d]*mobility*dt; }}
+	List_CleanULVD4(moleclist);
+
+	return CMDok;
+
+ scanportion:
+	dim=sim->dim;
+	mptr=(moleculeptr) line2;
+	j=ListInsertItemULVD4(moleclist,mptr->serno,(void*)mptr,force0,1);
+	SCMDCHECK(j>=0,"failed to allocate memory");
+	moleclist->datad4[j][3]=1;
+	bptr=boxscansphere(sim,mptr->pos,rmax,NULL,wrap);
+	while(bptr) {
+		for(ll=lllo;ll<llhi;ll++)
+			for(m=0;m<bptr->nmol[ll];m++) {
+				mptr2=bptr->mol[ll][m];
+				if(molismatch(mptr2,i2,index2,ms2) && mptr2!=mptr) {
+					dist=0;
+					for(d=0;d<dim;d++) {
+						delta[d]=mptr2->pos[d]+wrap[d]*syswidth[d]-mptr->pos[d];
+						dist+=delta[d]*delta[d]; }
+					dist=sqrt(dist);
+					if(dist>=rmin && dist<=rmax) {
+						if(rvar) {
+							simsetvariable(sim,"r",dist);
+							forcemag=strmatheval(eqstring,Varnames,Varvalues,Nvar); }
+						duplicate=molismatch(mptr2,i1,index1,ms1);
+						if(!duplicate) {
+							j2=ListInsertItemULVD4(moleclist,mptr2->serno,(void*)mptr2,force0,1);
+							moleclist->datad4[j2][3]=1; }
+						for(d=0;d<dim;d++) {
+							force=delta[d]/dist*forcemag;
+							moleclist->datad4[j][d]-=force;
+							if(!duplicate)
+								moleclist->datad4[j2][d]+=force; }}}}
+		bptr=boxscansphere(sim,mptr->pos,rmax,bptr,wrap); }
+	return CMDok;	}
+
+
+
+
+
 /**********************************************************/
 /******************* internal routines ********************/
 /**********************************************************/
@@ -4629,6 +4758,7 @@ enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
 /* cmdv1free */
 void cmdv1free(cmdptr cmd) {
 	free(cmd->v1);
+	cmd->v1=NULL;
 	return; }
 
 
@@ -4636,6 +4766,15 @@ void cmdv1free(cmdptr cmd) {
 void cmdv1v2free(cmdptr cmd) {
 	free(cmd->v1);
 	free(cmd->v2);
+	cmd->v1=NULL;
+	cmd->v2=NULL;
+	return; }
+
+
+/* cmdListULVD3free */
+void cmdListULVD4free(cmdptr cmd) {
+	ListFreeULVD4((listptrULVD4) cmd->v1);
+	cmd->v1=NULL;
 	return; }
 
 

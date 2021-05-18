@@ -213,13 +213,16 @@ extern CSTRING enum ErrorCode smolRunTimeStep(simptr sim) {
 	er=smolsimulate(sim);
 	LCHECK(er!=1,funcname,ECnotify,"Simulation complete");
 	LCHECK(er!=2,funcname,ECerror,"Simulation terminated during molecule assignment\n  Out of memory");
-	LCHECK(er!=3,funcname,ECerror,"Simulation terminated during order 0 reaction\n  Not enough molecules allocated");
-	LCHECK(er!=4,funcname,ECerror,"Simulation terminated during order 1 reaction\n  Not enough molecules allocated");
-	LCHECK(er!=5,funcname,ECerror,"Simulation terminated during order 2 reaction\n  Not enough molecules allocated");
+	LCHECK(er!=3,funcname,ECerror,"Simulation terminated during order 0 reaction\n");
+	LCHECK(er!=4,funcname,ECerror,"Simulation terminated during order 1 reaction\n");
+	LCHECK(er!=5,funcname,ECerror,"Simulation terminated during order 2 reaction\n");
 	LCHECK(er!=6,funcname,ECerror,"Simulation terminated during molecule sorting\n  Out of memory");
 	LCHECK(er!=7,funcname,ECnotify,"Simulation stopped by a runtime command");
 	LCHECK(er!=8,funcname,ECerror,"Simulation terminated during simulation state updating\n  Out of memory");
 	LCHECK(er!=9,funcname,ECerror,"Simulation terminated during diffusion\n  Out of memory");
+	LCHECK(er!=11,funcname,ECerror,"Simulation terminated during filament dynamics");
+	LCHECK(er!=12,funcname,ECerror,"Simulation terminated during lattice simulation");
+	LCHECK(er!=13,funcname,ECerror,"Simulation terminated during reaction network expansion");
 	return Libwarncode;
  failure:
 	return Liberrorcode; }
@@ -348,28 +351,34 @@ extern CSTRING enum ErrorCode smolLoadSimFromFile(const char *filepath,const cha
 
 /* smolReadConfigString */
 extern CSTRING enum ErrorCode smolReadConfigString(simptr sim,const char *statement,char *parameters) {
-	return ECok; }
-
-//?? Commented out to force compile
-/*
 	const char *funcname="smolReadConfigString";
-	char erstr[STRCHAR];
 	int er;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	LCHECK(statement,funcname,ECmissing,"missing statement");
-	er=simreadstring(sim,statement,parameters,erstr);
-	LCHECK(!er,funcname,ECerror,erstr);
+	er=simreadstring(sim,NULL,statement,parameters);
+	LCHECK(!er,funcname,ECerror,"Error in configuration string");
 
 	return ECok;
  failure:
 	return Liberrorcode; }
-*/
 
 
 /******************************************************************************/
 /***************************** Simulation settings ****************************/
 /******************************************************************************/
+
+
+/* smolSetSimFlags */
+extern CSTRING enum ErrorCode smolSetSimFlags(simptr sim,const char *flags) {
+	const char *funcname="smolSetSimFlags";
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(flags,funcname,ECmissing,"missing flags");
+	strncpy(sim->flags,flags,STRCHAR);
+	return ECok;
+ failure:
+	return Liberrorcode; }
 
 
 /* smolSetSimTimes */
@@ -753,6 +762,26 @@ extern CSTRING enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *n
     *array=datacopy;
 	if(erase) ListClearDD(list);
 
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+extern CSTRING enum ErrorCode smolRunCommand(simptr sim,const char *commandstring) {
+	const char *funcname="smolRunCommand";
+	char stringcopy[STRCHAR];
+	cmdptr cmd;
+	enum CMDcode cmdcode;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(commandstring,funcname,ECmissing,"missing command string");
+	strncpy(stringcopy,commandstring,STRCHAR);
+	cmd=scmdalloc();
+	LCHECK(cmd,funcname,ECmemory,"failed to create a new command structure");
+	strcpy(cmd->str,stringcopy);
+	cmdcode=docommand((void*)sim,cmd,stringcopy);
+	LCHECK(cmdcode==CMDok,funcname,ECwarning,cmd->erstr);
+	scmdfree(cmd);
 	return ECok;
  failure:
 	return Liberrorcode; }

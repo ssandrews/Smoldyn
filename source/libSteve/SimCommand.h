@@ -44,7 +44,7 @@ typedef struct cmdsuperstruct {
 	queue cmd;						// queue of normal run-time commands
 	queue cmdi;						// queue of integer time commands
 	enum CMDcode (*cmdfn)(void*,cmdptr,char*);	// function that runs commands
-	void *cmdfnarg;				// function argument (e.g. sim)
+	void *simvd;					// void pointer to simulation structure
 	int iter;							// number of times integer commands have run
 	double flag;					// global command structure flag
 	int maxfile;					// number of files allocated
@@ -64,7 +64,9 @@ typedef struct cmdsuperstruct {
 	} *cmdssptr;
 
 // non-file functions
-cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *cmdfnarg,const char *root);
+cmdptr scmdalloc(void);
+void scmdfree(cmdptr cmd);
+cmdssptr scmdssalloc(enum CMDcode (*cmdfn)(void*,cmdptr,char*),void *simvd,const char *root);
 void scmdssfree(cmdssptr cmds);
 void scmdsetcondition(cmdssptr cmds,int cond,int upgrade);
 int scmdaddcommand(cmdssptr cmds,char timing,double on,double off,double step,double multiplier,const char *commandstring);

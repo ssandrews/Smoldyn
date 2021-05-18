@@ -1066,7 +1066,7 @@ void molsetlistlookup(simptr sim,int ident,int *index,enum MolecState ms,int ll)
 
 	else {																						// all diffusing or non-diffusing species
 		diffusing=(ident==-7)?1:0;
-		for(i=0;i<sim->mols->nspecies;i++) {
+		for(i=1;i<sim->mols->nspecies;i++) {
 			if(ms==MSsoln || ms==MSbsoln) {
 				if(molismobile(sim,i,MSsoln)==diffusing)
 					sim->mols->listlookup[i][MSsoln]=sim->mols->listlookup[i][MSbsoln]=ll; }
@@ -2671,7 +2671,7 @@ int molsupdatelists(simptr sim) {
 			molsetlistlookup(sim,-8,NULL,MSall,ll); }}
 
 	ok=1;															// set any list lookup values that weren't done yet
-	for(i=0;i<mols->nspecies && ok;i++)
+	for(i=1;i<mols->nspecies && ok;i++)
 		for(ms=(enum MolecState)(0);ms<MSMAX && ok;ms=(enum MolecState)(ms+1))
 			if(mols->listlookup[i][ms]<0)
 				ok=0;
@@ -2680,7 +2680,7 @@ int molsupdatelists(simptr sim) {
 		if(ll<0) {
 			ll=addmollist(sim,"unassignedlist",MLTsystem);
 			if(ll<0) return 1; }
-		for(i=0;i<mols->nspecies;i++)
+		for(i=1;i<mols->nspecies;i++)
 			for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
 				if(mols->listlookup[i][ms]<0)
 					molsetlistlookup(sim,i,NULL,ms,ll); }
@@ -2963,15 +2963,18 @@ int molsort(simptr sim,int onlydead2live) {
 
 	for(m=mols->topd;m<mols->nd;m++) {		// move molecules from resurrected to reborn
 		mptr=dead[m];
-		ll2=mptr->list;
-		if(nl[ll2]==maxl[ll2])
-			if(molexpandlist(mols,sim->dim,ll2,-1,0)) {
-				simLog(sim,10,"out of memory in molsort\n");return 1;}
-		live[ll2][nl[ll2]++]=mptr;
-		dead[m]=NULL;
-		if(listtype[ll2]==MLTsystem) {
-			if(boxaddmol(mptr,ll2)) {
-				simLog(sim,10,"out of memory in molsort\n");return 1;} }}
+		if(mptr->ident==0) {
+			dead[mols->topd++]=mptr; }
+		else {
+			ll2=mptr->list;
+			if(nl[ll2]==maxl[ll2])
+				if(molexpandlist(mols,sim->dim,ll2,-1,0)) {
+					simLog(sim,10,"out of memory in molsort\n");return 1;}
+			live[ll2][nl[ll2]++]=mptr;
+			dead[m]=NULL;
+			if(listtype[ll2]==MLTsystem) {
+				if(boxaddmol(mptr,ll2)) {
+					simLog(sim,10,"out of memory in molsort\n");return 1;} }}}
 	mols->nd=mols->topd;
 
   if(!onlydead2live) {

@@ -508,6 +508,12 @@ PYBIND11_MODULE(_smoldyn, m)
             sim.getSimPtr()->quitatend = quitatend;
         })
 
+      // enum ErrorCode smolSetSimFlags(simptr sim, const char *flags);
+      .def("setFlags",
+        [](Simulation& sim, const char* flags) {
+            return smolSetSimFlags(sim.getSimPtr(), flags);
+        })
+
       // enum ErrorCode smolSetTimeNow(simptr sim, double timenow);
       .def("setTimeNow",
         [](Simulation& sim, double timenow) {
@@ -654,6 +660,11 @@ PYBIND11_MODULE(_smoldyn, m)
                 options[it->first.cast<string>()] = it->second.cast<double>();
             return sim.addCommand(cmd, cmd_type, options);
         })
+
+			.def("runCommand",
+				[](Simulation& sim, const char* commandstring) {
+						return smolRunCommand(sim.getSimPtr(), commandstring);
+				})
 
       /***************
        *  Molecules  *

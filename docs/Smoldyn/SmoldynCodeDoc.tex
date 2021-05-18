@@ -1354,7 +1354,7 @@ This function is essentially the same exact thing several times in a row, for th
 \item[\ttt{void}]
 \ttt{molscancmd(simptr sim,int i,int *index,enum MolecState ms,cmdptr cmd,enum CMDcode(*fn)(simptr,cmdptr,char*));}
 \hfill \\
-Scans over all molecules that meet the criteria listed and calls the function \ttt{fn} for each one. This function is similar to \ttt{molcount}, except that it calls a function for each molecule rather than just counting them. As with \ttt{molcount}, this checks all molecule lists and the dead list; it also works whether molecules have been sorted or not. Send in \ttt{i} as the species number, which should be less than 0 for all species, 0 to indicate that \ttt{i} should be ignored and \ttt{index} should be used instead, or as a positive number for that specific species. Enter \ttt{index} as a sorted list of species, using the standard index pattern header and format; it is only used if \ttt{i} equals zero. Enter \ttt{ms} as \ttt{MSall} for all species and as a specific species otherwise. The function entry is designed for a Smoldyn command function and so has the same format, despite the fact that this format isn't really ideal in this case. The function gets passed the simulation pointer in the first argument, \ttt{cmd} in the second argument, and a pointer to the current molecule in the third parameter (cast to a \ttt{char*} due to the non-ideal formatting). The function should return \ttt{CMDok} to indicate that the scan should continue or \ttt{CMDstop} to indicate that the scan should stop. See the commands section of the manual to see how this function can be used.
+Scans over all molecules that meet the criteria listed and calls the function \ttt{fn} for each one. This function is similar to \ttt{molcount}, except that it calls a function for each molecule rather than just counting them. As with \ttt{molcount}, this checks all molecule lists and the dead list; it also works whether molecules have been sorted or not. Send in \ttt{i} as the species number, which should be less than 0 for all species, 0 to indicate that \ttt{i} should be ignored and \ttt{index} should be used instead, or as a positive number for that specific species. Enter \ttt{index} as a sorted list of species, using the standard index pattern header and format; it is only used if \ttt{i} equals zero. Enter \ttt{ms} as \ttt{MSall} for all states and as a specific state otherwise. The function entry is designed for a Smoldyn command function and so has the same format, despite the fact that this format isn't really ideal in this case. The function gets passed the simulation pointer in the first argument, \ttt{cmd} in the second argument, and a pointer to the current molecule in the third parameter (cast to a \ttt{char*} due to the non-ideal formatting). The function should return \ttt{CMDok} to indicate that the scan should continue or \ttt{CMDstop} to indicate that the scan should stop. See the commands section of the manual to see how this function can be used.
 
 \item[\ttt{void}]
 \ttt{molscanfn(simptr sim,int i,int *index,enum MolecState ms,char *erstr,double(*fn)(void*,char*,char*);}
@@ -1509,7 +1509,7 @@ Adds \ttt{nmol} molecules of type \ttt{ident} and state \ttt{MSsoln} to the syst
 \hfill \\
 Sorts molecules between live and dead lists, and between live lists. This also takes care of the live lists within boxes, as well as all list indices. Sorting is based solely on the list element of the molecule structure. Molecule ordering in lists is not preserved. If a molecule is in the system (in a master live list of type \ttt{MLTsystem}), its box element must point to a box, and those boxes' molecule lists must list the respective molecules. Resurrected molecules need to have the proper box listed in the molecule structure, but should not be listed in the box list; this listing is taken care of here. The routine returns 0 for normal operation and 1 if memory could not be allocated.
 
-Under normal operation, the \ttt{onlydead2live} option is set to 0. In this case, the function first sets the \ttt{topl} indices to the ends of the live lists, so that future functions can see what's new in those lists. Then, it checks molecules in live lists, starting with the \ttt{sortl} molecule, which is the bottom one that is known to need sorting, and checks up to the \ttt{topl-1} molecule, which is the end of the list, as it was when this function was called. Any missorted molecules get moved. Next, the function processes all molecules in the dead list, starting from \ttt{topd} and going to \ttt{nd}, which is called the resurrected portion of the dead list. All of these molecules are moved to the appropriate live list. Afterwards, \ttt{nd} is decreased to equal \ttt{topd}, meaning that the resurrected list has zero length and that there's nothing more to do there. Finally, the function sets the \ttt{sortl} indices to equal the \ttt{nl} indices, to show that all of the molecules in the live lists have been sorted. Thus, at the end, \ttt{topl} $\leq$ \ttt{sortl} = \ttt{nl}, where the sublist from \ttt{topl} and \ttt{nl} is the reborn list. Also, \ttt{topd} = \ttt{nd}, showing that there is no resurrected list.
+Under normal operation, the \ttt{onlydead2live} option is set to 0. In this case, the function first sets the \ttt{topl} indices to the ends of the live lists, so that future functions can see what's new in those lists. Then, it checks molecules in live lists, starting with the \ttt{sortl} molecule, which is the bottom one that is known to need sorting, and checks up to the \ttt{topl-1} molecule, which is the end of the list, as it was when this function was called. Any missorted molecules get moved. Next, the function processes all molecules in the dead list, starting from \ttt{topd} and going to \ttt{nd}, which is called the resurrected portion of the dead list. All of these molecules are moved to the appropriate live list (unless they are empty molecules, in which case they get put on the top of the dead list). Afterwards, \ttt{nd} is decreased to equal \ttt{topd}, meaning that the resurrected list has zero length and that there's nothing more to do there. Finally, the function sets the \ttt{sortl} indices to equal the \ttt{nl} indices, to show that all of the molecules in the live lists have been sorted. Thus, at the end, \ttt{topl} $\leq$ \ttt{sortl} = \ttt{nl}, where the sublist from \ttt{topl} and \ttt{nl} is the reborn list. Also, \ttt{topd} = \ttt{nd}, showing that there is no resurrected list.
 
 On occasion, it's helpful to set the \ttt{onlydead2live} option to 1. In this case, the function only sorts resurrected molecules in the dead list into the live lists. It does not change the \ttt{sortl} or \ttt{topl} indices. One result is that any molecules that were considered to be reborn before are still considered to be reborn (and, in fact, there are now more reborn molecules due to their addition from the resurrected list). This option is helpful when molecules that have been added to the system need to be made available for other functions, such as in some commands that add molecules and for molecules added from the lattice code.
 
@@ -4856,9 +4856,26 @@ Performs all commands that should happen at the current time. This includes comm
 
 \item[\ttt{int simulatetimestep(simptr sim)}]
 \hfill \\
-\ttt{simulatetimestep} runs the simulation over one time step. If an error is encountered at any step, or a command tells the simulation to stop, or the simulation time becomes greater than or equal to the requested maximum time, the function returns an error code to indicate that the simulation should stop; otherwise it returns 0 to indicate that the simulation should continue. Error codes are 1 for simulation completed normally, 2 for error with \ttt{assignmolecs}, 3 for error with \ttt{zeroreact}, 4 for error with \ttt{unireact}, 5 for error with \ttt{bireact}, 6 for error with \ttt{molsort}, 7 for terminate instruction from \ttt{docommand} (e.g. stop command), 8 for failed simulation update, 9 for error with \ttt{diffuse}, 10 for simulation stopped because the time equals or exceeds the break time, 11 for error in filament dynamics, 12 for error in lattice simulation, or 13 for error in reaction network expansion. Errors 2 and 6 arise from insufficient memory when boxes were being expanded and errors 3, 4, and 5 arise from too few molecules being allocated initially.
+\ttt{simulatetimestep} runs the simulation over one time step. If an error is encountered at any step, or a command tells the simulation to stop, or the simulation time becomes greater than or equal to the requested maximum time, the function returns an error code to indicate that the simulation should stop; otherwise it returns 0 to indicate that the simulation should continue. See the table below. Note that the sequence in which the simulation components are set up is designed carefully and will likely lead to bugs if it is changed.
 
-Note that the sequence in which the simulation components are set up is designed carefully and will likely lead to bugs if it is changed.
+\begin{longtable}[c]{cl}
+Error code&Meaning\\
+\hline
+0&Simulation should continue\\
+1&Simulation completed normally\\
+2&Error with \ttt{assignmolecs} (insufficient memory when expanding boxes)\\
+3&Error with \ttt{zeroreact} (insufficient memory when expanding molecules)\\
+4&Error with \ttt{unireact} (insufficient memory when expanding molecules)\\
+5&Error with \ttt{bireact} (insufficient memory when expanding molecules)\\
+6&Error with \ttt{molsort} (insufficient memory when expanding boxes)\\
+7&Terminate instruction from \ttt{docommand} (e.g. stop command)\\
+8&Failed simulation update\\
+9&Error with \ttt{diffuse}\\
+10&Simulation stopped because the time equals or exceeds the break time\\
+11&Error in filament dynamics\\
+12&Error in lattice simulation\\
+13&Error in reaction network expansion
+\end{longtable}
 
 \item[\ttt{void endsimulate(simptr sim,int er)}]
 \hfill \\
@@ -4968,8 +4985,8 @@ Not all functions are listed here because many of them don't require any more de
 
 \begin{description}
 
-\item[\ttt{CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line);}]
-\ttt{docommand} is given the simulation structure in \ttt{sim}, the command to be executed in \ttt{cmd}, and a line of text which includes the entire command string. It parses the line of text only into the first word, which specifies which command is to be run, and into the rest of the line, which contains the command parameters. The rest of the line is then sent to the appropriate command routine as \ttt{line2}. The return value of the command that was called is passed back to the main program from \ttt{docommand}. These routines return \ttt{CMDok} for normal operation, \ttt{CMDwarn} for an error that does not require simulation termination, \ttt{CMDabort} for an error that requires immediate simulation termination, \ttt{CMDstop} for a normal simulation termination, and \ttt{CMDpause} for simulation pausing.
+\item[\ttt{CMDcode docommand(void *simvd,cmdptr cmd,char *line);}]
+\ttt{docommand} is given the simulation structure in \ttt{simvd}, the command to be executed in \ttt{cmd}, and a line of text which includes the entire command string. It parses the line of text only into the first word, which specifies which command is to be run, and into the rest of the line, which contains the command parameters. The rest of the line is then sent to the appropriate command routine as \ttt{line2}. The return value of the command that was called is passed back to the main program from \ttt{docommand}. These routines return \ttt{CMDok} for normal operation, \ttt{CMDwarn} for an error that does not require simulation termination, \ttt{CMDabort} for an error that requires immediate simulation termination, \ttt{CMDstop} for a normal simulation termination, and \ttt{CMDpause} for simulation pausing.
 
 \end{description}
 
@@ -5123,7 +5140,7 @@ Counts and outputs the number of molecules as a function of polar angle, creatin
 
 \item[\ttt{enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
-Computes and outputs a radial distribution function.
+Computes and outputs a radial distribution function. This function is a nice example of scanning over pairs of molecules, where wildcards are allowed. It inputs species 1 into \ttt{i1}, \ttt{ms1}, and \ttt{index1} and species 2 into \ttt{i2}, \ttt{ms2}, and \ttt{index2}. It creates a histogram of separations in \ttt{ct=cmd->v1}, which has size \ttt{cmd->i1=nbin}. Next, it finds the low and high state numbers (\ttt{mslo} and \ttt{mshi}) and low and high list numbers (\ttt{lllo} and \ttt{llhi}) for species number 2. Then, it scans over species 1 using the \ttt{molscancmd} function, for which the code for each scan is in the \ttt{scanportion} section. In that portion, \ttt{mptr} is the current molecule of interest, from species 1. The function scans over the boxes that surround \ttt{mptr} and, within each box, it scans over all molecules in lists from \ttt{lllo} to \ttt{llhi}, testing to see if they are of type species 2 with the \ttt{molismatch} function. If it matches, the separation is computed and included in the histogram. Finally, back in the main function, data analysis is done and results are output.
 
 \item[\ttt{enum CMDcode cmdmolcountspecies(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
@@ -5334,6 +5351,10 @@ This command translates a compartment, including dealing with molecule displacem
 \item[\ttt{enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);}]
 \hfill \\
 This command diffuses a compartment, including dealing with molecule displacements. All of the work is done by \ttt{comparttranslate}. For bounded diffusion, a move that would lead to an illegal location is rejected, and diffusion is attempted again, up to 10 times; if there are 10 failures, then the compartment simply isn't moved at all during that command call.
+
+\item[\ttt{enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);}]
+\hfill \\
+This command simulates a long range force between pairs of molecules. It uses loops over molecule pairs that's largely borrowed from \ttt{cmdradialdistribution}. Also, it keeps a list of molecules that have forces on them, which is in \ttt{cmd->v1}, used internally as \ttt{moleclist}. Each entry in this list includes the molecule serial number (on which the list is sorted), the molecule pointer, and a 4-dimensional vector of doubles. The first three dimensions are for the $x$, $y$, and $z$ components of the force on a molecule, and the fourth is 0 for molecules that were never visited during the last round of checks and 1 for molecules that were visited. Unvisited molecules get purged from this list, partly because those molecules might have gone away due to reactions.
 
 \item[\underline{Internal functions}]
 
@@ -6643,6 +6664,13 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Changed SimCommand.c and .h, so that commands are now added to a list of templates rather than directly to the command queues. Also added a condition element to the superstructure, telling whether commands have been added to the queues or not. This required a major overhaul of command running code.
 \item Moved a few lines of code about commands from endsimulate to smolsimulate.
 \item Dilawar made major changes to the build system, so that it's more modular now.
+\item Added long range forces, with \ttt{cmdlongrangeforce} and several additions to List.c and List.h.
+\item Made some minor changes to SimCommand so that its output now pays attention to simulation flags.
+\item Fixed some minor bugs in \ttt{molsetlistlookup} and \ttt{molsupdatelists}, which set the wrong list number for empty molecules. This only affected partially set up data structures.
+\item Edited \ttt{molsort} so that it can cope with empty molecules in the resurrected list.
+\item Fixed \ttt{smolReadConfigString} so that it now works again, for both Libsmoldyn and the Python low-level interface.
+\item Added \ttt{smolSetSimFlags} and \ttt{smolRunCommand} functions to Libsmoldyn and also to the Python low-level interface.
+\item Fixed minor issues with \ttt{smolRunTimeStep} and commands, which were causing commands to not run after the first time step.
 
 \end{itemize}
 
