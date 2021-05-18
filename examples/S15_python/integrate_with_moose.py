@@ -9,9 +9,11 @@ try:
     import rdesigneur as rd
     import gnuplotlib as gp
 except Exception:
-    print('[WARN] MOOSE/gnuplotlib are missing. To install'
-          ' $ python3 -m pip install pymoose --pre --user '
-          ' $ python3 -m pip install gnuplotlib')
+    print(
+        "[WARN] MOOSE/gnuplotlib are missing. To install"
+        " $ python3 -m pip install pymoose --pre --user "
+        " $ python3 -m pip install gnuplotlib"
+    )
     quit(0)
 
 g1_ = gp.gnuplotlib(title="MOOSE simualtion: Soma")
@@ -38,26 +40,28 @@ r1_ = None
 bouton_ = None
 bottom_ = None
 
+
 def run_moose(t, args):
     global mooseT_, mooseY_
     global elem_, g1_
     dt, N = args
     mooseT_.append(t)
     mooseY_.append(elem_.Vm)
-    moose.start(dt*N)
+    moose.start(dt * N)
     if len(mooseT_) == 220:
         mooseT_ = mooseT_[20:]
         mooseY_ = mooseY_[20:]
         g1_.plot(np.array(mooseT_), np.array(mooseY_))
     return elem_.Vm
 
+
 def update_kf(val):
     global r1_, bouton_, bottom_
     kf = max(0.0, val) * 1e3 * 1e3
     r1_.setRate(kf)
-    bottom_.setRate(sv, "fsoln", "front", rate=(10+kf), revrate=0.0)
-    c = min(kf/300, 1)
-    bouton_.setStyle('both', color=[c, c, c])
+    bottom_.setRate(sv, "fsoln", "front", rate=(10 + kf), revrate=0.0)
+    c = min(kf / 300, 1)
+    bouton_.setStyle("both", color=[c, c, c])
 
 
 """
@@ -78,28 +82,28 @@ sv.addToSolution(100, pos=(500, 500))
 
 # fused vesicle.
 svFused = s.addSpecies("VSOpen", color="red", display_size=10)
-s.addReaction("prod", subs=[sv], prds=[sv,sv], rate=1e-2)
+s.addReaction("prod", subs=[sv], prds=[sv, sv], rate=1e-2)
 
 # neutotransmitter. The concentration has the half-life of 2ms (PMID:
 # 19844813), that is, rate is 0.693/2e-3, k ~ 346 per sec
 trans = s.addSpecies("trans", color="red", difc=10000, display_size=2)
-s.addReaction("decay", subs=[trans], prds=[], rate=math.log(2)/20e-3)
+s.addReaction("decay", subs=[trans], prds=[], rate=math.log(2) / 20e-3)
 
 # BOUTON
 path = s.addPath2D((1000, 0), (550, 1000), (450, 1000), (0, 0))
 bouton_ = s.addSurface("bouton", panels=path.panels)
-bouton_.setStyle('both', color="blue")
-bouton_.setAction('both', [sv], "reflect")
+bouton_.setStyle("both", color="blue")
+bouton_.setAction("both", [sv], "reflect")
 
 # this is the bottom surface of bouton. This is sticky for synaptic vesciles
-rect1 = smoldyn.Rectangle(corner=(0,0), dimensions=[1000], axis="+y")
+rect1 = smoldyn.Rectangle(corner=(0, 0), dimensions=[1000], axis="+y")
 bottom_ = s.addSurface("boutonBottom", panels=[rect1])
-bottom_.setStyle('both', color="red")
+bottom_.setStyle("both", color="red")
 
 # SV stick to bottom of the bouton.
 bottom_.setRate(sv, "fsoln", "front", rate=100, revrate=0)
 # but it reflect neurotranmitter
-bottom_.setAction('back', trans, "reflect")
+bottom_.setAction("back", trans, "reflect")
 
 # They also merge to the surface, this value is dependant on the membrane
 # potential. See connect
