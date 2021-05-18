@@ -425,8 +425,8 @@ if (OPTION_TARGET_SMOLDYN)
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
-    add_library(smoldyn_shared SHARED ${SRC_FILES})
-    add_library(smoldyn_static STATIC ${SRC_FILES})
+    add_library(smoldyn_shared SHARED ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
+    add_library(smoldyn_static STATIC ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     target_link_libraries(smoldyn_shared ${DEP_LIBS})
