@@ -661,10 +661,10 @@ PYBIND11_MODULE(_smoldyn, m)
             return sim.addCommand(cmd, cmd_type, options);
         })
 
-			.def("runCommand",
-				[](Simulation& sim, const char* commandstring) {
-						return smolRunCommand(sim.getSimPtr(), commandstring);
-				})
+      .def("runCommand",
+        [](Simulation& sim, const char* commandstring) {
+            return smolRunCommand(sim.getSimPtr(), commandstring);
+        })
 
       /***************
        *  Molecules  *

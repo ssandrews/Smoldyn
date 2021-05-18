@@ -9,7 +9,7 @@ if(VTK_VERSION VERSION_GREATER_EQUAL "9.0.0")
     message(FATAL_ERROR "Only vtk version <8.x is supported")
 endif()
 
-add_library(vtkwrapper STATIC vtkwrapper.cpp)
+add_library(vtkwrapper OBJECT vtkwrapper.cpp)
 
 set_target_properties(vtkwrapper PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(vtkwrapper PRIVATE ${VTK_LIBRARIES})
