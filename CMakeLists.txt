@@ -406,11 +406,12 @@ endif(OPTION_USE_ZLIB)
 
 
 ####### Option: Build with NextSubvolume ##########
+list(APPEND DEP_LIBS $<TARGET_OBJECTS:Steve>)
 
 if (OPTION_NSV)
     add_subdirectory(source/NextSubVolume)
-    list(APPEND DEP_LIBS nsv)
     include_directories(source/NextSubVolume)
+    list(APPEND DEP_LIBS nsv)
 endif (OPTION_NSV)
 
 
@@ -418,13 +419,13 @@ endif (OPTION_NSV)
 
 add_subdirectory(source/libSteve)
 if (OPTION_TARGET_SMOLDYN)
-    add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES} $<TARGET_OBJECTS:Steve>)
+    add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES})
     target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
-    add_library(smoldyn_shared SHARED ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
-    add_library(smoldyn_static STATIC ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
+    add_library(smoldyn_shared SHARED ${SRC_FILES})
+    add_library(smoldyn_static STATIC ${SRC_FILES})
 
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
