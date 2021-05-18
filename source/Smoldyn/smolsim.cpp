@@ -2544,8 +2544,9 @@ int smolsimulate(simptr sim) {
 	er=simdocommands(sim);
 	if(!er)
 		while((er=simulatetimestep(sim))==0);
-	scmdpop(sim->cmds,sim->tmax);
-	scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
-	scmdsetcondition(sim->cmds,0,0);
+	if(er!=10) {
+		scmdpop(sim->cmds,sim->tmax);
+		scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
+		scmdsetcondition(sim->cmds,0,0); }
 	sim->elapsedtime+=difftime(time(NULL),sim->clockstt);
 	return er; }

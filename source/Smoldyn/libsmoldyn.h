@@ -62,6 +62,7 @@ enum ErrorCode smolReadConfigString(simptr sim,const char *statement,char *param
 
 /***************************** Simulation settings ****************************/
 
+enum ErrorCode smolSetSimFlags(simptr sim,const char *flags);
 enum ErrorCode smolSetSimTimes(simptr sim,double timestart,double timestop,double timestep);
 enum ErrorCode smolSetTimeStart(simptr sim,double timestart);
 enum ErrorCode smolSetTimeStop(simptr sim,double timestop);
@@ -91,6 +92,7 @@ enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite);
 enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring);
 enum ErrorCode smolAddCommandFromString(simptr sim,char *string);
 enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,double **array,int erase);
+enum ErrorCode smolRunCommand(simptr sim,const char *commandstring);
 
 /********************************* Molecules **********************************/
 

@@ -4084,7 +4084,7 @@ Updates the simulation structure. This calculates all simulation parameters from
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolRunTimeStep(simptr sim)}\\
 Python: $sim$.\ttt{runTimeStep()}; \ttt{S.Simulation.runTimeStep($sim$)}\\
-Runs one time step of the simulation. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
+Runs one time step of the simulation. Returns an error if the simulation terminates unexpectedly during this time step. This function does not support graphical output, but always runs in non-graphics mode.
 
 \item[RunSim]
 \hfill \\
@@ -4135,7 +4135,7 @@ Loads part or all of a sim structure from the file that is at \ttt{filepath} and
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolReadConfigString(simptr sim, char *statement, char *parameters)}\\
 Python: \ttt{ErrorCode S.Simulation.readConfigString(sim,str statement, str parameters)}\\
-\textit{This function doesn't work currently in either the C or Python APIs.} Reads and processes what would normally be a single line of a configuration file. The first word of the line is the statement name, entered here as \ttt{statement}, while the rest of the line is entered as \ttt{parameters}. Separate different parameters with spaces. The same parser is used as for normal Smoldyn configuration files. This function does not make use of block style input formatting, such as for surface definitions. This means that a new surface needs to declared with ``\ttt{new\_surface} \emph{name}" and all subsequent surface definitions need to start with ``\ttt{surface} \emph{name}". Analogous rules apply to compartments and port.
+Reads and processes what would normally be a single line of a configuration file. The first word of the line is the statement name, entered here as \ttt{statement}, while the rest of the line is entered as \ttt{parameters}. Separate different parameters with spaces. The same parser is used as for normal Smoldyn configuration files. This function does not make use of block style input formatting, such as for surface definitions. This means that a new surface needs to declared with ``\ttt{new\_surface} \emph{name}" and all subsequent surface definitions need to start with ``\ttt{surface} \emph{name}". Analogous rules apply to compartments and port.
 
 \end{description}
 
@@ -4143,6 +4143,12 @@ Python: \ttt{ErrorCode S.Simulation.readConfigString(sim,str statement, str para
 \section{Simulation settings}
 
 \begin{description}
+
+\item[SetSimFlags]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSimFlags(simptr sim, const char *flags)}\\
+Python: \ttt{S.Simulation.setSimFlags(sim, str flags)}\\
+Sets the simulation flags. Examples are: \ttt{q} is for quiet operation, \ttt{t} is for text-only, and \ttt{v} is for verbose.
 
 \item[SetSimTimes]
 \hfill \\
@@ -4441,6 +4447,12 @@ Defines a runtime command, including its execution timing parameters, from the s
 C/C++: \ttt{enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,char *array,int erase)}\\
 Python: \ttt{vector<vector<double>> getOutputData(str dataname, bool erase)}\\
 Returns data that have been recorded by an observation command (e.g. molcount). Send in the name of the data in \ttt{dataname} and pointers to variables that will receive the data in: \ttt{nrow}, for the number of rows, \ttt{ncol}, for the number of columns, and \ttt{array}, for the data themselves. The data are copied over in this function from the original into the array that is returned, with the result that the data in the array can be modified as desired. \textit{The array needs to be freed by the host code.} All values in this data table are doubles, which is appropriate for some things but not so good for things like species names and molecule states. The array represents a 2D table as a single vector so to read the item at row \ttt{i} and column \ttt{j}, use \ttt{array[i*ncol+j]}. Set \ttt{erase} to 1 for the original data to be cleared after it is copied over.
+
+\item[runCommand]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolRunCommand(simptr sim,const char *commandstring)}\\
+Python: \ttt{S.Simulation.smolRunCommand(sim, str commandstring)}\\
+Runs the specified command one time, immediately. The \ttt{commandstring} should include the command name and all parameters, but not any timing information.
 
 \end{description}
 

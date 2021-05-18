@@ -168,13 +168,13 @@ void cmdmeansqrdispfree(cmdptr cmd);
 
 
 /* docommand */
-enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line) {
+enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	simptr sim;
 	char word[STRCHAR],*line2;
 	int itct;
 
-	if(!cmdfnarg) return CMDok;
-	sim=(simptr) cmdfnarg;
+	if(!simvd) return CMDok;
+	sim=(simptr) simvd;
 	if(!line) return CMDok;
 	itct=sscanf(line,"%s",word);
 	if(itct<=0) return CMDok;
