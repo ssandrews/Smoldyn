@@ -417,23 +417,23 @@ endif (OPTION_NSV)
 ####### Targets ##########
 
 add_subdirectory(source/libSteve)
-list(APPEND DEP_LIBS Steve)
 
 if (OPTION_TARGET_SMOLDYN)
-    add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES})
-    target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
+    add_executable(smoldyn ${MAIN_FILES})
+    target_link_libraries(smoldyn PRIVATE smoldyn_static ${DEP_LIBS})
 endif ()
 
 if (OPTION_TARGET_LIBSMOLDYN)
     add_library(smoldyn_shared SHARED ${SRC_FILES})
+
     add_library(smoldyn_static STATIC ${SRC_FILES})
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-    target_link_libraries(smoldyn_shared ${DEP_LIBS})
-    target_link_libraries(smoldyn_shared)
+    target_link_libraries(smoldyn_shared PRIVATE $<TARGET_OBJECTS:Steve>)
+    target_link_libraries(smoldyn_shared PUBLIC ${DEP_LIBS})
 
-    target_link_libraries(smoldyn_static ${DEP_LIBS})
-    target_link_libraries(smoldyn_static)
+    target_link_libraries(smoldyn_static PRIVATE $<TARGET_OBJECTS:Steve>)
+    target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 
     if (APPLE_BUILD)
         set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
