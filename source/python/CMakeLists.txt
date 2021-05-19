@@ -2,7 +2,9 @@
 
 # recompile libsmoldyn for PYTHON.
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
-add_library(_pysmoldyn STATIC ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
+add_library(_pysmoldyn STATIC ${SRC_FILES} 
+    $<TARGET_OBJECTS:Steve>
+    $<TARGET_OBJECTS:nsv>)
 
 target_include_directories(_pysmoldyn PRIVATE ${Python3_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
 
