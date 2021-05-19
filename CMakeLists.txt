@@ -409,23 +409,33 @@ endif(OPTION_USE_ZLIB)
 
 if (OPTION_NSV)
     add_subdirectory(source/NextSubVolume)
-    list(APPEND DEP_LIBS nsv)
     include_directories(source/NextSubVolume)
 endif (OPTION_NSV)
 
+if(OPTION_VTK)
+    add_definitions(-DHAVE_VTK)
+    find_package(VTK REQUIRED)
+    include(${VTK_USE_FILE})
+
+    message(STATUS "VTK_VERSION: ${VTK_VERSION}")
+    if(VTK_VERSION VERSION_GREATER_EQUAL "8.0.0")
+        message(FATAL_ERROR "Only vtk version <8.0 is supported")
+    endif()
+    list(APPEND DEP_LIBS ${VTK_LIBRARIES})
+endif()
+
 
 ####### Targets ##########
-
 add_subdirectory(source/libSteve)
 
-if (OPTION_TARGET_SMOLDYN)
-    add_executable(smoldyn ${MAIN_FILES})
-    target_link_libraries(smoldyn PRIVATE smoldyn_static ${DEP_LIBS})
-endif ()
-
 if (OPTION_TARGET_LIBSMOLDYN)
-    add_library(smoldyn_shared SHARED ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
-    add_library(smoldyn_static STATIC ${SRC_FILES} $<TARGET_OBJECTS:Steve>)
+    add_library(smoldyn_shared SHARED ${SRC_FILES} 
+        $<TARGET_OBJECTS:Steve>
+        $<TARGET_OBJECTS:nsv>)
+    add_library(smoldyn_static STATIC ${SRC_FILES} 
+        $<TARGET_OBJECTS:Steve>
+        $<TARGET_OBJECTS:nsv>)
+
     set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 
     target_link_libraries(smoldyn_shared PUBLIC ${DEP_LIBS})
@@ -437,6 +447,12 @@ if (OPTION_TARGET_LIBSMOLDYN)
         set_target_properties(smoldyn_shared PROPERTIES PREFIX "lib")
         set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
     endif ()
+endif ()
+
+if (OPTION_TARGET_SMOLDYN)
+    add_executable(smoldyn ${MAIN_FILES})
+    target_link_libraries(smoldyn PUBLIC smoldyn_static)
+    target_link_libraries(smoldyn PUBLIC ${DEP_LIBS})
 endif ()
 
 
