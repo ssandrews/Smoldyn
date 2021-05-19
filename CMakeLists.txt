@@ -406,7 +406,6 @@ endif(OPTION_USE_ZLIB)
 
 
 ####### Option: Build with NextSubvolume ##########
-list(APPEND DEP_LIBS $<TARGET_OBJECTS:Steve>)
 
 if (OPTION_NSV)
     add_subdirectory(source/NextSubVolume)
@@ -418,6 +417,7 @@ endif (OPTION_NSV)
 ####### Targets ##########
 
 add_subdirectory(source/libSteve)
+list(APPEND DEP_LIBS Steve)
 
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES})

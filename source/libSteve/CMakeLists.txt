@@ -16,7 +16,7 @@ set(SRC_FILES
     Zn.c
     SFMT/SFMT.c)
 
-add_library(Steve OBJECT ${SRC_FILES})
+add_library(Steve STATIC ${SRC_FILES})
 set_target_properties(Steve PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX)
