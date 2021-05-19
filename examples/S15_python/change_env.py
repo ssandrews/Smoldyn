@@ -8,7 +8,6 @@ import math
 r1_ = None
 bouton_ = None
 
-
 def generate_spike(t, args):
     x = random.random()
     if x < 0.1:
@@ -20,7 +19,7 @@ def update_kf(val):
     global r1_, bouton_
     r1_.kf = 1000 ** val
     c = min(1.0, val)
-    bouton_.setStyle("both", color=[c, c, c])
+    bouton_.setStyle('both', color=[c, c, c])
 
 
 def build_model_smoldyn():
@@ -32,9 +31,7 @@ def build_model_smoldyn():
     """
     global r1_, bouton_
     s = smoldyn.Simulation(low=[-500, -500], high=[1500, 1500])
-    sv = s.addSpecies(
-        "SV", difc=dict(all=2400, front=10), color="blue", display_size=10
-    )
+    sv = s.addSpecies("SV", difc=dict(all=2400, front=10), color="blue", display_size=10)
     sv.addToSolution(100, lowpos=(0, 0), highpos=(1000, 1000))
 
     # add a reaction with generates the sv at a fixed rate. Its better to
@@ -52,15 +49,15 @@ def build_model_smoldyn():
     # BOUTON
     path = s.addPath2D((1000, 0), (1000, 1000), (0, 1000), (0, 0))
     bouton_ = s.addSurface("bouton", panels=path.panels)
-    bouton_.setStyle("both", color="blue")
-    bouton_.setAction("both", [sv], "reflect")
+    bouton_.setStyle('both', color="blue")
+    bouton_.setAction('both', [sv], "reflect")
 
     # this is the bottom surface of bouton. This is sticky for synaptic
     # vesciles
     rect1 = smoldyn.Rectangle(corner=(0, 0), dimensions=[1000], axis="+y")
     bottom = s.addSurface("boutonBottom", panels=[rect1])
-    bottom.setStyle("both", color="red")
-    bottom.setAction("back", trans, "reflect")  # but it reflect neurotranmitter
+    bottom.setStyle('both', color="red")
+    bottom.setAction('back', trans, "reflect")  # but it reflect neurotranmitter
 
     # SV stick to bottom of the bouton and also detach back with a smaller
     # rate.
@@ -75,10 +72,9 @@ def build_model_smoldyn():
     s.connect(generate_spike, update_kf, step=20)
 
     s.addGraphics("opengl", iter=10, text_display="time")
-    print("[INFO] Starting simulation ...")
+    print('[INFO] Starting simulation ...')
     s.run(stop=20, dt=0.001)
     print("Done")
-
 
 def main():
     build_model_smoldyn()
@@ -86,3 +82,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

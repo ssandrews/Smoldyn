@@ -16,8 +16,8 @@ r3 = s.addReaction("r3", subs=[fox], prds=[], rate=10)
 rabbit.addToSolution(1000)
 fox.addToSolution(1000)
 
-# s.setTiff("OpenGl")
-# s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
+#s.setTiff("OpenGl")
+#s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
 
 # NOTE: Can not set the absolute path. Its always relative to the current
 # working directory.
@@ -34,7 +34,7 @@ assert Path(datafile).exists(), f"Simulation did not generate {datafile}"
 # graph of results. This doesn't run because Python quits first.
 import matplotlib.pyplot as plt
 import numpy as np
-
-t, rabbit, fox = np.loadtxt(datafile, unpack=True)
-plt.plot(t, rabbit, "r-", t, fox, "b-")
+t,rabbit,fox = np.loadtxt(datafile, unpack=True)
+plt.plot(t,rabbit,'r-',t,fox,'b-')
 plt.show()
+
