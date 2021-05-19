@@ -801,7 +801,7 @@ int panelsalloc(surfaceptr srf,int dim,int maxpanel,int maxspecies,enum PanelSha
 		newpname[p]=srf->pname[ps][p];
 	for(;p<maxpanel;p++) {
 		CHECKMEM(newpname[p]=EmptyString());
-		snprintf(newpname[p],STRCHAR,"%s%i",surfps2string(ps,string),p); }
+		snprintf(newpname[p],2*STRCHAR,"%s%i",surfps2string(ps,string),p); }
 
 	CHECKMEM(newpnls=(panelptr*) calloc(maxpanel,sizeof(panelptr)));
 	for(p=0;p<maxpanel;p++) newpnls[p]=NULL;
@@ -4856,8 +4856,9 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 
 	else if(act==SAport) {												// port
 		newface=(face==PFfront)?PFback:PFfront;
-    fixpt2panel(crsspt,pnl,dim,newface,epsilon);
+        fixpt2panel(crsspt,pnl,dim,newface,epsilon);
 		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl);
+        // NOTE: face must be <= 1 (array size is 2)
 		mptr->list=pnl->srf->port[face]->llport;
 		if(ll>=0 && m<sim->mols->sortl[ll]) sim->mols->sortl[ll]=m;
 		done=1; }

@@ -418,6 +418,7 @@ endif (OPTION_NSV)
 ####### Targets ##########
 
 add_subdirectory(source/libSteve)
+
 if (OPTION_TARGET_SMOLDYN)
     add_executable(smoldyn ${SRC_FILES} ${MAIN_FILES})
     target_link_libraries(smoldyn PRIVATE ${DEP_LIBS})
