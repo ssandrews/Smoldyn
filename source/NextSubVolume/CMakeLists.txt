@@ -25,13 +25,12 @@ set(NSV_SRC_FILES
     )
 
 if(OPTION_VTK)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vtk)
-    add_subdirectory(${CMAKE_BINARY_DIR}/vtkwrapper)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../vtk ${CMAKE_BINARY_DIR}/vtkwrapper)
 endif()
 
-add_library(nsv OBJECT ${NSV_SRC_FILES})
+add_library(nsv STATIC ${NSV_SRC_FILES})
 set_target_properties(nsv PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(OPTION_VTK)
-    target_link_libraries(nsv PRIVATE $<TARGET_OBJECTS:vtkwrapper>)
+    target_link_libraries(nsv PRIVATE vtkwrapper)
 endif()

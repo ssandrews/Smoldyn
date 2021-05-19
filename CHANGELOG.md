@@ -4,7 +4,6 @@
 
 https://github.com/ssandrews/Smoldyn/compare/v2.64...v2.65
 
-- added `longrageforce` command (74523620)
 - `Box`, `addBox` and `moleculePerBox` are deprecated. Use `setPartition`
   instead (e4465b1e5).
 - (developer) Major refactoring in `Simulation` class (#50, #51, #52). `smoldyn.Command` is

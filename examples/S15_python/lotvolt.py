@@ -16,25 +16,19 @@ r3 = s.addReaction("r3", subs=[fox], prds=[], rate=10)
 rabbit.addToSolution(1000)
 fox.addToSolution(1000)
 
-# s.setTiff("OpenGl")
-# s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
+#s.setTiff("OpenGl")
+#s.setGraphics("opengl", iter=5, text_display=["time", "rabbit", "fox"])
 
-# NOTE: Can not set the absolute path. Its always relative to the current
-# working directory.
-datafile = "lotvoltout.txt"
-s.setOutputFile(datafile)
-s.addCommand(f"molcount {datafile}", "i", on=0, off=20, step=0.01)
+s.setOutputFile("lotvoltout.txt")
+s.addCommand("molcount lotvoltout.txt", "i", on=0, off=20, step=0.01)
 s.addCommand("molcount stdout", "i", on=0, off=20, step=0.1)
 
 s = s.run(5, dt=0.001, overwrite=True)
 
-# make sure that datafile is generated.
-assert Path(datafile).exists(), f"Simulation did not generate {datafile}"
-
 # graph of results. This doesn't run because Python quits first.
 import matplotlib.pyplot as plt
 import numpy as np
-
-t, rabbit, fox = np.loadtxt(datafile, unpack=True)
-plt.plot(t, rabbit, "r-", t, fox, "b-")
+t,rabbit,fox = np.loadtxt(scriptdir / "lotvoltout.txt",unpack=True)
+plt.plot(t,rabbit,'r-',t,fox,'b-')
 plt.show()
+

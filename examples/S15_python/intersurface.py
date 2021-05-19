@@ -15,7 +15,7 @@ p2 = smoldyn.Rectangle(corner=(100, 0), dimensions=[100], axis="-x")
 p3 = smoldyn.Rectangle(corner=(0, 0), dimensions=[100], axis="+y")
 p4 = smoldyn.Rectangle(corner=(0, 100), dimensions=[100], axis="-y")
 walls = s.addSurface("walls", panels=[p1, p2, p3, p4])
-walls.setAction("both", [A, B, C], "reflect")
+walls.setAction('both', [A, B, C], "reflect")
 
 r1 = smoldyn.Rectangle(corner=[49, 30], dimensions=[20], axis="+x", name="r1")
 t1 = smoldyn.Triangle(vertices=[[49, 50], [29, 70]], name="t1")
@@ -23,7 +23,7 @@ left = s.addSurface(name="left", panels=[r1, t1])
 
 r1.neighbor = t1
 t1.neighbor = r1
-left.setAction("both", [A, B, C], "reflect")
+left.setAction('both', [A, B, C], "reflect")
 left.addMolecules((A, "up"), 20)
 
 r1 = smoldyn.Rectangle(corner=[50, 30], dimensions=[20], axis="+x", name="r1")
@@ -31,7 +31,7 @@ t1 = smoldyn.Triangle(vertices=[[50, 30], [70, 10]], name="t1")
 right = s.addSurface(name="right", panels=[r1, t1])
 r1.neighbor = t1
 t1.neighbor = r1
-right.setAction("both", [A, B, C], "reflect")
+right.setAction('both', [A, B, C], "reflect")
 right.addMolecules((B, "up"), 20)
 
 rxn1 = s.addReaction(
