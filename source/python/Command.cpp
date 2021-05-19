@@ -23,9 +23,9 @@ Command::Command(const simptr sim, const string& cmd)
 {}
 
 Command::Command(const simptr sim,
-                 const string& cmd,
-                 char cmd_type,
-                 const map<string, double>& options)
+  const string& cmd,
+  char cmd_type,
+  const map<string, double>& options)
   : Command(sim, cmd)
 {
     cmd_type_ = cmd_type;
@@ -65,8 +65,8 @@ Command::addCommandToSimptr()
         if ('x' == cmd_type_)
             multiplier_ = (size_t)options_.at("multiplier");
     } else
-        throw py::value_error(("Command type " + cmd_type_) +
-                              string(" is not supported"));
+        throw py::value_error(
+          string("Command type `") + string(1, cmd_type_) + string("` is not supported"));
     if (addCommand() != ErrorCode::ECok)
         throw std::runtime_error("Failed to add command " + cmd_);
     added_ = true;
@@ -86,7 +86,6 @@ Command::addCommand()
               << " off=" << off_ << " step=" << step_
               << " multiplier=" << multiplier_ << endl;
 #endif
-    return smolAddCommand(
-      sim_, cmd_type_, on_, off_, step_, multiplier_, cmd_.c_str());
+    return smolAddCommand(sim_, cmd_type_, on_, off_, step_, multiplier_, cmd_.c_str());
 }
 

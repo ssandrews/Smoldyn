@@ -23,20 +23,19 @@ jobs:
         sudo apt -y install libvtk7-dev vtk7
         sudo apt -y install xvfb
     - name: configure
-      run: | 
+      run: |
         cmake --version
         PYTHON=$(which python)
         $PYTHON -c "import sys; print(sys.version)"
         $PYTHON -m pip install pytest matplotlib numpy wheel
-        mkdir build && cd build 
+        mkdir build && cd build
         cmake -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \
-            -DOPTION_VTK=ON \
             -DPython3_EXECUTABLE=$PYTHON ..
     - name: make
       run: |
           cd build && make -j2 && make wheel && sudo make install
-          ## If installation is successful, following should just work. 
+          ## If installation is successful, following should just work.
           ## NOTE: Following does not work on github actions because python is in a
           ## virtual environment.
           # python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
@@ -48,4 +47,4 @@ jobs:
         cd build && ctest --output-on-failure -j2
         python -m pip install smoldyn*.whl
         python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
-        
+
