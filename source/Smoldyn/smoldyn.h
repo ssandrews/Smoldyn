@@ -33,7 +33,7 @@
 
 
 #ifdef OPTION_VTK
-  #include "../source/NextSubVolume/vtkwrapper.h"
+  #include "../source/vtk/vtkwrapper.h"
 #endif
 
 #ifdef OPTION_VCELL
