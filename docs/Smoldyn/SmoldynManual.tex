@@ -84,8 +84,8 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.64}
-\date{\copyright March, 2021}
+\subtitle{Version 2.65}
+\date{\copyright May, 2021}
 \author{Steve Andrews}
 \maketitle
 
@@ -2390,6 +2390,7 @@ Dynamic link, with OpenGL:
 gcc test1.o -L/usr/local/lib -I/System/Library/Frameworks/OpenGL.framework/Headers -I/System/Library/Frameworks/GLUT.framework/Headers -framework GLUT -framework OpenGL -framework Cocoa -L/System/Library/Frameworks/OpenGL.framework/Libraries -o test1 -lsmoldyn_shared -ltiff
 \end{lstlisting}
 
+If you're having problems with linking, note that you can enter \ttt{nm --demangle libsmoldyn\_static.a} to get a complete list of functions in this library.
 
 % Memory management
 \subsection*{Memory management}

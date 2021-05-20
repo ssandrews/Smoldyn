@@ -2,11 +2,11 @@
 Smoldyn Code Documentation
 ==========================
 ------------
-Version 2.64
+Version 2.65
 ------------
 
 :Author: Steve Andrews
-:Date:   ©March, 2021
+:Date:   ©May, 2021
 
 Programmer’s introduction
 =========================
@@ -322,16 +322,24 @@ glut
 
    For Mac, I’ve been using regular glut, not freeglut, which works
    easily but has the drawback that control never returns to Smoldyn
-   after it is handed over to ``glutmainloop``. To address this, I
-   installed freeglut using MacPorts, which was trivial. However,
-   entering ``port contents freeglut`` showed the files that were
-   installed, and none were a static library. I tried for a while to
-   link to it anyhow using the CMakeLists.txt file, without luck. Next,
-   I downloaded freeglut from http://freeglut.sourceforge.net, as I did
-   for Windows, and tried to build using CMake. This failed at the
-   linking stage. There was a prior report of it not working for Macs,
-   with the same error and no solution given, so this seems to be a
-   building bug and not easily fixed.
+   after it is handed over to ``glutmainloop``. To address this
+   (12/14/20), I installed freeglut using MacPorts, which was trivial.
+   However, entering ``port contents freeglut`` showed the files that
+   were installed, and none were a static library. I tried for a while
+   to link to it anyhow using the CMakeLists.txt file, without luck. I
+   also tried to reinstall the MacPorts version (3/29/21), with edits in
+   the Portfile so that static libraries would be built. This seemed
+   easy, but took a long time and didn’t work out in the end. The
+   Portfile says that static libraries should be built, but they aren’t.
+   In another attempt, I downloaded freeglut from
+   http://freeglut.sourceforge.net, as I did for Windows, and tried to
+   build using CMake. This failed at the linking stage. There was a
+   prior report of it not working for Macs (see
+   https://sourceforge.net/projects/freeglut/), with the same error and
+   no solution given, so this seems to be a building bug and not easily
+   fixed. The issue seems to be that Apple deprecated the GLX functions
+   that libfreeglut depends on, so libfreeglut can no longer be built
+   statically.
 
 libtiff
    is optional. It is used for saving graphics images as TIFF files.
@@ -452,7 +460,16 @@ but smoldyn.sln instead; this is the “solution” file for compiling.
 Once configuring is complete, enter “make" (on Mac or Linux, or “msbuild
 smoldyn.sln /p:Configuration=Release” on Windows with MSVC). Hopefully,
 Smoldyn will build, again with build files being put into the cmake
-directory. Smoldyn can be run at this point. If you want to install,
+directory. For me, “make” often doesn’t work, because I get the error
+“ld: can’t write output file:
+../../../source/python/smoldyn/_smoldyn.cpython-39-darwin.so for
+architecture x86_64”. The solution is to run “sudo make” and enter a
+password because, for some reason, I don’t have the correct ownership
+permissions for my build directory. To help debug issues with the “make”
+step, try “make VERBOSE=1” to see what commands CMake is sending to the
+system.
+
+Once the “make” step works, Smoldyn can be run. If you want to install,
 enter “sudo make install" and enter your password, to install Smoldyn to
 the usual place (/usr/local/bin on Linux and Mac systems).
 
@@ -877,11 +894,134 @@ and libsmoldyn_shared.dylib on a Mac. Also, one can write
 addition, ``make examples`` does some testing.
 
 Within the python subdirectory, additional targets are: ``wheel``,
-``pyinstall``, ``pyinstall_venv``, ``pyuninstall``, ``pydevel``, and
-``doc_api_html``. I don’t think that most of these targets need to be
-called specifically, but are instead called automatically when running
-just “make”. These targets are fairly simple, just running a line of
-Python code in most cases.
+``pyinstall``, ``pyinstall_venv`` (virtual environment),
+``pyuninstall``, ``pydevel``, and ``doc_api_html``. I don’t think that
+most of these targets need to be called specifically, but are instead
+called automatically when running just “make”. These targets are fairly
+simple, just running a line of Python code in most cases (it runs the
+setup.py program, which is somewhat involved, but carries out the
+installation). The ``pyuninstall`` line runs pip, and removes the
+Smoldyn version that pip installed, but not the Smoldyn version that
+``pyinstall`` installs.
+
+CMake file locations
+~~~~~~~~~~~~~~~~~~~~
+
+Running CMake from the build directory with ``cmake ..`` creates a lot
+of files in the build directory. I don’t believe that it creates files
+anywhere else. Some notable ones are:
+
+-  ``cmake_install.cmake``. A CMake file that includes installation
+   instructions. It’s not very readable.
+
+-  ``CMakeCache.txt``. List of variables that were defined in the
+   CMakeLists.txt file and their values.
+
+-  ``CMakeFiles`` directory. Lots of files are in here, plus
+   subdirectories that will be used for compiled object code.
+
+-  ``Makefile``. The primary makefile for building.
+
+-  ``smoldynconfigure.h``. The C configuration file that was written by
+   CMake based on source/smoldynconfigure.h.in.
+
+Running ``make`` then builds Smoldyn. As it goes along, it writes object
+files to build/CMakeFiles/smoldyn_static.dif/source/...., or to other
+subdirectories within build/CMakeFiles. It puts the compiled results at
+the top-level of the build directory, where these include
+libsmoldyn_shared.dylib, libsmoldyn_static.a, and the smoldyn
+executable.
+
+When it gets to the Python code, it first builds the C++ target
+lib_pysmoldyn.a, which appears to have exactly the same object files as
+the other targets, without any Python-specific files. This target gets
+put into the build/source/python directory. Next, CallbakcFunc.cpp and
+module.cpp get compiled. I think they get linked to lib_pysmoldyn.a and
+then turned into \_smoldyn.cpython-39-darwin.so, which gets saved in
+source/python/smoldyn (this is *not* within the build directory). The
+.so suffix is for a shared library, using the standard Linux suffix. No
+other files appear to get written to the source directory.
+
+Next, the Python source files (the source tree) get copied from the
+source directory to the appropriate places in the build directory. Then
+it builds the Python wheel; I’m not sure if this is a sub-portion of the
+copying step or the same thing. It checks for a pre-existing wheel in
+/Users/sandrews/Library/Python/3.9/lib/python/site-packages; it says
+that one is found, but that seems odd to me because I can’t find any
+Smoldyn files in there at all. Maybe it’s looking for some other wheel.
+In any case, it next copies the Smoldyn Python files (smoldyn.py,
+\__init__.py, types.py, etc., and also the newly created
+\_smoldyn.cpython-39-darwin.so) over from source/python/smoldyn to the
+build/lib/smoldyn directory. Then, it creates a directory for the wheel
+and copies the same files over into there. Then, it does a bunch of
+stuff with egg information, although I was under the impression that
+eggs and wheels are alternate approaches for similar results, and
+weren’t used together, but I guess not. After that, it creates an actual
+wheel file, and adds the Python files, the
+\_smoldyn.cpython-39-darwin.so file, and some more files with wheel
+metadata and similar stuff. Finally, the wheel directory is removed.
+
+By the end of the ``make`` step, the important files are:
+libsmoldyn_shared.dylib, libsmoldyn_static.a, the smoldyn executable,
+and the wheel file in the top-level build directory. One file was added
+to the source directory, and there are vast numbers of other files
+within subdirectories of the build directory, but nothing else.
+
+Next, running ``sudo make install`` does lots of file copying. This
+starts by repeating the ``make`` functionality, although there’s no need
+to recompile the code since that’s already done. However, this does
+repeat checking for the wheel, finding that it’s in
+/Users/sandrews/Library/Python/3.9/lib/python/site-packages, even though
+it isn’t. Then, this repeats all steps of the Python copying, wheel
+directory creation, egg creation, wheel creation, copying into the
+wheel, and removing the wheel directory.
+
+Finally, this copies files into system locations. Here is the
+install_manifest.txt file, which lists all of the install files and
+locations:
+
+::
+
+   /usr/local/bin/smoldyn
+   /usr/local/lib/libsmoldyn_shared.dylib
+   /usr/local/lib/libsmoldyn_static.a
+   /usr/local/include/libsmoldyn.h
+   /usr/local/include/smoldyn.h
+   /usr/local/include/smoldynconfigure.h
+
+There’s no evidence that this copies the wheel anywhere.
+
+Running ``sudo make pyinstall`` installs the Python code, *probably to
+the wrong place*. This make target is listed in the
+source/python/CMakeLists.txt file, where is simply says to run setup.py
+and install in the ``${CMAKE_INSTALL_PREFIX}`` directory, which is
+/usr/local for me. It puts the files in
+/usr/local/lib/python3.9/site-packages. However, this isn’t actually
+useful for me because my Python doesn’t look there for files.
+
+Instead, run ``sudo pip install smoldyn-2.64-....whl``. This installs
+the wheel to the correct location. For me, that is
+/opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/smoldyn/.
+
+Python module after building
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Rather than installing the Python module, it’s also possible to import
+the build version into Python, directly from the build/py directory. Add
+this directory to your ``PYTHONPATH`` temporarily with
+``export PYTHONPATH=/path/to/Smoldyn/build/py:$PYTHONPATH``. With this,
+the module can be accessed from any directory. Also, somehow, it’s
+possible to add the module directory to sys.path, which is then a
+permanent solution. However, better is to actually install it with pip.
+
+Note that it’s possible to see where the library is imported from by
+checking ``smoldyn.__file__`` while in Python. For example,
+
+::
+
+   >>> import smoldyn
+   >>> print(smoldyn.__file__)
+   /home/dilawars/Work/FORKES/Smoldyn/build/py/smoldyn/__init__.py
 
 Cross-compiling for Windows with MinGW
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1071,11 +1211,38 @@ directory (Smoldyn/trunk/GPU/Gladkov/smoldyn-gpu-dg/).
 Code techniques and tricks
 --------------------------
 
+New releases
+~~~~~~~~~~~~
+
+To release a new version, there are many things to do.
+
+-  Go through any libSteve documentation that has changed and print to
+   pdf all of the new files.
+
+-  Describe the changes in the history section of this code
+   documentation.
+
+-  Update the version number in: (1) the top-level CMakeLists.txt file,
+   (2) the Code documentation, (3) the User’s manual, (4) the release
+   shell script, (5) the install batch file for Windows.
+
+-  Run the regression tests using the latest version number and confirm
+   that all results are correct.
+
+-  Run my release shell script (it’s not on git and is customized for my
+   computer system, but I’m happy to share it with others if they want).
+
+-  Commit changes to github. Tag the commit. Example:
+   ``git tag -a v2.65 -m "release Version 2.65"; git push origin v2.65``.
+
+-  Update the www.smoldyn.org webpage. Upload the new files, delete the
+   old files, and update the index.html and download.html web pages.
+
 Formatting
 ~~~~~~~~~~
 
-I like a very compact source code style, where the indentation shows the
-code depth rather than the braces. It just was that way for the most
+I like a very compact C source code style, where the indentation shows
+the code depth rather than the braces. It just was that way for the most
 part, but then the VCell team added code in their style, and then
 Dilawar reformatted the code to yet another style. I figured out how to
 partially revert to my style, and also standardize others’ additions. I
@@ -1085,7 +1252,7 @@ resides in my Smoldyn top level directory. I wrote a configuration file
 called ssa.cfg, which I use to format code; it is in the uncrustify
 directory.
 
-To reformat smolreact.c, enter:
+As an example, to reformat smolreact.c, enter:
 ``uncrustify -c ../../uncrustify/ssa.cfg smolreact.c``. This creates a
 new file, smolreact.c.uncrustify. However, this still leaves lots of
 things that I like to fix. First, remove closing braces on their own
@@ -1093,6 +1260,14 @@ lines. To do so, do a find and replace, first replace all “}” with “}”,
 repeating as many times as necessary. Then replace all “\\n}” with “}”.
 Another thing to look for is multi-line for statements. It would be nice
 if these could be removed by uncrustify, but it doesn’t.
+
+For the Python code, Dilawar uses the black software, available at
+https://pypi.org/project/black/. He says that if I change the Python
+code, just run ``black filename.py`` to auto-format the code, thus
+keeping the format consistent.
+
+Similarly, he uses clang-format for C++ files, but is less worried about
+format consistency there.
 
 Code merging
 ~~~~~~~~~~~~
@@ -1525,30 +1700,6 @@ to Dilawar, if Smoldyn is started with “python3 -m smoldyn
 template.txt”, then this will execute the \__main__.py file, with
 command line arguments passed to it. Here, the Python package is being
 used as a proxy for the Smoldyn executable.
-
-Python module after building
-----------------------------
-
-After building Smoldyn, in the build directory at
-``/path/to/Smoldyn/build``, the python module ends up at
-``/path/to/Smoldyn/build/py``. The actual code that runs is in the
-``smoldyn`` subdirectory of this location, but that’s not directly
-relevant. The module can be imported into Python from this directory
-(``.../build/py``). Add this directory to your ``PYTHONPATH``
-temporarily with
-``export PYTHONPATH=/path/to/Smoldyn/build/py:$PYTHONPATH``. With this,
-the module can be accessed from any directory. Also, somehow, it’s
-possible to add the module directory to sys.path, which is then a
-permanent solution.
-
-Note that it’s possible to see where the library is imported from by
-checking ``smoldyn.__file__`` while in Python. For example,
-
-::
-
-   >>> import smoldyn
-   >>> print(smoldyn.__file__)
-   /home/dilawars/Work/FORKES/Smoldyn/build/py/smoldyn/__init__.py
 
 C code: files, macros, variables, etc.
 ======================================
@@ -2677,7 +2828,9 @@ called the reborn molecules, which have higher indices.
      that specific species; and if ``i`` equals zero, this implies that
      the ``index`` entry should be used instead. In this last case,
      enter lists of species using ``index``, using the standard index
-     pattern header.
+     pattern header. This function returns 0 if the molecule
+     superstructure still has an “SCinit” condition, regardless of
+     whether there are molecules in it or not.
 
    This function is essentially the same exact thing several times in a
    row, for the different input cases and with slightly different outer
@@ -2698,7 +2851,7 @@ called the reborn molecules, which have higher indices.
      or as a positive number for that specific species. Enter ``index``
      as a sorted list of species, using the standard index pattern
      header and format; it is only used if ``i`` equals zero. Enter
-     ``ms`` as ``MSall`` for all species and as a specific species
+     ``ms`` as ``MSall`` for all states and as a specific state
      otherwise. The function entry is designed for a Smoldyn command
      function and so has the same format, despite the fact that this
      format isn’t really ideal in this case. The function gets passed
@@ -3072,14 +3225,16 @@ called the reborn molecules, which have higher indices.
    molecules get moved. Next, the function processes all molecules in
    the dead list, starting from ``topd`` and going to ``nd``, which is
    called the resurrected portion of the dead list. All of these
-   molecules are moved to the appropriate live list. Afterwards, ``nd``
-   is decreased to equal ``topd``, meaning that the resurrected list has
-   zero length and that there’s nothing more to do there. Finally, the
-   function sets the ``sortl`` indices to equal the ``nl`` indices, to
-   show that all of the molecules in the live lists have been sorted.
-   Thus, at the end, ``topl`` :math:`\leq` ``sortl`` = ``nl``, where the
-   sublist from ``topl`` and ``nl`` is the reborn list. Also, ``topd`` =
-   ``nd``, showing that there is no resurrected list.
+   molecules are moved to the appropriate live list (unless they are
+   empty molecules, in which case they get put on the top of the dead
+   list). Afterwards, ``nd`` is decreased to equal ``topd``, meaning
+   that the resurrected list has zero length and that there’s nothing
+   more to do there. Finally, the function sets the ``sortl`` indices to
+   equal the ``nl`` indices, to show that all of the molecules in the
+   live lists have been sorted. Thus, at the end, ``topl`` :math:`\leq`
+   ``sortl`` = ``nl``, where the sublist from ``topl`` and ``nl`` is the
+   reborn list. Also, ``topd`` = ``nd``, showing that there is no
+   resurrected list.
 
    On occasion, it’s helpful to set the ``onlydead2live`` option to 1.
    In this case, the function only sorts resurrected molecules in the
@@ -9849,21 +10004,49 @@ Functions
      to stop, or the simulation time becomes greater than or equal to
      the requested maximum time, the function returns an error code to
      indicate that the simulation should stop; otherwise it returns 0 to
-     indicate that the simulation should continue. Error codes are 1 for
-     simulation completed normally, 2 for error with ``assignmolecs``, 3
-     for error with ``zeroreact``, 4 for error with ``unireact``, 5 for
-     error with ``bireact``, 6 for error with ``molsort``, 7 for
-     terminate instruction from ``docommand`` (e.g. stop command), 8 for
-     failed simulation update, 9 for error with ``diffuse``, 10 for
-     simulation stopped because the time equals or exceeds the break
-     time, 11 for error in filament dynamics, 12 for error in lattice
-     simulation, or 13 for error in reaction network expansion. Errors 2
-     and 6 arise from insufficient memory when boxes were being expanded
-     and errors 3, 4, and 5 arise from too few molecules being allocated
-     initially.
+     indicate that the simulation should continue. See the table below.
+     Note that the sequence in which the simulation components are set
+     up is designed carefully and will likely lead to bugs if it is
+     changed.
 
-   Note that the sequence in which the simulation components are set up
-   is designed carefully and will likely lead to bugs if it is changed.
+   +------------+--------------------------------------------------------+
+   | Error code | Meaning                                                |
+   +============+========================================================+
+   | 0          | Simulation should continue                             |
+   +------------+--------------------------------------------------------+
+   | 1          | Simulation completed normally                          |
+   +------------+--------------------------------------------------------+
+   | 2          | Error with ``assignmolecs`` (insufficient memory when  |
+   |            | expanding boxes)                                       |
+   +------------+--------------------------------------------------------+
+   | 3          | Error with ``zeroreact`` (insufficient memory when     |
+   |            | expanding molecules)                                   |
+   +------------+--------------------------------------------------------+
+   | 4          | Error with ``unireact`` (insufficient memory when      |
+   |            | expanding molecules)                                   |
+   +------------+--------------------------------------------------------+
+   | 5          | Error with ``bireact`` (insufficient memory when       |
+   |            | expanding molecules)                                   |
+   +------------+--------------------------------------------------------+
+   | 6          | Error with ``molsort`` (insufficient memory when       |
+   |            | expanding boxes)                                       |
+   +------------+--------------------------------------------------------+
+   | 7          | Terminate instruction from ``docommand`` (e.g. stop    |
+   |            | command)                                               |
+   +------------+--------------------------------------------------------+
+   | 8          | Failed simulation update                               |
+   +------------+--------------------------------------------------------+
+   | 9          | Error with ``diffuse``                                 |
+   +------------+--------------------------------------------------------+
+   | 10         | Simulation stopped because the time equals or exceeds  |
+   |            | the break time                                         |
+   +------------+--------------------------------------------------------+
+   | 11         | Error in filament dynamics                             |
+   +------------+--------------------------------------------------------+
+   | 12         | Error in lattice simulation                            |
+   +------------+--------------------------------------------------------+
+   | 13         | Error in reaction network expansion                    |
+   +------------+--------------------------------------------------------+
 
 ``void endsimulate(simptr sim,int er)``
    | 
@@ -10073,8 +10256,8 @@ Externally accessible function
 Not all functions are listed here because many of them don’t require any
 more description than what is already given in the Smoldyn User Manual.
 
-``CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line);``
-   ``docommand`` is given the simulation structure in ``sim``, the
+``CMDcode docommand(void *simvd,cmdptr cmd,char *line);``
+   ``docommand`` is given the simulation structure in ``simvd``, the
    command to be executed in ``cmd``, and a line of text which includes
    the entire command string. It parses the line of text only into the
    first word, which specifies which command is to be run, and into the
@@ -10270,7 +10453,23 @@ Individual command functions
 
 ``enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2);``
    | 
-   | Computes and outputs a radial distribution function.
+   | Computes and outputs a radial distribution function. This function
+     is a nice example of scanning over pairs of molecules, where
+     wildcards are allowed. It inputs species 1 into ``i1``, ``ms1``,
+     and ``index1`` and species 2 into ``i2``, ``ms2``, and ``index2``.
+     It creates a histogram of separations in ``ct=cmd->v1``, which has
+     size ``cmd->i1=nbin``. Next, it finds the low and high state
+     numbers (``mslo`` and ``mshi``) and low and high list numbers
+     (``lllo`` and ``llhi``) for species number 2. Then, it scans over
+     species 1 using the ``molscancmd`` function, for which the code for
+     each scan is in the ``scanportion`` section. In that portion,
+     ``mptr`` is the current molecule of interest, from species 1. The
+     function scans over the boxes that surround ``mptr`` and, within
+     each box, it scans over all molecules in lists from ``lllo`` to
+     ``llhi``, testing to see if they are of type species 2 with the
+     ``molismatch`` function. If it matches, the separation is computed
+     and included in the histogram. Finally, back in the main function,
+     data analysis is done and results are output.
 
 ``enum CMDcode cmdmolcountspecies(simptr sim,cmdptr cmd,char *line2);``
    | 
@@ -10677,6 +10876,22 @@ Individual command functions
      to an illegal location is rejected, and diffusion is attempted
      again, up to 10 times; if there are 10 failures, then the
      compartment simply isn’t moved at all during that command call.
+
+``enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);``
+   | 
+   | This command simulates a long range force between pairs of
+     molecules. It uses loops over molecule pairs that’s largely
+     borrowed from ``cmdradialdistribution``. Also, it keeps a list of
+     molecules that have forces on them, which is in ``cmd->v1``, used
+     internally as ``moleclist``. Each entry in this list includes the
+     molecule serial number (on which the list is sorted), the molecule
+     pointer, and a 4-dimensional vector of doubles. The first three
+     dimensions are for the :math:`x`, :math:`y`, and :math:`z`
+     components of the force on a molecule, and the fourth is 0 for
+     molecules that were never visited during the last round of checks
+     and 1 for molecules that were visited. Unvisited molecules get
+     purged from this list, partly because those molecules might have
+     gone away due to reactions.
 
 *Internal functions*
 ``void cmdv1free(cmdptr cmd);``
@@ -14001,6 +14216,52 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Minor change in CMakeLists.txt so that the version number could be
    input from the command line.
+
+   .. rubric:: Modifications for version 2.65 (released 5/18/21)
+      :name: modifications-for-version-2.65-released-51821
+      :class: unnumbered
+
+-  Dilawar moved some functionality from smoldyn.py to module.cpp, in
+   order to support loading simulations from files using Python.
+
+-  Fixed several bugs that arose when displaying diagnostics with
+   partially set up structures.
+
+-  Dilawar added a changelog.md file to the package.
+
+-  Changed SimCommand.c and .h, so that commands are now added to a list
+   of templates rather than directly to the command queues. Also added a
+   condition element to the superstructure, telling whether commands
+   have been added to the queues or not. This required a major overhaul
+   of command running code.
+
+-  Moved a few lines of code about commands from endsimulate to
+   smolsimulate.
+
+-  Dilawar made major changes to the build system, so that it’s more
+   modular now.
+
+-  Added long range forces, with ``cmdlongrangeforce`` and several
+   additions to List.c and List.h.
+
+-  Made some minor changes to SimCommand so that its output now pays
+   attention to simulation flags.
+
+-  Fixed some minor bugs in ``molsetlistlookup`` and
+   ``molsupdatelists``, which set the wrong list number for empty
+   molecules. This only affected partially set up data structures.
+
+-  Edited ``molsort`` so that it can cope with empty molecules in the
+   resurrected list.
+
+-  Fixed ``smolReadConfigString`` so that it now works again, for both
+   Libsmoldyn and the Python low-level interface.
+
+-  Added ``smolSetSimFlags`` and ``smolRunCommand`` functions to
+   Libsmoldyn and also to the Python low-level interface.
+
+-  Fixed minor issues with ``smolRunTimeStep`` and commands, which were
+   causing commands to not run after the first time step.
 
 The wish/ to do list
 ====================

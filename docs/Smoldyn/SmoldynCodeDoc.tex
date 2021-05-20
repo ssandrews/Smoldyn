@@ -42,8 +42,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.64}
-\date{\copyright March, 2021}
+\subtitle{Version 2.65}
+\date{\copyright May, 2021}
 \author{Steve Andrews}
 \maketitle
 
@@ -194,11 +194,14 @@ For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the 
 \section{CMake build system}
 
 \subsection{Basic building}
+
 Smoldyn builds with CMake, which can be downloaded from \url{http://www.cmake.org}. I use version 3.16, but any version above 3.4 should work (lower versions don't work due to requirements from pybind11). CMake installs trivially (at least on Mac), with a standard installer and no building required.
 
 CMake can be run from either a command line interface (my preference) or with a GUI. At a command line interface, change directories to cmake. Every time you change CMake settings, you'll probably want to do a clean build. To do so, enter ``rm -r *", while in the cmake directory (verify that you're in this directory!), to remove any prior build results. If you're asked about whether manifest.txt should be removed, say yes; this file shows the directories where Smoldyn was installed previously, thus providing information for you to remove it. For a default build, enter ``cmake ..". A few test results will be printed out, and then configuring will be complete. See below for custom builds. The other option is to use the CMake GUI. It can be started by entering ``cmake-gui" at a command line. Either way, when CMake is done, it will have written a lot of stuff to the cmake directory. Important files are ``Makefile", which is the standard Makefile for the code and also smoldynconfigure.h, which is a C header file that the Smoldyn code uses for knowing what the build parameters are. On Windows with the MSVC compiler, there's no makefile, but smoldyn.sln instead; this is the ``solution'' file for compiling.
 
-Once configuring is complete, enter ``make" (on Mac or Linux, or ``msbuild smoldyn.sln /p:Configuration=Release'' on Windows with MSVC). Hopefully, Smoldyn will build, again with build files being put into the cmake directory. Smoldyn can be run at this point. If you want to install, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
+Once configuring is complete, enter ``make" (on Mac or Linux, or ``msbuild smoldyn.sln /p:Configuration=Release'' on Windows with MSVC). Hopefully, Smoldyn will build, again with build files being put into the cmake directory. For me, ``make'' often doesn't work, because I get the error ``ld: can't write output file: ../../../source/python/smoldyn/\_smoldyn.cpython-39-darwin.so for architecture x86\_64''. The solution is to run ``sudo make'' and enter a password because, for some reason, I don't have the correct ownership permissions for my build directory. To help debug issues with the ``make'' step, try ``make VERBOSE=1'' to see what commands CMake is sending to the system.
+
+Once the ``make'' step works, Smoldyn can be run. If you want to install, enter ``sudo make install" and enter your password, to install Smoldyn to the usual place (/usr/local/bin on Linux and Mac systems).
 
 Here is the summary of the building process:
 
@@ -6657,7 +6660,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Had problems with static libtiff for Mac, so downloaded a new version and put the compiled static library in Smoldyn/Mac.
 \item Minor change in CMakeLists.txt so that the version number could be input from the command line.
 
-\subsection*{Modifications for version 2.65 (not released yet)}
+\subsection*{Modifications for version 2.65 (released 5/18/21)}
 \item Dilawar moved some functionality from smoldyn.py to module.cpp, in order to support loading simulations from files using Python.
 \item Fixed several bugs that arose when displaying diagnostics with partially set up structures.
 \item Dilawar added a changelog.md file to the package.
