@@ -13,7 +13,6 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 
-
 #ifdef WINDOWS_BUILD
 	#define DEVNULL "> NUL"
 #else
@@ -181,13 +180,13 @@ bngptr bngalloc(bngptr bng,int maxparams,int maxmonomer,int maxbspecies,int maxb
 		for(;i<newmax;i++) {CHECKMEM(strlist[i]=EmptyString());}
 		free(bng->paramnames);
 		bng->paramnames=strlist;
-    
+
 		CHECKMEM(strlist=(char**)calloc(newmax,sizeof(char *)));
 		for(i=0;i<oldmax;i++) strlist[i]=bng->paramstrings[i];
 		for(;i<newmax;i++) {CHECKMEM(strlist[i]=EmptyString());}
 		free(bng->paramstrings);
 		bng->paramstrings=strlist;
-    
+
 		CHECKMEM(dbllist=(double*)calloc(newmax,sizeof(double)));
 		for(i=0;i<oldmax;i++) dbllist[i]=bng->paramvalues[i];
 		for(;i<newmax;i++) dbllist[i]=0;
@@ -195,7 +194,7 @@ bngptr bngalloc(bngptr bng,int maxparams,int maxmonomer,int maxbspecies,int maxb
 		bng->paramvalues=dbllist;
 
     bng->maxparams=newmax; }
-  
+
   if(maxmonomer>bng->maxmonomer) {          // enlarge monomers
 		newmax=maxmonomer;
 		oldmax=bng->maxmonomer;
@@ -302,13 +301,13 @@ bngptr bngalloc(bngptr bng,int maxparams,int maxmonomer,int maxbspecies,int maxb
 		for(;i<newmax;i++) {CHECKMEM(strlist[i]=EmptyString());}
 		free(bng->brxnreactstr);
 		bng->brxnreactstr=strlist;
-    
+
 		CHECKMEM(strlist=(char**)calloc(newmax,sizeof(char *)));
 		for(i=0;i<oldmax;i++) strlist[i]=bng->brxnprodstr[i];
 		for(;i<newmax;i++) {CHECKMEM(strlist[i]=EmptyString());}
 		free(bng->brxnprodstr);
 		bng->brxnprodstr=strlist;
-    
+
 		CHECKMEM(strlist=(char**)calloc(newmax,sizeof(char *)));
 		for(i=0;i<oldmax;i++) strlist[i]=bng->brxnratestr[i];
 		for(;i<newmax;i++) {CHECKMEM(strlist[i]=EmptyString());}
@@ -332,19 +331,19 @@ bngptr bngalloc(bngptr bng,int maxparams,int maxmonomer,int maxbspecies,int maxb
       intptrlist[i][1]=0; }
 		free(bng->brxnprod);
 		bng->brxnprod=intptrlist;
-    
+
     CHECKMEM(intlist=(int*)calloc(newmax,sizeof(int)));
 		for(i=0;i<oldmax;i++) intlist[i]=bng->brxnorder[i];
 		for(;i<newmax;i++) intlist[i]=0;
 		free(bng->brxnorder);
 		bng->brxnorder=intlist;
-    
+
     CHECKMEM(intlist=(int*)calloc(newmax,sizeof(int)));
 		for(i=0;i<oldmax;i++) intlist[i]=bng->brxnnprod[i];
 		for(;i<newmax;i++) intlist[i]=0;
 		free(bng->brxnnprod);
 		bng->brxnnprod=intlist;
-    
+
     CHECKMEM(rxnlist=(rxnptr*)calloc(newmax,sizeof(rxnptr)));
 		for(i=0;i<oldmax;i++) rxnlist[i]=bng->brxn[i];
 		for(;i<newmax;i++) rxnlist[i]=NULL;
@@ -352,7 +351,7 @@ bngptr bngalloc(bngptr bng,int maxparams,int maxmonomer,int maxbspecies,int maxb
 		bng->brxn=rxnlist;
 
     bng->maxbrxns=newmax; }
-  
+
 		return bng;
 failure:
 	bngfree(bng);
@@ -1123,7 +1122,7 @@ int bngparsespecies(bngptr bng,int index) {
   else if(i1==-5)               // already exists
     i1=stringfind(sim->mols->spname,sim->mols->nspecies,bng->bspshortnames[index]);
   else if(i1==-6) return -3;    // illegal name
-    
+
   bng->spindex[index]=i1;												// set spindex element
 
 	if(ms==MSbsoln) ms=MSsoln;
@@ -1158,7 +1157,7 @@ int bngparsespecies(bngptr bng,int index) {
       if(er==1) return -1;
 			else if(er==2) return -6;			// no surface panels
       else if(er==3) return -5; }}  // too many molecules
-    
+
   return 0; }
 
 
@@ -1553,7 +1552,7 @@ int bngupdatelists(simptr sim) {
 int bngupdate(simptr sim) {
 	int er;
 	bngssptr bngss;
-	
+
 	bngss=sim->bngss;
 	if(bngss) {
 		if(bngss->condition<=SClists) {
@@ -1571,6 +1570,5 @@ int bngupdate(simptr sim) {
 /******************************************************************************/
 /*************************** core simulation functions ************************/
 /******************************************************************************/
-
 
 

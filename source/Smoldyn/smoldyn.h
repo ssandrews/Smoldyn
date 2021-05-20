@@ -990,9 +990,11 @@ typedef struct simstruct
     checkwallsfnptr checkwallsfn; // function for molecule collisions with walls
 
 #ifdef ENABLE_PYTHON_CALLBACK
+#ifdef __cplusplus
     CallbackFunc* callbacks[MAX_PY_CALLBACK]; // Python callback.
     unsigned int ncallbacks;                  // number of callbacks.
     size_t simstep;
+#endif   // __cplusplsu
 #endif
 
 #ifdef OPTION_VCELL
