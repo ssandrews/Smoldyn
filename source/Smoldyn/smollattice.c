@@ -13,7 +13,6 @@
 #include "random2.h"
 #include "string2.h"
 #include "Zn.h"
-#include <string>
 
 #include "smoldynconfigure.h"
 #ifdef OPTION_NSV
@@ -270,7 +269,7 @@ latticessptr latticessalloc(latticessptr latticess,int maxlattice,int dim) {
 			CHECKMEM(newlatticelist[lat]=latticealloc(dim));
 			newlatticelist[lat]->latticess=latticess;
 			newlatticelist[lat]->latticename=newnames[lat]; }
-  
+
     free(latticess->latticenames);
     latticess->latticenames=newnames;
     free(latticess->latticelist);
@@ -294,7 +293,7 @@ void latticessfree(latticessptr latticess) {
 		for(lat=0;lat<latticess->maxlattice;lat++)
       latticefree(latticess->latticelist[lat]);
 	free(latticess->latticelist);
-  
+
 	if(latticess->latticenames)
 		for(lat=0;lat<latticess->maxlattice;lat++)
       free(latticess->latticenames[lat]);
@@ -331,7 +330,7 @@ void latticeoutput(simptr sim) {
 		for(d=0;d<sim->dim;d++)
 			simLog(sim,2,"  Boundaries on axis %i: from %lg to %lg, step %lg, type %s\n",d,lattice->min[d],lattice->max[d],lattice->dx[d],lattice->btype[d]=='r'?"reflect":(lattice->btype[d]=='p'?"periodic":"undefined"));
 		simLog(sim,2,"  Interface port: %s\n",lattice->port?lattice->port->portname:"none");
-    
+
 		simLog(sim,2,"  Reactions (%i allocated, %i defined):\n",lattice->maxreactions,lattice->nreactions);
 		for(r=0;r<lattice->nreactions;r++) {
 			simLog(sim,2,"   %s%s\n",lattice->reactionlist[r]->rname,lattice->reactionmove[r]?" (moved)":""); }
@@ -988,8 +987,8 @@ int latticesupdateparams(simptr sim) {
                 for(k=0;k<3;++k) {
                     start[k]=0.0;							// start and end are opposite port rectangle corners
                     end[k]=1.0;								// norm is port rectangle normal
-                    norm_front[k]=0.0; 
-                    norm_back[k]=0.0; 
+                    norm_front[k]=0.0;
+                    norm_back[k]=0.0;
                 }
 
                 panel=port->srf->panels[PSrect][j];
@@ -1018,13 +1017,13 @@ int latticesupdateparams(simptr sim) {
                     norm_front[(int)(panel->front[1])]=panel->front[0];
                     norm_back[(int)(panel->front[1])]=-panel->front[0];
                     break; }
-                for(s=0;s<lattice->nspecies;++s) {			
+                for(s=0;s<lattice->nspecies;++s) {
                     si=lattice->species_index[s];
                     if(lattice->type==LATTICEnsv) {
                         if(lattice->convert[s][PFback])
-                            NSV_CALL(nsv_add_interface(lattice->nsv,si,sim->dt,start,end,norm_front,sim->dim)); 
-                        if(lattice->convert[s][PFfront]) 
-                            NSV_CALL(nsv_add_interface(lattice->nsv,si,sim->dt,start,end,norm_back,sim->dim)); 
+                            NSV_CALL(nsv_add_interface(lattice->nsv,si,sim->dt,start,end,norm_front,sim->dim));
+                        if(lattice->convert[s][PFfront])
+                            NSV_CALL(nsv_add_interface(lattice->nsv,si,sim->dt,start,end,norm_back,sim->dim));
                     }
                     else if (lattice->type==LATTICEpde) {
                         //not implemented
@@ -1032,7 +1031,7 @@ int latticesupdateparams(simptr sim) {
                 }
             }
         }
-    
+
 
 		for(order=0;order<MAXORDER;order++) {
 			if(sim->rxnss[order])
@@ -1079,14 +1078,14 @@ int latticesupdateparams(simptr sim) {
 		for(j=0;j<lattice->nsurfaces;++j) {	// send surface information to NSV code
 			surface=lattice->surfacelist[j];
 			if(lattice->type==LATTICEnsv) {
-				NSV_CALL(nsv_add_surface(lattice->nsv,surface)); 
-            } 
+				NSV_CALL(nsv_add_surface(lattice->nsv,surface));
+            }
             else if(lattice->type==LATTICEpde) {
 				//not implemented
 			}
         }
     }
-	return 0; 
+	return 0;
 }
 
 
@@ -1123,7 +1122,7 @@ int latticesupdatelists(simptr sim) {
 int latticesupdate(simptr sim) {
 	int er;
 	latticessptr latticess;
-	
+
 	latticess=sim->latticess;
 	if(latticess) {
 		if(latticess->condition<=SClists) {

@@ -10,7 +10,6 @@
 #include <string.h>
 #include "string2.h"
 #include "Zn.h"
-#include <string>
 
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
@@ -395,7 +394,7 @@ int portsupdatelists(simptr sim) {
 int portsupdate(simptr sim) {
 	int er;
 	portssptr portss;
-	
+
 	portss=sim->portss;
 	if(portss) {
 		if(portss->condition<=SClists) {

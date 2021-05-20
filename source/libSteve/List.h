@@ -6,6 +6,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __list_h
 #define __list_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdarg.h>
 
 typedef struct liststructli{
@@ -69,6 +73,10 @@ void ListClearDD(listptrdd list);
 
 // List output
 void ListPrintDD(listptrdd list);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif

@@ -18,7 +18,6 @@
 #include "string2.h"
 #include "SimCommand.h"
 #include "Zn.h"
-#include <string>
 
 #ifdef OPTION_NSV
   #include "nsvc.h"
@@ -347,7 +346,7 @@ enum CMDcode cmdbeep(simptr sim,cmdptr cmd,char *line2) {
 enum CMDcode cmdkeypress(simptr sim,cmdptr cmd,char *line2) {
 	char c;
 	int itct,tflag;
-	
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
 	SCMDCHECK(line2,"missing argument");
 	itct=sscanf(line2,"%c",&c);
@@ -462,7 +461,7 @@ enum CMDcode cmdifflag(simptr sim,cmdptr cmd,char *line2) {
 	int itct;
 	char ch;
 	double f1,flag;
-	
+
 	if(line2 && !strcmp(line2,"cmdtype")) return conditionalcmdtype(sim,cmd,2);
 	SCMDCHECK(line2,"missing arguments");
 	itct=strmathsscanf(line2,"%c %mlg",Varnames,Varvalues,Nvar,&ch,&f1);
@@ -606,7 +605,7 @@ enum CMDcode cmdifchange(simptr sim,cmdptr cmd,char *line2) {
 	int itct,i,*index,count,num,diff;
 	enum MolecState ms;
   char change;
-  
+
 	if(line2 && !strcmp(line2,"cmdtype")) {
 		return conditionalcmdtype(sim,cmd,2); }
 
@@ -638,7 +637,7 @@ enum CMDcode cmdif(simptr sim,cmdptr cmd,char *line2) {
 	int itct;
   char symbol;
 	double value1,value2;
-  
+
 	if(line2 && !strcmp(line2,"cmdtype")) {
 		return conditionalcmdtype(sim,cmd,2); }
 
@@ -1013,7 +1012,7 @@ enum CMDcode cmdmolcountinbox(simptr sim,cmdptr cmd,char *line2) {
 		cmd->freefn=&cmdv1free;
 		cmd->v1=calloc(nspecies,sizeof(int));
 		if(!cmd->v1) {cmd->i1=-1;return CMDwarn;} }
-	
+
 	ct=(int*)cmd->v1;
 	for(i=0;i<nspecies;i++) ct[i]=0;
 
@@ -1072,7 +1071,7 @@ enum CMDcode cmdmolcountincmpt(simptr sim,cmdptr cmd,char *line2) {
 		cmd->freefn=&cmdv1free;
 		cmd->v1=calloc(nspecies,sizeof(int));
 		if(!cmd->v1) {cmd->i1=-1;return CMDwarn;} }
-	
+
 	ct=(int*)cmd->v1;
 	for(i=0;i<nspecies;i++) ct[i]=0;
 
@@ -1143,7 +1142,7 @@ enum CMDcode cmdmolcountincmpts(simptr sim,cmdptr cmd,char *line2) {
 
 	scmdfprintf(cmd->cmds,fptr,"%g",sim->time);
 	scmdappenddata(cmd->cmds,dataid,1,1,sim->time);
-	for(i=1;i<nspecies*ncmpt;i++) 
+	for(i=1;i<nspecies*ncmpt;i++)
 		if(i%nspecies!=0) {
 			scmdfprintf(cmd->cmds,fptr,"%,%i",ct[i]);
 			scmdappenddata(cmd->cmds,dataid,0,1,(double)ct[i]); }
@@ -1961,7 +1960,7 @@ enum CMDcode cmdmolcountspecies(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	int i,*index,count,er,dataid;
 	enum MolecState ms;
-	
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 	i=molstring2index1(sim,line2,&ms,&index);
 	SCMDCHECK(i!=-1,"species is missing or cannot be read");
@@ -2579,7 +2578,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(er!=-1,"file or data name not recognized");
 
 	SCMDCHECK(cmd->i2!=2,"error on setup");					// failed before, don't try again
-  
+
 	dim=sim->dim;
 
 	if(!cmd->i2) {										// test for first run
@@ -2607,7 +2606,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 		SCMDCHECK(ctr<maxmol,"insufficient allocated space");
 		cmd->i3=ctr;
 		if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3); }
-  
+
 	v1=(long int*)cmd->v1;						// start of code that is run every invocation
 	v2=(double**)cmd->v2;
 
@@ -2618,7 +2617,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 	if(cmd->i3==cmd->i1) {SCMDCHECK(0,"not enough allocated space");}
 	if(startchar!='i')								// resort lists if appropriate
 		if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3);
-  
+
 	for(mom=0;mom<=maxmoment;mom++)
 		sum[mom]=0;
 	for(j=0;j<cmd->i3;j++) {					// find moments of all reported results
@@ -2635,7 +2634,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 				diff=v2[j][dim+1+msddim]-v2[j][1+msddim];
 				for(mom=0;mom<=maxmoment;mom++)
 					sum[mom]+=pow(diff,mom); }}}
-  
+
 	if(sum[0]>0) {
 		scmdfprintf(cmd->cmds,fptr,"%g%,%g",sim->time,sum[0]);					// display results
 		scmdappenddata(cmd->cmds,dataid,1,2,sim->time,sum[0]);
@@ -2643,7 +2642,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 			scmdfprintf(cmd->cmds,fptr,"%,%g",sum[mom]/sum[0]);
 			scmdappenddata(cmd->cmds,dataid,0,1,sum[mom]/sum[0]); }
 		scmdfprintf(cmd->cmds,fptr,"\n"); }
-  
+
 	for(j=0;j<cmd->i3;j++) {							// stop tracking expired molecules
 		if(v2[j][0]==0 || v2[j][0]==2.0) {
 			v1[j]=v1[cmd->i3-1];
@@ -2657,7 +2656,7 @@ enum CMDcode cmdmeansqrdisp2(simptr sim,cmdptr cmd,char *line2) {
 		else
 			v2[j][0]-=1.0; }
 	if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3);
-  
+
 	scmdflush(fptr);
 	return CMDok;
 
@@ -2733,9 +2732,9 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(er!=-1,"file or data name not recognized");
   line2=strnword(line2,2);
   SCMDCHECK(change<=0 || line2,"missing task to be accomplished if change is small");
-  
+
 	SCMDCHECK(cmd->i2!=2,"error on setup");					// failed before, don't try again
-  
+
 	dim=sim->dim;
 
 	if(!cmd->i2) {										// test for first run
@@ -2764,7 +2763,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 		SCMDCHECK(ctr<maxmol,"insufficient allocated space");
 		cmd->i3=ctr;
 		if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3); }
-  
+
 	v1=(long int*)cmd->v1;						// start of code that is run every invocation
 	v2=(double**)cmd->v2;
 
@@ -2775,7 +2774,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 	if(cmd->i3==cmd->i1) {SCMDCHECK(0,"not enough allocated space");}
 	if(startchar!='i')								// resort lists if appropriate
 		if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3);
-  
+
   sum=0;
   ctr=0;
   wgt=0;
@@ -2813,7 +2812,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 		else
 			v2[j][0]-=1.0; }
 	if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3);
-  
+
   if(change>0 && ctr>0 && cmd->f1>0 && fabs((sum/ctr-cmd->f1)/cmd->f1)<change)
     return docommand(sim,cmd,line2);
   cmd->f1=sum/ctr;
@@ -2863,7 +2862,7 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
 	char reportchar;
 	static char startchar;
 	static int inscan=0,ctr,maxmol;
-  
+
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 
@@ -2921,7 +2920,7 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
 	if(cmd->i3==cmd->i1) {SCMDCHECK(0,"not enough allocated space");}
 	if(startchar!='i')								// resort lists if appropriate
 		if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3);
-  
+
   sum=0;
   ctr=0;
 	for(j=0;j<cmd->i3;j++) {					// find effective diffusion coefficients of all reported results
@@ -2931,7 +2930,7 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
       if(listout>0 && cmd->invoke>0 && cmd->invoke%listout==0) {
         scmdfprintf(cmd->cmds,fptr,"%li%,%g\n",v1[j],sim->time-v2[j][1]);
         scmdappenddata(cmd->cmds,dataid,1,2,(double)v1[j],sim->time-v2[j][1]); }}}
-  
+
   if(summaryout>0 && cmd->invoke>0 && cmd->invoke%summaryout==0) {
     scmdfprintf(cmd->cmds,fptr,"%g%,%i%,%g\n",sim->time,ctr,sum/(double)ctr);		// display results
 		scmdappenddata(cmd->cmds,dataid,1,3,sim->time,(double)ctr,sum/(double)ctr); }
@@ -2949,7 +2948,7 @@ enum CMDcode cmdresidencetime(simptr sim,cmdptr cmd,char *line2) {
 		else
 			v2[j][0]-=1.0; }
 	if(cmd->i3>0) sortVliv(v1,(void**)cmd->v2,cmd->i3);
-  
+
 	scmdflush(fptr);
 	return CMDok;
 
@@ -2982,14 +2981,14 @@ enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2) {
 	int itct,order;
 	static char nm[STRCHAR];
 	enum SmolStruct ss;
-	
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 	SCMDCHECK(line2,"missing argument");
 	itct=sscanf(line2,"%s",nm);
 	SCMDCHECK(itct==1,"read failure");
 	ss=simstring2ss(nm);
 	SCMDCHECK(ss!=SSnone,"diagnostic type not recognized");
-	
+
 	if(ss==SSsim || ss==SSall) simoutput(sim);
 	if(ss==SSwall || ss==SSall) walloutput(sim);
 	if(ss==SSmolec || ss==SSall) molssoutput(sim);
@@ -3062,7 +3061,7 @@ enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
   SCMDCHECK(line2,"file name not given");
 	itct=sscanf(line2,"%s",nm);
 	SCMDCHECK(itct==1,"read failure");
-  
+
 //	printf("Writing out VTK files....\n");
 	grid = vtkCreateMolGrid();
 
@@ -3071,7 +3070,7 @@ enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
 	inscan=0;
 	vtkWriteGrid(nm,"Molecules",cmd->invoke,grid);
 	vtkDeleteGrid(grid);
-  
+
 #ifdef OPTION_NSV
 	static char nm2[STRCHAR];
 	latticeptr lattice;
@@ -3192,7 +3191,7 @@ enum CMDcode cmdvolumesource(simptr sim,cmdptr cmd,char *line2) {
 	int itct,num,i,d;
 	char nm[STRCHAR];
 	double poslo[DIMMAX],poshi[DIMMAX],numdbl;
-	
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 	SCMDCHECK(line2,"missing argument");
 	SCMDCHECK(sim->mols,"molecules are undefined");
@@ -3219,7 +3218,7 @@ enum CMDcode cmdgaussiansource(simptr sim,cmdptr cmd,char *line2) {
 	int itct,num,i,d,imol,dim;
 	char nm[STRCHAR];
 	double mean[DIMMAX],sigma[DIMMAX],pos[DIMMAX],lowcorner[DIMMAX],highcorner[DIMMAX],numdbl;
-	
+
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
 	dim=sim->dim;
@@ -4386,7 +4385,7 @@ enum CMDcode cmdincludeecoli(simptr sim,cmdptr cmd,char *line2) {
 	wallptr *wlist;
 	static double rad,length,pos[DIMMAX];
 	static int inscan=0;
-  
+
 	if(inscan) goto scanportion;
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
@@ -4487,12 +4486,12 @@ enum CMDcode cmdexpandsystem(simptr sim,cmdptr cmd,char *line2) {
 		zero[0]=zero[1]=zero[2]=0;
 		for(s=0;s<sim->srfss->nsrf;s++) {
 			srf=sim->srfss->srflist[s];
-			for(ps=(PanelShape)0;ps<(PanelShape)PSMAX;ps=(PanelShape)(ps+1))
+			for(ps=(enum PanelShape)0;ps<(enum PanelShape)PSMAX;ps=(enum PanelShape)(ps+1))
 				for(p=0;p<srf->npanel[ps];p++) {
 					pnl=srf->panels[ps][p];
 					surftransformpanel(pnl,sim->dim,zero,center,expand); }
 			if(srf->nemitter[PFfront] && srf->nemitter[PFback] && sim->mols)
-				for(face=(PanelFace)0;face<(PanelFace)2;face=(PanelFace)(face+1))
+				for(face=(enum PanelFace)0;face<(enum PanelFace)2;face=(enum PanelFace)(face+1))
 					for(i=1;i<sim->mols->nspecies;i++)
 						for(em=0;em<srf->nemitter[face][i];em++)
 							for(d=0;d<dim;d++)
