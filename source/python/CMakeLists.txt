@@ -1,8 +1,7 @@
 # python binding.
 
 # recompile libsmoldyn for PYTHON.
-set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
-add_library(_pysmoldyn STATIC ${SRC_FILES} 
+add_library(_pysmoldyn STATIC ${SRC_FILES}
     $<TARGET_OBJECTS:Steve>
     $<TARGET_OBJECTS:nsv>)
 
