@@ -1,4 +1,4 @@
-name: Linux Wheels
+name: Wheels
 
 on:
   push:
