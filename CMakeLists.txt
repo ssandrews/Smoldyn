@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.12)   # due to better Python support
+cmake_minimum_required(VERSION 3.12)   
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -35,14 +35,6 @@ if(NOT SMOLDYN_VERSION)
     endif()
 endif()
 message(STATUS "Smoldyn version is set to: '${SMOLDYN_VERSION}'")
-
-#
-# Must use a C++14 compatible compiler (gcc>=5.x).
-# NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
-# nice to use them. Most compilers support C++17 these days.
-#
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_C_STANDARD 11)
 
 
 ######### Targets to build ###########
@@ -106,6 +98,61 @@ message(STATUS "Option to run Libsmoldyn examples: ${OPTION_EXAMPLES}")
 message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
+
+####### Compiler flags ######################
+#
+# Must use a C++14 compatible compiler (gcc>=5.x).
+# NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
+# nice to use them. Most compilers support C++17 these days.
+#
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 11)
+
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
+# macro to check if a flag exists and enable for compiler.
+macro(CheckCompilerFlagAndAdd)
+    check_c_compiler_flag(${ARGV0} FLAG_EXISTS)
+    if(FLAG_EXISTS)
+        if(${ARGV1})
+            add_definitions(${ARGV0}=${ARGV1})
+        else()
+            add_definitions(${ARGV0})
+        endif()
+    else(FLAG_EXISTS)
+        message(STATUS "Compiler does not support ${ARGV0}. Ignoring..")
+    endif(FLAG_EXISTS)
+endmacro()
+
+# enable all warnings.
+if(MSVC)
+    # FIXME: On Windows, when using MSVC, reduce the amount of warnings. MSVC
+    # generates a lot of warning about casting which pollute the build log and
+    # makes it hard to find the error.
+    add_compile_options(/W1)
+else()
+    add_compile_options(-Wall -Wextra)
+endif()
+
+
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING
+        "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
+endif ()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+if(OPTION_STRICT_BUILD)
+    add_definitions(-Wextra -Werror)
+    CheckCompilerFlagAndAdd(-Wno-format-truncation)
+    CheckCompilerFlagAndAdd(-Wno-uninitialized)
+    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
+    CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
+endif()
+
+
+
+
 ######### Core code information ###########
 
 #
@@ -156,52 +203,12 @@ if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
     set(OPTION_USE_LIBTIFF OFF)
 endif()
 
-# set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
-# set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
-
-
-####### Compiler flags ######################
-
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-
-# macro to check if a flag exists and enable for compiler.
-macro(CheckCompilerFlagAndAdd)
-    check_c_compiler_flag(${ARGV0} FLAG_EXISTS)
-    if(FLAG_EXISTS)
-        if(${ARGV1})
-            add_definitions(${ARGV0}=${ARGV1})
-        else()
-            add_definitions(${ARGV0})
-        endif()
-    else(FLAG_EXISTS)
-        message(STATUS "Compiler does not support ${ARGV0}. Ignoring..")
-    endif(FLAG_EXISTS)
-endmacro()
-
-add_definitions(-Wall)
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING
-        "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
-endif ()
-
 if(OPTION_ASAN)
     # Address sanitizer
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
     set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
-
-if(OPTION_STRICT_BUILD)
-    add_definitions(-Wextra -Werror)
-    CheckCompilerFlagAndAdd(-Wno-format-truncation)
-    CheckCompilerFlagAndAdd(-Wno-uninitialized)
-    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
-    CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
-endif()
-
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(VCELL_BUILD OFF)
 set(APPLE_BUILD OFF)

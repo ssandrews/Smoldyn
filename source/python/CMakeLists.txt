@@ -15,7 +15,6 @@ target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE)
 target_include_directories(_pysmoldyn PRIVATE ${Python3_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
 
 # This is suggested by pybind11: reduces binary size and disables some warnings.
-target_compile_options(_pysmoldyn PRIVATE -fvisibility=hidden)
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
