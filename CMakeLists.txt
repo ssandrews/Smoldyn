@@ -105,7 +105,7 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 # NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
 # nice to use them. Most compilers support C++17 these days.
 #
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_C_STANDARD 11)
 
 include(CheckCCompilerFlag)

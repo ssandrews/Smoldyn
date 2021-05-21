@@ -21,8 +21,8 @@ if (WIN32)
     list(APPEND WindowsSDK_LIB_DIR ${WindowsSDK_ROOT}/Lib/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/winrt/${CMAKE_VS_PLATFORM_NAME})
     list(APPEND WindowsSDK_LIB_DIR ${WindowsSDK_ROOT}/Lib/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/ucrt/${CMAKE_VS_PLATFORM_NAME})
 
-    message ("WindowsSDK include dir: ${WindowsSDK_INCLUDE_DIR}")
-    message ("WindowsSDK library dir: ${WindowsSDK_LIB_DIR}")
+    message (STATUS "WindowsSDK include dir: ${WindowsSDK_INCLUDE_DIR}")
+    message (STATUS "WindowsSDK library dir: ${WindowsSDK_LIB_DIR}")
     include_directories(${WindowsSDK_INCLUDE_DIR})
     link_directories(${WindowsSDK_LIB_DIR})
 
