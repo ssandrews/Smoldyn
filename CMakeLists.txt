@@ -105,7 +105,7 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 # NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
 # nice to use them. Most compilers support C++17 these days.
 #
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
 include(CheckCCompilerFlag)
@@ -150,7 +150,8 @@ if(OPTION_STRICT_BUILD)
 endif()
 
 # For CI.
-if(WIN32 AND $ENV{GITHUB_ACTIONS})
+if(WIN32) # AND "$ENV{GITHUB_ACTIONS}")
+    message(STATUS "Running github actions on Window platform")
     set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.19041)
     include(cmake/GithubActions.cmake)
 endif()
