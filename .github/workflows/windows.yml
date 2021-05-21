@@ -3,13 +3,13 @@ name: Windows Build
 on:
   push:
     branches:
-      - master
+      - '*'
     tags:
       - 'v**'
   pull_request:
-    branches: 
+    branches:
       - master
-      
+
 jobs:
   build:
     runs-on: windows-latest
@@ -32,7 +32,7 @@ jobs:
         $PYTHON -m pip install pip --upgrade
         $PYTHON -m pip install numpy pytest matplotlib setuptools
         cmake -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DPython3_EXECUTABLE=$PYTHON ..
-        cmake --build . --config Release 
+        cmake --build . --config Release
         ctest -C Release
     - name: Upload to PyPI
       shell: bash
