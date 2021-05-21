@@ -36,7 +36,7 @@ jobs:
         PYTHON=$(which python)
         $PYTHON -m pip install pip --upgrade
         $PYTHON -m pip install numpy pytest matplotlib setuptools
-        cmake -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DPython3_EXECUTABLE=$PYTHON ..
+        cmake .. -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DPython3_EXECUTABLE=$PYTHON -G "Visual Studio 16 2019"
         cmake --build . --config Release
         ctest -C Release
     - name: Upload to PyPI

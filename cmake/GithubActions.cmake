@@ -1,4 +1,5 @@
 # Use it on Github Action.
+# Thanks https://github.com/rpavlik/cmake-modules/blob/main/FindWindowsSDK.cmake
 
 if (WIN32)
     #find_package(WindowsSDK)
