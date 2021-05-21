@@ -179,7 +179,7 @@ macro(CheckCompilerFlagAndAdd)
     endif(FLAG_EXISTS)
 endmacro()
 
-add_definitions(-Wall -Wfatal-errors)
+add_definitions(-Wall)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
