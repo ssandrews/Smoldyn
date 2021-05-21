@@ -154,6 +154,8 @@ if(WIN32) # AND "$ENV{GITHUB_ACTIONS}")
     message(STATUS "Running github actions on Window platform")
     set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.19041)
     include(cmake/GithubActions.cmake)
+    message(STATUS "SDK directory: ${WINDOWSSDK_PREFERRED_FIRST_DIR}")
+    include_directories(${WINDOWSSDK_PREFERRED_FIRST_DIR})
 endif()
 
 
