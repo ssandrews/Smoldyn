@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.12)   
+cmake_minimum_required(VERSION 3.12)
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -135,8 +135,7 @@ else()
     add_compile_options(-Wall -Wextra)
 endif()
 
-
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
 endif ()
@@ -150,6 +149,11 @@ if(OPTION_STRICT_BUILD)
     CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
 endif()
 
+# For CI.
+if(WIN32 AND $ENV{GITHUB_ACTIONS})
+    set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.19041)
+    include(cmake/GithubActions.cmake)
+endif()
 
 
 
