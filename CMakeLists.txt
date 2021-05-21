@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.12)
 project(smoldyn LANGUAGES CXX C)
 
 # Custom scripts to find some modules such as VTK.
-list(APPEND CMAKE_MODULE_PATHS ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # CI/CD can also set version string. If not, set using git tags or current
 # date.
@@ -154,8 +154,6 @@ if(WIN32) # AND "$ENV{GITHUB_ACTIONS}")
     message(STATUS "Running github actions on Window platform")
     set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.19041)
     include(cmake/GithubActions.cmake)
-    message(STATUS "SDK directory: ${WINDOWSSDK_PREFERRED_FIRST_DIR}")
-    include_directories(${WINDOWSSDK_PREFERRED_FIRST_DIR})
 endif()
 
 
