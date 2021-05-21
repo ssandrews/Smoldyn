@@ -263,13 +263,12 @@ extern CSTRING enum ErrorCode smolRunSim(simptr sim) {
 /* smolRunSimUntil */
 extern CSTRING enum ErrorCode smolRunSimUntil(simptr sim,double breaktime) {
 	const char *funcname="smolRunSimUntil";
-	int er;
 	double stoptime;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	stoptime=sim->tmax;
 	simsettime(sim,breaktime,4);
-	er=smolRunSim(sim);
+	smolRunSim(sim);
 	simsettime(sim,stoptime,4);
 	return Libwarncode;
  failure:
@@ -775,7 +774,7 @@ extern CSTRING enum ErrorCode smolRunCommand(simptr sim,const char *commandstrin
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	LCHECK(commandstring,funcname,ECmissing,"missing command string");
-	strncpy(stringcopy,commandstring,STRCHAR);
+	strncpy(stringcopy,commandstring,STRCHAR-1);
 	cmd=scmdalloc();
 	LCHECK(cmd,funcname,ECmemory,"failed to create a new command structure");
 	strcpy(cmd->str,stringcopy);

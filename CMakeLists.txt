@@ -194,7 +194,7 @@ endif()
 
 
 if(OPTION_STRICT_BUILD)
-    add_definitions(-Wextra)
+    add_definitions(-Wextra -Werror)
     CheckCompilerFlagAndAdd(-Wno-format-truncation)
     CheckCompilerFlagAndAdd(-Wno-uninitialized)
     CheckCompilerFlagAndAdd(-Wno-unused-parameter)
