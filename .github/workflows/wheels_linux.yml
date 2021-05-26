@@ -27,7 +27,7 @@ jobs:
 
       # BioSimulators
       - name: Build BioSimulators Docker image
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || true
         env:
           TAG: ${{ github.ref }}
         run: |
@@ -51,7 +51,7 @@ jobs:
             .
 
       - name: Push BioSimulators Docker image
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || true
         env:
           TAG: ${{ github.ref }}
         run: |
@@ -69,7 +69,7 @@ jobs:
           docker push ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest
 
       - name: Submit Smoldyn to BioSimulators
-        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch' || true
         env:
           TAG: ${{ github.ref }}
         run: |
