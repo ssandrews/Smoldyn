@@ -3,8 +3,8 @@
 [![OS X build status](https://github.com/ssandrews/Smoldyn/actions/workflows/osx.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/osx.yml)
 [![Windows build status](https://github.com/ssandrews/Smoldyn/actions/workflows/windows.yml/badge.svg)](https://github.com/ssandrews/Smoldyn/actions/workflows/windows.yml)
 [![PyPI version](https://badge.fury.io/py/smoldyn.svg)](https://badge.fury.io/py/smoldyn)
-[![BioSimulators](https://img.shields.io/badge/BioSimulators-registered-green)](https://biosimulators.org/simulators/smoldyn)
-[![runBioSimulations](https://img.shields.io/badge/runBioSimulations-simulate-green)](https://run.biosimulations.org/run)
+[![BioSimulators](https://img.shields.io/badge/BioSimulators-registered-brightgreen)](https://biosimulators.org/simulators/smoldyn)
+[![runBioSimulations](https://img.shields.io/badge/runBioSimulations-simulate-brightgreen)](https://run.biosimulations.org/run)
 [![Documentation status](https://readthedocs.org/projects/smoldyn/badge/?version=latest)](https://smoldyn.readthedocs.io/en/latest/?badge=latest)
 
 # Smoldyn
