@@ -2,16 +2,20 @@ __author__ = "Jonathan Karr"
 __email__ = "karr@mssm.edu"
 
 
-from biosimulators_utils.combine.data_model import CombineArchive, CombineArchiveContent, CombineArchiveContentFormat
-from biosimulators_utils.combine.io import CombineArchiveWriter
-from biosimulators_utils.report.data_model import ReportFormat
-from biosimulators_utils.report.io import ReportReader
-from biosimulators_utils.sedml.data_model import (
-    SedDocument,
-    Model, ModelLanguage, ModelAttributeChange,
-    UniformTimeCourseSimulation, Algorithm, AlgorithmParameterChange,
-    Task, DataGenerator, Report, DataSet, Variable, Symbol)
-from biosimulators_utils.sedml.io import SedmlSimulationWriter
+try:
+    import biosimulators_utils
+    from biosimulators_utils.combine.data_model import CombineArchive, CombineArchiveContent, CombineArchiveContentFormat
+    from biosimulators_utils.combine.io import CombineArchiveWriter
+    from biosimulators_utils.report.data_model import ReportFormat
+    from biosimulators_utils.report.io import ReportReader
+    from biosimulators_utils.sedml.data_model import (
+        SedDocument,
+        Model, ModelLanguage, ModelAttributeChange,
+        UniformTimeCourseSimulation, Algorithm, AlgorithmParameterChange,
+        Task, DataGenerator, Report, DataSet, Variable, Symbol)
+    from biosimulators_utils.sedml.io import SedmlSimulationWriter
+except ModuleNotFoundError:
+    biosimulators_utils = None
 from unittest import mock
 import datetime
 import dateutil.tz
@@ -20,12 +24,16 @@ import numpy.testing
 import os
 import shutil
 import smoldyn
-import smoldyn.biosimulators.__main__
-import smoldyn.biosimulators.combine
+try:
+    import smoldyn.biosimulators.__main__
+    import smoldyn.biosimulators.combine
+except ModuleNotFoundError:
+    biosimulators_utils = None
 import tempfile
 import unittest
 
 
+@unittest.skipIf(biosimulators_utils is None, "BioSimulators-utils must be installed")
 class BioSimulatorsTestCase(unittest.TestCase):
     EXAMPLES_DIRNAME = os.path.join(os.path.dirname(__file__), '..', 'examples')
 
@@ -444,3 +452,7 @@ class BioSimulatorsTestCase(unittest.TestCase):
         for result in results.values():
             self.assertEqual(result.shape, (11, ))
             self.assertFalse(numpy.any(numpy.isnan(result)))
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -58,7 +58,7 @@ setuptools.setup(
         ],
     },
     install_requires=["dataclasses;python_version=='3.6'"],
-    extra_requires={
+    extras_require={
         "dev": [
             "coverage",
             "pytest",
