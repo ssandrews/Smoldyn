@@ -29,7 +29,7 @@ LABEL \
 
 # install Smoldyn and its dependencies
 COPY smoldyn.whl /tmp/smoldyn.whl
-RUN pip install /tmp/smoldyn.whl \
+RUN pip install /tmp/smoldyn.whl[biosimulators] \
     && rm /tmp/smoldyn.whl
 
 # setup entry point

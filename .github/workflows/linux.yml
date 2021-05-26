@@ -44,16 +44,17 @@ jobs:
         # From https://github.com/processing/processing/wiki/Running-without-a-Display
         sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
         export DISPLAY=":1"
-        cd build && ctest --output-on-failure -j2
+        cd build
         python -m pip install smoldyn*.whl
         python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
+        ctest --output-on-failure -j2
     
     # BioSimulators
     - name: Build BioSimulators Docker image
       if: ${{ matrix.python-version }} == '3.9'
       run: |
         cp build/smoldyn*.whl scripts/smoldyn.whl
-        cd scripts        
+        cd scripts
 
         docker build \
           --file Dockerfile-BioSimulators \
@@ -65,5 +66,5 @@ jobs:
         flake8 source/python/smoldyn/biosimulators/ --ignore E501
     - name: Test BioSimulators
       run: |
-        python -m pip install pytest
+        python -m pip install smoldyn*.whl[biosimulators,biosimulators-tests]
         python -m pytest tests/test_biosimulators.py

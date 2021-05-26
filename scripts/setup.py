@@ -115,7 +115,7 @@ with open(sdir_ / "README.md") as f:
 setup(
     name="smoldyn",
     version=version_,
-    description="Python module of the Smoldyn simulator",
+    description="Python module for the Smoldyn simulator",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Dilawar Singh",  # author of this python package.
@@ -132,15 +132,18 @@ setup(
     extra_requires={
         "dev": [
             "coverage",
-            "flake8",
-            "numpy",
-            "python-dateutil"
             "pytest",
             "pytest-cov",
         ],
         "biosimulators": [
             "biosimulators-utils[logging]>=0.1.71",
-            'pandas',
+            "pandas",
+        ],
+        "biosimulators-dev": [
+            "flake8",
+        ],
+        "biosimulators-tests": [
+            "python-dateutil",
         ],
     },
     cmdclass={"build_ext": build_ext, "test": TestCommand},
