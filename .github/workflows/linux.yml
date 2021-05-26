@@ -45,7 +45,7 @@ jobs:
         sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
         export DISPLAY=":1"
         cd build
-        python -m pip install smoldyn*.whl
+        python -m pip install smoldyn*.whl[biosimulators,biosimulators-tests]
         python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
         ctest --output-on-failure -j2
     

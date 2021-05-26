@@ -110,12 +110,12 @@ class build_ext(_build_ext):
 
 
 with open(sdir_ / "README.md") as f:
-    readme = f.read()
+    readme = f.read().partition('##')[0]
 
 setup(
     name="smoldyn",
     version=version_,
-    description="Python module for the Smoldyn simulator",
+    description="Python package for the Smoldyn simulator",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Dilawar Singh",  # author of this python package.
