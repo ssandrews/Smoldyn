@@ -1,0 +1,37 @@
+FROM python:3.9-slim-buster
+
+ARG VERSION=""
+
+# metadata
+LABEL \
+    org.opencontainers.image.title="Smoldyn" \
+    org.opencontainers.image.version="${VERSION}" \
+    org.opencontainers.image.description="Particle-based biochemical simulator for modeling molecular diffusion, surface interactions, and chemical reactions" \
+    org.opencontainers.image.url="http://www.smoldyn.org/" \
+    org.opencontainers.image.documentation="https://smoldyn.readthedocs.io/" \
+    org.opencontainers.image.source="https://github.com/ssandrews/Smoldyn" \
+    org.opencontainers.image.authors="Steven Andrews <steven.s.andrews@gmail.com>" \
+    org.opencontainers.image.vendor="Steven Andrews" \
+    org.opencontainers.image.licenses="LGPL-3.0-only" \
+    \
+    base_image="python:3.9-slim-buster" \
+    version="${VERSION}" \
+    software="Smoldyn" \
+    software.version="${VERSION}" \
+    about.summary="Particle-based biochemical simulator for modeling molecular diffusion, surface interactions, and chemical reactions" \
+    about.home="http://www.smoldyn.org/" \
+    about.documentation="https://smoldyn.readthedocs.io/" \
+    about.license_file="https://raw.githubusercontent.com/ssandrews/Smoldyn/master/LICENSE" \
+    about.license="SPDX:LGPL-3.0-only" \
+    about.tags="Smoldyn,particle,biochemistry,kinetic modeling,dynamical simulation,systems biology,SED-ML,COMBINE,OMEX,BioSimulators" \
+    extra.identifiers.biotools="smoldyn" \
+    maintainer="Steven Andrews <steven.s.andrews@gmail.com>"
+
+# install Smoldyn and its dependencies
+COPY smoldyn.whl /tmp/smoldyn.whl
+RUN pip install /tmp/smoldyn.whl \
+    && rm /tmp/smoldyn.whl
+
+# setup entry point
+ENTRYPOINT ["biosimulators-smoldyn"]
+CMD []

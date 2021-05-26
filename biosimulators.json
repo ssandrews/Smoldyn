@@ -1,0 +1,258 @@
+{
+  "id": "smoldyn",
+  "name": "Smoldyn",
+  "version": "2.65",
+  "description": "Computer program for cell-scale biochemical simulations.",
+  "urls": [{
+      "title": null,
+      "type": "Home page",
+      "url": "http://www.smoldyn.org/"
+    },
+    {
+      "title": null,
+      "type": "Examples",
+      "url": "http://www.smoldyn.org/archive.html"
+    },
+    {
+      "title": null,
+      "type": "Installation instructions",
+      "url": "https://smoldyn.readthedocs.io/en/latest/user/install.html"
+    },
+    {
+      "title": null,
+      "type": "Documentation",
+      "url": "https://smoldyn.readthedocs.io/"
+    },
+    {
+      "title": null,
+      "type": "Source repository",
+      "url": "https://github.com/ssandrews/Smoldyn"
+    },
+    {
+      "title": null,
+      "type": "License",
+      "url": "https://github.com/ssandrews/Smoldyn/blob/master/LICENSE"
+    },
+    {
+      "title": null,
+      "type": "Issue tracker",
+      "url": "https://github.com/ssandrews/Smoldyn/issues"
+    }
+  ],
+  "image": {
+    "url": "ghcr.io/ssandrews/Smoldyn/biosimulators_smoldyn:latest",
+    "format": {
+      "namespace": "EDAM",
+      "id": "format_3973",
+      "version": null,
+      "supportedFeatures": []
+    },
+    "operatingSystemType": "Linux"
+  },
+  "authors": [{
+      "middleName": "S.",
+      "firstName": "Steven",
+      "lastName": "Andrews",
+      "identifiers": [{
+        "namespace": "orcid",
+        "id": "0000-0002-4576-8107",
+        "url": "https://orcid.org/0000-0002-4576-8107"
+      }]
+    },
+    {
+      "middleName": null,
+      "firstName": "Dilawar",
+      "lastName": "Singh",
+      "identifiers": []
+    }
+  ],
+  "references": {
+    "identifiers": [{
+        "namespace": "pypi",
+        "id": "smoldyn",
+        "url": "https://pypi.org/project/smoldyn/"
+      },
+      {
+        "namespace": "bio.tools",
+        "id": "smoldyn",
+        "url": "https://bio.tools/smoldyn"
+      }
+    ],
+    "citations": [{
+        "volume": 33,
+        "issue": 5,
+        "pages": "710-717",
+        "journal": "Bioinformatics",
+        "title": "Smoldyn: particle-based simulation with rule-based modeling, improved molecular interaction and a library interface",
+        "authors": "Steve S. Andrews",
+        "year": 2017,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1093/bioinformatics/btw700",
+          "url": "https://doi.org/10.1093/bioinformatics/btw700"
+        }]
+      },
+      {
+        "volume": 31,
+        "issue": 14,
+        "pages": "2406-2408",
+        "journal": "Bioinformatics",
+        "title": "Multiscale reaction-diffusion simulations with Smoldyn",
+        "authors": "Martin Robinson, Steven S. Andrews & Radek Erban",
+        "year": 2015,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1093/bioinformatics/btv149",
+          "url": "https://doi.org/10.1093/bioinformatics/btv149"
+        }]
+      },
+      {
+        "pages": "519-542",
+        "volume": 804,
+        "journal": "Methods in Molecular Biology",
+        "title": "Spatial and stochastic cellular modeling with the Smoldyn simulator",
+        "authors": "Steven S. Andrews",
+        "year": 2012,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1007/978-1-61779-361-5_26",
+          "url": "https://doi.org/10.1007/978-1-61779-361-5_26"
+        }]
+      },
+      {
+        "volume": 6,
+        "issue": 3,
+        "pages": "e1000705",
+        "journal": "PLoS Compututational Biology",
+        "title": "Detailed simulations of cell biology with Smoldyn 2.1",
+        "authors": "Steven S. Andrews, Nathan J. Addy, Roger Brent & Adam P. Arkin",
+        "year": 2010,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1371/journal.pcbi.1000705",
+          "url": "https://doi.org/10.1371/journal.pcbi.1000705"
+        }]
+      }
+    ]
+  },
+  "license": {
+    "namespace": "SPDX",
+    "id": "LGPL-3.0-only"
+  },
+  "algorithms": [{
+    "id": "Smoldyn",
+    "name": "Smoldyn (Spatial Stochastic Simulator)",
+    "kisaoId": {
+      "namespace": "KISAO",
+      "id": "KISAO_0000057"
+    },
+    "modelingFrameworks": [{
+      "namespace": "SBO",
+      "id": "SBO_0000294"
+    }],
+    "modelFormats": [],
+    "simulationFormats": [{
+      "namespace": "EDAM",
+      "id": "format_3685",
+      "version": "L1V3",
+      "supportedFeatures": []
+    }],
+    "archiveFormats": [{
+      "namespace": "EDAM",
+      "id": "format_3686",
+      "version": "1",
+      "supportedFeatures": []
+    }],
+    "citations": [],
+    "parameters": [{
+        "kisaoId": {
+          "namespace": "KISAO",
+          "id": "KISAO_0000254"
+        },
+        "id": "accuracy",
+        "name": "accuracy",
+        "type": "float",
+        "value": "10.0",
+        "recommendedRange": ["0.0", "10.0"],
+        "availableSoftwareInterfaceTypes": ["library", "command-line application", "BioSimulators Docker image"]
+      },
+      {
+        "kisaoId": {
+          "namespace": "KISAO",
+          "id": "KISAO_0000488"
+        },
+        "id": "seed",
+        "name": "seed",
+        "type": "integer",
+        "value": null,
+        "recommendedRange": null,
+        "availableSoftwareInterfaceTypes": ["library", "command-line application", "BioSimulators Docker image"]
+      }
+    ],
+    "dependentDimensions": [{
+        "namespace": "SIO",
+        "id": "SIO_000418"
+      },
+      {
+        "namespace": "SIO",
+        "id": "SIO_000452"
+      },
+      {
+        "namespace": "SIO",
+        "id": "SIO_000453"
+      },
+      {
+        "namespace": "SIO",
+        "id": "SIO_000454"
+      }
+    ],
+    "dependentVariableTargetPatterns": [{
+        "variables": "species counts",
+        "targetPattern": "/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species"
+      },
+      {
+        "variables": "parameter values",
+        "targetPattern": "/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter/@value"
+      }
+    ],
+    "availableSoftwareInterfaceTypes": ["command-line application", "library"],
+    "dependencies": [{
+      "name": "Virtual Cell",
+      "version": null,
+      "required": false,
+      "freeNonCommercialLicense": true,
+      "url": "https://vcell.org/"
+    }]
+  }],
+  "interfaceTypes": [
+    "command-line application",
+    "library",
+    "BioSimulators Docker image"
+  ],
+  "supportedOperatingSystemTypes": [
+    "Mac OS",
+    "Linux",
+    "Windows"
+  ],
+  "supportedProgrammingLanguages": [{
+      "namespace": "Linguist",
+      "id": "C"
+    },
+    {
+      "namespace": "Linguist",
+      "id": "C++"
+    },
+    {
+      "namespace": "Linguist",
+      "id": "Python"
+    }
+  ],
+  "funding": [],
+  "biosimulators": {
+    "meta": null,
+    "imageVersion": "1.0.0",
+    "specificationVersion": "1.0.0",
+    "validationTests": null,
+    "validated": false
+  }
+}

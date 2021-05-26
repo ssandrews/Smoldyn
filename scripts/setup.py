@@ -115,13 +115,13 @@ with open(sdir_ / "README.md") as f:
 setup(
     name="smoldyn",
     version=version_,
-    description="Python module of the Smoldyn simulator (alpha)",
+    description="Python module of the Smoldyn simulator",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Dilawar Singh",  # author of this python package.
     author_email="dilawar.s.rajput@gmail.com",
     url="http://www.smoldyn.org/",
-    license="Gnu LGPL",
+    license="GNU LGPLv3",
     include_package_data=True,
     packages=["smoldyn"],
     # NOTE: Beware there paths are also used by cmake.
@@ -129,7 +129,34 @@ setup(
     package_data={"smoldyn": ["_smoldyn.so"]},
     install_requires=["numpy", "dataclasses;python_version=='3.6'"],
     python_requires=">=3.6",
-    extra_requires={"dev": ["coverage", "pytest", "pytest-cov"]},
+    extra_requires={
+        "dev": [
+            "coverage",
+            "flake8",
+            "numpy",
+            "python-dateutil"
+            "pytest",
+            "pytest-cov",
+        ],
+        "biosimulators": [
+            "biosimulators-utils[logging]>=0.1.71",
+            'pandas',
+        ],
+    },
     cmdclass={"build_ext": build_ext, "test": TestCommand},
-    classifiers=["Programming Language :: Python :: 3",],
+    entry_points={
+        "console_scripts": [
+            "smoldyn = smoldyn.__main__:main",
+            "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
+        ],
+    }
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+        "Natural Language :: English",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+    ],
 )
