@@ -44,7 +44,7 @@ setuptools.setup(
     description="Python package for the Smoldyn simulator",
     long_description=readme,
     long_description_content_type="text/markdown",
-    author="Dilawar Singh",  # author of this package.
+    author="Dilawar Singh",  # author of this package
     author_email="dilawar.s.rajput@gmail.com",
     url="http://www.smoldyn.org/",
     license="GNU LGPLv3",
@@ -56,7 +56,7 @@ setuptools.setup(
             "smoldyn = smoldyn.__main__:main",
             "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
         ],
-    }
+    },
     install_requires=["dataclasses;python_version=='3.6'"],
     extra_requires={
         "dev": [

@@ -5,7 +5,7 @@
 # module. It is neccessary when a pip is used `pip install smoldyn`.
 #
 # Alternatively, you can use cmake build system which provides finer control
-# over the build. 
+# over the build.
 #
 """
 
