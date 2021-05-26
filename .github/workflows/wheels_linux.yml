@@ -24,7 +24,6 @@ jobs:
           ls -ltR
           export PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN
           cd scripts && make wheels
-          sudo chmod -R ugo+r /root/wheelhouse
 
       # BioSimulators
       - name: Build BioSimulators Docker image
@@ -32,7 +31,8 @@ jobs:
         env:
           TAG: ${{ github.ref }}
         run: |
-          cp /root/wheelhouse/smoldyn-*-cp39-*.whl scripts/
+          ls -l /home/runner/wheelhouse
+          cp /home/runner/wheelhouse/smoldyn-*-cp39-*.whl scripts/
           cd scripts
           if [[ "${TAG}" =~ ^refs/tags/ ]]; then
             VERSION="${TAG/refs\/tags\/v/}"

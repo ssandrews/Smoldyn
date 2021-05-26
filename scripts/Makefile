@@ -14,9 +14,10 @@ build : ./Dockerfile ./build_wheels_linux.sh
 wheels : ./Dockerfile ./build_wheels_linux.sh build
 	mkdir -p $(HOME)/wheelhouse
 	# Generate version.
-	docker run -e PYPI_PASSWORD=$(PYPI_PASSWORD) \
-		$(LABEL)
-
+	CONTAINER := $(shell docker run -e PYPI_PASSWORD=$(PYPI_PASSWORD) \
+		$(LABEL))
+	docker cp $(CONTAINER):/root/wheelhouse/*.whl $(HOME)/wheelhouse/
+	docker rm -v $(CONTAINER)
 
 test : build
 	docker run -it \
