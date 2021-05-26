@@ -1,4 +1,4 @@
-name: OSX Build
+name: Build and push Mac OS wheels
 
 on:
   push:

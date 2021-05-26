@@ -1,4 +1,4 @@
-name: Wheels
+name: Build and push Linux wheels and BioSimulators Docker image
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Windows Build
+name: Build and push Windows wheels
 
 on:
   push:
