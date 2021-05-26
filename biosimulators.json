@@ -207,22 +207,12 @@
       }
     ],
     "dependentVariableTargetPatterns": [{
-        "variables": "species counts",
-        "targetPattern": "/sbml:sbml/sbml:model/sbml:listOfSpecies/sbml:species"
-      },
-      {
-        "variables": "parameter values",
-        "targetPattern": "/sbml:sbml/sbml:model/sbml:listOfParameters/sbml:parameter/@value"
+        "variables": "molecule counts",
+        "targetPattern": ""
       }
     ],
-    "availableSoftwareInterfaceTypes": ["command-line application", "library"],
-    "dependencies": [{
-      "name": "Virtual Cell",
-      "version": null,
-      "required": false,
-      "freeNonCommercialLicense": true,
-      "url": "https://vcell.org/"
-    }]
+    "availableSoftwareInterfaceTypes": ["command-line application", "library", "BioSimulators Docker image"],
+    "dependencies": []
   }],
   "interfaceTypes": [
     "command-line application",
