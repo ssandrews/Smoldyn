@@ -24,6 +24,7 @@ jobs:
           ls -ltR
           export PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN
           cd scripts && make wheels
+          sudo chmod -R ugo+r /root/wheelhouse
 
       # BioSimulators
       - name: Build BioSimulators Docker image
