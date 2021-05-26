@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7,3.8,3.9]
+        python-version: [3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -46,7 +46,7 @@ jobs:
         export DISPLAY=":1"
         cd build
         WHEEL_PATH=$(ls smoldyn*.whl)
-        python -m pip install "${WHEEL_PATH}[biosimulators,biosimulators-tests]"
+        python -m pip install --force-reinstall "${WHEEL_PATH}[biosimulators,biosimulators-tests]"
         python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
         ctest --output-on-failure -j2
     
@@ -68,5 +68,4 @@ jobs:
     - name: Test BioSimulators
       run: |
         WHEEL_PATH=$(ls smoldyn*.whl)
-        python -m pip install "${WHEEL_PATH}[biosimulators,biosimulators-tests]"
         python -m pytest tests/test_biosimulators.py
