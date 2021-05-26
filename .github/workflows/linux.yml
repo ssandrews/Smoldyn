@@ -50,7 +50,7 @@ jobs:
     
     # BioSimulators
     - name: Build BioSimulators Docker image
-      if: ${{ matrix.python-version }} == '3.9'
+      if: matrix.python-version == '3.9'
       run: |
         cp build/smoldyn*.whl scripts/
         cd scripts
@@ -60,18 +60,18 @@ jobs:
           --tag ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest \
           .
     - name: Lint BioSimulators
-      if: ${{ matrix.python-version }} == '3.9'
+      if: matrix.python-version == '3.9'
       run: |
         python -m pip install flake8
         flake8 source/python/smoldyn/biosimulators/ --ignore E501
     - name: Install BioSimulators
-      if: ${{ matrix.python-version }} == '3.9'
+      if: matrix.python-version == '3.9'
       run: |
         cd build
         WHEEL_PATH=$(ls smoldyn*.whl)
         python -m pip install --force-reinstall "${WHEEL_PATH}[biosimulators,biosimulators-tests]"
     - name: Test BioSimulators
-      if: ${{ matrix.python-version }} == '3.9'
+      if: matrix.python-version == '3.9'
       run: |
         python -m pip install pytest
         python -m pytest tests/test_biosimulators.py
