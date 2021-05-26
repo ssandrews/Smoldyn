@@ -1,4 +1,4 @@
-name: Build and push Mac OS wheels
+name: Release Mac OS
 
 on:
   push:

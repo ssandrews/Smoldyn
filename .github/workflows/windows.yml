@@ -1,4 +1,4 @@
-name: Build and push Windows wheels
+name: Release Windows
 
 on:
   push:
