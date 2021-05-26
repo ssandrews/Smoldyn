@@ -208,7 +208,7 @@
     ],
     "dependentVariableTargetPatterns": [{
         "variables": "molecule counts",
-        "targetPattern": ""
+        "targetPattern": "{species}"
       }
     ],
     "availableSoftwareInterfaceTypes": ["command-line application", "library", "BioSimulators Docker image"],

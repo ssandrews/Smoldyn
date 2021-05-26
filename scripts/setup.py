@@ -118,7 +118,7 @@ setup(
     description="Python package for the Smoldyn simulator",
     long_description=readme,
     long_description_content_type="text/markdown",
-    author="Dilawar Singh",  # author of this python package.
+    author="Dilawar Singh",  # author of this package.
     author_email="dilawar.s.rajput@gmail.com",
     url="http://www.smoldyn.org/",
     license="GNU LGPLv3",
@@ -127,8 +127,13 @@ setup(
     # NOTE: Beware there paths are also used by cmake.
     package_dir={"smoldyn": builddir_ / "py" / "smoldyn"},
     package_data={"smoldyn": ["_smoldyn.so"]},
-    install_requires=["numpy", "dataclasses;python_version=='3.6'"],
-    python_requires=">=3.6",
+    entry_points={
+        "console_scripts": [
+            "smoldyn = smoldyn.__main__:main",
+            "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
+        ],
+    }
+    install_requires=["dataclasses;python_version=='3.6'"],
     extra_requires={
         "dev": [
             "coverage",
@@ -146,13 +151,8 @@ setup(
             "python-dateutil",
         ],
     },
+    python_requires=">=3.6",
     cmdclass={"build_ext": build_ext, "test": TestCommand},
-    entry_points={
-        "console_scripts": [
-            "smoldyn = smoldyn.__main__:main",
-            "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
-        ],
-    }
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
