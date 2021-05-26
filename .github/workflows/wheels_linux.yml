@@ -29,7 +29,7 @@ jobs:
         env:
           TAG: ${{ github.ref }}
         run: |
-          cp /root/wheelhouse/smoldyn-*-cp39-*.whl scripts/smoldyn.whl
+          cp /root/wheelhouse/smoldyn-*-cp39-*.whl scripts/
           cd scripts
           VERSION="${TAG/refs\/tags\/v/}"
           REVISION=$(git rev-parse HEAD)

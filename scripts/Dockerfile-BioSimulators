@@ -28,9 +28,11 @@ LABEL \
     maintainer="Steven Andrews <steven.s.andrews@gmail.com>"
 
 # install Smoldyn and its dependencies
-COPY smoldyn.whl /tmp/smoldyn.whl
-RUN pip install /tmp/smoldyn.whl[biosimulators] \
-    && rm /tmp/smoldyn.whl
+COPY smoldyn*.whl /tmp/
+RUN cd /tmp \
+    && WHEEL_PATH=$(ls smoldyn*.whl) \
+    && pip install "${WHEEL_PATH}[biosimulators]" \
+    && rm smoldyn*.whl
 
 # setup entry point
 ENTRYPOINT ["biosimulators-smoldyn"]

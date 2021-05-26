@@ -13,3 +13,10 @@ Developer API
 
 .. automodule:: smoldyn._smoldyn
    :members:
+
+
+SED-ML/COMBINE/BioSimulators API
+********************************
+
+.. automodule:: smoldyn.biosimulators
+   :members:
