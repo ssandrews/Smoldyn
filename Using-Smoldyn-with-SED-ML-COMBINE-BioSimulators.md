@@ -137,7 +137,7 @@ provided with the Smoldyn Python package as illustrated below. Note, this
 requires Smoldyn to be installed with the `biosimulators` option.
 ```sh
 pip install smoldyn[biosimulators]
-biosimulations-smoldyn -i /path/to/simulation.omex -o /path/to/save/outputs
+python -m biosimulators.biosimulators -i /path/to/simulation.omex -o /path/to/save/outputs
 ```
 
 ### Python API

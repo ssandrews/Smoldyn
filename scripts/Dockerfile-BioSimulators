@@ -35,5 +35,5 @@ RUN cd /tmp \
     && rm smoldyn*.whl
 
 # setup entry point
-ENTRYPOINT ["biosimulators-smoldyn"]
+ENTRYPOINT ["python", "-m", "smoldyn.biosimulators"]
 CMD []
