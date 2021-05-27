@@ -63,7 +63,11 @@
       "middleName": null,
       "firstName": "Dilawar",
       "lastName": "Singh",
-      "identifiers": []
+      "identifiers": [{
+        "namespace": "orcid",
+        "id": "0000-0002-4645-3211",
+        "url": "https://orcid.org/0000-0002-4645-3211"
+      }]
     }
   ],
   "references": {
