@@ -219,8 +219,18 @@ class BioSimulatorsTestCase(unittest.TestCase):
         sim = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
         sim.setGraphics('none')
 
-        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [], sim)
-        self.assertEqual(set(smoldyn_output_files.keys()), set(['mol_counts']))
+        var = Variable(id='time', symbol=Symbol.time.value)
+        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [var], sim)
+        self.assertEqual(set(smoldyn_output_files.keys()), set(['molcount']))
+
+        var.symbol = 'undefined'
+        with self.assertRaises(ValueError):
+            smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [var], sim)
+
+        var.symbol = None
+        var.target = 'undefined '
+        with self.assertRaises(NotImplementedError):
+            smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [var], sim)
 
     def test_get_variable_results(self):
         filename = os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt')
@@ -233,21 +243,32 @@ class BioSimulatorsTestCase(unittest.TestCase):
         sim = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
         sim.setGraphics('none')
 
-        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [], sim)
+        vars = [
+            Variable(id='time', symbol=Symbol.time.value),
+            Variable(id='red', target='molcount red'),
+            Variable(id='green', target='molcountspecies green'),
+            Variable(id='greenBox', target='molcountinbox green 0 10'),
+            Variable(id='greenHist', target='molcountspace green x 0 100 20')
+        ]
+        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, vars, sim)
 
         sim.run(start=0., stop=0.2, dt=0.01, overwrite=True, display=False, quit_at_end=False)
 
-        vars = [
-            Variable(id='time', symbol=Symbol.time.value),
-            Variable(id='red', target='red'),
-            Variable(id='green', target='green'),
-        ]
         results = smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
-        self.assertEqual(set(results.keys()), set(['time', 'red', 'green']))
+        self.assertEqual(set(results.keys()), set(['time', 'red', 'green', 'greenBox', 'greenHist']))
         numpy.testing.assert_allclose(results['time'], numpy.linspace(0.1, 0.2, 11))
-        for result in results.values():
-            self.assertEqual(result.shape, (11, ))
-            self.assertFalse(numpy.any(numpy.isnan(result)))
+
+        self.assertEqual(results['red'].shape, (11, ))
+        self.assertFalse(numpy.any(numpy.isnan(results['red'])))
+
+        self.assertEqual(results['green'].shape, (11, ))
+        self.assertFalse(numpy.any(numpy.isnan(results['green'])))
+
+        self.assertEqual(results['greenBox'].shape, (11, ))
+        self.assertFalse(numpy.any(numpy.isnan(results['greenBox'])))
+
+        self.assertEqual(results['greenHist'].shape, (11, 20))
+        self.assertFalse(numpy.any(numpy.isnan(results['greenHist'])))
 
         vars = [
             Variable(id='time', symbol='undefined'),
@@ -256,10 +277,42 @@ class BioSimulatorsTestCase(unittest.TestCase):
             smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
 
         vars = [
-            Variable(id='red', target='blue'),
+            Variable(id='red', target='molcount blue'),
         ]
         with self.assertRaises(ValueError):
             smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+
+        vars = [
+            Variable(id='red', target='undefined blue'),
+        ]
+        with self.assertRaises(NotImplementedError):
+            smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+
+    def test_get_variable_results_2d(self):
+        filename = os.path.join(self.EXAMPLES_DIRNAME, 'S4_molecules', 'isotropic', 'diffi.txt')
+        config = smoldyn.biosimulators.combine.read_smoldyn_simulation_configuration(filename)
+        smoldyn.biosimulators.combine.disable_smoldyn_graphics_in_simulation_configuration(config)
+
+        filename2 = os.path.join(self.dirname, 'config.txt')
+        smoldyn.biosimulators.combine.write_smoldyn_simulation_configuration(config, filename2)
+
+        sim = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
+        sim.setGraphics('none')
+
+        vars = [
+            Variable(id='time', symbol=Symbol.time.value),
+            Variable(id='greenHist', target='molcountspace2d green(all) z -10 10 30 -10 10 40 -10 10')
+        ]
+        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, vars, sim)
+
+        sim.run(start=0., stop=0.2, dt=0.01, overwrite=True, display=False, quit_at_end=False)
+
+        results = smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+        self.assertEqual(set(results.keys()), set(['time', 'greenHist']))
+        numpy.testing.assert_allclose(results['time'], numpy.linspace(0.1, 0.2, 11))
+
+        self.assertEqual(results['greenHist'].shape, (11, 30, 40))
+        self.assertFalse(numpy.any(numpy.isnan(results['greenHist'])))
 
     def test_exec_sed_task(self):
         task = Task(
@@ -288,8 +341,8 @@ class BioSimulatorsTestCase(unittest.TestCase):
 
         variables = [
             Variable(id='time', symbol=Symbol.time.value, task=task),
-            Variable(id='red', target='red', task=task),
-            Variable(id='green', target='green', task=task),
+            Variable(id='red', target='molcount red', task=task),
+            Variable(id='green', target='molcount green', task=task),
         ]
 
         results, log = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
@@ -383,8 +436,8 @@ class BioSimulatorsTestCase(unittest.TestCase):
 
         variables = [
             Variable(id='time', symbol=Symbol.time.value, task=task),
-            Variable(id='red', target='red', task=task),
-            Variable(id='green', target='green', task=task),
+            Variable(id='red', target='molcount red', task=task),
+            Variable(id='green', target='molcount green', task=task),
         ]
 
         doc = SedDocument(
@@ -399,12 +452,12 @@ class BioSimulatorsTestCase(unittest.TestCase):
                 ),
                 DataGenerator(
                     id='data_gen_red',
-                    variables=[Variable(id='var_red', target='red', task=task)],
+                    variables=[Variable(id='var_red', target='molcount red', task=task)],
                     math='var_red',
                 ),
                 DataGenerator(
                     id='data_gen_green',
-                    variables=[Variable(id='var_green', target='green', task=task)],
+                    variables=[Variable(id='var_green', target='molcount green', task=task)],
                     math='var_green',
                 ),
             ],

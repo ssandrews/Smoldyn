@@ -71,15 +71,42 @@ SED-ML files for Smoldyn support the following algorithms and algorithm paramete
 
 ## Variables of SED-ML data generators
 
-Variables for SED-ML data generators should use the following symbols and targets as 
+Variables for SED-ML data generators should use symbols and targets as 
 illustrated below.
 
 * Time - symbol: `urn:sedml:symbol:time`
-* Molecule counts - target: `{species}`
+* Species counts and distributions - target
+
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Smoldyn output file                                                                                                                           | SED variable target                                                                                                                         | Shapes                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| ``molcount``                                                                                                                                  | ``molcount {species}``                                                                                                                      | (numberOfSteps + 1,)                |
+| ``molcountspecies {species}({state})``                                                                                                        | ``molcountspecies {species}({state})``                                                                                                      | (numberOfSteps + 1,)                |
+| ``molcountspecieslist {species}({state})+``                                                                                                   | ``molcountspecies {species}({state})``                                                                                                      | (numberOfSteps + 1,)                |
+| ``molcountinbox {low-x} {hi-x}``                                                                                                              | ``molcountinbox {species} {low-x} {hi-x}``                                                                                                  | (numberOfSteps + 1,)                |
+| ``molcountinbox {low-x} {hi-x} {low-y} {hi-y}``                                                                                               | ``molcountinbox {species} {low-x} {hi-x} {low-y} {hi-y}``                                                                                   | (numberOfSteps + 1,)                |
+| ``molcountinbox {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z}``                                                                                | ``molcountinbox {species} {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z}``                                                                    | (numberOfSteps + 1,)                |
+| ``molcountincmpt {compartment}``                                                                                                              | ``molcountincmpt {species} {compartment}``                                                                                                  | (numberOfSteps + 1,)                |
+| ``molcountincmpts {compartment}+``                                                                                                            | ``molcountincmpt {species} {compartment}``                                                                                                  | (numberOfSteps + 1,)                |
+| ``molcountincmpt2 {compartment} {state}``                                                                                                     | ``molcountincmpt2 {species} {compartment} {state}``                                                                                         | (numberOfSteps + 1,)                |
+| ``molcountonsurf {surface}``                                                                                                                  | ``molcountonsurf {species} {surface}``                                                                                                      | (numberOfSteps + 1,)                |
+| ``molcountspace {species}({state}) {axis} {low} {hi} {bins} 0``                                                                               | ``molcountspace {species}({state}) {axis} {low} {hi} {bins}``                                                                               | (numberOfSteps + 1, bins)           |
+| ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} 0``                                                                    | ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi}``                                                                    | (numberOfSteps + 1, bins)           |
+| ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} {low} {hi} 0``                                                         | ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} {low} {hi}``                                                         | (numberOfSteps + 1, bins)           |
+| ``molcountspace2d {species}({state}) z {low-x} {hi-x} {bins-x} {low-y} {hi-y} {bins-y} 0``                                                    | ``molcountspace2d {species}({state}) z {low-x} {hi-x} {bins-x} {low-y} {hi-y} {bins-y}``                                                    | (numberOfSteps + 1, bins-x, bins-y) |
+| ``molcountspace2d {species}({state}) {axis} {low-1} {hi-1} {bins-1} {low-2} {hi-2} {bins-2} {low-3} {hi-3} 0``                                | ``molcountspace2d {species}({state}) {axis} {low-1} {hi-1} {bins-1} {low-2} {hi-2} {bins-2} {low-3} {hi-3}``                                | (numberOfSteps + 1, bins-1, bins-2) |
+| ``molcountspaceradial {species}({state}) {center-x} {radius} {bins} 0``                                                                       | ``molcountspaceradial {species}({state}) {center-x} {radius} {bins}``                                                                       | (numberOfSteps + 1, bins)           |
+| ``molcountspaceradial {species}({state}) {center-x} {center-y} {radius} {bins} 0``                                                            | ``molcountspaceradial {species}({state}) {center-x} {center-y} {radius} {bins}``                                                            | (numberOfSteps + 1, bins)           |
+| ``molcountspaceradial {species}({state}) {center-x} {center-y} {center-z} {radius} {bins} 0``                                                 | ``molcountspaceradial {species}({state}) {center-x} {center-y} {center-z} {radius} {bins}``                                                 | (numberOfSteps + 1, bins)           |
+| ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {pole-x} {pole-y} {radius-min} {radius-max} {bins} 0``                     | ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {pole-x} {pole-y} {radius-min} {radius-max} {bins}``                     | (numberOfSteps + 1, bins)           |
+| ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins} 0`` | ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins}`` | (numberOfSteps + 1, bins)           |
+| ``radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins} 0``                                                        | ``radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins}``                                                        | (numberOfSteps + 1, bins)           |
+| ``radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins} 0``          | ``radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins}``          | (numberOfSteps + 1, bins)           |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 
 ```xml
 <variable id="time" symbol="urn:sedml:symbol:time">
-<variable id="red" target="red">
+<variable id="red" target="molcount red">
 ```
 
 ## Simulation results

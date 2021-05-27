@@ -66,6 +66,7 @@ setuptools.setup(
         ],
         "biosimulators": [
             "biosimulators-utils[logging]>=0.1.71",
+            "numpy",
             "pandas",
         ],
         "biosimulators-dev": [

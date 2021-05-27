@@ -25,6 +25,7 @@ from smoldyn import smoldyn
 import enum
 import functools
 import os
+import numpy
 import pandas
 import re
 import tempfile
@@ -343,8 +344,9 @@ def disable_smoldyn_graphics_in_simulation_configuration(configuration):
 def apply_sed_model_change_to_smoldyn_simulation_configuration(sed_model_change, simulation_configuration):
     ''' Apply a SED model attribute change to a configuration for a Smoldyn simulation
 
+    ====================================================================  ===================
     target                                                                newValue type
-    -------------                                                         -------------
+    ====================================================================  ===================
     ``dim``                                                               integer
     ``low_wall {dim}``                                                    float string
     ``high_wall {dim}``                                                   float string
@@ -364,6 +366,7 @@ def apply_sed_model_change_to_smoldyn_simulation_configuration(sed_model_change,
     ``mol {species} [{pos} ...]``                                         integer
     ``compartment_mol {species} {compartment-name}``                      integer
     ``surface_mol {species}({state}) {panel-shape} {panel} [{pos} ...]``  integer
+    ====================================================================  ===================
 
     Args:
         sed_model_change (:obj:`ModelAttributeChange`): SED model change
@@ -540,6 +543,33 @@ def add_commands_to_smoldyn_output_file(simulation, output_file, commands):
 def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_variables, smoldyn_simulation):
     ''' Add Smoldyn output files for capturing each SED variable
 
+    =============================================================================================================================================  ===========================================================================================================================================  ===========================================
+    Smoldyn output file                                                                                                                            SED variable target                                                                                                                          Shape
+    =============================================================================================================================================  ===========================================================================================================================================  ===========================================
+    ``molcount``                                                                                                                                   ``molcount {species}``                                                                                                                       (numberOfSteps + 1,)
+    ``molcountspecies {species}({state})``                                                                                                         ``molcountspecies {species}({state})``                                                                                                       (numberOfSteps + 1,)
+    ``molcountspecieslist {species}({state})+``                                                                                                    ``molcountspecies {species}({state})``                                                                                                       (numberOfSteps + 1,)
+    ``molcountinbox {low-x} {hi-x}``                                                                                                               ``molcountinbox {species} {low-x} {hi-x}``                                                                                                   (numberOfSteps + 1,)
+    ``molcountinbox {low-x} {hi-x} {low-y} {hi-y}``                                                                                                ``molcountinbox {species} {low-x} {hi-x} {low-y} {hi-y}``                                                                                    (numberOfSteps + 1,)
+    ``molcountinbox {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z}``                                                                                 ``molcountinbox {species} {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z}``                                                                     (numberOfSteps + 1,)
+    ``molcountincmpt {compartment}``                                                                                                               ``molcountincmpt {species} {compartment}``                                                                                                   (numberOfSteps + 1,)
+    ``molcountincmpts {compartment}+``                                                                                                             ``molcountincmpt {species} {compartment}``                                                                                                   (numberOfSteps + 1,)
+    ``molcountincmpt2 {compartment} {state}``                                                                                                      ``molcountincmpt2 {species} {compartment} {state}``                                                                                          (numberOfSteps + 1,)
+    ``molcountonsurf {surface}``                                                                                                                   ``molcountonsurf {species} {surface}``                                                                                                       (numberOfSteps + 1,)
+    ``molcountspace {species}({state}) {axis} {low} {hi} {bins} 0``                                                                                ``molcountspace {species}({state}) {axis} {low} {hi} {bins}``                                                                                (numberOfSteps + 1, bins)
+    ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} 0``                                                                     ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi}``                                                                     (numberOfSteps + 1, bins)
+    ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} {low} {hi} 0``                                                          ``molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} {low} {hi}``                                                          (numberOfSteps + 1, bins)
+    ``molcountspace2d {species}({state}) z {low-x} {hi-x} {bins-x} {low-y} {hi-y} {bins-y} 0``                                                     ``molcountspace2d {species}({state}) z {low-x} {hi-x} {bins-x} {low-y} {hi-y} {bins-y}``                                                     (numberOfSteps + 1, bins-x, bins-y)
+    ``molcountspace2d {species}({state}) {axis} {low-1} {hi-1} {bins-1} {low-2} {hi-2} {bins-2} {low-3} {hi-3} 0``                                 ``molcountspace2d {species}({state}) {axis} {low-1} {hi-1} {bins-1} {low-2} {hi-2} {bins-3} {low-3} {hi-3}``                                 (numberOfSteps + 1, bins-1, bins-2)
+    ``molcountspaceradial {species}({state}) {center-x} {radius} {bins} 0``                                                                        ``molcountspaceradial {species}({state}) {center-x} {radius} {bins}``                                                                        (numberOfSteps + 1, bins)
+    ``molcountspaceradial {species}({state}) {center-x} {center-y} {radius} {bins} 0``                                                             ``molcountspaceradial {species}({state}) {center-x} {center-y} {radius} {bins}``                                                             (numberOfSteps + 1, bins)
+    ``molcountspaceradial {species}({state}) {center-x} {center-y} {center-z} {radius} {bins} 0``                                                  ``molcountspaceradial {species}({state}) {center-x} {center-y} {center-z} {radius} {bins}``                                                  (numberOfSteps + 1, bins)
+    ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {pole-x} {pole-y} {radius-min} {radius-max} {bins} 0``                      ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {pole-x} {pole-y} {radius-min} {radius-max} {bins}``                      (numberOfSteps + 1, bins)
+    ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins} 0``  ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins}``  (numberOfSteps + 1, bins)
+    ``radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins} 0``                                                         ``radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins}``                                                         (numberOfSteps + 1, bins)
+    ``radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins} 0``           ``radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins}``           (numberOfSteps + 1, bins)
+    =============================================================================================================================================   ==========================================================================================================================================  ===========================================
+
     Args:
         configuration_filename (:obj:`str`): path to the Smoldyn configuration file for the simulation
         sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
@@ -553,19 +583,70 @@ def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_varia
     # initialize dictionary of output files
     smoldyn_output_files = {}
 
-    # output file for molecule counts
-    smoldyn_output_files['mol_counts'] = add_smoldyn_output_file(configuration_filename, smoldyn_simulation)
-    add_commands_to_smoldyn_output_file(
-        smoldyn_simulation,
-        smoldyn_output_files['mol_counts'],
-        [
-            SmoldynCommand('molcountheader', 'B'),
-            SmoldynCommand('molcount', 'E'),
-        ],
-    )
+    missing_symbols = []
+
+    for sed_variable in sed_variables:
+        if sed_variable.symbol:
+            if sed_variable.symbol == Symbol.time.value:
+                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
+                                                   'molcount', True, smoldyn_output_files)
+            else:
+                missing_symbols.append('{}: {}'.format(sed_variable.id, sed_variable.symbol))
+
+        else:
+            output_command, _, output_args = re.sub(r' +', ' ', sed_variable.target).partition(' ')
+            if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
+                output_args = output_args.partition(' ')[2]
+                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
+                                                   output_command + ' ' + output_args, True, smoldyn_output_files)
+            elif output_command in ['molcountspecies']:
+                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
+                                                   output_command + ' ' + output_args, False, smoldyn_output_files)
+
+            elif output_command in ['molcountspace', 'molcountspace2d', 'molcountspaceradial',
+                                    'molcountspacepolarangle', 'radialdistribution', 'radialdistribution2']:
+                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
+                                                   output_command + ' ' + output_args + ' 0', False, smoldyn_output_files)
+
+            else:
+                raise NotImplementedError('Output command `{}` is not supported.'.format(output_command))
+
+    if missing_symbols:
+        msg = '{} symbols cannot be recorded:\n  {}\n\nThe following symbols can be recorded:\n  symbol: {}'.format(
+            len(missing_symbols),
+            '\n  '.join(missing_symbols),
+            Symbol.time.value,
+        )
+        raise ValueError(msg)
 
     # return output files
     return smoldyn_output_files
+
+
+def add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
+                                       smoldyn_output_command, include_header, smoldyn_output_files):
+    ''' Add a Smoldyn output file for molecule counts
+
+    Args:
+        configuration_filename (:obj:`str`): path to the Smoldyn configuration file for the simulation
+        smoldyn_simulation (:obj:`smoldyn.Simulation`): Smoldyn simulation
+        smoldyn_output_command (:obj:`str`): Smoldyn output command (e.g., ``molcount``)
+        include_header (:obj:`bool`): whether to include a header
+        smoldyn_output_files (:obj:`dict` of :obj:`str` => :obj:`SmoldynOutputFile`): Smoldyn output files
+    '''
+    smoldyn_output_command = smoldyn_output_command.strip()
+    if smoldyn_output_command not in smoldyn_output_files:
+        smoldyn_output_files[smoldyn_output_command] = add_smoldyn_output_file(configuration_filename, smoldyn_simulation)
+
+        commands = [SmoldynCommand(smoldyn_output_command, 'E')]
+        if include_header:
+            commands.insert(0, SmoldynCommand('molcountheader', 'B'))
+
+        add_commands_to_smoldyn_output_file(
+            smoldyn_simulation,
+            smoldyn_output_files[smoldyn_output_command],
+            commands,
+        )
 
 
 def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
@@ -583,7 +664,7 @@ def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
         :obj:`ValueError`: unsupported results
     '''
     # TODO: support additional kinds of outputs
-    mol_counts_result = pandas.read_csv(smoldyn_output_files['mol_counts'].filename, sep=' ')
+    smoldyn_results = {}
 
     missing_variables = []
 
@@ -591,25 +672,95 @@ def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
     for sed_variable in sed_variables:
         if sed_variable.symbol:
             if sed_variable.symbol == Symbol.time.value:
-                variable_result = mol_counts_result['time']
+                variable_result = get_smoldyn_output('molcount', True, None, smoldyn_output_files, smoldyn_results)['time']
             else:
                 variable_result = None
                 missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'symbol', sed_variable.symbol))
         else:
-            variable_result = mol_counts_result.get(sed_variable.target, None)
-            if variable_result is None:
-                missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'target', sed_variable.target))
+            output_command, _, output_args = re.sub(r' +', ' ', sed_variable.target).partition(' ')
+            if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
+                species_name, _, output_args = output_args.partition(' ')
+                variable_result = get_smoldyn_output(output_command + ' ' + output_args, True, None,
+                                                     smoldyn_output_files, smoldyn_results).get(species_name, None)
+                if variable_result is None:
+                    missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'target', sed_variable.target))
+
+            elif output_command in ['molcountspecies']:
+                variable_result = get_smoldyn_output(output_command + ' ' + output_args, True, None,
+                                                     smoldyn_output_files, smoldyn_results).iloc[:, 1]
+
+            elif output_command in ['molcountspace', 'molcountspaceradial',
+                                    'molcountspacepolarangle', 'radialdistribution', 'radialdistribution2']:
+                variable_result = get_smoldyn_output(output_command + ' ' + output_args + ' 0', True, None,
+                                                     smoldyn_output_files, smoldyn_results).iloc[:, 1:]
+
+            elif output_command in ['molcountspace2d']:
+                output_args_list = output_args.split(' ')
+                if len(output_args_list) == 8:
+                    shape = (int(output_args_list[-4]), int(output_args_list[-1]))
+                else:
+                    shape = (int(output_args_list[-6]), int(output_args_list[-3]))
+
+                variable_result = get_smoldyn_output(output_command + ' ' + output_args + ' 0', True, shape,
+                                                     smoldyn_output_files, smoldyn_results)
+
+            else:
+                raise NotImplementedError('Output command `{}` is not supported.'.format(output_command))
 
         if variable_result is not None:
-            variable_results[sed_variable.id] = variable_result[-(number_of_steps + 1):].to_numpy()
+            if variable_result.ndim == 1:
+                variable_results[sed_variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, ]
+            elif variable_result.ndim == 2:
+                variable_results[sed_variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, :]
+            else:
+                variable_results[sed_variable.id] = variable_result[-(number_of_steps + 1):, :, :]
 
     if missing_variables:
-        msg = '{} variables could not be recorded:\n  {}\n\nThe following variables can be recorded:\n  symbol: {}\n  {}'.format(
+        msg = '{} variables could not be recorded:\n  {}'.format(
             len(missing_variables),
             '\n  '.join(missing_variables),
-            Symbol.time.value,
-            '\n  '.join('target: {}'.format(target) for target in sorted(mol_counts_result.columns))
         )
         raise ValueError(msg)
 
     return variable_results
+
+
+def get_smoldyn_output(smoldyn_output_command, has_header, three_d_shape, smoldyn_output_files, smoldyn_results):
+    ''' Get the simulated count of each molecule
+
+    Args:
+        smoldyn_output_command (:obj:`str`): Smoldyn output command (e.g., ``molcount``)
+        has_header (:obj:`bool`): whether to include a header
+        three_d_shape (:obj:`tuple` of :obj:`int`): dimensions of the output
+        smoldyn_output_files (:obj:`dict` of :obj:`str` => :obj:`SmoldynOutputFile`): Smoldyn output files
+        smoldyn_results (:obj:`dict`)
+
+    Returns:
+        :obj:`pandas.DataFrame` or :obj:`numpy.ndarray`: results
+    '''
+    smoldyn_output_command = smoldyn_output_command.strip()
+    if smoldyn_output_command not in smoldyn_results:
+        smoldyn_output_file = smoldyn_output_files[smoldyn_output_command]
+        if three_d_shape:
+            with open(smoldyn_output_file.filename, 'r') as file:
+                data_list = []
+
+                i_line = 0
+                for line in file:
+                    if i_line % (three_d_shape[1] + 1) == 0:
+                        time_point_data = []
+                    else:
+                        profile = [int(el) for el in line.split(' ')]
+                        time_point_data.append(profile)
+
+                        if i_line % (three_d_shape[1] + 1) == three_d_shape[1]:
+                            data_list.append(time_point_data)
+
+                    i_line += 1
+
+            smoldyn_results[smoldyn_output_command] = numpy.array(data_list).transpose((0, 2, 1))
+
+        else:
+            smoldyn_results[smoldyn_output_command] = pandas.read_csv(smoldyn_output_file.filename, sep=' ')
+
+    return smoldyn_results[smoldyn_output_command]
