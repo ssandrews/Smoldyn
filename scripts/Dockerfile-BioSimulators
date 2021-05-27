@@ -27,6 +27,20 @@ LABEL \
     extra.identifiers.biotools="smoldyn" \
     maintainer="Steven Andrews <steven.s.andrews@gmail.com>"
 
+# Set up headless environment
+RUN apt-get -y update \
+    && apt-get install --no-install-recommends -y \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir /tmp/.X11-unix \
+    && chmod 1777 /tmp/.X11-unix
+COPY xvfb-startup.sh .
+ARG RESOLUTION="1920x1080x24"
+ARG XARGS=""
+ENV XVFB_RES="${RESOLUTION}" \
+    XVFB_ARGS="${XARGS}" \
+    DISPLAY=":1"
+
 # install Smoldyn and its dependencies
 COPY smoldyn*.whl /tmp/
 RUN cd /tmp \
@@ -34,6 +48,15 @@ RUN cd /tmp \
     && pip install "${WHEEL_PATH}[biosimulators]" \
     && rm smoldyn*.whl
 
+# configure matplotlib
+RUN mkdir -p /.cache/matplotlib \
+    && mkdir -p /.config/matplotlib \
+    && chmod ugo+rw /.config/matplotlib \
+    && chmod ugo+rw /.cache/matplotlib
+
+ENV VERBOSE=0 \
+    MPLBACKEND=PDF
+
 # setup entry point
-ENTRYPOINT ["python", "-m", "smoldyn.biosimulators"]
+ENTRYPOINT ["/bin/bash", "xvfb-startup.sh", "python", "-m", "smoldyn.biosimulators"]
 CMD []

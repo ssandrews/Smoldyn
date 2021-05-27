@@ -65,7 +65,7 @@ setuptools.setup(
             "pytest-cov",
         ],
         "biosimulators": [
-            "biosimulators-utils[logging]>=0.1.71",
+            "biosimulators-utils[logging]>=0.1.73",
             "numpy",
             "pandas",
         ],

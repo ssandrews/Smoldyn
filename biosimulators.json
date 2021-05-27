@@ -40,7 +40,7 @@
     }
   ],
   "image": {
-    "url": "ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:2.65",
+    "url": "ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest",
     "format": {
       "namespace": "EDAM",
       "id": "format_3973",
