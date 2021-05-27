@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e 
+set -e
 set -x
 
 brew install libtiff || echo "Failed to install libtiff"
@@ -23,7 +23,7 @@ if [ ! -f $PYTHON ]; then
     exit -1
 fi
 
-$PYTHON -m pip install setuptools --upgrade 
+$PYTHON -m pip install setuptools --upgrade
 $PYTHON -m pip install wheel --upgrade
 $PYTHON -m pip install numpy --upgrade
 $PYTHON -m pip install delocate --upgrade
@@ -33,7 +33,7 @@ $PYTHON -m pip install matplotlib  --upgrade
 
 PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform())")
 
-( 
+(
     mkdir -p _build_wheel && cd _build_wheel
     echo "Building wheel for $PLATFORM"
     ls -ltr
@@ -41,11 +41,11 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         -DOPTION_PYTHON=ON \
         -DOPTION_EXAMPLES=ON \
         -DPython3_EXECUTABLE=$PYTHON
-    make -j4 
+    make -j4
     make wheel
     ctest --output-on-failure
     delocate-wheel -w $WHEELHOUSE -v *.whl
-    ls $WHEELHOUSE/smoldyn*.whl
+    ls -lth $WHEELHOUSE/smoldyn*.whl
 
     ## NOTE: I am contantly getting  the following error in venv.
     ## $ python -c 'import smoldyn; print(smoldyn.__version__ )'

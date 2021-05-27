@@ -6,6 +6,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __SimCommand_h__
 #define __SimCommand_h__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "queue.h"
 #include "stdio.h"
 #include "string2.h"
@@ -80,7 +84,7 @@ void scmdoutput(cmdssptr cmds);
 void scmdwritecommands(cmdssptr cmds,FILE *fptr,char *filename);
 void scmdsetflag(cmdssptr cmds,double flag);
 double scmdreadflag(cmdssptr cmds);
-void scmdsetcondition(cmdssptr cmds,int condition);
+void scmdsetcondition(cmdssptr cmds,int condition, int upgrade);
 void scmdsetprecision(cmdssptr cmds,int precision);
 int scmdsetoutputformat(cmdssptr cmds,char *format);
 
@@ -99,5 +103,9 @@ int scmdincfile(cmdssptr cmds,char *line2);
 int scmdgetfptr(cmdssptr cmds,char *line2,int outstyle,FILE **fptrptr,int *dataidptr);
 int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...);
 void scmdflush(FILE *fptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 # endif

@@ -54,9 +54,9 @@ rxnssptr rxnssalloc(rxnssptr rxnss,int order,int maxspecies);
 // data structure output
 
 // parameter calculations
-int rxnsetrates(simptr sim,int order);
-int rxnsetproduct(simptr sim,int order,int r);
-int rxnsetproducts(simptr sim,int order);
+int rxnsetrates(simptr sim,int order, char* errstr);
+int rxnsetproduct(simptr sim,int order,int r, char* errstr);
+int rxnsetproducts(simptr sim,int order, char* errstr);
 double rxncalcrate(simptr sim,int order,int r,double *pgemptr);
 void rxncalctau(simptr sim,int order);
 
@@ -247,17 +247,17 @@ void rxnunpackident(int order,int maxspecies,int ipack,int *ident) {
 
 /* rxnpackstate */
 enum MolecState rxnpackstate(int order,enum MolecState *mstate) {
-	if(order==0) return (MolecState)0;
+	if(order==0) return (enum MolecState)0;
 	if(order==1) return mstate[0];
-	if(order==2) return (MolecState)(mstate[0]*MSMAX1+mstate[1]);
-	return (MolecState)0; }
+	if(order==2) return (enum MolecState)(mstate[0]*MSMAX1+mstate[1]);
+	return (enum MolecState)0; }
 
 
 /* rxnunpackstate */
 void rxnunpackstate(int order,enum MolecState mspack,enum MolecState *mstate) {
 	if(order==0);
 	else if(order==1) mstate[0]=mspack;
-	else if(order==2) {mstate[0]=(MolecState)(mspack/MSMAX1);mstate[1]=(MolecState)(mspack%MSMAX1);}
+	else if(order==2) {mstate[0]=(enum MolecState)(mspack/MSMAX1);mstate[1]=(enum MolecState)(mspack%MSMAX1);}
 	return; }
 
 
@@ -268,8 +268,8 @@ int rxnallstates(rxnptr rxn) {
 
 	if(rxn->rxnss->order==0) return 0;
 	nms2o=intpower(MSMAX1,rxn->rxnss->order);
-	for(ms=(MolecState)0;ms<nms2o && rxn->permit[ms];ms=(MolecState)(ms+1));
-	if(ms==nms2o) return 1;
+	for(ms=(enum MolecState)0;ms<(enum MolecState)nms2o && rxn->permit[ms];ms=(enum MolecState)(ms+1));
+	if(ms==(enum MolecState)nms2o) return 1;
 	return 0; }
 
 
@@ -292,7 +292,7 @@ int rxnreactantstate(rxnptr rxn,enum MolecState *mstate,int convertb2f) {
 			ms=MSbsoln;
 			permit=1; }
 		else {
-			for(ms=(MolecState)0;ms<MSMAX1 && !rxn->permit[ms];ms=(MolecState)(ms+1));
+			for(ms=(enum MolecState)0;ms<MSMAX1 && !rxn->permit[ms];ms=(enum MolecState)(ms+1));
 			if(ms<MSMAX1) permit=1; }
 		if(permit && convertb2f && ms==MSbsoln) ms=MSsoln;
 		if(mstate) {
@@ -316,20 +316,20 @@ int rxnreactantstate(rxnptr rxn,enum MolecState *mstate,int convertb2f) {
 			ms2=MSbsoln;
 			permit=1; }
 		if(!permit) {
-			for(ms1=(MolecState)0;ms1<MSMAX1 && !rxn->permit[ms1*MSMAX1+MSsoln];ms1=(MolecState)(ms1+1));
+			for(ms1=(enum MolecState)0;ms1<MSMAX1 && !rxn->permit[ms1*MSMAX1+MSsoln];ms1=(enum MolecState)(ms1+1));
 			if(ms1<MSMAX1) {
 				ms2=MSsoln;
 				permit=1; }}
 		if(!permit) {
-			for(ms2=(MolecState)0;ms2<MSMAX1 && !rxn->permit[MSsoln*MSMAX1+ms2];ms2=(MolecState)(ms2+1));
+			for(ms2=(enum MolecState)0;ms2<MSMAX1 && !rxn->permit[MSsoln*MSMAX1+ms2];ms2=(enum MolecState)(ms2+1));
 			if(ms2<MSMAX1) {
 				ms1=MSsoln;
 				permit=1; }}
 		if(!permit) {
 			for(mspair=0;mspair<MSMAX1*MSMAX1 && !rxn->permit[mspair];mspair++);
 			if(mspair<MSMAX1*MSMAX1) {
-				ms1=(MolecState)(mspair/MSMAX1);
-				ms2=(MolecState)(mspair%MSMAX1);
+				ms1=(enum MolecState)(mspair/MSMAX1);
+				ms2=(enum MolecState)(mspair%MSMAX1);
 				permit=1; }}
 		if(permit && convertb2f) {
 			if(ms1==MSbsoln) ms1=MSsoln;
@@ -576,7 +576,7 @@ rxnptr rxnalloc(int order) {
 		for(rct=0;rct<order;rct++) rxn->rctstate[rct]=MSnone;
 		nms2o=intpower(MSMAX1,order);
 		CHECKMEM(rxn->permit=(int*)calloc(nms2o,sizeof(int)));
-		for(ms=(MolecState)0;ms<nms2o;ms=(MolecState)(ms+1)) rxn->permit[ms]=0; }
+		for(ms=(enum MolecState)0;ms<(enum MolecState)nms2o;ms=(enum MolecState)(ms+1)) rxn->permit[ms]=0; }
 	return rxn;
 
  failure:
@@ -730,7 +730,7 @@ void rxnoutput(simptr sim,int order) {
 	simLog(sim,2," %i reactions defined",rxnss->totrxn);
 	simLog(sim,1,", of %i allocated",rxnss->maxrxn);
 	simLog(sim,2,"\n");
-	
+
 	if(order>0) {
 		simLog(sim,2," Reactive molecule lists:");
 		if(!rxnss->rxnmollist || !sim->mols->nlist)
@@ -780,8 +780,8 @@ void rxnoutput(simptr sim,int order) {
 			if(rxn->rctstate[rct]==MSsome) rct=order+1;
 		if(rct==order+1) {
 			simLog(sim,2,"   permit:");
-			nms2o=MolecState(intpower(MSMAX1,order));
-			for(ms=MolecState(0);ms<nms2o;ms=MolecState(ms + 1)) {
+			nms2o=(enum MolecState)intpower(MSMAX1,order);
+			for(ms=(enum MolecState)0;ms<nms2o;ms=(enum MolecState)(ms + 1)) {
 				if(rxn->permit[ms]) {
 					rxnunpackstate(order,ms,statelist);
 					simLog(sim,2," ");
@@ -960,12 +960,12 @@ void writereactions(simptr sim,FILE *fptr) {
 				if(rxn->multiplicity!=1) fprintf(fptr,"reaction_multiplicity %s %i\n",rxn->rname,rxn->multiplicity);
 
 				if(order==1 && rxn->rctstate[0]==MSsome) {
-					for(ms=(MolecState)0;ms<MSMAX;ms=(MolecState)(ms+1))
+					for(ms=(enum MolecState)0;ms<MSMAX;ms=(enum MolecState)(ms+1))
 						if(rxn->permit[ms])
 							fprintf(fptr,"reaction_permit %s %s\n",rxn->rname,molms2string(ms,string)); }
 				else if(order==2 && (rxn->rctstate[0]==MSsome || rxn->rctstate[1]==MSsome)) {
-					for(ms1=(MolecState)0;ms1<MSMAX1;ms1=(MolecState)(ms1+1))
-						for(ms2=(MolecState)0;ms2<MSMAX1;ms2=(MolecState)(ms2+1))
+					for(ms1=(enum MolecState)0;ms1<MSMAX1;ms1=(enum MolecState)(ms1+1))
+						for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1))
 							if(rxn->permit[ms1*MSMAX1+ms2])
 								fprintf(fptr,"reaction_permit %s %s %s\n",rxn->rname,molms2string(ms1,string),molms2string(ms2,string2)); }
 
@@ -1087,21 +1087,21 @@ int checkrxnparams(simptr sim,int *warnptr) {
 							simLog(sim,5," WARNING: multiply defined bimolecular reactions: %s(all) + %s(all)\n",spname[i1],spname[i2]);
 							warn++; }
 						else if(rxnallstates(rxn1)) {
-							for(ms2=(MolecState)0;ms2<=MSMAX1;ms2=(MolecState)(ms2+1)) {
-								ms=(MolecState)(MSsoln*MSMAX1+ms2);
+							for(ms2=(enum MolecState)0;ms2<=MSMAX1;ms2=(enum MolecState)(ms2+1)) {
+								ms=(enum MolecState)(MSsoln*MSMAX1+ms2);
 								if(rxn2->permit[ms]) {
 									simLog(sim,5," WARNING: multiply defined bimolecular reactions: %s(all) + %s(%s)\n",spname[i1],spname[i2],molms2string(ms2,string2));
 									warn++; }}}
 						else if(rxnallstates(rxn2)) {
-							for(ms1=(MolecState)0;ms1<=MSMAX1;ms1=(MolecState)(ms1+1)) {
-								ms=(MolecState)(ms1*MSMAX1+MSsoln);
+							for(ms1=(enum MolecState)0;ms1<=MSMAX1;ms1=(enum MolecState)(ms1+1)) {
+								ms=(enum MolecState)(ms1*MSMAX1+MSsoln);
 								if(rxn1->permit[ms]) {
 									simLog(sim,5," WARNING: multiply defined bimolecular reactions: %s(%s) + %s(all)\n",spname[i1],molms2string(ms1,string),spname[i2]);
 									warn++; }}}
 						else {
-							for(ms1=(MolecState)0;ms1<MSMAX1;ms1=(MolecState)(ms1+1))
-								for(ms2=(MolecState)0;ms2<=ms1;ms2=(MolecState)(ms2+1)) {
-									ms=(MolecState)(ms1*MSMAX1+ms2);
+							for(ms1=(enum MolecState)0;ms1<MSMAX1;ms1=(enum MolecState)(ms1+1))
+								for(ms2=(enum MolecState)0;ms2<=ms1;ms2=(enum MolecState)(ms2+1)) {
+									ms=(enum MolecState)(ms1*MSMAX1+ms2);
 									if(rxn1->permit[ms] && rxn2->permit[ms]) {
 										simLog(sim,5," WARNING: multiply defined bimolecular reactions: %s(%s) + %s(%s)\n",spname[i1],molms2string(ms1,string),spname[i2],molms2string(ms2,string2));
 										warn++; }}}}}}}
@@ -1310,7 +1310,7 @@ int rxnsetrate(simptr sim,int order,int r,char *erstr) {
 		rxn->prob=rxn->rate*rxn->multiplicity*sim->dt*vol; }
 
 	else if(order==1) {															// order 1
-		for(ms=(MolecState)0;ms<MSMAX && !rxn->permit[ms];ms=(MolecState)(ms+1));		// determine first state that this is permitted for (usually only state)
+		for(ms=(enum MolecState)0;ms<MSMAX && !rxn->permit[ms];ms=(enum MolecState)(ms+1));		// determine first state that this is permitted for (usually only state)
 		if(rxn->rate<0) {snprintf(erstr,STRCHAR*sizeof(erstr),"reaction %s rate is undefined",rxn->rname);return 1;}
 		else if(rxn->rate==0) rxn->prob=0;
 		else if(ms==MSMAX) rxn->prob=0;
@@ -1320,7 +1320,7 @@ int rxnsetrate(simptr sim,int order,int r,char *erstr) {
 			for(j=0;j<rxnss->nrxn[i];j++) {
 				rxn2=rxnss->rxn[rxnss->table[i][j]];
 				if(rxn2->permit[ms] && rxn2->rate>0) {
-					for(ms1=(MolecState)0;ms1<MSMAX;ms1=(MolecState)(ms1+1))
+					for(ms1=(enum MolecState)0;ms1<MSMAX;ms1=(enum MolecState)(ms1+1))
 						if(rxn->permit[ms1]!=rxn2->permit[ms1]) {snprintf(erstr, STRCHAR*sizeof(erstr),"reactions %s and %s have the same reactant but different state permissions, which is not allowed",rxn->rname,rxn2->rname);return 2;}
 					sum+=rxn2->rate*rxn2->multiplicity; }}
 			rxn->prob=rxn->rate*rxn->multiplicity/sum*(1.0-exp(-sum*sim->dt));				// desired reaction probability
@@ -1550,7 +1550,7 @@ int rxnsetproduct(simptr sim,int order,int r,char *erstr) {
 					rxn->prdpos[0][0]=rpar*dc1;
 					rxn->prdpos[1][0]=-rpar*dc2; }}
 			else {
-				simLog(sim,10,"BUG in rxnsetproduct");er=10; }}}		
+				simLog(sim,10,"BUG in rxnsetproduct");er=10; }}}
 
 	return er; }
 
@@ -1592,7 +1592,7 @@ double rxncalcrate(simptr sim,int order,int r,double *pgemptr) {
 
 	else if(order==1) {															// order 1
 		ans=0;
-		for(ms1=(MolecState)0;ms1<MSMAX && !rxn->permit[ms1];ms1=(MolecState)(ms1+1));
+		for(ms1=(enum MolecState)0;ms1<MSMAX && !rxn->permit[ms1];ms1=(enum MolecState)(ms1+1));
 		if(rxn->prob>0 && ms1!=MSMAX) {
 			i1=rxn->rctident[0];
 
@@ -1713,7 +1713,7 @@ void rxnsetcondition(simptr sim,int order,enum StructCond cond,int upgrade) {
 			if(sim->rxnss[order]->condition<sim->condition) {
 				cond=sim->rxnss[order]->condition;
 				simsetcondition(sim,cond==SCinit?SClists:cond,0); }}}
-	
+
 	return; }
 
 
@@ -1882,8 +1882,8 @@ void RxnSetPermit(simptr sim,rxnptr rxn,int order,enum MolecState *rctstate,int 
 	static int recurse;
 
 	if(order==0) return;
-	nms2o=(MolecState)intpower(MSMAX1,order);
-	for(ms=(MolecState)0;ms<nms2o;ms=(MolecState)(ms+1)) {
+	nms2o=(enum MolecState)intpower(MSMAX1,order);
+	for(ms=(enum MolecState)0;ms<nms2o;ms=(enum MolecState)(ms+1)) {
 		rxnunpackstate(order,ms,mslist);
 		set=1;
 		for(ord=0;ord<order && set;ord++)
@@ -2271,7 +2271,7 @@ failure:
 int rxnsupdateparams(simptr sim) {
 	int er,order,wflag;
 	char errorstr[STRCHAR];
-	
+
 	wflag=strchr(sim->flags,'w')?1:0;
 	for(order=0;order<MAXORDER;order++)
 		if(sim->rxnss[order] && sim->rxnss[order]->condition<=SCparams) {
@@ -2279,7 +2279,7 @@ int rxnsupdateparams(simptr sim) {
 			if(er>=0) {
 				simLog(sim,8,"Error setting rate for reaction order %i, reaction %s\n%s\n",order,sim->rxnss[order]->rname[er],errorstr);
 				return 3; }}
-	
+
 	for(order=0;order<MAXORDER;order++)
 		if(sim->rxnss[order] && sim->rxnss[order]->condition<=SCparams) {
 			errorstr[0]='\0';
@@ -2292,7 +2292,7 @@ int rxnsupdateparams(simptr sim) {
 	for(order=0;order<MAXORDER;order++)									// calculate tau values
 		if(sim->rxnss[order] && sim->rxnss[order]->condition<=SCparams)
 			rxncalctau(sim,order);
-	
+
 	return 0; }
 
 
@@ -2328,7 +2328,7 @@ int rxnsupdatelists(simptr sim,int order) {
 			rxn=rxnss->rxn[r];
 			i1=rxn->rctident[0];
 			if(order==1) {
-				for(ms1=(MolecState)0;ms1<MSMAX1;ms1=(MolecState)(ms1+1)) {
+				for(ms1=(enum MolecState)0;ms1<MSMAX1;ms1=(enum MolecState)(ms1+1)) {
 #ifdef OPTION_VCELL
 					if(rxn->permit[ms1] && (rxn->prob>0 || rxn->rate>0 || rxn->rateValueProvider != NULL))
 #else
@@ -2340,8 +2340,8 @@ int rxnsupdatelists(simptr sim,int order) {
 
 			else if(order==2) {
 				i2=rxn->rctident[1];
-				for(ms1=(MolecState)0;ms1<MSMAX1;ms1=(MolecState)(ms1+1))
-					for(ms2=(MolecState)0;ms2<MSMAX1;ms2=(MolecState)(ms2+1)) {
+				for(ms1=(enum MolecState)0;ms1<MSMAX1;ms1=(enum MolecState)(ms1+1))
+					for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1)) {
 
 #ifdef OPTION_VCELL
 						if(rxn->permit[ms1*MSMAX1+ms2] && rxn->prob!=0 && (rxn->rate>0 || rxn->bindrad2>0 || rxn->rateValueProvider != NULL))
@@ -2492,7 +2492,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 	while(more) {			// product list
 		CHECKS((itct=sscanf(line2,"%s %s",nm,nm1))>=1,"failed to read product");
 		if(strcmp(nm,"0")) {
-			CHECKS(size_t(nprod+1)<MAXPRODUCT,"exceeded allowed number of reaction products");
+			CHECKS(nprod+1<MAXPRODUCT,"exceeded allowed number of reaction products");
 			er=molstring2pattern(nm,&ms,pattern,2);
 			CHECKS(er!=-1,"BUG: reading reaction");
 			CHECKS(er!=-2,"mismatched or improper parentheses around reactant state");
@@ -2879,7 +2879,7 @@ int zeroreact(simptr sim) {
 	if(!rxnss) return 0;
 	for(r=0;r<rxnss->totrxn;r++) {
 		rxn=rxnss->rxn[r];
-				
+
 #ifdef OPTION_VCELL
 		if(rxn->rateValueProvider != NULL) {
 			if(rxn->cmpt) {
@@ -2889,8 +2889,8 @@ int zeroreact(simptr sim) {
 				int n[3];
 				mesh->getNumXYZ(n);
 				double meshv = delta[0]*delta[1]*delta[2];
-				int totalNumMesh = n[0]*n[1]*n[2];			
-			
+				int totalNumMesh = n[0]*n[1]*n[2];
+
 				for(i=0; i<totalNumMesh; i++) {
 					int volIndex = i;
 					double centerPos[3];
@@ -2898,7 +2898,7 @@ int zeroreact(simptr sim) {
 					if (posincompart(sim, centerPos, rxn->cmpt,0)) {
 					   // go through each mesh elements to see if it is in the compartments that the reaction happens
 						double rate =  evaluateVolRnxRate(sim, rxn, centerPos);
-						double prob = rate * sim->dt * meshv;	
+						double prob = rate * sim->dt * meshv;
 						nmol=poisrandD(prob);
 						int count = 0;
 						//put generated molecules in the same mesh
@@ -2920,9 +2920,9 @@ int zeroreact(simptr sim) {
 						int numOfTriPanels = surfaces[i]->npanel[PStri];
 						panelptr* panels = surfaces[i]->panels[PStri];
 						for(long j=0; j<numOfTriPanels; j++) {
-							//evaluate rate 
+							//evaluate rate
 							double ** points = panels[j]->point; //point[number][dim]
-							double triCenterPos[3]; 
+							double triCenterPos[3];
 							Geo_TriCenter(points, triCenterPos, sim->dim);
 							double rate = evaluateMemRnxRate(sim, rxn, triCenterPos, panels[j]->pname);
 							//get probability
@@ -2930,7 +2930,7 @@ int zeroreact(simptr sim) {
 							double prob = rate * sim->dt * triPanelArea;
 							//num of molecules generated
 							nmol=poisrandD(prob);
-							//uniformly and randomly place the molecule 
+							//uniformly and randomly place the molecule
 							int count = 0;
 							//put generated molecules in the same mesh
 							while(count < nmol) {
@@ -2939,8 +2939,8 @@ int zeroreact(simptr sim) {
 								////since we are using vcell mesh, we double check the pos in compartment
 								//if(posincompart(sim,pos,rxn->cmpt,0))
 								//{
-									//count++; 
-									if(doreact(sim,rxn,NULL,NULL,-1,-1,-1,-1,pos,panels[j])) return 1; 
+									//count++;
+									if(doreact(sim,rxn,NULL,NULL,-1,-1,-1,-1,pos,panels[j])) return 1;
 								//}
 							}
 							sim->eventcount[ETrxn0]+=nmol; }}}}}
@@ -3100,7 +3100,7 @@ int morebireact(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr mptr2,int ll
 		msA=(panelside(mptrA->pos,mptrB->pnl,sim->dim,NULL,0,0)==PFfront)?MSsoln:MSbsoln;
 	else if(msB==MSsoln && msA!=MSsoln)
 		msB=(panelside(mptrB->pos,mptrA->pnl,sim->dim,NULL,0,0)==PFfront)?MSsoln:MSbsoln;
-	ms=(MolecState)(msA*MSMAX1+msB);
+	ms=(enum MolecState)(msA*MSMAX1+msB);
 
 	if(rxn->permit[ms]) {
 		if(et==ETrxn2wrap && rxn->rparamt!=RPconfspread) {		// if wrapping, then move faster diffusing molecule
@@ -3129,7 +3129,7 @@ void setBiReactRateForHybrid(simptr sim,rxnptr rxn,moleculeptr mptr1,moleculeptr
 	if(rxn->rateValueProvider != NULL)
 	{
 		int dimension = sim->dim;
-		double pos[3]; 
+		double pos[3];
 		for(int dimIdx =0; dimIdx < dimension; dimIdx++)
 		{
 			pos[dimIdx] = (mptr1->pos[dimIdx] + mptr2->pos[dimIdx])/2;

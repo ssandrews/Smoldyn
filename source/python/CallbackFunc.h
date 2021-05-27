@@ -1,8 +1,8 @@
 /***
  *    Description:  Callback functions.
  *        Created:  2020-07-26
- *         Author:  Dilawar Singh <dilawars@ncbs.res.in>
- *   Organization:  NCBS Bangalore
+ *         Author:  Dilawar Singh <dilawar.s.rajput@gmail.com>
+ *   Organization:  Subconscious Compute Pvt. Ltd.
  */
 
 #ifndef CALLBACKFUNC_H_XGBEYLQ3

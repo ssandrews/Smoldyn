@@ -187,7 +187,7 @@ void wallsfree(wallptr *wlist,int dim) {
 void walloutput(simptr sim) {
 	int w,d,dim;
 	wallptr *wlist,wptr;
-	double vol,poslo[DIMMAX],poshi[DIMMAX];
+	double vol,poslo[DIMMAX]={0},poshi[DIMMAX] = {0};
 	char dimchar;
 
 	dim=sim->dim;

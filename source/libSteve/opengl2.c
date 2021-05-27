@@ -94,6 +94,7 @@ void ChangeSize(int w,int h) {
 /* KeyPush */
 void KeyPush(unsigned char key,int x,int y) {
 #ifdef __gl_h_
+    (void)x; // x is unused.
 	GLint viewport[4],w,h;
 	char name[2*STRCHAR],str[2*STRCHAR];
 	GLfloat clipheight,clipwidth;
@@ -191,6 +192,7 @@ void KeyPush(unsigned char key,int x,int y) {
 /* SpecialKeyPush2 */
 void SpecialKeyPush2(unsigned char key,int x,int y) {
 #ifdef __gl_h_
+    (void)x;
 	GLfloat m[16];
 	GLint viewport[4],w,h;
 	GLfloat clipheight,clipwidth;
@@ -357,14 +359,14 @@ void gl2Initialize(char *wname,float xlo,float xhi,float ylo,float yhi,float zlo
 
 	if(Dimension<3) glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB);
 	else glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
-	
+
 	// position opengl window
 	int w = 400, h = 400;
 	int xmaxpix=glutGet(GLUT_SCREEN_WIDTH);
 	int ymaxpix=glutGet(GLUT_SCREEN_HEIGHT);
 	glutInitWindowSize(w, h);
-	glutInitWindowPosition((xmaxpix- w)/2, (ymaxpix-h)/2);	
-	
+	glutInitWindowPosition((xmaxpix- w)/2, (ymaxpix-h)/2);
+
 	glutCreateWindow(wname?wname:"OpenGL");
 	glutReshapeFunc(ChangeSize);
 	glutKeyboardFunc(KeyPush);

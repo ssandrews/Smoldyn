@@ -7,6 +7,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __opengl2_h
 #define __opengl2_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* If the OpenGL graphics libraries are unavailable, then #undefine OPENGL.  This
  should be done automatically with smoldynconfigure.h */
 
@@ -92,5 +96,10 @@ void gl2PlotData(float *xdata,float *ydata,int nx,int nycol,char *style);
 void gl2PlotPts(float **data,int *ser,int nser,int npts,float **color,float *size,char style);
 void gl2PlotPtsD(double **data,int *ser,int nser,int npts,double **color,double *size,char style);
 void gl2PlotSurf(float *xdata,float *ydata,float **zdata,int nx,int ny,int nz,char *style);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

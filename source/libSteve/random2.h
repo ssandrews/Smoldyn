@@ -6,6 +6,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __random2_h
 #define __random2_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Comment out the following lines if the Mersenne Twister is unavailable
 #include "SFMT/SFMT.h"
 
@@ -189,5 +193,10 @@ void randshuffletableF(float *a,int n);
 void randshuffletableI(int *a,int n);
 void randshuffletableV(void **a,int n);
 void showdist(int n,float low,float high,int bin);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

@@ -5,12 +5,12 @@
 # Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.12)   # due to better Python support
+cmake_minimum_required(VERSION 3.12)
 
 project(smoldyn LANGUAGES CXX C)
 
 # Custom scripts to find some modules such as VTK.
-list(APPEND CMAKE_MODULE_PATHS ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 # CI/CD can also set version string. If not, set using git tags or current
 # date.
@@ -35,14 +35,6 @@ if(NOT SMOLDYN_VERSION)
     endif()
 endif()
 message(STATUS "Smoldyn version is set to: '${SMOLDYN_VERSION}'")
-
-#
-# Must use a C++14 compatible compiler (gcc>=5.x).
-# NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
-# nice to use them. Most compilers support C++17 these days.
-#
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_C_STANDARD 11)
 
 
 ######### Targets to build ###########
@@ -106,6 +98,69 @@ message(STATUS "Option to run Libsmoldyn examples: ${OPTION_EXAMPLES}")
 message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
+
+####### Compiler flags ######################
+#
+# Must use a C++14 compatible compiler (gcc>=5.x).
+# NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
+# nice to use them. Most compilers support C++17 these days.
+#
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 11)
+
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
+
+# macro to check if a flag exists and enable for compiler.
+function(CheckCompilerFlagAndAdd)
+    check_c_compiler_flag(${ARGV0} C_FLAG_EXISTS)
+    check_cxx_compiler_flag(${ARGV0} CXX_FLAG_EXISTS)
+    if(C_FLAG_EXISTS OR CXX_FLAG_EXISTS)
+        if(${ARGV1})
+            add_definitions(${ARGV0}=${ARGV1})
+        else()
+            add_definitions(${ARGV0})
+        endif()
+        message(STATUS "[COMPILER] Adding ${ARGV0}")
+    else()
+        message(STATUS "Compiler does not support ${ARGV0}. Ignoring..")
+    endif()
+endfunction()
+
+# enable all warnings.
+if(MSVC)
+    # FIXME: On Windows, when using MSVC, reduce the amount of warnings. MSVC
+    # generates a lot of warning about casting which pollute the build log and
+    # makes it hard to find the error.
+    add_compile_options(/W1)
+else()
+    add_compile_options(-Wall -Wextra)
+    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
+endif()
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING
+        "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
+endif ()
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+if(OPTION_STRICT_BUILD)
+    add_definitions(-Wextra -Werror)
+    CheckCompilerFlagAndAdd(-Wno-format-truncation)
+    CheckCompilerFlagAndAdd(-Wno-uninitialized)
+    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
+    CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
+endif()
+
+# For CI.
+if(WIN32) # AND "$ENV{GITHUB_ACTIONS}")
+    message(STATUS "Running github actions on Window platform")
+    set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.19041)
+    include(cmake/GithubActions.cmake)
+endif()
+
+
+
 ######### Core code information ###########
 
 #
@@ -156,33 +211,12 @@ if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
     set(OPTION_USE_LIBTIFF OFF)
 endif()
 
-set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
-set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE CXX )
-
-
-####### Compiler flags ######################
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING
-        "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
-endif ()
-
 if(OPTION_ASAN)
     # Address sanitizer
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
     set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
-if(OPTION_STRICT_BUILD)
-    add_definitions(-Wall -Werror -Wextra)
-    # add_definitions(-Wno-format-truncation)
-    # See https://stackoverflow.com/a/14132910/1805129
-    add_definitions(-Wno-uninitialized)
-    add_definitions(-Wno-unused-parameter)
-    add_definitions(-Wno-unused-but-set-parameter)
-endif()
-
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(VCELL_BUILD OFF)
 set(APPLE_BUILD OFF)
@@ -428,24 +462,26 @@ endif()
 ####### Targets ##########
 add_subdirectory(source/libSteve)
 
-if (OPTION_TARGET_LIBSMOLDYN)
-    add_library(smoldyn_shared SHARED ${SRC_FILES} 
-        $<TARGET_OBJECTS:Steve>
-        $<TARGET_OBJECTS:nsv>)
-    add_library(smoldyn_static STATIC ${SRC_FILES} 
-        $<TARGET_OBJECTS:Steve>
-        $<TARGET_OBJECTS:nsv>)
+# Static library is always built. We link it to all other targets.
+# OPTION_TARGET_LIBSMOLDYN now only control the shared library.
+add_library(smoldyn_static STATIC ${SRC_FILES}
+    $<TARGET_OBJECTS:Steve>
+    $<TARGET_OBJECTS:nsv>)
+set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
+set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
 
-    set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
+if (OPTION_TARGET_LIBSMOLDYN)
+    add_library(smoldyn_shared SHARED ${SRC_FILES}
+        $<TARGET_OBJECTS:Steve>
+        $<TARGET_OBJECTS:nsv>)
 
     target_link_libraries(smoldyn_shared PUBLIC ${DEP_LIBS})
-    target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 
     if (APPLE_BUILD)
         set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
     elseif (WINDOWS_BUILD)
         set_target_properties(smoldyn_shared PROPERTIES PREFIX "lib")
-        set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
     endif ()
 endif ()
 

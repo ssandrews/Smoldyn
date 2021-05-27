@@ -49,7 +49,7 @@ void scmdcatfname(cmdssptr cmds,int fid,char *str) {
 	strncat(str,cmds->froot,STRCHAR-strlen(str));
 	dot=strrchr(cmds->fname[fid],'.');
 	if(dot)	{
-		min=STRCHAR-strlen(str)<(unsigned int)(dot-cmds->fname[fid])?STRCHAR-strlen(str):dot-cmds->fname[fid];
+		min=STRCHAR-strlen(str)<(unsigned int)(dot-cmds->fname[fid])?STRCHAR-strlen(str):(unsigned int)(dot-cmds->fname[fid]);
 		strncat(str,cmds->fname[fid],min); }
 	else strncat(str,cmds->fname[fid],STRCHAR);
 	if(cmds->fsuffix[fid] && STRCHAR-strlen(str)>4) snprintf(str+strlen(str),sizeof(str)-strlen(str),"_%03i",cmds->fsuffix[fid]);
@@ -741,8 +741,8 @@ void scmdappenddata(cmdssptr cmds,int dataid,int newrow, int narg, ...) {
 	return; }
 
 
-/************** file functions **************/	
-	
+/************** file functions **************/
+
 /* scmdsetfroot */
 int scmdsetfroot(cmdssptr cmds,const char *root) {
 	if(!cmds || !root) return 1;
@@ -779,7 +779,7 @@ int scmdsetfnames(cmdssptr cmds,char *str,int append) {
 			newfsuffix[fid]=cmds->fsuffix[fid];
 		for(;fid<newmaxfile;fid++)
 			newfsuffix[fid]=0;
-		
+
 		newfappend=(int*)calloc(newmaxfile,sizeof(int));
 		if(!newfappend) return 1;
 		for(fid=0;fid<cmds->maxfile;fid++)
@@ -793,7 +793,7 @@ int scmdsetfnames(cmdssptr cmds,char *str,int append) {
 			newfptr[fid]=cmds->fptr[fid];
 		for(;fid<newmaxfile;fid++)
 			newfptr[fid]=NULL;
-		
+
 		cmds->maxfile=newmaxfile;
 		free(cmds->fname);
 		cmds->fname=newfname;
@@ -857,7 +857,7 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 					char str2[STRCHAR];
 					fprintf(stderr,"Overwrite existing output file '%s' (y/n)? ",cmds->fname[fid]);
 					scanf("%s",str2);
-					if(!(str2[0]=='y' || str2[0]=='Y')) return 1; 
+					if(!(str2[0]=='y' || str2[0]=='Y')) return 1;
 #endif
 					}}
 			if(cmds->fappend[fid]) cmds->fptr[fid]=fopen(str1,"a");
@@ -975,7 +975,7 @@ int scmdfprintf(cmdssptr cmds,FILE *fptr,const char *format,...) {
 	va_start(arguments,format);
 	vsnprintf(message,STRCHARLONG,newformat,arguments);
 	va_end(arguments);
-	code=fprintf(fptr,"%s",message);	
+	code=fprintf(fptr,"%s",message);
 	return code; }
 
 

@@ -1,23 +1,20 @@
 # python binding.
 
 # recompile libsmoldyn for PYTHON.
-set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE CXX )
-add_library(_pysmoldyn STATIC ${SRC_FILES} 
+add_library(_pysmoldyn STATIC ${SRC_FILES}
     $<TARGET_OBJECTS:Steve>
     $<TARGET_OBJECTS:nsv>)
 
-target_include_directories(_pysmoldyn PRIVATE ${Python3_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
-
+# Enables PYTHON_CALLBACK extention.
+target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
 # COMPILE_AS_PY_MODULE changes the behaviour of libSteve at a few places
 # especially where scanf is used for user input.
 target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE)
 
-# Enables PYTHON_CALLBACK extention.
-target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
+
+target_include_directories(_pysmoldyn PRIVATE ${Python3_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
 
 # This is suggested by pybind11: reduces binary size and disables some warnings.
-target_compile_options(_pysmoldyn PRIVATE -fvisibility=hidden)
-
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(_pysmoldyn PRIVATE ${DEP_LIBS})
 target_link_libraries(_pysmoldyn PUBLIC ${PYTHON_LIBRARIES})
@@ -52,6 +49,7 @@ target_compile_options(_smoldyn PRIVATE
     -DENABLE_PYTHON_CALLBACK
     # https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
     -fvisibility=hidden)
+
 target_include_directories(_smoldyn PRIVATE
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
