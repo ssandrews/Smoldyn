@@ -379,7 +379,7 @@ class BioSimulatorsTestCase(unittest.TestCase):
             },
         })
 
-        task.simulation.algorithm.kisao_id = 'KISAO_0000001'
+        task.simulation.algorithm.kisao_id = 'KISAO_0000437'
         with self.assertRaises(NotImplementedError):
             smoldyn.biosimulators.combine.exec_sed_task(task, variables)
 
