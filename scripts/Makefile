@@ -14,10 +14,9 @@ build : ./Dockerfile ./build_wheels_linux.sh
 wheels : ./Dockerfile ./build_wheels_linux.sh build
 	mkdir -p $(HOME)/wheelhouse
 	# Generate version.
-	CONTAINER := $(shell docker run -e PYPI_PASSWORD=$(PYPI_PASSWORD) \
-		$(LABEL))
-	docker cp $(CONTAINER):/root/wheelhouse/*.whl $(HOME)/wheelhouse/
-	docker rm -v $(CONTAINER)
+	$(eval CONTAINER = $(shell docker run -it --detach --env PYPI_PASSWORD=$(PYPI_PASSWORD) $(LABEL)))
+	docker cp $(CONTAINER):/root/wheelhouse/ $(HOME)/
+	docker rm --force --volumes $(CONTAINER)
 
 test : build
 	docker run -it \

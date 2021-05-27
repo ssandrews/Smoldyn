@@ -31,8 +31,7 @@ jobs:
         env:
           TAG: ${{ github.ref }}
         run: |
-          ls -l /home/runner/wheelhouse
-          cp /home/runner/wheelhouse/smoldyn-*-cp39-*.whl scripts/
+          cp ~/wheelhouse/smoldyn-*-cp39-*.whl scripts/
           cd scripts
           if [[ "${TAG}" =~ ^refs/tags/ ]]; then
             VERSION="${TAG/refs\/tags\/v/}"
