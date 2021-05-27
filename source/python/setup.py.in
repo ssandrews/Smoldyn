@@ -51,12 +51,12 @@ setuptools.setup(
     #  include_package_data=True,
     packages=setuptools.find_packages(),
     package_data={"smoldyn": ["_smoldyn*.*"]},
-    entry_points={
-        "console_scripts": [
-            "smoldyn = smoldyn.__main__:main",
-            "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
-        ],
-    },
+    # entry_points={
+    #     "console_scripts": [
+    #         "smoldyn = smoldyn.__main__:main",
+    #         "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
+    #     ],
+    # },
     install_requires=["dataclasses;python_version=='3.6'"],
     extras_require={
         "dev": [
