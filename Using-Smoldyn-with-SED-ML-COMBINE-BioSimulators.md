@@ -77,7 +77,6 @@ illustrated below.
 * Time - symbol: `urn:sedml:symbol:time`
 * Species counts and distributions - target
 
-| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | Smoldyn output file                                                                                                                           | SED variable target                                                                                                                         | Shapes                              |
 | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | ``molcount``                                                                                                                                  | ``molcount {species}``                                                                                                                      | (numberOfSteps + 1,)                |
@@ -102,7 +101,7 @@ illustrated below.
 | ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins} 0`` | ``molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins}`` | (numberOfSteps + 1, bins)           |
 | ``radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins} 0``                                                        | ``radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins}``                                                        | (numberOfSteps + 1, bins)           |
 | ``radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins} 0``          | ``radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins}``          | (numberOfSteps + 1, bins)           |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+
 
 ```xml
 <variable id="time" symbol="urn:sedml:symbol:time">
