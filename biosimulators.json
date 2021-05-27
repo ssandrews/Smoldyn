@@ -150,7 +150,12 @@
       "namespace": "SBO",
       "id": "SBO_0000294"
     }],
-    "modelFormats": [],
+    "modelFormats": [{
+      "namespace": "EDAM",
+      "id": "format_9001",
+      "version": null,
+      "supportedFeatures": []
+    }],
     "simulationFormats": [{
       "namespace": "EDAM",
       "id": "format_3685",
