@@ -30,7 +30,7 @@ if(NOT SMOLDYN_VERSION)
         else()
             # nightly release.
             string(TIMESTAMP STAMP "%Y%m%d")
-            set(SMOLDYN_VERSION "2.65.dev${STAMP}")
+            set(SMOLDYN_VERSION "2.66.dev${STAMP}")
         endif()
     endif()
 endif()
@@ -467,6 +467,7 @@ add_subdirectory(source/libSteve)
 add_library(smoldyn_static STATIC ${SRC_FILES}
     $<TARGET_OBJECTS:Steve>
     $<TARGET_OBJECTS:nsv>)
+
 set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
