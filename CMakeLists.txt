@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -30,7 +30,7 @@ if(NOT SMOLDYN_VERSION)
         else()
             # nightly release.
             string(TIMESTAMP STAMP "%Y%m%d")
-            set(SMOLDYN_VERSION "2.65.dev${STAMP}")
+            set(SMOLDYN_VERSION "2.66.dev${STAMP}")
         endif()
     endif()
 endif()
@@ -105,7 +105,6 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 # NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
 # nice to use them. Most compilers support C++17 these days.
 #
-set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_C_STANDARD 11)
 
 include(CheckCCompilerFlag)
@@ -127,13 +126,13 @@ function(CheckCompilerFlagAndAdd)
     endif()
 endfunction()
 
-# enable all warnings.
 if(MSVC)
     # FIXME: On Windows, when using MSVC, reduce the amount of warnings. MSVC
     # generates a lot of warning about casting which pollute the build log and
     # makes it hard to find the error.
     add_compile_options(/W1)
 else()
+    # enable all warnings.
     add_compile_options(-Wall -Wextra)
     CheckCompilerFlagAndAdd(-Wno-unused-parameter)
 endif()
@@ -152,13 +151,22 @@ if(OPTION_STRICT_BUILD)
     CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
 endif()
 
-# For CI.
-if(WIN32) # AND "$ENV{GITHUB_ACTIONS}")
-    message(STATUS "Running github actions on Window platform")
-    set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION 10.0.19041)
-    include(cmake/GithubActions.cmake)
+# We need a c++14 support to build python bindings.
+if(OPTION_PYTHON)
+    set(CMAKE_CXX_STANDARD 14)
+    try_compile(COMPILER_SUPPORT_C14
+        ${CMAKE_BINARY_DIR}/_test_compiler
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_compiler.cpp
+        OUTPUT_VARIABLE COMPILER_TEST_OUTPUT
+        )
+    if(NOT COMPILER_SUPPORT_C14)
+        message(STATUS "Failed to build test program: ${COMPILER_TEST_OUTPUT}")
+        message(FATAL_ERROR "Your compiler does not support C++14. "
+            "Please use a C++14 compliant compiler. "
+            "See https://en.cppreference.com/w/cpp/compiler_support/14 "
+            "for C++14 support among C++ compilers.")
+    endif()
 endif()
-
 
 
 ######### Core code information ###########
@@ -467,6 +475,7 @@ add_subdirectory(source/libSteve)
 add_library(smoldyn_static STATIC ${SRC_FILES}
     $<TARGET_OBJECTS:Steve>
     $<TARGET_OBJECTS:nsv>)
+
 set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")

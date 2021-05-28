@@ -36,26 +36,56 @@ class BinaryDistribution(setuptools.Distribution):
 
 readme = ""
 with open(Path("@CMAKE_SOURCE_DIR@") / "README.md") as f:
-    readme = f.read()
+    readme = f.read().partition('##')[0]
 
 setuptools.setup(
     name="smoldyn",
     version=version_,
-    description="Python module of the Smoldyn simulator",
+    description="Python package for the Smoldyn simulator",
     long_description=readme,
     long_description_content_type="text/markdown",
-    author="Dilawar Singh",  # author of this package.
+    author="Dilawar Singh",  # author of this package
     author_email="dilawar.s.rajput@gmail.com",
     url="http://www.smoldyn.org/",
-    license="Gnu LGPL",
+    license="GNU LGPLv3",
     #  include_package_data=True,
     packages=setuptools.find_packages(),
     package_data={"smoldyn": ["_smoldyn*.*"]},
+    # entry_points={
+    #     "console_scripts": [
+    #         "smoldyn = smoldyn.__main__:main",
+    #         "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
+    #     ],
+    # },
     install_requires=["dataclasses;python_version=='3.6'"],
+    extras_require={
+        "dev": [
+            "coverage",
+            "pytest",
+            "pytest-cov",
+        ],
+        "biosimulators": [
+            "biosimulators-utils[logging]>=0.1.73",
+            "numpy",
+            "pandas",
+        ],
+        "biosimulators-dev": [
+            "flake8",
+        ],
+        "biosimulators-tests": [
+            "python-dateutil",
+        ],
+    },
     python_requires=">=3.6",
     cmdclass={"install": InstallPlatLib},
     distclass=BinaryDistribution,
     classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+        "Natural Language :: English",
+        "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )

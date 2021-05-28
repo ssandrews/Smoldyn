@@ -1,0 +1,333 @@
+{
+  "id": "smoldyn",
+  "name": "Smoldyn",
+  "version": "2.65",
+  "description": "Computer program for cell-scale biochemical simulations.",
+  "urls": [{
+      "title": null,
+      "type": "Home page",
+      "url": "http://www.smoldyn.org/"
+    },
+    {
+      "title": null,
+      "type": "Examples",
+      "url": "http://www.smoldyn.org/archive.html"
+    },
+    {
+      "title": null,
+      "type": "Installation instructions",
+      "url": "https://smoldyn.readthedocs.io/en/latest/user/install.html"
+    },
+    {
+      "title": null,
+      "type": "Documentation",
+      "url": "https://smoldyn.readthedocs.io/"
+    },
+    {
+      "title": null,
+      "type": "Source repository",
+      "url": "https://github.com/ssandrews/Smoldyn"
+    },
+    {
+      "title": null,
+      "type": "License",
+      "url": "https://github.com/ssandrews/Smoldyn/blob/master/LICENSE"
+    },
+    {
+      "title": null,
+      "type": "Issue tracker",
+      "url": "https://github.com/ssandrews/Smoldyn/issues"
+    }
+  ],
+  "image": {
+    "url": "ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest",
+    "format": {
+      "namespace": "EDAM",
+      "id": "format_3973",
+      "version": null,
+      "supportedFeatures": []
+    },
+    "operatingSystemType": "Linux"
+  },
+  "authors": [{
+      "middleName": "S.",
+      "firstName": "Steven",
+      "lastName": "Andrews",
+      "identifiers": [{
+        "namespace": "orcid",
+        "id": "0000-0002-4576-8107",
+        "url": "https://orcid.org/0000-0002-4576-8107"
+      }]
+    },
+    {
+      "middleName": null,
+      "firstName": "Dilawar",
+      "lastName": "Singh",
+      "identifiers": [{
+        "namespace": "orcid",
+        "id": "0000-0002-4645-3211",
+        "url": "https://orcid.org/0000-0002-4645-3211"
+      }]
+    }
+  ],
+  "references": {
+    "identifiers": [{
+        "namespace": "pypi",
+        "id": "smoldyn",
+        "url": "https://pypi.org/project/smoldyn/"
+      },
+      {
+        "namespace": "bio.tools",
+        "id": "smoldyn",
+        "url": "https://bio.tools/smoldyn"
+      }
+    ],
+    "citations": [{
+        "volume": 33,
+        "issue": 5,
+        "pages": "710-717",
+        "journal": "Bioinformatics",
+        "title": "Smoldyn: particle-based simulation with rule-based modeling, improved molecular interaction and a library interface",
+        "authors": "Steve S. Andrews",
+        "year": 2017,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1093/bioinformatics/btw700",
+          "url": "https://doi.org/10.1093/bioinformatics/btw700"
+        }]
+      },
+      {
+        "volume": 31,
+        "issue": 14,
+        "pages": "2406-2408",
+        "journal": "Bioinformatics",
+        "title": "Multiscale reaction-diffusion simulations with Smoldyn",
+        "authors": "Martin Robinson, Steven S. Andrews & Radek Erban",
+        "year": 2015,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1093/bioinformatics/btv149",
+          "url": "https://doi.org/10.1093/bioinformatics/btv149"
+        }]
+      },
+      {
+        "pages": "519-542",
+        "volume": 804,
+        "journal": "Methods in Molecular Biology",
+        "title": "Spatial and stochastic cellular modeling with the Smoldyn simulator",
+        "authors": "Steven S. Andrews",
+        "year": 2012,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1007/978-1-61779-361-5_26",
+          "url": "https://doi.org/10.1007/978-1-61779-361-5_26"
+        }]
+      },
+      {
+        "volume": 6,
+        "issue": 3,
+        "pages": "e1000705",
+        "journal": "PLoS Compututational Biology",
+        "title": "Detailed simulations of cell biology with Smoldyn 2.1",
+        "authors": "Steven S. Andrews, Nathan J. Addy, Roger Brent & Adam P. Arkin",
+        "year": 2010,
+        "identifiers": [{
+          "namespace": "doi",
+          "id": "10.1371/journal.pcbi.1000705",
+          "url": "https://doi.org/10.1371/journal.pcbi.1000705"
+        }]
+      }
+    ]
+  },
+  "license": {
+    "namespace": "SPDX",
+    "id": "LGPL-3.0-only"
+  },
+  "algorithms": [{
+    "id": "Smoldyn",
+    "name": "Smoldyn (Spatial Stochastic Simulator)",
+    "kisaoId": {
+      "namespace": "KISAO",
+      "id": "KISAO_0000057"
+    },
+    "modelingFrameworks": [{
+      "namespace": "SBO",
+      "id": "SBO_0000294"
+    }],
+    "modelFormats": [{
+      "namespace": "EDAM",
+      "id": "format_9001",
+      "version": null,
+      "supportedFeatures": []
+    }],
+    "simulationFormats": [{
+      "namespace": "EDAM",
+      "id": "format_3685",
+      "version": "L1V3",
+      "supportedFeatures": []
+    }],
+    "archiveFormats": [{
+      "namespace": "EDAM",
+      "id": "format_3686",
+      "version": "1",
+      "supportedFeatures": []
+    }],
+    "citations": [],
+    "parameters": [{
+        "kisaoId": {
+          "namespace": "KISAO",
+          "id": "KISAO_0000254"
+        },
+        "id": "accuracy",
+        "name": "accuracy",
+        "type": "float",
+        "value": "10.0",
+        "recommendedRange": ["0.0", "10.0"],
+        "availableSoftwareInterfaceTypes": ["library", "command-line application", "BioSimulators Docker image"]
+      },
+      {
+        "kisaoId": {
+          "namespace": "KISAO",
+          "id": "KISAO_0000488"
+        },
+        "id": "seed",
+        "name": "seed",
+        "type": "integer",
+        "value": null,
+        "recommendedRange": null,
+        "availableSoftwareInterfaceTypes": ["library", "command-line application", "BioSimulators Docker image"]
+      }
+    ],
+    "dependentDimensions": [{
+        "namespace": "SIO",
+        "id": "SIO_000418"
+      },
+      {
+        "namespace": "SIO",
+        "id": "SIO_000452"
+      },
+      {
+        "namespace": "SIO",
+        "id": "SIO_000453"
+      },
+      {
+        "namespace": "SIO",
+        "id": "SIO_000454"
+      }
+    ],
+    "dependentVariableTargetPatterns": [{
+        "variables": "molecule count of a species",
+        "targetPattern": "molcount {species}"
+      },
+      {
+        "variables": "molecule count of a state of a species",
+        "targetPattern": "molcountspecies {species}({state})"
+      },
+      {
+        "variables": "molecule count of a species in a 1-D range",
+        "targetPattern": "molcountinbox {species} {low-x} {hi-x}"
+      },
+      {
+        "variables": "molecule count of a species in a 2-D range",
+        "targetPattern": "molcountinbox {species} {low-x} {hi-x} {low-y} {hi-y}"
+      },
+      {
+        "variables": "molecule count of a species in a 3-D range",
+        "targetPattern": "molcountinbox {species} {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z}"
+      },
+      {
+        "variables": "molecule count of a species in a compartment",
+        "targetPattern": "molcountincmpt {species} {compartment}"
+      },
+      {
+        "variables": "molecule count of a state of a species in a compartment",
+        "targetPattern": "molcountincmpt2 {species} {compartment} {state}"
+      },
+      {
+        "variables": "molecule count of a species on a surface",
+        "targetPattern": "molcountonsurf {species} {surface}"
+      },
+      {
+        "variables": "distribution of molecule counts of a species along a line",
+        "targetPattern": "molcountspace {species}({state}) {axis} {low} {hi} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along a line of a plane",
+        "targetPattern": "molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along a line of a cube",
+        "targetPattern": "molcountspace {species}({state}) {axis} {low} {hi} {bins} {low} {hi} {low} {hi}"
+      },
+      {
+        "variables": "2-D distribution of molecule counts of a state of a species in a plane",
+        "targetPattern": "molcountspace2d {species}({state}) z {low-x} {hi-x} {bins-x} {low-y} {hi-y} {bins-y}"
+      },
+      {
+        "variables": "2-D distribution of molecule counts of a state of a species in a cube",
+        "targetPattern": "molcountspace2d {species}({state}) {axis} {low-1} {hi-1} {bins-1} {low-2} {hi-2} {bins-2} {low-3} {hi-3}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of a 1-D circle",
+        "targetPattern": "molcountspaceradial {species}({state}) {center-x} {radius} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of a circle",
+        "targetPattern": "molcountspaceradial {species}({state}) {center-x} {center-y} {radius} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of a sphere",
+        "targetPattern": "molcountspaceradial {species}({state}) {center-x} {center-y} {center-z} {radius} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of an angular segment of a circle",
+        "targetPattern": "molcountspacepolarangle {species}({state}) {center-x} {center-y} {pole-x} {pole-y} {radius-min} {radius-max} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of an angular segment of a shere",
+        "targetPattern": "molcountspacepolarangle {species}({state}) {center-x} {center-y} {center-z} {pole-x} {pole-y} {pole-z} {radius-min} {radius-max} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of a circle around molecules of second state of a second species",
+        "targetPattern": "radialdistribution {species-1}({state-1}) {species-2}({state-2}) {radius} {bins}"
+      },
+      {
+        "variables": "1-D distribution of molecule counts of a state of a species along radii of a sphere around molecules of second state of a second species",
+        "targetPattern": "radialdistribution2 {species-1}({state-1}) {species-2}({state-2}) {low-x} {hi-x} {low-y} {hi-y} {low-z} {hi-z} {radius} {bins}"
+      }
+    ],
+    "availableSoftwareInterfaceTypes": ["command-line application", "library", "BioSimulators Docker image"],
+    "dependencies": []
+  }],
+  "interfaceTypes": [
+    "command-line application",
+    "library",
+    "BioSimulators Docker image"
+  ],
+  "supportedOperatingSystemTypes": [
+    "Mac OS",
+    "Linux",
+    "Windows"
+  ],
+  "supportedProgrammingLanguages": [{
+      "namespace": "Linguist",
+      "id": "C"
+    },
+    {
+      "namespace": "Linguist",
+      "id": "C++"
+    },
+    {
+      "namespace": "Linguist",
+      "id": "Python"
+    }
+  ],
+  "funding": [],
+  "biosimulators": {
+    "meta": null,
+    "imageVersion": "1.0.0",
+    "specificationVersion": "1.0.0",
+    "validationTests": null,
+    "validated": false
+  }
+}

@@ -17,8 +17,7 @@
 namespace py = pybind11;
 
 CallbackFunc::CallbackFunc()
-  : val_(0.0)
-  , funcName_("")
+  : funcName_("")
   , func_(py::none())
   , step_(1)
   , args_({})
@@ -43,8 +42,7 @@ CallbackFunc::evalAndUpdate(double t)
     if (true == py::isinstance<py::function>(target_))
         target_(v);
     else
-        py::exec(target_.cast<string>() + '=' + std::to_string(v),
-                 m.attr("__dict__"));
+        py::exec(target_.cast<string>() + '=' + std::to_string(v), m.attr("__dict__"));
     return true;
 }
 

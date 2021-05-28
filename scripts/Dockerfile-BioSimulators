@@ -1,0 +1,62 @@
+FROM python:3.9-slim-buster
+
+ARG VERSION=""
+
+# metadata
+LABEL \
+    org.opencontainers.image.title="Smoldyn" \
+    org.opencontainers.image.version="${VERSION}" \
+    org.opencontainers.image.description="Particle-based biochemical simulator for modeling molecular diffusion, surface interactions, and chemical reactions" \
+    org.opencontainers.image.url="http://www.smoldyn.org/" \
+    org.opencontainers.image.documentation="https://smoldyn.readthedocs.io/" \
+    org.opencontainers.image.source="https://github.com/ssandrews/Smoldyn" \
+    org.opencontainers.image.authors="Steven Andrews <steven.s.andrews@gmail.com>" \
+    org.opencontainers.image.vendor="Steven Andrews" \
+    org.opencontainers.image.licenses="LGPL-3.0-only" \
+    \
+    base_image="python:3.9-slim-buster" \
+    version="${VERSION}" \
+    software="Smoldyn" \
+    software.version="${VERSION}" \
+    about.summary="Particle-based biochemical simulator for modeling molecular diffusion, surface interactions, and chemical reactions" \
+    about.home="http://www.smoldyn.org/" \
+    about.documentation="https://smoldyn.readthedocs.io/" \
+    about.license_file="https://raw.githubusercontent.com/ssandrews/Smoldyn/master/LICENSE" \
+    about.license="SPDX:LGPL-3.0-only" \
+    about.tags="Smoldyn,particle,biochemistry,kinetic modeling,dynamical simulation,systems biology,SED-ML,COMBINE,OMEX,BioSimulators" \
+    extra.identifiers.biotools="smoldyn" \
+    maintainer="Steven Andrews <steven.s.andrews@gmail.com>"
+
+# Set up headless environment
+RUN apt-get -y update \
+    && apt-get install --no-install-recommends -y \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir /tmp/.X11-unix \
+    && chmod 1777 /tmp/.X11-unix
+COPY xvfb-startup.sh .
+ARG RESOLUTION="1920x1080x24"
+ARG XARGS=""
+ENV XVFB_RES="${RESOLUTION}" \
+    XVFB_ARGS="${XARGS}" \
+    DISPLAY=":1"
+
+# install Smoldyn and its dependencies
+COPY smoldyn*.whl /tmp/
+RUN cd /tmp \
+    && WHEEL_PATH=$(ls smoldyn*.whl) \
+    && pip install "${WHEEL_PATH}[biosimulators]" \
+    && rm smoldyn*.whl
+
+# configure matplotlib
+RUN mkdir -p /.cache/matplotlib \
+    && mkdir -p /.config/matplotlib \
+    && chmod ugo+rw /.config/matplotlib \
+    && chmod ugo+rw /.cache/matplotlib
+
+ENV VERBOSE=0 \
+    MPLBACKEND=PDF
+
+# setup entry point
+ENTRYPOINT ["/bin/bash", "xvfb-startup.sh", "python", "-m", "smoldyn.biosimulators"]
+CMD []
