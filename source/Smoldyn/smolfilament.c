@@ -534,19 +534,27 @@ void filTranslate(filamentptr fil,const double *vect,char func) {
 
 /* filRotateVertex */
 void filRotateVertex(filamentptr fil,int seg,double *angle,char endchar,char func) {
-
+	(void)fil;
+	(void)seg;
+	(void)angle;
+	(void)endchar;
+	(void)func;
 	return; }
 
 
 /* filLengthenSegment */
 void filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func) {
-
+	(void)fil;
+	(void)seg;
+	(void)length;
+	(void)endchar;
+	(void)func;
 	return; }
 
 
 /* filReverseFilament */
 void filReverseFilament(filamentptr fil) {
-
+	(void)fil;
 	return; }
 
 
@@ -1018,10 +1026,12 @@ int filload(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 
 /* filupdateparams */
 int filupdateparams(simptr sim) {
+	(void)sim;
 	return 0; }
 
 /* filupdatelists */
 int filupdatelists(simptr sim) {
+	(void)sim;
 	return 0; }
 
 

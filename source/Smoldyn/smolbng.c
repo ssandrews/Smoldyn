@@ -1284,6 +1284,7 @@ int bngaddgroup(bngptr bng,int gindex,const char *gname,const char *specieslist)
 	int er,itct,imol,i1;
 	const char *splistptr;
 
+	(void)gindex;
 	er=moladdspeciesgroup(bng->bngss->sim,gname,NULL,0);
 	if(er) return 1;
 	splistptr=specieslist;
@@ -1540,11 +1541,13 @@ failure:																					// failure
 
 /* bngupdateparams */
 int bngupdateparams(simptr sim) {
+	(void)sim;
   return 0; }
 
 
 /* bngupdatelists */
 int bngupdatelists(simptr sim) {
+	(void)sim;
   return 0; }
 
 

@@ -34,9 +34,9 @@ reaction BxA   B2 + A -> B2  1
 reaction Adegrade A -> 0  0.01
 reaction Bdegrade B -> 0  0.01
 
-output_files bistableout.txt
-cmd B molcountheader bistableout.txt
-cmd N 10 molcount bistableout.txt
+#output_files bistableout.txt
+#cmd B molcountheader bistableout.txt
+#cmd N 10 molcount bistableout.txt
 
 end_file
 

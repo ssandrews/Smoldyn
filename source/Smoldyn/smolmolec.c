@@ -165,7 +165,7 @@ int molstring2pattern(const char *str,enum MolecState *msptr,char *pat,int mode)
 
 
 /* molreversepattern */
-int molreversepattern(simptr sim,const char *pattern,char *patternrev) {
+int molreversepattern(const char *pattern,char *patternrev) {
 	const char *newline;
 
 	newline=strchr(pattern,'\n');
@@ -3047,7 +3047,7 @@ void moldosurfdrift(simptr sim,moleculeptr mptr,double dt) {
 				vect[1]=drift1*unit1[1]+drift2*unit2[1];
 				vect[2]=drift1*unit1[2]+drift2*unit2[2]; }
 			else if(ps==PScyl) {
-				Geo_CylUnitVects(pnl->point[0],pnl->point[1],mptr->pos,(int)(pnl->front[2]),unit0,unit1,unit2);
+				Geo_CylUnitVects(pnl->point[0],pnl->point[1],mptr->pos,unit0,unit1,unit2);
 				vect[0]=drift1*unit1[0]+drift2*unit2[0];
 				vect[1]=drift1*unit1[1]+drift2*unit2[1];
 				vect[2]=drift1*unit1[2]+drift2*unit2[2]; }

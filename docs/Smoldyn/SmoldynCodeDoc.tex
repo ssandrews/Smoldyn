@@ -1253,7 +1253,7 @@ Enter \ttt{str} as a string of which the first word is the species name or patte
 
 Returns 0 for success, -1 if \ttt{str} or \ttt{pat} are missing or if there is no first word in \ttt{str}, -2 if the parentheses in \ttt{str} don't match up, -3 if the molecule state could not be read, or -4 if the pattern length exceeds the maximum number of allowed characters (which is \ttt{STRCHAR}).
 
-\item[\ttt{int molreversepattern(simptr sim,const char *pattern,char *patternrev);}]
+\item[\ttt{int molreversepattern(const char *pattern,char *patternrev);}]
 \hfill \\
 Takes in a reaction pattern in \ttt{pattern} and reverses it for the reverse reaction, returning the result in the string \ttt{patternrev}. This only works for patterns that represent reactions. This simply writes the reverse pattern as the products of the original and then the reactants. Returns 0 for success or -1 if \ttt{pattern} is not a reaction.
 

@@ -12,6 +12,7 @@ namespace Kairos {
 
 std::ostream& operator<<(std::ostream& out, const NullGeometry& b)
 {
+    (void)b;
     return out << "Null Geometry";
 }
 

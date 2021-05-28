@@ -1185,6 +1185,7 @@ int compartsupdateparams_volumeSample(simptr sim) {					//VCELL
 
 /* compartsupdatelists */
 int compartsupdatelists(simptr sim) {
+	(void)sim;
 	return 0; }
 
 

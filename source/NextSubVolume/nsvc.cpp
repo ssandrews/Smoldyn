@@ -469,6 +469,7 @@ void nsv_integrate(NextSubvolumeMethod* nsv,double dt, portstruct *port, lattice
 
 vtkUnstructuredGrid* nsv_get_grid(NextSubvolumeMethod* nsv) {
 	using namespace Kairos;
+	(void)nsv;
 #if defined(HAVE_VTK)
 	return get_vtk_grid(nsv->get_grid(),nsv->get_diffusing_species());
 #endif

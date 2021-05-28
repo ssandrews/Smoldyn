@@ -133,6 +133,7 @@ protected:
 template <unsigned int DIM>
 std::ostream& operator<<(std::ostream& out, const AxisAlignedPlane<DIM>& p)
 {
+    (void)p;
     return out << "Plane aligned with dimension " << DIM;
 }
 

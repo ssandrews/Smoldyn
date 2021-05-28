@@ -91,6 +91,7 @@ public:
 		return high;
 	}
 	inline double get_cell_volume(const int i) const {
+    (void)i;
 		return cell_volume;
 	}
 	inline int size() const {

@@ -316,6 +316,8 @@ int loadsmolfunctions(simptr sim) {
 /* cmdstop */
 enum CMDcode cmdstop(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
+	(void)sim;
+	(void)cmd;
 	return CMDstop; }
 
 
@@ -338,6 +340,8 @@ enum CMDcode cmdpause(simptr sim,cmdptr cmd,char *line2) {
 /* cmdbeep */
 enum CMDcode cmdbeep(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
+	(void)sim;
+	(void)cmd;
 	fprintf(stderr,"\7");
 	return CMDok; }
 
@@ -376,6 +380,7 @@ enum CMDcode cmdsetrandseed(simptr sim,cmdptr cmd,char *line2) {
 	long int seed;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
+	(void)sim;
 	SCMDCHECK(line2,"missing argument");
 	itct=sscanf(line2,"%li",&seed);
 	SCMDCHECK(itct==1,"cannot read seed");
@@ -416,6 +421,7 @@ enum CMDcode cmdsetgraphic_iter(simptr sim,cmdptr cmd,char *line2) {
 /* cmdupdategraphics */
 enum CMDcode cmdupdategraphics(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
+	(void)cmd;
 	if(!sim->graphss || sim->graphss->graphics==0) return CMDok;
 	smolPostRedisplay();
 	return CMDok; }
@@ -3046,6 +3052,9 @@ enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2) {
 enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2) {
 
 #ifndef OPTION_VTK
+	(void)sim;
+	(void)cmd;
+	(void)line2;
 	simLog(NULL,11,"ERROR: VTK option not set. Recompile with OPTION_VTK = ON\n");
 #else
 

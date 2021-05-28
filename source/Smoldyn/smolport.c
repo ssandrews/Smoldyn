@@ -367,6 +367,7 @@ int loadport(simptr sim,ParseFilePtr *pfpptr,char* line2) {
 
 /* portsupdateparams */
 int portsupdateparams(simptr sim) {
+	(void)sim;
 	return 0; }
 
 

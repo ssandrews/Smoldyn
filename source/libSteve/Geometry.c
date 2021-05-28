@@ -273,7 +273,7 @@ double Geo_SphereUnitVects(double *cent,double *top,double *point,int front,doub
 	return radius; }
 
 
-double Geo_CylUnitVects(double *pt1,double *pt2,double *point,int front,double *unit0,double *unit1,double *unit2) {
+double Geo_CylUnitVects(double *pt1,double *pt2,double *point,double *unit0,double *unit1,double *unit2) {
 	double radius,dist;
 
 	radius=Geo_LineNormal3D(pt1,pt2,point,unit0);						// unit0 is cylinder normal

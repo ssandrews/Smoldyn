@@ -61,7 +61,7 @@ unsigned long long molstring2serno(char *string);
 unsigned long long molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist);
 int molismobile(simptr sim,int species,enum MolecState ms);
 int molstring2pattern(const char *str,enum MolecState *msptr,char *pat,int mode);
-int molreversepattern(simptr sim,const char *pattern,char *patternrev);
+int molreversepattern(const char *pattern,char *patternrev);
 int molpatternindex(simptr sim,const char *pattern,const char *rname,int isrule,int update,int **indexptr);
 int molstring2index1(simptr sim,const char *str,enum MolecState *msptr,int **indexptr);
 int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol);

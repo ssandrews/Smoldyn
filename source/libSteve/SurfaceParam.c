@@ -537,6 +537,7 @@ double xdfadsorb(double *x,double *xdf,int n,double probon) {
 	cleft=2.0*f1/(1.0+erfnD(x1/SQRT2));
 	sum=cleft/2.0*(SQRT2/SQRTPI*exp(-x1*x1/2.0)+x1*(1.0+erfnD(x1/SQRT2)));
 	for(j=1;x1<0;j++) {
+		if(j==n) printf("BUG in xdfadsorb.\n");
 		x0=x1;
 		f0=f1;
 		x1=x[j];

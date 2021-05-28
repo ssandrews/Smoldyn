@@ -58,6 +58,7 @@ ReactionEquation operator>>(const ReactionSide& lhs, Species& rhs) {
 
 ReactionEquation operator>>(const ReactionSide& lhs, const int rhs) {
 	ASSERT(rhs==0,"null species is always 0");
+	(void)rhs;
 	ReactionSide* newlhs = new ReactionSide(lhs);
 	ReactionSide* newrhs = new ReactionSide();
 	return ReactionEquation(*newlhs,*newrhs);
@@ -81,6 +82,7 @@ ReactionEquation operator>>(const ReactionComponent& lhs, Species& rhs) {
 }
 ReactionEquation operator>>(const ReactionComponent& lhs, const int rhs) {
 	ASSERT(rhs==0,"null species is always 0");
+	(void)rhs;
 	ReactionSide* newlhs = new ReactionSide(lhs);
 	ReactionSide* newrhs = new ReactionSide();
 	return ReactionEquation(*newlhs,*newrhs);
@@ -104,6 +106,7 @@ ReactionEquation operator>>(Species& lhs, Species& rhs) {
 }
 ReactionEquation operator>>(Species& lhs, const int rhs) {
 	ASSERT(rhs==0,"null species is always 0");
+	(void)rhs;
 	ReactionSide* newlhs = new ReactionSide(ReactionComponent(1,lhs,0));
 	ReactionSide* newrhs = new ReactionSide();
 	return ReactionEquation(*newlhs,*newrhs);
@@ -111,6 +114,7 @@ ReactionEquation operator>>(Species& lhs, const int rhs) {
 
 ReactionEquation operator>>(const int lhs, const ReactionSide& rhs) {
 	ASSERT(lhs==0,"null species is always 0");
+	(void)lhs;
 	ReactionSide* newlhs = new ReactionSide();
 	ReactionSide* newrhs = new ReactionSide(rhs);
 	return ReactionEquation(*newlhs,*newrhs);
@@ -118,12 +122,14 @@ ReactionEquation operator>>(const int lhs, const ReactionSide& rhs) {
 
 ReactionEquation operator>>(const int lhs, const ReactionComponent& rhs) {
 	ASSERT(lhs==0,"null species is always 0");
+	(void)lhs;
 	ReactionSide* newlhs = new ReactionSide();
 	ReactionSide* newrhs = new ReactionSide(rhs);
 	return ReactionEquation(*newlhs,*newrhs);
 }
 ReactionEquation operator>>(const int lhs, Species& rhs) {
 	ASSERT(lhs==0,"null species is always 0");
+	(void)lhs;
 	ReactionSide* newlhs = new ReactionSide();
 	ReactionSide* newrhs = new ReactionSide(ReactionComponent(1,rhs,0));
 	return ReactionEquation(*newlhs,*newrhs);

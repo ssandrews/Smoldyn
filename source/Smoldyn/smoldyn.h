@@ -45,15 +45,6 @@ class ValueProviderFactory;
 using std::string;
 #endif
 
-#ifdef OPTION_VCELL
-#include <string>
-typedef struct VolumeSamples* VolumeSamplesPtr;
-class AbstractMesh;
-class ValueProvider;
-class ValueProviderFactory;
-using std::string;
-#endif
-
 #endif // -----  not __cplusplus  -----
 
 /****************************************************************************/

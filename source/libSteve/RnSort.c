@@ -710,8 +710,9 @@ double *cpxinitializec(double *r,double *c,int n,double *values,int code) {
 	
 	if(DEBUG) {
 		printf("cpxinitializec: c= [%g %g %g ... ",c[0],c[1],c[2]);
-		printf("%g %g]\n",c[n-2],c[n-1]); }
-	
+		printf("%g %g]\n",c[n-2],c[n-1]);
+		if(r) printf(" r[0] = %g\n",r[0]); }
+
 	return c; }
 
 

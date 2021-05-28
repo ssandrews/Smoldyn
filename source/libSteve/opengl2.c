@@ -94,12 +94,12 @@ void ChangeSize(int w,int h) {
 /* KeyPush */
 void KeyPush(unsigned char key,int x,int y) {
 #ifdef __gl_h_
-    (void)x; // x is unused.
 	GLint viewport[4],w,h;
 	char name[2*STRCHAR],str[2*STRCHAR];
 	GLfloat clipheight,clipwidth;
 
-	x=y=0;	// to avoid compiler warnings
+	(void)x;
+	(void)y;
 	glMatrixMode(GL_MODELVIEW);
 	if(key=='Q') {
 		if(Gl2PauseState==2) {
@@ -192,12 +192,12 @@ void KeyPush(unsigned char key,int x,int y) {
 /* SpecialKeyPush2 */
 void SpecialKeyPush2(unsigned char key,int x,int y) {
 #ifdef __gl_h_
-    (void)x;
 	GLfloat m[16];
 	GLint viewport[4],w,h;
 	GLfloat clipheight,clipwidth;
 
-	x=y=0;		// to avoid compiler warnings
+	(void)x;
+	(void)y;
 	if(Dimension<3) {
 		if(key=='D') Ytrans-=(ClipRight-ClipLeft)/100;
 		else if(key=='U') Ytrans+=(ClipRight-ClipLeft)/100;

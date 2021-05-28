@@ -2536,7 +2536,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 		CHECKS(er!=-30,"BUG: failed to add reaction"); }
 
 	if(bidirect) {
-		er=molreversepattern(sim,pattern,patternrev);
+		er=molreversepattern(pattern,patternrev);
 		CHECKS(er!=-4,"pattern length exceeds maximum length");
 		CHECKS(er!=-5,"the reverse reaction would have more than two reactants, which is not allowed");
 		CHECKS(!er,"BUG: error in reverse reaction code");

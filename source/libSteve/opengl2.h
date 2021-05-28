@@ -16,6 +16,8 @@ extern "C" {
 
 #include "smoldynconfigure.h"
 
+#define GL_SILENCE_DEPRECATION				// OpenGL is deprecated, but I'm still using it
+
 #if defined(HAVE_OPENGL)							// The sequence of these if..elses is important
 	#ifdef WIN32
 		#include <windows.h>

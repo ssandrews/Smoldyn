@@ -308,7 +308,7 @@ void ruleoutput(simptr sim) {
 
 /* writerules */
 void writerules(simptr sim,FILE *fptr) {
-
+	(void)sim;
 	fprintf(fptr,"# Rules\n");
 
 	//?? not written yet
@@ -321,6 +321,7 @@ void writerules(simptr sim,FILE *fptr) {
 int checkruleparams(simptr sim,int *warnptr) {
 	int warn,error;
 
+	(void)sim;
 	error=warn=0;
 
 	if(warnptr) *warnptr=warn;

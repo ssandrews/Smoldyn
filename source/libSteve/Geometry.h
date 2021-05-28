@@ -24,7 +24,7 @@ double Geo_SphereNormal(double *cent,double *pt,int front,int dim,double *ans);
 double Geo_UnitCross(double *v1start,double *v1end,double *v2start,double *v2end,double *ans);
 double Geo_TriUnitVects(double *pt1,double *pt2,double *pt3,double *unit0,double *unit1,double *unit2);
 double Geo_SphereUnitVects(double *cent,double *top,double *point,int front,double *unit0,double *unit1,double *unit2);
-double Geo_CylUnitVects(double *pt1,double *pt2,double *point,int front,double *unit0,double *unit1,double *unit2);
+double Geo_CylUnitVects(double *pt1,double *pt2,double *point,double *unit0,double *unit1,double *unit2);
 double Geo_DiskUnitVects(double *cent,double *front,double *point,double *unit0,double *unit1,double *unit2);
 
 // Area

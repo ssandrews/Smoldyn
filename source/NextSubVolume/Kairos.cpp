@@ -29,6 +29,8 @@ namespace Kairos {
 
 
 void init(int argc, char *argv[]) {
+	(void)argc;
+	(void)argv;
 }
 
 }
