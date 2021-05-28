@@ -1,4 +1,8 @@
-''' Methods for executing COMBINE archives and SED-ML files involving simulations of models encoded in Smoldyn '''
+''' Methods for executing COMBINE archives and SED-ML files involving simulations of models encoded in Smoldyn 
+
+    Information about encoding Smoldyn simulations into SED-ML files and COMBINE archives is available at 
+    `https://github.com/ssandrews/Smoldyn/blob/master/Using-Smoldyn-with-SED-ML-COMBINE-BioSimulators.md <https://github.com/ssandrews/Smoldyn/blob/master/Using-Smoldyn-with-SED-ML-COMBINE-BioSimulators.md>`_.
+'''
 
 __author__ = 'Jonathan Karr'
 __email__ = 'karr@mssm.edu'
