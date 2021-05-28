@@ -43,7 +43,6 @@ class CallbackFunc
 
   private:
     /* data */
-    double val_;
     std::string funcName_;
     py::function func_;
     size_t step_;
