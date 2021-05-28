@@ -60,10 +60,19 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         # which python
         # now use venv pyhton.
         $PYTHON --version
-        $PYTHON -m pip install $WHEELHOUSE/smoldyn*.whl
-        $PYTHON -c 'import smoldyn; print(smoldyn.__version__ )'
-        $PYTHON -m pip uninstall -y smoldyn
+
+        # Use the latest wheel. There could be more than one whl files in
+        # WHEELHOUSE (sometimes, on github actions for sure).
+        WHEELFILE=$(ls -t "$WHEELHOUSE"/smoldyn*.whl | head -n 1)
+        if [ -f "${WHEELFILE}" ]; then
+            $PYTHON -m pip install "$WHEELFILE"
+            $PYTHON -c 'import smoldyn; print(smoldyn.__version__ )'
+            $PYTHON -m pip uninstall -y smoldyn
+        else
+            echo "Strage! No wheel is found."
+        fi
     )
+
 )
 
 if [ -n "$PYPI_PASSWORD" ]; then

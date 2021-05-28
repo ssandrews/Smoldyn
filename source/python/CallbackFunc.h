@@ -17,7 +17,7 @@ namespace py = pybind11;
 
 using namespace std;
 
-class CallbackFunc
+class __attribute__((visibility("hidden"))) CallbackFunc
 {
   public:
     CallbackFunc();
@@ -43,7 +43,6 @@ class CallbackFunc
 
   private:
     /* data */
-    double val_;
     std::string funcName_;
     py::function func_;
     size_t step_;
