@@ -18,5 +18,5 @@ Developer API
 SED-ML/COMBINE/BioSimulators API
 ********************************
 
-.. automodule:: smoldyn.biosimulators
+.. automodule:: smoldyn.biosimulators.combine
    :members:
