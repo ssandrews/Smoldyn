@@ -8,11 +8,6 @@ Welcome to Smoldyn's documentation!
 
 .. image:: http://www.smoldyn.org/smoldyn_banner.jpg
 
-.. warning::
-
-   Please refer to official documentation at <http://www.smoldyn.org>. This is a 
-   work in progress. 
-
 .. toctree::
    :maxdepth: 3
    :caption: Table of Contents

@@ -1,6 +1,10 @@
 ## Changelog
 
-### 2.65 (unreleased)
+### 2.66 (development)
+
+- Added biosimulator support (thanks @jonrkarr, #79, #75)
+
+### 2.65 (5/21/21)
 
 https://github.com/ssandrews/Smoldyn/compare/v2.64...v2.65
 
