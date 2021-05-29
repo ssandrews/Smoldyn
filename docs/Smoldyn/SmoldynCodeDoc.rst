@@ -2521,7 +2521,7 @@ called the reborn molecules, which have higher indices.
    the pattern length exceeds the maximum number of allowed characters
    (which is ``STRCHAR``).
 
-``int molreversepattern(simptr sim,const char *pattern,char *patternrev);``
+``int molreversepattern(const char *pattern,char *patternrev);``
    | 
    | Takes in a reaction pattern in ``pattern`` and reverses it for the
      reverse reaction, returning the result in the string
