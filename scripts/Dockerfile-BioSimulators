@@ -35,6 +35,7 @@ RUN apt-get -y update \
     && mkdir /tmp/.X11-unix \
     && chmod 1777 /tmp/.X11-unix
 COPY xvfb-startup.sh .
+RUN chmod +x xvfb-startup.sh
 ARG RESOLUTION="1920x1080x24"
 ARG XARGS=""
 ENV XVFB_RES="${RESOLUTION}" \
