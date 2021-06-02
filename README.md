@@ -17,10 +17,15 @@ Please visit this website to learn about Smoldyn, download the latest
 release, etc.
 
 ## Installing Smoldyn
-The Smoldyn command-line program and Python package can be installed by
-executing the following command.
+The Smoldyn Python package can be installed by executing the following command.
 ```sh
-pip install smoldyn
+python3 -m pip install smoldyn
+```
+
+You can also use the Python package to run models written in txt file.
+
+```sh
+python -m smoldyn model.txt
 ```
 
 Compiled binaries for Mac OS and Windows are also available at
