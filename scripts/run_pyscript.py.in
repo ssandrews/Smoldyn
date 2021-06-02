@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+__author__ = "Dilawar Singh"
+__email__ = "dilawar.s.rajput@gmail.com"
+
+# This script is a wrapper around smoldyn. It is used to run smoldyn model with
+# timeout on various platforms.
+# It also make sure that matplotlib plots are non-blocking (env MPLBACKEND=agg)
+# and smoldyn does not ask for user for input and block (env SMOLDYN_NO_PROMPT).
+
 import subprocess
 import sys
 import os
@@ -9,7 +17,7 @@ infile = Path(sys.argv[1])
 
 assert infile.exists(), f"{infile} does not exists"
 
-env = {**os.environ, 'SMOLDYN_NO_PROMPT':"1", 'MPLBACKEND':'Agg'}
+env = {**os.environ, "SMOLDYN_NO_PROMPT": "1", "MPLBACKEND": "Agg"}
 
 r = None
 try:

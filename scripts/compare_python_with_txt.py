@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 
-"""This script compare stdout capture at run of a txt script as well as its
-equivalent pyhton script.
+"""This script run a txt model e.g., model.txt with smoldyn binary (./smoldyn
+model.txt) and with `python -m smoldyn model.txt`. It captures stdout in both
+cases and compare them against each other. Both outputs must be almost
+same.
+
+It is useful when testing for equivalence of Python interface and smoldyn
+binary.
 """
 
 __author__ = "Dilawar Singh"
@@ -12,12 +17,10 @@ import time
 import os
 from pathlib import Path
 import subprocess
-import io
 import difflib
 
 def execute(filename, command, outfile):
     cmd = command.split(' ') + [ str(filename) ]
-    txt = ''
     stdout = open(outfile, "w", 1)
     _environ = os.environ.copy()
     _environ['SMOLDYN_NO_PROMPT'] = '1'

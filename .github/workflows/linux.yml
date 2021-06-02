@@ -32,22 +32,28 @@ jobs:
         cmake -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \
             -DPython3_EXECUTABLE=$PYTHON ..
-    - name: make
+    - name: build smoldyn
       run: |
           cd build && make -j2 && make wheel && sudo make install
           ## If installation is successful, following should just work.
           ## NOTE: Following does not work on github actions because python is in a
           ## virtual environment.
-          # python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"    
-    - name: ctest -j2
+          # python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
+    - name: test smoldyn
       run: |
         # From https://github.com/processing/processing/wiki/Running-without-a-Display
         sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
         export DISPLAY=":1"
         cd build && ctest --output-on-failure -j2
         python -m pip install smoldyn*.whl
-        python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"        
-    
+        python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
+
+    - name: Test released wheels
+      run: |
+        sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
+        export DISPLAY=":1"
+        ./.ci/install_wheel_and_test.sh
+
     # BioSimulators
     - name: Build BioSimulators Docker image
       if: matrix.python-version == '3.9'
