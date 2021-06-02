@@ -62,14 +62,14 @@ jobs:
             VERSION=$(echo $WHEEL_PATH | cut -d - -f 2- | cut -d . -f 1-2)
           fi
 
-          if [ -z ${SECRETS_ARE_AVAILABLE+x} ]; then
+          if [ ! -z ${SECRETS_ARE_AVAILABLE+x} ]; then
               docker login ghcr.io \
                 --username ${{ secrets.BIOSIMULATORS_GH_USERNAME }} \
                 --password ${{ secrets.BIOSIMULATORS_GH_TOKEN }}
               docker push ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:${VERSION}
               docker push ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest
           else
-            echo "GH_TOKEN are not set. Not uploading docker image"
+            echo "tokens are not set. Not uploading docker image"
           fi
 
       - name: Submit Smoldyn to BioSimulators
