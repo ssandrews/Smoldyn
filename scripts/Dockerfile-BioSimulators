@@ -58,5 +58,5 @@ ENV VERBOSE=0 \
     MPLBACKEND=PDF
 
 # setup entry point
-ENTRYPOINT ["/bin/bash", "xvfb-startup.sh", "python", "-m", "smoldyn.biosimulators"]
+ENTRYPOINT ["/bin/bash", "/xvfb-startup.sh", "python", "-m", "smoldyn.biosimulators"]
 CMD []
