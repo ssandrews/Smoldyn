@@ -1,0 +1,23 @@
+name: Test released wheels
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: [windows-latest, ubuntu-latest, macos-latest]
+    strategy:
+      matrix:
+        python-version: [3.7,3.8,3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: "Setup Python ${{ matrix.python-version }}"
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Test wheels
+      run: |
+        sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
+        export DISPLAY=":1"
+        ./.ci/install_wheel_and_test.sh
