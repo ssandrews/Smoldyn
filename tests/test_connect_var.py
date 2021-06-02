@@ -1,9 +1,11 @@
-"""This does not work with pytest
+"""NOTE: This does not work with pytest since this scripts use global variables.
 
-https://stackoverflow.com/a/38802415/1805129
+See https://stackoverflow.com/a/38802415/1805129
 """
-__author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+
+__author__           = "Dilawar Singh"
+__email__            = "dilawar.s.rajput@gmail.com"
+
 
 import smoldyn
 import random

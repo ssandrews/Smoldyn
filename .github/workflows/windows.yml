@@ -47,3 +47,6 @@ jobs:
         cd build
         python -m pip install twine --upgrade
         python -m twine upload -u __token__ -p "$SMOLDYN_PYPI_TOKEN" *.whl --skip-existing || echo "Failed to upload"
+    - name: Test released wheels
+      shell: bash
+      run: ./.ci/install_wheel_and_test.sh
