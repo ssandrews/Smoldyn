@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-MPL_BACKEND=agg SMOLDYN_NO_PROMPT=1 \
-    timeout 10 \
-    @Python3_EXECUTABLE@ "$1" || ( [[ $? -eq 124 ]] && echo "Warning: Timeout reached." )

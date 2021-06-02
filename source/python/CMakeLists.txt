@@ -134,9 +134,15 @@ install(CODE "execute_process(
 
 ###  python tests ###
 enable_testing()
+
+# NOTE: We do not use pytest because pytest doesn't handle global variables very
+# well.
 file(GLOB TEST_SCRIPTS "${CMAKE_SOURCE_DIR}/tests/test_*.py")
+list(LENGTH TEST_SCRIPTS TOTAL_TESTS)
+message(STATUS "[TEST] Found ${TOTAL_TESTS} test scripts")
+
 foreach(_pyscript ${TEST_SCRIPTS})
-    # message(STATUS "Adding test ${_pyscript}")
+    # message(STATUS " [TEST] Adding test ${_pyscript}")
     get_filename_component(_test_name ${_pyscript} NAME_WE)
     get_filename_component(_test_dir ${_pyscript} DIRECTORY)
     add_test(NAME ${_test_name} COMMAND
