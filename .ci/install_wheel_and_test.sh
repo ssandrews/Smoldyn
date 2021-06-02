@@ -27,12 +27,12 @@ install_and_run()
 (
     echo "Installing and testing normal release"
     cd $SCRIPT_DIR
-    # install_and_run || echo "Failed with stable release"
+    install_and_run || echo "Failed with previous stable release which is OK."
 )
 
 # test the --pre release
 (
-    echo "Installing and testing with --pre"
+    echo "Installing and testing with --pre (this must not fail)"
     cd $SCRIPT_DIR
     install_and_run --pre
 )

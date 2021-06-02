@@ -48,6 +48,12 @@ jobs:
         python -m pip install smoldyn*.whl
         python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
 
+    - name: Test released wheels
+      run: |
+        sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
+        export DISPLAY=":1"
+        ./.ci/install_wheel_and_test.sh
+
     # BioSimulators
     - name: Build BioSimulators Docker image
       if: matrix.python-version == '3.9'
