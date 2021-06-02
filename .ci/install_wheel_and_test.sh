@@ -36,7 +36,7 @@ install_and_run()
 
 # test normal release
 echo "Installing and testing normal release"
-install_and_run
+install_and_run || echo "Failed with stable release"
 
 # test the --pre release
 echo "Installing and testing with --pre"
