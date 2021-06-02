@@ -52,7 +52,6 @@ jobs:
       - name: Push BioSimulators Docker image
         env:
           TAG: ${{ github.ref }}
-          SECRETS_ARE_AVAILABLE: ${{ secrets.BIOSIMULATORS_GH_TOKEN }}
         run: |
           cd scripts
           if [[ "${TAG}" =~ ^refs/tags/ ]]; then
@@ -62,21 +61,18 @@ jobs:
             VERSION=$(echo $WHEEL_PATH | cut -d - -f 2- | cut -d . -f 1-2)
           fi
 
-          if [ -z ${SECRETS_ARE_AVAILABLE+x} ]; then
+          (
               docker login ghcr.io \
                 --username ${{ secrets.BIOSIMULATORS_GH_USERNAME }} \
                 --password ${{ secrets.BIOSIMULATORS_GH_TOKEN }}
               docker push ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:${VERSION}
               docker push ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest
-          else
-            echo "GH_TOKEN are not set. Not uploading docker image"
-          fi
+          ) || echo "Failed to upload docker image. Maybe secrets are not available."
 
       - name: Submit Smoldyn to BioSimulators
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         env:
           TAG: ${{ github.ref }}
-          SECRETS_ARE_AVAILABLE: ${{ secrets.BIOSIMULATORS_GH_TOKEN }}
         run: |
           cd scripts
           if [[ "${TAG}" =~ ^refs/tags/ ]]; then
@@ -86,13 +82,12 @@ jobs:
             VERSION=$(echo $WHEEL_PATH | cut -d - -f 2- | cut -d . -f 1-2)
           fi
           REVISION=$(git rev-parse HEAD)
-          if [ -z ${SECRETS_ARE_AVAILABLE+x} ]; then
+
+          (
               curl \
                 -X POST \
                 -u ${{ secrets.BIOSIMULATORS_GH_USERNAME }}:${{ secrets.BIOSIMULATORS_GH_TOKEN }} \
                 -H "Accept: application/vnd.github.v3+json" \
                 https://api.github.com/repos/biosimulators/Biosimulators/issues \
                 -d "{\"labels\": [\"Validate/submit simulator\"], \"title\": \"Submit Smoldyn ${VERSION}\", \"body\": \"---\nid: smoldyn\nversion: \\\"${VERSION}\\\"\nspecificationsUrl: https://raw.githubusercontent.com/ssandrews/Smoldyn/${REVISION}/biosimulators.json\nspecificationsPatch:\n  version: \\\"${VERSION}\\\"\n  image:\n    url: ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:${VERSION}\nvalidateImage: true\ncommitSimulator: true\n\n---\"}"
-            else
-                echo "Secrets are not available. Not creating issue."
-            fi
+            ) || echo "Failed to create issue. Probably secrets are not available?"
