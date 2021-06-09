@@ -314,7 +314,7 @@ def normalize_smoldyn_simulation_configuration(configuration):
 
     # remove end_file and following lines
     for i_line, line in enumerate(configuration):
-        if line == 'end_file':
+        if re.match(r'^end_file( |$)', line):
             for i_line_remove in range(len(configuration) - i_line):
                 configuration.pop()
             break
