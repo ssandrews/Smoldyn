@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Run these tests locally.
+
 set -e
 set -x
 
@@ -27,12 +29,12 @@ install_and_run()
 (
     echo "Installing and testing normal release"
     cd $SCRIPT_DIR
-    install_and_run || echo "Failed with previous stable release which is OK."
+    install_and_run || echo "Failed with previous stable release that is OK."
 )
 
 # test the --pre release
 (
-    echo "Installing and testing with --pre (this must not fail)"
+    echo "Installing and testing with --pre"
     cd $SCRIPT_DIR
-    install_and_run --pre
+    install_and_run --pre || echo "Failed with previous nightly release"
 )
