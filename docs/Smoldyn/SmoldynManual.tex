@@ -10,6 +10,16 @@
 \usepackage{graphicx}
 \usepackage{geometry}
 
+% https://tex.stackexchange.com/questions/600628/aligning-linebreaks-in-long-item-inside-description-environment
+\usepackage{enumitem}
+\setlist[description]{style=nextline}
+
+% math font.
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+% \usepackage[]{eulervm}
+\usepackage[math-style=upright]{unicode-math}
+
 % settings for listings package
 \lstdefinestyle{SSAPython}{
 	language=Python,
