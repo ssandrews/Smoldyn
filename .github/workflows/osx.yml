@@ -27,6 +27,3 @@ jobs:
       env:
         SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
       run: cd ./scripts && PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN ./build_wheels_osx.sh
-    - name: Test released wheels
-      shell: bash
-      run: ./.ci/install_wheel_and_test.sh

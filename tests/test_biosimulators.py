@@ -1,7 +1,8 @@
 __author__ = "Jonathan Karr"
 __email__ = "karr@mssm.edu"
 
-
+from smoldyn.biosimulators.data_model import Simulation, SimulationInstruction
+from smoldyn.biosimulators.utils import read_simulation, _read_simulation_line
 try:
     import biosimulators_utils
     from biosimulators_utils.combine.data_model import CombineArchive, CombineArchiveContent, CombineArchiveContentFormat
@@ -33,8 +34,220 @@ import tempfile
 import unittest
 
 
+class BioSimulatorsUtilsTestCase(unittest.TestCase):
+    EXAMPLES_DIRNAME = os.path.join(os.path.dirname(__file__), '..', 'examples')
+
+    def test__read_simulation_line(self):
+        sim = Simulation()
+
+        _read_simulation_line('dim 3', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='number_dimensions',
+            description='Number of dimensions',
+            macro='dim',
+            arguments='3',
+        )))
+
+        _read_simulation_line('low_wall x -100 p', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='low_x_wall_1',
+            description='Low x wall 1',
+            macro='low_wall x',
+            arguments='-100 p',
+        )))
+
+        _read_simulation_line('high_wall x -100 p', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='high_x_wall_1',
+            description='High x wall 1',
+            macro='high_wall x',
+            arguments='-100 p',
+        )))
+
+        _read_simulation_line('boundaries x 0 1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='x_boundary',
+            description='X boundary',
+            macro='boundaries x',
+            arguments='0 1',
+        )))
+
+        _read_simulation_line('define SYSLENGTH 50', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='value_parameter_SYSLENGTH',
+            description='Value of parameter "SYSLENGTH"',
+            macro='define SYSLENGTH',
+            arguments='50',
+        )))
+
+        _read_simulation_line('difc all 1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='diffusion_coefficient_species_all',
+            description='Diffusion coefficient of species "all"',
+            macro='difc all',
+            arguments='1',
+        )))
+
+        _read_simulation_line('difc all(x) 1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='diffusion_coefficient_species_all_state_x',
+            description='Diffusion coefficient of species "all" in state "x"',
+            macro='difc all(x)',
+            arguments='1',
+        )))
+
+        _read_simulation_line('difc_rule Prot* 22', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='diffusion_coefficient_rule_species_Prot_',
+            description='Diffusion coefficient rule for species "Prot*"',
+            macro='difc_rule Prot*',
+            arguments='22',
+        )))
+
+        _read_simulation_line('difc_rule Prot*(x) 22', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='diffusion_coefficient_rule_species_Prot__state_x',
+            description='Diffusion coefficient rule for species "Prot*" in state "x"',
+            macro='difc_rule Prot*(x)',
+            arguments='22',
+        )))
+
+        _read_simulation_line('difm red 1 0 0 0 0 0 0 0 2', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='membrane_diffusion_coefficient_species_red',
+            description='Membrane diffusion coefficient of species "red"',
+            macro='difm red',
+            arguments='1 0 0 0 0 0 0 0 2',
+        )))
+
+        _read_simulation_line('difm red(x) 1 0 0 0 0 0 0 0 2', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='membrane_diffusion_coefficient_species_red_state_x',
+            description='Membrane diffusion coefficient of species "red" in state "x"',
+            macro='difm red(x)',
+            arguments='1 0 0 0 0 0 0 0 2',
+        )))
+
+        _read_simulation_line('difm_rule red* 1 0 0 0 0 0 0 0 2', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='membrane_diffusion_coefficient_rule_species_red_',
+            description='Membrane diffusion coefficient rule for species "red*"',
+            macro='difm_rule red*',
+            arguments='1 0 0 0 0 0 0 0 2',
+        )))
+
+        _read_simulation_line('difm_rule red*(x) 1 0 0 0 0 0 0 0 2', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='membrane_diffusion_coefficient_rule_species_red__state_x',
+            description='Membrane diffusion coefficient rule for species "red*" in state "x"',
+            macro='difm_rule red*(x)',
+            arguments='1 0 0 0 0 0 0 0 2',
+        )))
+
+        _read_simulation_line('drift red 0 0 0', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='drift_species_red',
+            description='Drift of species "red"',
+            macro='drift red',
+            arguments='0 0 0',
+        )))
+
+        _read_simulation_line('drift red(x) 0 0 0', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='drift_species_red_state_x',
+            description='Drift of species "red" in state "x"',
+            macro='drift red(x)',
+            arguments='0 0 0',
+        )))
+
+        _read_simulation_line('drift_rule red* 0 0 0', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='drift_rule_species_red_',
+            description='Drift rule for species "red*"',
+            macro='drift_rule red*',
+            arguments='0 0 0',
+        )))
+
+        _read_simulation_line('drift_rule red*(x) 0 0 0', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='drift_rule_species_red__state_x',
+            description='Drift rule for species "red*" in state "x"',
+            macro='drift_rule red*(x)',
+            arguments='0 0 0',
+        )))
+
+        _read_simulation_line('surface_drift red surf1 all 0.1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='surface_drift_species_red_surface_surf1_shape_all',
+            description='Surface drift of species "red" on surface "surf1" with panel shape "all"',
+            macro='surface_drift red surf1 all',
+            arguments='0.1',
+        )))
+
+        _read_simulation_line('surface_drift red(x) surf1 all 0.1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='surface_drift_species_red_state_x_surface_surf1_shape_all',
+            description='Surface drift of species "red" in state "x" on surface "surf1" with panel shape "all"',
+            macro='surface_drift red(x) surf1 all',
+            arguments='0.1',
+        )))
+
+        _read_simulation_line('surface_drift_rule red* surf1 all 0.1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='surface_drift_rule_species_red__surface_surf1_panel_all',
+            description='Surface drift rule for species "red*" on surface "surf1" of panel shape "all"',
+            macro='surface_drift_rule red* surf1 all',
+            arguments='0.1',
+        )))
+
+        _read_simulation_line('surface_drift_rule red*(x) surf1 all 0.1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='surface_drift_rule_species_red__state_x_surface_surf1_panel_all',
+            description='Surface drift rule for species "red*" in state "x" on surface "surf1" of panel shape "all"',
+            macro='surface_drift_rule red*(x) surf1 all',
+            arguments='0.1',
+        )))
+
+        _read_simulation_line('mol 167 A 5 u u', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='initial_count_species_A_5_u_u',
+            description='Initial count of species "A 5 u u"',
+            macro='mol A 5 u u',
+            arguments='167',
+        )))
+
+        _read_simulation_line('compartment_mol 500 red intersection', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='initial_count_species_red_intersection',
+            description='Initial count of species "red intersection"',
+            macro='compartment_mol red intersection',
+            arguments='500',
+        )))
+
+        _read_simulation_line('surface_mol 100 red(up) all rect r1', {}, sim)
+        self.assertTrue(sim.instructions[-1].is_equal(SimulationInstruction(
+            id='initial_count_species_red_up__all_rect_r1',
+            description='Initial count of species "red(up) all rect r1"',
+            macro='surface_mol red(up) all rect r1',
+            arguments='100',
+        )))
+
+    def test_read_simulation(self):
+        filename = os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt')
+        sim = read_simulation(filename)
+        self.assertEqual(sim.species, ['red', 'green'])
+        self.assertEqual(sim.compartments, [])
+        self.assertEqual(sim.surfaces, [])
+
+        filename = os.path.join(self.EXAMPLES_DIRNAME, 'S9_compartments', 'compart.txt')
+        sim = read_simulation(filename)
+        self.assertEqual(sim.species, ['red', 'green'])
+        self.assertEqual(sim.compartments, ['middle'])
+        self.assertEqual(sim.surfaces, ['walls', 'surf'])
+
+
 @unittest.skipIf(biosimulators_utils is None, "BioSimulators-utils must be installed")
-class BioSimulatorsTestCase(unittest.TestCase):
+class BioSimulatorsCombineTestCase(unittest.TestCase):
     EXAMPLES_DIRNAME = os.path.join(os.path.dirname(__file__), '..', 'examples')
 
     def setUp(self):

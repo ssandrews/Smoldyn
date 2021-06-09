@@ -37,9 +37,9 @@ as illustrated below.
 | `difm {species} {float}+`                                                    | `difm {species}`                                                    | `{float}+`                            |
 | `difm {species}({state}) {float}+`                                           | `difm {species}({state})`                                           | `{float}+`                            |
 | `difm_rule {species}({state}) {float}+`                                      | `difm_rule {species}({state})`                                      | `{float}+`                            |
-| `drift {species} {float}+ {float}+`                                          | `drift {species}`                                                   | `{float}+`                            |
+| `drift {species} {float}+`                                                   | `drift {species}`                                                   | `{float}+`                            |
 | `drift {species}({state}) {float}+`                                          | `drift {species}({state})`                                          | `{float}+`                            |
-| `drift_rule {species}({state})`                                              | `drift_rule {species}({state})`                                     | `{float}+`                            |
+| `drift_rule {species}({state}) {float}+`                                     | `drift_rule {species}({state})`                                     | `{float}+`                            |
 | `surface_drift {species}({state}) {surface} {panel-shape} {float}+`          | `surface_drift {species}({state}) {surface} {panel-shape}`          | `{float}+`                            |
 | `surface_drift_rule {species}({state}) {surface} {panel-shape} {float}+`     | `surface_drift_rule {species}({state}) {surface} {panel-shape}`     | `{float}+`                            |
 | `mol {integer} {species} [{pos} ...]`                                        | `mol {species} [{pos} ...]`                                         | `{integer}`                           |
