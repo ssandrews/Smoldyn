@@ -10,54 +10,62 @@
 \usepackage{graphicx}
 \usepackage{geometry}
 
+% https://tex.stackexchange.com/questions/600628/aligning-linebreaks-in-long-item-inside-description-environment
+\usepackage{enumitem}
+\setlist[description]{style=nextline}
+
+% upright math font. use xelatex/lualatex to compile.
+% \usepackage[]{eulervm}
+\usepackage[math-style=upright]{unicode-math}
+
 % settings for listings package
 \lstdefinestyle{SSAPython}{
-	language=Python, 
-	basicstyle=\footnotesize\ttfamily, 
-	keywordstyle=\bfseries, 
-	tabsize=2, 
-	breaklines=true, 
+	language=Python,
+	basicstyle=\footnotesize\ttfamily,
+	keywordstyle=\bfseries,
+	tabsize=2,
+	breaklines=true,
 	breakatwhitespace=false }
 
 \lstdefinestyle{SSAPythonNumbers}{
-	language=Python, 
-	basicstyle=\footnotesize\ttfamily, 
-	numbers=left, 
-	stepnumber=1, 
-	xleftmargin=5mm, 
-	keywordstyle=\bfseries, 
-	tabsize=2, 
-	breaklines=true, 
+	language=Python,
+	basicstyle=\footnotesize\ttfamily,
+	numbers=left,
+	stepnumber=1,
+	xleftmargin=5mm,
+	keywordstyle=\bfseries,
+	tabsize=2,
+	breaklines=true,
 	breakatwhitespace=false }
 
 \lstdefinestyle{SSAC}{
-	language=C, 
-	basicstyle=\footnotesize\ttfamily, 
-	keywordstyle=\bfseries, 
-	tabsize=2, 
-	breaklines=true, 
+	language=C,
+	basicstyle=\footnotesize\ttfamily,
+	keywordstyle=\bfseries,
+	tabsize=2,
+	breaklines=true,
 	breakatwhitespace=false }
 
 % settings for longtable package
 \setlength\LTleft\parindent
 \setlength\LTright\fill
 
-% Allow line breaks in \texttt mode at periods and open brackets
-\renewcommand{\texttt}[1]{%
-  \begingroup
-  \ttfamily
-  \begingroup\lccode`~=`/\lowercase{\endgroup\def~}{/\discretionary{}{}{}}%
-  \begingroup\lccode`~=`[\lowercase{\endgroup\def~}{[\discretionary{}{}{}}%
-  \begingroup\lccode`~=`.\lowercase{\endgroup\def~}{.\discretionary{}{}{}}%
-  \catcode`/=\active\catcode`[=\active\catcode`.=\active
-  \scantokens{#1\noexpand}%
-  \endgroup
-}
+% % Allow line breaks in \texttt mode at periods and open brackets
+% \renewcommand{\texttt}[1]{%
+%   \begingroup
+%   \ttfamily
+%   \begingroup\lccode`~=`/\lowercase{\endgroup\def~}{/\discretionary{}{}{}}%
+%   \begingroup\lccode`~=`[\lowercase{\endgroup\def~}{[\discretionary{}{}{}}%
+%   \begingroup\lccode`~=`.\lowercase{\endgroup\def~}{.\discretionary{}{}{}}%
+%   \catcode`/=\active\catcode`[=\active\catcode`.=\active
+%   \scantokens{#1\noexpand}%
+%   \endgroup
+% }
+
 % Following is a different way to allow line breaks, this time between any character. But, no spaces
 % are allowed within the \ttt{} braces, which I decided that I didn't want.
 %\usepackage{seqsplit}
 %\newcommand{\ttt}[1]{{\ttfamily\seqsplit{#1}}}
-
 
 % New commands
 \newcommand {\ttt} {\texttt}
@@ -107,7 +115,7 @@ The input to Smoldyn is a plain text configuration file. This file specifies all
 \subsection*{About this User's Manual}
 
 Do not read the manual from end to end. New users should read the Installation chapter as needed and the Getting Started chapter. The last half of the manual is a reference section which lists all statements and commands. The first portions of the other chapters provide helpful introductions on additional topics. Later portions of those chapters present advanced material that you may want to learn if you continue with Smoldyn.
- 
+
  % Installing Smoldyn
 \section{Installing Smoldyn}
 \subsection*{Macintosh}
@@ -229,7 +237,7 @@ Ubuntu systems are slightly more finicky than others. First, you may need to ins
 It can be helpful to have Smoldyn installed on computer A and run from computer B. Running Smoldyn without graphics is trivial. Just ssh into computer A as normal, and run Smoldyn with \ttt{smoldyn filename.txt -t}, where the -t flag implies text-only operation. If you want graphics though, then log in with \ttt{ssh -Y me@compA/directory} and run Smoldyn as normal. Graphics will be slow but should be functional.
 
 Alternatively, I've found the free software TeamViewer to be a convenient method for working on computers remotely. An advantage of this method is that it works even if there are institutional firewalls that prohibit remote computer access.
- 
+
 
 
 
@@ -552,7 +560,7 @@ A simulation runs for a fixed amount of simulated time, using constant length ti
 The size of the time step is set easily enough with \ttt{time\_step}, although knowing what value to use is an art. Smoldyn always becomes more accurate, and runs more slowly, as shorter time steps are used. Thus, an important rule for picking a time step size is to compare the results that are produced for one value with those produced with a time step that is half as long; if the results are identical, within stochastic noise, then the longer time step value is adequate. If not, then a smaller time step needs to be used.
 
 As an initial guess for what time step to use, time steps can be chosen from the spatial resolution that is required. The average displacement of a molecule, which has diffusion coefficient $D$, during one time step is $s = \sqrt{2D \Delta t}$, where $\Delta t$ is the time step. Turning this around, to achieve spatial resolution of $s$, the time step needs to obey
-$$\Delta t < \frac{s^2}{2D_{max}}$$ 
+$$\Delta t < \frac{s^2}{2D_{max}}$$
 where $D_{max}$ is the diffusion coefficient of the fastest diffusing species. The overall spatial resolution for a simulation, which is the largest rms step length, is displayed in the ``molecule parameters'' section of the configuration file diagnostics output. For good accuracy, the spatial resolution should be significantly smaller than geometric features or than radii of curvature, for curved objects.
 
 Other considerations for choosing the time step are the characteristic time scales of the unimolecular and bimolecular reactions. For good accuracy, the time step should generally be significantly shorter than the characteristic time scale of any reaction. Using $k$ as the reaction rate constants, unimolecular and bimolecular reactions lead to the respective time step constraints
@@ -722,7 +730,7 @@ Symbol & meaning & matching example & reaction example\\
 
 \section{Species groups}
 
-You can create your own groups of species by defining species groups. This allows you to set the properties of multiple species at once. It also enables the results for multiple species to be added together for many of the observation commands. Species groups function essentially identically to groups of species that are designated using wildcard characters or using the BioNetGen module. Define a species group with the \ttt{species\_group} statement. 
+You can create your own groups of species by defining species groups. This allows you to set the properties of multiple species at once. It also enables the results for multiple species to be added together for many of the observation commands. Species groups function essentially identically to groups of species that are designated using wildcard characters or using the BioNetGen module. Define a species group with the \ttt{species\_group} statement.
 
 
 % Graphics
@@ -1094,7 +1102,7 @@ Results from example stickrate.txt, shown in red, are compared with the analytic
 The example files in S7\_surfaces/unbounded\_diffusion illustrate and verify the use of a partially absorbing bounding surface to simulate effective unbounded diffusion. These files use the Smoldyn file sphere.txt, which describes a sphere; I created it by using Mathematica to define a sphere, triangulate it, and save it as a ``wrl'' (Virtual Reality Modeling Language) file. Then, I used the wrl2smol utility program to convert it to the Smoldyn-readable file sphere.txt. Other Smoldyn configuration files specify either one or multiple emitters within this sphere and then save concentration line profiles as functions of time. The theoretical concentration distributions for these situations is expressed with a slight extension of eq. 3.5b from Crank, which leads to
 $$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} \erfc \frac{|\mathbf{r}-\mathbf{r}_i |}{2 \sqrt{Dt}}$$
 Here, $C(\mathbf{r})$ is the concentration at position $\mathbf{r}$, $q_i$ is the emission rate of source $i$, $D$ is the diffusion coefficient, $\mathbf{r}_i$ is the location of source $i$, and $t$ is the time since the sources started emitting. At steady-state, this concentration equation simplifies to
-$$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} $$ 
+$$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} $$
 The figure below shows results from the emitter1.txt Smoldyn simulation, in which an emitter at location $\mathbf{r}_1 = (-4.5,0,0)$ microns emits $q_1 = 500$ molecules per second, these molecules have a diffusion coefficient of $D = 3 \mu \textrm{m}^2/\textrm{s}$, and the system is surrounded by a triangulated sphere that is centered at the origin and has radius 10 microns. Absorption to this sphere was set to make the molecules diffuse as though the system were unbounded. Close agreement between simulation and theory show that the algorithm works well.
 
 \begin{figure}[h]
@@ -1185,7 +1193,7 @@ Zeroth order reactions have no reactants and yet produce products at a rate that
 The zeroth order reaction 0 $\rightarrow$ A proceeds according to the mass action rate equation
 $$\frac{d[\textrm{A}]}{dt} = k$$
 $k$ is the reaction rate constant. Solving for the number of A molecules in volume $V$ as a function of time yields the deterministic solution
-$$n(t) = n(0)+kt$$ 
+$$n(t) = n(0)+kt$$
 $n(0)$ and $n(t)$ are the initial and time-dependent numbers of A molecules. There are also fluctuations due to the stochastic nature of chemical processes. Smoldyn assumes that each molecule created in a zeroth order reaction is created independently of each other, which allows Poisson statistics to be used. As an example of a limitation, this is not a perfect description of biochemical protein production because that involves sequential stochastic DNA transcription followed by many relatively rapid mRNA translations, thus leading to stochastic bursts of protein production.
 
 Zeroth order reactions were tested with the file zeroreact.txt. The reaction portion of the configuration file is
@@ -1210,9 +1218,9 @@ This shows zeroth order reaction molecule production with data simulated from th
 \section{Unimolecular reactions}
 
 Order 1 reactions follow the general reaction equation A $\rightarrow$ B. The mass action kinetics for the loss of reactant are described with the differential equation
-$$\frac{d[\textrm{A}]}{dt} = -k [\textrm{A}]$$ 
+$$\frac{d[\textrm{A}]}{dt} = -k [\textrm{A}]$$
 where $k$ is the first order reaction rate. This is solved to yield the deterministic solution for the number of A molecules as a function of time,
-$$n(t) = n(0) e^{-kt}$$ 
+$$n(t) = n(0) e^{-kt}$$
 n(0) is the number of A molecules at time 0 and n(t) is the number at time t.
 
 The example file S8\_reactions/unireact1.txt was used to check unimolecular reaction rates using a wide range of reaction rates. The reaction portion of the configuration file is
@@ -2131,30 +2139,30 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 
 \begin{lstlisting}[style=SSAPython]
 1   """Template for writing Smoldyn model in Python
-2   
+2
 3   Use standard docstring to list basic file information here, including your
 4   name, the development date, what this file does, the model name if you want
 5   one, units used, the file version, distribution terms, etc.
-6   
+6
 7   Enzymatic reactions on a surface, by Steve Andrews, October 2009. Modified by
 8   Dilawar Singh, 2020. Model is public domain. Units are microns and seconds.
 9   It was published in Andrews (2012) Methods for Molecular Biology, 804:519.
 10  It executes a Michaelis-Menten reaction within and on a 2D circle.
 11  """
-12   
+12
 13  __author__ = "Dilawar Singh"
 14  __email__ = "dilawars@ncbs.res.in"
-15  
-16  import smoldyn 
-17  
+15
+16  import smoldyn
+17
 18  # Model parameters
 19  K_FWD = 0.001    # substrate-enzyme association reaction rate
 20  K_BACK = 1       # complex dissociation reaction rate
 21  K_PROD = 1       # complex reaction rate to product
-22   
+22
 23  # Simulation starts with declaring a Simulation object with the system boundaries.
 24  s = smoldyn.Simulation(low=[-1, -1], high=[1, 1])
-25  
+25
 26  # Molecular species and their properties
 27  # Species: S=substrate, E=enzyme, ES=complex, P=product
 28  # Type `help(smoldyn.Species)` in Python console to see all parameters.
@@ -2162,7 +2170,7 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 30  E = s.addSpecies("E", color=dict(all="darkred"), display_size=dict(all=0.03))
 31  P = s.addSpecies("P", difc=3, color=dict(all="darkblue"), display_size=dict(all=0.02))
 32  ES = s.addSpecies("ES", color=dict(all="orange"), display_size=dict(all=0.03))
-33  
+33
 34  # Surfaces in and their properties. Each surface requires at least one panel.
 35  # Add action to `both` faces for surface. You can also use `front` or `back`
 36  # as well. Here, `all` molecules reflect at both surface faces.
@@ -2170,27 +2178,27 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 38  membrane = s.addSurface("membrane", panels=[sph1])
 39  membrane.setAction('both', [S, E, P, ES], "reflect")
 40  membrane.setStyle('both', color="black", thickness=1)
-41  
+41
 42  # Define a compartment, which is region inside the 'membrane' surface.
 43  inside = s.addCompartment(name="inside", surface=membrane, point=[0, 0])
-44  
+44
 45  # Chemical reactions. Here, E + S <-> ES -> P
-46  r1 = s.addBidirectionalReaction("r1", subs=[(E,"front"), (S,"bsoln")], 
+46  r1 = s.addBidirectionalReaction("r1", subs=[(E,"front"), (S,"bsoln")],
 47       prds=[(ES,"front")], kf=K_FWD, kb=K_BACK)
 48  r1.reverse.productPlacement("pgemmax", 0.2)
-49  
+49
 50  r2 = s.addReaction("r2", subs=[(ES, "front")], prds=[(E, "front"),
 51       (P, "bsoln")], rate=K_PROD)
-52  
+52
 53  # Place molecules for initial condition
 54  inside.addMolecules(S, 500)
 55  membrane.addMolecules((E, "front"), 100)
-56  
+56
 57  # Output and other run-time commands
 58  s.setOutputFile('templateout.txt', True)
 59  s.addCommand(cmd="molcountheader templateout.txt", cmd_type="B")
 60  s.addCommand(cmd="molcount templateout.txt", cmd_type="N", step=10)
-61  
+61
 62  s.setGraphics(
 63      "opengl_good", bg_color="white", frame_thickness=1,
 64      text_display=["time", S, (E, "front"), (ES, "front"), P] )
@@ -2262,7 +2270,7 @@ For example, suppose we have the following function, ``computeVm'', which genera
 
 \begin{lstlisting}[style=SSAPython]
 def computeVm(t, args):
-    x, y = args 
+    x, y = args
     return math.sin(t) + x * y + random.random()
 ...
 import smoldyn
@@ -3857,7 +3865,7 @@ Randomly shuffles the sequence of molecules in the molecule list called $listnam
 
 \item{\ttt{shufflereactions} $reactant_1\ reactant_2$}
 
-Randomly shuffles the sequence of bimolecular reactions that reactant species $reactant_1$ and $reactant_2$ can undergo (all states are indexed together). Either or both or $reactant_1$ and $reactant_2$ can be ``all''. 
+Randomly shuffles the sequence of bimolecular reactions that reactant species $reactant_1$ and $reactant_2$ can undergo (all states are indexed together). Either or both or $reactant_1$ and $reactant_2$ can be ``all''.
 
 \item{\ttt{settimestep} $dt$}
 
@@ -3901,7 +3909,7 @@ Translate the compartment called $compartment$ by the shift value given in $\Del
 \ttt{diffusecmpt} $compartment\ code\ stddev_x\ stddev_y\ [cmpt\_bound\ radius\ nsample]$\\
 \ttt{diffusecmpt} $compartment\ code\ stddev_x\ stddev_y\ stddev_z\ [cmpt\_bound\ radius\ nsample]$}
 
-This is similar to \ttt{translatecmpt}, except that this translates the compartment by a Gaussian distributed random amount that has standard deviation on each axis of $stddev_x$, $stddev_y$, and $stddev_z$. Also, this has three optional parameters: $cmpt\_bound$, $radius$, and $nsample$. If they are entered, then Smoldyn keeps the diffusing compartment within the bounding compartment called $cmpt\_bound$ (assuming it was inside initially). It does this by computing $nsample$ test points that are on a spherical shell of radius radius around each of the compartment's interior-defining points and determines if any of these test points would escape the bounding compartment during a move. If so, then the move is rejected, and Smoldyn tries again, up to 10 times. It's important that radius is slightly larger than the actual distance to the compartment edge and that $nsample$ is sufficiently large to cover the effective surface adequately because molecule behavior is unpredictable if a molecule is between two reflective surfaces that end up crossing each other, even if only briefly and by a small amount. 
+This is similar to \ttt{translatecmpt}, except that this translates the compartment by a Gaussian distributed random amount that has standard deviation on each axis of $stddev_x$, $stddev_y$, and $stddev_z$. Also, this has three optional parameters: $cmpt\_bound$, $radius$, and $nsample$. If they are entered, then Smoldyn keeps the diffusing compartment within the bounding compartment called $cmpt\_bound$ (assuming it was inside initially). It does this by computing $nsample$ test points that are on a spherical shell of radius radius around each of the compartment's interior-defining points and determines if any of these test points would escape the bounding compartment during a move. If so, then the move is rejected, and Smoldyn tries again, up to 10 times. It's important that radius is slightly larger than the actual distance to the compartment edge and that $nsample$ is sufficiently large to cover the effective surface adequately because molecule behavior is unpredictable if a molecule is between two reflective surfaces that end up crossing each other, even if only briefly and by a small amount.
 
 \item{\ttt{longrangeforce} $species_1(state)\ species_2(state)\ mobility_1\ mobility_2\ rad_{min}\ rad_{max}\ equation$}
 
@@ -3919,13 +3927,13 @@ The C and C++ APIs are the same. There are two Python APIs. Import the ``high-le
 % Enumerations
 \section{Enumerations}
 
-In C, enumerations are defined in the smoldyn.h header file, so they can be used once that it included. Here is an example of using an enumerated error code as an argument, 
+In C, enumerations are defined in the smoldyn.h header file, so they can be used once that it included. Here is an example of using an enumerated error code as an argument,
 \begin{lstlisting}[style=SSAC]
 #include <libsmoldyn.h>
 smolErrorCodeToString(ECwarning, mystring)
 \end{lstlisting}
 
-In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example, 
+In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example,
 \begin{lstlisting}[style=SSAC]
 import smoldyn._smoldyn as S
 EC=S.ErrorCode
