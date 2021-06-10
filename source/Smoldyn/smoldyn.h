@@ -751,6 +751,88 @@ typedef struct latticesuperstruct
 
 /********************************* Filaments ********************************/
 
+enum FilamentDynamics {FDnone,FDrigidbeads,FDrigidsegments,FDrouse,FDalberts,FDnedelec};
+enum FilamentBiology {FBactin,FBmicrotubule,FBintermediate,FBdsDNA,FBssDNA,FBother};
+
+typedef struct beadstruct {
+	double xyz[3];							// bead coordinates
+	double xyzold[3];						// bead coordinates for prior time
+	} *beadptr;
+
+typedef struct segmentstruct {
+	double xyzfront[3];					// Coords. for segment front
+	double xyzback[3];					// Coords. for segment back
+	double len;									// segment length
+	double ypr[3];							// relative ypr angles
+	double dcm[9];							// relative dcm
+	double adcm[9];							// absolute segment orientation
+	double thk;									// thickness of segment
+	} *segmentptr;
+
+typedef struct filamentstruct {
+	struct filamenttypestruct *filtype;		// filament type structure
+	char *filname;							// filament name (reference, not owned)
+	int maxbs;									// number of beads or segments allocated
+	int nbs;										// number of beads or segments
+	int frontbs;								// index of front bead or segment
+	int backbs;									// index of back bead or segment
+	beadptr *beads;							// array of beads if any
+	segmentptr *segments;				// array of segments if any
+	struct filamentstruct *frontend;	// what front attaches to if anything
+	struct filamentstruct *backend;		// what back attaches to if anything
+	int maxbranch;							// max number of branches off this filament
+	int nbranch;								// number of branches off this filament
+	int *branchspots;						// list of bead or segments where branches are
+	struct filamentstruct **branches;		// list of branching filaments
+	int maxmonomer;							// number of monomers allocated
+	int nmonomer;								// number of monomers
+	int frontmonomer;						// index of front monomer
+	int backmonomer;						// index of back monomer
+	char *monomers;							// monomer codes
+	} *filamentptr;
+
+typedef struct filamenttypestruct {
+	struct filamentsuperstruct *filss;	// filament superstructure
+	char *ftname;								// filament type name (reference, not owned)
+	enum FilamentDynamics dynamics;	// dynamics for the filament
+	int isbead;									// 1 for bead model, 0 for segments
+	enum FilamentBiology biology; // Biological name for filament type
+	double bundlevalue;					// number of microfilaments in bundle
+	double color[4];						// filament color
+	double edgepts;							// thickness of edge for drawing
+	unsigned int edgestipple[2];	// edge stippling [factor, pattern]
+	enum DrawMode drawmode;			// polygon drawing mode
+	double shiny;								// shininess
+	double stdlen;							// minimum energy segment length
+	double stdypr[3];						// minimum energy bend angle
+	double klen;								// force constant for length
+	double kypr[3];							// force constant for angle
+	double kT;									// thermodynamic temperature, [0,inf)
+	double treadrate;						// treadmilling rate constant
+	double viscosity;						// viscosity
+	double filradius;						// bead or segment radius
+	int maxface;								// number of filament faces allocated
+	int nface;									// number of filament faces
+	char **facename;						// list of face names
+	double facetwist;						// twisting rate of faces along filament
+	int maxfil;									// maximum number of filaments
+	int nfil;										// actual number of filaments
+	filamentptr *fillist;				// list of filaments
+	char **filnames;						// names of filaments
+} *filamenttypeptr;
+
+typedef struct filamentsuperstruct {
+	enum StructCond condition;	// structure condition
+	struct simstruct *sim;			// simulation structure
+	int maxtype;								// maximum number of filament types
+	int ntype;									// actual number of filament types
+	char **ftnames;							// filament type names
+	filamenttypeptr *filtypes;	// list of filament types
+	} *filamentssptr;
+
+
+
+/* OLD FILAMENTS
 typedef struct filamentstruct
 {
     struct filamentsuperstruct* filss; // filament superstructure
@@ -787,6 +869,7 @@ typedef struct filamentsuperstruct
     char** fnames;             // filament names
     filamentptr* fillist;      // list of filaments
 } * filamentssptr;
+*/
 
 /******************************** BioNetGen *********************************/
 

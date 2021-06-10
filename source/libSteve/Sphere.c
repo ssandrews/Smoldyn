@@ -16,7 +16,7 @@ of the Gnu Lesser General Public License (LGPL). */
 double Work[9],Work2[9];
 
 
-void Sph_Cart2Sc(double *Cart,double *Sc) {
+void Sph_Cart2Sc(const double *Cart,double *Sc) {
 	Work[0]=sqrt(Cart[0]*Cart[0]+Cart[1]*Cart[1]+Cart[2]*Cart[2]);
 	Work[1]=Work[0]>0?acos(Cart[2]/Work[0]):0;
 	Work[2]=atan2(Cart[1],Cart[0]);
@@ -27,7 +27,7 @@ void Sph_Cart2Sc(double *Cart,double *Sc) {
 	return; }
 
 
-void Sph_Sc2Cart(double *Sc,double *Cart) {
+void Sph_Sc2Cart(const double *Sc,double *Cart) {
 	Work[0]=Sc[0]*sin(Sc[1])*cos(Sc[2]);
 	Work[1]=Sc[0]*sin(Sc[1])*sin(Sc[2]);
 	Work[2]=Sc[0]*cos(Sc[1]);
@@ -37,7 +37,7 @@ void Sph_Sc2Cart(double *Sc,double *Cart) {
 	return; }
 
 
-void Sph_Eay2Ep(double *Eay,double *Ep) {
+void Sph_Eay2Ep(const double *Eay,double *Ep) {
 	Work[0]=cos(0.5*(Eay[3]+Eay[2]))*cos(0.5*Eay[1]);
 	Work[1]=sin(0.5*(Eay[3]-Eay[2]))*sin(0.5*Eay[1]);
 	Work[2]=cos(0.5*(Eay[3]-Eay[2]))*sin(0.5*Eay[1]);
@@ -49,7 +49,7 @@ void Sph_Eay2Ep(double *Eay,double *Ep) {
 	return; }
 
 
-void Sph_Xyz2Xyz(double *Xyz1,double *Xyz2) {
+void Sph_Xyz2Xyz(const double *Xyz1,double *Xyz2) {
 	Xyz2[0]=Xyz1[0];
 	Xyz2[1]=Xyz1[1];
 	Xyz2[2]=Xyz1[2];
@@ -62,7 +62,7 @@ void Sph_Xyz2Xyz(double *Xyz1,double *Xyz2) {
 	return; }
 
 
-void Sph_Eax2Dcm(double *Eax,double *Dcm) {
+void Sph_Eax2Dcm(const double *Eax,double *Dcm) {
 	double cf,cq,cy,sf,sq,sy;
 
 	cq=cos(Eax[0]);
@@ -83,7 +83,7 @@ void Sph_Eax2Dcm(double *Eax,double *Dcm) {
 	return; }
 
 
-void Sph_Eay2Dcm(double *Eay,double *Dcm) {
+void Sph_Eay2Dcm(const double *Eay,double *Dcm) {
 	double cf,cq,cy,sf,sq,sy;
 
 	cq=cos(Eay[0]);
@@ -104,7 +104,7 @@ void Sph_Eay2Dcm(double *Eay,double *Dcm) {
 	return; }
 
 
-void Sph_Xyz2Dcm(double *Xyz,double *Dcm) {
+void Sph_Xyz2Dcm(const double *Xyz,double *Dcm) {
 	double cf,cq,cy,sf,sq,sy;
 	
 	cf=cos(Xyz[0]);
@@ -125,7 +125,7 @@ void Sph_Xyz2Dcm(double *Xyz,double *Dcm) {
 	return; }
 
 
-void Sph_Xyz2Dcmt(double *Xyz,double *Dcmt) {
+void Sph_Xyz2Dcmt(const double *Xyz,double *Dcmt) {
 	double cf,cq,cy,sf,sq,sy;
 	
 	cf=cos(Xyz[0]);
@@ -146,7 +146,7 @@ void Sph_Xyz2Dcmt(double *Xyz,double *Dcmt) {
 	return; }
 
 
-void Sph_Dcm2Xyz(double *Dcm,double *Xyz) {
+void Sph_Dcm2Xyz(const double *Dcm,double *Xyz) {
 	Work[0]=atan2(Dcm[1],Dcm[0]);
 	Work[1]=asin(-Dcm[2]);
 	Work[2]=atan2(Dcm[5],Dcm[8]);
@@ -156,7 +156,7 @@ void Sph_Dcm2Xyz(double *Dcm,double *Xyz) {
 	return; }
 
 
-void Sph_Dcm2Dcm(double *Dcm1,double *Dcm2) {
+void Sph_Dcm2Dcm(const double *Dcm1,double *Dcm2) {
 	Dcm2[0]=Dcm1[0];
 	Dcm2[1]=Dcm1[1];
 	Dcm2[2]=Dcm1[2];
@@ -169,7 +169,7 @@ void Sph_Dcm2Dcm(double *Dcm1,double *Dcm2) {
 	return; }
 
 
-void Sph_Dcm2Dcmt(double *Dcm1,double *Dcm2) {
+void Sph_Dcm2Dcmt(const double *Dcm1,double *Dcm2) {
 	Dcm2[0]=Dcm1[0];
 	Dcm2[4]=Dcm1[4];
 	Dcm2[8]=Dcm1[8];
@@ -188,7 +188,7 @@ void Sph_Dcm2Dcmt(double *Dcm1,double *Dcm2) {
 	return; }
 
 
-void Sph_DcmxDcm(double *Dcm1,double *Dcm2,double *Dcm3) {
+void Sph_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3) {
 	Work[0]=Dcm1[0]*Dcm2[0]+Dcm1[1]*Dcm2[3]+Dcm1[2]*Dcm2[6];
 	Work[1]=Dcm1[0]*Dcm2[1]+Dcm1[1]*Dcm2[4]+Dcm1[2]*Dcm2[7];
 	Work[2]=Dcm1[0]*Dcm2[2]+Dcm1[1]*Dcm2[5]+Dcm1[2]*Dcm2[8];
@@ -210,7 +210,7 @@ void Sph_DcmxDcm(double *Dcm1,double *Dcm2,double *Dcm3) {
 	return; }
 
 
-void Sph_DcmxDcmt(double *Dcm1,double *Dcmt,double *Dcm3) {
+void Sph_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3) {
 	Work[0]=Dcm1[0]*Dcmt[0]+Dcm1[1]*Dcmt[1]+Dcm1[2]*Dcmt[2];
 	Work[1]=Dcm1[0]*Dcmt[3]+Dcm1[1]*Dcmt[4]+Dcm1[2]*Dcmt[5];
 	Work[2]=Dcm1[0]*Dcmt[6]+Dcm1[1]*Dcmt[7]+Dcm1[2]*Dcmt[8];
@@ -232,7 +232,7 @@ void Sph_DcmxDcmt(double *Dcm1,double *Dcmt,double *Dcm3) {
 	return; }
 
 
-void Sph_DcmtxDcm(double *Dcmt,double *Dcm2,double *Dcm3) {
+void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3) {
 	Work[0]=Dcmt[0]*Dcm2[0]+Dcmt[3]*Dcm2[3]+Dcmt[6]*Dcm2[6];
 	Work[1]=Dcmt[0]*Dcm2[1]+Dcmt[3]*Dcm2[4]+Dcmt[6]*Dcm2[7];
 	Work[2]=Dcmt[0]*Dcm2[2]+Dcmt[3]*Dcm2[5]+Dcmt[6]*Dcm2[8];
@@ -260,7 +260,7 @@ void Sph_One2Dcm(double *Dcm) {
 	return; }
 
 
-void Sph_Xyz2Xyzr(double *Xyz,double *Xyzr) {
+void Sph_Xyz2Xyzr(const double *Xyz,double *Xyzr) {
 	double cf,cq,cy,sf,sq,sy;
 
 	cf=cos(Xyz[0]);
@@ -275,7 +275,7 @@ void Sph_Xyz2Xyzr(double *Xyz,double *Xyzr) {
 	return; }
 
 
-void Sph_Dcm2Dcmr(double *Dcm,double *Dcmr) {
+void Sph_Dcm2Dcmr(const double *Dcm,double *Dcmr) {
 	Dcmr[0]=-Dcm[0];
 	Dcmr[1]=-Dcm[1];
 	Dcmr[2]=-Dcm[2];
@@ -307,7 +307,7 @@ void Sph_Rot2Dcm(char axis,double angle,double *Dcm) {
 	return; }
 
 
-void Sph_Newz2Dcm(double *Newz,double psi,double *Dcm) {
+void Sph_Newz2Dcm(const double *Newz,double psi,double *Dcm) {
 	Sph_Cart2Sc(Newz,Work2);
 	Work2[2]+=PI/2.0;
 	Work2[3]=psi-Work2[2];
@@ -316,7 +316,7 @@ void Sph_Newz2Dcm(double *Newz,double psi,double *Dcm) {
 	return; }
 
 
-void Sph_DcmtxUnit(double *Dcmt,char axis,double *vect,double *add,double mult) {
+void Sph_DcmtxUnit(const double *Dcmt,char axis,double *vect,const double *add,double mult) {
 	if(add) {
 		Work[0]=add[0];
 		Work[1]=add[1];
@@ -340,7 +340,7 @@ void Sph_DcmtxUnit(double *Dcmt,char axis,double *vect,double *add,double mult) 
 	return; }
 
 
-double Sph_RotateVectWithNormals3D(double *pt1,double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign) {
+double Sph_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign) {
 	double costheta,ax,ay,az,sintheta,oldnormint[3],*oldnormptr;
 	double costheta1,dcmxx,dcmxy,dcmxz,dcmyx,dcmyy,dcmyz,dcmzx,dcmzy,dcmzz,x,y,z;
 	int sinsign;

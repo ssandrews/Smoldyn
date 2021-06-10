@@ -1092,8 +1092,9 @@ void RenderSurfaces(simptr sim) {
 void RenderFilaments(simptr sim) {
 #ifdef __gl_h_
 	filamentssptr filss;
+	filamenttypeptr filtype;
 	filamentptr fil;
-	int f,vtx,graphics;
+	int f,vtx,graphics,ft;
 	double *point;
 	enum DrawMode drawmode;
 	GLfloat glfvect[4];
@@ -1102,39 +1103,48 @@ void RenderFilaments(simptr sim) {
 	if(!filss) return;
 	graphics=sim->graphss->graphics;
 
-	for(f=0;f<filss->nfil;f++) {
-		fil=filss->fillist[f];
-		drawmode=fil->drawmode;
-		if(drawmode==DMno);
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		drawmode=filtype->drawmode;
 
-		else if(drawmode&DMvert || drawmode&DMedge) {
-			glColor4fv(gl2Double2GLfloat(fil->color,glfvect,4));
-			if(graphics>=2 && fil->edgestipple[1]!=0xFFFF) {
-				glEnable(GL_LINE_STIPPLE);
-				glLineStipple((GLint)fil->edgestipple[0],(GLushort)fil->edgestipple[1]); }
-			if(drawmode&DMedge) {
-				glLineWidth((GLfloat)fil->edgepts);
-				glBegin(GL_LINE_STRIP); }
-			else {
-				glPointSize((GLfloat)fil->edgepts);
-				glBegin(GL_POINTS); }
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(drawmode==DMno);
 
-			for(vtx=fil->front;vtx<=fil->back;vtx++) {
-				point=fil->sxyz[vtx];
-				glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
-			glEnd(); }
+			else if(drawmode&DMvert || drawmode&DMedge) {
+				glColor4fv(gl2Double2GLfloat(filtype->color,glfvect,4));
+				if(graphics>=2 && filtype->edgestipple[1]!=0xFFFF) {
+					glEnable(GL_LINE_STIPPLE);
+					glLineStipple((GLint)filtype->edgestipple[0],(GLushort)filtype->edgestipple[1]); }
+				if(drawmode&DMedge) {
+					glLineWidth((GLfloat)filtype->edgepts);
+					glBegin(GL_LINE_STRIP); }
+				else {
+					glPointSize((GLfloat)filtype->edgepts);
+					glBegin(GL_POINTS); }
 
-		else if(drawmode&DMface) {
-			glPolygonMode(GL_FRONT,GL_FILL);
-			glCullFace(GL_BACK);
-			if(graphics>=3) {
-				//glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(srf->fcolor,glfvect,4));
-				//glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(srf->bcolor,glfvect,4));
-				glMateriali(GL_FRONT,GL_SHININESS,(GLint)fil->shiny); }
-			for(vtx=fil->front;vtx<fil->back;vtx++)
-				/*gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor)*/; }
-		if(glIsEnabled(GL_LINE_STIPPLE))
-			glDisable(GL_LINE_STIPPLE); }
+				for(vtx=fil->frontbs;vtx<fil->backbs;vtx++) {
+					if(filtype->isbead)
+						point=fil->beads[vtx]->xyz;
+					else
+						point=fil->segments[vtx]->xyzfront;
+					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
+					if(!filtype->isbead) {
+						point=fil->segments[vtx-1]->xyzback;
+						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
+				glEnd(); }
+
+			else if(drawmode&DMface) {
+				glPolygonMode(GL_FRONT,GL_FILL);
+				glCullFace(GL_BACK);
+				if(graphics>=3) {
+					//glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(srf->fcolor,glfvect,4));
+					//glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(srf->bcolor,glfvect,4));
+					glMateriali(GL_FRONT,GL_SHININESS,(GLint)filtype->shiny); }
+				for(vtx=fil->frontbs;vtx<fil->backbs;vtx++)
+					/*gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor)*/; }
+			if(glIsEnabled(GL_LINE_STIPPLE))
+				glDisable(GL_LINE_STIPPLE); }}
 
 #endif
 	return; }

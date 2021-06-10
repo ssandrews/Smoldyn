@@ -550,11 +550,12 @@ int simsettime(simptr sim,double time,int code) {
 /* simreadstring */
 int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
+	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR];
 	char errstr[STRCHARLONG];
-	int er,i,nmol,d,i1,s,c,ll,order,*index;
-	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,f,detailsi[8];
+	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
+	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
 	long int pserno,sernolist[MAXPRODUCT];
-	double flt1,flt2,v1[DIMMAX*DIMMAX],v2[4],poslo[DIMMAX],poshi[DIMMAX];
+	double flt1,flt2,v1[DIMMAX*DIMMAX],v2[4],poslo[DIMMAX],poshi[DIMMAX],thick;
 	enum MolecState ms,rctstate[MAXORDER];
 	enum PanelShape ps;
 	enum RevParam rpart;
@@ -565,6 +566,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	surfaceptr srf;
 	portptr port;
 	filamentptr fil;
+	filamenttypeptr filtype;
+	filamentssptr filss;
 	long int li1;
 	listptrli lilist;
 	listptrv vlist;
@@ -1436,12 +1439,9 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	// filaments
 
 	else if(!strcmp(word,"max_filament")) {				// max_filament
-		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
-		CHECKS(itct==1,"max_filament needs to be a number");
-		CHECKS(i1>=0,"max_filament must be at least 0");
-		CHECKS(filenablefilaments(sim,i1),"failed to enable filaments");
-		CHECKS(!strnword(line2,2),"unexpected text following max_filament"); }
+		CHECKS(0,"max_filament has been deprecated"); }
 
+/*
 	else if(!strcmp(word,"new_filament")) {				// new_filament
 		fil=filreadstring(sim,pfp,NULL,"name",line2);
 		CHECK(fil!=NULL); }
@@ -1457,6 +1457,49 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		fil=sim->filss->fillist[f];
 		fil=filreadstring(sim,pfp,fil,nm1,line2);
 		CHECK(fil!=NULL); }
+*/
+
+	else if(!strcmp(word,"random_filament")) {		// random_filament
+		CHECKS(sim->filss,"need to enter a filament type before random_filament");
+		filenablefilaments(sim);
+		filss=sim->filss;
+		itct=sscanf(line2,"%s %s",nm,nm1);
+		CHECKS(itct==2,"random_filament format: name type segments [x y z]");
+		ft=stringfind(filss->ftnames,filss->ntype,nm1);
+		CHECKS(ft>=0,"filament type is unknown");
+		filtype=filss->filtypes[ft];
+		fil=filaddfilament(filtype,nm);
+		CHECKS(fil,"unable to add filament to simulation");
+		line2=strnword(line2,3);
+
+		CHECKS(line2,"random_filament format: name type segments [x y z]");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKS(itct==1,"random_segments format: number [x y z] [thickness]");
+		CHECKS(i1>0,"number needs to be >0");
+		line2=strnword(line2,2);
+		if(fil->nbs==0) {
+			CHECKS(line2,"missing x y z position information");
+			itct=sscanf(line2,"%s %s %s",str1,str2,str3);
+			CHECKS(itct==3,"random_segments format: number [x y z] [thickness]");
+			line2=strnword(line2,4); }
+		else {
+			sprintf(str1,"%i",0);
+			sprintf(str2,"%i",0);
+			sprintf(str3,"%i",0); }
+		thick=1;
+		if(line2) {
+			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);
+			CHECKS(itct==1,"random_segments format: number [x y z] [thickness]");
+			CHECKS(thick>0,"thickness needs to be >0");
+			line2=strnword(line2,2); }
+		if(filtype->isbead)
+			er=filAddRandomBeads(fil,i1,str1,str2,str3);
+		else
+			er=filAddRandomSegments(fil,i1,str1,str2,str3,thick);
+		CHECKS(er!=2,"random_segments positions need to be 'u' or value");
+		CHECKS(er==0,"BUG: error in filAddRandomsegments");
+		CHECKS(!line2,"unexpected text following random_segments"); }
+
 
 	// reactions
 
@@ -2131,8 +2174,11 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 
 		else if(!strcmp(word,"start_bng")) {					// start_bng
 			er=loadbng(sim,&pfp,line2);
-                        if(er) return 1;
-                        er=bngupdate(sim); }
+			if(er) return 1;
+			er=bngupdate(sim); }
+
+		else if(!strcmp(word,"start_filament_type")) {	// start_filament_type
+			er=filload(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_filament")) {			// start_filament
 			er=filload(sim,&pfp,line2); }
