@@ -1123,7 +1123,7 @@ void RenderFilaments(simptr sim) {
 					glPointSize((GLfloat)filtype->edgepts);
 					glBegin(GL_POINTS); }
 
-				for(vtx=fil->frontbs;vtx<fil->backbs;vtx++) {
+				for(vtx=fil->frontbs;vtx<fil->nbs+fil->frontbs;vtx++) {
 					if(filtype->isbead)
 						point=fil->beads[vtx]->xyz;
 					else
@@ -1141,7 +1141,7 @@ void RenderFilaments(simptr sim) {
 					//glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(srf->fcolor,glfvect,4));
 					//glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(srf->bcolor,glfvect,4));
 					glMateriali(GL_FRONT,GL_SHININESS,(GLint)filtype->shiny); }
-				for(vtx=fil->frontbs;vtx<fil->backbs;vtx++)
+				for(vtx=fil->frontbs;vtx<fil->nbs+fil->frontbs;vtx++)
 					/*gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor)*/; }
 			if(glIsEnabled(GL_LINE_STIPPLE))
 				glDisable(GL_LINE_STIPPLE); }}

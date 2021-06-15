@@ -1,0 +1,55 @@
+# Filaments
+
+#graphics opengl
+#random_seed 2
+graphics opengl_better
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 2 r
+
+species red
+
+difc red 3
+
+color red white
+
+time_start 0
+time_stop 10000
+time_step 0.01
+
+frame_thickness 0
+
+start_filament_type tread
+color black
+thickness 2
+polygon edge
+kT 1
+treadmill_rate 1
+standard_length 5
+standard_angle 0 0 0
+force_length 0
+force_angle 100 0 0
+end_filament_type
+
+random_filament fil1 tread 5 10 50 1
+
+
+start_surface bounds
+action both all reflect
+polygon both edge
+thickness 1
+panel cyl 50 50 0 50 50 2 50 50 1
+#panel rect +0	0 0 0		100 2
+#panel rect -0	100 0 0		100 2
+#panel rect +1	0 0 0		100 2
+#panel rect -1	0 100 0		100 2
+#panel rect +2	0 0 0		100 100
+#panel rect -2	0 0 2		100 100
+end_surface
+
+end_file
+
+
+

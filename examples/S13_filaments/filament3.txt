@@ -1,0 +1,50 @@
+# Filaments
+
+#graphics opengl
+#random_seed 2
+graphics opengl_better
+
+dim 3
+boundaries x -1000 1000 r
+boundaries y -1000 1000 r
+boundaries z -1000 1000 r
+
+species red
+
+difc red 3
+
+color red white
+
+time_start 0
+time_stop 50000
+time_step 0.01
+
+frame_thickness 0
+
+mol 1 red u u u
+
+start_filament_type template
+color black
+thickness 2
+polygon edge
+kT 1
+dynamics rouse
+standard_length 5
+standard_angle 0 0 0
+force_length 0
+force_angle 0 0 0
+#random_segments 49 10 50 1
+bead_radius 2
+viscosity 3
+end_filament_type
+
+random_filament fil1 template 49  10 50 1
+#random_filament fil2 template 49  20 50 1
+#random_filament fil3 template 49  30 50 1
+#random_filament fil4 template 49  40 50 1
+#random_filament fil5 template 49  50 50 1
+
+end_file
+
+
+

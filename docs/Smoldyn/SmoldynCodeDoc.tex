@@ -4144,13 +4144,15 @@ Not written yet. This function is supposed to modify the length of a single segm
 \hfill \\
 Not written yet. This will reverse the sequence of segments in a filament.
 
-\item[\ttt{int filCopyFilament(const filamentptr filfrom,filamentptr filto,const char *fname);}]
+\item[\ttt{int}]
+\ttt{filCopyFilament(filamentptr filto,const filamentptr filfrom);}
 \hfill \\
-This function was deleted. It was designed to copy all of the values in a filament to another filament, but I don't think it was likely to be useful.
+This function copies all of the values from \ttt{filfrom} to \ttt{filto} except for the name, completely overwriting any prior data in \ttt{filto} in the process. Any elements in bead, segment, and monomer lists are shifted back so that they start at index number 0. Returns 0 for success, 1 for out of memory, or 2 for illegal function inputs.
 
 \item[\underline{Filament type}]
 
-\item[\ttt{int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value)}]
+\item[\ttt{int}]
+\ttt{filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value)}
 \hfill \\
 Sets various filament type parameters. The parameter name is \ttt{param} and it is set to the value \ttt{value}. If this parameter has multiple inidices, enter the index to be changed in \ttt{index}, or enter \ttt{index} as -1 to set all of the indices at once to the same value. Returns 0 for success or 2 for out of bounds value. The parameter options are: \ttt{stdlen} for the standard length, \ttt{stdypr} for the standard yaw-pitch-roll angles, \ttt{klen} for the stretching force constant, \ttt{kypr} for the bending force constants, \ttt{kT} for the thermodynamic energy, \ttt{treadrate} for the treadmilling rate, \ttt{viscosity} for the medium viscosity, and \ttt{beadradius} for the bead radius.
 
@@ -4189,9 +4191,12 @@ Local. This function sets the condition of the filament superstructure. Set \ttt
 \hfill \\
 Allocates a filament superstructure, adds it to the simulation structure, and sets the filament condition to \ttt{SClists}.
 
-\item[\ttt{filamentptr filaddfilament(const filamenttypeptr filtype,const char *filname);}]
+\item[\ttt{filamentptr}]
+\ttt{filAddFilament(filamenttypeptr filtype,filamentptr fil,const char *filname);}
 \hfill \\
-Add a new filament to the simulation, which is named \ttt{filname}, returning a pointer to the new filament. If a filament with this name already exists, this returns a pointer to the existing filament.
+This has several models, all of which generally add a new filament to the simulation, which is named \ttt{filname}, returning a pointer to the new filament. If a filament with this name already exists, this returns a pointer to the existing filament.
+
+If both \ttt{filtype} and \ttt{fil} are \ttt{NULL}, this creates a new filament structure, with its own \ttt{filname} string, and returns it; it cannot participate in simulations because it's not part of a filament type, but it can be set up. This detached filament is typically then returned to this function, now with both \ttt{filtype} and \ttt{fil} defined, and this function copies it into the filament type, freeing the extra name string in the process. Alternatively, a tidier approach is to know the filament type when creating a new filament, in which case \ttt{filtype} is defined and \ttt{fil} is \ttt{NULL}; in this case, the function adds a new filament structure to the correct place in the simulation and returns a pointer to it. Finally, there's no point in calling this function with \ttt{fil} defined and \ttt{filtype} equal to \ttt{NULL} because there's nothing sensible that it can do, so it just returns \ttt{fil}.
 
 \item[\ttt{filamenttypeptr filAddFilamentType(simptr sim,const char *ftname)}]
 \hfill \\

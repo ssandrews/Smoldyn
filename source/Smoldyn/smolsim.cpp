@@ -1461,14 +1461,13 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"random_filament")) {		// random_filament
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
-		filenablefilaments(sim);
 		filss=sim->filss;
 		itct=sscanf(line2,"%s %s",nm,nm1);
 		CHECKS(itct==2,"random_filament format: name type segments [x y z]");
 		ft=stringfind(filss->ftnames,filss->ntype,nm1);
 		CHECKS(ft>=0,"filament type is unknown");
 		filtype=filss->filtypes[ft];
-		fil=filaddfilament(filtype,nm);
+		fil=filAddFilament(filtype,NULL,nm);
 		CHECKS(fil,"unable to add filament to simulation");
 		line2=strnword(line2,3);
 
@@ -2178,10 +2177,10 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 			er=bngupdate(sim); }
 
 		else if(!strcmp(word,"start_filament_type")) {	// start_filament_type
-			er=filload(sim,&pfp,line2); }
+			er=filloadtype(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_filament")) {			// start_filament
-			er=filload(sim,&pfp,line2); }
+			er=filloadfil(sim,&pfp,line2,NULL); }
 
 		else if(!strcmp(word,"start_rules")) {				// start_rules
 			CHECKS(0,"Moleculizer support has been discontinued in Smoldyn"); }

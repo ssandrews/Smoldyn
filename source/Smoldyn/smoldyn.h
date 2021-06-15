@@ -752,7 +752,7 @@ typedef struct latticesuperstruct
 /********************************* Filaments ********************************/
 
 enum FilamentDynamics {FDnone,FDrigidbeads,FDrigidsegments,FDrouse,FDalberts,FDnedelec};
-enum FilamentBiology {FBactin,FBmicrotubule,FBintermediate,FBdsDNA,FBssDNA,FBother};
+enum FilamentBiology {FBactin,FBmicrotubule,FBintermediate,FBdsDNA,FBssDNA,FBother,FBnone};
 
 typedef struct beadstruct {
 	double xyz[3];							// bead coordinates
@@ -775,7 +775,6 @@ typedef struct filamentstruct {
 	int maxbs;									// number of beads or segments allocated
 	int nbs;										// number of beads or segments
 	int frontbs;								// index of front bead or segment
-	int backbs;									// index of back bead or segment
 	beadptr *beads;							// array of beads if any
 	segmentptr *segments;				// array of segments if any
 	struct filamentstruct *frontend;	// what front attaches to if anything
@@ -787,7 +786,6 @@ typedef struct filamentstruct {
 	int maxmonomer;							// number of monomers allocated
 	int nmonomer;								// number of monomers
 	int frontmonomer;						// index of front monomer
-	int backmonomer;						// index of back monomer
 	char *monomers;							// monomer codes
 	} *filamentptr;
 
