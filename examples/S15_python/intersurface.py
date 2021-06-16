@@ -51,11 +51,7 @@ def test_getters():
     rxn1.setIntersurface([1, 1])
 
     s.addGraphics("opengl_good")
-
-    c = s.count_all()
-    print(c)
-
-    #s = s.run(1000, dt=0.1)
+    s = s.run(1000, dt=0.1)
 
 
 def main():
