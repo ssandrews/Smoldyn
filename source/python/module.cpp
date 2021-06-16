@@ -418,6 +418,7 @@ PYBIND11_MODULE(_smoldyn, m)
 
       .def("setModelpath", &Simulation::setModelpath)
       .def("getBoundaries", &Simulation::getBoundaries)
+      .def("count", &Simulation::count)
 
       // Simulation extra.
       .def("runSim", &Simulation::runSim)

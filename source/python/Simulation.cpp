@@ -9,9 +9,14 @@
 
 using namespace std;
 
-Simulation::Simulation(vector<double> &low, vector<double> &high,
-                       vector<string> &boundary_type)
-    : low_(low), high_(high), curtime_(0.0), initDisplay_(false), debug_(false)
+Simulation::Simulation(vector<double>& low,
+  vector<double>& high,
+  vector<string>& boundary_type)
+  : low_(low)
+  , high_(high)
+  , curtime_(0.0)
+  , initDisplay_(false)
+  , debug_(false)
 {
     assert(low.size() == high.size());
 
@@ -20,8 +25,7 @@ Simulation::Simulation(vector<double> &low, vector<double> &high,
 
     assert(boundary_type.size() == getDim());
 
-    for (size_t d = 0; d < getDim(); d++)
-    {
+    for (size_t d = 0; d < getDim(); d++) {
         string t = boundary_type[d];
         if (t.size() == 1)
             smolSetBoundaryType(sim_, d, -1, t[0]);
@@ -32,54 +36,71 @@ Simulation::Simulation(vector<double> &low, vector<double> &high,
 }
 
 // Factory function.
-Simulation::Simulation(const char *filepath, const char *flags)
-    : curtime_(0.0), initDisplay_(false), debug_(false)
+Simulation::Simulation(const char* filepath, const char* flags)
+  : curtime_(0.0)
+  , initDisplay_(false)
+  , debug_(false)
 {
     auto path = splitPath(string(filepath));
-    sim_ =
-        smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
+    sim_ = smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
 }
 
-Simulation::~Simulation() { smolFreeSim(sim_); }
+Simulation::~Simulation()
+{
+    smolFreeSim(sim_);
+}
 
-size_t Simulation::getDim() const
+size_t
+Simulation::getDim() const
 {
     assert(sim_->dim >= 0);
     return (size_t)sim_->dim;
 }
 
-bool Simulation::initialize()
+map<string, size_t>
+Simulation::count() const
+{
+    map<string, size_t> res{
+#ifdef ENABLE_PYTHON_CALLBACK
+        { "functions", sim_->ncallbacks },
+#endif
+        { "dim", sim_->dim },
+        { "variables", sim_->nvar }
+    };
+
+    res["species"] = sim_->mols ? sim_->mols->nspecies : 0;
+    res["compartment"] = sim_->cmptss ? sim_->cmptss->ncmpt : 0;
+    res["surface"] = sim_->srfss ? sim_->srfss->nsrf : 0;
+
+    return res;
+}
+
+bool
+Simulation::initialize()
 {
     if (sim_)
         return true;
 
-    if (getDim() == 0 || getDim() > 3)
-    {
-        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got "
-             << getDim() << endl;
+    if (getDim() == 0 || getDim() > 3) {
+        cerr << __FUNCTION__ << ": dim must be between 0 and 3. Got " << getDim() << endl;
         return false;
     }
 
-    if (low_.size() != getDim())
-    {
+    if (low_.size() != getDim()) {
         cerr << __FUNCTION__ << ": missing lowbounds" << endl;
         return false;
     }
 
-    if (high_.size() != getDim())
-    {
+    if (high_.size() != getDim()) {
         cerr << __FUNCTION__ << ": missing highbounds" << endl;
         return false;
     }
 
-    for (size_t d = 0; d < getDim(); d++)
-    {
-        if (low_[d] >= high_[d])
-        {
+    for (size_t d = 0; d < getDim(); d++) {
+        if (low_[d] >= high_[d]) {
             cerr << __FUNCTION__ << ": lowbounds must be < highbounds"
-                 << " which is not true at index " << d
-                 << " where lowbounds is " << low_[d] << " and highbound is "
-                 << high_[d] << endl;
+                 << " which is not true at index " << d << " where lowbounds is "
+                 << low_[d] << " and highbound is " << high_[d] << endl;
             return false;
         }
     }
@@ -102,7 +123,8 @@ bool Simulation::initialize()
  *
  * @return true.
  */
-bool Simulation::setModelpath(const string &modelpath)
+bool
+Simulation::setModelpath(const string& modelpath)
 {
     assert(sim_);
     auto p = splitPath(modelpath);
@@ -111,15 +133,13 @@ bool Simulation::setModelpath(const string &modelpath)
     return true;
 }
 
-ErrorCode Simulation::runSim(double stoptime, double dt, bool display,
-                             bool overwrite)
+ErrorCode
+Simulation::runSim(double stoptime, double dt, bool display, bool overwrite)
 {
     ErrorCode er;
 
-    if (!sim_)
-    {
-        if (!initialize())
-        {
+    if (!sim_) {
+        if (!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
             return ECerror;
         }
@@ -128,29 +148,25 @@ ErrorCode Simulation::runSim(double stoptime, double dt, bool display,
     gl2glutInit(0, NULL);
 
     er = smolOpenOutputFiles(sim_, overwrite);
-    if (er != ErrorCode::ECok)
-    {
+    if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not open output files." << endl;
         return er;
     }
 
     auto er1 = smolSetTimeStep(sim_, dt);
     auto er2 = smolSetTimeStop(sim_, stoptime);
-    if (er1 != ErrorCode::ECok || er2 != ErrorCode::ECok)
-    {
+    if (er1 != ErrorCode::ECok || er2 != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not update simtimes." << endl;
         return er;
     }
 
     er = smolUpdateSim(sim_);
-    if (er != ErrorCode::ECok)
-    {
+    if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not update simstruct." << endl;
         return er;
     }
 
-    if (display && !initDisplay_)
-    {
+    if (display && !initDisplay_) {
         smolDisplaySim(sim_);
         initDisplay_ = true;
     }
@@ -161,23 +177,23 @@ ErrorCode Simulation::runSim(double stoptime, double dt, bool display,
     return er;
 }
 
-ErrorCode Simulation::runUntil(const double breaktime, const double dt,
-                               bool display, bool overwrite)
+ErrorCode
+Simulation::runUntil(const double breaktime,
+  const double dt,
+  bool display,
+  bool overwrite)
 {
     assert(sim_);
 
-    if (!sim_)
-    {
-        if (!initialize())
-        {
+    if (!sim_) {
+        if (!initialize()) {
             cerr << __FUNCTION__ << ": Could not initialize sim." << endl;
             return ECerror;
         }
     }
 
     auto er = smolOpenOutputFiles(sim_, overwrite);
-    if (er != ErrorCode::ECok)
-    {
+    if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Simulation skipped." << endl;
     }
 
@@ -186,23 +202,25 @@ ErrorCode Simulation::runUntil(const double breaktime, const double dt,
         smolSetTimeStep(sim_, dt);
     smolUpdateSim(sim_);
 
-    if (display && (!initDisplay_))
-    {
+    if (display && (!initDisplay_)) {
         smolDisplaySim(sim_);
         initDisplay_ = true;
     }
     return smolRunSimUntil(sim_, breaktime);
 }
 
-bool Simulation::connect(const py::function &func, const py::object &target,
-                         const size_t step, const py::list &args)
+bool
+Simulation::connect(const py::function& func,
+  const py::object& target,
+  const size_t step,
+  const py::list& args)
 {
     assert(sim_->ncallbacks < MAX_PY_CALLBACK);
-    if (sim_->ncallbacks >= MAX_PY_CALLBACK)
-    {
-        py::print("Error: Maximum of ", MAX_PY_CALLBACK,
-                  " callbacks are allowed. Current number of callbacks: ",
-                  sim_->ncallbacks);
+    if (sim_->ncallbacks >= MAX_PY_CALLBACK) {
+        py::print("Error: Maximum of ",
+          MAX_PY_CALLBACK,
+          " callbacks are allowed. Current number of callbacks: ",
+          sim_->ncallbacks);
         return false;
     }
 
@@ -220,35 +238,54 @@ bool Simulation::connect(const py::function &func, const py::object &target,
 }
 
 // get the pointer
-simptr Simulation::getSimPtr() const
+simptr
+Simulation::getSimPtr() const
 {
     assert(sim_);
     return sim_;
 }
 
 // set the pointer.
-void Simulation::setSimPtr(simptr sim) { sim_ = sim; }
+void
+Simulation::setSimPtr(simptr sim)
+{
+    sim_ = sim;
+}
 
-void Simulation::setCurtime(double curtime) { curtime_ = curtime; }
+void
+Simulation::setCurtime(double curtime)
+{
+    curtime_ = curtime;
+}
 
-double Simulation::getCurtime() const { return curtime_; }
+double
+Simulation::getCurtime() const
+{
+    return curtime_;
+}
 
-bool Simulation::isValid() { return sim_ ? true : false; }
+bool
+Simulation::isValid()
+{
+    return sim_ ? true : false;
+}
 
-pair<vector<double>, vector<double>> Simulation::getBoundaries(void)
+pair<vector<double>, vector<double>>
+Simulation::getBoundaries(void)
 {
     vector<double> low;
     vector<double> high;
-    for (size_t d = 0; d < (size_t) sim_->dim; d++)
-    {
+    for (size_t d = 0; d < (size_t)sim_->dim; d++) {
         low.push_back(sim_->wlist[2 * d]->pos);
         high.push_back(sim_->wlist[2 * d + 1]->pos);
     }
     return make_pair(low, high);
 }
 
-void Simulation::addCommand(const string &cmd, char cmd_type,
-                            const map<string, double> &kwargs)
+void
+Simulation::addCommand(const string& cmd,
+  char cmd_type,
+  const map<string, double>& kwargs)
 {
     auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, kwargs);
     c->addCommandToSimptr();
@@ -259,7 +296,8 @@ void Simulation::addCommand(const string &cmd, char cmd_type,
     // printf("*** Simulation.cpp Simulation::addCommand B\n"); //??
 }
 
-void Simulation::addCommandStr(char *cmd)
+void
+Simulation::addCommandStr(char* cmd)
 {
     auto c = make_unique<Command>(getSimPtr(), cmd);
     c->addCommandToSimptr();

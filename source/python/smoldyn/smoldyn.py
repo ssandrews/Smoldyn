@@ -176,8 +176,8 @@ class Species(object):
 
         Parameters
         ----------
-        difconst : DiffConst
-            Default value is 0. If a single value is given, all states of the
+        difconst : DiffConst (default '0')
+            If a single value is given, all states of the
             molecule are assigned the same value. To assign state specific
             values, use a dictionary. Missing states will be assigned 0.0.
         """

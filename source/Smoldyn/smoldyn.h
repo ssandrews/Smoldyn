@@ -8,14 +8,14 @@
 #ifndef __smoldyn_h__
 #define __smoldyn_h__
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 
 #ifdef ENABLE_PYTHON_CALLBACK
 #define MAX_PY_CALLBACK 10
 #include "../python/CallbackFunc.h"
 #endif
 
-#endif     // -----  not __CPLUSPLSU  -----
+#endif // -----  not __CPLUSPLSU  -----
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -206,8 +206,8 @@ typedef struct cmdsuperstruct
 #define NSVC_H_
 
 #ifdef NSVC_CPP
-#include <string.h>
 #include "Kairos.h"
+#include <string.h>
 using Kairos::NextSubvolumeMethod;
 
 #if defined(HAVE_VTK)
@@ -751,84 +751,104 @@ typedef struct latticesuperstruct
 
 /********************************* Filaments ********************************/
 
-enum FilamentDynamics {FDnone,FDrigidbeads,FDrigidsegments,FDrouse,FDalberts,FDnedelec};
-enum FilamentBiology {FBactin,FBmicrotubule,FBintermediate,FBdsDNA,FBssDNA,FBother,FBnone};
+enum FilamentDynamics
+{
+    FDnone,
+    FDrigidbeads,
+    FDrigidsegments,
+    FDrouse,
+    FDalberts,
+    FDnedelec
+};
+enum FilamentBiology
+{
+    FBactin,
+    FBmicrotubule,
+    FBintermediate,
+    FBdsDNA,
+    FBssDNA,
+    FBother,
+    FBnone
+};
 
-typedef struct beadstruct {
-	double xyz[3];							// bead coordinates
-	double xyzold[3];						// bead coordinates for prior time
-	} *beadptr;
+typedef struct beadstruct
+{
+    double xyz[3];    // bead coordinates
+    double xyzold[3]; // bead coordinates for prior time
+} * beadptr;
 
-typedef struct segmentstruct {
-	double xyzfront[3];					// Coords. for segment front
-	double xyzback[3];					// Coords. for segment back
-	double len;									// segment length
-	double ypr[3];							// relative ypr angles
-	double dcm[9];							// relative dcm
-	double adcm[9];							// absolute segment orientation
-	double thk;									// thickness of segment
-	} *segmentptr;
+typedef struct segmentstruct
+{
+    double xyzfront[3]; // Coords. for segment front
+    double xyzback[3];  // Coords. for segment back
+    double len;         // segment length
+    double ypr[3];      // relative ypr angles
+    double dcm[9];      // relative dcm
+    double adcm[9];     // absolute segment orientation
+    double thk;         // thickness of segment
+} * segmentptr;
 
-typedef struct filamentstruct {
-	struct filamenttypestruct *filtype;		// filament type structure
-	char *filname;							// filament name (reference, not owned)
-	int maxbs;									// number of beads or segments allocated
-	int nbs;										// number of beads or segments
-	int frontbs;								// index of front bead or segment
-	beadptr *beads;							// array of beads if any
-	segmentptr *segments;				// array of segments if any
-	struct filamentstruct *frontend;	// what front attaches to if anything
-	struct filamentstruct *backend;		// what back attaches to if anything
-	int maxbranch;							// max number of branches off this filament
-	int nbranch;								// number of branches off this filament
-	int *branchspots;						// list of bead or segments where branches are
-	struct filamentstruct **branches;		// list of branching filaments
-	int maxmonomer;							// number of monomers allocated
-	int nmonomer;								// number of monomers
-	int frontmonomer;						// index of front monomer
-	char *monomers;							// monomer codes
-	} *filamentptr;
+typedef struct filamentstruct
+{
+    struct filamenttypestruct* filtype; // filament type structure
+    char* filname;                      // filament name (reference, not owned)
+    int maxbs;                          // number of beads or segments allocated
+    int nbs;                            // number of beads or segments
+    int frontbs;                        // index of front bead or segment
+    beadptr* beads;                     // array of beads if any
+    segmentptr* segments;               // array of segments if any
+    struct filamentstruct* frontend;    // what front attaches to if anything
+    struct filamentstruct* backend;     // what back attaches to if anything
+    int maxbranch;                      // max number of branches off this filament
+    int nbranch;                        // number of branches off this filament
+    int* branchspots;                   // list of bead or segments where branches are
+    struct filamentstruct** branches;   // list of branching filaments
+    int maxmonomer;                     // number of monomers allocated
+    int nmonomer;                       // number of monomers
+    int frontmonomer;                   // index of front monomer
+    char* monomers;                     // monomer codes
+} * filamentptr;
 
-typedef struct filamenttypestruct {
-	struct filamentsuperstruct *filss;	// filament superstructure
-	char *ftname;								// filament type name (reference, not owned)
-	enum FilamentDynamics dynamics;	// dynamics for the filament
-	int isbead;									// 1 for bead model, 0 for segments
-	enum FilamentBiology biology; // Biological name for filament type
-	double bundlevalue;					// number of microfilaments in bundle
-	double color[4];						// filament color
-	double edgepts;							// thickness of edge for drawing
-	unsigned int edgestipple[2];	// edge stippling [factor, pattern]
-	enum DrawMode drawmode;			// polygon drawing mode
-	double shiny;								// shininess
-	double stdlen;							// minimum energy segment length
-	double stdypr[3];						// minimum energy bend angle
-	double klen;								// force constant for length
-	double kypr[3];							// force constant for angle
-	double kT;									// thermodynamic temperature, [0,inf)
-	double treadrate;						// treadmilling rate constant
-	double viscosity;						// viscosity
-	double filradius;						// bead or segment radius
-	int maxface;								// number of filament faces allocated
-	int nface;									// number of filament faces
-	char **facename;						// list of face names
-	double facetwist;						// twisting rate of faces along filament
-	int maxfil;									// maximum number of filaments
-	int nfil;										// actual number of filaments
-	filamentptr *fillist;				// list of filaments
-	char **filnames;						// names of filaments
-} *filamenttypeptr;
+typedef struct filamenttypestruct
+{
+    struct filamentsuperstruct* filss; // filament superstructure
+    char* ftname;                      // filament type name (reference, not owned)
+    enum FilamentDynamics dynamics;    // dynamics for the filament
+    int isbead;                        // 1 for bead model, 0 for segments
+    enum FilamentBiology biology;      // Biological name for filament type
+    double bundlevalue;                // number of microfilaments in bundle
+    double color[4];                   // filament color
+    double edgepts;                    // thickness of edge for drawing
+    unsigned int edgestipple[2];       // edge stippling [factor, pattern]
+    enum DrawMode drawmode;            // polygon drawing mode
+    double shiny;                      // shininess
+    double stdlen;                     // minimum energy segment length
+    double stdypr[3];                  // minimum energy bend angle
+    double klen;                       // force constant for length
+    double kypr[3];                    // force constant for angle
+    double kT;                         // thermodynamic temperature, [0,inf)
+    double treadrate;                  // treadmilling rate constant
+    double viscosity;                  // viscosity
+    double filradius;                  // bead or segment radius
+    int maxface;                       // number of filament faces allocated
+    int nface;                         // number of filament faces
+    char** facename;                   // list of face names
+    double facetwist;                  // twisting rate of faces along filament
+    int maxfil;                        // maximum number of filaments
+    int nfil;                          // actual number of filaments
+    filamentptr* fillist;              // list of filaments
+    char** filnames;                   // names of filaments
+} * filamenttypeptr;
 
-typedef struct filamentsuperstruct {
-	enum StructCond condition;	// structure condition
-	struct simstruct *sim;			// simulation structure
-	int maxtype;								// maximum number of filament types
-	int ntype;									// actual number of filament types
-	char **ftnames;							// filament type names
-	filamenttypeptr *filtypes;	// list of filament types
-	} *filamentssptr;
-
-
+typedef struct filamentsuperstruct
+{
+    enum StructCond condition; // structure condition
+    struct simstruct* sim;     // simulation structure
+    int maxtype;               // maximum number of filament types
+    int ntype;                 // actual number of filament types
+    char** ftnames;            // filament type names
+    filamenttypeptr* filtypes; // list of filament types
+} * filamentssptr;
 
 /* OLD FILAMENTS
 typedef struct filamentstruct
@@ -1018,41 +1038,54 @@ typedef int (*checkwallsfnptr)(struct simstruct*, int, int, boxptr);
 
 typedef struct simstruct
 {
-    enum StructCond condition;                  // structure condition
-    FILE* logfile;                              // file to send output
-    char* filepath;                             // configuration file path
-    char* filename;                             // configuration file name
-    char* flags;                                // command-line options from user
-    time_t clockstt;                            // clock starting time of simulation
-    double elapsedtime;                         // elapsed time of simulation
-    long int randseed;                          // random number generator seed
-    int eventcount[ETMAX];                      // counter for simulation events
-    int maxvar;                                 // allocated user-settable variables
-    int nvar;                                   // number of user-settable variables
-    char** varnames;                            // names of user-settable variables [v]
-    double* varvalues;                          // values of user-settable variables [v]
-    int dim;                                    // dimensionality of space.
-    double accur;                               // accuracy, on scale from 0 to 10
-    double time;                                // current time in simulation
-    double tmin;                                // simulation start time
-    double tmax;                                // simulation end time
-    double tbreak;                              // simulation break time
-    double dt;                                  // simulation time step
-    bool quitatend;                             // simulation quits at the end
-    rxnssptr rxnss[MAXORDER];                   // reaction superstructures
-    rulessptr ruless;                           // rule superstructure
-    molssptr mols;                              // molecule superstructure
-    wallptr* wlist;                             // list of walls
-    surfacessptr srfss;                         // surface superstructure
-    boxssptr boxs;                              // box superstructure
-    compartssptr cmptss;                        // compartment superstructure
-    portssptr portss;                           // port superstructure
-    latticessptr latticess;                     // lattice superstructure
-    bngssptr bngss;                             // bionetget superstructure
-    filamentssptr filss;                        // filament superstructure
-    cmdssptr cmds;                              // command superstructure
-    graphicsssptr graphss;                      // graphics superstructure
-    diffusefnptr diffusefn;                     // function for molecule diffusion
+    enum StructCond condition; // structure condition
+    FILE* logfile;             // file to send output
+    char* filepath;            // configuration file path
+    char* filename;            // configuration file name
+    char* flags;               // command-line options from user
+    time_t clockstt;           // clock starting time of simulation
+    double elapsedtime;        // elapsed time of simulation
+    long int randseed;         // random number generator seed
+    int eventcount[ETMAX];     // counter for simulation events
+    int maxvar;                // allocated user-settable variables
+    int nvar;                  // number of user-settable variables
+    char** varnames;           // names of user-settable variables [v]
+    double* varvalues;         // values of user-settable variables [v]
+
+    int dim; // dimensionality of space.
+
+    double accur;  // accuracy, on scale from 0 to 10
+    double time;   // current time in simulation
+    double tmin;   // simulation start time
+    double tmax;   // simulation end time
+    double tbreak; // simulation break time
+    double dt;     // simulation time step
+
+    bool quitatend; // simulation quits at the end
+
+    rxnssptr rxnss[MAXORDER]; // reaction superstructures
+    rulessptr ruless;         // rule superstructure
+    molssptr mols;            // molecule superstructure
+    wallptr* wlist;           // list of walls
+    surfacessptr srfss;       // surface superstructure
+    boxssptr boxs;            // box superstructure
+
+    compartssptr cmptss; // compartment superstructure
+
+    portssptr portss; // port superstructure
+
+    latticessptr latticess; // lattice superstructure
+
+    bngssptr bngss; // bionetget superstructure
+
+    filamentssptr filss; // filament superstructure
+
+    cmdssptr cmds; // command superstructure
+
+    graphicsssptr graphss; // graphics superstructure
+
+    diffusefnptr diffusefn; // function for molecule diffusion
+
     surfaceboundfnptr surfaceboundfn;           // function for surface-bound molecules
     surfacecollisionsfnptr surfacecollisionsfn; // function for surface collisons
     assignmols2boxesfnptr assignmols2boxesfn;   // function that assigns molecs to boxes
@@ -1066,7 +1099,7 @@ typedef struct simstruct
     CallbackFunc* callbacks[MAX_PY_CALLBACK]; // Python callback.
     unsigned int ncallbacks;                  // number of callbacks.
     size_t simstep;
-#endif   // __cplusplsu
+#endif // __cplusplsu
 #endif
 
 #ifdef OPTION_VCELL
@@ -1142,7 +1175,7 @@ class AbstractMesh
     virtual void getNumXYZ(int* num) = 0;
 };
 
-#endif    // not __cplusplus
+#endif // not __cplusplus
 
 #endif
 
