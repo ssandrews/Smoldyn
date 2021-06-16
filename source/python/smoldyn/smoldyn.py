@@ -7,6 +7,7 @@ __email__ = "dilawar.s.rajput@gmail.com"
 __all__ = [
     "__version__",
     "version",
+    "getError",
     "Simulation",
     "Species",
     "Panel",
@@ -20,8 +21,6 @@ __all__ = [
     "Surface",
     "Port",
     "Partition",
-    #  "MoleculePerBox",
-    #  "Box",
     "Compartment",
     "Reaction",
     "BidirectionalReaction",
@@ -64,6 +63,10 @@ def version():
 
 # alias of version()
 __version__: str = version()
+
+
+def getError(clear: bool = False) -> Tuple[_smoldyn.ErrorCode, str]:
+    return _smoldyn.getError(clear)
 
 
 def _toMS(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:

@@ -2,41 +2,31 @@
 File: test_sanity.py
 Author: Dilawar Singh
 Email: dilawars@ncbs.res.in
-Description: 
+Description:
     User can create multiple simptr and assign one of them as current simptr.
 """
 # todo: Test a full simulation with configuration changes.
 
 import smoldyn
 
-
-def test_cursim():
-    print("test_cursim")
-    smoldyn.clearAllSimStructs()
-    curSim = smoldyn.getCurSimStruct()
-    print("cursim", curSim)
-    # assert curSim == None, curSim # Not initialized yet.
-    s1 = smoldyn.newSim([0, 0, 0], [10, 10, 10])
-    # assert s1 != curSim, (s1, curSim)
-
-    s2 = smoldyn.newSim([0, 0], [10, 10])
-    assert s2 != s1, (s1, s2)
-    smoldyn.setCurSimStruct(s1)
-    assert s1 == smoldyn.getCurSimStruct()
-
+print(f'Using smoldyn from {smoldyn.__file__}')
 
 def test_newcursim():
     print("test_newcursim")
-    smoldyn.setBoundaries([(0, 1), (0, 1)])
-    cs = smoldyn.getCurSimStruct()
+    s = smoldyn.Simulation(low=(0,0), high=(1,1))
+    cs = s.simptr
     assert cs != None
     print(cs)
 
+def test_get_err():
+    print('Testing test_get_err')
+    s = smoldyn.Simulation(low=(0,0), high=(1,1))
+    a = smoldyn.getError()
+    print(a)
 
 def main():
-    """TODO: Docstring for main.
-    :returns: TODO
-
-    """
     test_newcursim()
-    test_cursim()
+    test_get_err()
+
+if __name__ == "__main__":
+    main()
