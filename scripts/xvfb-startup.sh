@@ -4,3 +4,4 @@ XVFB_PROC=$!
 sleep 1
 "$@"
 kill $XVFB_PROC
+exit 0
