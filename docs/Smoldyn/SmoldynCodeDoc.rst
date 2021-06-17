@@ -8177,17 +8177,61 @@ Functions
 Filaments (functions in smolfilament.c)
 ---------------------------------------
 
-Filament support is in progress.
+Filaments are 1-dimensional structures that are designed to represent
+cytoskeletal filaments, such as actin or microtubules, or DNA. They are
+intended to be much longer than they are wide. I wrote most of the code
+here, although some of it was extended from code that Edward Rolls
+wrote; he was a graduate student in Radek Erban’s lab during 2016, when
+I was at the Newton Institute in Cambridge.
 
 Data structures declared in smoldyn.h
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Filaments are defined in a heirarchical fashion. At the top level, there
+is one filament superstructure which contains a list of filament types
+that are used in the simulation. Below that are multiple filament type
+structures. Each individual filament of a particular type looks and
+behaves identically. For example, actin in the cytoplasm might be one
+type; another might be double-stranded DNA, and yet another is
+single-stranded DNA. Each filament type contains multiple individual
+filaments.
+
+Each filament is composed of either segments or beads, depending on the
+dynamics that were chosen for that type. Both types of filaments can
+have stretching energies. Bead filaments never have bending energies but
+segment filaments can. Segment thicknesses can vary over the length of a
+filament, but not bead radii. Each segment or bead is only part of a
+single filament; it’s possible for a filament to branch off of a segment
+or bead in another filament, but that bead is not shared but owned by
+the original filament. The following table lists the dynamics and beads
+vs. segment representations.
+
+============= ==================
+Dynamics      Beads or segements
+============= ==================
+rigidbeads    beads
+rigidsegments segments
+rouse         beads
+alberts       segments
+nedelec       don’t know
+============= ==================
+
+Enumerations
+^^^^^^^^^^^^
+
 ::
 
-   enum DynamicsType {DTnone,DTrouse,DTalberts};
+   enum FilamentDynamics {FDnone,FDrouse,FDalberts,FDnedelec};
+   enum FilamentBiology {FBactin,FBmicrotubule,FBintermediate,FBdsDNA,FBssDNA,FBother};
 
-The ``DynamicsType`` enumerated type describes the filament simulation
-dynamics type.
+These enumerations are used in the filament types. The filament dynamics
+enumeration describes how the filament is to represented and what
+algorithms to use for its dynamics. The filament biology enumeration is
+used to describe what kind of filament this is, which can then be used
+to pre-populate many of the filament parameters.
+
+Beads and segments
+^^^^^^^^^^^^^^^^^^
 
 ::
 
@@ -8196,10 +8240,9 @@ dynamics type.
        double xyzold[3];                       // bead coordinates for prior time
        } *beadptr;
 
-A filament can have beads or segments, but not both. In the bead case,
-each bead is quite simple. A bead has its current position, in ``xyz``
-and its old position, in ``xyzold``. For 2D simulations, only the first
-two vales are used in each position vector.
+Each bead, for filaments that have them, is quite simple. A bead has its
+current position, in ``xyz`` and its old position, in ``xyzold``. For 2D
+simulations, only the first two vales are used in each position vector.
 
 ::
 
@@ -8217,8 +8260,8 @@ Segments are a bit more complicated than beads. ``xyzfront`` is the
 :math:`x,y,z` coordinate of the segment starting point and ``xyzback``
 is the :math:`x,y,z` coordinate of the segment end point. ``len`` is the
 segment length. ``ypr`` is the relative yaw, pitch, and roll angle for
-the segment relative to the orientation of the prior segment. ``sdcm``
-is the relative direction cosine matrix for the segment relative to the
+the segment relative to the orientation of the prior segment. ``dcm`` is
+the relative direction cosine matrix for the segment relative to the
 orientation of the one before it. Identical information is contained in
 ``ypr`` and ``dcm``, but the latter is here for faster computation.
 ``adcm`` is the direction cosine matrix for the absolute orientation.
@@ -8226,107 +8269,183 @@ orientation of the one before it. Identical information is contained in
 first 2 values are used in the coordinates vectors and only the first
 value is used in the ypr angles.
 
-At present, filaments are designed for all segments of the same length.
-This wasn’t what I had in mind initially, but may be sufficiently easier
-to program that it’s worth keeping this constraint.
+| At present, filaments are designed for all segments of the same
+  length. This wasn’t what I had in mind initially, but may be
+  sufficiently easier to program that it’s worth keeping this
+  constraint.
+
+Filaments
+^^^^^^^^^
+
+::
+
+   typedef struct filamentstruct {
+       struct filamenttypestruct *filtype;     // filament type structure
+       char *filname;                          // filament name (reference, not owned)
+       int maxbs;                                  // number of beads or segments allocated
+       int nbs;                                        // number of beads or segments
+       int frontbs;                                // index of front bead or segment
+       int backbs;                                 // index of back bead or segment
+       beadptr *beads;                         // array of beads if any
+       segmentptr *segments;               // array of segments if any
+       struct filamentstruct *frontend;    // what front attaches to if anything
+       struct filamentstruct *backend;     // what back attaches to if anything
+       int maxbranch;                          // max number of branches off this filament
+       int nbranch;                                // number of branches off this filament
+       int *branchspots;                       // list of bead or segments where branches are
+       struct filamentstruct **branches;       // list of branching filaments
+       int maxmonomer;                         // number of monomers allocated
+       int nmonomer;                               // number of monomers
+       int frontmonomer;                       // index of front monomer
+       int backmonomer;                        // index of back monomer
+       char *monomers;                         // monomer codes
+       } *filamentptr;
+
+Each filament data structure represents a single unbranched chain of
+either beads or segments. Multiple filaments of the same type (e.g. two
+microtubules) are stored in multiple data structures. In the filament
+data structure, ``filtype`` points to the filament type that owns this
+filament, ``filindex`` tells what the index number is of this particular
+filament, and ``filname`` points to the name of this filament; names are
+assigned by default if not assigned by the user.
+
+Whether a filament is composed of beads or segments depends on its
+dynamics type, and is given in the ``isbead`` element of the type.
+Either way, ``maxbs`` and ``nbs`` give the allocated and actual numbers
+of either beads or segments. These are stored in an array, where the
+index of the front is in ``frontbs`` and the index of the back is in
+``backbs-1``. These are implemented so that the back index is always
+greater than the front index; I considered using a circular array, but
+this is easier to use and runs faster in most algorithms. If the
+filament is composed of beads, then they are stored in ``beads`` and if
+it is composed of segments, they are stored in ``segments``.
+
+If ``backbs==frontbs``, then this is an empty filament with no beads or
+segments at all. If ``backbs==frontbs+1``, then this is a single element
+filament; it has one bead if it is bead style, or one segment if it is
+segment style.
+
+Filaments are allowed to branch. If the current filament is a branch off
+of another filament, then ``frontend`` points to the filament that the
+front end attaches to and/or ``backend`` points to the filament that the
+back end attaches to; these are ``NULL`` if they are free ends.
+Additionally, this filament knows about the filaments that branch off of
+this one, which are listed in ``maxbranch``, ``nbranch``, and
+``branches``. The branched filaments branch off at the locations listed
+in ``branchspots``.
+
+| Along the length of each filament are equally spaced monomer codes,
+  which represent things like DNA sequence or modification state of
+  proteins. They are stored in a non-circular array with parameters
+  ``maxmonomer``, ``nmonomer``, ``frontmonomer``, ``backmonomer``, and
+  then the list ``monomers``. This array is analogous to the beads or
+  segments array, but may be larger or smaller because there’s no
+  necessary correlation between monomer codes and beads or segments.
+
+Filament types
+^^^^^^^^^^^^^^
 
 ::
 
    typedef struct filamenttypestruct {
        struct filamentsuperstruct *filss;  // filament superstructure
        char *ftname;                               // filament type name
+       enum FilamentDynamics dynamics; // dynamics for the filament
+       int isbead;                                 // 1 for bead model, 0 for segments
+       enum FilamentBiology biology; // Biological name for filament type
+       int bundlevalue;                        // number of microfilaments in bundle
        double color[4];                        // filament color
        double edgepts;                         // thickness of edge for drawing
        unsigned int edgestipple[2];    // edge stippling [factor, pattern]
        enum DrawMode drawmode;         // polygon drawing mode
        double shiny;                               // shininess
-       enum DynamicsType dynamics; // Dynamics for the filament
-       int isbead;                                 // 1 for bead model, 0 for segment model
        double stdlen;                          // minimum energy segment length
        double stdypr[3];                       // minimum energy bend angle
        double klen;                                // force constant for length
        double kypr[3];                         // force constant for angle
+       int maxface;                                // number of filament faces allocated
+       int nface;                                  // number of filament faces
+       char **facename;                        // list of face names
+       double facetwist;                       // twisting rate of faces along filament
        double kT;                                  // thermodynamic temperature, [0,inf)
        double treadrate;                       // treadmilling rate constant
        double viscosity;                       // viscosity
-       double beadradius;                  // bead radiues
-       } *filamenttypeptr;
+       double beadradius;                  // bead radius
+       int maxfil;                                 // maximum number of filaments
+       int nfil;                                       // actual number of filaments
+       filamentptr *fillist;               // list of filaments
+       char **filnames;                        // names of filaments
+   } *filamenttypeptr;
 
 Filament types describe various types of filaments, such as actin,
 microtubule, etc. All filaments of the same type have the same graphical
-display, force constants, dynamic simulation methods, etc.
+display, force constants, dynamic simulation methods, etc. It’s
+reasonable to have multiple types that are represent a single biological
+type. For example, there could be actin in cytoplasm, actin in
+nucleoplasm, and an actin bundle.
 
-Starting with graphical display parameters, ``color`` is the filament
-color, with red, green, blue, and alpha values. ``edgepts`` is the edge
+The ``filss`` element points to the filament superstructure that owns
+this filament type, and the name of the type is in ``ftname``. The type
+of simulation dynamics is in ``dynamics``, where the options are listed
+above. Whether these dynamics work for beads or segments is fixed by the
+type, but, for convenience, it is copied over into ``isbead`` so that
+routines can easily determine if this is a bead or segment
+representation. The ``biology`` element is not needed, but is useful
+because a user can specifiy the biology and then Smoldyn auto-fills the
+rest of the parameters. The ``bundlevalue`` parameter gives the number
+of filaments that are bundled together in this particular type.
+
+In the graphical display parameters, ``color`` is the filament color,
+with red, green, blue, and alpha values. ``edgepts`` is the edge
 thickness for drawing, ``edgestipple`` is the stippling code for the
 edge stippleing, if any. ``drawmode`` is the polymer drawing mode, which
 can be face, edge, vertex, of a combination of these. ``shiny`` is the
 shininess for graphical display. These graphical display statements are
 very similar to those used for surfaces.
 
-Filament mechanics information is in the next elements. ``dynamics``
-gives the type of simulation dynamics. ``stdlen`` is the standard
-segment length, meaning the segment length at minimum energy, where
-segments are neither stretched nor compressed. ``stdypr`` is the minimum
-energy relative ypr angle. ``klen`` is the stretching force constant.
-Its value is :math:`< 0` for an infinite force constant, meaning that
-the segment lengths are fixed. ``kypr`` is the bending force constant.
-For any element, its value is 0 for zero force constant, meaning a
-freely jointed chain, and :math:`< 0` for an infinite force constant,
-meaning a fixed bending angle. ``kT`` is the thermodynamic energy. This
-parameter isn’t ideal here because it allows a different temperature for
-different components in the simulation, but it’s here for now.
-``treadrate`` is the treadmilling rate constant. ``viscosity`` is the
-medium viscosity for computing drag coefficients. ``beadradius`` is the
-radius of beads, which only applies to bead models. For 2D filaments,
-``stdypr`` values 1 and 2 should have value 0 and ``kypr`` values 1 and
-2 should have value -1 (i.e. bending out of the :math:`x,y` plane can’t
-happen).
+Filament mechanics information is in the next elements. ``stdlen`` is
+the standard segment length, meaning the segment length at minimum
+energy, where segments are neither stretched nor compressed. ``stdypr``
+is the minimum energy relative ypr angle. ``klen`` is the stretching
+force constant. Its value is :math:`< 0` for an infinite force constant,
+meaning that the segment lengths are fixed. ``kypr`` is the bending
+force constant. For any element, its value is 0 for zero force constant,
+meaning a freely jointed chain, and :math:`< 0` for an infinite force
+constant, meaning a fixed bending angle. ``kT`` is the thermodynamic
+energy. This parameter isn’t ideal here because it allows a different
+temperature for different components in the simulation, but it’s here
+for now. ``treadrate`` is the treadmilling rate constant. ``viscosity``
+is the medium viscosity for computing drag coefficients. ``filradius``
+is the radius of either beads or segments, depending on the
+representation. For 2D filaments, ``stdypr`` values 1 and 2 should have
+value 0 and ``kypr`` values 1 and 2 should have value -1 (i.e. bending
+out of the :math:`x,y` plane can’t happen, and all that’s left is the
+yaw option).
 
-::
+| Finally, ``maxfil`` and ``nfil`` give the number of allocated and
+  actual filaments of this type, and they are listed in ``fillist``. The
+  filaments have names in ``filnames``.
 
-   typedef struct filamentstruct {
-       struct filamentsuperstruct *filss;  // filament superstructure
-       filamenttypeptr filtype;    // filament type structure
-       char *fname;                                // filament name
-       int maxseg;                                 // number of segments allocated
-       int nseg;                                       // number of segments
-       int front;                                  // front index
-       int back;                                       // back index
-       beadptr *beads;                     // array of the beads ?? Initialise to NULL
-       segmentptr *segments;               // array of the segments ?? Initialise to NULL
-       } *filamentptr;
-
-Each filament is a pretty simple data structure, including only a type
-and a list of either beads or segments. Beads or segments are joined
-end-to-end. Multiple filaments of the same type (e.g. two microtubules)
-are stored in multiple data structures. At some point, we’ll add support
-for filament joining, such as for multi-scale filaments, branched
-filaments, filament meshes, etc., but that’s not here now.
-
-The ``filss`` element points to the filament superstructure that owns
-this filament. ``fname`` is the name of the filament. The filament
-segment lists are allocated for ``maxseg`` total segments, of which
-``nseg`` of those are actually used for segments. Each segment list
-starts at position ``front`` and continues to position ``back-1``. These
-are implemented so that ``back`` is always greater than ``front``. I
-considered using a circular queue, but this is easier to use and runs
-faster in most algorithms.
+Filament superstructure
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
 
    typedef struct filamentsuperstruct {
        enum StructCond condition;  // structure condition
        struct simstruct *sim;          // simulation structure
-       int maxfil;                                 // maximum number of filaments
-       int nfil;                                       // actual number of filaments
-       char **fnames;                          // filament names
-       filamentptr *fillist;               // list of filaments
+       int maxtype;                                // maximum number of filament types
+       int ntype;                                  // actual number of filament types
+       char **ftnames;                         // filament type names
+       filamenttypeptr *filtypes;  // list of filament types
        } *filamentssptr;
 
-The superstructure contains a list of filaments. It also contains a
-condition element and a pointer up the heirarchy to the simulation
-structure.
+| The superstructure contains a list of filament types. It starts with
+  its condition element in ``condition`` and a pointer up the heirarchy
+  to the simulation structure in ``sim``. The list of filament types is
+  allocated with ``maxtype`` entries, has ``ntype`` entries, and has
+  list ``ftnames`` for the type names and ``filtypes`` is the actual
+  list of types.
 
 Filament math
 ~~~~~~~~~~~~~
@@ -8349,72 +8468,80 @@ smoldynfuncs.h header file. This simplifies the code reading because it
 clarifies which functions might be called externally versus those that
 are only called internally.
 
-``char *fildt2string(enum DynamicsType dt,char *string);``
-   Local. Converts filament dynamics type to string. Returns “none” for
-   unrecognized dynamics type. Writes result to ``string`` and also
+*Enumerations*
+``char *filFD2string(enum FilamentDynamics fd,char *string);``
+   | 
+   | Local. Converts filament dynamics type to string. Returns “none”
+     for unrecognized dynamics type. Writes result to ``string`` and
+     also returns it directly.
+
+``enum FilamentDynamics filstring2FD(const char *string);``
+   | 
+   | Local. Converts filament dynamics string to enumerated dynamics
+     type. Returns ``FDnone`` for unrecognized input.
+
+``char *filFB2string(enum FilamentBiology fb,char *string)``
+   Local. Converts filament biology type to string. Returns “other” for
+   unrecognized biology type. Writes result to ``string`` and also
    returns it directly.
 
-``enum DynamicsType filstring2dt(char *string);``
-   Local. Converts filament dynamics string to enumerated dynamics type.
-   Returns ``DTnone`` for unrecognized input.
+``enum FilamentBiology filstring2FB(const char *string)``
+   Local. Converts filament biology string to enumerated biology type.
+   Returns ``FBother`` for unrecognized input.
 
-*low level utilities*
-``double filRandomLength(const filamenttypeptr filtype,double thickness,double sigmamult);``
-   | 
+*Low level utilities*
+``double``
+   | ``filRandomLength(const filamenttypeptr filtype,double thickness,double sigmamult);``
    | Local. Returns a random segment length using the mechanics
      parameters given in filament type ``filtype``. ``thickness`` is the
      thickness of the new segment and ``sigmamult`` is multiplied by the
-     normal standard deviation of the length. The returned length is
+     normal standard deviation of the length. If :math:`k_{len} \leq 0`,
+     this returns the standard length; otherwise, the returned length is
      Gaussian distributed, with mean equal to ``fil->lstd`` and standard
-     deviation equal to
-     :math:`\sigma_{mult}\sqrt{kT/(thickness*k_{len})}`. The returned
-     length is always positive.
+     deviation, which is constrained to be always positive, equal to
 
-``double *filRandomAngle(filamenttypeptr filtype,double thickness,double *angle,double sigmamult);``
-   | 
-   | Local. Returns a random bending angle in ``angle`` (a relative ypr
-     angle) for filament type ``filtype``, without changing the
-     filament. The new segment has thickness ``thickness`` and the
-     normal standard deviation is multiplied by ``sigmamult``.
+   .. math:: \sigma_{mult}\sqrt{\frac{kT}{R*k_{len}}}
 
-``double filStretchEnergy(filamentptr fil,int seg1,int seg2);``
+``double``
+   | ``*filRandomAngle(const filamenttypeptr filtype,double thickness,double *angle,double sigmamult);``
+   | Local. Returns a random bending angle, which is a relative ypr
+     angle, in ``angle`` and directly for filament type ``filtype``,
+     without changing the filament. The new segment has thickness
+     ``thickness`` and the computed standard deviation is multiplied by
+     ``sigmamult``. If :math:`k_{ypr}` is less than 0 for a particular
+     coordinate, this returns the standard bending angle; if it is equal
+     to 0, this returns a uniformly distributed bending angle; and if it
+     is greater than 0, this returns a mean of :math:`ypr_{std}` and
+     standard deviation of
+
+   .. math:: \sigma_{mult} \sqrt{\frac{kT}{R*k_{ypr}}}
+
+*Computations on filaments*
+``double filStretchEnergy(const filamentptr fil,int seg1,int seg2);``
    | 
    | Computes the stretching energy for filament ``fil``. Enter ``seg1``
      as the first segment to compute from, or as -1 to indicate that it
      should start at the front of the filament, and ``set2`` as the last
      segment to compute to, or as -1 to indicate that calculation should
-     end at the end of the filament. The equation is
+     end at the end of the filament. The equation is (the thickness only
+     applies to segment models):
 
-   .. math:: E_{stretch} = \sum_{s} \frac{thk_s k_{len} (l_s - l_{std})^2}{2}
+   .. math:: E_{stretch} = \sum_{s} \frac{R_s k_{len} (l_s - l_{std})^2}{2}
 
-``double filBendEnergy(filamentptr fil,int seg1,int seg2);``
+``double filBendEnergy(const filamentptr fil,int seg1,int seg2);``
    | 
-   | Computes the bending energy for filament ``fil``. Enter ``seg1`` as
-     the first segment to compute from, or as -1 to indicate that it
-     should start at the front of the filament, and ``set2`` as the last
-     segment to compute to, or as -1 to indicate that calculation should
-     end at the end of the filament. The equation is
+   | Computes the bending energy for filament ``fil``. This returns 0
+     for bead filaments because they always have 0 bending energy. Enter
+     ``seg1`` as the first segment to compute from, or as -1 to indicate
+     that it should start at the front of the filament, and ``seg2`` as
+     the last segment to compute to, or as -1 to indicate that
+     calculation should end at the end of the filament. The equation is
 
-   .. math:: E_{bend}=\sum_{s=1}^{n} \frac{thk_{s-1}+thk_s}{2} \frac{k_y(a_y-a_{y,std})^2+k_p(a_p-a_{p,std})^2+k_r(a_r-a_{r,std})^2}{2}
+   .. math:: E_{bend}=\sum_{s=1}^{n} \frac{R_{s-1}+R_s}{2} \frac{k_y(a_y-a_{y,std})^2+k_p(a_p-a_{p,std})^2+k_r(a_r-a_{r,std})^2}{2}
 
    The first term in the sum computes the average thickness of the
    segment in front of and behind the bend. The other term is the
    squared bending angle on each coordintate.
-
-``void filArrayShift(filamentptr fil,int shift);``
-   | 
-   | Shifts the bead or segment list in the filament (beads if they are
-     defined and segements otherwise) either to higher indices or to
-     lower indices, adjusting the ``front`` and ``back`` elements to
-     account for the shift. Enter ``shift`` as a positive number to
-     increase all of the indices, as a negative number to decrease all
-     of the indices, and as 0 to have the filament centered in the
-     allocated memory.
-
-   This is inefficient currently since it does repeated memory swaps
-   rather than moving blocks of memory around more intelligently. As a
-   results, empty beads/segments may get moved multiple times in a
-   single array shift.
 
 *Memory management*
 ``beadptr beadalloc();``
@@ -8431,69 +8558,109 @@ are only called internally.
    | 
    | Allocates memory for a single segment and initializes this segment.
      Returns a pointer to this segment, or ``NULL`` if memory could not
-     be allocated.
+     be allocated. The segment length is initialized to 0 to indicate
+     that it hasn’t been set up yet, and the thickness is initialized to
+     1, which is good default value. Ypr angles are initialized to 0 and
+     direction cosine matrices to unit matrices.
 
 ``void segmentfree(segmentptr segment);``
    | 
    | Frees memory for a single segment.
 
-``filamenttypeptr filamenttypealloc();``
-   | 
-   | Allocates memory for a filament type structure and intilizes it.
-     Returns a pointer to this filament type, or ``NULL`` if memory
-     could not be allocated.
-
-``void filamenttypefree(filamenttypeptr filtype);``
-   | 
-   | Frees memory for a single filament type.
-
-``filamentptr filalloc(filamentptr fil,int maxbead,int maxseg);``
-   | 
-   | Allocates and initializes a filament for ``maxseg`` segments and
-     returns the resulting pointer.
+``filamentptr``
+   | ``filalloc(filamentptr fil,int isbead,int maxbs,int maxbranch,int maxmonomer);``
+   | Allocates or expands a filament, returning a pointer to the result.
+     This does not shrink any elements of filaments. Enter ``isbead`` as
+     1 if this is a bead type filament and 0 if it is segment type (this
+     only matters for allocating beads or segments), ``maxbs`` to expand
+     the number of beads or segments, ``maxbranch`` to expand the number
+     of branches off of this filament, and ``maxmonomer`` to expand the
+     monomer list. This returns ``NULL`` if memory could not be
+     allocated but does not free things, which can cause a minor memory
+     leak, but is better than risking a segfault and easier than a
+     sophisticated analysis of what can and cannot be freed.
 
 ``void filfree(filamentptr fil);``
    | 
    | Frees a filament and all of the data structures in it.
 
-``filamentssptr filssalloc(filamentssptr filss,int maxfil);``
+``filamenttypeptr``
+   | ``filamenttypealloc(filamenttypeptr filtype,int maxfil,int maxface);``
+   | Allocates or expands memory for a filament type structure and
+     intilizes it. Returns a pointer to this filament type, or ``NULL``
+     if memory could not be allocated. Enter ``filtype`` as an existing
+     one if it is to be expanded, ``maxfil`` as the number of filament
+     spaces to be allocated, and ``maxface`` as the number of face names
+     to be allocated. This only expands the filament or face lists if
+     the requested sizes are larger than the current sizes. When putting
+     new filaments into the list, they are allocated here and
+     initialized, but have no segments or beads.
+
+``void filamenttypefree(filamenttypeptr filtype);``
    | 
-   | Allocates and initializes a filament superstructure for a maximum
-     size of ``maxfil`` filaments. This is set up for expanding the
-     list, but nevertheless needs work, due to the static memory
-     allocation for individual filaments.
+   | Frees memory for a single filament type.
+
+``filamentssptr filssalloc(filamentssptr filss,int maxtype);``
+   | 
+   | Allocates or expands a filament superstructure for a maximum size
+     of ``maxtype`` filament types.
 
 ``void filssfree(filamentssptr filss);``
    | 
    | Fres a filament superstructure and all of the structures within it.
 
 *Data structure output*
-``void filtypeoutput(filamenttypeptr filtype,int dim);``
-   Outputs all of the key information about a filament type to the
-   display.
-
-``void filoutput(filamentptr fil);``
+``void filoutput(const filamentptr fil);``
    | 
    | Outputs all of the key information about a filament to the display.
 
-``void filssoutput(simptr sim);``
+``void filtypeoutput(const filamenttypeptr filtype);``
+   Outputs all of the key information about a filament type to the
+   display.
+
+``void filssoutput(const simptr sim);``
    | 
    | Outputs all of the key information about a filament superstructure,
      and all of the filaments in it, to the display.
 
-``void filwrite(simptr sim,FILE *fptr);``
+``void filwrite(const simptr sim,FILE *fptr);``
    | 
    | Writes filament information to a file in Smoldyn format for loading
      in again later on. This function isn’t written yet.
 
-``int filcheckparams(simptr sim,int *warnptr);``
+``int filcheckparams(const simptr sim,int *warnptr);``
    | 
    | Checks filament parameters to make sure they are all reasonable.
      This function isn’t written yet.
 
 *Filament manipulation*
+``void filArrayShift(filamentptr fil,int shift);``
+   | 
+   | Shifts the bead or segment list in the filament (beads if they are
+     defined and segments otherwise) either to higher indices or to
+     lower indices, adjusting the ``frontbs`` and ``backbs`` elements to
+     account for the shift. Enter ``shift`` as a positive number to
+     increase all of the indices, as a negative number to decrease all
+     of the indices, and as 0 to have the filament centered in the
+     allocated memory. If ``shift`` is made too large or too small, such
+     that the filament would move off the end of the allocated memory,
+     then it is automatically fixed so that the filament just gets
+     shifted to the end of the allocated memory instead. Thus, an easy
+     way to make sure that the filament is at the end of the allocated
+     memory is to enter ``shift`` as :math:`\pm`\ ``fil->maxbs``.
+
 ``int``
-   | ``filAddSegment(filamentptr fil,double *x,double length,double *angle,double thickness,char endchar);``
+   | ``filAddBead(filamentptr fil,const double *x,double length,char endchar)``
+   | Adds a bead to filament ``fil``. If this is the first bead, then
+     ``x`` needs to be set to the starting location of the filament;
+     otherwise, ``x`` is ignored. ``length`` is the length of the
+     distance between beads, and ``endchar`` should be set to ‘b’ to add
+     to the back of the filament or ‘f’ to add to the front of the
+     filament. Relative angles are randomly chosen from a circle for 2D
+     or a sphere for 3D, to create a freely-jointed chain.
+
+``int``
+   | ``filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char endchar);``
    | Adds a segment to filament ``fil``. If this is the first segment,
      then ``x`` needs to be set to the starting location of the
      filament; otherwise, ``x`` is ignored. ``length`` is the length of
@@ -8525,11 +8692,25 @@ are only called internally.
    :math:`\mathbf{a}_i = XYZ(\mathbf{B}_i)`,
    :math:`\mathbf{x}_i = \mathbf{x}_{i+1} - l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}`
 
+``int``
+   | ``filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,double thickness)``
+   | Add ``number`` of random segments to filament ``fil``. Enter
+     ``xstr``, ``ystr``, and ``zstr`` as strings for the starting
+     position coordinates of a new filament. Here, math equations are
+     allowed, using Smoldyn variables, or use the ‘u’ character to
+     indicate uniform starting position within the system volume.
+     ``thickness`` is the thickness of the segments being added.
+
+``int``
+   | ``filAddRandomBeads(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr);``
+   | This is the same as ``filAddRandomSegments``, but adds beads
+     instead of segments.
+
 ``int filRemoveSegment(filamentptr fil,char endchar);``
    | 
-   | Removes one segment from either the front or back end of a
-     filament. Specify the end in ``endchar`` with ‘f’ for front and ‘b’
-     for back.
+   | Removes one segment or one bead from either the front or back end
+     of a filament. Specify the end in ``endchar`` with ‘f’ for front
+     and ‘b’ for back.
 
 ``void filTranslate(filamentptr fil,const double *vect,char func)``
    | 
@@ -8538,7 +8719,7 @@ are only called internally.
      for to subtract the value of ``vect`` from the current position,
      and with ‘+’ to add the value of ``vect`` to the current position.
 
-``void filRotateVertex(filamentptr fil,int seg,double *angle,char endchar,char func);``
+``void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);``
    | 
    | Not written yet. This function is supposed to rotate part of the
      filament about one of the filament vertices by ypr angle ``angle``.
@@ -8559,21 +8740,16 @@ are only called internally.
    | Not written yet. This will reverse the sequence of segments in a
      filament.
 
-``int filCopyFilament(filamentptr filfrom,filamentptr filto,const char *fname);``
+``int filCopyFilament(const filamentptr filfrom,filamentptr filto,const char *fname);``
    | 
-   | This copies all of the values in a filament to another filament.
+   | This function was deleted. It was designed to copy all of the
+     values in a filament to another filament, but I don’t think it was
+     likely to be useful.
 
-*Structure set up*
-``void filsetcondition(filamentssptr filss,enum StructCond cond,int upgrade);``
+*Filament type*
+``int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value)``
    | 
-   | Local. This function sets the condition of the filament
-     superstructure. Set ``upgrade`` to 1 if this is an upgrade, to 0 if
-     this is a downgrade, or to 2 to set the condition independent of
-     its current value.
-
-``int filSetParam(filamentptr fil,const char *param,int index,double value);``
-   | 
-   | Sets various parameters for a filament, where the parameter name is
+   | Sets various filament type parameters. The parameter name is
      ``param`` and it is set to the value ``value``. If this parameter
      has multiple inidices, enter the index to be changed in ``index``,
      or enter ``index`` as -1 to set all of the indices at once to the
@@ -8585,48 +8761,66 @@ are only called internally.
      the treadmilling rate, ``viscosity`` for the medium viscosity, and
      ``beadradius`` for the bead radius.
 
-``int filsetcolor(filamentptr fil,double *rgba);``
+``int filtypeSetColor(filamenttypeptr filtype,const double *rgba)``
    | 
-   | Set the 4-value color vector of the filament to the values entered
-     in ``rgba``. Returns 0 unless one of the entered values is outside
-     of the range [0,1], in which case this does not change the current
-     color and returns an error code of 2.
+   | Set the 4-value color vector of the filament type to the values
+     entered in ``rgba``. Returns 0 unless one of the entered values is
+     outside of the range [0,1], in which case this does not change the
+     current color and returns an error code of 2.
 
-``int filsetedgepts(filamentptr fil,double value);``
+``int filtypeSetEdgePts(filamenttypeptr filtype,double value)``
    | 
-   | Sets the drawing thickness of the filament to the value entered in
-     ``value``. Returns 0 for success or 2 if the entered value is less
-     than 0, which is an error.
+   | Sets the drawing thickness of the filament type to the value
+     entered in ``value``. Returns 0 for success or 2 if the entered
+     value is less than 0, which is an error.
 
-``int filsetstipple(filamentptr fil,int factor,int pattern);``
+``int filtypeSetStipple(filamenttypeptr filtype,int factor,int pattern)``
    | 
-   | Sets the stippling factor and pattern for the filament to the
+   | Sets the stippling factor and pattern for the filament type to the
      entered values. Returns 0 for success or 2 if values are out of
      bounds.
 
-``int filsetdrawmode(filamentptr fil,enum DrawMode dm);``
+``int filtypeSetDrawmode(filamenttypeptr filtype,enum DrawMode dm)``
    | 
-   | Sets the filament drawing mode to the entered value. Returns 0 for
-     success or 2 if the input value is unrecognized.
+   | Sets the filament type drawing mode to the entered value. Returns 0
+     for success or 2 if the input value is unrecognized.
 
-``int filsetshiny(filamentptr fil,double shiny);``
+``int filtypeSetShiny(filamenttypeptr filtype,double shiny)``
    | 
-   | Sets the shininess for the filament to the entered value. Returns 0
-     for success or 2 if the value is out of bounds.
+   | Sets the shininess for the filament type to the entered value.
+     Returns 0 for success or 2 if the value is out of bounds.
 
-``int filenablefilaments(simptr sim,int maxfil);``
+``int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd)``
    | 
-   | Allocates a filament superstructure with ``maxfil`` filaments, adds
-     it to the simulation structure, and sets the filament condition to
-     ``SClists``. This function can be called multiple times. Use this
-     function to expand the number of filaments in the superstructure.
+   | Sets the dynamics for the filament type to ``fd``. This also sets
+     the ``isbead`` element.
 
-``filamentptr filaddfilament(simptr sim,const char *fnames);``
+*Filament superstructure*
+``void filsetcondition(filamentssptr filss,enum StructCond cond,int upgrade);``
    | 
-   | Add a new filament to the simulation, which is named ``fnames``,
+   | Local. This function sets the condition of the filament
+     superstructure. Set ``upgrade`` to 1 if this is an upgrade, to 0 if
+     this is a downgrade, or to 2 to set the condition independent of
+     its current value.
+
+``int filenablefilaments(simptr sim);``
+   | 
+   | Allocates a filament superstructure, adds it to the simulation
+     structure, and sets the filament condition to ``SClists``.
+
+``filamentptr filaddfilament(const filamenttypeptr filtype,const char *filname);``
+   | 
+   | Add a new filament to the simulation, which is named ``filname``,
      returning a pointer to the new filament. If a filament with this
      name already exists, this returns a pointer to the existing
      filament.
+
+``filamenttypeptr filAddFilamentType(simptr sim,const char *ftname)``
+   | 
+   | Adds a new filament type to the simulation, which is named
+     ``ftname``, returning a pointer to the new filament type. If a
+     filament type with this name already exists, this returns a pointer
+     to the existing filament type.
 
 ``int``
    | ``filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,double thickness);``

@@ -1653,20 +1653,21 @@ int filloadtype(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 			firstline2=0; }
 		else
 			pfpcode=Parse_ReadLine(&pfp,word,&line2,errstring);
-			*pfpptr=pfp;
-			CHECKS(pfpcode!=3,"%s",errstring);
 
-			if(pfpcode==0);																// already taken care of
-			else if(pfpcode==2) {													// end reading
-				done=1; }
-			else if(!strcmp(word,"end_filament_type")) {		// end_filament_type
-				CHECKS(!line2,"unexpected text following end_filament_type");
-				return 0; }
-			else if(!line2) {															// just word
-				CHECKS(0,"unknown word or missing parameter"); }
-			else {
-				filtype=filtypereadstring(sim,pfp,filtype,word,line2);
-				CHECK(filtype); }}													// failed but error has already been sent
+        *pfpptr=pfp;
+        CHECKS(pfpcode!=3,"%s",errstring);
+
+        if(pfpcode==0);																// already taken care of
+        else if(pfpcode==2) {													// end reading
+            done=1; }
+        else if(!strcmp(word,"end_filament_type")) {		// end_filament_type
+            CHECKS(!line2,"unexpected text following end_filament_type");
+            return 0; }
+        else if(!line2) {															// just word
+            CHECKS(0,"unknown word or missing parameter"); }
+        else {
+            filtype=filtypereadstring(sim,pfp,filtype,word,line2);
+            CHECK(filtype); }}													// failed but error has already been sent
 
 	CHECKS(0,"end of file encountered before end_filament_type statement");	// end of file
 
@@ -1698,21 +1699,22 @@ int filloadfil(simptr sim,ParseFilePtr *pfpptr,char *line2,filamenttypeptr filty
 			firstline2=0; }
 		else
 			pfpcode=Parse_ReadLine(&pfp,word,&line2,errstring);
-			*pfpptr=pfp;
-			CHECKS(pfpcode!=3,"%s",errstring);
 
-			if(pfpcode==0);																// already taken care of
-			else if(pfpcode==2) {													// end reading
-				done=1; }
-			else if(!strcmp(word,"end_filament")) {				// end_filament_type
-				CHECKS(!line2,"unexpected text following end_filament");
-				return 0; }
-			else if(!line2) {															// just word
-				CHECKS(0,"unknown word or missing parameter"); }
-			else {
-				fil=filreadstring(sim,pfp,fil,filtype,word,line2);
-				CHECK(fil); 															// failed but error has already been sent
-				filtype=fil->filtype; }}
+        *pfpptr=pfp;
+        CHECKS(pfpcode!=3,"%s",errstring);
+
+        if(pfpcode==0);																// already taken care of
+        else if(pfpcode==2) {													// end reading
+            done=1; }
+        else if(!strcmp(word,"end_filament")) {				// end_filament_type
+            CHECKS(!line2,"unexpected text following end_filament");
+            return 0; }
+        else if(!line2) {															// just word
+            CHECKS(0,"unknown word or missing parameter"); }
+        else {
+            fil=filreadstring(sim,pfp,fil,filtype,word,line2);
+            CHECK(fil); 															// failed but error has already been sent
+            filtype=fil->filtype; }}
 
 	CHECKS(0,"end of file encountered before end_filament statement");	// end of file
 

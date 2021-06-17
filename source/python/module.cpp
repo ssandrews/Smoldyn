@@ -418,6 +418,7 @@ PYBIND11_MODULE(_smoldyn, m)
 
       .def("setModelpath", &Simulation::setModelpath)
       .def("getBoundaries", &Simulation::getBoundaries)
+      .def("count", &Simulation::count)
 
       // Simulation extra.
       .def("runSim", &Simulation::runSim)
@@ -661,10 +662,10 @@ PYBIND11_MODULE(_smoldyn, m)
             return sim.addCommand(cmd, cmd_type, options);
         })
 
-			.def("runCommand",
-				[](Simulation& sim, const char* commandstring) {
-						return smolRunCommand(sim.getSimPtr(), commandstring);
-				})
+      .def("runCommand",
+        [](Simulation& sim, const char* commandstring) {
+            return smolRunCommand(sim.getSimPtr(), commandstring);
+        })
 
       /***************
        *  Molecules  *
@@ -1412,8 +1413,19 @@ PYBIND11_MODULE(_smoldyn, m)
      *  Errors  *
      ************/
     m.def("setDebugMode", &smolSetDebugMode);
-    m.def("errorCodeToString",
-      [](ErrorCode err) { return smolErrorCodeToString(err, tempstring); });
+    m.def("errorCodeToString", [](ErrorCode err) -> string {
+        return string(smolErrorCodeToString(err, tempstring));
+    });
+
+    // Error
+    m.def(
+      "getError",
+      [](bool clear) -> std::tuple<ErrorCode, string> {
+          char errstr[512];
+          auto code = smolGetError(nullptr, errstr, clear);
+          return std::make_tuple(code, string(errstr));
+      },
+      "clear"_a = false);
 
     /*****************************
      *  Read configuration file  *
