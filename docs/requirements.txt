@@ -9,6 +9,5 @@ sphinxcontrib-plantuml
 sphinxcontrib-napoleon
 sphinxcontrib-programoutput2
 sphinxcontrib-inlinesyntaxhighlight
-sphinxcontrib-tikz
 sphinx-autodoc-typehints
 smoldyn

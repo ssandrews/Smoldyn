@@ -69,7 +69,6 @@ extensions = [
     "sphinxcontrib.programoutput",
     "sphinxcontrib.inlinesyntaxhighlight",
     "sphinx.ext.autosectionlabel",
-    "sphinxcontrib.tikz",
     "sphinx_rtd_theme",
     "recommonmark",
     "breathe",

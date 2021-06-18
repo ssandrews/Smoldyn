@@ -4830,15 +4830,65 @@ fairly minimal manner.
 Filaments
 ---------
 
-Status
-~~~~~~
+Smoldyn has very minimal filament support at present. Filaments can be
+defined and some of them can undergo Brownian motion, but these
+filaments can’t interact with molecules or surfaces yet. See the
+examples in the S13_filaments directory.
 
-I am working on adding simulation support for filaments to Smoldyn, but
-have only just begun. At present, it is possible to define filaments and
-specify their geometries by adding monomers to them. These filaments can
-move by treadmilling, and they interact with surfaces. They do not
-exhibit Brownian motion. See the examples in the S13_filaments
-directory.
+Filament heirarchy
+~~~~~~~~~~~~~~~~~~
+
+Filaments are structured in a three-tier hierarchy. At the top level,
+one defines one or more filament types, where each type is represents a
+single kind of filament in a particular environment. For example, actin
+filaments in the cytoplasm might be one type, and another is
+double-stranded DNA in the nucleus. Within each type, every individual
+filament has the same dynamics method, same dynamics parameters, and
+same graphical display. Also, if some type of filament has faces, which
+are lengthwise elements along filaments, then each filament within a
+type has the same list of faces.
+
+The next level of the heirarchy are filaments, each of which is a
+sequential list of segments. Each filament has its own set of locations
+and conformations. Filaments also have faces. In addition, filaments can
+have “monomer codes”, which are characters that are equally spaced along
+a filament’s length. These characters can represent DNA sequence,
+phosphorylation state, or some other sequence. Filament energies can be
+computed from the conformation parameters. Filaments can branch off of
+other filaments, and, obviously, can have filaments that branch off of
+themselves.
+
+The bottom of the heirarchy are either segments or beads, depending on
+the type of dynamics that are defined in the filament type, which are
+the components of filaments. In bead models, the beads are at the
+filament vertices with straight lines between them. Beads are spherical.
+In segment models, the segments are cylindrical edges that connect the
+vertices. Filament shapes are straight lines either between the beads or
+along the segments, rather than being, for example, Bézier curves that
+are defined by the vertices (called control points in that context). For
+now at least, bead models do not contain relative rotation angle
+information, so are best for freely jointed chains, whereas segment
+models do contain relative rotation angle information, so are necessary
+for angle-biased chains or other more realistic models.
+
+Defining filaments
+~~~~~~~~~~~~~~~~~~
+
+Start by defining one or more filament types. Start this with the
+``start_filament_type`` statement, including the name of the filament
+type. Then, describe the filament type parameters, such as the dynamics
+type (e.g. “alberts”, “nedelec”, “rigidbeads”, etc.), the dynamics
+parameters, and the graphics instructions. Close this section with
+``end_filament_type``.
+
+To create a filament, one approach is ``random_filament``, in which you
+give the filament a name, a type, its length, and its starting location.
+Alternatively, a filament can be started with ``start_filament`` and
+ended with ``end_filament``, in between which are filament definitions,
+including the ``type``,
+
+The ``filament`` statement used to work as well, and several of the
+example files use it. However, this statement doesn’t work at present.
 
 Hybrid simulation
 -----------------

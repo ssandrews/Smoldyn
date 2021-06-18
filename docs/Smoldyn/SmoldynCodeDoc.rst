@@ -8740,15 +8740,18 @@ are only called internally.
    | Not written yet. This will reverse the sequence of segments in a
      filament.
 
-``int filCopyFilament(const filamentptr filfrom,filamentptr filto,const char *fname);``
-   | 
-   | This function was deleted. It was designed to copy all of the
-     values in a filament to another filament, but I don’t think it was
-     likely to be useful.
+``int``
+   | ``filCopyFilament(filamentptr filto,const filamentptr filfrom);``
+   | This function copies all of the values from ``filfrom`` to
+     ``filto`` except for the name, completely overwriting any prior
+     data in ``filto`` in the process. Any elements in bead, segment,
+     and monomer lists are shifted back so that they start at index
+     number 0. Returns 0 for success, 1 for out of memory, or 2 for
+     illegal function inputs.
 
 *Filament type*
-``int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value)``
-   | 
+``int``
+   | ``filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value)``
    | Sets various filament type parameters. The parameter name is
      ``param`` and it is set to the value ``value``. If this parameter
      has multiple inidices, enter the index to be changed in ``index``,
@@ -8808,12 +8811,27 @@ are only called internally.
    | Allocates a filament superstructure, adds it to the simulation
      structure, and sets the filament condition to ``SClists``.
 
-``filamentptr filaddfilament(const filamenttypeptr filtype,const char *filname);``
-   | 
-   | Add a new filament to the simulation, which is named ``filname``,
-     returning a pointer to the new filament. If a filament with this
-     name already exists, this returns a pointer to the existing
-     filament.
+``filamentptr``
+   | ``filAddFilament(filamenttypeptr filtype,filamentptr fil,const char *filname);``
+   | This has several models, all of which generally add a new filament
+     to the simulation, which is named ``filname``, returning a pointer
+     to the new filament. If a filament with this name already exists,
+     this returns a pointer to the existing filament.
+
+   If both ``filtype`` and ``fil`` are ``NULL``, this creates a new
+   filament structure, with its own ``filname`` string, and returns it;
+   it cannot participate in simulations because it’s not part of a
+   filament type, but it can be set up. This detached filament is
+   typically then returned to this function, now with both ``filtype``
+   and ``fil`` defined, and this function copies it into the filament
+   type, freeing the extra name string in the process. Alternatively, a
+   tidier approach is to know the filament type when creating a new
+   filament, in which case ``filtype`` is defined and ``fil`` is
+   ``NULL``; in this case, the function adds a new filament structure to
+   the correct place in the simulation and returns a pointer to it.
+   Finally, there’s no point in calling this function with ``fil``
+   defined and ``filtype`` equal to ``NULL`` because there’s nothing
+   sensible that it can do, so it just returns ``fil``.
 
 ``filamenttypeptr filAddFilamentType(simptr sim,const char *ftname)``
    | 
