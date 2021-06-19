@@ -274,7 +274,7 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file('not a file')
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, 'Error: '):
             smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(
                 os.path.join(self.EXAMPLES_DIRNAME, 'CMakeLists.txt'))
 
