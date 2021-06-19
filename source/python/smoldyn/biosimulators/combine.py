@@ -251,8 +251,10 @@ def init_smoldyn_simulation_from_configuration_file(filename):
 
     smoldyn_simulation = smoldyn.Simulation.fromFile(filename)
     if not smoldyn_simulation.getSimPtr():
-        # TODO: capture Smoldyn error better
-        raise ValueError('Model source `{}` is not a valid Smoldyn file.'.format(filename))
+        error_code, error_msg = smoldyn.getError()
+        msg = 'Model source `{}` is not a valid Smoldyn file.\n\n  {}: {}'.format(
+            filename, error_code.name[0].upper() + error_code.name[1:], error_msg.replace('\n', '\n  '))
+        raise ValueError(msg)
 
     return smoldyn_simulation
 
