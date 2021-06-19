@@ -392,6 +392,20 @@ def apply_sed_model_change_to_smoldyn_simulation_configuration(sed_model_change,
     valid = False
 
     if target_type in [
+        'dim'
+    ]:
+        # Examples:
+        #   dim 1
+        for i_line, line in enumerate(simulation_configuration):
+            pattern = r'^{} '.format(target_type)
+            if re.match(pattern, line):
+                valid = True
+                simulation_configuration[i_line] = re.sub(r'^{} +[^#]+'.format(target_type),
+                                                          '{} {} '.format(target_type, new_value),
+                                                          line, count=1).strip()
+                break
+
+    elif target_type in [
         'boundaries', 'low_wall', 'high_wall',
         'define',
         'difc', 'difc_rule', 'difm', 'difm_rule', 'drift', 'drift_rule', 'surface_drift', 'surface_drift_rule'
