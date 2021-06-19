@@ -1,8 +1,10 @@
 ## Changelog
 
-### 2.66 (development)
+### 2.66 (6/18/21)
 
 - Added biosimulator support (thanks @jonrkarr, #79, #75)
+- Fixed formatting in readthedocs documentation.
+- Partial support for filaments. This still needs substantial work.
 
 ### 2.65 (5/21/21)
 

@@ -2,11 +2,11 @@
 Smoldyn Code Documentation
 ==========================
 ------------
-Version 2.65
+Version 2.66
 ------------
 
 :Author: Steve Andrews
-:Date:   ©May, 2021
+:Date:   ©June, 2021
 
 Programmer’s introduction
 =========================
@@ -1224,7 +1224,8 @@ To release a new version, there are many things to do.
 
 -  Update the version number in: (1) the top-level CMakeLists.txt file,
    (2) the Code documentation, (3) the User’s manual, (4) the release
-   shell script, (5) the install batch file for Windows.
+   shell script, (5) the install batch file for Windows, (6)
+   CHANGELOG.md.
 
 -  Run the regression tests using the latest version number and confirm
    that all results are correct.
@@ -14474,6 +14475,20 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Fixed minor issues with ``smolRunTimeStep`` and commands, which were
    causing commands to not run after the first time step.
+
+   .. rubric:: Modifications for version 2.66 (released 6/18/21)
+      :name: modifications-for-version-2.66-released-61821
+      :class: unnumbered
+
+-  Substantial work on filaments. Some example files work, but several
+   still don’t.
+
+-  Dilawar fixed documentation formatting issues for the readthedocs
+   site.
+
+-  Various additions for compatibility with Biosimulators.
+
+-  Minor additions to Python API: Simulation.counts and getError.
 
 The wish/ to do list
 ====================

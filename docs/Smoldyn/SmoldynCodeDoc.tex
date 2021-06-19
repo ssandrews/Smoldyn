@@ -42,8 +42,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.65}
-\date{\copyright May, 2021}
+\subtitle{Version 2.66}
+\date{\copyright June, 2021}
 \author{Steve Andrews}
 \maketitle
 
@@ -570,7 +570,7 @@ To release a new version, there are many things to do.
 
 \item Describe the changes in the history section of this code documentation.
 
-\item Update the version number in: (1) the top-level CMakeLists.txt file, (2) the Code documentation, (3) the User's manual, (4) the release shell script, (5) the install batch file for Windows.
+\item Update the version number in: (1) the top-level CMakeLists.txt file, (2) the Code documentation, (3) the User's manual, (4) the release shell script, (5) the install batch file for Windows, (6) CHANGELOG.md.
 
 \item Run the regression tests using the latest version number and confirm that all results are correct.
 
@@ -6778,6 +6778,12 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Fixed \ttt{smolReadConfigString} so that it now works again, for both Libsmoldyn and the Python low-level interface.
 \item Added \ttt{smolSetSimFlags} and \ttt{smolRunCommand} functions to Libsmoldyn and also to the Python low-level interface.
 \item Fixed minor issues with \ttt{smolRunTimeStep} and commands, which were causing commands to not run after the first time step.
+
+\subsection*{Modifications for version 2.66 (released 6/18/21)}
+\item Substantial work on filaments. Some example files work, but several still don't.
+\item Dilawar fixed documentation formatting issues for the readthedocs site.
+\item Various additions for compatibility with Biosimulators.
+\item Minor additions to Python API: Simulation.counts and getError.
 
 \end{itemize}
 

@@ -2,11 +2,11 @@
 Smoldyn User’s Manual
 =====================
 ------------
-Version 2.65
+Version 2.66
 ------------
 
 :Author: Steve Andrews
-:Date:   ©May, 2021
+:Date:   ©June, 2021
 
 Getting Started
 ===============
