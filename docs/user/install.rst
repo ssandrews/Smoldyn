@@ -12,17 +12,18 @@ systems such as Linux, Windows and OSX (10.14 onwards).
 In most cases, following should just work
 
 
-.. code block:: bash
+.. code-block:: bash
 
-    $ python3 -m pip install smoldyn
+    python3 -m pip install smoldyn
 
-``smoldyn`` binary can be mimicked by this module. In terminal ``python3 -m smoldyn`` is
-roughly equivalent to good old ``smoldyn`` command.
+``smoldyn`` binary can be mimicked by this module. In a terminal, ``python3 -m smoldyn`` is
+roughly equivalent to the ``smoldyn`` command.
 
-.. code block:: bash
+.. code-block:: bash
+
    python3 -m smoldyn template.txt
 
-In case, pip can't find wheel for your distribution, you may have to build it
+In cases where `pip` can't find a wheel for your distribution, you may have to build it
 yourself.
 
 Building Smoldyn 
@@ -42,16 +43,11 @@ Install dependencies
 ---------------------
 
 Most dependencies are in source tree except for ``freeglut`` and ``libtiff``.
-It is possible to build without. These dependencies are easy available so you
-are encouraged to build using them.
+It is possible to build Smoldyn without them. These dependencies are easy available 
+from your package manager.
 
-You will also need ``cmake`` (version 3.12+) and a recent C++ compiler such as
-``gcc``, ``clang``, or Microsoft Visual Studio. We assume that you already have
-these installed.  
-
-.. note::
-    `cmake` is also available at Python module. You can install/upgrade it
-    using pip e.g., ``pip3 install cmake --upgrade``.
+You will also need ``cmake`` (version 3.14+) and a recent C++ compiler such as
+``gcc``, ``clang``, or Microsoft Visual Studio.
 
 On Debian/Ubuntu  system, these dependencies can be installed using `apt`
 package manager.
