@@ -71,7 +71,15 @@ extern CSTRING void smolSetThrowing(int corethreshold,int libthreshold) {
 /* smolSetError */
 extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring,const char *flags) {
 	char string[STRCHAR];
+	int qflag,sflag,wflag;
 //	int severity;
+
+	if(flags) {
+		qflag=strchr(flags,'q')?1:0;
+		sflag=strchr(flags,'s')?1:0;
+		wflag=strchr(flags,'w')?1:0; }
+	else {
+		qflag=sflag=wflag=0; }
 
 	if(errorcode!=ECsame) {
 		Liberrorcode=errorcode;
@@ -88,12 +96,14 @@ extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorc
 
 	if(Libdebugmode && Liberrorfunction[0]!='\0') {
 		if(Liberrorcode==ECnotify) {
-			if(!strchr(flags,'q'))
+			if(!qflag && !sflag)
 				fprintf(stderr,"Libsmoldyn notification from %s: %s\n",Liberrorfunction,Liberrorstring); }
-		else if(Liberrorcode==ECwarning)
-			fprintf(stderr,"Libsmoldyn warning in %s: %s\n",Liberrorfunction,Liberrorstring);
-		else
-			fprintf(stderr,"Libsmoldyn '%s' error in %s: %s\n",smolErrorCodeToString(Liberrorcode,string),Liberrorfunction,Liberrorstring); }
+		else if(Liberrorcode==ECwarning) {
+			if(!sflag && !wflag)
+				fprintf(stderr,"Libsmoldyn warning in %s: %s\n",Liberrorfunction,Liberrorstring); }
+		else {
+			if(!sflag)
+				fprintf(stderr,"Libsmoldyn '%s' error in %s: %s\n",smolErrorCodeToString(Liberrorcode,string),Liberrorfunction,Liberrorstring); }}
 	return; }
 
 
@@ -311,7 +321,7 @@ extern CSTRING simptr smolPrepareSimFromFile(const char *filepath,const char *fi
 #else
 	er=simInitAndLoad(filepath,filename,&sim,flags);
 #endif
-	LCHECK(!er,funcname,ECerror,"Failed to initialize and load simulation");
+	LCHECKNT(!er,funcname,ECerror,ErrorLineAndString);
 	er=simUpdateAndDisplay(sim);
 	LCHECK(!er,funcname,ECerror,"Failed to update simulation");
 	return sim;
@@ -340,7 +350,7 @@ extern CSTRING enum ErrorCode smolLoadSimFromFile(const char *filepath,const cha
 		sim=simalloc(filepath);
 		LCHECK(sim,funcname,ECmemory,"allocating sim"); }
 	er=loadsim(sim,filepath,filename,flags);
-	LCHECK(!er,funcname,ECerror,ErrorString);	// ?? check error handling
+	LCHECKNT(!er,funcname,ECerror,ErrorLineAndString);
 
 	*simpointer=sim;
 	return ECok;

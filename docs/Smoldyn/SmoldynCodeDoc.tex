@@ -5504,6 +5504,27 @@ The top-level source code file, smoldyn.c, contains only the \ttt{main} function
 
 \end{description}
 
+% Libsmoldyn
+\section{Libsmoldyn (functions in libsmoldyn.cpp)}
+
+Libsmoldyn is a C/C++ API for the Smoldyn code. It is designed to be redundant with the configuration file input, but accessible from code. This description is far from complete but needs to be finished at some point. See also documentation for it in the SmoldynManual.
+
+\subsection{Error handling}
+
+Essentially every user-accessible function returns an error code. Also, functions define their function name in \ttt{const char* funcname="}$function$\ttt{";}. Errors are checked with either the \ttt{LCHECK} or \ttt{LCHECKNT} macros. These are supposed to differ with \ttt{LCHECK} dealing with the error itself and throwing an exception if necessary, and the \ttt{LCHECKNT} (no throw) macro not dealing with the error but just copying the message over into global variables. However, in practice, throwing doesn't work anyhow, so the only real difference is that the regular version displays an error message to standard error, whereas the \ttt{NT} version doesn't. Anyhow, if an error is detected, these macros send the function name, the error code, a string error message, and any simulation flags to the libsmoldyn functions \ttt{smolSetError} or \ttt{smolSetErrorNT}.
+
+At \ttt{smolSetError} and \ttt{smolSetErrorNT}, which are essentially identical, several function inputs are copied over to global variables: the function name to \ttt{Liberrorfunction}, the error code to \ttt{Liberrorcode}, and the error message to \ttt{Liberrorstring}. These items are also displayed to standard error if appropriate.
+
+The global error variables are pretty much only used in one place, which is the \ttt{smolGetError} function, which copies their values over to new variables and returns those to the calling code. In addition, each function in the library returns \ttt{Liberrorcode}, which it just set if an error occurred.
+
+A few more error handling steps arise if \ttt{smolPrepareSimFromFile} or \ttt{smolLoadSimFromFile} are used.
+
+In \ttt{smolLoadSimFromFile}, this calls the smolsim.c function \ttt{loadsim}. Here, errors are written by the macro \ttt{CHECKS}, which copies the error message to the global variable \ttt{ErrorString}. Errors are then handled by \ttt{simParseError}, which concatenates the error message from \ttt{Parse\_ReadFailure} (the file name and file line) with the error message from \ttt{ErrorString}. \ttt{simParseError} sends the result off to \ttt{simLog}, which writes the error to a logfile if one has been created or to standard output otherwise.
+
+Here is a typical example of error handling. Starting with stand-alone Smoldyn first, the program starts in \ttt{main} in smoldyn.cpp, which calls \ttt{simInitAndLoad} in smolsim.c, which calls \ttt{loadsim}, which calls \ttt{simreadstring}. In the \ttt{simreadstring} function, the input parser encounters an error. It writes an error message to the global variable \ttt{ErrorString}, goes to its failure label, and then on to \ttt{simParseError}. Here, \ttt{Parse\_ReadFailure} is called and sent an empty string, and that function returns the string with text that reads ``Error reading file in line \textit{number}. \textbackslash n line: \textit{text of line} \textbackslash n file: \textit{filename}''; if the input line included substituted text, it also gives the substituted version of the line in the string as well. \ttt{Parse\_ReadFailure} also closes files and stops the input process. Back in \ttt{simParseError}, the input file information is concatanated with the error message to create the complete error string. This is done twice; first to create an error string in the global variable \ttt{ErrorLineAndString} and also as the input to \ttt{simLog}. The \ttt{simLog} function prints the error message to the logging file if one was declared or to standard output if not (unless the `s' runtime flags was selected, in which case the error output is supressed). Next, \ttt{simParseError} returns to \ttt{simreadstring}, which returns an error code to \ttt{loadsim}, which returns an error code to \ttt{simInitAndLoad}, which returns an error code to \ttt{main}. Here, the code sees the error message, skips the simulation, and quits with an exit code of 0.
+
+For Libsmoldyn, the flow is similar, but here an entry point is \ttt{smolPrepareSimFromFile}. This calls \ttt{simInitAndLoad}. As before, an error is encountered, it is displayed to the standard output if the `s' flag isn't selected (it often should be selected for Libsmoldyn use) and also written to \ttt{ErrorLineAndString}. Then, control returns back to \ttt{smolPrepareSimFromFile}. This sees the error, so it follows the \ttt{LCHECK} macro to head off to \ttt{smolSetError}, with the \ttt{ErrorLineAndString} contents as the error message. This function prints the error message out a second time, which is a little inelegant, and also copies the message into the library global variable \ttt{Liberrorstring}. At this point, control returns to the calling program. If desired, that program can then call \ttt{smolGetError} to get the error string again, now in a string variable rather than displayed to the output.
+
 % Chapter: Code design
 \chapter{Code design}
 
@@ -6784,6 +6805,10 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Dilawar fixed documentation formatting issues for the readthedocs site.
 \item Various additions for compatibility with Biosimulators.
 \item Minor additions to Python API: Simulation.counts and getError.
+
+\subsection*{Modifications for version 2.66 (not released yet)}
+\item Added ``-s'' command line flag for silent operation.
+\item Improved error reporting for Libsmoldyn \ttt{smolPrepareSimFromFile} and \ttt{smolLoadSimFromFile} functions.
 
 \end{itemize}
 

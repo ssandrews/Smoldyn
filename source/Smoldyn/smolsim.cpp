@@ -44,6 +44,7 @@ void (*LoggingCallback)(simptr,int,const char*,...)=NULL;
 int ThrowThreshold=11;
 FILE *LogFile=NULL;
 char ErrorString[STRCHARLONG]="";
+char ErrorLineAndString[STRCHARLONG]="";
 int ErrorType=0;
 char SimFlags[STRCHAR]="";
 int VCellDefined=0;
@@ -96,7 +97,7 @@ void simSetThrowing(int corethreshold) {
 void simLog(simptr sim,int importance,const char* format, ...) {
 	char message[STRCHARLONG],*flags;
 	va_list arguments;
-	int qflag,vflag,wflag;
+	int qflag,vflag,wflag,sflag;
 	FILE *fptr;
 
 	va_start(arguments, format);
@@ -112,12 +113,14 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 	if(sim) flags=sim->flags;
 	else flags=SimFlags;
 	qflag=strchr(flags,'q')?1:0;
+	sflag=strchr(flags,'s')?1:0;
 	vflag=strchr(flags,'v')?1:0;
 	wflag=strchr(flags,'w')?1:0;
-	if(vflag || importance>=2)
-		if(!qflag || importance>=5)
-			if(!wflag || importance<=4 || importance>=7)
-				fprintf(fptr,"%s", message);
+	if(!sflag)
+		if(vflag || importance>=2)
+			if(!qflag || importance>=5)
+				if(!wflag || importance<=4 || importance>=7)
+					fprintf(fptr,"%s", message);
 
 //??	if(importance>=ThrowThreshold) throw message;	//?? This is removed for now because I can't statically link Libsmoldyn if it's enabled
 
@@ -130,11 +133,13 @@ void simParseError(simptr sim,ParseFilePtr pfp) {
 
 	if(pfp) {
 		Parse_ReadFailure(pfp,parseerrstr);
+		sprintf(ErrorLineAndString,"%s\nMessage: %s",parseerrstr,ErrorString);
 		simLog(sim,8,"%s\nMessage: %s\n",parseerrstr,ErrorString);
 		if(strmatherror(matherrstr,1))
 			simLog(sim,8,"math error: %s\n",matherrstr); }
-	else
-		simLog(sim,8,"%s",ErrorString);
+	else {
+		sprintf(ErrorLineAndString,"%s",ErrorString);
+		simLog(sim,8,"%s",ErrorString); }
 	return; }
 
 
@@ -2125,6 +2130,8 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 	strncpy(sim->flags,flags,STRCHAR);
 	strcpy(SimFlags,flags);
 	done=0;
+	ErrorLineAndString[0]='\0';
+
 	pfp=Parse_Start(fileroot,filename,errstring);
 	CHECKS(pfp,"%s",errstring);
 	er=Parse_CmdLineArg(NULL,NULL,pfp);
@@ -2315,12 +2322,13 @@ int simupdate(simptr sim) {
 int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags, ValueProviderFactory* valueProviderFactory, AbstractMesh* mesh) {
 
 	simptr sim;
-	int er,qflag;
+	int er,qflag,sflag;
 
 	sim=*smptr;
 	if(!sim) {
 		qflag=strchr(flags,'q')?1:0;
-		if(!qflag) {
+		sflag=strchr(flags,'s')?1:0;
+		if(!qflag && !sflag) {
 			simLog(NULL,2,"--------------------------------------------------------------\n");
 			simLog(NULL,2,"Running Smoldyn %s\n",VERSION);
 			simLog(NULL,2,"\nCONFIGURATION FILE\n");
@@ -2351,12 +2359,13 @@ failure:
 /* simInitAndLoad */
 int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags) {
 	simptr sim;
-	int er,qflag;
+	int er,qflag,sflag;
 
 	sim=*smptr;
 	if(!sim) {
 		qflag=strchr(flags,'q')?1:0;
-		if(!qflag) {
+		sflag=strchr(flags,'s')?1:0;
+		if(!qflag && !sflag) {
 			simLog(NULL,2,"--------------------------------------------------------------\n");
 			simLog(NULL,2,"Running Smoldyn %s\n",VERSION);
 			simLog(NULL,2,"\nCONFIGURATION FILE\n");
@@ -2527,11 +2536,11 @@ int simulatetimestep(simptr sim) {
 
 /* endsimulate */
 void endsimulate(simptr sim,int er) {
-	int tflag,*eventcount;
+	int sflag,tflag,*eventcount;
 
 	gl2State(2);
-	//qflag=strchr(sim->flags,'q')?1:0;
 	tflag=strchr(sim->flags,'t')?1:0;
+	sflag=strchr(sim->flags,'s')?1:0;
 
 	simLog(sim,2,"\n");
 	if(er==1) simLog(sim,2,"Simulation complete\n");
@@ -2573,18 +2582,17 @@ void endsimulate(simptr sim,int er) {
   if(dontPrompt != NULL && strlen(dontPrompt) > 0)
     sim->quitatend = 1;
 
-  if(sim->graphss && sim->graphss->graphics>0 && !tflag && !sim->quitatend)
+  if(sim->graphss && sim->graphss->graphics>0 && !tflag && !sim->quitatend && !sflag)
     fprintf(stderr,"\nTo quit: Activate graphics window, then press shift-Q.\a\n");
   return; }
 
 
 /* smolsimulate */
 int smolsimulate(simptr sim) {
-	int er,qflag;
+	int er;
 
 	er=0;
-	qflag=strchr(sim->flags,'q')?1:0;
-	if(!qflag) simLog(sim,2,"Simulating\n");
+	simLog(sim,2,"Simulating\n");
 	sim->clockstt=time(NULL);
 	er=simdocommands(sim);
 	if(!er)

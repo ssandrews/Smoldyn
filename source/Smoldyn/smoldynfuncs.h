@@ -38,6 +38,7 @@ extern int ThrowThreshold;
 extern FILE* LogFile;
 
 extern char ErrorString[];
+extern char ErrorLineAndString[];
 extern int ErrorType;
 extern char SimFlags[];
 
