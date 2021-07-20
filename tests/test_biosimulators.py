@@ -690,15 +690,13 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         sim_filename = os.path.join(archive_dirname, 'sim_1.sedml')
         SedmlSimulationWriter().run(doc, sim_filename)
 
-        updated = datetime.datetime(2020, 1, 2, 1, 2, 3, tzinfo=dateutil.tz.tzutc())
         archive = CombineArchive(
             contents=[
                 CombineArchiveContent(
-                    'bounce1.txt', CombineArchiveContentFormat.Smoldyn.value, updated=updated),
+                    'bounce1.txt', CombineArchiveContentFormat.Smoldyn.value),
                 CombineArchiveContent(
-                    'sim_1.sedml', CombineArchiveContentFormat.SED_ML.value, updated=updated),
+                    'sim_1.sedml', CombineArchiveContentFormat.SED_ML.value),
             ],
-            updated=updated,
         )
         archive_filename = os.path.join(self.dirname, 'archive.omex')
         CombineArchiveWriter().run(archive, archive_dirname, archive_filename)
