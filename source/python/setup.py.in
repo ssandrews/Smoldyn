@@ -60,7 +60,7 @@ setuptools.setup(
     extras_require={
         "dev": ["mypy", "pyflakes", "black", "numpy", "matplotlib"],
         "biosimulators": [
-            "biosimulators-utils[logging]>=0.1.95",
+            "biosimulators-utils[logging]>=0.1.96",
             "numpy",
             "pandas",
         ],
