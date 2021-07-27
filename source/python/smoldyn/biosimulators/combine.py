@@ -17,7 +17,7 @@ __all__ = [
 from biosimulators_utils.combine.exec import exec_sedml_docs_in_archive
 from biosimulators_utils.data_model import ValueType
 from biosimulators_utils.log.data_model import CombineArchiveLog, TaskLog  # noqa: F401
-from biosimulators_utils.plot.data_model import PlotFormat  # noqa: F401
+from biosimulators_utils.viz.data_model import VizFormat  # noqa: F401
 from biosimulators_utils.report.data_model import ReportFormat, VariableResults  # noqa: F401
 from biosimulators_utils.sedml import validation
 from biosimulators_utils.sedml.data_model import (Task, ModelLanguage, ModelAttributeChange,  # noqa: F401
@@ -114,7 +114,7 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir,
               with reports at keys ``{ relative-path-to-SED-ML-file-within-archive }/{ report.id }`` within the HDF5 file
 
         report_formats (:obj:`list` of :obj:`ReportFormat`, optional): report format (e.g., csv or h5)
-        plot_formats (:obj:`list` of :obj:`PlotFormat`, optional): report format (e.g., pdf)
+        plot_formats (:obj:`list` of :obj:`VizFormat`, optional): report format (e.g., pdf)
         bundle_outputs (:obj:`bool`, optional): if :obj:`True`, bundle outputs into archives for reports and plots
         keep_individual_outputs (:obj:`bool`, optional): if :obj:`True`, keep individual output files
 
