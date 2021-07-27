@@ -878,6 +878,39 @@ extern CSTRING void smolGetSpeciesName(simptr sim,int speciesindex,char *species
 	return; }
 
 
+/* smolGetSpecies */
+extern CSTRING int smolGetSpecies(simptr sim,int speciesindex,char *speciesname,double *difc,double **color,double *displaysize,char **listname) {
+	const char *funcname="smolGetSpecies";
+	int i;
+	enum MolecState ms;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->mols,funcname,ECnonexist,"no species defined");
+	if(speciesindex>=0) {
+		LCHECK(speciesindex<sim->mols->nspecies,funcname,ECnonexist,"species doesn't exist");
+		if(speciesname) strcpy(speciesname,sim->mols->spname[speciesindex]); }
+	else {
+		LCHECK(speciesname,funcname,ECmissing,"missing species name");
+		LCHECK(strcmp(speciesname,"all"),funcname,ECall,"species is 'all'");
+		i=stringfind(sim->mols->spname,sim->mols->nspecies,speciesname);
+		if(i<=0) {
+			char buffer[STRCHAR];
+			snprintf(buffer,STRCHAR,"species '%s' not found",speciesname);
+			LCHECK(0,funcname,ECnonexist,buffer); }}
+	for(ms=(enum MolecState)0;ms<(enum MolecState)MSMAX;ms=(enum MolecState)(ms+1)) {
+		if(difc) difc[ms]=sim->mols->difc[i][ms];
+		if(color) {
+			color[ms][0]=sim->mols->color[i][ms][0];
+			color[ms][1]=sim->mols->color[i][ms][1];
+			color[ms][2]=sim->mols->color[i][ms][2];
+			color[ms][3]=sim->mols->color[i][ms][3]; }
+		if(displaysize) displaysize[ms]=sim->mols->display[i][ms];
+		if(listname) strcpy(listname[ms],sim->mols->listname[sim->mols->listlookup[i][ms]]); }
+	return i;
+ failure:
+	return (int)Liberrorcode; }
+
+
 /* smolSetSpeciesMobility */
 extern CSTRING enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix) {
 	const char *funcname="smolSetSpeciesMobility";

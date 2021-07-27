@@ -1329,6 +1329,12 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 	strcpy(dot,".net");
 	remove(outname);						// delete output file
 
+	snprintf(string,STRCHAR,"perl -v > %s",outname);	// test for perl
+	system(string);
+	fptr=fopen(outname,"r");
+	if(!fptr) return 4;
+	remove(outname);
+
 	snprintf(string,STRCHAR,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
 	simLog(bng->bngss->sim,2," Running BNG2.pl on %s\n",filename);
 	system(string);							// generate network
@@ -1485,6 +1491,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 		CHECKS(er!=1,"BNG2.pl software is not at '%s'",bngss->BNG2path);
 		CHECKS(er!=2,"BioNetGen file '%s' not found",str1);
 		CHECKS(er!=3,"Error reading BioNetGen file '%s'. Try again with '-v' flag for more information.",str1);
+		CHECKS(er!=4,"Unable to run perl. Check that it is installed.");
 		CHECKS(!strnword(line2,2),"unexpected text following file name"); }
 
 	else {																				// unknown word
