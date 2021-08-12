@@ -39,8 +39,7 @@ RUN chmod +x xvfb-startup.sh
 ARG RESOLUTION="1920x1080x24"
 ARG XARGS=""
 ENV XVFB_RES="${RESOLUTION}" \
-    XVFB_ARGS="${XARGS}" \
-    DISPLAY=":1"
+    XVFB_ARGS="${XARGS}"
 
 # install Smoldyn and its dependencies
 COPY smoldyn*.whl /tmp/
