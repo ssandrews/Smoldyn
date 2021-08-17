@@ -8,12 +8,12 @@ __all__ = [
     'main',
 ]
 
-from ..smoldyn import __version__
+from . import __version__, get_simulator_version
 from .combine import exec_sedml_docs_in_combine_archive
 from biosimulators_utils.simulator.cli import build_cli
 
 App = build_cli('smoldyn', __version__,
-                'Smoldyn', __version__, 'http://www.smoldyn.org',
+                'Smoldyn', get_simulator_version(), 'http://www.smoldyn.org',
                 exec_sedml_docs_in_combine_archive)
 
 

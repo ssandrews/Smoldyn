@@ -1,1 +1,1 @@
-from smoldyn import __version__
+from smoldyn import __version__  # noqa: F401
