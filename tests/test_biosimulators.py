@@ -34,6 +34,7 @@ import tempfile
 import unittest
 
 
+@unittest.skipIf(biosimulators_utils is None, "BioSimulators-utils must be installed")
 class BioSimulatorsUtilsTestCase(unittest.TestCase):
     EXAMPLES_DIRNAME = os.path.join(os.path.dirname(__file__), '..', 'examples')
 
