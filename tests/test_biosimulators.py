@@ -1,8 +1,6 @@
 __author__ = "Jonathan Karr"
 __email__ = "karr@mssm.edu"
 
-from smoldyn.biosimulators.data_model import Simulation, SimulationInstruction
-from smoldyn.biosimulators.utils import read_simulation, _read_simulation_line
 try:
     import biosimulators_utils
     from biosimulators_utils.combine.data_model import CombineArchive, CombineArchiveContent, CombineArchiveContentFormat
@@ -15,6 +13,8 @@ try:
         UniformTimeCourseSimulation, Algorithm, AlgorithmParameterChange,
         Task, DataGenerator, Report, DataSet, Variable, Symbol)
     from biosimulators_utils.sedml.io import SedmlSimulationWriter
+    from smoldyn.biosimulators.data_model import Simulation, SimulationInstruction
+    from smoldyn.biosimulators.utils import read_simulation, _read_simulation_line
 except ModuleNotFoundError:
     biosimulators_utils = None
 from unittest import mock
