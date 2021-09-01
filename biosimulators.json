@@ -49,6 +49,10 @@
     },
     "operatingSystemType": "Linux"
   },
+  "pythonApi": {
+    "package": "smoldyn",
+    "module": "smoldyn.biosimulators"
+  },
   "authors": [{
       "middleName": "S.",
       "firstName": "Steven",
@@ -152,7 +156,7 @@
     },
     "modelingFrameworks": [{
       "namespace": "SBO",
-      "id": "SBO_0000294"
+      "id": "SBO_0000678"
     }],
     "modelFormats": [{
       "namespace": "EDAM",

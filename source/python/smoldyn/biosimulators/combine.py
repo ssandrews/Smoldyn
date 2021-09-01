@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 from biosimulators_utils.combine.exec import exec_sedml_docs_in_archive
-from biosimulators_utils.config import get_config
+from biosimulators_utils.config import get_config, Config  # noqa: F401
 from biosimulators_utils.data_model import ValueType
 from biosimulators_utils.log.data_model import CombineArchiveLog, TaskLog  # noqa: F401
 from biosimulators_utils.viz.data_model import VizFormat  # noqa: F401
@@ -100,11 +100,7 @@ KISAO_ALGORITHM_PARAMETERS_MAP = {
 }
 
 
-def exec_sedml_docs_in_combine_archive(archive_filename, out_dir,
-                                       return_results=False,
-                                       report_formats=None, plot_formats=None,
-                                       bundle_outputs=None, keep_individual_outputs=None,
-                                       raise_exceptions=True):
+def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
     ''' Execute the SED tasks defined in a COMBINE/OMEX archive and save the outputs
 
     Args:
@@ -116,12 +112,7 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir,
             * HDF5: directory in which to save a single HDF5 file (``{ out_dir }/reports.h5``),
               with reports at keys ``{ relative-path-to-SED-ML-file-within-archive }/{ report.id }`` within the HDF5 file
 
-        return_results (:obj:`bool`, optional): whether to return the result of each output of each SED-ML file
-        report_formats (:obj:`list` of :obj:`ReportFormat`, optional): report format (e.g., csv or h5)
-        plot_formats (:obj:`list` of :obj:`VizFormat`, optional): report format (e.g., pdf)
-        bundle_outputs (:obj:`bool`, optional): if :obj:`True`, bundle outputs into archives for reports and plots
-        keep_individual_outputs (:obj:`bool`, optional): if :obj:`True`, keep individual output files
-        raise_exceptions (:obj:`bool`, optional): whether to raise exceptions
+        config (:obj:`Config`, optional): BioSimulators common configuration
 
     Returns:
         :obj:`tuple`:
@@ -132,21 +123,17 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir,
     sed_doc_executer = functools.partial(exec_sed_doc, exec_sed_task)
     return exec_sedml_docs_in_archive(sed_doc_executer, archive_filename, out_dir,
                                       apply_xml_model_changes=False,
-                                      return_results=return_results,
-                                      report_formats=report_formats,
-                                      plot_formats=plot_formats,
-                                      bundle_outputs=bundle_outputs,
-                                      keep_individual_outputs=keep_individual_outputs,
-                                      raise_exceptions=raise_exceptions)
+                                      config=config)
 
 
-def exec_sed_task(sed_task, sed_variables, log=None):
+def exec_sed_task(sed_task, sed_variables, log=None, config=None):
     ''' Execute a task and save its results
 
     Args:
        sed_task (:obj:`Task`): task
        sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
        log (:obj:`TaskLog`, optional): log for the task
+       config (:obj:`Config`, optional): BioSimulators common configuration
 
     Returns:
         :obj:`tuple`:
@@ -154,9 +141,10 @@ def exec_sed_task(sed_task, sed_variables, log=None):
             :obj:`VariableResults`: results of variables
             :obj:`TaskLog`: log
     '''
-    config = get_config()
-
-    log = log or TaskLog()
+    if not config:
+        config = get_config()
+    if config.LOG and not log:
+        log = TaskLog()
 
     sed_model = sed_task.model
     sed_simulation = sed_task.simulation
@@ -238,13 +226,14 @@ def exec_sed_task(sed_task, sed_variables, log=None):
         os.remove(smoldyn_output_file.filename)
 
     # log simulation
-    log.algorithm = sed_simulation.algorithm.kisao_id
-    log.simulator_details = {
-        'class': 'smoldyn.Simulation',
-        'setInstanceAttributes': smoldyn_simulation_attr_setter_args,
-        'method': 'run',
-        'methodArguments': smoldyn_run_args,
-    }
+    if config.LOG:
+        log.algorithm = sed_simulation.algorithm.kisao_id
+        log.simulator_details = {
+            'class': 'smoldyn.Simulation',
+            'setInstanceAttributes': smoldyn_simulation_attr_setter_args,
+            'method': 'run',
+            'methodArguments': smoldyn_run_args,
+        }
 
     # return the values of the variables and log
     return variable_results, log
