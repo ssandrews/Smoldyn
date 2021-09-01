@@ -48,6 +48,11 @@ RUN cd /tmp \
     && pip install "${WHEEL_PATH}[biosimulators]" \
     && rm smoldyn*.whl
 
+# fonts for matplotlib
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends libfreetype6 \
+    && rm -rf /var/lib/apt/lists/*
+
 # configure matplotlib
 RUN mkdir -p /.cache/matplotlib \
     && mkdir -p /.config/matplotlib \

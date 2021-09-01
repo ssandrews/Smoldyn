@@ -5,6 +5,7 @@ try:
     import biosimulators_utils
     from biosimulators_utils.combine.data_model import CombineArchive, CombineArchiveContent, CombineArchiveContentFormat
     from biosimulators_utils.combine.io import CombineArchiveWriter
+    from biosimulators_utils.config import get_config
     from biosimulators_utils.report.data_model import ReportFormat
     from biosimulators_utils.report.io import ReportReader
     from biosimulators_utils.sedml.data_model import (
@@ -601,8 +602,14 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         doc, archive_filename = self._build_combine_archive()
 
         out_dir = os.path.join(self.dirname, 'out')
-        log = smoldyn.biosimulators.combine.exec_sedml_docs_in_combine_archive(
-            archive_filename, out_dir, report_formats=[ReportFormat.h5])
+
+        config = get_config()
+        config.REPORT_FORMATS = [ReportFormat.h5]
+
+        _, log = smoldyn.biosimulators.combine.exec_sedml_docs_in_combine_archive(
+            archive_filename, out_dir, config=config)
+        if log.exception:
+            raise log.exception
 
         self._assert_combine_archive_outputs(doc, out_dir)
 
