@@ -598,6 +598,66 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             smoldyn.biosimulators.combine.exec_sed_task(task, variables)
 
+    def test_exec_sed_task_positive_initial_time(self):
+        task = Task(
+            id='task',
+            model=Model(
+                id='model',
+                source=os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt'),
+                language=ModelLanguage.Smoldyn.value,
+            ),
+            simulation=UniformTimeCourseSimulation(
+                initial_time=0.01,
+                output_start_time=0.01,
+                output_end_time=0.11,
+                number_of_points=10,
+                algorithm=Algorithm(
+                    kisao_id='KISAO_0000057',
+                )
+            ),
+        )
+
+        variables = [
+            Variable(id='time', symbol=Symbol.time.value, task=task),
+            Variable(id='red', target='molcount red', task=task),
+            Variable(id='green', target='molcount green', task=task),
+        ]
+
+        results, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
+
+        self.assertEqual(set(results.keys()), set(['time', 'red', 'green']))
+        numpy.testing.assert_allclose(results['time'], numpy.linspace(0.01, 0.11, 11))
+
+    def test_exec_sed_task_negative_initial_time(self):
+        task = Task(
+            id='task',
+            model=Model(
+                id='model',
+                source=os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt'),
+                language=ModelLanguage.Smoldyn.value,
+            ),
+            simulation=UniformTimeCourseSimulation(
+                initial_time=-0.01,
+                output_start_time=-0.01,
+                output_end_time=0.09,
+                number_of_points=10,
+                algorithm=Algorithm(
+                    kisao_id='KISAO_0000057',
+                )
+            ),
+        )
+
+        variables = [
+            Variable(id='time', symbol=Symbol.time.value, task=task),
+            Variable(id='red', target='molcount red', task=task),
+            Variable(id='green', target='molcount green', task=task),
+        ]
+
+        results, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
+
+        self.assertEqual(set(results.keys()), set(['time', 'red', 'green']))
+        numpy.testing.assert_allclose(results['time'], numpy.linspace(-0.01, 0.09, 11), rtol=5e-6)
+
     def test_exec_sedml_docs_in_combine_archive(self):
         doc, archive_filename = self._build_combine_archive()
 

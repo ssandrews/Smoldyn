@@ -126,12 +126,15 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
                                       config=config)
 
 
-def exec_sed_task(sed_task, sed_variables, log=None, config=None):
+def exec_sed_task(task, variables, preprocessed_task=None, log=None, config=None):
     ''' Execute a task and save its results
 
     Args:
-       sed_task (:obj:`Task`): task
-       sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+       task (:obj:`Task`): task
+       variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+       preprocessed_task (:obj:`dict`, optional): preprocessed information about the task, including possible
+            model changes and variables. This can be used to avoid repeatedly executing the same initialization
+            for repeated calls to this method.
        log (:obj:`TaskLog`, optional): log for the task
        config (:obj:`Config`, optional): BioSimulators common configuration
 
@@ -143,15 +146,19 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
     '''
     if not config:
         config = get_config()
+
     if config.LOG and not log:
         log = TaskLog()
 
-    sed_model = sed_task.model
-    sed_simulation = sed_task.simulation
+    if preprocessed_task is None:
+        preprocessed_task = preprocess_sed_task(task, variables, config=config)
+
+    sed_model = task.model
+    sed_simulation = task.simulation
 
     if config.VALIDATE_SEDML:
-        raise_errors_warnings(validation.validate_task(sed_task),
-                              error_summary='Task `{}` is invalid.'.format(sed_task.id))
+        raise_errors_warnings(validation.validate_task(task),
+                              error_summary='Task `{}` is invalid.'.format(task.id))
         raise_errors_warnings(validation.validate_model_language(sed_model.language, ModelLanguage.Smoldyn),
                               error_summary='Language for model `{}` is not supported.'.format(sed_model.id))
         raise_errors_warnings(validation.validate_model_change_types(sed_model.changes, (ModelAttributeChange, )),
@@ -162,8 +169,8 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
                               error_summary='{} `{}` is not supported.'.format(sed_simulation.__class__.__name__, sed_simulation.id))
         raise_errors_warnings(*validation.validate_simulation(sed_simulation),
                               error_summary='Simulation `{}` is invalid.'.format(sed_simulation.id))
-        raise_errors_warnings(*validation.validate_data_generator_variables(sed_variables),
-                              error_summary='Data generator variables for task `{}` are invalid.'.format(sed_task.id))
+        raise_errors_warnings(*validation.validate_data_generator_variables(variables),
+                              error_summary='Data generator variables for task `{}` are invalid.'.format(task.id))
 
     if sed_simulation.algorithm.kisao_id not in KISAO_ALGORITHMS_MAP:
         msg = 'Algorithm `{}` is not supported. The following algorithms are supported:{}'.format(
@@ -207,7 +214,7 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
             setter(val['value'])
 
     # Setup Smoldyn output files for the SED variables
-    smoldyn_output_files = add_smoldyn_output_files_for_sed_variables(smoldyn_configuration_filename, sed_variables, smoldyn_simulation)
+    smoldyn_output_files = add_smoldyn_output_files_for_sed_variables(smoldyn_configuration_filename, variables, smoldyn_simulation)
 
     # execute the simulation
     smoldyn_run_args = dict(
@@ -217,7 +224,7 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
     smoldyn_simulation.run(**smoldyn_run_args, overwrite=True, display=False, quit_at_end=False)
 
     # get the result of each SED variable
-    variable_results = get_variable_results(sed_simulation.number_of_steps, sed_variables, smoldyn_output_files)
+    variable_results = get_variable_results(sed_simulation.number_of_steps, variables, smoldyn_output_files)
 
     # cleanup temporary files
     os.remove(smoldyn_configuration_filename)
@@ -237,6 +244,24 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
 
     # return the values of the variables and log
     return variable_results, log
+
+
+def preprocess_sed_task(task, variables, config=None):
+    """ Preprocess a SED task, including its possible model changes and variables. This is useful for avoiding
+    repeatedly initializing tasks on repeated calls of :obj:`exec_sed_task`.
+
+    Args:
+        task (:obj:`Task`): task
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        config (:obj:`Config`, optional): BioSimulators common configuration
+
+    Returns:
+        :obj:`dict`: preprocessed information about the task
+    """
+    config = config or get_config()
+
+    # return preprocessed information
+    return {}
 
 
 def init_smoldyn_simulation_from_configuration_file(filename):
@@ -562,7 +587,7 @@ def add_commands_to_smoldyn_output_file(simulation, output_file, commands):
         simulation.addCommand(command.command + ' ' + output_file.name, command.type)
 
 
-def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_variables, smoldyn_simulation):
+def add_smoldyn_output_files_for_sed_variables(configuration_filename, variables, smoldyn_simulation):
     ''' Add Smoldyn output files for capturing each SED variable
 
     =============================================================================================================================================  ===========================================================================================================================================  ===========================================
@@ -594,7 +619,7 @@ def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_varia
 
     Args:
         configuration_filename (:obj:`str`): path to the Smoldyn configuration file for the simulation
-        sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
         smoldyn_simulation (:obj:`smoldyn.Simulation`): Smoldyn simulation
 
     Returns:
@@ -607,16 +632,16 @@ def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_varia
 
     missing_symbols = []
 
-    for sed_variable in sed_variables:
-        if sed_variable.symbol:
-            if sed_variable.symbol == Symbol.time.value:
+    for variable in variables:
+        if variable.symbol:
+            if variable.symbol == Symbol.time.value:
                 add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
                                                    'molcount', True, smoldyn_output_files)
             else:
-                missing_symbols.append('{}: {}'.format(sed_variable.id, sed_variable.symbol))
+                missing_symbols.append('{}: {}'.format(variable.id, variable.symbol))
 
         else:
-            output_command, _, output_args = re.sub(r' +', ' ', sed_variable.target).partition(' ')
+            output_command, _, output_args = re.sub(r' +', ' ', variable.target).partition(' ')
             if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
                 output_args = output_args.partition(' ')[2]
                 add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
@@ -671,12 +696,12 @@ def add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulatio
         )
 
 
-def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
+def get_variable_results(number_of_steps, variables, smoldyn_output_files):
     ''' Get the result of each SED variable
 
     Args:
         number_of_steps (:obj:`int`): number of steps
-        sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
         smoldyn_output_files (:obj:`dict` of :obj:`str` => :obj:`SmoldynOutputFile`): Smoldyn output files
 
     Returns:
@@ -691,21 +716,21 @@ def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
     missing_variables = []
 
     variable_results = VariableResults()
-    for sed_variable in sed_variables:
-        if sed_variable.symbol:
-            if sed_variable.symbol == Symbol.time.value:
+    for variable in variables:
+        if variable.symbol:
+            if variable.symbol == Symbol.time.value:
                 variable_result = get_smoldyn_output('molcount', True, None, smoldyn_output_files, smoldyn_results)['time']
             else:
                 variable_result = None
-                missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'symbol', sed_variable.symbol))
+                missing_variables.append('{}: {}: {}'.format(variable.id, 'symbol', variable.symbol))
         else:
-            output_command, _, output_args = re.sub(r' +', ' ', sed_variable.target).partition(' ')
+            output_command, _, output_args = re.sub(r' +', ' ', variable.target).partition(' ')
             if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
                 species_name, _, output_args = output_args.partition(' ')
                 variable_result = get_smoldyn_output(output_command + ' ' + output_args, True, None,
                                                      smoldyn_output_files, smoldyn_results).get(species_name, None)
                 if variable_result is None:
-                    missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'target', sed_variable.target))
+                    missing_variables.append('{}: {}: {}'.format(variable.id, 'target', variable.target))
 
             elif output_command in ['molcountspecies']:
                 variable_result = get_smoldyn_output(output_command + ' ' + output_args, True, None,
@@ -731,11 +756,11 @@ def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
 
         if variable_result is not None:
             if variable_result.ndim == 1:
-                variable_results[sed_variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, ]
+                variable_results[variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, ]
             elif variable_result.ndim == 2:
-                variable_results[sed_variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, :]
+                variable_results[variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, :]
             else:
-                variable_results[sed_variable.id] = variable_result[-(number_of_steps + 1):, :, :]
+                variable_results[variable.id] = variable_result[-(number_of_steps + 1):, :, :]
 
     if missing_variables:
         msg = '{} variables could not be recorded:\n  {}'.format(
