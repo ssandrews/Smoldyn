@@ -28,8 +28,8 @@ if(NOT SMOLDYN_VERSION)
             string(SUBSTRING ${SMOLDYN_TAG} 1 -1 SMOLDYN_VERSION)
             message(STATUS " -- Found a release tag ${SMOLDYN_TAG}")
         else()
-            # nightly release.
-            string(TIMESTAMP STAMP "%Y%m%d")
+            # minute-ly release.
+            string(TIMESTAMP STAMP "%Y%m%d%H%M")
             set(SMOLDYN_VERSION "2.67.dev${STAMP}")
         endif()
     endif()
