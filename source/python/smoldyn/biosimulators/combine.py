@@ -8,15 +8,14 @@ __author__ = 'Jonathan Karr'
 __email__ = 'karr@mssm.edu'
 
 __all__ = [
-    'KISAO_ALGORITHMS_MAP',
-    'KISAO_ALGORITHM_PARAMETERS_MAP',
     'exec_sedml_docs_in_combine_archive',
     'exec_sed_task',
 ]
 
+from .data_model import (SmoldynCommand, SmoldynOutputFile, SimulationChange, SimulationChangeExecution, AlgorithmParameterType,
+                         KISAO_ALGORITHMS_MAP, KISAO_ALGORITHM_PARAMETERS_MAP)
 from biosimulators_utils.combine.exec import exec_sedml_docs_in_archive
 from biosimulators_utils.config import get_config, Config  # noqa: F401
-from biosimulators_utils.data_model import ValueType
 from biosimulators_utils.log.data_model import CombineArchiveLog, TaskLog  # noqa: F401
 from biosimulators_utils.viz.data_model import VizFormat  # noqa: F401
 from biosimulators_utils.report.data_model import ReportFormat, VariableResults, SedDocumentResults  # noqa: F401
@@ -27,77 +26,13 @@ from biosimulators_utils.sedml.data_model import (Task, ModelLanguage, ModelAttr
 from biosimulators_utils.sedml.exec import exec_sed_doc
 from biosimulators_utils.utils.core import validate_str_value, parse_value, raise_errors_warnings
 from smoldyn import smoldyn
-import enum
 import functools
 import os
 import numpy
 import pandas
 import re
 import tempfile
-
-
-class AlgorithmParameterType(str, enum.Enum):
-    ''' Type of algorithm parameter '''
-    run_argument = 'run_argument'
-    instance_attribute = 'instance_attribute'
-
-
-class SmoldynOutputFile(object):
-    ''' A Smoldyn output file
-
-    Attributes:
-        name (:obj:`str`): name
-        filename (:obj:`str`): path to the file
-    '''
-
-    def __init__(self, name, filename):
-        '''
-        Args:
-            name (:obj:`str`): name
-            filename (:obj:`str`): path to the file
-        '''
-        self.name = name
-        self.filename = filename
-
-
-class SmoldynCommand(object):
-    ''' A Smoldyn command
-
-    Attributes:
-        command (:obj:`str`): command (e.g., ``molcount``)
-        type (:obj:`str`): command type (e.g., ``E``)
-    '''
-
-    def __init__(self, command, type):
-        '''
-        Args:
-            command (:obj:`str`): command (e.g., ``molcount``)
-            type (:obj:`str`): command type (e.g., ``E``)
-        '''
-        self.command = command
-        self.type = type
-
-
-KISAO_ALGORITHMS_MAP = {
-    'KISAO_0000057': {
-        'name': 'Brownian diffusion Smoluchowski method',
-    }
-}
-
-KISAO_ALGORITHM_PARAMETERS_MAP = {
-    'KISAO_0000254': {
-        'name': 'accuracy',
-        'type': AlgorithmParameterType.run_argument,
-        'data_type': ValueType.float,
-        'default': 10.,
-    },
-    'KISAO_0000488': {
-        'name': 'setRandomSeed',
-        'type': AlgorithmParameterType.instance_attribute,
-        'data_type': ValueType.integer,
-        'default': None,
-    },
-}
+import types  # noqa: F401
 
 
 def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
@@ -126,12 +61,15 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
                                       config=config)
 
 
-def exec_sed_task(sed_task, sed_variables, log=None, config=None):
+def exec_sed_task(task, variables, preprocessed_task=None, log=None, config=None):
     ''' Execute a task and save its results
 
     Args:
-       sed_task (:obj:`Task`): task
-       sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+       task (:obj:`Task`): task
+       variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+       preprocessed_task (:obj:`dict`, optional): preprocessed information about the task, including possible
+            model changes and variables. This can be used to avoid repeatedly executing the same initialization
+            for repeated calls to this method.
        log (:obj:`TaskLog`, optional): log for the task
        config (:obj:`Config`, optional): BioSimulators common configuration
 
@@ -143,15 +81,83 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
     '''
     if not config:
         config = get_config()
+
     if config.LOG and not log:
         log = TaskLog()
 
-    sed_model = sed_task.model
-    sed_simulation = sed_task.simulation
+    sed_model_changes = task.model.changes
+    sed_simulation = task.simulation
+
+    if preprocessed_task is None:
+        preprocessed_task = preprocess_sed_task(task, variables, config=config)
+        sed_model_changes = list(filter(lambda change: change.target in preprocessed_task['sed_smoldyn_simulation_change_map'],
+                                        sed_model_changes))
+
+    # read Smoldyn configuration
+    smoldyn_simulation = preprocessed_task['simulation']
+
+    # apply model changes to the Smoldyn configuration
+    sed_smoldyn_simulation_change_map = preprocessed_task['sed_smoldyn_simulation_change_map']
+    for change in sed_model_changes:
+        smoldyn_change = sed_smoldyn_simulation_change_map.get(change.target, None)
+        if smoldyn_change is None or smoldyn_change.execution != SimulationChangeExecution.simulation:
+            raise NotImplementedError('Target `{}` can only be changed during simulation preprocessing.'.format(change.target))
+        apply_change_to_smoldyn_simulation(
+            smoldyn_simulation, change, smoldyn_change)
+
+    # get the Smoldyn representation of the SED uniform time course simulation
+    smoldyn_simulation_run_timecourse_args = get_smoldyn_run_timecourse_args(sed_simulation)
+
+    # execute the simulation
+    smoldyn_run_args = dict(
+        **smoldyn_simulation_run_timecourse_args,
+        **preprocessed_task['simulation_run_alg_param_args'],
+    )
+    smoldyn_simulation.run(**smoldyn_run_args, overwrite=True, display=False, quit_at_end=False)
+
+    # get the result of each SED variable
+    variable_output_cmd_map = preprocessed_task['variable_output_cmd_map']
+    smoldyn_output_files = preprocessed_task['output_files']
+    variable_results = get_variable_results(sed_simulation.number_of_steps, variables, variable_output_cmd_map, smoldyn_output_files)
+
+    # cleanup output files
+    for smoldyn_output_file in smoldyn_output_files.values():
+        os.remove(smoldyn_output_file.filename)
+
+    # log simulation
+    if config.LOG:
+        log.algorithm = sed_simulation.algorithm.kisao_id
+        log.simulator_details = {
+            'class': 'smoldyn.Simulation',
+            'instanceAttributes': preprocessed_task['simulation_attrs'],
+            'method': 'run',
+            'methodArguments': smoldyn_run_args,
+        }
+
+    # return the values of the variables and log
+    return variable_results, log
+
+
+def preprocess_sed_task(task, variables, config=None):
+    """ Preprocess a SED task, including its possible model changes and variables. This is useful for avoiding
+    repeatedly initializing tasks on repeated calls of :obj:`exec_sed_task`.
+
+    Args:
+        task (:obj:`Task`): task
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        config (:obj:`Config`, optional): BioSimulators common configuration
+
+    Returns:
+        :obj:`dict`: preprocessed information about the task
+    """
+    config = config or get_config()
+
+    sed_model = task.model
+    sed_simulation = task.simulation
 
     if config.VALIDATE_SEDML:
-        raise_errors_warnings(validation.validate_task(sed_task),
-                              error_summary='Task `{}` is invalid.'.format(sed_task.id))
+        raise_errors_warnings(validation.validate_task(task),
+                              error_summary='Task `{}` is invalid.'.format(task.id))
         raise_errors_warnings(validation.validate_model_language(sed_model.language, ModelLanguage.Smoldyn),
                               error_summary='Language for model `{}` is not supported.'.format(sed_model.id))
         raise_errors_warnings(validation.validate_model_change_types(sed_model.changes, (ModelAttributeChange, )),
@@ -162,8 +168,8 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
                               error_summary='{} `{}` is not supported.'.format(sed_simulation.__class__.__name__, sed_simulation.id))
         raise_errors_warnings(*validation.validate_simulation(sed_simulation),
                               error_summary='Simulation `{}` is invalid.'.format(sed_simulation.id))
-        raise_errors_warnings(*validation.validate_data_generator_variables(sed_variables),
-                              error_summary='Data generator variables for task `{}` are invalid.'.format(sed_task.id))
+        raise_errors_warnings(*validation.validate_data_generator_variables(variables),
+                              error_summary='Data generator variables for task `{}` are invalid.'.format(task.id))
 
     if sed_simulation.algorithm.kisao_id not in KISAO_ALGORITHMS_MAP:
         msg = 'Algorithm `{}` is not supported. The following algorithms are supported:{}'.format(
@@ -179,9 +185,21 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
     # turn off Smoldyn's graphics
     disable_smoldyn_graphics_in_simulation_configuration(simulation_configuration)
 
-    # apply model changes to the Smoldyn configuration
+    # preprocess model changes
+    sed_smoldyn_preprocessing_change_map = {}
+    sed_smoldyn_simulation_change_map = {}
     for change in sed_model.changes:
-        apply_sed_model_change_to_smoldyn_simulation_configuration(change, simulation_configuration)
+        smoldyn_change = validate_model_change(change)
+
+        if smoldyn_change.execution == SimulationChangeExecution.preprocessing:
+            sed_smoldyn_preprocessing_change_map[change] = smoldyn_change
+        else:
+            sed_smoldyn_simulation_change_map[change.target] = smoldyn_change
+
+    # apply preprocessing-time changes
+    for change, smoldyn_change in sed_smoldyn_preprocessing_change_map.items():
+        apply_change_to_smoldyn_simulation_configuration(
+            simulation_configuration, change, smoldyn_change)
 
     # write the modified Smoldyn configuration to a temporary file
     fid, smoldyn_configuration_filename = tempfile.mkstemp(suffix='.txt')
@@ -191,52 +209,41 @@ def exec_sed_task(sed_task, sed_variables, log=None, config=None):
     # initialize a simulation from the Smoldyn file
     smoldyn_simulation = init_smoldyn_simulation_from_configuration_file(smoldyn_configuration_filename)
 
-    # get the Smoldyn representation of the SED uniform time course simulation
-    smoldyn_run_timecourse_args = get_smoldyn_run_timecourse_args(sed_simulation)
+    # clean up temporary file
+    os.remove(smoldyn_configuration_filename)
 
     # apply the SED algorithm parameters to the Smoldyn simulation and to the arguments to its ``run`` method
-    smoldyn_simulation_attr_setter_args = {}
-    smoldyn_run_alg_param_args = {}
+    smoldyn_simulation_attrs = {}
+    smoldyn_simulation_run_alg_param_args = {}
     for sed_algorithm_parameter_change in sed_simulation.algorithm.changes:
         val = get_smoldyn_instance_attr_or_run_algorithm_parameter_arg(sed_algorithm_parameter_change)
         if val['type'] == AlgorithmParameterType.run_argument:
-            smoldyn_run_alg_param_args[val['name']] = val['value']
+            smoldyn_simulation_run_alg_param_args[val['name']] = val['value']
         else:
-            smoldyn_simulation_attr_setter_args[val['name']] = val['value']
-            setter = getattr(smoldyn_simulation, val['name'])
-            setter(val['value'])
+            smoldyn_simulation_attrs[val['name']] = val['value']
+
+    # apply the SED algorithm parameters to the Smoldyn simulation and to the arguments to its ``run`` method
+    for attr_name, value in smoldyn_simulation_attrs.items():
+        setter = getattr(smoldyn_simulation, attr_name)
+        setter(value)
+
+    # validate SED variables
+    variable_output_cmd_map = validate_variables(variables)
 
     # Setup Smoldyn output files for the SED variables
-    smoldyn_output_files = add_smoldyn_output_files_for_sed_variables(smoldyn_configuration_filename, sed_variables, smoldyn_simulation)
+    smoldyn_configuration_dirname = os.path.dirname(smoldyn_configuration_filename)
+    smoldyn_output_files = add_smoldyn_output_files_for_sed_variables(
+        smoldyn_configuration_dirname, variables, variable_output_cmd_map, smoldyn_simulation)
 
-    # execute the simulation
-    smoldyn_run_args = dict(
-        **smoldyn_run_timecourse_args,
-        **smoldyn_run_alg_param_args,
-    )
-    smoldyn_simulation.run(**smoldyn_run_args, overwrite=True, display=False, quit_at_end=False)
-
-    # get the result of each SED variable
-    variable_results = get_variable_results(sed_simulation.number_of_steps, sed_variables, smoldyn_output_files)
-
-    # cleanup temporary files
-    os.remove(smoldyn_configuration_filename)
-
-    for smoldyn_output_file in smoldyn_output_files.values():
-        os.remove(smoldyn_output_file.filename)
-
-    # log simulation
-    if config.LOG:
-        log.algorithm = sed_simulation.algorithm.kisao_id
-        log.simulator_details = {
-            'class': 'smoldyn.Simulation',
-            'setInstanceAttributes': smoldyn_simulation_attr_setter_args,
-            'method': 'run',
-            'methodArguments': smoldyn_run_args,
-        }
-
-    # return the values of the variables and log
-    return variable_results, log
+    # return preprocessed information
+    return {
+        'simulation': smoldyn_simulation,
+        'simulation_attrs': smoldyn_simulation_attrs,
+        'simulation_run_alg_param_args': smoldyn_simulation_run_alg_param_args,
+        'sed_smoldyn_simulation_change_map': sed_smoldyn_simulation_change_map,
+        'variable_output_cmd_map': variable_output_cmd_map,
+        'output_files': smoldyn_output_files,
+    }
 
 
 def init_smoldyn_simulation_from_configuration_file(filename):
@@ -349,16 +356,12 @@ def disable_smoldyn_graphics_in_simulation_configuration(configuration):
             configuration[i_line] = re.sub(r'^graphics +[a-z_]+', 'graphics none', line)
 
 
-def apply_sed_model_change_to_smoldyn_simulation_configuration(sed_model_change, simulation_configuration):
-    ''' Apply a SED model attribute change to a configuration for a Smoldyn simulation
+def validate_model_change(sed_model_change):
+    ''' Validate a SED model attribute change to a configuration for a Smoldyn simulation
 
     ====================================================================  ===================
-    target                                                                newValue type
+    target                                                                newValue
     ====================================================================  ===================
-    ``dim``                                                               integer
-    ``low_wall {dim}``                                                    float string
-    ``high_wall {dim}``                                                   float string
-    ``boundaries {dim}``                                                  float float string?
     ``define {name}``                                                     float
     ``difc {species}``                                                    float
     ``difc {species}({state})``                                           float
@@ -371,17 +374,23 @@ def apply_sed_model_change_to_smoldyn_simulation_configuration(sed_model_change,
     ``drift_rule {species}({state})``                                     float[]
     ``surface_drift {species}({state}) {surface} {panel-shape}``          float[]
     ``surface_drift_rule {species}({state}) {surface} {panel-shape}``     float[]
-    ``mol {species} [{pos} ...]``                                         integer
-    ``compartment_mol {species} {compartment-name}``                      integer
-    ``surface_mol {species}({state}) {panel-shape} {panel} [{pos} ...]``  integer
+    ``killmol {species}({state})``                                        0
+    ``killmolprob {species}({state}) {prob}``                             0
+    ``killmolincmpt {species}({state}) {compartment}``                    0
+    ``killmolinsphere {species}({state}) {surface}``                      0
+    ``killmoloutsidesystem {species}({state})``                           0
+    ``fixmolcount {species}({state})``                                    integer
+    ``fixmolcountincmpt {species}({staet}) {compartment}``                integer
+    ``fixmolcountonsurf {species}({state}) {surface}``                    integer
     ====================================================================  ===================
 
     Args:
         sed_model_change (:obj:`ModelAttributeChange`): SED model change
-        simulation_configuration (:obj:`list` of :obj:`str`): configuration for a Smoldyn simulation
+
+    Returns:
+        :obj:`SimulationChange`: Smoldyn representation of the model change
 
     Raises:
-        :obj:`ValueError`: invalid value for a model change
         :obj:`NotImplementedError`: unsupported model change
     '''
     # TODO: support additional types of model changes
@@ -389,60 +398,104 @@ def apply_sed_model_change_to_smoldyn_simulation_configuration(sed_model_change,
     target_type, _, target = sed_model_change.target.strip().partition(' ')
     target_type = target_type.strip()
     target = re.sub(r' +', ' ', target).strip()
-    new_value = sed_model_change.new_value.strip()
-
-    valid = False
 
     if target_type in [
-        'dim'
+        'killmol', 'killmolprob', 'killmolinsphere', 'killmolincmpt', 'killmoloutsidesystem',
     ]:
         # Examples:
-        #   dim 1
-        for i_line, line in enumerate(simulation_configuration):
-            pattern = r'^{} '.format(target_type)
-            if re.match(pattern, line):
-                valid = True
-                simulation_configuration[i_line] = re.sub(r'^{} +[^#]+'.format(target_type),
-                                                          '{} {} '.format(target_type, new_value),
-                                                          line, count=1).strip()
-                break
+        #   killmol red
+        def new_line_func(new_value):
+            return target_type + ' ' + target
+        execution = SimulationChangeExecution.simulation
 
     elif target_type in [
-        'boundaries', 'low_wall', 'high_wall',
-        'define',
-        'difc', 'difc_rule', 'difm', 'difm_rule', 'drift', 'drift_rule', 'surface_drift', 'surface_drift_rule'
+        'fixmolcount', 'fixmolcountonsurf', 'fixmolcountincmpt',
+    ]:
+        # Examples:
+        #   fixmolcount red
+        species_name, species_target_sep, target = target.partition(' ')
+
+        def new_line_func(new_value):
+            return target_type + ' ' + species_name + ' ' + new_value + species_target_sep + target
+
+        execution = SimulationChangeExecution.simulation
+
+    elif target_type in [
+        'define', 'difc', 'difc_rule', 'difm', 'difm_rule',
+        'drift', 'drift_rule', 'surface_drift', 'surface_drift_rule',
     ]:
         # Examples:
         #   define K_FWD 0.001
         #   difc S 3
         #   difm red 1 0 0 0 0 0 0 0 2
-        for i_line, line in enumerate(simulation_configuration):
-            pattern = r'^{} +{} '.format(target_type, re.escape(target).replace(' ', ' +'))
-            if re.match(pattern, line):
-                valid = True
-                simulation_configuration[i_line] = re.sub(r'^{} +{} +[^#]+'.format(target_type, re.escape(target).replace(' ', ' +')),
-                                                          '{} {} {} '.format(target_type, target, new_value),
-                                                          line, count=1).strip()
-                break
+        def new_line_func(new_value):
+            return target_type + ' ' + target + ' ' + new_value
 
-    elif target_type in ['mol', 'compartment_mol', 'surface_mol']:
-        # Examples:
-        #   mol 5 red u
-        #   compartment_mol 500 S inside
-        #   surface_mol 100 E(front) membrane all all
-        for i_line, line in enumerate(simulation_configuration):
-            pattern = r'^{} +\d+ +{}'.format(target_type, re.escape(target).replace(' ', ' +'))
-            if re.match(pattern, line):
-                valid = True
-                simulation_configuration[i_line] = re.sub(r'^{} +\d+ +{}'.format(target_type, re.escape(target).replace(' ', ' +')),
-                                                          '{} {} {} '.format(target_type, new_value, target),
-                                                          line, count=1).strip()
-                break
+        execution = SimulationChangeExecution.preprocessing
+
+    # elif target_type in [
+    #     'mol', 'compartment_mol', 'surface_mol',
+    # ]:
+    #     # Examples:
+    #     #   mol 5 red u
+    #     #   compartment_mol 500 S inside
+    #     #   surface_mol 100 E(front) membrane all all
+    #     def new_line_func(new_value):
+    #         return target_type + ' ' + new_value + ' ' + target
+    #
+    #     execution = SimulationChangeExecution.preprocessing
+
+    # elif target_type in [
+    #     'dim',
+    # ]:
+    #     # Examples:
+    #     #   dim 1
+    #     def new_line_func(new_value):
+    #         return target_type + ' ' + new_value
+    #
+    #     execution = SimulationChangeExecution.preprocessing
+
+    # elif target_type in [
+    #     'boundaries', 'low_wall', 'high_wall',
+    # ]:
+    #     # Examples:
+    #     #   low_wall x -10
+    #     #   high_wall y 10
+    #     def new_line_func(new_value):
+    #         return target_type + ' ' + target + ' ' + new_value
+    #
+    #     execution = SimulationChangeExecution.preprocessing
+
     else:
         raise NotImplementedError('Target `{}` is not supported.'.format(sed_model_change.target))
 
-    if not valid:
-        raise ValueError('Model does not contain target `{}`.'.format(sed_model_change.target))
+    return SimulationChange(new_line_func, execution)
+
+
+def apply_change_to_smoldyn_simulation(smoldyn_simulation, sed_change, smoldyn_change):
+    ''' Apply a SED model attribute change to a Smoldyn simulation
+
+    Args:
+        smoldyn_simulation (:obj:`smoldyn.Simulation`): Smoldyn simulation
+        sed_change (:obj:`ModelAttributeChange`): SED model change
+        smoldyn_change (:obj:`SimulationChange`): Smoldyn representation of the model change
+    '''
+    new_value = str(sed_change.new_value).strip()
+    new_line = smoldyn_change.command(new_value)
+    smoldyn_simulation.addCommand(new_line, 'b')
+
+
+def apply_change_to_smoldyn_simulation_configuration(smoldyn_simulation_configuration, sed_change, smoldyn_change):
+    ''' Apply a SED model attribute change to a configuration for a Smoldyn simulation
+
+    Args:
+        smoldyn_simulation_configuration (:obj:`list` of :obj:`str`): configuration for the Smoldyn simulation
+        sed_change (:obj:`ModelAttributeChange`): SED model change
+        smoldyn_change (:obj:`SimulationChange`): Smoldyn representation of the model change
+    '''
+    new_value = str(sed_change.new_value).strip()
+    new_line = smoldyn_change.command(new_value)
+    smoldyn_simulation_configuration.insert(0, new_line)
 
 
 def get_smoldyn_run_timecourse_args(sed_simulation):
@@ -531,20 +584,19 @@ def get_smoldyn_instance_attr_or_run_algorithm_parameter_arg(sed_algorithm_param
         raise NotImplementedError(msg)
 
 
-def add_smoldyn_output_file(configuration_filename, smoldyn_simulation):
+def add_smoldyn_output_file(configuration_dirname, smoldyn_simulation):
     ''' Add an output file to a Smoldyn simulation
 
     Args:
-        configuration_filename (:obj:`str`): path to the Smoldyn configuration file for the simulation
+        configuration_dirname (:obj:`str`): path to the parent directory of the Smoldyn configuration file for the simulation
         smoldyn_simulation (:obj:`smoldyn.Simulation`): Smoldyn simulation
 
     Returns:
         :obj:`SmoldynOutputFile`: output file
     '''
-    out_dirname = os.path.dirname(configuration_filename)
-    fid, filename = tempfile.mkstemp(dir=out_dirname, suffix='.ssv')
+    fid, filename = tempfile.mkstemp(dir=configuration_dirname, suffix='.ssv')
     os.close(fid)
-    name = os.path.relpath(filename, out_dirname)
+    name = os.path.relpath(filename, configuration_dirname)
     smoldyn_simulation.setOutputFile(name, append=False)
     smoldyn_simulation.setOutputPath('./')
     return SmoldynOutputFile(name=name, filename=filename)
@@ -562,8 +614,8 @@ def add_commands_to_smoldyn_output_file(simulation, output_file, commands):
         simulation.addCommand(command.command + ' ' + output_file.name, command.type)
 
 
-def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_variables, smoldyn_simulation):
-    ''' Add Smoldyn output files for capturing each SED variable
+def validate_variables(variables):
+    ''' Validate SED variables
 
     =============================================================================================================================================  ===========================================================================================================================================  ===========================================
     Smoldyn output file                                                                                                                            SED variable target                                                                                                                          Shape
@@ -593,90 +645,196 @@ def add_smoldyn_output_files_for_sed_variables(configuration_filename, sed_varia
     =============================================================================================================================================   ==========================================================================================================================================  ===========================================
 
     Args:
-        configuration_filename (:obj:`str`): path to the Smoldyn configuration file for the simulation
-        sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+
+    Returns:
+        :obj:`dict`: dictionary that maps variable targets and symbols to Smoldyn output commands
+    '''
+    # TODO: support additional kinds of outputs
+
+    variable_output_cmd_map = {}
+
+    invalid_symbols = []
+    invalid_targets = []
+
+    for variable in variables:
+        if variable.symbol:
+            if variable.symbol == Symbol.time.value:
+                output_command_args = 'molcount'
+                include_header = True
+                shape = None
+                results_slicer = functools.partial(results_key_slicer, key='time')
+
+            else:
+                invalid_symbols.append('{}: {}'.format(variable.id, variable.symbol))
+                output_command_args = None
+                include_header = None
+
+        else:
+            output_command, _, output_args = re.sub(r' +', ' ', variable.target).partition(' ')
+
+            if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
+                species_name, _, output_args = output_args.partition(' ')
+                output_command_args = output_command + ' ' + output_args
+                include_header = True
+                shape = None
+                results_slicer = functools.partial(results_key_slicer, key=species_name)
+
+            elif output_command in ['molcountspecies']:
+                output_command_args = output_command + ' ' + output_args
+                include_header = False
+                shape = None
+                results_slicer = results_array_slicer
+
+            elif output_command in ['molcountspace', 'molcountspaceradial',
+                                    'molcountspacepolarangle', 'radialdistribution', 'radialdistribution2']:
+                output_command_args = output_command + ' ' + output_args + ' 0'
+                include_header = False
+                shape = None
+                results_slicer = results_matrix_slicer
+
+            elif output_command in ['molcountspace2d']:
+                output_command_args = output_command + ' ' + output_args + ' 0'
+                include_header = False
+                output_args_list = output_args.split(' ')
+                if len(output_args_list) == 8:
+                    shape = (int(output_args_list[-4]), int(output_args_list[-1]))
+                else:
+                    shape = (int(output_args_list[-6]), int(output_args_list[-3]))
+                results_slicer = None
+
+            else:
+                invalid_targets.append('{}: {}'.format(variable.id, variable.target))
+                output_command_args = None
+
+        if output_command_args is not None:
+            output_command_args = output_command_args.strip()
+            variable_output_cmd_map[(variable.target, variable.symbol)] = (output_command_args, include_header, shape, results_slicer)
+
+    if invalid_symbols:
+        msg = '{} symbols cannot be recorded:\n  {}\n\nThe following symbols can be recorded:\n  {}'.format(
+            len(invalid_symbols),
+            '\n  '.join(sorted(invalid_symbols)),
+            '\n  '.join(sorted([Symbol.time.value])),
+        )
+        raise ValueError(msg)
+
+    if invalid_targets:
+        valid_target_output_commands = [
+            'molcount',
+
+            'molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf',
+
+            'molcountspace', 'molcountspaceradial',
+            'molcountspacepolarangle', 'radialdistribution', 'radialdistribution2',
+
+            'molcountspace2d',
+        ]
+
+        msg = '{} targets cannot be recorded:\n  {}\n\nTargets are supported for the following output commands:\n  {}'.format(
+            len(invalid_targets),
+            '\n  '.join(sorted(invalid_targets)),
+            '\n  '.join(sorted(set(valid_target_output_commands))),
+        )
+        raise NotImplementedError(msg)
+
+    return variable_output_cmd_map
+
+
+def results_key_slicer(results, key):
+    """ Get the results for a key from a set of results
+
+    Args:
+        results (:obj:`pandas.DataFrame`): set of results
+
+    Returns:
+        :obj:`pandas.DataFrame`: results for a key
+    """
+    return results.get(key, None)
+
+
+def results_array_slicer(results):
+    """ Extract an array of results from a matrix of time and results
+
+    Args:
+        results (:obj:`pandas.DataFrame`): matrix of time and results
+
+    Returns:
+        :obj:`pandas.DataFrame`: results
+    """
+    return results.iloc[:, 1]
+
+
+def results_matrix_slicer(results):
+    """ Extract a matrix array of results from a matrix of time and results
+
+    Args:
+        results (:obj:`pandas.DataFrame`): matrix of time and results
+
+    Returns:
+        :obj:`pandas.DataFrame`: results
+    """
+    return results.iloc[:, 1:]
+
+
+def add_smoldyn_output_files_for_sed_variables(configuration_dirname, variables, variable_output_cmd_map, smoldyn_simulation):
+    ''' Add Smoldyn output files for capturing each SED variable
+
+    Args:
+        configuration_dirname (:obj:`str`): path to the parent directory of the Smoldyn configuration file for the simulation
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        variable_output_cmd_map (:obj:`dict`): dictionary that maps variable targets and symbols to Smoldyn output commands
         smoldyn_simulation (:obj:`smoldyn.Simulation`): Smoldyn simulation
 
     Returns:
         :obj:`dict` of :obj:`str` => :obj:`SmoldynOutputFile`: Smoldyn output files
     '''
-    # TODO: support additional kinds of outputs
-
-    # initialize dictionary of output files
     smoldyn_output_files = {}
 
-    missing_symbols = []
+    output_cmds = set()
+    for variable in variables:
+        output_cmds.add(variable_output_cmd_map[(variable.target, variable.symbol)])
 
-    for sed_variable in sed_variables:
-        if sed_variable.symbol:
-            if sed_variable.symbol == Symbol.time.value:
-                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
-                                                   'molcount', True, smoldyn_output_files)
-            else:
-                missing_symbols.append('{}: {}'.format(sed_variable.id, sed_variable.symbol))
-
-        else:
-            output_command, _, output_args = re.sub(r' +', ' ', sed_variable.target).partition(' ')
-            if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
-                output_args = output_args.partition(' ')[2]
-                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
-                                                   output_command + ' ' + output_args, True, smoldyn_output_files)
-            elif output_command in ['molcountspecies']:
-                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
-                                                   output_command + ' ' + output_args, False, smoldyn_output_files)
-
-            elif output_command in ['molcountspace', 'molcountspace2d', 'molcountspaceradial',
-                                    'molcountspacepolarangle', 'radialdistribution', 'radialdistribution2']:
-                add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
-                                                   output_command + ' ' + output_args + ' 0', False, smoldyn_output_files)
-
-            else:
-                raise NotImplementedError('Output command `{}` is not supported.'.format(output_command))
-
-    if missing_symbols:
-        msg = '{} symbols cannot be recorded:\n  {}\n\nThe following symbols can be recorded:\n  symbol: {}'.format(
-            len(missing_symbols),
-            '\n  '.join(missing_symbols),
-            Symbol.time.value,
-        )
-        raise ValueError(msg)
-
+    for command, include_header, _, _ in output_cmds:
+        add_smoldyn_output_file_for_output(configuration_dirname, smoldyn_simulation,
+                                           command, include_header,
+                                           smoldyn_output_files)
     # return output files
     return smoldyn_output_files
 
 
-def add_smoldyn_output_file_for_output(configuration_filename, smoldyn_simulation,
+def add_smoldyn_output_file_for_output(configuration_dirname, smoldyn_simulation,
                                        smoldyn_output_command, include_header, smoldyn_output_files):
     ''' Add a Smoldyn output file for molecule counts
 
     Args:
-        configuration_filename (:obj:`str`): path to the Smoldyn configuration file for the simulation
+        configuration_dirname (:obj:`str`): path to the parent directory of the Smoldyn configuration file for the simulation
         smoldyn_simulation (:obj:`smoldyn.Simulation`): Smoldyn simulation
         smoldyn_output_command (:obj:`str`): Smoldyn output command (e.g., ``molcount``)
         include_header (:obj:`bool`): whether to include a header
         smoldyn_output_files (:obj:`dict` of :obj:`str` => :obj:`SmoldynOutputFile`): Smoldyn output files
     '''
-    smoldyn_output_command = smoldyn_output_command.strip()
-    if smoldyn_output_command not in smoldyn_output_files:
-        smoldyn_output_files[smoldyn_output_command] = add_smoldyn_output_file(configuration_filename, smoldyn_simulation)
+    smoldyn_output_files[smoldyn_output_command] = add_smoldyn_output_file(configuration_dirname, smoldyn_simulation)
 
-        commands = [SmoldynCommand(smoldyn_output_command, 'E')]
-        if include_header:
-            commands.insert(0, SmoldynCommand('molcountheader', 'B'))
+    commands = []
+    if include_header:
+        commands.append(SmoldynCommand('molcountheader', 'B'))
+    commands.append(SmoldynCommand(smoldyn_output_command, 'E'))
 
-        add_commands_to_smoldyn_output_file(
-            smoldyn_simulation,
-            smoldyn_output_files[smoldyn_output_command],
-            commands,
-        )
+    add_commands_to_smoldyn_output_file(
+        smoldyn_simulation,
+        smoldyn_output_files[smoldyn_output_command],
+        commands,
+    )
 
 
-def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
+def get_variable_results(number_of_steps, variables, variable_output_cmd_map, smoldyn_output_files):
     ''' Get the result of each SED variable
 
     Args:
         number_of_steps (:obj:`int`): number of steps
-        sed_variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        variables (:obj:`list` of :obj:`Variable`): variables that should be recorded
+        variable_output_cmd_map (:obj:`dict`): dictionary that maps variable targets and symbols to Smoldyn output commands
         smoldyn_output_files (:obj:`dict` of :obj:`str` => :obj:`SmoldynOutputFile`): Smoldyn output files
 
     Returns:
@@ -685,57 +843,26 @@ def get_variable_results(number_of_steps, sed_variables, smoldyn_output_files):
     Raises:
         :obj:`ValueError`: unsupported results
     '''
-    # TODO: support additional kinds of outputs
     smoldyn_results = {}
 
     missing_variables = []
 
     variable_results = VariableResults()
-    for sed_variable in sed_variables:
-        if sed_variable.symbol:
-            if sed_variable.symbol == Symbol.time.value:
-                variable_result = get_smoldyn_output('molcount', True, None, smoldyn_output_files, smoldyn_results)['time']
-            else:
-                variable_result = None
-                missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'symbol', sed_variable.symbol))
+    for variable in variables:
+        output_command_args, _, shape, results_slicer = variable_output_cmd_map[(variable.target, variable.symbol)]
+        variable_result = get_smoldyn_output(output_command_args, True, shape, smoldyn_output_files, smoldyn_results)
+        if results_slicer:
+            variable_result = results_slicer(variable_result)
+
+        if variable_result is None:
+            missing_variables.append('{}: {}: {}'.format(variable.id, 'target', variable.target))
         else:
-            output_command, _, output_args = re.sub(r' +', ' ', sed_variable.target).partition(' ')
-            if output_command in ['molcount', 'molcountinbox', 'molcountincmpt', 'molcountincmpt2', 'molcountonsurf']:
-                species_name, _, output_args = output_args.partition(' ')
-                variable_result = get_smoldyn_output(output_command + ' ' + output_args, True, None,
-                                                     smoldyn_output_files, smoldyn_results).get(species_name, None)
-                if variable_result is None:
-                    missing_variables.append('{}: {}: {}'.format(sed_variable.id, 'target', sed_variable.target))
-
-            elif output_command in ['molcountspecies']:
-                variable_result = get_smoldyn_output(output_command + ' ' + output_args, True, None,
-                                                     smoldyn_output_files, smoldyn_results).iloc[:, 1]
-
-            elif output_command in ['molcountspace', 'molcountspaceradial',
-                                    'molcountspacepolarangle', 'radialdistribution', 'radialdistribution2']:
-                variable_result = get_smoldyn_output(output_command + ' ' + output_args + ' 0', True, None,
-                                                     smoldyn_output_files, smoldyn_results).iloc[:, 1:]
-
-            elif output_command in ['molcountspace2d']:
-                output_args_list = output_args.split(' ')
-                if len(output_args_list) == 8:
-                    shape = (int(output_args_list[-4]), int(output_args_list[-1]))
-                else:
-                    shape = (int(output_args_list[-6]), int(output_args_list[-3]))
-
-                variable_result = get_smoldyn_output(output_command + ' ' + output_args + ' 0', True, shape,
-                                                     smoldyn_output_files, smoldyn_results)
-
-            else:
-                raise NotImplementedError('Output command `{}` is not supported.'.format(output_command))
-
-        if variable_result is not None:
             if variable_result.ndim == 1:
-                variable_results[sed_variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, ]
+                variable_results[variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, ]
             elif variable_result.ndim == 2:
-                variable_results[sed_variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, :]
+                variable_results[variable.id] = variable_result.to_numpy()[-(number_of_steps + 1):, :]
             else:
-                variable_results[sed_variable.id] = variable_result[-(number_of_steps + 1):, :, :]
+                variable_results[variable.id] = variable_result[-(number_of_steps + 1):, :, :]
 
     if missing_variables:
         msg = '{} variables could not be recorded:\n  {}'.format(

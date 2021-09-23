@@ -27,7 +27,7 @@ jobs:
         cmake --version
         PYTHON=$(which python)
         $PYTHON -c "import sys; print(sys.version)"
-        $PYTHON -m pip install pytest matplotlib numpy wheel
+        $PYTHON -m pip install pytest matplotlib numpy wheel flaky
         mkdir build && cd build
         cmake -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \
@@ -73,7 +73,7 @@ jobs:
     - name: Test BioSimulators
       if: matrix.python-version == '3.9'
       run: |
-        python -m pip install pytest
+        python -m pip install pytest flaky
 
         sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
         export DISPLAY=":1"

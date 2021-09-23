@@ -35,7 +35,7 @@ jobs:
         cd build
         PYTHON=$(which python)
         $PYTHON -m pip install pip --upgrade
-        $PYTHON -m pip install numpy pytest matplotlib setuptools
+        $PYTHON -m pip install numpy pytest matplotlib setuptools flaky
         cmake .. -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DCMAKE_SYSTEM_VERSION=10.0.19041.0 -DPython3_EXECUTABLE=$PYTHON
         cmake --build . --config Release
         ctest -C Release

@@ -21,6 +21,7 @@ except ModuleNotFoundError:
 from unittest import mock
 import datetime
 import dateutil.tz
+import flaky
 import numpy
 import numpy.testing
 import os
@@ -259,12 +260,12 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         shutil.rmtree(self.dirname)
 
     def test_SmoldynOutputFile(self):
-        output_file = smoldyn.biosimulators.combine.SmoldynOutputFile('out.txt', '/tmp/out.txt')
+        output_file = smoldyn.biosimulators.data_model.SmoldynOutputFile('out.txt', '/tmp/out.txt')
         self.assertEqual(output_file.name, 'out.txt')
         self.assertEqual(output_file.filename, '/tmp/out.txt')
 
     def test_SmoldynCommand(self):
-        output_file = smoldyn.biosimulators.combine.SmoldynCommand('molcount', 'E')
+        output_file = smoldyn.biosimulators.data_model.SmoldynCommand('molcount', 'E')
         self.assertEqual(output_file.command, 'molcount')
         self.assertEqual(output_file.type, 'E')
 
@@ -332,36 +333,36 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         smoldyn.biosimulators.combine.disable_smoldyn_graphics_in_simulation_configuration(config)
         self.assertEqual(config[2], 'graphics none')
 
-    def test_apply_sed_model_change_to_smoldyn_simulation_configuration(self):
+    def test_apply_change_to_smoldyn_simulation(self):
         filename = os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt')
         config = smoldyn.biosimulators.combine.read_smoldyn_simulation_configuration(filename)
-        self.assertEqual(config[13], 'difc red 3')
+        smoldyn.biosimulators.combine.disable_smoldyn_graphics_in_simulation_configuration(config)
+        filename2 = os.path.join(self.dirname, 'config.txt')
+        smoldyn.biosimulators.combine.write_smoldyn_simulation_configuration(config, filename2)
 
-        change = ModelAttributeChange(target=' difc  red ', new_value=' 5 ')
+        smoldyn_simulation = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
+        change = ModelAttributeChange(target='define K_1', new_value='0')
+        preprocessed_change = smoldyn.biosimulators.combine.validate_model_change(change)
+        smoldyn.biosimulators.combine.apply_change_to_smoldyn_simulation_configuration(config, change, preprocessed_change)
 
-        smoldyn.biosimulators.combine.apply_sed_model_change_to_smoldyn_simulation_configuration(change, config)
-        self.assertEqual(config[13], 'difc red 5')
+        smoldyn_simulation = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
+        change = ModelAttributeChange(target='killmol red', new_value='0')
+        preprocessed_change = smoldyn.biosimulators.combine.validate_model_change(change)
+        smoldyn.biosimulators.combine.apply_change_to_smoldyn_simulation(smoldyn_simulation, change, preprocessed_change)
 
-        config[13] = 'difc red 3 # comment'
-        smoldyn.biosimulators.combine.apply_sed_model_change_to_smoldyn_simulation_configuration(change, config)
-        self.assertEqual(config[13], 'difc red 5 # comment')
+        smoldyn_simulation = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
+        change = ModelAttributeChange(target='fixmolcount green', new_value='10')
+        preprocessed_change = smoldyn.biosimulators.combine.validate_model_change(change)
+        smoldyn.biosimulators.combine.apply_change_to_smoldyn_simulation(smoldyn_simulation, change, preprocessed_change)
 
-        config[13] = 'difc  red  3  #  comment  '
-        smoldyn.biosimulators.combine.apply_sed_model_change_to_smoldyn_simulation_configuration(change, config)
-        self.assertEqual(config[13], 'difc red 5 #  comment')
+        smoldyn_simulation = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
+        change = ModelAttributeChange(target='fixmolcountincmpt green  cytosol', new_value='10')
+        preprocessed_change = smoldyn.biosimulators.combine.validate_model_change(change)
+        smoldyn.biosimulators.combine.apply_change_to_smoldyn_simulation(smoldyn_simulation, change, preprocessed_change)
 
-        config[13] = 'surface_mol 100 E(front) membrane all all'
-        change = ModelAttributeChange(target=' surface_mol  E(front)  membrane  all  all  ', new_value='5')
-        smoldyn.biosimulators.combine.apply_sed_model_change_to_smoldyn_simulation_configuration(change, config)
-        self.assertEqual(config[13], 'surface_mol 5 E(front) membrane all all')
-
-        change = ModelAttributeChange(target='not supported', new_value='5')
+        change = ModelAttributeChange(target=' dim  ', new_value=' 5 ')
         with self.assertRaises(NotImplementedError):
-            smoldyn.biosimulators.combine.apply_sed_model_change_to_smoldyn_simulation_configuration(change, config)
-
-        change = ModelAttributeChange(target='difc notdefined', new_value='5')
-        with self.assertRaises(ValueError):
-            smoldyn.biosimulators.combine.apply_sed_model_change_to_smoldyn_simulation_configuration(change, config)
+            smoldyn.biosimulators.combine.validate_model_change(change)
 
     def test_get_smoldyn_run_timecourse_args(self):
         sim = UniformTimeCourseSimulation(
@@ -416,11 +417,11 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
 
         sim = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(filename2)
         sim.setGraphics('none')
-        output_file = smoldyn.biosimulators.combine.add_smoldyn_output_file(filename2, sim)
-        self.assertIsInstance(output_file, smoldyn.biosimulators.combine.SmoldynOutputFile)
+        output_file = smoldyn.biosimulators.combine.add_smoldyn_output_file(self.dirname, sim)
+        self.assertIsInstance(output_file, smoldyn.biosimulators.data_model.SmoldynOutputFile)
 
         smoldyn.biosimulators.combine.add_commands_to_smoldyn_output_file(sim, output_file, [
-            smoldyn.biosimulators.combine.SmoldynCommand(command='molcount', type='E'),
+            smoldyn.biosimulators.data_model.SmoldynCommand(command='molcount', type='E'),
         ])
 
     def test_add_smoldyn_output_files_for_sed_variables(self):
@@ -435,17 +436,19 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         sim.setGraphics('none')
 
         var = Variable(id='time', symbol=Symbol.time.value)
-        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [var], sim)
+        variable_output_cmd_map = smoldyn.biosimulators.combine.validate_variables([var])
+        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(
+            self.dirname, [var], variable_output_cmd_map, sim)
         self.assertEqual(set(smoldyn_output_files.keys()), set(['molcount']))
 
         var.symbol = 'undefined'
         with self.assertRaises(ValueError):
-            smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [var], sim)
+            smoldyn.biosimulators.combine.validate_variables([var])
 
         var.symbol = None
         var.target = 'undefined '
         with self.assertRaises(NotImplementedError):
-            smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, [var], sim)
+            smoldyn.biosimulators.combine.validate_variables([var])
 
     def test_get_variable_results(self):
         filename = os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt')
@@ -465,11 +468,13 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
             Variable(id='greenBox', target='molcountinbox green 0 10'),
             Variable(id='greenHist', target='molcountspace green x 0 100 20')
         ]
-        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, vars, sim)
+        variable_output_cmd_map = smoldyn.biosimulators.combine.validate_variables(vars)
+        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(
+            self.dirname, vars, variable_output_cmd_map, sim)
 
         sim.run(start=0., stop=0.2, dt=0.01, overwrite=True, display=False, quit_at_end=False)
 
-        results = smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+        results = smoldyn.biosimulators.combine.get_variable_results(10, vars, variable_output_cmd_map, smoldyn_output_files)
         self.assertEqual(set(results.keys()), set(['time', 'red', 'green', 'greenBox', 'greenHist']))
         numpy.testing.assert_allclose(results['time'], numpy.linspace(0.1, 0.2, 11))
 
@@ -489,19 +494,22 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
             Variable(id='time', symbol='undefined'),
         ]
         with self.assertRaises(ValueError):
-            smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+            variable_output_cmd_map = smoldyn.biosimulators.combine.validate_variables(vars)
+            smoldyn.biosimulators.combine.get_variable_results(10, vars, variable_output_cmd_map, smoldyn_output_files)
 
         vars = [
             Variable(id='red', target='molcount blue'),
         ]
+        variable_output_cmd_map = smoldyn.biosimulators.combine.validate_variables(vars)
         with self.assertRaises(ValueError):
-            smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+            smoldyn.biosimulators.combine.get_variable_results(10, vars, variable_output_cmd_map, smoldyn_output_files)
 
         vars = [
             Variable(id='red', target='undefined blue'),
         ]
         with self.assertRaises(NotImplementedError):
-            smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+            variable_output_cmd_map = smoldyn.biosimulators.combine.validate_variables(vars)
+            smoldyn.biosimulators.combine.get_variable_results(10, vars, variable_output_cmd_map, smoldyn_output_files)
 
     def test_get_variable_results_2d(self):
         filename = os.path.join(self.EXAMPLES_DIRNAME, 'S4_molecules', 'isotropic', 'diffi.txt')
@@ -518,11 +526,13 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
             Variable(id='time', symbol=Symbol.time.value),
             Variable(id='greenHist', target='molcountspace2d green(all) z -10 10 30 -10 10 40 -10 10')
         ]
-        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(filename2, vars, sim)
+        variable_output_cmd_map = smoldyn.biosimulators.combine.validate_variables(vars)
+        smoldyn_output_files = smoldyn.biosimulators.combine.add_smoldyn_output_files_for_sed_variables(
+            self.dirname, vars, variable_output_cmd_map, sim)
 
         sim.run(start=0., stop=0.2, dt=0.01, overwrite=True, display=False, quit_at_end=False)
 
-        results = smoldyn.biosimulators.combine.get_variable_results(10, vars, smoldyn_output_files)
+        results = smoldyn.biosimulators.combine.get_variable_results(10, vars, variable_output_cmd_map, smoldyn_output_files)
         self.assertEqual(set(results.keys()), set(['time', 'greenHist']))
         numpy.testing.assert_allclose(results['time'], numpy.linspace(0.1, 0.2, 11))
 
@@ -536,9 +546,6 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
                 id='model',
                 source=os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt'),
                 language=ModelLanguage.Smoldyn.value,
-                changes=[
-                    ModelAttributeChange(target='difc red', new_value='4'),
-                ],
             ),
             simulation=UniformTimeCourseSimulation(
                 initial_time=0.,
@@ -571,7 +578,7 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         self.assertEqual(log.algorithm, 'KISAO_0000057')
         self.assertEqual(log.simulator_details, {
             'class': 'smoldyn.Simulation',
-            'setInstanceAttributes': {'setRandomSeed': 10},
+            'instanceAttributes': {'setRandomSeed': 10},
             'method': 'run',
             'methodArguments': {
                 'start': 0.,
@@ -584,7 +591,7 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         results, log = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
         self.assertEqual(log.simulator_details, {
             'class': 'smoldyn.Simulation',
-            'setInstanceAttributes': {'setRandomSeed': 10},
+            'instanceAttributes': {'setRandomSeed': 10},
             'method': 'run',
             'methodArguments': {
                 'start': 0.,
@@ -597,6 +604,213 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         task.simulation.algorithm.kisao_id = 'KISAO_0000437'
         with self.assertRaises(NotImplementedError):
             smoldyn.biosimulators.combine.exec_sed_task(task, variables)
+
+    def test_exec_sed_task_positive_initial_time(self):
+        task = Task(
+            id='task',
+            model=Model(
+                id='model',
+                source=os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt'),
+                language=ModelLanguage.Smoldyn.value,
+            ),
+            simulation=UniformTimeCourseSimulation(
+                initial_time=0.01,
+                output_start_time=0.01,
+                output_end_time=0.11,
+                number_of_points=10,
+                algorithm=Algorithm(
+                    kisao_id='KISAO_0000057',
+                )
+            ),
+        )
+
+        variables = [
+            Variable(id='time', symbol=Symbol.time.value, task=task),
+            Variable(id='red', target='molcount red', task=task),
+            Variable(id='green', target='molcount green', task=task),
+        ]
+
+        results, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
+
+        self.assertEqual(set(results.keys()), set(['time', 'red', 'green']))
+        numpy.testing.assert_allclose(results['time'], numpy.linspace(0.01, 0.11, 11))
+
+    def test_exec_sed_task_negative_initial_time(self):
+        task = Task(
+            id='task',
+            model=Model(
+                id='model',
+                source=os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt'),
+                language=ModelLanguage.Smoldyn.value,
+            ),
+            simulation=UniformTimeCourseSimulation(
+                initial_time=-0.01,
+                output_start_time=-0.01,
+                output_end_time=0.09,
+                number_of_points=10,
+                algorithm=Algorithm(
+                    kisao_id='KISAO_0000057',
+                )
+            ),
+        )
+
+        variables = [
+            Variable(id='time', symbol=Symbol.time.value, task=task),
+            Variable(id='red', target='molcount red', task=task),
+            Variable(id='green', target='molcount green', task=task),
+        ]
+
+        results, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
+
+        self.assertEqual(set(results.keys()), set(['time', 'red', 'green']))
+        numpy.testing.assert_allclose(results['time'], numpy.linspace(-0.01, 0.09, 11), rtol=5e-6)
+
+    @flaky.flaky(max_runs=10, min_passes=1)
+    def test_exec_sed_task_with_changes(self):
+        task = Task(
+            id='task',
+            model=Model(
+                id='model',
+                source=os.path.join(os.path.dirname(__file__), 'fixtures', 'lotvolt.txt'),
+                language=ModelLanguage.Smoldyn.value,
+            ),
+            simulation=UniformTimeCourseSimulation(
+                initial_time=0.,
+                output_start_time=0.,
+                output_end_time=0.1,
+                number_of_points=10,
+                algorithm=Algorithm(
+                    kisao_id='KISAO_0000057',
+                    changes=[
+                        AlgorithmParameterChange(kisao_id='KISAO_0000488', new_value='10'),
+                    ]
+                )
+            ),
+        )
+        model = task.model
+        sim = task.simulation
+
+        variable_ids = ['rabbit', 'fox']
+
+        variables = []
+        for variable_id in variable_ids:
+            variables.append(Variable(id=variable_id, target='molcount ' + variable_id, task=task))
+
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        results, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        with self.assertRaises(AssertionError):
+            for variable_id in variable_ids:
+                numpy.testing.assert_allclose(
+                    results[variable_id][0:int(sim.number_of_points / 2 + 1)],
+                    results[variable_id][-int(sim.number_of_points / 2 + 1):])
+
+        # check simulation is repeatable
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results2[variable_id],
+                results[variable_id])
+
+        # check simulation is repeatable in two steps
+        sim.output_end_time = sim.output_end_time / 2
+        sim.number_of_points = int(sim.number_of_points / 2)
+
+        model.changes = []
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=None))
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        model.changes = []
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results2[variable_id],
+                results[variable_id][0:sim.number_of_points + 1])
+
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=results2[variable_id][-1]))
+        results3, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results3[variable_id],
+                results[variable_id][-(sim.number_of_points + 1):])
+
+        # check model change modifies simulation
+        model.changes = []
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=None))
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        model.changes = []
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results2[variable_id],
+                results[variable_id][0:sim.number_of_points + 1])
+
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=results2[variable_id][-1] + 1))
+        results3, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        with self.assertRaises(AssertionError):
+            for variable_id in variable_ids:
+                numpy.testing.assert_allclose(
+                    results3[variable_id],
+                    results[variable_id][-(sim.number_of_points + 1):])
+
+        # check model change modifies simulation
+        model.changes = []
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='killmol ' + variable_id, new_value=None))
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        model.changes = []
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results2[variable_id],
+                results[variable_id][0:sim.number_of_points + 1])
+
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='killmol ' + variable_id, new_value=0))
+        results3, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        with self.assertRaises(AssertionError):
+            for variable_id in variable_ids:
+                numpy.testing.assert_allclose(
+                    results3[variable_id],
+                    results[variable_id][-(sim.number_of_points + 1):])
+
+        # preprocessing-time change
+        model.changes = []
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='define K_1', new_value=10))
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results2[variable_id],
+                results[variable_id][0:sim.number_of_points + 1])
+
+        model.changes = []
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='define K_1', new_value=10))
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        with self.assertRaisesRegex(NotImplementedError, 'can only be changed during simulation preprocessing'):
+            smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        model.changes = []
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        for variable_id in variable_ids:
+            numpy.testing.assert_allclose(
+                results2[variable_id],
+                results[variable_id][0:sim.number_of_points + 1])
+
+        model.changes = []
+        for variable_id in variable_ids:
+            model.changes.append(ModelAttributeChange(target='define K_1', new_value=0))
+        preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
+        model.changes = []
+        results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
+        with self.assertRaises(AssertionError):
+            for variable_id in variable_ids:
+                numpy.testing.assert_allclose(
+                    results2[variable_id],
+                    results[variable_id][0:sim.number_of_points + 1])
 
     def test_exec_sedml_docs_in_combine_archive(self):
         doc, archive_filename = self._build_combine_archive()
@@ -636,9 +850,6 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
                 id='model',
                 source='bounce1.txt',
                 language=ModelLanguage.Smoldyn.value,
-                changes=[
-                    ModelAttributeChange(target='difc red', new_value='4'),
-                ],
             ),
             simulation=UniformTimeCourseSimulation(
                 id='sim',
