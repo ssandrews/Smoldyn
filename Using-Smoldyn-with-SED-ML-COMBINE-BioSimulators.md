@@ -24,34 +24,43 @@ for Smoldyn configuration files.
 Changes to configurations for Smoldyn simulations can be encoded into SED-ML `changeAttribute` model changes
 as illustrated below.
 
-| Smoldyn syntax                                                               | `target` of SED-ML change                                           | Format of `newValue` of SED-ML change |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------- |
-| `dim {integer}`                                                              | `dim`                                                               | `{integer}`                           |
-| `low_wall {dim} {float} {string}`                                            | `low_wall {dim}`                                                    | `{float} {string}`                    |
-| `high_wall {dim} {float} {string}`                                           | `high_wall {dim}`                                                   | `{float} {string}`                    |
-| `boundaries {dim} {float} {float} {string}?`                                 | `boundaries {dim}`                                                  | `{float} {float} {string}?`           |
-| `define {name} {float}`                                                      | `define {name}`                                                     | `{float}`                             |
-| `difc {species} {float}`                                                     | `difc {species}`                                                    | `{float}`                             |
-| `difc {species}({state}) {float}`                                            | `difc {species}({state})`                                           | `{float}`                             |
-| `difc_rule {species}({state}) {float}`                                       | `difc_rule {species}({state})`                                      | `{float}`                             |
-| `difm {species} {float}+`                                                    | `difm {species}`                                                    | `{float}+`                            |
-| `difm {species}({state}) {float}+`                                           | `difm {species}({state})`                                           | `{float}+`                            |
-| `difm_rule {species}({state}) {float}+`                                      | `difm_rule {species}({state})`                                      | `{float}+`                            |
-| `drift {species} {float}+`                                                   | `drift {species}`                                                   | `{float}+`                            |
-| `drift {species}({state}) {float}+`                                          | `drift {species}({state})`                                          | `{float}+`                            |
-| `drift_rule {species}({state}) {float}+`                                     | `drift_rule {species}({state})`                                     | `{float}+`                            |
-| `surface_drift {species}({state}) {surface} {panel-shape} {float}+`          | `surface_drift {species}({state}) {surface} {panel-shape}`          | `{float}+`                            |
-| `surface_drift_rule {species}({state}) {surface} {panel-shape} {float}+`     | `surface_drift_rule {species}({state}) {surface} {panel-shape}`     | `{float}+`                            |
-| `mol {integer} {species} [{pos} ...]`                                        | `mol {species} [{pos} ...]`                                         | `{integer}`                           |
-| `compartment_mol {integer} {species} {compartment-name}`                     | `compartment_mol {species} {compartment-name}`                      | `{integer}`                           |
-| `surface_mol {integer} {species}({state}) {panel-shape} {panel} [{pos} ...]` | `surface_mol {species}({state}) {panel-shape} {panel} [{pos} ...]`  | `{integer}`                           |
+| Smoldyn syntax                                                               | `target` of SED-ML change                                           | Format of `newValue` of SED-ML change | Execution time | 
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------- | -------------- |
+| `define {name} {float}`                                                      | `define {name}`                                                     | `{float}`                             | Preprocessing  |
+| `difc {species} {float}`                                                     | `difc {species}`                                                    | `{float}`                             | Preprocessing  |
+| `difc {species}({state}) {float}`                                            | `difc {species}({state})`                                           | `{float}`                             | Preprocessing  |
+| `difc_rule {species}({state}) {float}`                                       | `difc_rule {species}({state})`                                      | `{float}`                             | Preprocessing  |
+| `difm {species} {float}+`                                                    | `difm {species}`                                                    | `{float}+`                            | Preprocessing  |
+| `difm {species}({state}) {float}+`                                           | `difm {species}({state})`                                           | `{float}+`                            | Preprocessing  |
+| `difm_rule {species}({state}) {float}+`                                      | `difm_rule {species}({state})`                                      | `{float}+`                            | Preprocessing  |
+| `drift {species} {float}+`                                                   | `drift {species}`                                                   | `{float}+`                            | Preprocessing  |
+| `drift {species}({state}) {float}+`                                          | `drift {species}({state})`                                          | `{float}+`                            | Preprocessing  |
+| `drift_rule {species}({state}) {float}+`                                     | `drift_rule {species}({state})`                                     | `{float}+`                            | Preprocessing  |
+| `surface_drift {species}({state}) {surface} {panel-shape} {float}+`          | `surface_drift {species}({state}) {surface} {panel-shape}`          | `{float}+`                            | Preprocessing  |
+| `surface_drift_rule {species}({state}) {surface} {panel-shape} {float}+`     | `surface_drift_rule {species}({state}) {surface} {panel-shape}`     | `{float}+`                            | Preprocessing  |
+| `killmol {species}({state})`                                                 | `killmol {species}({state})`                                        | `0`                                   | Simulation     |
+| `killmol {species}({state}) {prob}`                                          | `killmol {species}({state}) {prob}`                                 | `0`                                   | Simulation     |
+| `killmolinsphere {species}({state}) {surface}`                               | `killmolinsphere {species}({state}) {surface}`                      | `0`                                   | Simulation     |
+| `killmolincmpt {species}({state}) {compartment}`                             | `killmolincmpt {species}({state}) {compartment}`                    | `0`                                   | Simulation     |
+| `killmoloutsidesystem {species}({state})`                                    | `killmoloutsidesystem {species}({state})`                           | `0`                                   | Simulation     |
+| `fixmolcount {species}({state}) {num}`                                       | `fixmolcount {species}({state})`                                    | `{integer}`                           | Simulation     |
+| `fixmolcountincmpt {species}({state}) {num} {compartment}`                   | `fixmolcountincmpt {species}({state}) {compartment}`                | `{integer}`                           | Simulation     |
+| `fixmolcountonsurf {species}({state}) {num} {surface}`                       | `fixmolcountonsurf {species}({state}) {surface}`                    | `{integer}`                           | Simulation     |
+
+<!--
+| `mol {integer} {species} [{pos} ...]`                                        | `mol {species} [{pos} ...]`                                         | `{integer}`                           | Preprocessing  |
+| `compartment_mol {integer} {species} {compartment}`                          | `compartment_mol {species} {compartment}`                           | `{integer}`                           | Preprocessing  |
+| `surface_mol {integer} {species}({state}) {panel-shape} {panel} [{pos} ...]` | `surface_mol {species}({state}) {panel-shape} {panel} [{pos} ...]`  | `{integer}`                           | Preprocessing  |
+| `dim {integer}`                                                              | `dim`                                                               | `{integer}`                           | Preprocessing  |
+| `low_wall {dim} {float} {string}`                                            | `low_wall {dim}`                                                    | `{float} {string}`                    | Preprocessing  |
+| `high_wall {dim} {float} {string}`                                           | `high_wall {dim}`                                                   | `{float} {string}`                    | Preprocessing  |
+| `boundaries {dim} {float} {float} {string}?`                                 | `boundaries {dim}`                                                  | `{float} {float} {string}?`           | Preprocessing  |
+-->
 
 ```xml
-<changeAttribute target="dim" newValue="2"/>
-<changeAttribute target="define k_cat" newValue="1.2"/>
-<changeAttribute target="difc red" newValue="4"/>
-<changeAttribute target="mol red" newValue="10"/>
-<changeAttribute target="compartment_mol red cytosol" newValue="10"/>
+<changeAttribute target="fixmolcount red" newValue="10"/>
+<changeAttribute target="killmolincmpt red cytosol" newValue="10"/>
+<changeAttribute target="killmolinsphere red membrane" newValue="10"/>
 ```
 
 ## SED-ML simulation algorithms
