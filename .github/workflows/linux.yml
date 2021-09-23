@@ -27,7 +27,7 @@ jobs:
         cmake --version
         PYTHON=$(which python)
         $PYTHON -c "import sys; print(sys.version)"
-        $PYTHON -m pip install pytest matplotlib numpy wheel
+        $PYTHON -m pip install pytest matplotlib numpy wheel flaky
         mkdir build && cd build
         cmake -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \
