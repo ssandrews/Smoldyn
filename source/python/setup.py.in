@@ -58,7 +58,7 @@ setuptools.setup(
     # },
     install_requires=["dataclasses;python_version=='3.6'"],
     extras_require={
-        "dev": ["mypy", "pyflakes", "black", "numpy", "matplotlib"],
+        "dev": ["mypy", "pyflakes", "black", "numpy", "matplotlib", "flaky"],
         "biosimulators": [
             "biosimulators-utils[logging]>=0.1.124",
             "numpy",
