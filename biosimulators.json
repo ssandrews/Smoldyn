@@ -49,6 +49,12 @@
     },
     "operatingSystemType": "Linux"
   },
+  "cli": {
+    "packageRepository": "PyPI",
+    "package": "smoldyn",
+    "command": "python -m smoldyn.biosimulators",
+    "installationInstructions": null
+  },
   "pythonApi": {
     "package": "smoldyn",
     "module": "smoldyn.biosimulators",
