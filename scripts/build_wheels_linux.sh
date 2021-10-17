@@ -12,8 +12,9 @@ rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 PYDIR37=/opt/python/cp37-cp37m/
 PYDIR38=/opt/python/cp38-cp38/
 PYDIR39=/opt/python/cp39-cp39/
+PYDIR310=/opt/python/cp310-cp310/
 
-for PYDIR in $PYDIR39 $PYDIR38 $PYDIR37; do
+for PYDIR in $PYDIR310 $PYDIR39 $PYDIR38 $PYDIR37; do
     PYTHON=$PYDIR/bin/python
 
     # dependencies
