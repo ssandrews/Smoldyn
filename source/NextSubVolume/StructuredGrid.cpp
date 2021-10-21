@@ -217,7 +217,7 @@ Rectangle StructuredGrid::get_face_between(const int i, const int j) const {
 	} else {
 		ERROR("cells are not adjacent");
 	}
-	return Rectangle(Vect3d(),Vect3d(),Vect3d());
+	return Rectangle(Vect3d(0,0,0),Vect3d(0,0,0),Vect3d(0,0,0));
 }
 
 void StructuredGrid::fill_raw_positions() {

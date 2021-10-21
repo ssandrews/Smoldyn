@@ -15,7 +15,12 @@
 #include "../python/CallbackFunc.h"
 #endif
 
-#endif // -----  not __CPLUSPLSU  -----
+#endif // -----  not __CPLUSPLUS  -----
+
+//
+// A macro to mark a variable unused. Supresses compiler warnings.
+//
+#define UNUSED(x)  (void)(x)
 
 #include <stdbool.h>
 #include <stdio.h>

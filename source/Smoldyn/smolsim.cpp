@@ -43,8 +43,16 @@
 void (*LoggingCallback)(simptr,int,const char*,...)=NULL;
 int ThrowThreshold=11;
 FILE *LogFile=NULL;
-char ErrorString[STRCHARLONG]="";
+
+//
+// ErrorLineAndString contains ErrorString (a few places sprinf is used to put
+// ErrorLine inside ErrorLineAndString therefore the size of ErrorLineAndString
+// has to be bigger than ErrorString else compiler emits warning (for a good
+// reason).
+//
 char ErrorLineAndString[STRCHARLONG]="";
+char ErrorString[STRCHARLONG-STRCHAR-100]="";
+
 int ErrorType=0;
 char SimFlags[STRCHAR]="";
 int VCellDefined=0;
