@@ -65,7 +65,7 @@ class Simulation
       bool overwrite);
 
     bool connect(const py::function& func,
-      const py::object& target,
+      const py::handle& target,
       const size_t step,
       const py::list& args);
 
