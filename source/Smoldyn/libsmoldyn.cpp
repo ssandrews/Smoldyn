@@ -881,7 +881,7 @@ extern CSTRING void smolGetSpeciesName(simptr sim,int speciesindex,char *species
 /* smolGetSpecies */
 extern CSTRING int smolGetSpecies(simptr sim,int speciesindex,char *speciesname,double *difc,double **color,double *displaysize,char **listname) {
 	const char *funcname="smolGetSpecies";
-	int i;
+	int i=0;
 	enum MolecState ms;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");

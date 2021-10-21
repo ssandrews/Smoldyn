@@ -819,6 +819,7 @@ int filAddBead(filamentptr fil,const double *x,double length,char endchar) {
 /* filAddSegment */
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char endchar) {
 	int seg,dim;
+    UNUSED(dim);
 	filamenttypeptr filtype;
 	segmentptr segment,segmentminus,segmentplus;
 
@@ -1320,6 +1321,7 @@ filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	int nvar;
 
 	filamentssptr filss;
+    UNUSED(filss);
 	int itct,er,i1,i2;
 	char nm[STRCHAR],nm1[STRCHAR];
 	double fltv1[9],f1;
@@ -1355,7 +1357,7 @@ filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"biology options: actin, microtubule, intermediate, dsDNA, ssDNA, other");
 		fb=filstring2FB(nm);
-		CHECKS(fb!=FDnone,"biology options: actin, microtubule, intermediate, dsDNA, ssDNA, other");
+		CHECKS(fb!=FBnone,"biology options: actin, microtubule, intermediate, dsDNA, ssDNA, other");
 		er=filtypeSetBiology(filtype,fb);
 		CHECKS(!er,"error setting filament biology");
 		CHECKS(!strnword(line2,2),"unexpected text following biology"); }
@@ -1814,7 +1816,7 @@ int filSegmentXSurface(simptr sim,filamentptr fil,char endchar) { //?? Currently
 /* filSegmentXFilament */
 int filSegmentXFilament(simptr sim,filamentptr fil,char endchar,filamentptr *filptr) { //?? Currently only supported for segments not beads
 	int f,i,mxf,mn,mn1,ft;
-	double thk,*pt1,*pt2,dist;
+	double thk=0.0,*pt1,*pt2,dist=0.0;
 	filamentssptr filss;
 	filamenttypeptr filtype;
 	filamentptr fil2;

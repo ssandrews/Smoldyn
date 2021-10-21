@@ -35,6 +35,7 @@ struct ReactionComponent
       : multiplier(multiplier)
       , species(&species_ref)
       , compartment_index(compartment_index)
+      , tmp(0.0)
     {}
 
     ReactionComponent(const ReactionComponent& arg)

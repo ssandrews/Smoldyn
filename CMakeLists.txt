@@ -66,7 +66,7 @@ option(OPTION_DOCS "Generate documentation" OFF)
 # Developer options. Enables Address Sanitizer to detects memory leak etc. Most
 # memory leaks are in GL interface.
 #
-option(OPTION_STRICT_BUILD "Treat most warnings as error." OFF)
+option(OPTION_WARNING_AS_ERROR "Treat most warnings as error." OFF)
 option(OPTION_ASAN "Enable Address Sanitizer" OFF)
 
 if (OPTION_VCELL)
@@ -143,12 +143,14 @@ if(NOT CMAKE_BUILD_TYPE)
 endif ()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-if(OPTION_STRICT_BUILD)
+if(OPTION_WARNING_AS_ERROR)
     add_definitions(-Wextra -Werror)
+    # ignore these warnings.
     CheckCompilerFlagAndAdd(-Wno-format-truncation)
     CheckCompilerFlagAndAdd(-Wno-uninitialized)
     CheckCompilerFlagAndAdd(-Wno-unused-parameter)
     CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
+    CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
 # We need a c++14 support to build python bindings.
