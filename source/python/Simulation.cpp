@@ -211,7 +211,7 @@ Simulation::runUntil(const double breaktime,
 
 bool
 Simulation::connect(const py::function& func,
-  const py::object& target,
+  const py::handle& target,
   const size_t step,
   const py::list& args)
 {
@@ -225,13 +225,14 @@ Simulation::connect(const py::function& func,
     }
 
     // Note: cleanup is the job of simfree.
-    // I thought of using unique_ptr here but then gave up on that idea.
-    // simfree is already being used for cleaning up.
     auto f = new CallbackFunc();
+    assert(f);
+
     f->setFunc(func);
     f->setStep(step);
     f->setTarget(target);
     f->setArgs(args);
+
     sim_->callbacks[sim_->ncallbacks] = f;
     sim_->ncallbacks += 1;
     return true;

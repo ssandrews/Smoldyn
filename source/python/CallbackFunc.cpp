@@ -17,10 +17,7 @@
 namespace py = pybind11;
 
 CallbackFunc::CallbackFunc()
-  : funcName_("")
-  , func_(py::none())
-  , step_(1)
-  , args_({})
+  : step_(1)
 {}
 
 CallbackFunc::~CallbackFunc() {}

@@ -13,12 +13,11 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
-import shlex
-import subprocess
-from pathlib import Path
 import re
+import subprocess
+import sys
+from pathlib import Path
 
 DIR = Path(__file__).parent.resolve()
 
@@ -239,6 +238,8 @@ htmlhelp_basename = "pybind11doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
+latex_engine = "pdflatex"
+
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     # 'papersize': 'letterpaper',
@@ -353,8 +354,11 @@ def prepare(app):
     with open(DIR.parent / "README.rst") as f:
         contents = f.read()
 
-    # Filter out section titles for index.rst for LaTeX
     if app.builder.name == "latex":
+        # Remove badges and stuff from start
+        contents = contents[contents.find(r".. start") :]
+
+        # Filter out section titles for index.rst for LaTeX
         contents = re.sub(r"^(.*)\n[-~]{3,}$", r"**\1**", contents, flags=re.MULTILINE)
 
     with open(DIR / "readme.rst", "w") as f:
