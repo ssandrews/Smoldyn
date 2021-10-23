@@ -82,6 +82,7 @@ jobs:
             VERSION=$(echo $WHEEL_PATH | cut -d - -f 2- | cut -d . -f 1-2)
           fi
           REVISION=$(git rev-parse HEAD)
+          IMAGE_DIGEST=$(docker image inspect ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:${VERSION} | jq -r '.[0].RepoDigests[0]' | cut -d "@" -f 2-)
 
           (
               curl \
@@ -89,5 +90,5 @@ jobs:
                 -u ${{ secrets.BIOSIMULATORS_GH_USERNAME }}:${{ secrets.BIOSIMULATORS_GH_TOKEN }} \
                 -H "Accept: application/vnd.github.v3+json" \
                 https://api.github.com/repos/biosimulators/Biosimulators/issues \
-                -d "{\"labels\": [\"Validate/submit simulator\"], \"title\": \"Submit Smoldyn ${VERSION}\", \"body\": \"---\nid: smoldyn\nversion: \\\"${VERSION}\\\"\nspecificationsUrl: https://raw.githubusercontent.com/ssandrews/Smoldyn/${REVISION}/biosimulators.json\nspecificationsPatch:\n  version: \\\"${VERSION}\\\"\n  image:\n    url: ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:${VERSION}\nvalidateImage: true\ncommitSimulator: true\n\n---\"}"
+                -d "{\"labels\": [\"Validate/submit simulator\"], \"title\": \"Submit Smoldyn ${VERSION}\", \"body\": \"---\nid: smoldyn\nversion: \\\"${VERSION}\\\"\nspecificationsUrl: https://raw.githubusercontent.com/ssandrews/Smoldyn/${REVISION}/biosimulators.json\nspecificationsPatch:\n  version: \\\"${VERSION}\\\"\n  image:\n    url: ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:${VERSION}\n    digest: ${IMAGE_DIGEST}\nvalidateImage: true\ncommitSimulator: true\n\n---\"}"
             ) || echo "Failed to create issue. Probably secrets are not available?"
