@@ -1,5 +1,10 @@
 ## Changelog
 
+### 2.66.1 (10/28/21)
+
+- Maintainence release. Enabled Python 3.10 wheels.
+- Upgraded pybind11 to latest commit (2.9.dev). Also fixed #83
+
 ### 2.66 (6/18/21)
 
 - Added biosimulator support (thanks @jonrkarr, #79, #75)
