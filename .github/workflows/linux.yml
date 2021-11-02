@@ -16,13 +16,17 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: install
+    - name: Start svfb
+      run: |
+        export DISPLAY=:99.0
+        Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
+    - name: Install dependencies
       run: |
         sudo apt -y update
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
         sudo apt -y install libvtk7-dev vtk7
         sudo apt -y install xvfb
-    - name: configure
+    - name: Configure smoldyn
       run: |
         cmake --version
         PYTHON=$(which python)
@@ -32,19 +36,12 @@ jobs:
         cmake -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \
             -DPython3_EXECUTABLE=$PYTHON ..
-    - name: build smoldyn
+    - name: Build smoldyn
       run: |
           cd build && make -j2 && make wheel && sudo make install
-          ## If installation is successful, following should just work.
-          ## NOTE: Following does not work on github actions because python is in a
-          ## virtual environment.
-          # python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
-    - name: test smoldyn
+    - name: Test smoldyn
       run: |
-        # From https://github.com/processing/processing/wiki/Running-without-a-Display
-        sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
-        export DISPLAY=":1"
-        cd build && ctest --output-on-failure -j2
+        cd build && xvfb-run --auto-servernum ctest --output-on-failure -j2
         python -m pip install smoldyn*.whl
         python -c "import smoldyn; print(smoldyn.__file__); print(smoldyn.__version__)"
 
@@ -54,7 +51,6 @@ jobs:
       run: |
         cp build/smoldyn*.whl scripts/
         cd scripts
-
         docker build \
           --file Dockerfile-BioSimulators \
           --tag ghcr.io/ssandrews/smoldyn/biosimulators_smoldyn:latest \
@@ -74,7 +70,4 @@ jobs:
       if: matrix.python-version == '3.9'
       run: |
         python -m pip install pytest flaky
-
-        # sudo Xvfb :1 -screen 0 1024x768x24 </dev/null &
-        # export DISPLAY=":1"
-        sudo xvfb-run -e /dev/stdout python -m pytest tests/test_biosimulators.py --verbose
+        xvfb-run --auto-servernum python -m pytest tests/test_biosimulators.py --verbose
