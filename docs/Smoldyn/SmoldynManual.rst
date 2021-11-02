@@ -2,11 +2,11 @@
 Smoldyn User’s Manual
 =====================
 ------------
-Version 2.66
+Version 2.67
 ------------
 
 :Author: Steve Andrews
-:Date:   ©June, 2021
+:Date:   ©November, 2021
 
 Getting Started
 ===============
@@ -915,6 +915,9 @@ combination of flags may be used, and in any order.
 | ``-q``                  | q       | quiet: parameters are not  |
 |                         |         | displayed                  |
 +-------------------------+---------+----------------------------+
+| ``-s``                  | s       | silent: no text output at  |
+|                         |         | all, even errors           |
++-------------------------+---------+----------------------------+
 | ``-t``                  | t       | text only: no graphics are |
 |                         |         | displayed                  |
 +-------------------------+---------+----------------------------+
@@ -1415,8 +1418,7 @@ file diffi.xls, which is also in the S4_molecules folder. From this
 Excel file, the graphical and numerical results are shown below, along
 with theoretical predictions.
 
-|Output from file diffi.txt showing quantiatively accurate isotropic
-diffusion.| |image1| |image2|
+|image| |image1| |image2|
 
 The middle panel of the figure shows that the mean position of the red
 molecules, on each of the three coordinates, stays near zero although
@@ -1486,8 +1488,7 @@ interpreted to be
 
 Results are shown below
 
-|Output from diffa.txt showing quantitatively accurate anisotropic
-diffusion.| |image3| |image4|
+|image3| |image4| |image5|
 
 In the figure, it can be seen that the red molecules diffuse only on the
 :math:`x`-:math:`z`-plane, whereas the green molecules diffuse into an
@@ -1646,7 +1647,7 @@ represent zero or more characters. For example, if you want protein Fus3
 to have a different diffusion coefficient in the cytoplasm as in the
 nucleus, you might define it as two species, ``Fus3_cyto`` and
 ``Fu3_nucl``. Then, you could specify that they are both colored red
-using ``color Fus3_red``.
+using ``color Fus3_* red``.
 
 Smoldyn supports many other wildcards as well. The logical operators are
 “:math:`|`” for OR and “&” for AND, along with braces to enforce an
@@ -1860,8 +1861,7 @@ The following images show Smoldyn’s graphics for 1D, 2D, and 3D systems,
 made with the files graphics1.txt, graphics2.txt, and graphics3.txt. All
 of these use the “opengl_good” graphics quality.
 
-|Output from graphics1.txt, graphics2.txt, and graphics3.txt showing
-some graphics options.| |image5| |image6|
+|image6| |image7| |image8|
 
 The following table lists the graphics statements
 
@@ -2706,8 +2706,7 @@ with rate 0.5 on one side. This situation can be solved analytically as
 well from equations in Crank, allowing for a good comparison. Comparison
 between simulation and theory are shown in the figure below.
 
-|Output from stickrate.txt, showing quantitatively accurate adsorption.|
-|image7|
+|image9| |image10|
 
 Results from example stickrate.txt, shown in red, are compared with the
 analytic solution for the sticking rate. The left panel shows the total
@@ -2753,8 +2752,7 @@ by a triangulated sphere that is centered at the origin and has radius
 diffuse as though the system were unbounded. Close agreement between
 simulation and theory show that the algorithm works well.
 
-|Output from emitter1.txt, showing quantitatively accurate effective
-unbounded diffusion.| |image8|
+|image11| |image12|
 
 The left panel shows a snapshot from example emitter1.txt where it is
 seen that the emitter center is somewhat left of the sphere center and
@@ -3123,8 +3121,7 @@ The number of B molecules as a function of time is
 Analogous equations hold for C and D. Simulation results closely matched
 these theoretical equations, as shown in the figure below.
 
-|Output from unireact1.txt and unireactn.txt, showing quantitatively
-accurate first order reactions.| |image9|
+|image13| |image14|
 
 The panel on the left shows results from the configuration file
 unireact1.txt. First order reactions occur at rates that are in good
@@ -3188,8 +3185,7 @@ passed for a steady state reactant distribution to be formed, it is
 shown that the simulated results agree well with the analytical results
 (orange line in the figure).
 
-|Output from bireactAB.txt and bireactAA.txt, showing quantitatively
-accurate second order reactions.| |image10|
+|image15| |image16|
 
 The panel on the left shows reactant numbers for the reaction A + B
 :math:`\rightarrow` C for three different reaction rates and with equal
@@ -3250,8 +3246,7 @@ simulates as though it is diffusion-limited. As is shown in the figure
 below, results conform closely to the Smoluchowski prediction for this
 reaction.
 
-|Output from bireactABB.txt, showing accurate diffusion-limited
-reactions.| |image11|
+|image17| |image18|
 
 This example shows diffusion-limited bimolecular reactions from the
 configuration file bireactABB.txt, which simulates the reaction that is
@@ -3405,8 +3400,7 @@ simulation is set up with only 1 molecule per virtual box, and the
 rabbit and fox molecules are stored in separate molecule lists. Results
 from this file are shown in the figure below.
 
-|Output from lotvolt.txt, showing a simple reaction network with
-Lotka-Volterra dynamics.| |image12| |image13|
+|image19| |image20| |image21|
 
 These figures show results from Lotka-Volterra simulation. The first
 panel shows of snapshot of the simulation after it has run for long
@@ -3512,8 +3506,7 @@ conformational spread reaction rates that were observed to be slightly
 too low for the case in which each red molecule was within the
 conformational spread radius of two blue molecules.
 
-|Output from confspread.txt, showing accurate conformational spread
-interactions.| |image14|
+|image22| |image23|
 
 This figure show output from confspread.txt configuration file. There
 are conformational spread reactions between blue molecules and red
@@ -3574,8 +3567,7 @@ are:
 A second example involves a crowded system and is in the same directory
 and the file crowding.txt.
 
-|Output from bounce.txt and crowding.txt, showing excluded volume for
-surface-bound and solution phase molecules.| |image15|
+|image24| |image25|
 
 These figures show output from bounce.txt and crowding.txt. In the
 former, red and green molecules, both of which are confined to the
@@ -4014,8 +4006,7 @@ These files are in the examples folder in S9_compartments. The first is
 called compart.txt and the second is compartlogic.txt. They yield the
 following results:
 
-|Output from compart.txt and compartlogic.txt, showing behavior of
-compartments.| |image16|
+|image26| |image27|
 
 This figure shows examples of compartments. In the left panel, green
 dots are the interior-defining points and red molecules were added
@@ -4292,6 +4283,29 @@ reaction network, adding the generated species and reactions to its
 internal lists. During the process, Smoldyn also computes diffusion
 coefficients, default states, display colors, display sizes, and
 molecule-surface interactions for the new species, as explained below.
+
+Note about errors: Sometimes Smoldyn can’t find files or can’t run
+BioNetGen. If so, then check the following things. (1) It’s usually
+easiest if you navigate so that your current working directory is the
+same location as both the Smoldyn and BioNetGen input files. (2) Check
+that your computer has Perl installed by entering “perl -v”, which
+should just print out the version number. If you’re on a Windows
+computer and you don’t have Perl, then I recommend installing Strawberry
+Perl, which is free. (3) Check that your system has BNG2.pl installed
+and that Smoldyn knows where it is. For Mac and Linux, its default
+location is ``/usr/local/bin/BioNetGen/BNG2.pl`` and for Windows its
+default location is ``C:\Program Files\Smoldyn\BioNetGen\BNG.pl``. If
+it’s there and Smoldyn isn’t finding it (or if it’s somewhere else),
+tell Smoldyn where to find it with the ``BNG2_path`` statement,
+remembering to give the complete path, *including* the BNG2.pl filename.
+(4) Even if Smoldyn finds BNG2.pl, it may not be able to run it, which
+typically occurs if there are spaces in directory names, including
+particularly the Windows “Program Files” directory name. The easiest
+solution to this, at least for now, is to copy the BioNetGen code into
+the same directory as your simulation files. For Windows this means
+entering ``xcopy "C:\Program Files\Smoldyn\BioNetGen" . /s`` . Then,
+change the ``BNG2_path`` statement to be just “BNG2.pl”, meaning that
+it’s in the current directory.
 
 Writing rules in BNGL
 ~~~~~~~~~~~~~~~~~~~~~
@@ -8794,7 +8808,7 @@ System manipulation commands
    step (or run it every :math:`n` time steps, and multiply the force or
    mobility by :math:`n`).
 
-.. _ch:APIReference:
+.. _`ch:APIReference`:
 
 C/C++ and Python APIs
 ---------------------
@@ -9278,6 +9292,24 @@ GetSpeciesName
      ``speciesindex``. The name is returned both in ``species`` and
      directly, where the latter simplifies function use. Upon failure,
      this function returns ``NULL``.
+
+GetSpecies
+   | 
+   | C/C++:
+     ``int smolGetSpecies(simptr sim, int speciesindex, char *speciesname, double *difc, double **color, double *displaysize, char **listname)``
+   | Send in the species index in ``speciesindex`` if known, or the
+     species name in ``speciesname`` if not. This then returns
+     information about the species, including the species name, the
+     diffusion coefficients for each state, the color for each state,
+     the display size for each state, and the molecule list name for
+     each state. If you don’t want some of this information, send in the
+     corresponding parameter as ``NULL``. Otherwise, all pointers sent
+     in need to point to memory that has been allocated to be large
+     enough to recieve the given data. For example, the color pointer
+     needs to point to a vector that is ``MSMAX`` (equal to 5) large for
+     each of the states, and each of those points to 4 color channels.
+     Returns the species index number on success or a library error code
+     otherwise.
 
 SetSpeciesMobility
    | 
@@ -11055,59 +11087,31 @@ Singh (National Centre for Biological Sciences and then on his own)
 developed Smoldyn’s Python bindings and improved code and documentation
 distribution.
 
-.. |Output from file diffi.txt showing quantiatively accurate isotropic diffusion.| image:: figures/image5.png
-   :name: fig:diffi
+.. |image| image:: figures/image5.png
 .. |image1| image:: figures/image6.png
-   :name: fig:diffi
 .. |image2| image:: figures/image7.png
-   :name: fig:diffi
-.. |Output from diffa.txt showing quantitatively accurate anisotropic diffusion.| image:: figures/image13.png
-   :name: fig:diffa
-.. |image3| image:: figures/image14.png
-   :name: fig:diffa
-.. |image4| image:: figures/image15.png
-   :name: fig:diffa
-.. |Output from graphics1.txt, graphics2.txt, and graphics3.txt showing some graphics options.| image:: figures/image16.png
-   :name: fig:graphics1
-.. |image5| image:: figures/image17.png
-   :name: fig:graphics1
-.. |image6| image:: figures/image18.png
-   :name: fig:graphics1
-.. |Output from stickrate.txt, showing quantitatively accurate adsorption.| image:: figures/image21.png
-   :name: fig:stickrate
-.. |image7| image:: figures/image22.png
-   :name: fig:stickrate
-.. |Output from emitter1.txt, showing quantitatively accurate effective unbounded diffusion.| image:: figures/image25.png
-   :name: fig:emitter1
-.. |image8| image:: figures/image26.png
-   :name: fig:emitter1
-.. |Output from unireact1.txt and unireactn.txt, showing quantitatively accurate first order reactions.| image:: figures/image34.png
-   :name: fig:unireact1
-.. |image9| image:: figures/image35.png
-   :name: fig:unireact1
-.. |Output from bireactAB.txt and bireactAA.txt, showing quantitatively accurate second order reactions.| image:: figures/image38.png
-   :name: fig:bireactAB
-.. |image10| image:: figures/image39.png
-   :name: fig:bireactAB
-.. |Output from bireactABB.txt, showing accurate diffusion-limited reactions.| image:: figures/image41.png
-   :name: fig:bireactABB
-.. |image11| image:: figures/image42.png
-   :name: fig:bireactABB
-.. |Output from lotvolt.txt, showing a simple reaction network with Lotka-Volterra dynamics.| image:: figures/image53.png
-   :name: fig:lotvolt
-.. |image12| image:: figures/image54.png
-   :name: fig:lotvolt
-.. |image13| image:: figures/image55.png
-   :name: fig:lotvolt
-.. |Output from confspread.txt, showing accurate conformational spread interactions.| image:: figures/image56.png
-   :name: fig:confspread
-.. |image14| image:: figures/image57.png
-   :name: fig:confspread
-.. |Output from bounce.txt and crowding.txt, showing excluded volume for surface-bound and solution phase molecules.| image:: figures/image58.png
-   :name: fig:crowding
-.. |image15| image:: figures/image59.png
-   :name: fig:crowding
-.. |Output from compart.txt and compartlogic.txt, showing behavior of compartments.| image:: figures/image62.png
-   :name: fig:compart
-.. |image16| image:: figures/image63.png
-   :name: fig:compart
+.. |image3| image:: figures/image13.png
+.. |image4| image:: figures/image14.png
+.. |image5| image:: figures/image15.png
+.. |image6| image:: figures/image16.png
+.. |image7| image:: figures/image17.png
+.. |image8| image:: figures/image18.png
+.. |image9| image:: figures/image21.png
+.. |image10| image:: figures/image22.png
+.. |image11| image:: figures/image25.png
+.. |image12| image:: figures/image26.png
+.. |image13| image:: figures/image34.png
+.. |image14| image:: figures/image35.png
+.. |image15| image:: figures/image38.png
+.. |image16| image:: figures/image39.png
+.. |image17| image:: figures/image41.png
+.. |image18| image:: figures/image42.png
+.. |image19| image:: figures/image53.png
+.. |image20| image:: figures/image54.png
+.. |image21| image:: figures/image55.png
+.. |image22| image:: figures/image56.png
+.. |image23| image:: figures/image57.png
+.. |image24| image:: figures/image58.png
+.. |image25| image:: figures/image59.png
+.. |image26| image:: figures/image62.png
+.. |image27| image:: figures/image63.png

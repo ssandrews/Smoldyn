@@ -1,5 +1,10 @@
 ## Changelog
 
+
+### 2.67 (11/2/21)
+
+- Fixed a bug in longrangeforce command.
+
 ### 2.66.1 (10/28/21)
 
 - Maintainence release. Enabled Python 3.10 wheels.

@@ -4745,7 +4745,8 @@ enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
 						duplicate=molismatch(mptr2,i1,index1,ms1);
 						if(!duplicate) {
 							j2=ListInsertItemULVD4(moleclist,mptr2->serno,(void*)mptr2,force0,1);
-							moleclist->datad4[j2][3]=1; }
+							moleclist->datad4[j2][3]=1;
+							j=ListInsertItemULVD4(moleclist,mptr->serno,NULL,NULL,0); } // in case adding j2 moved the position for j
 						for(d=0;d<dim;d++) {
 							force=delta[d]/dist*forcemag;
 							moleclist->datad4[j][d]-=force;

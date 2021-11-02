@@ -2,11 +2,11 @@
 Smoldyn Code Documentation
 ==========================
 ------------
-Version 2.66
+Version 2.67
 ------------
 
 :Author: Steve Andrews
-:Date:   ©June, 2021
+:Date:   ©November, 2021
 
 Programmer’s introduction
 =========================
@@ -11106,6 +11106,18 @@ Individual command functions
      purged from this list, partly because those molecules might have
      gone away due to reactions.
 
+   The ``scanportion`` region scans over all molecules that fit the
+   :math:`species_1` category. Each of these molecules is returned, one
+   at a time, in ``mptr``. This ``mptr`` is added to ``moleclist``. The
+   function then scans over all possible :math:`species_2` molecules
+   that are within ``rmax`` distance of this molecule and checks to see
+   if they interact. The ``duplicate`` test investigates whether
+   ``mptr2`` is an instance of :math:`species_1` because if it is, then
+   it’s already in the ``moleclist``, and if it’s not then it needs to
+   be put in that list, which is done. If it’s put in the list, then
+   that might shift the list by one, in which case ``j`` becomes
+   incorrect; to address this, ``j`` is recomputed.
+
 *Internal functions*
 ``void cmdv1free(cmdptr cmd);``
    | 
@@ -11169,6 +11181,94 @@ the shell. This source code file is not included in Libsmoldyn.
      file and set up all the structures. If all goes well, it calls
      ``smolsimulate`` or ``smolsimulategl`` to run the simulation. At
      the end, it returns to the shell.
+
+Libsmoldyn (functions in libsmoldyn.cpp)
+----------------------------------------
+
+Libsmoldyn is a C/C++ API for the Smoldyn code. It is designed to be
+redundant with the configuration file input, but accessible from code.
+This description is far from complete but needs to be finished at some
+point. See also documentation for it in the SmoldynManual.
+
+Error handling
+~~~~~~~~~~~~~~
+
+Essentially every user-accessible function returns an error code. Also,
+functions define their function name in
+``const char* funcname="``\ :math:`function`\ ``";``. Errors are checked
+with either the ``LCHECK`` or ``LCHECKNT`` macros. These are supposed to
+differ with ``LCHECK`` dealing with the error itself and throwing an
+exception if necessary, and the ``LCHECKNT`` (no throw) macro not
+dealing with the error but just copying the message over into global
+variables. However, in practice, throwing doesn’t work anyhow, so the
+only real difference is that the regular version displays an error
+message to standard error, whereas the ``NT`` version doesn’t. Anyhow,
+if an error is detected, these macros send the function name, the error
+code, a string error message, and any simulation flags to the libsmoldyn
+functions ``smolSetError`` or ``smolSetErrorNT``.
+
+At ``smolSetError`` and ``smolSetErrorNT``, which are essentially
+identical, several function inputs are copied over to global variables:
+the function name to ``Liberrorfunction``, the error code to
+``Liberrorcode``, and the error message to ``Liberrorstring``. These
+items are also displayed to standard error if appropriate.
+
+The global error variables are pretty much only used in one place, which
+is the ``smolGetError`` function, which copies their values over to new
+variables and returns those to the calling code. In addition, each
+function in the library returns ``Liberrorcode``, which it just set if
+an error occurred.
+
+A few more error handling steps arise if ``smolPrepareSimFromFile`` or
+``smolLoadSimFromFile`` are used.
+
+In ``smolLoadSimFromFile``, this calls the smolsim.c function
+``loadsim``. Here, errors are written by the macro ``CHECKS``, which
+copies the error message to the global variable ``ErrorString``. Errors
+are then handled by ``simParseError``, which concatenates the error
+message from ``Parse_ReadFailure`` (the file name and file line) with
+the error message from ``ErrorString``. ``simParseError`` sends the
+result off to ``simLog``, which writes the error to a logfile if one has
+been created or to standard output otherwise.
+
+Here is a typical example of error handling. Starting with stand-alone
+Smoldyn first, the program starts in ``main`` in smoldyn.cpp, which
+calls ``simInitAndLoad`` in smolsim.c, which calls ``loadsim``, which
+calls ``simreadstring``. In the ``simreadstring`` function, the input
+parser encounters an error. It writes an error message to the global
+variable ``ErrorString``, goes to its failure label, and then on to
+``simParseError``. Here, ``Parse_ReadFailure`` is called and sent an
+empty string, and that function returns the string with text that reads
+“Error reading file in line *number*. \\n line: *text of line* \\n file:
+*filename*”; if the input line included substituted text, it also gives
+the substituted version of the line in the string as well.
+``Parse_ReadFailure`` also closes files and stops the input process.
+Back in ``simParseError``, the input file information is concatanated
+with the error message to create the complete error string. This is done
+twice; first to create an error string in the global variable
+``ErrorLineAndString`` and also as the input to ``simLog``. The
+``simLog`` function prints the error message to the logging file if one
+was declared or to standard output if not (unless the ‘s’ runtime flags
+was selected, in which case the error output is supressed). Next,
+``simParseError`` returns to ``simreadstring``, which returns an error
+code to ``loadsim``, which returns an error code to ``simInitAndLoad``,
+which returns an error code to ``main``. Here, the code sees the error
+message, skips the simulation, and quits with an exit code of 0.
+
+For Libsmoldyn, the flow is similar, but here an entry point is
+``smolPrepareSimFromFile``. This calls ``simInitAndLoad``. As before, an
+error is encountered, it is displayed to the standard output if the ‘s’
+flag isn’t selected (it often should be selected for Libsmoldyn use) and
+also written to ``ErrorLineAndString``. Then, control returns back to
+``smolPrepareSimFromFile``. This sees the error, so it follows the
+``LCHECK`` macro to head off to ``smolSetError``, with the
+``ErrorLineAndString`` contents as the error message. This function
+prints the error message out a second time, which is a little inelegant,
+and also copies the message into the library global variable
+``Liberrorstring``. At this point, control returns to the calling
+program. If desired, that program can then call ``smolGetError`` to get
+the error string again, now in a string variable rather than displayed
+to the output.
 
 Code design
 ===========
@@ -14489,6 +14589,30 @@ Modifications for version 2.27 (released 7/26/12)
 -  Various additions for compatibility with Biosimulators.
 
 -  Minor additions to Python API: Simulation.counts and getError.
+
+   .. rubric:: Modifications for version 2.66 (not released yet)
+      :name: modifications-for-version-2.66-not-released-yet
+      :class: unnumbered
+
+-  Added “-s” command line flag for silent operation.
+
+-  Improved error reporting for Libsmoldyn ``smolPrepareSimFromFile``
+   and ``smolLoadSimFromFile`` functions.
+
+-  Added a test for Perl availability in bngrunBNGL, in smolbng.c.
+
+-  Added smolGetSpecies function to libsmoldyn. I haven’t tested it yet.
+
+   .. rubric:: Modifications for version 2.67 (released 11/2/21)
+      :name: modifications-for-version-2.67-released-11221
+      :class: unnumbered
+
+-  Dilawar fixed a typo in the filament code.
+
+-  Fixed the ``longrangeforce`` command, where an index value could be
+   off by one.
+
+-  Jonathan Karr and Dilawar updated the Biosimulators links.
 
 The wish/ to do list
 ====================

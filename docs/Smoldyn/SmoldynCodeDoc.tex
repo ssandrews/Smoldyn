@@ -42,8 +42,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.66}
-\date{\copyright June, 2021}
+\subtitle{Version 2.67}
+\date{\copyright November, 2021}
 \author{Steve Andrews}
 \maketitle
 
@@ -5463,6 +5463,8 @@ This command diffuses a compartment, including dealing with molecule displacemen
 \hfill \\
 This command simulates a long range force between pairs of molecules. It uses loops over molecule pairs that's largely borrowed from \ttt{cmdradialdistribution}. Also, it keeps a list of molecules that have forces on them, which is in \ttt{cmd->v1}, used internally as \ttt{moleclist}. Each entry in this list includes the molecule serial number (on which the list is sorted), the molecule pointer, and a 4-dimensional vector of doubles. The first three dimensions are for the $x$, $y$, and $z$ components of the force on a molecule, and the fourth is 0 for molecules that were never visited during the last round of checks and 1 for molecules that were visited. Unvisited molecules get purged from this list, partly because those molecules might have gone away due to reactions.
 
+The \ttt{scanportion} region scans over all molecules that fit the $species_1$ category. Each of these molecules is returned, one at a time, in \ttt{mptr}. This \ttt{mptr} is added to \ttt{moleclist}. The function then scans over all possible $species_2$ molecules that are within \ttt{rmax} distance of this molecule and checks to see if they interact. The \ttt{duplicate} test investigates whether \ttt{mptr2} is an instance of $species_1$ because if it is, then it's already in the \ttt{moleclist}, and if it's not then it needs to be put in that list, which is done. If it's put in the list, then that might shift the list by one, in which case \ttt{j} becomes incorrect; to address this, \ttt{j} is recomputed.
+
 \item[\underline{Internal functions}]
 
 \item[\ttt{void cmdv1free(cmdptr cmd);}]
@@ -6811,6 +6813,12 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Improved error reporting for Libsmoldyn \ttt{smolPrepareSimFromFile} and \ttt{smolLoadSimFromFile} functions.
 \item Added a test for Perl availability in bngrunBNGL, in smolbng.c.
 \item Added smolGetSpecies function to libsmoldyn. I haven't tested it yet.
+
+\subsection*{Modifications for version 2.67 (released 11/2/21)}
+\item Dilawar fixed a typo in the filament code.
+\item Fixed the \ttt{longrangeforce} command, where an index value could be off by one.
+\item Jonathan Karr and Dilawar updated the Biosimulators links.
+
 
 \end{itemize}
 
