@@ -7,6 +7,8 @@
 
 #include "Simulation.h"
 
+#include <exception>
+
 using namespace std;
 
 Simulation::Simulation(vector<double>& low,
@@ -42,12 +44,18 @@ Simulation::Simulation(const char* filepath, const char* flags)
   , debug_(false)
 {
     auto path = splitPath(string(filepath));
+
+    //
+    // WARN: sim_ could be null if the model file could not parsed successfully. See
+    // issue #113.
+    //
     sim_ = smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
 }
 
 Simulation::~Simulation()
 {
-    smolFreeSim(sim_);
+    if (sim_)
+        smolFreeSim(sim_);
 }
 
 size_t
@@ -242,7 +250,10 @@ Simulation::connect(const py::function& func,
 simptr
 Simulation::getSimPtr() const
 {
-    assert(sim_);
+    //
+    // Beware that sim_ could be null if parsing for txt file has error. See
+    // smolPrepareSimFromFile function that calls simfree(sim) on failure.
+    //
     return sim_;
 }
 
