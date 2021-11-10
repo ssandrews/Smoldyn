@@ -1,8 +1,6 @@
 __author__ = "Jonathan Karr"
 __email__ = "karr@mssm.edu"
 
-import pytest
-
 try:
     import biosimulators_utils
     from biosimulators_utils.combine.data_model import CombineArchive, CombineArchiveContent, CombineArchiveContentFormat
@@ -271,15 +269,16 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         self.assertEqual(output_file.command, 'molcount')
         self.assertEqual(output_file.type, 'E')
 
-    @pytest.mark.skip(reason="Segfault in CICD.  https://github.com/dilawar/Smoldyn/runs/4086350631?check_suite_focus=true")
     def test_init_smoldyn_simulation_from_configuration_file(self):
         sim = smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(
             os.path.join(self.EXAMPLES_DIRNAME, 'S1_intro', 'bounce1.txt'))
         self.assertIsInstance(sim, smoldyn.Simulation)
 
+    def test_init_smoldyn_simulation_from_configuration_file_handle_not_a_file(self):
         with self.assertRaises(FileNotFoundError):
             smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file('not a file')
 
+    def test_init_smoldyn_simulation_from_configuration_file_handle_not_a_smoldyn_file(self):
         with self.assertRaisesRegex(ValueError, 'Error: '):
             smoldyn.biosimulators.combine.init_smoldyn_simulation_from_configuration_file(
                 os.path.join(self.EXAMPLES_DIRNAME, 'CMakeLists.txt'))
