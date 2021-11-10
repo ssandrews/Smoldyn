@@ -94,8 +94,8 @@
       }
     ],
     "citations": [{
-        "volume": 33,
-        "issue": 5,
+        "volume": "33",
+        "issue": "5",
         "pages": "710-717",
         "journal": "Bioinformatics",
         "title": "Smoldyn: particle-based simulation with rule-based modeling, improved molecular interaction and a library interface",
@@ -108,8 +108,8 @@
         }]
       },
       {
-        "volume": 31,
-        "issue": 14,
+        "volume": "31",
+        "issue": "14",
         "pages": "2406-2408",
         "journal": "Bioinformatics",
         "title": "Multiscale reaction-diffusion simulations with Smoldyn",
@@ -123,7 +123,7 @@
       },
       {
         "pages": "519-542",
-        "volume": 804,
+        "volume": "804",
         "journal": "Methods in Molecular Biology",
         "title": "Spatial and stochastic cellular modeling with the Smoldyn simulator",
         "authors": "Steven S. Andrews",
@@ -135,8 +135,8 @@
         }]
       },
       {
-        "volume": 6,
-        "issue": 3,
+        "volume": "6",
+        "issue": "3",
         "pages": "e1000705",
         "journal": "PLoS Compututational Biology",
         "title": "Detailed simulations of cell biology with Smoldyn 2.1",
@@ -366,7 +366,6 @@
   ],
   "funding": [],
   "biosimulators": {
-    "meta": null,
     "imageVersion": "1.0.0",
     "specificationVersion": "1.0.0",
     "validationTests": null,
