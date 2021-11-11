@@ -42,10 +42,11 @@ int main(int argc,char **argv) {
 		if(argc<=1) {
 			fprintf(stderr,"Welcome to Smoldyn version %s.\n\n",VERSION);
 			fprintf(stderr,"Enter name of configuration file: ");
-			fgets(root,STRCHAR,stdin);
+			char* _x=fgets(root,STRCHAR,stdin);
 			if(strchr(root,'\n')) *(strchr(root,'\n'))='\0';
 			fprintf(stderr,"Enter runtime flags (q=quiet, p=parameters only), or '-'=none: ");
-			fgets(flags,STRCHAR,stdin);
+			_x=fgets(flags,STRCHAR,stdin);
+            UNUSED(_x);
 			if(strchr(flags,'\n')) *(strchr(flags,'\n'))='\0'; }
 		if(argc>1) {
 			strncpy(root,argv[1],STRCHAR-1);
@@ -109,7 +110,7 @@ int main(int argc,char **argv) {
 				smolsimulategl(sim); }}
 		simfree(sim);
 		simfuncfree(); }
-	
+
 	catch (const char* errmsg) {
 		fprintf(stderr, "%s\n", errmsg);
 		exitCode = 1; }

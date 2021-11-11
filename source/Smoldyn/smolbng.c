@@ -1330,14 +1330,17 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 	remove(outname);						// delete output file
 
 	snprintf(string,STRCHAR,"perl -v > %s",outname);	// test for perl
-	system(string);
+
+	int n = system(string);
+    UNUSED(n);
+
 	fptr=fopen(outname,"r");
 	if(!fptr) return 4;
 	remove(outname);
 
 	snprintf(string,STRCHAR,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
 	simLog(bng->bngss->sim,2," Running BNG2.pl on %s\n",filename);
-	system(string);							// generate network
+	n = system(string);							// generate network
 
 	fptr=fopen(outname,"r");		// check for output file
 	if(!fptr) return 3;					// output file was not written

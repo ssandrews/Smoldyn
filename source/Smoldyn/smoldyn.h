@@ -77,7 +77,7 @@ enum StructCond
 #ifndef __string2_h
 #define __string2_h
 
-#define STRCHAR 256
+#define STRCHAR 512
 #define STRCHARLONG 4000
 
 #endif

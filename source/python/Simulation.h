@@ -1,5 +1,5 @@
 /***
- *         Author:  Dilawar Singh <dilawar@subcom.tech>
+ *         Author:  Dilawar Singh <dilawar.s.rajput@gmail.com>
  *    Description:  Simulation class.
  */
 
@@ -69,7 +69,9 @@ class Simulation
       const size_t step,
       const py::list& args);
 
-    // get the pointer
+    //
+    // get the simptr
+    //
     simptr getSimPtr() const;
 
     // set the pointer.
@@ -90,7 +92,7 @@ class Simulation
     void addCommandStr(char* cmd);
 
   private:
-    simptr sim_;
+    std::shared_ptr<simstruct> sim_;
     vector<double> low_;
     vector<double> high_;
     double curtime_;

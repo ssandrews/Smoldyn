@@ -329,7 +329,8 @@ enum CMDcode cmdpause(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
 	if(!sim->graphss || sim->graphss->graphics==0) {
 		fprintf(stderr,"Simulation paused at time %g.  Press enter to continue.",sim->time);
-		scanf("%c",&c);
+		int n = scanf("%c",&c);
+        UNUSED(n);
 		return CMDok; }
 	tflag=strchr(sim->flags,'t')?1:0;
 	SCMDCHECK(sim->graphss && sim->graphss->graphics!=0 && !tflag,"pause doesn't work without graphics");

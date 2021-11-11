@@ -856,7 +856,8 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 					// When compiled for c++ binary.
 					char str2[STRCHAR];
 					fprintf(stderr,"Overwrite existing output file '%s' (y/n)? ",cmds->fname[fid]);
-					scanf("%s",str2);
+					int count = scanf("%s",str2);
+                    (void)count;
 					if(!(str2[0]=='y' || str2[0]=='Y')) return 1;
 #endif
 					}}

@@ -3,11 +3,13 @@
  *    Description:  Utility/helper functions.
  */
 
-
 #ifndef UTIL_H
 #define UTIL_H
 
-extern int graphicsreadcolor(char **stringptr,double *rgba);
+extern "C"
+{
+    extern int graphicsreadcolor(char** stringptr, double* rgba);
+}
 
 /* --------------------------------------------------------------------------*/
 /**
@@ -19,18 +21,20 @@ extern int graphicsreadcolor(char **stringptr,double *rgba);
  * @Returns
  */
 /* ----------------------------------------------------------------------------*/
-inline pair<string, string> splitPath(const string& p)
+inline pair<string, string>
+splitPath(const string& p)
 {
     string filename, fileroot;
-    auto   pos = p.find_last_of('/');
-    fileroot   = p.substr(0, pos + 1);
-    filename   = p.substr(pos + 1);
-    return {fileroot, filename};
+    auto pos = p.find_last_of('/');
+    fileroot = p.substr(0, pos + 1);
+    filename = p.substr(pos + 1);
+    return { fileroot, filename };
 }
 
-inline array<double, 4> color2RGBA(char* color)
+inline array<double, 4>
+color2RGBA(char* color)
 {
-    array<double, 4> rgba = {0, 0, 0, 1.0};
+    array<double, 4> rgba = { 0, 0, 0, 1.0 };
     graphicsreadcolor(&color, &rgba[0]);
     return rgba;
 }

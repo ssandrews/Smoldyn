@@ -250,13 +250,13 @@ int Parse_CmdLineArg(int *argcptr,char **argv,ParseFilePtr pfp) {
 		replist=NULL;
 		ndefine=0;
 		maxdefine=0; }
-	
+
 	if(argcptr && *argcptr>0 && argv) {				// there are arguments for reading
 		argc=*argcptr;
 		argc2=argc/2;
 		if(!pfp && maxdefine-ndefine<argc2) {		// allocate space
 			newmax=ndefine+argc2;
-	
+
 			CHECK(newkeylist=(char **) calloc(newmax,sizeof(char*)));
 			for(i=0;i<newmax;i++) newkeylist[i]=NULL;
 			for(i=0;i<maxdefine;i++) newkeylist[i]=keylist[i];
@@ -294,9 +294,9 @@ int Parse_CmdLineArg(int *argcptr,char **argv,ParseFilePtr pfp) {
 				argc-=2;
 				i--; }
 		*argcptr=argc; }
-	
+
 	return 0;
-	
+
 failure:
 	return 1; }
 
@@ -461,10 +461,10 @@ int Parse_ReadLine(ParseFilePtr *pfpptr,char *word,char **line2ptr,char *erstr) 
 		CHECKS(itct==1,"unable to read undefine key");
 		if(stringfind(pfp->defkey,pfp->ndef,str1)!=-1)
 			pfp->inifdef=1; }
-	
+
 	else if(!strcmp(word,"display_define")) {			// display_define
 		Parse_DisplayDefine(pfp); }
-		
+
 	else if(!strcmp(word,"else")) {								// else
 		pfp->inifdef=1; }
 

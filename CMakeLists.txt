@@ -101,7 +101,6 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 ####### Compiler flags ######################
 #
-# Must use a C++14 compatible compiler (gcc>=5.x).
 # NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
 # nice to use them. Most compilers support C++17 these days.
 #
@@ -153,21 +152,9 @@ if(OPTION_WARNING_AS_ERROR)
     CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
-# We need a c++14 support to build python bindings.
+# We need at least c++14 support to build python bindings.
 if(OPTION_PYTHON)
     set(CMAKE_CXX_STANDARD 14)
-    try_compile(COMPILER_SUPPORT_C14
-        ${CMAKE_BINARY_DIR}/_test_compiler
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_compiler.cpp
-        OUTPUT_VARIABLE COMPILER_TEST_OUTPUT
-        )
-    if(NOT COMPILER_SUPPORT_C14)
-        message(STATUS "Failed to build test program: ${COMPILER_TEST_OUTPUT}")
-        message(FATAL_ERROR "Your compiler does not support C++14. "
-            "Please use a C++14 compliant compiler. "
-            "See https://en.cppreference.com/w/cpp/compiler_support/14 "
-            "for C++14 support among C++ compilers.")
-    endif()
 endif()
 
 
