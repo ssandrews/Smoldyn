@@ -348,12 +348,7 @@ PYBIND11_MODULE(_smoldyn, m)
     // struct, make sure to create a Python wrapper just like simstruct below.
     py::class_<simstruct>(m, "simstruct")
       .def(py::init<>())
-      //.def_readonly("condition", &simstruct::condition, "Structure
-      // condition")
-
       // Python user can write these values.
-      //.def_readwrite("logfile", &simstruct::logfile, "configuration file
-      // path")
       .def_readwrite("filepath", &simstruct::filepath, "configuration file path")
       .def_readwrite("filename", &simstruct::filename, "configuration file name")
       .def_readwrite("flags", &simstruct::flags, "command-line options from user")
@@ -373,20 +368,6 @@ PYBIND11_MODULE(_smoldyn, m)
       .def_readonly("tmax", &simstruct::tmax, "simulation end time")
       .def_readonly("tbreak", &simstruct::tbreak, "simulation break time")
       .def_readonly("dt", &simstruct::dt, "simulation time step")
-      //.def_readonly("rules", &simstruct::ruless, "rule superstructure")
-      //.def_readonly("molecuels", &simstruct::mols, "molecule
-      // superstructure") .def_readonly("surfaces", &simstruct::srfss,
-      // "surface superstructure") .def_readonly("boxs", &simstruct::boxs,
-      // "box superstructure") .def_readonly("cmpts", &simstruct::cmptss,
-      //"compartment superstructure") .def_readonly("ports",
-      //&simstruct::portss, "port superstructure") .def_readonly("lattices",
-      //&simstruct::latticess, "lattice superstructure")
-      //.def_readonly("bionets", &simstruct::bngss, "bionetget
-      // superstructure") .def_readonly("filaments", &simstruct::filss,
-      //"filament superstructure") .def_readonly("commands", &simstruct::cmds,
-      //"command superstructure") .def_readonly( "graphics",
-      //&simstruct::graphss,
-      // py::return_value_policy::reference)
       ;
 
     /**

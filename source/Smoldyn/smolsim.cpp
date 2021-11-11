@@ -50,8 +50,8 @@ FILE *LogFile=NULL;
 // has to be bigger than ErrorString else compiler emits warning (for a good
 // reason).
 //
-char ErrorLineAndString[STRCHARLONG]="";
-char ErrorString[STRCHARLONG-STRCHAR-100]="";
+char ErrorLineAndString[STRCHARLONG+STRCHAR+100]="";
+char ErrorString[STRCHARLONG]="";
 
 int ErrorType=0;
 char SimFlags[STRCHAR]="";

@@ -32,9 +32,9 @@ class Command
     Command(const simptr sim, const string& cmd);
 
     Command(const simptr sim,
-            const string& cmd,
-            const char cmd_type,
-            const map<string, double>& options);
+      const string& cmd,
+      const char cmd_type,
+      const map<string, double>& options);
 
     ~Command();
 

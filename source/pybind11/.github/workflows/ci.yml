@@ -13,6 +13,9 @@ concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PIP_ONLY_BINARY: numpy
+
 jobs:
   # This is the "main" test suite, which tests a large number of different
   # versions of default compilers and Python versions in GitHub Actions.
@@ -22,13 +25,14 @@ jobs:
       matrix:
         runs-on: [ubuntu-latest, windows-latest, macos-latest]
         python:
-        - 2.7
-        - 3.5
-        - 3.6
-        - 3.9
-        - 3.10-dev
-        - pypy2
-        - pypy3
+        - '2.7'
+        - '3.5'
+        - '3.6'
+        - '3.9'
+        - '3.10'
+        # - '3.11-dev'
+        - 'pypy-3.7-v7.3.5'
+        # - 'pypy-3.8'
 
         # Items in here will either be added to the build matrix (if not
         # present), or add new keys to an existing matrix element if all the
@@ -46,18 +50,8 @@ jobs:
             python: 3.6
             args: >
               -DPYBIND11_FINDPYTHON=ON
-
-        # These items will be removed from the build matrix, keys must match.
-        exclude:
-            # Currently 32bit only, and we build 64bit
-          - runs-on: windows-latest
-            python: pypy2
-          - runs-on: windows-latest
-            python: pypy3
-
-          # TODO: PyPy2 7.3.3 segfaults, while 7.3.2 was fine.
-          - runs-on: ubuntu-latest
-            python: pypy2
+          - runs-on: macos-latest
+            python: pypy-2.7
 
     name: "🐍 ${{ matrix.python }} • ${{ matrix.runs-on }} • x64 ${{ matrix.args }}"
     runs-on: ${{ matrix.runs-on }}
@@ -93,7 +87,8 @@ jobs:
         key: ${{ runner.os }}-pip-${{ matrix.python }}-x64-${{ hashFiles('tests/requirements.txt') }}
 
     - name: Prepare env
-      run: python -m pip install -r tests/requirements.txt --prefer-binary
+      run: |
+        python -m pip install -r tests/requirements.txt
 
     - name: Setup annotations on Linux
       if: runner.os == 'Linux'
@@ -117,7 +112,11 @@ jobs:
 
     - name: C++11 tests
       # TODO: Figure out how to load the DLL on Python 3.8+
+<<<<<<< HEAD
       if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10-dev'))"
+=======
+      if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10' || matrix.python == '3.11-dev' || matrix.python == 'pypy-3.8'))"
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
       run: cmake --build .  --target cpptest -j 2
 
     - name: Interface test C++11
@@ -145,7 +144,11 @@ jobs:
 
     - name: C++ tests
       # TODO: Figure out how to load the DLL on Python 3.8+
+<<<<<<< HEAD
       if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10-dev'))"
+=======
+      if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10' || matrix.python == '3.11-dev' || matrix.python == 'pypy-3.8'))"
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
       run: cmake --build build2 --target cpptest
 
     # Third build - C++17 mode with unstable ABI
@@ -196,11 +199,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
+<<<<<<< HEAD
         - python-version: 3.9
           python-debug: true
           valgrind: true
         - python-version: 3.10-dev
           python-debug: false
+=======
+        # TODO: Fails on 3.10, investigate
+        - python-version: "3.9"
+          python-debug: true
+          valgrind: true
+      # - python-version: "3.11-dev"
+      #   python-debug: false
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
 
     name: "🐍 ${{ matrix.python-version }}${{ matrix.python-debug && '-dbg' || '' }} (deadsnakes)${{ matrix.valgrind && ' • Valgrind' || '' }} • x64"
     runs-on: ubuntu-latest
@@ -244,7 +256,12 @@ jobs:
         sudo apt-get install libc6-dbg  # Needed by Valgrind
 
     - name: Prepare env
+<<<<<<< HEAD
       run: python -m pip install -r tests/requirements.txt --prefer-binary
+=======
+      run: |
+        python -m pip install -r tests/requirements.txt
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
 
     - name: Configure
       run: >
@@ -521,7 +538,11 @@ jobs:
     - name: Install dependencies
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
+<<<<<<< HEAD
         python3 -m pip install -r tests/requirements.txt --prefer-binary
+=======
+        python3 -m pip install -r tests/requirements.txt
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
 
     - name: Configure C++11
       run: |
@@ -612,12 +633,20 @@ jobs:
       run: python3 -m pip install --upgrade pip
 
     - name: Install dependencies
-      run: python3 -m pip install cmake -r tests/requirements.txt --prefer-binary
+      run: |
+        python3 -m pip install cmake -r tests/requirements.txt
 
     - name: VAR_BUILD_TYPE 7
       if: matrix.centos == 7
       run: echo MinSizeRel > VAR_BUILD_TYPE
 
+<<<<<<< HEAD
+    - name: VAR_BUILD_TYPE 7
+      if: matrix.centos == 7
+      run: echo MinSizeRel > VAR_BUILD_TYPE
+
+=======
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
     # Using Release to avoid segfault that appeared around 2021-06-04,
     # apparently when the gcc version changed from 8.3 to 8.4.
     - name: VAR_BUILD_TYPE 8
@@ -739,8 +768,7 @@ jobs:
         - 3.7
         - 3.8
         - 3.9
-        - pypy3
-        # TODO: fix hang on pypy2
+        - pypy-3.6
 
         include:
           - python: 3.9
@@ -769,7 +797,8 @@ jobs:
         arch: x86
 
     - name: Prepare env
-      run: python -m pip install -r tests/requirements.txt --prefer-binary
+      run: |
+        python -m pip install -r tests/requirements.txt
 
     # First build - C++11 mode and inplace
     - name: Configure ${{ matrix.args }}
@@ -815,7 +844,8 @@ jobs:
         toolset: 14.0
 
     - name: Prepare env
-      run: python -m pip install -r tests/requirements.txt --prefer-binary
+      run: |
+        python -m pip install -r tests/requirements.txt
 
     # First build - C++11 mode and inplace
     - name: Configure
@@ -851,6 +881,10 @@ jobs:
             std: 17
             args: >
               -DCMAKE_CXX_FLAGS="/permissive- /EHsc /GR"
+          - python: 3.7
+            std: 17
+            args: >
+              -DCMAKE_CXX_FLAGS="/permissive- /EHsc /GR"
 
     steps:
     - uses: actions/checkout@v2
@@ -864,7 +898,8 @@ jobs:
       uses: jwlawson/actions-setup-cmake@v1.11
 
     - name: Prepare env
-      run: python -m pip install -r tests/requirements.txt --prefer-binary
+      run: |
+        python -m pip install -r tests/requirements.txt
 
     # First build - C++11 mode and inplace
     - name: Configure

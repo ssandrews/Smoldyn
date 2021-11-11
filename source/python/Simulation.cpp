@@ -3,11 +3,13 @@
  *    Description:  Simulation class.
  */
 
+#include "Simulation.h"
 #include "Command.h"
 
-#include "Simulation.h"
-
-#include <exception>
+//
+// simfree (used as custom delete in shared_ptr is declared here.
+//
+#include "../Smoldyn/smoldynfuncs.h"
 
 using namespace std;
 
@@ -22,24 +24,23 @@ Simulation::Simulation(vector<double>& low,
 {
     assert(low.size() == high.size());
 
-    sim_ = smolNewSim(low.size(), &low[0], &high[0]);
-    assert(sim_);
-
+    sim_.reset(smolNewSim(low.size(), &low[0], &high[0]), simfree);
     assert(boundary_type.size() == getDim());
 
     for (size_t d = 0; d < getDim(); d++) {
         string t = boundary_type[d];
         if (t.size() == 1)
-            smolSetBoundaryType(sim_, d, -1, t[0]);
+            smolSetBoundaryType(sim_.get(), d, -1, t[0]);
         else
             for (size_t ii = 0; ii < 2; ii++)
-                smolSetBoundaryType(sim_, d, ii, t[ii]);
+                smolSetBoundaryType(sim_.get(), d, ii, t[ii]);
     }
 }
 
 // Factory function.
 Simulation::Simulation(const char* filepath, const char* flags)
-  : curtime_(0.0)
+  : sim_(nullptr)
+  , curtime_(0.0)
   , initDisplay_(false)
   , debug_(false)
 {
@@ -49,14 +50,19 @@ Simulation::Simulation(const char* filepath, const char* flags)
     // WARN: sim_ could be null if the model file could not parsed successfully. See
     // issue #113.
     //
-    sim_ = smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
+    auto sim = smolPrepareSimFromFile(path.first.c_str(), path.second.c_str(), flags);
+    if (sim) {
+        sim_.reset(sim, simfree);
+        return;
+    }
+
+    //
+    // TODO: What to do if sim is NULL
+    //
+    cerr << __FUNCTION__ << ":: Fatal error: failed to initialize Simulation." << endl;
 }
 
-Simulation::~Simulation()
-{
-    if (sim_)
-        smolFreeSim(sim_);
-}
+Simulation::~Simulation() {}
 
 size_t
 Simulation::getDim() const
@@ -113,12 +119,14 @@ Simulation::initialize()
         }
     }
 
-    sim_ = smolNewSim(getDim(), &low_[0], &high_[0]);
-    assert(sim_);
+    auto sim = smolNewSim(getDim(), &low_[0], &high_[0]);
+    if (!sim)
+        return false;
 
+    sim_.reset(sim, simfree);
     if (debug_)
         smolSetDebugMode(1);
-    return sim_ ? true : false;
+    return true;
 }
 
 /**
@@ -134,7 +142,6 @@ Simulation::initialize()
 bool
 Simulation::setModelpath(const string& modelpath)
 {
-    assert(sim_);
     auto p = splitPath(modelpath);
     strncpy(sim_->filepath, p.first.c_str(), p.first.size());
     strncpy(sim_->filename, p.second.c_str(), p.second.size());
@@ -155,31 +162,31 @@ Simulation::runSim(double stoptime, double dt, bool display, bool overwrite)
 
     gl2glutInit(0, NULL);
 
-    er = smolOpenOutputFiles(sim_, overwrite);
+    er = smolOpenOutputFiles(sim_.get(), overwrite);
     if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not open output files." << endl;
         return er;
     }
 
-    auto er1 = smolSetTimeStep(sim_, dt);
-    auto er2 = smolSetTimeStop(sim_, stoptime);
+    auto er1 = smolSetTimeStep(sim_.get(), dt);
+    auto er2 = smolSetTimeStop(sim_.get(), stoptime);
     if (er1 != ErrorCode::ECok || er2 != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not update simtimes." << endl;
         return er;
     }
 
-    er = smolUpdateSim(sim_);
+    er = smolUpdateSim(sim_.get());
     if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not update simstruct." << endl;
         return er;
     }
 
     if (display && !initDisplay_) {
-        smolDisplaySim(sim_);
+        smolDisplaySim(sim_.get());
         initDisplay_ = true;
     }
 
-    er = smolRunSim(sim_);
+    er = smolRunSim(sim_.get());
     curtime_ = stoptime;
 
     return er;
@@ -200,21 +207,21 @@ Simulation::runUntil(const double breaktime,
         }
     }
 
-    auto er = smolOpenOutputFiles(sim_, overwrite);
+    auto er = smolOpenOutputFiles(sim_.get(), overwrite);
     if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Simulation skipped." << endl;
     }
 
     // If dt>0, reset dt else use the old one.
     if (dt > 0.0)
-        smolSetTimeStep(sim_, dt);
-    smolUpdateSim(sim_);
+        smolSetTimeStep(sim_.get(), dt);
+    smolUpdateSim(sim_.get());
 
     if (display && (!initDisplay_)) {
-        smolDisplaySim(sim_);
+        smolDisplaySim(sim_.get());
         initDisplay_ = true;
     }
-    return smolRunSimUntil(sim_, breaktime);
+    return smolRunSimUntil(sim_.get(), breaktime);
 }
 
 bool
@@ -246,7 +253,9 @@ Simulation::connect(const py::function& func,
     return true;
 }
 
-// get the pointer
+//
+// get the pointer to simptr (use with care).
+//
 simptr
 Simulation::getSimPtr() const
 {
@@ -254,14 +263,14 @@ Simulation::getSimPtr() const
     // Beware that sim_ could be null if parsing for txt file has error. See
     // smolPrepareSimFromFile function that calls simfree(sim) on failure.
     //
-    return sim_;
+    return sim_.get();
 }
 
 // set the pointer.
 void
 Simulation::setSimPtr(simptr sim)
 {
-    sim_ = sim;
+    sim_.reset(sim);
 }
 
 void
@@ -299,6 +308,7 @@ Simulation::addCommand(const string& cmd,
   char cmd_type,
   const map<string, double>& kwargs)
 {
+    assert(sim_);
     auto c = make_unique<Command>(getSimPtr(), cmd.c_str(), cmd_type, kwargs);
     c->addCommandToSimptr();
 

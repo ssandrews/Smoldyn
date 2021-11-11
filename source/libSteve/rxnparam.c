@@ -923,6 +923,7 @@ void rdfmaketable() {
 	const double blob=0,bhib=1.0,bincb=0.1;					// b value low, high, increment for b<a
 	double *r,*rdfa,*rdfd,dr,s,b,flux,eps;
 	int i,n,done;
+    int count=0;
 	char mode,dir,string[256];
 
 	printf("Function for calculating radial diffusion functions (rdf) and reactive\n");
@@ -932,18 +933,18 @@ void rdfmaketable() {
 	printf("the binding radius, or (b) for other reversible reactions.  Enter this\n");
 	printf("mode in upper case for machine readable output.\n");
 	printf("Operation mode: ");
-	scanf("%s",string);
+	count=scanf("%s",string);
 	mode=string[0];
 	printf("Enter the number of radial points in the rdf (e.g. 200): ");
-	scanf("%i",&n);
+	count=scanf("%i",&n);
 	if(n<10) {
 		printf("Value is too low.  Function stopped.\n");return; }
 	printf("Enter level of precision (e.g. 1e-4): ");
-	scanf("%lf",&eps);
+	count=scanf("%lf",&eps);
 	if(eps<=0) {
 		printf("Impossible precision.  Function stopped.\n");return; }
 	printf("Enter u for increasing step lengths, d for decreasing: ");
-	scanf("%s",string);
+	count=scanf("%s",string);
 	dir=string[0];
 	if(dir=='d') {
 		s=slo;slo=shi;shi=s;
@@ -998,6 +999,7 @@ void rdfmaketable() {
 	free(r);
 	free(rdfa);
 	free(rdfd);
+    (void)count; // to keep compiler happy
 	return; }
 
 
@@ -1012,6 +1014,8 @@ void rdfmaketableprob() {
 	double *r,*rdfa,*rdfd,dr,s,b,prob,flux,eps;
 	int i,n,done,it,pindx;
 	char mode,dir,string[256];
+    int count=0;
+    (void)count;
 
 	printf("\nFunction for calculating radial diffusion functions (rdf) and reactive\n");
 	printf("fluxes for alternating reaction and diffusion steps.  This module\n");
@@ -1021,14 +1025,14 @@ void rdfmaketableprob() {
 	printf("inside the binding radius.  Enter this mode in upper case for machine\n");
 	printf("readable output.\n");
 	printf("Operation mode: ");
-	scanf("%s",string);
+	count=scanf("%s",string);
 	mode=string[0];
 	printf("Enter the number of radial points in the rdf (e.g. 200): ");
-	scanf("%i",&n);
+	count=scanf("%i",&n);
 	if(n<10) {
 		printf("Value is too low.  Function stopped.\n");return; }
 	printf("Enter level of precision (e.g. 1e-6): ");
-	scanf("%lf",&eps);
+	count=scanf("%lf",&eps);
 	if(eps<=0) {
 		printf("Impossible precision.  Function stopped.\n");return; }
 	if(mode=='b'||mode=='B') {
@@ -1036,7 +1040,7 @@ void rdfmaketableprob() {
 		dir='d'; }
 	else {
 		printf("Enter u for increasing step lengths, d for decreasing: ");
-		scanf("%s",string);
+		count=scanf("%s",string);
 		dir=string[0]; }
 	if(dir=='d') {
 		s=slo;slo=shi;shi=s;

@@ -19,7 +19,7 @@
 
 #define CHECKS(A,...)		if(!(A)) {ErrorType=2;sprintf(ErrorString,__VA_ARGS__); goto failure;} else (void)0
 
-char ErrorString[256]="";
+char ErrorString[STRCHARLONG+STRCHAR]="";
 int ErrorType=0;
 FILE* gnu=NULL;
 

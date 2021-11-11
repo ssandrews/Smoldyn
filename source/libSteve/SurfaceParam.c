@@ -13,6 +13,12 @@ files are unavailable */
 #include "math2.h"
 #include "random2.h"
 
+//
+// A macro to mark a variable unused. Supresses compiler warnings.
+//
+#define UNUSED(x)  (void)(x)
+
+
 
 /* Declarations for functions that are only used internally */
 double interpolate1D(double *xdata,double *ydata,int n,double x);
@@ -609,22 +615,25 @@ void xdfmaketableirrev(void) {
 	double *x,*xdfa,*xdfd,xlo,xhi,dx,flux1,flux2,slope1,slope2,intercept1,intercept2,probon,eps,xfitlo,xfithi;
 	int i,i2,n,ifitlo,ifithi,npon;
 	char ynmro[256],ynxdf[256];
+    int count=0;
 
 	fprintf(stderr,"Enter the number of position points for the concentration (e.g. 200): ");
-	scanf("%i",&n);
+	count=scanf("%i",&n);
 	if(iseven(n)) n++;
 	fprintf(stderr,"Enter low and high x values (e.g. -6 and 10): ");
-	scanf("%lf %lf",&xlo,&xhi);
+	count=scanf("%lf %lf",&xlo,&xhi);
 	fprintf(stderr,"Enter fit domain for x values (e.g. 3 and 7): ");
-	scanf("%lf %lf",&xfitlo,&xfithi);
+	count=scanf("%lf %lf",&xfitlo,&xfithi);
 	fprintf(stderr,"Enter epsilon (e.g. 0.0001): ");
-	scanf("%lf",&eps);
+	count=scanf("%lf",&eps);
 	fprintf(stderr,"Do you want machine readable output (y/n)? ");
-	scanf("%s",ynmro);
+	count=scanf("%s",ynmro);
 	if(ynmro[0]!='y') {
 		fprintf(stderr,"Do you want xdf output (y/n)? ");
-		scanf("%s",ynxdf); }
+		count=scanf("%s",ynxdf); }
 	else ynxdf[0]='n';
+
+    UNUSED(count);
 
 	x=(double*)calloc(n,sizeof(double));
 	xdfa=(double*)calloc(n,sizeof(double));
@@ -683,18 +692,21 @@ void xdfmaketable(void) {
 	double eps,pon,kon,koff,poff,cs,*x,*xdfa,*xdfd,dx;
 	int i,i2,n,npon,npoff;
 	char yn[256];
+    int count=0;
 
 	fprintf(stderr,"\nFunction for calculating steady-state surface concentrations\n");
 	fprintf(stderr,"for various adsorption and desorption probabilities.\n\n");
 	fprintf(stderr,"Enter the number of position points for the concentration (e.g. 200): ");
-	scanf("%i",&n);
+	count=scanf("%i",&n);
 	if(n<10) {fprintf(stderr,"Value is too low.  Function stopped.\n");return; }
 	if(iseven(n)) n++;
 	fprintf(stderr,"Enter level of precision (e.g. 1e-4): ");
-	scanf("%lf",&eps);
+	count=scanf("%lf",&eps);
 	if(eps<=0) {fprintf(stderr,"Impossible precision.  Function stopped.\n");return; }
 	fprintf(stderr,"Do you want machine readable output (y/n)? ");
-	scanf("%s",yn);
+	count=scanf("%s",yn);
+
+    UNUSED(count);
 
 	x=(double*)calloc(n,sizeof(double));
 	xdfa=(double*)calloc(n,sizeof(double));
@@ -848,7 +860,7 @@ void xdfmaketable(void) {
 
 double experfcD(double x) {
 	double ans,xxinv;
-	
+
 	if(fabs(x)<20) ans=exp(x*x)*erfccD(x);
 	else {
 		xxinv=1.0/(x*x);
