@@ -11,6 +11,7 @@ import smoldyn
 from pathlib import Path
 import typing as T
 
+
 def add_maze(s, mazefile) -> T.List[smoldyn.Panel]:
     """Add maze"""
     panels = []
@@ -31,8 +32,8 @@ s = smoldyn.Simulation(low=[0, 0], high=[120, 120])
 A = s.addSpecies("A", difc=2, color="blue")
 A.addToSolution(1000, pos=[15, 15])
 
-B = s.addSpecies("B", difc=0, color='black', display_size=3)
-B.addToSolution(10, lowpos=[105,112], highpos=[110,112])
+B = s.addSpecies("B", difc=0, color="black", display_size=3)
+B.addToSolution(10, lowpos=[105, 112], highpos=[110, 112])
 
 panels = add_maze(s, Path(__file__).parent / "maze.txt")
 maze = s.addSurface("maze", panels=panels)
@@ -42,12 +43,14 @@ maze.setStyle("both", thickness=1, color="red")
 
 # When any A meets B, maze is solved. So we set a reaction between A and B
 s.addReaction("done", [A, B], [], rate=10)
-s.addCommand("ifless B 10 text ", "E")
 
 # Stop when A + B -> ∅ happens i.e. maze is solved.
-s.addCommand("ifless B 10 pause", "E")
-
-# TODO: Show the solution.
+s.addOutputData('posdata')
+s.addCommand("molpos B posdata", "E")
+s.addCommand("ifless B 10 stop", "E")
 
 s.addGraphics("opengl", iter=50)
-s.run(3000, dt=0.01)
+s.run(3000, dt=0.01, quit_at_end=True)
+
+print(s.getOutputData("posdata"))
+print('all done')
