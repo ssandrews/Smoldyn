@@ -121,7 +121,7 @@ illustrated below.
 
 The results of Smoldyn simulations executed through SED-ML and COMBINE archives
 are saved in HDF5 format as described in the 
-[BioSimulators documentation](https://biosimulators.org/conventions/simulation-reports).
+[BioSimulators documentation](https://docs.biosimulations.org/concepts/conventions/simulation-run-reports/).
 These files can be read with a variety of tools such as 
 [HDFView](https://www.hdfgroup.org/downloads/hdfview/),
 [h5py](https://www.h5py.org/) for Python, and 
