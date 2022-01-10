@@ -149,10 +149,12 @@ PYBIND11_MODULE(_smoldyn, m)
       .value("mult", SrfAction::SAmult)
       .value("no", SrfAction::SAno)
       .value("none", SrfAction::SAnone)
-      .value("adsorb", SrfAction::SAadsorb)
-      .value("revdes", SrfAction::SArevdes)
-      .value("irrevdes", SrfAction::SAirrevdes)
-      .value("flip", SrfAction::SAflip);
+      // IMP: Following are for internal use. If you expose them, make sure to update the user manual.
+      // .value("adsorb", SrfAction::SAadsorb)
+      // .value("revdes", SrfAction::SArevdes)
+      // .value("irrevdes", SrfAction::SAirrevdes)
+      // .value("flip", SrfAction::SAflip)
+     ;
 
     py::enum_<MolecState>(m, "MolecState")
       .value("soln", MolecState::MSsoln)
