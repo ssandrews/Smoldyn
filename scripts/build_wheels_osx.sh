@@ -3,6 +3,9 @@
 set -e
 set -x
 
+# See https://github.com/ssandrews/Smoldyn/runs/4770635750?check_suite_focus=true
+export MACOSX_DEPLOYMENT_TARGET=10.9
+
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
 brew install freeglut || echo "Failed to install freeglut"
@@ -23,7 +26,7 @@ if [ ! -f $PYTHON ]; then
     exit -1
 fi
 
-$PYTHON -m pip install setuptools --upgrade
+$PYTHON -m pip install pip setuptools --upgrade
 $PYTHON -m pip install wheel --upgrade
 $PYTHON -m pip install numpy --upgrade
 $PYTHON -m pip install delocate --upgrade
@@ -62,8 +65,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         # now use venv pyhton.
         $PYTHON --version
 
-        # Use the latest wheel. There could be more than one whl files in
-        # WHEELHOUSE (sometimes, on github actions for sure).
+        # Use the latest wheel. There could be more than one whl files in WHEELHOUSE
         WHEELFILE=$(ls -t "$WHEELHOUSE"/smoldyn*.whl | head -n 1)
         if [ -f "${WHEELFILE}" ]; then
             $PYTHON -m pip install "$WHEELFILE"

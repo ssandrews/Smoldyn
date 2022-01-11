@@ -721,11 +721,13 @@ class _SurfaceFaceCollection(object):
         self.surfname: str = surfname
         self.__valid_actions_ = [
             "reflect",
+            "trans",
             "absorb",
-            "transmit",
             "jump",
             "port",
-            "periodic",
+            "mult",
+            "no",
+            "none",
         ]
 
     def setStyle(
@@ -813,7 +815,7 @@ class _SurfaceFaceCollection(object):
         """
         assert (
             action in self.__valid_actions_
-        ), f"Action '{action}' is not a valid action: {self.__valid_actions_}"
+        ), f"'{action}' is not a valid action. Available actions: {', '.join(self.__valid_actions_)}"
 
         if isinstance(species, str):
             raise NameError(
@@ -842,7 +844,7 @@ class _SurfaceFaceCollection(object):
                     sstate,
                     _smoldyn.SrfAction.__members__[action],
                 )
-                assert k == _smoldyn.ErrorCode.ok
+                assert k == _smoldyn.ErrorCode.ok, f"Failed setSurfaceAction: {k}"
 
 
 class Path2D(object):
