@@ -1,6 +1,6 @@
 ## Changelog
 
-### 2.68 
+### 2.67.1 (1/11/22)
 
 - Fixed a bug in Python `setAction` command: action `trans` as not exposed.
 
