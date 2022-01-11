@@ -4,7 +4,7 @@ set -e
 set -x
 
 # See https://github.com/ssandrews/Smoldyn/runs/4770635750?check_suite_focus=true
-export MACOSX_DEPLOYMENT_TARGET=10.4
+export MACOSX_DEPLOYMENT_TARGET=10.9
 
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
