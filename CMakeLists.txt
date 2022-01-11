@@ -265,16 +265,9 @@ message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
 
-if (OPTION_USE_OPENGL)
+if (OPTION_USE_OPENGL AND NOT APPLE)
     # see cmake --help-policy CMP0072"
     set(OpenGL_GL_PREFERENCE LEGACY)
-
-    # if (VCELL_BUILD)
-    #     set(HAVE_OPENGL TRUE)
-    #     set(HAVE_GL_GL_H TRUE)
-    #     set(HAVE_GL_GLU_H TRUE)
-    # endif()
-
     if (MINGW_BUILD)
         list(APPEND DEP_LIBS opengl32 glu32 freeglut_static gdi32 winmm)
         find_file(HAVE_GL_GL_H GL/gl.h PATHS ${MINGWDIR}/include)
@@ -322,20 +315,7 @@ endif()
 
 
 ####### Option: Build with OpenGL (glut only) ##########
-
-if (OPTION_USE_OPENGL)
-
-    ## if (VCELL_BUILD)
-    ##     set(HAVE_GL_GLUT_H TRUE)
-    ##     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    ##     link_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    ##     if (ARCH_64bit)
-    ##         list(APPEND DEP_LIBS glut64)
-    ##     else()
-    ##         list(APPEND DEP_LIBS glut32 zlib)
-    ##     endif()
-    ## endif()
-
+if (OPTION_USE_OPENGL AND NOT APPLE)
     if (MINGW_BUILD)
         add_compile_definitions(FREEGLUT_STATIC)
         find_file(HAVE_GL_GLUT_H GL/glut.h PATHS ${MINGWDIR}/include)
@@ -357,10 +337,8 @@ if (OPTION_USE_OPENGL)
         set(GLUT_FOUND TRUE)
     endif ()
 
-    if(GLUT_FOUND)
-        message(STATUS "Glut found: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
-    else()
-        message(STATUS "Glut include and library variables: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
+    message(STATUS "Glut found: Include dir: '${GLUT_INCLUDE_DIR}', libs: '${GLUT_LIBRARIES}'")
+    if(NOT GLUT_FOUND)
         message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
     endif()
 
