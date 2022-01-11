@@ -4,7 +4,7 @@ set -e
 set -x
 
 # See https://github.com/ssandrews/Smoldyn/runs/4770635750?check_suite_focus=true
-export MACOSX_DEPLOYMENT_TARGET=11_0
+export MACOSX_DEPLOYMENT_TARGET=10.4
 
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
@@ -65,7 +65,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
         # now use venv pyhton.
         $PYTHON --version
 
-        # Use the latest wheel. There could be more than one whl files in WHEELHOUSE 
+        # Use the latest wheel. There could be more than one whl files in WHEELHOUSE
         WHEELFILE=$(ls -t "$WHEELHOUSE"/smoldyn*.whl | head -n 1)
         if [ -f "${WHEELFILE}" ]; then
             $PYTHON -m pip install "$WHEELFILE"
