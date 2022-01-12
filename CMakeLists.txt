@@ -53,6 +53,7 @@ option(OPTION_MINGW "Cross-compile for Windows using MinGW compiler" OFF)
 
 option(OPTION_NSV "Compile Smoldyn with NextSubvolume functionality" ON)
 option(OPTION_VTK "Compile Smoldyn with VTK functionality" OFF)
+option(OPTION_STATIC "Compile Smoldyn with static libraries" OFF)
 option(OPTION_USE_OPENGL "Build with OpenGL support" ON)
 option(OPTION_USE_LIBTIFF "Build with LibTiff support" ON)
 option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
@@ -88,6 +89,7 @@ if (OPTION_MINGW)
 endif ()
 message(STATUS "Option to include NextSubvolume: ${OPTION_NSV}")
 message(STATUS "Option to include VTK: ${OPTION_VTK}")
+message(STATUS "Option to compile with static libraries: ${OPTION_STATIC}")
 message(STATUS "Option to include OpenGL support: ${OPTION_USE_OPENGL}")
 message(STATUS "Option to include LibTiff: ${OPTION_USE_LIBTIFF}")
 message(STATUS "Option to include Zlib: ${OPTION_USE_ZLIB}")
@@ -99,6 +101,7 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 ####### Compiler flags ######################
 #
+# Must use a C++14 compatible compiler (gcc>=5.x).
 # NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
 # nice to use them. Most compilers support C++17 these days.
 #
@@ -150,9 +153,21 @@ if(OPTION_WARNING_AS_ERROR)
     CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
-# We need at least c++14 support to build python bindings.
+# We need a c++14 support to build python bindings.
 if(OPTION_PYTHON)
     set(CMAKE_CXX_STANDARD 14)
+    try_compile(COMPILER_SUPPORT_C14
+        ${CMAKE_BINARY_DIR}/_test_compiler
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_compiler.cpp
+        OUTPUT_VARIABLE COMPILER_TEST_OUTPUT
+        )
+    if(NOT COMPILER_SUPPORT_C14)
+        message(STATUS "Failed to build test program: ${COMPILER_TEST_OUTPUT}")
+        message(FATAL_ERROR "Your compiler does not support C++14. "
+            "Please use a C++14 compliant compiler. "
+            "See https://en.cppreference.com/w/cpp/compiler_support/14 "
+            "for C++14 support among C++ compilers.")
+    endif()
 endif()
 
 
@@ -201,7 +216,7 @@ if(OPTION_TARGET_LIBSMOLDYN)
     list(APPEND SRC_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/libsmoldyn.cpp)
 endif(OPTION_TARGET_LIBSMOLDYN)
 
-if(OPTION_USE_LIBTIFF AND (NOT OPTION_USE_OPENGL))
+if(OPTION_USE_LIBTIFF AND NOT OPTION_USE_OPENGL)
     message(WARNING "LibTiff won't be used because build does not include OpenGL.")
     set(OPTION_USE_LIBTIFF OFF)
 endif()
@@ -224,9 +239,7 @@ if (OPTION_VCELL)
     message(STATUS "Compiling for VCell")
     add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
     link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell)
-endif()
-
-if (OPTION_MINGW)
+elseif (OPTION_MINGW)
     set(MINGW_BUILD ON)
     message(STATUS "Cross-compiling for Windows using MinGW libraries from: ${MINGWDIR}")
     set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
@@ -265,10 +278,15 @@ message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
 
-if (OPTION_USE_OPENGL AND NOT APPLE)
+if (OPTION_USE_OPENGL)
     # see cmake --help-policy CMP0072"
     set(OpenGL_GL_PREFERENCE LEGACY)
-    if (MINGW_BUILD)
+
+    if (VCELL_BUILD)
+        set(HAVE_OPENGL TRUE)
+        set(HAVE_GL_GL_H TRUE)
+        set(HAVE_GL_GLU_H TRUE)
+    elseif (MINGW_BUILD)
         list(APPEND DEP_LIBS opengl32 glu32 freeglut_static gdi32 winmm)
         find_file(HAVE_GL_GL_H GL/gl.h PATHS ${MINGWDIR}/include)
         find_file(HAVE_OPENGL_GL_H OpenGL/gl.h PATHS ${MINGWDIR}/include)
@@ -315,8 +333,18 @@ endif()
 
 
 ####### Option: Build with OpenGL (glut only) ##########
-if (OPTION_USE_OPENGL AND NOT APPLE)
-    if (MINGW_BUILD)
+
+if (OPTION_USE_OPENGL)
+    if (VCELL_BUILD)
+        set(HAVE_GL_GLUT_H TRUE)
+        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
+        link_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
+        if (ARCH_64bit)
+            list(APPEND DEP_LIBS glut64)
+        else()
+            list(APPEND DEP_LIBS glut32 zlib)
+        endif()
+    elseif (MINGW_BUILD)
         add_compile_definitions(FREEGLUT_STATIC)
         find_file(HAVE_GL_GLUT_H GL/glut.h PATHS ${MINGWDIR}/include)
         find_path(GLUT_INCLUDE_DIR glut.h PATHS ${MINGWDIR}/include/GL)
@@ -337,14 +365,30 @@ if (OPTION_USE_OPENGL AND NOT APPLE)
         set(GLUT_FOUND TRUE)
     endif ()
 
-    message(STATUS "Glut found: Include dir: '${GLUT_INCLUDE_DIR}', libs: '${GLUT_LIBRARIES}'")
-    if(NOT GLUT_FOUND)
+    if(GLUT_FOUND)
+        message(STATUS "Glut found: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
+    else()
+        message(STATUS "Glut include and library variables: '${GLUT_INCLUDE_DIR}', '${GLUT_LIBRARIES}'")
         message(FATAL_ERROR "Glut not found.  Building without OpenGL is possible.")
     endif()
 
     include_directories(${GLUT_INCLUDE_DIR})
     list(APPEND DEP_LIBS ${GLUT_LIBRARIES})
 endif()
+
+
+####### Build with LibX11 (only required for static build on Mac) ##########
+
+#if (OPTION_STATIC AND OPTION_USE_OPENGL AND HAVE_OPENGL)
+#	   find_package(X11)
+#	   if (X11_FOUND)
+#        message(STATUS "Found X11: '${X11_INCLUDE_DIR}', '${X11_LIBRARIES}'")
+#    else ()
+#        message(FATAL_ERROR "X11 not found")
+#    endif ()
+#    include_directories(${X11_INCLUDE_DIR})
+#    list(APPEND DEP_LIBS ${X11_LIBRARIES})
+#endif()
 
 
 ####### Option: Build with LibTiff ##########
@@ -358,6 +402,9 @@ if (OPTION_USE_LIBTIFF)
         set(HAVE_TIFF_H TRUE)
         find_file(TIFF_LIBRARY NAMES tiff.lib PATHS source/MSVClibs NO_DEFAULT_PATH)
         set(TIFF_FOUND TRUE)
+    elseif (OPTION_STATIC)
+        find_path(TIFF_INCLUDE_DIR tiff.h PATHS ${CMAKE_SOURCE_DIR}/Mac/libtiff/include NO_DEFAULT_PATH)
+        find_library(TIFF_LIBRARY libtiff.a ${CMAKE_SOURCE_DIR}/Mac/libtiff/lib NO_DEFAULT_PATH)
     else ()
         find_package(TIFF)
     endif()
@@ -382,6 +429,11 @@ if(OPTION_USE_ZLIB)
     if(OPTION_MINGW)
         find_path(ZLIB_INCLUDE_DIRS zlib.h PATHS ${MINGWDIR}/include NO_DEFAULT_PATH)
         find_library(ZLIB_LIBRARIES libz.a PATHS ${MINGWDIR}/lib NO_DEFAULT_PATH)
+    elseif(OPTION_STATIC)
+        find_path(ZLIB_INCLUDE_DIRS zlib.h)
+        find_library(ZLIB_LIBRARIES libz.a)
+    else()
+        include(FindZlib)
     endif()
 
     if(ZLIB_INCLUDE_DIRS AND ZLIB_LIBRARIES)
@@ -429,9 +481,6 @@ add_library(smoldyn_static STATIC ${SRC_FILES}
 set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
-if (APPLE)
-    set_target_properties(smoldyn_static PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
-endif()
 
 if (OPTION_TARGET_LIBSMOLDYN)
     add_library(smoldyn_shared SHARED ${SRC_FILES}

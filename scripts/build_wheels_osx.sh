@@ -8,7 +8,6 @@ export MACOSX_DEPLOYMENT_TARGET=10.9
 
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
-brew install freeglut || echo "Failed to install freeglut"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
