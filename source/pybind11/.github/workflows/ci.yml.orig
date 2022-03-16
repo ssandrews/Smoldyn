@@ -30,8 +30,14 @@ jobs:
         - '3.6'
         - '3.9'
         - '3.10'
+<<<<<<< HEAD
+        # - '3.11-dev'
+        - 'pypy-3.7-v7.3.5'
+        # - 'pypy-3.8'
+=======
         - 'pypy-3.7-v7.3.7'
         - 'pypy-3.8-v7.3.7'
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
         # Items in here will either be added to the build matrix (if not
         # present), or add new keys to an existing matrix element if all the
@@ -50,12 +56,16 @@ jobs:
             args: >
               -DPYBIND11_FINDPYTHON=ON
           - runs-on: macos-latest
+<<<<<<< HEAD
+            python: pypy-2.7
+=======
             python: 'pypy-2.7'
           # Inject a couple Windows 2019 runs
           - runs-on: windows-2019
             python: '3.9'
           - runs-on: windows-2019
             python: '2.7'
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     name: "🐍 ${{ matrix.python }} • ${{ matrix.runs-on }} • x64 ${{ matrix.args }}"
     runs-on: ${{ matrix.runs-on }}
@@ -69,8 +79,12 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: Setup Boost (Linux)
+<<<<<<< HEAD
+      if: runner.os == 'Linux'
+=======
       # Can't use boost + define _
       if: runner.os == 'Linux' && matrix.python != '3.6'
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
       run: sudo apt-get install libboost-dev
 
     - name: Setup Boost (macOS)
@@ -78,7 +92,11 @@ jobs:
       run: brew install boost
 
     - name: Update CMake
+<<<<<<< HEAD
+      uses: jwlawson/actions-setup-cmake@v1.11
+=======
       uses: jwlawson/actions-setup-cmake@v1.12
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Cache wheels
       if: runner.os == 'macOS'
@@ -117,7 +135,15 @@ jobs:
 
     - name: C++11 tests
       # TODO: Figure out how to load the DLL on Python 3.8+
+<<<<<<< HEAD
+<<<<<<< HEAD
+      if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10-dev'))"
+=======
       if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10' || matrix.python == '3.11-dev' || matrix.python == 'pypy-3.8'))"
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
+=======
+      if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10' || matrix.python == '3.11-dev' || matrix.python == 'pypy-3.8'))"
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
       run: cmake --build .  --target cpptest -j 2
 
     - name: Interface test C++11
@@ -144,7 +170,15 @@ jobs:
 
     - name: C++ tests
       # TODO: Figure out how to load the DLL on Python 3.8+
+<<<<<<< HEAD
+<<<<<<< HEAD
+      if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10-dev'))"
+=======
       if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10' || matrix.python == '3.11-dev' || matrix.python == 'pypy-3.8'))"
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
+=======
+      if: "!(runner.os == 'Windows' && (matrix.python == 3.8 || matrix.python == 3.9 || matrix.python == '3.10' || matrix.python == '3.11-dev' || matrix.python == 'pypy-3.8'))"
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
       run: cmake --build build2 --target cpptest
 
     # Third build - C++17 mode with unstable ABI
@@ -251,6 +285,98 @@ jobs:
     - name: Configure
       env:
         SETUPTOOLS_USE_DISTUTILS: stdlib
+      run: >
+        cmake -S . -B build
+        -DCMAKE_BUILD_TYPE=Debug
+        -DPYBIND11_WERROR=ON
+        -DDOWNLOAD_CATCH=ON
+        -DDOWNLOAD_EIGEN=ON
+        -DCMAKE_CXX_STANDARD=17
+
+    - name: Build
+      run: cmake --build build -j 2
+
+    - name: Python tests
+      run: cmake --build build --target pytest
+
+    - name: C++ tests
+      run: cmake --build build --target cpptest
+
+    - name: Run Valgrind on Python tests
+      if: matrix.valgrind
+      run: cmake --build build --target memcheck
+
+
+  deadsnakes:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+<<<<<<< HEAD
+        - python-version: 3.9
+          python-debug: true
+          valgrind: true
+        - python-version: 3.10-dev
+          python-debug: false
+=======
+        # TODO: Fails on 3.10, investigate
+        - python-version: "3.9"
+          python-debug: true
+          valgrind: true
+      # - python-version: "3.11-dev"
+      #   python-debug: false
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
+
+    name: "🐍 ${{ matrix.python-version }}${{ matrix.python-debug && '-dbg' || '' }} (deadsnakes)${{ matrix.valgrind && ' • Valgrind' || '' }} • x64"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python ${{ matrix.python-version }} (deadsnakes)
+      uses: deadsnakes/action@v2.1.1
+      with:
+        python-version: ${{ matrix.python-version }}
+        debug: ${{ matrix.python-debug }}
+
+    - name: Update CMake
+      uses: jwlawson/actions-setup-cmake@v1.11
+
+    - name: Valgrind cache
+      if: matrix.valgrind
+      uses: actions/cache@v2
+      id: cache-valgrind
+      with:
+        path: valgrind
+        key: 3.16.1 # Valgrind version
+
+    - name: Compile Valgrind
+      if: matrix.valgrind && steps.cache-valgrind.outputs.cache-hit != 'true'
+      run: |
+        VALGRIND_VERSION=3.16.1
+        curl https://sourceware.org/pub/valgrind/valgrind-$VALGRIND_VERSION.tar.bz2 -o - | tar xj
+        mv valgrind-$VALGRIND_VERSION valgrind
+        cd valgrind
+        ./configure
+        make -j 2 > /dev/null
+
+    - name: Install Valgrind
+      if: matrix.valgrind
+      working-directory: valgrind
+      run: |
+        sudo make install
+        sudo apt-get update
+        sudo apt-get install libc6-dbg  # Needed by Valgrind
+
+    - name: Prepare env
+<<<<<<< HEAD
+      run: python -m pip install -r tests/requirements.txt --prefer-binary
+=======
+      run: |
+        python -m pip install -r tests/requirements.txt
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
+
+    - name: Configure
       run: >
         cmake -S . -B build
         -DCMAKE_BUILD_TYPE=Debug
@@ -471,7 +597,11 @@ jobs:
       run: python3 -m pip install --upgrade pip
 
     - name: Update CMake
+<<<<<<< HEAD
+      uses: jwlawson/actions-setup-cmake@v1.11
+=======
       uses: jwlawson/actions-setup-cmake@v1.12
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Configure
       shell: bash
@@ -525,7 +655,15 @@ jobs:
     - name: Install dependencies
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
+<<<<<<< HEAD
+<<<<<<< HEAD
+        python3 -m pip install -r tests/requirements.txt --prefer-binary
+=======
         python3 -m pip install -r tests/requirements.txt
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
+=======
+        python3 -m pip install -r tests/requirements.txt
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Configure C++11
       run: |
@@ -619,11 +757,33 @@ jobs:
       run: |
         python3 -m pip install cmake -r tests/requirements.txt
 
+    - name: VAR_BUILD_TYPE 7
+      if: matrix.centos == 7
+      run: echo MinSizeRel > VAR_BUILD_TYPE
+
+<<<<<<< HEAD
+    - name: VAR_BUILD_TYPE 7
+      if: matrix.centos == 7
+      run: echo MinSizeRel > VAR_BUILD_TYPE
+
+=======
+>>>>>>> 4d545d9c1e4a82ae0d41af44a41a2220111ca47f
+    # Using Release to avoid segfault that appeared around 2021-06-04,
+    # apparently when the gcc version changed from 8.3 to 8.4.
+    - name: VAR_BUILD_TYPE 8
+      if: matrix.centos == 8
+      run: echo Release > VAR_BUILD_TYPE
+
+    # Temporally disabling EIGEN due to SSL issue in CentOS 7
     - name: Configure
       shell: bash
       run: >
         cmake -S . -B build
+<<<<<<< HEAD
+        -DCMAKE_BUILD_TYPE=$(cat VAR_BUILD_TYPE)
+=======
         -DCMAKE_BUILD_TYPE=MinSizeRel
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
         -DPYBIND11_WERROR=ON
         -DDOWNLOAD_CATCH=ON
         -DDOWNLOAD_EIGEN=ON
@@ -751,7 +911,11 @@ jobs:
         architecture: x86
 
     - name: Update CMake
+<<<<<<< HEAD
+      uses: jwlawson/actions-setup-cmake@v1.11
+=======
       uses: jwlawson/actions-setup-cmake@v1.12
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Prepare MSVC
       uses: ilammy/msvc-dev-cmd@v1.10.0
@@ -798,7 +962,11 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: Update CMake
+<<<<<<< HEAD
+      uses: jwlawson/actions-setup-cmake@v1.11
+=======
       uses: jwlawson/actions-setup-cmake@v1.12
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Prepare MSVC
       uses: ilammy/msvc-dev-cmd@v1.10.0
@@ -857,7 +1025,11 @@ jobs:
         python-version: ${{ matrix.python }}
 
     - name: Update CMake
+<<<<<<< HEAD
+      uses: jwlawson/actions-setup-cmake@v1.11
+=======
       uses: jwlawson/actions-setup-cmake@v1.12
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Prepare env
       run: |
@@ -893,7 +1065,12 @@ jobs:
           - { sys: mingw64, env: x86_64 }
           - { sys: mingw32, env: i686 }
     steps:
+<<<<<<< HEAD
+    # Force version because of https://github.com/msys2/setup-msys2/issues/167
+    - uses: msys2/setup-msys2@v2.4.2
+=======
     - uses: msys2/setup-msys2@v2
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
       with:
         msystem: ${{matrix.sys}}
         install: >-
@@ -923,10 +1100,17 @@ jobs:
       run: cmake --build build --target pytest -j 2
 
     - name: C++11 tests
+<<<<<<< HEAD
+      run: cmake --build build --target cpptest -j 2
+
+    - name: Interface test C++11
+      run: cmake --build build --target test_cmake_build
+=======
       run: PYTHONHOME=/${{matrix.sys}} PYTHONPATH=/${{matrix.sys}} cmake --build build --target cpptest -j 2
 
     - name: Interface test C++11
       run: PYTHONHOME=/${{matrix.sys}} PYTHONPATH=/${{matrix.sys}} cmake --build build --target test_cmake_build
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Clean directory
       run: git clean -fdx
@@ -941,10 +1125,17 @@ jobs:
       run: cmake --build build2 --target pytest -j 2
 
     - name: C++14 tests
+<<<<<<< HEAD
+      run: cmake --build build2 --target cpptest -j 2
+
+    - name: Interface test C++14
+      run: cmake --build build2 --target test_cmake_build
+=======
       run: PYTHONHOME=/${{matrix.sys}} PYTHONPATH=/${{matrix.sys}} cmake --build build2 --target cpptest -j 2
 
     - name: Interface test C++14
       run: PYTHONHOME=/${{matrix.sys}} PYTHONPATH=/${{matrix.sys}} cmake --build build2 --target test_cmake_build
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
 
     - name: Clean directory
       run: git clean -fdx
@@ -959,7 +1150,14 @@ jobs:
       run: cmake --build build3 --target pytest -j 2
 
     - name: C++17 tests
+<<<<<<< HEAD
+      run: cmake --build build3 --target cpptest -j 2
+
+    - name: Interface test C++17
+      run: cmake --build build3 --target test_cmake_build
+=======
       run: PYTHONHOME=/${{matrix.sys}} PYTHONPATH=/${{matrix.sys}} cmake --build build3 --target cpptest -j 2
 
     - name: Interface test C++17
       run: PYTHONHOME=/${{matrix.sys}} PYTHONPATH=/${{matrix.sys}} cmake --build build3 --target test_cmake_build
+>>>>>>> fadd258c3925cd09791fe1c27b50847bd6d0db91
