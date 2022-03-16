@@ -1,0 +1,74 @@
+# Filaments
+
+graphics opengl
+#random_seed 2
+
+dim 3
+species red
+
+difc red 3
+
+color red white
+
+time_start 0
+time_stop 10000
+time_step 0.01
+
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 20 r
+
+#frame_thickness 0
+
+start_filament_type red
+color red
+dynamics alberts
+thickness 4
+polygon edge
+kT 1
+standard_length 2
+standard_angle 0 0 0
+force_length 0
+force_angle 100 80 0
+end_filament_type
+
+random_filament r0 red 10  u u u  u u u
+random_filament r1 red 10  u u u  u u u
+random_filament r2 red 10  u u u  u u u
+random_filament r3 red 10  u u u  u u u
+random_filament r4 red 10  u u u  u u u
+random_filament r5 red 10  u u u  u u u
+random_filament r6 red 10  u u u  u u u
+random_filament r7 red 10  u u u  u u u
+random_filament r8 red 10  u u u  u u u
+random_filament r9 red 10  u u u  u u u
+
+
+start_filament_type green
+color green
+dynamics alberts
+thickness 2
+polygon edge
+kT 1
+standard_length 2
+standard_angle 0 0.5 0.5
+force_length 0
+force_angle 10 0 0
+end_filament_type
+
+random_filament g0 green 80  u u u  u u u
+random_filament g1 green 80  u u u  u u u
+random_filament g2 green 80  u u u  u u u
+random_filament g3 green 80  u u u  u u u
+random_filament g4 green 80  u u u  u u u
+random_filament g5 green 80  u u u  u u u
+random_filament g6 green 80  u u u  u u u
+random_filament g7 green 80  u u u  u u u
+random_filament g8 green 80  u u u  u u u
+random_filament g9 green 80  u u u  u u u
+
+
+end_file
+
+
+

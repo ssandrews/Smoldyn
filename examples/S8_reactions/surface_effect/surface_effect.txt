@@ -1,0 +1,65 @@
+# Test of effects of reflective surfaces on reactions
+
+define PI	3.1415926
+define Deltax	10		# system size on x, y, z
+define Deltay	100
+define Deltaz	100
+define Volume	(Deltax*Deltay*Deltaz)
+define Tmax	1000
+define Tstep	0.01
+define Nmol	500		# number of A, B, and C at equilibrium
+define Kfwd	4*PI		# diffusion-limited binding radius is 1
+define Krev	4*PI*Nmol/Volume
+define Krelax	1
+
+graphics opengl
+
+dim 3
+species A B C Agem Bgem Cgem
+
+difc A* 0.5
+difc B* 0.5
+difc C* 0
+
+color A* red
+color B* green
+color C* blue
+display_size all 3
+display_size *gem 6
+
+time_start 0
+time_stop Tmax
+time_step Tstep
+
+boundaries x 0 Deltax r
+boundaries y 0 Deltay p
+boundaries z 0 Deltaz p
+
+reaction fwd1	A + B		-> C	Kfwd
+reaction fwd2	Agem + B	-> C	Kfwd
+reaction fwd3	A + Bgem	-> C	Kfwd
+reaction fwd4	Agem + Bgem	-> Cgem
+binding_radius fwd4 1.08
+
+reaction rev1	C -> Agem + Bgem	Krev	# Equilibrium constant is 1
+reaction rev2	Cgem -> Agem + Bgem	Krev
+product_placement rev1 pgem 0.2
+product_placement rev2 pgem 0.2
+
+reaction Ang	Agem -> A	Krelax
+reaction Bng	Bgem -> B	Krelax
+
+mol Nmol A u u u
+mol Nmol B u u u
+mol Nmol C u u u
+
+output_files stdout
+cmd E molcountspace A x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace B x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace C x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace Agem x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace Bgem x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace Cgem x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+
+end_file
+

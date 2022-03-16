@@ -1,0 +1,52 @@
+# Test of effects of reflective surfaces on reactions
+
+define PI	3.1415926
+define Deltax	10		# system size on x, y, z
+define Deltay	100
+define Deltaz	100
+define Volume	(Deltax*Deltay*Deltaz)
+define Tmax	1000
+define Tstep	0.01
+define Nmol	500		# number of A, B, and C at equilibrium
+define Kfwd	4*PI		# diffusion-limited binding radius is 1
+define Krev	4*PI*Nmol/Volume
+define Krelax	1
+
+graphics opengl
+
+dim 3
+species A B C
+
+difc A 0.01
+difc B 0.99
+difc C 0
+
+color A red
+color B green
+color C blue
+display_size all 3
+
+time_start 0
+time_stop Tmax
+time_step Tstep
+
+boundaries x 0 Deltax r
+boundaries y 0 Deltay p
+boundaries z 0 Deltaz p
+
+reaction fwd1	A + B	-> C	Kfwd
+reaction rev1	C -> A + B	Krev
+product_placement rev1 pgem 0.2
+
+mol Nmol A u u u
+mol Nmol B u u u
+mol Nmol C u u u
+
+output_files stdout
+cmd E molcountspace A x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace B x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd E molcountspace C x 0 Deltax 50 0 Deltay 0 Deltaz Tmax/Tstep stdout
+cmd A molcount stdout
+
+end_file
+
