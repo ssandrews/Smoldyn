@@ -646,6 +646,7 @@ class Disk(Panel):
         *,
         center: List[float],
         radius: float,
+        slices: int,
         vector: List[float],
         name="",
         simulation: Optional[_smoldyn.Simulation] = None,
@@ -658,6 +659,8 @@ class Disk(Panel):
             center of the disk.
         radius : float
             radius of the disk.
+				slices : int
+						Number of slices for drawing
         vector:
             A vector that points away from the front of the disk. The size of
             this vector is 2 for 2-D and 3 for 3-D.
@@ -669,10 +672,11 @@ class Disk(Panel):
         )
         self.center = center
         self.radius = radius
+        self.slices = slices
         self.vector = vector
         # Smoldyn panel
         self.axisstr = ""
-        self.pts = [*self.center, self.radius, *self.vector]
+        self.pts = [*self.center, self.radius, self.slices, *self.vector]
 
 
 class _PanelFace(object):
@@ -2372,9 +2376,10 @@ class Simulation(_smoldyn.Simulation):
         *,
         center: List[float],
         radius: float,
+        slices: int,
         vector: List[float],
         name="",
     ):
         return Disk(
-            simulation=super(), center=center, radius=radius, vector=vector, name=name
+            simulation=super(), center=center, radius=radius, slices=slices, vector=vector, name=name
         )
