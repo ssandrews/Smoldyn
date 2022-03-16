@@ -880,7 +880,7 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 
 
 /* filAddRandomSegments */
-int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,double thickness) {
+int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness) {
 	int i,dim,er;
 	double f1,pos[3],angle[3],len;
 	char **varnames;
@@ -907,13 +907,27 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 		if(dim==2) pos[2]=0;
 		else if(!strcmp(zstr,"u"));
 		else if(strmathsscanf(zstr,"%mlg",varnames,varvalues,nvar,&f1)==1) pos[2]=f1;
-		else return 2; }
-	else
+		else return 2;
+
+		angle[0]=(dim==2 ? unirandCOD(0,2*PI) : thetarandCCD());
+		angle[1]=unirandCOD(0,2*PI);
+		angle[2]=unirandCOD(0,2*PI);
+		if(!strcmp(thtstr,"u"));
+		else if(strmathsscanf(thtstr,"%mlg",varnames,varvalues,nvar,&f1)==1) angle[0]=f1;
+		else return 3;
+		if(!strcmp(phistr,"u"));
+		else if(strmathsscanf(phistr,"%mlg",varnames,varvalues,nvar,&f1)==1) angle[1]=f1;
+		else return 3;
+		if(!strcmp(chistr,"u"));
+		else if(strmathsscanf(chistr,"%mlg",varnames,varvalues,nvar,&f1)==1) angle[2]=f1;
+		else return 3; }
+	else {
 		pos[0]=pos[1]=pos[2]=0;
+		angle[0]=angle[1]=angle[2]=0; }
 
 	for(i=0;i<number;i++) {
 		len=filRandomLength(filtype,thickness,1);
-		filRandomAngle(filtype,thickness,angle,1);
+		if(i>1) filRandomAngle(filtype,thickness,angle,1);
 		if(dim==2) angle[1]=angle[2]=0;
 		er=filAddSegment(fil,pos,len,angle,thickness,'b');
 		if(er) return er; }
@@ -1346,9 +1360,9 @@ filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"dynamics")) {				// dynamics
 		CHECKS(filtype,"need to enter filament type name before dynamics");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"dynamics options: RigidBeads, RigidSegements, Rouse, Alberts, Nedelec");
+		CHECKS(itct==1,"dynamics options: RigidBeads, RigidSegments, Rouse, Alberts, Nedelec");
 		fd=filstring2FD(nm1);
-		CHECKS(fd!=FDnone,"dynamics options: RigidBeads, RigidSegements, Rouse, Alberts, Nedelec");
+		CHECKS(fd!=FDnone,"dynamics options: RigidBeads, RigidSegments, Rouse, Alberts, Nedelec");
 		er=filtypeSetDynamics(filtype,fd); //?? beware of changing between beads and segments
 		CHECKS(!er,"BUG: error setting filament dynamics");
 		CHECKS(!strnword(line2,2),"unexpected text following dynamics"); }
@@ -1495,7 +1509,7 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	filamentptr fil2;
 	filamentssptr filss;
 	int itct,er,i1;
-	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],symbol;
+	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR],symbol;
 	double fltv1[9],length,angle[3],thick;
 
 	printf("%s\n",word);//?? debug
@@ -1583,26 +1597,30 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil,"need to enter filament name before random_segments");
 		CHECKS(fil->filtype,"need to enter filament type before random_segments");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
-		CHECKS(itct==1,"random_segments format: number [x y z] [thickness]");
+		CHECKS(itct==1,"random_segments format: number [x y z theta phi chi] [thickness]");
 		CHECKS(i1>0,"number needs to be >0");
 		line2=strnword(line2,2);
 		if(fil->nbs==0) {
-			CHECKS(line2,"missing x y z position information");
-			itct=sscanf(line2,"%s %s %s",str1,str2,str3);
-			CHECKS(itct==3,"random_segments format: number [x y z] [thickness]");
-			line2=strnword(line2,4); }
+			CHECKS(line2,"missing position and angle information");
+			itct=sscanf(line2,"%s %s %s %s %s %s",str1,str2,str3,str4,str5,str6);
+			CHECKS(itct==6,"random_segments format: number [x y z theta phi chi] [thickness]");
+			line2=strnword(line2,7); }
 		else {
 			sprintf(str1,"%i",0);
 			sprintf(str2,"%i",0);
-			sprintf(str3,"%i",0); }
+			sprintf(str3,"%i",0);
+			sprintf(str4,"%i",0);
+			sprintf(str5,"%i",0);
+			sprintf(str6,"%i",0); }
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);
-			CHECKS(itct==1,"random_segments format: number [x y z] [thickness]");
+			CHECKS(itct==1,"random_segments format: number [x y z theta phi chi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
-		er=filAddRandomSegments(fil,i1,str1,str2,str3,thick);
+		er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
 		CHECKS(er!=2,"random_segments positions need to be 'u' or value");
+		CHECKS(er!=3,"random_segments angles need to be 'u' or value");
 		CHECKS(er==0,"BUG: error in filAddRandomsegments");
 		CHECKS(!line2,"unexpected text following random_segments"); }
 

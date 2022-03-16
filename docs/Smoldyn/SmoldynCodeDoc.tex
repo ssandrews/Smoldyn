@@ -160,6 +160,8 @@ Getting the code for these dependencies has ranged from easy to impossible, so m
 
 \begin{description}
 
+\item[python, pip]. These aren't code dependencies as the others are, but are still required software tools that need to be installed. Note that pip needs to be affiliated with the same copy of python that is being run; if it's not, then you get the error \ttt{invalid command 'bdist\_wheel'}. This error can also arise from wheel not being installed; that's solved by configuring Smoldyn with CMake and then running \ttt{make install\_deps}.
+
 \item[glut] is complicated. It's part of the standard OpenGL libraries on Macs, but doesn't seem to be standard on Windows. Also, glut itself is obsolete, having been replaced by, which is a superset of glut; nevertheless, the glut.h header file is supposed to be used, unless one wants functions that are only available in freeglut.
 
 For Windows with MSVC, I downloaded freeglut 3.2.1 from \url{http://freeglut.sourceforge.net} and built it on a Windows computer using the Visual Studio compiler. To build, I created and then moved to a build directory, entered ``cmake ..'', and entered ``msbuild freeglut.sln''. This created the files lib/Debug/freeglutd.lib, lib/Debug/freeglut\_staticd.lib, and bin/Debug/freeglutd.dll. The ``d'' characters show that these are the debug versions of the library. These work in Smoldyn but aren't ideal. I then found that I can create the release versions of the library with the same CMake step and then ``msbuild freeglut.sln /p:Configuration=Release''. I put the compiled libraries in the source/MSVClibs directory, along with a header file from the same freeglut download.
@@ -168,11 +170,11 @@ For Windows with MinGW, I found that the MinGW cross-compiler download that I us
 
 To address this, I also tried to compile the freeglut 3.2.1 download on a Windows computer but with the MinGW compiler. This didn't work. Thus, instead, I downloaded the freeglut 3.2.1 source code to my Mac and cross-compiled it for Windows using ``cmake .. -DCMAKE\_TOOLCHAIN\_FILE=../Toolchain-mingw32.cmake''. This actually worked and produced libfreeglut\_static.a, libfreeglut.dll.a, libfreeglut.dll, and many more files. I was able to build Smoldyn while linking to these files, but the result was the same as before in that I got smoldyn.exe just fine, but it didn't run.
 
-For Mac, I've been using regular glut, not freeglut, which works easily but has the drawback that control never returns to Smoldyn after it is handed over to \ttt{glutmainloop}. To address this (12/14/20), I installed freeglut using MacPorts, which was trivial. However, entering \ttt{port contents freeglut} showed the files that were installed, and none were a static library. I tried for a while to link to it anyhow using the CMakeLists.txt file, without luck. I also tried to reinstall the MacPorts version (3/29/21), with edits in the Portfile so that static libraries would be built. This seemed easy, but took a long time and didn't work out in the end. The Portfile says that static libraries should be built, but they aren't. In another attempt, I downloaded freeglut from \url{http://freeglut.sourceforge.net}, as I did for Windows, and tried to build using CMake. This failed at the linking stage. There was a prior report of it not working for Macs (see \url{https://sourceforge.net/projects/freeglut/}), with the same error and no solution given, so this seems to be a building bug and not easily fixed. The issue seems to be that Apple deprecated the GLX functions that libfreeglut depends on, so libfreeglut can no longer be built statically.
+For Mac, I've been using regular glut, not freeglut, which works easily but has the drawback that control never returns to Smoldyn after it is handed over to \ttt{glutmainloop}. To address this (12/14/20), I installed freeglut using MacPorts, which was trivial. However, entering \ttt{port contents freeglut} showed the files that were installed, and none were a static library. I tried for a while to link to it anyhow using the CMakeLists.txt file, without luck. I also tried to reinstall the MacPorts version (3/29/21), with edits in the Portfile so that static libraries would be built. This seemed easy, but took a long time and didn't work out in the end. The Portfile says that static libraries should be built, but they aren't. In another attempt, I downloaded freeglut from \url{http://freeglut.sourceforge.net}, as I did for Windows, and tried to build using CMake. This failed at the linking stage. There was a prior report of it not working for Macs (see \url{https://sourceforge.net/projects/freeglut/}), with the same error and no solution given, so this seems to be a building bug and not easily fixed. The issue seems to be that Apple deprecated the GLX functions that libfreeglut depends on, so libfreeglut can no longer be built statically. Later on (1/11/22), it turned out that CMake had been modified so that it found my freeglut preferentially over the built-in glut, which then caused it to not build. The solution was to remove freeglut from my computer.
 
 \item[libtiff] is optional. It is used for saving graphics images as TIFF files.
 
-For Mac, I've installed and installed libtiff many times. MacPorts has worked, but the latest version has lots of dependencies that I didn't want. My latest approach (March, 2021) was to downloaded the latest version (4.2.0) from \url{http://download.osgeo.org/libtiff/}. Previously, I avoided the zlib dependency by configuring with ``./configure --disable-zlib", and then entering ``make" and ``sudo make install" as usual. This time, I created the subdirectory ``mybuild'', moved to there, and entered ``cmake .. -Dzlib=OFF -Dlibdeflate=OFF -Dpixarlog=OFF -Djpeg=OFF -Dold-jpeg=OFF -Djbig=OFF -Dlzma=OFF -Dzstd=OFF -Dwebp=OFF -Djpeg12=OFF -DBUILD\_SHARED\_LIBS=OFF''. This turned off all external codecs, which reduced dependencies, hopefully without reducing the functionality that Smoldyn needs. It also instructed cmake to configure for a static build. Afterward, I entered ``make'' and ``sudo make install'', which installed to /usr/local/include and /usr/local/lib. Then, I copied the /usr/local/include/*tiff* and /usr/local/lib/*tiff* files to the Mac/libtiff subdirectory of Smoldyn.
+For Mac, I've installed libtiff many times. MacPorts has worked, but the latest version has lots of dependencies that I didn't want. My latest approach (March, 2021 and then again in Febrary, 2022) was to download the latest version (4.3.0) as source code from \url{http://download.osgeo.org/libtiff/}. Then, I created the subdirectory ``mybuild'', moved to there, and entered ``cmake .. -Dzlib=OFF -Dlibdeflate=OFF -Dpixarlog=OFF -Djpeg=OFF -Dold-jpeg=OFF -Djbig=OFF -Dlzma=OFF -Dzstd=OFF -Dwebp=OFF -Djpeg12=OFF''. This turned off all external codecs, which reduced dependencies, hopefully without reducing the functionality that Smoldyn needs. Afterward, I entered ``make'' and ``sudo make install'', which installed to /usr/local/include and /usr/local/lib. Then, I copied the /usr/local/include/*tiff* and /usr/local/lib/*tiff* files to the Mac/libtiff subdirectory of Smoldyn. After that, I repeated the configure, build, and install process, using the same flags but also ``-DBUILD\_SHARED\_LIBS=OFF''. This built the static libraries. I copied those to the Smoldyn/Mac/libtiff directory as well.
 
 For Windows with MSVC, I downloaded version 3.8.0 from \url{http://download.osgeo.org/libtiff/}, but it required Autotools to compile, which didn't work for me on Windows. So, I downloaded version 4.1.0, which uses CMake. It already has a ``build'' directory, so I worked in a new directory called ``mybuild''. I configured using the option ``cmake .. -DBUILD\_SHARED\_LIBS=FALSE'' and built with ``msbuild tiff.sln /p:Configuration=Release''. This created the libraries, libtiff/Release/tiff.lib and libtiff/Release/tiffxx.lib. I copied these libraries over to source/MSVClibs, and also included several header files (tiff.h, tiffio.h, tiffvers.h, tiffconf.h). The result works.
 
@@ -246,6 +248,31 @@ CMake option & default & function\\
 \multicolumn{3}{l}{\hspace{0.3in}for example: /usr/bin/g++}\\
 \ttt{-DCMAKE\_TOOLCHAIN\_FILE} & None & Cross-compiling toolchain file \\
 \multicolumn{3}{l}{\hspace{0.3in}for example: ../Toolchain-mingw32.cmake}\\
+\end{longtable}
+
+CMake has many different targets, which are entered after \ttt{make}. The ones listed in the upper section of the following table are likely to be useful, whereas I think the ones in the lower section are probably less useful and/or are run automatically.
+
+\begin{longtable}[c]{lll}
+Target & CMake file & Description\\
+\hline
+none listed & many & Compiles and links code\\
+\ttt{install} & many & Installs executables and other code to system locations\\
+\ttt{docs} & docs & Generate documentation with Sphinx and doxygen\\
+\ttt{install\_deps} & python & Install Python dependencies\\
+\ttt{wheel} & python & Generate the Python wheel\\
+\ttt{examples} & examples & Runs test code\\
+\hline
+\ttt{TeX2RST} & docs & Dummy target to convert all TeX to RST files\\
+\ttt{Doxygen} & docs & Run doxygen\\
+\ttt{Sphinx} & docs & Run Sphinx\\
+\ttt{doc\_livehtml} & docs & Generate live html\\
+\ttt{copy\_python\_tree} & python & Copies python source tree to binary directory\\
+\ttt{pyinstall} & python & Used by install script (useful in packaging)\\
+\ttt{pyinstall\_venv} & python & Runs ``python3 setup.py install''\\
+\ttt{pyuninstall} & python & Runs ``pip uninstall smoldyn''\\
+\ttt{pydevel} & python & Runs ``python3 setup.py develop --user''\\
+\ttt{lint} & python & Static type checking using mypy\\
+\ttt{lint\_strict} & python & Static type checking using mypy\\
 \end{longtable}
 
 
@@ -4115,9 +4142,11 @@ $\mathbf{a}_i = XYZ(\mathbf{B}_i)$,
 $\mathbf{x}_i = \mathbf{x}_{i+1} - l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}$
 
 \item[\ttt{int}]
-\ttt{filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,double thickness)}
+\ttt{filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness)}
 \hfill \\
-Add \ttt{number} of random segments to filament \ttt{fil}. Enter \ttt{xstr}, \ttt{ystr}, and \ttt{zstr} as strings for the starting position coordinates of a new filament. Here, math equations are allowed, using Smoldyn variables, or use the `u' character to indicate uniform starting position within the system volume. \ttt{thickness} is the thickness of the segments being added.
+Add \ttt{number} of random segments to filament \ttt{fil}. Enter \ttt{xstr}, \ttt{ystr}, and \ttt{zstr} as strings for the starting position coordinates of a new filament, and \ttt{thtstr}, \ttt{phistr}, and \ttt{chistr} as string for the starting angle of a new filament. Here, math equations are allowed, using Smoldyn variables, or use the `u' character to indicate uniform starting position within the system volume or angle in spherical coordinates. \ttt{thickness} is the thickness of the segments being added.
+
+Returns 0 for success, 2 for error in positions, or 3 for error in angles.
 
 \item[\ttt{int}]
 \ttt{filAddRandomBeads(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr);}

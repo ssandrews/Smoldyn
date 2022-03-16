@@ -563,7 +563,7 @@ int simsettime(simptr sim,double time,int code) {
 /* simreadstring */
 int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
-	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR];
+	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR];
 	char errstr[STRCHARLONG];
 	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
@@ -1476,7 +1476,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
 		filss=sim->filss;
 		itct=sscanf(line2,"%s %s",nm,nm1);
-		CHECKS(itct==2,"random_filament format: name type segments [x y z]");
+		CHECKS(itct==2,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
 		ft=stringfind(filss->ftnames,filss->ntype,nm1);
 		CHECKS(ft>=0,"filament type is unknown");
 		filtype=filss->filtypes[ft];
@@ -1484,33 +1484,37 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(fil,"unable to add filament to simulation");
 		line2=strnword(line2,3);
 
-		CHECKS(line2,"random_filament format: name type segments [x y z]");
+		CHECKS(line2,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
-		CHECKS(itct==1,"random_segments format: number [x y z] [thickness]");
+		CHECKS(itct==1,"random_filament format: number [x y z theta phi chi] [thickness]");
 		CHECKS(i1>0,"number needs to be >0");
 		line2=strnword(line2,2);
 		if(fil->nbs==0) {
-			CHECKS(line2,"missing x y z position information");
-			itct=sscanf(line2,"%s %s %s",str1,str2,str3);
-			CHECKS(itct==3,"random_segments format: number [x y z] [thickness]");
-			line2=strnword(line2,4); }
+			CHECKS(line2,"missing position and angle information");
+			itct=sscanf(line2,"%s %s %s %s %s %s",str1,str2,str3,str4,str5,str6);
+			CHECKS(itct==6,"random_filament format: number [x y z theta phi chi] [thickness]");
+			line2=strnword(line2,7); }
 		else {
 			sprintf(str1,"%i",0);
 			sprintf(str2,"%i",0);
-			sprintf(str3,"%i",0); }
+			sprintf(str3,"%i",0);
+			sprintf(str4,"%i",0);
+			sprintf(str5,"%i",0);
+			sprintf(str6,"%i",0); }
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);
-			CHECKS(itct==1,"random_segments format: number [x y z] [thickness]");
+			CHECKS(itct==1,"random_segments format: number [x y z theta phi chi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
 		if(filtype->isbead)
 			er=filAddRandomBeads(fil,i1,str1,str2,str3);
 		else
-			er=filAddRandomSegments(fil,i1,str1,str2,str3,thick);
-		CHECKS(er!=2,"random_segments positions need to be 'u' or value");
-		CHECKS(er==0,"BUG: error in filAddRandomsegments");
-		CHECKS(!line2,"unexpected text following random_segments"); }
+			er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
+		CHECKS(er!=2,"random_filament positions need to be 'u' or value");
+		CHECKS(er!=3,"random_filament angles need to be 'u' or value");
+		CHECKS(er==0,"BUG: error in filAddRandomSegments");
+		CHECKS(!line2,"unexpected text following random_filament"); }
 
 
 	// reactions

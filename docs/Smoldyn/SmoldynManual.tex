@@ -116,7 +116,7 @@ The input to Smoldyn is a plain text configuration file. This file specifies all
 
 Do not read the manual from end to end. New users should read the Installation chapter as needed and the Getting Started chapter. The last half of the manual is a reference section which lists all statements and commands. The first portions of the other chapters provide helpful introductions on additional topics. Later portions of those chapters present advanced material that you may want to learn if you continue with Smoldyn.
 
- % Installing Smoldyn
+% Section: Installing Smoldyn
 \section{Installing Smoldyn}
 \subsection*{Macintosh}
 
@@ -240,7 +240,7 @@ Alternatively, I've found the free software TeamViewer to be a convenient method
 
 
 
-
+% Section: Getting started
 \section{Getting Started}
 
 Smoldyn should be run from a command line interface. For Macs, use the application called Terminal, which you can find by searching for it, or it should be in your /Applications/Utilities directory. For Windows, use the application called Command Prompt, which is easiest to find by searching for it using the Start menu.
@@ -438,6 +438,7 @@ Smoldyn supports quite a lot of commands, all of which are listed in the second 
 
 In this particular example file, note the use of the  \ttt{ifdefine TEXTOUTPUT} statement. This is used to easily turn on or turn off text output by commenting the  \ttt{define TEXTOUTPUT} statement at the top of the file.
 
+% Section: Conclusions
 \section{Conclusions}
 
 This chapter has presented most of what you know to read and write Smoldyn input files. If you have not done so already, I recommend stopping here and experimenting with Smoldyn. At a minimum, it is helpful to edit and run some of the example files. Ideally, this is a good time to copy an example file into your own directory and then completely rewrite it to create your own model. As you go along, refer to the reference section for the details of how specific statements and commands work. Also, read other chapters in this manual as questions arise.
@@ -452,6 +453,7 @@ If you start using Smoldyn for actual research, then it is important that you un
 
 This is the first of the chapters that focuses on a specific aspect of Smoldyn, in this case the configuration or input file. These chapters are arranged with more elementary material first and more advanced material afterwards.
 
+% Section: Runtime flags
 \section{Runtime flags}
 
 When starting Smoldyn from the command line, you can follow the filename with runtime flags, of which the options are listed below. Any combination of flags may be used, and in any order.
@@ -472,22 +474,26 @@ line & query & Result\\
 \ttt{--define} $x=y$ &  & set a text macro definition\\
 \end{longtable}
 
+% Section: configuration file syntax
 \section{Configuration file syntax}
 
 Configuration files, such as bounce3.txt, are simple text files. The format is a series of text lines, each of which needs to be less than 256 characters long. On each line of input, the first word describes which parameters are being set, while the rest of the line lists those parameters, separated by spaces. If Smoldyn encounters a problem with a line, it displays an error message and terminates. Possible problems include missing parameters, illegal parameter values, too many parameters, unrecognized molecule, surface, or reaction names, unrecognized statements, or others.
 
 In most cases, statements may be entered in any order, although some are required to be listed after others. The required sequence is not always obvious, so it is usually easiest to just try what seems most reasonable and then fix any errors that Smoldyn reports. Also, a few instructions can only be entered once, whereas others can be entered multiple times. If a parameter is entered more than once, the latter value overwrites the prior one. Parameters that are not defined in the configuration file are assigned default values.
 
+% Section: variables and formulas
 \section{Variables and formulas}
 
 Smoldyn supports numeric variables. Set them using the variable statement, such as \ttt{variable x = 100} (spaces are required here). Also, essentially all numeric inputs can be entered with a formula. For example, if you want a reaction rate to be two times the value of \ttt{x}, enter it as \ttt{2*x} (spaces are not allowed within formulas). Smoldyn's formula processing supports arithmetic (+,-,*,/), modulo division (\%), powers (\^{}), and all levels of parentheses. It also supports many standard functions, such as exp, sin, sqrt, etc.
 
+% Section: statements about the configuration file
 \section{Statements about the configuration file}
 
 A few statements control the reading of the configuration file, which are now described in more detail. The first, shown in the first line of bounce3.txt, is a comment. A \# symbol indicates that the remainder of the line should be ignored, whether it is the whole line as it is in bounce3.txt or just the end of the line. It is also possible to comment out entire blocks of the configuration file using \ttt{/*} to start a block-comment and \ttt{*/} to end it. For these, the \ttt{/*} or \ttt{*/} symbol combinations are each required to be at the beginning of configuration file lines. The remainder of those lines is ignored, along with any lines between them.
 
 It is possible to separate configuration files into multiple text files. This is done with the statement \ttt{read\_file}, which simply instructs Smoldyn to continue reading from some other file until that one ends with \ttt{end\_file}, which is followed by more reading of the original file. The \ttt{read\_file} statement may be used anywhere in the configuration file, including within reaction definition and surface definition blocks (described below) and within files that were themselves called with a \ttt{read\_file} statement. The configuration file examples/S2\_config/config.txt illustrates these statements.
 
+% Section: text substitution macros
 \section{Text substitution macros}
 
 You can use \ttt{define} statements to instruct Smoldyn to perform simple text substitution as it reads in a configuration file. As a typical example, you might define your reaction rate constants at the top of a configuration file using define statements (e.g. \ttt{define k1 100}) and then use the key later on in the file rather than the actual number. This leads to a file that is more readable and easier to modify. One definition is set automatically: \ttt{FILEROOT} is replaced by the current file name, without path information and without any text that follows a ``.''. Prior definitions are overwritten with new ones without causing errors or warnings. These definitions have local scope, meaning that they only lead to text replacement within the current configuration file, and not to those that it reads with \ttt{read\_file}. To create a definition with broader scope, use \ttt{define\_global}; the scope of these definitions is throughout the current configuration file, as well as any file or sub-file that is called by the current file. A configuration file that calls the current one is not affected by a \ttt{define\_global}. To remove a definition, or all definitions, use \ttt{undefine}.
@@ -500,6 +506,7 @@ Text substitution can also be directed from the command line. If you include the
 
 This feature simplifies running multiple simulations through a shell script. Essentially any number of definitions can be made this way. If the same key text is defined both on the command line and in the configuration file, the former takes priority.
 
+% Section: running multiple simulations using scripts
 \section{Running multiple simulations using scripts}
 
 It is often useful to simulations over and over again, whether to collect statistics, to look for rare events, or to scan over parameter ranges. This is easily accomplished by writing a short Python script, or a script in some other high level language such as R, MatLab, Mathematica, etc. The following Python script is at S2\_config/pyscript.py. It runs the file paramscan.txt several times using different parameter values, with results sent to the standard output and also saved to different files.
@@ -519,6 +526,7 @@ Run this script by entering \ttt{python pyscript.txt}.
 
 Another method for running batches of simulations is for your script to generate a Smoldyn-readable text file with the appropriate parameters, say with the file name myparams.txt. Then, in your master Smoldyn file, which might also be called from the same script, include the line \ttt{read\_file myparams.txt}, which reads in the necessary parameters.
 
+% Section: summary
 \section{Summary}
 
 The following table summarizes the statements that deal with the configuration file.
@@ -544,6 +552,7 @@ Statement & meaning\\
 % Space and time
 \chapter{Space and time}
 
+% Section: space
 \section{Space}
 
 Smoldyn simulations can be run in a system that is 1, 2, or 3-dimensional. These can be useful for accurate simulations of systems that naturally have these dimensions. For example, a 2-dimensional system can be useful for investigating diffusional dynamics and interactions of transmembrane proteins. Smoldyn does not permit 4 or more dimensional systems because it is not clear that they would be useful. Define the system dimensionality with the dim statement, which needs to be one of the first statements in a configuration file.
@@ -554,6 +563,7 @@ On rare occasion, it might be desirable to have asymmetric system boundary types
 
 These boundaries of the entire system are different from surfaces, which are described below. However, they have enough in common that Smoldyn does not work well with both at once. Thus, \textit{if any surfaces are used, the system boundaries will always behave as though the types are transparent, whether they are defined that way or not}. Thus, if there are surfaces, it is usually best to use the boundaries statement without a type parameter, which will lead to the default transparent type. To account for the transparent boundaries, an outside surface may be needed that keeps molecules within the system. The one exception to these suggestions arises for systems with both surfaces and periodic boundary conditions. To accomplish this with the maximum accuracy, set the boundary types to periodic (although they will behave as though they are transparent) and create jump type surfaces, described below, at each outside edge that send molecules to the far sides. The reason for specifying that the boundaries are periodic is that they will then allow bimolecular reactions that occur with one molecule on each side of the system. This will probably yield a negligible improvement in results, but nevertheless removes a potential artifact. This is illustrated in the example S3\_space/bounds2.txt.
 
+% Section: time
 \section{Time}
 
 A simulation runs for a fixed amount of simulated time, using constant length time steps. The simulation starting time is set with \ttt{time\_start} and the stopping time is set with \ttt{time\_stop}. For simulations that are interrupted and then continued, the \ttt{time\_now} statement allows the initial time to be set to a value that is intermediate between the starting and stopping times.
@@ -570,6 +580,7 @@ $$\Delta t < \frac{[\textrm{A}]+[\textrm{B}]}{k[\textrm{A}][\textrm{B}]}$$
 The latter equation is for the reaction A + B $\rightarrow$ products. These values are displayed in the ``reaction parameters'' section of the configuration file diagnostics output. While the time scale for unimolecular reactions is independent of concentrations, the time scale for bimolecular reactions clearly depends on concentrations. Thus, the time scale that is displayed for bimolecular reactions is only a rough guide at best; it does not account for the changing concentrations of the reactants nor for local variations in concentrations.
 As an initial guess, the time step that is chosen should be the smallest of those that are suggested here for all of these processes. Afterwards, it is usually worth running several trial simulations with longer or shorter time steps to see what the longest time step is that still yields sufficiently accurate results.
 
+% Section: summary of statements for space and time
 \section{Summary of statements that define space and time}
 
 The following table summarizes the statements for defining space and time.
@@ -588,6 +599,7 @@ Statement & function\\
 \ttt{time\_now} $time$ & current time of the simulation
 \end{longtable}
 
+% Section: technical discussion of time steps
 \section{Technical discussion of time steps}
 
 A major focus of the design of Smoldyn has been to make it so that results are indistinguishable from those that would be obtained if the simulated time increased continuously. This goal cannot be achieved perfectly. Instead, the algorithms are written so that the simulation approaches the Smoluchowski description of reaction-diffusion systems as the time step is reduced towards zero. Also, it maintains as much accuracy as possible for longer time steps. This topic is discussed in detail in the research paper ``Stochastic simulation of chemical reactions with spatial resolution and single molecule detail'' by Steven Andrews and Dennis Bray (Physical Biology 1:137-151, 2004).
@@ -616,6 +628,7 @@ Each of the individual routines that is executed during a time step exactly prod
 % Molecules
 \chapter{Molecules}
 
+% Section: about molecules
 \section{About molecules}
 
 In Smoldyn, each individual molecule is represented as a separate point-like particle. These particles have no volume, so they do not collide with each other when they are simply diffusing (however, see ``excluded volume reactions'' in the reactions section, below, which can give molecules excluded volume). Because of the rapid collisions that occur for solvated molecules, both rotational correlations and momentum correlations damp out rapidly in most biochemical systems, so orientations and momenta are ignored in Smoldyn as well.
@@ -626,6 +639,7 @@ Each molecule is allowed to exist in any of five states: (1) not bound to any su
 
 Molecules that are not bound to surfaces are added with the mol statement. This is a reasonably versatile statement in that, on each axis, it allows molecules to be placed randomly within the simulation volume, randomly within some smaller region, or at a specific location. The \ttt{surface\_mol} statement is used to add molecules that are bound to surfaces, although it cannot be entered in the configuration file until the appropriate surface has been set up. Similarly, \ttt{compart\_mol} is used to add molecules to compartments, which are regions between surfaces, but it also cannot be entered until more things have been set up. The statements about molecules mentioned thus far, with the exception of the last two, are shown in either S1\_intro/bounce3.txt or S4\_molecules/molecule.txt.
 
+% Section: diffusion
 \section{Diffusion}
 
 Molecules in Smoldyn diffuse according to the diffusion coefficient that is entered for the appropriate species and state. These coefficients are entered with the \ttt{difc} statement. Although it has not proven to be particularly useful, it is also possible for Smoldyn to simulate anisotropic diffusion, meaning that molecules diffuse more rapidly in some directions than in others. Anisotropic diffusion is specified with a diffusion coefficient matrix using the \ttt{difm} statement.
@@ -671,12 +685,14 @@ Results are shown below
 
 In the figure, it can be seen that the red molecules diffuse only on the $x$-$z$-plane, whereas the green molecules diffuse into an elliptical pattern that is not aligned with the axes. The red molecule data are graphed, where it is shown that $x$-values diffuse slowly, $y$-values don't diffuse at all, and $z$-values diffuse rapidly. The means and variances agree well with theory.
 
+% Section: drift
 \section{Drift}
 
 In addition to diffusion, molecules can drift, meaning that they move with a fixed speed and in a fixed direction. Up to version 2.26, drift could only be defined relative to the global system coordinates. For this method, which is supported in subsequent versions as well, enter the drift rate using the \ttt{drift} statement, followed by the velocity vector. Surface-bound molecules drift as well, although they are constrained to surfaces, so their actual velocity depends on the overlap of the drift vector and the surface orientation (e.g. a molecule's velocity is zero if the local surface is perpendicular to the drift vector and it equals the drift vector if that vector can lie within the the local surface orientation).
 
 New in version 2.27, surface-bound molecules can also drift relative to the coordinates of their surface panel. Specify this with the \ttt{surface\_drift} statement. For a 2-D system, surfaces are 1-D objects, so the surface-bound drift vector is a single number. It is the drift rate along ``rectangles,'' ``triangles,'' ``spheres,'' etc., all of which are really just different shape lines. For a 3-D system, surfaces are 2-D objects, so the surface-bound drift vector includes two values, which generally use the most obvious orthogonal coordinates for each panel shape. For a cylinder, for example, the former number is the drift rate parallel to the cylinder axis and the latter is the drift rate around the cylinder. A possible use of surface-bound drift would be to simulate molecular motor motion along a cylinder that represents a microtubule.
 
+% Section: molecule lists
 \section{Molecule lists}
 
 From a user's point of view, Smoldyn molecules follow a Western life trajectory: some chemical reaction causes a new molecule to be born from nothing, it diffuses around in space for a while, and then it undergoes a reaction and vanishes again into nothingness (or maybe goes to molecule heaven). Internally though, the situation is closer to a Wheel of Life: there are a fixed number of molecules that cycle indefinitely between ``live'' and ``dead'' states and which are assigned a new species type at each reincarnation. The dead molecule list is of no importance to the functioning of the simulation, but merely stores molecules when they are not currently active in the simulated system. The size and current population of the dead list are displayed in the molecule section of the configuration file diagnostics if you choose verbose output.
@@ -689,6 +705,7 @@ While it might seem best to have one molecule list per molecular species, it is 
 
 At least for the present, Smoldyn does not automatically determine what set of molecule lists will lead to the most efficient simulation, so it is up to the user make his or her best guess. Molecule lists are defined with the statement \ttt{molecule\_lists} and molecule species are assigned to the lists with \ttt{mol\_list}. Any molecules that are unassigned with the \ttt{mol\_list} statement are automatically assigned to new a list called ``unassignedlist''.
 
+% Section: statements about molecules
 \section{Statements about molecules}
 
 The following table summarizes the statements about molecules.
@@ -710,6 +727,7 @@ Statement & function\\
 \ttt{mol\_list} $species(state)\ listname$ & assignment of molecule to a list
 \end{longtable}
 
+% Section: wildcards
 \section{Wildcards}
 
 Most statements that work with molecular species allow you to specify multiple species using wildcard characters, such as ``?'' and ``*''. A question mark can represent exactly one character and an asterisk can represent zero or more characters. For example, if you want protein Fus3 to have a different diffusion coefficient in the cytoplasm as in the nucleus, you might define it as two species, \ttt{Fus3\_cyto} and \ttt{Fu3\_nucl}. Then, you could specify that they are both colored red using \ttt{color Fus3\_* red}.
@@ -729,6 +747,7 @@ Symbol & meaning & matching example & reaction example\\
 \ttt{\$}$n$ & $n$'th match on left side &  & \ttt{A? + B? -> C\$1C\$2}
 \end{longtable}
 
+% Section: species groups
 \section{Species groups}
 
 You can create your own groups of species by defining species groups. This allows you to set the properties of multiple species at once. It also enables the results for multiple species to be added together for many of the observation commands. Species groups function essentially identically to groups of species that are designated using wildcard characters or using the BioNetGen module. Define a species group with the \ttt{species\_group} statement.
@@ -737,6 +756,7 @@ You can create your own groups of species by defining species groups. This allow
 % Graphics
 \chapter{Graphics}
 
+% Section: graphics display
 \section{Graphics display}
 
 Graphics are useful for designing and debugging configuration files, for understanding the results of a simulation, and for communicating simulation results to others.
@@ -764,10 +784,12 @@ x,y,z & 3 & rotate counterclockwise about object axis\\
 X,Y,Z & 3 & rotate clockwise about object axis\\
 \end{longtable}
 
+% Section: drawing the system
 \section{Drawing the system}
 
 Several statements control the drawing of the system. The background color is set with \ttt{background\_color}, the system boundaries are drawn with the line thickness that is set with \ttt{frame\_thickness} and the color that is set with \ttt{frame\_color}. Although the feature is usually turned off, the \ttt{grid\_thickness} and \ttt{grid\_color statements} can be used to display the virtual boxes into which the system is divided (see the optimization section). Molecules are drawn with a size that is set with \ttt{display\_size} and a color set with color. All of the statements that set colors require either color words chosen from the table below, or numbers for the red, green, and blue color channels. Regarding the molecule display size, dimensions are in pixels if the output style is just ``opengl'' and are in the same length units are used in the rest of the configuration file if the output style is ``opengl\_good''.
 
+% Section: colors
 \section{Colors}
 
 Colors can be entered with color coordinates or names. Color coordinates are for the red, green and blue channels, with each value ranging between 0 (fully off) and 1 (fully on). Surfaces also allow a fourth color channel, the alpha channel, which is the surface opacity. Here, a value of 0 indicates a transparent surface and 1 indicates an opaque surface. Smoldyn does not support this feature very well, so it's generally best to stick with opaque surfaces.
@@ -791,16 +813,19 @@ yellow & navy & slate\\
 gold & turquoise & white\\
 \end{longtable}
 
+% Section: text display to the graphics window
 \section{Text display to the graphics window}
 
 A few text items can be written to the graphics window during the simulation, all of which are displayed in the upper left corner of the graphics window. These are the simulation time and the numbers of different molecular species in the simulation. Use the \ttt{text\_color} and \ttt{text\_display} statements to control this output.
 
+% Section: TIFF files and movies
 \section{TIFF files and movies}
 
 Graphical images may be saved as TIFF images that are copied from the graphical display. Thus, the saved image size and resolution are the same as they are on the screen. A single snapshot can be saved during a simulation by pressing ``T'' (uppercase). As a default it is saved as ``OpenGL001.tiff'', which will be in the same file directory as the configuration file. Alternatively, the configuration file statements \ttt{tiff\_name} can be used to set the basic name of the file (a name of ``picture'' will end up being saved as ``picture001.tiff''). The numerical suffix of the name can be set with \ttt{tiff\_min} and \ttt{tiff\_max}. The \ttt{tiff\_max} value can be set to arbitrarily large numbers, although reasonable values are recommended so that vast numbers of useless tiff files can't be saved by accident.
 
 A sequence of TIFF files can be saved automatically with the \ttt{tiff\_iter} statement, allowing one to save an image sequence for later compilation into a movie. TIFF files can also be saved automatically with the keypress T command, which allows more versatile timing than the \ttt{tiff\_iter} statement. Compiling an image sequence into a movie is easy with Apple's QuickTime Pro or with various other programs.
 
+% Section: summary of graphics statements
 \section{Summary of basic graphics statements}
 
 The following images show Smoldyn's graphics for 1D, 2D, and 3D systems, made with the files graphics1.txt, graphics2.txt, and graphics3.txt. All of these use the ``opengl\_good'' graphics quality.
@@ -839,6 +864,7 @@ Statement & function\\
 \end{longtable}
 The $color$ parameter can be either a color name, or the red, green, and blue color coordinates.
 
+% Section: better graphics
 \section{Better graphics}
 
 Smoldyn's better graphics, selected with the graphics \ttt{opengl\_better} statement, are intended to be adequate for publication-quality figures. With them, you can define a ``room'' light and up to 8 point lights. The room light is non-directional. Define its color with the \ttt{ambient} option. Each point light has a position and then colors for its ambient light, diffuse light, and specular light. To make the light position as a 3-dimensional point in space, enter 4 values for the position, and make the last value equal to 1. Alternatively, you can make the light directional but not arising from a specific position. To do this, keep all of the x, y, and z values between 0 and 1, and set the 4th value to 0. Ambient light is non-directional and does not reflect off of a surface. Diffuse light is directional (from the light source) but lights the illuminated side of a surface evenly, as though it is a non-shiny surface. Specular light is also directional and reflects off of a surface as though it is shiny.
@@ -849,6 +875,7 @@ Within each surface block, you can set the shininess of the surface with the \tt
 % Runtime commands
 \chapter{Runtime commands}
 
+% Section: command basics
 \section{Command basics}
 
 The design of a simulation can be broken down into two portions. One portion represents the physical system, including its boundaries, surfaces, molecules, and chemical reactions. These are the core components of Smoldyn and are simulated by the main program. The other portion represents the action of the experimenter, which include observations and manipulations of the system. As with the parameters of the physical system, these actions are also listed in the configuration file. They are listed as a series of commands and execution times.
@@ -891,6 +918,7 @@ A few deprecated codes, which are in addition to the codes listed above, are tha
 
 Each command is one of three main types: control, observe, or manipulate. Control commands control the simulation operation. For example, a command called keypress, followed by a letter, causes the simulation to act as though that key had been pressed by the user. This can be useful for modifying the display automatically. Observation commands read information from the simulation data structures, analyze the data some, and output results to text files. The precision of numerical output values can be set using the \ttt{output\_precision} statement. Neither control nor observation commands modify any aspect of the simulation. Manipulation commands modify the simulation parameters, such as the addition, removal, or replacement of molecules, or the modification of reaction rate constants. These commands do not produce any output. Yet a fourth type of command is the conditional command. These test for certain simulation conditions, such as there being more than some number of some molecule species, and then run a second command if the conditions are met. Each conditional command is characterized as being one of the three main types based on the type of its second command.
 
+% Section: output format and files
 \section{Output format and files}
 
 Most observation commands output a series of data values. The default format is ``ssv'', which is space-separated vectors. These are easy for a person to read but are not as convenient when using most software. Thus, you can also use the \ttt{output\_format} statement to specify that you want ``csv'' output, which are comma-separated vectors.
@@ -921,6 +949,7 @@ Because of the potential for confusion with output file names, complete pathname
 
 An example that is essentially identical to the one shown above is in given in the example file S6\_commands/cmdfile.txt. Upon running it and looking at the results, you will discover that the first output file, cmdfileout\_001.txt, is empty, whereas all of the others are full, as expected. The empty file arises because the file number is incremented at the very beginning, before the molcount command is invoked for the first time. This could be remedied by using slightly more sophisticated command timing with the ``i'' or ``j'' timing codes.
 
+% Section: specific commands
 \section{Specific commands}
 
 All of the commands are listed below in the reference section, which is the definitive source of information about them. Most of the commands are also demonstrated in the example files S6\_commands/cmdobserve.txt and S6\_commands/cmdmanipulate.txt. Of the full list of commands, some are quite useful, some are rarely used, and some have been superceded by newer code. The last category includes several that implement rudimentary reflecting surfaces, which were written before a good treatment of surfaces was added to the core program. Of the more useful commands, a few deserve special mention.
@@ -932,6 +961,7 @@ The keypress command creates an event that the program responds to, as though th
 
 The set command enables you to enter essentially any configuration file statement mid-simulation. For example, the command \ttt{set species green} creates the species named ``green'' when the command is invoked, rather than at the beginning of the simulation. It's also possible to create surfaces, add reactions, etc. mid-simulation.
 
+% Section: summary of statements about commands
 \section{Summary of statements about commands}
 
 The following table summarizes the statements used for commands.
@@ -956,6 +986,7 @@ Statement & function\\
 % Surfaces
 \chapter{Surfaces}
 
+% Section: surface basics
 \section{Surface basics}
 
 A large fraction of biochemistry does not happen in free solution, but at or across cellular membranes. To model these interactions, Smoldyn supports surfaces within the simulation volume. Typically, one Smoldyn surface is used to model each type of membrane. For example, a bacterium might be modeled with one surface for the inner membrane and another for the outer membrane, while a eukaryotic cell would use separate surfaces for the plasma membrane, the nuclear membrane, and for each type of organelle. Smoldyn supports disjoint surfaces as well, such as for a collection of vesicles.
@@ -964,6 +995,7 @@ Each Smoldyn surface comprises many panels. These panels have simple geometries:
 
 Each surface includes a set of rules that dictate how molecules interact with it. This includes molecules that diffuse into it from solution, as well as molecules that are bound to the surface. All panels on a single surface interact with molecules in the same ways. Molecules that are bound to a surface are designed to represent membrane-bound proteins and trans-membrane proteins. For example, they can model signaling receptors or ion channels.
 
+% Section: defining surfaces
 \section{Defining surfaces}
 
 Surfaces are typically entered with one or more blocks of statements that start with \ttt{start\_surface} and end with \ttt{end\_surface}. Between these, only surface statements are recognized. A single surface may be broken up into multiple blocks of statements, and each block may describe multiple surfaces. The surface name may be given after the \ttt{start\_surface} statement, or it can be given afterwards with the name statement; this specifies which surface is being defined, and starts a new one if required.
@@ -976,6 +1008,7 @@ The \ttt{action} and \ttt{rate} statements also apply to collisions of surface-b
 
 Sometimes, one wants a modeled system to be unbounded, such as for the simulation of pheromones that diffuse freely between cells, but that can also diffuse away towards infinity. While Smoldyn can simulate such unbounded systems with unbounded space, this can be very computationally intensive because it tracks every molecule, no matter how far it is from the region of interest. A better solution is to define a surface that surrounds the portion of the system that is of interest, where these surface panels absorb molecules at a rate that causes the system to behave as though it were unbounded. Smoldyn calculates this absorption rate automatically, from information that the user specifies with the \ttt{unbounded\_emitter} statement. This statement declares the positions and the production rates for each emission source within the simulation volume. The new absorption coefficients completely replace any other actions that might be defined for interactions between this surface and molecular species.
 
+% Section: defining surface panels
 \section{Defining surface panels}
 
 Individual surface panels are defined with one panel statement for each individual panel. These statements are used to specify panel locations, dimensions, orientations, and, sometimes, drawing information. Each panel also has a name, for which the default is simply the panel shape followed a number, although it is also possible for the name to be defined by the user at the end of the panel statement. These names are used for jumping surfaces and diffusion of surface-bound molecules. For a surface to work in a consistent manner, it is worth making sure that all panel front sides face the same way. The drawing information, such as the numbers of slices and stacks for a sphere, is only used for graphical rendering. As far as the simulation is concerned, a sphere, regardless of how it is drawn, is always a mathematically perfect sphere.
@@ -1013,6 +1046,7 @@ end_surface
 
 Several statements control the drawing of surfaces to the graphics window. The \ttt{color} statement specifies the color of the front and/or back of the surface with either color words or red, green, blue, and alpha (opacity) values. As mentioned above in the graphics section, OpenGL does not render well with alpha values between 0 and 1. Thickness defines the line width that should be used for drawing surface edges, or for surfaces in 2-dimensional systems. The polygon statement is used to set the drawing mode for showing just the panel edges, only panel vertices, or complete panel faces. It also allows filling of regions for surfaces in 2-dimensions.
 
+% Section: jumping surfaces
 \section{Jumping surfaces}
 
 There are a few situations in which one might reasonably want to have molecules move discontinuously, leaping from one place to another. One is for periodic boundaries in which molecules that diffuse off of one side of the system immediately diffuse onto the other side, thus keeping the composition of the system constant while avoiding effects that can arise from edges. Another situation is for building complex surface structures from the Smoldyn panel primitives without resorting to triangulated meshes. For example, one might want to have two spherical cells whose cytoplasms are linked by a narrow cylindrical channel, making a dumbbell shape. This would be easy to design in Smoldyn, except that there is no way to cut holes in the spheres where the cylinder should be attached. The solution is to put small disk-shaped ``jumping'' panels on each side of the spot where the hole is wanted so that molecules can be transported across the barrier (see examples/S7\_surfaces/dumbbell.txt).
@@ -1023,6 +1057,7 @@ Jumping surfaces are demonstrated with the files jump1.txt, jump2.txt, and jump3
 
 Surface-bound molecules used to jump when they diffused onto panels that had surface-bound jump actions. However, this feature was removed in version 2.37 because it was complicated and there were better ways of accomplishing the same result.
 
+% Section: membrane-bound molecules
 \section{Membrane-bound molecules}
 
 In Smoldyn, molecules can be in free solution or bound to surfaces. The bound ones can be attached on the front of the surface or on the back, called the ``front'' and ``back'' states, or they can be transmembrane molecules in either an ``up'' orientation or a ``down'' orientation. The precise meanings of these states are decided by the user. As an example, if a receptor is oriented such that the ligand binding site is on the outside of the cell, as usual, it could be called ``up,'' whereas if it were in the membrane in a reversed orientation, it could be called ``down.'' In all, there are five states that molecules can be in: ``solution,'' ``front,'' ``back,'' ``up,'' or ``down,'' of which the last four are the surface-bound states. In practice, all four surface-bound states are essentially equivalent. A molecule in any of these states is allowed to interact with solution-phase molecules that are on either side of the surface, and it can desorb to either side of the surface. The only real difference between these states is that Smoldyn ensures that molecules in the ``front'' state have coordinates that are slightly on the front side of the surface and those in the ``back'' state have coordinates that are slightly on the back side of the surface. Smoldyn does not fix the coordinates to be on any particular side for molecules in the ``up'' or ``down'' states, which makes these states simulate very slightly faster.
@@ -1039,10 +1074,12 @@ Note that molecules only transition from one panel to another when they diffuse 
 
 Files that demonstrate surface-bound molecules are: S7\_surfaces/stick2.txt and cellmesh.txt (which reads cellmeshfile.txt). Surface diffusion is demonstrated with the files in S7\_surfaces/surfacediffuse/.
 
+% Section: Smoldyn bugs
 \section{Smoldyn bugs}
 
 As far as I know, there are no bugs currently in Smoldyn that cause surfaces to behave other than requested. However, leaking surfaces have been a recurring problem with Smoldyn. In this problem, which can be caused by any of a vast number of small mistakes in the source code, molecules that shouldn't go through a surface are found to have done so. Some commands that were written to test for it are: \ttt{warnescapee} and \ttt{killmoloutsidesystem}. If you suspect that Smoldyn isn't working right, or if you just want to verify that it is working right (a good idea if you don't use graphical output), then it might be worth running these or other commands. The former one has to be run at every time step to be useful. The latter one has no output directly, but will identify problems if it is bracketed by \ttt{molcount} commands. The command \ttt{killmolinsphere} can be used in a similar manner.
 
+% Section: statements about surfaces
 \section{Statements about surfaces}
 
 The following table summarizes the statements about surfaces.
@@ -1072,6 +1109,7 @@ Statement & function\\
 \ttt{end\_surface}
 \end{longtable}
 
+% Section: rates of surface interactions
 \section{Rates of surface interactions}
 
 For an interaction to occur between a solution-state molecule and a surface, the molecule has to (1) contact the surface and (2) interact based on some probability. There are subtleties both in the determination of contacts and in the calculation of these probabilities.
@@ -1098,6 +1136,7 @@ Surface sticking rates were tested with the example file stickrate.txt. Here, a 
 
 Results from example stickrate.txt, shown in red, are compared with the analytic solution for the sticking rate. The left panel shows the total number of molecules stuck to the surface. The right panel shows the average sticking rate with a 5 time unit averaging window, with comparisons to the expectation sticking rate shown with a solid line and the 1 standard deviation range shown with dashed lines.
 
+% Section: simulating effective unbounded diffusion
 \section{Simulating effective unbounded diffusion}
 
 The example files in S7\_surfaces/unbounded\_diffusion illustrate and verify the use of a partially absorbing bounding surface to simulate effective unbounded diffusion. These files use the Smoldyn file sphere.txt, which describes a sphere; I created it by using Mathematica to define a sphere, triangulate it, and save it as a ``wrl'' (Virtual Reality Modeling Language) file. Then, I used the wrl2smol utility program to convert it to the Smoldyn-readable file sphere.txt. Other Smoldyn configuration files specify either one or multiple emitters within this sphere and then save concentration line profiles as functions of time. The theoretical concentration distributions for these situations is expressed with a slight extension of eq. 3.5b from Crank, which leads to
@@ -1120,6 +1159,7 @@ The left panel shows a snapshot from example emitter1.txt where it is seen that 
 % Reactions
 \chapter{Reactions}
 
+% Section: reaction basics
 \section{Reaction basics}
 
 There are three types of chemical reactions in Smoldyn: zeroth order, first order, and second order, where the order is simply the number of reactants. Synonyms for the latter two are unimolecular and bimolecular reactions. In addition, Smoldyn simulates a couple of additional interaction types using reactions; these are conformational spread reactions and excluded volume reactions, both of which are described below.
@@ -1139,6 +1179,7 @@ Excluded volume reactions use the reaction concept to simulate excluded volume i
 
 Each molecule has a serial number that can be used to uniquely identify it. In most reactions, the reactants are simply removed from the system and the reaction products are new molecules with new serial numbers. However, this is not the case for conformational spread and excluded volume reactions because the reactants and products are conceptually the same molecules, so these products have the same serial numbers as the reactants. It can also be helpful to maintain serial numbers in other situations, such as for single molecule tracking. In these situations, use the \ttt{reaction\_serialnum} statement to define rules for the product serial number assignments.
 
+% Section: defining reactions
 \section{Defining reactions}
 
 To define a reaction, enter the statement reaction, followed by the reaction name, the reaction, and the rate constant. Here are some examples:
@@ -1161,6 +1202,7 @@ Conformational spread reactions are a special type of bimolecular reactions. For
 
 To simulate second order reactions with reaction probabilities that are not equal to one (called the lambda-rho algorithm), you can set the reaction probability with the \ttt{reaction\_probability} statement. Alternatively, you can set the reaction $\chi$ value, which is the ratio of the actual reaction rate constant to the diffusion-limited reaction rate constant, using \ttt{reaction\_chi}.
 
+% Section: statements about reactions
 \section{Statements about reactions}
 
 The following table summarizes the statements about reactions.
@@ -1182,12 +1224,14 @@ Statement\\
 \ttt{product\_placement} $rname\ type\ parameters$
 \end{longtable}
 
+% Section: reactions with a block format
 \section{Reactions with a block format}
 
 Although now discouraged and deprecated, the block format for entering reactions is similar. The block starts with the statement \ttt{start\_reaction} and ends with \ttt{end\_reaction}, between which only instructions that are relevant to reactions are allowed. The first statement within a reaction block is order to define the reaction order of this block. The \ttt{max\_rxn} statement used to be required next, but is no longer functional as of version 1.82. Basic reactions are entered with a \ttt{reactant} statement, a \ttt{rate} statement, and a \ttt{product} statement. It is also possible to enter the internal value that Smoldyn uses with \ttt{rate\_internal}. It is possible to turn states on or off with the \ttt{permit} statement. If there are multiple products, and if these products can react with each other (most often a reversible reaction), then Smoldyn may need some information about the product unbinding radii, which is entered with the \ttt{product\_param} statement. It is discussed at length below.
 
 Conformational spread reactions are slightly different. Enter the conformational spread radius with the \ttt{confspread\_radius} statement and the reaction rate (which is analogous to a first order rate) with rate. This rate value is converted to a reaction probability at each time step. To enter the latter value directly, do so with the \ttt{probability} statement. The \ttt{rate\_internal} statement is ignored.
 
+% Section: zeroth order reactions
 \section{Zeroth order reactions}
 
 Zeroth order reactions have no reactants and yet produce products at a rate that is constant except for stochastic fluctuations. They can be used to simulate the production of molecules that are of interest from sub-systems that are not of interest and thus are not explicitly part of the model. As mentioned above, zeroth order reactions have not proven to be particularly useful.
@@ -1216,6 +1260,7 @@ As seen in the figure below, simulation results conform closely to corresponding
 
 This shows zeroth order reaction molecule production with data simulated from the example file S8\_reactions/zeroreact.txt. Shown are the numbers of molecules produced as a function of time with three different production rates along with the deterministic theory for how many molecules would be expected.
 
+% Section: unimolecular reactions
 \section{Unimolecular reactions}
 
 Order 1 reactions follow the general reaction equation A $\rightarrow$ B. The mass action kinetics for the loss of reactant are described with the differential equation
@@ -1256,6 +1301,7 @@ Analogous equations hold for C and D. Simulation results closely matched these t
 
 The panel on the left shows results from the configuration file unireact1.txt. First order reactions occur at rates that are in good agreement with theory over a wide range of rate values. The panel on the right shows results from the file unireactn.txt. Again, there is good agreement with theory.
 
+% Section: bimolecular reactions
 \section{Bimolecular reactions}
 
 Bimolecular reactions have the generic reaction equation A + B $\rightarrow$ C, for which the mass action kinetics are described by the deterministic differential equations
@@ -1285,6 +1331,7 @@ Activation-limited reactions follow the mass action kinetics shown in the equati
 
 The panel on the left shows reactant numbers for the reaction A + B $\rightarrow$ C for three different reaction rates and with equal initial numbers of A and B molecules. The panel on the right is similar but for the reaction 2A $\rightarrow$ C. Light black lines are solutions to the deterministic steady-state mass action rate equations. Deviations arise for the faster reactions (blue lines) because those start far from steady-state. Light orange lines are the steady-state theory, starting with time 10 rather than 0, so as to start at times when reactants are closer to steady-state distributions.
 
+% Section: reactions with identical reactants
 \section{Reactions with identical reactants}
 
 Although there are no conceptual or simulation algorithm differences for bimolecular reactions in which two reactants are the same, there are a few quantitative differences. Consider a situation with 1000 A molecules and 1000 B molecules. Despite the fact that each A molecule has about 1000 potential collision partners, whether the reactants are A + A or A + B, there are twice as many A-B collisions as A-A collisions. This is because each A-A pair can be counted in either of two ways, but is still only a single possible collision. To achieve the same reaction rate for A + A reactants as for A + B, despite the fact that there are fewer collisions, Smoldyn uses a larger binding radius for the former.
@@ -1300,6 +1347,7 @@ reaction fast Af + Af -> C 50
 \end{lstlisting}
 Results are similar to those seen before. Simulation results agreed well with the analytical equations if the reaction is activation-limited or once the reactant distributions have reached steady-state, but agreement is not good for diffusion-limited reactions away from steady-state. It should be emphasized that these discrepancies are not errors by Smoldyn, but are quite the opposite: they are approximations made in the steady-state equations which people are used to making but which are nevertheless incorrect, which are being compared to accurate simulations by Smoldyn.
 
+% Section: diffusion-limited reactions
 \section{Diffusion-limited reactions}
 
 Diffusion-limited reactions can be simulated well by Smoldyn. The example file bireactABB.txt again simulates the reaction A + B $\rightarrow$ C, but now with a lot more B molecules than A ones, and with a time step that is sufficiently short that the reaction simulates as though it is diffusion-limited. As is shown in the figure below, results conform closely to the Smoluchowski prediction for this reaction.
@@ -1314,6 +1362,7 @@ Diffusion-limited reactions can be simulated well by Smoldyn. The example file b
 
 This example shows diffusion-limited bimolecular reactions from the configuration file bireactABB.txt, which simulates the reaction that is described in Figure 7 of Andrews and Bray, 2004. The left panel shows the number of surviving A molecules as a function of time with comparison to the time-dependent Smoluchowski equation. The right panel shows the reaction rate per A molecule per time unit as a function of time along with the Smoluchowski prediction with the solid black line and predicted fluctuations with the dashed lines.
 
+% Section: reversible reactions
 \section{Reversible reactions}
 
 Reversible reactions, where at least one has multiple products, involve geminate recombination issues, as discussed below. The accuracy of reversible reaction rates using the default reverse parameter type and parameter was investigated with the configuration file S8\_reactions/equil/equil.txt. Here, an equilibrium is set up for the reaction A + B $\leftrightarrow$ C.
@@ -1333,6 +1382,7 @@ where $n_A(0)$ is the initial number of A molecules. It was verified that the si
 
 This figure shows the equilibrium result from example file S8\_reactions/equil/equil.txt.
 
+% Section: multi-step reactions
 \section{Multi-step reactions}
 
 Many biochemical models include reactions that do not fall neatly into the 0th, 1st, or 2nd order reaction categories, but are instead complex reactions that include multiple elementary steps. Whereas these complex reactions can be well-defined for models that are either deterministic or non-spatial, they simply don't make sense when individual molecules are modeled. Thus, to include them in a Smoldyn model, one has to explicitly define each of the steps.
@@ -1347,6 +1397,7 @@ This value can range between 0 and 1, where small values represent rapid equilib
 $$k_1 = \frac{V_{max}}{[\textrm{E}]_0 K_M r} \qquad k_{-1} = \frac{V_{max} (1-r)}{[\textrm{E}]_0 r} \qquad k_2 = \frac{V_{max}}{[\textrm{E}]_0}$$
 Other multi-step reactions can be broken down to elementary reactions in a similar manner. The need to include additional assumptions, as we did here with $r$, is typical when converting from a low-detail reaction rate equation to a high-detail reaction mechanism.
 
+% Section: reaction networks
 \section{Reaction networks}
 
 The reaction types presented above can be combined to create essentially unlimited varieties of reaction networks. A particularly simple one is shown here as an example. It is the classic Lotka-Volterra reaction network, which was originally designed to explain observed oscillations in ecological predator-prey systems but is also analogous to many natural biochemical oscillators. The terminology used here borrows from the ecology application, although all numbers were chosen solely to make for an interesting simulation result. The complete file S8\_reactions/lotvolt/lotvolt.txt is:
@@ -1407,6 +1458,7 @@ This involves several statements that make the simulation run efficiently. Graph
 
 These figures show results from Lotka-Volterra simulation. The first panel shows of snapshot of the simulation after it has run for long enough for the regular boom-and-bust pattern to develop. Red dots are ``rabbits'' and green dots are ``foxes''. The next panel shows the numbers of ``rabbit'' and ``fox'' molecules as a function of time, with the same colors, again illustrating the boom-and-bust pattern. The panel on the right is a phase portrait of the data shown in the center; oscillations lead to cycles in the phase portrait and the initial large spike is seen as the large diameter cycle.
 
+% Section: conformational spread reactions
 \section{Conformational spread reactions}
 
 Currently, Smoldyn only allows second order reactions that have exactly two products to be declared a conformational spread reaction. Defining them as a conformational spread reaction, which is done with the \ttt{confspread\_radius} statement, implies a few things. Typically, the diffusion coefficients of both reactants are zero, although this is not required. The reaction rate constant that is entered is a \textit{first order} rate constant, meaning that it has units of inverse time. It is interpreted as the rate at which a reaction will occur, given that both reactants are continuously closer to each other than the conformational spread radius. Finally, the products of a conformational spread reaction are placed in the exact same locations as the reactants, and in the spots that correspond to the order in which the reactants and products were listed in the configuration file. For example, consider the conformational spread reaction defined with the statements
@@ -1445,6 +1497,7 @@ While it is simplistic for most conformational spread situations, it leads to a 
 
 This figure show output from confspread.txt configuration file. There are conformational spread reactions between blue molecules and red molecules, which convert red to green; reversion is a simple reaction. The panel on the right shows the average probability of molecules being in their red states, for a situation in which rate constants are equal for the forward and reverse reactions, but each red/green molecule is within a conformational spread radius of two blue molecules, thus doubling the red $\rightarrow$ green reaction rate.
 
+% Section: excluded volume reactions
 \section{Excluded volume reactions}
 
 Smoldyn can treat molecules as though they have excluded volume using the same reaction concept that was developed for bimolecular reactions. The user specifies the collision radius (using the \ttt{binding\_radius} statement) for each pair of species that is supposed to respect each others' excluded volume and then makes this an excluded volume reaction with the \ttt{product\_placement} statement, with the bounce option. If molecules of those two species end up within their collision radius at the end of a time step, they are then moved apart. The reactants and products may be the same molecular species, in which case the molecules are simply pushed apart. They can also be different species. Molecules maintain their serial numbers. There are several options for the \ttt{product\_placement} parameter value. Setting it to a positive value (which should be larger than the binding radius) causes the two products to be placed at this distance apart, along the same vector as the molecules were on before they were moved apart. Setting it to -1 is generally more accurate; here, the products are separated by the binding radius plus the distance that the reactants had been inside of the binding radius. This separation is along the vector that separated the reactants. Setting it to -2, or leaving the value blank because this is the default method, is better yet. Here, the molecules bounce ballistically off of each other. This is the most accurate method. In all cases, the reaction rate value is largely meaningless for excluded volume reactions.
@@ -1469,6 +1522,7 @@ A second example involves a crowded system and is in the same directory and the 
 
 These figures show output from bounce.txt and crowding.txt. In the former, red and green molecules, both of which are confined to the diagonal line, bounce off of each other. This has the result that the ordering of red and green molecules does not change during the simulation. The latter file shows that this crowding method works even with relatively high molecule densities. These molecules clearly do not overlap each other. During the simulation, molecules diffuse within the confines set by their neighbors.
 
+% Section: binding and unbinding radii
 \section{Binding and unbinding radii}
 
 For every bimolecular reaction, Smoldyn has to calculate the correct binding radius from the reaction rate that is given in the configuration file. Also, for every reaction that leads to multiple products, Smoldyn has to determine the correct unbinding radius, using whatever product parameter is supplied, if any. Product parameters are listed in the table, below. While these binding and unbinding radii are well defined microscopic parameters (at least within the context of the Smoluchowski model system that is simulated), the meanings of the experimental rate constants, including those given in the configuration file, are not nearly as well defined. Instead, those rate constants depend on the conditions under which they were measured. Smoldyn accounts for this by attempting to guess the experimental conditions, using a process described here. If Smoldyn's guess is correct, the simulated reaction rates should exactly match the experimental rates (not including edge effects, which are typically negligible unless one reactant is fixed at or near an edge).
@@ -1538,6 +1592,7 @@ The general principle for calculating binding radii is that Smoldyn first looks 
 
 Unbinding radii typically require a reversible parameter (except as in example 2). If the parameter is \ttt{unbindrad}, \ttt{offset}, or \ttt{fixed}, the requested unbinding radius is used. If it is irrev, the unbinding radius is set to 0. Otherwise, it can only be calculated with the knowledge of the binding radius. If the reaction is directly reversible, the binding radius for the reverse reaction is used. If it is not directly reversible but the products can react, as in examples 5, 6, and 8, then the binding radius for the first reaction that is listed is used.
 
+% Section: bimolecular reactions and surfaces
 \section{Bimolecular reactions and surfaces}
 
 Does a bimolecular reaction occur if there is a surface between the reactants? This turns out to be a somewhat complex question. The simple answer is that it does occur if the surface is transparent to both molecular species and it does not occur if the surface is reflective or absorptive to both molecular species. In principle, reactions should be possible across pairs of jump surfaces, although they are not performed by the current Smoldyn version which treats jump surfaces as though they are opaque with respect to reactions.
@@ -1563,6 +1618,7 @@ In conclusion, reaction rates are reduced near surfaces and the effect is differ
 % Compartments
 \chapter{Compartments}
 
+% Section: compartment basics
 \section{Compartment basics}
 
 Compartments are regions of volume that are bounded by surfaces. In general, they do not include their bounding surfaces. Compartments are useful for input or output and, as mentioned above, zeroth and first order reactions can be made to be only active within specified compartments. Compartments can also be moved around using various commands, thus providing support for moving surfaces. In addition, compartments are used for communication with the MOOSE simulator.
@@ -1571,6 +1627,7 @@ The inside of a compartment is defined to be all points from which one can draw 
 
 In addition, compartments can be composed from previously defined compartments using logic arguments. This way, for example, a cell cytoplasm compartment can be defined as the region that is within a cell compartment but that is not also within a nucleus compartment. Or, the region that is outside of a cell can be simply defined as the region that is not inside the cell.
 
+% Section: defining compartments
 \section{Defining compartments}
 
 The definition style for compartments is much like it is for other portions of the code. Compartment statements for specific compartments are entered in blocks that start with \ttt{start\_compartment} and end with \ttt{end\_compartment}. The compartment name, which is given after \ttt{start\_compartment}, is used to start a new compartment definition, or to continue defining a previously started one. Bounding surfaces and interior-defining points are added with the surface and point statements, respectively. The compartment command, used within a compartment block, is used to define one compartment in terms of others. Using this command one can, for example, define a compartment as the union or the intersection of two previously defined compartments.
@@ -1626,10 +1683,12 @@ These files are in the examples folder in S9\_compartments. The first is called 
 This figure shows examples of compartments. In the left panel, green dots are the interior-defining points and red molecules were added randomly to the compartment. In the right panel, each circle was defined as a compartment and then the red, green, and blue molecule regions were defined with logical combinations of the left and right compartments.
 For logically combining compartments, the logical options are: ``equal'', ``equalnot'', ``and'', ``andnot'', ``or'', ``ornot'', or ``xor''. These obey the standard logical rules. Note that the sequence of statements matters. For example, the region defined by A-andnot-B is the portion of A is that is not within B, whereas B-andnot-A is the portion of B that is not within A.
 
+% Section: compartments and efficiency
 \section{Compartments and efficiency}
 
 To test whether a given point is within a given compartment, Smoldyn starts by computing a line between that point and one of the interior-defining points. Smoldyn then tests whether this line crossed any of the panels of any of the compartment's bounding surfaces. If so, Smoldyn moves on to the next interior-defining point and repeats. The procedure stops as soon as a line can be drawn without crossing any surface panel, if that happens. This procedure is rapid for compartments with one panel and one interior-defining point, but can become extremely slow for surfaces with many panels and/or many interior-defining points. As a result, it is helpful to design compartments for efficient simulation. Also, it's best to avoid compartments if they aren't needed. For example, don't use the \ttt{reaction\_compartment} statement if you don't actually need the compartment testing.
 
+% Section: statements about compartments
 \section{Statements about compartments}
 
 The following table summarizes the statements about compartments.
@@ -1648,18 +1707,21 @@ Statement\\
 % Simulation settings
 \chapter{Simulation settings}
 
+% Section: simulation settings basics
 \section{Simulation settings basics}
 
 Several statements define how the simulation should be run. There are defaults for each of these settings, so the user does not need to set them directly. However, they can be useful for optimizing simulation performance. These settings include the random number generator seed, virtual boxes that partition the simulation volume, and some settings for diffusion on surfaces.
 
 The simulation volume is partitioned into an array of virtual boxes, each of which is the same size and shape. In addition, each box that is on the edge of the simulation volume actually extends out to infinity in that direction, such that every location in space, whether in the simulation volume or not, is in some virtual box. These boxes do not affect the performance of the simulation, except for allowing computational efficiencies that speed it up.
 
+% Section: random number seed
 \section{Random number seed}
 
 As a default, the random number generator seed is set to the time at which the simulation is started. This is virtually certain to yield a unique random number sequence each time the simulation is run, so no two simulations will be identical. However, it can also be useful to set the random number generator seed, which can be done with the \ttt{random\_seed} statement. This statement can also be used to set the random number seed to the current time.
 
 Smoldyn uses the Mersenne Twister random number generator, which has become a standard generator for many applications because it is fast and very high quality. Because Smoldyn uses this method rather than built-in generators, Smoldyn simulations that are run with the same seed produce the same results, regardless of the operating system or computer.
 
+% Section: virtual boxes
 \section{Virtual boxes}
 
 The box sizes can be left undefined, in which case a default is used, or they can be defined with either the \ttt{molperbox} or \ttt{boxsize} statements. The former statement sets the box sizes so that the average number of molecules per box, at simulation initiation, is close to the requested number. Good numbers tend to be between 3 and 6, although more or fewer may be appropriate, depending on how the number of molecules in the simulation is likely to change over time (the default box size is computed for an average of 4 molecules per box). The \ttt{boxsize} statement requests the length of one side of a box, which should be in the same units that are used for the boundary statements. Either way, the boxes that are actually created are unlikely to exactly match the requested values, but are sized to be as close to cubical as possible (or square for a 2-D simulation) and to exactly fill the simulation volume.
@@ -1668,6 +1730,7 @@ Box sizes that are too large will cause slow simulations, but no errors. Warning
 
 The \ttt{accuracy} statement sets which neighboring boxes are checked for potential bimolecular reactions. Consider the reaction A + B $\rightarrow$ C and suppose that A and B are within a binding radius of each other. This reaction will always be performed if A and B are in the same virtual box. If accuracy is set to at least 3, then it will also occur if A and B are in nearest-neighbor virtual boxes. If it is at least 7, then the reaction will happen if they are in nearest-neighbor boxes that are separated by periodic boundary conditions. And if it is 9 or 10, then all edge and corner boxes are checked for reactions, which means that no potential reactions are overlooked. Overall, increasing accuracy numbers lead to improved quantitative bimolecular reaction rates, along with substantially slower simulations. If qualitative simulations are wanted, then lower accuracy values are likely to be preferable.
 
+% Section: surface-bound molecule settings
 \section{Surface-bound molecule settings}
 
 Several settings affect simulation of surface-bound molecules, described here. The default settings are nearly always good, although they can be modified if desired.
@@ -1676,6 +1739,7 @@ Molecules that are bound to a surface are given locations that are extremely clo
 
 When a surface-bound molecule diffuses off of one surface panel, it can sometimes diffuse onto the neighboring surface panel. It does so only if the neighboring panel is declared to be a neighbor, as described above in the surfaces section, and also the neighbor is within a distance that is set with the \ttt{neighbor\_dist} statement. This value is set to an extremely small value by default, just large enough to prevent round-off error, and generally should not need changing. In some cases, moving a molecule to a point that is exactly on a panel edge can cause problems with round-off errors, so it is actually moved just inside the edge by a distance that can be set by the margin statement. Again, this should not need changing.
 
+% Section: statements for simulation settings
 \section{Statements for simulation settings}
 
 The following table summarizes the statements for simulation settings.
@@ -1696,18 +1760,21 @@ Statement & Description\\
 % Ports
 \chapter{Ports}
 
+% Section: port basics
 \section{Port basics}
 
 Ports are data structures that are used for importing and exporting molecules between a Smoldyn simulation and another simulation. In particular, they are designed for the incorporation of Smoldyn into MOOSE, but they could also be used to connect multiple Smoldyn simulations or for other connections.
 
 A port is essentially a surface and a buffer. Smoldyn molecules that hit the porting surface are removed from the Smoldyn simulation and are put into the buffer for export. Once exported, they are removed from the buffer. Also, molecules may be added to the Smoldyn simulation at the porting surface by other programs.
 
+% Section: defining ports
 \section{Defining ports}
 
 Using the standard format, port statements are given in blocks that start with \ttt{start\_port} and end with \ttt{end\_port}. A port name is declared after \ttt{start\_port}. The porting surface is specified with surface and the active face of that surface is specified with face.
 
 Also, in the definition of the surface that is to be used for porting (the surface has to be defined first), one has to specify that the active face of the surface has action ``port''.
 
+% Section: statements about ports
 \section{Statements about ports}
 
 The following table lists statements about ports.
@@ -1721,6 +1788,7 @@ Statement\\
 \ttt{end\_port}
 \end{longtable}
 
+% Section: porting rate
 \section{Porting rate}
 
 Some care is required to make ports work accurately. In particular, a port behaves for a Smoldyn simulation as an absorbing surface. The absorption rate depends on the simulation time step and molecular rms step length, as I described in Andrews, Physical Biology, 2009.
@@ -1729,6 +1797,7 @@ Some care is required to make ports work accurately. In particular, a port behav
 % Rule-based modeling with BioNetGen
 \chapter{Rule-based modeling with BioNetGen}
 
+% Section: rule-based modeling basics
 \section{Rule-based modeling basics}
 
 In many biochemical systems, proteins bind together into multimeric complexes and/or can be modified with phosphates, methyls, or other moieties. Each possible complex or protein state needs to be treated as a distinct chemical species in Smoldyn, as in many other simulators. However, even a fairly small list of complexation or modification reactions can lead to a large number of distinct species, and even more reactions that interconvert these species, making it impractical to enumerate all of the species and reactions manually. The solution is rule-based modeling, in which the user specifies the protein subunits and their binding rules, and then the software generates the species and reaction lists.
@@ -1739,6 +1808,7 @@ To use BioNetGen rule-based modeling with Smoldyn, you need to write a rules fil
 
 Note about errors: Sometimes Smoldyn can't find files or can't run BioNetGen. If so, then check the following things. (1) It's usually easiest if you navigate so that your current working directory is the same location as both the Smoldyn and BioNetGen input files. (2) Check that your computer has Perl installed by entering ``perl -v'', which should just print out the version number. If you're on a Windows computer and you don't have Perl, then I recommend installing Strawberry Perl, which is free. (3) Check that your system has BNG2.pl installed and that Smoldyn knows where it is. For Mac and Linux, its default location is \ttt{/usr/local/bin/BioNetGen/BNG2.pl} and for Windows its default location is \verb!C:\Program Files\Smoldyn\BioNetGen\BNG.pl!. If it's there and Smoldyn isn't finding it (or if it's somewhere else), tell Smoldyn where to find it with the \ttt{BNG2\_path} statement, remembering to give the complete path, \textit{including} the BNG2.pl filename. (4) Even if Smoldyn finds BNG2.pl, it may not be able to run it, which typically occurs if there are spaces in directory names, including particularly the Windows ``Program Files'' directory name. The easiest solution to this, at least for now, is to copy the BioNetGen code into the same directory as your simulation files. For Windows this means entering \verb!xcopy "C:\Program Files\Smoldyn\BioNetGen" . /s! . Then, change the \ttt{BNG2\_path} statement to be just ``BNG2.pl'', meaning that it's in the current directory.
 
+% Section: writing rules in BNGL
 \section{Writing rules in BNGL}
 
 The BNGL language is relatively simple to use for most models. The language also has many more sophisticated portions, for which interested readers should refer to the BioNetGen website and publications by the BioNetGen team; the most relevant publication, which is included in the documentation directory of the download package, is ``Rule-Based Modeling of Biochemical Systems with BioNetGen'' by Faeder, Blinov, and Hlavacek, Methods in Molecular Biology, Systems Biology 500:113, 2009.
@@ -1781,6 +1851,7 @@ The \ttt{setOption} statement tells BioNetGen how to do graph isomorphism checki
 
 The parameters block defines parameters and lists their values. In the seed species definitions, each line lists one subunit and all of its binding sites. Here, the A species has only one binding site, called a2b and the B species has two binding sites, called b2a and b2b. These species are followed by the number of molecules to include in the simulation (which will be randomly placed within the simulation volume). Although not done here, it is typically easiest to set these molecule counts to 0 and to then add monomers to the simulation with mol, \ttt{surface\_mol}, or \ttt{compartment\_mol} statements in the Smoldyn input file. The reaction rules describe how things can bind together. In the first rule, for example, A can bind to B using the a2b site on A molecules and the b2a site on B molecules. The b2b site of B molecules does not affect this binding, so it is ignored in the rule (alternatively, this rule could have specified that the b2b site must be bound, or unbound, for this reaction to occur). On the right hand side of the rule, the period between the species indicates a bond and the ``!1'' text labels the bond number; this latter notation is useful for distinguishing bonds when there are multiple bonds in a single rule. Finally, the reaction rate is followed by forward and reverse reaction rate constants. The last line of the file tells BioNetGen to generate the network and to overwrite any previous output file. Note that BioNetGen can also do quite a lot of other things in addition to simply generating the network, including running non-spatial simulations; see the BioNetGen documentation for these.
 
+% Section: writing the Smoldyn file to read the rules or generated network
 \section{Writing the Smoldyn file to read the rules or generated network}
 
 The following Smoldyn file reads and simulates the abba network.
@@ -1853,6 +1924,7 @@ When you run this configuration file in Smoldyn, you should, as always, look at 
 
 The species list shows that each species has both a short name and a long name. The long names were generated by BioNetGen and give the full binding information. The short names were shortened by Smoldyn for more convenient use. They list only the numbers of each monomer type in a species, followed by an ``isomer index'' in case there are multiple complexes with the same stoichiometry. The reaction list is shown using the short names. Note that the reaction rates account correctly for the species' binding sites; for example, reaction 3 has rate 400, rather than the value of 200 that was given in the rules file for A-B binding, due to the fact that the A molecule in this reaction can bind to either of two B monomers.
 
+% Section: creating species groups in BioNetGen
 \section{Creating species groups in BioNetGen}
 
 It is often helpful to be able to output not just the number of a molecules of individual species, but the number of molecules of all species that share some specific property. For example, one might want the total number of molecules that include at least one AB group, independent of what else is bound to them. To do so, you can define a species group using an ``observables'' section in the BNGL file. These observables become species groups in the main Smoldyn program, as described above the in the Molecules chapter. Each observable needs to have a name and then a species pattern that tells which species are included. For example, adding these lines to the ABBA.bngl file would create a species group called ABgroup:
@@ -1865,6 +1937,7 @@ end observables
 
 Species groups defined in this way can be used in most Smoldyn statements and commands.
 
+% Section: statements for rule-based modeling
 \section{Statements for rule-based modeling}
 
 The following list summarizes the statements for rule-based modeling.
@@ -1882,6 +1955,7 @@ Statement\\
 \ttt{bng\_file} $filename$
 \end{longtable}
 
+% Section: a ligand-receptor-messenger system in BioNetGen
 \section{A ligand-receptor-messenger system in BioNetGen}
 
 The following BioNetGen and Smoldyn files represent a ligand-receptor-messenger signaling system. In it, both an extracellular ligand and an intracellular messenger protein can bind to opposite sides of a trans-membrane receptor. When a receptor binds both at once, it causes the messenger to become phosphorylated, thus transmitting the ligand-binding event to an intracellular signal. The messenger protein dephosphorylates spontaneously. This is substantially more complicated than the above ABBA simulation because it uses monomer modification sites and surface-bound molecules. The following sections discuss these files.
@@ -1994,6 +2068,7 @@ mol 20 M.1.0 50 20
 end_file
 \end{lstlisting}
 
+% Section: network expansion with monomer modifications
 \section{Network expansion with monomer modifications}
 
 Monomers can have modification sites, such as sites that can accept phosphate or methyl groups. Using these modification sites can be preferable to treating them as complexation reactions with phosphate or methyl molecules because doing so avoids needing to treat the additional molecules explicitly.
@@ -2005,6 +2080,7 @@ Note the use of modification sites in the reaction rules. Also, the third reacti
 
 Smoldyn interprets modification sites as creating different isomers of a species. For this reason, there is no species called just M in this simulation, because it would be unclear which modification state that would represent. Instead, the two species are M.1.0 and M.1.1, where the former 1 denotes that there is 1 M monomer and the latter 0 or 1 denotes the isomer number (which, in this case, corresponds to the ``u'' and the ``p'' condition, respectively). This Smoldyn file defines the diffusion coefficient, color, and display size for both M isomers, which are then used in the simulation. If the file did not define them, Smoldyn would have looked for these attributes for a species named M or one called M.$x$.$y$, where $x$ and $y$ are any numbers, and used those instead.
 
+% Section: network expansion with surface-bound states
 \section{Network expansion with surface-bound states}
 
 The lrm simulation also uses surface-bound states. These do not appear in the BioNetGen file at all. Instead, they show up in the Smoldyn file in a couple of places. First, trivially, they are used in the diffusion coefficient and graphical display statements, where they ensure that the attributes get assigned to the correct states of the species. They also appear in the bng block, in the \ttt{monomer\_state} statement. This specifies the state (solution, ``bsoln,'' or a surface-bound state) in which each monomer is typically found. Smoldyn uses these to infer states for reaction products.
@@ -2021,6 +2097,7 @@ M.1.R.1.0 (up) -> R (up) + M.1.0 (bsoln)
 
 Smoldyn uses the method that the state for a species is the highest precedence of the states for the species' subunits. In the first reaction, for example, the species L.1.R.1.0 has an L monomer with state fsoln and an R monomer with state up, and the up state takes precedence, so the species is assigned state up. The precedence order is: solution, ``bsoln,'' and then surface-bound states in the order front, back, up, and down.
 
+% Section: short names, diffusion coefficients, and graphical parameters
 \section{Short names, diffusion coefficients, and graphical parameters}
 
 Smoldyn assigns short names to each species that BioNetGen generates. As mentioned briefly above, the format is that it lists each monomer and the number of copies of that monomer in the species, and then an isomer number at the end, with the items separated by periods. Smoldyn gets the monomer names from the species' long names, which BioNetGen generates. The monomers are listed in alphabetical order. If a species has only a single monomer in it and there are no modification sites for this monomer, then Smoldyn abbreviates the short name to just the same name as the monomer. Note that a monomer and a species that has just a single monomer can have the same names and are chemically identical, but are conceptually different in the software; one is a monomer, which only exists in the context of parsing BioNetGen files, and the other is a species, which is part of a Smoldyn simulation. Smoldyn assigns isomer numbers based on the order in which it encounters the species in the BioNetGen output file. Thus, there is no a priori way to know what the isomer number will be. The best approach is to figure out which is which by reading the long name portion of the bng output.
@@ -2033,6 +2110,7 @@ where $S_i$ is the display size of the $i$'th monomer. Smoldyn also assumes that
 $$D_{species} = \left( \sum_i D_i^{-3} \right)^{-\frac{1}{3}}$$
 where $D_i$ is the diffusion coefficient of the $i$'th monomer. Smoldyn computes colors for species by computing the arithmetic average of the red, green, and blue color values for each of the monomers.
 
+% Section: surface-molecule interactions
 \section{Surface-molecule interactions}
 
 If your block of BioNetGen statements comes before your surface definitions in your Smoldyn input file, then all of the species will have been generated before Smoldyn starts defining surfaces. In this case, you can set surface actions or rates for the newly generated species yourself. In the surface action or rate statements, you can list these species individually, all at once using the ``all'' option, or selectively using species groups or wildcards.
@@ -2045,6 +2123,7 @@ The other option is to define surfaces before expanding the reaction network wit
 
 Smoldyn has very minimal filament support at present. Filaments can be defined and some of them can undergo Brownian motion, but these filaments can't interact with molecules or surfaces yet. See the examples in the S13\_filaments directory.
 
+% Section: filament heirarchy
 \section{Filament heirarchy}
 
 Filaments are structured in a three-tier hierarchy. At the top level, one defines one or more filament types, where each type is represents a single kind of filament in a particular environment. For example, actin filaments in the cytoplasm might be one type, and another is double-stranded DNA in the nucleus. Within each type, every individual filament has the same dynamics method, same dynamics parameters, and same graphical display. Also, if some type of filament has faces, which are lengthwise elements along filaments, then each filament within a type has the same list of faces.
@@ -2053,6 +2132,7 @@ The next level of the heirarchy are filaments, each of which is a sequential lis
 
 The bottom of the heirarchy are either segments or beads, depending on the type of dynamics that are defined in the filament type, which are the components of filaments. In bead models, the beads are at the filament vertices with straight lines between them. Beads are spherical. In segment models, the segments are cylindrical edges that connect the vertices. Filament shapes are straight lines either between the beads or along the segments, rather than being, for example, B\'{e}zier curves that are defined by the vertices (called control points in that context). For now at least, bead models do not contain relative rotation angle information, so are best for freely jointed chains, whereas segment models do contain relative rotation angle information, so are necessary for angle-biased chains or other more realistic models.
 
+% Section: defining filaments
 \section{Defining filaments}
 
 Start by defining one or more filament types. Start this with the \ttt{start\_filament\_type} statement, including the name of the filament type. Then, describe the filament type parameters, such as the dynamics type (e.g. ``alberts'', ``nedelec'', ``rigidbeads'', etc.), the dynamics parameters, and the graphics instructions. Close this section with \ttt{end\_filament\_type}.
@@ -2068,10 +2148,12 @@ Most of the Smoldyn software is developed around the Smoluchowski level of detai
 
 The hybrid methods that are particularly important here combine particle-based simulation with lattice-based simulation. The particle-based simulation methods are Smoldyn's standard methods, which work at the Smoluchowski level of detail. The lattice-based methods represent spatially compartmentalized versions of the chemical master equation, typically simulated using one of the spatial Gillespie methods (partial differential equations or spatial Langevin methods are also appropriate). Hybrid methods can use either overlapping space or adjacent space methods. In the former case, the physical space represented by the lattice-based methods is the same as that by the particle-based methods; molecules in one representation can interact with spatially proximate molecules that are in the other representation. Smoldyn has been added to Virtual Cell in this manner, where VCell provides the lattice representation and Smoldyn provides the particle representation. Here, the lattice representation is best for abundant or rapidly diffusing species where exact molecule positions don't matter, and the particle representation for rare species where the extra computational effort is necessary. In the latter case, the particle-based and lattice-based methods represent adjacent regions of physical space. Molecules can diffuse back and forth between the two regions, changing representations as they do so. This approach is best in cases where one region of space needs to be simulated in detail, while surrounding regions can be simulated more coarsely. The remainder of this section focuses on this latter adjacent space approach.
 
+% Section: hybrid simulation basics
 \section{Hybrid simulation basics}
 
 The lattice module incorporated into Smoldyn is fairly simple. It represents lattices using an axis-aligned rectangular array of subvolumes. It simulates chemical reactions using the next subvolume (NSV) method, which treats molecules as discrete objects (i.e. not continuously variable concentrations) and captures reaction stochasticity accurately. Whereas simulation time advances with fixed length time steps in the particle-based methods, it advances with unequal steps, from event to event, in the NSV method. The lattice region of space can be bounded by a few different boundary types, but the lattice code does not currently address interactions between molecules and any surfaces that are within the lattice region of space. The junction between the particle-based region of space and the lattice region of space is created using a Smoldyn ``port'', explained above.
 
+% Section: defining lattices
 \section{Defining lattices}
 
 To include a lattice in a model, you need to add a lattice, obviously. This is entered using a block of statements that starts with \ttt{start\_lattice} and ends with \ttt{end\_lattice}, much like similar blocks for surfaces, compartments, and other things. The definitions that can be entered within this block are discussed below. In addition to adding a lattice, you also need to define a port, which will form the junction between the particle space and the lattice space. And to create a port, you will need to define at least one surface. The examples/S14\_lattices/diffusion.txt file shows a very simple example of model that uses a lattice.
@@ -2085,6 +2167,7 @@ Use the \ttt{species} and \ttt{reactions} statements to tell a lattice which spe
 
 Finally, use the \ttt{mol} statement to add molecules to the lattice side. This is essentially identical to the statement of the same name in the main portion of the configuration file, but only applies to the lattice side of space.
 
+% Section: lattice output
 \section{Lattice output}
 
 Several commands output information from lattices. \ttt{printLattice} outputs some basic information about the lattice, including the low and high corners of the lattice space, the subvolume partition spacing, and the total number of each species in the lattice. This is the same output that is displayed with the simulation diagnostics.
@@ -2093,6 +2176,7 @@ Several commands output information from lattices. \ttt{printLattice} outputs so
 
 Finally, \ttt{writeVTK} produces VTK output for both the particle and lattice regions of space. It does not include surface information. The output is saved as a stack of files that have names that follow the format $filename$Lattice00\_00001.vtu and $filename$Molecules00001.vtu, and that have incremented numbers for subsequent snapshots. This output can be viewed using Paraview, Visit, or other VTK viewers. It doesn't appear that any of them are trivial to use.
 
+% Section: statements about lattices
 \section{Statements about lattices}
 
 The following table summarizes the statements about lattices.
@@ -2118,6 +2202,7 @@ Libsmoldyn is a C, C++, and Python interface to the Smoldyn simulator. It comple
 
 The remainder of this chapter describes some aspects of these interfaces in detail, but doesn't give a comprehensive list of the functionality. For that, refer to Chapter \ref{ch:APIReference}, in the Reference section.
 
+% Section: installing
 \section{Installing}
 
 The best method is to download the latest package from \url{http://www.smoldyn.org} and run the install script. This will install the stand-alone program, the C/C++ libraries, and the BioNetGen code, and will also give you the documentation and example files. If you have pip installed, then it will also install the Python bindings.
@@ -2134,6 +2219,7 @@ Either of these should install the smoldyn nightly package, from: \url{https://p
 
 After installing, it might just run. If not, then the next challenge is to get your system to know that it's allowed to run the files. There are a few ways to do this. (1) You can navigate to one directory above where the ``\_\_init\_\_.py'' file gets stored and work from there. To try this out, go there and start Python; then try \ttt{import smoldyn} and see if it works. (2) You can set \ttt{PYTHONPATH} environment variable to the install location. However, this only works for the current command-line session and needs to be reset for the next one. To see its current value, for Mac or Linux, enter \ttt{echo \$PYTHONPATH}. (3) You can modify your sys.path variable to include a path to the install location, which then lasts for new command-line sessions as well. To see its current value, start Python and enter: \ttt{import sys; print(sys.path)}.
 
+% Section: current limitations
 \section{Current limitations}
 
 The Python interface has a few limitations that users should be aware of. We are working on fixing them.
@@ -2251,12 +2337,12 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 
 \end{description}
 
-% User and low-level Python APIs
+% Section: User and low-level Python APIs
 \section{User and low-level Python APIs}
 
 Smoldyn's Python API is divided into two portions. The user API, imported with \ttt{import smoldyn}, is what most people will use most of the time and is the one that's demonstrated above in the example simulation. The low-level API, imported with \ttt{import smoldyn.\_smoldyn}, is more of a wrapper for the C API, with less Pythonic syntax and user friendliness.
 
-% Creating new simulations
+% Section: Creating new simulations
 \section{Creating new simulations}
 
 Create a new simulation from scratch by defining the system boundaries with \ttt{smoldyn.Simulation}, or load a simulation from a file with \ttt{smoldyn.Simulation.fromFile}, as shown below. Each of these options returns a Simulation object.
@@ -2277,7 +2363,7 @@ The \ttt{fromFile} option uses the absolute path of the file, which isn't always
 
 As an aside, the Python Simulation object is not the same as the C/C++ simulation pointer. The latter can be accessed with \ttt{s1.simptr}.
 
-% Callback functions
+% Section: Callback functions
 \section{Callback functions}
 
 The Python API offers a callback function that enables Smoldyn setup functions to be called repeatedly and automatically during a simulation. For example, this could be used to tell the simulation about external environmental parameters that change over the course of a simulation.
@@ -2351,7 +2437,7 @@ test_connect()
 Additional examples of ``connect'' are included in S15\_python/change\_env.py, which simulates a pre-synaptic bouton with n synaptic vesicles. These vesicles fuse with the bottom of the bouton (red surface). Upon fusion, one vesicle releases 1000 neurotransmitters which decay with time-constant $\tau$. The rate of release is controlled by a function that is set by ``connect''. The function generates a spike 0 or 1; if the value is 1, the rate is set to 1000, else it is 0.
 
 
-% Use with C/C++
+% Section: Use with C/C++
 \section{Use with C/C++}
 
 % Compiling
@@ -2784,6 +2870,7 @@ N/A & \ttt{PrepareSimFromFile}\\
 % Statements
 \chapter{Statements}
 
+% Section: statements about the configuration file
 \section{Statements about the configuration file}
 
 \begin{description}
@@ -2842,6 +2929,7 @@ Causes all current definitions to be displayed to the standard output. This is o
 
 \end{description}
 
+% Section: statements about variables
 \section{Statements about variables}
 
 \begin{description}
@@ -2852,6 +2940,7 @@ Sets the value of variable $var$ to $value$, which needs to evaluate to a numeri
 
 \end{description}
 
+% Section: statements about space and time
 \section{Statements about space and time}
 
 \begin{description}
@@ -2891,6 +2980,7 @@ Another starting time of simulation. Default value is equal to \ttt{time\_start}
 
 \end{description}
 
+% Section: statements about molecules
 \section{Statements about molecules}
 
 \begin{description}
@@ -2955,6 +3045,7 @@ Optional statement (it was required up to version 2.22). This tells Smoldyn to t
 
 \end{description}
 
+% Section: statements about graphics
 \section{Statements about graphics}
 
 \begin{description}
@@ -3042,6 +3133,7 @@ Turns on text display of the listed items, which are listed as strings. Possible
 
 \end{description}
 
+% Section: statements about run-time commands
 \section{Statements about run-time commands}
 
 \begin{description}
@@ -3089,6 +3181,7 @@ Maximum length of command queue. Default value is 10. As of version 1.55, this s
 
 \end{description}
 
+% Section: statements about surfaces
 \section{Statements about surfaces}
 
 The statements shown below that are preceded by an asterisk need to be entered within surface blocks, which start with \ttt{start\_surface} and end with \ttt{end\_surface}. These statements can also be entered directly, meaning not in a surface block, by preceding the statement with surface and then the surface name.
@@ -3204,6 +3297,7 @@ See ``simulation settings'' section. This is not entered in a surface block.
 
 \end{description}
 
+% Section: statements about compartments
 \section{Statements about compartments}
 
 The statements shown below that are preceded by an asterisk need to be entered within compartment blocks, which start with \ttt{start\_compartment} and end with \ttt{end\_compartment}. Most of these statements can also be entered directly, preceded by the statement compartment and then the compartment name. Both forms are shown below.
@@ -3240,6 +3334,7 @@ End of a block of compartment definitions. Compartment statements are no longer 
 
 \end{description}
 
+% Section: statements about reactions
 \section{Statements about reactions}
 
 \begin{description}
@@ -3315,6 +3410,7 @@ Turns off reaction logging for the reaction $rxnname$ and for molecules with ser
 
 \end{description}
 
+% Section: statements about ports
 \section{Statements about ports}
 
 The statements shown below that are preceded by an asterisk need to be entered within port blocks, which start with \ttt{start\_port} and end with \ttt{end\_port}. Most of these statements can also be entered directly, preceded by the statement port and then the port name. Both forms are shown below.
@@ -3351,6 +3447,7 @@ Maximum number of ports that may be defined.
 
 \end{description}
 
+% Section: statements for rule-based modeling with BioNetGen
 \section{Statements for rule-based modeling with BioNetGen}
 
 The statements shown below that are preceded by an asterisk need to be entered within bng blocks, which start with \ttt{start\_bng} and end with \ttt{end\_bng}. Most of these statements can also be entered directly, preceded by the statement \ttt{bng} and then the bng network name. Both forms are shown below.
@@ -3406,7 +3503,137 @@ Filename for a rules file written in the BNGL language, which should have a .bng
 
 \end{description}
 
-\section{Statements for lattices}
+% Section: Statements about filaments
+\section{Statements about filaments}
+
+The statements shown below that are preceded by an asterisk need to be entered within filament type blocks, which start with \ttt{start\_filament\_type} and end with \ttt{end\_filament\_type}. Most of these statements can also be entered directly, preceded by the statement \ttt{filament\_type} and then the filament type name. Both forms are shown below.
+
+\begin{description}
+
+\item{\ttt{start\_filament\_type} $name$}
+
+Start of filament type definition block. The filament type name may be given with $name$, or it may be given afterward with the \ttt{name} statement. If the name has not been used yet for a filament type, then a new filament type is started. Between this instruction and \ttt{end\_filament\_type}, all lines need to pertain to filament types. Parameters of one filament type can be listed in multiple blocks, or parameters for many filament types can be listed in one block.
+
+\item{\ttt{dynamics} $dynamics$}
+
+Sets the dynamics for the filament type. Options are: ``RigidBeads'', ``RigidSegments'', ``Rouse'', ``Alberts'', ``Nedelec''. These are case-insensitive.
+
+\item{\ttt{biology} $biology$}
+
+Sets the biology value for the filament type. Options are: ``actin'', ``microtubule'', ``intermediate'', ``dsDNA'', ``ssDNA'', and ``other''. These are case-insensitive.
+
+\item{\ttt{color} $color$}
+
+Sets the drawing color for the filament type. Enter the color as either a color description as a word or as RGB$\alpha$ values.
+
+\item{\ttt{thickness} $thickness$}
+
+Sets the drawing thickness for the filament type. Enter this in pixels if the graphics type is ``opengl'' or as an actual length value for the better drawing options.
+
+\item{\ttt{stipple} $factor$ $pattern$}
+
+Sets the stipple pattern and factor for filament drawing. This is only relevant for simulations with ``opengl\_good'' or better display method. In $factor$, which is an integer, enter the repeat distance for the entire stippling pattern (1 is a good choice). In $pattern$, which is a hexadecimal integer, enter the stippling pattern between 0x0000 and 0xFFFF. 0x00FF has long dashes, 0x0F0F has medium dashes, 0x5555 has dots, etc. Turn stippling off with 0xFFFF.
+
+\item{\ttt{polygon} $drawmode$}
+
+Drawing mode for filament surfaces. Options are: ``vertex'', ``edge'', ``face'', or combinations of these by using single letters for vertex, edge, and face, such as ``ve'', ``vef'', etc.
+
+\item{\ttt{shininess} $value$}
+
+Shininess of the filament for drawing purposes. This value can range from 0 for visually flat surfaces to 128 for very shiny surfaces. This is only relevant for some simulations.
+
+\item{\ttt{kT} $value$}
+
+Set the thermal energy value, equal to Boltzmann's constant times temperature. Enter this in energy units that are consistent with other units in the input file. This is only used for some of the dynamics options.
+
+\item{\ttt{treadmill\_rate} $value$}
+
+Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here.
+
+\item{\ttt{viscosity} $value$}
+
+Viscosity of the surrounding medium.
+
+\item{\ttt{bead\_radius} $value$}
+
+Radius of the beads in these filaments. Used for hydrodynamic calculations.
+
+\item{\ttt{standard\_length} $length$}
+
+Relaxed length of a filament segment. It can change through stretching or compression.
+
+\item{\ttt{standard\_angle} $yaw$ $pitch$ $roll$}
+
+Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis.
+
+\item{\ttt{force\_length} $value$}
+
+Stretching force constant for filament segments.
+
+\item{\ttt{force\_angle} $yaw$ $pitch$ $roll$}
+
+Force constants for bending and torsion.
+
+\item{\ttt{end\_filament\_type}}
+
+End of a block of filament type definitions. Filament type statements are no longer recognized but other simulation statements are.
+
+\end{description}
+
+Filaments can be entered either in a block or with the single \ttt{random\_filament} statement. The block statements shown below that are preceded by an asterisk need to be entered within filament blocks, which start with \ttt{start\_filament} and end with \ttt{end\_filament}. Most of these statements can also be entered directly, preceded by the statement \ttt{filament} and then the filament name (\textit{Not functional currently}). Both forms are shown below.
+
+\begin{description}
+
+\item{\ttt{random\_filament} $name$ $type$ $segments$ $[x$ $y$ $z]$}
+
+Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$.
+
+\item{\ttt{start\_filament} $name$}
+
+Start of filament definition block. The filament name may be given with $name$, or it may be given afterward with the \ttt{name} statement. If the name has not been used yet for a filament, then a new filament is started. Between this instruction and \ttt{end\_filament}, all lines need to pertain to filaments. Parameters of one filament can be listed in multiple blocks, or parameters for many filaments can be listed in one block.
+
+\item{\ttt{* name} $name$}
+
+Name of the filament for editing. This statement is not required because the filament name can also be given with \ttt{start\_filament}. This statement gives the name of the current filament for editing, and creates a new filament if needed.
+
+\item{\ttt{type} $type$}
+
+Filament type, which should already be defined in a filament type block.
+
+\item{\ttt{first\_segment} $x$ $y$ $z$ $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness]$}
+
+Defines the first segment of a filament. Enter the starting location in $x$, $y$, and $z$, the segment length in $length$, and its absolute orientation with the angle values using spherical coordinates. The thickness value is optional.
+
+\item{\ttt{add\_segment} $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness [end]]$}
+
+Add a segment to the filament, with the given length. The angles are relative angles using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are $front$ or $back$.
+
+\item{\ttt{remove\_segment} $end$}
+
+Remove one segment from end $end$ of the filament (``front'' or ``back'').
+
+\item{\ttt{random\_segments} $number$ $[x$ $y$ $z]$ $[thickness]$}
+
+Add $number$ of random segments to the filament.
+
+\item{\ttt{translate} $symbol$ $x$ $y$ $z$}
+
+Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' for relative translation in which the values are added to the current filament location, and ``-'' for relative translation in the other direction.
+
+\item{\ttt{copy} $filament$}
+
+Copy monomers to the current filament from $filament$.
+
+\item{\ttt{* end\_filament}}
+
+End of a block of filament definitions. Filament statements are no longer recognized but other simulation statements are.
+
+\end{description}
+
+
+
+% Section: statements about lattices
+\section{Statements about lattices}
 
 The statements shown below that are preceded by an asterisk need to be entered within lattice blocks, which start with \ttt{start\_lattice} and end with \ttt{end\_lattice}. Most of these statements can also be entered directly, preceded by the statement lattice and then the lattice name. Both forms are shown below.
 
@@ -3462,6 +3689,7 @@ End of a block of lattice definitions. Lattice statements are no longer recogniz
 
 \end{description}
 
+% Section: statements about simulation settings
 \section{Statements for simulation settings}
 
 \begin{description}
@@ -3505,6 +3733,7 @@ Maximum distance that surface-bound molecules will jump across space to diffuse 
 % Runtime commands
 \chapter{Runtime commands}
 
+% Section: simulation control commands
 \section{Simulation control commands}
 
 \begin{description}
@@ -3547,6 +3776,7 @@ Update the graphics window.
 
 \end{description}
 
+% Section: file manipulation commands
 \section{File manipulation commands}
 
 \begin{description}
@@ -3561,6 +3791,7 @@ A new output file is created based upon the $filename$. The first time this is c
 
 \end{description}
 
+% Section: conditional commands
 \section{Conditional commands}
 
 \begin{description}
@@ -3599,6 +3830,7 @@ Run command $command$ if the number of molecules of type $species$ changes (or d
 
 \end{description}
 
+% Section: system observation commands
 \section{System observation commands}
 
 For all of the observation commands, if $filename$ is the last parameter, then it may be omitted and results will be output to ``stdout''.
@@ -3769,6 +4001,7 @@ Prints data that were recorded by some other command, and stored in data array d
 
 \end{description}
 
+% Section: system manipulation commands
 \section{System manipulation commands}
 
 \begin{description}
@@ -3940,7 +4173,7 @@ This simulates a long range force between molecules of $species_1$ and $species_
 
 The C and C++ APIs are the same. There are two Python APIs. Import the ``high-level'' or ``user'' API with \ttt{import smoldyn}. Import the ``low-level'' or ``developer'' API with \ttt{import smoldyn.\_smoldyn}. This documentation section is comprehensive for the C/C++ API but not for the Python API. For that, use this as a guide, but also look at example files, use \ttt{help()}, \ttt{dir()}, etc. as needed, and try the readthedocs webpage. Also, note that many functions can be accessed in multiple different ways; for example, you can run a simulation with $sim$\ttt{.run()} or $sim$\ttt{.runSim()} or \ttt{smoldyn.Simulation.runSim($sim$)}. For the most part, this documentation only shows the single recommended approach because that leads to more readable code.
 
-% Enumerations
+% Section: Enumerations
 \section{Enumerations}
 
 In C, enumerations are defined in the smoldyn.h header file, so they can be used once that it included. Here is an example of using an enumerated error code as an argument,
@@ -4035,7 +4268,7 @@ N/A & ECwildcard & wildcard & value -12
 \end{longtable}
 
 
-% Miscellaneous
+% Section: Miscellaneous
 \section{Miscellaneous}
 
 \begin{description}
@@ -4048,7 +4281,7 @@ Returns the Smoldyn version. The C/C++ and low-level Python options just return 
 
 \end{description}
 
-% Errors
+% Section: Errors
 \section{Errors}
 
 \begin{description}
@@ -4088,7 +4321,7 @@ Returns a string both directly and in \ttt{string} that corresponds to the error
 
 \end{description}
 
-% Sim structure
+% Section: Sim structure
 \section{Sim structure}
 
 \begin{description}
@@ -4139,7 +4372,7 @@ Displays all relevant information about the simulation system to stdout.
 
 \end{description}
 
-% Read configuration file
+% Section: Read configuration file
 \section{Read configuration file}
 
 \begin{description}
@@ -4164,7 +4397,7 @@ Reads and processes what would normally be a single line of a configuration file
 
 \end{description}
 
-% Simulation settings
+% Section: Simulation settings
 \section{Simulation settings}
 
 \begin{description}
@@ -4235,7 +4468,7 @@ This is only available in Python. I think this should be removed because partiti
 
 \end{description}
 
-% Molecules
+% Section: Molecules
 \section{Molecules}
 
 \begin{description}
@@ -4357,7 +4590,7 @@ Sets the graphical display parameters for molecules of species \ttt{species} (``
 \end{description}
 
 
-% Graphics
+% Section: Graphics
 \section{Graphics}
 
 \begin{description}
@@ -4413,7 +4646,7 @@ Adds \ttt{item} to the list of things that Smoldyn should display as text to the
 
 \end{description}
 
-% Runtime commands
+% Section: Runtime commands
 \section{Runtime commands}
 
 \begin{description}
@@ -4487,7 +4720,7 @@ Runs the specified command one time, immediately. The \ttt{commandstring} should
 \end{description}
 
 
-% Surfaces
+% Section: Surfaces
 \section{Surfaces}
 
 \begin{description}
@@ -4631,7 +4864,7 @@ Sets the graphics output style for face \ttt{face} of surface \ttt{surface}. \tt
 
 \end{description}
 
-% Reactions
+% Section: Reactions
 \section{Reactions}
 
 \begin{description}
@@ -4701,7 +4934,7 @@ If \ttt{method} is \ttt{RPbounce}, then a negative number for the \ttt{parameter
 
 \end{description}
 
-% Compartments
+% Section: Compartments
 \section{Compartments}
 
 \begin{description}
@@ -4747,7 +4980,7 @@ Modifies the current definition of compartment \ttt{compartment} using a logical
 \end{description}
 
 
-% Ports
+% Section: Ports
 \section{Ports}
 
 \begin{description}
@@ -4787,7 +5020,7 @@ Returns the number of molecules that are in Smoldyn's export buffer of port \ttt
 \end{description}
 
 
-% Lattices
+% Section: Lattices
 \section{Lattices}
 
 \begin{description}
