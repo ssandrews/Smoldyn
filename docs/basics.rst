@@ -109,7 +109,7 @@ a file named :file:`example.cpp` with the following contents:
     PYBIND11_MODULE(example, m) {
         m.doc() = "pybind11 example plugin"; // optional module docstring
 
-        m.def("add", &add, "A function which adds two numbers");
+        m.def("add", &add, "A function that adds two numbers");
     }
 
 .. [#f1] In practice, implementation and binding code will generally be located
@@ -136,7 +136,14 @@ On Linux, the above example can be compiled using the following command:
 
 .. code-block:: bash
 
-    $ c++ -O3 -Wall -shared -std=c++11 -fPIC `python3 -m pybind11 --includes` example.cpp -o example`python3-config --extension-suffix`
+    $ c++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) example.cpp -o example$(python3-config --extension-suffix)
+
+.. note::
+
+    If you used :ref:`include_as_a_submodule` to get the pybind11 source, then
+    use ``$(python3-config --includes) -Iextern/pybind11/include`` instead of
+    ``$(python3 -m pybind11 --includes)`` in the above compilation, as
+    explained in :ref:`building_manually`.
 
 For more details on the required compiler flags on Linux and macOS, see
 :ref:`building_manually`. For complete cross-platform compilation instructions,

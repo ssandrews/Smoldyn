@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-import env  # noqa: F401
-
+import env
+from pybind11_tests import IncType, UserType
 from pybind11_tests import builtin_casters as m
-from pybind11_tests import UserType, IncType
 
 
 def test_simple_string():
@@ -50,7 +49,7 @@ def test_single_char_arguments():
     """Tests failures for passing invalid inputs to char-accepting functions"""
 
     def toobig_message(r):
-        return "Character code point not in range({0:#x})".format(r)
+        return "Character code point not in range({:#x})".format(r)
 
     toolong_message = "Expected a character, but multi-character string found"
 
@@ -207,6 +206,17 @@ def test_string_view(capture):
         """
         )
 
+    assert m.string_view_bytes() == b"abc \x80\x80 def"
+    assert m.string_view_str() == u"abc ‽ def"
+    assert m.string_view_from_bytes(u"abc ‽ def".encode("utf-8")) == u"abc ‽ def"
+    if hasattr(m, "has_u8string"):
+        assert m.string_view8_str() == u"abc ‽ def"
+    if not env.PY2:
+        assert m.string_view_memoryview() == "Have some 🎂".encode()
+
+    assert m.bytes_from_type_with_both_operator_string_and_string_view() == b"success"
+    assert m.str_from_type_with_both_operator_string_and_string_view() == "success"
+
 
 def test_integer_casting():
     """Issue #929 - out-of-range integer values shouldn't be accepted"""
@@ -249,6 +259,101 @@ def test_integer_casting():
         with pytest.raises(TypeError) as excinfo:
             m.u64_str(long(-1))  # noqa: F821 undefined name 'long'
         assert "incompatible function arguments" in str(excinfo.value)
+
+
+def test_int_convert():
+    class Int(object):
+        def __int__(self):
+            return 42
+
+    class NotInt(object):
+        pass
+
+    class Float(object):
+        def __float__(self):
+            return 41.99999
+
+    class Index(object):
+        def __index__(self):
+            return 42
+
+    class IntAndIndex(object):
+        def __int__(self):
+            return 42
+
+        def __index__(self):
+            return 0
+
+    class RaisingTypeErrorOnIndex(object):
+        def __index__(self):
+            raise TypeError
+
+        def __int__(self):
+            return 42
+
+    class RaisingValueErrorOnIndex(object):
+        def __index__(self):
+            raise ValueError
+
+        def __int__(self):
+            return 42
+
+    convert, noconvert = m.int_passthrough, m.int_passthrough_noconvert
+
+    def requires_conversion(v):
+        pytest.raises(TypeError, noconvert, v)
+
+    def cant_convert(v):
+        pytest.raises(TypeError, convert, v)
+
+    assert convert(7) == 7
+    assert noconvert(7) == 7
+    cant_convert(3.14159)
+    # TODO: Avoid DeprecationWarning in `PyLong_AsLong` (and similar)
+    # TODO: PyPy 3.8 does not behave like CPython 3.8 here yet (7.3.7)
+    if (3, 8) <= env.PY < (3, 10) and env.CPYTHON:
+        with env.deprecated_call():
+            assert convert(Int()) == 42
+    else:
+        assert convert(Int()) == 42
+    requires_conversion(Int())
+    cant_convert(NotInt())
+    cant_convert(Float())
+
+    # Before Python 3.8, `PyLong_AsLong` does not pick up on `obj.__index__`,
+    # but pybind11 "backports" this behavior.
+    assert convert(Index()) == 42
+    assert noconvert(Index()) == 42
+    assert convert(IntAndIndex()) == 0  # Fishy; `int(DoubleThought)` == 42
+    assert noconvert(IntAndIndex()) == 0
+    assert convert(RaisingTypeErrorOnIndex()) == 42
+    requires_conversion(RaisingTypeErrorOnIndex())
+    assert convert(RaisingValueErrorOnIndex()) == 42
+    requires_conversion(RaisingValueErrorOnIndex())
+
+
+def test_numpy_int_convert():
+    np = pytest.importorskip("numpy")
+
+    convert, noconvert = m.int_passthrough, m.int_passthrough_noconvert
+
+    def require_implicit(v):
+        pytest.raises(TypeError, noconvert, v)
+
+    # `np.intc` is an alias that corresponds to a C++ `int`
+    assert convert(np.intc(42)) == 42
+    assert noconvert(np.intc(42)) == 42
+
+    # The implicit conversion from np.float32 is undesirable but currently accepted.
+    # TODO: Avoid DeprecationWarning in `PyLong_AsLong` (and similar)
+    # TODO: PyPy 3.8 does not behave like CPython 3.8 here yet (7.3.7)
+    # https://github.com/pybind/pybind11/issues/3408
+    if (3, 8) <= env.PY < (3, 10) and env.CPYTHON:
+        with env.deprecated_call():
+            assert convert(np.float32(3.14159)) == 3
+    else:
+        assert convert(np.float32(3.14159)) == 3
+    require_implicit(np.float32(3.14159))
 
 
 def test_tuple(doc):
@@ -315,6 +420,7 @@ def test_reference_wrapper():
     """std::reference_wrapper for builtin and user types"""
     assert m.refwrap_builtin(42) == 420
     assert m.refwrap_usertype(UserType(42)) == 42
+    assert m.refwrap_usertype_const(UserType(42)) == 42
 
     with pytest.raises(TypeError) as excinfo:
         m.refwrap_builtin(None)
@@ -323,6 +429,9 @@ def test_reference_wrapper():
     with pytest.raises(TypeError) as excinfo:
         m.refwrap_usertype(None)
     assert "incompatible function arguments" in str(excinfo.value)
+
+    assert m.refwrap_lvalue().value == 1
+    assert m.refwrap_lvalue_const().value == 1
 
     a1 = m.refwrap_list(copy=True)
     a2 = m.refwrap_list(copy=True)
@@ -421,3 +530,21 @@ def test_int_long():
 
 def test_void_caster_2():
     assert m.test_void_caster()
+
+
+def test_const_ref_caster():
+    """Verifies that const-ref is propagated through type_caster cast_op.
+    The returned ConstRefCasted type is a minimal type that is constructed to
+    reference the casting mode used.
+    """
+    x = False
+    assert m.takes(x) == 1
+    assert m.takes_move(x) == 1
+
+    assert m.takes_ptr(x) == 3
+    assert m.takes_ref(x) == 2
+    assert m.takes_ref_wrap(x) == 2
+
+    assert m.takes_const_ptr(x) == 5
+    assert m.takes_const_ref(x) == 4
+    assert m.takes_const_ref_wrap(x) == 4
