@@ -659,13 +659,13 @@ class Disk(Panel):
             center of the disk.
         radius : float
             radius of the disk.
-				slices : int
-						Number of slices for drawing
+        slices : int
+            Number of slices for drawing.
         vector:
             A vector that points away from the front of the disk. The size of
             this vector is 2 for 2-D and 3 for 3-D.
-        name : optional
-            name
+        name: optional
+            name of this Disk.
         """
         super().__init__(
             simulation=simulation, shape=_smoldyn.PanelShape.disk, name=name
@@ -2381,5 +2381,10 @@ class Simulation(_smoldyn.Simulation):
         name="",
     ):
         return Disk(
-            simulation=super(), center=center, radius=radius, slices=slices, vector=vector, name=name
+            simulation=super(),
+            center=center,
+            radius=radius,
+            slices=slices,
+            vector=vector,
+            name=name,
         )
