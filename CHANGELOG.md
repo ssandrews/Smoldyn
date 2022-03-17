@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.67.3 (3/17/22)
+
+- Fixes to issue #118. Thanks Philip Luthert for reporting.
+
 ### 2.67.2 (1/12/22)
 
 - Fixes to graphics on OSX (#117).
