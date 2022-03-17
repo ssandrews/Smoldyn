@@ -378,7 +378,7 @@ class Panel(object):
         return jfrom.jumpTo(jto, bidirectional)
 
     def __str__(self):
-        return f"<{self.name} type={self.ctype} index={self.index}>"
+        return f"<{self.name} type={self.ctype} index={self.index} points={self.pts}>"
 
     def _axisIndex(self, axisname: str):
         axisDict = dict(x=0, y=1, z=2)
@@ -659,24 +659,26 @@ class Disk(Panel):
             center of the disk.
         radius : float
             radius of the disk.
-				slices : int
-						Number of slices for drawing
+        slices : int
+            Number of slices for drawing.
         vector:
             A vector that points away from the front of the disk. The size of
             this vector is 2 for 2-D and 3 for 3-D.
-        name : optional
-            name
+        name: optional
+            name of this Disk.
         """
         super().__init__(
             simulation=simulation, shape=_smoldyn.PanelShape.disk, name=name
         )
+        assert slices > -1, f"Slices must be positive. Given value {slices}"
         self.center = center
         self.radius = radius
         self.slices = slices
         self.vector = vector
         # Smoldyn panel
         self.axisstr = ""
-        self.pts = [*self.center, self.radius, self.slices, *self.vector]
+        # From the manual: #Slice is entered last (after normal vector).
+        self.pts = [*self.center, self.radius, *self.vector, self.slices]
 
 
 class _PanelFace(object):
@@ -915,16 +917,16 @@ class Surface(object):
     represent cell membranes, obstructions, system boundaries, or other things.
 
     Note
-    -----
-    They are 2D structures in 3D simulations, or 1D lines or
-    curves in 2D simulations (or 0D points in 1D simulations).Each surface
-    has a “front” and a “back” face, so molecules can interact differently
-    with the two sides of a surface.Each surface is composed of one or more
-    “:py:class:`~Panels`”, where each panels can be a rectangle, triangle, sphere,
-    hemisphere, cylinder, or a disk. Surfaces can be disjoint, with separate
-    non-connected portions.  However, all portions of a given surface type
-    are displayed in the same way and interact with molecules in the same
-    way.
+    ----
+
+    They are 2D structures in 3D simulations, or 1D lines or curves in 2D simulations (or 0D points
+    in 1D simulations).Each surface has a “front” and a “back” face, so molecules can interact
+    differently with the two sides of a surface.Each surface is composed of one or more
+    “:py:class:`~Panels`”, where each panels can be a rectangle, triangle, sphere, hemisphere,
+    cylinder, or a disk. Surfaces can be disjoint, with separate non-connected portions.  However,
+    all portions of a given surface type are displayed in the same way and interact with molecules
+    in the same way.
+
     """
 
     def __init__(
@@ -956,10 +958,10 @@ class Surface(object):
         self.front = _SurfaceFaceCollection(self.simulation, ["front"], name)
         self.back = _SurfaceFaceCollection(self.simulation, ["back"], name)
         self.both = _SurfaceFaceCollection(self.simulation, ["front", "back"], name)
-        self._addToSmoldyn()
+        self._addPanelsToSmoldyn()
 
-    def _addToSmoldyn(self):
-        # add panels
+    def _addPanelsToSmoldyn(self):
+        """Call libsmodyn API to construct this surface' Panels"""
         assert self.name, "Surface name is missing"
         for i, panel in enumerate(self.panels):
             panel.name = panel._getName(i)
@@ -976,7 +978,9 @@ class Surface(object):
                 panel.axisstr,
                 panel.pts,
             )
-            assert k == _smoldyn.ErrorCode.ok, f"Failed to add panel {self.name}, {k}"
+            assert (
+                k == _smoldyn.ErrorCode.ok
+            ), f"Failed to add panel (error={k}): Surface:{self.name} {panel}"
 
     def setStyle(self, face, *args, **kwargs):
         """See the function :func:`_SurfaceFaceCollection.setStyle` for more
@@ -2381,5 +2385,10 @@ class Simulation(_smoldyn.Simulation):
         name="",
     ):
         return Disk(
-            simulation=super(), center=center, radius=radius, slices=slices, vector=vector, name=name
+            simulation=super(),
+            center=center,
+            radius=radius,
+            slices=slices,
+            vector=vector,
+            name=name,
         )

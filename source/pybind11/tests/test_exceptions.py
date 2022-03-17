@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-import env  # noqa: F401
+import env
 import pybind11_cross_module_tests as cm
 from pybind11_tests import exceptions as m
 
@@ -97,6 +97,8 @@ def ignore_pytest_unraisable_warning(f):
         return f
 
 
+# TODO: find out why this fails on PyPy, https://foss.heptapod.net/pypy/pypy/-/issues/3583
+@pytest.mark.xfail(env.PYPY, reason="Failure on PyPy 3.8 (7.3.7)", strict=False)
 @ignore_pytest_unraisable_warning
 def test_python_alreadyset_in_destructor(monkeypatch, capsys):
     hooked = False
@@ -235,6 +237,14 @@ def test_nested_throws(capture):
     with pytest.raises(m.MyException5) as excinfo:
         m.try_catch(m.MyException, pycatch, m.MyException, m.throws5)
     assert str(excinfo.value) == "this is a helper-defined translated exception"
+
+
+@pytest.mark.skipif("env.PY2")
+def test_throw_nested_exception():
+    with pytest.raises(RuntimeError) as excinfo:
+        m.throw_nested_exception()
+    assert str(excinfo.value) == "Outer Exception"
+    assert str(excinfo.value.__cause__) == "Inner Exception"
 
 
 # This can often happen if you wrap a pybind11 class in a Python wrapper
