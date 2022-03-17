@@ -7,47 +7,47 @@
 #ifndef _TIFFCONF_
 #define _TIFFCONF_
 
+
+#include <stddef.h>
+#include <stdint.h>
+#include <inttypes.h>
+
+
 /* Signed 16-bit type */
-#define TIFF_INT16_T signed short
+#define TIFF_INT16_T int16_t
 
 /* Signed 32-bit type */
-#define TIFF_INT32_T signed int
+#define TIFF_INT32_T int32_t
 
 /* Signed 64-bit type */
-#define TIFF_INT64_T signed long
+#define TIFF_INT64_T int64_t
 
 /* Signed 8-bit type */
-#define TIFF_INT8_T signed char
+#define TIFF_INT8_T int8_t
 
 /* Unsigned 16-bit type */
-#define TIFF_UINT16_T unsigned short
+#define TIFF_UINT16_T uint16_t
 
 /* Unsigned 32-bit type */
-#define TIFF_UINT32_T unsigned int
+#define TIFF_UINT32_T uint32_t
 
 /* Unsigned 64-bit type */
-#define TIFF_UINT64_T unsigned long
+#define TIFF_UINT64_T uint64_t
 
 /* Unsigned 8-bit type */
-#define TIFF_UINT8_T unsigned char
-
-/* Unsigned size type */
-#define TIFF_SIZE_T unsigned long
+#define TIFF_UINT8_T uint8_t
 
 /* Signed size type */
-#define TIFF_SSIZE_T signed long
-
-/* Pointer difference type */
-#define TIFF_PTRDIFF_T ptrdiff_t
+#define TIFF_SSIZE_T int64_t
 
 /* Compatibility stuff. */
 
-/* Define as 0 or 1 according to the floating point format suported by the
+/* Define as 0 or 1 according to the floating point format supported by the
    machine */
 #define HAVE_IEEEFP 1
 
 /* Set the native cpu bit order (FILLORDER_LSB2MSB or FILLORDER_MSB2LSB) */
-#define HOST_FILLORDER FILLORDER_LSB2MSB
+#define HOST_FILLORDER FILLORDER_MSB2LSB
 
 /* Native cpu byte order: 1 if big-endian (Motorola) or 0 if little-endian
    (Intel) */
@@ -61,6 +61,9 @@
 
 /* Support JBIG compression (requires JBIG-KIT library) */
 /* #undef JBIG_SUPPORT */
+
+/* Support LERC compression */
+/* #undef LERC_SUPPORT */
 
 /* Support LogLuv high dynamic range encoding */
 #define LOGLUV_SUPPORT 1
@@ -91,7 +94,7 @@
 /* #undef LIBDEFLATE_SUPPORT */
 
 /* Support strip chopping (whether or not to convert single-strip uncompressed
-   images to mutiple strips of ~8Kb to reduce memory usage) */
+   images to multiple strips of ~8Kb to reduce memory usage) */
 #define STRIPCHOP_DEFAULT 1
 
 /* Enable SubIFD tag (330) support */

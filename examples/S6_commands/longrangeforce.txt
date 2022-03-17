@@ -12,7 +12,7 @@ species red green blue
 
 time_start 0
 time_stop 1000
-time_step 0.1
+time_step 0.01
 
 difc all 0.1
 color red red

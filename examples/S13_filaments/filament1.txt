@@ -26,14 +26,14 @@ color black
 thickness 2
 polygon edge
 kT 1
-treadmill_rate 1
+#treadmill_rate 1
 standard_length 5
 standard_angle 0 0 0
 force_length 0
 force_angle 100 0 0
 end_filament_type
 
-random_filament fil1 tread 5 10 50 1
+random_filament fil1 tread 5 10 50 1  u u u
 
 
 start_surface bounds

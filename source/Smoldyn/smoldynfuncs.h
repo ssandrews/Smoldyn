@@ -406,7 +406,7 @@ void filssoutput(simptr sim);
 int filcheckparams(simptr sim,int *warnptr);
 
 // filament manipulation
-int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,double thickness);
+int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr,const char *phistr,const char *chistr,double thickness);
 int filAddRandomBeads(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr);
 
 // structure set up

@@ -1,7 +1,7 @@
 # Filaments
 
 #graphics opengl
-#random_seed 2
+random_seed 2
 graphics opengl_better
 
 dim 3
@@ -29,7 +29,7 @@ color black
 thickness 2
 polygon edge
 kT 1
-treadmill_rate 1
+#treadmill_rate 1
 standard_length 5
 standard_angle 0 0 0
 force_length 0
@@ -39,7 +39,7 @@ end_filament_type
 
 start_filament template
 type black
-random_segments 5 10 50 1
+random_segments 5  10 50 1  u u u
 end_filament
 
 
