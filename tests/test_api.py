@@ -29,7 +29,7 @@ def test_rectangles():
     print(sph.toText())
     cyl = S.Cylinder(start=[20, 30, 70], end=[20, 50, 70], radius=4, slices=20,stacks=20, name="cyl1")
     print(cyl.toText())
-    disk = S.Disk(center=[20, 20, 20], radius=10, vector=[10, 20, 20], name="d1")
+    disk = S.Disk(center=[20, 20, 20], radius=10, vector=[10, 20, 20], slices=10, name="d1")
     print(disk.toText())
 
 
