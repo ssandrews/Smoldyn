@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.68 (7/3/22)
+
+- Added listmolssurf command. 
+
 ### 2.67.3 (3/17/22)
 
 - Fixes to issue #118. Thanks Philip Luthert for reporting.

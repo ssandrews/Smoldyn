@@ -2,11 +2,11 @@
 Smoldyn Code Documentation
 ==========================
 ------------
-Version 2.67
+Version 2.68
 ------------
 
 :Author: Steve Andrews
-:Date:   ©November, 2021
+:Date: ©July, 2022
 
 Programmer’s introduction
 =========================
@@ -284,6 +284,15 @@ to work on Windows.
 Getting the code for these dependencies has ranged from easy to
 impossible, so my approaches to solve these issues are listed below.
 
+python, pip
+   . These aren’t code dependencies as the others are, but are still
+   required software tools that need to be installed. Note that pip
+   needs to be affiliated with the same copy of python that is being
+   run; if it’s not, then you get the error
+   ``invalid command ’bdist_wheel’``. This error can also arise from
+   wheel not being installed; that’s solved by configuring Smoldyn with
+   CMake and then running ``make install_deps``.
+
 glut
    is complicated. It’s part of the standard OpenGL libraries on Macs,
    but doesn’t seem to be standard on Windows. Also, glut itself is
@@ -339,28 +348,31 @@ glut
    no solution given, so this seems to be a building bug and not easily
    fixed. The issue seems to be that Apple deprecated the GLX functions
    that libfreeglut depends on, so libfreeglut can no longer be built
-   statically.
+   statically. Later on (1/11/22), it turned out that CMake had been
+   modified so that it found my freeglut preferentially over the
+   built-in glut, which then caused it to not build. The solution was to
+   remove freeglut from my computer.
 
 libtiff
    is optional. It is used for saving graphics images as TIFF files.
 
-   For Mac, I’ve installed and installed libtiff many times. MacPorts
-   has worked, but the latest version has lots of dependencies that I
-   didn’t want. My latest approach (March, 2021) was to downloaded the
-   latest version (4.2.0) from http://download.osgeo.org/libtiff/.
-   Previously, I avoided the zlib dependency by configuring with
-   “./configure –disable-zlib", and then entering “make" and “sudo make
-   install" as usual. This time, I created the subdirectory “mybuild”,
-   moved to there, and entered “cmake .. -Dzlib=OFF -Dlibdeflate=OFF
-   -Dpixarlog=OFF -Djpeg=OFF -Dold-jpeg=OFF -Djbig=OFF -Dlzma=OFF
-   -Dzstd=OFF -Dwebp=OFF -Djpeg12=OFF -DBUILD_SHARED_LIBS=OFF”. This
-   turned off all external codecs, which reduced dependencies, hopefully
-   without reducing the functionality that Smoldyn needs. It also
-   instructed cmake to configure for a static build. Afterward, I
-   entered “make” and “sudo make install”, which installed to
-   /usr/local/include and /usr/local/lib. Then, I copied the
-   /usr/local/include/*tiff\* and /usr/local/lib/*tiff\* files to the
-   Mac/libtiff subdirectory of Smoldyn.
+   For Mac, I’ve installed libtiff many times. MacPorts has worked, but
+   the latest version has lots of dependencies that I didn’t want. My
+   latest approach (March, 2021 and then again in Febrary, 2022) was to
+   download the latest version (4.3.0) as source code from
+   http://download.osgeo.org/libtiff/. Then, I created the subdirectory
+   “mybuild”, moved to there, and entered “cmake .. -Dzlib=OFF
+   -Dlibdeflate=OFF -Dpixarlog=OFF -Djpeg=OFF -Dold-jpeg=OFF -Djbig=OFF
+   -Dlzma=OFF -Dzstd=OFF -Dwebp=OFF -Djpeg12=OFF”. This turned off all
+   external codecs, which reduced dependencies, hopefully without
+   reducing the functionality that Smoldyn needs. Afterward, I entered
+   “make” and “sudo make install”, which installed to /usr/local/include
+   and /usr/local/lib. Then, I copied the /usr/local/include/*tiff\* and
+   /usr/local/lib/*tiff\* files to the Mac/libtiff subdirectory of
+   Smoldyn. After that, I repeated the configure, build, and install
+   process, using the same flags but also “-DBUILD_SHARED_LIBS=OFF”.
+   This built the static libraries. I copied those to the
+   Smoldyn/Mac/libtiff directory as well.
 
    For Windows with MSVC, I downloaded version 3.8.0 from
    http://download.osgeo.org/libtiff/, but it required Autotools to
@@ -567,6 +579,61 @@ some of the more helpful standard ones.
 | ..                       |             |                          |
 | /Toolchain-mingw32.cmake |             |                          |
 +--------------------------+-------------+--------------------------+
+
+CMake has many different targets, which are entered after ``make``. The
+ones listed in the upper section of the following table are likely to be
+useful, whereas I think the ones in the lower section are probably less
+useful and/or are run automatically.
+
++----------------------+------------+---------------------------+
+| Target               | CMake file | Description               |
++======================+============+===========================+
+| none listed          | many       | Compiles and links code   |
++----------------------+------------+---------------------------+
+| ``install``          | many       | Installs executables and  |
+|                      |            | other code to system      |
+|                      |            | locations                 |
++----------------------+------------+---------------------------+
+| ``docs``             | docs       | Generate documentation    |
+|                      |            | with Sphinx and doxygen   |
++----------------------+------------+---------------------------+
+| ``install_deps``     | python     | Install Python            |
+|                      |            | dependencies              |
++----------------------+------------+---------------------------+
+| ``wheel``            | python     | Generate the Python wheel |
++----------------------+------------+---------------------------+
+| ``examples``         | examples   | Runs test code            |
++----------------------+------------+---------------------------+
+| ``TeX2RST``          | docs       | Dummy target to convert   |
+|                      |            | all TeX to RST files      |
++----------------------+------------+---------------------------+
+| ``Doxygen``          | docs       | Run doxygen               |
++----------------------+------------+---------------------------+
+| ``Sphinx``           | docs       | Run Sphinx                |
++----------------------+------------+---------------------------+
+| ``doc_livehtml``     | docs       | Generate live html        |
++----------------------+------------+---------------------------+
+| ``copy_python_tree`` | python     | Copies python source tree |
+|                      |            | to binary directory       |
++----------------------+------------+---------------------------+
+| ``pyinstall``        | python     | Used by install script    |
+|                      |            | (useful in packaging)     |
++----------------------+------------+---------------------------+
+| ``pyinstall_venv``   | python     | Runs “python3 setup.py    |
+|                      |            | install”                  |
++----------------------+------------+---------------------------+
+| ``pyuninstall``      | python     | Runs “pip uninstall       |
+|                      |            | smoldyn”                  |
++----------------------+------------+---------------------------+
+| ``pydevel``          | python     | Runs “python3 setup.py    |
+|                      |            | develop –user”            |
++----------------------+------------+---------------------------+
+| ``lint``             | python     | Static type checking      |
+|                      |            | using mypy                |
++----------------------+------------+---------------------------+
+| ``lint_strict``      | python     | Static type checking      |
+|                      |            | using mypy                |
++----------------------+------------+---------------------------+
 
 CMake build system code
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -8694,13 +8761,18 @@ are only called internally.
    :math:`\mathbf{x}_i = \mathbf{x}_{i+1} - l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}`
 
 ``int``
-   | ``filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,double thickness)``
+   | ``filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness)``
    | Add ``number`` of random segments to filament ``fil``. Enter
      ``xstr``, ``ystr``, and ``zstr`` as strings for the starting
-     position coordinates of a new filament. Here, math equations are
-     allowed, using Smoldyn variables, or use the ‘u’ character to
-     indicate uniform starting position within the system volume.
-     ``thickness`` is the thickness of the segments being added.
+     position coordinates of a new filament, and ``thtstr``, ``phistr``,
+     and ``chistr`` as string for the starting angle of a new filament.
+     Here, math equations are allowed, using Smoldyn variables, or use
+     the ‘u’ character to indicate uniform starting position within the
+     system volume or angle in spherical coordinates. ``thickness`` is
+     the thickness of the segments being added.
+
+   Returns 0 for success, 2 for error in positions, or 3 for error in
+   angles.
 
 ``int``
    | ``filAddRandomBeads(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr);``
@@ -14590,10 +14662,6 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Minor additions to Python API: Simulation.counts and getError.
 
-   .. rubric:: Modifications for version 2.66 (not released yet)
-      :name: modifications-for-version-2.66-not-released-yet
-      :class: unnumbered
-
 -  Added “-s” command line flag for silent operation.
 
 -  Improved error reporting for Libsmoldyn ``smolPrepareSimFromFile``
@@ -14613,6 +14681,12 @@ Modifications for version 2.27 (released 7/26/12)
    off by one.
 
 -  Jonathan Karr and Dilawar updated the Biosimulators links.
+
+   .. rubric:: Modifications for version 2.68 (released 7/3/22)
+      :name: modifications-for-version-2.68-released-7322
+      :class: unnumbered
+
+-  Added ``listmolssurf`` command.
 
 The wish/ to do list
 ====================

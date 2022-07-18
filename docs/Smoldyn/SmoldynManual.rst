@@ -2,11 +2,11 @@
 Smoldyn User’s Manual
 =====================
 ------------
-Version 2.67
+Version 2.68
 ------------
 
 :Author: Steve Andrews
-:Date:   ©November, 2021
+:Date: ©July, 2022
 
 Getting Started
 ===============
@@ -7588,8 +7588,206 @@ forms are shown below.
    verbose operation, and then Smoldyn will display all of the BNG2.pl
    output.
 
-Statements for lattices
-~~~~~~~~~~~~~~~~~~~~~~~
+Statements about filaments
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The statements shown below that are preceded by an asterisk need to be
+entered within filament type blocks, which start with
+``start_filament_type`` and end with ``end_filament_type``. Most of
+these statements can also be entered directly, preceded by the statement
+``filament_type`` and then the filament type name. Both forms are shown
+below.
+
+.. container:: description
+
+   ``start_filament_type`` :math:`name`
+
+   Start of filament type definition block. The filament type name may
+   be given with :math:`name`, or it may be given afterward with the
+   ``name`` statement. If the name has not been used yet for a filament
+   type, then a new filament type is started. Between this instruction
+   and ``end_filament_type``, all lines need to pertain to filament
+   types. Parameters of one filament type can be listed in multiple
+   blocks, or parameters for many filament types can be listed in one
+   block.
+
+   ``dynamics`` :math:`dynamics`
+
+   Sets the dynamics for the filament type. Options are: “RigidBeads”,
+   “RigidSegments”, “Rouse”, “Alberts”, “Nedelec”. These are
+   case-insensitive.
+
+   ``biology`` :math:`biology`
+
+   Sets the biology value for the filament type. Options are: “actin”,
+   “microtubule”, “intermediate”, “dsDNA”, “ssDNA”, and “other”. These
+   are case-insensitive.
+
+   ``color`` :math:`color`
+
+   Sets the drawing color for the filament type. Enter the color as
+   either a color description as a word or as RGB\ :math:`\alpha`
+   values.
+
+   ``thickness`` :math:`thickness`
+
+   Sets the drawing thickness for the filament type. Enter this in
+   pixels if the graphics type is “opengl” or as an actual length value
+   for the better drawing options.
+
+   ``stipple`` :math:`factor` :math:`pattern`
+
+   Sets the stipple pattern and factor for filament drawing. This is
+   only relevant for simulations with “opengl_good” or better display
+   method. In :math:`factor`, which is an integer, enter the repeat
+   distance for the entire stippling pattern (1 is a good choice). In
+   :math:`pattern`, which is a hexadecimal integer, enter the stippling
+   pattern between 0x0000 and 0xFFFF. 0x00FF has long dashes, 0x0F0F has
+   medium dashes, 0x5555 has dots, etc. Turn stippling off with 0xFFFF.
+
+   ``polygon`` :math:`drawmode`
+
+   Drawing mode for filament surfaces. Options are: “vertex”, “edge”,
+   “face”, or combinations of these by using single letters for vertex,
+   edge, and face, such as “ve”, “vef”, etc.
+
+   ``shininess`` :math:`value`
+
+   Shininess of the filament for drawing purposes. This value can range
+   from 0 for visually flat surfaces to 128 for very shiny surfaces.
+   This is only relevant for some simulations.
+
+   ``kT`` :math:`value`
+
+   Set the thermal energy value, equal to Boltzmann’s constant times
+   temperature. Enter this in energy units that are consistent with
+   other units in the input file. This is only used for some of the
+   dynamics options.
+
+   ``treadmill_rate`` :math:`value`
+
+   Some filaments treadmill, in which they drop off monomers at one end
+   and add them to the other end. Set the treadmilling rate here.
+
+   ``viscosity`` :math:`value`
+
+   Viscosity of the surrounding medium.
+
+   ``bead_radius`` :math:`value`
+
+   Radius of the beads in these filaments. Used for hydrodynamic
+   calculations.
+
+   ``standard_length`` :math:`length`
+
+   Relaxed length of a filament segment. It can change through
+   stretching or compression.
+
+   ``standard_angle`` :math:`yaw` :math:`pitch` :math:`roll`
+
+   Relaxed angles between adjacent filament segments. When facing toward
+   the filament’s front end, yaw represents left-right bending, pitch
+   represents up-down bending, and roll represents rotation about the
+   filament axis.
+
+   ``force_length`` :math:`value`
+
+   Stretching force constant for filament segments.
+
+   ``force_angle`` :math:`yaw` :math:`pitch` :math:`roll`
+
+   Force constants for bending and torsion.
+
+   ``end_filament_type``
+
+   End of a block of filament type definitions. Filament type statements
+   are no longer recognized but other simulation statements are.
+
+Filaments can be entered either in a block or with the single
+``random_filament`` statement. The block statements shown below that are
+preceded by an asterisk need to be entered within filament blocks, which
+start with ``start_filament`` and end with ``end_filament``. Most of
+these statements can also be entered directly, preceded by the statement
+``filament`` and then the filament name (*Not functional currently*).
+Both forms are shown below.
+
+.. container:: description
+
+   ``random_filament`` :math:`name` :math:`type` :math:`segments`
+   :math:`[x` :math:`y` :math:`z]`
+
+   Create a new filament with random segments. It is named :math:`name`,
+   is of type :math:`type`, has :math:`segments` number of segments,
+   and, optionally, has its starting location at :math:`(x,y,z)`.
+
+   ``start_filament`` :math:`name`
+
+   Start of filament definition block. The filament name may be given
+   with :math:`name`, or it may be given afterward with the ``name``
+   statement. If the name has not been used yet for a filament, then a
+   new filament is started. Between this instruction and
+   ``end_filament``, all lines need to pertain to filaments. Parameters
+   of one filament can be listed in multiple blocks, or parameters for
+   many filaments can be listed in one block.
+
+   ``* name`` :math:`name`
+
+   Name of the filament for editing. This statement is not required
+   because the filament name can also be given with ``start_filament``.
+   This statement gives the name of the current filament for editing,
+   and creates a new filament if needed.
+
+   ``type`` :math:`type`
+
+   Filament type, which should already be defined in a filament type
+   block.
+
+   ``first_segment`` :math:`x` :math:`y` :math:`z` :math:`length`
+   :math:`angle_0` :math:`angle_1` :math:`angle_2` :math:`[thickness]`
+
+   Defines the first segment of a filament. Enter the starting location
+   in :math:`x`, :math:`y`, and :math:`z`, the segment length in
+   :math:`length`, and its absolute orientation with the angle values
+   using spherical coordinates. The thickness value is optional.
+
+   ``add_segment`` :math:`length` :math:`angle_0` :math:`angle_1`
+   :math:`angle_2` :math:`[thickness [end]]`
+
+   Add a segment to the filament, with the given length. The angles are
+   relative angles using yaw-pitch-roll values, and the thickness is
+   optional. The segment can be added to either end, given in
+   :math:`end`, where the options are :math:`front` or :math:`back`.
+
+   ``remove_segment`` :math:`end`
+
+   Remove one segment from end :math:`end` of the filament (“front” or
+   “back”).
+
+   ``random_segments`` :math:`number` :math:`[x` :math:`y` :math:`z]`
+   :math:`[thickness]`
+
+   Add :math:`number` of random segments to the filament.
+
+   ``translate`` :math:`symbol` :math:`x` :math:`y` :math:`z`
+
+   Translate the filament. Set :math:`symbol` to “=” for absolute
+   coordinates, “+” for relative translation in which the values are
+   added to the current filament location, and “-” for relative
+   translation in the other direction.
+
+   ``copy`` :math:`filament`
+
+   Copy monomers to the current filament from :math:`filament`.
+
+   ``* end_filament``
+
+   End of a block of filament definitions. Filament statements are no
+   longer recognized but other simulation statements are.
+
+.. _statements-about-lattices-1:
+
+Statements about lattices
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The statements shown below that are preceded by an asterisk need to be
 entered within lattice blocks, which start with ``start_lattice`` and
@@ -8215,6 +8413,16 @@ parameter, then it may be omitted and results will be output to
    compartment :math:`cmpt`. It only prints information about molecules
    of type :math:`species`. :math:`state` is optional; :math:`species`
    and/or :math:`state` can be “all”.
+
+   ``listmolssurf`` :math:`species(state)\ surface\ filename`
+
+   This prints out the time counter (see ``listmols2``), and then the
+   species number, state number, location, surface name bound to, colon,
+   panel name bound to, and serial number of every molecule that is
+   bound to surface :math:`surface`, with one line per molecule. It only
+   prints information about molecules of type :math:`species`.
+   :math:`state` is optional. :math:`species` and/or :math:`state`
+   and/or :math:`surface` can be “all”.
 
    ``molpos`` :math:`species(state)\ filename`
 

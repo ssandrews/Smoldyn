@@ -74,7 +74,7 @@ end_compartment
 compartment_mol 500 U(solution) left
 
 cmd b pause
-
+# cmd N 200 listmolssurf all(all) all stdout
 
 end_file
 

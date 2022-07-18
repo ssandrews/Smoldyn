@@ -92,8 +92,8 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.67}
-\date{\copyright November, 2021}
+\subtitle{Version 2.68}
+\date{\copyright July, 2022}
 \author{Steve Andrews}
 \maketitle
 
@@ -3946,6 +3946,10 @@ This is identical to \ttt{listmols3} except that it accounts for wrap-arounds wh
 \item{\ttt{listmolscmpt} $species(state)\ cmpt\ filename$}
 
 This prints out the time counter (see \ttt{listmols2}), species, state, and location, and serial number of every molecule that is within compartment $cmpt$. It only prints information about molecules of type $species$. $state$ is optional; $species$ and/or $state$ can be ``all''.
+
+\item{\ttt{listmolssurf} $species(state)\ surface\ filename$}
+
+This prints out the time counter (see \ttt{listmols2}), and then the species number, state number, location, surface name bound to, colon, panel name bound to, and serial number of every molecule that is bound to surface $surface$, with one line per molecule. It only prints information about molecules of type $species$. $state$ is optional. $species$ and/or $state$ and/or $surface$ can be ``all''.
 
 \item{\ttt{molpos} $species(state)\ filename$}
 

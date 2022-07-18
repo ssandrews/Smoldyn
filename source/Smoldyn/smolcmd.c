@@ -93,6 +93,7 @@ enum CMDcode cmdlistmols2(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlistmols3(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlistmols4(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdlistmolssurf(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdmolpos(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtrackmol(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdmolmoments(simptr sim,cmdptr cmd,char *line2);
@@ -234,6 +235,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"listmols3")) return cmdlistmols3(sim,cmd,line2);
 	else if(!strcmp(word,"listmols4")) return cmdlistmols4(sim,cmd,line2);
 	else if(!strcmp(word,"listmolscmpt")) return cmdlistmolscmpt(sim,cmd,line2);
+	else if(!strcmp(word,"listmolssurf")) return cmdlistmolssurf(sim,cmd,line2);
 	else if(!strcmp(word,"molpos")) return cmdmolpos(sim,cmd,line2);
 	else if(!strcmp(word,"trackmol")) return cmdtrackmol(sim,cmd,line2);
 	else if(!strcmp(word,"molmoments")) return cmdmolmoments(sim,cmd,line2);
@@ -2240,6 +2242,66 @@ enum CMDcode cmdlistmolscmpt(simptr sim,cmdptr cmd,char *line2) {
 		for(d=0;d<sim->dim;d++) {
 			scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
 			scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
+		scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));	}
+	return CMDok; }
+
+
+/* cmdlistmolssurf */
+enum CMDcode cmdlistmolssurf(simptr sim,cmdptr cmd,char *line2) {
+	int i,*index,s,itct,d,er;
+	moleculeptr mptr;
+	enum MolecState ms;
+	char sname[STRCHAR],string[STRCHAR];
+	surfacessptr srfss;
+	static FILE *fptr;
+	static surfaceptr srf;
+	static int inscan=0,invk,dataid=-1;
+
+	if(inscan) goto scanportion;
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
+
+	i=molstring2index1(sim,line2,&ms,&index);
+	SCMDCHECK(i!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i!=-3,"cannot read molecule state value");
+	SCMDCHECK(i!=-4 || sim->ruless,"molecule name not recognized");
+	SCMDCHECK(i!=-7,"error allocating memory");
+	line2=strnword(line2,2);
+	SCMDCHECK(line2,"missing surface name");
+	itct=sscanf(line2,"%s",sname);
+	SCMDCHECK(itct==1,"cannot read surface name");
+	srfss=sim->srfss;
+	SCMDCHECK(srfss,"no surfaces defined");
+	if(!strcmp(sname,"all"))
+		srf=NULL;
+	else {
+		s=stringfind(srfss->snames,srfss->nsrf,sname);
+		SCMDCHECK(s>=0,"surface name not recognized");
+		srf=srfss->srflist[s]; }
+	line2=strnword(line2,2);
+	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
+	SCMDCHECK(er!=-1,"file or data name not recognized");
+	invk=cmd?cmd->invoke:0;
+
+	if(i!=-4) {
+		inscan=1;
+		molscancmd(sim,i,index,ms,cmd,cmdlistmolssurf);
+		inscan=0; }
+
+	scmdflush(fptr);
+	return CMDok;
+
+ scanportion:
+	mptr=(moleculeptr) line2;
+	if(mptr->pnl && (srf==NULL || mptr->pnl->srf==srf)) {
+		scmdfprintf(cmd->cmds,fptr,"%i%,%i%,%i",invk,mptr->ident,mptr->mstate);
+		scmdappenddata(cmd->cmds,dataid,1,3,(double)invk,(double)(mptr->ident),(double)(mptr->mstate));
+		for(d=0;d<sim->dim;d++) {
+			scmdfprintf(cmd->cmds,fptr,"%,%g",mptr->pos[d]);
+			scmdappenddata(cmd->cmds,dataid,0,1,mptr->pos[d]); }
+		scmdfprintf(cmd->cmds,fptr,"%,%s:%s",mptr->pnl->srf->sname,mptr->pnl->pname);
+		scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->pnl->srf->selfindex));
 		scmdfprintf(cmd->cmds,fptr,"%,%s\n",molserno2string(mptr->serno,string));
 		scmdappenddata(cmd->cmds,dataid,0,1,(double)(mptr->serno));	}
 	return CMDok; }
