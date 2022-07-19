@@ -14682,8 +14682,8 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Jonathan Karr and Dilawar updated the Biosimulators links.
 
-   .. rubric:: Modifications for version 2.68 (released 7/3/22)
-      :name: modifications-for-version-2.68-released-7322
+   .. rubric:: Modifications for version 2.68 (released 7/18/22)
+      :name: modifications-for-version-2.68-released-71822
       :class: unnumbered
 
 -  Added ``listmolssurf`` command.
