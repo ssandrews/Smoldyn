@@ -3,6 +3,8 @@
 ### 2.68 (7/3/22)
 
 - Added listmolssurf command. 
+- Added python3.11 support.
+- dev: Linux wheels now uses 2014 version.
 
 ### 2.67.3 (3/17/22)
 
