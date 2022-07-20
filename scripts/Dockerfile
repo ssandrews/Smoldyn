@@ -1,4 +1,4 @@
-FROM quay.io/pypa/manylinux2010_x86_64
+FROM quay.io/pypa/manylinux2014_x86_64
 MAINTAINER Dilawar Singh <dilawar.s.rajput@gmail.com>
 
 ENV PATH=$PATH:/usr/local/bin
