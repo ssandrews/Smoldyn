@@ -1,5 +1,10 @@
 ## Changelog
 
+### 2.69 (10/17/22)
+
+- Fixed command entry mid-simulation.
+- Fixed command entry with @ timing in Python
+
 ### 2.68 (7/3/22)
 
 - Added listmolssurf command. 

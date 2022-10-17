@@ -92,8 +92,8 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.68}
-\date{\copyright July, 2022}
+\subtitle{Version 2.69}
+\date{\copyright October, 2022}
 \author{Steve Andrews}
 \maketitle
 
@@ -2382,7 +2382,11 @@ ca = sim.addSpecies('ca', difc=1, color='blue', display_size=1)
 sim.connect(func = computeVm, target = 'ca.difc', step=10, args=[1,2.1])
 \end{lstlisting}
 
-Both source and target in the \ttt{connect} function must be global variables. In the example below, a global variable is made before it is used in \ttt{connect} because otherwise there would be a runtime error.
+Both the source and target in the \ttt{connect} function must be global variables. Also, there are limits on the types of values that the source function is allowed to return. Single numeric values work well, and lists do not work; I don't know about other possibilities. If you want to transfer other things, such as lists, a good approach is to use a global variable for it, in which the source function writes to this global variable and then that global variable is read by the target function (which needs to be your own Python code, as demonstrated below in the example of connect accepting a target function).
+
+Information can also be transmitted between Smoldyn and your Python code using text files. For example, you can use the output commands to save data to a file, and then use your connect source function to read these data and then do something based on what it sees. In this case, beware that Smoldyn changes the working directory. So, it's a good idea to get the current working directory with the Python function \ttt{os.getcwd()} before Smoldyn is called, and then include this in your file path.
+
+In the example below, a global variable is made before it is used in \ttt{connect} because otherwise there would be a runtime error.
 
 \begin{lstlisting}[style=SSAPython]
 import smoldyn
@@ -2407,7 +2411,7 @@ def test_connect():
 test_connect()
 \end{lstlisting}
 
-The following example shows that connect accepts a function.
+The following example shows that connect can accept a target function.
 
 \begin{lstlisting}[style=SSAPython]
 def new_dif(t, args):

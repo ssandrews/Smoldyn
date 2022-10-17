@@ -1366,7 +1366,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=1,"out of memory in cmd");
 		CHECKS(er!=2,"BUG: no command superstructure for cmd");
 		CHECKS(er!=3,"cmd format: type [on off dt] string");
-		CHECKS(er!=6,"command timing type character not recognized"); }
+		CHECKS(er!=6,"command timing type character not recognized");
+		simsetcondition(sim,SCparams,0); }
 
 	else if(!strcmp(word,"max_cmd")) {						// max_cmd
 		CHECKS(0,"max_cmd is an obsolete statement. It simply needs to be removed."); }

@@ -54,7 +54,7 @@ Command::addCommandToSimptr()
     }
 
     if ('@' == cmd_type_)
-        on_ = off_ = options_["time"];
+        on_ = options_.at("on");
     else if (string("aAbBeE").find(cmd_type_) != string::npos) {
     } else if (string("nN").find(cmd_type_) != string::npos)
         step_ = options_.at("step");

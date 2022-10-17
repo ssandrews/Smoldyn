@@ -723,6 +723,7 @@ extern CSTRING enum ErrorCode smolAddCommand(simptr sim,char type,double on,doub
 	LCHECK(er!=1,funcname,ECmemory,"out of memory creating command");
 	LCHECK(er!=2,funcname,ECbug,"missing sim->cmds");
 	LCHECK(er!=3,funcname,ECsyntax,"missing command string");
+	simsetcondition(sim,SCparams,0);
 	return ECok;
  failure:
 	return Liberrorcode; }
@@ -741,6 +742,7 @@ extern CSTRING enum ErrorCode smolAddCommandFromString(simptr sim,char *string) 
 	LCHECK(er!=3,funcname,ECsyntax,"cmd format: type [on off dt] string");
 	LCHECK(er!=5,funcname,ECbounds,"cmd time step needs to be >0");
 	LCHECK(er!=8,funcname,ECbounds,"cmd time multiplier needs to be >1");
+	simsetcondition(sim,SCparams,0);
 	return ECok;
  failure:
 	return Liberrorcode; }

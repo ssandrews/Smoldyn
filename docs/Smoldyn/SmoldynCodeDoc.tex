@@ -42,8 +42,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.68}
-\date{\copyright July, 2022}
+\subtitle{Version 2.69}
+\date{\copyright October, 2022}
 \author{Steve Andrews}
 \maketitle
 
@@ -6848,6 +6848,10 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 
 \subsection*{Modifications for version 2.68 (released 7/18/22)}
 \item Added \ttt{listmolssurf} command.
+
+\subsection*{Modifications for version 2.69 (released 10/17/22)}
+\item Fixed bug in which commands added mid-simulation were not added to the command queue.
+\item Fixed bug in the Python interface, in which commands with an `@' timing type weren't accepting an ``on'' time.
 
 \end{itemize}
 
