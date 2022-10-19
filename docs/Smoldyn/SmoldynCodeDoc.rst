@@ -2,11 +2,11 @@
 Smoldyn Code Documentation
 ==========================
 ------------
-Version 2.68
+Version 2.69
 ------------
 
 :Author: Steve Andrews
-:Date: ©July, 2022
+:Date: ©October, 2022
 
 Programmer’s introduction
 =========================
@@ -1324,7 +1324,7 @@ As an example, to reformat smolreact.c, enter:
 ``uncrustify -c ../../uncrustify/ssa.cfg smolreact.c``. This creates a
 new file, smolreact.c.uncrustify. However, this still leaves lots of
 things that I like to fix. First, remove closing braces on their own
-lines. To do so, do a find and replace, first replace all “}” with “}”,
+lines. To do so, do a find and replace, first replace all “ }” with “}”,
 repeating as many times as necessary. Then replace all “\\n}” with “}”.
 Another thing to look for is multi-line for statements. It would be nice
 if these could be removed by uncrustify, but it doesn’t.
@@ -1869,7 +1869,7 @@ Macros
      CHECK. Because of the trailing else, compilers may complain if the
      CHECK macro follows an if and is not surrounded by braces.
 
-``#define CHECKS(A,B) if(!(A)) strncpy(erstr,B,STRCHAR);goto failure; else (void)0``
+``#define CHECKS(A,B) if(!(A))``\ ``strncpy(erstr,B,STRCHAR);goto failure;``\ ``else (void)0``
    | 
    | This is identical to CHECK, except that it also copies the included
      string to the variable erstr if a failure occurs. It is useful for
@@ -2631,7 +2631,7 @@ called the reborn molecules, which have higher indices.
    words than allowed by this function (which is 4 currently), -5 if a
    trial match string was too long to fit in ``STRCHAR`` characters
    (even if this wasn’t actually a match), -6 if species generation
-   failed, -11 for inability to allocate memory, -12 for missing
+   failed, -11 for inability to allocate memory, -12 for missing ‘ ’
    operand, -13 for missing & operand, -15 for mismatched braces, or -20
    for a destination pattern that is incompatible with the matching
    pattern (i.e. it has to have either 1 destination or the same number
@@ -4439,7 +4439,7 @@ reaction functions
    words than allowed by this function (which is 4 currently), -5 if a
    trial match string was too long to fit in ``STRCHAR`` characters
    (even if this wasn’t actually a match), -6 if species generation
-   failed, -11 for inability to allocate memory, -12 for missing
+   failed, -11 for inability to allocate memory, -12 for missing ‘ ’
    operand, -13 for missing & operand, -15 for mismatched braces, or -20
    for a destination pattern that is incompatible with the matching
    pattern (i.e. it has to have either 1 destination or the same number
@@ -4902,7 +4902,7 @@ rule functions
    words than allowed by this function (which is 4 currently), -5 if a
    trial match string was too long to fit in ``STRCHAR`` characters
    (even if this wasn’t actually a match), -6 if species generation
-   failed, -11 for inability to allocate memory, -12 for missing
+   failed, -11 for inability to allocate memory, -12 for missing ‘ ’
    operand, -13 for missing & operand, -15 for mismatched braces, or -20
    for a destination pattern that is incompatible with the matching
    pattern (i.e. it has to have either 1 destination or the same number
@@ -11633,17 +11633,17 @@ table was updated after changes for version 2.23.
 
 .. container:: tabbing
 
-   | ̄̄̄̄̄ ``molsupdate``
+   | ̄̄̄̄̄ *``molsupdate``*
    | ``SClists (molsupdatelists)``
    | gaussian lookup table
-   | ``mols->exist`` (calls ``rxnisprod`` and ``issurfprod``)
+   | ``mols->exist`` (calls **``rxnisprod``** and **``issurfprod``**)
    | creates system molecule lists if none yet
    | sets any list lookup values that weren’t done yet
    | sets molecule list values for molecules in dead list
    | ``SCparams (molsupdateparams)``
    | ``mols->difstep``
    | ``mols->diffuselist``
-   | ``boxesupdate``
+   | *``boxesupdate``*
    | ``SClists (boxesupdatelists)``
    | box superstructure (requires **walls**)
    | ``bptr->indx``
@@ -11652,36 +11652,36 @@ table was updated after changes for version 2.23.
    | ``SCparams (boxesupdateparams)``
    | ``bptr->npanel`` and ``bptr->panel`` (requires **surfaces**)
    | molecules in boxes (requires **molecules** and assigns
-     ``mptr->box``)
-   | ``molsort``
+     **``mptr->box``**)
+   | *``molsort``*
    | resets ``topl`` indices
-   | sorts and compacts live lists (calls ``boxremovemol`` and
-     ``boxaddmol``)
+   | sorts and compacts live lists (calls **``boxremovemol``** and
+     **``boxaddmol``**)
    | moves molecules from resurrected to reborn lists (calls
-     ``boxaddmol``)
+     **``boxaddmol``**)
    | resets ``sortl`` indices
-   | ``compartsupdate``
+   | *``compartsupdate``*
    | ``SClists (compartsupdatelists)``
    | does nothing
    | ``SCparams (compartsupdateparams)``
    | finds boxes in compartment (requires **boxes** and **surfaces**)
    | finds box volumes and compartment volumes
-   | ``rxnsupdate``
+   | *``rxnsupdate``*
    | ``SClists (rxnsupdatelists)``
    | sets reaction molecule lists (requires **molecule lists**)
    | ``SCparams (rxnsupdateparams)``
    | sets rates (may require **compartments**)
    | sets products
    | calculates tau values
-   | ``surfupdate``
+   | *``surfupdate``*
    | ``SClists (surfupdatelists)``
    | allocates ``srfmollist`` arrays (requires **molecule lists**)
    | sets ``srfmollist`` values (requires **molecule lists** and calls
-     ``rxnisprod``)
+     **``rxnisprod``**)
    | ``SCparams (surfupdateparams)``
-   | sets surface interaction probabilities (requires ``mols->difc`` and
-     ``->difstep``)
-   | ``portsupdate``
+   | sets surface interaction probabilities (requires **``mols->difc``**
+     and **``->difstep``**)
+   | *``portsupdate``*
    | ``SClists (portsupdatelists)``
    | sets port molecule lists (uses **molecule lists**)
    | ``SCparams (portsupdateparams)``
@@ -14688,6 +14688,16 @@ Modifications for version 2.27 (released 7/26/12)
 
 -  Added ``listmolssurf`` command.
 
+   .. rubric:: Modifications for version 2.69 (released 10/17/22)
+      :name: modifications-for-version-2.69-released-101722
+      :class: unnumbered
+
+-  Fixed bug in which commands added mid-simulation were not added to
+   the command queue.
+
+-  Fixed bug in the Python interface, in which commands with an ‘@’
+   timing type weren’t accepting an “on” time.
+
 The wish/ to do list
 ====================
 
@@ -14872,10 +14882,10 @@ Distribution
 
 -  Need to improve Windows distribution. Write a batch file for
    installing. Note that the download location appears to be
-   %USERPROFILE%\Downloads\smoldyn-2.xx-windows.zip. It should be moved
-   to %PROGRAMFILES%. Instructions: user needs to right-click the
+   %USERPROFILE%\\Downloads\\smoldyn-2.xx-windows.zip. It should be
+   moved to %PROGRAMFILES%. Instructions: user needs to right-click the
    downloaded zip file, which will normally be in
-   C:\Users\your_name\Downloads, and then select "Extract without
+   C:\\Users\\your_name\\Downloads, and then select "Extract without
    confirmation" or something else that extracts the zipped file into
    the current directory. Next, run the install.bat file.
 
@@ -14957,7 +14967,7 @@ Code improvements
 -  I think I see two ways to improve performance in ``checksurfaces``:
    (1) instead of ``for(bptr1=pos2box...)``, do
    ``for(bptr1=mptr->box,...)``. (2) End this same box loop when
-   ``crossmin<2``.
+   ``crossmin``\ :math:`<`\ ``2``.
 
 -  Speed for 3D systems can be improved by always checking for 3D first,
    rather than last.

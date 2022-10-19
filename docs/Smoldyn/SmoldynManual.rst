@@ -2,11 +2,11 @@
 Smoldyn User’s Manual
 =====================
 ------------
-Version 2.68
+Version 2.69
 ------------
 
 :Author: Steve Andrews
-:Date: ©July, 2022
+:Date: ©October, 2022
 
 Getting Started
 ===============
@@ -316,7 +316,7 @@ system may not find Smoldyn when you try to run it. To solve this, you
 need to add the directory “ /usr”, or wherever you installed Smoldyn, to
 your PATH variable. This is explained above in instruction 5a for the
 regular Macintosh installation, except that here you would add
-``export PATH=$PATH:\sim/usr/bin``.
+``export PATH=$PATH:``\ :math:`\sim`\ ``/usr/bin``.
 
 Compiling on a UNIX/Linux system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1653,15 +1653,15 @@ Smoldyn supports many other wildcards as well. The logical operators are
 “:math:`|`” for OR and “&” for AND, along with braces to enforce an
 order of operation. Use the former operator to enumerate a set of
 options. Continuing with the above example, you could specify that both
-species should be red with ``Fus3_{cyto|nucl}``, where this is now more
-specific than using the asterisk wildcard character. Use the ampersand
-to specify that multiple terms are in a species name but that the order
-of the terms is unimportant. For example, ``a&b&c`` represents any of
-the 6 species: abc, acb, bac, bca, cab, and cba. The “&” operator takes
-precedence over the “:math:`|`” operator so, for example, ``a|b&c``
-represents any of: a, bc, and cb. On the other hand, ``{a|b}&c``
-represents any of: ac, bc, ca, and cb. The following table summarizes
-Smoldyn’s wildcard options.
+species should be red with ``Fus3_{cyto``\ :math:`|`\ ``nucl}``, where
+this is now more specific than using the asterisk wildcard character.
+Use the ampersand to specify that multiple terms are in a species name
+but that the order of the terms is unimportant. For example, ``a&b&c``
+represents any of the 6 species: abc, acb, bac, bca, cab, and cba. The
+“&” operator takes precedence over the “:math:`|`” operator so, for
+example, ``a``\ :math:`|`\ ``b&c`` represents any of: a, bc, and cb. On
+the other hand, ``{a``\ :math:`|`\ ``b}&c`` represents any of: ac, bc,
+ca, and cb. The following table summarizes Smoldyn’s wildcard options.
 
 +----------------+----------------+----------------+----------------+
 | Symbol         | meaning        | matching       | reaction       |
@@ -1675,14 +1675,17 @@ Smoldyn’s wildcard options.
 | ``*``          | any 0 or more  | ``A*`` matches | ``A            |
 |                | characters     | A, Ax, Axy     |  + B* -> AB*`` |
 +----------------+----------------+----------------+----------------+
-| ``A|B``        | either A or B  | ``A|B``        | ``             |
-|                |                | matches A, B   | A|B + C -> D`` |
+| ``A``\ :m      | either A or B  | ``A``\ :m      | ``A`           |
+| ath:`|`\ ``B`` |                | ath:`|`\ ``B`` | `\ :math:`|`\  |
+|                |                | matches A, B   | ``B + C -> D`` |
 +----------------+----------------+----------------+----------------+
 | ``A&B``        | either AB or   | A&B matches    | ``             |
 |                | BA             | AB, BA         | A&B + C -> D`` |
 +----------------+----------------+----------------+----------------+
-| ``{}``         | order of       | ``A&B|C``      | ``A&B|C -> 0`` |
-|                | operation      | matches AB,    |                |
+| ``{}``         | order of       | ``A            | ``A&``\ ``B``  |
+|                | operation      | &``\ ``B``\ :m | \ :math:`|`\ ` |
+|                |                | ath:`|`\ ``C`` | `C``\ ``-> 0`` |
+|                |                | matches AB,    |                |
 |                |                | BA, AC, CA     |                |
 +----------------+----------------+----------------+----------------+
 | ``[ad]``       | any 1          | ``A[ad]``      | ``A[1-         |
@@ -4685,12 +4688,14 @@ in a “molecule types” block. This block is optional when not using
 modification sites. In this block, list the different monomers, along
 with their binding sites. List modification sites similarly to binding
 sites, but follow the site name with a sequence of tildes and the
-possible modifications. In the lrm example, ``M(m2r,psite\simu\simp)``
-declares the monomer M, which has a binding site called m2r and a
-modification site called psite. This modification site can adopt either
-the “u” or the “p” condition. In this case, the seed species block
-specifies that network expansion should start with unphosphorylated M
-using ``M(m2r,psite\simu)``, but does not include phosphorylated M.
+possible modifications. In the lrm example,
+``M(m2r,psite``\ :math:`\sim`\ ``u``\ :math:`\sim`\ ``p)`` declares the
+monomer M, which has a binding site called m2r and a modification site
+called psite. This modification site can adopt either the “u” or the “p”
+condition. In this case, the seed species block specifies that network
+expansion should start with unphosphorylated M using
+``M(m2r,psite``\ :math:`\sim`\ ``u)``, but does not include
+phosphorylated M.
 
 The molecule types and seed species blocks appear to be essentially the
 same, but aren’t actually. The molecule types block is used to define
@@ -4706,9 +4711,9 @@ does not generate it. Nevertheless, there is high overlap between the
 two blocks, which is why the molecule types block is optional when there
 are no modification sites. Note the use of modification sites in the
 reaction rules. Also, the third reaction rule has the reactant
-``R(r2l!+,r2m!1).M(m2r!1,psite\simu)``. The notation !+ indicates that
-the r2l site needs to be bound to something, but does not specify the
-binding partner.
+``R(r2l!+,r2m!1).M(m2r!1,psite``\ :math:`\sim`\ ``u)``. The notation !+
+indicates that the r2l site needs to be bound to something, but does not
+specify the binding partner.
 
 Smoldyn interprets modification sites as creating different isomers of a
 species. For this reason, there is no species called just M in this
@@ -5449,9 +5454,26 @@ which is called every 10th step in this case.
    ...
    sim.connect(func = computeVm, target = 'ca.difc', step=10, args=[1,2.1])
 
-Both source and target in the ``connect`` function must be global
-variables. In the example below, a global variable is made before it is
-used in ``connect`` because otherwise there would be a runtime error.
+Both the source and target in the ``connect`` function must be global
+variables. Also, there are limits on the types of values that the source
+function is allowed to return. Single numeric values work well, and
+lists do not work; I don’t know about other possibilities. If you want
+to transfer other things, such as lists, a good approach is to use a
+global variable for it, in which the source function writes to this
+global variable and then that global variable is read by the target
+function (which needs to be your own Python code, as demonstrated below
+in the example of connect accepting a target function).
+
+Information can also be transmitted between Smoldyn and your Python code
+using text files. For example, you can use the output commands to save
+data to a file, and then use your connect source function to read these
+data and then do something based on what it sees. In this case, beware
+that Smoldyn changes the working directory. So, it’s a good idea to get
+the current working directory with the Python function ``os.getcwd()``
+before Smoldyn is called, and then include this in your file path.
+
+In the example below, a global variable is made before it is used in
+``connect`` because otherwise there would be a runtime error.
 
 ::
 
@@ -5476,7 +5498,7 @@ used in ``connect`` because otherwise there would be a runtime error.
 
    test_connect()
 
-The following example shows that connect accepts a function.
+The following example shows that connect can accept a target function.
 
 ::
 
@@ -9030,9 +9052,9 @@ files, use ``help()``, ``dir()``, etc. as needed, and try the
 readthedocs webpage. Also, note that many functions can be accessed in
 multiple different ways; for example, you can run a simulation with
 :math:`sim`\ ``.run()`` or :math:`sim`\ ``.runSim()`` or
-``smoldyn.Simulation.runSim(sim)``. For the most part, this
-documentation only shows the single recommended approach because that
-leads to more readable code.
+``smoldyn.Simulation.runSim(``\ :math:`sim`\ ``)``. For the most part,
+this documentation only shows the single recommended approach because
+that leads to more readable code.
 
 Enumerations
 ~~~~~~~~~~~~
@@ -9232,7 +9254,7 @@ NewSim, Simulation
    | C/C++:
      ``simptr smolNewSim(int dim, double *lowbounds, double *highbounds)``
    | Python: :math:`sim` =
-     ``smoldyn.Simulation(low = List[float], high = List[float], boundary_type = string, quit_at_end = bool, log_level = int)``
+     ``smoldyn.Simulation(low =``\ :math:`List[float]`\ ``, high =``\ :math:`List[float]`\ ``, boundary_type =``\ :math:`string`\ ``, quit_at_end =``\ :math:`bool`\ ``, log_level =``\ :math:`int`\ ``)``
    | Creates and returns a new sim structure for C and a new Simulation
      object for Python. The structure is initialized for a ``dim``
      dimensional system that has boundaries defined by the points
@@ -9261,7 +9283,7 @@ RunTimeStep
    | 
    | C/C++: ``enum ErrorCode smolRunTimeStep(simptr sim)``
    | Python: :math:`sim`.\ ``runTimeStep()``;
-     ``S.Simulation.runTimeStep(sim)``
+     ``S.Simulation.runTimeStep(``\ :math:`sim`\ ``)``
    | Runs one time step of the simulation. Returns an error if the
      simulation terminates unexpectedly during this time step. This
      function does not support graphical output, but always runs in
@@ -9271,8 +9293,9 @@ RunSim
    | 
    | C/C++: ``enum ErrorCode smolRunSim(simptr sim)``
    | Python:
-     :math:`sim`.\ ``run(stop=float, dt=float, start=float, display=bool, overwrite=bool, accuracy=int, log_level=int, quit_at_end=bool)``;
-     :math:`sim`.\ ``runSim()``; ``smoldyn.Simulation.runSim(sim)``
+     :math:`sim`.\ ``run(stop=``\ :math:`float`\ ``, dt=``\ :math:`float`\ ``, start=``\ :math:`float`\ ``, display=``\ :math:`bool`\ ``, overwrite=``\ :math:`bool`\ ``, accuracy=``\ :math:`int`\ ``, log_level=``\ :math:`int`\ ``, quit_at_end=``\ :math:`bool`\ ``)``;
+     :math:`sim`.\ ``runSim()``;
+     ``smoldyn.Simulation.runSim(``\ :math:`sim`\ ``)``
    | Runs the simulation until it terminates. Returns an error if the
      simulation terminates unexpectedly during this time step or a
      warning if it terminates normally.
@@ -9303,8 +9326,8 @@ DisplaySim
    | 
    | C/C++: ``enum ErrorCode smolDisplaySim(simptr sim)``
    | Python: :math:`sim`.\ ``displaySim()``;
-     ``smoldyn.Simulation.displaySim(sim)``;
-     ``S.Simulation.displaySim(sim)``
+     ``smoldyn.Simulation.displaySim(``\ :math:`sim`\ ``)``;
+     ``S.Simulation.displaySim(``\ :math:`sim`\ ``)``
    | Displays all relevant information about the simulation system to
      stdout.
 
@@ -9466,7 +9489,7 @@ AddSpecies
    | C/C++:
      ``enum ErrorCode smolAddSpecies(simptr sim, char *species, char *mollist)``
    | Python:
-     :math:`sim`.\ ``addSpecies(name=string, state="soln", color=color, difc= 0.0, display_size = 3, mol_list = "")``;
+     :math:`sim`.\ ``addSpecies(name=``\ :math:`string`\ ``, state="soln", color=``\ :math:`color`\ ``, difc= 0.0, display_size = 3, mol_list = "")``;
      ``S.Simulation.addSpecies(sim, str species, str mollist)``
    | Adds a molecular species named ``species`` to the system. If you
      have already created species lists and want all states of this
@@ -9618,7 +9641,7 @@ AddSurfaceMolecules
    | Python:
      ``ErrorCode addSurfaceMolecules(int speciesindex, MolecState state, int number, int surface, PanelShape panelshape, int panel, List[float] position)``
    | Python:
-     :math:`surface`.\ ``addMolecules((species, state), N=number, pos=position)``
+     :math:`surface`.\ ``addMolecules((species, state), N=``\ :math:`number`\ ``, pos=``\ :math:`position`\ ``)``
    | Adds ``number`` molecules of species ``species`` and state
      ``state`` to surface(s) in the system. It is permissible for
      ``surface`` to be “all", ``panelshape`` to be PSall, and/or
@@ -9967,7 +9990,7 @@ AddSurface
    | 
    | C/C++: ``int smolAddSurface(simptr sim, char *surface)``
    | Python:
-     :math:`surface`\ =\ :math:`sim`.\ ``addSurface(str: surface\_name, panels = panel\_list)``
+     :math:`surface`\ =\ :math:`sim`.\ ``addSurface(str:``\ :math:`surface\_name`\ ``, panels =``\ :math:`panel\_list`\ ``)``
    | Adds a surface called ``surface`` or :math:`surface\_name` to the
      system.
 
@@ -10368,7 +10391,7 @@ AddCompartment
    | C/C++: ``int smolAddCompartment(simptr sim, char *compartment)``
    | Python: ``int addCompartment(str compartment)``
    | Python:
-     :math:`compart`\ =\ :math:`sim`.\ ``addCompartment(name=name, surface=surface, point=vector)``
+     :math:`compart`\ =\ :math:`sim`.\ ``addCompartment(name=``\ :math:`name`\ ``, surface=``\ :math:`surface`\ ``, point=``\ :math:`vector`\ ``)``
    | Adds a compartment called ``compartment`` to the system.
 
 GetCompartmentIndex
