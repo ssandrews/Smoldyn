@@ -719,8 +719,8 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
         sim.number_of_points = int(sim.number_of_points / 2)
 
         model.changes = []
-        for variable_id in variable_ids:
-            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=None))
+#        for variable_id in variable_ids:
+#            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=None))
         preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
         model.changes = []
         results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
@@ -739,8 +739,8 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
 
         # check model change modifies simulation
         model.changes = []
-        for variable_id in variable_ids:
-            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=None))
+#        for variable_id in variable_ids:
+#            model.changes.append(ModelAttributeChange(target='fixmolcount ' + variable_id, new_value=None))
         preprocessed_task = smoldyn.biosimulators.combine.preprocess_sed_task(task, variables)
         model.changes = []
         results2, _ = smoldyn.biosimulators.combine.exec_sed_task(task, variables, preprocessed_task=preprocessed_task)
