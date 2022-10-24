@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.70 (10/24/22)
+
+- Allowed users to set reaction probability with Libsmoldyn and Python APIs
+
 ### 2.69 (10/17/22)
 
 - Fixed command entry mid-simulation.

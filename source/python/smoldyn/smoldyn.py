@@ -1392,7 +1392,7 @@ class Reaction(object):
             self.__rate = rate
             self.setRate(rate)
 
-    def setRate(self, rate, reaction_probability=0.0, binding_radius=0.0):
+    def setRate(self, rate, reaction_probability=-1.0, binding_radius=-1.0):
         # if rate is negative, then we expect either binding_radius or
         # reaction_probability. A reaction can have zero rate.
         if rate >= 0.0:
@@ -1403,19 +1403,22 @@ class Reaction(object):
             # check if reaction_probability is given
             if len(self.subs) < 2:
                 assert (
-                    reaction_probability > 0.0
+                    reaction_probability >= 0.0
                 ), "Must set rate or reaction_probability"
                 k = self.simulation.setReactionRate(
                     self.name, reaction_probability, True
                 )
                 assert k == _smoldyn.ErrorCode.ok
             else:
-                assert binding_radius > 0.0, "Must set either rate of binding_radius"
-                k = self.simulation.setReactionRate(self.name, binding_radius, True)
-                assert k == _smoldyn.ErrorCode.ok
+                if reaction_probability >= 0.0:
+                    k = self.simulation.setReactionRate(self.name, reaction_probability, 2)
+                    assert k == _smoldyn.ErrorCode.ok
+                if binding_radius >= 0.0:
+                    k = self.simulation.setReactionRate(self.name, binding_radius, True)
+                    assert k == _smoldyn.ErrorCode.ok
         else:
             raise RuntimeError(
-                "Rate is negative and reaction_probability or reaction_probability set to zero?"
+                "Rate is not a numeric value"
             )
 
     @property
@@ -1739,6 +1742,9 @@ class Simulation(_smoldyn.Simulation):
 
         if kwargs.get("seed", -1) >= 0:
             self.randomSeed = int(kwargs["seed"])
+
+#        if kwargs.get("log_level", 2):#????
+#            self.flags = kwargs["log_level"]	# Doesn't work
 
     @classmethod
     def fromFile(cls, path: Union[Path, str], arg: str = ""):

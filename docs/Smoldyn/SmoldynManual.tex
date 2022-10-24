@@ -92,7 +92,7 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.69}
+\subtitle{Version 2.70}
 \date{\copyright October, 2022}
 \author{Steve Andrews}
 \maketitle
@@ -4900,7 +4900,7 @@ Returns the name of the reaction that has reaction order \ttt{order} and index \
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetReactionRate(simptr sim, int order, char *reaction, double rate, int isinternal)}\\
 Python: \ttt{ErrorCode setReactionRate(int order, str reaction, float rate, int isinternal)}\\
-Set the reaction rate to \ttt{rate}. If this value is to be interpreted as an internal reaction rate parameter, meaning the production rate for zeroth order reactions, the reaction probability for first order reactions, or the binding radius for second order reactions, then set \ttt{isinternal} to 1. Rather than calling this function at all, it's usually easier to use the \ttt{rate} parameter of the \ttt{smolAddReaction} function, although that doesn't cope with internal rate values.
+Set the reaction rate to \ttt{rate}. If this value is to be interpreted as an internal reaction rate parameter, meaning the production rate for zeroth order reactions, the reaction probability for first order reactions, or the binding radius for second order reactions, then set \ttt{isinternal} to 1. Rather than calling this function at all, it's usually easier to use the \ttt{rate} parameter of the \ttt{smolAddReaction} function, although that doesn't cope with internal rate values. As a new feature in version 2.70, set \ttt{isinternal} to 2 to set the reaction probability for bimolecular reactions.
 
 \item[SetReactionRegion]
 \hfill \\

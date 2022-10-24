@@ -1898,8 +1898,10 @@ extern CSTRING enum ErrorCode smolSetReactionRate(simptr sim,const char *reactio
 		er=RxnSetValue(sim,"rate",rxn,rate);
 	else if(order<2)
 		er=RxnSetValue(sim,"prob",rxn,rate);
-	else
+	else if(isinternal==1)
 		er=RxnSetValue(sim,"bindrad",rxn,rate);
+	else
+		er=RxnSetValue(sim,"prob",rxn,rate);
 	if(er==3) LCHECK(0,funcname,ECwarning,"rate was set previously");
 	else LCHECK(!er,funcname,ECbug,"RxnSetValue error");
 	return Libwarncode;

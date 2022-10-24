@@ -42,7 +42,7 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.69}
+\subtitle{Version 2.70}
 \date{\copyright October, 2022}
 \author{Steve Andrews}
 \maketitle
@@ -891,6 +891,33 @@ This defines a \ttt{load\_model} function with a path and arguments, which then 
 
 This file parses the command line arguments using the argparse standard library and then runs the model using \ttt{smoldyn.load\_model()}. This file includes the Python command-line options, including ``overwrite'', ``quit-at-end'', and ``args''. This code doesn't necessarily run. According to Dilawar, if Smoldyn is started with ``python3 -m smoldyn template.txt'', then this will execute the \_\_main\_\_.py file, with command line arguments passed to it. Here, the Python package is being used as a proxy for the Smoldyn executable.
 
+
+% Python calling sequence
+\section{Python calling sequence}
+
+The Python interface can be better understood by considering what happens when it is called.
+
+Example. The user's Python script includes \ttt{s.addReaction("rxn", subs=[A,B], prds=[C], rate=-1, binding\_radius=0.05, reaction\_probability=0.1)}. This sends control to the \ttt{addReaction} method in smoldyn.py (line 2130). That creates a Python reaction object, which is defined in smoldyn.py line 1272 and instantiated in the \ttt{\_\_init\_\_} method in line 1286. This method adds the reaction to the simulation with \ttt{self.simulation.addReaction}, which connects to a module.cpp line that reads \ttt{.def("addReaction", ...} (line 1129) and then on to the libsmoldyn.cpp function \ttt{smolAddReaction} (line 1775). This line, finally, connects to the Smoldyn core code, by calling \ttt{RxnAddReaction}, which is in smolreact.c.
+
+Control then moves back up the stack to the reaction instantiation in smoldyn.py, where the rate needs to get set next. The instantiation runs the method \ttt{self.setRate}, which is also in smoldyn.py, in line 1396 and reads \ttt{def setRate(self, rate, reaction\_probability=0.0, binding\_radius=0.0):}. This has the line \ttt{self.simulation.setReactionRate}, which connects to module.cpp \ttt{.def("setReactionRate",...}, goes to libsmoldyn.cpp function \ttt{smolSetReactionRate}, and then on to the Smoldyn core with \ttt{RxnSetValue}.
+
+The following table summarizes these connections.
+
+\begin{longtable}[c]{lll}
+File & Line & Code \\
+\hline
+User code & &\ttt{s.addReaction("rxn", subs=[A,B], prds=[C], rate=1)} \\
+smoldyn.py & 2130 & \hspace{0.2cm} \ttt{def addReaction(...)} \\
+smoldyn.py & 1272 & \hspace{0.4cm} \ttt{class Reaction(object): }...\ttt{ def \_\_init\_\_(...)} \\
+module.cpp & 1129 & \hspace{0.6cm} \ttt{.def("addReaction",...)} \\
+libsmoldyn.cpp & 1775 & \hspace{0.8cm} \ttt{enum ErrorCode smolAddReaction(simptr sim,...)} \\
+smolreact.c & 2044 & \hspace{1cm} \ttt{rxnptr RxnAddReaction(simptr sim,...)} \\
+smoldyn.py & 1396 & \hspace{0.6cm} \ttt{def setRate(self, rate,...)} \\
+module.cpp & 1190 & \hspace{0.8cm} \ttt{.def("setReactionRate",...)} \\
+libsmoldyn.cpp & 1887 & \hspace{1cm} \ttt{enum ErrorCode smolSetReactionRate(simptr sim,...)} \\
+smolreact.c & 1721 & \hspace{1.2cm} \ttt{int RxnSetValue(simptr sim,...)}
+
+\end{longtable}
 
 % Chapter: Files, macros, variables, etc.
 \chapter{C code: files, macros, variables, etc.}
@@ -6852,6 +6879,9 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \subsection*{Modifications for version 2.69 (released 10/17/22)}
 \item Fixed bug in which commands added mid-simulation were not added to the command queue.
 \item Fixed bug in the Python interface, in which commands with an `@' timing type weren't accepting an ``on'' time.
+
+\subsection*{Modifications for version 2.70 (released 10/24/22)}
+\item Fixed bug, or maybe just a lack of feature availablility, in libsmoldyn and Python interface in which reaction probabilities could not be set for bimolecular reactions.
 
 \end{itemize}
 
