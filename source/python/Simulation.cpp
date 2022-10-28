@@ -160,8 +160,6 @@ Simulation::runSim(double stoptime, double dt, bool display, bool overwrite)
         }
     }
 
-    gl2glutInit(0, NULL);
-
     er = smolOpenOutputFiles(sim_.get(), overwrite);
     if (er != ErrorCode::ECok) {
         cerr << __FUNCTION__ << ": Could not open output files." << endl;

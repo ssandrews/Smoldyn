@@ -137,6 +137,7 @@ There is also one file in the source directory, which is smoldynconfigure.h.in. 
 \end{description}
 
 
+% Dependencies
 \subsection{Dependencies}
 
 As much as possible, Smoldyn is compiled statically so that its dependencies are automatically included in the binary distributions. However, if you compile Smoldyn yourself, then you may need to get them.
@@ -191,6 +192,7 @@ I downloaded my Mac version from \url{http://www.vtk.org/VTK/resources/software.
 For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the VTK-9.0.1.tar.gz file. I then extracted at the command line with ``tar -xvcf VTK-9.0.1.tar.gz'', created a build subdirectory, moved into it, and ran ``cmake ..'' and ``msbuild VTK.sln''. This required almost 3 hours to build on my very slow Windows computer. I copied the build directory over to ``source/VTKlibs'', and planned to link it in, following advice at \url{https://vtk.org/Wiki/VTK/Tutorials/CMakeListsFile}. However, I discovered that this VTK build directory is truly enormous (3.8 Gb) and it offers very little additional capability to Smoldyn, so I decided to leave it out for the Windows build.
 
 \end{description}
+
 
 % Building with CMake
 \section{CMake build system}
@@ -516,6 +518,7 @@ Running \ttt{sudo make pyinstall} installs the Python code, \textit{probably to 
 
 Instead, run \ttt{sudo pip install smoldyn-2.64-....whl}. This installs the wheel to the correct location. For me, that is /opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/smoldyn/.
 
+
 % Python module after building
 \subsection{Python module after building}
 
@@ -545,12 +548,15 @@ Part of the MacPorts MinGW download is a lot of library code that's pre-compiled
 For Libtiff, I had several failed attempts. I copied the i386 tiff*.h files from MinGW directory to /opt/local/x86...include directory. They seem ok, but they're clearly for a different architecture. I also tried the i386 libtiff.a static libtiff library, but Smoldyn building complained that it wasn't compatible. I also tried downloading libtiff.a from many different websites, but got the same result every time, that they weren't compatible. I gave up on offering tiff support for Windows, but I now think that I might be able to download the Libtiff source code and cross-compile myself. I successfully compiled the Libtiff source code on Windows with MSVC, but haven't tried yet for MinGW.
 
 
+% Building for Windows on Windows with MinGW
 \subsection{Building for Windows on Windows with MinGW}
 
 I think I have two different versions of MinGW on my Windows computer. For the second one, I downloaded MinGW using the mingw-get-setup.exe installer, from osdn.net, which was remarkably hard to figure out. I next ran ``mingw-get.exe install mingw32-gcc'' and it seemed to install the compiler.
 
 For versions 2.59 to 2.61, I built Windows versions on a Windows computer with MinGW. I hadn't figured out CMake there yet, so I copied the smoldynconfigure.h file and all of the source files to the Windows computer, compiled, copied the .exe file back to the Mac, and continued with the build process. I distributed old version of SmolCrowd and wrl2smol in the Windows package (they only change very rarely, so the old ones were also the current ones).
 
+
+% Building for Windows on Windows with Visual C
 \subsection{Building for Windows on Windows with Visual C}
 
 For version 2.62 and maybe future versions, I'm compiling the Windows version on a Windows computer using the Visual C compiler (MSVC). After lots of work, this now functions using the CMake build system. The method starts with creating a build directory, as usual (I haven't figured out how to remove all of the contents of the build directory, so I clean it out by moving up to the Smoldyn directory, removing build with ``rmdir /s build'', and then recreating it with ``mkdir build'', ``cd build''). Then, in the build directory, ``cmake ..'' as usual, with any options, and ``msbuild smoldyn.sln /p:Configuration=Release''. The final option is essential because Visual Studio ignores the CMake directive to make this a release build, creating a debug build instead, which then needs to link to debug libraries that most people don't have. This option tells Visual Studio that it should actually be a release build.
@@ -565,6 +571,7 @@ Here is some more advice, from Dilawar on 11/26/20.
 \end{itemize}
 The build step should install the wheel.
 
+
 % Unit and regression testing
 \section{Unit and regression testing}
 
@@ -573,6 +580,7 @@ Smoldyn does not include unit tests in their purest form. Instead, I tested Smol
 The examples/S95\_regression directory includes files used for regression testing. This directory includes many of the original unit tests, although typically modified for longer time steps, shorter total run times, and a fixed random number seed. In addition, I removed the original output for these unit tests and instead instructed them to output all molecule positions at the end of the simulation. The idea is that this is a very sensitive way of detecting whether all interactions during the simulation were the same between two runs, or not. This directory also includes a Python script regression.py. This script runs all unit tests, outputs their results to a subdirectory, and compares the results to those that there previously generated. All differences are reported, enabling detection of potential bugs.
 
 To add a new unit test to the regression testing suite, simply make sure that the unit test runs relatively quickly (a few seconds) and has no text output. Then, copy and paste the top few lines from any of the current unit tests (e.g. bounce2.txt), so that the new unit test will output molecule positions or other relevant output. Finally, list the unit test name in the Python script.
+
 
 % GPU Smoldyn
 \section{GPU Smoldyn}
@@ -609,6 +617,8 @@ To release a new version, there are many things to do.
 
 \end{itemize}
 
+
+% Formatting
 \subsection{Formatting}
 
 I like a very compact C source code style, where the indentation shows the code depth rather than the braces. It just was that way for the most part, but then the VCell team added code in their style, and then Dilawar reformatted the code to yet another style. I figured out how to partially revert to my style, and also standardize others' additions. I use the ``uncrustify'' software, which I downloaded from SourceForge at \url{https://sourceforge.net/projects/uncrustify/}. The package currently resides in my Smoldyn top level directory. I wrote a configuration file called ssa.cfg, which I use to format code; it is in the uncrustify directory.
@@ -620,6 +630,7 @@ For the Python code, Dilawar uses the black software, available at \url{https://
 Similarly, he uses clang-format for C++ files, but is less worried about format consistency there.
 
 
+% Code merging
 \subsection{Code merging}
 
 Here are some options for merging code.
@@ -897,7 +908,7 @@ This file parses the command line arguments using the argparse standard library 
 
 The Python interface can be better understood by considering what happens when it is called.
 
-Example. The user's Python script includes \ttt{s.addReaction("rxn", subs=[A,B], prds=[C], rate=-1, binding\_radius=0.05, reaction\_probability=0.1)}. This sends control to the \ttt{addReaction} method in smoldyn.py (line 2130). That creates a Python reaction object, which is defined in smoldyn.py line 1272 and instantiated in the \ttt{\_\_init\_\_} method in line 1286. This method adds the reaction to the simulation with \ttt{self.simulation.addReaction}, which connects to a module.cpp line that reads \ttt{.def("addReaction", ...} (line 1129) and then on to the libsmoldyn.cpp function \ttt{smolAddReaction} (line 1775). This line, finally, connects to the Smoldyn core code, by calling \ttt{RxnAddReaction}, which is in smolreact.c.
+\textit{Example 1.} The user's Python script includes \ttt{s.addReaction("rxn", subs=[A,B], prds=[C], rate=-1, binding\_radius=0.05, reaction\_probability=0.1)}. This sends control to the \ttt{addReaction} method in smoldyn.py (line 2130). That creates a Python reaction object, which is defined in smoldyn.py line 1272 and instantiated in the \ttt{\_\_init\_\_} method in line 1286. This method adds the reaction to the simulation with \ttt{self.simulation.addReaction}, which connects to a module.cpp line that reads \ttt{.def("addReaction", ...} (line 1129) and then on to the libsmoldyn.cpp function \ttt{smolAddReaction} (line 1775). This line, finally, connects to the Smoldyn core code, by calling \ttt{RxnAddReaction}, which is in smolreact.c.
 
 Control then moves back up the stack to the reaction instantiation in smoldyn.py, where the rate needs to get set next. The instantiation runs the method \ttt{self.setRate}, which is also in smoldyn.py, in line 1396 and reads \ttt{def setRate(self, rate, reaction\_probability=0.0, binding\_radius=0.0):}. This has the line \ttt{self.simulation.setReactionRate}, which connects to module.cpp \ttt{.def("setReactionRate",...}, goes to libsmoldyn.cpp function \ttt{smolSetReactionRate}, and then on to the Smoldyn core with \ttt{RxnSetValue}.
 
@@ -916,8 +927,10 @@ smoldyn.py & 1396 & \hspace{0.6cm} \ttt{def setRate(self, rate,...)} \\
 module.cpp & 1190 & \hspace{0.8cm} \ttt{.def("setReactionRate",...)} \\
 libsmoldyn.cpp & 1887 & \hspace{1cm} \ttt{enum ErrorCode smolSetReactionRate(simptr sim,...)} \\
 smolreact.c & 1721 & \hspace{1.2cm} \ttt{int RxnSetValue(simptr sim,...)}
-
 \end{longtable}
+
+\textit{Example 2.} For running the simulation, the user enters \ttt{s.run(...)}. This goes to smoldyn.py line 1946 where \ttt{run} is defined. This method calls \ttt{runSim} in line 1994. This might go to several possible locations. In module.c, \ttt{runSim} is defined in line 407, which then calls \ttt{Simulation::runSim}. Also, module.c defines \ttt{runSim} in line 1381, which calls libsmoldyn.cpp \ttt{smolRunSim}. Additionally, simulation.cpp has a function called \ttt{Simulation::runSim} in line 152. This last one calls libsmoldyn.cpp \ttt{smolRunSim}. So, everything appears to converge on \ttt{smolRunSim} before too long.
+
 
 % Chapter: Files, macros, variables, etc.
 \chapter{C code: files, macros, variables, etc.}

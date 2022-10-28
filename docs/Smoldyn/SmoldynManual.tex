@@ -4358,7 +4358,7 @@ C/C++: \ttt{enum ErrorCode smolRunSim(simptr sim)}\\
 Python: $sim$.\ttt{run(stop=$float$, dt=$float$, start=$float$, display=$bool$, overwrite=$bool$, accuracy=$int$, log\_level=$int$, quit\_at\_end=$bool$)}; $sim$.\ttt{runSim()}; \ttt{smoldyn.Simulation.runSim($sim$)}\\
 Runs the simulation until it terminates. Returns an error if the simulation terminates unexpectedly during this time step or a warning if it terminates normally.
 
-The Python version allows inputs of the start time, stop time, and time step, along with whether the simulation details should be displayed to the standard output before the simulation runs, whether output files should be overwritten, the simulation accuracy level (10 is for maximum accuracy), the level of output logging (2 is the default), and whether the simulation should quit at the end.
+The Python version allows inputs of the start time, stop time, and time step, along with whether the simulation details should be displayed to the standard output before the simulation runs, whether output files should be overwritten, the simulation accuracy level (10 is for maximum accuracy), the level of output logging (2 is the default), and whether the simulation should quit at the end. Note that the display parameter does not have anything to do with graphical output; set that with \ttt{setGraphicsParams} instead.
 
 \item[RunSimUntil]
 \hfill \\

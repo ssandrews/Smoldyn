@@ -1413,6 +1413,7 @@ void smolsimulategl(simptr sim) {
 #ifdef __gl_h_
 	int er;
 
+	gl2glutInit(0,NULL);
 	glutTimerFunc((unsigned int)0,TimerFunction,0);
 	Sim=sim;
 	sim->clockstt=time(NULL);
