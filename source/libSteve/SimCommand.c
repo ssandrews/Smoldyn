@@ -62,6 +62,7 @@ void scmdcopycommand(cmdptr cmdfrom,cmdptr cmdto) {
 	if(!cmdfrom || !cmdto || cmdfrom==cmdto) return;
 	cmdto->cmds=cmdfrom->cmds;
 	cmdto->twin=cmdfrom;
+	cmdto->listpos=cmdfrom->listpos;
 	cmdto->timing=cmdfrom->timing;
 	cmdto->on=cmdfrom->on;
 	cmdto->off=cmdfrom->off;
@@ -104,6 +105,7 @@ cmdptr scmdalloc(void) {
 	if(!cmd) return NULL;
 	cmd->cmds=NULL;
 	cmd->twin=NULL;
+	cmd->listpos=0;
 	cmd->timing='?';
 	cmd->on=cmd->off=cmd->dt=cmd->xt=0;
 	cmd->oni=cmd->offi=cmd->dti=0;
@@ -280,23 +282,41 @@ int scmdaddcommand(cmdssptr cmds,char timing,double on,double off,double step,do
 	else if(strchr("@",timing))
 		cmd->on=cmd->off=on;
 	else if(strchr("i",timing)) {
+		if(step<=0) {
+			scmdfree(cmd);
+			return 5; }
 		cmd->on=on;
 		cmd->off=off;
 		cmd->dt=step; }
 	else if(strchr("x",timing)) {
+		if(step<=0) {
+			scmdfree(cmd);
+			return 5; }
 		cmd->on=on;
 		cmd->off=off;
 		cmd->dt=step;
 		cmd->xt=multiplier; }
 	else if(strchr("&",timing)) {
+		if((double)(Q_LONGLONG)on!=on) {
+			scmdfree(cmd);
+			return 4; }
 		cmd->oni=cmd->offi=(Q_LONGLONG)on;
 		cmd->dti=1; }
 	else if(strchr("Ij",timing)) {
+		if((double)(Q_LONGLONG)on!=on || (double)(Q_LONGLONG)off!=off || (double)(Q_LONGLONG)step!=step) {
+			scmdfree(cmd);
+			return 4; }
+		if(step<=0) {
+			scmdfree(cmd);
+			return 5; }
 		cmd->oni=(Q_LONGLONG)on;
 		cmd->offi=(Q_LONGLONG)off;
 		cmd->dti=(Q_LONGLONG)step; }
-	else if(strchr("Nn",timing))
-		cmd->dti=(Q_LONGLONG)step;
+	else if(strchr("Nn",timing)) {
+		if((double)(Q_LONGLONG)step!=step) {
+			scmdfree(cmd);
+			return 4; }
+		cmd->dti=(Q_LONGLONG)step; }
 	else {
 		scmdfree(cmd);
 		return 6; }
@@ -308,6 +328,7 @@ int scmdaddcommand(cmdssptr cmds,char timing,double on,double off,double step,do
 	if(cmds->ncmdlist==cmds->maxcmdlist) {
 		er=scmdcmdlistalloc(cmds,1+cmds->maxcmdlist);
 		if(er) {scmdfree(cmd);return 1;} }
+	cmd->listpos=cmds->ncmdlist;
 	cmds->cmdlist[cmds->ncmdlist]=cmd;
 	cmds->ncmdlist++;
 	scmdsetcondition(cmds,2,0);
@@ -425,12 +446,12 @@ int scmdupdatecommands(cmdssptr cmds,double tmin,double tmax,double dt) {
 			if(strchr("ba@ix",timing)) {
 				if(!cmds->cmd)
 					if(scmdqalloc(cmds,10)==1) {scmdfree(cmd);return 1;}
-				if(q_insert(NULL,0,cmd->on,0,(void*)cmd,cmds->cmd)==1)
+				if(q_insert(NULL,cmd->listpos,cmd->on,0,(void*)cmd,cmds->cmd)==1)
 					if(q_expand(cmds->cmd,q_length(cmds->cmd))) {scmdfree(cmd);return 1; }}
 			else if(strchr("BA&jIENen",timing)) {
 				if(!cmds->cmdi)
 					if(scmdqalloci(cmds,10)==1) {scmdfree(cmd);return 1;}
-				if(q_insert(NULL,0,0,cmd->oni,(void*)cmd,cmds->cmdi)==1)
+				if(q_insert(NULL,cmd->listpos,0,cmd->oni,(void*)cmd,cmds->cmdi)==1)
 					if(q_expand(cmds->cmdi,q_length(cmds->cmdi))) {scmdfree(cmd);return 1; }}
 			else {
 				scmdfree(cmd);
@@ -484,7 +505,7 @@ enum CMDcode scmdexecute(cmdssptr cmds,double time,double simdt,Q_LONGLONG iter,
 				else SCMDPRINTF(simvd,7,"error with command: '%s'\n",cmd->str); }
 			if(cmd->oni+cmd->dti<=cmd->offi && !donow && (code1==CMDok || code1==CMDpause)) {
 				cmd->oni+=cmd->dti;
-				q_insert(NULL,0,0,cmd->oni,(void*)cmd,cmds->cmdi); }
+				q_insert(NULL,cmd->listpos,0,cmd->oni,(void*)cmd,cmds->cmdi); }
 			else {
 				cmd->twin->twin=NULL;
 				scmdfree(cmd); }
@@ -504,7 +525,7 @@ enum CMDcode scmdexecute(cmdssptr cmds,double time,double simdt,Q_LONGLONG iter,
 			if(cmd->on+dt<=cmd->off && !donow && (code1==CMDok || code1==CMDpause)) {
 				cmd->on+=dt;
 				if(cmd->xt>1) cmd->dt*=cmd->xt;
-				q_insert(NULL,0,cmd->on,0,(void*)cmd,cmds->cmd); }
+				q_insert(NULL,cmd->listpos,cmd->on,0,(void*)cmd,cmds->cmd); }
 			else {
 				cmd->twin->twin=NULL;
 				scmdfree(cmd); }
@@ -564,7 +585,9 @@ void scmdoutput(cmdssptr cmds) {
 		for(i=0;i<cmds->ncmdlist;i++) {
 			cmd=cmds->cmdlist[i];
 			timing=cmd->timing;
-			SCMDPRINTF(simvd,2,"  %c",timing);
+			SCMDPRINTF(simvd,2," ");
+			SCMDPRINTF(simvd,1," %i:",cmd->listpos);
+			SCMDPRINTF(simvd,2," %c",timing);
 			if(strchr("baBAEe",timing));
 			else if(strchr("@",timing))
 				SCMDPRINTF(simvd,2," time: %g",cmd->on);

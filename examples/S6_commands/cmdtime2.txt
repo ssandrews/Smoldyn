@@ -23,9 +23,9 @@ output_files stdout
 cmd B molcountheader
 cmd A echo stdout "simulation finished\n"
 cmd & 25 echo stdout "time step number 25\n"
-cmd e molcount
-cmd n 10 molpos blue
-cmd I 4 30 7 echo stdout "test of j timing\n"
+cmd E molcount
+cmd N 10 molpos blue
+cmd I 4 30 7 echo stdout "test of I timing\n"
 
 difc red 1
 difc blue 1

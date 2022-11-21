@@ -6896,6 +6896,11 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \subsection*{Modifications for version 2.70 (released 10/24/22)}
 \item Fixed bug, or maybe just a lack of feature availablility, in libsmoldyn and Python interface in which reaction probabilities could not be set for bimolecular reactions.
 
+\subsection*{Modifications for version 2.71 (not released yet)}
+\item Fixed bug in which graphics were being called from Python API even when they were turned off. This arose from \ttt{gl2glutInit} being called in Simulation.cpp \ttt{Simulation::runSim} for all cases; it's now called in smolgraphics.c \ttt{smolsimulategl} instead.
+\item Made it an error to enter command timing with either non-integer values for integer type commands, or to enter timing steps that are less than or equal to zero.
+\item Improved command timing so that all commands that execute at a particular time are performed with integer commands first, then float commands (unchanged from before) and also, within these lists, in the order that they are listed in the configuration file (new functionality).
+
 \end{itemize}
 
 

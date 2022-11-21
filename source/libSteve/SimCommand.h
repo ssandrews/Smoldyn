@@ -23,6 +23,7 @@ enum CMDcode {CMDok,CMDwarn,CMDpause,CMDstop,CMDabort,CMDnone,CMDcontrol,CMDobse
 typedef struct cmdstruct {
 	struct cmdsuperstruct *cmds;	// owning command superstructure
 	struct cmdstruct *twin;				// pointer to same command elsewhere
+	int listpos;					// position in command list
 	char timing;					// timing character (e.g. B, A, i, @, x)
 	double on;						// first command run time
 	double off;						// last command run time
