@@ -3,6 +3,7 @@ See documentation called gnuPipe_doc.doc
 Copyright 2003-2017 by Steven Andrews.  This work is distributed under the terms
 of the Gnu Lesser General Public License (LGPL). */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -20,6 +21,7 @@ FILE *gnuWindow() {
 
 /* gnuClose */
 void gnuClose(FILE *gnu) {
+	if(!gnu) return;
   fclose(gnu);
   return; }
 
@@ -28,8 +30,15 @@ void gnuClose(FILE *gnu) {
 
 
 /* gnuCommand */
-void gnuCommand(FILE *gnu,char *s) {
-  fprintf(gnu,"%s\n",s);
+void gnuCommand(FILE *gnu,char *s,...) {
+	char s1[1024];
+	va_list args;
+
+	if(!gnu) return;
+	va_start(args,s);
+	vsprintf(s1,s,args);
+	va_end(args);
+  fprintf(gnu,"%s\n",s1);
   fflush(gnu);
   return; }
 
@@ -38,6 +47,7 @@ void gnuCommand(FILE *gnu,char *s) {
 void gnuPrompt(FILE *gnu) {
   char s[256];
 
+	if(!gnu) return;
   fprintf(stderr,"Press enter to continue program.\n");
   fprintf(stderr,"gnuPlot> ");
   fgets(s,256,stdin);
@@ -54,6 +64,8 @@ void gnuPrompt(FILE *gnu) {
 
 /* gnuSetScales */
 void gnuSetScales(FILE *gnu,double xa,double xb,double ya,double yb) {
+
+	if(!gnu) return;
   if(xa==xb) fprintf(gnu,"set autoscale x\n");
   else fprintf(gnu,"set xrange[%g:%g]\n",xa,xb);
   if(ya==yb) fprintf(gnu,"set autoscale y\n");
@@ -69,6 +81,7 @@ void gnuSetScales(FILE *gnu,double xa,double xb,double ya,double yb) {
 void gnuData(FILE *gnu,double *x,double *y,int rows,int cols) {
   int i,j;
 
+	if(!gnu) return;
   fprintf(gnu,"plot");
   for(j=0;j<cols;j++)
     fprintf(gnu," '-'%c",j==cols-1?'\n':',');
@@ -85,6 +98,7 @@ void gnuData(FILE *gnu,double *x,double *y,int rows,int cols) {
 void gnuData2(FILE *gnu,double *x,double *y,int *ct,int col) {
   int i,j;
 
+	if(!gnu) return;
   fprintf(gnu,"plot ");
   for(j=0;j<col-1;j++)
     fprintf(gnu,"'-' with points %i, ",j+1);
@@ -97,3 +111,18 @@ void gnuData2(FILE *gnu,double *x,double *y,int *ct,int col) {
   return; }
 
 
+/* gnuData3 */
+void gnuData3(FILE *gnu,double *x,double **y,int rows,int cols) {
+  int i,j;
+
+	if(!gnu) return;
+  fprintf(gnu,"plot");
+  for(j=0;j<cols;j++)
+    fprintf(gnu," '-'%c",j==cols-1?'\n':',');
+
+  for(j=0;j<cols;j++) {
+    for(i=0;i<rows;i++)
+      fprintf(gnu,"%g %g\n",x[i],y[j][i]);
+    fprintf(gnu,"e\n"); }
+  fflush(gnu);
+  return; }

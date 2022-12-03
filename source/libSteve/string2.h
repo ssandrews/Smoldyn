@@ -39,6 +39,7 @@ const char *strnwordc(const char *s,int n);
 char *strnword1(char *s,int n);
 char *strnwordend(char *s,int n);
 char *strwordcpy(char *destination,const char *source,int n);
+char *str1wordcpy(char *destination,const char *source,int n);
 
 /************************** String arrays *************************/
 

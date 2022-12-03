@@ -386,18 +386,34 @@ char *strwordcpy(char *destination,const char *source,int n) {
 	int i;
 
 	i=0;
-	while(n) {
-		while(isspace(source[i])) {
+	while(source[i] && n) {
+		while(source[i] && isspace(source[i])) {
 			destination[i]=source[i];
 			i++; }
-		while(!isspace(source[i])) {
+		while(source[i] && !isspace(source[i])) {
 			destination[i]=source[i];
 			i++; }
 		n--; }
 
-	if(i>0 && destination[i-1]!='\0')
-		destination[i]='\0';
+	destination[i]='\0';
+	return destination; }
 
+
+/* str1wordcpy */
+char *str1wordcpy(char *destination,const char *source,int n) {
+	int is,id;
+
+	is=id=0;
+	n--;
+	while(source[is] && n) {
+		while(source[is] && isspace(source[is])) is++;
+		while(source[is] && !isspace(source[is])) is++;
+		n--; }
+	while(source[is] && isspace(source[is])) is++;
+	while(source[is] && !isspace(source[is]))
+		destination[id++]=source[is++];
+
+	destination[id]='\0';
 	return destination; }
 
 

@@ -7,38 +7,38 @@
 ########## Basic setup ##########
 
 project(SmolEmulate)
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
 set(SMOLEMULATE_VERSION "1.0")
 
 
 ######### Core code information ###########
 
 set(HEADER_FILES
-	../lib/Geometry.h
-	../lib/gnuPipe.h
-	../lib/math2.h
-	../lib/random2.h
-	../lib/Rn.h
-	../lib/RnSort.h
-	../lib/rxnparam.h
-	../lib/rxn2Dparam.h
-	../lib/string2.h
-	../lib/SurfaceParam.h
-	../lib/SFMT/SFMT.h
+	${CMAKE_SOURCE_DIR}/../libSteve/Geometry.h
+	${CMAKE_SOURCE_DIR}/../libSteve/gnuPipe.h
+	${CMAKE_SOURCE_DIR}/../libSteve/math2.h
+	${CMAKE_SOURCE_DIR}/../libSteve/random2.h
+	${CMAKE_SOURCE_DIR}/../libSteve/Rn.h
+	${CMAKE_SOURCE_DIR}/../libSteve/RnSort.h
+	${CMAKE_SOURCE_DIR}/../libSteve/rxnparam.h
+	${CMAKE_SOURCE_DIR}/../libSteve/rxn2Dparam.h
+	${CMAKE_SOURCE_DIR}/../libSteve/string2.h
+	${CMAKE_SOURCE_DIR}/../libSteve/SurfaceParam.h
+	${CMAKE_SOURCE_DIR}/../libSteve/SFMT/SFMT.h
 )
 
 set(SRC_FILES
-	../lib/Geometry.c
-	../lib/gnuPipe.c
-	../lib/math2.c
-	../lib/random2.c
-	../lib/Rn.c
-	../lib/RnSort.c
-	../lib/rxnparam.c
-	../lib/rxn2Dparam.c
-	../lib/string2.c
-	../lib/SurfaceParam.c
-	../lib/SFMT/SFMT.c
+	${CMAKE_SOURCE_DIR}/../libSteve/Geometry.c
+	${CMAKE_SOURCE_DIR}/../libSteve/gnuPipe.c
+	${CMAKE_SOURCE_DIR}/../libSteve/math2.c
+	${CMAKE_SOURCE_DIR}/../libSteve/random2.c
+	${CMAKE_SOURCE_DIR}/../libSteve/Rn.c
+	${CMAKE_SOURCE_DIR}/../libSteve/RnSort.c
+	${CMAKE_SOURCE_DIR}/../libSteve/rxnparam.c
+	${CMAKE_SOURCE_DIR}/../libSteve/rxn2Dparam.c
+	${CMAKE_SOURCE_DIR}/../libSteve/string2.c
+	${CMAKE_SOURCE_DIR}/../libSteve/SurfaceParam.c
+	${CMAKE_SOURCE_DIR}/../libSteve/SFMT/SFMT.c
 )
 
 set(MAIN_FILES SmolEmulate.c)
@@ -46,7 +46,7 @@ set(MAIN_FILES SmolEmulate.c)
 set_source_files_properties(${SRC_FILES} PROPERTIES LANGUAGE C )
 set_source_files_properties(${MAIN_FILES} PROPERTIES LANGUAGE C )
 
-include_directories(../lib)
+include_directories(${CMAKE_SOURCE_DIR}/../libSteve)
 
 list(APPEND DEP_LIBS m)
 

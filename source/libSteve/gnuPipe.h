@@ -11,7 +11,7 @@ FILE *gnuWindow();
 void gnuClose(FILE *gnu);
 
 // Direct gnuplot access
-void gnuCommand(FILE *gnu,char *s);
+void gnuCommand(FILE *gnu,char *s,...);
 void gnuPrompt(FILE *gnu);
 
 // Setup functions
@@ -20,5 +20,6 @@ void gnuSetScales(FILE *gnu,double xa,double xb,double ya,double yb);
 // Data plotting
 void gnuData(FILE *gnu,double *x,double *y,int m,int col);
 void gnuData2(FILE *gnu,double *x,double *y,int *ct,int col);
+void gnuData3(FILE *gnu,double *x,double **y,int rows,int cols);
 
 #endif

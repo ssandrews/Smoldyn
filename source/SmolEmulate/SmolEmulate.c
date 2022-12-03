@@ -15,7 +15,7 @@
 #include "string2.h"
 #include "SurfaceParam.h"
 
-#define VERSION 1.0
+#define VERSION 1.1
 
 #define CHECKS(A,...)		if(!(A)) {ErrorType=2;sprintf(ErrorString,__VA_ARGS__); goto failure;} else (void)0
 
@@ -25,23 +25,23 @@ FILE* gnu=NULL;
 
 
 typedef struct emustruct {
-	int dim;
-	int npts;
-	int reversible;
-	char algorithm;
-	double bindrad;
-	double unbindrad;
-	double rxnprob;
-	double epsilon;
-	double difc;
-	double dt;
-	double rmsstep;
-	char initialrdf;
-	double initialrdfval;
-	double dr;
-	double *r;
-	double *rdfa;
-	double *rdfd;
+	int dim;							// system dimensionality: 1,2,3
+	char algorithm;				// algorithm: a,l,h
+	int reversible;				// reversible or not: 0,1
+	double difc;					// diffusion coefficient
+	double dt;						// simulation time step
+	double rmsstep;				// diffusive step size
+	double bindrad;				// binding radius
+	double unbindrad;			// unbinding radius or -1
+	double rxnprob;				// reaction probability or -1
+	double epsilon;				// precision level
+	char initialrdf;			// initial rdf shape: w,h,s,k
+	double initialrdfval;	// value for initial rdf
+	int npts;							// points in RDF
+	double dr;						// spatial step size
+	double *r;						// vector of radial positions
+	int nrdf;							// number of RDFs (=2)
+	double **rdf;					// RDFs
 	} *emuptr;
 
 
@@ -57,52 +57,66 @@ typedef struct emustruct {
 
 /* emualloc */
 emuptr emualloc(emuptr emu,int npts) {
-	int i;
+	int i,irdf;
 
 	if(!emu) {
 		emu=(emuptr) malloc(sizeof(struct emustruct));
 		if(!emu) return NULL;
 		emu->dim=-1;
-		emu->npts=0;
-		emu->reversible=-1;
 		emu->algorithm='a';
+		emu->reversible=-1;
+		emu->difc=-1;
+		emu->dt=-1;
+		emu->rmsstep=-1;
 		emu->bindrad=-1;
 		emu->unbindrad=-1;
 		emu->rxnprob=-1;
 		emu->epsilon=-1;
-		emu->difc=-1;
-		emu->dt=-1;
-		emu->rmsstep=-1;
 		emu->initialrdf='w';
 		emu->initialrdfval=-1;
+		emu->npts=0;
 		emu->dr=-1;
 		emu->r=NULL;
-		emu->rdfa=NULL;
-		emu->rdfd=NULL; }
+		emu->nrdf=0;
+		emu->rdf=NULL; }
 
 	if(npts>0 && emu->npts!=npts) {
 		if(emu->r) free(emu->r);
-		if(emu->rdfa) free(emu->rdfa);
-		if(emu->rdfd) free(emu->rdfd);
+		if(emu->rdf) {
+			for(irdf=0;irdf<emu->nrdf;irdf++)
+				if(emu->rdf[irdf]) free(emu->rdf[irdf]);
+			free(emu->rdf); }
+		emu->nrdf=0;
 		emu->npts=0;
 
-		emu->r=(double *) calloc(npts,sizeof(double));
-		emu->rdfa=(double *) calloc(npts,sizeof(double));
-		emu->rdfd=(double *) calloc(npts,sizeof(double));
-		if(!emu->r || !emu->rdfa || !emu->rdfd) return NULL;
+		CHECKS(emu->r=(double *) calloc(npts,sizeof(double)),"Memory error");
 		for(i=0;i<npts;i++)
-			emu->r[i]=emu->rdfa[i]=emu->rdfd[i]=0;
+			emu->r[i]=0;
+
+		emu->nrdf=2;
+		CHECKS(emu->rdf=(double **) calloc(emu->nrdf,sizeof(double *)),"Memory error");
+		for(irdf=0;irdf<emu->nrdf;irdf++) {
+			CHECKS(emu->rdf[irdf]=(double *) calloc(npts,sizeof(double)),"Memory error");
+			for(i=0;i<npts;i++)
+				emu->rdf[irdf][i]=0; }
 		emu->npts=npts; }
 
-	return emu; }
+	return emu;
+
+ failure:
+	return NULL; }
 
 
 /* emufree */
 void emufree(emuptr emu) {
+	int irdf;
+
 	if(!emu) return;
 	free(emu->r);
-	free(emu->rdfa);
-	free(emu->rdfd);
+	if(emu->rdf) {
+		for(irdf=0;irdf<emu->nrdf;irdf++)
+			free(emu->rdf[irdf]);
+		free(emu->rdf); }
 	free(emu);
 	return; }
 
@@ -112,26 +126,45 @@ void emufree(emuptr emu) {
 /******************************************************************************/
 
 
+/* emuhelp */
+void emuhelp() {
+	printf("dim: 1, 2, or 3\n");
+	printf("algo: (A)ndrews-Bray, (L)ambda-rho, (H)ard-sphere, but H doesn't work\n");
+	printf("rev: 0 or 1\n");
+	printf("difc: >0, or -1 to compute\n");
+	printf("dt: >0, or -1 to compute\n");
+	printf("rms: >0, or -1 to compute\n");
+	printf("bind: >0\n");
+	printf("unbind: >=0 if reversible, ignored otherwise\n");
+	printf("prob: between 0 and 1, unless ignored\n");
+	printf("eps: 0.0001 is usually good, smaller is more precise\n");
+	printf("rdf: (w)ell-mixed, (h)eaviside, (s)moluchowski, (k)eep prior\n");
+	printf("npts: 200 is usually good, more is more precise\n");
+	printf("dr: much smaller than the binding radius\n");
+	return; }
+
+
 /* emuoutput */
 void emuoutput(emuptr emu) {
+	printf("\n");
 	if(!emu) {
 		printf("No emulation structure defined.\n");
 		return; }
-	printf("Emulation structure:\n");
-	printf(" dimensions: %i\n",emu->dim);
-	printf(" reversible: %s\n",emu->reversible?"yes":"no");
-	printf(" algorithm: %c\n",emu->algorithm);
-	printf(" difc, dt, rms step: %g %g %g\n",emu->difc,emu->dt,emu->rmsstep);
-	if(emu->reversible)
-		printf(" bind/unbind radius: %g %g\n",emu->bindrad,emu->unbindrad);
-	else
-		printf(" binding radius: %g\n",emu->bindrad);
-	printf(" reaction probability: %g\n",emu->rxnprob);
-	printf(" epsilon value: %g\n",emu->epsilon);
-	printf(" initial rdf shape: %c",emu->initialrdf);
-	if(emu->initialrdf=='h')
-		printf(", value: %g",emu->initialrdfval);
-	printf("\n points in rdf, dr: %i %g\n",emu->npts,emu->dr);
+	printf("-- Emulation structure: --\n");
+	printf(" dimensions (dim): %i\n",emu->dim);
+	printf(" algorithm (algo): %c\n",emu->algorithm);
+	printf(" reversible (rev): %i\n",emu->reversible);
+	printf(" diffusion (difc): %g\n",emu->difc);
+	printf(" time step (dt): %g\n",emu->dt);
+	printf(" rms step (rms): %g\n",emu->rmsstep);
+	printf(" binding rad. (bind): %g\n",emu->bindrad);
+	printf(" unbind rad. (unbind): %g\n",emu->unbindrad);
+	printf(" rxn. prob. (prob): %g\n",emu->rxnprob);
+	printf(" epsilon (eps): %g\n",emu->epsilon);
+	printf(" initial rdf shape (rdf): %c\n",emu->initialrdf);
+	printf(" rdf value (val): %g\n",emu->initialrdfval);
+	printf(" points in rdf (npts): %i\n",emu->npts);
+	printf(" spatial step (dr): %g\n",emu->dr);
 	return; }
 
 
@@ -142,19 +175,23 @@ int emucheckparams(emuptr emu) {
 	warn=error=0;
 	if(!emu) return 0;
 	if(emu->dim<1 || emu->dim>3) {error++;printf("ERROR: dim must be between 1 and 3\n");}
-	if(emu->npts<2) {error++;printf("ERROR: npts too small\n");}
-	if(emu->bindrad<0) {error++;printf("ERROR: bindrad must be >= 0\n");}
-	if(emu->reversible && emu->unbindrad<0) {error++;printf("ERROR: unbindrad must be >=0\n");}
-	if(emu->dim<1 || emu->dim>3) {error++;printf("ERROR: dim out of range\n");}
-	if(emu->rxnprob<0 || emu->rxnprob>1) {error++;printf("ERROR: rxnprob must be between 0 and 1\n");}
-	if(emu->epsilon<=0) {error++;printf("ERROR: epsilon must be >0\n");}
+	if(!strchr("alh",emu->algorithm)) {error++;printf("ERROR: unknown algorithm\n");}
+	if(emu->difc<=0) {error++;printf("ERROR: diffusion coefficient must be >0\n");}
+	if(emu->dt<=0) {error++;printf("ERROR: time step must be >0\n");}
 	if(emu->rmsstep<=0) {error++;printf("ERROR: rmsstep must be >0\n");}
+	if(emu->bindrad<=0) {error++;printf("ERROR: bindrad must be > 0\n");}
+	if(emu->reversible && emu->unbindrad<0) {error++;printf("ERROR: unbindrad must be >=0\n");}
+	if(emu->algorithm!='a' && (emu->rxnprob<0 || emu->rxnprob>1)) {error++;printf("ERROR: rxnprob must be between 0 and 1\n");}
+	if(emu->epsilon<=0) {error++;printf("ERROR: epsilon must be >0\n");}
+	if(!strchr("whsk",emu->initialrdf)) {error++;printf("ERROR: unknown initial rdf shape");}
+	if(emu->npts<2) {error++;printf("ERROR: npts must be >2\n");}
 	if(emu->dr<=0) {error++;printf("ERROR: dr must be >0\n");}
-	if(emu->r==NULL) {error++;printf("ERROR: r vector not allocated\n");}
-	if(emu->rdfa==NULL) {error++;printf("ERROR: r vector not allocated\n");}
-	if(emu->rdfd==NULL) {error++;printf("ERROR: r vector not allocated\n");}
+	if(emu->r==NULL) {error++;printf("BUG: r vector not allocated\n");}
+	if(emu->nrdf!=2) {error++;printf("BUG: nrdf must equal 2\n");}
+	if(emu->rdf[0]==NULL) {error++;printf("BUG: rdf[0] vector not allocated\n");}
+	if(emu->rdf[1]==NULL) {error++;printf("BUG: rdf[1] vector not allocated\n");}
 	if(emu->difc>0 && emu->dt>0 && emu->rmsstep!=sqrt(2*emu->difc*emu->dt)) {warn++;printf("WARNING: rms step doesn't agree with difc and dt.\n");}
-	printf("%i warnings, %i errors\n",warn,error);
+	printf("%i warnings, %i errors\n\n",warn,error);
 	return error; }
 
 
@@ -170,38 +207,38 @@ int emusetparam(emuptr emu,char *param,double value) {
 	errcode=0;
 	if(!strcmp(param,"dim"))
 		emu->dim=(int) value;
-	else if(!strcmp(param,"algorithm"))
+	else if(!strcmp(param,"algorithm") || !strcmp(param,"algo"))
 		emu->algorithm=(char) value;
-	else if(!strcmp(param,"bindrad"))
-		emu->bindrad=value;
-	else if(!strcmp(param,"unbindrad"))
-		emu->unbindrad=value;
-	else if(!strcmp(param,"reversible"))
+	else if(!strcmp(param,"reversible") || !strcmp(param,"rev"))
 		emu->reversible=(int) value;
-	else if(!strcmp(param,"rxnprob"))
-		emu->rxnprob=value;
-	else if(!strcmp(param,"dt"))
-		emu->dt=value;
 	else if(!strcmp(param,"difc"))
 		emu->difc=value;
-	else if(!strcmp(param,"rmsstep"))
+	else if(!strcmp(param,"dt"))
+		emu->dt=value;
+	else if(!strcmp(param,"rmsstep") || !strcmp(param,"rms"))
 		emu->rmsstep=value;
-	else if(!strcmp(param,"initialrdf"))
+	else if(!strcmp(param,"bindrad") || !strcmp(param,"bind"))
+		emu->bindrad=value;
+	else if(!strcmp(param,"unbindrad") || !strcmp(param,"unbind"))
+		emu->unbindrad=value;
+	else if(!strcmp(param,"rxnprob") || !strcmp(param,"prob"))
+		emu->rxnprob=value;
+	else if(!strcmp(param,"epsilon") || !strcmp(param,"eps"))
+		emu->epsilon=value;
+	else if(!strcmp(param,"initialrdf") || !strcmp(param,"rdf"))
 		emu->initialrdf=(char) value;
-	else if(!strcmp(param,"initialrdfvalue"))
+	else if(!strcmp(param,"initialrdfvalue") || !strcmp(param,"val"))
 		emu->initialrdfval=value;
-	else if(!strcmp(param,"dr"))
-		emu->dr=value;
 	else if(!strcmp(param,"npts")) {
 		if(emualloc(emu,(int)value)==NULL)
 			errcode=-1; }
-	else if(!strcmp(param,"epsilon"))
-		emu->epsilon=value;
+	else if(!strcmp(param,"dr"))
+		emu->dr=value;
 	else
 		errcode=-2;
 
 	if(errcode==-1) fprintf(stderr,"BUG: out of memory in emusetparam\n");
-	else if(errcode==-2) fprintf(stderr,"BUG: unknown parameter in emusetparam\n");
+	else if(errcode==-2) fprintf(stderr,"Unknown parameter in emusetparam\n");
 
 	return errcode; }
 
@@ -211,86 +248,37 @@ int emuhardcodeparams(emuptr emu) {
 	emusetparam(emu,"dim",3);
 	emusetparam(emu,"algorithm",(double)'l');
 	emusetparam(emu,"reversible",0);
-//	emusetparam(emu,"bindrad",0.432834);
-	emusetparam(emu,"bindrad",0.386114);
-	emusetparam(emu,"unbindrad",-1);
-	emusetparam(emu,"rxnprob",0.5);
 	emusetparam(emu,"difc",0.5);
 	emusetparam(emu,"dt",0.1);
-	emusetparam(emu,"npts",200);
+	emusetparam(emu,"bindrad",1);
+	emusetparam(emu,"unbindrad",-1);
+	emusetparam(emu,"rxnprob",0.5);
 	emusetparam(emu,"epsilon",0.0001);
 	emusetparam(emu,"initialrdf",(double)'w');
+	emusetparam(emu,"npts",200);
 	return 0; }
 
 
 /* emuinputparams*/
 int emuinputparams(emuptr emu) {
-	int i1;
-	double d1;
-	char string[STRCHAR];
-	emuptr emutemp;
+	double value;
+	char param[STRCHAR],val[STRCHAR];
+	int er;
 
-	printf("Enter system dimensionality (1, 2, or 3): ");
-	scanf("%i",&i1);
-	if(i1<1 || i1>3) {printf("Illegal input.\n");return 1;}
-	emusetparam(emu,"dim",(double)i1);
-
-	printf("Enter reaction algorithm: (A)ndrews-Bray, (L)ambda-rho: ");
-	scanf("%s",string);
-	emusetparam(emu,"algorithm",(double)tolower(string[0]));
-
-	printf("Is reaction reversible, 'y' or 'n': ");
-	scanf("%s",string);
-	if(string[0]=='y' || string[0]=='Y')
-		emusetparam(emu,"reversible",(double)1);
-	else
-		emusetparam(emu,"reversible",(double)0);
-
-	printf("Enter binding radius (e.g. 1): ");
-	scanf("%lg",&d1);
-	if(d1<=0) {printf("Illegal input.\n");return 1;}
-	emusetparam(emu,"bindrad",d1);
-
-	if(emu->reversible) {
-		printf("Enter unbinding radius (e.g. 2): ");
-		scanf("%lg",&d1);
-		if(d1<0) {printf("Illegal input.\n");return 1;}}
-	else d1=-1;
-	emusetparam(emu,"unbindrad",d1);
-
-	if(emu->algorithm=='l') {
-		printf("Enter reaction probability (e.g. 0.5): ");
-		scanf("%lg",&d1);
-		if(d1<0 || d1>1) {printf("Illegal input.\n");return 1; }}
-	else d1=1;
-	emusetparam(emu,"rxnprob",d1);
-
-	printf("Enter rms step length (e.g. 0.1): ");
-	scanf("%lg",&d1);
-	emusetparam(emu,"rmsstep",d1);
-	emusetparam(emu,"dt",-1);
-	emusetparam(emu,"difc",-1);
-
-	printf("Enter the number of radial points in the rdf (e.g. 200): ");
-	scanf("%i",&i1);
-	if(i1<10) {
-		printf("Value is too low.  Function stopped.\n");return 1; }
-	emusetparam(emu,"npts",(double)i1);
-
-	printf("Enter the shape for the initial rdf:\n (w)ell-mixed, (H)eaviside function, (S)moluchowski: ");
-	scanf("%s",string);
-	string[0]=tolower(string[0]);
-	emusetparam(emu,"initialrdf",(double)string[0]);
-	if(string[0]=='h') {
-		printf("Enter radius of step in initial rdf: ");
-		scanf("%lg",&d1);
-		emusetparam(emu,"initialrdfvalue",d1); }
-
-	printf("Enter level of precision (e.g. 1e-4): ");
-	scanf("%lf",&d1);
-	if(d1<=0) {
-		printf("Impossible precision.  Function stopped.\n");return 1; }
-	emusetparam(emu,"epsilon",d1);
+	while(strcmp(param,"done")) {
+		printf("Current settings:\n");
+		emuoutput(emu);
+		printf("Enter parameter and new value (or 'done 1' or 'help 1'):");
+		scanf("%s %s",param,val);
+		if(!strcmp(param,"done"));
+		else if(!strcmp(param,"help"))
+			emuhelp();
+		else {
+			if(!strcmp(param,"algo") || !strcmp(param,"rdf"))
+				value=(double) tolower(val[0]);
+			else
+				value=strtod(val,NULL);
+			emusetparam(emu,param,value); }}
 
 	return 0; }
 
@@ -314,8 +302,16 @@ int emusetrmsstep(emuptr emu) {
 	else if(s>0) {
 		emusetparam(emu,"dt",1);
 		emusetparam(emu,"difc",s*s/2/emu->dt); }
-	else
-		return -1;
+	else if(emu->dt>0) {
+		emusetparam(emu,"difc",1);
+		emusetparam(emu,"rmsstep",sqrt(2*emu->difc*emu->dt)); }
+	else if(emu->difc>0) {
+		emusetparam(emu,"dt",1);
+		emusetparam(emu,"rmsstep",sqrt(2*emu->difc*emu->dt)); }
+	else {
+		emusetparam(emu,"dt",1);
+		emusetparam(emu,"difc",1);
+		emusetparam(emu,"rmsstep",sqrt(2*emu->difc*emu->dt)); }
 
 	return 0; }
 
@@ -326,8 +322,8 @@ int emumakervect(emuptr emu) {
 	double dr,*r,bindrad,unbindrad;
 
 	bindrad=emu->bindrad;
-	unbindrad=emu->unbindrad;
 	reversible=emu->reversible;
+	unbindrad=reversible?emu->unbindrad:-1;
 	npts=emu->npts;
 	r=emu->r;
 
@@ -358,11 +354,11 @@ int emumakerdfvect(emuptr emu,char type) {
 
 	npts=emu->npts;
 	r=emu->r;
-	rdfa=emu->rdfa;
-	rdfd=emu->rdfd;
+	rdfa=emu->rdf[0];
+	rdfd=emu->rdf[1];
 	bindrad=emu->bindrad;
-	unbindrad=emu->unbindrad;
 	reversible=emu->reversible;
+	unbindrad=reversible?emu->unbindrad:-1;
 	initialrdf=(type=='d') ? emu->initialrdf : type;	// d = default
 	initialrdfval=emu->initialrdfval;
 
@@ -380,9 +376,13 @@ int emumakerdfvect(emuptr emu,char type) {
 				rdfa[i]=rdfd[i]=1.0-(unbindrad-r[i])/r[i]/(unbindrad-bindrad);
 		for(;i<npts;i++) rdfa[i]=rdfd[i]=1.0; }
 
-	else {																				// w = well-mixed
+	else if(initialrdf=='w') {										// w = well-mixed
 		for(i=0;i<npts;i++)
 			rdfa[i]=rdfd[i]=1; }
+
+	else if(initialrdf=='k');											// k = keep prior
+
+	else return 1;
 
 	return 0; }
 
@@ -400,10 +400,10 @@ int emuactivationlimit(emuptr emu) {
 	dim=emu->dim;
 	bindrad=emu->bindrad;
 	r=emu->r;
-	rdfa=emu->rdfa;
-	rdfd=emu->rdfd;
+	rdfa=emu->rdf[0];
+	rdfd=emu->rdf[1];
 	npts=emu->npts;
-	rxnprob=emu->rxnprob;
+	rxnprob=emu->algorithm=='a'?1:emu->rxnprob;
 	rmsstep=emu->rmsstep;
 	dt=emu->dt;
 
@@ -436,13 +436,13 @@ int emustepbystep(emuptr emu) {
 	dim=emu->dim;
 	dt=emu->dt;
 	r=emu->r;
-	rdfa=emu->rdfa;
-	rdfd=emu->rdfd;
+	rdfa=emu->rdf[0];
+	rdfd=emu->rdf[1];
 	npts=emu->npts;
 	bindrad=emu->bindrad;
-	unbindrad=emu->unbindrad;
+	unbindrad=emu->reversible?emu->unbindrad:-1;
 	rmsstep=emu->rmsstep;
-	rxnprob=emu->rxnprob;
+	rxnprob=emu->algorithm=='a'?1:emu->rxnprob;
 	difc=emu->difc;
 
 	if(!gnu) gnu=gnuWindow();
@@ -472,8 +472,9 @@ int emustepbystep(emuptr emu) {
 		if(dim==3) flux=rdfabsorb(r,rdfa,npts,bindrad,rxnprob);
 		else if(dim==2) flux=rdf2Dabsorbprob(r,rdfa,npts,rxnprob);
 
-		if(it%10==0)
-			gnuData(gnu,r,rdfa,npts,1); }
+		if(it%10==0) {
+			gnuData3(gnu,r,emu->rdf,npts,2);
+			gnuCommand(gnu,"set arrow 1 from %f,0 to %f,1.1 nohead lc rgb 'red'",bindrad,bindrad); }}
 
 	printf("emulator final flux value in one time step: %g\n",flux);
 	numflux=numrxnrate(rmsstep,bindrad,unbindrad);
@@ -500,6 +501,7 @@ int emustepbystep(emuptr emu) {
 	numbindradchi=bindingradiusprob(rxnrate,dt,difc,unbindrad,0,chi,&numprob);
 	printf("computed binding radius and prob from bindingradiusprob(%g,%g,%g,%g,0,%g,&prob): %g %g\n",rxnrate,dt,difc,unbindrad,chi,numbindradchi,numprob);
 
+	gnuCommand(gnu,"unset arrow 1");
 
 	return 0; }
 
@@ -515,13 +517,13 @@ int emusteadystate(emuptr emu) {
 	dim=emu->dim;
 	dt=emu->dt;
 	r=emu->r;
-	rdfa=emu->rdfa;
-	rdfd=emu->rdfd;
+	rdfa=emu->rdf[0];
+	rdfd=emu->rdf[1];
 	npts=emu->npts;
 	bindrad=emu->bindrad;
-	unbindrad=emu->unbindrad;
+	unbindrad=emu->reversible?emu->unbindrad:-1;
 	rmsstep=emu->rmsstep;
-	rxnprob=emu->rxnprob;
+	rxnprob=emu->algorithm=='a'?1:emu->rxnprob;
 	difc=emu->difc;
 
 	printf("... running ...\n");
@@ -560,22 +562,28 @@ int emurateconstant(emuptr emu) {
 	int npts,i,dim,nrecord,irec;
 	double flux,fluxold,numflux,numfluxprob,tmax,dtrecord,t,fluxmax,dt,*r,*rdfa,*rdfd;
 	double *tvect,*kvect,bindrad,unbindrad,rmsstep,rxnprob;
-	char string[STRCHAR];
+	char string[STRCHAR],outtype[STRCHAR];
 
 	dim=emu->dim;
 	dt=emu->dt;
 	r=emu->r;
-	rdfa=emu->rdfa;
-	rdfd=emu->rdfd;
+	rdfa=emu->rdf[0];
+	rdfd=emu->rdf[1];
 	rmsstep=emu->rmsstep;
 	npts=emu->npts;
-	rxnprob=emu->rxnprob;
+	rxnprob=emu->algorithm=='a'?1:emu->rxnprob;
 	bindrad=emu->bindrad;
-	unbindrad=emu->unbindrad;
+	unbindrad=emu->reversible?emu->unbindrad:-1;
 
-	printf("Enter maximum time and recording interval: ");
+	printf("Enter maximum time and recording interval (e.g. 100 1): ");
 	scanf("%lf %lf",&tmax,&dtrecord);
+	if(dtrecord<emu->dt)
+		printf("WARNING: recording interval (%g) is shorter than time step (%g)\n",dtrecord,emu->dt);
 	nrecord=(int)floor(tmax/dtrecord);
+	printf("Output type (E)xcel (M)athematica: ");
+	scanf("%s",outtype);
+	outtype[0]=tolower(outtype[0]);
+
 	tvect=(double*) calloc(nrecord,sizeof(double));
 	kvect=(double*) calloc(nrecord,sizeof(double));
 	if(!tvect || !kvect) return 1;
@@ -602,16 +610,17 @@ int emurateconstant(emuptr emu) {
 
 		if(flux>fluxmax) {
 			fluxmax=flux;
-			gnuSetScales(gnu,0,tmax,0,fluxmax); }
+			gnuSetScales(gnu,0,tmax,0,fluxmax/dt); }
 		if((int)floor(t/dtrecord)>irec) {
 			irec++;
 			tvect[irec]=t;
-			kvect[irec]=flux;
+			kvect[irec]=flux/dt;
 			gnuData(gnu,tvect,kvect,irec+1,1);
-			printf("%g,%g\n",t,flux);
+			if(outtype[0]=='e') printf("%g,%g\n",t,flux/dt);
+			else if(outtype[0]=='m') printf("{%g,%g},",t,flux/dt);
 		}}
 
-	printf("emulator final flux value: %g\n",flux);
+	printf("\nemulator final flux value: %g\n",flux);
 	numflux=numrxnrate(rmsstep,bindrad,unbindrad);
 	printf("flux from numrxnrate(%g,%g,%g): %g\n",rmsstep,bindrad,unbindrad,numflux);
 	numfluxprob=numrxnrateprob(rmsstep,bindrad,unbindrad,rxnprob);
@@ -620,6 +629,9 @@ int emurateconstant(emuptr emu) {
 		printf("emulator steady-state reaction rate: %g\n",flux/dt);
 		printf("reaction rate from numrxnrate(%g,%g,%g): %g\n",rmsstep,bindrad,unbindrad,numflux/dt);
 		printf("reaction rate from numrxnrateprob(%g,%g,%g,%g): %g\n",rmsstep,bindrad,unbindrad,rxnprob,numfluxprob/dt); }
+
+	free(tvect);
+	free(kvect);
 
 	return 0; }
 
@@ -711,6 +723,7 @@ int main(void) {
 	printf("Runing SmolEmulate version %g\n",VERSION);
 
 	emu=emualloc(NULL,0);
+	emuhardcodeparams(emu);
 
 	selection=0;
 	while(selection!=9) {
@@ -774,11 +787,13 @@ int main(void) {
 		}
 
 	if(gnu) gnuClose(gnu);
+	gnu=NULL;
 	emufree(emu);
 	return 0;
 
  failure:
 	if(gnu) gnuClose(gnu);
+	gnu=NULL;
  	printf("Terminated due to: %s\n",ErrorString);
  	return 0; }
 
