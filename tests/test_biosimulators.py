@@ -1174,7 +1174,7 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
                     results[variable_id][0 : sim.number_of_points + 1],
                 )
 
-    @unitest.skip(
+    @unittest.skip(
         "Line 1191: IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices"
     )
     def test_exec_sedml_docs_in_combine_archive(self):
@@ -1193,7 +1193,7 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
 
         self._assert_combine_archive_outputs(doc, out_dir)
 
-    @unitest.skip(
+    @unittest.skip(
         "Line 1206: IndexError: only integers, slices (`:`), ellipsis (`...`), numpy.newaxis (`None`) and integer or boolean arrays are valid indices"
     )
     def test_command_line_interface(self):
