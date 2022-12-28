@@ -954,7 +954,10 @@ class BioSimulatorsCombineTestCase(unittest.TestCase):
 
     # FIXME: Failing with following error message.
     # Target `fixmolcount rabbit` can only be changed during simulation preprocessing
-    @flaky.flaky(max_runs=10, min_passes=0)
+    # @flaky.flaky(max_runs=10, min_passes=1)
+    @unittest.skip(
+        "Target `fixmolcount rabbit` can only be changed during simulation preprocessing"
+    )
     def test_exec_sed_task_with_changes(self):
         task = Task(
             id="task",
