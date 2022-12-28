@@ -11,6 +11,8 @@ concurrency:
 
 env:
   PIP_ONLY_BINARY: numpy
+  # For cmake:
+  VERBOSE: 1
 
 jobs:
   standard:
@@ -31,7 +33,7 @@ jobs:
       run: sudo apt-get install libboost-dev
 
     - name: Update CMake
-      uses: jwlawson/actions-setup-cmake@v1.12
+      uses: jwlawson/actions-setup-cmake@v1.13
 
     - name: Prepare env
       run: |
@@ -104,7 +106,7 @@ jobs:
       run: cmake --build build3 --target pytest
 
     - name: Interface test
-      run: cmake --build build2 --target test_cmake_build
+      run: cmake --build build3 --target test_cmake_build
 
     # This makes sure the setup_helpers module can build packages using
     # setuptools

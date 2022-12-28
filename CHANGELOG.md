@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.70.1 (12/28/22)
+
+- Added wheels for Python 3.11.
+
 ### 2.70 (10/24/22)
 
 - Allowed users to set reaction probability with Libsmoldyn and Python APIs
@@ -11,7 +15,7 @@
 
 ### 2.68 (7/3/22)
 
-- Added listmolssurf command. 
+- Added listmolssurf command.
 - Added python3.11 support.
 - dev: Linux wheels now uses 2014 version.
 
