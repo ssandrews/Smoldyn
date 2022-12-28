@@ -2,7 +2,7 @@
 
 ### 2.70.1 (12/28/22)
 
-- Added wheels for Python 3.11.
+- Added wheels for Python 3.11 (Windows, OSX).
 
 ### 2.70 (10/24/22)
 
@@ -16,7 +16,7 @@
 ### 2.68 (7/3/22)
 
 - Added listmolssurf command.
-- Added python3.11 support.
+- Added python3.11 support (linux).
 - dev: Linux wheels now uses 2014 version.
 
 ### 2.67.3 (3/17/22)
