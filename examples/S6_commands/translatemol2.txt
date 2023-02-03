@@ -1,0 +1,53 @@
+# Simulation file
+# This file is used to test and demonstrate the translatemol command
+
+define DT 0.002
+
+graphics opengl_good
+#random_seed 2
+
+dim 2
+boundaries x -10 10
+boundaries y -10 10
+
+species red green blue
+
+time_start 0
+time_stop 1000
+time_step DT
+
+difc all 0.1
+color red red
+color green green
+color blue(all) blue
+
+display_size all(all) 0.2
+
+start_surface bounds
+action both all jump
+panel rect +x -10 -10 20 rxlow
+panel rect -x 10 -10 20 rxhigh
+panel rect +y -10 -10 20 rylow
+panel rect -y -10 10 20 ryhigh
+jump rxlow f <-> rxhigh f
+jump rylow f <-> ryhigh f
+end_surface
+
+start_surface surf1
+color both maroon
+action both red reflect
+action both green transmit
+polygon both edge
+panel sph 5 0 2 20
+end_surface
+
+mol 100 red u u
+mol 30 green u u
+surface_mol 20 blue(up) surf1 all all
+
+cmd E translatemol red DT*y -DT*x
+cmd E translatemol green DT -DT
+cmd E translatemol blue(all) DT/5 0
+
+end_file
+

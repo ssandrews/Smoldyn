@@ -1286,7 +1286,7 @@ int strloadmathfunctions(void) {
 
 
 /* strevalfunction */
-double strevalfunction(char *expression,char *parameters,void *voidptr,void *funcptr,char **varnames,const double *varvalues,int nvar) {
+double strevalfunction(const char *expression,char *parameters,void *voidptr,void *funcptr,char **varnames,const double *varvalues,int nvar) {
 	static int maxfunc=0,nfunc=0;
 	static char **funclist=NULL,**paramlist=NULL;
 	static void **funcptrs=NULL,**voidptrs=NULL;
@@ -1301,9 +1301,8 @@ double strevalfunction(char *expression,char *parameters,void *voidptr,void *fun
 	double (*fnptrdves)(void*,char*,char*);
 
 	double answer,f1,f2;
-	char *s1;
 
-	if(!expression) {
+	if(!expression) {									// free all memory that was allocated by this function
 		for(i=0;i<nfunc;i++) {
 			free(funclist[i]);
 			free(paramlist[i]); }
@@ -1315,8 +1314,8 @@ double strevalfunction(char *expression,char *parameters,void *voidptr,void *fun
 		nfunc=0;
 		return 0; }
 
-	if(funcptr) {
-		if(nfunc==maxfunc) {
+	if(funcptr) {											// store a new function for later use
+		if(nfunc==maxfunc) {						// expand function list if needed
 			newmaxfunc=2*maxfunc+1;
 			newfunclist=(char **) calloc(newmaxfunc,sizeof(char *));
 			if(!newfunclist) return 1;
@@ -1365,7 +1364,7 @@ double strevalfunction(char *expression,char *parameters,void *voidptr,void *fun
 		nfunc++;
 		return 0; }
 
-	for(i=0;i<nfunc && strcmp(expression,funclist[i]);i++);		// i is function number
+	for(i=0;i<nfunc && strcmp(expression,funclist[i]);i++);		// evaluate a function; i is function number
 	CHECKS(i<nfunc,"unknown function name");
 
 	if(!strcmp(paramlist[i],"dd")) {
@@ -1377,13 +1376,12 @@ double strevalfunction(char *expression,char *parameters,void *voidptr,void *fun
 		CHECKS((comma=strChrBrackets(parameters,-1,',',"([{,\"'"))>0,"missing parameter");
 		parameters[comma]='\0';
 		f1=strmatheval(parameters,varnames,varvalues,nvar);
-		parameters+=comma+1;
-		f2=strmatheval(parameters,varnames,varvalues,nvar);
+		f2=strmatheval(parameters+comma+1,varnames,varvalues,nvar);
+		parameters[comma]=',';
 		answer=(*fnptrddd)(f1,f2); }
 	else if(!strcmp(paramlist[i],"dves")) {
 		fnptrdves=(double(*)(void*,char*,char*)) funcptrs[i];
-		s1=parameters;
-		answer=(*fnptrdves)(voidptrs[i],erstr,s1);
+		answer=(*fnptrdves)(voidptrs[i],erstr,parameters);
 		CHECKS(answer>=0 || answer<0,"%s",erstr); }
 	else
 		CHECKS(0,"BUG: unknown function format");
@@ -1396,48 +1394,49 @@ double strevalfunction(char *expression,char *parameters,void *voidptr,void *fun
 
 
 /* strmatheval */
-double strmatheval(char *expression,char **varnames,const double *varvalues,int nvar) {
+double strmatheval(const char *expression,char **varnames,const double *varvalues,int nvar) {
   static int unarysymbol=0;
   int length,i1,i2;
   double answer,term;
-  char *ptr,*ptr2,ptrchar,ptr2char;
+  char *ptr,*ptr2,ptrchar,ptr2char,expr[STRCHAR];
 
 //	printf("strmatheval expression: '%s'\n",expression);	// DEBUG
 
+	strncpy(expr,expression,STRCHAR);
   MathParseError=0;
-  length=strlen(expression);
+  length=strlen(expr);
   CHECKS(length>0,"missing expression");
 
-  if(strisnumber(expression)) {																		// number
+  if(strisnumber(expr)) {																		// number
     unarysymbol=0;
-    answer=strtod(expression,NULL); }
+    answer=strtod(expr,NULL); }
 
-  else if((i1=stringfind(varnames,nvar,expression))>=0) {					// variable
+  else if((i1=stringfind(varnames,nvar,expr))>=0) {					// variable
     unarysymbol=0;
     answer=varvalues[i1]; }
 
-  else if(strchr("([{",expression[0]) && strparenmatch(expression,0)==length-1) {   // {[()]}
+  else if(strchr("([{",expr[0]) && strparenmatch(expr,0)==length-1) {   // {[()]}
     unarysymbol=0;
-    ptr=expression+length-1;
+    ptr=expr+length-1;
     ptrchar=*ptr;
     *ptr='\0';
-    answer=strmatheval(expression+1,varnames,varvalues,nvar);
+    answer=strmatheval(expr+1,varnames,varvalues,nvar);
     *ptr=ptrchar; }
 
-	else if(strisfunctionform(expression,&ptr)) {										// function
+	else if(strisfunctionform(expr,&ptr)) {										// function
 		unarysymbol=0;
-		expression[length-1]='\0';
+		expr[length-1]='\0';
 		*ptr='\0';
 		ptr++;
-		answer=strevalfunction(expression,ptr,NULL,NULL,varnames,varvalues,nvar);
+		answer=strevalfunction(expr,ptr,NULL,NULL,varnames,varvalues,nvar);
 		CHECK(answer>=0 || answer<0); }
 
-  else if((i1=strPbrkBrackets(expression,length-1,"+-","([{",1))>0 && !strchr("^*/",expression[i1-1]) && !(strchr("Ee",expression[i1-1]) && i1>1 && strchr("0123456789",expression[i1-2]))) {  // binary + -
+  else if((i1=strPbrkBrackets(expr,length-1,"+-","([{",1))>0 && !strchr("^*/",expr[i1-1]) && !(strchr("Ee",expr[i1-1]) && i1>1 && strchr("0123456789",expr[i1-2]))) {  // binary + -
     unarysymbol=0;
-    ptr=expression+i1;
+    ptr=expr+i1;
     ptrchar=*ptr;
     *ptr='\0';
-    answer=strmatheval(expression,varnames,varvalues,nvar);        // first term
+    answer=strmatheval(expr,varnames,varvalues,nvar);        // first term
     *ptr=ptrchar;
     while((i2=strPbrkBrackets(ptr+1,strlen(ptr+1)-1,"+-","([{",1))>0 && !strchr("^*/",ptr[i2]) && !(strchr("Ee",ptr[i2]) && strchr("0123456789",ptr[i2-1]))) {
       ptr2=ptr+1+i2;
@@ -1453,12 +1452,12 @@ double strmatheval(char *expression,char **varnames,const double *varvalues,int 
     if(ptrchar=='+') answer=answer+term;
     else answer=answer-term; }
 
-  else if((i1=strPbrkBrackets(expression,length-1,"*/%","([{",1))>0) {  // binary * / %
+  else if((i1=strPbrkBrackets(expr,length-1,"*/%","([{",1))>0) {  // binary * / %
     unarysymbol=0;
-    ptr=expression+i1;
+    ptr=expr+i1;
     ptrchar=*ptr;
     *ptr='\0';
-    answer=strmatheval(expression,varnames,varvalues,nvar);     // first term
+    answer=strmatheval(expr,varnames,varvalues,nvar);     // first term
     *ptr=ptrchar;
     while((i2=strPbrkBrackets(ptr+1,strlen(ptr+1)-1,"*/%","([{",1))>0) {
       ptr2=ptr+1+i2;
@@ -1484,18 +1483,18 @@ double strmatheval(char *expression,char **varnames,const double *varvalues,int 
       CHECKS(term>0.5,"illegal modulo value");
       answer=(double)((long int)(answer+0.5)%(long int)(term+0.5)); }}
 
-  else if(expression[0]=='+' || expression[0]=='-') {           // unary + -
+  else if(expr[0]=='+' || expr[0]=='-') {           // unary + -
     CHECKS(!unarysymbol,"cannot have multiple preceding signs");
     unarysymbol=1;
-    term=strmatheval(expression+1,varnames,varvalues,nvar);
-    answer=expression[0]=='+'?term:-term; }
+    term=strmatheval(expr+1,varnames,varvalues,nvar);
+    answer=expr[0]=='+'?term:-term; }
 
-	else if((i1=strPbrkBrackets(expression,length-1,"^","([{",1))>0) {	// binary ^
+	else if((i1=strPbrkBrackets(expr,length-1,"^","([{",1))>0) {	// binary ^
 		unarysymbol=0;
-		ptr=expression+i1;
+		ptr=expr+i1;
 		ptrchar=*ptr;
 		*ptr='\0';
-		answer=strmatheval(expression,varnames,varvalues,nvar);
+		answer=strmatheval(expr,varnames,varvalues,nvar);
 		*ptr=ptrchar;
 		term=strmatheval(ptr+1,varnames,varvalues,nvar);
 		CHECKS(answer>0 || (answer==0 && term>0) || (answer<0 && term==round(term)),"exponent error");
@@ -1514,7 +1513,7 @@ failure:
 
 
 /* strmathevalint */
-int strmathevalint(char *expression,char **varnames,const double *varvalues,int nvar) {
+int strmathevalint(const char *expression,char **varnames,const double *varvalues,int nvar) {
 	double value;
 
 	value=strmatheval(expression,varnames,varvalues,nvar);

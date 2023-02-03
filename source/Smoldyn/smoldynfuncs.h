@@ -66,7 +66,6 @@ int molreversepattern(const char *pattern,char *patternrev);
 int molpatternindex(simptr sim,const char *pattern,const char *rname,int isrule,int update,int **indexptr);
 int molstring2index1(simptr sim,const char *str,enum MolecState *msptr,int **indexptr);
 int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol);
-void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);
 
 // set structure values
 int molssetgausstable(simptr sim,int size);
@@ -110,6 +109,10 @@ int addmol(simptr sim,int nmol,int ident,double *poslo,double *poshi,int sort);
 int addsurfmol(simptr sim,int nmol,int ident,enum MolecState ms,double *pos,panelptr pnl,int surface,enum PanelShape ps,char *pname);
 int addcompartmol(simptr sim,int nmol,int ident,compartptr cmpt);
 
+// molecule manipulations
+void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);
+int molmovemol(simptr sim,moleculeptr mptr,const double *delta);
+
 // core simulation functions
 void moldosurfdrift2D(simptr sim,moleculeptr mptr,double dt);
 int molsort(simptr sim,int onlydead2live);
@@ -139,6 +142,7 @@ int walladd(simptr sim,int d,int highside,double pos,char type);
 int wallsettype(simptr sim,int d,int highside,char type);
 
 // core simulation functions
+int checkwalls1mol(simptr sim,moleculeptr mptr);
 int checkwalls(simptr sim,int ll,int reborn,boxptr bptr);
 
 /********************************* Reactions ********************************/

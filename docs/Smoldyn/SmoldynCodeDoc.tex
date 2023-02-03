@@ -1288,12 +1288,12 @@ Returns the string that corresponds to the enumerated molecule list type \ttt{ml
 Writes the molecule serial number to a pre-allocated string, returning the pointer to that string. If the serial number is not a concatenated number, then just writes that number to the string. If the serial number has been concatenated, then this writes the left portion, a period, and then the right portion. Note that this uses the defined string \ttt{LLUFORMAT} because Windows doesn't use the standard \%llu format specifier for some reason.
 
 \item[\ttt{unsigned long long molstring2serno(char *string);}]
-\hfill
+\hfill \\
 Converts a string with a serial number value to a serial number. If the string is simply a number, then this reads the number and returns it. If the string has two numbers separated by a period, then this takes the left number, shifts it left 32 places, and adds the right number, to create a concatenated serial number. Returns 0 on failure (serial numbers equal to 0 are not allowed).
 
 \item[\ttt{unsigned long long}]
 \ttt{molfindserno(simptr sim,unsigned long long def,long int pserno,unsigned long long r1serno,unsigned long long r2serno,unsigned long long *sernolist);}
-\hfill
+\hfill \\
 Computes a serial number for a new molecule, based upon coded instructions in \ttt{pserno}, a default value in \ttt{def}, reactant serial numbers in \ttt{r1serno} and \ttt{r2serno}, and previously assigned product serial numbers in \ttt{sernolist}. This does not use \ttt{sim} at all, except if the coded instructions are for a serial number with the format ``new.new'', in which case this uses the default value as the first new value and then gets the next one off of \ttt{sim->mols->serno} and also increments the value. This function does no checking to make sure that inputs are valid.
 
 A positive value of \ttt{pserno} indicates that it is an actual serial number and a negative value indicates that it is a bit-inverted code, labeled the bitcode here. The bitcode is 4 hex numbers, with the first two for the left half of the serial number and the second two for the right half of the serial number. The other functions that deal with bitcodes are \ttt{rxnstring2sernocode} and \ttt{rxnsernocode2string}.
@@ -1312,7 +1312,8 @@ bits & mask & use\\
 \hfill \\
 Returns 1 if molecules of species \ttt{species} and state \ttt{ms} are mobile at all and 0 if they are not. Mobility includes isotropic and anisotropic diffusion, drift, and surface drift. \ttt{MSbsoln} is an allowed input, which always returns the same result as a \ttt{MSsoln} input.
 
-\item[\ttt{int molstring2pattern(const char *str,enum MolecState *msptr,char *pat,int mode);}]
+\item[\ttt{int}]
+\ttt{molstring2pattern(const char *str,enum MolecState *msptr,char *pat,int mode);}
 \hfill \\
 This assembles a species pattern string from molecule species strings. For example, if the user enters a reaction as \ttt{A*(front) + B|C(soln) -> A*\{B|C\}(front)}, then the function that reads this string (which are \ttt{molstring2index1} and \ttt{rxnparsereaction}) will send the \ttt{A*(front)}, \ttt{B|C(soln)}, and \ttt{A*\{B|C\}(front)} strings to this function for them to be assembled in the pattern \ttt{A*+B|C\textbackslash nA*\{B|C\}}, and for the states to be returned to the calling function. The pattern is then generally sent off to \ttt{molpatternindex}.
 
@@ -1354,7 +1355,8 @@ Finally, the function goes through a number of pattern types, from simplest to m
 
 (8) Finally, with newline, species group or wildcards, and 2 matchwords.
 
-\item[\ttt{int molstring2index1(simptr sim,char *str,enum MolecState *msptr,int **indexptr);}]
+\item[\ttt{int}]
+\ttt{molstring2index1(simptr sim,char *str,enum MolecState *msptr,int **indexptr);}
 \hfill \\
 This reads the first word of the string in \ttt{str}, parses it to find the state listed, if any, and determines what species name or names it refers to. The state is returned in \ttt{msptr} and the species index list is pointed to by \ttt{indexptr}. The function simply calls \ttt{molstring2pattern} and then \ttt{molpatternindex} sequentially. On success, if there is exactly one result in the list and exactly one match item in the pattern, this returns the index of the result. If there are multiple results, it returns 0, which is still a successful result.
 
@@ -1370,12 +1372,6 @@ Returns 0 for success, -1 if the group name name is missing, -2 if there are par
 \hfill \\
 Writes molecule position in \ttt{mptr->pos} to \ttt{string} using ``\%g" formatting code for \ttt{sprintf}. Each coordinate value, including the first one, is preceded by a space. If the simulation includes surfaces, this function ensures that the written position, including round-off errors, is both in the same box and on the same side of all surface panels (not including the panel that the molecule is bound to, if any) as the actual position. If this function cannot achieve these criteria after 50 attempts, it prints a warning, and returns the string.
 
-\item[\ttt{void}]
-\ttt{molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);} \\
-Changes the identity or state of a molecule that is currently in the system to species \ttt{i} and state \ttt{ms}. It is permissible for \ttt{i} to equal 0 for the molecule to be killed, which is equivalent to calling \ttt{molkill}. \ttt{mptr} is a pointer to the molecule and \ttt{ll} is the list that it is currently listed in (probably equal to \ttt{mptr->list}, but not necessarily). If the molecule's list information should be updated to reflect the identity change, which is nearly always, then \ttt{ll} should be the molecule's list; if not though, then send in both \ttt{ll} and \ttt{m} as -1. If \ttt{m} is known, then enter the index of the molecule in the master list (i.e. not a box list) in \ttt{m}; if it's unknown set \ttt{m} to -1. If the molecule is to be bound to a panel (independent of whether it was bound to a panel before or not), enter the panel in \ttt{pnl}. Or, if it is to be in solution but adjacent to a panel, enter this panel in \ttt{pnl}.
-
-This function sets some parameters of the molecule structure, fixes the location as needed, and, if appropriate, updates \ttt{sortl} to indicate to \ttt{molsort} that sorting is needed. This also increments the molecule \ttt{touch} value to show that molecules have been touched.
-
 \item[\underline{set structure values}]
 
 \item[\ttt{int molssetgausstable(simptr sim,int size);}]
@@ -1390,7 +1386,8 @@ Sets the diffusion coefficient for molecule \ttt{ident} and state \ttt{ms} to \t
 \hfill \\
 Sets the diffusion matrix for molecule \ttt{ident} and state \ttt{ms} to \ttt{difm}. Any required matrices that were not allocated previously are allocated here. For multiple species, enter them in \ttt{index} using the pattern index header. If \ttt{ms} is \ttt{MSall}, this sets the diffusion matrix for all states. This returns 0 for successful operation and 1 for failure to allcate memory. This updates the isotropic diffusion coefficient but does not update rms step sizes or reaction rates.
 
-\item[\ttt{int molsetdrift(simptr sim,int ident,int *index,enum MolecState ms,double *drift);}]
+\item[\ttt{int}]
+\ttt{molsetdrift(simptr sim,int ident,int *index,enum MolecState ms,double *drift);}
 \hfill \\
 Sets the drift vector for molecule \ttt{ident} and state \ttt{ms} to drift. Any required vectors that were not allocated previously are allocated here. For multiple species, enter them in \ttt{index} using the pattern index header. If \ttt{ms} is \ttt{MSall}, this sets the drift vector for all states. This returns 0 for successful operation and 1 for failure to allocate memory.
 
@@ -1399,15 +1396,18 @@ Sets the drift vector for molecule \ttt{ident} and state \ttt{ms} to drift. Any 
 \hfill \\
 Sets the surface drift vector for molecule \ttt{ident}, state \ttt{ms}, surface \ttt{surface}, and panel shape \ttt{ps} to \ttt{drift}. Any required memory that was not allocated previously is allocated here. For multiple species, enter them in \ttt{index} using the pattern header. If \ttt{ms} is \ttt{MSall}, this sets the surface drift vector for all surface-bound states. In addition, \ttt{surface} can be -1 to indicate all surfaces and \ttt{ps} can be \ttt{PSall} to indicate all panel shapes. Any combination of ``all" conditions is permitted. This returns 0 for successful operation and 1 for failure to allocate memory.
 
-\item[\ttt{void molsetdisplaysize(simptr sim,int ident,int *index,enum MolecState ms,double dsize);}]
+\item[\ttt{void}]
+\ttt{molsetdisplaysize(simptr sim,int ident,int *index,enum MolecState ms,double dsize);}
 \hfill \\
 Sets the display size for molecule \ttt{ident} and state \ttt{ms} to \ttt{dsize}. For multiple species, enter them in \ttt{index} using the pattern header. If \ttt{ms} is \ttt{MSall}, this sets the display size for all states.
 
-\item[\ttt{void molsetcolor(simptr sim,int ident,int *index,enum MolecState ms,double *color);}]
+\item[\ttt{void}]
+\ttt{molsetcolor(simptr sim,int ident,int *index,enum MolecState ms,double *color);}
 \hfill \\
 Sets the color for molecule \ttt{ident} and state \ttt{ms} to the 3-dimensional RGB vector \ttt{color}. For multiple species, enter them in \ttt{index} using the pattern header. If \ttt{ms} is \ttt{MSall}, this sets the color for all states.
 
-\item[\ttt{void molsetlistlookup(simptr sim,int ident,int *index,enum MolecState ms,int ll);}]
+\item[\ttt{void}]
+\ttt{molsetlistlookup(simptr sim,int ident,int *index,enum MolecState ms,int ll);}
 \hfill \\
 Sets the list lookup table value to live list number \ttt{ll} for molecule \ttt{ident} and state \ttt{ms}. For multiple species, enter them in \ttt{index} using the pattern header. Special codes are also possible in the \ttt{ident} input: \ttt{ident=-7} implies all diffusing molecules, and \ttt{ident=-8} implies all non-diffusing molecules. Using \ttt{ms=MSall} implies all states. Note that the \ttt{listlookup} element is defined for both \ttt{MSsoln} and \ttt{MSbsoln}, and they are always set to the same values.
 
@@ -1435,7 +1435,8 @@ This is identical to \ttt{molscancmd} but has a slightly more versatile function
 \hfill \\
 Tests to see if the molecule in \ttt{mptr} matches the conditions given in species number \ttt{i}, index list \ttt{index}, and state \ttt{ms}. These latter three elements should be the values returned by \ttt{molstring2index1}, so they can be for single species, species groups, etc.
 
-\item[\ttt{int MolCalcDifcSum(simptr sim,int i1,enum MolecState ms1,int i2,enum MolecState ms2);}]
+\item[\ttt{int}]
+\ttt{MolCalcDifcSum(simptr sim,int i1,enum MolecState ms1,int i2,enum MolecState ms2);}
 \hfill \\
 Calculate and returns diffusion coefficient sums. This allows \ttt{ms1} and/or \ttt{ms2} to be the \ttt{MSbsoln} state. Also, enter \ttt{i1} and/or \ttt{i2} as 0 to not include it in the sum.
 
@@ -1573,6 +1574,19 @@ For multiple panels, this function creates tables that list the cumulative areas
 \hfill \\
 Adds \ttt{nmol} molecules of type \ttt{ident} and state \ttt{MSsoln} to the system with random locations that are within compartment \ttt{cmpt}. Returns 0 for success, 2 if a random point cannot be found, or 3 if there aren't enough available molecules.
 
+\item[\underline{molecule manipulations}]
+
+\item[\ttt{void}]
+\ttt{molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);} \\
+Changes the identity or state of a molecule that is currently in the system to species \ttt{i} and state \ttt{ms}. It is permissible for \ttt{i} to equal 0 for the molecule to be killed, which is equivalent to calling \ttt{molkill}. \ttt{mptr} is a pointer to the molecule and \ttt{ll} is the list that it is currently listed in (probably equal to \ttt{mptr->list}, but not necessarily). If the molecule's list information should be updated to reflect the identity change, which is nearly always, then \ttt{ll} should be the molecule's list; if not though, then send in both \ttt{ll} and \ttt{m} as -1. If \ttt{m} is known, then enter the index of the molecule in the master list (i.e. not a box list) in \ttt{m}; if it's unknown set \ttt{m} to -1. If the molecule is to be bound to a panel (independent of whether it was bound to a panel before or not), enter the panel in \ttt{pnl}. Or, if it is to be in solution but adjacent to a panel, enter this panel in \ttt{pnl}.
+
+This function sets some parameters of the molecule structure, fixes the location as needed, and, if appropriate, updates \ttt{sortl} to indicate to \ttt{molsort} that sorting is needed. This also increments the molecule \ttt{touch} value to show that molecules have been touched.
+
+\item[\ttt{int molmovemol(simptr sim,moleculeptr mptr,const double *delta);}]
+\hfill \\
+Moves molecule \ttt{mptr} by distance \ttt{delta}. This translates the molecule, including keeping it on a surface if it's surface-bound, and dealing with surface and/or wall collisions.
+
+
 \item[\underline{core simulation functions}]
 
 \item[\ttt{int molsort(simptr sim,int onlydead2live);}]
@@ -1697,6 +1711,10 @@ Adds a wall to the system. If no walls have been added yet, this allocates the n
 Sets the type of an existing wall for dimension \ttt{d} to \ttt{type}. Set \ttt{highside} to 0 if the wall is on the low side of the system and 1 if it is on the high side of the system. Enter \ttt{d} and/or \ttt{highside} with a negative number to indicate ``all" dimensions and/or system sides.
 
 \item[\underline{core simulation functions}]
+
+\item[\ttt{void checkwalls1mol(simptr sim,moleculeptr mptr);}]
+\hfill \\
+Checks the walls for a single molecule, reflecting, wrapping around, or absorbing as needed. This is identical to \ttt{checkwalls}, but only for one molecule.
 
 \item[\ttt{void checkwalls(simptr sim,int ll,int reborn,boxptr bptr);}]
 \hfill \\
@@ -6900,6 +6918,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Fixed bug in which graphics were being called from Python API even when they were turned off. This arose from \ttt{gl2glutInit} being called in Simulation.cpp \ttt{Simulation::runSim} for all cases; it's now called in smolgraphics.c \ttt{smolsimulategl} instead.
 \item Made it an error to enter command timing with either non-integer values for integer type commands, or to enter timing steps that are less than or equal to zero.
 \item Improved command timing so that all commands that execute at a particular time are performed with integer commands first, then float commands (unchanged from before) and also, within these lists, in the order that they are listed in the configuration file (new functionality).
+\item Added \ttt{translatemol} command. This involved several other changes. Added \ttt{molmovemol} function and also called this function from \ttt{longrangeforce} rather than moving molecules locally (in general, very few functions, including especially those in the commands, should be allowed to move molecules by themselves). Added \ttt{checkwalls1mol} for wall checking for a single molecule at a time. Moved \ttt{molchangeident} to a different region of the file. In string2.c, added a \ttt{const} declaration to both \ttt{strevalfunction} and \ttt{strmathevalint} and cleaned up the code slightly. Also, edited \ttt{strmatheval} so that the \ttt{expression} input isn't changed by this function and is now a \ttt{const}.
 
 \end{itemize}
 

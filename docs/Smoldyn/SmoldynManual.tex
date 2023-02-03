@@ -4172,6 +4172,12 @@ This is similar to \ttt{translatecmpt}, except that this translates the compartm
 
 This simulates a long range force between molecules of $species_1$ and $species_2$, moving them in response to it. The force is computed from $equation$. This equation needs to be a function of $r$, which is the radius. For example, it could be \ttt{-4*r\^{}(-2)+2*r\^{}(-4)}, where \ttt{r} represents the distance between two molecules; do not include any spaces in the equation. Negative values represent attractive forces, and note that exponents will probably be negative for most physically reasonable forces. This equation applies for all separations between $rad_{min}$ and $rad_{max}$, and the force is zero elsewhere. For computational efficiency, it's a good idea to keep $rad_{max}$ reasonably small. Molecules of $species_1$ move distance $mobility_1 \Delta t$ times the force, while those of $species_2$ move $mobility_2 \Delta t$ times the force, where $\Delta t$ is the simulation time step. Except in very unusual circumstances, both mobilities should be positive values. Note that this accounts for the simulation time step, which is unusual for commands. However, it does not account for the command being run at wide intervals, such as every 2, 3, or 4 time steps. Instead, to be quantitatively accurate, it needs to run at every time step (or run it every $n$ time steps, and multiply the force or mobility by $n$).
 
+\item{\ttt{translatemol}} $species(state)\ equation_x$\\
+\ttt{translatemol} $species(state)\ equation_x\ equation_y$\\
+\ttt{translatemol} $species(state)\ equation_x\ equation_y\ equation_z$
+
+Translates molecules of the given species and state (each of which are allowed to be ``all'') by the displacement that is calculated from the equations, with one equation for each coordinate. These equations are allowed to be functions of the position and/or the time; the position is entered as \ttt{x}, \ttt{y}, and/or \ttt{z}, and the time as \ttt{time}. Do not include spaces in the equations and simply enter ``0'' for an equation if there's no translation on that axis. For example, in a 3D system, the three equations \ttt{y -x 0} cause the molecules to circle the origin in the $x-y$ plane and stay stationary along the $z$ axis.
+
 \end{description}
 
 

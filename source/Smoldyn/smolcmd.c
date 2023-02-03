@@ -146,6 +146,7 @@ enum CMDcode cmdexpandsystem(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdtranslatemol(simptr sim,cmdptr cmd,char *line2);
 
 // Smoldyn function declarations
 double fnmolcount(void *voidsim,char *erstr,char *line2);
@@ -287,6 +288,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"translatecmpt")) return cmdtranslatecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"diffusecmpt")) return cmddiffusecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"longrangeforce")) return cmdlongrangeforce(sim,cmd,line2);
+	else if(!strcmp(word,"translatemol")) return cmdtranslatemol(sim,cmd,line2);
 
 #ifdef VCELL
 	// vcell commands
@@ -4779,7 +4781,8 @@ enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
 			mptr=(moleculeptr) moleclist->datav[i];
 			mobility=molismatch(mptr,i1,index1,ms1)?mobility1:mobility2;
 			for(d=0;d<dim;d++)
-				mptr->pos[d]+=moleclist->datad4[i][d]*mobility*dt; }}
+				delta[d]=moleclist->datad4[i][d]*mobility*dt;
+			molmovemol(sim,mptr,delta); }}
 	List_CleanULVD4(moleclist);
 
 	return CMDok;
@@ -4819,6 +4822,51 @@ enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
 	return CMDok;	}
 
 
+/* cmdtranslatemol */
+enum CMDcode cmdtranslatemol(simptr sim,cmdptr cmd,char *line2) {
+	int itct,d,dim;
+	moleculeptr mptr;
+	double delta[DIMMAX];
+
+	static int inscan=0,i1,*index1;
+	static enum MolecState ms1;
+	static char eqstring[DIMMAX][STRCHAR];
+
+	if(inscan) goto scanportion;
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
+
+	dim=sim->dim;
+	i1=molstring2index1(sim,line2,&ms1,&index1);
+	SCMDCHECK(i1!=-1,"species is missing or cannot be read");
+	SCMDCHECK(i1!=-2,"mismatched or improper parentheses around molecule state");
+	SCMDCHECK(i1!=-3,"cannot read molecule state value");
+	SCMDCHECK(i1!=-4,"molecule name not recognized");
+	SCMDCHECK(i1!=-7,"error allocating memory");
+	for(d=0;d<dim;d++) {
+		line2=strnword(line2,2);
+		SCMDCHECK(line2,"translatemol format: species(state) equation_x equation_y equation_z");
+		itct=sscanf(line2,"%s",eqstring[d]);
+		SCMDCHECK(itct==1,"translatemol format: species(state) equation_x equation_y equation_z"); }
+	line2=strnword(line2,2);
+	SCMDCHECK(!line2,"unexpected text following translatemol command");
+
+	inscan=1;
+	molscancmd(sim,i1,index1,ms1,cmd,cmdtranslatemol);
+	inscan=0;
+
+	return CMDok;
+
+ scanportion:
+	dim=sim->dim;
+	mptr=(moleculeptr) line2;
+	simsetvariable(sim,"x",mptr->pos[0]);
+	if(dim>1) simsetvariable(sim,"y",mptr->pos[1]);
+	if(dim>2) simsetvariable(sim,"z",mptr->pos[2]);
+	for(d=0;d<dim;d++) {
+		delta[d]=strmatheval(eqstring[d],Varnames,Varvalues,Nvar);
+		if(!isfinite(delta[d])) delta[d]=0; }
+	molmovemol(sim,mptr,delta);
+	return CMDok;	}
 
 
 

@@ -88,8 +88,8 @@ int strEnhWildcardMatchAndSub(const char *pat,const char *str,const char *destpa
 
 double dblnan();
 int strloadmathfunctions(void);
-double strevalfunction(char *expression,char *parameters,void *voidptr,void *funcptr,char **varnames,const double *varvalues,int nvar);
-double strmatheval(char *expression,char **varnames,const double *varvalues,int nvar);
+double strevalfunction(const char *expression,char *parameters,void *voidptr,void *funcptr,char **varnames,const double *varvalues,int nvar);
+double strmatheval(const char *expression,char **varnames,const double *varvalues,int nvar);
 int strmatherror(char *string,int clear);
 int strmathsscanf(const char *str,const char *format,char **varnames,const double *varvalues,int nvar,...);
 

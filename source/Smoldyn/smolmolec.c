@@ -771,48 +771,6 @@ char *molpos2string(simptr sim,moleculeptr mptr,char *string) {
 		return string; }
 
 
-/* molchangeident */
-void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl) {
-	int dim,ll2;
-	double epsilon;
-
-	if(i==0) {
-		molkill(sim,mptr,ll,m);
-		return; }
-
-	dim=sim->dim;
-	epsilon=sim->srfss?sim->srfss->epsilon:0;
-
-	mptr->ident=i;
-	mptr->mstate=ms;
-	if(ms==MSsoln || ms==MSbsoln) mptr->pnl=NULL;
-	else mptr->pnl=pnl;
-
-	if(ms==MSsoln && !mptr->pnlx);								// soln -> soln
-	else if(ms==MSsoln) {													// surf -> front soln
-		fixpt2panel(mptr->posx,mptr->pnlx,dim,PFfront,epsilon); }
-	else if(ms==MSbsoln && !mptr->pnlx)						// fsoln -> bsoln
-		mptr->mstate=MSsoln;
-	else if(ms==MSbsoln) {												// surf -> back soln
-		mptr->mstate=MSsoln;
-		fixpt2panel(mptr->posx,mptr->pnlx,dim,PFback,epsilon); }
-	else if(ms==MSfront)													// any -> front surf
-		fixpt2panel(mptr->pos,pnl,dim,PFfront,epsilon);
-	else if(ms==MSback)														// any -> back surf
-		fixpt2panel(mptr->pos,pnl,dim,PFback,epsilon);
-	else																					// any -> up or down
-		fixpt2panel(mptr->pos,pnl,dim,PFnone,epsilon);
-
-	ll2=sim->mols->listlookup[i][ms];
-	if(ll>=0 && ll2!=ll) {
-		mptr->list=ll2;
-		if(m<0) sim->mols->sortl[ll]=0;
-		else if(m<sim->mols->sortl[ll]) sim->mols->sortl[ll]=m; }
-
-	sim->mols->touch++;
-
-	return; }
-
 
 /******************************************************************************/
 /***************************** set structure values ***************************/
@@ -2892,6 +2850,79 @@ int addcompartmol(simptr sim,int nmol,int ident,compartptr cmpt) {
 		else mptr->box=NULL; }
 	molsetexist(sim,ident,MSsoln,1);
 	sim->mols->expand[ident]|=1;
+	return 0; }
+
+
+
+/******************************************************************************/
+/************************* molecule manipulations ********************/
+/******************************************************************************/
+
+
+/* molchangeident */
+void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl) {
+	int dim,ll2;
+	double epsilon;
+
+	if(i==0) {
+		molkill(sim,mptr,ll,m);
+		return; }
+
+	dim=sim->dim;
+	epsilon=sim->srfss?sim->srfss->epsilon:0;
+
+	mptr->ident=i;
+	mptr->mstate=ms;
+	if(ms==MSsoln || ms==MSbsoln) mptr->pnl=NULL;
+	else mptr->pnl=pnl;
+
+	if(ms==MSsoln && !mptr->pnlx);								// soln -> soln
+	else if(ms==MSsoln) {													// surf -> front soln
+		fixpt2panel(mptr->posx,mptr->pnlx,dim,PFfront,epsilon); }
+	else if(ms==MSbsoln && !mptr->pnlx)						// fsoln -> bsoln
+		mptr->mstate=MSsoln;
+	else if(ms==MSbsoln) {												// surf -> back soln
+		mptr->mstate=MSsoln;
+		fixpt2panel(mptr->posx,mptr->pnlx,dim,PFback,epsilon); }
+	else if(ms==MSfront)													// any -> front surf
+		fixpt2panel(mptr->pos,pnl,dim,PFfront,epsilon);
+	else if(ms==MSback)														// any -> back surf
+		fixpt2panel(mptr->pos,pnl,dim,PFback,epsilon);
+	else																					// any -> up or down
+		fixpt2panel(mptr->pos,pnl,dim,PFnone,epsilon);
+
+	ll2=sim->mols->listlookup[i][ms];
+	if(ll>=0 && ll2!=ll) {
+		mptr->list=ll2;
+		if(m<0) sim->mols->sortl[ll]=0;
+		else if(m<sim->mols->sortl[ll]) sim->mols->sortl[ll]=m; }
+
+	sim->mols->touch++;
+
+	return; }
+
+
+/* molmovemol */
+int molmovemol(simptr sim,moleculeptr mptr,const double *delta) {
+	int dim,d;
+
+	dim=sim->dim;
+	for(d=0;d<dim;d++) {
+		mptr->via[d]=mptr->pos[d];
+		mptr->pos[d]+=delta[d]; }
+
+	if(mptr->mstate!=MSsoln) {													// surface-bound molecules
+		if(dim>1)
+			movemol2closepanel(sim,mptr);
+		else
+			mptr->pos[0]=mptr->posx[0]; }										// 1D surface-bound molecules aren't allowed to move
+
+	if(sim->srfss)																			// deal with surface or wall collisions
+		checksurfaces1mol(sim,mptr,0);
+	else
+		checkwalls1mol(sim,mptr);
+
+	sim->mols->touch++;
 	return 0; }
 
 

@@ -319,6 +319,51 @@ int wallsettype(simptr sim,int d,int highside,char type) {
 /******************************************************************************/
 
 
+/* checkwalls1mol */
+int checkwalls1mol(simptr sim,moleculeptr mptr) {
+	int w,d;
+	double pos2,diff,difi,step,**difstep;
+	wallptr wptr;
+
+	if(sim->srfss) return 0;
+
+	for(w=0;w<2*sim->dim;w++) {
+		wptr=sim->wlist[w];
+		d=wptr->wdim;
+		if(wptr->type=='r' && wptr->side==0) {			// reflective
+			if(mptr->pos[d]<wptr->pos) {
+				pos2=2*wptr->pos;
+				sim->eventcount[ETwall]++;
+				mptr->pos[d]=pos2-mptr->pos[d]; }}
+		else if(wptr->type=='r') {
+			if(mptr->pos[d]>wptr->pos) {
+				pos2=2*wptr->pos;
+				sim->eventcount[ETwall]++;
+				mptr->pos[d]=pos2-mptr->pos[d]; }}
+		else if(wptr->type=='p' && wptr->side==0) {	// periodic
+			if(mptr->pos[d]<wptr->pos) {
+				pos2=wptr->opp->pos-wptr->pos;
+				sim->eventcount[ETwall]++;
+				mptr->pos[d]+=pos2;
+				mptr->posoffset[d]-=pos2; }}
+		else if(wptr->type=='p') {
+			if(mptr->pos[d]>wptr->pos) {
+				pos2=wptr->opp->pos-wptr->pos;
+				sim->eventcount[ETwall]++;
+				mptr->pos[d]+=pos2;
+				mptr->posoffset[d]-=pos2; }}
+		else if(wptr->type=='a') {								// absorbing
+			difstep=sim->mols->difstep;
+			diff=wptr->pos-mptr->pos[d];
+			difi=wptr->pos-mptr->posx[d];
+			step=difstep[mptr->ident][MSsoln];
+			if((!(wptr->side) && diff>0) || (wptr->side && diff<0) || coinrandD(exp(-2*difi*diff/step/step))) {
+				sim->eventcount[ETwall]++;
+				molkill(sim,mptr,mptr->list,-1); }}}
+	sim->mols->touch++;
+	return 0; }
+
+
 /* checkwalls */
 int checkwalls(simptr sim,int ll,int reborn,boxptr bptr) {
 	int nmol,w,d,m;

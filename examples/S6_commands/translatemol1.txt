@@ -1,0 +1,35 @@
+# Simulation file
+# This file is used to test and demonstrate the translatemol command
+
+define DT 0.002
+
+graphics opengl_good
+random_seed 1
+
+dim 2
+boundaries x -10 10 p
+boundaries y -10 10 p
+
+species red green blue
+
+time_start 0
+time_stop 1000
+time_step DT
+
+difc all 0.1
+color red red
+color green green
+color blue blue
+
+display_size all(all) 0.2
+
+mol 100 red u u
+mol 20 green u u
+mol 20 blue u u
+
+cmd E translatemol red DT*y -DT*x
+cmd E translatemol green DT 0
+cmd E translatemol blue DT*x 0
+
+end_file
+
