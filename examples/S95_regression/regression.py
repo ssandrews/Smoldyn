@@ -10,7 +10,7 @@ filelist=['addspecies','abba','allostery','bimolecularlattice','bounce2','bounds
 					'polymer_end','polymer_mid','rafts','rafts3D','ReflectToNewSpecies',
 					'structexpansion','surf1','surf2','surf3','surfaceboundjump','surfacedrift2',
 					'surfacedrift3','surfacereact','stick',
-					'surfacediffuse','tracking','tracking2','trisphere']
+					'surfacediffuse','tracking','tracking2','translatemol2','trisphere']
 
 suffix=input('Enter suffix for new simulations: ')
 reference=input('Enter suffix for reference simulations or "none": ')

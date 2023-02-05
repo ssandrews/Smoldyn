@@ -1,5 +1,12 @@
 ## Changelog
 
+### 2.71 (2/5/23)
+
+- Fixed bug in which graphics were called by Python API even when turned off.
+- Made it an error for command timing to have non-integer values for integer commands.
+- Improved command timing so that command execution order is consistent.
+- Added translatemol command and improved longrangeforce command.
+
 ### 2.70.1 (12/28/22)
 
 - Added wheels for Python 3.11 (Windows, OSX).
