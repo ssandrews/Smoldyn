@@ -54,7 +54,7 @@ int graphicsupdateparams(simptr sim);
 void RenderSurfaces(simptr sim);
 void RenderMolecs(simptr sim);
 void RenderText(simptr sim);
-void RenderSim(simptr sim);
+void RenderSim(simptr sim,int swapbuffers);
 
 // top level OpenGL functions
 
@@ -1283,13 +1283,23 @@ void RenderText(simptr sim) {
 
 
 /* RenderSim */
-void RenderSim(simptr sim) {
+void RenderSim(simptr sim,int swapbuffers) {
 #ifdef __gl_h_
 	graphicsssptr graphss;
 	double pt1[DIMMAX],pt2[DIMMAX];
 	int dim;
 	wallptr *wlist;
 	GLfloat glf1[4];
+
+	clock_t timenow;
+	static clock_t oldclocktime;
+	static double oldsimtime=NAN;
+
+	timenow=clock();
+	if(swapbuffers==1 && sim->time==oldsimtime && (double)(timenow-oldclocktime)/CLOCKS_PER_SEC < 0.005)
+		return;																					// no need to redraw
+	oldsimtime=sim->time;
+	oldclocktime=timenow;
 
 	graphss=sim->graphss;
 	if(!graphss || graphss->graphics==0) return;
@@ -1330,7 +1340,7 @@ void RenderSim(simptr sim) {
 	if(sim->latticess) RenderLattice(sim);
 	if(graphss->ntextitems) RenderText(sim);
 
-	glutSwapBuffers();
+	if(swapbuffers) glutSwapBuffers();
 #endif
 	return; }
 
@@ -1347,7 +1357,7 @@ simptr Sim;
 
 
 /* smolPostRedisplay */
-void smolPostRedisplay(void) {	//??
+void smolPostRedisplay(void) {
 #ifdef __gl_h_
 	glutPostRedisplay();
 #endif
@@ -1356,7 +1366,7 @@ void smolPostRedisplay(void) {	//??
 
 /* RenderScene */
 void RenderScene(void) {
-	RenderSim(Sim);
+	RenderSim(Sim,1);
 	return; }
 
 
@@ -1382,7 +1392,9 @@ void TimerFunction(int state) {
 	if(state==0 && gl2State(-1)==0) {										// normal run mode
 		it=graphss->currentit;
 		if(!(it%graphss->graphicit)) glutPostRedisplay();
-		if(graphss->tiffit>0 && it>0 && !((it-1)%graphss->tiffit)) gl2SetKeyPush('T');
+		if(graphss->tiffit>0 && !(it%graphss->tiffit)) {
+			RenderSim(sim,0);
+			gl2SetKeyPush('T'); }
 		state=simulatetimestep(sim);
 		graphss->currentit++; }
 	else if(state>0 || (state==0 && gl2State(-1)==2)) {			// stop the simulation
@@ -1391,7 +1403,7 @@ void TimerFunction(int state) {
 		scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
 		scmdsetcondition(sim->cmds,0,0);
 		endsimulate(sim,state);
-		if(sim->quitatend) gl2SetKeyPush('Q');	//??
+		if(sim->quitatend) gl2SetKeyPush('Q');
 		state=-1; }
 	else if(oldstate==0 && gl2State(-1)==1) {					// enter pause state
 		sim->elapsedtime+=difftime(time(NULL),sim->clockstt);
@@ -1420,6 +1432,7 @@ void smolsimulategl(simptr sim) {
 	er=simdocommands(sim);
 	if(er) endsimulate(sim,er);
 	glutDisplayFunc(RenderScene);
+	glutPostRedisplay();
 	glutMainLoop();
 #else
 	simLog(sim,5,"Graphics are unavailable, so performing non-graphics simulation.\n");

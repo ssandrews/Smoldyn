@@ -517,7 +517,7 @@ There's no evidence that this copies the wheel anywhere.
 
 Running \ttt{sudo make pyinstall} installs the Python code, \textit{probably to the wrong place}. This make target is listed in the source/python/CMakeLists.txt file, where is simply says to run setup.py and install in the \ttt{\$\{CMAKE\_INSTALL\_PREFIX\}} directory, which is /usr/local for me. It puts the files in /usr/local/lib/python3.9/site-packages. However, this isn't actually useful for me because my Python doesn't look there for files.
 
-Instead, run \ttt{sudo pip install smoldyn-2.64-....whl}. This installs the wheel to the correct location. For me, that is /opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/site-packages/smoldyn/.
+Instead, run \ttt{pip install smoldyn-2.64-....whl}. This installs the wheel to the correct location. For me, that is /opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/\allowbreak python3.9/\allowbreak site-packages/\allowbreak smoldyn/.
 
 
 % Python module after building
@@ -4032,7 +4032,7 @@ The superstructure contains a list of filament types. It starts with its conditi
 
 \subsection*{Filament math}
 
-Following are the basic equations for the filament relative angles ($\mathbf{A}$, \ttt{dcm}), absolute angles ($\mathbf{B}$, \ttt{adcm}), and positions ($\mathbf{x}$, \ttt{xyz}).
+Following are the basic equations for the filament relative angles ($\mathbf{A}$, \ttt{dcm}), absolute angles ($\mathbf{B}$, \ttt{adcm}), and positions ($\mathbf{x}$, \ttt{xyz}). See Andrews, 2014 for a much more complete description of filament math.
 
 \begin{math}
 \mathbf{B}_0 = \mathbf{A}_0
@@ -4648,7 +4648,7 @@ Add to moleculesuperstruct:
 
 Overall, Smoldyn's graphics use is fairly straightforward, although it is nevertheless a little complicated due to the design of the OpenGL glut library. For stand-alone Smoldyn, the program's entry and exit point are in the \ttt{main} function, which is in smoldyn.c. From here, the program forks to either \ttt{smolsimulate} (in smolsim.c) if graphics are not used or to \ttt{smolsimulategl} (in smolgraphics.c) if graphics are used. In the latter case, the OpenGL glut framework is used, in which control is passed from the main program to OpenGL and is not returned again until the user chooses quit from a menu. This leads to a slightly strange program structure, although I have attempted to contain all of the strangeness to a few functions at the end of smolgraphics.c.
 
-If graphics are used, then \ttt{smolsimulategl} sets up a few graphics options that will apply for the entire simulation, calls \ttt{gl2Initialize} with the system boundaries for more overall set up, sets the background color, registers \ttt{RenderScene} as the display callback function, registers \ttt{TimerFunction} as the simulation callback function, and then goes into the black box called \ttt{glutMainLoop}. The only graphics done in \ttt{TimerFunction} is that it posts a need for graphical update on occasion with \ttt{glutPostRedisplay}. Meanwhile, \ttt{RenderScene} is just a wrapper for \ttt{RenderSim}, which actually draws the entire graphical output. The summary is: initialization is done in \ttt{smolsimulategl} and drawing is done by \ttt{RenderSim}.
+If graphics are used, then \ttt{smolsimulategl} sets up a few graphics options that will apply for the entire simulation, calls \ttt{gl2Initialize} with the system boundaries for more overall set up, sets the background color, registers \ttt{RenderScene} as the display callback function, registers \ttt{TimerFunction} as the simulation callback function, posts a need for a redisplay with \ttt{glutPostRedisplay}, and then goes into the black box called \ttt{glutMainLoop}. The only graphics done in \ttt{TimerFunction} is that it posts a need for graphical update on occasion with \ttt{glutPostRedisplay}. Meanwhile, \ttt{RenderScene} is just a wrapper for \ttt{RenderSim}, which actually draws the entire graphical output. The summary is: initialization is done in \ttt{smolsimulategl} and drawing is done by \ttt{RenderSim}.
 \newline
 \newline
 \underline{Data structure}
@@ -4680,6 +4680,8 @@ typedef struct graphicssuperstruct {
 	double lightpos[MAXLIGHTS][3];	 // light positions [lt][d]
 	} *graphicsssptr;
 \end{lstlisting}
+
+The \ttt{graphicdelay} value is used during simulation running to slow the simulation down. It is ignored while the simulation is in pause state or is complete, and then a delay of 20 milliseconds is used instead.
 
 \begin{description}
 
@@ -4739,7 +4741,7 @@ Sets the \ttt{graphicit} element of the graphics superstructure, which tells how
 
 \item[\ttt{int graphicssetdelay(simptr sim,int delay);}]
 \hfill \\
-Sets the \ttt{graphicdelay} element of the graphics superstructure, which gives the minimum number of milliseconds that should be allowed to elapse between graphics renderings, to keep simulations from running too fast to see. This enables graphics, if needed. Returns 0 for success, 1 for out of memory enabling graphics, 2 for no \ttt{sim}, or 3 for an illegal \ttt{delay} value (it needs to be at least 0).
+Sets the \ttt{graphicdelay} element of the graphics superstructure, which gives the minimum number of milliseconds that should be allowed to elapse between graphics renderings, to keep simulations from running too fast to see. This enables graphics, if needed. Returns 0 for success, 1 for out of memory enabling graphics, 2 for no \ttt{sim}, or 3 for an illegal \ttt{delay} value (it needs to be at least 0). As described above, this delay value is only used during simulation running; a value of 20 milliseconds is used during pause state or after the simulation is complete.
 
 \item[\ttt{int graphicssetframethickness(simptr sim,double thickness);}]
 \hfill \\
@@ -4806,13 +4808,19 @@ Draws all molecules using OpenGL graphics. Because the molecules are not sorted 
 \hfill \\
 Draws any requested text to the OpenGL graphics window.
 
-\item[\ttt{void RenderSim(simptr sim)}]
+\item[\ttt{void RenderSim(simptr sim,int swapbuffers)}]
 \hfill \\
-Draws the entire graphical output using OpenGL graphics. This calls other functions for most of the work, although it draws the frame and the grid itself.
+Draws the entire graphical output using OpenGL graphics. This calls other functions for most of the work, although it draws the frame and the grid itself. Set the \ttt{swapbuffers} input to 0 for this function to not swap graphics buffers when it's done and 1 to swap the buffers. Using 1 is the standard practice but buffer swapping is asynchronous with the rest of the code and only happens on monitor vertical refreshes; thus, I've found that it needs to be set to 0 for recording the output at a specific simulation time to TIFF files.
+
+For some reason, OpenGL calls this function more frequently than it needs to. For this reason, this function doesn't bother running if it's unnecessary, meaning that the simulation time hasn't changed and it was called less than 5 ms earlier.
 
 \item[\underline{Top level OpenGL functions}]
 
 Both \ttt{RenderScene} and \ttt{TimerFunction} are declared locally, rather than in smoldynfuncs.h. This makes them invisible outside of this source file. They are callback functions for OpenGL. In addition, the \ttt{Sim} variable is declared as a global variable, with the scope of this file. It is here because OpenGL does not allow \ttt{void*} pointers to be passed through to all callback functions, so making it a global variable enables the callback functions to access the simulation data structure.
+
+\item[\ttt{smolPostRedisplay(void);}]
+\hfill \\
+This is just a wrapper for \ttt{glutPostRedisplay}, designed for use elsewhere in the Smoldyn code.
 
 \item[\ttt{void RenderScene(void);}]
 \hfill \\
@@ -6920,6 +6928,9 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Made it an error to enter command timing with either non-integer values for integer type commands, or to enter timing steps that are less than or equal to zero.
 \item Improved command timing so that all commands that execute at a particular time are performed with integer commands first, then float commands (unchanged from before) and also, within these lists, in the order that they are listed in the configuration file (new functionality).
 \item Added \ttt{translatemol} command. This involved several other changes. Added \ttt{molmovemol} function and also called this function from \ttt{longrangeforce} rather than moving molecules locally (in general, very few functions, including especially those in the commands, should be allowed to move molecules by themselves). Added \ttt{checkwalls1mol} for wall checking for a single molecule at a time. Moved \ttt{molchangeident} to a different region of the file. In string2.c, added a \ttt{const} declaration to both \ttt{strevalfunction} and \ttt{strmathevalint} and cleaned up the code slightly. Also, edited \ttt{strmatheval} so that the \ttt{expression} input isn't changed by this function and is now a \ttt{const}.
+
+\subsection*{Modifications for version 2.72 (not released yet)}
+\item Made some minor modifications in smolgraphics.c. Tiff files were saving using the latest screen update, which occurs asynchronously, rather than at the requested time, which is now fixed. To do this, I added a \ttt{swapbuffers} input to \ttt{RenderSim} and also now draw the output without swapping buffers before recording tiff files. I also removed redundant system drawings by testing if it was just drawn, and then not bothering to redraw if unnecessary.
 
 \end{itemize}
 
