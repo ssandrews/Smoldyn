@@ -261,6 +261,7 @@ simptr simalloc(const char *fileroot) {
 	sim=NULL;
 	CHECKMEM(sim=(simptr) malloc(sizeof(struct simstruct)));
 	sim->logfile=NULL;
+	sim->logfn=NULL;
 	sim->condition=SCinit;
 	sim->filepath=NULL;
 	sim->filename=NULL;
