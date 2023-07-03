@@ -89,9 +89,30 @@ char *simss2string(enum SmolStruct ss,char *string);
 
 
 /* simSetLogging */
-void simSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*,...)) {
-	LogFile=logfile;
-	LoggingCallback=logFunction;
+void simSetLogging(simptr sim,const char *logfile,void (*logFunction)(simptr,int,const char*,...)) {
+	FILE *logfileptr;
+
+	if(!logfile && !logFunction) {					// turn off both file and function
+		if(sim) {
+			if(sim->logfile && !(sim->logfile==stdout || sim->logfile==stderr)) fclose(sim->logfile);
+			sim->logfile=NULL;
+			sim->logfn=NULL; }
+		else {
+			if(LogFile && !(LogFile==stdout || LogFile==stderr)) fclose(LogFile);
+			LogFile=NULL;
+			LoggingCallback=NULL; }}
+
+	if(logfile) {
+		if(!strcmp(logfile,"stdout")) logfileptr=stdout;
+		else if(!strcmp(logfile,"stderr")) logfileptr=stderr;
+		else logfileptr=fopen(logfile,"a");
+		if(sim) sim->logfile=logfileptr;
+		else LogFile=logfileptr; }
+
+	if(logFunction) {
+		if(sim) sim->logfn=logFunction;
+		else LoggingCallback=logFunction; }
+
 	return; }
 
 
@@ -111,13 +132,15 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 	va_start(arguments, format);
 	vsprintf(message, format, arguments);
 	va_end(arguments);
+	strcpy(SimFlags,sim->flags);
 
-	if(LoggingCallback)
-		(*LoggingCallback)(sim,importance,message);
+	if(sim && sim->logfn) (*sim->logfn)(sim,importance,message);
+	else if(LoggingCallback) (*LoggingCallback)(sim,importance,message);
 
 	if(sim && sim->logfile) fptr=sim->logfile;
 	else if(LogFile) fptr=LogFile;
 	else fptr=stdout;
+
 	if(sim) flags=sim->flags;
 	else flags=SimFlags;
 	qflag=strchr(flags,'q')?1:0;
@@ -340,6 +363,9 @@ void simfree(simptr sim) {
 	free(sim->flags);
 	free(sim->filename);
 	free(sim->filepath);
+
+	simSetLogging(sim,NULL,NULL);
+
 	free(sim);
 	return; }
 
@@ -2140,10 +2166,14 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 	char word[STRCHAR],*line2,errstring[STRCHARLONG];
 	ParseFilePtr pfp;
 
-	strncpy(sim->filepath,fileroot,STRCHAR);
-	strncpy(sim->filename,filename,STRCHAR);
-	strncpy(sim->flags,flags,STRCHAR);
-	strcpy(SimFlags,flags);
+	if(fileroot) strncpy(sim->filepath,fileroot,STRCHAR);
+	if(filename) strncpy(sim->filename,filename,STRCHAR);
+	if(flags) {
+		strncpy(sim->flags,flags,STRCHAR);
+		strcpy(SimFlags,flags); }
+	else {
+		flags=SimFlags;
+		strncpy(sim->flags,SimFlags,STRCHAR); }
 	done=0;
 	ErrorLineAndString[0]='\0';
 
@@ -2372,25 +2402,24 @@ failure:
 
 
 /* simInitAndLoad */
-int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags) {
+int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags,const char *logfile) {
 	simptr sim;
-	int er,qflag,sflag;
+	int er;
 
 	sim=*smptr;
 	if(!sim) {
-		qflag=strchr(flags,'q')?1:0;
-		sflag=strchr(flags,'s')?1:0;
-		if(!qflag && !sflag) {
-			simLog(NULL,2,"--------------------------------------------------------------\n");
-			simLog(NULL,2,"Running Smoldyn %s\n",VERSION);
-			simLog(NULL,2,"\nCONFIGURATION FILE\n");
-			simLog(NULL,2," Path: '%s'\n",fileroot);
-			simLog(NULL,2," Name: '%s'\n",filename); }
 		sim=simalloc(fileroot);
 		CHECKMEM(sim);
+		strncpy(sim->flags,flags,STRCHAR);
+		if(logfile) simSetLogging(sim,logfile,NULL);
+		simLog(sim,2,"--------------------------------------------------------------\n");
+		simLog(sim,2,"Running Smoldyn %s\n",VERSION);
+		simLog(sim,2,"\nCONFIGURATION FILE\n");
+		simLog(sim,2," Path: '%s'\n",fileroot);
+		simLog(sim,2," Name: '%s'\n",filename);
 		CHECKMEM(strloadmathfunctions()==0);
 		CHECKMEM(loadsmolfunctions(sim)==0);
-		er=loadsim(sim,fileroot,filename,flags);		// load sim
+		er=loadsim(sim,fileroot,filename,NULL);		// load sim
 		CHECK(!er);
 		simLog(sim,2," Loaded file successfully\n"); }
 

@@ -702,6 +702,34 @@ Running ``sudo make install'' writes the documentation to /usr/local/share/doc/s
 Another new directory is called ``scripts''. It includes development related scripts for building Smoldyn on online platforms like Travis, Open Build Service, OSX, and docker. I don't believe that these are complete yet. The build\_wheels\_osx.sh script has stuff about homebrew, which I avoid, so this is going to take some work before I'll want to run it.
 
 
+% Interfacing with Biosimulators, Simularium, and Vivarium
+\section{Interfacing with Biosimulators, Simularium, and Vivarium}
+
+Smoldyn is interfaced with several other tools.
+
+\subsection{Biosimulators}
+
+Biosimulators is an online access point to a wide variety of simulators, including Smoldyn. It was headed up initially by Jonathan Karr and his student Bilal Shaikh. Jonathan emailed me about joining the project on May 17, 2021. Afterward, he and Bilal, along with Dilawar and myself, integrated Smoldyn into the project. The work was published in a paper titled ``BioSimulators: a central registry of simulation engines and services for recommending specific tools'' in \textit{Nucleic Acids Research} 50:W108-W114, 2022. Jonathan and Bilal both left Biosimulators around the time the paper was published, and the work was taken over by others.
+
+In May, 2023, I started working with Eran Agmon and Logan Drescher (both at UCHC) to improve Smoldyn integration into Biosimulators. The goal at this point is to get the E. coli Min simulation running, but there are still some bugs to fix at their end. Ideally, one would go to the Biosimulators website at \url{https://biosimulations.org}, click on ``Run simulations'', click on ``Utilities/Create a project'', upload a Smoldyn file, check that the website fields auto-filled correctly, and click on the ``Simulate'' button. So far, this isn't working.
+
+For Biosimulators to display graphical output from Smoldyn, configuration files need to have the following commands, or something equivalent.
+\begin{lstlisting}
+output_files FILEROOTout.txt
+cmd i 0 TIME_STOP 1 executiontime FILEROOTout.txt
+cmd i 0 TIME_STOP 1 listmols FILEROOTout.txt
+\end{lstlisting}
+Then, the Smoldyn output is converted to graphics using the Simularium conversion tool. It is at \url{https://github.com/simularium/simulariumio/blob/main/examples/Tutorial_smoldyn.ipynb}.
+
+\subsection{Simularium}
+
+Simularium is a project of the Allen Institute for Cell Biology and is run by Blair Lyons. I was invited to join it on Dec. 2, 2020. It is a simulation viewer for previously written and submitted models. They wrote the converter that converts Smoldyn molecule position output to Simularium input.
+
+\subsection{Vivarium}
+
+Vivarium is another online tool for multiple simulators. I was invited to join it around May, 2021. It was being run by Eran Agmon (Stanford University, Covert lab) and Ryan Spangler (Allen Institute). Eran and Ryan added Smoldyn to Vivarium using Smoldyn's Python interface, which sort of worked, but I don't think that we fully completed the task. As of May, 2023, Eran says that Vivarium is still going, but it sounds like Biosimulators is of greater interest and will likely replace replace Vivarium.
+
+
 % Chapter: Python binding code
 \chapter{Python binding code}
 
@@ -1578,8 +1606,10 @@ Adds \ttt{nmol} molecules of type \ttt{ident} and state \ttt{MSsoln} to the syst
 \item[\underline{molecule manipulations}]
 
 \item[\ttt{void}]
-\ttt{molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);} \\
+\ttt{molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl,double *crsspt);} \\
 Changes the identity or state of a molecule that is currently in the system to species \ttt{i} and state \ttt{ms}. It is permissible for \ttt{i} to equal 0 for the molecule to be killed, which is equivalent to calling \ttt{molkill}. \ttt{mptr} is a pointer to the molecule and \ttt{ll} is the list that it is currently listed in (probably equal to \ttt{mptr->list}, but not necessarily). If the molecule's list information should be updated to reflect the identity change, which is nearly always, then \ttt{ll} should be the molecule's list; if not though, then send in both \ttt{ll} and \ttt{m} as -1. If \ttt{m} is known, then enter the index of the molecule in the master list (i.e. not a box list) in \ttt{m}; if it's unknown set \ttt{m} to -1. If the molecule is to be bound to a panel (independent of whether it was bound to a panel before or not), enter the panel in \ttt{pnl}. Or, if it is to be in solution but adjacent to a panel, enter this panel in \ttt{pnl}.
+
+If this identity change occured mid-time step at some location, such as due to a surface collision, then send in that location in \ttt{crsspt}. This function will then rescale the molecule's motion over the course of the time step to address any change in diffusion coefficient that arises from the species and/or state change. Send in \ttt{crsspt} as \ttt{NULL} to not use this correction.
 
 This function sets some parameters of the molecule structure, fixes the location as needed, and, if appropriate, updates \ttt{sortl} to indicate to \ttt{molsort} that sorting is needed. This also increments the molecule \ttt{touch} value to show that molecules have been touched.
 
@@ -4915,7 +4945,23 @@ typedef struct simstruct {
 
 The list of function pointers defined with typedef statements are used below in the \ttt{simstruct}. They make it possible for a simulation to use different collections of core algorithms. The first one, logfnptr, is for an external logging function, for use by Libsmoldyn. Others allow the use of either single-threaded or multi-threaded algorithm versions. Also, which has not been done but could be, they could be tuned for better efficiency in, say, a 3D system, rather than being generalists for all system dimensionalities.
 
-\ttt{simstruct} contains and owns all information that defines the simulation conditions, the current state of the simulation, and all other simulation parameters. The \ttt{condition} element is maintained at the lowest level of all superstructure conditions. The \ttt{logfn} is typically set to \ttt{NULL} but can be set to point to a function if text output should be dealt with there instead of in simLog. \ttt{logfile} is used by simLog for sending all output. The default is stdout. The \ttt{filepath} and \ttt{filename} give the configuration file name and \ttt{flags} lists the command-line flags that the user supplied. \ttt{clockstt} is used for the clock value when the simulation starts, and \ttt{elapsedtime} is used for storing the simulation run time while the simulation is paused, both of which are for timing simulations. \ttt{randseed} is the starting random number seed. \ttt{eventcount} is a list of counts for each of the enumerated event types. \ttt{dim} is the system dimensionality and \ttt{accur} is the overall simulation accuracy level. Because this has not proven useful, it should be removed at some point, and a version of it should be moved to the box superstructure. Finally, \ttt{time}, \ttt{tmin}, \ttt{tmax}, and \ttt{dt} are the current time, starting time, stopping time, and time step of the simulation, respectively. \ttt{tbreak} is the simulation break time, which lets functions that use Libsmoldyn run the simulation for a fixed amount of time and then stop for other operations. \ttt{quitatend} is a simple flag that is 1 if the simulation should simply quit when done and 0 if not. This is only relevant for simulations with graphics, because the others automatically quit at the end anyhow.
+\ttt{simstruct} contains and owns all information that defines the simulation conditions, the current state of the simulation, and all other simulation parameters.
+
+The \ttt{condition} element is maintained at the lowest level of all superstructure conditions.
+
+The \ttt{logfn} is typically set to \ttt{NULL} but can be set to point to a function if text output should be dealt with there instead of in simLog. This is a callback function, where this function is called by \ttt{simLog} with any possible output, which allows for complex internal error handling. It is not used at present. \ttt{logfile} is used by simLog for sending all output. The default is stdout. Note that there are also global variables for these purposes called \ttt{LogFile} and \ttt{LoggingCallback}; the system is that the \ttt{sim} variables are used by priority but if they are not available, then the global variables are used.
+
+The \ttt{filepath} and \ttt{filename} give the configuration file name and \ttt{flags} lists the command-line flags that the user supplied.
+
+\ttt{clockstt} is used for the clock value when the simulation starts, and \ttt{elapsedtime} is used for storing the simulation run time while the simulation is paused, both of which are for timing simulations.
+
+\ttt{randseed} is the starting random number seed. \ttt{eventcount} is a list of counts for each of the enumerated event types.
+
+\ttt{dim} is the system dimensionality and \ttt{accur} is the overall simulation accuracy level. Because this has not proven useful, it should be removed at some point, and a version of it should be moved to the box superstructure.
+
+Finally, \ttt{time}, \ttt{tmin}, \ttt{tmax}, and \ttt{dt} are the current time, starting time, stopping time, and time step of the simulation, respectively. \ttt{tbreak} is the simulation break time, which lets functions that use Libsmoldyn run the simulation for a fixed amount of time and then stop for other operations.
+
+\ttt{quitatend} is a simple flag that is 1 if the simulation should simply quit when done and 0 if not. This is only relevant for simulations with graphics, because the others automatically quit at the end anyhow.
 
 The superstructures are listed next. All of them are optional, where a \ttt{NULL} value simply means that the simulation does not include that feature and an existing superstructure means that the simulation has that feature. The command superstructure is pointed to with a \ttt{void*} rather than a \ttt{cmdssptr} because the latter is declared in a separate header file and I didn't want to require a dependency between the smoldyn.h header file and the SimCommand.h header file.
 
@@ -4926,7 +4972,42 @@ Finally, the simulation structure lists the function pointers for the core simul
 
 \begin{description}
 
-\item[\underline{enumerated types}]
+\item[\underline{Error handling}]
+
+\item[\ttt{void}]
+\ttt{simSetLogging(simptr sim,const char *logfile,void (*logFunction)(simptr,int,const char*,...))}
+\hfill \\
+This sets the logging file and logging callback functions. If \ttt{sim} is entered, this sets the versions for the simulation structure and if not, this sets the global variables. Enter both \ttt{logfile} and \ttt{logFunction} as \ttt{NULL} to close files, clear both values, and set them to \ttt{NULL}. If either or both of \ttt{logfile} and \ttt{logFunction} are non-\ttt{NULL}, this sets them, without disturbing the other one. Files are closed as needed.
+
+\item[\ttt{void simSetThrowing(int corethreshold)}]
+\hfill \\
+Sets the global \ttt{ThrowThreshold} threshold for throwing an error. Throwing would normally occur if the error importance values is greater than or equal to this threshold. However, throwing is disabled for now because it conflicts with static linking for libsmoldyn, making this function unnecessary.
+
+\item[\ttt{void simLog(simptr sim,int importance,const char* format, ...)}]
+\hfill \\
+All text output should be sent to this function. As a default, it simply prints the output to stdout. However, this also sends it elsewhere if the user asked for a different destination. This can also send output to a Libsmoldyn host program. Enter \ttt{sim} with the simulation structure if possible; if it's not possible, then this function displays the message to stderr. Enter \ttt{importance} with a value between 0 and 10, as shown below. The \ttt{format} and \ttt{...} portions are the same format string and arguments that are used for \ttt{printf}.
+
+\begin{longtable}[c]{clll}
+\ttt{importance} & meaning & example & flags and display\\
+\hline
+0 & debugging output & & v enables\\
+1 & verbose output & box details & v enables\\
+2 & normal diagnostics & reaction parameters & q suppresses\\
+3 & abbreviated diagnostics & basic species & q suppresses\\
+4 & important notices & simulation has ended & q suppresses\\
+5 & warnings & time step too big & w suppresses\\
+7 & minor errors & command errors & w suppresses\\
+ & & structure condition not updated\\
+8 & recoverable errors & user input syntax error & always shown\\
+9 & error in normal operation & child structures missing parents & always shown\\
+10 & unrecoverable errors & bug or memory allocation failure & always shown\\
+\end{longtable}
+
+\item[\ttt{void simParseError(simptr sim,ParseFilePtr pfp)}]
+\hfill \\
+Handles parsing errors when reading a file. Send in the parse file pointer in \ttt{pfp} with the current status of the parsing. This sends \ttt{pfp} off to \ttt{Parse\_ReadFailure} and then displays the error with appropriate messages using \ttt{simLog}.
+
+\item[\underline{Enumerated types}]
 
 \item[\ttt{enum SmolStruct simstring2ss(char *string)}]
 \hfill \\
@@ -4969,26 +5050,6 @@ Frees memory that is allocated by functions within the Smoldyn program and that 
 Expands the number of variables in a simulation structure by \ttt{spaces} spaces. This allocates memory, copies over existing variables, and clears new ones as needed.
 
 \item[\underline{data structure output}]
-
-\item[\ttt{void simLog(simptr sim,int importance,const char* format, ...)}]
-\hfill \\
-All text output should be sent to this function. As a default, it simply prints the output to stdout. However, this also sends it elsewhere if the user asked for a different destination. This can also send output to a Libsmoldyn host program. Enter \ttt{sim} with the simulation structure if possible; if it's not possible, then this function displays the message to stderr. Enter \ttt{importance} with a value between 0 and 10, as shown below. The \ttt{format} and \ttt{...} portions are the same format string and arguments that are used for \ttt{printf}.
-
-\begin{longtable}[c]{clll}
-\ttt{importance} & meaning & example & flags and display\\
-\hline
-0 & debugging output & & v enables\\
-1 & verbose output & box details & v enables\\
-2 & normal diagnostics & reaction parameters & q suppresses\\
-3 & abbreviated diagnostics & basic species & q suppresses\\
-4 & important notices & simulation has ended & q suppresses\\
-5 & warnings & time step too big & w suppresses\\
-7 & minor errors & command errors & w suppresses\\
- & & structure condition not updated\\
-8 & recoverable errors & user input syntax error & always shown\\
-9 & error in normal operation & child structures missing parents & always shown\\
-10 & unrecoverable errors & bug or memory allocation failure & always shown\\
-\end{longtable}
 
 \item[\ttt{void simoutput(simptr sim)}]
 \hfill \\
@@ -5035,17 +5096,18 @@ Sets the appropriate simulation time parameter to \ttt{time}. Enter code as 0 to
 \hfill \\
 Reads and processes one line of text from the configuration file, or some other source. The first word of the line should be sent in as \ttt{word} (terminated by a `$\backslash$0') and the rest sent in as \ttt{line2}. I don't think that this function changes either the contents of \ttt{word} or \ttt{line2}, but this should be verified if it's important. If this function is successful, it returns 0 and it does not change the contents of \ttt{erstr}; if not, it returns 1 and it writes an error message to \ttt{erstr}.
 
-\item[\ttt{int loadsim(simptr sim,char *fileroot,char *filename,char *erstr,char *flags)}]
+\item[\ttt{int}]
+\ttt{loadsim(simptr sim, const char *fileroot, const char *filename, const char *flags)}
 \hfill \\
-\ttt{loadsim} loads all simulation parameters from a configuration file, using a format described above. \ttt{fileroot} is sent in as the root of the filename, including all colons, slashes, or backslashes; if the configuration file is in the same directory as Smoldyn, \ttt{fileroot} should be an empty string. \ttt{filename} is sent in as just the file name and any extension. \ttt{erstr} is sent in as an empty string of size \ttt{STRCHAR} and is returned with an error message if an error occurs. \ttt{sim} is the simulation structure. This routine calls \ttt{loadsurface} to load any surfaces. The following things are set up after this routine is completed: all molecule elements except box; all molecule superstructure elements; all wall elements; box superstructure element \ttt{mpbox}, but no other elements; no boxes are allocated or set up; all reaction structure elements except \ttt{rate2} and the product template position vectors (\ttt{pos} in each product); the command superstructure, including all of its elements; and all simulation structure elements except for sub-elements that have already been listed. All new molecules are left in the dead list for sorting later. If the configuration file loads successfully, the routine returns 0. If the file could not be found, it returns 10 and an error message. If an error was caught during file loading, the return value is 10 plus the line number of the file with an error, along with an error message. If there is an error, all structures are freed automatically.
+\ttt{loadsim} loads all simulation parameters from a configuration file, using a format described above. \ttt{fileroot} is sent in as the root of the filename, including all colons, slashes, or backslashes; if the configuration file is in the same directory as Smoldyn, \ttt{fileroot} should be an empty string. \ttt{filename} is sent in as just the file name and any extension. \ttt{sim} is the simulation structure. This routine calls \ttt{loadsurface} to load any surfaces. The following things are set up after this routine is completed: all molecule elements except box; all molecule superstructure elements; all wall elements; box superstructure element \ttt{mpbox}, but no other elements; no boxes are allocated or set up; all reaction structure elements except \ttt{rate2} and the product template position vectors (\ttt{pos} in each product); the command superstructure, including all of its elements; and all simulation structure elements except for sub-elements that have already been listed. All new molecules are left in the dead list for sorting later. If the configuration file loads successfully, the routine returns 0. If the file could not be found, it returns 10 and an error message. If an error was caught during file loading, the return value is 10 plus the line number of the file with an error, along with an error message. If there is an error, all structures are freed automatically.
 
 \item[\ttt{int simupdate(simptr sim,char *erstr)}]
 \hfill \\
 Updates all parts of the simulation structure. This is called on start up by \ttt{simUpdateAndDisplay}, and may be called at anytime afterwards. It returns 0 for success or 1 for failure. In the latter case, a string that describes the error should be returned in \ttt{erstr}.
 
-\item[\ttt{int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags)}]
+\item[\ttt{int simInitAndLoad(const char *fileroot, const char *filename, simptr *smptr, const char *flags, const char *logfile)}]
 \hfill \\
-\ttt{simInitAndLoad} sets up and loads values for all the structures as well as global variables. This routine calls the other initialization routines, so they do not have to be called from elsewhere. It also displays the status to stdout and calls output routines for each structure, allowing verification of the initiallization. Send in \ttt{fileroot} and \ttt{filename} with strings for the path and name of the input file and send in \ttt{smptr} (pointer to a simulation structure) pointing to a \ttt{NULL}. \ttt{flags} is a string of command-line flags. This returns 0 for correct operation and 1 for an error. If it succeeds, \ttt{smptr} is returned pointing to a fully set up simulation structure. Otherwise, \ttt{smptr} is set to \ttt{NULL} and an error messages is displayed on stderr. If \ttt{smptr} does not point to \ttt{NULL}, then this simply returns without doing anything.
+\ttt{simInitAndLoad} sets up and loads values for all the structures as well as global variables. This routine calls the other initialization routines, so they do not have to be called from elsewhere. It also displays the status to stdout and calls output routines for each structure, allowing verification of the initiallization. Send in \ttt{fileroot} and \ttt{filename} with strings for the path and name of the input file and send in \ttt{smptr} (pointer to a simulation structure) pointing to a \ttt{NULL}. \ttt{flags} is a string of command-line flags. \ttt{logfile} is an optional entry for the logging filename. This returns 0 for correct operation and 1 for an error. If it succeeds, \ttt{smptr} is returned pointing to a fully set up simulation structure. Otherwise, \ttt{smptr} is set to \ttt{NULL} and an error messages is displayed on stderr. If \ttt{smptr} does not point to \ttt{NULL}, then this simply returns without doing anything.
 
 \item[\ttt{int simUpdateAndDisplay(simptr sim)}]
 \hfill \\
@@ -6931,6 +6993,16 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 
 \subsection*{Modifications for version 2.72 (not released yet)}
 \item Made some minor modifications in smolgraphics.c. Tiff files were saving using the latest screen update, which occurs asynchronously, rather than at the requested time, which is now fixed. To do this, I added a \ttt{swapbuffers} input to \ttt{RenderSim} and also now draw the output without swapping buffers before recording tiff files. I also removed redundant system drawings by testing if it was just drawn, and then not bothering to redraw if unnecessary.
+\item Changed \ttt{molchangeident} to include a \ttt{crsspt} input parameter. This is used to rescale molecule motions in cases where the diffusion coefficient changes at a surface crossing.
+\item Improved \ttt{surfaceoutput} so that it displays more details about molecule-surface interactions, particularly with verbose output.
+\item Several minor clean-up things and bug fixes in \ttt{surfupdateparams}.
+\item Edited \ttt{dosurfinteract} so that molecule diffusion coefficients change at the moment that molecule identities change, which basically means that the correct parameters get passed to the updated version of \ttt{molchangeident}.
+\item Lots of changes to clean up error handling and command line input. In smolsim.c, rewrote \ttt{simSetLogging} and made some small edits in \ttt{simLog} and the top of \ttt{loadsim}. Added a \ttt{logfile} input to the non-VCell version of \ttt{simInitAndLoad}. Edited \ttt{smolSetLogging} in libsmoldyn.cpp. There's also a small edit in python/module.cpp, \ttt{init\_and\_run} to account for the change to \ttt{simInitAndLoad}.
+\item Added command line options with double-hyphens. Previously, the only support for this was with ``--define''. Now, all options can be entered with a double-hyphen version. Also, options with single hyphens can be entered all at once or one at a time. This required lots of edits to \ttt{main} in smoldyn.cpp.
+\item Added command line input for logging file with \ttt{--logfile}.
+\item In python/module.cpp, removed the \ttt{overwrite} parameter from the \ttt{runSimUntil} python function because it had no purpose and was causing compiling warnings.
+\item In NextSubVolume/NextSubvolumeMethod.cpp, commented out the \ttt{beta} computation in the \ttt{ReactionList::recalculate\_propensities} function because it wasn't being used and was causing compiling warnings.
+\item Writing function \ttt{surfacetransmit} in SurfaceParam.c. This is only half-written so far, but it's supposed to compute transmission probabilities from transmission coefficients or vice versa, while accounting for diffusion coefficient changes.
 
 \end{itemize}
 

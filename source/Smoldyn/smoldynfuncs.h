@@ -110,7 +110,7 @@ int addsurfmol(simptr sim,int nmol,int ident,enum MolecState ms,double *pos,pane
 int addcompartmol(simptr sim,int nmol,int ident,compartptr cmpt);
 
 // molecule manipulations
-void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl);
+void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl,double *crsspt);
 int molmovemol(simptr sim,moleculeptr mptr,const double *delta);
 
 // core simulation functions
@@ -484,7 +484,7 @@ int loadsmolfunctions(simptr sim);
 /******************************** Simulation ********************************/
 
 // error handling
-void simSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*, ...));
+void simSetLogging(simptr sim,const char *logfile,void (*logFunction)(simptr,int,const char*, ...));
 void simSetThrowing(int corethreshold);
 void simLog(simptr sim,int importance,const char* format, ...);
 void simParseError(simptr sim,ParseFilePtr pfp);
@@ -518,7 +518,7 @@ int simupdate(simptr sim);
 #ifdef OPTION_VCELL
 	int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags, ValueProviderFactory* valueProviderFactory, AbstractMesh* mesh);
 #else
-	int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags);
+	int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags,const char *logfile);
 #endif
 int simUpdateAndDisplay(simptr sim);
 

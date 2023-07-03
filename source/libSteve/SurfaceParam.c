@@ -57,6 +57,53 @@ double interpolate2D(double *xdata,double *ydata,double *zdata,int nx,int ny,dou
 /******************************************************************************/
 
 
+/* surfacetransmit */
+int surfacetransmit(double *kap1ptr,double *kap2ptr,double *p1ptr,double *p2ptr,double difc1,double difc2,double dt) {
+	double kap1,kap2,p1,p2,c,cterm;
+	double newkap1,newkap2,newp1,newp2;
+	int er;
+
+	if(difc1<=0 || difc2<=0 || dt<=0) return 1;				// not allowed
+
+	kap1=kap1ptr ? *kap1ptr:-2;
+	kap2=kap2ptr ? *kap2ptr:-2;
+	p1=p1ptr ? *p1ptr:-2;
+	p2=p2ptr ? *p2ptr:-2;
+	er=0;
+
+	if(p1==-2 && p2==-2) {														// find probabilities from kappas
+		if(kap1==-1 && kap2==-1) {
+			if(difc1<=difc2) {
+				newp1=1;
+				newp2=sqrt(difc1/difc2); }
+			else {
+				newp1=sqrt(difc2/difc1);
+				newp2=1; }}
+		else if(kap1==-1) {
+			newp1=1;
+			newp2=-2;
+			newkap1=-2;
+			newkap2=kap2;
+			er=surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt); }
+		else if(kap2==-1) {
+			newp1=-2;
+			newp2=1;
+			newkap1=kap1;
+			newkap2=-2;
+			er=surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt); }
+		else {
+			c=sqrt(dt)*(kap1/sqrt(difc1)+kap2/sqrt(difc2));
+			cterm=(-1+2*c/sqrt(PI)+experfcD(c))/(c*c);
+			newp1=kap1*sqrt(PI*dt)/sqrt(difc1)*cterm;
+			newp2=kap2*sqrt(PI*dt)/sqrt(difc2)*cterm;
+			// check that these <=1
+			}
+		}
+	else if(kap1==-2 && kap2==-2) {												// find kappas from probabilities
+		}
+	return er; }
+
+
 /* surfaceprob. */
 double surfaceprob(double k1,double k2,double dt,double difc,double *p2ptr,enum SurfParamAlgo algo) {
 	double step,p1,p2,kapp,kp,p1lo,p1hi,c1,c2,caideal,casim,kapfp,kapbp;
@@ -81,7 +128,13 @@ double surfaceprob(double k1,double k2,double dt,double difc,double *p2ptr,enum 
 		c1=kapfp+kapbp;
 		c2=1.0/(c1*c1)*(2*c1-SQRTPI/SQRT2+SQRTPI/SQRT2*experfcD(SQRT2*c1));
 		p1=kapfp*c2;
-		p2=kapbp*c2; }
+		p2=kapbp*c2;
+		if(p1>1 && p1>p2) {
+			p1=1;
+			p2=kapbp/kapfp; }
+		else if(p2>1) {
+			p2=1;
+			p1=kapfp/kapbp; }}
 
 	else if(algo==SPAirrAds || algo==SPAirrAdsT) {								// IrrAds, IrrAdsT
 		kapp=k1*dt/step;

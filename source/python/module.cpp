@@ -94,7 +94,7 @@ init_and_run(const string& filepath,
       new SimpleValueProviderFactory(),
       new SimpleMesh());
 #else
-    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &pSim, flags.c_str());
+    er = simInitAndLoad(p.first.c_str(), p.second.c_str(), &pSim, flags.c_str(), NULL);
 #endif
     if (!er) {
         pSim->quitatend = quit_at_end;
@@ -1380,7 +1380,7 @@ PYBIND11_MODULE(_smoldyn, m)
         })
       .def("runSim", [](Simulation& sim) { return smolRunSim(sim.getSimPtr()); })
       .def("runSimUntil",
-        [](Simulation& sim, double breaktime, bool overwrite) {
+        [](Simulation& sim, double breaktime) {
             return smolRunSimUntil(sim.getSimPtr(), breaktime);
         })
 

@@ -3395,7 +3395,7 @@ enum CMDcode cmdmovesurfacemol(simptr sim,cmdptr cmd,char *line2) {
 			for(d=0;d<sim->dim;d++) {
 				mptr->posoffset[d]=mptr->pos[d]-pos[d];
 				mptr->posx[d]=mptr->pos[d]=pos[d]; }
-			molchangeident(sim,mptr,-1,-1,mptr->ident,ms2==MSnone?mptr->mstate:ms2,pnl2); }
+			molchangeident(sim,mptr,-1,-1,mptr->ident,ms2==MSnone?mptr->mstate:ms2,pnl2,NULL); }
 	return CMDok; }
 
 
@@ -3913,9 +3913,9 @@ enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2) {
 			if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
 			strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
 		if(coinrandD(prob))
-			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl);
+			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL);
 		else
-			molchangeident(sim,mptr,-1,-1,i1,ms1,mptr->pnl); }
+			molchangeident(sim,mptr,-1,-1,i1,ms1,mptr->pnl,NULL); }
 	return CMDok; }
 
 
@@ -3976,7 +3976,7 @@ enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2) {
 		if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
 		strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
 	if(coinrandD(prob))
-		molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl);
+		molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL);
 	return CMDok; }
 
 
@@ -4011,7 +4011,7 @@ enum CMDcode cmdreplacexyzmol(simptr sim,cmdptr cmd,char *line2) {
 		for(d=0;d<sim->dim;d++)
 			if(mlist[m]->pos[d]!=pos[d]) d=sim->dim+1;
 		if(d==sim->dim) {
-			molchangeident(sim,mlist[m],ll,-1,i,ms,mlist[m]->pnl);
+			molchangeident(sim,mlist[m],ll,-1,i,ms,mlist[m]->pnl,NULL);
 			m=bptr->nmol[ll]+1; }}
 	return CMDok; }
 
@@ -4087,7 +4087,7 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 						if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
 						strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&frac); }
 				 	if(coinrandD(frac)) {
-						molchangeident(sim,mptr,ll,-1,i2,ms2,mptr->pnl); }}}}}
+						molchangeident(sim,mptr,ll,-1,i2,ms2,mptr->pnl,NULL); }}}}}
 	return CMDok; }
 
 
@@ -4157,7 +4157,7 @@ enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2) {
 			if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
 			strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&frac); }
 	 	if(coinrandD(frac))
-			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl); }
+			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL); }
 	return CMDok; }
 
 
@@ -4206,9 +4206,9 @@ enum CMDcode cmdmodulatemol(simptr sim,cmdptr cmd,char *line2) {
 	mptr=(moleculeptr) line2;
 	if((mptr->ident==i1 && mptr->mstate==ms1) || (mptr->ident==i2 && mptr->mstate==ms2)) {
 		if(coinrandD(prob))
-			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl);
+			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL);
 		else
-			molchangeident(sim,mptr,-1,-1,i1,ms1,mptr->pnl); }
+			molchangeident(sim,mptr,-1,-1,i1,ms1,mptr->pnl,NULL); }
 	return CMDok; }
 
 
