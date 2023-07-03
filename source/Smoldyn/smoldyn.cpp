@@ -35,39 +35,59 @@ int main(int argc,char **argv) {
 	try {
 	  simptr sim;
 	  int i,er,pflag,wflag,tflag,Vflag,oflag;
-	  char root[STRCHAR],fname[STRCHAR],flags[STRCHAR],*cptr;
+	  char root[STRCHAR],fname[STRCHAR],flags[STRCHAR],*cptr,logfile[STRCHAR];
 
-		for(i=0;i<STRCHAR;i++) root[i]=fname[i]=flags[i]='\0';
+		for(i=0;i<STRCHAR;i++) root[i]=fname[i]=flags[i]=logfile[i]='\0';
 		er=0;
-		if(argc<=1) {
+		if(argc<=1) {																		// only software name
 			fprintf(stderr,"Welcome to Smoldyn version %s.\n\n",VERSION);
 			fprintf(stderr,"Enter name of configuration file: ");
 			char* _x=fgets(root,STRCHAR,stdin);
 			if(strchr(root,'\n')) *(strchr(root,'\n'))='\0';
-			fprintf(stderr,"Enter runtime flags (q=quiet, p=parameters only), or '-'=none: ");
+			fprintf(stderr,"Enter runtime flags (q=quiet, p=parameters only, etc.), or '-'=none: ");
 			_x=fgets(flags,STRCHAR,stdin);
             UNUSED(_x);
 			if(strchr(flags,'\n')) *(strchr(flags,'\n'))='\0'; }
-		if(argc>1) {
-			strncpy(root,argv[1],STRCHAR-1);
-			root[STRCHAR-1]='\0';
+
+		if(argc>1) {																		// also have filename or --version
+			if(!strcmp(argv[1],"--version")) strncat(flags,"V",STRCHAR);
+			else {
+				strncpy(root,argv[1],STRCHAR-1);
+				root[STRCHAR-1]='\0'; }
 			argc--;
 			argv++; }
-		er=Parse_CmdLineArg(&argc,argv,NULL);
+
+		er=Parse_CmdLineArg(&argc,argv,NULL);						// process any --define arguments
 		if(er) {
 			if(er==1) fprintf(stderr,"Out of memory");
 			else fprintf(stderr,"Follow command line '--define' options with key=replacement\n");
 			return 0; }
-		if(argc>1) {
-			if(argv[1][0]=='-') {
-				strncpy(flags,argv[1],STRCHAR-1);
-				flags[STRCHAR-1]='\0';
-				strcpy(SimFlags,flags);
-				argc--;
-				argv++; }
+
+		while(argc>1) {																	// process flags with -- or with -
+			if(!strcmp(argv[1],"--version")) strncat(flags,"V",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--output")) strncat(flags,"o",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--parameters")) strncat(flags,"p",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--params")) strncat(flags,"p",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--quiet")) strncat(flags,"q",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--silent")) strncat(flags,"s",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--text")) strncat(flags,"t",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--verbose")) strncat(flags,"v",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--warnings")) strncat(flags,"w",STRCHAR-strlen(flags));
+			else if(!strcmp(argv[1],"--logfile")) {
+				if(argc>2) {
+					strncpy(logfile,argv[2],STRCHAR-1);
+					argc--;
+					argv++; }
+				else {
+					fprintf(stderr,"Missing logfile name\n");
+					return 0; }}
+			else if(argv[1][0]=='-' && argv[1][1]!='-') strncat(flags,argv[1],STRCHAR-strlen(flags));
 			else {
-				fprintf(stderr,"Command line format: smoldyn [config_file] [-options] [-OpenGL_options]\n");
-				return 0; }}
+				fprintf(stderr,"Command line format: smoldyn [config_file] [-options]\n");
+				return 0; }
+			argc--;
+			argv++; }
+		strcpy(SimFlags,flags);
 
 		cptr=strrpbrk(root,":\\/");
 		if(cptr) cptr++;
@@ -90,7 +110,7 @@ int main(int argc,char **argv) {
 #ifdef OPTION_VCELL
 		er=simInitAndLoad(root,fname,&sim,flags,new SimpleValueProviderFactory(), new SimpleMesh());
 #else
-		er=simInitAndLoad(root,fname,&sim,flags);
+		er=simInitAndLoad(root,fname,&sim,flags,logfile);
 #endif
 		if(!er) {
 			if(!tflag && sim->graphss && sim->graphss->graphics!=0)

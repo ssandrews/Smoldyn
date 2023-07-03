@@ -456,22 +456,21 @@ This is the first of the chapters that focuses on a specific aspect of Smoldyn, 
 % Section: Runtime flags
 \section{Runtime flags}
 
-When starting Smoldyn from the command line, you can follow the filename with runtime flags, of which the options are listed below. Any combination of flags may be used, and in any order.
+When starting Smoldyn from the command line, you can follow the filename with runtime flags, of which the options are listed below. Any combination of flags may be used, and in any order. Flags can be entered with a single hyphen and a single letter (possible with multiple letter codes entered sequentially), or with a double hyphen and a word. Both possibilities are listed below.
 
 \begin{longtable}[c]{lll}
-Command & Smoldyn\\
-line & query & Result\\
-\hline\\
- & - & normal: parameters displayed and simulation run\\
-\ttt{-o} & o & suppress output: text output files are not opened\\
-\ttt{-p} & p & parameters only: simulation is not run\\
-\ttt{-q} & q & quiet: parameters are not displayed\\
-\ttt{-s} & s & silent: no text output at all, even errors\\
-\ttt{-t} & t & text only: no graphics are displayed\\
-\ttt{-V} & V & display version number and quit\\
-\ttt{-v} & v & verbose: extra parameter information is displayed\\
-\ttt{-w} & w & suppress warnings: no warnings are shown\\
+Word & Letter & Result\\
+\hline
+\ttt{--output} & \ttt{-o} & suppress output: text output files are not opened\\
+\ttt{--params} & \ttt{-p} & parameters only: simulation is not run\\
+\ttt{--quiet} & \ttt{-q} & quiet: parameters are not displayed\\
+\ttt{--silent} & \ttt{-s} & silent: no text output at all, even errors\\
+\ttt{--text} & \ttt{-t} & text only: no graphics are displayed\\
+\ttt{--version} & \ttt{-V} & display version number and quit\\
+\ttt{--verbose} & \ttt{-v} & verbose: extra parameter information is displayed\\
+\ttt{--warnings} & \ttt{-w} & suppress warnings: no warnings are shown\\
 \ttt{--define} $x=y$ &  & set a text macro definition\\
+\ttt{--logfile} \textit{file} & & set output logging file for diagnostics and warnings
 \end{longtable}
 
 % Section: configuration file syntax
@@ -4299,6 +4298,18 @@ Returns the Smoldyn version. The C/C++ and low-level Python options just return 
 \section{Errors}
 
 \begin{description}
+
+\item[SetLogging]
+\hfill \\
+C/C++: \ttt{void smolSetLogging(const char *logfile,void (*logFunction)(simptr,int,const char*,...))}\\
+Python: N/A\\
+This function sets the file for output logging (diagnostics, warnings, etc., but not simulation data output) and/or the logging callback function. The callback function is called whenever any output is made so that it can be handled in some way other than simply displaying it to the output file. Smoldyn has two copies of these pieces of information, of which one is in the simulation data structure and the other is in global variables; this function only sets the global variables. Enter both \ttt{logfile} and \ttt{logFunction} as \ttt{NULL} to clear the values, and otherwise entering either value as \ttt{NULL} will cause it to be ignored.
+
+\item[SetThrowing]
+\hfill \\
+C/C++: \ttt{void smolSetThrowing(int corethreshold,int libthreshold)}
+Python: N/A\\
+Sets error throwing threshold values. Both values are ignored because throwing is somehow not compatible with static linking.
 
 \item[SetError]
 \hfill \\

@@ -56,8 +56,8 @@ extern CSTRING double smolGetVersion(void) {
 /******************************************************************************/
 
 /* smolSetLogging */
-extern CSTRING void smolSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*,...)) {
-	simSetLogging(logfile,logFunction);
+extern CSTRING void smolSetLogging(const char *logfile,void (*logFunction)(simptr,int,const char*,...)) {
+	simSetLogging(NULL,logfile,logFunction);
 	return; }
 
 
@@ -319,7 +319,7 @@ extern CSTRING simptr smolPrepareSimFromFile(const char *filepath,const char *fi
 #ifdef OPTION_VCELL
 	er=simInitAndLoad(filepath,filename,&sim,flags,new SimpleValueProviderFactory(),new SimpleMesh());
 #else
-	er=simInitAndLoad(filepath,filename,&sim,flags);
+	er=simInitAndLoad(filepath,filename,&sim,flags,NULL);
 #endif
 	LCHECKNT(!er,funcname,ECerror,ErrorLineAndString);
 	er=simUpdateAndDisplay(sim);

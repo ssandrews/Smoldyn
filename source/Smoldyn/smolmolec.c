@@ -2860,9 +2860,10 @@ int addcompartmol(simptr sim,int nmol,int ident,compartptr cmpt) {
 
 
 /* molchangeident */
-void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl) {
-	int dim,ll2;
-	double epsilon;
+void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecState ms,panelptr pnl,double *crsspt) {
+	int dim,ll2,oldi,d;
+	enum MolecState oldms;
+	double epsilon,difcratio;
 
 	if(i==0) {
 		molkill(sim,mptr,ll,m);
@@ -2870,11 +2871,18 @@ void molchangeident(simptr sim,moleculeptr mptr,int ll,int m,int i,enum MolecSta
 
 	dim=sim->dim;
 	epsilon=sim->srfss?sim->srfss->epsilon:0;
+	oldi=mptr->ident;
+	oldms=mptr->mstate;
 
 	mptr->ident=i;
 	mptr->mstate=ms;
 	if(ms==MSsoln || ms==MSbsoln) mptr->pnl=NULL;
 	else mptr->pnl=pnl;
+
+	if(crsspt && sim->mols->difc[oldi][oldms]>0) {						// correct motion based on new diffusion coefficient
+		difcratio=sqrt(sim->mols->difc[i][ms]/sim->mols->difc[oldi][oldms]);
+		for(d=0;d<dim;d++)
+			mptr->pos[d]=crsspt[d]+difcratio*(mptr->pos[d]-crsspt[d]); }
 
 	if(ms==MSsoln && !mptr->pnlx);								// soln -> soln
 	else if(ms==MSsoln) {													// surf -> front soln

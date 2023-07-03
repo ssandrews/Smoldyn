@@ -1245,7 +1245,7 @@ void surfacessfree(surfacessptr srfss) {
 
 /* surfaceoutput */
 void surfaceoutput(simptr sim) {
-	int s,p,i,dim,nspecies,jumpfrnt,jumpback,ll,p2,emit,d,same,none,newident;
+	int s,p,i,dim,nspecies,jumpfrnt,jumpback,ll,p2,emit,d,same,none,newident,show;
 	surfacessptr srfss;
 	surfaceptr srf;
 	double **point,*front,prob;
@@ -1285,10 +1285,12 @@ void surfaceoutput(simptr sim) {
 				simLog(sim,2," %s",sim->mols->listname[ll]);
 		simLog(sim,2,"\n"); }
 
-	simLog(sim,2," Surfaces allocated: %i, surfaces defined: %i\n\n",srfss->maxsrf,srfss->nsrf);
+	simLog(sim,1," Surfaces allocated: %i,",srfss->maxsrf);
+	simLog(sim,2," Surfaces defined: %i\n\n",srfss->nsrf);
 	for(s=0;s<srfss->nsrf;s++) {
 		srf=srfss->srflist[s];
 		simLog(sim,2," Surface: %s\n",srfss->snames[s]);
+		simLog(sim,1,"  surface index: %i%s\n",srf->selfindex,(srf->selfindex==s)?"":" ERROR: actual index doesn't match selfindex");
 		if(srf->port[PFfront]) simLog(sim,2,"  The front of this surface is part of port %s\n",srf->port[PFfront]->portname);
 		if(srf->port[PFback]) simLog(sim,2,"  The back of this surface is part of port %s\n",srf->port[PFback]->portname);
 
@@ -1304,41 +1306,43 @@ void surfaceoutput(simptr sim) {
 						if(action[i][ms][face]!=act) same=0;
 						if(newident && !((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3 && actdetails->srfnewspec[ms]==newident)) same=0; }
 					if(same) {
-						if(act!=SAmult) {
-							simLog(sim,2,"   %s(all) at %s: %s",sim->mols->spname[i],face==PFfront?"front":"back",surfact2string(act,string));
-							if(newident) simLog(sim,2," (convert to %s)",sim->mols->spname[newident]);
-							simLog(sim,2,"\n"); }}
+						show=(act!=SAmult)?2:1;
+						simLog(sim,show,"   %s(all) at %s: %s",sim->mols->spname[i],face==PFfront?"front":"back",surfact2string(act,string));
+						if(newident) simLog(sim,show," (convert to %s)",sim->mols->spname[newident]);
+						simLog(sim,show,"\n"); }
 					else {
 						for(ms=(enum MolecState)0;ms<MSMAX;ms=(enum MolecState)(ms+1)) {
 							act=action[i][ms][face];
-							if(sim->mols->exist[i][ms] && act!=SAmult) {
-								simLog(sim,2,"   %s(%s)",sim->mols->spname[i],molms2string(ms,string));
-								simLog(sim,2," at %s: %s",face==PFfront?"front":"back",surfact2string(act,string));
-								if((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3)
-									simLog(sim,2," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms]]);
-								simLog(sim,2,"\n"); }}}}}
+							show=(sim->mols->exist[i][ms] && act!=SAmult)?2:1;
+							simLog(sim,show,"   %s(%s)",sim->mols->spname[i],molms2string(ms,string));
+							simLog(sim,show," at %s: %s",face==PFfront?"front":"back",surfact2string(act,string));
+							if((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3)
+								simLog(sim,show," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms]]);
+							simLog(sim,show,"\n"); }}}}
 
 			simLog(sim,2,"  rates for molecules:");
 			none=1;
-			for(i=1;i<nspecies;i++)
-				for(ms=(enum MolecState)0;ms<MSMAX;ms=(enum MolecState)(ms+1))
-					for(face=(enum PanelFace)0;face<3;face=(enum PanelFace)(face+1))
+			for(i=1;i<nspecies;i++)																												// species
+				for(ms=(enum MolecState)0;ms<MSMAX;ms=(enum MolecState)(ms+1))							// molecule state
+					for(face=(enum PanelFace)0;face<3;face=(enum PanelFace)(face+1))					// surface face
 						if(action[i][ms][face]==SAmult && srf->actdetails) {
 							actdetails=srf->actdetails[i][ms][face];
-							for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1)) {
+							for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1)) {	// destination state
 								prob=actdetails->srfprob[ms2];
-								if(prob>0 && !srfsamestate(ms,face,ms2,NULL)) {
-									if(none) {
-										none=0;
-										simLog(sim,2,"\n"); }
-									srfindex2tristate(ms,face,ms2,&ms3,&ms4,&ms5);
-									simLog(sim,2,"    %s(%s)",sim->mols->spname[i],molms2string(ms3,string));
-									simLog(sim,2," %s ->",molms2string(ms4,string));
-									simLog(sim,2," %s",molms2string(ms5,string));
-									if(actdetails->srfnewspec[ms2]!=i) simLog(sim,2," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms2]]);
-									if(actdetails->srfdatasrc[ms2]==1) simLog(sim,2,", requested rate=%g",actdetails->srfrate[ms2]);
-									else if(actdetails->srfdatasrc[ms2]==2) simLog(sim,2,", requested prob=%g",actdetails->srfprob[ms2]);
-									simLog(sim,2,", actual rate=%g, prob=%g\n",srfcalcrate(sim,srf,i,ms,face,ms2),prob); }}}
+								show=(prob>0 && !srfsamestate(ms,face,ms2,NULL))?2:1;
+								if(none) {
+									none=0;
+									simLog(sim,2,"\n"); }
+								srfindex2tristate(ms,face,ms2,&ms3,&ms4,&ms5);										// ms3, ms4, and ms5 are tristate values
+								simLog(sim,show,"    %s(%s)",sim->mols->spname[i],molms2string(ms3,string));
+								simLog(sim,show," %s ->",molms2string(ms4,string));
+								simLog(sim,show," %s",molms2string(ms5,string));
+								if(actdetails->srfnewspec[ms2]!=i) simLog(sim,show," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms2]]);
+								if(actdetails->srfdatasrc[ms2]==1) simLog(sim,show,", requested rate=%g",actdetails->srfrate[ms2]);
+								else if(actdetails->srfdatasrc[ms2]==2) simLog(sim,show,", requested prob=%g",actdetails->srfprob[ms2]);
+								simLog(sim,show,", actual rate=%g, prob=%g",srfcalcrate(sim,srf,i,ms,face,ms2),prob);
+								simLog(sim,1,", cum. prob=%g, rev. prob=%g",actdetails->srfcumprob[ms2],actdetails->srfrevprob[ms2]);
+								simLog(sim,show,"\n"); }}
 			if(none) simLog(sim,2," no stochastic interactions\n"); }
 
 		if(sim->mols) {
@@ -3621,8 +3625,10 @@ int surfupdateparams(simptr sim) {
 					for(face=(enum PanelFace)0;face<3;face=(enum PanelFace)(face+1))
 						if(srf->action[i][ms1][face]==SAmult && srf->actdetails[i][ms1][face]) {
 							actdetails=srf->actdetails[i][ms1][face];
-							for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1))							// record actual probability of each event
-								actdetails->srfprob[ms2]=srfcalcprob(sim,srf,i,ms1,face,ms2); }
+							for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1))	{						// record actual probability of each event
+								actdetails->srfprob[ms2]=srfcalcprob(sim,srf,i,ms1,face,ms2);
+								//printf("surfupdateparams: i=%i, ms1=%i, face=%i, ms2=%i, prob=%g\n",i,ms1,face,ms2,actdetails->srfprob[ms2]); //??
+							}}
 
 			for(i=1;i<nspecies;i++)
 				for(ms1=(enum MolecState)0;ms1<MSMAX;ms1=(enum MolecState)(ms1+1))
@@ -3648,7 +3654,9 @@ int surfupdateparams(simptr sim) {
 							sum=0;																	// find cumulative probability
 							for(ms2=(enum MolecState)0;ms2<MSMAX1;ms2=(enum MolecState)(ms2+1)) {
 								sum+=actdetails->srfprob[ms2];
-								actdetails->srfcumprob[ms2]=sum; }}}}
+								actdetails->srfcumprob[ms2]=sum;
+								//printf("  i=%i, ms1=%i, face=%i, ms2=%i, prob=%g, rev=%g, cum=%g\n",i,ms1,face,ms2,actdetails->srfprob[ms2],actdetails->srfrevprob[ms2],actdetails->srfcumprob[ms2]);//??
+						}}}}
 
 		surfsetemitterabsorption(sim); }
 
@@ -4828,7 +4836,7 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 	else if(act==SAtrans) {												// transmit
 		newface=(face==PFfront)?PFback:PFfront;
 		fixpt2panel(crsspt,pnl,dim,newface,epsilon);
-		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl); }
+		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl,crsspt); }
 
 	else if(act==SAreflect) {											// reflect
 		surfacereflect(mptr,pnl,crsspt,dim,face);
@@ -4839,7 +4847,7 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 			mptr->pnl=mptr->pnlx;
 			done=1; }
 //			fixpt2panel(mptr->pos,pnl,dim,face,0); }		// old version, up to 2.50; line can be deleted
-		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl); }
+		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl,crsspt); }
 
 	else if(act==SAabsorb) {											// absorb
 		molkill(sim,mptr,ll,m);
@@ -4850,12 +4858,12 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 		if(!jump) {				// transmit
 			newface=(face==PFfront)?PFback:PFfront;
 			fixpt2panel(crsspt,pnl,dim,newface,epsilon); }
-		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl); }
+		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl,crsspt); }
 
 	else if(act==SAport) {												// port
 		newface=(face==PFfront)?PFback:PFfront;
-        fixpt2panel(crsspt,pnl,dim,newface,epsilon);
-		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl);
+		fixpt2panel(crsspt,pnl,dim,newface,epsilon);
+		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl,crsspt);
         // NOTE: face must be <= 1 (array size is 2)
 		mptr->list=pnl->srf->port[face]->llport;
 		if(ll>=0 && m<sim->mols->sortl[ll]) sim->mols->sortl[ll]=m;
@@ -4863,7 +4871,7 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 
 	else if(act==SAadsorb) {											// adsorb
 		oldpnl=mptr->pnl;
-		molchangeident(sim,mptr,ll,m,i2,ms2,pnl);
+		molchangeident(sim,mptr,ll,m,i2,ms2,pnl,NULL);
 		for(d=0;d<dim;d++) mptr->pos[d]=crsspt[d];
 		if(!ptinpanel(mptr->pos,mptr->pnl,dim))
 			movept2panel(mptr->pos,mptr->pnl,dim,margin);
@@ -4897,7 +4905,7 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 		done=1; }
 
 	else if(act==SAflip) {												// on-surface flipping
-		molchangeident(sim,mptr,ll,m,i2,ms2,pnl);
+		molchangeident(sim,mptr,ll,m,i2,ms2,pnl,crsspt);
 		if(ms2==MSfront) fixpt2panel(mptr->pos,mptr->pnl,dim,PFfront,epsilon);
 		else if(ms2==MSback) fixpt2panel(mptr->pos,mptr->pnl,dim,PFback,epsilon);
 		done=1; }
