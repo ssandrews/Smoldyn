@@ -1032,6 +1032,7 @@ enum EventType
     ETexport
 };
 
+typedef void (*logfnptr)(struct simstruct *,int,const char*,...);
 typedef int (*diffusefnptr)(struct simstruct*);
 typedef int (*surfaceboundfnptr)(struct simstruct*, int);
 typedef int (*surfacecollisionsfnptr)(struct simstruct*, int, int);
@@ -1045,6 +1046,7 @@ typedef struct simstruct
 {
     enum StructCond condition; // structure condition
     FILE* logfile;             // file to send output
+    logfnptr logfn;            // function for logging output
     char* filepath;            // configuration file path
     char* filename;            // configuration file name
     char* flags;               // command-line options from user
