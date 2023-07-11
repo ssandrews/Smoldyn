@@ -68,6 +68,7 @@ enum SurfParamAlgo {SPAirrTrans,SPAirrTransT,SPAirrTransQ,SPArevTrans,SPAirrAds,
 double surfaceprob(double k1,double k2,double dt,double difc,double *p2ptr,enum SurfParamAlgo algo);
 double desorbdist(double step,enum SurfParamAlgo algo);
 double surfacerate(double p1,double p2,double dt,double difc,double *k2ptr,enum SurfParamAlgo algo);
+int surfacetransmit(double *kap1ptr,double *kap2ptr,double *p1ptr,double *p2ptr,double difc1,double difc2,double dt);
 
 /********************* PARAMETER CALCULATION FUNCTIONS ********************/
 
@@ -196,6 +197,38 @@ This function is the inverse of \ttt{surfaceprob}. Enter the interaction probabi
 \end{longtable}
 
 In \ttt{SPAirrFlip} and \ttt{SPAirrDes}, $sum$ is the sum of the probabilities of transitioning away from the starting state. If there is only way to leave the starting state, then enter $sum$ either equal to $P$ or as 0.
+
+
+\item[\ttt{int}]
+\ttt{surfacetransmit(double *kap1ptr,double *kap2ptr,double *p1ptr,double *p2ptr,double difc1,double difc2,double dt);}
+
+This expands upon \ttt{surfaceprob} and \ttt{surfacerate} for partial transmission, offering additional functionality. This function allows for, but doesn't require, different diffusion coefficients on the two sides of the surface, entered in \ttt{difc1} and \ttt{difc2}. Also, \ttt{dt} is the simulation time step. The four transmission parameters are $\kappa_1$, $\kappa_2$, $P_1$, and $P_2$, of which one side 1 value and one side 2 value should be entered as inputs, and the other two values will be returned as outputs; the side number represents the side that a molecule diffuses \textit{from}. All of these values are entered as pointers due to the fact that two of them will be outputs. Enter the output parameters with the value $-2$ to show that they are unknowns. The input parameters are not changed by this function.
+
+For example:
+\begin{lstlisting}[language=C]
+kap1=kap2=1;
+p1=p2=-2;
+surfacetransmit(&kap1,&kap2,&p1,&p2,2,4,0.1);
+\end{lstlisting}
+This returns \ttt{p1=0.306} and \ttt{p2=0.216}, where the different values arise from the different diffusion coefficients.
+
+Enter either $\kappa$ value as $-1$ to show that it equals $\infty$. If both $\kappa$ values are $-1$, then the probability for the side with the slower diffusion is set to 1 and the other probability is set to the appropriate value to produce equal concentrations on both sides. For example, if side 1 has slower diffusion, then $P_1=1$ and $P_2 = \sqrt{D_1 / D_2}$. See my 2023 paper. Output probabilities are capped so that they are always between 0 and 1, inclusive.
+
+This function returns 0 for correct operation, 1 for illegal input parameters (negative or zero diffusion coefficients or time step), or 2 if there are more than 2 unknowns. These errors are easily avoided with good code, so there's no need to check for them in most cases.
+
+Internally, this function is divided into four sections: (1) $\kappa_1$ and $\kappa_2$ are known and $P_1$ and $P_2$ are computed, (2) $P_1$ and $P_2$ are known and $\kappa_1$ and $\kappa_2$ are determined, (3) $P_1$ and $\kappa_2$ are known and $\kappa_1$ and $P_2$ are determined, and (4) $\kappa_1$ and $P_2$ are known and $P_1$ and $\kappa_2$ are determined.
+
+Section 1 considers several special cases first, such as the $\kappa$ values being equal to 0 or $\infty$. Then, if those don't apply, it computes $P_1$ and $P_2$ using
+$$P_1 = \frac{\kappa_1 \sqrt{\pi \Delta t}}{c^{2} \sqrt{D_1}} \left( -1 + \frac{2c}{\sqrt{\pi}} + e^{c^2} \erfc c \right)$$
+$$P_2 = \frac{\kappa_2 \sqrt{\pi \Delta t}}{c^{2} \sqrt{D_2}} \left( -1 + \frac{2c}{\sqrt{\pi}} + e^{c^2} \erfc c \right)$$
+where
+$$c=\sqrt{\Delta t} \left( \frac{\kappa_1}{\sqrt{D_1}}+\frac{\kappa_2}{\sqrt{ D_2}} \right).$$
+
+Section 2 considers the special case of both probabilities equaling 0 and then, if that doesn't apply, it searches for the $\kappa_1$ and $\kappa_2$ values that yields the desired $P_1$ and $P_2$ values. This search uses a greedy random walk algorithm in which \ttt{diff} is equal to the squared distance value and is minimized. In each random step, trial $\kappa_1$ and $\kappa_2$ values are found by multiplying the best current $\kappa_1$ and $\kappa_2$ values by random values that range from $1-$\ttt{deltakap} to $1+$\ttt{deltakap}, where \ttt{deltakap} starts at 0.5 and generally decreases over time. Successful steps are kept, and \ttt{deltakap} is increased by 10\%, and unsuccessful steps are discarded, and \ttt{deltakap} is reduced by 1\%. I haven't optimized these search parameters, but they seem to work remarkably well, yielding good fits within about 20 successful steps. This section of the code turns off probability capping, by setting the static variable \ttt{capprob} to 0, in order to have a meaningful distance metric even when probability values exceed 1.
+
+Section 3 considers a known $P_1$ and $\kappa_2$. After considering some special cases, it searches over $\kappa_1$ values that yield the correct $P_1$; it doesn't need to search over $\kappa_2$ because that's already known. This is only a 1D search, so it could be done with bracketing and subdividing. However, it was easier to use essentially the same greedy random walk method as in section 2, but now in only 1D, so that's what I did.
+
+Section 4 addresses the same problem as section 3 but with reversed knowns and unknowns. It works by reversing parameters and calling section 3.
 
 \end{description}
 

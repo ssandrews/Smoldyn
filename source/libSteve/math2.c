@@ -439,6 +439,14 @@ double experfcD(double x) {
 	return ans; }
 
 
+double experfcm1D(double x) {
+	double ans;
+
+	if(fabs(x)>0.05) ans=experfcD(x)-1;
+	else ans=x*(-2.0/SQRTPI+x*(1.0+x*(-4.0/3.0/SQRTPI+x*(1.0/2.0+x*(-8.0/15.0/SQRTPI+x*(1.0/6.0+x*(-16.0/105.0/SQRTPI+x*(1.0/24.0))))))));
+	return ans; }
+
+
 double erfcintegralD(double x) {
 	return (1.0-exp(-x*x))/SQRTPI+x*erfccD(x); }
 
