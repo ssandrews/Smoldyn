@@ -13,6 +13,7 @@ enum SurfParamAlgo {SPAirrTrans,SPAirrTransT,SPAirrTransQ,SPArevTrans,SPAirrAds,
 double surfaceprob(double k1,double k2,double dt,double difc,double *p2ptr,enum SurfParamAlgo algo);
 double desorbdist(double step,enum SurfParamAlgo algo);
 double surfacerate(double p1,double p2,double dt,double difc,double *k2ptr,enum SurfParamAlgo algo);
+int surfacetransmit(double *kap1ptr,double *kap2ptr,double *p1ptr,double *p2ptr,double difc1,double difc2,double dt);
 
 /*********************  PARAMETER CALCULATION FUNCTIONS  ********************/
 
