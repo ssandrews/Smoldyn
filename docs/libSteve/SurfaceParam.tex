@@ -129,7 +129,7 @@ These enumerations are used as shown below.
 \item[\ttt{double}]
 \ttt{surfaceprob(double k1, double k2, double dt, double difc, double *p2ptr, enum SurfParamAlgo algo);}
 
-Returns the transition probabilities for molecules that interact with surfaces. \ttt{k1} and \ttt{k2} are interaction coefficients, \ttt{dt} is the simulation time step, \ttt{difc} is the molecule diffusion coefficient, and \ttt{p2ptr} is used for the function to return a second interaction probability. \ttt{algo} specifies which algorithm should be followed. Returns the probability, which is always between 0 and 1 inclusive, or -1 if \ttt{algo} isn't recognized. The algorithms and variable interpretations are:
+Returns the transition probabilities for molecules that interact with surfaces. \ttt{k1} and \ttt{k2} are interaction coefficients, \ttt{dt} is the simulation time step, \ttt{difc} is the molecule diffusion coefficient, and \ttt{p2ptr} is used for the function to return a second interaction probability. \ttt{algo} specifies which algorithm should be followed. Returns the probability, which is always between 0 and 1 inclusive, or -1 if \ttt{algo} isn't recognized. Enter \ttt{k1} and/or \ttt{k2} as -1 to indicate that they their values are infinite; in this case, the corresponding probability is typically set to 1 and the probability for the reverse action, if applicable, is set to achieve the correct equilibrium concentration. The algorithms and variable interpretations are:
 
 \begin{longtable}[c]{llcccc}
 \ttt{algo} & meaning & \ttt{k1} & \ttt{k2} & returns & \ttt{*p2ptr}\\
@@ -154,7 +154,7 @@ Several algorithms are listed with variants. For example, \ttt{IrrAds} uses the 
 
 Flipping means a state change for a surface-bound molecule, such as membrane-orientation flipping; this is identical to a simple first order reaction, but is included here for convenience. For irreversible flipping, $k$ is the flipping reaction rate and $sum$ is the sum of the rates of all first order reactions that the reactant can undergo. This $sum$ value correctly adjusts the probability to account for competing processes (it is also required for irreversible desorption, with exactly the same interpretation). If the listed state change is the only one that is possible, then enter sum as either $k$ or 0. For reversible flipping, $k_{fwd}$ is the reaction rate constant for leaving the current state, while $k_{rev}$ is the reaction rate constant for returning to the current state.
 
-A minor bug was fixed in the \ttt{SPArevTrans} section on11/19/2010 to enable it to use a wider range of input values. Another bug was fixed in the \ttt{SPArevTrans} section 6/10/23 to clamp the output probabilities to the range from 0 to 1; this maintains the $\kappa_F'/\kappa_b'$ ratio, so equilibrium constants are not affected, although actual transition rates will be lower than those entered here.
+A minor bug was fixed in the \ttt{SPArevTrans} section on11/19/2010 to enable it to use a wider range of input values. Another bug was fixed in the \ttt{SPArevTrans} section 6/10/23 to clamp the output probabilities to the range from 0 to 1; this maintains the $\kappa_F'/\kappa_b'$ ratio, so equilibrium constants are not affected, although actual transition rates will be lower than those entered here. These changes became moot on 7/12/23, when this portion of the function was commented out and sent to \ttt{surfacetransmit} instead.
 
 
 \item[\ttt{double}]
@@ -212,7 +212,8 @@ surfacetransmit(&kap1,&kap2,&p1,&p2,2,4,0.1);
 \end{lstlisting}
 This returns \ttt{p1=0.306} and \ttt{p2=0.216}, where the different values arise from the different diffusion coefficients.
 
-Enter either $\kappa$ value as $-1$ to show that it equals $\infty$. If both $\kappa$ values are $-1$, then the probability for the side with the slower diffusion is set to 1 and the other probability is set to the appropriate value to produce equal concentrations on both sides. For example, if side 1 has slower diffusion, then $P_1=1$ and $P_2 = \sqrt{D_1 / D_2}$. See my 2023 paper. Output probabilities are capped so that they are always between 0 and 1, inclusive.
+Enter either $\kappa$ value as $-1$ to show that it equals $\infty$. If both $\kappa$ values are $-1$, then the probability for the side with the slower diffusion is set to 1 and the other probability is set to the appropriate value to produce equal concentrations on both sides. For example, if side 1 has slower diffusion, then $P_1=1$ and $P_2 = \sqrt{D_1 / D_2}$. See my 2023 paper. Output probabilities are capped so that they are always between 0 and 1, inclusive. During this capping, the other computed parameter is also modified in order to achieve the correct equilibrium concentrations according to the equation
+$$\frac{P_1}{P_2} = \frac{\kappa_1}{\kappa_2}\sqrt{\frac{D_2}{D_1}}.$$
 
 This function returns 0 for correct operation, 1 for illegal input parameters (negative or zero diffusion coefficients or time step), or 2 if there are more than 2 unknowns. These errors are easily avoided with good code, so there's no need to check for them in most cases.
 
