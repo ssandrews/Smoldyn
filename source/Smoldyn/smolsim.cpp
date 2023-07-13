@@ -132,7 +132,6 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 	va_start(arguments, format);
 	vsprintf(message, format, arguments);
 	va_end(arguments);
-	strcpy(SimFlags,sim->flags);
 
 	if(sim && sim->logfn) (*sim->logfn)(sim,importance,message);
 	else if(LoggingCallback) (*LoggingCallback)(sim,importance,message);

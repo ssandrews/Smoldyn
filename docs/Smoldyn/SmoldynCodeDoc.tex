@@ -162,7 +162,7 @@ Getting the code for these dependencies has ranged from easy to impossible, so m
 
 \begin{description}
 
-\item[python, pip]. These aren't code dependencies as the others are, but are still required software tools that need to be installed. Note that pip needs to be affiliated with the same copy of python that is being run; if it's not, then you get the error \ttt{invalid command 'bdist\_wheel'}. This error can also arise from wheel not being installed; that's solved by configuring Smoldyn with CMake and then running \ttt{make install\_deps}.
+\item[python, pip, wheel]. These aren't code dependencies as the others are, but are still required software tools that need to be installed. Note that wheel and pip need to be affiliated with the same copy of python that is being run; if it's not, then you get the error \ttt{invalid command 'bdist\_wheel'}. This error arises from wheel not being installed; that can be solved by configuring Smoldyn with CMake and then running \ttt{make install\_deps}. Note that the CMake output shows which copy of Python is being run. You can also enter \ttt{which python} to see what Python copy is being used (if it's an alias, then \ttt{ls -l} \textit{path}\ttt{/python} will show what the alias points to). For example, my CMake shows \ttt{Found Python3: /opt/local/bin/python3.10 (found version "3.10.12")}; if I enter \ttt{which python} and then resolve the alias, I get \ttt{/opt/local/bin/python -> /opt/local/bin/python3.10}, which is the same file; also, if I enter \ttt{pip install wheel} it says that the requirement is already satisfied and it's at \ttt{/Users/sandrews/Library/Python/3.10/lib/python/site-packages}.
 
 \item[glut] is complicated. It's part of the standard OpenGL libraries on Macs, but doesn't seem to be standard on Windows. Also, glut itself is obsolete, having been replaced by, which is a superset of glut; nevertheless, the glut.h header file is supposed to be used, unless one wants functions that are only available in freeglut.
 
@@ -2756,32 +2756,34 @@ bound state&"&"&bsoln&desorb&0&bound\\
 \end{longtable}
 
 \item[\ttt{void}]
-\ttt{srfreverseaction(enum MolecState ms1,enum PanelFace face1,enum MolecState ms2,enum MolecState *ms3ptr,enum PanelFace *face2ptr,enum MolecState *ms4ptr);}
+\ttt{srfreverseaction(enum MolecState ms1,enum PanelFace face1,enum MolecState ms2,enum MolecState *ms3ptr,enum PanelFace *face2ptr,enum MolecState *ms4ptr,enum SrfAction *actionptr);}
 \hfill \\
-This function simply takes in a surface interaction are returns what the reverse interaction would be. It does not consider the specifics of individual surfaces, any interaction rates, or any other details. Instead, it simply inverts the table of surface interactions that is presented above. More specifically, given that some molecule starts with state \ttt{ms1}, interacts with \ttt{face1} of a surface, and then ends in state \ttt{ms2}, this finds the reverse surface action. In this reverse action, the molecule starts in state \ttt{ms3}, interacts with \ttt{face2}, and ends in state \ttt{ms4}. These latter parameters are pointed to by \ttt{ms3ptr}, \ttt{face2ptr}, and \ttt{ms4ptr}, respectively. In concept, the reverse action is that \ttt{ms3} should equal \ttt{ms2} and \ttt{ms4} should equal \ttt{ms1}, although it's rarely this simple. The reason is that the starting states cannot include \ttt{MSbsoln}, whereas the end states can include it, and also the actions have to allow for surface-bound molecules to interact with other surfaces that they cross. The following table shows the input and output values.
+This function simply takes in a surface interaction are returns what the reverse interaction would be. It does not consider the specifics of individual surfaces, any interaction rates, or any other details. Instead, it simply inverts the table of surface interactions that is presented above. More specifically, given that some molecule starts with state \ttt{ms1}, interacts with \ttt{face1} of a surface, and then ends in state \ttt{ms2}, this finds the reverse surface action. In this reverse action, the molecule starts in state \ttt{ms3}, interacts with \ttt{face2}, and ends in state \ttt{ms4}. These latter parameters are pointed to by \ttt{ms3ptr}, \ttt{face2ptr}, and \ttt{ms4ptr}, respectively. Additionally, the type of action is returned in \ttt{actionptr}.
+
+In concept, the reverse action is that \ttt{ms3} should equal \ttt{ms2} and \ttt{ms4} should equal \ttt{ms1}, although it's rarely this simple. The reason is that the starting states cannot include \ttt{MSbsoln}, whereas the end states can include it, and also the actions have to allow for surface-bound molecules to interact with other surfaces that they cross. The following table shows the input and output values.
 
 \begin{longtable}[c]{l|ccc|c|ccc}
 interaction class&\multicolumn{3}{c}{forward states}&action&\multicolumn{3}{c}{reverse states}\\
-&\ttt{ms1}&\ttt{face1}&\ttt{ms2}&&\ttt{ms3}&\ttt{face2}&\ttt{ms4}\\
+&\ttt{ms1}&\ttt{face1}&\ttt{ms2}&\ttt{action}&\ttt{ms3}&\ttt{face2}&\ttt{ms4}\\
 \hline
 &soln&front&fsoln&reflect&soln&front&fsoln\\
 &"&"&bsoln&transmit&soln&back&fsoln\\
-collision from&"&"&bound&bind&bound&none&fsoln\\
+collision from&"&"&bound&adsorb&bound&none&fsoln\\
 solution state&"&back&fsoln&transmit&soln&front&bsoln\\
 &"&"&bsoln&reflect&soln&back&bsoln\\
-&"&"&bound&bind&bound&none&bsoln\\
+&"&"&bound&adsorb&bound&none&bsoln\\
 \hline
-impossible&"&none&any&impossible&none&none&none\\
+impossible&"&none&any&none&none&none&none\\
 \hline
 &bound&front&fsoln&reflect&bound&front&fsoln\\
 &"&"&bsoln&transmit&bound&back&fsoln\\
-collision from&"&"&bound'&hop&\emph{bound'}&\emph{both}&\emph{bound}\\
+collision from&"&"&bound'&no (hop)&\emph{bound'}&\emph{both}&\emph{bound}\\
 bound state&"&back&fsoln&transmit&bound&front&bsoln\\
 &"&"&bsoln&reflect&bound&back&bsoln\\
-&"&"&bound'&hop&\emph{bound'}&\emph{both}&\emph{bound}\\
+&"&"&bound'&no (hop)&\emph{bound'}&\emph{both}&\emph{bound}\\
 \hline
-action from&"&none&fsoln&desorb&soln&front&bound\\
-bound state&"&"&bsoln&desorb&soln&back&bound\\
+action from&"&none&fsoln&rev. desorb&soln&front&bound\\
+bound state&"&"&bsoln&rev. desorb&soln&back&bound\\
 &"&"&bound'&flip&bound'&none&bound\\
 \end{longtable}
 
@@ -2833,7 +2835,7 @@ Inverse function as \ttt{srftristate2index}. This function uses the same table a
 \item[\ttt{int}]
 \ttt{srfcompareaction(enum SrfAction act1,surfactionptr details1,enum SrfAction act2,surfactionptr details2)}
 \hfill \\
-Compares the activity levels of \ttt{act1} and \ttt{act2}, returning -1 if \ttt{act1} is ``more active'', 1 if \ttt{act2} is more active, and 0 if they are the same. If they have exactly the same activity levels, then this returns 0. If both \ttt{act1} and \ttt{act2} equal \ttt{SAmult}, then this turns to the details of these actions, entered in \ttt{details1} and \ttt{details2}, to determine which is more active. Here, the first difference that is encountered determines which is more active. For the actions, the ``activity'' of an action is ordered as: \ttt{SAtrans} < \ttt{SAmult} < \ttt{SAreflect} < \ttt{SAjump} < \ttt{SAabsorb} < \ttt{SAport}.
+Compares the activity levels of \ttt{act1} and \ttt{act2}, returning -1 if \ttt{act1} is ``more active'', 1 if \ttt{act2} is more active, and 0 if they are the same. If they have exactly the same activity levels, then this returns 0. If both \ttt{act1} and \ttt{act2} equal \ttt{SAmult}, then this turns to the details of these actions, entered in \ttt{details1} and \ttt{details2}, to determine which is more active. Here, the first difference that is encountered determines which is more active. For the actions, the ``activity'' of an action is ordered as: \ttt{SAtrans} $<$ \ttt{SAmult} $<$ \ttt{SAreflect} $<$ \ttt{SAjump} $<$ \ttt{SAabsorb} $<$ \ttt{SAport}.
 
 \item[\underline{memory management}]
 
@@ -3037,7 +3039,11 @@ Reads and processes one line of text from the configuration file, or some other 
 
 \item[\ttt{int surfupdateparams(simptr sim);}]
 \hfill \\
-Sets the simulation time step for surface parameters. This includes setting the neighbor distance (\ttt{srf->neighdist}) to 0.1 times the longest surface-bound diffusion rms step-length, and setting surface interaction probabilities (\ttt{srf->prob}). All probabilities are either simply set to 0 or 1 or are set to an intermediate value with the SurfaceParam.c function \ttt{srfprob}. The latter ones account for reversible or competing processes, as appropriate. They are cumulative probabilities. Returns 0 for success or 2 if the molecules aren't adequately set up.
+Sets the surface interaction probabilities within the surface action structure, calling \ttt{srfcalcprob} to do the actual calculations. This function loops through all possible interactions and sets those that are needed. Returns 0 for success or 2 if the molecules aren't adequately set up.
+
+This function loops over all surfaces and then within each surface, it loops over all possible interactions several times. In the first pass, it computes (with \ttt{srfcalcprob}) and assigns the interaction probabilities. In the next pass, it adds up all the probabilities for exiting each particular state; if those probabilities add up to more than one, then all are scaled down to make the sum equal to one, and if the sum is less than one, then the remaining probability is the probability of staying in the originating state. The next pass through adds up probabilities to compute cumulative probabilities, which are the ones that are actually used in a simulation. The final pass through records the reverse probabilities by simply looking them up in the newly updated action details structure, which accounting for changes to new species.
+
+At the very end of this function, \ttt{surfsetemitterabsorption} is called to set up effective emitter stuff.
 
 \item[\ttt{int surfupdatelists(simptr sim);}]
 \hfill \\
@@ -7002,7 +7008,13 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Added command line input for logging file with \ttt{--logfile}.
 \item In python/module.cpp, removed the \ttt{overwrite} parameter from the \ttt{runSimUntil} python function because it had no purpose and was causing compiling warnings.
 \item In NextSubVolume/NextSubvolumeMethod.cpp, commented out the \ttt{beta} computation in the \ttt{ReactionList::recalculate\_propensities} function because it wasn't being used and was causing compiling warnings.
-\item Writing function \ttt{surfacetransmit} in SurfaceParam.c. This is only half-written so far, but it's supposed to compute transmission probabilities from transmission coefficients or vice versa, while accounting for diffusion coefficient changes.
+\item Wrote function \ttt{surfacetransmit} in SurfaceParam.c. This computes transmission probabilities from transmission coefficients or vice versa, while accounting for diffusion coefficient changes.
+\item Edited \ttt{surfupdateparams} to support species changing during surface interactions.
+\item Extended \ttt{srfreverseaction} to return the action type.
+\item Edited several functions to allow for surface interaction rates of $-1$, which indicates the maximum possible rate. These functions included \ttt{surfreadstring}, \ttt{surfaceoutput}, \ttt{srfcompareaction}, \ttt{writesurfaces}, and \ttt{surfsetrate}. Another function is \ttt{surfaceprob} in SurfaceParam.c.
+\item Overhauled \ttt{srfcalcrate} and \ttt{srfcalcprob} so that they allow for maximum possible rates as inputs and so that they account for surface actions when determining reversible rates and probabilities. They also account for species changes and diffusion coefficient changes at surfaces and use the new \ttt{surfacetransmit} function to compute reversible transmission parameters.
+\item Fixed a tiny bug in \ttt{surfreadstring} in which the ``rate\_rule'' statement didn't actually call the appropriate setting function.
+\item Changed \ttt{surfupdateparams} so that reverse probabilities are now recorded after all molecule probabilities are computed, to allow for species changes at surfaces.
 
 \end{itemize}
 
