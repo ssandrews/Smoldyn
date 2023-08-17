@@ -23,8 +23,8 @@ namespace detail {
 
 
 template<typename type>
-struct identity:
-    public std::unary_function<type,type>
+struct identity
+//    public std::unary_function<type,type>		// Removed 8/17/23 because deprecated and unnecessary
 {
     type& operator()(type& x) const
     { return x; }
@@ -34,8 +34,8 @@ struct identity:
 };
 
 template<typename type>
-struct caster:
-    public std::unary_function<type,type>
+struct caster
+//    public std::unary_function<type,type>		// Removed 8/17/23 because deprecated and unnecessary
 {
     template <typename U>
     type& operator()(U& x) const
