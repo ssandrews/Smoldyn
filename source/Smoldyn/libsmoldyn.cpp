@@ -32,8 +32,8 @@
 
 enum ErrorCode Liberrorcode=ECok;
 enum ErrorCode Libwarncode=ECok;
-char Liberrorfunction[STRCHAR]="";
-char Liberrorstring[STRCHAR]="";
+char Liberrorfunction[STRCHARLONG]="";
+char Liberrorstring[STRCHARLONG]="";
 int Libdebugmode=1;
 int LibThrowThreshold=11;
 
@@ -70,7 +70,7 @@ extern CSTRING void smolSetThrowing(int corethreshold,int libthreshold) {
 
 /* smolSetError */
 extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorcode,const char *errorstring,const char *flags) {
-	char string[STRCHAR];
+	char string[STRCHARLONG];
 	int qflag,sflag,wflag;
 //	int severity;
 
@@ -85,10 +85,10 @@ extern CSTRING void smolSetError(const char *errorfunction,enum ErrorCode errorc
 		Liberrorcode=errorcode;
 		Libwarncode=(errorcode>=ECwarning)?errorcode:ECok;
 		if(errorstring)
-			strncpy(Liberrorstring,errorstring,STRCHAR-1);
+			strncpy(Liberrorstring,errorstring,STRCHARLONG-1);
 		else Liberrorstring[0]='\0'; }
 	if(errorfunction)
-		strncpy(Liberrorfunction,errorfunction,STRCHAR-1);
+		strncpy(Liberrorfunction,errorfunction,STRCHARLONG-1);
 	else Liberrorfunction[0]='\0';
 
 //	severity=-(int)errorcode;
@@ -113,11 +113,11 @@ extern CSTRING void smolSetErrorNT(const char *errorfunction,enum ErrorCode erro
 		Liberrorcode=errorcode;
 		Libwarncode=(errorcode>=ECwarning)?errorcode:ECok;
 		if(errorstring) {
-			strncpy(Liberrorstring,errorstring,STRCHAR-1);
-			Liberrorstring[STRCHAR-1] = '\0'; }
+			strncpy(Liberrorstring,errorstring,STRCHARLONG-1);
+			Liberrorstring[STRCHARLONG-1] = '\0'; }
 		else Liberrorstring[0]='\0'; }
 	if(errorfunction)
-		strncpy(Liberrorfunction,errorfunction,STRCHAR-1);
+		strncpy(Liberrorfunction,errorfunction,STRCHARLONG-1);
 	else Liberrorfunction[0]='\0';
 	return; }
 
@@ -780,13 +780,13 @@ extern CSTRING enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *n
 
 extern CSTRING enum ErrorCode smolRunCommand(simptr sim,const char *commandstring) {
 	const char *funcname="smolRunCommand";
-	char stringcopy[STRCHAR];
+	char stringcopy[STRCHARLONG];
 	cmdptr cmd;
 	enum CMDcode cmdcode;
 
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	LCHECK(commandstring,funcname,ECmissing,"missing command string");
-	strncpy(stringcopy,commandstring,STRCHAR-1);
+	strncpy(stringcopy,commandstring,STRCHARLONG-1);
 	cmd=scmdalloc();
 	LCHECK(cmd,funcname,ECmemory,"failed to create a new command structure");
 	strcpy(cmd->str,stringcopy);

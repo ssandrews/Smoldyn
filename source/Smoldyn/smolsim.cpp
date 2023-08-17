@@ -159,7 +159,7 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 
 /* simParseError */
 void simParseError(simptr sim,ParseFilePtr pfp) {
-	char parseerrstr[STRCHAR],matherrstr[STRCHAR];
+	char parseerrstr[STRCHARLONG],matherrstr[STRCHARLONG];
 
 	if(pfp) {
 		Parse_ReadFailure(pfp,parseerrstr);
@@ -304,8 +304,8 @@ simptr simalloc(const char *fileroot) {
 	sim->bimolreactfn=&bireact;
 	sim->checkwallsfn=&checkwalls;
 
-	CHECKMEM(sim->filepath=EmptyString());
-	CHECKMEM(sim->filename=EmptyString());
+	CHECKMEM(sim->filepath=EmptyStringLong(STRCHARLONG));
+	CHECKMEM(sim->filename=EmptyStringLong(STRCHARLONG));
 	CHECKMEM(sim->flags=EmptyString());
 	CHECKMEM(sim->cmds=scmdssalloc(&docommand,(void*)sim,fileroot));
 
@@ -2166,8 +2166,8 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 	char word[STRCHAR],*line2,errstring[STRCHARLONG];
 	ParseFilePtr pfp;
 
-	if(fileroot) strncpy(sim->filepath,fileroot,STRCHAR);
-	if(filename) strncpy(sim->filename,filename,STRCHAR);
+	if(fileroot) strncpy(sim->filepath,fileroot,STRCHARLONG);
+	if(filename) strncpy(sim->filename,filename,STRCHARLONG);
 	if(flags) {
 		strncpy(sim->flags,flags,STRCHAR);
 		strcpy(SimFlags,flags); }

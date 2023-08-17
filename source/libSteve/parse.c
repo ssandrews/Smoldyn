@@ -10,18 +10,27 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "string2.h"
 
 #define CHECK(A) if(!(A)) {goto failure;} else (void)0
-#define CHECKS(A,...)		if(!(A)) {snprintf(erstr,STRCHAR,__VA_ARGS__); goto failure;} else (void)0
+#define CHECKS(A,...)		if(!(A)) {snprintf(erstr,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
 
 
 /******************************************************************************/
 /************************** Functions for internal use ************************/
 /******************************************************************************/
 
+ParseFilePtr Parse_AllocFilePtr(const char *fileroot,const char *filename);
+void Parse_FreeFilePtr(ParseFilePtr pfp);
+int Parse_ExpandDefine(ParseFilePtr pfp,int maxdef);
+int Parse_AddDefine(ParseFilePtr pfp,const char *key,const char *replace,int global);
+int Parse_RemoveDefine(ParseFilePtr pfp,char *key);
+void Parse_DisplayDefine(ParseFilePtr pfp);
+int Parse_DoDefine(ParseFilePtr pfp);
+char* Parse_fgets(char *str,int num,FILE *stream);
+
 
 /* Parse_AllocFilePtr. */
 ParseFilePtr Parse_AllocFilePtr(const char *fileroot,const char *filename) {
 	ParseFilePtr pfp;
-	char str[STRCHAR];
+	char str[STRCHARLONG];
 
 	pfp=(ParseFilePtr)malloc(sizeof(struct ParseFileStruct));
 	if(!pfp) return NULL;
@@ -40,18 +49,18 @@ ParseFilePtr Parse_AllocFilePtr(const char *fileroot,const char *filename) {
 	pfp->defgbl=NULL;
 	pfp->inifdef=0;
 
-	CHECK(pfp->froot=EmptyString());
-	CHECK(pfp->fname=EmptyString());
-	CHECK(pfp->line=EmptyString());
-	CHECK(pfp->linecopy=EmptyString());
+	CHECK(pfp->froot=EmptyStringLong(STRCHARLONG));
+	CHECK(pfp->fname=EmptyStringLong(STRCHARLONG));
+	CHECK(pfp->line=EmptyStringLong(STRCHARLONG));
+	CHECK(pfp->linecopy=EmptyStringLong(STRCHARLONG));
 
-	if(fileroot) strncpy(pfp->froot,fileroot,STRCHAR-1);
-	if(fileroot) strncpy(pfp->fname,fileroot,STRCHAR-1);
-	if(filename) strncat(pfp->fname,filename,STRCHAR-1-strlen(pfp->fname));
+	if(fileroot) strncpy(pfp->froot,fileroot,STRCHARLONG-1);
+	if(fileroot) strncpy(pfp->fname,fileroot,STRCHARLONG-1);
+	if(filename) strncat(pfp->fname,filename,STRCHARLONG-1-strlen(pfp->fname));
 
 	if(filename) {
-		strncpy(str,filename,STRCHAR-1);
-		str[STRCHAR-1]='\0';
+		strncpy(str,filename,STRCHARLONG-1);
+		str[STRCHARLONG-1]='\0';
 		strchrreplace(str,'.','\0');
 		CHECK(!Parse_AddDefine(pfp,"FILEROOT",str,0)); }
 
@@ -103,8 +112,8 @@ int Parse_ExpandDefine(ParseFilePtr pfp,int maxdef) {
 		newdefrep[d]=pfp->defreplace[d];
 		newdefgbl[d]=pfp->defgbl[d]; }
 	for(;d<maxdef;d++) {
-		CHECK(newdefkey[d]=EmptyString());
-		CHECK(newdefrep[d]=EmptyString()); }
+		CHECK(newdefkey[d]=EmptyStringLong(STRCHARLONG));
+		CHECK(newdefrep[d]=EmptyStringLong(STRCHARLONG)); }
 
 	free(pfp->defkey);
 	free(pfp->defreplace);
@@ -146,11 +155,11 @@ int Parse_AddDefine(ParseFilePtr pfp,const char *key,const char *replace,int glo
 		strcpy(pfp->defreplace[d2+1],pfp->defreplace[d2]);
 		pfp->defgbl[d2+1]=pfp->defgbl[d2]; }
 
-	strncpy(pfp->defkey[d],key,STRCHAR-1);	// add new item
-	pfp->defkey[d][STRCHAR-1]='\0';
-	if(replace) strncpy(pfp->defreplace[d],replace,STRCHAR-1);
+	strncpy(pfp->defkey[d],key,STRCHARLONG-1);	// add new item
+	pfp->defkey[d][STRCHARLONG-1]='\0';
+	if(replace) strncpy(pfp->defreplace[d],replace,STRCHARLONG-1);
 	else pfp->defreplace[d][0]='\0';
-	pfp->defreplace[d][STRCHAR-1]='\0';
+	pfp->defreplace[d][STRCHARLONG-1]='\0';
 	pfp->defgbl[d]=global;
 
 	if(global) {												// add global defines to upstream files
@@ -211,7 +220,7 @@ int Parse_DoDefine(ParseFilePtr pfp) {
 	ans=0;
 	total=0;
 	for(d=0;d<pfp->ndef;d++) {
-		val=strstrreplace(line2,pfp->defkey[d],pfp->defreplace[d],STRCHAR-offset);
+		val=strstrreplace(line2,pfp->defkey[d],pfp->defreplace[d],STRCHARLONG-offset);
 		if(val<0) ans=2;
 		else total+=val; }
 	if(total && recurs<10) {
@@ -221,6 +230,32 @@ int Parse_DoDefine(ParseFilePtr pfp) {
 		recurs=0;
 
 	return ans; }
+
+
+/* Parse_fgets */
+char* Parse_fgets(char *str,int num,FILE *stream) {
+	int i,i1,done;
+	char ch;
+
+	done=0;
+	i1=0;
+	for(i=0;i<num-1 && !done;i++) {
+		i1=fgetc(stream);
+		ch=(char) i1;
+		if(i1==EOF || ch=='\r' || ch=='\0') {
+			str[i]='\0';
+			done=1; }
+		else if(i1=='\n') {
+			str[i]='\n';
+			str[i+1]='\0';
+			done=1; }
+		else
+			str[i]=ch; }
+
+	if(i==1 && i1==EOF) return NULL;
+	return str; }
+
+
 
 
 /******************************************************************************/
@@ -260,12 +295,12 @@ int Parse_CmdLineArg(int *argcptr,char **argv,ParseFilePtr pfp) {
 			CHECK(newkeylist=(char **) calloc(newmax,sizeof(char*)));
 			for(i=0;i<newmax;i++) newkeylist[i]=NULL;
 			for(i=0;i<maxdefine;i++) newkeylist[i]=keylist[i];
-			for(;i<newmax;i++) CHECK(newkeylist[i]=EmptyString());
+			for(;i<newmax;i++) CHECK(newkeylist[i]=EmptyStringLong(STRCHARLONG));
 
 			CHECK(newreplist=(char **) calloc(newmax,sizeof(char *)));
 			for(i=0;i<newmax;i++) newreplist[i]=NULL;
 			for(i=0;i<maxdefine;i++) newreplist[i]=replist[i];
-			for(;i<newmax;i++) CHECK(newreplist[i]=EmptyString());
+			for(;i<newmax;i++) CHECK(newreplist[i]=EmptyStringLong(STRCHARLONG));
 
 			maxdefine=newmax;
 			free(keylist);
@@ -280,8 +315,8 @@ int Parse_CmdLineArg(int *argcptr,char **argv,ParseFilePtr pfp) {
 				eqchar[0]='\0';
 				eqchar++;
 				if(!pfp) {
-					strncpy(keylist[ndefine],argv[i+1],STRCHAR);
-					strncpy(replist[ndefine],eqchar,STRCHAR);
+					strncpy(keylist[ndefine],argv[i+1],STRCHARLONG);
+					strncpy(replist[ndefine],eqchar,STRCHARLONG);
 					ndefine++; }
 				else {
 					er=Parse_AddDefine(pfp,argv[i+1],eqchar,1);
@@ -304,43 +339,19 @@ failure:
 /* Parse_Start. */
 ParseFilePtr Parse_Start(const char *fileroot,const char *filename,char *erstr) {
 	ParseFilePtr pfp;
-	char string[STRCHAR];
+	char string[STRCHARLONG];
 
 	pfp=Parse_AllocFilePtr(fileroot,filename);
 	CHECKS(pfp,"Unable to allocate memory for reading configuration file");
 	pfp->fptr=fopen(pfp->fname,"r");
 	if(!pfp->fptr) {
-		snprintf(string,STRCHAR,"File '%s' not found\n",pfp->fname);
+		snprintf(string,STRCHARLONG,"File '%s' not found\n",pfp->fname);
 		Parse_FreeFilePtr(pfp);
 		CHECKS(0,"%s",string); }
 	return pfp;
 
  failure:
 	return NULL; }
-
-
-/* Parse_fgets */
-char* Parse_fgets(char *str,int num,FILE *stream) {
-	int i,i1,done;
-	char ch;
-
-	done=0;
-	i1=0;
-	for(i=0;i<num-1 && !done;i++) {
-		i1=fgetc(stream);
-		ch=(char) i1;
-		if(i1==EOF || ch=='\r' || ch=='\0') {
-			str[i]='\0';
-			done=1; }
-		else if(i1=='\n') {
-			str[i]='\n';
-			str[i+1]='\0';
-			done=1; }
-		else
-			str[i]=ch; }
-
-	if(i==1 && i1==EOF) return NULL;
-	return str; }
 
 
 /* Parse_ReadLine. */
@@ -350,7 +361,7 @@ int Parse_ReadLine(ParseFilePtr *pfpptr,char *word,char **line2ptr,char *erstr) 
 	ParseFilePtr pfp,pfp1;
 
 	int d;
-	char str1[STRCHAR];
+	char str1[STRCHARLONG];
 
 	CHECKS(pfpptr && word && line2ptr && erstr,"BUG: Parse_ReadLine missing parameters");
 	pfp=*pfpptr;
@@ -358,7 +369,7 @@ int Parse_ReadLine(ParseFilePtr *pfpptr,char *word,char **line2ptr,char *erstr) 
 
 	ans=er=0;
 	line=pfp->line;
-	linetest=Parse_fgets(line,STRCHAR,pfp->fptr);
+	linetest=Parse_fgets(line,STRCHARLONG,pfp->fptr);
 	skip=0;
 	if(linetest) {																// pre-process line
 		pfp->lctr++;
@@ -381,7 +392,7 @@ int Parse_ReadLine(ParseFilePtr *pfpptr,char *word,char **line2ptr,char *erstr) 
 			else if(!strncmp(line,"endif",5)) pfp->inifdef--;
 			else if(pfp->inifdef==1 && !strncmp(line,"else",4)) pfp->inifdef=0; }
 		if(!skip) {
-			CHECKS(!toolong,"Line exceeds maximum allowable length of %i characters",STRCHAR);
+			CHECKS(!toolong,"Line exceeds maximum allowable length of %i characters",STRCHARLONG);
 			er=Parse_DoDefine(pfp);
 			CHECKS(er!=2,"overflow in line due to macro substitution");
 			itct=sscanf(line,"%s",word);
@@ -486,18 +497,18 @@ int Parse_ReadFailure(ParseFilePtr pfp,char *erstr) {
 	if(!pfp) i1=0;
 	else {
 		i1=pfp->lctr;
-		snprintf(erstr,STRCHAR,"Error reading file in line %i",i1);
+		snprintf(erstr,STRCHARLONG,"Error reading file in line %i",i1);
 		if(pfp->linecopy[0]) {
-			strncat(erstr,"\nline: ",STRCHAR-1-strlen(erstr));
+			strncat(erstr,"\nline: ",STRCHARLONG-1-strlen(erstr));
 			if(strchr(pfp->linecopy,'\n')) *(strchr(pfp->linecopy,'\n'))='\0';
-			strncat(erstr,pfp->linecopy,STRCHAR-1-strlen(erstr));
+			strncat(erstr,pfp->linecopy,STRCHARLONG-1-strlen(erstr));
 			strcpy(pfp->line,pfp->linecopy);
 			Parse_DoDefine(pfp);
 			if(strcmp(pfp->line,pfp->linecopy)) {
-				strncat(erstr,"\nsubstituted line: ",STRCHAR-1-strlen(erstr));
-				strncat(erstr,pfp->line,STRCHAR-1-strlen(erstr)); }}
-		strncat(erstr,"\nfile: ",STRCHAR-1-strlen(erstr));
-		strncat(erstr,pfp->fname,STRCHAR-1-strlen(erstr));
+				strncat(erstr,"\nsubstituted line: ",STRCHARLONG-1-strlen(erstr));
+				strncat(erstr,pfp->line,STRCHARLONG-1-strlen(erstr)); }}
+		strncat(erstr,"\nfile: ",STRCHARLONG-1-strlen(erstr));
+		strncat(erstr,pfp->fname,STRCHARLONG-1-strlen(erstr));
 
 		while(pfp) {
 			if(pfp->fptr) fclose(pfp->fptr);

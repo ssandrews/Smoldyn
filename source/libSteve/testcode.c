@@ -2,9 +2,36 @@
 
 #include <stdio.h>
 
+
+// Test of Geo_SphereReflectSphere function
+// gcc -Wall -O0 -g testcode.c Geometry.c math2.c -o testcode
+#include "Geometry.h"
+
+int main() {
+	double a0[3],a1[3],b0[3],b1[3],a1p[3],b1p[3],ap[3],bp[3],radius,radius2,p;
+
+	while(1) {
+		printf("Enter 2D values for a0, a1, b0, b1: ");
+		scanf("%lf %lf %lf %lf %lf %lf %lf %lf",&a0[0],&a0[1],&a1[0],&a1[1],&b0[0],&b0[1],&b1[0],&b1[1]);
+		printf("Enter R: ");
+		scanf("%lf",&radius);
+		radius2=radius*radius;
+		p=Geo_SphereReflectSphere(a0,a1,b0,b1,2,radius2,a1p,b1p);
+		printf("p: %g\n",p);
+		ap[0]=(1-p)*a0[0]+p*a1[0];
+		ap[1]=(1-p)*a0[1]+p*a1[1];
+		bp[0]=(1-p)*b0[0]+p*b1[0];
+		bp[1]=(1-p)*b0[1]+p*b1[1];
+		printf("A: (%g,%g) -> (%g,%g) -> (%g,%g)\n",a0[0],a0[1],ap[0],ap[1],a1p[0],a1p[1]);
+		printf("B: (%g,%g) -> (%g,%g) -> (%g,%g)\n",b0[0],b0[1],bp[0],bp[1],b1p[0],b1p[1]);
+		printf("\n"); }
+
+	return 0; }
+
+
 // Test of partial transmission values
 // gcc -Wall -O0 -g testcode.c SurfaceParam.c random2.c math2.c SFMT/SFMT.c -o testcode
-#include "SurfaceParam.h"
+/*#include "SurfaceParam.h"
 #include "random2.h"
 
 int main() {
@@ -29,7 +56,7 @@ int main() {
 		printf(" check: p1=%g, p2=%g\n",p1,p2);
 		printf("\n"); }
 	return 0; }
-
+*/
 
 // Test of string logic expansion
 // gcc -Wall -O0 -g testcode.c string2.c random2.c math2.c SFMT/SFMT.c -o testcode

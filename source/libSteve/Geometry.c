@@ -1280,11 +1280,15 @@ double Geo_SphereReflectSphere(const double *a0,const double *a1,const double *b
 		deltap[d]=(1-p)*(b0[d]-a0[d])+p*(b1[d]-a1[d]);
 		f1+=(a1[d]-a0[d])*deltap[d];
 		f2+=(b1[d]-b0[d])*deltap[d]; }
-	f1*=2*(1-p)/radius2;
-	f2*=2*(1-p)/radius2;
-	for(d=0;d<dim;d++) {
-		a1p[d]=a1[d]-f1*deltap[d];
-		b1p[d]=b1[d]-f2*deltap[d]; }
+	c=2*(1-p)/radius2;
+	if(f1>=0)
+		for(d=0;d<dim;d++) a1p[d]=a1[d]-c*f1*deltap[d];
+	else
+		for(d=0;d<dim;d++) a1p[d]=2*(1-p)*a0[d]+(2*p-1)*a1[d]+c*f1*deltap[d];
+	if(f2<=0)
+		for(d=0;d<dim;d++) b1p[d]=b1[d]-c*f2*deltap[d];
+	else
+		for(d=0;d<dim;d++) b1p[d]=2*(1-p)*b0[d]+(2*p-1)*b1[d]+c*f2*deltap[d];
 
 	return p; }
 
