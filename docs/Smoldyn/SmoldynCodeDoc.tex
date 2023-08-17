@@ -43,8 +43,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.71}
-\date{\copyright February, 2023}
+\subtitle{Version 2.72}
+\date{\copyright August, 2023}
 \author{Steve Andrews}
 \maketitle
 
@@ -6997,7 +6997,7 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Improved command timing so that all commands that execute at a particular time are performed with integer commands first, then float commands (unchanged from before) and also, within these lists, in the order that they are listed in the configuration file (new functionality).
 \item Added \ttt{translatemol} command. This involved several other changes. Added \ttt{molmovemol} function and also called this function from \ttt{longrangeforce} rather than moving molecules locally (in general, very few functions, including especially those in the commands, should be allowed to move molecules by themselves). Added \ttt{checkwalls1mol} for wall checking for a single molecule at a time. Moved \ttt{molchangeident} to a different region of the file. In string2.c, added a \ttt{const} declaration to both \ttt{strevalfunction} and \ttt{strmathevalint} and cleaned up the code slightly. Also, edited \ttt{strmatheval} so that the \ttt{expression} input isn't changed by this function and is now a \ttt{const}.
 
-\subsection*{Modifications for version 2.72 (not released yet)}
+\subsection*{Modifications for version 2.72 (released 8/17/23)}
 \item Made some minor modifications in smolgraphics.c. Tiff files were saving using the latest screen update, which occurs asynchronously, rather than at the requested time, which is now fixed. To do this, I added a \ttt{swapbuffers} input to \ttt{RenderSim} and also now draw the output without swapping buffers before recording tiff files. I also removed redundant system drawings by testing if it was just drawn, and then not bothering to redraw if unnecessary.
 \item Changed \ttt{molchangeident} to include a \ttt{crsspt} input parameter. This is used to rescale molecule motions in cases where the diffusion coefficient changes at a surface crossing.
 \item Improved \ttt{surfaceoutput} so that it displays more details about molecule-surface interactions, particularly with verbose output.
@@ -7017,6 +7017,8 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Changed \ttt{surfupdateparams} so that reverse probabilities are now recorded after all molecule probabilities are computed, to allow for species changes at surfaces.
 \item Increased standard string lengths. In string2.c, increased \ttt{STRCHAR} from 256 to 512 and \ttt{STRCHARLONG} from 4000 to 4096. Edited parse.c so that all strings are now 4096 characters long rather than 256 characters. This fixes bugs that arose from very long input lines (or at least pushes the problem threshold a little farther away). I tried to allow arbitrarily long input lines, but it would have been very difficult. This editing is far from perfect; I tried to allow 4096 characters for error strings, input strings, and filenames, and 512 characters for statement and object names. However, I was not particularly careful, so some may be set incorrectly. However, by increasing all sizes, I'm hoping that bugs won't be a problem.
 \item Fixed a bug in \ttt{Geo\_SphereReflectSphere} that caused problems with excluded volume reactions, using the ``bounce -2'' setting. This function implements the reflection method that I described in my 2017 paper. Previously, it was designed under the assumption that all collisions occur at the front of a molecule, meaning the direction that it's traveling toward. However, collisions can also occur at the back, which was leading to incorrect vector reflection. This is now fixed and has been validated some, but still needs additional validation.
+\item Merged an automated pull request that might fix dependabot alerts about out of date scipy.
+\item Removed \ttt{public std::unary\_function<type,type>} instances from tree\_iterator.hpp (part of NSV code) because this is deprecated.
 
 \end{itemize}
 
