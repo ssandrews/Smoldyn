@@ -3600,7 +3600,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 /* loadsurface */
 int loadsurface(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHAR],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	surfaceptr srf;
 

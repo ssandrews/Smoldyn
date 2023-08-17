@@ -77,8 +77,8 @@ enum StructCond
 #ifndef __string2_h
 #define __string2_h
 
-#define STRCHAR 512
-#define STRCHARLONG 4000
+#define STRCHAR 256
+#define STRCHARLONG 4096
 
 #endif
 
@@ -192,8 +192,8 @@ typedef struct cmdsuperstruct
     int iter;            // number of times integer commands have run
     int maxfile;         // number of files allocated
     int nfile;           // number of output files
-    char root[STRCHAR];  // file path
-    char froot[STRCHAR]; // more file path, used after root
+    char root[STRCHARLONG];  // file path
+    char froot[STRCHARLONG]; // more file path, used after root
     char** fname;        // file name [fid]
     int* fsuffix;        // file suffix [fid]
     int* fappend;        // 0 for overwrite, 1 for append [fid]

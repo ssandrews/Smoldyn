@@ -438,7 +438,7 @@ bngssptr bngssalloc(bngssptr bngss,int maxbng) {
 		bngss->bnglist=NULL; }
 
 	if(!bngss->BNG2path) {
-		CHECKMEM(bngss->BNG2path=EmptyString());
+		CHECKMEM(bngss->BNG2path=EmptyStringLong(STRCHARLONG));
 		strcpy(bngss->BNG2path,BNG2_PATH); }
 
 	if(maxbng>bngss->maxbng) {
@@ -1309,7 +1309,7 @@ int bngaddgroup(bngptr bng,int gindex,const char *gname,const char *specieslist)
 
 /* bngrunBNGL2 */
 int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
-	char string[STRCHAR],*dot;
+	char string[STRCHARLONG],*dot;
 	FILE *fptr;
 	int vflag;
 
@@ -1329,7 +1329,7 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 	strcpy(dot,".net");
 	remove(outname);						// delete output file
 
-	snprintf(string,STRCHAR,"perl -v > %s",outname);	// test for perl
+	snprintf(string,STRCHARLONG,"perl -v > %s",outname);	// test for perl
 
 	int n = system(string);
     UNUSED(n);
@@ -1338,7 +1338,7 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 	if(!fptr) return 4;
 	remove(outname);
 
-	snprintf(string,STRCHAR,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
+	snprintf(string,STRCHARLONG,"perl %s %s %s",bng->bngss->BNG2path,filename,vflag?"":DEVNULL);
 	simLog(bng->bngss->sim,2," Running BNG2.pl on %s\n",filename);
 	n = system(string);							// generate network
 
@@ -1352,7 +1352,7 @@ int bngrunBNGL2(bngptr bng,char *filename,char *outname) {
 
 /* bngreadstring */
 bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,char *line2) {
-	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR];
+	char str1[STRCHARLONG],str2[STRCHARLONG],str3[STRCHARLONG];
 	bngssptr bngss;
 	int itct,index,er;
 	enum MolecState ms;
@@ -1510,7 +1510,7 @@ failure:
 /* loadbng */
 int loadbng(simptr sim,ParseFilePtr *pfpptr,char* line2) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHARLONG],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	bngptr bng;
 

@@ -324,7 +324,7 @@ portptr portreadstring(simptr sim,ParseFilePtr pfp,portptr port,const char *word
 /* loadport */
 int loadport(simptr sim,ParseFilePtr *pfpptr,char* line2) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHARLONG],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	portptr port;
 

@@ -537,9 +537,19 @@ int strreadns(char *s,int n,char **a,char **endp) {
 char *EmptyString() {
 	char *s;
 	int i;
-	
+
 	s=(char*) calloc(STRCHAR,sizeof(char));
 	if(s)	for(i=0;i<STRCHAR;i++)	s[i]='\0';
+	return s; }
+
+
+/* EmptyStringLong */
+char *EmptyStringLong(int size) {
+	char *s;
+	int i;
+
+	s=(char*) calloc(size,sizeof(char));
+	if(s)	for(i=0;i<size;i++)	s[i]='\0';
 	return s; }
 
 

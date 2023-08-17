@@ -6,8 +6,8 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __string2_h
 #define __string2_h
 
-#define STRCHAR 256
-#define STRCHARLONG 4000
+#define STRCHAR 512
+#define STRCHARLONG 4096
 
 
 /******************* String classification ************************/
@@ -62,6 +62,7 @@ int strreadns(char *s,int n,char **a,char **endp);
 /************ String copying with memory allocation ***************/
 
 char *EmptyString();
+char *EmptyStringLong(int size);
 char *StringCopy(const char *s);
 unsigned char *PascalString(const char *s);
 

@@ -1337,7 +1337,7 @@ filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	filamentssptr filss;
     UNUSED(filss);
 	int itct,er,i1,i2;
-	char nm[STRCHAR],nm1[STRCHAR];
+	char nm[STRCHARLONG],nm1[STRCHARLONG];
 	double fltv1[9],f1;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
@@ -1654,7 +1654,7 @@ failure:
 /* filloadtype */
 int filloadtype(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHAR],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	filamenttypeptr filtype;
 
@@ -1700,7 +1700,7 @@ int filloadtype(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 /* filloadfil */
 int filloadfil(simptr sim,ParseFilePtr *pfpptr,char *line2,filamenttypeptr filtype) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHAR],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	filamentptr fil;
 

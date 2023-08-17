@@ -23,14 +23,6 @@ typedef struct ParseFileStruct {
 	int inifdef;								// counter for depth in ifdefines
 	} *ParseFilePtr;
 
-ParseFilePtr Parse_AllocFilePtr(const char *fileroot,const char *filename);
-void Parse_FreeFilePtr(ParseFilePtr pfp);
-int Parse_ExpandDefine(ParseFilePtr pfp,int maxdef);
-int Parse_AddDefine(ParseFilePtr pfp,const char *key,const char *replace,int global);
-int Parse_RemoveDefine(ParseFilePtr pfp,char *key);
-void Parse_DisplayDefine(ParseFilePtr pfp);
-int Parse_DoDefine(ParseFilePtr pfp);
-
 int Parse_CmdLineArg(int *argcptr,char **argv,ParseFilePtr pfp);
 ParseFilePtr Parse_Start(const char *fileroot,const char *filename,char *erstr);
 int Parse_ReadLine(ParseFilePtr *pfpptr,char *word,char **line2ptr,char *erstr);
