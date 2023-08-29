@@ -1,0 +1,37 @@
+# Test of isotropic diffusion rate
+
+graphics opengl
+graphic_iter 10
+
+dim 3
+names red green blue
+max_mol 3000
+boxsize 200
+
+difc red 100
+difc green 10
+difc blue 1
+
+color red 1 0 0
+color green 0 1 0
+color blue 0 0 1
+
+time_start 0
+time_stop 100
+time_step 0.1
+
+boundaries 0 -100 100 t
+boundaries 1 -100 100 t
+boundaries 2 -100 100 t
+
+mol 1000 red 0 0 0
+mol 1000 green 0 0 0
+mol 1000 blue 0 0 0
+
+output_files diffioutr.txt diffioutg.txt diffioutb.txt
+cmd e molmoments red diffioutr.txt
+cmd e molmoments green diffioutg.txt
+cmd e molmoments blue diffioutb.txt
+
+end_file
+

@@ -1,0 +1,116 @@
+# PAgfp (CaMKa) diffusion with basic dendrite & spine architecture. 
+# Excluded volume spine and stalk centers.
+
+graphics opengl_better
+graphic_iter 10
+accuracy 1
+#tiff_iter 1000
+#tiff_name basic
+
+dim 3
+names CaMKa CaMKb NR2B PSDA PSDB
+#output_files data1.txt data2.txt
+max_mol 50000
+
+difc CaMKa 275
+difc CaMKb 275
+difc NR2B 0.0
+difc PSDA 0.0
+difc PSDB 0.0
+
+#color CaMKa 0.4 0.2 0.1	# brown
+color CaMKa 0 1 0		# green
+color CaMKb 0 1 0		# green
+color NR2B 1 0.8 0.3		# yellow
+#color PSDA 0.4 0.2 0.1		# brown
+color PSDA 0 1 0		# green
+color PSDB 0 1 0		# green
+
+display_size all(all) 1.5
+light 0 position -1000 1000 -100
+light 0 diffuse 1 1 1
+light 0 specular 1 1 1
+background_color 0 0 0
+frame_thickness 0
+
+time_start 0
+time_stop 10000
+time_step 1
+
+low_wall 0 -250 r
+high_wall 0 250 r
+low_wall 1 -250 r
+high_wall 1 250 r
+low_wall 2 -250 r
+high_wall 2 250 r
+
+
+# The dendrite is modeled as a rectangle with two bounding plates
+# It runs along the x-axis
+mol 1250 CaMKa 250--250 45-35 45-35		# a stripe the length of the stalk
+mol 1250 CaMKa 250--250 -35--45 -35--45		# another stripe in the stalk
+mol 500 CaMKa 50--50 50--50 -190--100		# random within the spine head
+mol 10 CaMKa 5--5 50--50 50--50			# random within the middle of the stalk
+mol 300 NR2B 50--50 50--50 -190--200		# at the PSD
+mol 5 PSDA 50--50 50--50 -190--200		# at the PSD
+
+
+max_surface 5
+
+start_surface
+name stalk1			# right side of stalk
+action both all r
+#color both 0.9 0.4 0.2 0.3
+color both 1 1 1
+thickness 2
+polygon both edge
+#polygon both face
+
+max_panels r 20
+panel r +1 -250 -50 -50 500 100 r1	# y side of stalk
+panel r +1 20 -50 -50 -40 -50 r9	# narrow portion of neck
+panel r +1 50 -50 -100 -100 -100
+panel r -2 -250 -50 50 500 100 r3	# solid z side of stalk
+panel r +2 -250 -50 -50 230 100 r4	# part z side of stalk
+panel r +2 20 -50 -50 230 100 r5	# part z side of stalk
+panel r -0 20 50 -50 -100 -50 r6	# wide portion of neck
+panel r -0 -20 50 -50 -100 -50 r7	# wide portion of neck
+panel r -0 50 50 -100 -100 -100		# head of spine
+panel r -0 -50 50 -100 -100 -100
+panel r -1 50 50 -100 -100 -100
+panel r -2 50 50 -200 -100 -100
+panel r -2 50 50 -100 -30 -100
+panel r -2 -50 50 -100 30 -100
+panel r -1 -250 50 -50 500 100 r2	# y side of stalk
+panel r -1 20 50 -50 -40 -50 r8		# narrow portion of neck
+
+
+end_surface
+
+
+start_surface			# plates at either end of stalk
+name reflectStalk
+action both CaMKa a
+action both CaMKb a
+color both 0 0 0
+thickness 0
+polygon both edge
+max_panels r 2
+panel r -0 250 -60 -60 120 120
+panel r +0 -250 -60 -60 120 120
+end_surface
+
+
+
+cmd b pause
+
+
+#cmd i 0 6000 1 excludebox -40 40 -40 40 -155 -125
+#cmd i 0 6000 1 excludebox -250 250 -15 15 -30 30
+#cmd @ 100 replacevolmol CaMKa CaMKb 1 -50 50 -50 50 -50 50
+#cmd @ 100 replacevolmol PSDA PSDB 1 -50 50 -50 50 -50 50
+#cmd i 0 10000 100 listmols3 CaMKb data1.txt
+#cmd i 0 10000 100 listmols3 PSDB data2.txt
+
+end_file
+
