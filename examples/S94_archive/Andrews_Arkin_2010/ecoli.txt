@@ -1,0 +1,117 @@
+# E. coli chemotaxis simulation file 
+
+# for Fig.1 in Smoldyn2 paper (Andrews, Brent & Arkin'08)
+
+# CheYp/CheZ complexes as in Lipkow&Odde'08
+# as zy40, but with motors and E.coli shape
+# time is in ms, length in 10 nm pixels
+
+graphics opengl_good
+graphic_iter 100000	# change this to 1000 or more when generating your figure
+
+dim 3
+names A Ap mA mAp Y Yp Z ZYp ZYp2 M MYp
+max_mol 100000
+molperbox 15
+
+difc A 0
+difc Ap 0
+difc mA 0
+difc mAp 0
+difc Y 20					# 2 µm^2 s^-1	
+difc Yp 20	
+difc Z 20
+difc ZYp 2					# 0.2 µm^2 s^-1
+difc ZYp2 2
+
+difc M 0
+
+difc MYp 0
+
+color A 0.6 0.6 0.45			# beige: CheA, inactive
+color Ap 1 1 0				# yellow: CheAp, inactive, phosphorylated
+color mA 1 0.5 0			# orange: CheA, active   (m for 'methylated')
+color mAp 1 1 0				# yellow: CheAp, active, phosphorylated
+color Y 0 0 0				# black: CheY
+color Yp 1 0 0				# red: CheYp, phosphorylated
+color Z 0 0 1				# blue: CheZ2
+color ZYp 0.5 0 0.5			# purple: CheZ2-CheYp
+color ZYp2 0.9 0 0.5			# magenta: CheZ2-CheYp2
+color M 0 0.4 0				# dark green: FliM
+color MYp 0 1 0				# light green: FliM-CheYp
+
+display_size A 0.5			# monomers and homodimers: small
+display_size Ap 0.5
+display_size mA 0.5
+display_size mAp 0.5
+display_size Y 0.5
+display_size Yp 0.5				
+display_size Z 0.5
+display_size ZYp 0.8			# heterodimers and multimers: large 
+display_size ZYp2 0.8
+
+display_size M 0.8
+display_size MYp 1.2
+
+frame_thickness 0
+
+time_start 0
+time_stop 10000				# 10 s is a good time to take a picture: cell reaches steady state and the final gradient at c. 9 s
+time_step 0.1
+
+boundaries 0 -50 230 r
+boundaries 1 -50 50 r
+boundaries 2 -50 50 r
+
+read_file posE_M_49
+
+max_surface 1
+start_surface
+name ecoli
+action both all reflect
+color front 0.6 0.6 0.7
+polygon both edge
+#polygon front face
+thickness 4
+max_panels cyl 1
+panel cyl 0 0 0 180 0 0 -50 30 10
+max_panels hemi 2
+panel hemi 0 0 0 -50 1 0 0 30 10
+panel hemi 180 0 0 -50 -1 0 0 30 10
+end_surface
+
+max_compartment 1
+start_compartment
+name inside
+surface ecoli
+point 90 0 0
+end_compartment
+
+compartment_mol 8200 Y inside
+read_file posE_A_48_1.5_1276
+compartment_mol 1600 Z inside
+
+
+#output_files out2.txt 
+#cmd b pause
+cmd i 0 20000 10 equilmol A mA 0.132
+cmd i 0 20000 10 equilmol Ap mAp 0.132
+#cmd i 0 20000 100 molcount out2.txt
+
+
+reaction ah3 mA -> mAp 3.4e-2			# mA -> mAp		34 s^-1
+reaction z3 ZYp -> Yp + Z 5e-4			# ZYp -> Yp + Z		0.5 s^-1
+product_placement z3 pgemmax 0.2
+reaction z4 ZYp -> Y + Z 5e-3			# ZYp -> Y + Z		5 s^-1
+reaction z5 ZYp2 -> Yp + ZYp 5e-4		# ZYp2 -> Yp + ZYp	0.5 s^-1
+product_placement z5 pgemmax 0.2
+reaction z6 ZYp2 -> Y + ZYp 5e-3		# ZYp2 -> Y + ZYp	5 s^-1
+reaction m2 MYp -> M + Yp 2e-2			# MYp -> M + Yp		20 s^-1
+product_placement m2 pgemmax 0.2
+reaction ah21 Y + Ap -> Yp + A 1.66e2		# Y + Ap -> A + Yp	1e8 M^-1 s^-1
+reaction ah22 Y + mAp -> Yp + mA 1.66e2		# Y + mAp -> mA + Yp	1e8 M^-1 s^-1
+reaction z2 Yp + Z -> ZYp 3.32e1		# Yp + Z -> ZYp		2e7 M^-1 s^-1
+reaction z7 Yp + ZYp -> ZYp2 1.66e1		# Yp + ZYp -> ZYp2	1e7 M^-1 s^-1	
+reaction m1 Yp + M -> MYp 8.3e0			# Yp + M -> MYp		5e6 M^-1 s^-1
+
+end_file

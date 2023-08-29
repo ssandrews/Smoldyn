@@ -1,0 +1,159 @@
+# Bar1 Smoldyn simulation
+# by Steve Andrews, 11/30/09
+# Ref: Andrews, Addy, Brent, Arkin, "Detailed simulations of cell biology with Smoldyn 2.1", PLoS Comp. Biol. 2010
+# This file is Bar29.txt, from Bar28.txt
+# This is Bar1+, 1 target cell, no Bar1 adsorption
+# Units: microns and seconds
+
+define WITHBAR1
+
+# *** output file ***
+define	OUTFILE1	FILEROOTout.txt
+define	OUTFILE2	FILEROOTout2.txt
+
+# *** time ***
+define TIMEEND 4500
+
+# *** boundaries ***
+define	XLO	-12
+define	XHI	12
+define	YLO	-12
+define	YHI	12
+define	ZLO	-12
+define	ZHI	12
+
+# *** model parameters ***
+define	NGPCR	6622	# number of GPCR
+define	K1t	250	# target alpha production rate
+define	K1c	12.5	# challenger alpha production rate
+define	K4	100	# Bar1 production rate in um^-2/s
+define	K5	5.15	# Bar1-alpha reaction rate, diff. limit is 10.3 um^3/s
+define	K6	0.008303	# alpha binding to GPCR, *** 2x
+define	K7	0.02	# alpha unbinding from GPCR, *** 2x
+
+graphics opengl
+graphic_iter 10000
+frame_thickness 0
+accuracy 10
+
+dim 3
+species Bar1 alpha GPCR GPCRalpha
+max_mol 300000
+boxsize 0.5
+
+molecule_lists list3 list4 list1 list2 list5
+
+mol_list alpha(fsoln) list1
+mol_list alpha(up) list2
+mol_list GPCR(up) list3
+mol_list GPCRalpha(up) list4
+mol_list Bar1(fsoln) list5
+mol_list Bar1(up) list2
+
+difc Bar1(fsoln) 27
+difc alpha(fsoln) 132
+
+color Bar1(fsoln) 0 1 0
+color Bar1(front) 0 1 0
+color alpha(fsoln) 0 0 0
+color GPCR(up) 0 0 1
+color GPCRalpha(up) 1 0 0.2
+
+display_size alpha(fsoln) 1
+display_size alpha(up) 0
+display_size Bar1(all) 1
+display_size GPCR(up) 2
+display_size GPCRalpha(up) 2
+
+time_start 0
+time_stop TIMEEND
+time_step 0.02
+
+boundaries 0 XLO XHI
+boundaries 1 YLO YHI
+boundaries 2 ZLO ZHI
+
+max_surface 5
+
+start_surface sides
+polygon both none
+unbounded_emitter front Bar1 K4 0 0 0
+unbounded_emitter front alpha K1t 5.5 0 0
+unbounded_emitter front alpha K1c 2.75 4.7632 0
+unbounded_emitter front alpha K1c -2.75 4.7632 0
+unbounded_emitter front alpha K1c -5.5 0 0
+unbounded_emitter front alpha K1c -2.75 -4.7632 0
+unbounded_emitter front alpha K1c 2.75 -4.7632 0
+read_file ellipse_12_12.txt
+end_surface
+
+start_surface cell
+action both all reflect
+polygon both face
+color both 0.8 0.8 0.8
+max_panels sphere 1
+panel sphere 0 0 0 2.5 20 20
+end_surface
+
+start_surface alphatarget
+polygon both face
+color both 0.3 0.3 0.3
+max_panels sphere 6
+panel sphere 5.5	0	0 2.5 20 20
+end_surface
+
+start_surface alphachallenge
+polygon both face
+color both 0.5 0.5 0.5
+max_panels sphere 6
+panel sphere 2.75	4.7632	0 2.5 20 20
+panel sphere -2.75	4.7632	0 2.5 20 20
+panel sphere -5.5	0	0 2.5 20 20
+panel sphere -2.75	-4.7632	0 2.5 20 20
+panel sphere 2.75	-4.7632	0 2.5 20 20
+end_surface
+
+surface_mol NGPCR GPCR(up) cell all all
+
+reaction_surface alphatarget	rxn1t	0 -> alpha(fsoln)	K1t	# alpha production
+reaction_surface alphachallenge	rxn1c	0 -> alpha(fsoln)	K1c	# alpha production
+
+ifdefine WITHBAR1
+  reaction_surface cell		rxn4	0 -> Bar1(fsoln)	K4	# Bar1 production
+  reaction rxn5	Bar1(fsoln) + alpha(fsoln) -> Bar1(fsoln)	K5	# Bar1 protease on alpha
+endif
+
+reaction rxn6	GPCR(up) + alpha(fsoln) -> GPCRalpha(up)	K6	# GPCR-alpha binding
+reaction rxn7	GPCRalpha(up) -> GPCR(up) + alpha(fsoln)	K7	# GPCR-alpha unbinding
+product_placement rxn7 pgemmax 0.2
+
+cmd @ 0 set reaction_rate rxn1t 15.625
+cmd @ 500 set reaction_rate rxn1t 31.25
+cmd @ 1000 set reaction_rate rxn1t 62.5
+cmd @ 1500 set reaction_rate rxn1t 125
+cmd @ 2000 set reaction_rate rxn1t 250
+cmd @ 2500 set reaction_rate rxn1t 500
+cmd @ 3000 set reaction_rate rxn1t 1000
+cmd @ 3500 set reaction_rate rxn1t 2000
+cmd @ 4000 set reaction_rate rxn1t 4000
+
+cmd @ 0 set reaction_rate rxn1c 0.78125
+cmd @ 500 set reaction_rate rxn1c 1.5625
+cmd @ 1000 set reaction_rate rxn1c 3.125
+cmd @ 1500 set reaction_rate rxn1c 6.25
+cmd @ 2000 set reaction_rate rxn1c 12.5
+cmd @ 2500 set reaction_rate rxn1c 25
+cmd @ 3000 set reaction_rate rxn1c 50.0
+cmd @ 3500 set reaction_rate rxn1c 100.0
+cmd @ 4000 set reaction_rate rxn1c 200.0
+
+output_files stdout OUTFILE1 OUTFILE2
+
+cmd B molcountheader stdout
+cmd B molcountheader OUTFILE2
+cmd i 0 TIMEEND 2 molcount stdout
+cmd i 0 TIMEEND 2 molcount OUTFILE2
+cmd i 0 TIMEEND 2 molmoments GPCRalpha(up) OUTFILE1
+
+end_file
+

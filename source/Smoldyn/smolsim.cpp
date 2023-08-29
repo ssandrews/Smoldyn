@@ -2004,7 +2004,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		line2=strnword(line2,3);
 		if(rpart==RPirrev);
 		else if(rpart==RPbounce && !line2)
-			flt1=-2;
+			flt1=-1;			// default bounce method
 		else if(rpart==RPpgem || rpart==RPbounce || rpart==RPpgemmax || rpart==RPpgemmaxw || rpart==RPratio || rpart==RPunbindrad || rpart==RPpgem2 || rpart==RPpgemmax2 || rpart==RPratio2) {
 			CHECKS(line2,"missing parameter in product_placement");
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);

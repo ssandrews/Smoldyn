@@ -1,0 +1,65 @@
+# Hop diffusion simulation
+# units are nm and us
+
+graphics opengl_good
+graphic_iter 100
+
+dim 2
+names red
+max_mol 1000
+#rand_seed 1
+boxsize 50
+
+difc red 8
+
+color red 1 0 0
+
+display_size red 5
+
+time_start 0
+time_stop 20000
+time_step 0.1
+
+boundaries 0 0 435
+boundaries 1 0 435
+
+max_surface 2
+
+start_surface
+name sides
+action back red reflect
+action front red jump
+color both 0 0 0
+max_panels rect 4
+panel rect +0 0 0 435 r1
+panel rect -0 435 0 435 r2
+panel rect +1 0 0 435 r3
+panel rect -1 0 435 435 r4
+jump r1 front <-> r2 front
+jump r3 front <-> r4 front
+end_surface
+
+start_surface
+name lines
+action both red m
+rate red fsoln bsoln 0.000697
+rate red bsoln fsoln 0.000697
+color both 0 0 0
+thickness 2
+read_file MoroneData.txt
+end_surface
+
+
+mol 1 red 220 250
+output_files hopdiffposout.txt
+cmd n 100 molpos red hopdiffposout.txt
+
+
+/*
+mol 1000 red u u
+output_files hopdiffout.txt
+cmd n 10 meansqrdisp red all hopdiffout.txt
+*/
+
+end_file
+

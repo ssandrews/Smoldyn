@@ -1,0 +1,48 @@
+# Unimolecular reactions, rate testing
+
+graphics opengl
+
+dim 3
+names red green blue
+max_mol 15000
+
+difc all 1
+
+color red 1 0 0
+color green 0 1 0
+color blue 0 0 1
+
+time_start 0
+time_stop 50
+time_step 0.01
+
+boundaries 0 0 100 r
+boundaries 1 0 100 r
+boundaries 2 0 100 r
+
+mol 1000 red u u u
+mol 1000 green u u u
+mol 1000 blue u u u
+
+output_files unireact1out.txt
+cmd e molcount unireact1out.txt
+
+reaction slow red -> 0 0.1
+reaction med green -> 0 1
+reaction fast blue -> 0 10
+
+/*
+start_reaction
+order 1
+max_rxn 3
+reactant red slow
+rate slow 0.1
+reactant green med
+rate med 1
+reactant blue fast
+rate fast 10
+end_reaction
+*/
+
+end_file
+
