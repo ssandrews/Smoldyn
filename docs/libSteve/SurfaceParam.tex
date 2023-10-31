@@ -200,7 +200,7 @@ In \ttt{SPAirrFlip} and \ttt{SPAirrDes}, $sum$ is the sum of the probabilities o
 
 
 \item[\ttt{int}]
-\ttt{surfacetransmit(double *kap1ptr,double *kap2ptr,double *p1ptr,double *p2ptr,double difc1,double difc2,double dt);}
+\ttt{surfacetransmit(double *kap1ptr, double *kap2ptr, double *p1ptr, double *p2ptr, double difc1, double difc2, double dt);}
 
 This expands upon \ttt{surfaceprob} and \ttt{surfacerate} for partial transmission, offering additional functionality. This function allows for, but doesn't require, different diffusion coefficients on the two sides of the surface, entered in \ttt{difc1} and \ttt{difc2}. Also, \ttt{dt} is the simulation time step. The four transmission parameters are $\kappa_1$, $\kappa_2$, $P_1$, and $P_2$, of which one side 1 value and one side 2 value should be entered as inputs, and the other two values will be returned as outputs; the side number represents the side that a molecule diffuses \textit{from}. All of these values are entered as pointers due to the fact that two of them will be outputs. Enter the output parameters with the value $-2$ to show that they are unknowns. The input parameters are not changed by this function.
 

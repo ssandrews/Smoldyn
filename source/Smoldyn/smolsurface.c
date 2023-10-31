@@ -1275,7 +1275,7 @@ void surfaceoutput(simptr sim) {
 
 	simLog(sim,1," Allocated for %i species\n",srfss->maxspecies-1);
 
-	simLog(sim,2," Surface epsilon, margin, and neighbor distances: %g %g %g\n",srfss->epsilon,srfss->margin,srfss->neighdist);
+	simLog(sim,1," Surface epsilon, margin, and neighbor distances: %g %g %g\n",srfss->epsilon,srfss->margin,srfss->neighdist);
 
 	if(sim->mols) {
 		simLog(sim,1," Local max species record: %i\n",srfss->maxspecies);
@@ -1308,16 +1308,16 @@ void surfaceoutput(simptr sim) {
 			action=srf->action;
 			for(i=1;i<nspecies;i++) {
 				for(face=(enum PanelFace)0;face<2;face=(enum PanelFace)(face+1)) {
-					same=1;
+					same=1;						// same action for all states
 					act=action[i][MSsoln][face];
 					newident=((actdetails=srf->actdetails[i][MSsoln][face]) && actdetails->srfdatasrc[MSsoln]==3) ? actdetails->srfnewspec[MSsoln] : 0;
 					for(ms=(enum MolecState)0;ms<MSMAX;ms=(enum MolecState)(ms+1)) {
 						if(action[i][ms][face]!=act) same=0;
 						if(newident && !((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3 && actdetails->srfnewspec[ms]==newident)) same=0; }
 					if(same) {
-						show=(act!=SAmult)?2:1;
+						show=(act==SAmult)?1:2;
 						simLog(sim,show,"   %s(all) at %s: %s",sim->mols->spname[i],face==PFfront?"front":"back",surfact2string(act,string));
-						if(newident) simLog(sim,show," (convert to %s)",sim->mols->spname[newident]);
+						if(newident && newident!=i) simLog(sim,show," (convert to %s)",sim->mols->spname[newident]);
 						simLog(sim,show,"\n"); }
 					else {
 						for(ms=(enum MolecState)0;ms<MSMAX;ms=(enum MolecState)(ms+1)) {
@@ -1325,7 +1325,7 @@ void surfaceoutput(simptr sim) {
 							show=(sim->mols->exist[i][ms] && act!=SAmult)?2:1;
 							simLog(sim,show,"   %s(%s)",sim->mols->spname[i],molms2string(ms,string));
 							simLog(sim,show," at %s: %s",face==PFfront?"front":"back",surfact2string(act,string));
-							if((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3)
+							if((actdetails=srf->actdetails[i][ms][face]) && actdetails->srfdatasrc[ms]==3 && actdetails->srfnewspec[ms]!=i)
 								simLog(sim,show," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms]]);
 							simLog(sim,show,"\n"); }}}}
 
@@ -2200,17 +2200,17 @@ int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enu
 	simptr sim;
 
 	sim=srf->srfss->sim;
-	if(ms==MSbsoln || ms==MSall) return 2;
+	if(ms==MSbsoln || ms==MSall) return 2;						// check if ms is out of range
 
-	if(ms1>MSbsoln) return 3;
-	else if(ms!=MSsoln && ms1!=MSsoln && ms1!=MSbsoln && ms1!=ms) return 3;
+	if(ms1>MSbsoln) return 3;													// check if ms1 is out of range
+	else if(ms!=MSsoln && !(ms1==MSsoln || ms1==MSbsoln || ms1==ms)) return 3;
 
-	if(ms2>MSbsoln) return 4;
+	if(ms2>MSbsoln) return 4;													// check if ms2 is out of range
 	else if(ms2==ms1) return 4;
 
-	if((newident!=-5 && newident<0) || newident>=srf->srfss->maxspecies) return 5;
+	if((newident!=-5 && newident<0) || newident>=srf->srfss->maxspecies) return 5;	// check if newident is out of range
 
-	if(value<0 && !(which==1 && value==-1)) return 6;
+	if(value<0 && !(which==1 && value==-1)) return 6;	// check if value is out of range
 	else if(which==2 && value>1) return 6;
 
 	srftristate2index(ms,ms1,ms2,&ms3,&face,&ms4);
