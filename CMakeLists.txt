@@ -17,8 +17,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 if(NOT SMOLDYN_VERSION)
     find_package(Git QUIET)
     if(GIT_FOUND)
-        # Is the current commit tagged? If yes, this command will return the
-        # tag else it returns empty. When a tag is found, it is a release.
+        # Is the current commit tagged? If yes, this command returns the tag
+        # else empty.
         execute_process(COMMAND ${GIT_EXECUTABLE} tag --points-at HEAD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE SMOLDYN_TAG
