@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2.71.1 (11/11/23)
+
+- Adds support for Python3.12
+
 ### 2.71 (2/5/23)
 
 - Fixed bug in which graphics were called by Python API even when turned off.
