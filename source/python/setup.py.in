@@ -63,6 +63,7 @@ setuptools.setup(
             "biosimulators-utils[logging]>=0.1.124",
             "numpy",
             "pandas",
+            "biosimulators-simularium>=0.5.24"
         ],
         "biosimulators-dev": [
             "flake8",
