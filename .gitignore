@@ -7,3 +7,5 @@ log
 
 .coverage
 htmlcov/
+.idea/
+build-install.sh
