@@ -25,6 +25,7 @@ from biosimulators_utils.sedml.data_model import (Task, ModelLanguage, ModelAttr
                                                   Symbol)
 from biosimulators_utils.sedml.exec import exec_sed_doc as base_exec_sed_doc
 from biosimulators_utils.utils.core import validate_str_value, parse_value, raise_errors_warnings
+from biosimulators_simularium.exec import execute as exec_biosimularium
 from smoldyn import smoldyn
 import functools
 import os
@@ -32,6 +33,7 @@ import numpy
 import pandas
 import re
 import tempfile
+import zipfile
 import types  # noqa: F401
 
 __all__ = ['exec_sedml_docs_in_combine_archive', 'exec_sed_task', 'exec_sed_doc', 'preprocess_sed_task']
@@ -57,9 +59,27 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
             * :obj:`SedDocumentResults`: results
             * :obj:`CombineArchiveLog`: log
     '''
-    return exec_sedml_docs_in_archive(exec_sed_doc, archive_filename, out_dir,
-                                      apply_xml_model_changes=False,
-                                      config=config)
+
+    print('GENERATING A SIMULARIUM FILE ------------- ')
+    # extract contents from archive
+    temp_archive_root = tempfile.mkdtemp()
+    with zipfile.ZipFile(archive_filename, 'r') as ref:
+        ref.extractall(temp_archive_root)
+
+    # process simularium file generation
+    exec_biosimularium(
+        working_dir=temp_archive_root,
+        output_dir=out_dir,
+        use_json=True
+    )
+
+    print('RUNNING A SEDML SIMULATION ------------------ ')
+    # process sed result
+    results, log = exec_sedml_docs_in_archive(exec_sed_doc, archive_filename, out_dir,
+                                              apply_xml_model_changes=False,
+                                              config=config)
+
+    return results, log
 
 
 def exec_sed_doc(doc, working_dir, base_out_path, rel_out_path=None,
