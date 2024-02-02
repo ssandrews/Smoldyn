@@ -9,3 +9,4 @@ log
 htmlcov/
 .idea/
 build-install.sh
+run.sh
