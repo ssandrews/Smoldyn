@@ -59,6 +59,7 @@ jobs:
     - name: Lint BioSimulators
       if: matrix.python-version >= '3.9'
       run: |
+        python -m pip install --upgrade pip
         python -m pip install flake8
         flake8 source/python/smoldyn/biosimulators/ --ignore E501,W503
     - name: Install BioSimulators
