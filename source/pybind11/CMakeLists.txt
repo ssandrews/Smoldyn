@@ -16,6 +16,8 @@ else()
   cmake_policy(VERSION 3.22)
 endif()
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed VERSION 3.10...3.12)
+
 # Avoid infinite recursion if tests include this as a subdirectory
 if(DEFINED PYBIND11_MASTER_PROJECT)
   return()
