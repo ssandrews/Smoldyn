@@ -28,9 +28,51 @@ LABEL \
     maintainer="Steven Andrews <steven.s.andrews@gmail.com>"
 
 # Set up headless environment
+# RUN apt-get -y update \
+#     && apt-get install --no-install-recommends -y \
+#         xvfb \
+#     && rm -rf /var/lib/apt/lists/* \
+#     && mkdir /tmp/.X11-unix \
+#     && chmod 1777 /tmp/.X11-unix
+# COPY xvfb-startup.sh .
+# RUN chmod +x xvfb-startup.sh
+# ARG RESOLUTION="1920x1080x24"
+# ARG XARGS=""
+# ENV XVFB_RES="${RESOLUTION}" \
+#     XVFB_ARGS="${XARGS}"
+#
+# # install Smoldyn and its dependencies
+# COPY smoldyn*.whl /tmp/
+# RUN cd /tmp \
+#     && WHEEL_PATH=$(ls smoldyn*.whl) \
+#     && pip install "${WHEEL_PATH}[biosimulators]" \
+#     && rm smoldyn*.whl
+#
+# # fonts for matplotlib
+# RUN apt-get update -y \
+#     && apt-get install -y --no-install-recommends libfreetype6 \
+#     && rm -rf /var/lib/apt/lists/*
+#
+# # configure matplotlib
+# RUN mkdir -p /.cache/matplotlib \
+#     && mkdir -p /.config/matplotlib \
+#     && chmod ugo+rw /.config/matplotlib \
+#     && chmod ugo+rw /.cache/matplotlib
+#
+# ENV VERBOSE=0 \
+#     MPLBACKEND=PDF
+#
+# # setup entry point
+# ENTRYPOINT ["/bin/bash", "/xvfb-startup.sh", "python", "-m", "smoldyn.biosimulators"]
+# CMD []
+
+# Set up headless environment and install necessary packages
 RUN apt-get -y update \
     && apt-get install --no-install-recommends -y \
         xvfb \
+        libxrender1 \
+        libgl1-mesa-glx \
+        libfreetype6 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /tmp/.X11-unix \
     && chmod 1777 /tmp/.X11-unix
@@ -48,12 +90,7 @@ RUN cd /tmp \
     && pip install "${WHEEL_PATH}[biosimulators]" \
     && rm smoldyn*.whl
 
-# fonts for matplotlib
-RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends libfreetype6 \
-    && rm -rf /var/lib/apt/lists/*
-
-# configure matplotlib
+# configure matplotlib cache and config directories
 RUN mkdir -p /.cache/matplotlib \
     && mkdir -p /.config/matplotlib \
     && chmod ugo+rw /.config/matplotlib \
