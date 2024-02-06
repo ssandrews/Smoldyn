@@ -4210,11 +4210,15 @@ In C, enumerations are defined in the smoldyn.h header file, so they can be used
 smolErrorCodeToString(ECwarning, mystring)
 \end{lstlisting}
 
-In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example,
+In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here are two examples,
 \begin{lstlisting}[style=SSAC]
-import smoldyn._smoldyn as S
-EC=S.ErrorCode
-S.errorCodeToString(EC.warning)
+import smoldyn
+import smoldyn._smoldyn as smol
+EC=smol.ErrorCode
+smol.errorCodeToString(EC.warning)
+s=smoldyn.Simulation(low=[0,0],high=[10,10])
+specA=s.addSpecies("A")
+setSpeciesMobility(species="A", state=smol.MolecState.soln, diffConst=10)
 \end{lstlisting}
 For the user API, enter strings for the different enumeration possibilities.
 
