@@ -60,7 +60,7 @@ option(OPTION_USE_ZLIB "Build with Zlib support" OFF)
 option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
 option(OPTION_DOCS "Generate documentation" OFF)
-
+set(PYTHON_VERSION "Auto" CACHE STRING "Which Python version (Auto)")
 
 #
 # Developer options. Enables Address Sanitizer to detects memory leak etc. Most
@@ -521,8 +521,11 @@ endif ()
 
 if (OPTION_PYTHON)
     # Find python before using pybind11. There is a possibility of version mismatch later.
-    # find_package(Python3 3.10 EXACT COMPONENTS Interpreter Development REQUIRED)
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    if(${PYTHON_VERSION} STREQUAL "Auto")
+        find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    else()
+        find_package(Python3 ${PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
+    endif()
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)
