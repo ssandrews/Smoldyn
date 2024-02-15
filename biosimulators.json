@@ -1,7 +1,7 @@
 {
   "id": "smoldyn",
   "name": "Smoldyn",
-  "version": "2.67",
+  "version": "2.72",
   "description": "Computer program for cell-scale biochemical simulations.",
   "urls": [{
       "title": null,
@@ -366,7 +366,7 @@
   ],
   "funding": [],
   "biosimulators": {
-    "imageVersion": "1.0.0",
+    "imageVersion": "2.0.0",
     "specificationVersion": "1.0.0",
     "validationTests": null,
     "validated": false
