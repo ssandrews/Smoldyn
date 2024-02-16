@@ -366,7 +366,7 @@
   ],
   "funding": [],
   "biosimulators": {
-    "imageVersion": "2.0.0",
+    "imageVersion": "1.0.0",
     "specificationVersion": "1.0.0",
     "validationTests": null,
     "validated": false
