@@ -4507,7 +4507,7 @@ enum CMDcode cmdsetreactionratemolcount(simptr sim,cmdptr cmd,char *line2) {
   while(line2) {
     itct=strmathsscanf(line2,"%mlg %s",Varnames,Varvalues,Nvar,&coeff,nm1);
     SCMDCHECK(itct==2,"missing coefficient and/or species parameters");
-		i=molstring2index1(sim,line2,&ms,&index);
+		i=molstring2index1(sim,nm1,&ms,&index);
 		SCMDCHECK(i!=-1,"species is missing or cannot be read");
 		SCMDCHECK(i!=-2,"mismatched or improper parentheses around molecule state");
 		SCMDCHECK(i!=-3,"cannot read molecule state value");

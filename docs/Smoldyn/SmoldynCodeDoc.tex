@@ -7062,9 +7062,10 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 
 \subsection*{Modifications for version 2.73 (not released yet)}
 \item Investigated diffusion coefficients in crowded systems. I now believe that the overlap method is better than the reflection method. This is discussed in the reactions chapter of the Smoldyn manual. I changed the default behavior to overlap method.
-\item Added a line to the CMake file. In the Python module section, edited a line to read \ttt{find\_package(Python3 3.10 EXACT COMPONENTS Interpreter Development REQUIRED)}, where the new portion is the Python 3.10 requirement. This prevents an error of \ttt{invalid command 'bdist\_wheel'} because it now uses the same Python version for everything.
+\item Added a line to the CMake file. In the Python module section, edited a line to read \ttt{find\_package(Python3 3.10 EXACT COMPONENTS Interpreter Development REQUIRED)}, where the new portion is the Python 3.10 requirement. This prevents an error of \ttt{invalid command 'bdist\_wheel'} because it now uses the same Python version for everything. ... This was reverted by someone. The below \ttt{PYTHON\_VERSION} update fixes this problem.
 \item Edited Smoldyn/source/pybind11/tests/requirements.txt to simplify the file and hopefully stop warnings from the gitHub dependabot.
-\item Added \ttt{SMOLDYN\_VERSION} as an option to the build, with new code in the master CMakeLists.txt file. Using this fixes the problem of building for one Python version and running a different one.
+\item Added \ttt{PYTHON\_VERSION} as an option to the build, with new code in the master CMakeLists.txt file. Using this fixes the problem of building for one Python version and running a different one.
+\item Fixed bug in cmdsetreactionratemolcount. It wasn't loading the species name correctly, leading to a non-functional command. I'm not sure why it wasn't caught earlier, but it wasn't.
 
 
 \end{itemize}
