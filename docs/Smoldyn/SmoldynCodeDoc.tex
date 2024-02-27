@@ -7067,6 +7067,8 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Added \ttt{PYTHON\_VERSION} as an option to the build, with new code in the master CMakeLists.txt file. Using this fixes the problem of building for one Python version and running a different one.
 \item Fixed bug in cmdsetreactionratemolcount. It wasn't loading the species name correctly, leading to a non-functional command. I'm not sure why it wasn't caught earlier, but it wasn't.
 
+\subsection*{Modifications for version 2.74 (not released yet)}
+\item Changed Mac install and uninstall scripts so that individual commands use sudo, but the whole script does not. This is important because sudo should not be used with pip.
 
 \end{itemize}
 
