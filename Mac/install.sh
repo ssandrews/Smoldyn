@@ -1,29 +1,29 @@
 #!/bin/bash
 
 echo "Installing Smoldyn"
-mkdir -p /usr/local/bin
-cp bin/smoldyn /usr/local/bin
-chmod +x /usr/local/bin/smoldyn
-cp -r bin/BioNetGen /usr/local/bin
-chmod +x /usr/local/bin/BioNetGen/BNG2.pl
-chmod +x /usr/local/bin/BioNetGen/Perl2
+sudo mkdir -p /usr/local/bin
+sudo cp bin/smoldyn /usr/local/bin
+sudo chmod +x /usr/local/bin/smoldyn
+sudo cp -r bin/BioNetGen /usr/local/bin
+sudo chmod +x /usr/local/bin/BioNetGen/BNG2.pl
+sudo chmod +x /usr/local/bin/BioNetGen/Perl2
 
 echo "Installing SmolCrowd"
-cp bin/SmolCrowd /usr/local/bin
-chmod +x /usr/local/bin/SmolCrowd
+sudo cp bin/SmolCrowd /usr/local/bin
+sudo chmod +x /usr/local/bin/SmolCrowd
 
 echo "Installing wrl2smol"
-cp bin/wrl2smol /usr/local/bin
-chmod +x /usr/local/bin/wrl2smol
+sudo cp bin/wrl2smol /usr/local/bin
+sudo chmod +x /usr/local/bin/wrl2smol
 
 echo "Installing Libsmoldyn"
-mkdir -p /usr/local/include
-mkdir -p /usr/local/lib
-cp include/libsmoldyn.h /usr/local/include
-cp include/smoldyn.h /usr/local/include
-cp include/smoldynconfigure.h /usr/local/include
-cp lib/libsmoldyn_static.a /usr/local/lib
-cp lib/libsmoldyn_shared.dylib /usr/local/lib
+sudo mkdir -p /usr/local/include
+sudo mkdir -p /usr/local/lib
+sudo cp include/libsmoldyn.h /usr/local/include
+sudo cp include/smoldyn.h /usr/local/include
+sudo cp include/smoldynconfigure.h /usr/local/include
+sudo cp lib/libsmoldyn_static.a /usr/local/lib
+sudo cp lib/libsmoldyn_shared.dylib /usr/local/lib
 
 echo "Installing Python bindings"
 if command -v pip &> /dev/null; then
