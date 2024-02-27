@@ -1,5 +1,23 @@
 ## Changelog
 
+### 2.73 (2/27/24)
+
+- Changed default bounce interactions from the reflection method to the overlap method.
+- Added PYTHON_VERSION as a compile option.
+- Trying to reduce warnings from gitHub dependabot.
+- Fixed bug in cmdsetreactionratemolcount command.
+
+### 2.72 (8/17/23)
+
+- Minor improvements to Tiff saving.
+- Support for diffusion coefficient changes at surfaces.
+- Improved error handling, command line input, and logging functionality.
+- Added command line options with double hyphens.
+- Fixed some issues that caused compiler warnings.
+- Fixed a bug in the rate_rule statement.
+- Increased standard string lengths from 256 to 512 characters, and long strings to 4096 characters.
+- Fixed sphere reflection algorithm for the "bounce -2" setting.
+
 ### 2.71 (2/5/23)
 
 - Fixed bug in which graphics were called by Python API even when turned off.
