@@ -756,15 +756,6 @@ typedef struct latticesuperstruct
 
 /********************************* Filaments ********************************/
 
-enum FilamentDynamics
-{
-    FDnone,
-    FDrigidbeads,
-    FDrigidsegments,
-    FDrouse,
-    FDalberts,
-    FDnedelec
-};
 enum FilamentBiology
 {
     FBactin,
@@ -776,37 +767,38 @@ enum FilamentBiology
     FBnone
 };
 
-typedef struct beadstruct
+enum FilamentDynamics
 {
-    double xyz[3];    // bead coordinates
-    double xyzold[3]; // bead coordinates for prior time
-} * beadptr;
+    FDnone,
+    FDnewton
+};
 
 typedef struct segmentstruct
 {
-    double xyzfront[3]; // Coords. for segment front
-    double xyzback[3];  // Coords. for segment back
-    double len;         // segment length
-    double ypr[3];      // relative ypr angles
-    double dcm[9];      // relative dcm
-    double adcm[9];     // absolute segment orientation
-    double thk;         // thickness of segment
+    struct filamentstruct* fil;				// owning filament
+    int index;                        // self index along filament
+    double xyzfront[3]; 							// Coords. for segment front
+    double xyzback[3]; 								// Coords. for segment back
+    double len;         							// segment length
+    double thk;         							// thickness of segment
+    double ypr[3];      							// relative ypr angles
+    double dcm[9];      							// relative dcm
+    double adcm[9];     							// absolute segment orientation
 } * segmentptr;
 
 typedef struct filamentstruct
 {
-    struct filamenttypestruct* filtype; // filament type structure
-    char* filname;                      // filament name (reference, not owned)
-    int maxbs;                          // number of beads or segments allocated
-    int nbs;                            // number of beads or segments
-    int frontbs;                        // index of front bead or segment
-    beadptr* beads;                     // array of beads if any
+    struct filamenttypestruct* filtype; // owning filament type
+    char* filname;                      // filament name (ref, not owned)
+    int maxseg;                         // number of segments allocated
+    int nseg;                           // number of segments
+    int frontseg;                       // index of front segment
     segmentptr* segments;               // array of segments if any
-    struct filamentstruct* frontend;    // what front attaches to if anything
-    struct filamentstruct* backend;     // what back attaches to if anything
-    int maxbranch;                      // max number of branches off this filament
-    int nbranch;                        // number of branches off this filament
-    int* branchspots;                   // list of bead or segments where branches are
+    struct filamentstruct* frontend;    // what front attaches to
+    struct filamentstruct* backend;     // what back attaches to
+    int maxbranch;                      // max branches off this filament
+    int nbranch;                        // num branches off this filament
+    int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
     int maxmonomer;                     // number of monomers allocated
     int nmonomer;                       // number of monomers
@@ -817,11 +809,10 @@ typedef struct filamentstruct
 typedef struct filamenttypestruct
 {
     struct filamentsuperstruct* filss; // filament superstructure
-    char* ftname;                      // filament type name (reference, not owned)
+    char* ftname;                      // fil type name (ref, not owned)
+    enum FilamentBiology biology;      // biological name for filaments
     enum FilamentDynamics dynamics;    // dynamics for the filament
-    int isbead;                        // 1 for bead model, 0 for segments
-    enum FilamentBiology biology;      // Biological name for filament type
-    double bundlevalue;                // number of microfilaments in bundle
+    double bundlevalue;                // microfilaments in bundle
     double color[4];                   // filament color
     double edgepts;                    // thickness of edge for drawing
     unsigned int edgestipple[2];       // edge stippling [factor, pattern]
@@ -831,16 +822,17 @@ typedef struct filamenttypestruct
     double stdypr[3];                  // minimum energy bend angle
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
-    double kT;                         // thermodynamic temperature, [0,inf)
+    double kT;                         // thermodynamic temp, [0,inf)
     double treadrate;                  // treadmilling rate constant
     double viscosity;                  // viscosity
-    double filradius;                  // bead or segment radius
-    int maxface;                       // number of filament faces allocated
+    double filradius;                  // segment radius
+    int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names
-    double facetwist;                  // twisting rate of faces along filament
+    double facetwist;                  // twisting rate of faces
     int maxfil;                        // maximum number of filaments
     int nfil;                          // actual number of filaments
+    int autonamenum;                   // next number for autoname
     filamentptr* fillist;              // list of filaments
     char** filnames;                   // names of filaments
 } * filamenttypeptr;
@@ -855,44 +847,6 @@ typedef struct filamentsuperstruct
     filamenttypeptr* filtypes; // list of filament types
 } * filamentssptr;
 
-/* OLD FILAMENTS
-typedef struct filamentstruct
-{
-    struct filamentsuperstruct* filss; // filament superstructure
-    char* fname;                       // filament name
-    double color[4];                   // filament color
-    double edgepts;                    // thickness of edge for drawing
-    unsigned int edgestipple[2];       // edge stippling [factor, pattern]
-    enum DrawMode drawmode;            // polygon drawing mode
-    double shiny;                      // shininess
-    int maxseg;                        // number of segments allocated
-    int nseg;                          // number of segments
-    int front;                         // front index
-    int back;                          // back index
-    double** sxyz;                     // Coords. for segment ends [seg][3]
-    double* slen;                      // segment length [seg]
-    double** sypr;                     // relative ypr angles [seg][3]
-    double** sdcm;                     // relative dcm [seg][9]
-    double** sadcm;                    // absolute segment orientation [seg][9]
-    double* sthk;                      // thickness of segment [nmax], [0,inf)
-    double stdlen;                     // minimum energy segment length
-    double stdypr[3];                  // minimum energy bend angle
-    double klen;                       // force constant for length
-    double kypr[3];                    // force constant for angle
-    double kT;                         // thermodynamic temperature, [0,inf)
-    double treadrate;                  // treadmilling rate constant
-} * filamentptr;
-
-typedef struct filamentsuperstruct
-{
-    enum StructCond condition; // structure condition
-    struct simstruct* sim;     // simulation structure
-    int maxfil;                // maximum number of filaments
-    int nfil;                  // actual number of filaments
-    char** fnames;             // filament names
-    filamentptr* fillist;      // list of filaments
-} * filamentssptr;
-*/
 
 /******************************** BioNetGen *********************************/
 

@@ -410,17 +410,17 @@ void filssoutput(simptr sim);
 int filcheckparams(simptr sim,int *warnptr);
 
 // filament manipulation
-int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr,const char *phistr,const char *chistr,double thickness);
-int filAddRandomBeads(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr);
+int filGetFilIndex(simptr sim,const char *name,int *ftptr);
+filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
+int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness);
 
 // structure set up
 int filenablefilaments(simptr sim);
-filamentptr filAddFilament(filamenttypeptr filtype,filamentptr fil,const char *filname);
 filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr filtype,const char *word,char *line2);
 filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamenttypeptr filtype,const char *word,char *line2);
 int filloadtype(simptr sim,ParseFilePtr *pfpptr,char *line2);
-int filloadfil(simptr sim,ParseFilePtr *pfpptr,char *line2,filamenttypeptr filtype);
-int filsupdate(simptr sim);
+int filloadfil(simptr sim,ParseFilePtr *pfpptr,char *line2);
+int filupdate(simptr sim);
 
 // core simulation functions
 int filDynamics(simptr sim);
