@@ -591,7 +591,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
 	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR];
 	char errstr[STRCHARLONG];
-	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
+	int er,i,nmol,d,i1,s,c,ll,order,*index,ft,f;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
 	long int pserno,sernolist[MAXPRODUCT];
 	double flt1,flt2,v1[DIMMAX*DIMMAX],v2[4],poslo[DIMMAX],poshi[DIMMAX],thick;
@@ -1483,9 +1483,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	else if(!strcmp(word,"max_filament")) {				// max_filament
 		CHECKS(0,"max_filament has been deprecated"); }
 
-/*
 	else if(!strcmp(word,"new_filament")) {				// new_filament
-		fil=filreadstring(sim,pfp,NULL,"name",line2);
+		fil=filreadstring(sim,pfp,NULL,NULL,"name",line2);
 		CHECK(fil!=NULL); }
 
 	else if(!strcmp(word,"filament")) {						// filament
@@ -1494,12 +1493,13 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(itct==2,"filament format: filament_name statement_name statement_text");
 		line2=strnword(line2,3);
 		CHECKS(line2,"filament format: filament_name statement_name statement_text");
-		f=stringfind(sim->filss->fnames,sim->filss->nfil,nm);
-		CHECKS(f>=0,"filament is unrecognized");
-		fil=sim->filss->fillist[f];
-		fil=filreadstring(sim,pfp,fil,nm1,line2);
+		f=filGetFilIndex(sim,nm,&ft);
+		CHECKS(!(f==-2),"multiple filaments have the same name");
+		CHECKS(f>=0,"filament name is unrecognized");
+		filtype=sim->filss->filtypes[ft];
+		fil=filtype->fillist[f];
+		fil=filreadstring(sim,pfp,fil,filtype,nm1,line2);
 		CHECK(fil!=NULL); }
-*/
 
 	else if(!strcmp(word,"random_filament")) {		// random_filament
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
@@ -1509,7 +1509,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		ft=stringfind(filss->ftnames,filss->ntype,nm1);
 		CHECKS(ft>=0,"filament type is unknown");
 		filtype=filss->filtypes[ft];
-		fil=filAddFilament(filtype,NULL,nm);
+		CHECKS(filtype->klen==-1 || filtype->klen>0,"cannot compute random segments because the filament type has length force constant equals 0");
+		fil=filAddFilament(filtype,nm);
 		CHECKS(fil,"unable to add filament to simulation");
 		line2=strnword(line2,3);
 
@@ -1518,7 +1519,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(itct==1,"random_filament format: number [x y z theta phi chi] [thickness]");
 		CHECKS(i1>0,"number needs to be >0");
 		line2=strnword(line2,2);
-		if(fil->nbs==0) {
+		if(fil->nseg==0) {
 			CHECKS(line2,"missing position and angle information");
 			itct=sscanf(line2,"%s %s %s %s %s %s",str1,str2,str3,str4,str5,str6);
 			CHECKS(itct==6,"random_filament format: number [x y z theta phi chi] [thickness]");
@@ -1536,10 +1537,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			CHECKS(itct==1,"random_segments format: number [x y z theta phi chi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
-		if(filtype->isbead)
-			er=filAddRandomBeads(fil,i1,str1,str2,str3);
-		else
-			er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
+		er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
 		CHECKS(er!=2,"random_filament positions need to be 'u' or value");
 		CHECKS(er!=3,"random_filament angles need to be 'u' or value");
 		CHECKS(er==0,"BUG: error in filAddRandomSegments");
@@ -2232,7 +2230,7 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 			er=filloadtype(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_filament")) {			// start_filament
-			er=filloadfil(sim,&pfp,line2,NULL); }
+			er=filloadfil(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_rules")) {				// start_rules
 			CHECKS(0,"Moleculizer support has been discontinued in Smoldyn"); }
@@ -2306,7 +2304,7 @@ int simupdate(simptr sim) {
 
 	if(sim->condition==SCinit && sim->filss)
 		simLog(sim,2," setting up filaments\n");
-	er=filsupdate(sim);
+	er=filupdate(sim);
 	CHECK(er!=1);
 
 	if(sim->condition==SCinit && sim->graphss)
