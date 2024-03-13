@@ -1,0 +1,518 @@
+ \title{\vspace{-2.0cm}Documentation for Geometry.h and Geometry.c\vspace{-2ex}}
+\author{Steve Andrews}
+\date{\vspace{-2ex}2006 - 2023}
+
+\documentclass[11pt]{article}
+
+\usepackage{physics,amsmath}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage[margin=1in]{geometry}
+\usepackage{bm}
+\usepackage{upgreek}
+\usepackage{extarrows}
+\usepackage{gensymb}
+\usepackage{chemarr}
+
+\usepackage{longtable}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+   backgroundcolor=\color{backcolour},
+   commentstyle=\color{codegreen},
+   keywordstyle=\color{magenta},
+   numberstyle=\tiny\color{codegray},
+   stringstyle=\color{codepurple},
+   basicstyle=\ttfamily\footnotesize,
+   breakatwhitespace=false,
+   breaklines=true, 
+   captionpos=b, 
+   keepspaces=true, 
+   numbers=left, 
+   numbersep=5pt, 
+   showspaces=false, 
+   showstringspaces=false,
+   showtabs=false, 
+   tabsize=2
+}
+\lstset{style=mystyle}
+
+\newcommand {\ttt} {\texttt}
+%\DeclareMathOperator{\erf}{erf}
+\DeclareMathOperator{\erfc}{erfc}
+\DeclareMathOperator{\grn}{grn}
+
+\begin{document}
+\maketitle
+
+\section{Header file: Geometry.h}
+
+\begin{lstlisting}[language=C]
+/* Steven Andrews 2/17/06
+See documentation called Geometry_doc.doc.
+Copyright 2006-2007 by Steven Andrews.  This work is distributed under the terms
+of the Gnu Lesser General Public License (LGPL). */
+
+
+#ifndef __Geometry_h
+#define __Geometry_h
+
+// Center
+void Geo_LineCenter(double **point,double *cent,int dim);
+void Geo_RectCenter(double **point,double *cent,int dim);
+void Geo_TriCenter(double **point,double *cent,int dim);
+
+// Normal
+double Geo_LineNormal(double *pt1,double *pt2,double *ans);
+double Geo_LineNormal2D(double *pt1,double *pt2,double *point,double *ans);
+double Geo_LineNormal3D(double *pt1,double *pt2,double *point,double *ans);
+double Geo_LineNormPos(double *pt1,double *pt2,double *point,int dim,double *distptr);
+double Geo_TriNormal(double *pt1,double *pt2,double *pt3,double *ans);
+double Geo_SphereNormal(double *cent,double *pt,int front,int dim,double *ans);
+
+// Unit Vectors
+double Geo_UnitCross(double *v1start,double *v1end,double *v2start,double *v2end,double *ans);
+double Geo_TriUnitVects(double *pt1,double *pt2,double *pt3,double *unit0,double *unit1,double *unit2);
+double Geo_SphereUnitVects(double *cent,double *top,double *point,int front,double *unit0,double *unit1,double *unit2);
+double Geo_CylUnitVects(double *pt1,double *pt2,double *point,double *unit0,double *unit1,double *unit2);
+double Geo_DiskUnitVects(double *cent,double *front,double *point,double *unit0,double *unit1,double *unit2);
+
+// Area
+double Geo_LineLength(double *pt1,double *pt2,int dim);
+double Geo_TriArea2(double *pt1,double *pt2,double *pt3);
+double Geo_TriArea3D(double *pt1,double *pt2,double *pt3);
+double Geo_TriArea3(double *pt1,double *pt2,double *pt3,double *norm);
+double Geo_QuadArea(double *pt1,double *pt2,double *pt3,double *pt4,int dim);
+
+// Inside point
+double Geo_InsidePoints2(double *pt1,double *pt2,double margin,double *ans1,double *ans2,int dim);
+void Geo_InsidePoints3(double *pt1,double *pt2,double *pt3,double margin,double *ans1,double *ans2,double *ans3);
+void Geo_InsidePoints32(double **point,double margin,double **ans);
+
+// Point in
+int Geo_PtInTriangle(double *pt1,double *pt2,double *pt3,double *norm,double *test);
+int Geo_PtInTriangle2(double **point,double *test);
+int Geo_PtInSlab(double *pt1,double *pt2,double *test,int dim);
+int Geo_PtInSphere(double *test,double *cent,double rad,int dim);
+
+// Nearest
+void Geo_NearestSlabPt(double *pt1,double *pt2,double *point,double *ans,int dim);
+int Geo_NearestLineSegPt(double *pt1,double *pt2,double *point,double *ans,int dim,double margin);
+void Geo_NearestTriPt(double *pt1,double *pt2,double *pt3,double *norm,double *point,double *ans);
+void Geo_NearestTriPt2(double **point,double **edgenorm,double *norm,double *testpt,double *ans);
+int Geo_NearestTrianglePt(double *pt1,double *pt2,double *pt3,double *norm,double *point,double *ans);
+int Geo_NearestTrianglePt2(double **point,double *norm,double *testpt,double *ans,double margin);
+double Geo_NearestSpherePt(double *cent,double rad,int front,int dim,double *point,double *ans);
+void Geo_NearestRingPt(double *cent,double *axis,double rad,int dim,double *point,double *ans);
+void Geo_NearestCylPt(double *pt1,double *axis,double rad,int dim,double *point,double *ans);
+int Geo_NearestCylinderPt(double *pt1,double *pt2,double rad,int dim,double *point,double *ans,double margin);
+int Geo_NearestDiskPt(double *cent,double *axis,double rad,int dim,double *point,double *ans,double margin);
+double Geo_NearestLine2LineDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2);
+double Geo_NearestSeg2SegDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2);
+double Geo_NearestAabbPt(const double *bpt1,const double *bpt2,int dim,const double *point,double *ans);
+
+// To Rect
+void Geo_Semic2Rect(double *cent,double rad,double *outvect,double *r1,double *r2,double *r3);
+void Geo_Hemis2Rect(double *cent,double rad,double *outvect,double *r1,double *r2,double *r3,double *r4);
+void Geo_Cyl2Rect(double *pt1,double *pt2,double rad,double *r1,double *r2,double *r3,double *r4);
+
+// Cross
+double Geo_LineXLine(double *l1p1,double *l1p2,double *l2p1,double *l2p2,double *crss2ptr);
+double Geo_LineXPlane(double *pt1,double *pt2,double *v,double *norm,double *crsspt);
+double Geo_LineXSphs(double *pt1,double *pt2,double *cent,double rad,int dim,double *crss2ptr,double *nrdistptr,double *nrposptr);
+double Geo_LineXCyl2s(double *pt1,double *pt2,double *cp1,double *cp2,double *norm,double rad,double *crss2ptr,double *nrdistptr,double *nrposptr);
+double Geo_LineXCyls(double *pt1,double *pt2,double *cp1,double *cp2,double rad,double *crss2ptr,double *nrdistptr,double *nrposptr);
+
+// Reflection
+double Geo_SphereReflectSphere(const double *a0,const double *a1,const double *b0,const double *b1,int dim,double radius2,double *a1p,double *b1p);
+
+// Exit
+double Geo_LineExitRect(double *pt1,double *pt2,double *front,double *corner1,double *corner3,double *exitpt,int *exitside);
+double Geo_LineExitLine2(double *pt1,double *pt2,double *end1,double *end2,double *exitpt,int *exitend);
+void Geo_LineExitArc2(double *pt1,double *pt2,double *cent,double radius,double *norm,double *exitpt,int *exitend);
+double Geo_LineExitTriangle(double *pt1,double *pt2,double *normal,double *v1,double *v2,double *v3,double *exitpt,int *exitside);
+double Geo_LineExitTriangle2(double *pt1,double *pt2,double **point,double *exitpt,int *exitside);
+double Geo_LineExitSphere(double *pt1,double *pt2,double *cent,double rad,double *exitpt);
+void Geo_LineExitHemisphere(double *pt1,double *pt2,double *cent,double rad,double *normal,double *exitpt);
+double Geo_LineExitCylinder(double *pt1,double *pt2,double *end1,double *end2,double rad,double *exitpt,int *exitend);
+
+// Cross aabbb
+int Geo_LineXaabb2(double *pt1,double *pt2,double *norm,double *bpt1,double *bpt2);
+int Geo_LineXaabb(double *pt1,double *pt2,double *bpt1,double *bpt2,int dim,int infline);
+int Geo_TriXaabb3(double *pt1,double *pt2,double *pt3,double *norm,double *bpt1,double *bpt2);
+int Geo_RectXaabb2(double *r1,double *r2,double *r3,double *bpt1,double *bpt2);
+int Geo_RectXaabb3(double *r1,double *r2,double *r3,double *r4,double *bpt1,double *bpt2);
+int Geo_CircleXaabb2(double *cent,double rad,double *bpt1,double *bpt2);
+int Geo_SphsXaabb3(double *cent,double rad,double *bpt1,double *bpt2);
+int Geo_CylisXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2);
+int Geo_DiskXaabb3(double *cent,double rad,double *norm,double *bpt1,double *bpt2);
+
+// Approx. cross aabb
+int Geo_SemicXaabb2(double *cent,double rad,double *outvect,double *bpt1,double *bpt2);
+int Geo_HemisXaabb3(double *cent,double rad,double *outvect,double *bpt1,double *bpt2);
+int Geo_CylsXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2);
+
+// Volumes
+double Geo_SphVolume(double rad,int dim);
+double Geo_SphOLSph(double *cent1,double *cent2,double r1,double r2,int dim);
+
+#endif
+\end{lstlisting}
+
+% Description
+\section{Description}
+
+These functions do a variety of things that are useful for 1-D, 2-D, and 3-D geometry manipulations.  A few functions do $n$-D geometry, but those are rare.  Its sole current use is in Smoldyn.
+
+Functions do not change input data arrays.  Output arrays are written to but never read from.  It is often permissible to use the same input array for multiple inputs, but every output array needs to be distinct from each other, and from each input array.
+
+In general, functions include all boundaries as part of the region when testing whether a point is in a region or not, or whether two regions overlap.  An axis-aligned bounding box, called an aabb, has its low corner $(x_{min}, y_{min}, z_{min})$ at \ttt{bpt1} and its high corner $(x_{max}, y_{max}, z_{max})$ at \ttt{bpt2}.
+
+% Dependencies
+\section{Dependencies}
+Geometry.h, math2.h
+
+% History
+\section{History}
+\begin{description}
+
+\item[2/06] Started.
+\item[12/06-2/07] Major rewrite and additions; included in this was a complete switch from floats to doubles.
+\item[9/3/07] Added Center functions.
+\item[10/31/07] Added some nearest functions.
+\item[1/12/09] Added some area functions.
+\item[3/2/09] Added several nearest functions.
+\item[3/22/10] Added \ttt{Geo\_LineXaabb} and fixed a bug in \ttt{Geo\_CylisXaabb3}.
+\item[3/8/11] Fixed \ttt{Geo\_NearestTriPt} and \ttt{Geo\_NearestTrianglePt}, in which they didn't test nearest corner points correctly.
+\item[6/24/11] Added \ttt{Geo\_InsidePoints2} and \ttt{Geo\_InsidePoints3}.
+\item[4/11/12] Added \ttt{Geo\_TriArea3D}.
+\item[12/15/12] Ye Li added \ttt{Geo\_Area3D} to library.  I improved it to use a more stable algorithm.
+\item[7/17/12] Added unit vector functions: \ttt{Geo\_TriUnitVects}, \ttt{Geo\_SphereUnitVects}, \ttt{Geo\_CylUnitVects}, and \ttt{Geo\_DiskUnitVects}.
+\item[5/10/13] Fixed a bug in \ttt{Geo\_Cyl2Rect}.
+\item[7/20/15] Improved documentation.
+\item[8/15] ] Wrote \ttt{Geo\_LineExit}, etc. functions
+\item[9-10/15] Added \ttt{EPSILON}, added functions that use edge normals
+\item[1/8/16] Fixed a bug in \ttt{Geo\_NearestTrianglePt2}
+\item[3/10/16] Replaced \ttt{EPSILON} with margin input in some cases
+\item[3/18/16] Added \ttt{Geo\_SphereReflectSphere}.
+\item[4/11/16] Added \ttt{Geo\_NearestAabbPt}
+\item[7/19/19] Minor bug fix in \ttt{Geo\_CylisXaabb3}
+\item[8/16/23] Converted documentation to LaTeX.
+
+\end{description}
+
+
+% Bugs
+\section{Bugs}
+
+Several of the functions that check crossings of 3-D objects with others (aabbs in particular) ignore potential separation planes, so they report crossings when there aren't any.  These need to be fixed.  As it is, these functions can return false positives (they report non-existent crossings) but they never return false negatives (they never ignore a crossing that actually exists).
+
+Note that most functions do not work correctly with values that are close to \ttt{DBL\_MAX} because they can't do math with these numbers without running into errors.
+
+% Math
+\section{Math}
+
+Several functions use the cross-product of two vectors.  As a reminder, $\vb{c}=\vb{a} \times \vb{b}$ is:
+\begin{align*}
+c_x &= a_y b_z - a_z b_y\\
+c_y &= a_z b_x - a_x b_z\\
+c_z &= a_x b_y - a_y b_x
+\end{align*}
+
+The functions that test whether two objects intersect often make use of the separating axis theorem.  However, they also often use my own methods.  Here is my understanding of the separating axis theorem.  Consider two convex polygons, in 2-D.  A line segment is included as well, where this can be seen as a two-sided polygon with 0 area.  If the objects do not cross, then there must a be at least one infinite line that separates them.  One of these lines will be parallel and adjacent to one of the sides of one of the polygons.  To check for crossing, (1) choose a polygon edge on object A, (2) find its outward normal, which does not have to normalized, (3) project a vertex of the test edge onto this normal by taking the dot product of the vertex and the normal vector, (4) project all vertices of polygon B onto this normal in the same way, (5) the objects do not cross if all projected values of object B are larger than the projected value of the test edge.  Repeat for all edges of both objects; if all projections fail, then the objects must cross.  If two edges are parallel, they will have opposite normal vectors and some steps can be saved.  There are faster methods, but the one listed should work.
+
+In three dimensions, if two convex polyhedra do not cross, then there must be an infinite plane that separates them.  Before, I thought that non-crossing polyhedra necessarily implied a separating plane that is parallel to one of the faces on one of the objects.  Now I see that that is sufficient to prove separation, but that other potential separating planes need to be checked as well.  Other planes to test are those that are parallel to edges, including one edge from A and one vertex from B and vice versa.
+
+
+
+\section{Functions for external use}
+
+\begin{description}
+
+\item[\underline{Center functions}]
+
+\item[\ttt{void}]
+\ttt{Geo\_LineCenter(double **point, double *cent,int dim);}
+
+Returns the center of the line for which the two ends are defined as \ttt{point[0][$coordinate$]} and \ttt{point[1][$coordinate$]}.  This works for all dimensionalities and simply returns the mean of the \ttt{point[0]} and \ttt{point[1]} vectors.
+
+\item[\ttt{void}]
+\ttt{Geo\_RectCenter(double **point, double *cent,int dim);}
+
+Returns the center coordinates of a rectangle. The rectangle corners are defined by \ttt{point[$corner$] [$coordinate$]} and the result is returned in \ttt{cent}. \ttt{dim} is the dimensionality of space, not of the surface. If \ttt{dim} is 1, then the ``rectangle'' is really a point with only one ``corner'' and one coordinate; if \ttt{dim} is 2 then the rectangle is really a line with 2 corners (the two ends) and two coordinates each; if \ttt{dim} is 3 then the rectangle is a genuine rectangle with 4 corners that have three coordinates each. Results are undefined for other \ttt{dim} values.
+
+\item[\ttt{void}]
+\ttt{Geo\_TriCenter(double **point, double *cent,int dim);}
+
+This returns the center coordinates of a triangle, where the triangle vertices are defined by \ttt{point[$vertex$][$coordinate$]} and the result is returned in \ttt{cent}. \ttt{dim} is the dimensionality of space, not of the surface. If \ttt{dim} is 1, then the ``triangle'' is really a point with only one vertex and one coordinate; if \ttt{dim} is 2 then the triangle is really a line with two vertices (the two ends) and two coordinates each; and if \ttt{dim} is 3 then the triangle is a genuine triangle with 3 vertices that have 3 coordinates each. Results are undefined for other \ttt{dim} values.
+
+\hfill \\
+\item[\underline{Normal functions}]
+
+\item[\ttt{double}]
+\ttt{Geo\_LineNormal(double *pt1, double *pt2, double *ans);}
+
+Finds the 2-D unit normal for line segment that goes from \ttt{pt1} to \ttt{pt2} (all 2-D) and puts it in \ttt{ans}. The result vector is perpendicular to the line segment and points to the right, for travel from \ttt{pt1} to \ttt{pt2}. If \ttt{pt1} and \ttt{pt2} are equal, the unit normal points towards the positive $x$-axis. Returns the length of the line segment from \ttt{pt1} to \ttt{pt2}.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineNormal2D(double *pt1, double *pt2, double *point, double *ans);}
+
+Identical to \ttt{Geo\_LineNormal3D}, except that this is for a 2-D system. The returned vector is either identical to or the negative of that which is returned by \ttt{Geo\_LineNormal}. This returns the perpendicular distance between the line and the point, and can handle multiple points being equal to each other.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineNormal3D(double *pt1, double *pt2, double *point, double *ans);}
+
+Finds the 3-D unit normal for line that includes \ttt{pt1} and \ttt{pt2}, and that includes the point \ttt{point}, and puts it in \ttt{ans}. The result vector is perpendicular to the line. Returns the perpendicular distance between the line and point. To decrease round-off error, this function calculates the result using \ttt{pt1} as a basis point, and then recalculates the result using the new point. If \ttt{pt1} and \ttt{pt2} are the same, this returns the normalized vector from \ttt{pt1} to point. If point is on the line that includes \ttt{pt1} and \ttt{pt2}, this returns the perpendicular unit vector that is in the $x,y$-plane and that points to the right of the projection of the line in the $x,y$-plane, if possible; if not, it returns the unit $x$-vector which, again, is perpendicular to the line.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineNormPos(double *pt1, double *pt2, double *point,int dim, double *distptr);}
+
+Given the line that includes points \ttt{pt1} and \ttt{pt2}, this considers the normal of this line that goes to point. The position of the intersection between the normal and the line is returned, where it is scaled and offset such that \ttt{pt1} is at 0 and \ttt{pt2} is at 1. The unscaled length of the normal segment, from the intersection to point, is returned in \ttt{distptr}, if that pointer is not sent in as \ttt{NULL}. \ttt{dim} is the dimensionality of the system, which can be any positive value.
+
+\item[\ttt{double}]
+\ttt{Geo\_TriNormal(double *pt1, double *pt2, double *pt3, double *ans);}
+
+Finds the 3-D unit normal for the triangle that is defined by the 3-D points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3} and puts it in \ttt{ans}. If one looks at the triangle backwards along the unit normal, the three points show counterclockwise winding; i.e. the right-hand rule for the points in sequence yields the direction of the unit normal. The triangle area is returned. If the area is zero, \ttt{ans} is returned in the $x,y$-plane. This finds the normal and the area using the cross-product of the first two triangle edges.
+
+\item[\ttt{double}]
+\ttt{Geo\_SphereNormal(double *cent, double *pt,int front,int dim, double *ans);}
+
+Returns the unit normal vector from the sphere center at cent to the point at \ttt{pt}. Enter \ttt{front} as 1 for an outward normal and -1 for an inward normal. \ttt{dim} is the system dimensionality, which can be any positive integer. The result is returned in \ttt{ans} and the distance between \ttt{cent} and \ttt{pt} is returned by the function.
+
+\hfill \\
+\item[\underline{Unit vector functions}]
+
+\item[\ttt{double}]
+\ttt{Geo\_UnitCross(double *v1start, double *v1end, double *v2start, double *v2end, double *ans);}
+
+Computes the cross product between the vector that goes from \ttt{v1start} to \ttt{v1end} and the vector that goes from \ttt{v2start} to \ttt{v2end}, then normalizes this cross product to unit length and returns it in \ttt{ans}. Everything is assumed to be in 3D. The length of the unnormalized answer vector is returned directly. If this length result is 0, meaning that the two input vectors were parallel, then 0 is returned and the vector in \ttt{ans} is set to $(0,0,0)$. If either or both of the input vectors starts at the origin, then enter the start value as \ttt{NULL}.
+
+\item[\ttt{double}]
+\ttt{Geo\_TriUnitVects(double *pt1, double *pt2, double *pt3, double *unit0, double *unit1, double *unit2);}
+
+Returns the unit vectors of a 3-dimensional triangle that has its corners at \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}, in vectors \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first is the triangle normal, the second is parallel to the edge from \ttt{pt1} to \ttt{pt2}, and the third is orthogonal to the previous two, using a right-handed coordinate system. Returns the triangle area. Behavior is undefined if the area equals zero.
+
+\item[\ttt{double}]
+\ttt{Geo\_SphereUnitVects(double *cent, double *top, double *point,int front, double *unit0, double *unit1, double *unit2);}
+
+Returns the unit vectors of a 3-dimensional sphere that has its center at \ttt{cent} and its
+top (i.e. where $q=0$, in a spherical coordinate system) at \ttt{top}, for the point \ttt{point}. Enter \ttt{front} as 1 for an outward normal and -1 for an inward normal. Results are returned in \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first unit vector is the local sphere normal, the second points from point towards top, but in the local plane of the sphere at point, and the third is orthogonal to the previous two, using a right-handed coordinate system. Returns the distance from the center to point. Behavior is undefined if the distance from \ttt{cent} to \ttt{top} is zero, or the distance from \ttt{cent} to \ttt{point} is zero However, it's ok for \ttt{point} and \ttt{top} to equal each other.
+
+\item[\ttt{double}]
+\ttt{Geo\_CylUnitVects(double *pt1, double *pt2, double *point, double *unit0, double *unit1, double *unit2);}
+
+Returns the unit vectors of a 3-dimensional cylinder that has its axis along the line from \ttt{pt1} to \ttt{pt2}, for the reference point \ttt{point}. Results are returned in \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first unit vector is the local cylinder normal, the second is parallel to the cylinder axis, and the third is orthogonal to the previous two using a right- handed coordinate system. Returns the distance from the axis to \ttt{point}. Behavior is undefined if this distance, or if the distance from \ttt{pt1} to \ttt{pt2}, equals zero.
+
+\item[\ttt{double}]
+\ttt{Geo\_DiskUnitVects(double *cent, double *front, double *point, double *unit0, double *unit1, double *unit2);}
+
+Returns the unit vectors of a 3-dimensional disk that has its center at \ttt{cent} and is oriented perpendicular to the unit vector in \ttt{front}, for the reference point \ttt{point}. Results are returned in \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first unit vector is simply copied over from front, the second is in the direction from \ttt{cent} to \ttt{point}, and the third is orthogonal to the previous two using a right-handed coordinate system. Returns the distance from \ttt{cent} to \ttt{point}. Behavior is undefined if this distance is zero.
+
+
+
+
+\hfill \\
+\item[\underline{Length, area functions}]
+
+\item[\ttt{double}]
+\ttt{Geo\_LineLength(double *pt1, double *pt2,int dim);}
+
+Returns the length of the line that extends from \ttt{pt1} to \ttt{pt2}, and its dimensionality in \ttt{dim}.
+
+\item[\ttt{double}]
+\ttt{Geo\_TriArea2(double *pt1, double *pt2, double *pt3);}
+
+Returns the area of the 2-D triangle that is defined by points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}. The returned area will be positive if these are counter-clockwise (right-hand winding rule) and negative if these are clockwise.
+
+\item[\ttt{double}]
+\ttt{Geo\_TriArea3D(double *pt1, double *pt2, double *pt3);}
+
+VCell addition (Ye Li). This calculates the area of a 3-D triangle, defined by the points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}. Unlike \ttt{Geo\_TriArea3}, this does not require a unit normal. This always returns a positive value. This uses Heron's formula. I modified Ye's original code to use a numerically stable formula (see Wikipedia Heron's formula).
+
+\item[\ttt{double}]
+\ttt{Geo\_TriArea3(double *pt1, double *pt2, double *pt3, double *norm);}
+
+Returns the area of a 3-dimensional triangle which is defined by the 3-D points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3} and which has unit normal \ttt{norm}. The returned area will be positive if \ttt{norm} follows the right-hand winding rule, and vice versa.
+The base is defined as the side from \ttt{pt1} to \ttt{pt2}; the cross product is found of the base and the unit normal to yield a triangle height vector that has the length of the base and which points away from the triangle; the dot product of this height and the side from \ttt{pt1} to \ttt{pt3}, with a sign change and divided by 2, is the area.
+
+\item[\ttt{double}]
+\ttt{Geo\_QuadArea(double *pt1, double *pt2, double *pt3, double *pt4,int dim);}
+
+Returns the area of the quadrilateral that is defined by points \ttt{pt1}, \ttt{pt2}, \ttt{pt3}, and \ttt{pt4}, in dimension \ttt{dim}. Returns 0 if \ttt{dim} is not 2 or 3. The right-hand winding rule is used for the sign of the answer, meaning that if the area is positive if the points cycle counterclockwise for increasing point numbers. If \ttt{dim} is 3, all points are assumed to be coplanar.
+
+This works by dividing the quadrilateral into two triangles and returning the sum of their areas.
+
+\hfill \\
+\item[\underline{Inside point functions}]
+
+\item[\ttt{double}]
+\ttt{Geo\_InsidePoints2(double *pt1, double *pt2, double margin, double *ans1, double *ans2,int dim);}
+
+Takes two points in \ttt{pt1} and \ttt{pt2}, which are in 1, 2, or 3 dimensions (listed in \ttt{dim}), and returns versions of these points, in \ttt{ans1} and \ttt{ans2}, that are moved together by absolute distance margin on each side. For example, the 1-D points at 0 and 5 are moved to positions 1 and 4 if \ttt{margin} is 1. This function returns the separation between \ttt{pt1} and \ttt{pt2}; if this length is smaller than twice \ttt{margin}, then \ttt{ans1} will be closer to \ttt{pt2} and \ttt{ans2} will be closer to \ttt{pt1}. It is permitted for \ttt{ans1} to equal \ttt{pt1} and for \ttt{ans2} to equal \ttt{pt2}. Enter a negative value for \ttt{margin} if you want to move points outwards.
+
+Math: $\vb{delta}$ is the vector from \ttt{pt1} to \ttt{pt2}, which has length $len$. Dividing $\vb{delta}$ by $len$ yields a unit vector, and then multiplying it by $margin$ yields a vector with length $margin$ that points in the direction from \ttt{pt1} to \ttt{pt2}. The new points are found by adding $\bf{delta}$ to \ttt{pt1} and subtracting $\vb{delta}$ from \ttt{pt2}.
+
+\item[\ttt{void}]
+\ttt{Geo\_InsidePoints3(double *pt1, double *pt2, double *pt3, double margin, double *ans1, double *ans2, double *ans3);}
+
+This takes in a triangle defined by its corners \ttt{pt1}, \ttt{pt2}, and \ttt{pt3} and returns a smaller triangle with corners \ttt{ans1}, \ttt{ans2}, and \ttt{ans3}. This smaller triangle is inscribed inside the original one with distance margin between the original edges and the new edges. All edge lengths of the original triangle must be greater than zero, which is not checked for in this function. Enter \ttt{margin} as a negative number for a larger new triangle. It is not permitted for \ttt{ans1}, \ttt{ans2}, or \ttt{ans3} to occupy the same memory as \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}.
+
+Math: A triangle is defined by points $\vb{p}_1$, $\vb{p}_1$, and $\vb{p}_3$ (\ttt{pt1}, \ttt{pt2}, and \ttt{pt3} in the code). The side lengths are $l_{12}$, $l_{23}$, and $l_{31}$. We want to find inside points $\vb{s}_1$, $\vb{s}_2$, and $\vb{s}_3$ (\ttt{ans1}, \ttt{ans2}, and \ttt{ans3} in the code) so that the inner triangle is inscribed inside the original triangle with a margin of size $m$ on all sides. Consider corner 1. The vector that points from $\vb{p}_1$ to $\vb{s}_1$ bisects the two edges that meet at $\vb{p}_1$. Thus, its direction is
+$$direction = \frac{\vb{p}_2 - \vb{p}_1}{l_{12}} - \frac{\vb{p}_1 - \vb{p}_3}{l_{31}}$$
+This equation is more obvious by putting a `+' sign in the middle and reversing the order of the last difference, but this form is easier for converting to other corners. The length of this bisecting vector can be found using two applications of the law of cosines. The inside angle of corner 1 is denoted $\theta_1$ (and likewise for the other corners). From the law of cosines and the original triangle,
+$$2l_{12}l_{31} \cos \theta = l_{12}^2 + l_{31}^2 - l_{23}^2$$
+Now consider the triangle that is formed when two sides are added together to yield the bisecting vector listed above. The lengths of the two sides that we added are $l_{12}$ and $l_{31}$ and the exterior angle is $\theta_1$; this means that the interior angle is $\pi-\theta_1$ and $\cos(\pi-\theta_1) = -\cos \theta_1$. Now use the law of cosines to find the squared length of the bisecting vector to be
+\begin{align*}
+L^2 &= l_{12}^2 + l_{31}^2 + 2l_{12}l_{31} \cos \theta_1\\
+&= 2 l_{12}^2 + 2 l_{31}^2 - l_{23}^2
+\end{align*}
+The length of the vector that points from $\vb{p}_1$ to $\vb{s}_1$ is found using the half-angle formula for the law of cosines.
+$$\cos \frac{\theta_1}{2} = \sqrt{\frac{s(s-l_{23})}{l_{12}l_{31}}}$$
+where
+$$s = \frac{l_{12} + l_{23} + l_{31}}{2}$$
+This is from the Math CRC p. 176. For a margin of $m$ (\ttt{margin} in the code), the length of the vector from $\vb{p}_1$ to $\vb{s}_1$ is
+$$d_1 = \frac{m}{\cos (\theta_1/2)}$$
+This simplifies to
+$$d_1 = m \sqrt{\frac{l_{12}l_{31}}{s(s-l_{23})}}$$
+Putting the whole works together, the vector from $\vb{p}_1$ to $\vb{s}_1$ is
+$$\vb{s}_1 - \vb{p}_1 = \left( \frac{\vb{p}_2 - \vb{p}_1}{l_{12}} - \frac{\vb{p}_1 - \vb{p}_3}{l_{31}} \right) m \sqrt{\frac{l_{12}l_{31}}{s(s-l_{23})(2l_{12}^2+2l_{31}^2-l_{23}^2)}}$$
+For the other corners, indices can be simply incremented, modulo 3.
+
+\item[\ttt{void}]
+\ttt{Geo\_InsidePoints32(double **point, double margin, double **ans);}
+
+This is identical to \ttt{Geo\_InsidePoints3}, but uses a little more information and runs much faster. Enter \ttt{point} so that \ttt{point[0...2]} are the three triangle vertices and \ttt{point[3...5]} are the three triangle edge normals. This returns \ttt{ans[0...2]} with the new triangle vertices. New function Oct. 2015.
+
+As before, assume that the three triangle vertices are $\vb{p}_1$, $\vb{p}_2$, and $\vb{p}_3$, and that the inside points are $\vb{s}_1$, $\vb{s}_2$, and $\vb{s}_3$. Of these, we only consider $\vb{p}_1$ and $\vb{s}_1$ since the others are analogous. Also, assume that $\vb{e}_{12}$, $\vb{e}_{23}$, and $\vb{e}_{31}$ are normalized outward-pointing normals for the three edges. The inside angle of corner 1 is $\theta_1$. Point $\vb{s}_1$ is distance $m$ from edge 12, measured perpendicular to the edge. Suppose this line hits the edge at distance $a$ from $\vb{p}_1$. Then,
+$$\tan \frac{\theta_1}{2} = \frac{m}{a} = \frac{1-\cos \theta_1}{\sin \theta_1}$$
+$$a=\frac{m \sin \theta_1}{1-\cos \theta_1}$$
+The latter equality in the first equation is from the Math CRC p. 171. Now extend this line by distance $b$, until a line drawn from the endpoint is perpendicular to edge 31. The angle between this new line and edge 12 is $90\degree-\theta_1$, implying that the interior angle at the new point is $\theta_1$. For this angle,
+$$\tan \theta_1 = \frac{a}{b} = \frac{\sin \theta_1}{\cos \theta_1}$$
+$$b = \frac{a \cos \theta_1}{\sin \theta_1} = \frac{m \sin \theta_1 \cos \theta_1}{\sin \theta_1(1-\cos \theta_1)} = \frac{m \cos \theta_1}{1-\cos \theta_1}$$
+The distance between this new point and $\vb{s}_1$ is $l_1$, which is
+$$l_1 = m+b = m\left(\frac{1- \cos \theta_1}{1-\cos \theta_1}+\frac{\cos \theta_1}{1-\cos \theta_1} \right) = \frac{m}{1-\cos \theta_1}$$
+The new point, $\vb{s}_1$, is
+$$\vb{s}_1 = \vb{p}_1 - l_1\vb{e}_{31} - l_1\vb{e}_{12}$$
+Finally,
+$$\cos \theta_1 = - \vb{e}_{31} \cdot \vb{e}_{12}$$
+The other corners are the same.
+
+\hfill \\
+\item[\underline{Point in functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{Nearest functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{To rect functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{X (cross) functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{Reflect function}]
+
+\item[\ttt{double}]
+\ttt{Geo\_SphereReflectSphere(const double *a0, const double *a1, const double *b0, const double *b1, int dim, double radius2, double *a1p, double *b1p);}
+
+Reflects hard spheres off of each other while maintaining trajectory lengths for each of them (this does not conserve momentum). Sphere A moves from \ttt{a0} to \ttt{a1} and sphere B moves from \ttt{b0} to \ttt{b1}. Enter \ttt{dim} as the system dimensionality and \ttt{radius2} as the squared sum of their radii. The reflected endpoints are returned in \ttt{a1p} for sphere A and \ttt{b1p} for sphere B. This function assumes that the spheres collide at some point, creating an error if not (returning \ttt{NaN}, \ttt{Inf}, \ttt{-Inf}, or some comparable error). Preferably, they collide at some point between positions 0 and 1 (e.g. their separation is greater than the radius at positions 0 and is less than the radius at positions 1). Returns the relative collision position, $p$ (see below).
+
+Here is the math. The first part is similar to that used in \ttt{Geo\_LineXSphs}. Define $p$ as the relative collision position along the two trajectories, equal to 0 for positions 0, 1 for positions 1, and an intermediate value for other collision positions. Using this, define the A and B positions along their trajectories at the collision time as
+\begin{align*}
+\vb{a}_p &= (1-p)\vb{a}_0 + p\vb{a}_1 \\
+\vb{b}_p &= (1-p)\vb{b}_0 + p\vb{b}_1 \\
+R^2 &= (\vb{b}_p - \vb{a}_p)^2 \\
+&= [((1-p)\vb{b}_0 + p \vb{b}_1) - ((1-p)\vb{a}_0 + p\vb{a}_1)]^2 \\
+&= [(1-p)(\vb{b}_0 - \vb{a}_0) + p (\vb{b}_1 - \vb{a}_1)]^2
+\end{align*}
+This last equation is identical in form to one from the \ttt{Geo\_LineXSphs} derivation, so use that solution,
+\begin{align*}
+a &= (\vb{b}_1 - \vb{a}_1 - \vb{b}_0 + \vb{a}_0)^2 \\
+b &= 2(\vb{b}_0 - \vb{a}_0) \cdot (\vb{b}_1 - \vb{a}_1 - \vb{b}_0 + \vb{a}_0) \\
+c &= (\vb{b}_0 - \vb{a}_0)^2 - R^2 \\
+p &= \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\end{align*}
+The two solutions for $p$ are for the time when the trajectories are first within $R$ of each other and the time when they are last within $R$ of each other. If they do not cross, then there are no solutions and the code will try to take the square root of a negative number. The negative root is the one that is of interest.
+
+Next, using the assumption that the trajectory lengths are not affected by the collision, the trajectories from the collision times to the end times, meaning from $\vb{a}_p$ to $\vb{a}_1$ and from $\vb{b}_p$ to $\vb{b}_1$, are reflected across the plane that is perpendicular to the line that extends from $\vb{a}_p$ to $\vb{b}_p$. This plane is the contact plane for the A and B spheres, regardless of the relative sphere radii. From Wikipedia ``Reflection (mathematics)'', section on ``Reflection through a hyperplane in $n$ dimensions'', reflecting vector $\vb{v}$ across a plane with normal vector $\vb{a}$ is achieved with
+$$\vb{v}' = \vb{v} - 2\frac{\vb{v}\cdot\vb{a}}{\vb{a}\cdot\vb{a}}\vb{a}$$
+Applying this to the current problem leads to the equations
+\begin{align*}
+\vb{a}_1' - \vb{a}_p &= (\vb{a}_1 - \vb{a}_p) - 2 \frac{(\vb{a}_1 - \vb{a}_p)\cdot (\vb{b}_p - \vb{a}_p)}{R^2} (\vb{b}_p - \vb{a}_p) \\
+\vb{b}_1' - \vb{b}_p &= (\vb{b}_1 - \vb{b}_p) - 2 \frac{(\vb{b}_1 - \vb{b}_p)\cdot (\vb{b}_p - \vb{a}_p)}{R^2} (\vb{b}_p - \vb{a}_p)
+\end{align*}
+Here, twice the projection of the initial displacement on the reflection vector is subtracted from the initial displacement to produce the final displacement. Note that $(\vb{b}_p - \vb{a}_p)^2 = R^2$. These equations rearrange to
+\begin{align*}
+\vb{a}_1' &= \vb{a}_1 - \frac{2(1-p)}{R^2} \left[(\vb{a}_1 - \vb{a}_0)\cdot \Delta_p \right] \Delta_p \\
+\vb{b}_1' &= \vb{b}_1 - \frac{2(1-p)}{R^2} \left[(\vb{b}_1 - \vb{b}_0)\cdot \Delta_p \right] \Delta_p
+\end{align*}
+where $\Delta_p = \vb{b}_p - \vb{a}_p$. These equations are in the code.
+
+Extension added on 8/16/23. The above equations and logic are correct for spheres that are hit front to front, such as 2 balls that collide head-on. This is all that I investigated in my 2017 paper. However, they are incorrect for a sphere that is hit in the back (relative to its direction of motion). In this case, the direction of the reflected vector needs to be reversed, causing a slight change to the equations from above,
+\begin{align*}
+\vb{a}_p - \vb{a}_1' &= (\vb{a}_1 - \vb{a}_p) - 2 \frac{(\vb{a}_1 - \vb{a}_p)\cdot (\vb{b}_p - \vb{a}_p)}{R^2} (\vb{b}_p - \vb{a}_p) \\
+\vb{b}_p - \vb{b}_1' &= (\vb{b}_1 - \vb{b}_p) - 2 \frac{(\vb{b}_1 - \vb{b}_p)\cdot (\vb{b}_p - \vb{a}_p)}{R^2} (\vb{b}_p - \vb{a}_p)
+\end{align*}
+These rearrange to
+\begin{align*}
+\vb{a}_1' &= 2(1-p)\vb{a}_0 + (2p-1)\vb{a}_1 + \frac{2(1-p)}{R^2} \left[(\vb{a}_1 - \vb{a}_0)\cdot \Delta_p \right] \Delta_p \\
+\vb{b}_1' &= 2(1-p)\vb{b}_0 + (2p-1)\vb{b}_1 + \frac{2(1-p)}{R^2} \left[(\vb{b}_1 - \vb{b}_0)\cdot \Delta_p \right] \Delta_p
+\end{align*}
+
+A sphere is hit from the front, in which the first set of equations should be used, if the dot product of its trajectory and the collision vector is negative. Vice versa, a sphere is hit from the back if this dot product is positive. Thus, the following equalities imply that it's hit from the front, in which case the first set of equations should be used.
+\begin{align*}
+(\vb{a}_1-\vb{a}_0) \cdot (\vb{a}_p-\vb{b}_p) &\le 0 \\
+(\vb{b}_1-\vb{b}_0) \cdot (\vb{b}_p-\vb{a}_p) &\le 0
+\end{align*}
+
+
+\hfill \\
+\item[\underline{Exit functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{Xaabb functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{Approximate Xaabb functions}]
+
+To be copied.
+
+\hfill \\
+\item[\underline{Volume functions}]
+
+To be copied.
+
+
+
+
+
+
+
+
+
+
+
+
+\end{description}
+
+\bibliographystyle{plain}
+\bibliography{libSteveRefs}
+
+\end{document}

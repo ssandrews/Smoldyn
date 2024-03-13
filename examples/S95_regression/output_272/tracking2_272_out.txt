@@ -1,0 +1,176 @@
+0 ligand solution 1 6.76788 12.0152
+0.014 rxn1 7.09641 11.9423 36 1 36.1
+0.1 bound solution 36.1 7.09641 11.9423
+0.2 bound solution 36.1 7.09641 11.9423
+0.291 rxn2 7.09641 11.9423 36.1 36 1
+0.3 ligand solution 1 7.96686 11.4353
+0.4 ligand solution 1 7.59191 11.1662
+0.5 ligand solution 1 7.72129 10.8823
+0.6 ligand solution 1 7.93487 10.9013
+0.7 ligand solution 1 7.55038 10.519
+0.8 ligand solution 1 7.55261 10.4015
+0.9 ligand solution 1 7.87453 10.3422
+1 ligand solution 1 8.24744 10.7071
+1.1 ligand solution 1 9.08277 11.1614
+1.2 ligand solution 1 8.72783 11.2821
+1.3 ligand solution 1 8.9917 11.7902
+1.4 ligand solution 1 8.8376 11.6893
+1.5 ligand solution 1 9.12092 11.8374
+1.6 ligand solution 1 8.84945 11.2329
+1.614 rxn1 5.90866 12.4553 8 3 8.3
+1.7 ligand solution 1 8.44003 10.3319
+1.8 ligand solution 1 8.72777 9.82268
+1.889 rxn2 5.90866 12.4553 8.3 8 3
+1.9 ligand solution 1 9.16426 10.0411
+2 ligand solution 1 9.199 10.3038
+2.067 rxn1 5.27978 14.3302 42 5 42.5
+2.1 ligand solution 1 8.11996 10.1596
+2.2 ligand solution 1 8.84545 9.5144
+2.3 ligand solution 1 9.25992 9.60107
+2.4 ligand solution 1 8.64947 8.99276
+2.5 ligand solution 1 8.67268 8.18374
+2.6 ligand solution 1 8.36745 8.43187
+2.7 ligand solution 1 8.36482 7.69101
+2.776 rxn2 5.27978 14.3302 42.5 42 5
+2.8 ligand solution 1 7.70224 7.18422
+2.9 ligand solution 1 6.98938 6.95571
+2.979 rxn1 5.27978 14.3302 42 5 42.5
+3 ligand solution 1 6.70978 6.68285
+3.1 ligand solution 1 6.51972 6.66405
+3.2 ligand solution 1 6.50496 6.62522
+3.3 ligand solution 1 6.76499 6.54719
+3.4 ligand solution 1 6.35904 6.259
+3.447 rxn1 17.5066 4.90613 6 4 6.4
+3.5 ligand solution 1 6.59667 6.36225
+3.6 ligand solution 1 6.30089 5.78757
+3.7 ligand solution 1 6.34715 5.48
+3.731 rxn1 6.28262 5.07328 50 1 50.1
+3.8 bound solution 50.1 6.28262 5.07328
+3.9 bound solution 50.1 6.28262 5.07328
+4 bound solution 50.1 6.28262 5.07328
+4.1 bound solution 50.1 6.28262 5.07328
+4.134 rxn2 5.27978 14.3302 42.5 42 5
+4.2 bound solution 50.1 6.28262 5.07328
+4.3 bound solution 50.1 6.28262 5.07328
+4.4 bound solution 50.1 6.28262 5.07328
+4.5 bound solution 50.1 6.28262 5.07328
+4.6 bound solution 50.1 6.28262 5.07328
+4.7 bound solution 50.1 6.28262 5.07328
+4.8 bound solution 50.1 6.28262 5.07328
+4.9 bound solution 50.1 6.28262 5.07328
+5 bound solution 50.1 6.28262 5.07328
+5.082 rxn2 17.5066 4.90613 6.4 6 4
+5.1 bound solution 50.1 6.28262 5.07328
+5.2 bound solution 50.1 6.28262 5.07328
+5.3 bound solution 50.1 6.28262 5.07328
+5.4 bound solution 50.1 6.28262 5.07328
+5.5 bound solution 50.1 6.28262 5.07328
+5.6 bound solution 50.1 6.28262 5.07328
+5.7 bound solution 50.1 6.28262 5.07328
+5.8 bound solution 50.1 6.28262 5.07328
+5.9 bound solution 50.1 6.28262 5.07328
+6 bound solution 50.1 6.28262 5.07328
+6.082 rxn1 5.31847 18.1176 19 3 19.3
+6.1 bound solution 50.1 6.28262 5.07328
+6.2 bound solution 50.1 6.28262 5.07328
+6.3 bound solution 50.1 6.28262 5.07328
+6.4 bound solution 50.1 6.28262 5.07328
+6.5 bound solution 50.1 6.28262 5.07328
+6.6 bound solution 50.1 6.28262 5.07328
+6.655 rxn2 6.28262 5.07328 50.1 50 1
+6.7 ligand solution 1 6.69894 4.19476
+6.8 ligand solution 1 6.64634 3.41367
+6.9 ligand solution 1 6.79971 3.05696
+7 ligand solution 1 6.82521 2.86074
+7.1 ligand solution 1 6.76505 2.38204
+7.2 ligand solution 1 5.56261 2.79643
+7.3 ligand solution 1 5.03355 2.58969
+7.4 ligand solution 1 4.83253 2.27753
+7.5 ligand solution 1 4.39595 2.77547
+7.6 ligand solution 1 4.56149 2.93015
+7.7 ligand solution 1 4.21901 2.65197
+7.703 rxn2 5.31847 18.1176 19.3 19 3
+7.8 ligand solution 1 4.16511 2.27216
+7.9 ligand solution 1 4.32621 1.73308
+7.938 rxn1 5.31847 18.1176 19 3 19.3
+8 ligand solution 1 4.24922 1.87175
+8.1 ligand solution 1 4.10818 2.67822
+8.2 ligand solution 1 4.00463 2.10573
+8.3 ligand solution 1 4.4318 2.42156
+8.4 ligand solution 1 5.30807 1.95329
+8.455 rxn1 18.388 15.8796 16 2 16.2
+8.5 ligand solution 1 5.2637 1.76078
+8.511 rxn2 5.31847 18.1176 19.3 19 3
+8.6 ligand solution 1 5.09758 1.49697
+8.618 rxn2 18.388 15.8796 16.2 16 2
+8.7 ligand solution 1 5.19737 1.82954
+8.8 ligand solution 1 4.95903 1.26336
+8.9 ligand solution 1 5.62026 1.76191
+9 ligand solution 1 4.93215 1.89535
+9.1 ligand solution 1 4.97165 1.88518
+9.2 ligand solution 1 4.91031 2.74413
+9.3 ligand solution 1 5.05822 2.76724
+9.311 rxn1 18.388 15.8796 16 2 16.2
+9.4 ligand solution 1 5.25105 2.81833
+9.5 ligand solution 1 4.94218 2.29665
+9.6 ligand solution 1 4.44985 2.44181
+9.7 ligand solution 1 4.08421 2.33929
+9.8 ligand solution 1 3.84432 3.66526
+9.9 ligand solution 1 3.91299 3.13396
+9.965 rxn1 4.79306 17.6251 41 5 41.5
+9.993 rxn2 18.388 15.8796 16.2 16 2
+10 ligand solution 1 4.3807 3.22972
+ligand(solution) 18.8445 4.50698 4
+ligand(solution) 4.35258 3.17171 1
+ligand(solution) 5.11896 14.8474 3
+ligand(solution) 18.2635 16.9065 2
+receptor(solution) 14.296 1.48288 55
+receptor(solution) 7.14051 6.01941 54
+receptor(solution) 16.6333 13.9123 53
+receptor(solution) 0.749066 18.5303 52
+receptor(solution) 8.13017 18.9948 51
+receptor(solution) 5.27978 14.3302 42
+receptor(solution) 7.96505 3.81262 49
+receptor(solution) 11.7268 12.9451 48
+receptor(solution) 0.106137 1.52591 47
+receptor(solution) 8.0794 9.07028 46
+receptor(solution) 9.47731 9.80303 45
+receptor(solution) 1.13221 1.07383 44
+receptor(solution) 18.9146 3.05483 43
+receptor(solution) 5.90866 12.4553 8
+bound(solution) 4.79306 17.6251 41.5
+receptor(solution) 9.46634 4.93424 40
+receptor(solution) 13.7051 10.7209 39
+receptor(solution) 11.8268 10.5892 38
+receptor(solution) 0.0221131 18.402 37
+receptor(solution) 6.28262 5.07328 50
+receptor(solution) 14.0249 10.4549 35
+receptor(solution) 11.4928 9.98726 34
+receptor(solution) 11.3523 5.4902 33
+receptor(solution) 4.77668 19.6899 32
+receptor(solution) 3.88261 10.7182 31
+receptor(solution) 13.0525 6.40464 30
+receptor(solution) 1.20084 13.2152 29
+receptor(solution) 6.58787 9.07437 28
+receptor(solution) 18.7243 16.3712 27
+receptor(solution) 18.6664 2.63443 26
+receptor(solution) 3.81283 0.671224 25
+receptor(solution) 0.0546456 10.0803 24
+receptor(solution) 15.9897 4.68378 23
+receptor(solution) 4.19353 0.451662 22
+receptor(solution) 1.36894 0.540666 21
+receptor(solution) 16.3079 2.41545 20
+receptor(solution) 17.5066 4.90613 6
+receptor(solution) 7.02619 16.6709 18
+receptor(solution) 11.2133 5.29974 17
+receptor(solution) 5.31847 18.1176 19
+receptor(solution) 2.99837 1.44159 15
+receptor(solution) 18.3689 12.9327 14
+receptor(solution) 8.31003 15.4129 13
+receptor(solution) 13.3832 9.98634 12
+receptor(solution) 15.1562 8.17162 11
+receptor(solution) 4.37569 8.69769 10
+receptor(solution) 1.8378 5.18318 9
+receptor(solution) 7.09641 11.9423 36
+receptor(solution) 5.76463 8.09471 7
+receptor(solution) 18.388 15.8796 16

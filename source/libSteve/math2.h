@@ -60,6 +60,7 @@ double erfccD(double x);
 float erfcc(float x);
 double erfD(double x);
 double experfcD(double x);
+double experfcm1D(double x);
 double erfcintegralD(double x);
 float erfcintegral(float x);
 double betalnD(double x1,double x2);

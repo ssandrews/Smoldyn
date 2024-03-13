@@ -49,7 +49,8 @@ for PYDIR in $PYDIR312 $PYDIR311 $PYDIR310 $PYDIR39; do
     )
 done
 
-PYTHON=$PYDIR38/bin/python
+# PYTHON=$PYDIR38/bin/python
+PYTHON=$PYDIR39/bin/python
 $PYTHON -m pip install twine
 
 ls -lh $WHEELHOUSE/*.whl

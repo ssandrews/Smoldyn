@@ -89,9 +89,30 @@ char *simss2string(enum SmolStruct ss,char *string);
 
 
 /* simSetLogging */
-void simSetLogging(FILE *logfile,void (*logFunction)(simptr,int,const char*,...)) {
-	LogFile=logfile;
-	LoggingCallback=logFunction;
+void simSetLogging(simptr sim,const char *logfile,void (*logFunction)(simptr,int,const char*,...)) {
+	FILE *logfileptr;
+
+	if(!logfile && !logFunction) {					// turn off both file and function
+		if(sim) {
+			if(sim->logfile && !(sim->logfile==stdout || sim->logfile==stderr)) fclose(sim->logfile);
+			sim->logfile=NULL;
+			sim->logfn=NULL; }
+		else {
+			if(LogFile && !(LogFile==stdout || LogFile==stderr)) fclose(LogFile);
+			LogFile=NULL;
+			LoggingCallback=NULL; }}
+
+	if(logfile) {
+		if(!strcmp(logfile,"stdout")) logfileptr=stdout;
+		else if(!strcmp(logfile,"stderr")) logfileptr=stderr;
+		else logfileptr=fopen(logfile,"a");
+		if(sim) sim->logfile=logfileptr;
+		else LogFile=logfileptr; }
+
+	if(logFunction) {
+		if(sim) sim->logfn=logFunction;
+		else LoggingCallback=logFunction; }
+
 	return; }
 
 
@@ -112,12 +133,13 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 	vsprintf(message, format, arguments);
 	va_end(arguments);
 
-	if(LoggingCallback)
-		(*LoggingCallback)(sim,importance,message);
+	if(sim && sim->logfn) (*sim->logfn)(sim,importance,message);
+	else if(LoggingCallback) (*LoggingCallback)(sim,importance,message);
 
 	if(sim && sim->logfile) fptr=sim->logfile;
 	else if(LogFile) fptr=LogFile;
 	else fptr=stdout;
+
 	if(sim) flags=sim->flags;
 	else flags=SimFlags;
 	qflag=strchr(flags,'q')?1:0;
@@ -137,7 +159,7 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 
 /* simParseError */
 void simParseError(simptr sim,ParseFilePtr pfp) {
-	char parseerrstr[STRCHAR],matherrstr[STRCHAR];
+	char parseerrstr[STRCHARLONG],matherrstr[STRCHARLONG];
 
 	if(pfp) {
 		Parse_ReadFailure(pfp,parseerrstr);
@@ -238,6 +260,7 @@ simptr simalloc(const char *fileroot) {
 	sim=NULL;
 	CHECKMEM(sim=(simptr) malloc(sizeof(struct simstruct)));
 	sim->logfile=NULL;
+	sim->logfn=NULL;
 	sim->condition=SCinit;
 	sim->filepath=NULL;
 	sim->filename=NULL;
@@ -281,8 +304,8 @@ simptr simalloc(const char *fileroot) {
 	sim->bimolreactfn=&bireact;
 	sim->checkwallsfn=&checkwalls;
 
-	CHECKMEM(sim->filepath=EmptyString());
-	CHECKMEM(sim->filename=EmptyString());
+	CHECKMEM(sim->filepath=EmptyStringLong(STRCHARLONG));
+	CHECKMEM(sim->filename=EmptyStringLong(STRCHARLONG));
 	CHECKMEM(sim->flags=EmptyString());
 	CHECKMEM(sim->cmds=scmdssalloc(&docommand,(void*)sim,fileroot));
 
@@ -340,6 +363,9 @@ void simfree(simptr sim) {
 	free(sim->flags);
 	free(sim->filename);
 	free(sim->filepath);
+
+	simSetLogging(sim,NULL,NULL);
+
 	free(sim);
 	return; }
 
@@ -565,7 +591,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
 	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR];
 	char errstr[STRCHARLONG];
-	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
+	int er,i,nmol,d,i1,s,c,ll,order,*index,ft,f;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
 	long int pserno,sernolist[MAXPRODUCT];
 	double flt1,flt2,v1[DIMMAX*DIMMAX],v2[4],poslo[DIMMAX],poshi[DIMMAX],thick;
@@ -1457,9 +1483,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	else if(!strcmp(word,"max_filament")) {				// max_filament
 		CHECKS(0,"max_filament has been deprecated"); }
 
-/*
 	else if(!strcmp(word,"new_filament")) {				// new_filament
-		fil=filreadstring(sim,pfp,NULL,"name",line2);
+		fil=filreadstring(sim,pfp,NULL,NULL,"name",line2);
 		CHECK(fil!=NULL); }
 
 	else if(!strcmp(word,"filament")) {						// filament
@@ -1468,12 +1493,13 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(itct==2,"filament format: filament_name statement_name statement_text");
 		line2=strnword(line2,3);
 		CHECKS(line2,"filament format: filament_name statement_name statement_text");
-		f=stringfind(sim->filss->fnames,sim->filss->nfil,nm);
-		CHECKS(f>=0,"filament is unrecognized");
-		fil=sim->filss->fillist[f];
-		fil=filreadstring(sim,pfp,fil,nm1,line2);
+		f=filGetFilIndex(sim,nm,&ft);
+		CHECKS(!(f==-2),"multiple filaments have the same name");
+		CHECKS(f>=0,"filament name is unrecognized");
+		filtype=sim->filss->filtypes[ft];
+		fil=filtype->fillist[f];
+		fil=filreadstring(sim,pfp,fil,filtype,nm1,line2);
 		CHECK(fil!=NULL); }
-*/
 
 	else if(!strcmp(word,"random_filament")) {		// random_filament
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
@@ -1483,7 +1509,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		ft=stringfind(filss->ftnames,filss->ntype,nm1);
 		CHECKS(ft>=0,"filament type is unknown");
 		filtype=filss->filtypes[ft];
-		fil=filAddFilament(filtype,NULL,nm);
+		CHECKS(filtype->klen==-1 || filtype->klen>0,"cannot compute random segments because the filament type has length force constant equals 0");
+		fil=filAddFilament(filtype,nm);
 		CHECKS(fil,"unable to add filament to simulation");
 		line2=strnword(line2,3);
 
@@ -1492,7 +1519,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(itct==1,"random_filament format: number [x y z theta phi chi] [thickness]");
 		CHECKS(i1>0,"number needs to be >0");
 		line2=strnword(line2,2);
-		if(fil->nbs==0) {
+		if(fil->nseg==0) {
 			CHECKS(line2,"missing position and angle information");
 			itct=sscanf(line2,"%s %s %s %s %s %s",str1,str2,str3,str4,str5,str6);
 			CHECKS(itct==6,"random_filament format: number [x y z theta phi chi] [thickness]");
@@ -1510,10 +1537,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			CHECKS(itct==1,"random_segments format: number [x y z theta phi chi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
-		if(filtype->isbead)
-			er=filAddRandomBeads(fil,i1,str1,str2,str3);
-		else
-			er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
+		er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
 		CHECKS(er!=2,"random_filament positions need to be 'u' or value");
 		CHECKS(er!=3,"random_filament angles need to be 'u' or value");
 		CHECKS(er==0,"BUG: error in filAddRandomSegments");
@@ -1978,7 +2002,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		line2=strnword(line2,3);
 		if(rpart==RPirrev);
 		else if(rpart==RPbounce && !line2)
-			flt1=-2;
+			flt1=-1;			// default bounce method
 		else if(rpart==RPpgem || rpart==RPbounce || rpart==RPpgemmax || rpart==RPpgemmaxw || rpart==RPratio || rpart==RPunbindrad || rpart==RPpgem2 || rpart==RPpgemmax2 || rpart==RPratio2) {
 			CHECKS(line2,"missing parameter in product_placement");
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
@@ -2140,10 +2164,14 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 	char word[STRCHAR],*line2,errstring[STRCHARLONG];
 	ParseFilePtr pfp;
 
-	strncpy(sim->filepath,fileroot,STRCHAR);
-	strncpy(sim->filename,filename,STRCHAR);
-	strncpy(sim->flags,flags,STRCHAR);
-	strcpy(SimFlags,flags);
+	if(fileroot) strncpy(sim->filepath,fileroot,STRCHARLONG);
+	if(filename) strncpy(sim->filename,filename,STRCHARLONG);
+	if(flags) {
+		strncpy(sim->flags,flags,STRCHAR);
+		strcpy(SimFlags,flags); }
+	else {
+		flags=SimFlags;
+		strncpy(sim->flags,SimFlags,STRCHAR); }
 	done=0;
 	ErrorLineAndString[0]='\0';
 
@@ -2202,7 +2230,7 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 			er=filloadtype(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_filament")) {			// start_filament
-			er=filloadfil(sim,&pfp,line2,NULL); }
+			er=filloadfil(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_rules")) {				// start_rules
 			CHECKS(0,"Moleculizer support has been discontinued in Smoldyn"); }
@@ -2276,7 +2304,7 @@ int simupdate(simptr sim) {
 
 	if(sim->condition==SCinit && sim->filss)
 		simLog(sim,2," setting up filaments\n");
-	er=filsupdate(sim);
+	er=filupdate(sim);
 	CHECK(er!=1);
 
 	if(sim->condition==SCinit && sim->graphss)
@@ -2372,25 +2400,24 @@ failure:
 
 
 /* simInitAndLoad */
-int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags) {
+int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const char *flags,const char *logfile) {
 	simptr sim;
-	int er,qflag,sflag;
+	int er;
 
 	sim=*smptr;
 	if(!sim) {
-		qflag=strchr(flags,'q')?1:0;
-		sflag=strchr(flags,'s')?1:0;
-		if(!qflag && !sflag) {
-			simLog(NULL,2,"--------------------------------------------------------------\n");
-			simLog(NULL,2,"Running Smoldyn %s\n",VERSION);
-			simLog(NULL,2,"\nCONFIGURATION FILE\n");
-			simLog(NULL,2," Path: '%s'\n",fileroot);
-			simLog(NULL,2," Name: '%s'\n",filename); }
 		sim=simalloc(fileroot);
 		CHECKMEM(sim);
+		strncpy(sim->flags,flags,STRCHAR);
+		if(logfile) simSetLogging(sim,logfile,NULL);
+		simLog(sim,2,"--------------------------------------------------------------\n");
+		simLog(sim,2,"Running Smoldyn %s\n",VERSION);
+		simLog(sim,2,"\nCONFIGURATION FILE\n");
+		simLog(sim,2," Path: '%s'\n",fileroot);
+		simLog(sim,2," Name: '%s'\n",filename);
 		CHECKMEM(strloadmathfunctions()==0);
 		CHECKMEM(loadsmolfunctions(sim)==0);
-		er=loadsim(sim,fileroot,filename,flags);		// load sim
+		er=loadsim(sim,fileroot,filename,NULL);		// load sim
 		CHECK(!er);
 		simLog(sim,2," Loaded file successfully\n"); }
 

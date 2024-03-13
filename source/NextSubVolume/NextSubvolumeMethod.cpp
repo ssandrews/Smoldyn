@@ -159,11 +159,11 @@ double ReactionList::recalculate_propensities() {
 		ReactionsWithSameRateAndLHS& rs = reactions[i];
 		double& propensity = propensities[i];
 		propensity = 1.0;
-		int beta = 0;
+		//int beta = 0;									// beta was being computed but not used, so it's commented out now
 		//for (auto& rc : rs.lhs) {
 		for (std::vector<ReactionComponent>::iterator rc=rs.lhs.begin();rc!=rs.lhs.end();rc++) {
 			int copy_number = rc->species->copy_numbers[rc->compartment_index];
-			beta += rc->multiplier;
+			//beta += rc->multiplier;
 			ASSERT(copy_number >= 0, "copy number is less than zero!!");
 			if (copy_number < rc->multiplier) {
 				propensity = 0.0;

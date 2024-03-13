@@ -1250,8 +1250,10 @@ int checkrxnparams(simptr sim,int *warnptr) {
 				chi=actualrate/smolmodelrate;
 				if(chi<0.98*rxn->chi) {
 					warn++;
-					simLog(sim,5," WARNING: order 2 reaction %s cannot achieve requested chi of %g but is only %g\n",rxn->rname,rxn->chi,chi); }}}}
-
+					simLog(sim,5," WARNING: order 2 reaction %s cannot achieve requested chi of %g but is only %g\n",rxn->rname,rxn->chi,chi); }}
+			if(rxn->rparamt==RPbounce && rxn->rparam==-2) {
+				simLog(sim,5," WARNING: reaction %s uses a bounce type reaction with the reflection method, which may yield incorrect diffusion rates\n",rxn->rname);
+				warn++; }}}
 
 	rxnss=sim->rxnss[2];															// more order 2 reactions
 	if(rxnss) {

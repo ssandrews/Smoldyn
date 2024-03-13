@@ -924,7 +924,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 /* loadlattice */
 int loadlattice(simptr sim,ParseFilePtr *pfpptr,char* line2) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHARLONG],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	latticeptr lattice;
 

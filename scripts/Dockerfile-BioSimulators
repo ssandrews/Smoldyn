@@ -27,10 +27,12 @@ LABEL \
     extra.identifiers.biotools="smoldyn" \
     maintainer="Steven Andrews <steven.s.andrews@gmail.com>"
 
-# Set up headless environment
 RUN apt-get -y update \
     && apt-get install --no-install-recommends -y \
         xvfb \
+        libxrender1 \
+        libgl1-mesa-glx \
+        libfreetype6 \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /tmp/.X11-unix \
     && chmod 1777 /tmp/.X11-unix

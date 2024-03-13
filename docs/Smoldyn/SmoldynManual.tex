@@ -92,8 +92,8 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.71}
-\date{\copyright February, 2023}
+\subtitle{Version 2.73}
+\date{\copyright February, 2024}
 \author{Steve Andrews}
 \maketitle
 
@@ -456,28 +456,27 @@ This is the first of the chapters that focuses on a specific aspect of Smoldyn, 
 % Section: Runtime flags
 \section{Runtime flags}
 
-When starting Smoldyn from the command line, you can follow the filename with runtime flags, of which the options are listed below. Any combination of flags may be used, and in any order.
+When starting Smoldyn from the command line, you can follow the filename with runtime flags, of which the options are listed below. Any combination of flags may be used, and in any order. Flags can be entered with a single hyphen and a single letter (possible with multiple letter codes entered sequentially), or with a double hyphen and a word. Both possibilities are listed below.
 
 \begin{longtable}[c]{lll}
-Command & Smoldyn\\
-line & query & Result\\
-\hline\\
- & - & normal: parameters displayed and simulation run\\
-\ttt{-o} & o & suppress output: text output files are not opened\\
-\ttt{-p} & p & parameters only: simulation is not run\\
-\ttt{-q} & q & quiet: parameters are not displayed\\
-\ttt{-s} & s & silent: no text output at all, even errors\\
-\ttt{-t} & t & text only: no graphics are displayed\\
-\ttt{-V} & V & display version number and quit\\
-\ttt{-v} & v & verbose: extra parameter information is displayed\\
-\ttt{-w} & w & suppress warnings: no warnings are shown\\
+Word & Letter & Result\\
+\hline
+\ttt{--output} & \ttt{-o} & suppress output: text output files are not opened\\
+\ttt{--params} & \ttt{-p} & parameters only: simulation is not run\\
+\ttt{--quiet} & \ttt{-q} & quiet: parameters are not displayed\\
+\ttt{--silent} & \ttt{-s} & silent: no text output at all, even errors\\
+\ttt{--text} & \ttt{-t} & text only: no graphics are displayed\\
+\ttt{--version} & \ttt{-V} & display version number and quit\\
+\ttt{--verbose} & \ttt{-v} & verbose: extra parameter information is displayed\\
+\ttt{--warnings} & \ttt{-w} & suppress warnings: no warnings are shown\\
 \ttt{--define} $x=y$ &  & set a text macro definition\\
+\ttt{--logfile} \textit{file} & & set output logging file for diagnostics and warnings
 \end{longtable}
 
 % Section: configuration file syntax
 \section{Configuration file syntax}
 
-Configuration files, such as bounce3.txt, are simple text files. The format is a series of text lines, each of which needs to be less than 256 characters long. On each line of input, the first word describes which parameters are being set, while the rest of the line lists those parameters, separated by spaces. If Smoldyn encounters a problem with a line, it displays an error message and terminates. Possible problems include missing parameters, illegal parameter values, too many parameters, unrecognized molecule, surface, or reaction names, unrecognized statements, or others.
+Configuration files, such as bounce3.txt, are simple text files. The format is a series of text lines, each of which needs to be less than 4096 characters long. On each line of input, the first word describes which parameters are being set, while the rest of the line lists those parameters, separated by spaces. If Smoldyn encounters a problem with a line, it displays an error message and terminates. Possible problems include missing parameters, illegal parameter values, too many parameters, unrecognized molecule, surface, or reaction names, unrecognized statements, or others.
 
 In most cases, statements may be entered in any order, although some are required to be listed after others. The required sequence is not always obvious, so it is usually easiest to just try what seems most reasonable and then fix any errors that Smoldyn reports. Also, a few instructions can only be entered once, whereas others can be entered multiple times. If a parameter is entered more than once, the latter value overwrites the prior one. Parameters that are not defined in the configuration file are assigned default values.
 
@@ -1175,7 +1174,8 @@ If a reaction has multiple products, they are usually all added to the system at
 It is possible to specify that a reaction should only occur within a spatial compartment (defined below), or if one of the reactants is bound to a specified surface. For example, it is possible to declare that a zeroth order reaction should only produce product within a specific compartment, or that a first order reaction is only active when the reactant is within the specified compartment. In many cases, these rules are unphysical, although they can be very useful for treating interactions with spatially localized unmodeled chemical species. These restrictions can slow down simulations, so only use them if they are needed.
 
 Conformational spread reactions are only intended to be used with stationary reactants and are only permitted in reactions with two reactants and two products. A conformational spread reaction is possible if the reactants are closer together than the conformational spread radius, which is analogous to the binding radius of normal second order reactions (although its value is constant, regardless of the time step). For a conformational spread reaction, the reaction rate has units of inverse time, as it is for a first order reaction. If a reaction occurs, the first entered reactant is replaced by the first product, and the second reactant with the second product.
-Excluded volume reactions use the reaction concept to simulate excluded volume interactions. Here, the typical reaction is of the form A + B $\rightarrow$ A + B, with the ``binding radius'' set to the sum of the physical molecular radii and the product placement type set to ``bounce''. There are several options for simulating these reactions. The default and usually best approach is called the reflection method. Here, if molecules are found to be within a binding radius after diffusion, their positions are recomputed by reflecting the molecules off of each other based upon their straight-line trajectories during the course of the time step; the collision point is at the position along the trajectories where the center-to-center distance equals the binding radius. A different approach is the overlap method. Here, if molecules are found to be closer than their binding radius after diffusion, then the distance by which they are closer is added to the binding radius to compute the new separation. The molecules are separated by this amount, while keeping the molecule centers on the same line as they were on before they were moved.
+
+Excluded volume reactions use the reaction concept to simulate excluded volume interactions. Here, the typical reaction is of the form A + B $\rightarrow$ A + B, with the ``binding radius'' set to the sum of the physical molecular radii and the product placement type set to ``bounce''. There are several options for simulating these reactions. The default method (as of version 2.73) is called the overlap method. Here, if molecules are found to be closer than their binding radius after diffusion, then the distance by which they are closer is added to the binding radius to compute the new separation. The molecules are separated by this amount, while keeping the molecule centers on the same line as they were on before they were moved. A different method, and the one that was recommended between versions 2.41 and 2.72, is called the reflection method. Here, if molecules are found to be within a binding radius after diffusion, their positions are recomputed by reflecting the molecules off of each other based upon their straight-line trajectories during the course of the time step; the collision point is at the position along the trajectories where the center-to-center distance equals the binding radius. See the discussion in section \ref{sect:ReactionBounce} for the relative merits of these methods.
 
 Each molecule has a serial number that can be used to uniquely identify it. In most reactions, the reactants are simply removed from the system and the reaction products are new molecules with new serial numbers. However, this is not the case for conformational spread and excluded volume reactions because the reactants and products are conceptually the same molecules, so these products have the same serial numbers as the reactants. It can also be helpful to maintain serial numbers in other situations, such as for single molecule tracking. In these situations, use the \ttt{reaction\_serialnum} statement to define rules for the product serial number assignments.
 
@@ -1499,28 +1499,40 @@ This figure show output from confspread.txt configuration file. There are confor
 
 % Section: excluded volume reactions
 \section{Excluded volume reactions}
+\label{sect:ReactionBounce}
 
-Smoldyn can treat molecules as though they have excluded volume using the same reaction concept that was developed for bimolecular reactions. The user specifies the collision radius (using the \ttt{binding\_radius} statement) for each pair of species that is supposed to respect each others' excluded volume and then makes this an excluded volume reaction with the \ttt{product\_placement} statement, with the bounce option. If molecules of those two species end up within their collision radius at the end of a time step, they are then moved apart. The reactants and products may be the same molecular species, in which case the molecules are simply pushed apart. They can also be different species. Molecules maintain their serial numbers. There are several options for the \ttt{product\_placement} parameter value. Setting it to a positive value (which should be larger than the binding radius) causes the two products to be placed at this distance apart, along the same vector as the molecules were on before they were moved apart. Setting it to -1 is generally more accurate; here, the products are separated by the binding radius plus the distance that the reactants had been inside of the binding radius. This separation is along the vector that separated the reactants. Setting it to -2, or leaving the value blank because this is the default method, is better yet. Here, the molecules bounce ballistically off of each other. This is the most accurate method. In all cases, the reaction rate value is largely meaningless for excluded volume reactions.
+Smoldyn can treat molecules as though they have excluded volume using the same reaction concept that was developed for bimolecular reactions. The user specifies the collision radius (using the \ttt{binding\_radius} statement) for each pair of species that is supposed to respect each others' excluded volume and then makes this an excluded volume reaction with the \ttt{product\_placement} statement, with the bounce option. If molecules of those two species end up within their collision radius at the end of a time step, they are then moved apart. The reactants and products may be the same molecular species, in which case the molecules are simply pushed apart. They can also be different species. Molecules maintain their serial numbers. There are several options for the \ttt{product\_placement} parameter value. Setting it to a positive value (which should be larger than the binding radius) causes the two products to be placed at this distance apart, along the same vector as the molecules were on before they were moved apart. Setting it to -1 selects the ``overlap method'', which is also the default method and the approach that I recommend; here, the products are separated by the binding radius plus the distance that the reactants had been inside of the binding radius. This separation is along the vector that separated the reactants. Setting it to -2 selects the ``reflection method'', which I do not recommend. Here, the molecules bounce ballistically off of each other. In all cases, the reaction rate value is largely meaningless for excluded volume reactions.
 
 If molecules are not supposed to pass by each other, which can be simulated using excluded volume reactions and a one-dimensional system, then it is important to make the excluded volume binding radius significantly larger than the rms step lengths of the molecules. Because molecules move during diffusion with Gaussian-distributed displacements, and Gaussians have long tails, it is likely to be very difficult to ensure that absolutely no molecules cross that should not.
 
-I illustrate excluded volume reactions with several examples, all of which are in the S8\_reactions/bounce directory. In one, bounce.txt, molecules are confined to a line and maintain their ordering. The configuration file statements that declare the excluded volume reactions are:
+Several examples illustrate excluded volume reactions, all of which are in the S8\_reactions/bounce directory. In bounce.txt, molecules are confined to a line and maintain their ordering. The configuration file statements that declare the excluded volume reactions are:
 \begin{lstlisting}[style=SSAC]
 reaction rxn1 red(up) + green(up) -> red(up) + green(up)
 binding_radius rxn1 1
 product_placement rxn1 bounce -2
 \end{lstlisting}
-A second example involves a crowded system and is in the same directory and the file crowding.txt.
+A second example, crowding.txt, shows crowding in a 2D system. Their outputs are shown in Figure \ref{fig:crowding}. In the former, red and green molecules, both of which are confined to the diagonal line, bounce off of each other. This has the result that the ordering of red and green molecules does not change during the simulation. The latter file shows that this crowding method works even with relatively high molecule densities. These molecules clearly do not overlap each other. During the simulation, molecules diffuse within the confines set by their neighbors.
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=5 cm]{figures/image58.png}
-\includegraphics[height=5 cm]{figures/image59.png}
+\includegraphics[height=4 cm]{figures/image58.png}
+\includegraphics[height=4 cm]{figures/image59.png}
 \caption{Output from bounce.txt and crowding.txt, showing excluded volume for surface-bound and solution phase molecules.}
 \label{fig:crowding}
 \end{figure}
 
-These figures show output from bounce.txt and crowding.txt. In the former, red and green molecules, both of which are confined to the diagonal line, bounce off of each other. This has the result that the ordering of red and green molecules does not change during the simulation. The latter file shows that this crowding method works even with relatively high molecule densities. These molecules clearly do not overlap each other. During the simulation, molecules diffuse within the confines set by their neighbors.
+I developed the reflection method in my 2017 paper, where I showed that it yields a more accurate distribution of product locations after a single collision than the overlap method. This suggested that it was a superior algorithm. Also, it produced an accurate radial distribution function for hard spheres (in contrast to the SpringSaLaD software, which produced substantially incorrect results), again supporting its use. However, I reinvestigated its quantitative accuracy in 2023 (for version 2.73; files are called crowding3D.txt, crowding3D.nb, and similar) and found that the overlap method is likely to be substantially better, despite its poorer performance for the single-collision product locations.
+
+The first test looked at the hard sphere radial distribution function. The overlap method yielded very slightly better results at all time step lengths (left panel of Figure \ref{fig:crowding3D}). The second test looked at diffusion rates within the same crowded system (right panel of Figure \ref{fig:crowding3D}). The reflection method yielded diffusion coefficients that were about 2.3 times faster than those from the overlap method, for all time step lengths; importantly, this means that these methods do not converge to the same result in the limit of short time steps, implying that one or both of them does not become exact in this limit. Both yielded excessively fast diffusion at long time steps (e.g. the rms step length is greater than about 0.14 times the molecule radius), with values that were even greater than the diffusion coefficient entered into the simulation; this shows that crowding led to accelerated diffusion, not slowed diffusion, which is impossible. Shorter time steps led to lower measured diffusion coefficients, which are more reasonable, and had a transition point at around the rms step length being 6\% of the molecule radius; time steps that were longer than this led to different results but time steps that were shorter than this led to minimal improvement. I measured the effective diffusion coefficient using the meansqrdisp command, which outputs both the $\langle r^2 \rangle$ and $\langle r^4 \rangle$ averages. Assuming Gaussian distributions, which is what one would expect for diffusion, including in crowded systems, $\langle r^2 \rangle = 6 D_{eff.} t$ and $\langle r^4 \rangle = 60 D_{eff.}^2 t^2$, allowing $D_{eff.}$ to be computed from either statistic. Both statistics yielded essentially identical results for the overlap method, indicating a Gaussian distribution. However, the $\langle r^4 \rangle$ value led to much larger effective diffusion coefficients than the $\langle r^2 \rangle$ value did for the reflection method, indicating a broader than Gaussian distribution. This is incorrect, leading me to believe that the reflection method is inaccurate. I don't know if the algorithm itself is fundamentally inaccurate, or if molecules are ``skating'' through the system; this arises when a reflected molecule gets placed on top of another molecule, which then repeats over and over again and produces fast motion. In any case, the reflection method is clearly inaccurate, so I recommend the overlap method.
+
+\begin{figure}[h]
+\centering
+\includegraphics[height=4 cm]{figures/crowding3Drdf.png}
+\includegraphics[height=4 cm]{figures/crowding3Ddiff.png}
+\caption{(Left) Radial distribution function for 2.5 nm radius hard spheres, with theory in black and simulation in red (overlap method, time step is 0.00005 microseconds, 40\% volume occupancy). (Right) Effective diffusion coefficients for the same hard sphere crowded system computed as a function of time step. Red is overlap method, blue is reflection method; circles are computed from $\langle r^2 \rangle$ and squares are computed from $\langle r^4 \rangle$ (circles and squares overlap for the red symbols). The dashed line shows the diffusion coefficient without any crowding.}
+\label{fig:crowding3D}
+\end{figure}
+
 
 % Section: binding and unbinding radii
 \section{Binding and unbinding radii}
@@ -3216,7 +3228,7 @@ The behavior of molecules named $species$ (and in state $state$, which is assume
 \item{\ttt{* rate species(state)} $state_1\ state_2\ value\ [new\_spec]$\\
 \ttt{* rate\_rule} $species(state)\ state_1\ state_2\ value\ [new\_spec]$}
 
-The rate constant for transitions from $state_1$ to $state_2$ of molecules named $species$ at this surface. For the species name, in $species$, ``all'' is permitted; however, ``all'' is not permitted anywhere else. Usually, $state$ is omitted, but see below for where it is needed. $state_1$ and $state_2$ can be any of: fsoln, bsoln (in solution, hitting the front or back of the panel, respectively), front, back, up, or down. $value$ is the rate constant or rate coefficient. If $new\_spec$, which is an optional parameter, is entered, then molecules change to the listed species at the same time as changing states. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
+The rate constant for transitions from $state_1$ to $state_2$ of molecules named $species$ at this surface. For the species name, in $species$, ``all'' is permitted; however, ``all'' is not permitted anywhere else. Usually, $state$ is omitted, but see below for where it is needed. $state_1$ and $state_2$ can be any of: fsoln, bsoln (in solution, hitting the front or back of the panel, respectively), front, back, up, or down. $value$ is the rate constant or rate coefficient; enter it as $-1$ if you want the maximum possible value, typically meaning that the probability gets set to 1 (however, it may get set to a lower value if the rate of the reverse process is also set to $-1$, in which case both probabilities are chosen to maintain the appropriate equilibrium constant). If $new\_spec$, which is an optional parameter, is entered, then molecules change to the listed species at the same time as changing states. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
 To specify interaction rates for molecules that collide with surface B, while diffusing along surface A, use the first $state$ parameter. In this case: $state$ is the starting surface-bound state on surface A; $state_1$ is fsoln to indicate collision with the front side of surface B or bsoln to indicate collision with the back side of surface B; and $state_2$ is fsoln or bsoln to indicate transmission through surface B and still bound to surface A (but cannot equal $state_1$) or $state_2$ can be a surface-bound state to indicate that the molecule hops from surface A to surface-bound on surface B.
 
@@ -3390,7 +3402,7 @@ Molecule production rate for zeroth order reactions. Instead of entering the rea
 
 Placement method and parameters for the products of reaction rname. This also affects the binding radius of the reverse reaction, as explained in the text. The type irrev requires no parameters. Types ``pgem'', ``pgemmax'', ``pgemmaxw'', ``ratio'', ``unbindrad'', ``pgem2'', ``pgemmax2'', and ``ratio2'' each require one parameter. Types ``offset'' and ``fixed'' each require first a product molecule name and then a $dim$-dimensional vector as the parameter list. If multiple products are identical, then this placement instruction will only be applied to the first of the identical products. For this reason, you can also specify that this statement applies to the $n$'th product by entering the product name as \ttt{product\_}$n$ (e.g. \ttt{product\_2} for the second product). The default placement method for reversible reactions is ``pgemmaxw'' (the terminal ``w'' implies that a warning will be issued) with a parameter of 0.2. While it is suggested that placement types be entered with full words, single letter codes work as well.
 
-To create a ``bounce'' type reaction, for simulating excluded volume, enter the $type$ as ``bounce''. In this case, enter no parameter for the default algorithm or one parameter. The default algorithm, also entered with a -2 parameter, performs ballistic reflection for spherical molecules. Enter a parameter of -1 for an algorithm in which the reactant edges get separated by the same amount as they used to overlap, along their separation vector (e.g. consider two reactants each of radius 1, so the binding radius is set to 2; then, if the center-to-center distance is found to be 1.6, the molecules get separated to make the center-to-center distance equal to 2.4). Alternatively, you can use the parameter value to define the new separation, which should be larger than the binding radius.
+To create a ``bounce'' type reaction, for simulating excluded volume, enter the $type$ as ``bounce''. In this case, enter no parameter for the default algorithm or one parameter. The default algorithm, also entered with a -1 parameter, performs the overlap method, in which the reactant edges get separated by the same amount as they used to overlap, along their separation vector (e.g. consider two reactants each of radius 1, so the binding radius is set to 2; then, if the center-to-center distance is found to be 1.6, the molecules get separated to make the center-to-center distance equal to 2.4). Using a value of -2 performs the reflection method, which appears to substantially less accurate (see Section \ref{sect:ReactionBounce}). Alternatively, you can use the parameter value to define the new separation, which should be larger than the binding radius.
 
 \item{\ttt{expand\_rules} $iterations$}
 
@@ -3518,9 +3530,13 @@ The statements shown below that are preceded by an asterisk need to be entered w
 
 Start of filament type definition block. The filament type name may be given with $name$, or it may be given afterward with the \ttt{name} statement. If the name has not been used yet for a filament type, then a new filament type is started. Between this instruction and \ttt{end\_filament\_type}, all lines need to pertain to filament types. Parameters of one filament type can be listed in multiple blocks, or parameters for many filament types can be listed in one block.
 
+\item{\ttt{name} $name$}
+
+From within a filament type definition block, this switches to a new filament type and creates it if needed.
+
 \item{\ttt{dynamics} $dynamics$}
 
-Sets the dynamics for the filament type. Options are: ``RigidBeads'', ``RigidSegments'', ``Rouse'', ``Alberts'', ``Nedelec''. These are case-insensitive.
+Sets the dynamics for the filament type. Current options are: ``none'', ``Newton''. These are case-insensitive.
 
 \item{\ttt{biology} $biology$}
 
@@ -3558,17 +3574,13 @@ Some filaments treadmill, in which they drop off monomers at one end and add the
 
 Viscosity of the surrounding medium.
 
-\item{\ttt{bead\_radius} $value$}
-
-Radius of the beads in these filaments. Used for hydrodynamic calculations.
-
 \item{\ttt{standard\_length} $length$}
 
 Relaxed length of a filament segment. It can change through stretching or compression.
 
 \item{\ttt{standard\_angle} $yaw$ $pitch$ $roll$}
 
-Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis.
+Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
 
 \item{\ttt{force\_length} $value$}
 
@@ -3588,21 +3600,21 @@ Filaments can be entered either in a block or with the single \ttt{random\_filam
 
 \begin{description}
 
-\item{\ttt{random\_filament} $name$ $type$ $segments$ $[x$ $y$ $z]$}
+\item{\ttt{random\_filament} $name$ $type$ $segments$ $[x$ $y$ $z$ $\theta$ $\phi$ $\chi]$ $thickness$}
 
-Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$.
+Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$ and initial yaw-pitch-roll angle $(\theta, \phi, \chi)$. It also has optional thickness $thickness.$.
 
-\item{\ttt{start\_filament} $name$}
+\item{\ttt{start\_filament} $type$ $name$}
 
-Start of filament definition block. The filament name may be given with $name$, or it may be given afterward with the \ttt{name} statement. If the name has not been used yet for a filament, then a new filament is started. Between this instruction and \ttt{end\_filament}, all lines need to pertain to filaments. Parameters of one filament can be listed in multiple blocks, or parameters for many filaments can be listed in one block.
+Start of filament definition block, for a filament of type $type$ and named $name$. If the name has not been used yet for a filament of this type, then a new filament is started. Between this instruction and \ttt{end\_filament}, all lines need to pertain to filaments. Parameters of one filament can be listed in multiple blocks, or parameters for many filaments can be listed in one block.
 
-\item{\ttt{* name} $name$}
+\item{\ttt{new\_filament} $type$ $name$}
+
+Defines a new filament of type $type$ that is called $name$, but does not start a filament block. This statement is largely redundant with \ttt{start\_filament}.
+
+\item{\ttt{* name} $type$ $name$}
 
 Name of the filament for editing. This statement is not required because the filament name can also be given with \ttt{start\_filament}. This statement gives the name of the current filament for editing, and creates a new filament if needed.
-
-\item{\ttt{type} $type$}
-
-Filament type, which should already be defined in a filament type block.
 
 \item{\ttt{first\_segment} $x$ $y$ $z$ $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness]$}
 
@@ -3975,6 +3987,8 @@ This writes the complete state of the current system to the listed file name, in
 
 This function is used to measure mean square displacements (diffusion rates) of molecules of type $species$, along dimension $dim$ (``x'', ``y'', or ``z'', or 0, 1, or 2) printing the results to $filename$. When it is first invoked, it records the positions of all molecules of type $species$. Then, and every subsequent time it is called, it compares the current positions of all molecules that still exist to the old ones, calculates the average squared displacement ($\langle r^2 \rangle$), and prints the time and that number to a single line in the output file. If $dim$ is ``all'', this sums the mean square displacement for all dimensions, otherwise $dim$ should be a dimension number. This accounts for periodic boundaries. $state$ is optional; neither $species$ nor $state$ can be ``all''. This prints out three numbers in each line: time, $\langle r^2 \rangle$, and $\langle r^4 \rangle$. This command does not work if multiple molecules have the same serial number (which can only happen if you use the \ttt{reaction\_serialnum} statement). For molecules with two-part serial numbers, it determines molecule identity based on only the right part.
 
+To interpret these results, diffusion typically leads to a Gaussian concentration profile. In this case, $\langle r^2 \rangle = 2Dt$ and $\langle r^4 \rangle = 12D^2t^2$ in 1 dimension; $\langle r^2 \rangle = 4Dt$ and $\langle r^4 \rangle = 32D^2t^2$ in 2 dimensions; and $\langle r^2 \rangle = 6Dt$ and $\langle r^4 \rangle = 60D^2t^2$ in 3 dimensions, where $D$ is the effective diffusion coefficient and $t$ is the time. Most researchers only use the $\langle r^2 \rangle$ value but the $\langle r^4 \rangle$ value is also useful for checking whether the concentration profile is actually Gaussian or not.
+
 \item{\ttt{meansqrdisp2} $species(state)\ dim\ start\ report\ max\_mol\ max\_moment\ filename$}
 
 This function is an expanded version of \ttt{meansqrdisp}. As above, it measures mean square displacements of molecules of type $species$, along dimension $dim$ (``x'', ``y'', or ``z'', or 0, 1, or 2), and prints the results to $filename$. The $start$ and $report$ arguments control when this command starts tracking molecules and when it reports their mean square displacements, respectively. For $start$, enter ``i'' to track molecules that exist when the command is initially invoked, enter ``c'' to track those that are created after the first call, and enter ``a'' (all) to track both sets of molecules. For $report$, enter ``e'' to report on every molecule that is being tracked, or ``r'' to report on only those that reacted since the command was last called. In this latter case, the position that is used for a reacted molecule is its most recently tracked position, since it no longer exists. For example, if you want to see how far molecules diffuse between their creation in one reaction and their destruction in another reaction, set $start$ to ``c'' and report to ``r''. Or, set $start$ to ``i'' and report to ``e'' for this function to be identical to \ttt{meansqrdisp}. It can track up to $max\_mol$ molecules. This function prints out the time and then results for all moments, even and odd, from $\langle r^0 \rangle$ (the number of molecules being reported on) to $\langle r^{max\_moment} \rangle$. This command accounts for periodic boundaries. $state$ is optional; neither $species$ nor $state$ can be ``all''. This command does not work if multiple molecules have the same serial number (which can only happen if you use the \ttt{reaction\_serialnum} statement). For molecules with two-part serial numbers, it determines molecule identity based on only the right part.
@@ -4196,11 +4210,15 @@ In C, enumerations are defined in the smoldyn.h header file, so they can be used
 smolErrorCodeToString(ECwarning, mystring)
 \end{lstlisting}
 
-In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here is an example,
+In Python, enumerations are only directly accessible in the low-level API. Here, they are most easily dealt with by defining a variable for the enumerated list and then choosing from it. Here are two examples,
 \begin{lstlisting}[style=SSAC]
-import smoldyn._smoldyn as S
-EC=S.ErrorCode
-S.errorCodeToString(EC.warning)
+import smoldyn
+import smoldyn._smoldyn as smol
+EC=smol.ErrorCode
+smol.errorCodeToString(EC.warning)
+s=smoldyn.Simulation(low=[0,0],high=[10,10])
+specA=s.addSpecies("A")
+setSpeciesMobility(species="A", state=smol.MolecState.soln, diffConst=10)
 \end{lstlisting}
 For the user API, enter strings for the different enumeration possibilities.
 
@@ -4299,6 +4317,18 @@ Returns the Smoldyn version. The C/C++ and low-level Python options just return 
 \section{Errors}
 
 \begin{description}
+
+\item[SetLogging]
+\hfill \\
+C/C++: \ttt{void smolSetLogging(const char *logfile,void (*logFunction)(simptr,int,const char*,...))}\\
+Python: N/A\\
+This function sets the file for output logging (diagnostics, warnings, etc., but not simulation data output) and/or the logging callback function. The callback function is called whenever any output is made so that it can be handled in some way other than simply displaying it to the output file. Smoldyn has two copies of these pieces of information, of which one is in the simulation data structure and the other is in global variables; this function only sets the global variables. Enter both \ttt{logfile} and \ttt{logFunction} as \ttt{NULL} to clear the values, and otherwise entering either value as \ttt{NULL} will cause it to be ignored.
+
+\item[SetThrowing]
+\hfill \\
+C/C++: \ttt{void smolSetThrowing(int corethreshold,int libthreshold)}
+Python: N/A\\
+Sets error throwing threshold values. Both values are ignored because throwing is somehow not compatible with static linking.
 
 \item[SetError]
 \hfill \\

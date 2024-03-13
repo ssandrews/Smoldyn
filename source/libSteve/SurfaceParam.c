@@ -31,6 +31,7 @@ double interpolate2D(double *xdata,double *ydata,double *zdata,int nx,int ny,dou
 
 #ifndef __math2_h
 	#include <float.h>
+	#define PI 3.14159265358979323846
 	#define SQRT2 1.41421356237
 	#define SQRTPI 1.7724538509
 	#define SQRT2PI 2.50662827462
@@ -39,6 +40,7 @@ double interpolate2D(double *xdata,double *ydata,double *zdata,int nx,int ny,dou
 	double gammpD(double a,double x);
 	double erfccD(double x);
 	double experfcD(double x);
+	double experfcm1D(double x);
 	double erfnD(double x);
 	int iseven(int x);
 	void linefitD(double *x,double *y,int n,double *m,double *b);
@@ -49,6 +51,9 @@ double interpolate2D(double *xdata,double *ydata,double *zdata,int nx,int ny,dou
 	double randCCD(void);
 	double randCCD(void) {
 		return (double)rand()/RAND_MAX; }
+
+	inline static double unirandCCD(double lo,double hi) {
+		return randCCD()*(hi-lo)+lo; }
 #endif
 
 
@@ -59,7 +64,8 @@ double interpolate2D(double *xdata,double *ydata,double *zdata,int nx,int ny,dou
 
 /* surfaceprob. */
 double surfaceprob(double k1,double k2,double dt,double difc,double *p2ptr,enum SurfParamAlgo algo) {
-	double step,p1,p2,kapp,kp,p1lo,p1hi,c1,c2,caideal,casim,kapfp,kapbp;
+	double step,p1,p2,kapp,kp,p1lo,p1hi,caideal,casim;
+//	double c1,c2,kapfp,kapbp;
 	int it;
 	const int itmax=16;
 
@@ -76,64 +82,114 @@ double surfaceprob(double k1,double k2,double dt,double difc,double *p2ptr,enum 
 		return surfaceprob(k1,k2,dt,difc,p2ptr,SPAirrAdsQ); }
 
 	else if(algo==SPArevTrans) {																	// RevTrans
-		kapfp=k1*dt/step;
+		p1=p2=-2;
+		surfacetransmit(&k1,&k2,&p1,&p2,difc,difc,dt); }
+		/*kapfp=k1*dt/step;
 		kapbp=k2*dt/step;
 		c1=kapfp+kapbp;
-		c2=1.0/(c1*c1)*(2*c1-SQRTPI/SQRT2+SQRTPI/SQRT2*experfcD(SQRT2*c1));
+		c2=1.0/(c1*c1)*(2*c1+SQRTPI/SQRT2*experfcm1D(SQRT2*c1));
 		p1=kapfp*c2;
-		p2=kapbp*c2; }
+		p2=kapbp*c2;
+		if(p1>1 && p1>p2) {
+			p1=1;
+			p2=kapbp/kapfp; }
+		else if(p2>1) {
+			p2=1;
+			p1=kapfp/kapbp; }}*/
 
 	else if(algo==SPAirrAds || algo==SPAirrAdsT) {								// IrrAds, IrrAdsT
-		kapp=k1*dt/step;
-		p1=lookupirrevadsorb(kapp,1); }
+		if(k1==-1) p1=1;
+		else {
+			kapp=k1*dt/step;
+			p1=lookupirrevadsorb(kapp,1); }}
 
 	else if(algo==SPAirrAdsQ) {																		// IrrAdsQ
-		kapp=k1*dt/step;
-		if(kapp<=0) p1=0;
-		else if(kapp>=0.9) p1=1.0;
+		if(k1==-1) p1=1;
 		else {
-			p1=kapp*(SQRT2PI+kapp*(-3.3332146+kapp*(3.356688+kapp*(-1.5209235))));
-			if(p1>1.0) p1=1.0; }}
+			kapp=k1*dt/step;
+			if(kapp<=0) p1=0;
+			else if(kapp>=0.9) p1=1.0;
+			else {
+				p1=kapp*(SQRT2PI+kapp*(-3.3332146+kapp*(3.356688+kapp*(-1.5209235))));
+				if(p1>1.0) p1=1.0; }}}
 
 	else if(algo==SPAirrAdsEC) {																	// IrrAdsEC
-		kapp=k1*dt/step;
-		p1=kapp*SQRT2PI;
-		if(p1<0) p1=0;
-		else if(p1>1) p1=1; }
+		if(k1==-1) p1=1;
+		else {
+			kapp=k1*dt/step;
+			p1=kapp*SQRT2PI;
+			if(p1<0) p1=0;
+			else if(p1>1) p1=1; }}
 
 	else if(algo==SPArevAds) {																		// RevAds
-		kapp=k1*dt/step;
-		kp=k2*dt;
-		p1=lookuprevads(kapp,kp,1,&p2); }
+		if(k1==-1 && k2==-1) p1=p2=1;
+		else if(k1==-1) {
+			p1=1;
+			p2=1.0-exp(-k2*dt); }
+		else if(k2==-1) {
+			p2=1;
+			p1=lookupirrevadsorb(k1*dt/step,1); }
+		else {
+			kapp=k1*dt/step;
+			kp=k2*dt;
+			p1=lookuprevads(kapp,kp,1,&p2); }}
 
 	else if(algo==SPArevAdsND) {																	// RevAdsND
-		kapp=k1*dt/step;
-		kp=k2*dt;
-		p2=1.0-exp(-kp);
-		caideal=kapp*step/kp;
-		p1lo=p1=0;
-		p1hi=1.0;
-		for(it=0;it<itmax;it++) {
-			p1=0.5*(p1lo+p1hi);
-			casim=lookuprevadsorbnd(p1,p2);
-			if(casim>caideal) p1hi=p1;
-			else p1lo=p1; }
-		p1=0.5*(p1lo+p1hi); }
+		if(k1==-1 && k2==-1) p1=p2=1;
+		else if(k1==-1) {
+			p1=1;
+			p2=1.0-exp(-k2*dt); }
+		else if(k2==-1) {
+			p2=1;
+			p1=lookupirrevadsorb(k1*dt/step,1); }
+		else {
+			kapp=k1*dt/step;
+			kp=k2*dt;
+			p2=1.0-exp(-kp);
+			caideal=kapp*step/kp;
+			p1lo=p1=0;
+			p1hi=1.0;
+			for(it=0;it<itmax;it++) {
+				p1=0.5*(p1lo+p1hi);
+				casim=lookuprevadsorbnd(p1,p2);
+				if(casim>caideal) p1hi=p1;
+				else p1lo=p1; }
+			p1=0.5*(p1lo+p1hi); }}
 
 	else if(algo==SPAirrDes) {																		// IrrDes
-		if(k2<=0) k2=k1;
-		p1=k1/k2*(1.0-exp(-k2*dt)); }
+		if(k1==-1) p1=1;
+		else {
+			if(k2<=0) k2=k1;
+			p1=k1/k2*(1.0-exp(-k2*dt)); }}
 
 	else if(algo==SPArevDes) {																		// RevDes
-		p2=surfaceprob(k2,k1,dt,difc,&p1,SPArevAds); }
+		if(k1==-1 && k2==-1) p1=p2=1;
+		else if(k1==-1) {
+			p1=1;
+			p2=lookupirrevadsorb(k2*dt/step,1); }
+		else if(k2==-1) {
+			p1=1.0-exp(-k2*dt);
+			p2=1; }
+		else
+			p2=surfaceprob(k2,k1,dt,difc,&p1,SPArevAds); }
 
 	else if(algo==SPAirrFlip) {																		// IrrFlip
-		if(k2<=0) k2=k1;
-		p1=k1/k2*(1.0-exp(-k2*dt)); }
+		if(k1==-1) p1=1;
+		else {
+			if(k2<=0) k2=k1;
+			p1=k1/k2*(1.0-exp(-k2*dt)); }}
 
 	else if(algo==SPArevFlip) {																		// RevFlip
-		p1=k1/(k1+k2)*(1.0-exp(-(k1+k2)*dt));
-		p2=k2/(k1+k2)*(1.0-exp(-(k1+k2)*dt)); }
+		if(k1==-1 && k2==-1) p1=p2=1;
+		else if(k1==-1) {
+			p1=1;
+			p2=1.0-exp(-k2*dt); }
+		else if(k2==-1) {
+			p1=1.0-exp(-k1*dt);
+			p2=1; }
+		else {
+			p1=k1/(k1+k2)*(1.0-exp(-(k1+k2)*dt));
+			p2=k2/(k1+k2)*(1.0-exp(-(k1+k2)*dt)); }}
 
 	else {																												// unrecognized
 		p1=p2=-1; }
@@ -235,6 +291,155 @@ double surfacerate(double p1,double p2,double dt,double difc,double *k2ptr,enum 
 
 	if(k2ptr) *k2ptr=k2;
 	return k1; }
+
+
+/* surfacetransmit */
+int surfacetransmit(double *kap1ptr,double *kap2ptr,double *p1ptr,double *p2ptr,double difc1,double difc2,double dt) {
+	double kap1,kap2,p1,p2,c,cterm;
+	double newkap1,newkap2,newp1,newp2;
+	double diff,newdiff,deltakap,newerkap1,newerkap2;
+	static int capprob=1;
+
+	if(difc1<=0 || difc2<=0 || dt<=0) return 1;				// not allowed
+
+	kap1=kap1ptr ? *kap1ptr:-2;
+	kap2=kap2ptr ? *kap2ptr:-2;
+	p1=p1ptr ? *p1ptr:-2;
+	p2=p2ptr ? *p2ptr:-2;
+
+	if(p1==-2 && p2==-2) {														// find probabilities from kappas
+		if(kap1==-2 || kap2==-2)
+			return 2;
+		else if(kap1==0 && kap2==0) {
+			newp1=0;
+			newp2=0; }
+		else if(kap1==0 && kap2==-1) {
+			newp1=0;
+			newp2=1; }
+		else if(kap1==-1 && kap2==0) {
+			newp1=1;
+			newp2=0; }
+		else if(kap1==-1 && kap2==-1) {
+			if(difc1<=difc2) {
+				newp1=1;
+				newp2=sqrt(difc1/difc2); }
+			else {
+				newp1=sqrt(difc2/difc1);
+				newp2=1; }}
+		else if(kap1==-1) {
+			newp1=1;
+			newp2=-2;
+			newkap1=-2;
+			newkap2=kap2;
+			surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt); }
+		else if(kap2==-1) {
+			newp1=-2;
+			newp2=1;
+			newkap1=kap1;
+			newkap2=-2;
+			surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt); }
+		else {
+			c=sqrt(dt)*(kap1/sqrt(difc1)+kap2/sqrt(difc2));
+			cterm=(2*c/sqrt(PI)+experfcm1D(c))/(c*c);
+			newp1=kap1*sqrt(PI*dt)/sqrt(difc1)*cterm;
+			newp2=kap2*sqrt(PI*dt)/sqrt(difc2)*cterm; }
+		if(capprob) {
+			if(newp1>1) {
+				newp1=1;
+				newp2=kap2/kap1*sqrt(difc1/difc2); }
+			if(newp2>1) {
+				newp2=1;
+				newp1=kap1/kap2*sqrt(difc2/difc1); }}
+		if(p1ptr) *p1ptr=newp1;
+		if(p2ptr) *p2ptr=newp2; }
+
+	else if(kap1==-2 && kap2==-2) {										// find kappas from probabilities using greedy random walk
+		if(p1==-2 || p2==-2)
+			return 2;
+		else if(p1==0 && p2==0) {
+			newkap1=0;
+			newkap2=0; }
+		else {
+			capprob=0;
+			newkap1=(p1==0)?0:1;
+			newkap2=(p2==0)?0:1;
+			newp1=newp2=-2;
+			surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt);
+			diff=(newp1-p1)*(newp1-p1)+(newp2-p2)*(newp2-p2);
+			deltakap=0.5;
+			while(deltakap>0.001) {
+				newerkap1=(p1==0)?0:newkap1*(1+unirandCCD(-deltakap,deltakap));
+				newerkap2=(p2==0)?0:newkap2*(1+unirandCCD(-deltakap,deltakap));
+				newp1=newp2=-2;
+				surfacetransmit(&newerkap1,&newerkap2,&newp1,&newp2,difc1,difc2,dt);
+				newdiff=(newp1-p1)*(newp1-p1)+(newp2-p2)*(newp2-p2);
+				if(newdiff<diff) {
+					newkap1=newerkap1;
+					newkap2=newerkap2;
+					diff=newdiff;
+					deltakap*=1.1;
+					if(deltakap>0.5) deltakap=0.5; }
+				else {
+					deltakap*=0.99; }}
+			capprob=1; }
+		if(kap1ptr) *kap1ptr=newkap1;
+		if(kap2ptr) *kap2ptr=newkap2; }
+
+	else if(kap1==-2 && p2==-2) {											// p1 and kap2 are known
+		if(p1==-2 || kap2==-2)
+			return 2;
+		else if(p1==0 && kap2==0) {
+			newkap1=0;
+			newp2=0; }
+		else if(p1==0) {
+			newkap1=0;
+			newkap2=kap2;
+			newp1=-2;
+			newp2=-2;
+			surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt); }
+		else if(kap2==-1) {
+			newp1=p1;
+			newp2=1;
+			newkap1=-2;
+			newkap2=-2;
+			surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt); }
+		else {																					// find only kap1 using greedy random walk
+			capprob=0;
+			newkap1=1;
+			newkap2=kap2;
+			newp1=newp2=-2;
+			surfacetransmit(&newkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt);
+			diff=(newp1-p1)*(newp1-p1);
+			deltakap=0.5;
+			while(deltakap>0.001) {
+				newerkap1=newkap1*(1+unirandCCD(-deltakap,deltakap));
+				newp1=newp2=-2;
+				surfacetransmit(&newerkap1,&newkap2,&newp1,&newp2,difc1,difc2,dt);
+				newdiff=(newp1-p1)*(newp1-p1);
+				if(newdiff<diff) {
+					newkap1=newerkap1;
+					diff=newdiff;
+					deltakap*=1.1;
+					if(deltakap>0.5) deltakap=0.5; }
+				else {
+					deltakap*=0.99; }}
+			capprob=1; }
+		if(capprob && newp2>1) {
+			newp2=1;
+			newkap1=p1/newp2*kap2*sqrt(difc1/difc2); }
+		if(p2ptr) *p2ptr=newp2;
+		if(kap1ptr) *kap1ptr=newkap1; }
+
+	else if(p1==-2 && kap2==-2) {
+		newp1=p1;
+		newp2=p2;
+		newkap1=kap1;
+		newkap2=kap2;
+		surfacetransmit(&newkap2,&newkap1,&newp2,&newp1,difc2,difc1,dt);
+		if(p1ptr) *p1ptr=newp1;
+		if(kap2ptr) *kap2ptr=newkap2; }
+
+	return 0; }
 
 
 
@@ -867,6 +1072,13 @@ double experfcD(double x) {
 		ans=1.0+xxinv*(-1.0/2.0+xxinv*(3.0/4.0+xxinv*(-15.0/8.0+xxinv*(105.0/16.0+xxinv*(-945.0/32.0)))));
 		ans/=x*SQRTPI;
 		if(x<0) ans+=2.0*exp(x*x); }
+	return ans; }
+
+double experfcm1D(double x) {
+	double ans;
+
+	if(fabs(x)>0.05) ans=experfcD(x)-1;
+	else ans=x*(-2.0/SQRTPI+x*(1.0+x*(-4.0/3.0/SQRTPI+x*(1.0/2.0+x*(-8.0/15.0/SQRTPI+x*(1.0/6.0+x*(-16.0/105.0/SQRTPI+x*(1.0/24.0))))))));
 	return ans; }
 
 #endif

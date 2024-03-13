@@ -3,6 +3,7 @@ Library for runtime command interpreter used for various simulations.
 Copyright 2004-2007 by Steven Andrews.  This work is distributed under the terms
 of the Gnu Lesser General Public License (LGPL). */
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -856,6 +857,7 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 	FILE *fptr;
 
 	if(!cmds) return 0;
+	errno=0;
 	for(fid=0;fid<cmds->nfile;fid++) {
 		if(cmds->fptr[fid] && strcmp(cmds->fname[fid],"stdout") && strcmp(cmds->fname[fid],"stderr"))
 			fclose(cmds->fptr[fid]);
@@ -887,7 +889,7 @@ int scmdopenfiles(cmdssptr cmds,int overwrite) {
 			if(cmds->fappend[fid]) cmds->fptr[fid]=fopen(str1,"a");
 			else cmds->fptr[fid]=fopen(str1,"w");
 			if(!cmds->fptr[fid]) {
-				SCMDPRINTF(cmds->simvd,7,"Failed to open file '%s' for writing\n",cmds->fname[fid]);
+				SCMDPRINTF(cmds->simvd,7,"Failed to open file '%s' for writing. Error number: %d.\n",cmds->fname[fid],errno);
 				return 1; }}}
 
 	return 0; }

@@ -33,12 +33,12 @@ end_surface
 
 start_surface surf
 rate red fsoln bsoln 5 green
-rate green bsoln fsoln 1 red
-# The concentration ratio equals the transmission coefficient ratio,
-# so the latter must depend on the diffusion coefficients (i.e. the
-# transmission coefficients differ because of different diffusion
-# coefficients, not to make this active transport; this model is for
-# passive transport).
+rate green bsoln fsoln 5 red
+# The transmission coefficient ratio equals the equilibrium concentration ratio.
+# The eq. concentration ratio is independent of diffusion coefficients, which can
+# be seen from the Boltzmann distribution and assuming equal energy inside and
+# outside the rafts, which then implies that the transmission coefficient ratio
+# is the same in both directions.
 color front 1 0.7 0
 color back 0.6 0 0.6
 thickness 2

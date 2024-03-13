@@ -236,7 +236,7 @@ unsigned char fromHex(const char* src) {
 	using std::istringstream;
 /* loadHighResVolumeSamples */
 int loadHighResVolumeSamples(simptr sim,ParseFilePtr *pfpptr,char *line2) {		//?? needs to be added to user manual
-	char errstring[STRCHAR];
+	char errstring[STRCHARLONG];
 	
 	char word[STRCHAR];
 	ParseFilePtr pfp = *pfpptr;
@@ -865,7 +865,7 @@ int compartupdatebox_volumeSample(simptr sim,compartptr cmpt,boxptr bptr,double 
 
 /* compartreadstring */
 compartptr compartreadstring(simptr sim,ParseFilePtr pfp,compartptr cmpt,const char *word,char *line2) {
-	char nm[STRCHAR],nm1[STRCHAR];
+	char nm[STRCHARLONG],nm1[STRCHARLONG];
 	int s,er,cl,dim,itct;
 	double v1[DIMMAX];
 	enum CmptLogic sym;
@@ -933,7 +933,7 @@ compartptr compartreadstring(simptr sim,ParseFilePtr pfp,compartptr cmpt,const c
 /* loadcompart */
 int loadcompart(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 	ParseFilePtr pfp;
-	char word[STRCHAR],errstring[STRCHAR];
+	char word[STRCHARLONG],errstring[STRCHARLONG];
 	int done,pfpcode,firstline2;
 	compartptr cmpt;
 

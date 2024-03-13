@@ -1,0 +1,52 @@
+# Demonstration of diffusion on 3D surfaces
+# units are nanometer and milliseconds
+
+define SEED 1
+define NMOL 200
+
+define VMOL 0 500 0	# top of sphere
+
+graphics opengl_better
+light room ambient 0 0 0
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
+
+random_seed SEED
+gauss_table_size 65536
+
+dim 3
+boundaries x -500 500
+boundaries y -500 500
+boundaries z -500 500
+
+boxsize 1000
+
+species red
+
+difc red(all) 100	# 100 nm^2/ms = 0.1 um^2/s
+
+color red(all) red
+display_size red(all) 10
+
+time_start 0
+time_stop 1000
+time_step 0.1
+
+frame_thickness 0
+
+start_surface surf1
+color both lightgrey
+polygon both fe
+shininess both 10
+thickness 2
+panel sphere 0 0 0  500 30 30 sph1
+end_surface
+
+surface_mol NMOL red(up) surf1 sph sph1  VMOL
+
+cmd B pause
+
+end_file
+

@@ -1123,15 +1123,11 @@ void RenderFilaments(simptr sim) {
 					glPointSize((GLfloat)filtype->edgepts);
 					glBegin(GL_POINTS); }
 
-				for(vtx=fil->frontbs;vtx<fil->nbs+fil->frontbs;vtx++) {
-					if(filtype->isbead)
-						point=fil->beads[vtx]->xyz;
-					else
-						point=fil->segments[vtx]->xyzfront;
+				for(vtx=fil->frontseg;vtx<fil->nseg+fil->frontseg;vtx++) {
+					point=fil->segments[vtx]->xyzfront;
 					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
-					if(!filtype->isbead) {
-						point=fil->segments[vtx-1]->xyzback;
-						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
+					point=fil->segments[vtx-1]->xyzback;
+					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
 				glEnd(); }
 
 			else if(drawmode&DMface) {
@@ -1141,7 +1137,7 @@ void RenderFilaments(simptr sim) {
 					//glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(srf->fcolor,glfvect,4));
 					//glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(srf->bcolor,glfvect,4));
 					glMateriali(GL_FRONT,GL_SHININESS,(GLint)filtype->shiny); }
-				for(vtx=fil->frontbs;vtx<fil->nbs+fil->frontbs;vtx++)
+				for(vtx=fil->frontseg;vtx<fil->nseg+fil->frontseg;vtx++)
 					/*gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor)*/; }
 			if(glIsEnabled(GL_LINE_STIPPLE))
 				glDisable(GL_LINE_STIPPLE); }}
