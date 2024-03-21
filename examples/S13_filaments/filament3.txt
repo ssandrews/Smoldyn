@@ -5,9 +5,9 @@
 graphics opengl_better
 
 dim 3
-boundaries x -1000 1000 r
-boundaries y -1000 1000 r
-boundaries z -1000 1000 r
+boundaries x -100 100 r
+boundaries y -100 100 r
+boundaries z -100 100 r
 
 species red
 
@@ -21,28 +21,27 @@ time_step 0.01
 
 frame_thickness 0
 
-mol 1 red u u u
+#mol 1 red u u u
 
 start_filament_type template
 color black
 thickness 2
 polygon edge
 kT 1
-dynamics rouse
+dynamics none
 standard_length 5
 standard_angle 0 0 0
-force_length 0
+force_length -1
 force_angle 0 0 0
 #random_segments 49 10 50 1
-bead_radius 2
 viscosity 3
 end_filament_type
 
-random_filament fil1 template 49  10 50 1
-#random_filament fil2 template 49  20 50 1
-#random_filament fil3 template 49  30 50 1
-#random_filament fil4 template 49  40 50 1
-#random_filament fil5 template 49  50 50 1
+random_filament fil1 template 49  10 50 1 u u u
+random_filament fil2 template 49  20 50 1 u u u
+random_filament fil3 template 49  30 50 1 u u u
+random_filament fil4 template 49  40 50 1 u u u
+random_filament fil5 template 49  50 50 1 u u u
 
 end_file
 

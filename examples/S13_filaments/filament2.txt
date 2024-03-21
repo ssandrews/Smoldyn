@@ -22,17 +22,26 @@ frame_thickness 0
 
 mol 1 red u u u
 
-start_filament_type red
+start_filament_type redtype
 color red
 thickness 4
 polygon edge
 kT 1
 standard_length 2
 standard_angle 0 0 0
-force_length 0
-force_angle 100 80 0
+force_length 1
+force_angle 100 80 -1
 end_filament_type
 
+new_filament redtype red
+new_filament redtype red2
+new_filament redtype red3
+new_filament redtype red4
+new_filament redtype red5
+new_filament redtype red6
+new_filament redtype red7
+new_filament redtype red8
+new_filament redtype red9
 
 filament red copy red2
 filament red copy red3
@@ -63,16 +72,18 @@ filament red7 random_segments 20
 filament red8 random_segments 20
 filament red9 random_segments 20
 
-start_filament green
+start_filament_type greentype
 color green
 thickness 2
 polygon edge
 kT 1
 standard_length 2
 standard_angle 0 0.5 0.5
-force_length 0
+force_length -1
 force_angle 10 0 0
-end_filament
+end_filament_type
+
+new_filament greentype green
 
 filament green copy green2
 filament green copy green3

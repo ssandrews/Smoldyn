@@ -1413,6 +1413,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	else if(!strcmp(word,"new_surface")) {				// new_surface
 		CHECKS(dim>0,"need to enter dim before new_surface");
 		srf=surfreadstring(sim,pfp,NULL,"name",line2);
+		if(!srf) pfp=NULL;
 		CHECK(srf!=NULL); }
 
 	else if(!strcmp(word,"surface")) {						// surface
@@ -1426,6 +1427,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(s>=0,"surface is unrecognized");
 		srf=sim->srfss->srflist[s];
 		srf=surfreadstring(sim,pfp,srf,nm1,line2);
+		if(!srf) pfp=NULL;
 		CHECK(srf!=NULL); }
 
 	// compartments
@@ -1439,6 +1441,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"new_compartment")) {		// new_compartment
 		cmpt=compartreadstring(sim,pfp,NULL,"name",line2);
+		if(!cmpt) pfp=NULL;
 		CHECK(cmpt!=NULL); }
 
 	else if(!strcmp(word,"compartment")) {				// compartment
@@ -1451,6 +1454,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(c>=0,"compartment is unrecognized");
 		cmpt=sim->cmptss->cmptlist[c];
 		cmpt=compartreadstring(sim,pfp,cmpt,nm1,line2);
+		if(!cmpt) pfp=NULL;
 		CHECK(cmpt!=NULL); }
 
 	// ports
@@ -1464,6 +1468,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"new_port")) {					// new_port
 		port=portreadstring(sim,pfp,NULL,"name",line2);
+		if(!port) pfp=NULL;
 		CHECK(port!=NULL); }
 
 	else if(!strcmp(word,"port")) {							// port
@@ -1476,6 +1481,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(prt>=0,"port is unrecognized");
 		port=sim->portss->portlist[prt];
 		port=portreadstring(sim,pfp,port,nm1,line2);
+		if(!port) pfp=NULL;
 		CHECK(port!=NULL); }
 
 	// filaments
@@ -1485,6 +1491,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"new_filament")) {				// new_filament
 		fil=filreadstring(sim,pfp,NULL,NULL,"name",line2);
+		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
 	else if(!strcmp(word,"filament")) {						// filament
@@ -1499,6 +1506,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		filtype=sim->filss->filtypes[ft];
 		fil=filtype->fillist[f];
 		fil=filreadstring(sim,pfp,fil,filtype,nm1,line2);
+		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
 	else if(!strcmp(word,"random_filament")) {		// random_filament
@@ -1515,15 +1523,23 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		line2=strnword(line2,3);
 
 		CHECKS(line2,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
-		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
-		CHECKS(itct==1,"random_filament format: number [x y z theta phi chi] [thickness]");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);	// number of segments
+		CHECKS(itct==1,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
 		CHECKS(i1>0,"number needs to be >0");
 		line2=strnword(line2,2);
-		if(fil->nseg==0) {
+		if(fil->nseg==0 && dim==3) {
 			CHECKS(line2,"missing position and angle information");
 			itct=sscanf(line2,"%s %s %s %s %s %s",str1,str2,str3,str4,str5,str6);
-			CHECKS(itct==6,"random_filament format: number [x y z theta phi chi] [thickness]");
+			CHECKS(itct==6,"random_filament format: name type number [x y z theta phi chi] [thickness]");
 			line2=strnword(line2,7); }
+		else if(fil->nseg==0 && dim==2) {
+			CHECKS(line2,"missing position and angle information");
+			itct=sscanf(line2,"%s %s %s",str1,str2,str4);
+			CHECKS(itct==3,"random_filament format: name type number [x y theta] [thickness]");
+			sprintf(str3,"%i",0);
+			sprintf(str5,"%i",0);
+			sprintf(str6,"%i",0);
+			line2=strnword(line2,4); }
 		else {
 			sprintf(str1,"%i",0);
 			sprintf(str2,"%i",0);
@@ -1534,7 +1550,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);
-			CHECKS(itct==1,"random_segments format: number [x y z theta phi chi] [thickness]");
+			CHECKS(itct==1,"random_segments format: name type number [x y z theta phi chi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
 		er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);

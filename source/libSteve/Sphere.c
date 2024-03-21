@@ -18,9 +18,11 @@ double Work[9],Work2[9];
 
 void Sph_Cart2Sc(const double *Cart,double *Sc) {
 	Work[0]=sqrt(Cart[0]*Cart[0]+Cart[1]*Cart[1]+Cart[2]*Cart[2]);
-	Work[1]=Work[0]>0?acos(Cart[2]/Work[0]):0;
-	Work[2]=atan2(Cart[1],Cart[0]);
-	if(Work[2]<0) Work[2]+=2.0*PI;
+	if(Work[0]>0) {
+		Work[1]=acos(Cart[2]/Work[0]);
+		Work[2]=atan2(Cart[1],Cart[0]); }
+	else
+		Work[1]=Work[2]=0;
 	Sc[0]=Work[0];
 	Sc[1]=Work[1];
 	Sc[2]=Work[2];
@@ -53,13 +55,22 @@ void Sph_Xyz2Xyz(const double *Xyz1,double *Xyz2) {
 	Xyz2[0]=Xyz1[0];
 	Xyz2[1]=Xyz1[1];
 	Xyz2[2]=Xyz1[2];
-	while(Xyz2[0]>PI) Xyz2[0]-=2.0*PI;
-	while(Xyz2[0]<-PI) Xyz2[0]+=2.0*PI;
-	while(Xyz2[1]>PI) Xyz2[1]-=2.0*PI;
-	while(Xyz2[1]<-PI) Xyz2[1]+=2.0*PI;
-	while(Xyz2[2]>PI) Xyz2[2]-=2.0*PI;
-	while(Xyz2[2]<-PI) Xyz2[2]+=2.0*PI;
 	return; }
+
+
+void Sph_Eax2Xyz(const double *Eax,double *Xyz) {
+	double cf,cq,cy,sf,sq,sy;
+
+	cq=cos(Eax[0]);
+	cf=cos(Eax[1]);
+	cy=cos(Eax[2]);
+	sq=sin(Eax[0]);
+	sf=sin(Eax[1]);
+	sy=sin(Eax[2]);
+	Xyz[0]=atan2(cy*sf+cq*cf*sy,cy*cf-cq*sf*sy);
+	Xyz[1]=asin(-sy*sq);
+	Xyz[2]=atan2(cy*sq,cq);
+	return;	}
 
 
 void Sph_Eax2Dcm(const double *Eax,double *Dcm) {
@@ -251,6 +262,26 @@ void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3) {
 	Dcm3[6]=Work[6];
 	Dcm3[7]=Work[7];
 	Dcm3[8]=Work[8];
+	return; }
+
+
+void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2) {
+	Work[0]=Dcm[0]*Cart[0]+Dcm[1]*Cart[1]+Dcm[2]+Cart[2];
+	Work[1]=Dcm[3]*Cart[0]+Dcm[4]*Cart[1]+Dcm[5]+Cart[2];
+	Work[2]=Dcm[6]*Cart[0]+Dcm[7]*Cart[1]+Dcm[8]+Cart[2];
+	Cart2[0]=Work[0];
+	Cart2[1]=Work[1];
+	Cart2[2]=Work[2];
+	return; }
+
+
+void Sph_DcmtxCart(const double *Dcm,const double *Cart,double *Cart2) {
+	Work[0]=Dcm[0]*Cart[0]+Dcm[3]*Cart[1]+Dcm[6]+Cart[2];
+	Work[1]=Dcm[1]*Cart[0]+Dcm[4]*Cart[1]+Dcm[7]+Cart[2];
+	Work[2]=Dcm[2]*Cart[0]+Dcm[5]*Cart[1]+Dcm[8]+Cart[2];
+	Cart2[0]=Work[0];
+	Cart2[1]=Work[1];
+	Cart2[2]=Work[2];
 	return; }
 
 

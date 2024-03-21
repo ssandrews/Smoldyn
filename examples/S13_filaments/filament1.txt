@@ -24,11 +24,12 @@ frame_thickness 0
 start_filament_type tread
 color black
 thickness 2
+dynamics none
 polygon edge
 kT 1
 treadmill_rate 2
 standard_length 2
-standard_angle 0 0 0
+standard_angle 0.1 0 0
 force_length 10
 force_angle 5 -1 -1
 end_filament_type

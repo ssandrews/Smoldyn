@@ -770,15 +770,15 @@ enum FilamentBiology
 enum FilamentDynamics
 {
     FDnone,
-    FDnewton
+    FDeuler
 };
 
 typedef struct segmentstruct
 {
     struct filamentstruct* fil;				// owning filament
     int index;                        // self index along filament
-    double xyzfront[3]; 							// Coords. for segment front
-    double xyzback[3]; 								// Coords. for segment back
+    double *xyzfront;                 // Coords. for segment front
+    double *xyzback;                  // Coords. for segment back
     double len;         							// segment length
     double thk;         							// thickness of segment
     double ypr[3];      							// relative ypr angles
@@ -793,7 +793,10 @@ typedef struct filamentstruct
     int maxseg;                         // number of segments allocated
     int nseg;                           // number of segments
     int frontseg;                       // index of front segment
-    segmentptr* segments;               // array of segments if any
+    segmentptr* segments;               // array of segments (nseg)
+    double **nodes;                     // list of nodes (nseg+1)
+    double **forces;										// list of forces on nodes (nseg+1)
+    double *torques;										// list of segment torques (nseg)
     struct filamentstruct* frontend;    // what front attaches to
     struct filamentstruct* backend;     // what back attaches to
     int maxbranch;                      // max branches off this filament

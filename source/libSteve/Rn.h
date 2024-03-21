@@ -65,6 +65,7 @@ float *transM(float *a,float *c,int m,int n);
 float dotVV(float *a,float *b,int n);
 double dotVVD(double *a,double *b,int n);
 void crossVV(float *a,float *b,float *c);
+void crossVVD(const double *a,const double *b,double *c);
 float distanceVV(float *a,float *b,int n);
 double distanceVVD(double *a,double *b,int n);
 float normalizeV(float *a,int n);

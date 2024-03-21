@@ -38,7 +38,7 @@ end_filament_type
 
 
 start_filament black template
-random_segments 5  10 50 1  u u u
+random_segments 15  10 50 1  u u u
 #copy fil2
 #name black fil2
 #translate + 15 15 0
@@ -49,7 +49,6 @@ filament template copy fil2
 filament fil2 translate + 15 15 0
 
 
-/*
 filament template copy fil3
 filament template copy fil4
 filament template copy fil5
@@ -57,7 +56,6 @@ filament template copy fil6
 filament template copy fil7
 filament template copy fil8
 filament template copy fil9
-*/
 
 /*
 filament template copy fil10
@@ -259,13 +257,13 @@ start_surface bounds
 action both all reflect
 polygon both edge
 thickness 1
-panel cyl 50 50 0 50 50 2 50 50 1
-#panel rect +0	0 0 0		100 2
-#panel rect -0	100 0 0		100 2
-#panel rect +1	0 0 0		100 2
-#panel rect -1	0 100 0		100 2
-#panel rect +2	0 0 0		100 100
-#panel rect -2	0 0 2		100 100
+#panel cyl 50 50 0 50 50 2 50 50 1
+panel rect +0	0 0 0		100 2
+panel rect -0	100 0 0		100 2
+panel rect +1	0 0 0		100 2
+panel rect -1	0 100 0		100 2
+panel rect +2	0 0 0		100 100
+panel rect -2	0 0 2		100 100
 end_surface
 
 end_file

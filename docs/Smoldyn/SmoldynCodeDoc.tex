@@ -7,6 +7,8 @@
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{amsmath}
+\usepackage{gensymb}
+\usepackage{bm}
 
 % settings for listings package
 \lstset{
@@ -3024,7 +3026,7 @@ This function calculates all of the geometrical data that are stored with the pa
 \hfill \\
 Performs translation and expansion of a surface panel, while maintaining the panel shape as much as possible. Enter the translation vector in \ttt{translate}, the origin coordinates about which the expansion should be performed in \ttt{origin}, and the expansion values for the different coordinates in \ttt{expand}. If expansion should be isotropic, enter the same values for all components of the \ttt{epxand} vector. Each component should be 1 for no expansion, less than 1 for retraction, and greater than 1 for expansion. Negative values indicate inversion. This function updates all panel \ttt{point} and \ttt{front} values. This lowers the surface condition, box condition, and compartment condition to indicate that some recomputation is needed. Note that Smoldyn cannot distort spheres, hemisphere, cylinders, or disks, so anisotropic expansion is only done approximately.
 
-Most of this function is quite straightforward. Each panel point value that represents an actual coordinate is transformed through translation and expansion. Normals are recomputed as needed. Note that all computations are done in-place, which is usually easy, but some care is required to make sure that one is using the correct values. Several functions transform the radius of a panel. The math for this is as follows. Consider a 2D system, a radius vector (often given as \ttt{radiusv} in the code), $\mathbf{r}$, and suppose that the expansion vector is $(e_x, e_y)$. Also assume this radius vector starts at the expansion origin. In this case, the transformed vector endpoint will be at $(e_x r_x, e_y r_y)$. This means that the new radius will be $(e_x^2r_x^2+e_y^2r_y^2)^{1/2}$. If the old radius vector has length $r$ and is parallel to the unit vector $\mathbf{n}$, then the new radius is $r(e_x^2n_x^2+e_y^2n_y^2)^{1/2}$. For 3D objects, anisotropic expansion would normally distort shapes away from being perfect cylinders, hemispheres, spheres, or disks. However, Smoldyn does not support such distorted shapes, so this function just picks specific radius vectors and uses those.
+Most of this function is quite straightforward. Each panel point value that represents an actual coordinate is transformed through translation and expansion. Normals are recomputed as needed. Note that all computations are done in-place, which is usually easy, but some care is required to make sure that one is using the correct values. Several functions transform the radius of a panel. The math for this is as follows. Consider a 2D system, a radius vector (often given as \ttt{radiusv} in the code), $\bm{r}$, and suppose that the expansion vector is $(e_x, e_y)$. Also assume this radius vector starts at the expansion origin. In this case, the transformed vector endpoint will be at $(e_x r_x, e_y r_y)$. This means that the new radius will be $(e_x^2r_x^2+e_y^2r_y^2)^{1/2}$. If the old radius vector has length $r$ and is parallel to the unit vector $\bm{n}$, then the new radius is $r(e_x^2n_x^2+e_y^2n_y^2)^{1/2}$. For 3D objects, anisotropic expansion would normally distort shapes away from being perfect cylinders, hemispheres, spheres, or disks. However, Smoldyn does not support such distorted shapes, so this function just picks specific radius vectors and uses those.
 
 \item[\ttt{void surftranslatepanel(panelptr pnl, int dim, double *translate);}]
 \hfill \\
@@ -3964,7 +3966,7 @@ Filaments are defined in a heirarchical fashion. At the top level, there is one 
 
 \begin{lstlisting}
 enum FilamentBiology {FBactin, FBmicrotubule, FBintermediate, FBdsDNA, FBssDNA, FBother};
-enum FilamentDynamics {FDnone, FDrouse, FDalberts, FDnedelec};
+enum FilamentDynamics {FDnone, FDeuler};
 \end{lstlisting}
 
 The filament biology enumeration is used to describe what kind of filament this is, which can then be used to pre-populate many of the filament parameters. The filament dynamics enumeration describes what algorithms to use for its dynamics. They are summarized below; this list will be expanded.
@@ -3973,7 +3975,7 @@ The filament biology enumeration is used to describe what kind of filament this 
 Dynamics & Description\\
 \hline
 none & filament is rigid and does not move\\
-newton & use Newton ODE integration\\
+euler & use Euler ODE integration\\
 \end{longtable}
 
 \subsubsection*{Segments}
@@ -3982,8 +3984,8 @@ newton & use Newton ODE integration\\
 typedef struct segmentstruct {
     struct filamentstruct* fil;				// owning filament
     int index;                        // self index along filament
-    double xyzfront[3]; 							// Coords. for segment front
-    double xyzback[3]; 								// Coords. for segment back
+    double *xyzfront;                 // Coords. for segment front
+    double *xyzback;                  // Coords. for segment back
     double len;         							// segment length
     double thk;         							// thickness of segment
     double ypr[3];      							// relative ypr angles
@@ -3994,7 +3996,11 @@ typedef struct segmentstruct {
 
 Segments start by listing the filament that owns them. Then they have their own position within the filament in \ttt{index}; note that the segment array within a filament is shifted by \ttt{frontseg}, so a pointer to the same segment would be found with \ttt{segment->fil->segments[segment->index+segment->fil->frontseg]} and the result would be identical to \ttt{segment}.
 
-\ttt{xyzfront} is the $x, y, z$ coordinate of the segment starting point and \ttt{xyzback} is the $x, y, z$ coordinate of the segment end point. \ttt{len} is the segment length and \ttt{thk} is the segment thickness. \ttt{ypr} is the relative yaw, pitch, and roll angle for the segment relative to the orientation of the prior segment. \ttt{dcm} is the relative direction cosine matrix for the segment relative to the orientation of the one before it. Identical information is contained in \ttt{ypr} and \ttt{dcm}, but the latter is here for faster computation. \ttt{adcm} is the direction cosine matrix for the absolute orientation; again, this information is redundant but included for faster computation. For 2D simulations, only the first 2 values are used in the coordinates vectors and the third coordinate should always equal 0; only the first value (yaw) is used in the ypr angles and the other two should always equal 0; and only the first 2 rows and columns are used in the direction cosine matrices while the others equal 0 for unequal indices and 1 for equal indices.
+\ttt{xyzfront} is the $x, y, z$ coordinate of the segment starting point and \ttt{xyzback} is the $x, y, z$ coordinate of the segment end point. These vectors are not owned by the segment but point to vectors in the \ttt{nodes} element of the owning filament. The back of one segment is the identical vector (same memory address) as the front of the next segment. \ttt{len} is the segment length and \ttt{thk} is the segment thickness.
+
+\ttt{ypr} is the relative yaw, pitch, and roll angle for the segment relative to the orientation of the prior segment. \ttt{dcm} is the relative direction cosine matrix for the segment relative to the orientation of the one before it. Identical information is contained in \ttt{ypr} and \ttt{dcm}, but the latter is here for faster computation. \ttt{adcm} is the direction cosine matrix for the absolute orientation; again, this information is redundant but included for faster computation. Restated, \ttt{ypr} and \ttt{dcm} both represent the bend at the front of the segment, and \ttt{adcm} represents the rotation matrix from the absolute coordinate system to this segment's orientation.
+
+For 2D simulations, only the first 2 values are used in the coordinates vectors (\ttt{xyzfront} and \ttt{xyzback}) and the third coordinate should always equal 0; only the first value (yaw) is used in the ypr angles and the other two should always equal 0; and only the first 2 rows and columns are used in the direction cosine matrices while the others equal 0 for unequal indices and 1 for equal indices.
 
 Segments lengths can vary but standard lengths are constant over an entire filament. This means that segments all have roughly equal lengths. I initially thought that it could be useful to have large standard length variations to focus computation on more important regions, but this is sufficiently hard to program that it's not worth it.\\
 
@@ -4008,6 +4014,7 @@ typedef struct filamentstruct {
     int nseg;                           // number of segments
     int frontseg;                       // index of front segment
     segmentptr* segments;               // array of segments if any
+    double **nodes;                     // list of nodes
     struct filamentstruct* frontend;    // what front attaches to
     struct filamentstruct* backend;     // what back attaches to
     int maxbranch;                      // max branches off this filament
@@ -4023,7 +4030,7 @@ typedef struct filamentstruct {
 
 Each filament data structure represents a single unbranched chain of segments. Multiple filaments of the same type (e.g. two microtubules) are stored in multiple data structures. In the filament data structure, \ttt{filtype} points to the filament type that owns this filament and \ttt{filname} points to the name of this filament; names are assigned by default if not assigned by the user.
 
-Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segments. These are stored in an array, where the index of the front is in \ttt{frontseg}. This is not a circular array, which is more complicated to use, but allows for the front index to be non-zero because this leads to simpler and faster operation if there is regular assembly and/or disassembly. Segments are stored in \ttt{segments}.
+Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segments. These are stored in an array, where the index of the front is in \ttt{frontseg}. This is not a circular array, which is more complicated to use, but allows for the front index to be non-zero because this leads to simpler and faster operation if there is regular assembly and/or disassembly. Segments are stored in \ttt{segments}. The segment endpoints are stored in \ttt{nodes}, which is allocated to be \ttt{maxseg+1} long by 3 elements wide for the $x$, $y$, and $z$ values.
 
 Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{frontend} points to the filament that the front end attaches to and/or \ttt{backend} points to the filament that the back end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}.
 
@@ -4069,7 +4076,7 @@ The \ttt{filss} element points to the filament superstructure that owns this fil
 
 In the graphical display parameters, \ttt{color} is the filament color, with red, green, blue, and alpha values. \ttt{edgepts} is the edge thickness for drawing, \ttt{edgestipple} is the stippling code for the edge stippleing, if any. \ttt{drawmode} is the polymer drawing mode, which can be face, edge, vertex, of a combination of these. \ttt{shiny} is the shininess for graphical display. These graphical display statements are very similar to those used for surfaces.
 
-Filament mechanics information is in the next elements. \ttt{stdlen} is the standard segment length, meaning the segment length at minimum energy, where segments are neither stretched nor compressed. \ttt{stdypr} is the minimum energy relative ypr angle. \ttt{klen} is the stretching force constant. Its value is $< 0$ for an infinite force constant, meaning that the segment lengths are fixed. \ttt{kypr} is the bending force constant. For any element, its value is 0 for zero force constant, meaning a freely jointed chain, and $< 0$ for an infinite force constant, meaning a fixed bending angle. \ttt{kT} is the thermodynamic energy. This parameter isn't ideal here because it allows a different temperature for different components in the simulation, but it's here for now. \ttt{treadrate} is the treadmilling rate constant. \ttt{viscosity} is the medium viscosity for computing drag coefficients. \ttt{filradius} is the radius of segments.
+Filament mechanics information is in the next elements. \ttt{stdlen} is the standard segment length, meaning the segment length at minimum energy, where segments are neither stretched nor compressed. \ttt{stdypr} is the minimum energy relative ypr angle. \ttt{klen} is the stretching force constant. Its value is $< 0$ for an infinite force constant, meaning that the segment lengths are fixed. \ttt{kypr} is the bending force constant. For any element, its value is 0 for zero force constant, meaning a freely jointed chain, and $< 0$ for an infinite force constant, meaning a fixed bending angle. \ttt{kT} is the thermodynamic energy. This parameter isn't ideal here because it allows a different temperature for different components in the simulation, but it's here for now. \ttt{treadrate} is the treadmilling rate constant, with 0 for no treadmilling, a positive number for the back growing and a negative number for the front growing. \ttt{viscosity} is the medium viscosity for computing drag coefficients. \ttt{filradius} is the radius of segments.
 
 Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
 
@@ -4088,32 +4095,148 @@ typedef struct filamentsuperstruct {
 
 The superstructure contains a list of filament types. It starts with its condition element in \ttt{condition} and a pointer up the heirarchy to the simulation structure in \ttt{sim}. The list of filament types is allocated with \ttt{maxtype} entries, has \ttt{ntype} entries, and has list \ttt{ftnames} for the type names and \ttt{filtypes} is the actual list of types.\\
 
-\subsection*{Filament math}
+\subsection*{Filament math - direction cosine matrices}
 
-Following are the basic equations for the filament relative angles ($\mathbf{A}$, \ttt{dcm}), absolute angles ($\mathbf{B}$, \ttt{adcm}), and positions ($\mathbf{x}$, \ttt{xyz}). See also Goldstein, Andrews, 2004 and Andrews, 2014.
+Following are equations for the filament relative angles ($\bm{A}$, \ttt{dcm}), absolute angles ($\bm{B}$, \ttt{adcm}), and positions ($\bm{x}$, \ttt{xyz}). See also Goldstein, Andrews, 2004 and Andrews, 2014. Filament bending is described by the Tait-Bryan convention:
+\begin{longtable}[c]{lcc}
+name & symbol & perpendicular axis \\
+\hline
+yaw & $\phi$ & $z$ \\
+pitch & $\theta$ & $y$ \\
+roll & $\psi$ & $x$
+\end{longtable}
 
-Consider direction cosine matrix $\mathbf{\Phi}$, which can be expanded as
+Consider passive direction cosine matrix (dcm) $\bm{\Phi}$, which can be expanded as
 \begin{equation}
-\mathbf{\Phi} = \left[ \begin{array}{ccc} \Phi_{Xx} & \Phi_{Yx} & \Phi_{Zx} \\ \Phi_{Xy} & \Phi_{Yy} & \Phi_{Zy} \\ \Phi_{Xz} & \Phi_{Yz} & \Phi_{Zz} \end{array} \right]
+\bm{\Phi} = \left[ \begin{array}{ccc} \Phi_{Xx} & \Phi_{Xy} & \Phi_{Xz} \\ \Phi_{Yx} & \Phi_{Yy} & \Phi_{Yz} \\ \Phi_{Zx} & \Phi_{Zy} & \Phi_{Zz} \end{array} \right]
 \label{eq:DirectionCosineMatrix}
 \end{equation}
-One interpretation of the direction cosine matrix is that it converts between two frames of reference. Here, $X$, $Y$, and $Z$ are the unit vectors of the ``lab frame'', meaning the absolute coordinates of the simulation, and $x$, $y$, and $z$ are the unit vectors of the ``molecule frame'', meaning the local coordinates of a filament segment. The direction cosine matrix expresses the dot products of these unit vectors. As a result, each row of the matrix gives the lab frame coordinates of each unit vector of the molecule frame, and each column of the matrix gives the molecule frame coordinates of each unit vector of the lab frame. It is unitary, meaning that all its eigenvalues equal 1, and its transpose is its inverse, so $\mathbf{\Phi}^T \mathbf{\Phi} = \mathbf{1}$, where $\mathbf{1}$ is the identity matrix. Suppose $\mathbf{B}$ is a direction cosine matrix (called an absolute one here) and $\mathbf{p}$ is a column vector in the molecule frame. For example, $\mathbf{p}^T=[1,0,0]$ represents the direction parallel to the segment. Also, $\mathbf{p}_L$ is the same vector but expressed in the lab frame. These vectors can be converted back and forth with
+This dcm converts between two frames of reference. Here, $X$, $Y$, and $Z$ are the unit vectors of the ``lab frame'', meaning the absolute coordinates of the simulation, and $x$, $y$, and $z$ are the unit vectors of the ``molecule frame'', meaning the local coordinates of a filament segment. The dcm expresses the dot products of these unit vectors. As a result, each column of the matrix gives the lab frame coordinates of each unit vector of the molecule frame, and each row of the matrix gives the molecule frame coordinates of each unit vector of the lab frame. It is unitary, meaning that all its eigenvalues equal 1, and its transpose is its inverse, so $\bm{\Phi}^T \bm{\Phi} = \bm{1}$, where $\bm{1}$ is the identity matrix. Left-multiplying a molecule-frame vector by this dcm returns the same vector but now expressed in the lab frame. For example, suppose $\bm{B}$ is a dcm (called an absolute one here) and $\bm{p}$ is a column vector in the molecule frame; a particularly simple vector is $\bm{p}^T=[1,0,0]$, which is the direction parallel to a filament segment. Also, $\bm{p}_L$ is the same vector but expressed in the lab frame. These vectors can be converted back and forth with
 \begin{align}
-\mathbf{p}_L^T &= \mathbf{p}^T \cdot \mathbf{B} \hspace{2cm} \mathbf{p}^T = \mathbf{p}_L^T \cdot \mathbf{B}^T \\
-\mathbf{p}_L &= \mathbf{B}^T \cdot \mathbf{p} \hspace{2cm} \mathbf{p} = \mathbf{B}\cdot \mathbf{p}_L
+\bm{p}_L &= \bm{B} \cdot \bm{p} \hspace{2cm} \bm{p} = \bm{B}^T\cdot \bm{p}_L \\
+\bm{p}_L^T &= \bm{p}^T \cdot \bm{B}^T \hspace{1.5cm} \bm{p}^T = \bm{p}_L^T \cdot \bm{B}
 \end{align}
-Note that the Sphere.c library has the function \ttt{Sph\_DcmtxUnit}.
+The Sphere.c library has functions for these multiplications.
 
-A different interpretation of the direction cosine matrix is that it represents a rotation of a vector in a constant coordinate system, in which it can be called a rotation matrix. Refering back to eq. \ref{eq:DirectionCosineMatrix}, $X$, $Y$, and $Z$ represent the vector direction before rotation and $x$, $y$, and $z$ represent the vector after rotation. Left-multiplying the rotation matrix on a column vector yields the rotated version of the vector.
+The transpose of the dcm listed above performs an active rotation of a vector in a constant coordinate system, in which case it's often called a rotation matrix. Here is the transpose of the dcm given in eq. \ref{eq:DirectionCosineMatrix}.
+\begin{equation}
+\bm{\Phi}^T = \left[ \begin{array}{ccc} \Phi_{Xx} & \Phi_{Yx} & \Phi_{Zx} \\ \Phi_{Xy} & \Phi_{Yy} & \Phi_{Zy} \\ \Phi_{Xz} & \Phi_{Yz} & \Phi_{Zz} \end{array} \right]
+\label{eq:DirectionCosineMatrix}
+\end{equation}
+Now, $X$, $Y$, and $Z$ represent the vector direction before rotation and $x$, $y$, and $z$ represent the vector after rotation. Left-multiplying the rotation matrix on a column vector yields the rotated version of the vector. For example, if $\bm{p}_L$ is a vector before rotation and $\bm{B}^T$ is the active rotation matrix, then it's shown above that $\bm{p} = \bm{B}^T \cdot \bm{p}_L$, in agreement with this description.
 
-For a filament, an unrotated version of segment 0, meaning that it's aligned with the lab coordinate system, lies along direction $[1,0,0]^T$. This gets rotated into its actual direction using the absolute direction cosine matrix $\mathbf{B}_0$, and $\mathbf{A}_0$ is defined to be the same,
-$$\mathbf{B}_0 = \mathbf{A}_0$$
-Right-multiplying either of these, which are obviously the same, by $[1,0,0]^T$ gives the actual segment direction in the lab coordinate system. Segment 1 is rotated from segment 0 by the rotation matrix $\mathbf{A}_1$. Its absolute direction cosine matrix is
-$$\mathbf{B}_1 = \mathbf{A}_1 \cdot \mathbf{B}_0$$
-Again, right-multiplying by $[1,0,0]^T$ gives the segment direction in the lab coordinate system. This pattern continues with additional segments, so
-$$\mathbf{B}_i = \mathbf{A}_i \cdot \mathbf{B}_{i-1} = \mathbf{A}_i \mathbf{A}_{i-1} \cdots \mathbf{A}_1 \mathbf{B}_0$$
-We can also rotate the other direction, going from the back of the filament toward the front, with
-$$\mathbf{B}_i = \mathbf{A}^T_{i+1} \cdot \mathbf{B}_{i+1}.$$
+For a filament, the vector for segment 0 in its own coordinate system lies along direction $\hat{x} = [1,0,0]^T$. In the lab coordinate system, this same vector is $\bm{B}_0 \hat{x}$. For convenience, $\bm{A}_0$ is defined to be the same dcm,
+$$\bm{B}_0 = \bm{A}_0$$
+To convert from the segment 1 coordinate system to the segment 0 coordinate system, the coordinates need to be rotated by $\bm{A}_1$. Thus, the segment 1 direction in lab coordinates is
+$$\bm{B}_1 \hat{x} = \bm{B}_0 \bm{A}_1 \hat{x}$$
+Clearly, the $\hat{x}$ terms can be removed to give the coordinate transformation. This equation contradicts what I wrote in my 2014 paper as well as what I've been assuming all along, which was that the matrices should be in the opposite order, but I believe that it's shown correctly here. This pattern continues with additional segments, so
+$$\bm{B}_i = \bm{B}_{i-1} \bm{A}_i = \bm{B}_0 \bm{A}_1 \cdots \bm{A}_{i-1} \bm{A}_i$$
+In terms of active rotations, the orientation of segment 0 is rotated by $\bm{B}^T_0$ away from the lab frame. The orientation of segment 1 is rotated away from the lab frame first by $\bm{B}^T_0$ and then by $\bm{A}^T_1$. This continues, so that
+$$\bm{B}_i^T = \bm{A}_i^T \bm{B}_{i-1}^T = \bm{A}_i^T \bm{A}_{i-1}^T \cdots \bm{A}_1^T \bm{B}_0^T$$
+Computations can also go from the back of the filament toward the front with
+$$\bm{B}_i = \bm{B}_{i+1} \bm{A}^T_{i+1}$$
+$$\bm{B}_i^T = \bm{A}_{i+1} \bm{B}^T_{i+1}$$
+
+Here's the dcm in more detail, now shown for passive rotation matrix $\bm{A}$ as a product of yaw, pitch, and roll passive rotations.
+\begin{align*}
+\bm{A} &= \bm{X}(\psi) \bm{Y}(\theta) \bm{Z}(\phi) \\
+&= \left[ \begin{array}{ccc} 1 & 0 & 0 \\ 0 & \textrm{c} \psi & \textrm{s} \psi \\ 0 & -\textrm{s} \psi & \textrm{c} \psi \end{array} \right]
+\left[ \begin{array}{ccc} \textrm{c} \theta & 0 & -\textrm{s} \theta \\ 0 & 1 & 0 \\ \textrm{s} \theta & 0 & \textrm{c} \theta \end{array} \right]
+\left[ \begin{array}{ccc} \textrm{c} \phi & \textrm{s} \phi & 0 \\ -\textrm{s} \phi & \textrm{c} \phi & 0 \\ 0 & 0 & 1 \end{array} \right] \\
+&= \left[ \begin{array}{ccc} \textrm{c} \theta \textrm{c} \phi & \textrm{c} \theta \textrm{s} \phi & -\textrm{s} \theta \\ \textrm{s} \psi \textrm{s} \theta \textrm{c} \phi - \textrm{c} \psi \textrm{s} \phi & \textrm{s} \psi \textrm{s} \theta \textrm{s} \phi + \textrm{c} \psi \textrm{c} \phi & \textrm{c} \theta \textrm{s} \psi \\ \textrm{c} \psi \textrm{s} \theta \textrm{c} \phi + \textrm{s} \psi \textrm{s} \phi & \textrm{c} \psi \textrm{s} \theta \textrm{s} \phi - \textrm{s} \psi \textrm{c} \phi & \textrm{c} \theta \textrm{c} \psi \end{array} \right]
+\end{align*}
+
+\subsection*{Filament math - filament forces}
+
+For filament forces from bending angles, consider a pair of segments, labeled as $i-1$ and $i$; their vectors, pointing from front to back as normal, are $\bm{x}_{i-1}$ and $\bm{x}_i$. Their nodes are $i-1$ for the front-most node, $i$ for the middle node, and $i+1$ for the back-most node. The absolute passive dcm for the first segment is $\bm{B}_{i-1}$ and the relative passive dcm for the second segment is $\bm{A}_i$.
+
+Supposing the first segment were fixed and one applied force $\bm{F}_{i+1}$ to the back end node, this would create torque at the center node of
+\begin{equation}
+\bm{\tau}_{i} = \boldsymbol{x}_i \times \bm{F}_{i+1}.
+\label{eq:torque}
+\end{equation}
+This torque is necessarily perpendicular to $\bm{x}_i$ (and $\bm{F}_{i+1}$) but may not be perpendicular to $\bm{x}_{i-1}$. Alternatively, the second segment could be fixed and one applies force $\bm{F}_{i-1}$ to the first node, which would create torque at the center node of
+\begin{equation}
+\bm{\tau}_{i}' = \boldsymbol{x}_{i-1} \times \bm{F}_{i-1}
+\label{eq:torque2}
+\end{equation}
+In practice, the center node exerts a torque from effective yaw, pitch, and roll springs, which then creates forces at the end nodes. Inverting these equations (see Wikipedia ``Cross product'') gives the forces on the nodes that arise from the torques. This inversion is not mathematically unique but can also have components that are parallel to the segments, but those are omitted here because we know from the physical situation that the induced forces must be perpendicular to the segment vectors. The forces are
+\begin{align*}
+\bm{F}_{i+1} &= \frac{\bm{\tau}_{i} \times \bm{x}_i}{| \bm{x}_i|^2} \\
+\bm{F}_{i-1} &= \frac{\bm{\tau}_{i}' \times \bm{x}_{i-1}}{| \bm{x}_{i-1}|^2}
+\end{align*}
+Because the $\bm{\tau}_i$ and $\bm{\tau}'_i$ torques are created from the same yaw, pitch, and roll springs, they are equal to each other but have opposite signs, so
+$$\bm{\tau}_i' = -\bm{\tau}_i$$
+
+In addition to creating forces at the end nodes, the torque created at node $i$ by the springs also induces torques into the two segments around their axes. These segment torques are given as $\tau_{i-1}$ for the first segment and $\tau_i$ for the second segment (no bold face because these are scalars; note that $\tau_i \neq \bm{\tau}_i$ because they refer to different things). These induced torques are the projection of the spring torque onto the segment axes,
+\begin{align*}
+\tau_{i} &= \frac{\bm{\tau}_i \cdot \bm{x}_i}{|\bm{x}_i|} \\
+\tau_{i-1} &= \frac{\bm{\tau}_i' \cdot \bm{x}_{i-1}}{|\bm{x}_{i-1}|}
+\end{align*}
+This shows that spring torques that are perpendicular to the segments create forces at the end nodes and parallel spring torques create torques along the segments.
+
+Considering the yaw spring first, it creates torques
+$$\bm{\tau}_{\phi,i} = - k_\phi \Delta \phi_i \hat{z} = -\bm{\tau}_{\phi,i}'.$$
+Here and below, we work in the coordinate system of the first segment, so $\hat{x}$, $\hat{y}$ and $\hat{z}$ are unit vectors for the first segment's coordinate system. In this coordinate system,
+$$\bm{x}_{i-1} = \frac{\hat{x}}{|\bm{x}_{i-1}|}$$
+$$\bm{x}_{i} = \frac{\bm{A}_i^T \hat{x}}{|\bm{x}_{i}|}$$
+Also, $\Delta \phi_i = (\phi_i-\phi \degree)$ is the yaw spring displacement. Similarly, $\Delta \theta_i = (\theta_i-\theta \degree)$ and $\Delta \psi_i = (\psi_i-\psi \degree)$. This yaw spring torque creates forces
+\begin{align*}
+\bm{F}_{i+1} &= \frac{- k_\phi \Delta \phi_i \hat{z} \times \bm{x}_i}{| \bm{x}_i|^2}
+= \frac{- k_\phi \Delta \phi_i}{| \bm{x}_i|} \hat{z} \times (\bm{A}_i^T \hat{x})  \\
+\bm{F}_{i-1} &= \frac{k_\phi \Delta \phi_i \hat{z} \times \bm{x}_{i-1}}{| \bm{x}_{i-1}|^2}
+= \frac{k_\phi \Delta \phi_i}{| \bm{x}_{i-1}|}\hat{z} \times \hat{x}
+\end{align*}
+These forces are helpful to think about, but turn out not to be useful directly. Instead, we'll add up all the torques first.
+
+The pitch spring creates torques
+$$\bm{\tau}_{\theta,i} = - k_\theta \Delta \theta_i \bm{Z}^T(\phi_i) \hat{y} = -\bm{\tau}_{\theta,i}',$$
+where $\bm{Z}^T(\phi_i)$ represents the yaw active rotation matrix. It's here because yaw is performed first, and then pitch, so pitch deviations create a torque that's along the rotated $y$-axis. The roll spring creates torques
+$$\bm{\tau}_{\psi,i} = - k_\psi \Delta \psi_i \bm{Y}^T(\theta_i) \bm{Z}^T(\phi_i) \hat{x} = -\bm{\tau}_{\psi,i}',$$
+where $\bm{Y}^T(\theta_i)$ represents the pitch active rotation matrix. It's here because yaw is performed first, then pitch, and then roll, so roll deviations create a torque that's along the rotated $x$-axis.
+
+Adding up these torques leads to (math is in Sphere.nb, from the Sphere.c library)
+\begin{align}
+\bm{\tau}_i &= - k_\phi \Delta \phi_i \hat{z} - k_\theta \Delta \theta_i \bm{Z}^T(\phi_i) \hat{y} - k_\psi \Delta \psi_i \bm{Y}^T(\theta_i) \bm{Z}^T(\phi_i) \hat{x} \nonumber \\
+&= - k_\phi \Delta \phi_i \hat{z} - k_\theta \Delta \theta_i (-\textrm{s}\phi_i \hat{x} + \textrm{c}\phi_i \hat{y}) - k_\psi \Delta \psi_i (\textrm{c} \theta_i \textrm{c} \phi_i \hat{x} + \textrm{s} \phi_i \hat{y} - \textrm{c}\phi_i \textrm{s} \theta_i \hat{z}) \nonumber \\
+&= \left[ \begin{array}{c} - k_\psi \Delta \psi_i \textrm{c} \theta_i \textrm{c} \phi_i + k_\theta \Delta \theta_i \textrm{s}\phi_i \\ - k_\theta \Delta \theta_i \textrm{c}\phi_i - k_\psi \Delta \psi_i \textrm{s} \phi_i \\ - k_\phi \Delta \phi_i + k_\psi \Delta \psi_i \textrm{c}\phi_i \textrm{s} \theta_i \end{array} \right]
+\label{eq:BendTorque}
+\end{align}
+In the vector form, the terms are arranged so that the dominant one for small bending angles is listed first. This induces forces and segment torques
+\begin{align*}
+\bm{F}_{i+1} &= \frac{\bm{\tau}_{i} \times (\bm{A}_i^T \hat{x})}{| \bm{x}_i|} \\
+\bm{F}_{i-1} &= -\frac{\bm{\tau}_{i} \times \hat{x}}{| \bm{x}_{i-1}|} \\
+\bm{F}_{i} &= -(\bm{F}_{i+1}+\bm{F}_{i-1}) \\
+\tau_{i} &= \bm{\tau}_{i} \cdot (\bm{A}_i^T \hat{x}) \\
+\tau_{i-1} &= -\bm{\tau}_{i} \cdot \hat{x}
+\end{align*}
+These force vectors are in the frame of reference of the $i-1$ segment. Pre-multiply them by $\bm{B}_{i-1}$ to convert to absolute coordinates. Alternatively, the torque, $\bm{\tau}_i$ can be rotated to an absolute frame first, and then it's probably easiest to just multiply by the original segment vectors. In an absolute reference frame:
+\begin{align*}
+\bm{F}_{i+1} &= \frac{(\bm{B}_{i-1} \bm{\tau}_{i}) \times \bm{x}_i}{| \bm{x}_i|^2} \\
+\bm{F}_{i-1} &= -\frac{(\bm{B}_{i-1} \bm{\tau}_{i}) \times \bm{x}_{i-1}}{| \bm{x}_{i-1}|^2} \\
+\bm{F}_{i} &= -(\bm{F}_{i+1}+\bm{F}_{i-1}) \\
+\tau_{i} &= \frac{(\bm{B}_{i-1} \bm{\tau}_{i}) \cdot \bm{x}_i }{| \bm{x}_i|} \\
+\tau_{i-1} &= -\frac{(\bm{B}_{i-1} \bm{\tau}_{i}) \cdot \bm{x}_{i-1}}{| \bm{x}_{i-1}|}
+\end{align*}
+
+A caveat with these equations is that the node $i$ springs may induce forces over the entire length of the filament, not only at the nearest nodes. This adds quite a lot of complication that I'll ignore for now.
+
+\subsection*{Filament math - filament dynamics}
+
+These and other forces push on nodes, causing the nodes to move. Also, these and other torques create rotations in the segments. I'm not sure what the motions are, but it's proportional to the forces and torques, and to the time step $\Delta t$. It's also probably inversely proportional to the viscosity, and there's some relationship with the hydrodynamic radius. For the Brownian motion, that can be computed from the fluctuation-dissipation theorem. Anyhow, they move.
+
+After finding new node positions, one needs to compute the new ypr angles. The new roll angles are known from integrating the torques. The new absolute yaw and pitch angles can be computed from
+$$\frac{\bm{x}_i}{|\bm{x}_i|} = \bm{B}(\phi,\theta,\psi) \hat{x},$$
+where $\bm{x}_i$ is the segment vector for the $i$'th segment in the lab reference frame. The three values of $\bm{x}_i$ are known (which reduces to two independent values after dividing by its length), and $\psi$ is known. This equation needs to be solved for $\phi$ and $\theta$. It expands to
+$$\frac{\bm{x}_i}{|\bm{x}_i|} = \left[ \begin{array}{c} x_x \\ x_y \\ x_z \end{array} \right]
+= \left[ \begin{array}{c} \textrm{c} \theta \textrm{c} \phi \\ \textrm{s} \psi \textrm{s} \theta \textrm{c} \phi - \textrm{c} \psi \textrm{s} \phi \\ \textrm{c} \psi \textrm{s} \theta \textrm{c} \phi + \textrm{s} \psi \textrm{s} \phi \end{array} \right]$$
+Solving for $\phi$ and $\theta$ gives
+\begin{align*}
+\phi &= \textrm{asin} (x_z \textrm{s} \psi - x_y \textrm{c}\psi) \\
+\theta &= \textrm{asin} \left( \frac{x_z \textrm{c} \psi + x_y \textrm{s}\psi}{\textrm{c} \phi} \right)
+\end{align*}
+
+
 
 
 \subsection*{Function declarations.}
@@ -4150,7 +4273,7 @@ $$\sigma_{mult}\sqrt{\frac{kT}{R*k_{len}}}$$
 \item[\ttt{double}]
 \ttt{*filRandomAngle(const filamenttypeptr filtype,int dim,int n,double thickness,double sigmamult,double *angle));}
 \hfill \\
-Local. Returns a random bending angle, which is a relative ypr angle, in \ttt{angle} (which needs to be allocated with 3 elements) and directly. This is for filament type \ttt{filtype}, system dimensionality \ttt{dim} and segment number \ttt{n}; the number is only checked to see if it's zero, in which case angles are chosen uniformly over all possibilities or non-zero, in which case angles are chosen from angle bending forces. Angles are for a segment with thickness \ttt{thickness} and the computed standard deviation is multiplied by \ttt{sigmamult}. For \ttt{n>0}, if $k_{ypr}$ is less than 0 for a particular coordinate, this returns the standard bending angle, if it is equal to 0, this returns a uniformly distributed bending angle, and if it is greater than 0, this returns a mean of $ypr_{std}$ and standard deviation of
+Local. Returns a random bending angle, which is a relative ypr angle, in \ttt{angle} (which needs to be allocated with 3 elements) and directly. This is for filament type \ttt{filtype}, system dimensionality \ttt{dim} and segment number \ttt{n}; this \ttt{n} number is only checked to see if it's zero, in which case angles are chosen uniformly over all possibilities or non-zero, in which case angles are chosen from angle bending forces. Angles are for a segment with thickness \ttt{thickness} and the computed standard deviation is multiplied by \ttt{sigmamult}. For \ttt{n>0}, if $k_{ypr}$ is less than 0 for a particular coordinate, this returns the standard bending angle, if it is equal to 0, this returns a uniformly distributed bending angle, and if it is greater than 0, this returns a mean of $ypr_{std}$ and standard deviation of
 
 $$\sigma_{mult} \sqrt{\frac{kT}{R*k_{ypr}}}$$
 
@@ -4172,12 +4295,16 @@ $$E_{bend}=\sum_{s=1}^{n} \frac{R_{s-1}+R_s}{2} \frac{k_y(a_y-a_{y, std})^2+k_p(
 
 The first term in the sum computes the average thickness of the segment in front of and behind the bend. The other term is the squared bending angle on each coordinate (for 3D; only the first term is included for 2D).
 
+\item[\ttt{void filBendTorque(const filamentptr fil,int node,double *torque);}]
+\hfill \\
+Computes the bending torque vector for node number \ttt{node}, which is the front of segment \ttt{node}, in filament \ttt{fil}. The \ttt{torque} vector needs to be pre-allocated. This uses eq. \ref{eq:BendTorque} and then rotates the torque with the absolute direction cosine matrix of the prior segment to express the torque in absolute coordinates, which is how it's returned.
+
 
 \item[\underline{Memory management}]
 
 \item[\ttt{segmentptr segmentalloc();}]
 \hfill \\
-Allocates memory for a single segment and initializes this segment. Returns a pointer to this segment, or \ttt{NULL} if memory could not be allocated. The segment length is initialized to 0 to indicate that it hasn't been set up yet, and the thickness is initialized to 1, which is good default value. Ypr angles are initialized to 0 and direction cosine matrices to unit matrices.
+Allocates memory for a single segment and initializes this segment. Returns a pointer to this segment, or \ttt{NULL} if memory could not be allocated. The segment length is initialized to 0 to indicate that it hasn't been set up yet, and the thickness is initialized to 1, which is good default value. \ttt{xyzfront} and \ttt{xyzback} are set to \ttt{NULL}. Ypr angles are initialized to 0 and direction cosine matrices to unit matrices.
 
 \item[\ttt{void segmentfree(segmentptr segment);}]
 \hfill \\
@@ -4243,7 +4370,7 @@ Returns the index of the filament named \ttt{name} or -1 if not found; also, ret
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift);}]
 \hfill \\
-Shifts the segment list in the filament either to higher indices or to lower indices, adjusting the \ttt{frontseg} element to account for the shift. Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to have the filament centered in the allocated memory. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}.
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element), adjusting the \ttt{frontseg} element to account for the shift. Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to have the filament centered in the allocated memory. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}.
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar);}
@@ -4251,25 +4378,25 @@ Shifts the segment list in the filament either to higher indices or to lower ind
 Adds a segment to filament \ttt{fil}. If this is the first segment, then \ttt{x} becomes the starting location of the filament; otherwise, \ttt{x} is ignored. \ttt{length} is the length of the segment, \ttt{angle} is the relative angle of the segment facing along the filament from front to back (for the first segment, this is the absolute angle), \ttt{thickness} is the segment thickness, and \ttt{endchar} should be set to `b' to add to the back of the filament or `f' to add to the front of the filament. For segments added to the front, \ttt{angle} is the new angle from the new first monomer to the next monomer, facing towards the back. If the first segment is added to the back, then \ttt{angle} is the angle of the new segment off of the coordinate system. If the first segment is added to the front, then \ttt{angle} is the angle from the new segment to the coordinate system. The \ttt{angle} vector must have 3 elements in it, even for 2D simulations; in the latter case, the latter two elements should be set to 0. Returns 0 for success and 1 for out of memory.
 
 For the first segment:
-$\mathbf{x}_0=\ttt{x}$, 
-$\mathbf{x}_1=\mathbf{x}_0 + l_0 \mathbf{B}^T_0 \cdot \mathbf{\hat{x}}$
+$\bm{x}_0=\ttt{x}$, 
+$\bm{x}_1=\bm{x}_0 + l_0 \bm{B}^T_0 \cdot \bm{\hat{x}}$
 
 For segments added to the back, with index $i$:
-$\mathbf{a}_i = \ttt{angle}$, 
-$\mathbf{A}_i = DCM(\mathbf{a}_i)$, 
-$\mathbf{B}_i = \mathbf{A}_i \cdot \mathbf{B}_{i-1}$, 
-$\mathbf{x}_{i+1} = \mathbf{x}_i + l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}$
+$\bm{a}_i = \ttt{angle}$, 
+$\bm{A}_i = DCM(\bm{a}_i)$, 
+$\bm{B}_i = \bm{A}_i \cdot \bm{B}_{i-1}$, 
+$\bm{x}_{i+1} = \bm{x}_i + l_i \bm{B}^T_i \cdot \bm{\hat{x}}$
 
 For segments added to the front, with index $i$ (typically equal to 0):
-$\mathbf{B}_i = \mathbf{A}_{i+1}^T \cdot \mathbf{B}_{i+1}$, 
-$\mathbf{A}_i = \mathbf{B}_i$
-$\mathbf{a}_i = XYZ(\mathbf{B}_i)$, 
-$\mathbf{x}_i = \mathbf{x}_{i+1} - l_i \mathbf{B}^T_i \cdot \mathbf{\hat{x}}$
+$\bm{B}_i = \bm{A}_{i+1}^T \cdot \bm{B}_{i+1}$, 
+$\bm{A}_i = \bm{B}_i$
+$\bm{a}_i = XYZ(\bm{B}_i)$, 
+$\bm{x}_i = \bm{x}_{i+1} - l_i \bm{B}^T_i \cdot \bm{\hat{x}}$
 
 \item[\ttt{int}]
-\ttt{filAddRandomSegments(filamentptr fil, int number, const char *xstr, const char *ystr, const char *zstr, const char *thtstr, const char* phistr, const char* chistr, double thickness)}
+\ttt{filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *phistr, const char* thtstr,const char* psistr,double thickness);}
 \hfill \\
-Add \ttt{number} of random segments to the back filament \ttt{fil}, while ignoring any surfaces or other potential collisions. Enter \ttt{xstr}, \ttt{ystr}, and \ttt{zstr} as strings for the starting position coordinates of a new filament, and \ttt{thtstr}, \ttt{phistr}, and \ttt{chistr} as strings for the starting angle of a new filament. Here, math equations are allowed, using Smoldyn variables, or use the `u' character to indicate uniform starting position within the system volume or angle in spherical coordinates. \ttt{thickness} is the thickness of the segments being added. For 2D simulations, the $z$, $\phi$, and $\chi$ values are automatically set to zero, regardless of what is entered in \ttt{zstr}, \ttt{phistr}, and \ttt{chistr}.
+Add \ttt{number} of random segments to the back filament \ttt{fil}, while ignoring any surfaces or other potential collisions. Enter \ttt{xstr}, \ttt{ystr}, and \ttt{zstr} as strings for the starting position coordinates of a new filament, and \ttt{phistr}, \ttt{thtstr}, and \ttt{psistr} as strings for the starting angle of a new filament using Tait-Bryan (yaw-pitch-roll) angles. Here, math equations are allowed, using Smoldyn variables, or use the `u' character to indicate uniform starting position within the system volume or angle in spherical coordinates. \ttt{thickness} is the thickness of the segments being added. For 2D simulations, the $z$, $\phi$, and $\chi$ values are automatically set to zero, regardless of what is entered in \ttt{zstr}, \ttt{phistr}, and \ttt{chistr}.
 
 Returns 0 for success, 2 for syntax error in position strings, or 3 for syntax error in angle strings.
 
@@ -4282,20 +4409,16 @@ Removes one segment or one bead from either the front or back end of a filament.
 Translates an entire filament in space without rescaling or rotation. Enter \ttt{vect} with a 3D vector and \ttt{func} with `=' for translate to the given posiition, with `-' for to subtract the value of \ttt{vect} from the current position, and with `+' to add the value of \ttt{vect} to the current position. For 2D simulations, \ttt{vect[2]} needs to equal 0.
 
 \item[\ttt{void}]
+\ttt{filLengthenSegment(filamentptr fil, int seg, double length, char endchar, char func);}
+\hfill \\
+This function modifies the length of a single segment of index \ttt{seg} (not accounting for \ttt{fil->frontseg}) in filament \ttt{fil}. The \ttt{endchar} input can be \ttt{b} or \ttt{f} and gives which end of the segment moves, along with the entire rest of that end of the filament. The \ttt{func} input can be \ttt{=}, \ttt{+}, or \ttt{-} and gives whether the segment length should be made equal to \ttt{length}, increased by \ttt{length}, or decreased by \ttt{length}. This function is designed to run fairly fast, so doesn't loop over dimensions and it doesn't call functions from elsewhere.
+
+\item[\ttt{void}]
 \ttt{filRotateVertex(filamentptr fil, int seg, const double *angle, char endchar, char func);}
 \hfill \\
 This function rotates part of the filament about the vertex that is at the front of segment \ttt{seg} by ypr angle \ttt{angle}. Enter \ttt{endchar} as \ttt{b} to have the back of the filament move and as \ttt{f} to have the front move. Enter \ttt{func} as \ttt{=} to set the current relative rotation angles (\ttt{segment->dcm}) to the input ones, as \ttt{+} for increased rotation by the given angles and as \ttt{-} for decreased rotation by these angles.
 
 This function makes the requested modification to the \ttt{dcm} angles and then propagates the changes either backward or forward as needed. During propagation, new segment positions are computed from neighbor positions, rather than being rotated independently, in order to avoid round-off errors.
-
-\item[\ttt{void}]
-\ttt{filLengthenSegment(filamentptr fil, int seg, double length, char endchar, char func);}
-\hfill \\
-This function modifies the length of a single segment of index \ttt{seg} (not accounting for \ttt{fil->frontseg}) in filament \ttt{fil}. The \ttt{endchar} input can be \ttt{b} or \ttt{f} and gives which end of the segment moves, along with the entire rest of that end of the filament. The \ttt{func} input can be \ttt{=}, \ttt{+}, or \ttt{-} and gives whether the segment length should be made equal to \ttt{length}, increased by \ttt{length}, or decreased by \ttt{length}. This function is designed to run fairly fast, so doesn't loop over dimensions and it doesn't call functions from elsewhere.
-
-\item[\ttt{void filReverseFilament(filamentptr fil);}]
-\hfill \\
-NOT WRITTEN YET. This will reverse the sequence of segments in a filament.
 
 \item[\ttt{int}]
 \ttt{filCopyFilament(filamentptr filto, const filamentptr filfrom);}
@@ -4322,7 +4445,7 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{klen} & stretching force constant & n/a & $-1,[0,\infty)$\\
 \ttt{kypr} & bending force constants & 0,1,2 & $-1,[0,\infty)$\\
 \ttt{kT} & thermodynamic temperature & n/a & $[0,\infty)$\\
-\ttt{treadrate} & treadmill rate constant & n/a & $[0,\infty)$\\
+\ttt{treadrate} & treadmill rate constant & n/a & $(-\infty,\infty)$\\
 \ttt{viscosity} & medium viscosity & n/a & $(0,\infty)$\\
 \ttt{bundle} & bundle value & n/a & $(0,\infty)$\\
 \ttt{radius} & filament radius & n/a & $(0,\infty)$\\
@@ -5946,6 +6069,32 @@ Structure conditions (SC) are divided into four categories: \ttt{SCinit}, \ttt{S
 \>\>\>does nothing\\
 \end{tabbing}
 
+
+% User input
+\section{User input}
+
+Text-based input follows the following sequence of functions. This example is for a 4-line input file, of which the first two are parsed by \ttt{simreadstring} and the next two by \ttt{surfreadstring}.
+\begin{tabbing}
+\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\hspace{0.25in}\=\kill
+\>\ttt{main}\\
+\>\>\ttt{simInitAndLoad}\\
+\>\>\>\ttt{loadsim}\\
+\>\>\>\>\ttt{simreadstring}\\
+\>\>\>\ttt{loadsim}\\
+\>\>\>\>\ttt{simreadstring}\\
+\>\>\>\ttt{loadsim}\\
+\>\>\>\>\ttt{loadsurface}\\
+\>\>\>\>\>\ttt{surfreadstring}\\
+\>\>\>\>\ttt{loadsurface}\\
+\>\>\>\>\>\ttt{surfreadstring}\\
+\>\>\>\>\ttt{loadsurface}\\
+\>\>\>\ttt{loadsim}\\
+\>\>\ttt{simInitAndLoad}\\
+\>\ttt{main}
+\end{tabbing}
+
+Any errors are passed out through the same chain of functions.
+
 % Simulation algorithm sequence
 \section{Simulation algorithm sequence}
 
@@ -7093,6 +7242,11 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 
 \subsection*{Modifications for version 2.74 (not released yet)}
 \item Changed Mac install and uninstall scripts so that individual commands use sudo, but the whole script does not. This is important because sudo should not be used with pip.
+\item Lots of work on filaments, including changes to data structures, input syntax, examples, and most functions in smolfilament.c.
+\item Improved code robustness when encountering input file parsing errors.
+\item Added \ttt{crossVVD} to Rn.c.
+\item In Sphere.c: removed clamping from \ttt{Sph\_Xyz2Xyz}, added \ttt{Sph\_Eax2Xyz}, \ttt{Sph\_DcmxCart}, \ttt{Sph\_DcmtxCart}, converted the documentation from Word to LaTeX (Sphere.tex), updated the documentation, and checked lots of equations using docs/\-libSteve/\-SupportingFiles/\-Sphere2.nb.
+
 
 \end{itemize}
 

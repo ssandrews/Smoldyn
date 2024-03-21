@@ -1,0 +1,331 @@
+ \title{\vspace{-2.0cm}Documentation for Sphere.h and Sphere.c\vspace{-2ex}}
+\author{Steve Andrews}
+\date{\vspace{-2ex}2005 - 2024}
+
+\documentclass[11pt]{article}
+
+\usepackage{physics,amsmath}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage[margin=1in]{geometry}
+\usepackage{bm}
+\usepackage{upgreek}
+\usepackage{extarrows}
+\usepackage{gensymb}
+\usepackage{chemarr}
+
+\usepackage{longtable}
+
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+ backgroundcolor=\color{backcolour},
+ commentstyle=\color{codegreen},
+ keywordstyle=\color{magenta},
+ numberstyle=\tiny\color{codegray},
+ stringstyle=\color{codepurple},
+ basicstyle=\ttfamily\footnotesize,
+ breakatwhitespace=false,
+ breaklines=true, 
+ captionpos=b, 
+ keepspaces=true, 
+ numbers=left, 
+ numbersep=5pt, 
+ showspaces=false, 
+ showstringspaces=false,
+ showtabs=false, 
+ tabsize=2
+}
+\lstset{style=mystyle}
+
+\newcommand {\ttt} {\texttt}
+
+\begin{document}
+\maketitle
+
+\section{Header file: Sphere.h}
+
+\begin{lstlisting}[language=C]
+/* Steven Andrews 2/05.
+See documentation called Sphere_doc.doc.
+Copyright 2005-2007 by Steven Andrews. This work is distributed under the terms
+of the Gnu Lesser General Public License (LGPL). */
+
+
+#ifndef __Sphere_h
+#define __Sphere_h
+
+/*
+Cart = Cartesian coordinates (x, y, z)
+Sc = Spherical coordinates (r, theta, phi)
+Dcm = Direction cosine matrix (A00, A01, A02, A10, A11, A12, A20, A21, A22)
+Eax = Euler angles x-convention (theta, phi, psi)
+Eay = Euler angles y-convention (theta, phi, chi)
+Ep = Euler parameters (e0, e1, e2, e3)
+Xyz = xyz- or ypr- or Tait-Bryan convention (yaw, pitch, roll): rotate on z, then y, then x
+*/
+
+void Sph\_Cart2Sc(const double *Cart,double *Sc);
+void Sph\_Sc2Cart(const double *Sc,double *Cart);
+void Sph\_Eay2Ep(const double *Eay,double *Ep);
+void Sph\_Xyz2Xyz(const double *Xyz1,double *Xyz2);
+void Sph\_Eax2Xyz(const double *Eax,double *Xyz);
+
+void Sph\_Eax2Dcm(const double *Eax,double *Dcm);
+void Sph\_Eay2Dcm(const double *Eay,double *Dcm);
+void Sph\_Xyz2Dcm(const double *Xyz,double *Dcm);
+void Sph\_Xyz2Dcmt(const double *Xyz,double *Dcmt);
+void Sph\_Dcm2Xyz(const double *Dcm,double *Xyz);
+void Sph\_Dcm2Dcm(const double *Dcm1,double *Dcm2);
+void Sph\_Dcm2Dcmt(const double *Dcm1,double *Dcm2);
+
+void Sph\_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3);
+void Sph\_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3);
+void Sph\_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3);
+void Sph\_DcmxCart(const double *Dcm,const double *Cart,double *Cart2);
+
+void Sph\_One2Dcm(double *Dcm);
+void Sph\_Xyz2Xyzr(const double *Xyz,double *Xyzr);
+void Sph\_Dcm2Dcmr(const double *Dcm,double *Dcmr);
+void Sph\_Rot2Dcm(char axis,double angle,double *Dcm);
+void Sph\_Newz2Dcm(const double *Newz,double psi,double *Dcm);
+
+void Sph\_DcmtxUnit(const double *Dcmt,char unit,double *vect,const double *add,double mult);
+
+double Sph\_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign);
+
+#endif
+\end{lstlisting}
+
+% Description
+\section{Description}
+
+This is a collection of routines for manipulating rotational coordinates using a variety of conventions. Note that some coordinates are for vectors (e.g. spherical coordinates) whereas others are for transformations (e.g. Euler angles). Some of the math here is described in Goldstein (see Appendix B, pp. 606-610, and section 4.4, pp. 143-148), Wikipedia (``Rotation matrix'' and ``Euler Angles'') and Wolfram MathWorld (``Rotation Matrix''). Most rotations are passive, meaning that the rotation matrix times a vector leads to a rotated coordinate system, while the vector is unchanged. If you want to leave the coordinate system in place and rotate the vector instead, use the transposed direction cosine matrix.
+
+If two different function arguments are the same size, such as two vectors or two matrices, then they are always allowed to point to the same memory. For example to invert the direction cosine matrix dcm in-place, the function call is \ttt{Sph\_Dcm2Dcmt(dcm,dcm)}. While input angles are never required to be clamped to fixed domains, the output angle ranges are usually clamped, perhaps as listed below but usually based on whatever the inverse trig functions return. Input vectors and direction cosine matrices are assumed to be valid and are not checked.
+
+\begin{description}
+
+\item[Cartesian coordinates (Cart)]
+\hfill \\
+Vector is $[x,y,z]$, all of which are on $(-\infty,\infty)$.
+
+\item[Spherical coordinates (Sc)]
+\hfill \\
+Vector is $[r,\theta,\phi]$. $r$ is on $[0,\infty)$, $\theta$ is on $[0,\pi]$, and $\phi$ is on $(-\pi,\pi]$.
+
+\item[Direction cosine matrix (Dcm)]
+\hfill \\
+Matrix is given as a 9 element array, which lists the matrix row by row. This is useful for all coordinate transformations and is not associated with any particular convention.
+
+\item[Direction cosine matrix transpose (Dcmt)]
+\hfill \\
+This is entered as a normal, non-transposed, direction cosine matrix. However, it is interpreted as a transposed direction cosine matrix in the code.
+
+\item[Euler angle $x$-convention (Eax)]
+\hfill \\
+Vector is $[\theta,\phi,\psi]$. $\phi$ is on $[0,2\pi)$, $\theta$ is on $[0,\pi]$, $\psi$ is on $[0,2\pi)$. $\bm{A} = \bm{Z}(\psi)\bm{X}(\theta)\bm{Z}(\phi)$.
+
+\item[Euler angle $y$-convention (Eay)]
+\hfill \\
+Vector is $[\theta,\phi,\chi]$. $\phi$ is on $[0,2\pi)$, $\theta$ is on $[0,\pi]$, $\chi$ is on $[0,2\pi)$. $\bm{A} = \bm{Z}(\chi)\bm{Y}(\theta)\bm{Z}(\phi)$.
+
+\item[Euler parameters (Eap)]
+\hfill \\
+Vector is $[e_0,e_1,e_2,e_3]$.
+
+\item[Yaw-pitch-roll (Xyz or Ypr)]
+\hfill \\
+Vector is $[\phi,\theta,\psi]$. All are on $(-\pi,\pi]$. These angles are sometimes not clamped because multiple rotations are possible. $\bm{A} = \bm{X}(\psi)\bm{Y}(\theta)\bm{Z}(\phi)$.
+
+\end{description}
+
+
+
+% Dependencies
+\section{Dependencies}
+random2.h
+
+% History
+\section{History}
+\begin{description}
+
+\item[2/05] Started.
+\item[7/05] Documented.
+\item[10/24/07] Added \ttt{Eax2Dcm}, \ttt{Eay2Dcm}, \ttt{Newz2Dcm}.
+\item[5/55/12] Added \ttt{Sph\_DcmtxUnit}.
+\item[5/28/12] Added \ttt{Sph\_Xyz2Dcmt}.
+\item[8/6/15] Added \ttt{Sph\_RotateVectWithNormals}.
+\item[3/13/24] Added \ttt{Sph\_Eax2Xyz}.
+\item[3/15/24] Added \ttt{Sph\_DcmxCart}.
+\item[3/16/24] Rewrote docs in LaTeX.
+
+\end{description}
+
+
+% Math
+\section{Math}
+
+This library performs passive rotations, meaning that the coordinate system rotates while the vector stays fixed. This is the standard textbook method, such as in Goldstein. Elementary rotation matrices are:
+\begin{align*}
+\bm{X}(\psi) &= \left[ \begin{array}{ccc} 1 & 0 & 0 \\ 0 & \textrm{c} \psi & \textrm{s} \psi \\ 0 & -\textrm{s} \psi & \textrm{c} \psi \end{array} \right]\\
+\bm{Y}(\theta) &= \left[ \begin{array}{ccc} \textrm{c} \theta & 0 & -\textrm{s} \theta \\ 0 & 1 & 0 \\ \textrm{s} \theta & 0 & \textrm{c} \theta \end{array} \right] \\
+\bm{Z}(\phi) &= \left[ \begin{array}{ccc} \textrm{c} \phi & \textrm{s} \phi & 0 \\ -\textrm{s} \phi & \textrm{c} \phi & 0 \\ 0 & 0 & 1 \end{array} \right]
+\end{align*}
+
+
+\section{Code documentation}
+
+\subsection{Typical parameter names}
+\begin{longtable}[c]{ll}
+name & meaning \\
+\hline
+\ttt{cf} & $\cos(\phi)$ \\
+\ttt{cq} & $\cos(\theta)$ \\
+\ttt{cy} & $\cos(\psi)$ or $\cos(\chi)$ \\
+\ttt{sf} & $\cos(\phi)$ \\
+\ttt{sq} & $\cos(\theta)$ \\
+\ttt{sy} & $\cos(\psi)$ or $\sin(\chi)$
+\end{longtable}
+
+\subsection{Internal macros and global variables}
+
+\begin{description}
+
+\item[\ttt{\#define PI 3.14159265358979323846}]
+hfill \\
+$\pi$
+
+\item[\ttt{double Work[9],Work2[9];}]
+\hfill \\
+Scratch space.
+
+\end{description}
+
+\subsection{Externally accessible functions}
+
+\begin{description}
+
+\item[\underline{Vector conversion functions}]
+
+\item[\ttt{void Sph\_Cart2Sc(double *Cart,double *Sc);}]
+\hfill \\
+Converts Cartesian coordinates to spherical coordinates.
+
+\item[\ttt{void Sph\_Sc2Cart(double *Sc,double *Cart);}]
+\hfill \\
+Converts spherical coordinates to Cartesian coordinates.
+
+\item[\ttt{void Sph\_Eay2Ep(double *Eay,double *Ep);}]
+\hfill \\
+Converts Euler angle $y$-convention transformation to Euler parameters. Equations from Goldstein p. 608.
+
+\item[\ttt{void Sph\_Xyz2Xyz(double *Xyz1,double *Xyz2);}]
+\hfill \\
+Copies yaw-pitch-roll vector (or any other 3D vector) \ttt{Xyz1} to \ttt{Xyz2}. This does not clamp angles.
+
+\item[\ttt{void Sph\_Eax2Xyz(double *Eax,double *Xyz);}]
+\hfill \\
+Converts Euler angle $x$-convention to yaw-pitch-roll vector. Equations are from Sphere.nb. 
+
+
+\item[\ttt{void Sph\_Eax2Dcm(double *Eax,double *Dcm);}]
+\hfill \\
+Calculates direction cosine matrix from Euler angle $x$-convention vector. Equations from Wolfram Mathworld and Sphere.nb.
+
+\item[\ttt{void Sph\_Eay2Dcm(double *Eay,double *Dcm);}]
+\hfill \\
+Calculates direction cosine matrix from Euler angle $y$-convention vector. Equations from Wolfram Mathworld and Sphere.nb.
+
+\item[\ttt{void Sph\_Xyz2Dcm(double *Xyz,double *Dcm);}]
+\hfill \\
+Calculates direction cosine matrix from yaw-pitch-roll vector. Equations from Goldstein p. 609 and Sphere.nb. $\bm{A} = \bm{X}(\psi)\bm{Y}(\theta)\bm{Z}(\phi)$.
+
+\item[\ttt{void Sph\_Xyz2Dcmt(double *Xyz,double *Dcmt);}]
+\hfill \\
+Calculates transposed direction cosine matrix from yaw-pitch-roll vector. This is just \ttt{Sph\_Xyz2Dcm}, but for a transposed result. Rather than using this function, it's usually best to use the untransposed version in a \ttt{...Dcmt...} function.
+
+\item[\ttt{void Sph\_Dcm2Xyz(double *Dcm,double *Xyz);}]
+\hfill \\
+Calculates yaw-pitch-roll vector from a direction cosine matrix. Equations derived from Goldstein p. 609 and from Sphere.nb.
+
+\item[\ttt{void Sph\_Dcm2Dcm(double *Dcm1,double *Dcm2);}]
+\hfill \\
+Copies direction cosine matrix (or any other 9 element vector) \ttt{Dcm1} to a new one in \ttt{Dcm2}.
+
+\item[\ttt{void Sph\_Dcm2Dcmt(double *Dcm1,double *Dcm2);}]
+\hfill \\
+Transposes direction cosine matrix \ttt{Dcm1} to yield matrix inverse in \ttt{Dcm2}. $\bm{A}_2 = \bm{A}_1^{-1}$.
+
+\item[\ttt{void Sph\_DcmxDcm(double *Dcm1,double *Dcm2,double *Dcm3);}]
+\hfill \\
+Matrix multiplies \ttt{Dcm1} by \ttt{Dcm2} and returns result in \ttt{Dcm3}. Note that the transformation is \ttt{Dcm2} first, then \ttt{Dcm1}. $\bm{A}_3 = \bm{A}_1\bm{A}_2$.
+
+
+\item[\ttt{void Sph\_DcmxDcmt(double *Dcm1,double *Dcmt,double *Dcm3);}]
+\hfill \\
+Matrix multiplies \ttt{Dcm1} by the transpose of \ttt{Dcmt} and returns result in \ttt{Dcm3} (\ttt{Dcmt} is entered as an untransposed matrix). Essentially, this is a negative rotation of \ttt{Dcmt} followed by a positive rotation of \ttt{Dcm1}. $\bm{A}_3 = \bm{A}_1\bm{A}_2^{-1}$.
+
+\item[\ttt{void Sph\_DcmtxDcm(double *Dcmt,double *Dcm2,double *Dcm3);}]
+\hfill \\
+Matrix multiplies the transpose of \ttt{Dcmt} by \ttt{Dcm2} and returns the result in \ttt{Dcm3} (\ttt{Dcmt} is entered as an untransposed matrix). Essentially, this is a positive rotation of \ttt{Dcm2} followed by a negative rotation of \ttt{Dcmt}. $\bm{A}_3 = \bm{A}_1^{-1}\bm{A}_2$.
+
+\item[\ttt{void Sph\_DcmxCart(const double *Dcm,const double *Cart,double *Cart2);}]
+\hfill \\
+Multiplies matrix \ttt{Dcm} by Cartesian vector \ttt{Cart} and returns the result in \ttt{Cart2}. This is a passive rotation of the coordinate system for the vector, $\bm{x}_2 = \bm{A}\cdot \bm{x}$. This is just a matrix times a vector, but is specifically for 3D.
+
+\item[\ttt{void Sph\_One2Dcm(double *Dcm);}]
+\hfill \\
+Returns the identity direction cosine matrix. $A_{ij} = \delta_{ij}$.
+
+\item[\ttt{void Sph\_Xyz2Xyzr(double *Xyz,double *Xyzr);}]
+\hfill \\
+Converts the forward-direction yaw-pitch-roll vector \ttt{Xyz} to a relative direction change, but for travel in the reverse direction. For example, suppose an airplane performs the direction change that corresponds to \ttt{Xyz}. If it then turns around, with the local $z$-vector as it was initially, but with both $x$- and $y$-vectors reversed (180\degree yaw), then it needs to execute rotation \ttt{Xyzr} to retrace its original track. $\bm{A} = \bm{Z}^{-1}(\phi)\bm{Y}(\theta)\bm{X}(\psi)$. Note that this reverses a relative direction change between two vectors and does not reverse an absolute vector (the airplane traveling west being converted to it traveling east). Equations from Sphere.nb.
+
+\item[\ttt{void Sph\_Dcm2Dcmr(double *Dcm,double *Dcmr);}]
+\hfill \\
+Converts an absolute dcm to a dcm in the reverse direction. This reverses the local $x$ and $y$ directions, while preserving the local $z$ direction. This is unlike \ttt{Sph\_Xyz2Xyzr} in that this is for absolute directions while that one was for relative directions. $\bm{A}_r = \bm{Z}(\pi)\bm{A}$.
+
+\item[\ttt{void Sph\_Rot2Dcm(char axis,double angle,double *Dcm);}]
+\hfill \\
+Returns the direction cosine matrix that corresponds to rotation by angle \ttt{angle} about axis \ttt{axis}, where this latter parameter is the character \ttt{x}, \ttt{y}, or \ttt{z} (or upper-case). $\bm{A} = \bm{X}(a)$ or $\bm{A} = \bm{Y}(a)$ or $\bm{A} = \bm{Z}(a)$.
+
+\item[\ttt{void Sph\_Newz2Dcm(double *Newz,double psi,double *Dcm);}]
+\hfill \\
+Returns the direction cosine matrix that can be used to rotate the coordinate system such that the original $z$-axis will line up with the vector \ttt{Newz}. The length of \ttt{Newz} is irrelevent; it does not need to be normalized. Additional rotation about the new $z$-axis is entered with \ttt{psi}. This works as follows: \ttt{Newz} is converted to spherical coordinates $\theta$ and $\phi$, then the dcm is $\bm{A} = \bm{Z}(\psi-\phi) \bm{X}(\theta) \bm{Z}(\phi)$, which is transposed to yield the active matrix.
+
+\item[\ttt{void Sph\_DcmtxUnit(double *Dcmt,char axis,double *vect,double *add,double mult);}]
+\hfill \\
+Multiplies the transpose of \ttt{Dcmt} (entered as a non-transposed direction cosine matrix) with the unit vector for axis axis (entered as \ttt{x}, \ttt{y}, or \ttt{z}, or upper case) and returns the result in the 3-dimensional vector \ttt{vect}. This multiplies the result by the scalar \ttt{mult}. If \ttt{add} is non-\ttt{NULL}, this adds \ttt{add} to \ttt{vect} before returning the result. 
+
+\item[\ttt{double}]
+\ttt{Sph\_RotateVectWithNormals3D(double *pt1, double *pt2, double *newpt2, double *oldnorm, double *newnorm, int sign);}
+\hfill \\
+This is for the case where the line from \ttt{pt1} to \ttt{pt2} is in the plane that has normal \ttt{oldnorm}, and then the plane is rotated about point \ttt{pt1} to so that its normal becomes \ttt{newnorm}. This function calculates the new value for \ttt{pt2}, returned in \ttt{newpt2}. \ttt{newpt2} and \ttt{pt2} are allowed to point to the same memory. Both \ttt{oldnorm} and \ttt{newnorm} need to have unit length. This returns the cosine of the angle between the two normals, which is also the dot product of the two normal vectors. If this cosine is 1, then the two normals are parallel to each other and \ttt{newpt2} is set equal to \ttt{pt2} because no rotation takes place. If this cosine is -1, then the two normals are anti-parallel to each other, in which case the problem is ill-determined because the rotation axis cannot be determined; if that's the case, then this function assumes that the rotation axis is perpendicular to the vector from \ttt{pt1} to \ttt{pt2}, with the result that the new vector is in the opposite direction as the original vector. New function Sept. 2015.
+
+The \ttt{sign} input is here to allow the normals to internally inconsistent. That is, it is good practice for all normals to points toward the same face of a surface, such as the outside or inside. If this is the case, then enter \ttt{sign} as 0. However, if this is not done, then enter \ttt{sign} as 1 if the total rotation should be less than 90\degree and as -1 if the total rotation should be more than 90\degree.
+
+It is permitted to enter \ttt{oldnorm} as \ttt{NULL}. In this case, the vector is rotated around a random rotation axis that is perpendicular to \ttt{newnorm}. In other words, \ttt{newpt2} is still placed in the new plane and it is still the correct distance from \ttt{pt1}, but the rotation direction to this new position is random.
+
+The math is as follows. Define $\bm{p}_1$ as \ttt{pt1}, $\bm{p}_2$ as \ttt{pt2}, $\bm{o}$ as \ttt{oldnorm}, and $\bm{n}$ as \ttt{newnorm}. Also, define $\bm{p}$ as the vector from $\bm{p}_1$ to $\bm{p}_2$, meaning that $\bm{p} = \bm{p}_2 - \bm{p}_1$. Also define $\bm{a}$ as the unit vector for the axis about which the rotation takes place; it is the line that is shared by the old plane and the new plane. Define $\theta$ as the rotation angle about this axis. These values are
+$$\bm{a} = \frac{\bm{o} \times \bm{n}}{\sqrt{(\bm{o} \times \bm{n})\cdot (\bm{o} \times \bm{n})}}$$
+$$\cos \theta = \bm{o} \cdot \bm{n}$$
+
+The $\theta$ equation relies on the requirement that $\bm{o}$ and $\bm{n}$ have unit length. The direction cosine matrix for rotation by angle $\theta$ about axis $\bm{a}$ is (from Wikipedia ``Rotation matrix'')
+
+$$\left[ \begin{array}{ccc}
+c\theta+ a_x^2(1-c\theta) & a_x a_y(1-c\theta)-a_z s\theta & a_x a_z (1-c\theta)+a_y s\theta \\
+a_y a_x(1-c\theta)+a_zs\theta & c\theta + a_y^2(1-c\theta) & a_y z_z(1-c\theta)-a_x s\theta \\
+a_z a_x(1-c\theta)-a_y s\theta & a_z a_y(1-c\theta) + a_x s\theta & c\theta + a_z^2(1-c\theta)
+\end{array} \right ]$$
+
+\end{description}
+
+\bibliographystyle{plain}
+\bibliography{libSteveRefs}
+
+\end{document}

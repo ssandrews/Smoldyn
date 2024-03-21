@@ -21,6 +21,7 @@ void Sph_Cart2Sc(const double *Cart,double *Sc);
 void Sph_Sc2Cart(const double *Sc,double *Cart);
 void Sph_Eay2Ep(const double *Eay,double *Ep);
 void Sph_Xyz2Xyz(const double *Xyz1,double *Xyz2);
+void Sph_Eax2Xyz(const double *Eax,double *Xyz);
 
 void Sph_Eax2Dcm(const double *Eax,double *Dcm);
 void Sph_Eay2Dcm(const double *Eay,double *Dcm);
@@ -33,6 +34,8 @@ void Sph_Dcm2Dcmt(const double *Dcm1,double *Dcm2);
 void Sph_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3);
 void Sph_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3);
 void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3);
+void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2);
+void Sph_DcmtxCart(const double *Dcm,const double *Cart,double *Cart2);
 
 void Sph_One2Dcm(double *Dcm);
 void Sph_Xyz2Xyzr(const double *Xyz,double *Xyzr);

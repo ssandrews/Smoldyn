@@ -27,20 +27,19 @@ color black
 thickness 2
 polygon edge
 kT 1
-dynamics rouse
+dynamics none
 standard_length 5
 standard_angle 0
-force_length 0
-force_angle 0
-bead_radius 2
+force_length -1
+force_angle 0.5
 viscosity 3
 end_filament_type
 
-random_filament fil1 template 49  10 50
-random_filament fil2 template 49  20 50
-random_filament fil3 template 49  30 50
-random_filament fil4 template 49  40 50
-random_filament fil5 template 49  50 50
+random_filament fil1 template 49  10 50 u
+random_filament fil2 template 49  20 50 u
+random_filament fil3 template 49  30 50 u
+random_filament fil4 template 49  40 50 u
+random_filament fil5 template 49  50 50 u
 
 end_file
 

@@ -28,7 +28,7 @@ polygon edge
 kT 1
 standard_length 2
 standard_angle 0 0 0
-force_length 0
+force_length -1
 force_angle 100 80 0
 end_filament_type
 
@@ -52,7 +52,7 @@ polygon edge
 kT 1
 standard_length 2
 standard_angle 0 0.3 0.3
-force_length 0
+force_length -1
 force_angle 10 10 10
 end_filament_type
 
