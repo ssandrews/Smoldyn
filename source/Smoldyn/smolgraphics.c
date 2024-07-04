@@ -287,8 +287,8 @@ void graphssoutput(simptr sim) {
 	simLog(sim,2,", every %i iterations\n",graphss->graphicit);
 	if(graphss->graphicdelay>0) simLog(sim,2," delay per frame: %ui ms\n",graphss->graphicdelay);
 
-	simLog(sim,2," frame thickness: %g",graphss->framepts);
-	if(graphss->gridpts) simLog(sim,2,", grid thickness: %g",graphss->gridpts);
+	simLog(sim,2," frame thickness: %g|L",graphss->framepts);
+	if(graphss->gridpts) simLog(sim,2,", grid thickness: %g|L",graphss->gridpts);
 	simLog(sim,2,"\n");
 	if(graphss->framepts) simLog(sim,2," frame color: %g,%g,%g,%g\n",graphss->framecolor[0],graphss->framecolor[1],graphss->framecolor[2],graphss->framecolor[3]);
 	if(graphss->gridpts) simLog(sim,2," grid color: %g,%g,%g,%g\n",graphss->gridcolor[0],graphss->gridcolor[1],graphss->gridcolor[2],graphss->gridcolor[3]);
@@ -306,7 +306,7 @@ void graphssoutput(simptr sim) {
 	for(lt=0;lt<MAXLIGHTS;lt++)
 		if(graphss->lightstate[lt]!=LPauto) {
 			simLog(sim,2," light %i: %s\n",lt,graphicslp2string(graphss->lightstate[lt],string1));
-			simLog(sim,2,"  position: %g %g %g %g\n",graphss->lightpos[lt][0],graphss->lightpos[lt][1],graphss->lightpos[lt][2],graphss->lightpos[lt][3]);
+			simLog(sim,2,"  position: %g|L %g|L %g|L %g\n",graphss->lightpos[lt][0],graphss->lightpos[lt][1],graphss->lightpos[lt][2],graphss->lightpos[lt][3]);
 			simLog(sim,2,"  ambient: %g %g %g %g\n",graphss->ambilight[lt][0],graphss->ambilight[lt][1],graphss->ambilight[lt][2],graphss->ambilight[lt][3]);
 			simLog(sim,2,"  diffuse: %g %g %g %g\n",graphss->difflight[lt][0],graphss->difflight[lt][1],graphss->difflight[lt][2],graphss->difflight[lt][3]);
 			simLog(sim,2,"  specular: %g %g %g %g\n",graphss->speclight[lt][0],graphss->speclight[lt][1],graphss->speclight[lt][2],graphss->speclight[lt][3]); }
@@ -592,6 +592,7 @@ int graphicssettextitem(simptr sim,char *itemname) {
 		if(!strcmp(itemname,graphss->textitems[item])) return 3;
 	strncpy(graphss->textitems[graphss->ntextitems++],itemname,STRCHAR);
 	return 0; }
+
 
 /* graphicssetlight */
 int graphicssetlight(simptr sim,graphicsssptr graphss,int lt,enum LightParam ltparam,double *value) {
@@ -1405,7 +1406,7 @@ void TimerFunction(int state) {
 		sim->elapsedtime+=difftime(time(NULL),sim->clockstt);
 		oldstate=1;
 		delay=20;
-		simLog(sim,2,"Simulation paused at simulation time: %g\n",sim->time); }
+		simLog(sim,2,"Simulation paused at simulation time: %g|T\n",sim->time); }
 	else {																						// still in pause state or simulation is over
 		glutPostRedisplay();
 		delay=20; }

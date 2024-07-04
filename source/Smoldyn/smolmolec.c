@@ -624,9 +624,9 @@ int moladdspeciesgroup(simptr sim,const char *group,char *species,int imol) {
 /* molserno2string */
 char *molserno2string(unsigned long long serno,char *string) {
 	if(serno<0xFFFFFFFF)
-		snprintf(string,128*sizeof(string),LLUFORMAT,serno);
+		snprintf(string,STRCHAR,LLUFORMAT,serno);
 	else
-		snprintf(string,128*sizeof(string),LLUFORMAT "." LLUFORMAT,serno>>32,serno&0xFFFFFFFF);
+		snprintf(string,STRCHAR,LLUFORMAT "." LLUFORMAT,serno>>32,serno&0xFFFFFFFF);
 	return string; }
 
 
@@ -2123,7 +2123,7 @@ void molssoutput(simptr sim) {
 				if(mols->listlookup[i][ms]!=mols->listlookup[i][MSsoln]) same=0; }
 			if(same) {
 				if(mols->difstep[i][MSsoln]>maxstep) maxstep=mols->difstep[i][MSsoln];
-				simLog(sim,2,"  all states: difc=%g, rms step=%g",mols->difc[i][MSsoln],mols->difstep[i][MSsoln]);
+				simLog(sim,2,"  all states: difc=%g|L2/T, rms step=%g|L",mols->difc[i][MSsoln],mols->difstep[i][MSsoln]);
 				if(mols->difm[i][MSsoln]) simLog(sim,2," (anisotropic)");
 				if(mols->drift[i][MSsoln]) simLog(sim,2," (drift)");
 				if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][MSsoln]]);
@@ -2132,7 +2132,7 @@ void molssoutput(simptr sim) {
 				for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
 					if(mols->exist && mols->exist[i] && mols->exist[i][ms]) {
 						if(mols->difstep[i][ms]>maxstep) maxstep=mols->difstep[i][ms];
-						simLog(sim,2,"  %s: difc=%g, rms step=%g",molms2string(ms,string),mols->difc[i][ms],mols->difstep[i][ms]);
+						simLog(sim,2,"  %s: difc=%g|L2/T, rms step=%g|L",molms2string(ms,string),mols->difc[i][ms],mols->difstep[i][ms]);
 						if(mols->difm[i][ms]) simLog(sim,2," (anisotropic)");
 						if(mols->drift[i][ms]) simLog(sim,2," (drift)");
 						if(mols->listname) simLog(sim,2,", list=%s",mols->listname[mols->listlookup[i][ms]]);
@@ -2148,8 +2148,8 @@ void molssoutput(simptr sim) {
 							for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 								if(mols->surfdrift[i][ms][s][ps]) {
 									simLog(sim,2," %s,%s",sim->srfss->snames[s],surfps2string(ps,string));
-									if(sim->dim==2) simLog(sim,2,"=%g",mols->surfdrift[i][ms][s][ps][0]);
-									else simLog(sim,2,"=(%g,%g)",mols->surfdrift[i][ms][s][ps][0],mols->surfdrift[i][ms][s][ps][1]); }
+									if(sim->dim==2) simLog(sim,2,"=%g|L/T",mols->surfdrift[i][ms][s][ps][0]);
+									else simLog(sim,2,"=(%g|L/T,%g|L/T )",mols->surfdrift[i][ms][s][ps][0],mols->surfdrift[i][ms][s][ps][1]); }
 					simLog(sim,2,"\n"); }}
 
 		if(sim->graphss && mols->color && mols->color[i] && mols->display && mols->display[i]) {
@@ -2162,14 +2162,14 @@ void molssoutput(simptr sim) {
 			if(same) {
 				simLog(sim,2,"  all states:");
 				if(mols->display[i][MSsoln])
-					simLog(sim,2," color= %g,%g,%g, size=%g\n",mols->color[i][MSsoln][0],mols->color[i][MSsoln][1],mols->color[i][MSsoln][2],mols->display[i][MSsoln]);
+					simLog(sim,2," color= %g,%g,%g, size=%g|L\n",mols->color[i][MSsoln][0],mols->color[i][MSsoln][1],mols->color[i][MSsoln][2],mols->display[i][MSsoln]);
 				else simLog(sim,2," not displayed to graphics\n"); }
 			else {
 				for(ms=(enum MolecState)(0);ms<MSMAX;ms=(enum MolecState)(ms+1))
 					if(mols->exist && mols->exist[i] && mols->exist[i][ms]) {
 						simLog(sim,2,"  %s:",molms2string(ms,string));
 						if(mols->display[i][ms])
-							simLog(sim,2," color= %g,%g,%g, display size= %g\n",mols->color[i][ms][0],mols->color[i][ms][1],mols->color[i][ms][2],mols->display[i][ms]);
+							simLog(sim,2," color= %g,%g,%g, display size= %g|L\n",mols->color[i][ms][0],mols->color[i][ms][1],mols->color[i][ms][2],mols->display[i][ms]);
 						else simLog(sim,2," not displayed to graphics\n"); }}}}
 
 	if(mols->dead==NULL) simLog(sim,1," No dead list allocated\n");

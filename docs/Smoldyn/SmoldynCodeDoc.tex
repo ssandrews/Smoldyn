@@ -1353,7 +1353,7 @@ Returns the string that corresponds to the enumerated molecule list type \ttt{ml
 
 \item[\ttt{char *molserno2string(unsigned long long serno, char *string);}]
 \hfill \\
-Writes the molecule serial number to a pre-allocated string, returning the pointer to that string. If the serial number is not a concatenated number, then just writes that number to the string. If the serial number has been concatenated, then this writes the left portion, a period, and then the right portion. Note that this uses the defined string \ttt{LLUFORMAT} because Windows doesn't use the standard \%llu format specifier for some reason.
+Writes the molecule serial number to a pre-allocated string, which needs to of size \ttt{STRCHAR}, returning the pointer to that string. If the serial number is not a concatenated number, then just writes that number to the string. If the serial number has been concatenated, then this writes the left portion, a period, and then the right portion. Note that this uses the defined string \ttt{LLUFORMAT} because Windows doesn't use the standard \%llu format specifier for some reason.
 
 \item[\ttt{unsigned long long molstring2serno(char *string);}]
 \hfill \\
@@ -5180,6 +5180,10 @@ Sets the global \ttt{ThrowThreshold} threshold for throwing an error. Throwing w
 \hfill \\
 All text output should be sent to this function. As a default, it simply prints the output to stdout. However, this also sends it elsewhere if the user asked for a different destination. This can also send output to a Libsmoldyn host program. Enter \ttt{sim} with the simulation structure if possible; if it's not possible, then this function displays the message to stderr. Enter \ttt{importance} with a value between 0 and 10, as shown below. The \ttt{format} and \ttt{...} portions are the same format string and arguments that are used for \ttt{printf}.
 
+This function starts by printing the message to a string using the variable arguments functions \ttt{va\_start}, \ttt{vsprintf}, and \ttt{va\_end}. Then, it replaces any unit placeholders with the current working units, if there are any. After that, it sends output to the logging outputs if appropriate. Then it checks the flags and message importance, and sends it to the correct output if appropriate.
+
+As a comment on units, this expects unit placeholders to start with a pipe character and then list dimensions; parentheses are optional and the word is allowed to end with various puntuation (``, . : ; + - * / $<$ $>$ = !''). Examples: ``\ttt{|L}'', ``\ttt{|L2/T}'', ``\ttt{|(L/T)}'', ``\ttt{|/T,}''. If the file has working units, then they are substituted into the placeholders, and any parentheses or terminal comma are kept. If the file doesn't have working units, then the placeholders and any parentheses are removed, but the terminal comma is still kept.
+
 \begin{longtable}[c]{clll}
 \ttt{importance} & meaning & example & flags and display\\
 \hline
@@ -5285,9 +5289,11 @@ Sets the simulation dimensionality. Returns 0 for success, 2 if it had already b
 \hfill \\
 Sets the appropriate simulation time parameter to \ttt{time}. Enter code as 0 to set the current time, 1 to set the starting time, 2 to set the stopping time, 3 to set the time step, or 4 to set the break time. Returns 0 for success, 1 if an illegal code was entered, or 2 if a negative or zero time step was entered. This function also keeps track of the times that have been set using a static variable called \ttt{timedefined}. To see what times have been set, enter code as -1, and this will return a number which is the sum of: 1 for the current time, 2 for the starting time, 4 for the stopping, 8 for the time step, and 16 for the break time. For example, and the return value with 14 to check for the start, stop, and step times.
 
-\item[\ttt{int simreadstring(simptr sim, char *word, char *line2, char *erstr)}]
+\item[\ttt{int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2)}]
 \hfill \\
-Reads and processes one line of text from the configuration file, or some other source. The first word of the line should be sent in as \ttt{word} (terminated by a `$\backslash$0') and the rest sent in as \ttt{line2}. I don't think that this function changes either the contents of \ttt{word} or \ttt{line2}, but this should be verified if it's important. If this function is successful, it returns 0 and it does not change the contents of \ttt{erstr}; if not, it returns 1 and it writes an error message to \ttt{erstr}.
+Reads and processes one line of text from the configuration file, or some other source. The first word of the line should be sent in as \ttt{word} (terminated by a `$\backslash$0') and the rest sent in as \ttt{line2}. This function may change \ttt{line2}. Also send in the ``parse file pointer'' in \ttt{pfp}; this input is optional. Returns 0 for success. On failure, this prints an error message to the global variable \ttt{ErrorString}, calls \ttt{simParseError} to shut down the parsing process (and free \ttt{pfp}), and returns 1.
+
+Most numeric input is parsed with the \ttt{strmathsscanf} function, which is my version of the standard \ttt{sscanf} function. In this version, a \ttt{\%m} start to a format specifier means that it should accept math functions and variable names and also might end with units. The function then processes the input to a numeric quantity.
 
 \item[\ttt{int}]
 \ttt{loadsim(simptr sim, const char *fileroot, const char *filename, const char *flags)}
@@ -7246,7 +7252,8 @@ Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-b
 \item Improved code robustness when encountering input file parsing errors.
 \item Added \ttt{crossVVD} to Rn.c.
 \item In Sphere.c: removed clamping from \ttt{Sph\_Xyz2Xyz}, added \ttt{Sph\_Eax2Xyz}, \ttt{Sph\_DcmxCart}, \ttt{Sph\_DcmtxCart}, converted the documentation from Word to LaTeX (Sphere.tex), updated the documentation, and checked lots of equations using docs/\-libSteve/\-SupportingFiles/\-Sphere2.nb.
-
+\item Smoldyn now supports units. This is mostly covered in string2.c, strunits function and also, to lesser extend in strmathsscanf. It's also in simLog. Every input line that takes in a floating point number, with only a couple of exceptions, now support units as part of that input, and will convert as needed. Output lines that print floating point numbers often display units, but I didn't work as hard there (e.g. reaction rate units depend on reaction order and system dimensionality, so they're a pain to deal with). This has been documented, but could be documented more. The only test file so far is S2\_config/units.txt, but more testing is needed.
+\item Fixed a few minor issues with lighting in smolgraphics.c, including mostly documentation.
 
 \end{itemize}
 

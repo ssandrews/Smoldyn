@@ -124,14 +124,33 @@ void simSetThrowing(int corethreshold) {
 
 /* simLog */
 void simLog(simptr sim,int importance,const char* format, ...) {
-	char message[STRCHARLONG],*flags;
+	char message[STRCHARLONG],*flags,word[STRCHAR];
+	const char *strptr;
 	va_list arguments;
-	int qflag,vflag,wflag,sflag;
+	int qflag,vflag,wflag,sflag,wordlen,hasparen;
 	FILE *fptr;
+	double ans;
 
 	va_start(arguments, format);
 	vsprintf(message, format, arguments);
 	va_end(arguments);
+
+	while((strptr=strchr(message,'|'))) {						// process unit output
+		strwordcpy(word,strptr,1);
+		wordlen=strlen(word);
+		if(strchr(",.:;+-*/<>=!",word[wordlen-1])) {
+			word[wordlen-1]='\0';
+			wordlen--; }
+		hasparen=0;
+		if(word[1]=='(') {
+			hasparen=1;
+			word[wordlen-1]='\0';
+			wordlen--; }
+		ans=strunits(NULL,hasparen?word+2:word+1,0,hasparen?word+2:word+1,"getunits");
+		if(ans==1)
+			strMidCat(message,strptr-message,strptr-message+wordlen+(hasparen?1:0),NULL,0,0);
+		else {
+			strMidCat(message,strptr-message,strptr-message+wordlen,word+1,0,-1); }}
 
 	if(sim && sim->logfn) (*sim->logfn)(sim,importance,message);
 	else if(LoggingCallback) (*LoggingCallback)(sim,importance,message);
@@ -367,6 +386,7 @@ void simfree(simptr sim) {
 	simSetLogging(sim,NULL,NULL);
 
 	free(sim);
+	strunits(NULL,NULL,0,NULL,"free");
 	return; }
 
 
@@ -413,6 +433,7 @@ int simexpandvariables(simptr sim,int spaces) {
 /* simoutput */
 void simoutput(simptr sim) {
 	int v;
+	char string[STRCHAR];
 
 	simLog(sim,2,"SIMULATION PARAMETERS\n");
 	if(!sim) {
@@ -422,6 +443,8 @@ void simoutput(simptr sim) {
 		simLog(sim,2," file: %s%s\n",sim->filepath,sim->filename);
 	simLog(sim,2," starting clock time: %s",ctime(&sim->clockstt));
 	simLog(sim,2," %i dimensions\n",sim->dim);
+	strunits(NULL,NULL,0,string,"getunits");
+	if(string[0]) simLog(sim,2," units: %s\n",string);
 	if(sim->accur<10) simLog(sim,2," Accuracy level: %g\n",sim->accur);
 	else simLog(sim,1," Accuracy level: %g\n",sim->accur);
 	simLog(sim,2," Random number seed: %li\n",sim->randseed);
@@ -431,8 +454,8 @@ void simoutput(simptr sim) {
 	for(;v<sim->nvar;v++)
 		simLog(sim,2,"  %s = %g\n",sim->varnames[v],sim->varvalues[v]);
 
-	simLog(sim,2," Time from %g to %g step %g\n",sim->tmin,sim->tmax,sim->dt);
-	if(sim->time!=sim->tmin) simLog(sim,2," Current time: %g\n",sim->time);
+	simLog(sim,2," Time from %g|T to %g|T step %g|T\n",sim->tmin,sim->tmax,sim->dt);
+	if(sim->time!=sim->tmin) simLog(sim,2," Current time: %g|T\n",sim->time);
 	simLog(sim,2,"\n");
 	return; }
 
@@ -468,8 +491,13 @@ void simsystemoutput(simptr sim) {
 
 /* writesim */
 void writesim(simptr sim,FILE *fptr) {
+	char string[STRCHAR];
+
 	fprintf(fptr,"# General simulation parameters\n");
 	fprintf(fptr,"# Configuration file: %s%s\n",sim->filepath,sim->filename);
+	strunits(NULL,NULL,0,string,"getunits");
+	if(string[0]) fprintf(fptr,"units %s\n",string);
+	else fprintf(fptr,"# No units listed\n");
 	fprintf(fptr,"dim %i\n",sim->dim);
 	fprintf(fptr,"# random_seed for prior simulation was %li\n",sim->randseed);
 	fprintf(fptr,"random_seed %li  # this is a new random number\n",(long int)randULI());
@@ -633,11 +661,21 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(line2[0]=='=') {
 			line2=strnword(line2,2);
 			CHECKS(line2,"variable format: name = value"); }
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"cannot read variable value");
 		er=simsetvariable(sim,nm,flt1);
 		CHECKS(!er,"out of memory allocating variable space");
 		CHECKS(!strnword(line2,2),"unexpected text following variable"); }
+
+	// units
+
+	else if(!strcmp(word,"units")) {							// units
+		er=(int) strunits(line2,pfp?pfp->fname:NULL,0,NULL,"push");
+		CHECKS(!er,"unable to parse units"); }
+
+	else if(!strcmp(word,"working_units")) {			// working_units
+		er=(int) strunits(line2,NULL,0,NULL,"working");
+		CHECKS(!er,"unable to parse working_units"); }
 
 	// space and time
 
@@ -652,7 +690,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"boundaries")) {					// boundaries
 		CHECKS(dim>0,"need to enter dim before boundaries");
-		itct=strmathsscanf(line2,"%s %mlg %mlg",varnames,varvalues,nvar,nm,&flt1,&flt2);
+		itct=strmathsscanf(line2,"%s %mlg|L %mlg|L",varnames,varvalues,nvar,nm,&flt1,&flt2);
 		CHECKS(itct==3,"boundaries format: dimension position position [type]");
 		if(!strcmp(nm,"0") || !strcmp(nm,"x")) d=0;
 		else if(!strcmp(nm,"1") || !strcmp(nm,"y")) d=1;
@@ -677,7 +715,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"low_wall")) {						// low_wall
 		CHECKS(dim>0,"need to enter dim before low_wall");
-		itct=strmathsscanf(line2,"%s %mlg %c",varnames,varvalues,nvar,nm,&flt1,&ch);
+		itct=strmathsscanf(line2,"%s %mlg|L %c",varnames,varvalues,nvar,nm,&flt1,&ch);
 		CHECKS(itct==3,"low_wall format: dimension position type");
 		if(!strcmp(nm,"0") || !strcmp(nm,"x")) d=0;
 		else if(!strcmp(nm,"1") || !strcmp(nm,"y")) d=1;
@@ -692,7 +730,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"high_wall")) {					// high_wall
 		CHECKS(dim>0,"need to enter dim before high_wall");
-		itct=strmathsscanf(line2,"%s %mlg %c",varnames,varvalues,nvar,nm,&flt1,&ch);
+		itct=strmathsscanf(line2,"%s %mlg|L %c",varnames,varvalues,nvar,nm,&flt1,&ch);
 		CHECKS(itct==3,"high_wall format: dimension position type");
 		if(!strcmp(nm,"0") || !strcmp(nm,"x")) d=0;
 		else if(!strcmp(nm,"1") || !strcmp(nm,"y")) d=1;
@@ -706,27 +744,27 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,4),"unexpected text following high_wall"); }
 
 	else if(!strcmp(word,"time_start")) {					// time_start
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|T",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"time_start needs to be a number");
 		simsettime(sim,flt1,0);
 		simsettime(sim,flt1,1);
 		CHECKS(!strnword(line2,2),"unexpected text following time_start"); }
 
 	else if(!strcmp(word,"time_stop")) {					// time_stop
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|T",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"time_stop needs to be a number");
 		simsettime(sim,flt1,2);
 		CHECKS(!strnword(line2,2),"unexpected text following time_stop"); }
 
 	else if(!strcmp(word,"time_step")) {					// time_step
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|T",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"time_step needs to be a number");
 		er=simsettime(sim,flt1,3);
 		CHECKS(!er,"time step must be >0");
 		CHECKS(!strnword(line2,2),"unexpected text following time_step"); }
 
 	else if(!strcmp(word,"time_now")) {						// time_now
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|T",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"time_now needs to be a number");
 		simsettime(sim,flt1,0);
 		CHECKS(!strnword(line2,2),"unexpected text following time_now"); }
@@ -795,7 +833,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=-7,"error allocating memory");
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing data for difc");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"diffusion coefficient value cannot be read");
 		CHECKS(flt1>=0,"diffusion coefficient needs to be >=0");
 		molsetdifc(sim,0,index,ms,flt1);
@@ -808,7 +846,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=-3,"cannot read molecule state value");
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing data for difc_rule");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"diffusion coefficient value cannot be read");
 		CHECKS(flt1>=0,"diffusion coefficient needs to be >=0");
 		er=RuleAddRule(sim,RTdifc,NULL,pattern,&ms,NULL,flt1,NULL,NULL);
@@ -827,7 +865,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing matrix in difm");
 		for(d=0;d<dim*dim;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&v1[d]);
 			CHECKS(itct==1,"incomplete matrix in difm");
 			line2=strnword(line2,2); }
 		CHECKS(molsetdifm(sim,0,index,ms,v1)==0,"out of memory in difm");
@@ -841,7 +879,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing matrix in difm");
 		for(d=0;d<dim*dim;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&v1[d]);
 			CHECKS(itct==1,"incomplete matrix in difm");
 			line2=strnword(line2,2); }
 		er=RuleAddRule(sim,RTdifm,NULL,pattern,&ms,NULL,0,NULL,v1);
@@ -860,7 +898,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing vector in drift");
 		for(d=0;d<dim;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&v1[d]);
 			CHECKS(itct==1,"incomplete vector in drift");
 			line2=strnword(line2,2); }
 		CHECKS(molsetdrift(sim,0,index,ms,v1)==0,"out of memory in drift");
@@ -874,7 +912,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing vector in drift");
 		for(d=0;d<dim;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&v1[d]);
 			CHECKS(itct==1,"incomplete vector in drift");
 			line2=strnword(line2,2); }
 		er=RuleAddRule(sim,RTdrift,NULL,pattern,&ms,NULL,0,NULL,v1);
@@ -906,7 +944,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ps!=PSnone,"in surface_drift, panel shape name not recognized");
 		CHECKS(line2=strnword(line2,3),"missing vector in surface_drift");
 		for(d=0;d<dim-1;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&v1[d]);
 			CHECKS(itct==1,"incomplete vector in surface_drift");
 			line2=strnword(line2,2); }
 		CHECKS(molsetsurfdrift(sim,0,index,ms,s,ps,v1)==0,"out of memory in surface_drift");
@@ -933,7 +971,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ps!=PSnone,"in surface_drift_rule, panel shape name not recognized");
 		CHECKS(line2=strnword(line2,3),"missing vector in surface_drift");
 		for(d=0;d<dim-1;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&v1[d]);
 			CHECKS(itct==1,"incomplete vector in surface_drift_rule");
 			line2=strnword(line2,2); }
 		detailsi[0]=s;
@@ -972,7 +1010,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 					poslo[d]=flt1;
 					poshi[d]=flt2; }
 				else {
-					itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+					itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 					CHECKS(itct==1,"cannot read position value for mol");
 					poslo[d]=poshi[d]=flt1; }}}
 		er=addmol(sim,nmol,i,poslo,poshi,0);
@@ -1009,7 +1047,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		line2=strnword(line2,4);
 		if(line2) {
 			for(d=0;d<dim;d++) {
-				itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+				itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&v1[d]);
 				CHECKS(itct==1,"incomplete vector in drift");
 				line2=strnword(line2,2); }
 			CHECKS(s>=0 && ps!=PSall && strcmp(nm1,"all"),"in surface_mol, use of coordinates requires that a specific panel be specified");
@@ -1136,7 +1174,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,2),"unexpected text following quit_at_end"); }
 
 	else if(!strcmp(word,"frame_thickness")) {		// frame_thickness
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"frame_thickness needs to be a number");
 		er=graphicssetframethickness(sim,flt1);
 		CHECKS(er!=1,"out of memory enabling graphics");
@@ -1157,7 +1195,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!line2,"unexpected text following frame_color"); }
 
 	else if(!strcmp(word,"grid_thickness")) {		// grid_thickness
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"grid_thickness needs to be a number");
 		er=graphicssetgridthickness(sim,flt1);
 		CHECKS(er!=1,"out of memory enabling graphics");
@@ -1226,19 +1264,28 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(ltparam!=LPnone,"unrecognized light parameter");
 		line2=strnword(line2,2);
 		if(ltparam==LPon || ltparam==LPoff || ltparam==LPauto) v2[0]=0;
-		else {
+		else if(ltparam==LPambient || ltparam==LPdiffuse || ltparam==LPspecular) {
 			CHECKS(line2,"light format: light_number parameter values");
-			itct=strmathsscanf(line2,"%mlg %mlg %mlg",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
+			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
 			CHECKS(itct==3,"light is missing one or more values");
 			v2[3]=1;
 			line2=strnword(line2,4);
 			if(line2) {
-				itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v2[3]);
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&v2[3]);
 				CHECKS(itct==1,"failed to read alpha light value");
 				line2=strnword(line2,2); }
-			if(ltparam!=LPposition) {
-				for(i1=0;i1<4;i1++)
-					CHECKS(v2[i1]>=0 && v2[i1]<=1,"light color values need to be between 0 and 1"); }}
+			for(i1=0;i1<4;i1++)
+				CHECKS(v2[i1]>=0 && v2[i1]<=1,"light color values need to be between 0 and 1"); }
+		else if(ltparam==LPposition) {
+			CHECKS(line2,"light format: light_number parameter values");
+			itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
+			CHECKS(itct==3,"light position is missing one or more values");
+			v2[3]=0;
+			line2=strnword(line2,4);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&v2[3]);
+				CHECKS(itct==1,"failed to read position vs direction value");
+				line2=strnword(line2,2); }}
 		er=graphicssetlight(sim,NULL,lt,ltparam,v2);
 		CHECKS(er!=1,"out of memory");
 		CHECKS(!er,"BUG: error in light statement");
@@ -1255,7 +1302,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=-7,"error allocating memory");
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing data for display_size");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"display_size format: name[(state)] size");
 		CHECKS(flt1>=0,"display_size value needs to be >=0");
 		molsetdisplaysize(sim,0,index,ms,flt1);
@@ -1268,7 +1315,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=-3,"cannot read molecule state value");
 		CHECKS(ms<MSMAX || ms==MSall,"invalid state");
 		CHECKS(line2=strnword(line2,2),"missing data for display_size");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"display_size_rule format: name[(state)] size");
 		CHECKS(flt1>=0,"display_size_rule value needs to be >=0");
 		er=RuleAddRule(sim,RTdispsize,NULL,pattern,&ms,NULL,flt1,NULL,NULL);
@@ -1549,7 +1596,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			sprintf(str6,"%i",0); }
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
 			CHECKS(itct==1,"random_segments format: name type number [x y z theta phi chi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
@@ -1602,7 +1649,22 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 #else
 
 	else if(!strcmp(word,"reaction_rate")) {				// reaction_rate
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,rname,&flt1);
+		itct=sscanf(line2,"%s",rname);
+		CHECKS(itct==1,"reaction_rate format: rname rate");
+		r=readrxnname(sim,rname,&order,NULL,NULL,1);			// just get the order value
+		if(r<0) r=readrxnname(sim,rname,&order,NULL,NULL,2);
+		if(r<0) r=readrxnname(sim,rname,&order,NULL,NULL,3);
+		CHECKS(r>=0,"unrecognized reaction name");
+
+		if(order==0 && dim==1) itct=strmathsscanf(line2,"%s %mlg|L-1/T",varnames,varvalues,nvar,rname,&flt1);
+		else if(order==0 && dim==2) itct=strmathsscanf(line2,"%s %mlg|L-2/T",varnames,varvalues,nvar,rname,&flt1);
+		else if(order==0 && dim==3) itct=strmathsscanf(line2,"%s %mlg|L-3/T",varnames,varvalues,nvar,rname,&flt1);
+		else if(order==1) itct=strmathsscanf(line2,"%s %mlg|T-1",varnames,varvalues,nvar,rname,&flt1);
+		else if(order==2 && dim==1) itct=strmathsscanf(line2,"%s %mlg|L/T",varnames,varvalues,nvar,rname,&flt1);
+		else if(order==2 && dim==2) itct=strmathsscanf(line2,"%s %mlg|L2/T",varnames,varvalues,nvar,rname,&flt1);
+		else if(order==2 && dim==3) itct=strmathsscanf(line2,"%s %mlg|L3/T",varnames,varvalues,nvar,rname,&flt1);
+		else {CHECKS(0,"BUG in reaction_rate: order and dim are impossible");}
+
 		CHECKS(itct==2,"reaction_rate format: rname rate");
 		CHECKS(flt1>=0,"reaction rate value must be non-negative");
 		rxn=NULL;
@@ -1645,7 +1707,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,3),"unexpected text following reaction_multiplicity"); }
 
 	else if(!strcmp(word,"confspread_radius")) {		// confspread_radius
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,rname,&flt1);
+		itct=strmathsscanf(line2,"%s %mlg|L",varnames,varvalues,nvar,rname,&flt1);
 		CHECKS(itct==2,"confspread_radius format: rname radius");
 		CHECKS(flt1>=0,"confspread radius value must be non-negative");
 		rxn=NULL;
@@ -1666,7 +1728,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,3),"unexpected text following confspread_radius"); }
 
 	else if(!strcmp(word,"binding_radius")) {		// binding_radius
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,rname,&flt1);
+		itct=strmathsscanf(line2,"%s %mlg|L",varnames,varvalues,nvar,rname,&flt1);
 		CHECKS(itct==2,"binding_radius format: rname radius");
 		CHECKS(flt1>=0,"binding radius value must be non-negative");
 		rxn=NULL;
@@ -1687,7 +1749,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,3),"unexpected text following binding_radius"); }
 
 	else if(!strcmp(word,"reaction_probability")) {		// reaction_probability
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,rname,&flt1);
+		itct=strmathsscanf(line2,"%s %mlg|",varnames,varvalues,nvar,rname,&flt1);
 		CHECKS(itct==2,"reaction_probability format: rname value");
 		CHECKS(flt1>=0 && flt1<=1,"probability value must be between 0 and 1");
 		rxn=NULL;
@@ -1708,7 +1770,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,3),"unexpected text following reaction_probability"); }
 
 	else if(!strcmp(word,"reaction_chi")) {			// reaction_chi
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,rname,&flt1);
+		itct=strmathsscanf(line2,"%s %mlg|",varnames,varvalues,nvar,rname,&flt1);
 		CHECKS(itct==2,"reaction_chi format: rname value");
 		CHECKS(flt1!=0 && flt1<1,"reaction chi value must be between 0 and 1 (or -1 to disable)");
 		rxn=NULL;
@@ -1732,9 +1794,9 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,3),"unexpected text following reaction_chi"); }
 
 	else if(!strcmp(word,"reaction_production")) {		// reaction_production
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,rname,&flt1);
+		itct=strmathsscanf(line2,"%s %mlg|",varnames,varvalues,nvar,rname,&flt1);
 		CHECKS(itct==2,"reaction_production format: rname value");
-		CHECKS(flt1>=0 && flt1<=1,"production value must be between 0 and 1");
+		CHECKS(flt1>=0,"production value must be at least 0");
 		rxn=NULL;
 		r=readrxnname(sim,rname,&order,&rxn,NULL,1);
 		if(r>=0) {
@@ -2019,9 +2081,14 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(rpart==RPirrev);
 		else if(rpart==RPbounce && !line2)
 			flt1=-1;			// default bounce method
-		else if(rpart==RPpgem || rpart==RPbounce || rpart==RPpgemmax || rpart==RPpgemmaxw || rpart==RPratio || rpart==RPunbindrad || rpart==RPpgem2 || rpart==RPpgemmax2 || rpart==RPratio2) {
+		else if(rpart==RPpgem || rpart==RPbounce || rpart==RPpgemmax || rpart==RPpgemmaxw || rpart==RPratio || rpart==RPpgem2 || rpart==RPpgemmax2 || rpart==RPratio2) {
 			CHECKS(line2,"missing parameter in product_placement");
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
+			CHECKS(itct==1,"error reading parameter in product_placement");
+			line2=strnword(line2,2); }
+		else if(rpart==RPunbindrad) {
+			CHECKS(line2,"missing parameter in product_placement");
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 			CHECKS(itct==1,"error reading parameter in product_placement");
 			line2=strnword(line2,2); }
 		else if(rpart==RPoffset || rpart==RPfixed) {
@@ -2048,7 +2115,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 				CHECKS(prd<rxn->nprod,"molecule in product_placement is not a product of this reaction"); }
 			CHECKS(line2=strnword(line2,2),"position vector missing for product_placement");
 			for(d=0;d<dim;d++) {
-				itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[d]);
+				itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&v1[d]);
 				CHECKS(itct==1,"insufficient data for position vector for product_placement");
 				line2=strnword(line2,2); }}
 		else CHECKS(0,"unrecognized or not permitted product placement parameter");
@@ -2100,13 +2167,13 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,2),"unexpected text following random_seed"); }
 
 	else if(!strcmp(word,"accuracy")) {						// accuracy
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"accuracy needs to be a number");
 		sim->accur=flt1;
 		CHECKS(!strnword(line2,2),"unexpected text following accuracy"); }
 
 	else if(!strcmp(word,"molperbox")) {					// molperbox
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"molperbox needs to be a number");
 		er=boxsetsize(sim,"molperbox",flt1);
 		CHECKS(er!=1,"out of memory");
@@ -2115,7 +2182,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(!strnword(line2,2),"unexpected text following molperbox"); }
 
 	else if(!strcmp(word,"boxsize")) {						// boxsize
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"boxsize needs to be a number");
 		er=boxsetsize(sim,"boxsize",flt1);
 		CHECKS(er!=1,"out of memory");
@@ -2134,7 +2201,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"epsilon")) {						// epsilon
 		CHECKS(dim>0,"need to enter dim before epsilon");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"epsilon format: value");
 		er=surfsetepsilon(sim,flt1);
 		CHECKS(er!=2,"out of memory");
@@ -2143,7 +2210,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"margin")) {						// margin
 		CHECKS(dim>0,"need to enter dim before margin");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"margin format: value");
 		er=surfsetmargin(sim,flt1);
 		CHECKS(er!=2,"out of memory");
@@ -2152,7 +2219,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"neighbor_dist") || !strcmp(word,"neighbour_dist")) {			// neighbor_dist
 		CHECKS(dim>0,"need to enter dim before neighbor_dist");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKS(itct==1,"neighbor_dist format: value");
 		er=surfsetneighdist(sim,flt1);
 		CHECKS(er!=2,"out of memory");
@@ -2250,6 +2317,9 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 
 		else if(!strcmp(word,"start_rules")) {				// start_rules
 			CHECKS(0,"Moleculizer support has been discontinued in Smoldyn"); }
+
+		else if(!strcmp(word,"end_units")) {					// end_units
+			er=(int) strunits(NULL,NULL,0,NULL,"pop"); }
 
 		else if(!line2) {															// just word
 			CHECKS(0,"unknown word or missing parameter"); }
@@ -2432,6 +2502,7 @@ int simInitAndLoad(const char *fileroot,const char *filename,simptr *smptr,const
 		simLog(sim,2," Path: '%s'\n",fileroot);
 		simLog(sim,2," Name: '%s'\n",filename);
 		CHECKMEM(strloadmathfunctions()==0);
+		CHECKMEM(strunits(NULL,NULL,0,NULL,"initialize")==0);
 		CHECKMEM(loadsmolfunctions(sim)==0);
 		er=loadsim(sim,fileroot,filename,NULL);		// load sim
 		CHECK(!er);

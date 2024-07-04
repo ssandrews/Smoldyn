@@ -1275,7 +1275,7 @@ void surfaceoutput(simptr sim) {
 
 	simLog(sim,1," Allocated for %i species\n",srfss->maxspecies-1);
 
-	simLog(sim,1," Surface epsilon, margin, and neighbor distances: %g %g %g\n",srfss->epsilon,srfss->margin,srfss->neighdist);
+	simLog(sim,1," Surface epsilon, margin, and neighbor distances: %g|L %g|L %g|L\n",srfss->epsilon,srfss->margin,srfss->neighdist);
 
 	if(sim->mols) {
 		simLog(sim,1," Local max species record: %i\n",srfss->maxspecies);
@@ -1372,9 +1372,9 @@ void surfaceoutput(simptr sim) {
 					if(srf->nemitter[face][i]) {
 						simLog(sim,2,"  %i %s-side emitters defined, of %i allocated:\n",srf->nemitter[face][i],surfface2string(face,string),srf->maxemitter[face][i]);
 						for(emit=0;emit<srf->nemitter[face][i];emit++) {
-							simLog(sim,2,"   %g at (%g",srf->emitteramount[face][i][emit],srf->emitterpos[face][i][emit][0]);
+							simLog(sim,2,"   %g at (%g|L",srf->emitteramount[face][i][emit],srf->emitterpos[face][i][emit][0]);
 							for(d=1;d<dim;d++)
-								simLog(sim,2,",%g",srf->emitterpos[face][i][emit][d]);
+								simLog(sim,2,",%g|L",srf->emitterpos[face][i][emit][d]);
 							simLog(sim,2,")\n"); }}}
 
 		simLog(sim,1,"  number of molecule lists: %i of %i allocated\n",srf->nmollist,srf->maxmollist);
@@ -1397,7 +1397,7 @@ void surfaceoutput(simptr sim) {
 				pnl=srf->panels[PSrect][p];
 				point=pnl->point;
 				front=pnl->front;
-				if(dim==1) simLog(sim,2,"   %s: %g, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
+				if(dim==1) simLog(sim,2,"   %s: %g|L, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
 				else if(dim==2) simLog(sim,2,"   %s: (%g,%g), (%g,%g), facing: %c%1.0f, length: %g",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0]==1?'+':'-',front[1],Geo_LineLength(point[0],point[1],2));
 				else simLog(sim,2,"   %s: (%g,%g,%g), (%g,%g,%g), (%g,%g,%g), (%g,%g,%g), facing: %c%1.0f, area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],point[3][0],point[3][1],point[3][2],front[0]==1?'+':'-',front[1],Geo_QuadArea(point[0],point[1],point[2],point[3],3));
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));

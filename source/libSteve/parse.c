@@ -403,6 +403,7 @@ int Parse_ReadLine(ParseFilePtr *pfpptr,char *word,char **line2ptr,char *erstr) 
 	if(skip);
 
 	else if(!linetest || (itct>0 && !strcmp(word,"end_file"))) {// end_file
+		strunits(NULL,pfp->fname,0,NULL,"pop");
 		pfp1=pfp->prevfile;
 		fclose(pfp->fptr);
 		Parse_FreeFilePtr(pfp);

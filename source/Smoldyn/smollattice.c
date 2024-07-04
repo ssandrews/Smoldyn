@@ -741,7 +741,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 
 		CHECKS(lattice,"lattice name has to be entered before lattice boundaries");
 		CHECKS(dim>0,"need to enter dim before boundaries");
-		itct=strmathsscanf(line2,"%s %mlg %mlg",varnames,varvalues,nvar,nm,&min,&max);
+		itct=strmathsscanf(line2,"%s %mlg|L %mlg|L",varnames,varvalues,nvar,nm,&min,&max);
 		CHECKS(itct==3,"boundaries format: dimension position position [type]");
 		if(!strcmp(nm,"0") || !strcmp(nm,"x")) axis=0;
 		else if(!strcmp(nm,"1") || !strcmp(nm,"y")) axis=1;
@@ -767,7 +767,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 		CHECKS(dim>0,"need to enter dim before lengthscale");
 		for(d=0;d<dim;d++) {
       CHECKS(line2,"missing values for lengthscale");
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&dx);
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&dx);
 			CHECKS(itct==1,"error reading lengthscale");
 			lattice->dx[d]=dx;
       line2=strnword(line2,2); }
@@ -904,7 +904,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 					poslo[d]=flt1;
 					poshi[d]=flt2; }
 				else {
-					itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+					itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 					CHECKS(itct==1,"cannot read position value for mol");
 					poslo[d]=poshi[d]=flt1; }}}
 		er=latticeaddmols(lattice,nmol,i,poslo,poshi,sim->dim);

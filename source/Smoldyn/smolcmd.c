@@ -373,7 +373,7 @@ enum CMDcode cmdsetflag(simptr sim,cmdptr cmd,char *line2) {
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDcontrol;
 	SCMDCHECK(line2,"missing argument");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&f1);
+	itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&f1);
 	SCMDCHECK(itct==1,"cannot read flag value");
 	scmdsetflag(sim->cmds,f1);
 	return CMDok; }
@@ -475,7 +475,7 @@ enum CMDcode cmdifflag(simptr sim,cmdptr cmd,char *line2) {
 
 	if(line2 && !strcmp(line2,"cmdtype")) return conditionalcmdtype(sim,cmd,2);
 	SCMDCHECK(line2,"missing arguments");
-	itct=strmathsscanf(line2,"%c %mlg",Varnames,Varvalues,Nvar,&ch,&f1);
+	itct=strmathsscanf(line2,"%c %mlg|",Varnames,Varvalues,Nvar,&ch,&f1);
 	SCMDCHECK(itct==2,"cannot read comparison symbol or flag value");
 	SCMDCHECK(ch=='<' || ch=='=' || ch=='>',"comparison symbol has to be <, =, or >");
 	flag=scmdreadflag(sim->cmds);
@@ -491,7 +491,7 @@ enum CMDcode cmdifprob(simptr sim,cmdptr cmd,char *line2) {
 
 	if(line2 && !strcmp(line2,"cmdtype")) return conditionalcmdtype(sim,cmd,1);
 	SCMDCHECK(line2,"missing arguments");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&f1);
+	itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&f1);
 	SCMDCHECK(itct==1,"cannot read probability value");
 	SCMDCHECK(f1>=0 && f1<=1,"probability value needs to be between 0 and 1");
 	if(randCOD()<f1)
@@ -652,7 +652,7 @@ enum CMDcode cmdif(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) {
 		return conditionalcmdtype(sim,cmd,2); }
 
-	itct=strmathsscanf(line2,"%mlg %c %mlg",Varnames,Varvalues,Nvar,&value1,&symbol,&value2);
+	itct=strmathsscanf(line2,"%mlg| %c %mlg|",Varnames,Varvalues,Nvar,&value1,&symbol,&value2);
 	SCMDCHECK(itct==3,"cannot read command arguments");
   SCMDCHECK(line2=strnword(line2,4),"missing conditional command");
 
@@ -815,7 +815,7 @@ enum CMDcode cmdevaluate(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(er!=-1,"file or data name not recognized");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing item to evaluate");
-	it=strmathsscanf(line2,"%mlg",sim->varnames,sim->varvalues,sim->nvar,&answer);
+	it=strmathsscanf(line2,"%mlg|",sim->varnames,sim->varvalues,sim->nvar,&answer);
 	if(it!=1) {
 		er=strmatherror(erstr,1);
 		SCMDCHECK(!er,"%s",erstr); }
@@ -1010,7 +1010,7 @@ enum CMDcode cmdmolcountinbox(simptr sim,cmdptr cmd,char *line2) {
 	dim=sim->dim;
 	for(d=0;d<dim;d++) {
 		SCMDCHECK(line2,"missing argument");
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&low[d],&high[d]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&low[d],&high[d]);
 		SCMDCHECK(itct==2,"read failure");
 		line2=strnword(line2,3); }
 	er=scmdgetfptr(sim->cmds,line2,3,&fptr,&dataid);
@@ -1320,7 +1320,7 @@ enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(axis>=0 && axis<dim,"illegal axis value");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing arguments");
-	itct=strmathsscanf(line2,"%mlg %mlg %mi",Varnames,Varvalues,Nvar,&low[axis],&high[axis],&nbin);
+	itct=strmathsscanf(line2,"%mlg|L %mlg|L %mi",Varnames,Varvalues,Nvar,&low[axis],&high[axis],&nbin);
 	SCMDCHECK(itct==3,"cannot read arguments: low high bins");
 	SCMDCHECK(low[axis]<high[axis],"low value needs to be less than high value");
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
@@ -1329,7 +1329,7 @@ enum CMDcode cmdmolcountspace(simptr sim,cmdptr cmd,char *line2) {
 	for(d=0;d<dim-1;d++) {
 		if(ax2==axis) ax2++;
 		SCMDCHECK(line2,"missing position arguments");
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&low[ax2],&high[ax2]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&low[ax2],&high[ax2]);
 		SCMDCHECK(itct==2,"cannot read (or insufficient) position arguments");
 		SCMDCHECK(low[ax2]<=high[ax2],"low value needs to be less than or equal to high value");
 		line2=strnword(line2,3);
@@ -1442,7 +1442,7 @@ enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(line2,"missing arguments");
 	curaxis=0;
 	if(curaxis==axis) curaxis++;									// first parallel axis
-	itct=strmathsscanf(line2,"%mlg %mlg %mi",Varnames,Varvalues,Nvar,&low[curaxis],&high[curaxis],&nbin1);
+	itct=strmathsscanf(line2,"%mlg|L %mlg|L %mi",Varnames,Varvalues,Nvar,&low[curaxis],&high[curaxis],&nbin1);
 	SCMDCHECK(itct==3,"cannot read arguments: low high bins");
 	SCMDCHECK(low[curaxis]<high[curaxis],"low value needs to be less than high value");
 	SCMDCHECK(nbin1>0,"bins value needs to be > 0");
@@ -1452,7 +1452,7 @@ enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(line2,"missing arguments");
 	curaxis++;
 	if(curaxis==axis) curaxis++;									// second parallel axis
-	itct=strmathsscanf(line2,"%mlg %mlg %mi",Varnames,Varvalues,Nvar,&low[curaxis],&high[curaxis],&nbin2);
+	itct=strmathsscanf(line2,"%mlg|L %mlg|L %mi",Varnames,Varvalues,Nvar,&low[curaxis],&high[curaxis],&nbin2);
 	SCMDCHECK(itct==3,"cannot read arguments: low high bins");
 	SCMDCHECK(low[curaxis]<high[curaxis],"low value needs to be less than high value");
 	SCMDCHECK(nbin2>0,"bins value needs to be > 0");
@@ -1461,7 +1461,7 @@ enum CMDcode cmdmolcountspace2d(simptr sim,cmdptr cmd,char *line2) {
 
 	if(dim==3) {
 		curaxis=axis;																// perpendicular axis
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&low[curaxis],&high[curaxis]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&low[curaxis],&high[curaxis]);
 		SCMDCHECK(itct==2,"cannot read (or insufficient) position arguments");
 		SCMDCHECK(low[curaxis]<=high[curaxis],"low value needs to be less than or equal to high value");
 		line2=strnword(line2,3); }
@@ -1552,11 +1552,11 @@ enum CMDcode cmdmolcountspaceradial(simptr sim,cmdptr cmd,char *line2) {
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing arguments");
 	for(d=0;d<sim->dim;d++) {
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&center[d]);
+		itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&center[d]);
 		SCMDCHECK(itct==1,"missing center value");
 		line2=strnword(line2,2);
 		SCMDCHECK(line2,"missing arguments"); }
-	itct=strmathsscanf(line2,"%mlg %mi",Varnames,Varvalues,Nvar,&radius,&nbin);
+	itct=strmathsscanf(line2,"%mlg|L %mi",Varnames,Varvalues,Nvar,&radius,&nbin);
 	SCMDCHECK(itct==2,"cannot read arguments: radius bins");
 	SCMDCHECK(radius>0,"radius needs to be greater than 0");
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
@@ -1642,16 +1642,16 @@ enum CMDcode cmdmolcountspacepolarangle(simptr sim,cmdptr cmd,char *line2) {
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing arguments");
 	for(d=0;d<sim->dim;d++) {
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&center[d]);
+		itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&center[d]);
 		SCMDCHECK(itct==1,"missing center value");
 		line2=strnword(line2,2);
 		SCMDCHECK(line2,"missing arguments"); }
 	for(d=0;d<sim->dim;d++) {
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&pole[d]);
+		itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&pole[d]);
 		SCMDCHECK(itct==1,"missing pole value");
 		line2=strnword(line2,2);
 		SCMDCHECK(line2,"missing arguments"); }
-	itct=strmathsscanf(line2,"%mlg %mlg %mi",Varnames,Varvalues,Nvar,&radiusmin,&radiusmax,&nbin);
+	itct=strmathsscanf(line2,"%mlg|L %mlg|L %mi",Varnames,Varvalues,Nvar,&radiusmin,&radiusmax,&nbin);
 	SCMDCHECK(itct==3,"cannot read arguments: radius_min radius_max bins");
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
 	line2=strnword(line2,4);
@@ -1763,7 +1763,7 @@ enum CMDcode cmdradialdistribution(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i2!=-7,"error allocating memory");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing arguments");
-	itct=strmathsscanf(line2,"%mlg %mi %mi",Varnames,Varvalues,Nvar,&radius,&nbin,&average);
+	itct=strmathsscanf(line2,"%mlg|L %mi %mi",Varnames,Varvalues,Nvar,&radius,&nbin,&average);
 	SCMDCHECK(itct==3,"cannot read arguments: radius bins average");
 	SCMDCHECK(radius>0,"radius needs to be greater than 0");
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
@@ -1878,12 +1878,12 @@ enum CMDcode cmdradialdistribution2(simptr sim,cmdptr cmd,char *line2) {
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing arguments");
 	for(d=0;d<sim->dim;d++) {
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&lowpos[d],&highpos[d]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&lowpos[d],&highpos[d]);
 		SCMDCHECK(itct==2,"missing arguments");
 		SCMDCHECK(lowpos[d]<=highpos[d],"low position value needs to be <= high position value");
 		line2=strnword(line2,3);
 		SCMDCHECK(line2,"missing arguments"); }
-	itct=strmathsscanf(line2,"%mlg %mi %mi",Varnames,Varvalues,Nvar,&radius,&nbin,&average);
+	itct=strmathsscanf(line2,"%mlg|L %mi %mi",Varnames,Varvalues,Nvar,&radius,&nbin,&average);
 	SCMDCHECK(itct==3,"cannot read arguments: radius bins average");
 	SCMDCHECK(radius>0,"radius needs to be greater than 0");
 	SCMDCHECK(nbin>0,"bins value needs to be > 0");
@@ -2795,7 +2795,7 @@ enum CMDcode cmdmeansqrdisp3(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(msddim<sim->dim,"invalid dimension value");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"insufficient arguments");
-	itct=strmathsscanf(line2,"%c %c %i %mlg",Varnames,Varvalues,Nvar,&startchar,&reportchar,&maxmol,&change);
+	itct=strmathsscanf(line2,"%c %c %i %mlg|",Varnames,Varvalues,Nvar,&startchar,&reportchar,&maxmol,&change);
 	SCMDCHECK(itct==4,"cannot read start, report, max_mol, or change information");
 	SCMDCHECK(maxmol>0,"max_mol has to be at least 1");
 	line2=strnword(line2,5);
@@ -3252,9 +3252,9 @@ enum CMDcode cmdpointsource(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i>=1,"name not recognized");
 	line2=strnword(line2,3);
 	SCMDCHECK(line2,"missing location");
-	if(sim->dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&pos[0]);
-	else if(sim->dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&pos[0],&pos[1]);
-	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&pos[0],&pos[1],&pos[2]);
+	if(sim->dim==1) itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&pos[0]);
+	else if(sim->dim==2) itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&pos[0],&pos[1]);
+	else itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",Varnames,Varvalues,Nvar,&pos[0],&pos[1],&pos[2]);
 	SCMDCHECK(itct==sim->dim,"insufficient location dimensions");
 	SCMDCHECK(addmol(sim,num,i,pos,pos,1)==0,"not enough available molecules");
 	return CMDok; }
@@ -3269,7 +3269,7 @@ enum CMDcode cmdvolumesource(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 	SCMDCHECK(line2,"missing argument");
 	SCMDCHECK(sim->mols,"molecules are undefined");
-	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm,&numdbl);
+	itct=strmathsscanf(line2,"%s %mlg|",Varnames,Varvalues,Nvar,nm,&numdbl);
 	SCMDCHECK(itct==2,"read failure");
 	SCMDCHECK(numdbl>=0,"number cannot be negative");
 	num=(int) numdbl;
@@ -3280,14 +3280,14 @@ enum CMDcode cmdvolumesource(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(line2,"missing location");
 	for(d=0;d<sim->dim;d++) {
 		SCMDCHECK(line2,"missing argument");
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&poslo[d],&poshi[d]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&poslo[d],&poshi[d]);
 		SCMDCHECK(itct==2,"read failure");
 		line2=strnword(line2,3); }
 	SCMDCHECK(addmol(sim,num,i,poslo,poshi,1)==0,"not enough available molecules");
 	return CMDok; }
 
 
-/* guassiansource */
+/* gaussiansource */
 enum CMDcode cmdgaussiansource(simptr sim,cmdptr cmd,char *line2) {
 	int itct,num,i,d,imol,dim;
 	char nm[STRCHAR];
@@ -3298,7 +3298,7 @@ enum CMDcode cmdgaussiansource(simptr sim,cmdptr cmd,char *line2) {
 	dim=sim->dim;
 	SCMDCHECK(line2,"missing argument");
 	SCMDCHECK(sim->mols,"molecules are undefined");
-	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm,&numdbl);
+	itct=strmathsscanf(line2,"%s %mlg|",Varnames,Varvalues,Nvar,nm,&numdbl);
 	SCMDCHECK(itct==2,"read failure");
 	SCMDCHECK(numdbl>=0,"number cannot be negative");
 	num=(int) numdbl;
@@ -3309,7 +3309,7 @@ enum CMDcode cmdgaussiansource(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(line2,"missing location");
 	for(d=0;d<dim;d++) {
 		SCMDCHECK(line2,"missing argument");
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&mean[d],&sigma[d]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&mean[d],&sigma[d]);
 		SCMDCHECK(itct==2,"read failure");
 		line2=strnword(line2,3); }
 
@@ -3343,7 +3343,7 @@ enum CMDcode cmdmovesurfacemol(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(line2,"missing arguments");
 	SCMDCHECK(sim->mols,"molecules are undefined");
 	SCMDCHECK(sim->srfss,"surfaces are undefined");
-	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm,&prob);
+	itct=strmathsscanf(line2,"%s %mlg|",Varnames,Varvalues,Nvar,nm,&prob);
 	SCMDCHECK(itct==2,"failed to read molecule name or probability");
 
 	i=molstring2index1(sim,line2,&ms1,&index);
@@ -3454,7 +3454,7 @@ enum CMDcode cmdkillmolprob(simptr sim,cmdptr cmd,char *line2) {
 		strcpy(probstr,line2); }
 	else {
 		xyzvar=0;
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
+		itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&prob);
 		SCMDCHECK(itct==1,"killmolprob format: name[(state)] probability");
 		SCMDCHECK(prob>=0 && prob<=1,"probability needs to be between 0 and 1"); }
 
@@ -3471,7 +3471,7 @@ enum CMDcode cmdkillmolprob(simptr sim,cmdptr cmd,char *line2) {
 		simsetvariable(sim,"x",mptr->pos[0]);
 		if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
 		if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
-		strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
+		strmathsscanf(probstr,"%mlg|",Varnames,Varvalues,Nvar,&prob); }
 	if(coinrandD(prob)) molkill(sim,mptr,mptr->list,-1);
 	return CMDok; }
 
@@ -3895,7 +3895,7 @@ enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2) {
 		strcpy(probstr,line2); }
 	else {
 		xyzvar=0;
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
+		itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&prob);
 		SCMDCHECK(itct==1,"failed to read probability");
 		SCMDCHECK(prob>=0 && prob<=1,"probability is out of bounds"); }
 
@@ -3911,7 +3911,7 @@ enum CMDcode cmdequilmol(simptr sim,cmdptr cmd,char *line2) {
 			simsetvariable(sim,"x",mptr->pos[0]);
 			if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
 			if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
-			strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
+			strmathsscanf(probstr,"%mlg|",Varnames,Varvalues,Nvar,&prob); }
 		if(coinrandD(prob))
 			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL);
 		else
@@ -3959,7 +3959,7 @@ enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2) {
 		xyzvar=1;
 	else {
 		xyzvar=0;
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&prob);
+		itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&prob);
 		SCMDCHECK(itct==1,"cannot read fraction");
 		SCMDCHECK(prob>=0 && prob<=1,"fraction out of bounds"); }
 
@@ -3974,7 +3974,7 @@ enum CMDcode cmdreplacemol(simptr sim,cmdptr cmd,char *line2) {
 		simsetvariable(sim,"x",mptr->pos[0]);
 		if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
 		if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
-		strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&prob); }
+		strmathsscanf(probstr,"%mlg|",Varnames,Varvalues,Nvar,&prob); }
 	if(coinrandD(prob))
 		molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL);
 	return CMDok; }
@@ -4000,9 +4000,9 @@ enum CMDcode cmdreplacexyzmol(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(ms!=MSall,"molecule state cannot be 'all'");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing position information");
-	if(sim->dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&pos[0]);
-	else if(sim->dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&pos[0],&pos[1]);
-	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&pos[0],&pos[1],&pos[2]);
+	if(sim->dim==1) itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&pos[0]);
+	else if(sim->dim==2) itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&pos[0],&pos[1]);
+	else itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",Varnames,Varvalues,Nvar,&pos[0],&pos[1],&pos[2]);
 	SCMDCHECK(itct==sim->dim,"insufficient dimensions entered");
 	bptr=pos2box(sim,pos);
 	ll=sim->mols->listlookup[i][ms];
@@ -4055,7 +4055,7 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 		xyzvar=1;
 	else {
 		xyzvar=0;
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&frac);
+		itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&frac);
 		SCMDCHECK(itct==1,"cannot read fraction");
 		SCMDCHECK(frac>=0 && frac<=1,"fraction out of bounds"); }
 	line2=strnword(line2,2);
@@ -4063,7 +4063,7 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 	boxs=sim->boxs;
 	for(d=0;d<dim;d++) {
 		SCMDCHECK(line2,"missing argument");
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&poslo[d],&poshi[d]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&poslo[d],&poshi[d]);
 		SCMDCHECK(itct==2,"read failure");
 		line2=strnword(line2,3); }
 
@@ -4085,7 +4085,7 @@ enum CMDcode cmdreplacevolmol(simptr sim,cmdptr cmd,char *line2) {
 						simsetvariable(sim,"x",mptr->pos[0]);
 						if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
 						if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
-						strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&frac); }
+						strmathsscanf(probstr,"%mlg|",Varnames,Varvalues,Nvar,&frac); }
 				 	if(coinrandD(frac)) {
 						molchangeident(sim,mptr,ll,-1,i2,ms2,mptr->pnl,NULL); }}}}}
 	return CMDok; }
@@ -4133,7 +4133,7 @@ enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2) {
 		xyzvar=1;
 	else {
 		xyzvar=0;
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&frac);
+		itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&frac);
 		SCMDCHECK(itct==1,"cannot read fraction");
 		SCMDCHECK(frac>=0 && frac<=1,"fraction out of bounds"); }
 	line2=strnword(line2,2);
@@ -4155,7 +4155,7 @@ enum CMDcode cmdreplacecmptmol(simptr sim,cmdptr cmd,char *line2) {
 			simsetvariable(sim,"x",mptr->pos[0]);
 			if(sim->dim>1) simsetvariable(sim,"y",mptr->pos[1]);
 			if(sim->dim>2) simsetvariable(sim,"z",mptr->pos[2]);
-			strmathsscanf(probstr,"%mlg",Varnames,Varvalues,Nvar,&frac); }
+			strmathsscanf(probstr,"%mlg|",Varnames,Varvalues,Nvar,&frac); }
 	 	if(coinrandD(frac))
 			molchangeident(sim,mptr,-1,-1,i2,ms2,mptr->pnl,NULL); }
 	return CMDok; }
@@ -4193,7 +4193,7 @@ enum CMDcode cmdmodulatemol(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK((ms1==MSsoln && ms2==MSsoln) || (ms1!=MSsoln && ms2!=MSsoln),"cannot equilibrate between solution and surface-bound");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"missing frequency and shift");
-	itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&freq,&shift);
+	itct=strmathsscanf(line2,"%mlg|/T %mlg|",Varnames,Varvalues,Nvar,&freq,&shift);
 	SCMDCHECK(itct==2,"failure reading frequency or shift");
 
 	inscan=1;
@@ -4261,7 +4261,7 @@ enum CMDcode cmdsetrateint(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
 	SCMDCHECK(line2,"missing argument");
-	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,rnm,&rateint);
+	itct=strmathsscanf(line2,"%s %mlg|",Varnames,Varvalues,Nvar,rnm,&rateint);
 	SCMDCHECK(itct==2,"read failure");
 	r=-1;
 	if(sim->rxnss[0]) r=stringfind(sim->rxnss[0]->rname,sim->rxnss[0]->totrxn,rnm);
@@ -4342,7 +4342,7 @@ enum CMDcode cmdsettimestep(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
 	SCMDCHECK(line2,"missing argument");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&dt);
+	itct=strmathsscanf(line2,"%mlg|T",Varnames,Varvalues,Nvar,&dt);
 	SCMDCHECK(itct==1,"read failure");
 	SCMDCHECK(dt>0,"time step must be >0");
 
@@ -4387,7 +4387,7 @@ enum CMDcode cmdexcludebox(simptr sim,cmdptr cmd,char *line2) {
 	boxs=sim->boxs;
 	for(d=0;d<dim;d++) {
 		SCMDCHECK(line2,"missing argument");
-		itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&poslo[d],&poshi[d]);
+		itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&poslo[d],&poshi[d]);
 		SCMDCHECK(itct==2,"read failure");
 		line2=strnword(line2,3); }
 
@@ -4423,11 +4423,11 @@ enum CMDcode cmdexcludesphere(simptr sim,cmdptr cmd,char *line2) {
 	boxs=sim->boxs;
 	for(d=0;d<dim;d++) {
 		SCMDCHECK(line2,"missing center argument");
-		itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&poscent[d]);
+		itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&poscent[d]);
 		SCMDCHECK(itct==1,"failure reading center");
 		line2=strnword(line2,2); }
 	SCMDCHECK(line2,"missing radius");
-	itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&rad);
+	itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&rad);
 	SCMDCHECK(itct==1,"failure reading radius");
 
 	dist=rad*sqrt((double)dim);
@@ -4498,14 +4498,14 @@ enum CMDcode cmdsetreactionratemolcount(simptr sim,cmdptr cmd,char *line2) {
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 
 	SCMDCHECK(line2,"missing argument");
-	itct=strmathsscanf(line2,"%s %mlg",Varnames,Varvalues,Nvar,nm1,&coeff);
+	itct=strmathsscanf(line2,"%s %mlg|",Varnames,Varvalues,Nvar,nm1,&coeff);
   SCMDCHECK(itct==2,"missing reaction name or coefficient c0");
   r=readrxnname(sim,nm1,&order,&rxn,&vlist,1);
   SCMDCHECK(r>=0,"unrecognized reaction name");
   line2=strnword(line2,3);
   rate=coeff;
   while(line2) {
-    itct=strmathsscanf(line2,"%mlg %s",Varnames,Varvalues,Nvar,&coeff,nm1);
+    itct=strmathsscanf(line2,"%mlg| %s",Varnames,Varvalues,Nvar,&coeff,nm1);
     SCMDCHECK(itct==2,"missing coefficient and/or species parameters");
 		i=molstring2index1(sim,nm1,&ms,&index);
 		SCMDCHECK(i!=-1,"species is missing or cannot be read");
@@ -4546,9 +4546,9 @@ enum CMDcode cmdexpandsystem(simptr sim,cmdptr cmd,char *line2) {
 
 	dim=sim->dim;
 	SCMDCHECK(line2,"missing arguments");
-	if(dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&expand[0]);
-	else if(dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&expand[0],&expand[1]);
-	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&expand[0],&expand[1],&expand[2]);
+	if(dim==1) itct=strmathsscanf(line2,"%mlg|",Varnames,Varvalues,Nvar,&expand[0]);
+	else if(dim==2) itct=strmathsscanf(line2,"%mlg| %mlg|",Varnames,Varvalues,Nvar,&expand[0],&expand[1]);
+	else itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",Varnames,Varvalues,Nvar,&expand[0],&expand[1],&expand[2]);
   SCMDCHECK(itct==dim,"cannot read or wrong number of expansion values");
 	systemcenter(sim,center);
 
@@ -4615,9 +4615,9 @@ enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==1,"second argument should be code value");
 
 	SCMDCHECK(line2=strnword(line2,2),"missing arguments for translation amount");;
-	if(dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&translate[0]);
-	else if(dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&translate[0],&translate[1]);
-	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&translate[0],&translate[1],&translate[2]);
+	if(dim==1) itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&translate[0]);
+	else if(dim==2) itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&translate[0],&translate[1]);
+	else itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",Varnames,Varvalues,Nvar,&translate[0],&translate[1],&translate[2]);
   SCMDCHECK(itct==dim,"cannot read translation values or wrong number of them");
 
 	comparttranslate(sim,cmpt,code,translate);
@@ -4650,14 +4650,14 @@ enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(itct==1,"second argument should be code value");
 
 	SCMDCHECK(line2=strnword(line2,2),"missing arguments for standard deviations");;
-	if(dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&stddev[0]);
-	else if(dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&stddev[0],&stddev[1]);
-	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&stddev[0],&stddev[1],&stddev[2]);
+	if(dim==1) itct=strmathsscanf(line2,"%mlg|L",Varnames,Varvalues,Nvar,&stddev[0]);
+	else if(dim==2) itct=strmathsscanf(line2,"%mlg|L %mlg|L",Varnames,Varvalues,Nvar,&stddev[0],&stddev[1]);
+	else itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",Varnames,Varvalues,Nvar,&stddev[0],&stddev[1],&stddev[2]);
   SCMDCHECK(itct==dim,"cannot read standard deviation values or wrong number of them");
 
 	line2=strnword(line2,dim+1);
 	if(line2) {
-		itct=strmathsscanf(line2,"%s %mlg %mi",Varnames,Varvalues,Nvar,cname,&radius,&nsample);
+		itct=strmathsscanf(line2,"%s %mlg|L %mi",Varnames,Varvalues,Nvar,cname,&radius,&nsample);
 		SCMDCHECK(itct==3,"cannot read bounding compartment name, radius, and/or number of samples");
 		c=stringfind(cmptss->cnames,cmptss->ncmpt,cname);
 		SCMDCHECK(c>=0,"bounding compartment name not recognized");
@@ -4729,7 +4729,7 @@ enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i2!=-7,"error allocating memory");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation");
-	itct=strmathsscanf(line2,"%mlg %mlg %mlg %mlg %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
+	itct=strmathsscanf(line2,"%mlg|L/T %mlg|L/T %mlg|L %mlg|L %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
 	SCMDCHECK(itct==5,"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation");
 	SCMDCHECK(rmin>0,"minimum radius needs to be >0");
 	SCMDCHECK(rmax>=0,"maximum radius needs to be >=0");

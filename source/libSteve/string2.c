@@ -417,6 +417,17 @@ char *str1wordcpy(char *destination,const char *source,int n) {
 	return destination; }
 
 
+int strfirstwordpbrk(char *destination,const char *source,const char *symbols) {
+	int is;
+
+	is=0;
+	while(source[is] && !isspace(source[is]) && !strchr(symbols,source[is])) {
+		destination[is]=source[is];
+		is++; }
+	destination[is]='\0';
+	return is; }
+
+
 /******************************************************************/
 /************************** String arrays *************************/
 /******************************************************************/
@@ -1546,7 +1557,7 @@ int strmatherror(char *string,int clear) {
 /* strmathsscanf */
 int strmathsscanf(const char *str,const char *format,char **varnames,const double *varvalues,int nvar,...) {
 	va_list arguments;
-	char newformat[STRCHAR],newstr[STRCHAR],expression[STRCHAR];
+	char newformat[STRCHAR],newstr[STRCHAR],expression[STRCHAR],*barpos,dimstr[STRCHAR];
 	const char *fmtpos1,*fmtpos2,*strpos1,*strpos2;
 	int word,count,readint,valueint;
 	double value;
@@ -1565,20 +1576,28 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 		else if(*(fmtpos2+2)=='l' && *(fmtpos2+3)=='g') readint=0;
 		else CHECKS(0,"BUG: illegal string formatting argument");
 
-		word=strwhichword(fmtpos1,fmtpos2);
+		word=strwhichword(fmtpos1,fmtpos2);			// word number for fmtpos2
 		strpos2=strnwordc(strpos1,word);				// position in string with math for parsing
 		if(!strpos2) break;
 
-		strncat(newformat,fmtpos1,fmtpos2-fmtpos1);
+		strncat(newformat,fmtpos1,fmtpos2-fmtpos1);	// copy over everything up to pos2
 		strncat(newstr,strpos1,strpos2-strpos1);
-		sscanf(strpos2,"%s",expression);
-		if(readint) {
+		sscanf(strpos2,"%s",expression);				// read the full expression in from str
+		if(readint) {														// process an integer input
 			valueint=strmathevalint(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%i ");
 			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%i ",valueint); }
-		else {
+		else {																	// process a float input
+			barpos=strchr(expression,'|');
+			if(barpos) *(barpos++)='\0';
 			value=strmatheval(expression,varnames,varvalues,nvar);
+			if(strmatherror(NULL,0)) break;
+			if(*(fmtpos2+4)=='|')
+				sscanf(fmtpos2+5,"%s",dimstr);
+			else
+				dimstr[0]='\0';
+			value=strunits((!barpos || barpos[0]=='\0' || barpos[0]==' ')?NULL:barpos,(dimstr[0]=='\0' || dimstr[0]==' ')?NULL:dimstr,value,NULL,"convert");
 			if(strmatherror(NULL,0)) break;
 			strcat(newformat,"%lg ");
 			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%.17g ",value); }
@@ -1601,6 +1620,263 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 	return 0; }
 
 
+/****************************************************/
+/********** Unit conversions *********************/
+/*****************************************************/
 
 
+/* strunits */
+double strunits(const char *unitstring,const char *dimstring,double value,char *outstring,const char* function) {
+	static int numType=2;												// number of unit types
+	static int maxUnits=64;											// maximum number of units for each type
+	static int maxUnitChars=32;									// maximum characters in each unit name
+	static int maxStack=64;											// allocated size of unit stack
+	static int workUnits[2]={0,0};							// indices of working units
+	static int dimUnit[2]={0,0};								// powers of units, only used for recursion
+	static int haveWorkUnits=0;									// flag for whether already have working units
+	static int numUnits[2]={0,0};								// number of units defined for each type
+	static char **unitNames[2]={NULL,NULL};			// list of unit names for each type
+	static double *unitRatios[2]={NULL,NULL};		// list of conversion factors for each type
+	static int unitStack[2][64];								// stack of unit indices
+	static char *nameStack[64];									// stack of file names
+	static int numStack=0;											// elements in stacks
 
+	int ut,ui,count,is;
+	int tempunit[2],mult,power;
+	char ustring[STRCHAR],dstring[STRCHAR],word[STRCHAR];
+	char *strptr;
+	double factor,answer;
+
+	if(!unitstring && !haveWorkUnits && !strcmp(function,"convert"))	// file isn't using units
+		return value;
+
+	answer=0;																// initialize values and copy over input strings
+	if(unitstring) {
+		strncpy(ustring,unitstring,STRCHAR);
+		ustring[STRCHAR-1]='\0'; }
+	else
+		ustring[0]='\0';
+	if(dimstring) {
+		strncpy(dstring,dimstring,STRCHAR);
+		dstring[STRCHAR-1]='\0'; }
+	else
+		dstring[0]='\0';
+
+	if(!strcmp(function,"convert")) {				// convert value from entered units to working units
+		answer=value;
+		if(ustring[0]) {
+			CHECKS(haveWorkUnits==1,"Working units need to be defined before unit conversion can be done");
+			CHECKS(dstring[0],"Incompatible units: is '%s' but should be unitless",unitstring); }
+		if(dstring[0]) {
+			strunits(dstring,NULL,1,NULL,"parse");
+			for(ut=0;ut<numType;ut++)
+				tempunit[ut]=dimUnit[ut]; }
+		if(ustring[0])
+			answer=strunits(ustring,NULL,value,NULL,"parse");
+
+		if(dstring[0] && ustring[0]) {							// check unit compatibility
+			for(ut=0;ut<numType;ut++)
+				CHECKS(tempunit[ut]==dimUnit[ut],"Incompatible units: is '%s' but should be '%s'",unitstring,dimstring); }
+		else if(dstring[0] && numStack>0) {				// compute answer from stack
+			factor=1;
+			for(ut=0;ut<numType;ut++) {
+				ui=unitStack[ut][numStack-1];
+				factor*=pow(unitRatios[ut][ui]/unitRatios[ut][workUnits[ut]],tempunit[ut]); }
+			answer=value*factor; }
+		else if(dstring[0]) {
+			CHECKS(0,"Bug in strunits convert. No units to convert from."); }}
+
+	else if(!strcmp(function,"getunits")) {
+		outstring[0]='\0';
+		if(!haveWorkUnits)
+			answer=1;
+		else {
+			if(dstring[0]) {
+				strunits(dstring,NULL,1,NULL,"parse");
+				for(ut=0;ut<numType;ut++) {
+					count=strlen(outstring);
+					if(dimUnit[ut]!=0) {
+						if(count>0 && dimUnit[ut]>0) strcat(outstring,".");
+						else if(count>0) strcat(outstring,"/");
+						strcat(outstring,unitNames[ut][workUnits[ut]]);
+						if(dimUnit[ut]>1) sprintf(outstring+strlen(outstring),"%i",dimUnit[ut]);
+						else if(dimUnit[ut]<-1) sprintf(outstring+strlen(outstring),"%i",-dimUnit[ut]); }}}
+			else {
+				for(ut=0;ut<numType;ut++) {
+					if(ut>0) strcat(outstring," ");
+					strcat(outstring,unitNames[ut][workUnits[ut]]); }}}}
+
+	else if(!strcmp(function,"initialize")) {
+		if(unitNames[0]!=NULL) return 0;
+		for(ut=0;ut<numType;ut++) {
+			CHECKS(unitNames[ut]=(char**) calloc(maxUnits,sizeof(char*)),"strunits. Memory error.");
+			for(ui=0;ui<maxUnits;ui++) {
+				CHECKS(unitNames[ut][ui]=EmptyStringLong(maxUnitChars),"strunits. Memory error."); }
+			CHECKS(unitRatios[ut]=(double*) calloc(maxUnits,sizeof(double)),"strunits. Memory error");
+			for(ui=0;ui<maxUnits;ui++)
+				unitRatios[ut][ui]=1; }
+
+		ut=ui=0;
+		strcpy(unitNames[ut][ui],"L");							// length units
+		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"m");
+		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"km");
+		unitRatios[ut][ui++]=1e3;
+		strcpy(unitNames[ut][ui],"dm");
+		unitRatios[ut][ui++]=0.1;
+		strcpy(unitNames[ut][ui],"cm");
+		unitRatios[ut][ui++]=0.01;
+		strcpy(unitNames[ut][ui],"mm");
+		unitRatios[ut][ui++]=0.001;
+		strcpy(unitNames[ut][ui],"um");
+		unitRatios[ut][ui++]=1e-6;
+		strcpy(unitNames[ut][ui],"nm");
+		unitRatios[ut][ui++]=1e-9;
+		numUnits[ut]=ui;
+
+		ut++;
+		ui=0;
+		strcpy(unitNames[ut][ui],"T");							// time units
+		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"s");
+		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"ms");
+		unitRatios[ut][ui++]=0.001;
+		strcpy(unitNames[ut][ui],"us");
+		unitRatios[ut][ui++]=1e-6;
+		strcpy(unitNames[ut][ui],"ns");
+		unitRatios[ut][ui++]=1e-9;
+		numUnits[ut]=ui;
+
+		numStack=0;
+		for(is=0;is<maxStack;is++) {
+			CHECKS(nameStack[is]=EmptyString(),"Memory error in strunits."); }
+		for(ut=0;ut<numType;ut++)
+			workUnits[ut]=0; }
+
+	else if(!strcmp(function,"free")) {
+		for(ut=0;ut<numType;ut++) {
+			for(ui=0;ui<numUnits[ut];ui++)
+				free(unitNames[ut][ui]);
+			free(unitNames[ut]);
+			free(unitRatios[ut]);
+			unitNames[ut]=NULL;
+			unitRatios[ut]=NULL;
+			workUnits[ut]=0;
+			numUnits[ut]=0; }
+		for(is=0;is<maxStack;is++) {
+			free(nameStack[is]);
+			nameStack[is]=NULL; }
+		numStack=0;
+		haveWorkUnits=0; }
+
+	else if(!strcmp(function,"debug")) {
+		printf("data in strunit function:\n");
+		printf("%i unit types and %i units allocated per type\n",numType,maxUnits);
+		for(ut=0;ut<numType;ut++) {
+			printf("%i unit names and (ratios) in type %i:\n",numUnits[ut],ut);
+			for(ui=0;ui<numUnits[ut];ui++)
+				printf(" %s (%g)",unitNames[ut][ui],unitRatios[ut][ui]);
+			printf("\n"); }
+		printf("Unit stack has %i rows:\n",numStack);
+		for(is=0;is<numStack;is++) {
+			printf("row %i (filname='%s'):",is,nameStack[is]);
+			for(ut=0;ut<numType;ut++)
+				printf(" %s",unitNames[ut][unitStack[ut][is]]);
+			printf("\n"); }
+		printf("Working units (%s):",haveWorkUnits?"defined":"undefined");
+		for(ut=0;ut<numType;ut++)
+			printf(" %s",unitNames[ut][workUnits[ut]]);
+		printf("\n\n"); }
+
+	else if(!strcmp(function,"push")) {						// push new units onto stack. example string="um ms"
+		for(ut=0;ut<numType;ut++)
+			tempunit[ut]=0;
+		strptr=ustring;
+		while(strptr) {
+			count=sscanf(strptr,"%s",word);
+			CHECKS(count==1,"strunits. Failed to read unit during 'push' operation");
+			for(ut=0;ut<numType;ut++) {
+				ui=stringfind(unitNames[ut],numUnits[ut],word);
+				if(ui>=0) break; }
+			CHECKS(ui>=0,"strunits. Unit '%s' is not a recognized unit name",word);
+			tempunit[ut]=ui;
+			strptr=strnword(strptr,2); }
+		if(!haveWorkUnits) {
+			for(ut=0;ut<numType;ut++)
+				workUnits[ut]=tempunit[ut];
+			haveWorkUnits=1; }
+		CHECKS(numStack<maxStack,"strunits. Unit stack is full.");
+		for(ut=0;ut<numType;ut++)
+			unitStack[ut][numStack]=tempunit[ut];
+		strcpy(nameStack[numStack],dstring);
+		numStack++; }
+
+	else if(!strcmp(function,"pop")) {						// pop units down to the filename
+		if(dstring[0]) {
+			for(is=0;is<numStack;is++)
+				if(!strcmp(nameStack[is],dstring)) {
+					numStack=is;
+					break; }}
+		else
+			if(numStack>0)
+				numStack--; }
+
+	else if(!strcmp(function,"working")) {
+		for(ut=0;ut<numType;ut++)
+			tempunit[ut]=0;
+		strptr=ustring;
+		while(strptr) {
+			count=sscanf(strptr,"%s",word);
+			CHECKS(count==1,"strunits. Failed to read unit during 'working' operation");
+			for(ut=0;ut<numType;ut++) {
+				ui=stringfind(unitNames[ut],numUnits[ut],word);
+				if(ui>=0) break; }
+			CHECKS(ui>0,"strunits. Unit '%s' is not a recognized unit name",word);
+			tempunit[ut]=ui;
+			strptr=strnword(strptr,2); }
+		for(ut=0;ut<numType;ut++)
+			workUnits[ut]=tempunit[ut];
+		haveWorkUnits=1; }
+
+	else if(!strcmp(function,"parse")) {				// parse from unitstring
+		strptr=ustring;
+		factor=1;
+		mult=1;
+		for(ut=0;ut<numType;ut++)
+			dimUnit[ut]=0;
+		while(strptr && *strptr) {
+			if(*strptr=='.') {												// parse . or /
+				mult=1;
+				strptr++; }
+			else if(*strptr=='/') {
+				mult=0;
+				strptr++; }
+			else {																		// parse unit name
+				strptr+=strfirstwordpbrk(word,strptr,"./^0123456789-");
+				CHECKS(word[0]!='\0',"Parse error in strunits, with '%s'",unitstring);
+				for(ut=0;ut<numType;ut++) {
+					ui=stringfind(unitNames[ut],numUnits[ut],word);
+					if(ui>=0) break; }
+				CHECKS(ui>=0,"strunits. Unit '%s' (in '%s') is not a recognized unit name",word,unitstring);
+				strptr+=strfirstwordpbrk(word,strptr,"./");
+				power=1;
+				if(word[0]) {														// parse optional power value
+					if(word[0]=='^') word[0]=' ';
+					count=sscanf(word,"%i",&power);
+					CHECKS(count==1,"Parse error in strunits.");
+					if(mult==0) {
+						mult=1;
+						power*=-1; }}
+				dimUnit[ut]+=mult?power:-power;
+				if(ui>0) {
+					if(mult==1 && power==1) factor*=unitRatios[ut][ui]/unitRatios[ut][workUnits[ut]];
+					else if(mult==0 && power==1) factor*=unitRatios[ut][workUnits[ut]]/unitRatios[ut][ui];
+					else factor*=pow(unitRatios[ut][ui]/unitRatios[ut][workUnits[ut]],power); }}}
+		answer=value*factor; }
+
+	return answer;
+	failure:
+	MathParseError=2;
+	return 1; }

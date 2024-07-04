@@ -1,0 +1,25 @@
+# Simple bouncing molecules in a 3-D system
+# This file illustrates and tests the use of units
+
+units um ms
+
+graphics opengl
+
+dim 3
+
+boundaries x 0 100000|nm r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+read_file unitsmolecs.txt	# molecule information
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+cmd @ 1 molcount stdout
+
+end_file
+
+
+

@@ -350,20 +350,28 @@ int scmdstr2cmd(cmdssptr cmds,char *line2,char **varnames,double *varvalues,int 
 	if(itct!=1) return 3;
 	if(!(line2=strnword(line2,2))) return 3;
 	if(strchr("baBAEe",timing));
-	else if(strchr("@&",timing)) {
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&on);
+	else if(strchr("@",timing)) {
+		itct=strmathsscanf(line2,"%mlg|T",varnames,varvalues,nvar,&on);
+		if(itct!=1) return 3;
+		if(!(line2=strnword(line2,2))) return 3; }
+	else if(strchr("&",timing)) {
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&on);
 		if(itct!=1) return 3;
 		if(!(line2=strnword(line2,2))) return 3; }
 	else if(strchr("Nn",timing)) {
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&step);
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&step);
 		if(itct!=1) return 3;
 		if(!(line2=strnword(line2,2))) return 3; }
-	else if(strchr("iIj",timing)) {
-		itct=strmathsscanf(line2,"%mlg %mlg %mlg",varnames,varvalues,nvar,&on,&off,&step);
+	else if(strchr("i",timing)) {
+		itct=strmathsscanf(line2,"%mlg|T %mlg|T %mlg|T",varnames,varvalues,nvar,&on,&off,&step);
+		if(itct!=3) return 3;
+		if(!(line2=strnword(line2,4))) return 3; }
+	else if(strchr("Ij",timing)) {
+		itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&on,&off,&step);
 		if(itct!=3) return 3;
 		if(!(line2=strnword(line2,4))) return 3; }
 	else if(strchr("x",timing)) {
-		itct=strmathsscanf(line2,"%mlg %mlg %mlg %mlg",varnames,varvalues,nvar,&on,&off,&step,&multiplier);
+		itct=strmathsscanf(line2,"%mlg|T %mlg|T %mlg|T %mlg|",varnames,varvalues,nvar,&on,&off,&step,&multiplier);
 		if(itct!=4) return 3;
 		if(!(line2=strnword(line2,5))) return 3; }
 	else return 6;
@@ -591,17 +599,17 @@ void scmdoutput(cmdssptr cmds) {
 			SCMDPRINTF(simvd,2," %c",timing);
 			if(strchr("baBAEe",timing));
 			else if(strchr("@",timing))
-				SCMDPRINTF(simvd,2," time: %g",cmd->on);
+				SCMDPRINTF(simvd,2," time: %g|T",cmd->on);
 			else if(strchr("&",timing))
 				SCMDPRINTF(simvd,2," iteration: %i",cmd->oni);
 			else if(strchr("Nn",timing))
 				SCMDPRINTF(simvd,2," every: %i",cmd->dti);
 			else if(strchr("i",timing))
-				SCMDPRINTF(simvd,2," from: %g to: %g step: %g",cmd->on,cmd->off,cmd->dt);
+				SCMDPRINTF(simvd,2," from: %g|T to: %g|T step: %g|T",cmd->on,cmd->off,cmd->dt);
 			else if(strchr("Ij",timing))
 				SCMDPRINTF(simvd,2," from: %i to: %i step: %i",cmd->oni,cmd->offi,cmd->dti);
 			else if(strchr("x",timing))
-				SCMDPRINTF(simvd,2," from: %g to: %g step: %g mult: %g",cmd->on,cmd->off,cmd->dt,cmd->xt);
+				SCMDPRINTF(simvd,2," from: %g|T to: %g|T step: %g|T mult: %g",cmd->on,cmd->off,cmd->dt,cmd->xt);
 			SCMDPRINTF(simvd,2," '%s' (%s)\n",cmd->str,scmdcode2string(scmdcmdtype(cmds,cmd),string)); }}
 
 	cmdq=cmds->cmd;

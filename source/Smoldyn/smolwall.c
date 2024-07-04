@@ -203,7 +203,7 @@ void walloutput(simptr sim) {
 		else if(wptr->wdim==1) dimchar='y';
 		else if(wptr->wdim==2) dimchar='z';
 		else dimchar='?';
-		simLog(sim,2," wall %i: dimension %c, at %g",w,dimchar,wptr->pos);
+		simLog(sim,2," wall %i: dimension %c, at %g|L",w,dimchar,wptr->pos);
 		if(sim->srfss) {
 			simLog(sim,1,", non-interacting because surfaces are defined");
 			simLog(sim,2,"\n"); }
@@ -214,12 +214,12 @@ void walloutput(simptr sim) {
 		if(wlist[w+1-2*(w%2)]!=wptr->opp) simLog(sim,10," ERROR: opposing wall is incorrect\n"); }
 
 	vol=systemvolume(sim);
-	if(dim==1) simLog(sim,2," system length: %g\n",vol);
-	else if(dim==2) simLog(sim,2," system area: %g\n",vol);
-	else simLog(sim,2," system volume: %g\n",vol);
+	if(dim==1) simLog(sim,2," system length: %g|L\n",vol);
+	else if(dim==2) simLog(sim,2," system area: %g|L2\n",vol);
+	else simLog(sim,2," system volume: %g|L3\n",vol);
 
 	systemcorners(sim,poslo,poshi);
-	simLog(sim,2," system corners: (%g",poslo[0]);
+	simLog(sim,2," system corners |(L): (%g",poslo[0]);
 	for(d=1;d<dim;d++) simLog(sim,2,",%g",poslo[d]);
 	simLog(sim,2,") and (%g",poshi[0]);
 	for(d=1;d<dim;d++) simLog(sim,2,",%g",poshi[d]);

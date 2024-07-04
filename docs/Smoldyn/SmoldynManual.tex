@@ -40,7 +40,7 @@
 
 \lstdefinestyle{SSAC}{
 	language=C,
-	basicstyle=\footnotesize\ttfamily,
+	basicstyle=\scriptsize\ttfamily,
 	keywordstyle=\bfseries,
 	tabsize=2,
 	breaklines=true,
@@ -348,23 +348,7 @@ All text after a ``\#'' character is a comment and is ignored by Smoldyn.  In th
 
 \subsection*{Measurement units}
 
-Notably absent from input file are any measurement units. Instead, you need to choose a single set of units and to then use these throughout the file. For example, cgs units (centimeter-gram-second) and mks units (meter-kilogram-second) are two standard unit systems. These are too large-scale to be convenient for most Smoldyn simulations, so micron-second and nanometer-microsecond tend to be preferable. The following table lists reasonably typical values for different processes in several different unit systems.
-
-\begin{longtable}[c]{llllll}
-&& Diffusion & Unimolec. & Bimolecular & Adsorption\\
-& Concentration & coefficient & reactions & reactions & rates\\
-\hline \\
-Typical value & 10 $\mu$M & 10 $\mu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $10^5$ M1s$^{-1}$ & 1 $\mu$m s$^{-1}$\\
-mks & $6\cdot10^{21}$ m$^{-3}$ & $10^{-11}$ m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-22}$ m$^3$s$^{-1}$ & $10^{-6}$ m s$^{-1}$\\
-cgs & $6\cdot10^{15}$ cm$^{-3}$ & $10^{-7}$ cm$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-16}$ cm$^3$s$^{-1}$ & $10^{-4}$ cm s$^{-1}$\\
-$\mu$m-ms & 6000 $\mu$m$^{-3}$ & $10^{-2}$ $\mu$m$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & $1.7\cdot10^{-7}$ $\mu$m$^3$ms$^{-1}$ & $10^{-3}$ $\mu$m ms$^{-1}$\\
-$\mu$m-s & 6000 $\mu$m$^{-3}$ & 10 $\mu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-4}$ $\mu$m$^3$s$^{-1}$ & 1 $\mu$m s$^{-1}$\\
-nm-ms & $6\cdot10^{-6}$ nm$^{-3}$ & $10^4$ nm$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & 170 nm$^3$ms$^{-1}$ & 1 nm ms$^{-1}$\\
-nm-$\mu$s & $6\cdot10^{-6}$ nm$^{-3}$ & 10 nm$^2$$\mu$s$^{-1}$ & $10^{-6}$ $\mu$s$^{-1}$ & 0.17 nm$^3$$\mu$s$^{-1}$ & $10^{-3}$ nm $\mu$s$^{-1}$\\
-px-ms & $6\cdot10^{-3}$ px$^{-3}$ & 100 px$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & 0.17 px$^3$ms$^{-1}$ & 0.1 px ms$^{-1}$\\
-\end{longtable}
-
-A pixel, abbreviated px, is defined as a length of 10 nm. In the concentration column, ``6'' is short for 6.022045. In the bimolecular reactions column, 1.7 is short for 1.660565.
+Notably absent from this input file are any measurement units. Up through Smoldyn version 2.73, the software did not include units so the user needed to choose a single set of units and then use those throughout the entire input file. The file shown here uses this system. More recent versions of Smoldyn support explicit measurement units. See Section \ref{sect:ConfigUnits} for details.
 
 \subsection*{Model parameters}
 
@@ -492,6 +476,36 @@ A few statements control the reading of the configuration file, which are now de
 
 It is possible to separate configuration files into multiple text files. This is done with the statement \ttt{read\_file}, which simply instructs Smoldyn to continue reading from some other file until that one ends with \ttt{end\_file}, which is followed by more reading of the original file. The \ttt{read\_file} statement may be used anywhere in the configuration file, including within reaction definition and surface definition blocks (described below) and within files that were themselves called with a \ttt{read\_file} statement. The configuration file examples/S2\_config/config.txt illustrates these statements.
 
+% Measurement units
+\section{Measurement units}
+\label{sect:ConfigUnits}
+
+There are two ways to deal with measurement units.
+
+The first method, which was the only approach up through Smoldyn 2.73, is to choose a single set of units and then use those throughout the file. For example, cgs units (centimeter-gram-second) and mks units (meter-kilogram-second) are two standard unit systems. These are too large-scale to be convenient for most Smoldyn simulations, so micron-second and nanometer-microsecond tend to be preferable. The following table lists reasonably typical values for different processes in several different unit systems.
+
+Note that a pixel, abbreviated px, is defined as a length of 10 nm. Also, in the concentration column, ``6'' is short for 6.022045 and in the bimolecular reactions column, 1.7 is short for 1.660565.
+
+\begin{longtable}[c]{llllll}
+&& Diffusion & Unimolec. & Bimolecular & Adsorption\\
+& Concentration & coefficient & reactions & reactions & rates\\
+\hline \\
+Typical value & 10 $\mu$M & 10 $\mu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $10^5$ M1s$^{-1}$ & 1 $\mu$m s$^{-1}$\\
+mks & $6\cdot10^{21}$ m$^{-3}$ & $10^{-11}$ m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-22}$ m$^3$s$^{-1}$ & $10^{-6}$ m s$^{-1}$\\
+cgs & $6\cdot10^{15}$ cm$^{-3}$ & $10^{-7}$ cm$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-16}$ cm$^3$s$^{-1}$ & $10^{-4}$ cm s$^{-1}$\\
+$\mu$m-ms & 6000 $\mu$m$^{-3}$ & $10^{-2}$ $\mu$m$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & $1.7\cdot10^{-7}$ $\mu$m$^3$ms$^{-1}$ & $10^{-3}$ $\mu$m ms$^{-1}$\\
+$\mu$m-s & 6000 $\mu$m$^{-3}$ & 10 $\mu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-4}$ $\mu$m$^3$s$^{-1}$ & 1 $\mu$m s$^{-1}$\\
+nm-ms & $6\cdot10^{-6}$ nm$^{-3}$ & $10^4$ nm$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & 170 nm$^3$ms$^{-1}$ & 1 nm ms$^{-1}$\\
+nm-$\mu$s & $6\cdot10^{-6}$ nm$^{-3}$ & 10 nm$^2$$\mu$s$^{-1}$ & $10^{-6}$ $\mu$s$^{-1}$ & 0.17 nm$^3$$\mu$s$^{-1}$ & $10^{-3}$ nm $\mu$s$^{-1}$\\
+px-ms & $6\cdot10^{-3}$ px$^{-3}$ & 100 px$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & 0.17 px$^3$ms$^{-1}$ & 0.1 px ms$^{-1}$\\
+\end{longtable}
+
+The other approach is to explicitly define your units in the configuration file and to then let Smoldyn handle any necessary unit conversions automatically. In the most common use, a configuration file includes a \ttt{units} statement near the top that describes the list of units; for example ``\ttt{units um ms}'' tells Smoldyn that this file gives all length values in microns, all time in milliseconds, and compound values in combinations of these units (e.g. diffusion in $\mu$m$^2$/s). Because this is the first \ttt{units} line that Smoldyn reads, this also defines these as the ``working units'', meaning the units that Smoldyn performs all of its calculations in. If you'd rather have Smoldyn use some other working units, then enter those with the \ttt{working\_units} statement.
+
+If you want to enter a value within the configuration file in some units that aren't the ones listed initially, or if you want to be explicit about what units are being used, then append the unit information onto a number using a vertical bar and then the units. For example, \ttt{1000|nm} is the value 1000 nm. If the working units are microns, then this number will be automatically converted to 1 micron.
+
+As another common situation, the top-level configuration file will use one set of units, say microns and milliseconds, and it uses \ttt{read\_file} to call a lower-level file that uses a different set of units, say nanometers and microseconds. In that case, the top-level file starts with \ttt{units um ms} and everything in that file is assumed to use these units; also, the lower-level file starts with \ttt{units nm us} and everything in that file is assumed to use those units. In this case, Smoldyn sets the working units to microns and milliseconds and converts the numbers that it reads from the lower-level file to the working units. See the example file \ttt{S2\_config/units.txt}.
+
 % Section: text substitution macros
 \section{Text substitution macros}
 
@@ -537,6 +551,8 @@ Statement & meaning\\
 \ttt{/*} ... \ttt{*/} & multi-line comment\\
 \ttt{read\_file} $filename$ & read filename, and then return\\
 \ttt{end\_file} & end of this file\\
+\ttt{units} $units$ & length and time units for this file\\
+\ttt{working\_units} $units$ & working units, if different from \ttt{units} statement\\
 \ttt{define} $key\ substitution$ & local macro replacement text\\
 \ttt{define\_global} $key\ substitution$ & global macro replacement text\\
 \ttt{undefine} $key$ & undefine a macro substitution\\
@@ -2907,6 +2923,14 @@ Read some other configuration file, returning to the present one when that one h
 
 End of configuration file. This line is optional (but good programming practice), as Smoldyn can also just read until the file ends.
 
+\item{\ttt{units} $units$}
+
+This specifies the units that should be assumed for numerical quantities that are read from the configuration file. If this is the first \ttt{units} statement, then the working units (for Smoldyn's computations and output) are set to these units. These units continue to be assumed until another \ttt{units} statement is encountered, whether within the same file or at the top of a sub-file. At the end of a sub-file, any units that are defined in that sub-file are no longer assumed and Smoldyn reverts to the units of the higher-level file.
+
+\item{\ttt{working\_units} $units$}
+
+Define the working units, meaning the units that Smoldyn uses for internal computations and output. If this statement is not entered, which is typical, then the working units are set to the first units that are listed with the \ttt{units} statement.
+
 \item{\ttt{quit\_at\_end} $value$}
 
 Use a $value$ of ``yes'' to tell the simulator to quit the program at the end of the simulation, during simulations that use graphics. This has no effect if simulations do not use graphics. Use ``no'' to turn this off, which is the default behavior. This same behavior can also be achieved by creating and setting the shell environment variable \ttt{SMOLDYN\_NO\_PROMPT} to any value.
@@ -2952,7 +2976,7 @@ Causes all current definitions to be displayed to the standard output. This is o
 
 \item{\ttt{variable} $var = value$}
 
-Sets the value of variable $var$ to $value$, which needs to evaluate to a numerical value. Note that spaces and the equals sign are required.
+Sets the value of variable $var$ to $value$, which needs to evaluate to a numerical value. Note that spaces and the equals sign are required. Variables cannot have units.
 
 \end{description}
 
@@ -3021,6 +3045,8 @@ Isotropic diffusion coefficient of molecule type $species$. Default value is 0. 
 
 Square root of diffusion matrix of $species$ and maybe state $state$ (the dot product of this matrix and itself is the anisotropic diffusion matrix). The matrix has $dim^2$ terms ($dim$ is the system dimensionality), listed row by row of the matrix; the matrix is supposed to be symmetric. If this line is not entered, isotropic diffusion is assumed, which leads to a faster runtime. While a matrix is used for diffusion if one is given, the value stored with \ttt{difc} is used for reaction rate calculations. If \ttt{difc} is not entered, the trace of the square of this matrix, divided by the system dimensionality, is used as a proxy for the isotropic diffusion coefficient to allow reaction rates to be estimated. This line is most useful for restricting diffusion to a plane or a line, in which case the square root of the diffusion coefficient is given for each diagonal element of the matrix where there is diffusion and 0s are place on diagonal elements for axes where diffusion is not possible, as well as on off-diagonal elements. $species$ and or $state$ may be ``all'' to set diffusion matrices for multiple species at once. If the rule form is used (generally with wildcard characters), then the statement is not applied immediately but is stored for use during rule expansion; during rule expansion, it is applied to all species that match the given species pattern.
 
+Because this is the square root of the diffusion matrix, each term should have units of $L\cdot T^{-1/2}$, where $L$ is length and $T$ is time. Smoldyn's unit conversion can't handle this, so units cannot be entered with this statement.
+
 \item{\ttt{drift} $species\ float_0\ float_1\ ...\ float_{dim-1}$\\
 \ttt{drift} $species(state)\ float_0\ float_1\ ...\ float_{dim-1}$\\
 \ttt{drift\_rule} $species(state)\ float_0\ float_1\ ...\ float_{dim-1}$}
@@ -3034,7 +3060,7 @@ Drift velocity vector for molecules of type $species$ and state $state$, relativ
 
 \item{\ttt{mol} $nmol\ species\ pos_0\ pos_1\ ...\ pos_{dim-1}$}
 
-Simulation starts with $nmol$ type $species$ molecules at location $pos$. Each of the $dim$ elements of the position may be a number to give the actual position of the molecule or molecules; or the letter ``u'' to indicate that the position for each molecule should be a random value between the bounding walls, chosen from a uniform density; or a position range which is given as two numbers separated with a hyphen.
+Simulation starts with $nmol$ type $species$ molecules at location $pos$. Each of the $dim$ elements of the position may be: (1) a number to give the actual position of the molecule or molecules, or (2) the letter ``u'' to indicate that the position for each molecule should be a random value between the bounding walls, chosen from a uniform density, or (3) a position range which is given as two numbers separated with a hyphen (math operations, variables, and units are not allowed with this last option).
 
 \item{\ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel\ pos_0\ pos_1\ ...\ pos_{dim-1}$\\
 \ttt{surface\_mol} $nmol\ species(state)\ surface\ pshape\ panel$}
@@ -3133,10 +3159,11 @@ Initial suffix number of TIFF files that are saved. Default value is 1.
 
 Largest possible suffix number of TIFF files that are saved. Once this value has been reached, additional TIFFs cannot be saved. Default value is 999.
 
-\item{\ttt{light} $number\ parameter\ color\ [value4]$\\
-\ttt{light} $number\ parameter\ value_1\ value_2\ value_3\ [value_4]$}
+\item{\ttt{light} $number\ parameter\ value_1\ value_2\ value_3\ [value_4]$}
 
-Set the parameters for a light source, for use with ``opengl\_better'' quality graphics. The light $number$ should be between 0 and 7. The $parameter$ may be one of four strings: ``ambient'', ``diffuse'', ``specular'', or ``position''. The first three parameters are for the light's colors, which are then specified with either a word or in the $value$s as red, green, blue, and optionally alpha. The last parameter type is for the light's 3-dimensional position, which is specified as $x$, $y$, and $z$ in the $value$s. Lights specified this way are automatically enabled (turned on).
+Set the parameters for a light source, for use with ``opengl\_better'' quality graphics. The light $number$ should be between 0 and 7 for which light is being set. It can also be either ``global'' or ``room'', which are the same thing and set the ambient room lights, which are non-directional; use the ``ambient'' parameter for the room light. The $parameter$ may be one of the strings: ``ambient'', ``diffuse'', ``specular'', ``position'', ``on'', ``off'', or ``auto''. For ``ambient'', ``diffuse'', and ``specular'', enter the color with the $value$ inputs for red, green, and blue color channels; optionally, end with alpha. Ambient light is non-directional and does not reflect off of a surface. Diffuse light is directional (from the light source) but lights the illuminated side of a surface evenly, as though it is a non-shiny surface. Specular light is also directional and reflects off of a surface as though it is shiny.
+
+For parameter type ``position'', either enter the light's 3-dimensional position as $x$, $y$, and $z$ in the $value$s and then enter a value of 1 for the fourth value; or, enter the vector that the light points in using the $x$, $y$, and $z$ values, keeping each between 0 and 1, and then enter the fourth value as 0. Lights specified this way are automatically enabled (turned on). You can also turn a light on or off with parameter of ``on'' or ``off''. The ``auto'' parameter produces a low white light source; if used for the room, then this is ambient light and if used for a specific light, then this is a mix of diffuse and specular light.
 
 \item{\ttt{text\_color} $color$\\
 \ttt{text\_color} $red\ green\ blue$}
@@ -3396,7 +3423,7 @@ The diffusion-limited fraction ($\chi$) of a bimolecular reaction. This value is
 
 \item{\ttt{reaction\_production} $rname\ value$}
 
-Molecule production rate for zeroth order reactions. Instead of entering the reaction rate with \ttt{reaction\_rate}, this allows on to enter the expectation number of molecules per time step in the entire simulation volume.
+Molecule production rate for zeroth order reactions. Instead of entering the reaction rate with \ttt{reaction\_rate}, this allows one to enter the expectation number of molecules per time step in the entire simulation volume.
 
 \item{\ttt{product\_placement} $rname\ type\ parameters$}
 
@@ -4038,8 +4065,8 @@ This command lets you use essentially any statement that can be entered in a con
 
 Creates $num$ new molecules of type $species$ and at location $pos$. Molecule states are set to solution. This creates exactly $num$ molecules if $num$ is an integer and a Poisson-distributed random number of molecules with expected value equal to $num$ if $num$ is a non-integer.
 
-\item{\ttt{volumesource} $species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}$\\
-\ttt{volumesource} $species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}$\\
+\item{\ttt{volumesource} $species\ num\ pos_{x,low}\ pos_{x,high}$\\
+\ttt{volumesource} $species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}$\\
 \ttt{volumesource} $species\ num\ pos_{x,low}\ pos_{x,high}\ pos_{y,low}\ pos_{y,high}\ pos_{z,low}\ pos_{z,high}$}
 
 Creates $num$ new molecules of type $species$ and within the location bounded by $pos_{low}$ and $pos_{high}$. Molecule states are set to solution. This creates exactly $num$ molecules if $num$ is an integer and a Poisson-distributed random number of molecules with expected value equal to $num$ if $num$ is a non-integer.
@@ -4128,7 +4155,7 @@ All molecules of type $species$ are instantly reacted, resulting in the products
 
 \item{\ttt{setrateint} $rxn\ rate$}
 
-Sets the internal reaction rate of the reaction named $rxn$ to $rate$. See the description above for $rate\_internal$ for the meanings of $rate$ for the different reaction orders.
+Sets the internal reaction rate of the reaction named $rxn$ to $rate$. See the description above for $rate\_internal$ for the meanings of $rate$ for the different reaction orders. Units are not allowed for this function.
 
 \item{\ttt{shufflemollist} $listname$}
 
@@ -4164,7 +4191,7 @@ An \textit{E. coli} shape is defined as a cylinder with hemispherical endcaps, w
 
 \item{\ttt{setreactionratemolcount} $rxn\ c_0\ c_1\ species_1(state_1)\ c_2\ species_2(state_2)\ ...$}
 
-This sets the rate of the reaction named $rxn$ to: $c_0$, plus $c_1$ times the number of molecules of $species_1$ and $state_1$, plus $c_2$ times the number of molecules of $species_2$ and $state_2$, plus any additional coefficients and species that are listed here. Species and/or states may be ``all'' and wildcards are permitted. If the reaction rate is computed to be a negative value, it is set to zero instead (and no warning is issued).
+This sets the rate of the reaction named $rxn$ to: $c_0$, plus $c_1$ times the number of molecules of $species_1$ and $state_1$, plus $c_2$ times the number of molecules of $species_2$ and $state_2$, plus any additional coefficients and species that are listed here. Species and/or states may be ``all'' and wildcards are permitted. If the reaction rate is computed to be a negative value, it is set to zero instead (and no warning is issued). Units are not allowed in this function.
 
 \item{\ttt{expandsystem} $expand_x expand_y expand_z$}
 

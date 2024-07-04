@@ -838,15 +838,15 @@ void rxnoutput(simptr sim,int order) {
 		else simLog(sim,2,"   actual rate constant: %g\n",actualrate);
 		if(pgem>=0) simLog(sim,2,"   geminate recombination probability: %g\n",pgem);
 		if(rxn->rparamt==RPconfspread) simLog(sim,2,"   conformational spread reaction\n");
-		if(rxn->tau>=0) simLog(sim,2,"   characteristic time: %g\n",rxn->tau);
+		if(rxn->tau>=0) simLog(sim,2,"   characteristic time: %g|T\n",rxn->tau);
 		if(order==0) simLog(sim,2,"   average reactions per time step: %g\n",rxn->prob);
 		else if(order==1) simLog(sim,2,"   conditional reaction probability per time step: %g\n",rxn->prob);			// this is the conditional probability, with the condition that prior possible reactions did not happen
 		else if(rxn->prob>=0 && rxn->prob!=1) simLog(sim,2,"   reaction probability after collision: %g\n",rxn->prob);
 		bindrad=sqrt(rxn->bindrad2);															// binding radius for this reaction
-		if(rxn->bindrad2>=0) simLog(sim,2,"   binding radius: %g\n",bindrad);
+		if(rxn->bindrad2>=0) simLog(sim,2,"   binding radius: %g|L\n",bindrad);
 
 		if(rxn->nprod==2) {													// unbinding information
-			if(rxn->unbindrad>=0) simLog(sim,2,"   unbinding radius: %g\n",rxn->unbindrad);
+			if(rxn->unbindrad>=0) simLog(sim,2,"   unbinding radius: %g|L\n",rxn->unbindrad);
 			else if(rxn->rparamt==RPbounce && rxn->unbindrad==-1) simLog(sim,2,"   unbinding radius: calculated from molecule overlap\n");
 			else if(rxn->rparamt==RPbounce && rxn->unbindrad==-2) simLog(sim,2,"   unbinding radius: calculated for ballistic reflection\n");
 			else simLog(sim,2,"   unbinding radius: 0\n");
@@ -864,7 +864,7 @@ void rxnoutput(simptr sim,int order) {
 					bindradrev=bindingradiusprob(revrate*(1.0-rparam),0,revdsum,-1,0,-1,&revprob);
 					pgem=rparam; }
 				else bindradrev=bindingradiusprob(revrate,0,revdsum,-1,0,-1,&revprob);
-				simLog(sim,2,"   unbinding radius if dt were 0: %g\n",unbindingradius(pgem,0,revdsum,bindradrev)); }}
+				simLog(sim,2,"   unbinding radius if dt were 0: %g|L\n",unbindingradius(pgem,0,revdsum,bindradrev)); }}
 
 		if(order==2 && rxnreactantstate(rxn,statelist,1) && (vflag || rxn->chi>0 || rxn->prob<1)) {			// compute reaction rate details
 			ms1=statelist[0];
@@ -886,7 +886,7 @@ void rxnoutput(simptr sim,int order) {
 				chi=rate3/smolmodelrate;
 				if(rxn->chi>0) simLog(sim,2,"   requested and actual chi values: %g, %g\n",rxn->chi,chi);
 				else simLog(sim,1,"   actual chi value: %g\n",chi); }
-			simLog(sim,1,"   mutual rms step length: %g\n",step);
+			simLog(sim,1,"   mutual rms step length: %g|L\n",step);
 			if(step>0) simLog(sim,1,"   step length / binding radius: %g (%s %s steps)\n",ratio,ratio>0.1 && ratio<10?"somewhat":"very",ratio>1?"large":"small");
 			if(step>0 && (!rev || rparamt!=RPconfspread || rparamt!=RPbounce)) {					// a normal bimolecular reaction
 				simLog(sim,1,"   activation-limited reaction rate: %g\n",1/(1/rate3-1/smolmodelrate));
@@ -903,7 +903,7 @@ void rxnoutput(simptr sim,int order) {
 		for(prd=0;prd<rxn->nprod;prd++) {
 			if(dotVVD(rxn->prdpos[prd],rxn->prdpos[prd],dim)>0) {
 				simLog(sim,2,"   product %s displacement:",sim->mols->spname[rxn->prdident[prd]]);
-				for(d=0;d<dim;d++) simLog(sim,2," %g",rxn->prdpos[prd][d]);
+				for(d=0;d<dim;d++) simLog(sim,2," %g|L",rxn->prdpos[prd][d]);
 				simLog(sim,2,"\n"); }}
 
 		if(rxn->nprod==2 && sim->rxnss[2] && rxn->rparamt!=RPconfspread && rxn->rparamt!=RPbounce) {
@@ -2393,7 +2393,7 @@ int rxnsupdate(simptr sim) {
 int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 	compartptr cmpt;
 	surfaceptr srf;
-	int isrule,itct,c,s,order,more,er,nprod,bidirect,detailsi[2];
+	int isrule,itct,c,s,order,more,er,nprod,bidirect,detailsi[2],dim;
 	char nm[STRCHAR],nm1[STRCHAR],rname[STRCHAR],rnamerev[STRCHAR],*chptr,pattern[STRCHAR],patternrev[STRCHAR];
 	enum MolecState ms,rctstate[MAXORDER],prdstate[MAXPRODUCT];
 	double flt1,flt2;
@@ -2403,6 +2403,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 	char **varnames;
 	double *varvalues;
 
+	dim=sim->dim;
 	nvar=sim->nvar;
 	varnames=sim->varnames;
 	varvalues=sim->varvalues;
@@ -2506,7 +2507,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 			nprod++; }
 		else if(nprod==0) {
 			er=molstring2pattern(NULL,&ms,pattern,2);
-			CHECKS(!er,"BUG in simreadstring"); }
+			CHECKS(!er,"BUG in rxnparsereaction"); }
 		if(itct==1) {
 			more=0;
 			line2=NULL; }
@@ -2583,7 +2584,14 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 		else
 #endif
 		{
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt1);
+			if(order==0 && dim==1) itct=strmathsscanf(line2,"%mlg|L-1/T",varnames,varvalues,nvar,&flt1);
+			else if(order==0 && dim==2) itct=strmathsscanf(line2,"%mlg|L-2/T",varnames,varvalues,nvar,&flt1);
+			else if(order==0 && dim==3) itct=strmathsscanf(line2,"%mlg|L-3/T",varnames,varvalues,nvar,&flt1);
+			else if(order==1) itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&flt1);
+			else if(order==2 && dim==1) itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&flt1);
+			else if(order==2 && dim==2) itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt1);
+			else if(order==2 && dim==3) itct=strmathsscanf(line2,"%mlg|L3/T",varnames,varvalues,nvar,&flt1);
+			else itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
 			CHECKS(itct==1,"failed to read reaction rate");
 			if(!isrule) {
 				if(rxn) er=RxnSetValue(sim,"rate",rxn,flt1);
@@ -2593,7 +2601,14 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 			line2=strnword(line2,2);
 
 			if(bidirect && line2) {
-				itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&flt2);
+				if(nprod==0 && dim==1) itct=strmathsscanf(line2,"%mlg|L-1/T",varnames,varvalues,nvar,&flt2);
+				else if(nprod==0 && dim==2) itct=strmathsscanf(line2,"%mlg|L-2/T",varnames,varvalues,nvar,&flt2);
+				else if(nprod==0 && dim==3) itct=strmathsscanf(line2,"%mlg|L-3/T",varnames,varvalues,nvar,&flt2);
+				else if(nprod==1) itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&flt2);
+				else if(nprod==2 && dim==1) itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&flt2);
+				else if(nprod==2 && dim==2) itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt2);
+				else if(nprod==2 && dim==3) itct=strmathsscanf(line2,"%mlg|L3/T",varnames,varvalues,nvar,&flt2);
+				else itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt2);
 				CHECKS(itct==1,"failed to read reverse reaction rate");
 				if(!isrule) {
 					if(rxnrev) er=RxnSetValue(sim,"rate",rxnrev,flt2);

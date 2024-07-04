@@ -514,8 +514,8 @@ void bngoutput(simptr sim) {
 		simLog(sim,1,"  monomers allocated: %i,",bng->maxmonomer);
 		simLog(sim,2,"  monomers defined: %i\n",bng->nmonomer);
 		for(i=0;i<bng->nmonomer;i++) {
-			simLog(sim,2,"   %s: default state: %s, diffusion coeff.: %g\n",bng->monomernames[i],molms2string(bng->monomerstate[i],string),bng->monomerdifc[i]);
-			simLog(sim,2,"    display size: %g, color: %g %g %g\n",bng->monomerdisplaysize[i],bng->monomercolor[i][0],bng->monomercolor[i][1],bng->monomercolor[i][2]);
+			simLog(sim,2,"   %s: default state: %s, diffusion coeff.: %g|L2/T\n",bng->monomernames[i],molms2string(bng->monomerstate[i],string),bng->monomerdifc[i]);
+			simLog(sim,2,"    display size: %g|L, color: %g %g %g\n",bng->monomerdisplaysize[i],bng->monomercolor[i][0],bng->monomercolor[i][1],bng->monomercolor[i][2]);
 			for(s=0;s<bng->bngmaxsurface;s++) {
 				simLog(sim,2,"    for surface %s: %s at front",sim->srfss->srflist[s]->sname,surfact2string(bng->monomeraction[i][s][PFfront],string));
 				simLog(sim,2,", %s at back\n",surfact2string(bng->monomeraction[i][s][PFback],string)); }}
@@ -1427,7 +1427,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 		bngsetBNG2path(bng,line2); }
 
 	else if(!strcmp(word,"multiply")) {						// multiply
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,str1,&f1);
+		itct=strmathsscanf(line2,"%s %mlg|",varnames,varvalues,nvar,str1,&f1);
 		CHECKS(itct==2,"multiply format: parameter amount");
 		er=bngsetparam(bng,str1,f1);
 		CHECKS(er!=1,"unrecognized parameter");
@@ -1442,7 +1442,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 			CHECKS(!er,"error adding monomer %s",str1); }}
 
 	else if(!strcmp(word,"monomer_difc")) {				// monomer_difc
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,str1,&f1);
+		itct=strmathsscanf(line2,"%s %mlg|L2/T",varnames,varvalues,nvar,str1,&f1);
 		CHECKS(itct==2,"monomer_difc format: monomer difc");
 		CHECKS(f1>=0,"monomer diffusion coefficient has to be >=0");
 		er=bngsetmonomerdifc(bng,str1,f1);
@@ -1452,7 +1452,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 		CHECKS(!strnword(line2,3),"unexpected text following monomer_difc"); }
 
 	else if(!strcmp(word,"monomer_display_size")) {	// monomer_display_size
-		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,str1,&f1);
+		itct=strmathsscanf(line2,"%s %mlg|L",varnames,varvalues,nvar,str1,&f1);
 		CHECKS(itct==2,"monomer_display_size format: monomer display_size");
 		er=bngsetmonomerdisplaysize(bng,str1,f1);
 		CHECKS(er!=-1,"out of memory adding monomer %s",str1);

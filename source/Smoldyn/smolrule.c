@@ -238,7 +238,7 @@ void ruleoutput(simptr sim) {
 		if(ruletype==RTreaction)
 			simLog(sim,2," reaction rule %s: %s, rate %g",rname,rulestring,rulerate);
 		else if(ruletype==RTdifc)
-			simLog(sim,2," difc rule: %s, value %g",rulestring,rulerate);
+			simLog(sim,2," difc rule: %s, value %g|L2/T",rulestring,rulerate);
 		else if(ruletype==RTdifm) {
 			simLog(sim,2," difm rule: %s, matrix:",rulestring);
 			for(d=0;d<sim->dim*sim->dim;d++)
@@ -246,17 +246,17 @@ void ruleoutput(simptr sim) {
 		else if(ruletype==RTdrift) {
 			simLog(sim,2," drift rule: %s, vector:",rulestring);
 			for(d=0;d<sim->dim;d++)
-				simLog(sim,2," %g",detailsf[d]); }
+				simLog(sim,2," %g|L/T",detailsf[d]); }
 		else if(ruletype==RTsurfdrift) {
 			simLog(sim,2," surface drift rule: %s,",rulestring);
 			simLog(sim,2," surface %s,",sim->srfss->snames[detailsi[1]]);
 			simLog(sim,2," panel shape %s, vector:",surfps2string((enum PanelShape)detailsi[2],string));
 			for(d=0;d<sim->dim-1;d++)
-				simLog(sim,2," %g",detailsf[d]); }
+				simLog(sim,2," %g|L/T",detailsf[d]); }
 		else if(ruletype==RTmollist)
 			simLog(sim,2," molecule list rule: %s, list:",rulestring,sim->mols->listname[detailsi[1]]);
 		else if(ruletype==RTdispsize)
-			simLog(sim,2," display size rule: %s, size: %g",rulestring,rulerate);
+			simLog(sim,2," display size rule: %s, size: %g|L",rulestring,rulerate);
 		else if(ruletype==RTcolor)
 			simLog(sim,2," color rule: %s, color: %g %g %g",rulestring,detailsf[0],detailsf[1],detailsf[2]);
 		else if(ruletype==RTsurfaction) {
@@ -293,7 +293,7 @@ void ruleoutput(simptr sim) {
 			rxn=rule->rulerxn;
 			if(rxn->rate>=0) simLog(sim,2," rate=%g",rxn->rate);
 			if(rxn->multiplicity>=0) simLog(sim,2," multiplicity=%i",rxn->multiplicity);
-			if(rxn->bindrad2>=0) simLog(sim,2," binding radius=%g",sqrt(rxn->bindrad2));
+			if(rxn->bindrad2>=0) simLog(sim,2," binding radius=%g|L",sqrt(rxn->bindrad2));
 			if(rxn->prob>=0) simLog(sim,2," probability=%g",rxn->prob);
 			if(rxn->prdserno) simLog(sim,2," serial number rules");
 			if(rxn->prdintersurf) simLog(sim,2," intersurface");

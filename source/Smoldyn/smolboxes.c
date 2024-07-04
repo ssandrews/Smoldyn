@@ -520,15 +520,17 @@ void boxssoutput(simptr sim) {
 	for(d=0;d<dim;d++) simLog(sim,2," %i",boxs->side[d]);
 	simLog(sim,2,"\n");
 	simLog(sim,1," Minimum box position: ");
-	for(d=0;d<dim;d++) simLog(sim,1," %g",boxs->min[d]);
+	for(d=0;d<dim;d++) simLog(sim,1," %g|L",boxs->min[d]);
 	simLog(sim,1,"\n");
-	if(boxs->boxsize) simLog(sim,2," Requested box width: %g\n",boxs->boxsize);
+	if(boxs->boxsize) simLog(sim,2," Requested box width: %g|L\n",boxs->boxsize);
 	if(boxs->mpbox) simLog(sim,2," Requested molecules per box: %g\n",boxs->mpbox);
 	simLog(sim,2," Box dimensions: ");
-	for(d=0;d<dim;d++) simLog(sim,2," %g",boxs->size[d]);
+	for(d=0;d<dim;d++) simLog(sim,2," %g|L",boxs->size[d]);
 	simLog(sim,2,"\n");
-	if(boxs->boxvol>0)
-		simLog(sim,2," Box volumes: %g\n",boxs->boxvol);
+	if(boxs->boxvol>0) {
+		if(dim==1) simLog(sim,2," Box volumes: %g|L\n",boxs->boxvol);
+		else if(dim==2) simLog(sim,2," Box volumes: %g|L2\n",boxs->boxvol);
+		else simLog(sim,2," Box volumes: %g|L3\n",boxs->boxvol); }
 	else
 		simLog(sim,2," Box volumes not computed\n");
 

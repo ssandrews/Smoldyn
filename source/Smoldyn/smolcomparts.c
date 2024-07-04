@@ -500,12 +500,14 @@ void compartoutput(simptr sim) {
 		for(k=0;k<cmpt->npts;k++) {
 			simLog(sim,2,"   %i: (",k);
 			for(d=0;d<dim-1;d++)
-				simLog(sim,2,"%g,",cmpt->points[k][d]);
-			simLog(sim,2,"%g)\n",cmpt->points[k][d]); }
+				simLog(sim,2,"%g|L,",cmpt->points[k][d]);
+			simLog(sim,2,"%g|L )\n",cmpt->points[k][d]); }
 		simLog(sim,2,"  %i logically combined compartments\n",cmpt->ncmptl);
 		for(cl=0;cl<cmpt->ncmptl;cl++)
 			simLog(sim,2,"   %s %s\n",compartcl2string(cmpt->clsym[cl],string),cmpt->cmptl[cl]->cname);
-		simLog(sim,2,"  volume: %g\n",cmpt->volume);
+		if(dim==1) simLog(sim,2,"  volume: %g|L\n",cmpt->volume);
+		else if(dim==2) simLog(sim,2,"  volume: %g|L2\n",cmpt->volume);
+		else simLog(sim,2,"  volume: %g|L3\n",cmpt->volume);
 		simLog(sim,2,"  %i virtual boxes listed\n",cmpt->nbox); }
 	simLog(sim,2,"\n");
 	return; }
@@ -899,9 +901,9 @@ compartptr compartreadstring(simptr sim,ParseFilePtr pfp,compartptr cmpt,const c
 
 	else if(!strcmp(word,"point")) {							// point
 		CHECKS(cmpt,"name has to be entered before point");
-		if(dim==1) itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&v1[0]);
-		else if(dim==2) itct=strmathsscanf(line2,"%mlg %mlg",varnames,varvalues,nvar,&v1[0],&v1[1]);
-		else itct=strmathsscanf(line2,"%mlg %mlg %mlg",varnames,varvalues,nvar,&v1[0],&v1[1],&v1[2]);
+		if(dim==1) itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&v1[0]);
+		else if(dim==2) itct=strmathsscanf(line2,"%mlg|L %mlg|L",varnames,varvalues,nvar,&v1[0],&v1[1]);
+		else itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&v1[0],&v1[1],&v1[2]);
 		CHECKS(itct==dim,"unable to read all point values");
 		er=compartaddpoint(cmpt,dim,v1);
 		CHECKS(!er,"out of memory adding point to compartment");

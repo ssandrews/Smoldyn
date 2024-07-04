@@ -40,6 +40,7 @@ char *strnword1(char *s,int n);
 char *strnwordend(char *s,int n);
 char *strwordcpy(char *destination,const char *source,int n);
 char *str1wordcpy(char *destination,const char *source,int n);
+int strfirstwordpbrk(char *destination,const char *source,const char *symbols);
 
 /************************** String arrays *************************/
 
@@ -93,5 +94,6 @@ double strevalfunction(const char *expression,char *parameters,void *voidptr,voi
 double strmatheval(const char *expression,char **varnames,const double *varvalues,int nvar);
 int strmatherror(char *string,int clear);
 int strmathsscanf(const char *str,const char *format,char **varnames,const double *varvalues,int nvar,...);
+double strunits(const char *unitstring,const char *dimstring,double value,char *outstring,const char* function);
 
 #endif
