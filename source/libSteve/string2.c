@@ -1697,7 +1697,7 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 					count=strlen(outstring);
 					if(dimUnit[ut]!=0) {
 						if(count>0 && dimUnit[ut]>0) strcat(outstring,".");
-						else if(count>0) strcat(outstring,"/");
+						else if(dimUnit[ut]<0) strcat(outstring,"/");
 						strcat(outstring,unitNames[ut][workUnits[ut]]);
 						if(dimUnit[ut]>1) sprintf(outstring+strlen(outstring),"%i",dimUnit[ut]);
 						else if(dimUnit[ut]<-1) sprintf(outstring+strlen(outstring),"%i",-dimUnit[ut]); }}}
@@ -1741,6 +1741,10 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		unitRatios[ut][ui++]=1;
 		strcpy(unitNames[ut][ui],"s");
 		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"min");
+		unitRatios[ut][ui++]=60;
+		strcpy(unitNames[ut][ui],"hr");
+		unitRatios[ut][ui++]=3600;
 		strcpy(unitNames[ut][ui],"ms");
 		unitRatios[ut][ui++]=0.001;
 		strcpy(unitNames[ut][ui],"us");

@@ -501,7 +501,7 @@ void compartoutput(simptr sim) {
 			simLog(sim,2,"   %i: (",k);
 			for(d=0;d<dim-1;d++)
 				simLog(sim,2,"%g|L,",cmpt->points[k][d]);
-			simLog(sim,2,"%g|L )\n",cmpt->points[k][d]); }
+			simLog(sim,2,"%g|L)\n",cmpt->points[k][d]); }
 		simLog(sim,2,"  %i logically combined compartments\n",cmpt->ncmptl);
 		for(cl=0;cl<cmpt->ncmptl;cl++)
 			simLog(sim,2,"   %s %s\n",compartcl2string(cmpt->clsym[cl],string),cmpt->cmptl[cl]->cname);

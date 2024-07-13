@@ -138,14 +138,15 @@ void simLog(simptr sim,int importance,const char* format, ...) {
 	while((strptr=strchr(message,'|'))) {						// process unit output
 		strwordcpy(word,strptr,1);
 		wordlen=strlen(word);
-		if(strchr(",.:;+-*/<>=!",word[wordlen-1])) {
+		if(strchr(",.:;+-*/<>=!)",word[wordlen-1])) {
 			word[wordlen-1]='\0';
 			wordlen--; }
 		hasparen=0;
 		if(word[1]=='(') {
 			hasparen=1;
-			word[wordlen-1]='\0';
-			wordlen--; }
+			if(word[wordlen-1]==')') {
+				word[wordlen-1]='\0';
+				wordlen--; }}
 		ans=strunits(NULL,hasparen?word+2:word+1,0,hasparen?word+2:word+1,"getunits");
 		if(ans==1)
 			strMidCat(message,strptr-message,strptr-message+wordlen+(hasparen?1:0),NULL,0,0);

@@ -1389,7 +1389,9 @@ void surfaceoutput(simptr sim) {
 
 		if(srf->maxpanel[PSrect]) {
 			pname=srf->pname[PSrect];
-			simLog(sim,2,"  rectangle panels allocated: %i, defined: %i\n",srf->maxpanel[PSrect],srf->npanel[PSrect]);
+			simLog(sim,2,"  rectangle panels");
+			simLog(sim,1," allocated: %i,",srf->maxpanel[PSrect]);
+			simLog(sim,2," defined: %i\n",srf->npanel[PSrect]);
 			for(p=0;p<srf->npanel[PSrect] && p<21;p++) {
 				if(p==20) {
 					simLog(sim,2,"   ...\n");
@@ -1397,9 +1399,9 @@ void surfaceoutput(simptr sim) {
 				pnl=srf->panels[PSrect][p];
 				point=pnl->point;
 				front=pnl->front;
-				if(dim==1) simLog(sim,2,"   %s: %g|L, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
-				else if(dim==2) simLog(sim,2,"   %s: (%g,%g), (%g,%g), facing: %c%1.0f, length: %g",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0]==1?'+':'-',front[1],Geo_LineLength(point[0],point[1],2));
-				else simLog(sim,2,"   %s: (%g,%g,%g), (%g,%g,%g), (%g,%g,%g), (%g,%g,%g), facing: %c%1.0f, area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],point[3][0],point[3][1],point[3][2],front[0]==1?'+':'-',front[1],Geo_QuadArea(point[0],point[1],point[2],point[3],3));
+				if(dim==1) simLog(sim,2,"   %s: location=%g|L, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
+				else if(dim==2) simLog(sim,2,"   %s: corners: (%g,%g)|L, (%g,%g)|L, facing: %c%1.0f, length: %g|L",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0]==1?'+':'-',front[1],Geo_LineLength(point[0],point[1],2));
+				else simLog(sim,2,"   %s: corners: (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, facing: %c%1.0f, area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],point[3][0],point[3][1],point[3][2],front[0]==1?'+':'-',front[1],Geo_QuadArea(point[0],point[1],point[2],point[3],3));
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));
@@ -1417,7 +1419,9 @@ void surfaceoutput(simptr sim) {
 					simLog(sim,1,"\n"); }}}
 		if(srf->maxpanel[PStri]) {
 			pname=srf->pname[PStri];
-			simLog(sim,2,"  triangle panels allocated: %i, defined: %i\n",srf->maxpanel[PStri],srf->npanel[PStri]);
+			simLog(sim,2,"  triangle panels");
+			simLog(sim,1," allocated: %i,",srf->maxpanel[PStri]);
+			simLog(sim,2," defined: %i\n",srf->npanel[PStri]);
 			for(p=0;p<srf->npanel[PStri] && p<21;p++) {
 				if(p==20) {
 					simLog(sim,2,"   ...\n");
@@ -1425,9 +1429,9 @@ void surfaceoutput(simptr sim) {
 				pnl=srf->panels[PStri][p];
 				point=pnl->point;
 				front=pnl->front;
-				if(dim==1) simLog(sim,2,"   %s: %g, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
-				else if(dim==2) simLog(sim,2,"   %s: (%g,%g), (%g,%g), facing: (%g,%g), length: %g",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0],front[1],Geo_LineLength(point[0],point[1],2));
-				else simLog(sim,2,"   %s: (%g,%g,%g), (%g,%g,%g), (%g,%g,%g), facing: (%g,%g,%g), area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],front[0],front[1],front[2],Geo_TriArea3(point[0],point[1],point[2],front));
+				if(dim==1) simLog(sim,2,"   %s: location=%g|L, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
+				else if(dim==2) simLog(sim,2,"   %s: ends: (%g,%g)|L, (%g,%g)|L, facing: (%g,%g), length: %g|L",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0],front[1],Geo_LineLength(point[0],point[1],2));
+				else simLog(sim,2,"   %s: vertices: (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, facing: (%g,%g,%g), area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],front[0],front[1],front[2],Geo_TriArea3(point[0],point[1],point[2],front));
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));
@@ -1445,7 +1449,9 @@ void surfaceoutput(simptr sim) {
 					simLog(sim,1,"\n"); }}}
 		if(srf->maxpanel[PSsph]) {
 			pname=srf->pname[PSsph];
-			simLog(sim,2,"  sphere panels allocated: %i, defined: %i\n",srf->maxpanel[PSsph],srf->npanel[PSsph]);
+			simLog(sim,2,"  sphere panels");
+			simLog(sim,1," allocated: %i,",srf->maxpanel[PSsph]);
+			simLog(sim,2," defined: %i\n",srf->npanel[PSsph]);
 			for(p=0;p<srf->npanel[PSsph] && p<21;p++) {
 				if(p==20) {
 					simLog(sim,2,"   ...\n");
@@ -1453,9 +1459,9 @@ void surfaceoutput(simptr sim) {
 				pnl=srf->panels[PSsph][p];
 				point=pnl->point;
 				front=pnl->front;
-				if(dim==1) simLog(sim,2,"   %s: %g, R=%g, facing: %s",pname[p],point[0][0],point[1][0],front[0]==1?"out":"in");
-				else if(dim==2) simLog(sim,2,"   %s: (%g,%g), R=%g, facing: %s, draw: %g, length: %g",pname[p],point[0][0],point[0][1],point[1][0],front[0]==1?"out":"in",point[1][1],2.0*PI*point[1][0]);
-				else simLog(sim,2,"   %s: (%g,%g,%g), R=%g, facing: %s, draw: %g %g, area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],front[0]==1?"out":"in",point[1][1],point[1][2],4.0*PI*point[1][0]*point[1][0]);
+				if(dim==1) simLog(sim,2,"   %s: center=%g|L, radius=%g|L, facing: %s",pname[p],point[0][0],point[1][0],front[0]==1?"out":"in");
+				else if(dim==2) simLog(sim,2,"   %s: center=(%g,%g)|L, radius=%g|L, facing: %s, drawing edges: %g, perimeter: %g|L",pname[p],point[0][0],point[0][1],point[1][0],front[0]==1?"out":"in",point[1][1],2.0*PI*point[1][0]);
+				else simLog(sim,2,"   %s: center=(%g,%g,%g)|L, radius=%g|L, facing: %s, drawing slices, stacks: %g %g, surface area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],front[0]==1?"out":"in",point[1][1],point[1][2],4.0*PI*point[1][0]*point[1][0]);
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));
@@ -1473,7 +1479,9 @@ void surfaceoutput(simptr sim) {
 					simLog(sim,1,"\n"); }}}
 		if(srf->maxpanel[PScyl]) {
 			pname=srf->pname[PScyl];
-			simLog(sim,2,"  cylinder panels allocated: %i, defined: %i\n",srf->maxpanel[PScyl],srf->npanel[PScyl]);
+			simLog(sim,2,"  cylinder panels");
+			simLog(sim,1," allocated: %i,",srf->npanel[PScyl]);
+			simLog(sim,2," defined: %i\n",srf->npanel[PScyl]);
 			for(p=0;p<srf->npanel[PScyl] && p<21;p++) {
 				if(p==20) {
 					simLog(sim,2,"   ...\n");
@@ -1482,8 +1490,8 @@ void surfaceoutput(simptr sim) {
 				point=pnl->point;
 				front=pnl->front;
 				if(dim==1) simLog(sim,10,"   error, cylinders are not implemented in 1-D");
-				else if(dim==2) simLog(sim,2,"   %s: (%g,%g) to (%g,%g), R=%g, facing: %s, length: %g",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],point[2][0],front[2]==1?"out":"in",2.0*Geo_LineLength(point[0],point[1],2));
-				else simLog(sim,2,"   %s: (%g,%g,%g) to (%g,%g,%g), R=%g, facing: %s, draw: %g %g, area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],front[2]==1?"out":"in",point[2][1],point[2][2],2.0*PI*point[2][0]*Geo_LineLength(point[0],point[1],3));
+				else if(dim==2) simLog(sim,2,"   %s: ends: (%g,%g)|L to (%g,%g)|L, radius=%g|L, facing: %s, length: %g|L",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],point[2][0],front[2]==1?"out":"in",2.0*Geo_LineLength(point[0],point[1],2));
+				else simLog(sim,2,"   %s: ends: (%g,%g,%g)|L to (%g,%g,%g)|L, radius=%g|L, facing: %s, drawing slices, stacks: %g %g, area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],front[2]==1?"out":"in",point[2][1],point[2][2],2.0*PI*point[2][0]*Geo_LineLength(point[0],point[1],3));
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));
@@ -1501,7 +1509,9 @@ void surfaceoutput(simptr sim) {
 					simLog(sim,1,"\n"); }}}
 		if(srf->maxpanel[PShemi]) {
 			pname=srf->pname[PShemi];
-			simLog(sim,2,"  hemisphere panels allocated: %i, defined: %i\n",srf->maxpanel[PShemi],srf->npanel[PShemi]);
+			simLog(sim,2,"  hemisphere panels");
+			simLog(sim,1," allocated: %i,",srf->maxpanel[PShemi]);
+			simLog(sim,2," defined: %i\n",srf->npanel[PShemi]);
 			for(p=0;p<srf->npanel[PShemi] && p<21;p++) {
 				if(p==20) {
 					simLog(sim,2,"   ...\n");
@@ -1510,8 +1520,8 @@ void surfaceoutput(simptr sim) {
 				point=pnl->point;
 				front=pnl->front;
 				if(dim==1) simLog(sim,2,"   error, hemispheres are not implemented in 1-D");
-				else if(dim==2) simLog(sim,2,"   %s: (%g,%g), R=%g, facing: %s, opening: (%g,%g), draw: %g, length: %g",pname[p],point[0][0],point[0][1],point[1][0],front[0]==1?"out":"in",point[2][0],point[2][1],point[1][1],PI*point[1][0]);
-				else simLog(sim,2,"   %s: (%g,%g,%g), R=%g, facing: %s, opening: (%g,%g,%g), draw: %g %g, area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],front[0]==1?"out":"in",point[2][0],point[2][1],point[2][2],point[1][1],point[1][2],2.0*PI*point[1][0]*point[1][0]);
+				else if(dim==2) simLog(sim,2,"   %s: center=(%g,%g)|L, radius=%g|L, facing: %s, opening: (%g,%g), drawing edges: %g, perimeter: %g|L",pname[p],point[0][0],point[0][1],point[1][0],front[0]==1?"out":"in",point[2][0],point[2][1],point[1][1],PI*point[1][0]);
+				else simLog(sim,2,"   %s: center=(%g,%g,%g)|L, radius=%g|L, facing: %s, opening: (%g,%g,%g), drawing slices, stacks: %g %g, surface area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],front[0]==1?"out":"in",point[2][0],point[2][1],point[2][2],point[1][1],point[1][2],2.0*PI*point[1][0]*point[1][0]);
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));
@@ -1529,7 +1539,9 @@ void surfaceoutput(simptr sim) {
 					simLog(sim,1,"\n"); }}}
 		if(srf->maxpanel[PSdisk]) {
 			pname=srf->pname[PSdisk];
-			simLog(sim,2,"  disk panels allocated: %i, defined: %i\n",srf->maxpanel[PSdisk],srf->npanel[PSdisk]);
+			simLog(sim,2,"  disk panels");
+			simLog(sim,1," allocated: %i,",srf->maxpanel[PSdisk]);
+			simLog(sim,2," defined: %i\n",srf->npanel[PSdisk]);
 			for(p=0;p<srf->npanel[PSdisk] && p<21;p++) {
 				if(p==20) {
 					simLog(sim,2,"   ...\n");
@@ -1538,8 +1550,8 @@ void surfaceoutput(simptr sim) {
 				point=pnl->point;
 				front=pnl->front;
 				if(dim==1) simLog(sim,10,"   error, disks are not implemented in 1-D");
-				else if(dim==2) simLog(sim,2,"   %s: (%g,%g), R=%g, facing: (%g,%g), length: %g",pname[p],point[0][0],point[0][1],point[1][0],front[0],front[1],2.0*point[1][0]);
-				else simLog(sim,2,"   %s: (%g,%g,%g), R=%g, facing: (%g,%g,%g), draw: %g, area: %g",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],front[0],front[1],front[2],point[1][1],PI*point[1][0]*point[1][0]);
+				else if(dim==2) simLog(sim,2,"   %s: center=(%g,%g)|L, radius=%g|L, facing: (%g,%g), length: %g",pname[p],point[0][0],point[0][1],point[1][0],front[0],front[1],2.0*point[1][0]);
+				else simLog(sim,2,"   %s: center=(%g,%g,%g)|L, radius=%g|L, facing: (%g,%g,%g), drawing edges: %g, area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],front[0],front[1],front[2],point[1][1],PI*point[1][0]*point[1][0]);
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));

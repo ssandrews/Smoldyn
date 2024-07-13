@@ -834,8 +834,26 @@ void rxnoutput(simptr sim,int order) {
 		if(rxn->srf) simLog(sim,2,"   surface: %s\n",rxn->srf->sname);
 		if(rxn->multiplicity>1) simLog(sim,2,"   elementary rate and multiplicity: %g, %i\n",rxn->rate,rxn->multiplicity);
 		actualrate=rxncalcrate(sim,order,r,&pgem);								// actual rate constant and pgem values for this reaction
-		if(rxn->rate>=0) simLog(sim,2,"   requested and actual rate constants: %g, %g\n",rxn->rate*rxn->multiplicity,actualrate);
-		else simLog(sim,2,"   actual rate constant: %g\n",actualrate);
+		if(rxn->rate>=0) {
+			simLog(sim,2,"   requested and actual rate constants");
+			if(order==0 && dim==1) simLog(sim,2," |(/L/T):");
+			else if(order==0 && dim==2) simLog(sim,2," |(/L2/T):");
+			else if(order==0 && dim==3) simLog(sim,2," |(/L3/T):");
+			else if(order==1) simLog(sim,2," |(/T):");
+			else if(order==2 && dim==1) simLog(sim,2," |(L/T):");
+			else if(order==2 && dim==2) simLog(sim,2," |(L2/T):");
+			else if(order==2 && dim==3) simLog(sim,2," |(L3/T):");
+			simLog(sim,2," %g, %g\n",rxn->rate*rxn->multiplicity,actualrate); }
+		else {
+			simLog(sim,2,"   actual rate constant");
+			if(order==0 && dim==1) simLog(sim,2," |(L-1/T):");
+			else if(order==0 && dim==2) simLog(sim,2," |(L-2/T):");
+			else if(order==0 && dim==3) simLog(sim,2," |(L-3/T):");
+			else if(order==1) simLog(sim,2," |(/T):");
+			else if(order==2 && dim==1) simLog(sim,2," |(L/T):");
+			else if(order==2 && dim==2) simLog(sim,2," |(L2/T):");
+			else if(order==2 && dim==3) simLog(sim,2," |(L3/T):");
+			simLog(sim,2," %g\n",actualrate); }
 		if(pgem>=0) simLog(sim,2,"   geminate recombination probability: %g\n",pgem);
 		if(rxn->rparamt==RPconfspread) simLog(sim,2,"   conformational spread reaction\n");
 		if(rxn->tau>=0) simLog(sim,2,"   characteristic time: %g|T\n",rxn->tau);
@@ -890,10 +908,10 @@ void rxnoutput(simptr sim,int order) {
 			if(step>0) simLog(sim,1,"   step length / binding radius: %g (%s %s steps)\n",ratio,ratio>0.1 && ratio<10?"somewhat":"very",ratio>1?"large":"small");
 			if(step>0 && (!rev || rparamt!=RPconfspread || rparamt!=RPbounce)) {					// a normal bimolecular reaction
 				simLog(sim,1,"   activation-limited reaction rate: %g\n",1/(1/rate3-1/smolmodelrate));
-				simLog(sim,1,"   dynamics are like two-radius Smoluchowski model with radius: %g\n",bindrad*chi);
-				simLog(sim,1,"   dynamics are like C&K model with gamma' and gamma: %g, %g\n",(1-chi)/chi,bindrad*(1-chi)/chi);
+				simLog(sim,1,"   dynamics are like two-radius Smoluchowski model with radius: %g|L\n",bindrad*chi);
+				simLog(sim,1,"   dynamics are like C&K model with gamma' and gamma: %g, %g|L\n",(1-chi)/chi,bindrad*(1-chi)/chi);
 				lambdap=(3.18243*chi-3.40864*chi*chi+0.984385*chi*chi*chi)/pow(1-chi,2.08761);
-				simLog(sim,1,"   dynamics are like Doi model with lambda' and lambda: %g, %g\n",lambdap,lambdap/bindrad*lambdap/bindrad*dsum);
+				simLog(sim,1,"   dynamics are like Doi model with lambda' and lambda: %g, %g|/T\n",lambdap,lambdap/bindrad*lambdap/bindrad*dsum);
 			}}
 
 		if(rxn->rparamt!=RPbounce)

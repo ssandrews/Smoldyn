@@ -11,6 +11,7 @@
 # The model was published in Andrews (2012) Methods for Molecular Biology, 804:519.
 # It executes a Michaelis-Menten reaction within and on the surface of a 2D circle.
 
+units um ms
 
 # Model parameters
 define K_FWD 0.001		# substrate-enzyme association reaction rate

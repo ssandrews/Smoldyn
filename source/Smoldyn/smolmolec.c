@@ -2180,7 +2180,7 @@ void molssoutput(simptr sim) {
 
 	simLog(sim,2," Overall spatial resolution:");
 	if(maxstep==-1 || mols->condition<SCok) simLog(sim,2," not computed\n");
-	else simLog(sim,2," %g\n",maxstep);
+	else simLog(sim,2," %g|L\n",maxstep);
 	simLog(sim,2,"\n");
 	return; }
 

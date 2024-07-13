@@ -5182,7 +5182,7 @@ All text output should be sent to this function. As a default, it simply prints 
 
 This function starts by printing the message to a string using the variable arguments functions \ttt{va\_start}, \ttt{vsprintf}, and \ttt{va\_end}. Then, it replaces any unit placeholders with the current working units, if there are any. After that, it sends output to the logging outputs if appropriate. Then it checks the flags and message importance, and sends it to the correct output if appropriate.
 
-As a comment on units, this expects unit placeholders to start with a pipe character and then list dimensions; parentheses are optional and the word is allowed to end with various puntuation (``, . : ; + - * / $<$ $>$ = !''). Examples: ``\ttt{|L}'', ``\ttt{|L2/T}'', ``\ttt{|(L/T)}'', ``\ttt{|/T,}''. If the file has working units, then they are substituted into the placeholders, and any parentheses or terminal comma are kept. If the file doesn't have working units, then the placeholders and any parentheses are removed, but the terminal comma is still kept.
+This function can output units. It expects unit placeholders to start with a pipe character and then list dimensions. Parentheses around the complete units, which are started after the pipe character, are optional. Using parentheses means that any units are shown within parentheses but lack of units means that parentheses are not shown. The string word that contains the units is allowed to end with a single character of various puntuation (``, . : ; + - * / $<$ $>$ = ! )''), which is kept in the output; however, the word needs to have a whitespace character after that punctuation character. Examples: ``\ttt{\%g|L }'', ``\ttt{\%g|L2/T, }'', ``\ttt{text |(L/T): }'', ``\ttt{|/T, }''. If the file has working units, then they are substituted into the placeholders, and any parentheses or terminal punctuation are kept. If the file doesn't have working units, then the placeholders and any parentheses are removed, but the terminal punctuation is still kept.
 
 \begin{longtable}[c]{clll}
 \ttt{importance} & meaning & example & flags and display\\
@@ -6201,6 +6201,44 @@ Reaction rule expansion occurs through the \ttt{RuleExpandRules} function. This 
 The \ttt{RuleExpandRules} function first checks to see if expansion is necessary. If so, it goes through the rules list sequentially. For each rule, it calls \ttt{molpatternindex} without updating to convert the pattern to an index, it gets the data it needs from the other rule lists, and then it calls \ttt{RxnAddReactionPattern} with this information. That function updates the index variable for this pattern and adds any new reactions. After control returns to \ttt{RuleExpandRules}, it calls \ttt{RxnSetValuePattern} along with the same information and also the starting point for updating, and that function sets the reaction rates for the new patterns, adding the rate to the existing rate.
 
 Within the molecule superstructure, \ttt{expand} is a flag for on-the-fly rule-based modeling. It is initialized to 0 and stays that way so long as there have never been any molecules of this species, it is increased to 1 if at least one molecule of this species has been created but it has not yet been used for rule expansion, and is set to either 2 or 3 if it has been used for expansion.
+
+% Section: Units
+\section{Units}
+
+Units were introduced in Smoldyn version 2.74. The code is surprisingly simple, and is located primarily in \ttt{strunits}, in the string2.c library. There are a few parsing tasks.
+
+First, input occurs with the \ttt{strmathsscanf} function, which is my version of the standard library \ttt{sscanf} function. This function describes the units for the value that will be input with text that looks like \ttt{\%mlg|L}. Here, the \ttt{m} character shows that this is a special input that needs to be read by the \ttt{strmathsscanf} parser, rather than being sent on to the \ttt{sscanf} parser. The subsequent \ttt{lg} characters are the standard formatting characters for inputting a double. The vertical bar (pipe) shows that unit information follows, and the \ttt{L} shows that the unit should be a length.
+
+The second parsing task occurs if the user enters units with a number. Continuing with the above example, the user might enter \ttt{5.3|um}. The pipe again indicates that units follow. This value again needs to be parsed, and then checked that it is consistent with what was expected.
+
+The third parsing task occurs when Smoldyn prints out the model value in the diagnostics. Here, Smoldyn uses \ttt{simLog} which reads \ttt{\%g|L} and then outputs \ttt{5.3um}.
+
+\subsection{Unit formatting}
+
+Units start with a pipe character. After that, the code generally uses ``\ttt{L}'' for length, and ``\ttt{T}'' for time. Combine multiple units with either a ``\ttt{.}'' or a ``\ttt{/}'' character. If units have a power that is not equal to 1, enter it either directly after the unit name or with a carat first. Here are examples:
+
+\begin{longtable}[c]{lll}
+\ttt{L.L} & \ttt{L2} & \ttt{L\^{}2}\\
+\ttt{/L} & \ttt{L-1} & \ttt{L\^{}-1}\\
+\ttt{L.L/T} & \ttt{L2/T} & \ttt{L2.T-1}\\
+\ttt{/L/T} & \ttt{L-1.T-1} & \ttt{L\^{}-1/T}
+\end{longtable}
+
+If a number is explicitly unitless, then use a pipe character with nothing following it. For example, the input format string ``\ttt{\%mlg|}'' is used to input a unitless value. If the user includes units, then that is an error.
+
+For output using \ttt{simLog}, unit formatting has two additional details. First, it's allowed to enclose the units in parentheses; for example, ``\ttt{|(L2/T)}''. This will display the units in parentheses if there are units and won't display either parentheses or units if there aren't units. Second, the units format is allowed to end with exactly one puctuation character, which is kept in the output regardless of whether units are displayed or not, where the punctuation character options are: ``\ttt{, . : ; + - * / $<$ $>$ = ! )}''.
+
+
+\subsection{Unit parsing control flow}
+
+Consider inputting a diffusion coefficient using the \ttt{difc} statement. This goes through the \ttt{difc} input section of \ttt{simreadstring}, in smolsim.c, which has the line
+\begin{lstlisting}
+itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt1);
+\end{lstlisting}
+This line of code sends the user's input, in \ttt{line2} off to \ttt{strmathsscanf} for parsing. That function recognizes the ``\ttt{\%m}'' portion of the formatting string and then reads in the user's expression for this input as a string (variable \ttt{expression}). If the user entered a pipe character, to indicate that units follow, then \ttt{strmathsscanf} removes it and processes the two halves of the expression string separately; the first half goes off to \ttt{strmatheval} for math parsing and evaluation and the second half gets read in as a string (\ttt{dimstr}) for unit parsing. Both the ``\ttt{L2/T}'' portion of the original format string and any units entered by the user get sent off to \ttt{strunits}, with option ``\ttt{convert}'', for unit parsing.
+
+In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed first. To do so, it is send back into \ttt{strunits} but now with the ``\ttt{parse}'' option. That option clears the static \ttt{dimUnit} array, and then reads the units to find that the power is 2 for the first unit type (length) and -1 for the second unit type (time). It stores these in \ttt{dimUnit} so that the array is equal to \ttt{\{2,-1\}}. It also computes the conversion factor between these units and the working units and multiplies that by the user's value. Returning to the \ttt{convert} level of \ttt{strunits}, the function copies over the \ttt{dimUnit} array to \ttt{tempunit} so it won't be lost and then parses the user's units, if there are any, in the same manner. Next, it checks unit compatibility and performs conversion. If the user didn't enter units, then the function needs to know what units are being assumed for this input. To do that, it looks on the \ttt{unitStack} to get the latest unit set.
+
 
 
 % Chapter: Smoldyn modifications
