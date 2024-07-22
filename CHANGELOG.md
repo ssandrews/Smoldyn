@@ -1,8 +1,26 @@
 ## Changelog
 
-### 2.71.1 (11/11/23)
+### 2.73.1 (7/23/24)
 
-- Adds support for Python3.12
+- Adds support for Python3.12, and drops support for python3.7 and python3.8
+
+### 2.73 (2/27/24)
+
+- Changed default bounce interactions from the reflection method to the overlap method.
+- Added PYTHON_VERSION as a compile option.
+- Trying to reduce warnings from gitHub dependabot.
+- Fixed bug in cmdsetreactionratemolcount command.
+
+### 2.72 (8/17/23)
+
+- Minor improvements to Tiff saving.
+- Support for diffusion coefficient changes at surfaces.
+- Improved error handling, command line input, and logging functionality.
+- Added command line options with double hyphens.
+- Fixed some issues that caused compiler warnings.
+- Fixed a bug in the rate_rule statement.
+- Increased standard string lengths from 256 to 512 characters, and long strings to 4096 characters.
+- Fixed sphere reflection algorithm for the "bounce -2" setting.
 
 ### 2.71 (2/5/23)
 
