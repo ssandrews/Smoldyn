@@ -35,8 +35,7 @@ from dataclasses import dataclass
 
 from typing import Union, Tuple, List, Dict, Optional, Sequence
 
-
-from smoldyn.types import Color, BoundType, ColorType, DiffConst
+from smoldyn.types import Color, BoundType, ColorType, DiffConst, PointType
 from smoldyn import _smoldyn
 
 # Path of model file.
@@ -853,8 +852,32 @@ class _SurfaceFaceCollection(object):
                 assert k == _smoldyn.ErrorCode.ok, f"Failed setSurfaceAction: {k}"
 
 
+def _axis(p1: PointType, p2: PointType) -> str:
+    (x1, y1), (x2, y2) = p1, p2
+    theta = math.atan2(y2 - y1, x2 - x1)
+    __logger__.debug(f"theta={theta} {p1} and {p2}")
+    if theta in [0.0, math.pi, math.pi / 2.0, -math.pi / 2.0]:
+        if math.isclose(theta, 0.0):
+            axis = "+y"
+        elif math.isclose(theta, math.pi):
+            axis = "-y"
+        elif math.isclose(theta, math.pi / 2.0):
+            axis = "-x"
+        elif math.isclose(theta, -math.pi / 2.0):
+            axis = "+x"
+        else:
+            raise RuntimeError(
+                "Should not be here Python3 numerical computation is broken!"
+            )
+
+
 class Path2D(object):
-    def __init__(self, *points, simulation: _smoldyn.Simulation, closed: bool = False):
+    def __init__(
+        self,
+        points: List[PointType],
+        simulation: _smoldyn.Simulation,
+        closed: bool = False,
+    ):
         """Construct a 2D path from given points.
 
         A Path2D consists of `Rectangle` and `Triangle`.
@@ -2284,8 +2307,8 @@ class Simulation(_smoldyn.Simulation):
         """
         return super().connect(func, target, step, args)
 
-    def addPath2D(self, *points, closed: bool = False):
-        return Path2D(*points, simulation=super(), closed=closed)
+    def addPath2D(self, points: List[PointType], closed: bool = False):
+        return Path2D(points, simulation=super(), closed=closed)
 
     def addPort(
         self,
