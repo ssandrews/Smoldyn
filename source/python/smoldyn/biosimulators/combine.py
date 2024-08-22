@@ -59,27 +59,33 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
             * :obj:`SedDocumentResults`: results
             * :obj:`CombineArchiveLog`: log
     '''
-
-    print('GENERATING A SIMULARIUM FILE ------------- ')
-    # extract contents from archive
-    temp_archive_root = tempfile.mkdtemp()
-    with zipfile.ZipFile(archive_filename, 'r') as ref:
-        ref.extractall(temp_archive_root)
-
-    # process simularium file generation
-    exec_biosimularium(
-        working_dir=temp_archive_root,
-        output_dir=out_dir,
-        use_json=True
-    )
-
-    print('RUNNING A SEDML SIMULATION ------------------ ')
     # process sed result
+    print('RUNNING A SEDML SIMULATION ------------------ ')
     results, log = exec_sedml_docs_in_archive(exec_sed_doc, archive_filename, out_dir,
                                               apply_xml_model_changes=False,
                                               config=config)
 
-    return results, log
+    # generate a simularium file
+    try:
+        print('GENERATING A SIMULARIUM FILE ------------- ')
+        # extract contents from archive
+        temp_archive_root = tempfile.mkdtemp()
+        with zipfile.ZipFile(archive_filename, 'r') as ref:
+            ref.extractall(temp_archive_root)
+
+        # process simularium file generation
+        exec_biosimularium(
+            working_dir=temp_archive_root,
+            output_dir=out_dir,
+            use_json=True
+        )
+    except Exception as e:
+        if config.LOG:
+            log.exception = e 
+        else:
+            print(str(e))
+
+    return results, log 
 
 
 def exec_sed_doc(doc, working_dir, base_out_path, rel_out_path=None,
