@@ -84,7 +84,6 @@ def exec_sedml_docs_in_combine_archive(archive_filename, out_dir, config=None):
             log.exception = e 
         else:
             print(str(e))
-
     return results, log 
 
 
