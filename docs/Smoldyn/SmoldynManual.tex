@@ -9,6 +9,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{geometry}
+\usepackage{gensymb}
 
 % https://tex.stackexchange.com/questions/600628/aligning-linebreaks-in-long-item-inside-description-environment
 \usepackage{enumitem}
@@ -506,6 +507,30 @@ If you want to enter a value within the configuration file in some units that ar
 
 As another common situation, the top-level configuration file will use one set of units, say microns and milliseconds, and it uses \ttt{read\_file} to call a lower-level file that uses a different set of units, say nanometers and microseconds. In that case, the top-level file starts with \ttt{units um ms} and everything in that file is assumed to use these units; also, the lower-level file starts with \ttt{units nm us} and everything in that file is assumed to use those units. In this case, Smoldyn sets the working units to microns and milliseconds and converts the numbers that it reads from the lower-level file to the working units. See the example file \ttt{S2\_config/units.txt}.
 
+The vast majority of simulation parameters can be expressed in some combination of length and time units. However, some filament parameters, such as bending force constants, require energy units. To support this, you can also specify the working energy units and enter values using energy values. To set the rough scale for energy units, note that $k_B T \approx 4.28$ zJ; here, $k_B$ is Boltzmann's constant and is equal to $1.38\cdot10^{-23}$ J/K, and $T$ is the temperature which I'm assuming is $37\degree$C (310 K). Also, the ``z'' prefix in ``zJ'' is zepto, which represents $10^{-21}$.
+
+At least for now, Smoldyn only supports length, time, and energy units, along with combinations of them. The following table lists all units that Smoldyn recognizes.
+
+\begin{longtable}[c]{lll}
+Length (L) & Time (T) & Energy (E) \\
+\hline
+Mm & year & J \\
+km & day & dJ \\
+hm & hr & cJ \\
+dam & min & mJ \\
+m & s & uJ \\
+dm & ds & nJ \\
+cm & cs & pJ \\
+mm & ms & fJ \\
+um & us & aJ \\
+nm & ns & zJ \\
+pm & ps & yJ \\
+fm & fs & rJ \\
+ & & qJ
+\end{longtable}
+
+
+
 % Section: text substitution macros
 \section{Text substitution macros}
 
@@ -551,7 +576,7 @@ Statement & meaning\\
 \ttt{/*} ... \ttt{*/} & multi-line comment\\
 \ttt{read\_file} $filename$ & read filename, and then return\\
 \ttt{end\_file} & end of this file\\
-\ttt{units} $units$ & length and time units for this file\\
+\ttt{units} $units$ & length and time (and energy) units for this file\\
 \ttt{working\_units} $units$ & working units, if different from \ttt{units} statement\\
 \ttt{define} $key\ substitution$ & local macro replacement text\\
 \ttt{define\_global} $key\ substitution$ & global macro replacement text\\
@@ -2154,20 +2179,23 @@ Smoldyn has very minimal filament support at present. Filaments can be defined a
 % Section: filament heirarchy
 \section{Filament heirarchy}
 
-Filaments are structured in a three-tier hierarchy. At the top level, one defines one or more filament types, where each type is represents a single kind of filament in a particular environment. For example, actin filaments in the cytoplasm might be one type, and another is double-stranded DNA in the nucleus. Within each type, every individual filament has the same dynamics method, same dynamics parameters, and same graphical display. Also, if some type of filament has faces, which are lengthwise elements along filaments, then each filament within a type has the same list of faces.
+Filaments are structured in a three-tier hierarchy. At the top level, one defines one or more filament types, where each type is represents a single kind of filament in a particular environment. For example, actin filaments in the cytoplasm might be one type, and another is double-stranded DNA in the nucleus. Within each type, every individual filament has the mechanical and graphical parameters. Also, every individual filament of a particular type has the same attributes, such as faces and monomer sequences, which are described below.
 
-The next level of the heirarchy are filaments, each of which is a sequential list of segments. Each filament has its own set of locations and conformations. Filaments also have faces. In addition, filaments can have ``monomer codes'', which are characters that are equally spaced along a filament's length. These characters can represent DNA sequence, phosphorylation state, or some other sequence.  Filament energies can be computed from the conformation parameters. Filaments can branch off of other filaments, and, obviously, can have filaments that branch off of themselves.
+The next level of the heirarchy are individual filaments. Each filament has its own starting position and conformation. In some cases, filaments have ``monomer codes'', which are characters that are equally spaced along a filament's length, for representing things like DNA sequences and phosphorylation states. Filament energies can be computed from the conformation parameters. Filaments can branch off of other filaments, and, obviously, can have filaments that branch off of themselves.
 
-The bottom of the heirarchy are either segments or beads, depending on the type of dynamics that are defined in the filament type, which are the components of filaments. In bead models, the beads are at the filament vertices with straight lines between them. Beads are spherical. In segment models, the segments are cylindrical edges that connect the vertices. Filament shapes are straight lines either between the beads or along the segments, rather than being, for example, B\'{e}zier curves that are defined by the vertices (called control points in that context). For now at least, bead models do not contain relative rotation angle information, so are best for freely jointed chains, whereas segment models do contain relative rotation angle information, so are necessary for angle-biased chains or other more realistic models.
+The bottom level of the heirarchy are the segments that compose individual filaments, where segments are cylindrical edges that connect the vertices. Filament shapes are straight lines along the segments (they are not B\'{e}zier curves that are defined by the vertices, also called control points). Segments are separated by rotation angles, enabling simulation with angle-biased chains and other models.
 
 % Section: defining filaments
 \section{Defining filaments}
 
-Start by defining one or more filament types. Start this with the \ttt{start\_filament\_type} statement, including the name of the filament type. Then, describe the filament type parameters, such as the dynamics type (e.g. ``alberts'', ``nedelec'', ``rigidbeads'', etc.), the dynamics parameters, and the graphics instructions. Close this section with \ttt{end\_filament\_type}.
+Start by defining one or more filament types. Use the \ttt{start\_filament\_type} statement and give the name of the filament type. Then, describe the filament type parameters, such as the dynamics type (e.g. ``alberts'', ``nedelec'', ``rigidbeads'', etc.), the dynamics parameters, and the graphics instructions. Close this section with \ttt{end\_filament\_type}.
 
-To create a filament, one approach is \ttt{random\_filament}, in which you give the filament a name, a type, its length, and its starting location. Alternatively, a filament can be started with \ttt{start\_filament} and ended with \ttt{end\_filament}, in between which are filament definitions, including the \ttt{type}, 
+To create a filament, one approach is \ttt{random\_filament}, in which you give the filament a name, a type, its number of segments, and its starting location. Alternatively, a filament can be started with \ttt{start\_filament} and ended with \ttt{end\_filament}, in between which are filament definitions, including the \ttt{type}.
 
 The \ttt{filament} statement used to work as well, and several of the example files use it. However, this statement doesn't work at present.
+
+
+
 
 % Hybrid simulation
 \chapter{Hybrid simulation}
@@ -2337,7 +2365,7 @@ The following example, template.py, is from the ``examples'' directory in the Sm
 
 \begin{description}
 
-\item{1-11.} The file starts with a docstring, which is a useful way to provide information about the model, authors, etc. Smoldyn does not handle units at all, so it's the user's responsibility to make sure that all units are consistent with each other. The best approach is simply to make sure that all lengths use the same units, such as nanometers or microns, and all times use the same units, such as milliseconds. This also applies to derived units, such as volumes and rate constants.
+\item{1-11.} The file starts with a docstring, which is a useful way to provide information about the model, authors, etc. Smoldyn does not handle units at all when used with the Python interface, so it's the user's responsibility to make sure that all units are consistent with each other. The best approach is simply to make sure that all lengths use the same units, such as nanometers or microns, and all times use the same units, such as milliseconds. This also applies to derived units, such as volumes and rate constants.
 
 \item{13-14.} Entering the author and email address with double underscores follows good Python form.
 
@@ -3563,7 +3591,7 @@ From within a filament type definition block, this switches to a new filament ty
 
 \item{\ttt{dynamics} $dynamics$}
 
-Sets the dynamics for the filament type. Current options are: ``none'', ``Newton''. These are case-insensitive.
+Sets the dynamics for the filament type. Current options are: ``none'', ``Euler''. These are case-insensitive.
 
 \item{\ttt{biology} $biology$}
 
@@ -3597,15 +3625,16 @@ Set the thermal energy value, equal to Boltzmann's constant times temperature. E
 
 Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here.
 
-\item{\ttt{viscosity} $value$}
+\item{\ttt{mobility} $value$}
 
-Viscosity of the surrounding medium.
+Mobility of the nodes within the surrounding medium.
 
 \item{\ttt{standard\_length} $length$}
 
 Relaxed length of a filament segment. It can change through stretching or compression.
 
-\item{\ttt{standard\_angle} $yaw$ $pitch$ $roll$}
+\item{\ttt{standard\_angle} $yaw$\\
+\ttt{standard\_angle} $yaw$ $pitch$ $roll$}
 
 Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
 
@@ -3613,7 +3642,8 @@ Relaxed angles between adjacent filament segments. When facing toward the filame
 
 Stretching force constant for filament segments.
 
-\item{\ttt{force\_angle} $yaw$ $pitch$ $roll$}
+\item{\ttt{force\_angle} $yaw$\\
+\ttt{force\_angle} $yaw$ $pitch$ $roll$}
 
 Force constants for bending and torsion.
 
@@ -3643,27 +3673,29 @@ Defines a new filament of type $type$ that is called $name$, but does not start 
 
 Name of the filament for editing. This statement is not required because the filament name can also be given with \ttt{start\_filament}. This statement gives the name of the current filament for editing, and creates a new filament if needed.
 
-\item{\ttt{first\_segment} $x$ $y$ $z$ $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness]$}
+\item{\ttt{* first\_segment} $x$ $y$ $length$ $angle_0$ $[thickness]$\\
+\ttt{* first\_segment} $x$ $y$ $z$ $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness]$}
 
 Defines the first segment of a filament. Enter the starting location in $x$, $y$, and $z$, the segment length in $length$, and its absolute orientation with the angle values using spherical coordinates. The thickness value is optional.
 
-\item{\ttt{add\_segment} $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness [end]]$}
+\item{\ttt{* add\_segment} $length$ $angle_0$ $[thickness\ [end]]$\\
+\ttt{* add\_segment} $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness\ [end]]$}
 
 Add a segment to the filament, with the given length. The angles are relative angles using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are $front$ or $back$.
 
-\item{\ttt{remove\_segment} $end$}
+\item{\ttt{* remove\_segment} $end$}
 
 Remove one segment from end $end$ of the filament (``front'' or ``back'').
 
-\item{\ttt{random\_segments} $number$ $[x$ $y$ $z]$ $[thickness]$}
+\item{\ttt{* random\_segments} $number$ $[x$ $y$ $z]$ $[thickness]$}
 
 Add $number$ of random segments to the filament.
 
-\item{\ttt{translate} $symbol$ $x$ $y$ $z$}
+\item{\ttt{* translate} $symbol$ $x$ $y$ $z$}
 
 Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' for relative translation in which the values are added to the current filament location, and ``-'' for relative translation in the other direction.
 
-\item{\ttt{copy} $filament$}
+\item{\ttt{* copy} $filament$}
 
 Copy monomers to the current filament from $filament$.
 
@@ -4039,6 +4071,10 @@ Prints a single line of text with the current simulation time and the number of 
 \item{\ttt{printLattice} $filename$}
 
 Displays diagnostics about all lattices.
+
+\item{\ttt{printFilament} $filament\_type\ filament\ code\ filename$}
+
+Prints information about the specified filament. The $code$ input should be a string of letters; for each one, this prints out that data set. Codes are: \ttt{x}: segment endpoint positions, \ttt{a}: relative direction cosine matrices, \ttt{b}: absolute direction cosine matrices, \ttt{y}: ypr angles, \ttt{f}: forces on each node, \ttt{t}: torques at each node.
 
 \item{\ttt{writeVTK} $filepath/filename$}
 

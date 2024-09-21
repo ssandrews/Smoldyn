@@ -1,8 +1,9 @@
 # Filaments
 
-#graphics opengl
+#units nm us zJ
+
 #random_seed 2
-graphics opengl_better
+graphics opengl_good
 
 dim 2
 boundaries x -100 100 r
@@ -12,34 +13,45 @@ species red
 
 difc red 3
 
-color red white
+color red red
 
 time_start 0
 time_stop 50000
 time_step 0.01
 
-frame_thickness 0
+frame_thickness 1
 
-mol 1 red u u
+#mol 1 red u u
 
 start_filament_type template
-color black
+color blue
 thickness 2
-polygon edge
+polygon ve
+force_arrows 1 red
 kT 1
-dynamics none
+dynamics Euler
 standard_length 5
 standard_angle 0
-force_length -1
-force_angle 0.5
-viscosity 3
+force_length 1
+force_angle 10
+mobility 10
 end_filament_type
 
-random_filament fil1 template 49  10 50 u
+#start_filament template fil1
+#first_segment 0 0  5  0
+#add_segment 5  0.3
+#add_segment 5  0.3
+#end_filament
+
+
+random_filament fil1 template 8  10 50 u
 random_filament fil2 template 49  20 50 u
-random_filament fil3 template 49  30 50 u
-random_filament fil4 template 49  40 50 u
-random_filament fil5 template 49  50 50 u
+#random_filament fil3 template 49  30 50 u
+#random_filament fil4 template 49  40 50 u
+#random_filament fil5 template 49  50 50 u
+
+cmd B pause
+#cmd E printFilament template fil1 xabf stdout
 
 end_file
 

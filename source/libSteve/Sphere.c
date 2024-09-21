@@ -266,9 +266,9 @@ void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3) {
 
 
 void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2) {
-	Work[0]=Dcm[0]*Cart[0]+Dcm[1]*Cart[1]+Dcm[2]+Cart[2];
-	Work[1]=Dcm[3]*Cart[0]+Dcm[4]*Cart[1]+Dcm[5]+Cart[2];
-	Work[2]=Dcm[6]*Cart[0]+Dcm[7]*Cart[1]+Dcm[8]+Cart[2];
+	Work[0]=Dcm[0]*Cart[0]+Dcm[1]*Cart[1]+Dcm[2]*Cart[2];
+	Work[1]=Dcm[3]*Cart[0]+Dcm[4]*Cart[1]+Dcm[5]*Cart[2];
+	Work[2]=Dcm[6]*Cart[0]+Dcm[7]*Cart[1]+Dcm[8]*Cart[2];
 	Cart2[0]=Work[0];
 	Cart2[1]=Work[1];
 	Cart2[2]=Work[2];
@@ -276,9 +276,9 @@ void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2) {
 
 
 void Sph_DcmtxCart(const double *Dcm,const double *Cart,double *Cart2) {
-	Work[0]=Dcm[0]*Cart[0]+Dcm[3]*Cart[1]+Dcm[6]+Cart[2];
-	Work[1]=Dcm[1]*Cart[0]+Dcm[4]*Cart[1]+Dcm[7]+Cart[2];
-	Work[2]=Dcm[2]*Cart[0]+Dcm[5]*Cart[1]+Dcm[8]+Cart[2];
+	Work[0]=Dcm[0]*Cart[0]+Dcm[3]*Cart[1]+Dcm[6]*Cart[2];
+	Work[1]=Dcm[1]*Cart[0]+Dcm[4]*Cart[1]+Dcm[7]*Cart[2];
+	Work[2]=Dcm[2]*Cart[0]+Dcm[5]*Cart[1]+Dcm[8]*Cart[2];
 	Cart2[0]=Work[0];
 	Cart2[1]=Work[1];
 	Cart2[2]=Work[2];

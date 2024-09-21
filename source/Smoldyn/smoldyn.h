@@ -756,17 +756,6 @@ typedef struct latticesuperstruct
 
 /********************************* Filaments ********************************/
 
-enum FilamentBiology
-{
-    FBactin,
-    FBmicrotubule,
-    FBintermediate,
-    FBdsDNA,
-    FBssDNA,
-    FBother,
-    FBnone
-};
-
 enum FilamentDynamics
 {
     FDnone,
@@ -792,7 +781,6 @@ typedef struct filamentstruct
     char* filname;                      // filament name (ref, not owned)
     int maxseg;                         // number of segments allocated
     int nseg;                           // number of segments
-    int frontseg;                       // index of front segment
     segmentptr* segments;               // array of segments (nseg)
     double **nodes;                     // list of nodes (nseg+1)
     double **forces;										// list of forces on nodes (nseg+1)
@@ -813,7 +801,6 @@ typedef struct filamenttypestruct
 {
     struct filamentsuperstruct* filss; // filament superstructure
     char* ftname;                      // fil type name (ref, not owned)
-    enum FilamentBiology biology;      // biological name for filaments
     enum FilamentDynamics dynamics;    // dynamics for the filament
     double bundlevalue;                // microfilaments in bundle
     double color[4];                   // filament color
@@ -821,13 +808,15 @@ typedef struct filamenttypestruct
     unsigned int edgestipple[2];       // edge stippling [factor, pattern]
     enum DrawMode drawmode;            // polygon drawing mode
     double shiny;                      // shininess
+    double drawforcescale;             // scale factor for force arrows
+    double drawforcecolor[4];          // color for force arrows
     double stdlen;                     // minimum energy segment length
     double stdypr[3];                  // minimum energy bend angle
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
     double treadrate;                  // treadmilling rate constant
-    double viscosity;                  // viscosity
+    double mobility;                   // mobility
     double filradius;                  // segment radius
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces

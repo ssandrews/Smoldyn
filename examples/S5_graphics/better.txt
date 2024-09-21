@@ -10,10 +10,10 @@ boundaries z 0 100 r
 species red green
 
 light room ambient 0 0 0
-light 0 position 0 0 0
-light 0 diffuse 1 0.5 0.5
-light 0 ambient 0 0 0
-light 0 specular 1 1 1
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
 
 frame_thickness 0
 

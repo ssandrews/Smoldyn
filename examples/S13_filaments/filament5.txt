@@ -1,14 +1,16 @@
 # Filaments
 
-graphics opengl_good
+graphics opengl_better
 #random_seed 2
 
+light room ambient 0 0 0
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
+
+
 dim 3
-species red
-
-difc red 3
-
-color red white
 
 time_start 0
 time_stop 10000
@@ -18,13 +20,21 @@ boundaries x 0 100 r
 boundaries y 0 100 r
 boundaries z 0 20 r
 
+
+species red
+
+difc red 3
+color red red
+display_size red 1
+mol 5 red u u u
+
 #frame_thickness 0
 
 start_filament_type red
 color red
-dynamics alberts
-thickness 4
-polygon edge
+dynamics none
+thickness 1
+polygon face
 kT 1
 standard_length 2
 standard_angle 0 0 0
@@ -47,8 +57,8 @@ random_filament r9 red 10  u u u  u u u
 start_filament_type green
 color green
 dynamics alberts
-thickness 2
-polygon edge
+thickness 1
+polygon face
 kT 0.01
 standard_length 2
 standard_angle 0 0.5 0.5

@@ -1096,53 +1096,149 @@ void RenderFilaments(simptr sim) {
 	filamenttypeptr filtype;
 	filamentptr fil;
 	int f,vtx,graphics,ft;
-	double *point;
-	enum DrawMode drawmode;
+	double *point,zmid,*pointback,vect[3],vect2[3],axis[3],theta,scale;
+	enum DrawMode drawmode,dm;
 	GLfloat glfvect[4];
-	
+	double blackcolor[4]={0,0,0,1};
+
 	filss=sim->filss;
 	if(!filss) return;
 	graphics=sim->graphss->graphics;
+	zmid=gl2GetNumber("ClipMidz");
 
-	for(ft=0;ft<filss->ntype;ft++) {
-		filtype=filss->filtypes[ft];
-		drawmode=filtype->drawmode;
+	if(sim->dim==1);
 
-		for(f=0;f<filtype->nfil;f++) {
-			fil=filtype->fillist[f];
-			if(drawmode==DMno);
-
-			else if(drawmode&DMvert || drawmode&DMedge) {
+	else if(sim->dim==2) {
+		for(ft=0;ft<filss->ntype;ft++) {
+			filtype=filss->filtypes[ft];
+			drawmode=filtype->drawmode;
+			if(drawmode&DMface) dm=DMedge;				// face and edge are the same in 2D
+			else if(drawmode&DMedge) dm=DMedge;
+			else if(drawmode&DMvert) dm=DMvert;
+			else dm=DMno;
+			while(dm) {
 				glColor4fv(gl2Double2GLfloat(filtype->color,glfvect,4));
-				if(graphics>=2 && filtype->edgestipple[1]!=0xFFFF) {
-					glEnable(GL_LINE_STIPPLE);
-					glLineStipple((GLint)filtype->edgestipple[0],(GLushort)filtype->edgestipple[1]); }
-				if(drawmode&DMedge) {
-					glLineWidth((GLfloat)filtype->edgepts);
-					glBegin(GL_LINE_STRIP); }
-				else {
-					glPointSize((GLfloat)filtype->edgepts);
-					glBegin(GL_POINTS); }
+				if(dm==DMvert) {
+					glPointSize((GLfloat)filtype->edgepts*2); }
+				else if(dm==DMedge) {
+					if(graphics>=2 && filtype->edgestipple[1]!=0xFFFF) {
+						glEnable(GL_LINE_STIPPLE);
+						glLineStipple((GLint)filtype->edgestipple[0],(GLushort)filtype->edgestipple[1]); }
+					glLineWidth((GLfloat)filtype->edgepts); }
 
-				for(vtx=fil->frontseg;vtx<fil->nseg+fil->frontseg;vtx++) {
-					point=fil->segments[vtx]->xyzfront;
-					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
+				for(f=0;f<filtype->nfil;f++) {
+					if(dm==DMvert) glBegin(GL_POINTS);
+					else if(dm==DMedge) glBegin(GL_LINE_STRIP);
+					fil=filtype->fillist[f];
+					for(vtx=0;vtx<fil->nseg;vtx++) {
+						point=fil->segments[vtx]->xyzfront;
+						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid); }
 					point=fil->segments[vtx-1]->xyzback;
-					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
-				glEnd(); }
+					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid);
+					glEnd(); }
 
-			else if(drawmode&DMface) {
-				glPolygonMode(GL_FRONT,GL_FILL);
-				glCullFace(GL_BACK);
-				if(graphics>=3) {
-					//glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(srf->fcolor,glfvect,4));
-					//glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(srf->bcolor,glfvect,4));
-					glMateriali(GL_FRONT,GL_SHININESS,(GLint)filtype->shiny); }
-				for(vtx=fil->frontseg;vtx<fil->nseg+fil->frontseg;vtx++)
-					/*gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor)*/; }
-			if(glIsEnabled(GL_LINE_STIPPLE))
-				glDisable(GL_LINE_STIPPLE); }}
+				if(glIsEnabled(GL_LINE_STIPPLE)) glDisable(GL_LINE_STIPPLE);
+				if(dm==DMedge && drawmode&DMvert) dm=DMvert;
+				else dm=DMno; }
 
+			if(filtype->drawforcescale!=0) {
+				scale=filtype->drawforcescale;
+				glColor4fv(gl2Double2GLfloat(filtype->drawforcecolor,glfvect,4));
+				glLineWidth((GLfloat)filtype->edgepts);
+				glBegin(GL_LINES);
+				for(f=0;f<filtype->nfil;f++) {
+					fil=filtype->fillist[f];
+					filComputeForces(fil);
+					for(vtx=0;vtx<=fil->nseg;vtx++) {
+						point=fil->nodes[vtx];
+						vect[0]=point[0]+scale*fil->forces[vtx][0];
+						vect[1]=point[1]+scale*fil->forces[vtx][1];
+						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid);
+						glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),zmid); }}
+				glEnd(); }}}
+
+	else if(sim->dim==3) {
+		for(ft=0;ft<filss->ntype;ft++) {
+			filtype=filss->filtypes[ft];
+			drawmode=filtype->drawmode;
+			if(drawmode&DMface) dm=DMface;
+			else if(drawmode&DMedge) dm=DMedge;
+			else if(drawmode&DMvert) dm=DMvert;
+			else dm=DMno;
+			while(dm) {
+				glColor4fv(gl2Double2GLfloat(filtype->color,glfvect,4));
+				if(dm==DMvert) {
+					glPointSize((GLfloat)filtype->edgepts*2); }
+				else if(dm==DMedge) {
+					if(graphics>=2 && filtype->edgestipple[1]!=0xFFFF) {
+						glEnable(GL_LINE_STIPPLE);
+						glLineStipple((GLint)filtype->edgestipple[0],(GLushort)filtype->edgestipple[1]); }
+					glLineWidth((GLfloat)filtype->edgepts); }
+				else if(dm==DMface) {
+					glPolygonMode(GL_FRONT,GL_FILL);
+					glCullFace(GL_BACK);
+					if(graphics>=3) {
+						glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(filtype->color,glfvect,4));
+						glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(blackcolor,glfvect,4));
+						glMateriali(GL_FRONT,GL_SHININESS,(GLint)filtype->shiny);
+						glMateriali(GL_BACK,GL_SHININESS,(GLint)filtype->shiny); }}
+
+				if(dm==DMvert || dm==DMedge) {
+					for(f=0;f<filtype->nfil;f++) {
+						if(dm==DMvert) glBegin(GL_POINTS);
+						else if(dm==DMedge) glBegin(GL_LINE_STRIP);
+						fil=filtype->fillist[f];
+						for(vtx=0;vtx<fil->nseg;vtx++) {
+							point=fil->segments[vtx]->xyzfront;
+							glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
+						point=fil->segments[vtx-1]->xyzback;
+						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
+						glEnd(); }}
+
+				else {
+					for(f=0;f<filtype->nfil;f++) {
+						fil=filtype->fillist[f];
+						for(vtx=0;vtx<fil->nseg;vtx++) {
+							point=fil->segments[vtx]->xyzfront;
+							glMatrixMode(GL_MODELVIEW);
+							glPushMatrix();
+							glTranslated((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
+							pointback=fil->segments[vtx]->xyzback;
+							vect[0]=vect[1]=0;
+							vect[2]=1;
+							vect2[0]=pointback[0]-point[0];
+							vect2[1]=pointback[1]-point[1];
+							vect2[2]=pointback[2]-point[2];
+							normalizeVD(vect2,3);
+							theta=gl2FindRotateD(vect,vect2,axis);
+							glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
+							gl2DrawCylinder(filtype->edgepts,filtype->edgepts,fil->segments[vtx]->len,8,2,0,graphics>=3?1:0);
+							glPopMatrix(); }}}
+
+				if(glIsEnabled(GL_LINE_STIPPLE)) glDisable(GL_LINE_STIPPLE);
+				if(dm==DMface && drawmode&DMedge) dm=DMedge;
+				else if(dm==DMedge && drawmode&DMvert) dm=DMvert;
+				else dm=DMno; }
+
+			if(filtype->drawforcescale!=0) {
+				scale=filtype->drawforcescale;
+				glColor4fv(gl2Double2GLfloat(filtype->drawforcecolor,glfvect,4));
+				glLineWidth((GLfloat)filtype->edgepts);
+				glBegin(GL_LINES);
+				for(f=0;f<filtype->nfil;f++) {
+					fil=filtype->fillist[f];
+					filComputeForces(fil);
+					for(vtx=0;vtx<=fil->nseg;vtx++) {
+						point=fil->nodes[vtx];
+						vect[0]=point[0]+scale*fil->forces[vtx][0];
+						vect[1]=point[1]+scale*fil->forces[vtx][1];
+						vect[2]=point[2]+scale*fil->forces[vtx][2];
+						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
+						glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),(GLdouble)(vect[2])); }}
+				glEnd(); }}}
+
+//					for(vtx=0;vtx<fil->nseg;vtx++)
+//						gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor);
 #endif
 	return; }
 

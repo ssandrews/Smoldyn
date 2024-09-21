@@ -106,8 +106,8 @@ enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdexecutiontime(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2);
-
 enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2);
 
 // system manipulation
 enum CMDcode cmdset(simptr sim,cmdptr cmd,char *line2);
@@ -249,6 +249,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"executiontime")) return cmdexecutiontime(sim,cmd,line2);
 	else if(!strcmp(word,"writeVTK")) return cmdwriteVTK(sim,cmd,line2);
 	else if(!strcmp(word,"printLattice")) return cmdprintLattice(sim,cmd,line2);
+	else if(!strcmp(word,"printFilament")) return cmdprintFilament(sim,cmd,line2);
 	else if(!strcmp(word,"printdata")) return cmdprintdata(sim,cmd,line2);
 
 	// system manipulation
@@ -3109,6 +3110,70 @@ enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2) {
 		NSV_CALL(nsv_print(lattice->nsv,&buffer));
 		scmdfprintf(cmd->cmds,fptr,"%s",buffer?buffer:"Error");
 		buffer=NULL; }
+	scmdflush(fptr);
+	return CMDok; }
+
+
+/* cmdprintFilament */
+enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
+	FILE *fptr;
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	segmentptr segment;
+	char nm1[STRCHAR],nm2[STRCHAR],code[STRCHAR];
+	int itct,i1,er,seg;
+
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
+
+	SCMDCHECK(sim->filss,"No filaments defined");
+	itct=sscanf(line2,"%s %s %s",nm1,nm2,code);
+	SCMDCHECK(itct==3,"printFilament format: filament_type filament code filename");
+	filss=sim->filss;
+	i1=stringfind(filss->ftnames,filss->ntype,nm1);
+	SCMDCHECK(i1>=0,"filament type not recognized");
+	filtype=filss->filtypes[i1];
+	i1=stringfind(filtype->filnames,filtype->nfil,nm2);
+	SCMDCHECK(i1>=0,"filament name not recognized");
+	fil=filtype->fillist[i1];
+	line2=strnword(line2,4);
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
+
+	if(strchr(code,'f'))
+		filComputeForces(fil);
+
+	scmdfprintf(cmd->cmds,fptr,"%g %s:%s\n",sim->time,filtype->ftname,fil->filname);
+	if(strpbrk(code,"abxf")) {
+		for(seg=0;seg<fil->nseg;seg++) {
+			segment=fil->segments[seg];
+			if(strchr(code,'x')) {
+				if(sim->dim==2)
+					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g)->(%1.3g,%1.3g) angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzback[0],segment->xyzback[1],segment->ypr[0]);
+				else
+					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
+			if(strchr(code,'a')) {
+				if(sim->dim==2)
+					scmdfprintf(cmd->cmds,fptr," A=(%1.3g,%1.3g;%1.3g,%1.3g)",segment->dcm[0],segment->dcm[1],segment->dcm[3],segment->dcm[4]);
+				else
+					scmdfprintf(cmd->cmds,fptr," A=(%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g)",segment->dcm[0],segment->dcm[1],segment->dcm[2],segment->dcm[3],segment->dcm[4],segment->dcm[5],segment->dcm[6],segment->dcm[7],segment->dcm[8]); }
+			if(strchr(code,'b')) {
+				if(sim->dim==2)
+					scmdfprintf(cmd->cmds,fptr," B=(%1.3g,%1.3g;%1.3g,%1.3g)",segment->adcm[0],segment->adcm[1],segment->adcm[3],segment->adcm[4]);
+				else
+					scmdfprintf(cmd->cmds,fptr," B=(%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g)",segment->adcm[0],segment->adcm[1],segment->adcm[2],segment->adcm[3],segment->adcm[4],segment->adcm[5],segment->adcm[6],segment->adcm[7],segment->adcm[8]); }
+			if(strchr(code,'f')) {
+				if(sim->dim==2)
+					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g)",fil->forces[seg][0],fil->forces[seg][1]);
+				else
+					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g,%1.3g)",fil->forces[seg][0],fil->forces[seg][1],fil->forces[seg][2]); }
+			scmdfprintf(cmd->cmds,fptr,"\n"); }
+		if(strchr(code,'f')) {
+			if(sim->dim==2)
+				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g)\n",fil->forces[seg][0],fil->forces[seg][1]);
+			else
+				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g,%1.3g)\n",fil->forces[seg][0],fil->forces[seg][1],fil->forces[seg][2]); }}
+
 	scmdflush(fptr);
 	return CMDok; }
 

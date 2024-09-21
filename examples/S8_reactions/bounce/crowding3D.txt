@@ -5,7 +5,7 @@
 define SEED 1
 define NMOL 6112	# 40% volume occupancy
 define HGRADIUS 2.5
-#define BETTERGRAPHICS
+define BETTERGRAPHICS
 
 ifdefine BETTERGRAPHICS
   graphics opengl_better

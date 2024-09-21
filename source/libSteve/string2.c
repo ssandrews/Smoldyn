@@ -1627,22 +1627,22 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 
 /* strunits */
 double strunits(const char *unitstring,const char *dimstring,double value,char *outstring,const char* function) {
-	static int numType=2;												// number of unit types
+	static int numType=3;												// number of unit types
 	static int maxUnits=64;											// maximum number of units for each type
 	static int maxUnitChars=32;									// maximum characters in each unit name
 	static int maxStack=64;											// allocated size of unit stack
-	static int workUnits[2]={0,0};							// indices of working units
-	static int dimUnit[2]={0,0};								// powers of units, only used for recursion
+	static int workUnits[3]={0,0,0};						// indices of working units
+	static int dimUnit[3]={0,0,0};							// powers of units, only used for recursion
 	static int haveWorkUnits=0;									// flag for whether already have working units
-	static int numUnits[2]={0,0};								// number of units defined for each type
-	static char **unitNames[2]={NULL,NULL};			// list of unit names for each type
-	static double *unitRatios[2]={NULL,NULL};		// list of conversion factors for each type
-	static int unitStack[2][64];								// stack of unit indices
+	static int numUnits[3]={0,0,0};							// number of units defined for each type
+	static char **unitNames[3]={NULL,NULL,NULL};		// list of unit names for each type
+	static double *unitRatios[3]={NULL,NULL,NULL};	// list of conversion factors for each type
+	static int unitStack[3][64];								// stack of unit indices
 	static char *nameStack[64];									// stack of file names
 	static int numStack=0;											// elements in stacks
 
 	int ut,ui,count,is;
-	int tempunit[2],mult,power;
+	int tempunit[3],mult,power;
 	char ustring[STRCHAR],dstring[STRCHAR],word[STRCHAR];
 	char *strptr;
 	double factor,answer;
@@ -1721,8 +1721,14 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		unitRatios[ut][ui++]=1;
 		strcpy(unitNames[ut][ui],"m");
 		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"dam");
+		unitRatios[ut][ui++]=10;
+		strcpy(unitNames[ut][ui],"hm");
+		unitRatios[ut][ui++]=100;
 		strcpy(unitNames[ut][ui],"km");
 		unitRatios[ut][ui++]=1e3;
+		strcpy(unitNames[ut][ui],"Mm");
+		unitRatios[ut][ui++]=1e6;
 		strcpy(unitNames[ut][ui],"dm");
 		unitRatios[ut][ui++]=0.1;
 		strcpy(unitNames[ut][ui],"cm");
@@ -1733,6 +1739,10 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		unitRatios[ut][ui++]=1e-6;
 		strcpy(unitNames[ut][ui],"nm");
 		unitRatios[ut][ui++]=1e-9;
+		strcpy(unitNames[ut][ui],"pm");
+		unitRatios[ut][ui++]=1e-12;
+		strcpy(unitNames[ut][ui],"fm");
+		unitRatios[ut][ui++]=1e-15;
 		numUnits[ut]=ui;
 
 		ut++;
@@ -1745,12 +1755,56 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		unitRatios[ut][ui++]=60;
 		strcpy(unitNames[ut][ui],"hr");
 		unitRatios[ut][ui++]=3600;
+		strcpy(unitNames[ut][ui],"day");
+		unitRatios[ut][ui++]=86400;
+		strcpy(unitNames[ut][ui],"yr");
+		unitRatios[ut][ui++]=31557600;
+		strcpy(unitNames[ut][ui],"ds");
+		unitRatios[ut][ui++]=0.1;
+		strcpy(unitNames[ut][ui],"cs");
+		unitRatios[ut][ui++]=0.01;
 		strcpy(unitNames[ut][ui],"ms");
 		unitRatios[ut][ui++]=0.001;
 		strcpy(unitNames[ut][ui],"us");
 		unitRatios[ut][ui++]=1e-6;
 		strcpy(unitNames[ut][ui],"ns");
 		unitRatios[ut][ui++]=1e-9;
+		strcpy(unitNames[ut][ui],"ps");
+		unitRatios[ut][ui++]=1e-12;
+		strcpy(unitNames[ut][ui],"fs");
+		unitRatios[ut][ui++]=1e-15;
+		numUnits[ut]=ui;
+
+		ut++;
+		ui=0;
+		strcpy(unitNames[ut][ui],"E");							// energy units
+		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"J");
+		unitRatios[ut][ui++]=1;
+		strcpy(unitNames[ut][ui],"dJ");
+		unitRatios[ut][ui++]=0.1;
+		strcpy(unitNames[ut][ui],"cJ");
+		unitRatios[ut][ui++]=0.01;
+		strcpy(unitNames[ut][ui],"mJ");
+		unitRatios[ut][ui++]=1e-3;
+		strcpy(unitNames[ut][ui],"uJ");
+		unitRatios[ut][ui++]=1e-6;
+		strcpy(unitNames[ut][ui],"nJ");
+		unitRatios[ut][ui++]=1e-9;
+		strcpy(unitNames[ut][ui],"pJ");
+		unitRatios[ut][ui++]=1e-12;
+		strcpy(unitNames[ut][ui],"fJ");
+		unitRatios[ut][ui++]=1e-15;
+		strcpy(unitNames[ut][ui],"aJ");
+		unitRatios[ut][ui++]=1e-18;
+		strcpy(unitNames[ut][ui],"zJ");
+		unitRatios[ut][ui++]=1e-21;
+		strcpy(unitNames[ut][ui],"yJ");
+		unitRatios[ut][ui++]=1e-24;
+		strcpy(unitNames[ut][ui],"rJ");
+		unitRatios[ut][ui++]=1e-27;
+		strcpy(unitNames[ut][ui],"qJ");
+		unitRatios[ut][ui++]=1e-30;
 		numUnits[ut]=ui;
 
 		numStack=0;

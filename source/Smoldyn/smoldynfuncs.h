@@ -423,6 +423,7 @@ int filloadfil(simptr sim,ParseFilePtr *pfpptr,char *line2);
 int filupdate(simptr sim);
 
 // core simulation functions
+void filComputeForces(filamentptr fil);
 int filDynamics(simptr sim);
 
 /********************************* BioNetGen ********************************/
