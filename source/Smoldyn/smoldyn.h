@@ -759,7 +759,9 @@ typedef struct latticesuperstruct
 enum FilamentDynamics
 {
     FDnone,
-    FDeuler
+    FDeuler,
+    FDRK2,
+    FDRK4
 };
 
 typedef struct segmentstruct
@@ -783,6 +785,11 @@ typedef struct filamentstruct
     int nseg;                           // number of segments
     segmentptr* segments;               // array of segments (nseg)
     double **nodes;                     // list of nodes (nseg+1)
+    double **nodes1;                    // nodes for RK dynamics (nseg+1)
+    double **nodes2;                    // nodes for RK4 dynamics (nseg+1)
+    double **nodesx;                    // old node locations (nseg+1)
+    double *roll1;											// roll for RK dynamics (nseg)
+    double *roll2;											// roll for RK dynamics (nseg)
     double **forces;										// list of forces on nodes (nseg+1)
     double *torques;										// list of segment torques (nseg)
     struct filamentstruct* frontend;    // what front attaches to

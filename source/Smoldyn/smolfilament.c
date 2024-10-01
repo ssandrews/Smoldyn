@@ -104,6 +104,8 @@ int filupdate(simptr sim);
 /* filFD2string */
 char *filFD2string(enum FilamentDynamics fd,char *string) {
 	if(fd==FDeuler) strcpy(string,"euler");
+	else if(fd==FDRK2) strcpy(string,"RK2");
+	else if(fd==FDRK4) strcpy(string,"RK4");
 	else strcpy(string,"none");
 	return string; }
 
@@ -114,6 +116,8 @@ enum FilamentDynamics filstring2FD(const char *string) {
 
 	if(strbegin(string,"none",0)) ans=FDnone;
 	else if(strbegin(string,"euler",0)) ans=FDeuler;
+	else if(strbegin(string,"RK2",0)) ans=FDRK2;
+	else if(strbegin(string,"RK4",0)) ans=FDRK4;
 	else ans=FDnone;
 	return ans; }
 
@@ -295,7 +299,7 @@ filamentptr filalloc(filamentptr fil,int maxseg,int maxbranch,int maxmonomer) {
 	int *newbranchspots;
 	filamentptr *newbranches;
 	char *newmonomers;
-	double **newnodes,**newforces,*newtorques;
+	double **newnodes,**newnodes1,**newnodes2,**newnodesx,*newroll1,*newroll2,**newforces,*newtorques;
 
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
@@ -305,6 +309,11 @@ filamentptr filalloc(filamentptr fil,int maxseg,int maxbranch,int maxmonomer) {
 		fil->nseg=0;
 		fil->segments=NULL;
 		fil->nodes=NULL;
+		fil->nodes1=NULL;
+		fil->nodes2=NULL;
+		fil->nodesx=NULL;
+		fil->roll1=NULL;
+		fil->roll2=NULL;
 		fil->forces=NULL;
 		fil->torques=NULL;
 		fil->frontend=NULL;
@@ -321,6 +330,11 @@ filamentptr filalloc(filamentptr fil,int maxseg,int maxbranch,int maxmonomer) {
 	if(maxseg>fil->maxseg) {
 		CHECKMEM(newsegments=(segmentptr*) calloc(maxseg,sizeof(struct segmentstruct)));
 		CHECKMEM(newnodes=(double**) calloc(maxseg+1,sizeof(double*)));
+		CHECKMEM(newnodes1=(double**) calloc(maxseg+1,sizeof(double*)));
+		CHECKMEM(newnodes2=(double**) calloc(maxseg+1,sizeof(double*)));
+		CHECKMEM(newnodesx=(double**) calloc(maxseg+1,sizeof(double*)));
+		CHECKMEM(newroll1=(double*) calloc(maxseg,sizeof(double)));
+		CHECKMEM(newroll2=(double*) calloc(maxseg,sizeof(double)));
 		CHECKMEM(newforces=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newtorques=(double*) calloc(maxseg,sizeof(double)));
 
@@ -329,32 +343,55 @@ filamentptr filalloc(filamentptr fil,int maxseg,int maxbranch,int maxmonomer) {
 		if(fil->maxseg>0)
 			for(seg=0;seg<=fil->maxseg;seg++) {
 				newnodes[seg]=fil->nodes[seg];
+				newnodes1[seg]=fil->nodes1[seg];
+				newnodes2[seg]=fil->nodes2[seg];
+				newnodesx[seg]=fil->nodesx[seg];
 				newforces[seg]=fil->forces[seg]; }
 		for(;seg<=maxseg;seg++) {
 			CHECKMEM(newnodes[seg]=calloc(3,sizeof(double)));
+			CHECKMEM(newnodes1[seg]=calloc(3,sizeof(double)));
+			CHECKMEM(newnodes2[seg]=calloc(3,sizeof(double)));
+			CHECKMEM(newnodesx[seg]=calloc(3,sizeof(double)));
 			CHECKMEM(newforces[seg]=calloc(3,sizeof(double)));
 			newnodes[seg][0]=newnodes[seg][1]=newnodes[seg][2]=0;
 			newforces[seg][0]=newforces[seg][1]=newforces[seg][2]=0; }
 
 		for(seg=0;seg<maxseg;seg++) {													// segments and torques
 			newsegments[seg]=NULL;
+			newroll1[seg]=0;
+			newroll2[seg]=0;
 			newtorques[seg]=0; }
 		for(seg=0;seg<fil->maxseg;seg++) {
 			newsegments[seg]=fil->segments[seg];
+			newroll1[seg]=fil->roll1[seg];
+			newroll2[seg]=fil->roll2[seg];
 			newtorques[seg]=fil->torques[seg]; }
 		for(;seg<maxseg;seg++) {
 			CHECKMEM(newsegments[seg]=segmentalloc());
 			newsegments[seg]->fil=fil;
 			newsegments[seg]->index=seg;
 			newsegments[seg]->xyzfront=newnodes[seg];
-			newsegments[seg]->xyzback=newnodes[seg+1]; }
+			newsegments[seg]->xyzback=newnodes[seg+1];
+			newroll1[seg]=0;
+			newroll2[seg]=0;
+			newtorques[seg]=0; }
 
 		free(fil->segments);
 		free(fil->nodes);
+		free(fil->nodes1);
+		free(fil->nodes2);
+		free(fil->nodesx);
+		free(fil->roll1);
+		free(fil->roll2);
 		free(fil->forces);
 		free(fil->torques);
 		fil->segments=newsegments;
 		fil->nodes=newnodes;
+		fil->nodes1=newnodes1;
+		fil->nodes2=newnodes2;
+		fil->nodesx=newnodesx;
+		fil->roll1=newroll1;
+		fil->roll2=newroll2;
 		fil->forces=newforces;
 		fil->torques=newtorques;
 		fil->maxseg=maxseg; }
@@ -401,12 +438,26 @@ void filfree(filamentptr fil) {
 		for(seg=0;seg<=fil->maxseg;seg++)
 			free(fil->nodes[seg]);
 		free(fil->nodes); }
+	if(fil->nodes1) {
+		for(seg=0;seg<=fil->maxseg;seg++)
+			free(fil->nodes1[seg]);
+		free(fil->nodes1); }
+	if(fil->nodes2) {
+		for(seg=0;seg<=fil->maxseg;seg++)
+			free(fil->nodes2[seg]);
+		free(fil->nodes2); }
+	if(fil->nodesx) {
+		for(seg=0;seg<=fil->maxseg;seg++)
+			free(fil->nodesx[seg]);
+		free(fil->nodesx); }
 	if(fil->forces) {
 		for(seg=0;seg<=fil->maxseg;seg++)
 			free(fil->forces[seg]);
 		free(fil->forces); }
 
 	free(fil->torques);
+	free(fil->roll1);
+	free(fil->roll2);
 	free(fil->branchspots);
 	free(fil->branches);
 	free(fil->monomers);
@@ -1379,9 +1430,9 @@ filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"dynamics")) {				// dynamics
 		CHECKS(filtype,"need to enter filament type name before dynamics");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"dynamics options: none, euler");
+		CHECKS(itct==1,"dynamics options: none, euler, RK2, RK4");
 		fd=filstring2FD(nm1);
-//		CHECKS(fd!=FDnone,"dynamics options: none, euler");		//?? fix this
+//		CHECKS(fd!=FDnone,"dynamics options: none, euler, RK2, RK4");		//?? fix this
 		er=filtypeSetDynamics(filtype,fd);
 		CHECKS(!er,"BUG: error setting filament dynamics");
 		CHECKS(!strnword(line2,2),"unexpected text following dynamics"); }
@@ -1817,6 +1868,7 @@ void filNodes2Angles(filamentptr fil) {
 			xm1[1]=x[1]; }}
 
 	else {																				// 3D
+//		printf("\nfilNodes2Anges:");//??
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
 			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
@@ -1828,6 +1880,8 @@ void filNodes2Angles(filamentptr fil) {
 			segment->ypr[0]=atan2(x[1],x[0]);										// local ypr angles
 			segment->ypr[1]=-asin(x[2]/len);
 			Sph_Xyz2Dcm(segment->ypr,segment->dcm);
+//			if(seg==0)
+//				printf(" x=(%1.3g,%1.3g,%1.3g), YPR=(%1.3g,%1.3g,%1.3g), Dcm=((%1.3g,%1.3g,%1.3g),(%1.3g,%1.3g,%1.3g),(%1.3g,%1.3g,%1.3g))",x[0],x[1],x[2],segment->ypr[0],segment->ypr[1],segment->ypr[2],segment->dcm[0],segment->dcm[1],segment->dcm[2],segment->dcm[3],segment->dcm[4],segment->dcm[5],segment->dcm[6],segment->dcm[7],segment->dcm[8]);//??
 			if(seg>0) Sph_DcmxDcm(segment->dcm,fil->segments[seg-1]->adcm,segment->adcm);
 			else Sph_Dcm2Dcm(segment->dcm,segment->adcm); }}
 
@@ -2042,8 +2096,10 @@ void filAddBendForces(filamentptr fil) {
 			forces[node+1][0]+=forcep1[0];
 			forces[node+1][1]+=forcep1[1]; }}
 	else {
+//		printf("\nTorque:");//??
 		for(node=1;node<fil->nseg;node++) {								// compute bending forces
 			filBendTorque(fil,node,bendtorque);							// get bending torque in system reference frame
+//			printf(" (%1.2g,%1.2g,%1.2g)",bendtorque[0],bendtorque[1],bendtorque[2]);//??
 			segmentm1=fil->segments[node-1];
 			segment=fil->segments[node];
 
@@ -2104,29 +2160,212 @@ void filComputeForces(filamentptr fil) {
 
 
 /* filEulerDynamics */
-void filEulerDynamics(simptr sim,filamentptr fil) {
-	int node,seg;
+void filEulerDynamics(simptr sim,filamenttypeptr filtype) {
+	int node,seg,f;
 	double **nodes,mobility;
 	segmentptr segment;
+	filamentptr fil;
 
-	mobility=fil->filtype->mobility*sim->dt;
-	filComputeForces(fil);
-	nodes=fil->nodes;
-	if(sim->dim==2) {
-		for(node=0;node<=fil->nseg;node++) {
-			nodes[node][0]+=mobility*fil->forces[node][0];
-			nodes[node][1]+=mobility*fil->forces[node][1]; }}
-	else {
-		for(node=0;node<=fil->nseg;node++) {
-			nodes[node][0]+=mobility*fil->forces[node][0];
-			nodes[node][1]+=mobility*fil->forces[node][1];
-			nodes[node][2]+=mobility*fil->forces[node][2]; }
-		for(seg=0;seg<fil->nseg;seg++) {
-			segment=fil->segments[seg];
-			segment->ypr[2]+=mobility*fil->torques[seg]; }}
-
-	filNodes2Angles(fil);
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		mobility=fil->filtype->mobility*sim->dt;
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]+=mobility*fil->forces[node][0];
+				nodes[node][1]+=mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]+=mobility*fil->forces[node][0];
+				nodes[node][1]+=mobility*fil->forces[node][1];
+				nodes[node][2]+=mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				segment->ypr[2]+=mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
 	return; }
+
+
+void filRK2Dynamics(simptr sim,filamenttypeptr filtype) {
+	int node,seg,f;
+	double **nodes,**nodes1,*roll1,mobility;
+	segmentptr segment;
+	filamentptr fil;
+
+	for(f=0;f<filtype->nfil;f++) {						// store initial state in nodes1 and roll1 and then take a half step
+		fil=filtype->fillist[f];
+		mobility=fil->filtype->mobility*sim->dt*0.5;
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		nodes1=fil->nodes1;
+		roll1=fil->roll1;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes1[node][0]=nodes[node][0];
+				nodes1[node][1]=nodes[node][1];
+				nodes[node][0]+=mobility*fil->forces[node][0];
+				nodes[node][1]+=mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes1[node][0]=nodes[node][0];
+				nodes1[node][1]=nodes[node][1];
+				nodes1[node][2]=nodes[node][2];
+				nodes[node][0]+=mobility*fil->forces[node][0];
+				nodes[node][1]+=mobility*fil->forces[node][1];
+				nodes[node][2]+=mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				roll1[seg]=segment->ypr[2];
+				segment->ypr[2]+=mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
+
+	for(f=0;f<filtype->nfil;f++) {							// compute force from new state and then take full step from initial state
+		fil=filtype->fillist[f];
+		mobility=fil->filtype->mobility*sim->dt;
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		nodes1=fil->nodes1;
+		roll1=fil->roll1;
+		roll1=fil->roll1;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1];
+				nodes[node][2]=nodes1[node][2]+mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				segment->ypr[2]=roll1[seg]+mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
+
+	return; }
+
+
+void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
+	int node,seg,f;
+	double **nodes,**nodes1,**nodes2,*roll1,*roll2,mobility;
+	segmentptr segment;
+	filamentptr fil;
+
+	mobility=filtype->mobility*sim->dt;
+	for(f=0;f<filtype->nfil;f++) {						// copy initial state to nodes1/roll1, then take a half step and add to nodes2/roll2
+		fil=filtype->fillist[f];
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		nodes1=fil->nodes1;
+		nodes2=fil->nodes2;
+		roll1=fil->roll1;
+		roll2=fil->roll2;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes1[node][0]=nodes[node][0];
+				nodes1[node][1]=nodes[node][1];
+				nodes[node][0]+=0.5*mobility*fil->forces[node][0];
+				nodes[node][1]+=0.5*mobility*fil->forces[node][1];
+				nodes2[node][0]=nodes1[node][0]+(1.0/6)*mobility*fil->forces[node][0];
+				nodes2[node][1]=nodes1[node][1]+(1.0/6)*mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes1[node][0]=nodes[node][0];
+				nodes1[node][1]=nodes[node][1];
+				nodes1[node][2]=nodes[node][2];
+				nodes[node][0]+=0.5*mobility*fil->forces[node][0];
+				nodes[node][1]+=0.5*mobility*fil->forces[node][1];
+				nodes[node][2]+=0.5*mobility*fil->forces[node][2];
+				nodes2[node][0]=nodes1[node][0]+(1.0/6)*mobility*fil->forces[node][0];
+				nodes2[node][1]=nodes1[node][1]+(1.0/6)*mobility*fil->forces[node][1];
+				nodes2[node][2]=nodes1[node][2]+(1.0/6)*mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				roll1[seg]=segment->ypr[2];
+				segment->ypr[2]+=0.5*mobility*fil->torques[seg];
+				roll2[seg]=roll1[seg]+(1.0/6)*mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
+
+	for(f=0;f<filtype->nfil;f++) {							// with new force, take half step from initial state, and add to nodes2/roll2
+		fil=filtype->fillist[f];
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		nodes1=fil->nodes1;
+		nodes2=fil->nodes2;
+		roll1=fil->roll1;
+		roll2=fil->roll2;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+0.5*mobility*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+0.5*mobility*fil->forces[node][1];
+				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+0.5*mobility*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+0.5*mobility*fil->forces[node][1];
+				nodes[node][2]=nodes1[node][2]+0.5*mobility*fil->forces[node][2];
+				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1];
+				nodes2[node][2]+=(1.0/3)*mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				segment->ypr[2]=roll1[seg]+0.5*mobility*fil->torques[seg];
+				roll2[seg]+=(1.0/3)*mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
+
+	for(f=0;f<filtype->nfil;f++) {							// with new force, take full step from initial state, and add to nodes2/roll2
+		fil=filtype->fillist[f];
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		nodes1=fil->nodes1;
+		nodes2=fil->nodes2;
+		roll1=fil->roll1;
+		roll2=fil->roll2;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1];
+				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1];
+				nodes[node][2]=nodes1[node][2]+mobility*fil->forces[node][2];
+				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1];
+				nodes2[node][2]+=(1.0/3)*mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				segment->ypr[2]=roll1[seg]+mobility*fil->torques[seg];
+				roll2[seg]+=(1.0/3)*mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
+
+	for(f=0;f<filtype->nfil;f++) {							// with new force, add to nodes2/roll2
+		fil=filtype->fillist[f];
+		filComputeForces(fil);
+		nodes=fil->nodes;
+		nodes1=fil->nodes1;
+		nodes2=fil->nodes2;
+		roll1=fil->roll1;
+		roll2=fil->roll2;
+		if(sim->dim==2) {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes2[node][0]+(1.0/6)*mobility*fil->forces[node][0];
+				nodes[node][1]=nodes2[node][1]+(1.0/6)*mobility*fil->forces[node][1]; }}
+		else {
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes2[node][0]+(1.0/6)*mobility*fil->forces[node][0];
+				nodes[node][1]=nodes2[node][1]+(1.0/6)*mobility*fil->forces[node][1];
+				nodes[node][2]=nodes2[node][2]+(1.0/6)*mobility*fil->forces[node][2]; }
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				segment->ypr[2]=roll2[seg]+(1.0/6)*mobility*fil->torques[seg]; }}
+		filNodes2Angles(fil); }
+
+	return; }
+
 
 
 /* filDynamics */
@@ -2148,11 +2387,12 @@ int filDynamics(simptr sim) {
 				for(i=0;i<treadnum;i++)
 					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }}
 
-		if(filtype->dynamics==FDeuler) {
-			for(f=0;f<filtype->nfil;f++) {
-				fil=filtype->fillist[f];
-				filEulerDynamics(sim,fil); }}}
-
+		if(filtype->dynamics==FDeuler)
+			filEulerDynamics(sim,filtype);
+		else if(filtype->dynamics==FDRK2)
+			filRK2Dynamics(sim,filtype);
+		else if(filtype->dynamics==FDRK4)
+			filRK4Dynamics(sim,filtype); }
 
 	return 0; }
 

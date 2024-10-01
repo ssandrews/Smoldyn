@@ -17,7 +17,7 @@ color red red
 
 time_start 0
 time_stop 50000
-time_step 0.01
+time_step 0.02
 
 frame_thickness 1
 
@@ -29,7 +29,7 @@ thickness 2
 polygon ve
 force_arrows 1 red
 kT 1
-dynamics Euler
+dynamics RK2
 standard_length 5
 standard_angle 0
 force_length 1
@@ -46,9 +46,10 @@ end_filament_type
 
 random_filament fil1 template 8  10 50 u
 random_filament fil2 template 49  20 50 u
-#random_filament fil3 template 49  30 50 u
+random_filament fil3 template 20  30 50 u
 #random_filament fil4 template 49  40 50 u
 #random_filament fil5 template 49  50 50 u
+
 
 cmd B pause
 #cmd E printFilament template fil1 xabf stdout
