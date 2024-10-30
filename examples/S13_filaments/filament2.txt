@@ -33,24 +33,24 @@ force_length 1
 force_angle 100 80 -1
 end_filament_type
 
-new_filament redtype red
-new_filament redtype red2
-new_filament redtype red3
-new_filament redtype red4
-new_filament redtype red5
-new_filament redtype red6
-new_filament redtype red7
-new_filament redtype red8
-new_filament redtype red9
+new_filament redtype:red
+new_filament redtype:red2
+new_filament redtype:red3
+new_filament redtype:red4
+new_filament redtype:red5
+new_filament redtype:red6
+new_filament redtype:red7
+new_filament redtype:red8
+new_filament redtype:red9
 
-filament red copy red2
-filament red copy red3
-filament red copy red4
-filament red copy red5
-filament red copy red6
-filament red copy red7
-filament red copy red8
-filament red copy red9
+filament red copy_to red2
+filament red copy_to red3
+filament red copy_to red4
+filament red copy_to red5
+filament red copy_to red6
+filament red copy_to red7
+filament red copy_to red8
+filament red copy_to red9
 
 filament red first_segment	46.19222236	50.60101155	1	5	4.656180038	0	0
 filament red2 first_segment	76.90132296	26.70912275	1	5	4.351468544	0	0
@@ -83,16 +83,16 @@ force_length -1
 force_angle 10 0 0
 end_filament_type
 
-new_filament greentype green
+new_filament greentype:green
 
-filament green copy green2
-filament green copy green3
-filament green copy green4
-filament green copy green5
-filament green copy green6
-filament green copy green7
-filament green copy green8
-filament green copy green9
+filament green copy_to green2
+filament green copy_to green3
+filament green copy_to green4
+filament green copy_to green5
+filament green copy_to green6
+filament green copy_to green7
+filament green copy_to green8
+filament green copy_to green9
 filament green first_segment	68.21505086	46.64608437	1	2	1.691868734	0	0
 filament green2 first_segment	51.732133	55.70341596	1	2	0.764343705	0	0
 filament green3 first_segment	99.77730256	10.79488604	1	2	1.517531223	0	0

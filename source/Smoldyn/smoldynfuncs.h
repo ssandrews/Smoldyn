@@ -401,6 +401,7 @@ int latticeruntimestep(simptr sim);
 // enumerated types
 
 // low level utilities
+int filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
 
 // memory management
 void filssfree(filamentssptr filss);

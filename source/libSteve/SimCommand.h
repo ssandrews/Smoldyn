@@ -46,8 +46,8 @@ typedef struct cmdsuperstruct {
 	int maxcmdlist;				// allocated size of command list
 	int ncmdlist;					// actual size of command list
 	cmdptr *cmdlist;			// list of all added commands
-	queue cmd;						// queue of normal run-time commands
-	queue cmdi;						// queue of integer time commands
+	q_queue cmd;					// queue of normal run-time commands
+	q_queue cmdi;					// queue of integer time commands
 	enum CMDcode (*cmdfn)(void*,cmdptr,char*);	// function that runs commands
 	void *simvd;					// void pointer to simulation structure
 	int iter;							// number of times integer commands have run

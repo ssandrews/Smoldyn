@@ -3153,15 +3153,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 				else
 					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
 			if(strchr(code,'a')) {
-				if(sim->dim==2)
-					scmdfprintf(cmd->cmds,fptr," A=(%1.3g,%1.3g;%1.3g,%1.3g)",segment->dcm[0],segment->dcm[1],segment->dcm[3],segment->dcm[4]);
-				else
-					scmdfprintf(cmd->cmds,fptr," A=(%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g)",segment->dcm[0],segment->dcm[1],segment->dcm[2],segment->dcm[3],segment->dcm[4],segment->dcm[5],segment->dcm[6],segment->dcm[7],segment->dcm[8]); }
+				scmdfprintf(cmd->cmds,fptr," a=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3]); }
 			if(strchr(code,'b')) {
-				if(sim->dim==2)
-					scmdfprintf(cmd->cmds,fptr," B=(%1.3g,%1.3g;%1.3g,%1.3g)",segment->adcm[0],segment->adcm[1],segment->adcm[3],segment->adcm[4]);
-				else
-					scmdfprintf(cmd->cmds,fptr," B=(%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g;%1.3g,%1.3g,%1.3g)",segment->adcm[0],segment->adcm[1],segment->adcm[2],segment->adcm[3],segment->adcm[4],segment->adcm[5],segment->adcm[6],segment->adcm[7],segment->adcm[8]); }
+				scmdfprintf(cmd->cmds,fptr," b=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]); }
 			if(strchr(code,'f')) {
 				if(sim->dim==2)
 					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g)",fil->forces[seg][0],fil->forces[seg][1]);

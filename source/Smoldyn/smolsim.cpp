@@ -635,7 +635,6 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	portptr port;
 	filamentptr fil;
 	filamenttypeptr filtype;
-	filamentssptr filss;
 	long int li1;
 	listptrli lilist;
 	listptrv vlist;
@@ -1542,6 +1541,19 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
+	else if(!strcmp(word,"filament_type")) {			// filament_type
+		CHECKS(sim->filss,"individual filament types need to be defined before using filament_type");
+		itct=sscanf(line2,"%s %s",nm,nm1);
+		CHECKS(itct==2,"filament_type format: filament_type_name statement_name statement_text");
+		line2=strnword(line2,3);
+		CHECKS(line2,"filament_type format: filament_type_name statement_name statement_text");
+		ft=stringfind(sim->filss->ftnames,sim->filss->ntype,nm);
+		CHECKS(ft>=0,"filament type is unrecognized");
+		filtype=sim->filss->filtypes[ft];
+		filtype=filtypereadstring(sim,pfp,filtype,nm1,line2);
+		if(!filtype) pfp=NULL;
+		CHECK(filtype!=NULL); }
+
 	else if(!strcmp(word,"filament")) {						// filament
 		CHECKS(sim->filss,"individual filaments need to be defined before using filament");
 		itct=sscanf(line2,"%s %s",nm,nm1);
@@ -1559,31 +1571,31 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"random_filament")) {		// random_filament
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
-		filss=sim->filss;
-		itct=sscanf(line2,"%s %s",nm,nm1);
-		CHECKS(itct==2,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
-		ft=stringfind(filss->ftnames,filss->ntype,nm1);
-		CHECKS(ft>=0,"filament type is unknown");
-		filtype=filss->filtypes[ft];
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"random_filament format: type:name segments [x y z phi theta psi] [thickness]");
+		er=filReadFilName(sim,nm,&filtype,&fil,nm1);
+		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
+		CHECKS(er!=-4,"unknonwn filament type");
+		CHECKS(filtype,"missing filament type. Format: type:name segments [x y z phi theta psi] [thickness]");
 		CHECKS(filtype->klen==-1 || filtype->klen>0,"cannot compute random segments because the filament type has length force constant equals 0");
-		fil=filAddFilament(filtype,nm);
+		fil=filAddFilament(filtype,nm1);
 		CHECKS(fil,"unable to add filament to simulation");
-		line2=strnword(line2,3);
+		line2=strnword(line2,2);
 
-		CHECKS(line2,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
+		CHECKS(line2,"random_filament format: type:name segments [x y z phi theta psi] [thickness]");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);	// number of segments
-		CHECKS(itct==1,"random_filament format: name type segments [x y z theta phi chi] [thickness]");
-		CHECKS(i1>0,"number needs to be >0");
+		CHECKS(itct==1,"random_filament format: type:name segments [x y z phi theta psi] [thickness]");
+		CHECKS(i1>0,"number of segments needs to be >0");
 		line2=strnword(line2,2);
 		if(fil->nseg==0 && dim==3) {
 			CHECKS(line2,"missing position and angle information");
 			itct=sscanf(line2,"%s %s %s %s %s %s",str1,str2,str3,str4,str5,str6);
-			CHECKS(itct==6,"random_filament format: name type number [x y z theta phi chi] [thickness]");
+			CHECKS(itct==6,"random_filament format: type:name number [x y z phi theta psi] [thickness]");
 			line2=strnword(line2,7); }
 		else if(fil->nseg==0 && dim==2) {
 			CHECKS(line2,"missing position and angle information");
 			itct=sscanf(line2,"%s %s %s",str1,str2,str4);
-			CHECKS(itct==3,"random_filament format: name type number [x y theta] [thickness]");
+			CHECKS(itct==3,"random_filament format: type:name number [x y phi] [thickness]");
 			sprintf(str3,"%i",0);
 			sprintf(str5,"%i",0);
 			sprintf(str6,"%i",0);
@@ -1598,7 +1610,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			CHECKS(itct==1,"random_segments format: name type number [x y z theta phi chi] [thickness]");
+			CHECKS(itct==1,"random_segments format: type:name number [x y z phi theta psi] [thickness]");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
 		er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);

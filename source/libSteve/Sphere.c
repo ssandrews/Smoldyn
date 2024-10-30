@@ -13,10 +13,21 @@ of the Gnu Lesser General Public License (LGPL). */
 #define PI 3.14159265358979323846
 #define EPSILON 100*DBL_EPSILON
 
-double Work[9],Work2[9];
 
+/* *** Copied over from Rn.c to avoid a dependency *** */
+
+void Sph_crossVVD(const double *a,const double *b,double *c) {
+	c[0]=a[1]*b[2]-a[2]*b[1];
+	c[1]=a[2]*b[0]-a[0]*b[2];
+	c[2]=a[0]*b[1]-a[1]*b[0];
+	return; }
+
+
+/* *** Start of Sphere.c library functions *** */
 
 void Sph_Cart2Sc(const double *Cart,double *Sc) {
+	double Work[3];
+
 	Work[0]=sqrt(Cart[0]*Cart[0]+Cart[1]*Cart[1]+Cart[2]*Cart[2]);
 	if(Work[0]>0) {
 		Work[1]=acos(Cart[2]/Work[0]);
@@ -30,6 +41,8 @@ void Sph_Cart2Sc(const double *Cart,double *Sc) {
 
 
 void Sph_Sc2Cart(const double *Sc,double *Cart) {
+	double Work[3];
+
 	Work[0]=Sc[0]*sin(Sc[1])*cos(Sc[2]);
 	Work[1]=Sc[0]*sin(Sc[1])*sin(Sc[2]);
 	Work[2]=Sc[0]*cos(Sc[1]);
@@ -39,26 +52,21 @@ void Sph_Sc2Cart(const double *Sc,double *Cart) {
 	return; }
 
 
-void Sph_Eay2Ep(const double *Eay,double *Ep) {
-	Work[0]=cos(0.5*(Eay[3]+Eay[2]))*cos(0.5*Eay[1]);
-	Work[1]=sin(0.5*(Eay[3]-Eay[2]))*sin(0.5*Eay[1]);
-	Work[2]=cos(0.5*(Eay[3]-Eay[2]))*sin(0.5*Eay[1]);
-	Work[3]=sin(0.5*(Eay[3]+Eay[2]))*cos(0.5*Eay[1]);
-	Ep[0]=Work[0];
-	Ep[1]=Work[1];
-	Ep[2]=Work[2];
-	Ep[3]=Work[3];
+void Sph_Cart2Cart(const double *Cart1,double *Cart2) {
+	Cart2[0]=Cart1[0];
+	Cart2[1]=Cart1[1];
+	Cart2[2]=Cart1[2];
 	return; }
 
 
-void Sph_Xyz2Xyz(const double *Xyz1,double *Xyz2) {
-	Xyz2[0]=Xyz1[0];
-	Xyz2[1]=Xyz1[1];
-	Xyz2[2]=Xyz1[2];
+void Sph_Ypr2Ypr(const double *Ypr1,double *Ypr2) {
+	Ypr2[0]=Ypr1[0];
+	Ypr2[1]=Ypr1[1];
+	Ypr2[2]=Ypr1[2];
 	return; }
 
 
-void Sph_Eax2Xyz(const double *Eax,double *Xyz) {
+void Sph_Eax2Ypr(const double *Eax,double *Ypr) {
 	double cf,cq,cy,sf,sq,sy;
 
 	cq=cos(Eax[0]);
@@ -67,9 +75,9 @@ void Sph_Eax2Xyz(const double *Eax,double *Xyz) {
 	sq=sin(Eax[0]);
 	sf=sin(Eax[1]);
 	sy=sin(Eax[2]);
-	Xyz[0]=atan2(cy*sf+cq*cf*sy,cy*cf-cq*sf*sy);
-	Xyz[1]=asin(-sy*sq);
-	Xyz[2]=atan2(cy*sq,cq);
+	Ypr[0]=atan2(cy*sf+cq*cf*sy,cy*cf-cq*sf*sy);
+	Ypr[1]=asin(-sy*sq);
+	Ypr[2]=atan2(cy*sq,cq);
 	return;	}
 
 
@@ -115,15 +123,15 @@ void Sph_Eay2Dcm(const double *Eay,double *Dcm) {
 	return; }
 
 
-void Sph_Xyz2Dcm(const double *Xyz,double *Dcm) {
+void Sph_Ypr2Dcm(const double *Ypr,double *Dcm) {
 	double cf,cq,cy,sf,sq,sy;
 	
-	cf=cos(Xyz[0]);
-	cq=cos(Xyz[1]);
-	cy=cos(Xyz[2]);
-	sf=sin(Xyz[0]);
-	sq=sin(Xyz[1]);
-	sy=sin(Xyz[2]);
+	cf=cos(Ypr[0]);
+	cq=cos(Ypr[1]);
+	cy=cos(Ypr[2]);
+	sf=sin(Ypr[0]);
+	sq=sin(Ypr[1]);
+	sy=sin(Ypr[2]);
 	Dcm[0]=cq*cf;
 	Dcm[1]=cq*sf;
 	Dcm[2]=-sq;
@@ -136,15 +144,15 @@ void Sph_Xyz2Dcm(const double *Xyz,double *Dcm) {
 	return; }
 
 
-void Sph_Xyz2Dcmt(const double *Xyz,double *Dcmt) {
+void Sph_Ypr2Dcmt(const double *Ypr,double *Dcmt) {
 	double cf,cq,cy,sf,sq,sy;
 	
-	cf=cos(Xyz[0]);
-	cq=cos(Xyz[1]);
-	cy=cos(Xyz[2]);
-	sf=sin(Xyz[0]);
-	sq=sin(Xyz[1]);
-	sy=sin(Xyz[2]);
+	cf=cos(Ypr[0]);
+	cq=cos(Ypr[1]);
+	cy=cos(Ypr[2]);
+	sf=sin(Ypr[0]);
+	sq=sin(Ypr[1]);
+	sy=sin(Ypr[2]);
 	Dcmt[0]=cq*cf;
 	Dcmt[3]=cq*sf;
 	Dcmt[6]=-sq;
@@ -157,13 +165,15 @@ void Sph_Xyz2Dcmt(const double *Xyz,double *Dcmt) {
 	return; }
 
 
-void Sph_Dcm2Xyz(const double *Dcm,double *Xyz) {
+void Sph_Dcm2Ypr(const double *Dcm,double *Ypr) {
+	double Work[3];
+
 	Work[0]=atan2(Dcm[1],Dcm[0]);
 	Work[1]=asin(-Dcm[2]);
 	Work[2]=atan2(Dcm[5],Dcm[8]);
-	Xyz[0]=Work[0];
-	Xyz[1]=Work[1];
-	Xyz[2]=Work[2];
+	Ypr[0]=Work[0];
+	Ypr[1]=Work[1];
+	Ypr[2]=Work[2];
 	return; }
 
 
@@ -181,6 +191,8 @@ void Sph_Dcm2Dcm(const double *Dcm1,double *Dcm2) {
 
 
 void Sph_Dcm2Dcmt(const double *Dcm1,double *Dcm2) {
+	double Work[9];
+
 	Dcm2[0]=Dcm1[0];
 	Dcm2[4]=Dcm1[4];
 	Dcm2[8]=Dcm1[8];
@@ -200,6 +212,8 @@ void Sph_Dcm2Dcmt(const double *Dcm1,double *Dcm2) {
 
 
 void Sph_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3) {
+	double Work[9];
+
 	Work[0]=Dcm1[0]*Dcm2[0]+Dcm1[1]*Dcm2[3]+Dcm1[2]*Dcm2[6];
 	Work[1]=Dcm1[0]*Dcm2[1]+Dcm1[1]*Dcm2[4]+Dcm1[2]*Dcm2[7];
 	Work[2]=Dcm1[0]*Dcm2[2]+Dcm1[1]*Dcm2[5]+Dcm1[2]*Dcm2[8];
@@ -222,6 +236,8 @@ void Sph_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3) {
 
 
 void Sph_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3) {
+	double Work[9];
+
 	Work[0]=Dcm1[0]*Dcmt[0]+Dcm1[1]*Dcmt[1]+Dcm1[2]*Dcmt[2];
 	Work[1]=Dcm1[0]*Dcmt[3]+Dcm1[1]*Dcmt[4]+Dcm1[2]*Dcmt[5];
 	Work[2]=Dcm1[0]*Dcmt[6]+Dcm1[1]*Dcmt[7]+Dcm1[2]*Dcmt[8];
@@ -244,6 +260,8 @@ void Sph_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3) {
 
 
 void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3) {
+	double Work[9];
+
 	Work[0]=Dcmt[0]*Dcm2[0]+Dcmt[3]*Dcm2[3]+Dcmt[6]*Dcm2[6];
 	Work[1]=Dcmt[0]*Dcm2[1]+Dcmt[3]*Dcm2[4]+Dcmt[6]*Dcm2[7];
 	Work[2]=Dcmt[0]*Dcm2[2]+Dcmt[3]*Dcm2[5]+Dcmt[6]*Dcm2[8];
@@ -266,6 +284,8 @@ void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3) {
 
 
 void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2) {
+	double Work[3];
+
 	Work[0]=Dcm[0]*Cart[0]+Dcm[1]*Cart[1]+Dcm[2]*Cart[2];
 	Work[1]=Dcm[3]*Cart[0]+Dcm[4]*Cart[1]+Dcm[5]*Cart[2];
 	Work[2]=Dcm[6]*Cart[0]+Dcm[7]*Cart[1]+Dcm[8]*Cart[2];
@@ -276,6 +296,8 @@ void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2) {
 
 
 void Sph_DcmtxCart(const double *Dcm,const double *Cart,double *Cart2) {
+	double Work[3];
+
 	Work[0]=Dcm[0]*Cart[0]+Dcm[3]*Cart[1]+Dcm[6]*Cart[2];
 	Work[1]=Dcm[1]*Cart[0]+Dcm[4]*Cart[1]+Dcm[7]*Cart[2];
 	Work[2]=Dcm[2]*Cart[0]+Dcm[5]*Cart[1]+Dcm[8]*Cart[2];
@@ -291,18 +313,18 @@ void Sph_One2Dcm(double *Dcm) {
 	return; }
 
 
-void Sph_Xyz2Xyzr(const double *Xyz,double *Xyzr) {
+void Sph_Ypr2Yprr(const double *Ypr,double *Yprr) {
 	double cf,cq,cy,sf,sq,sy;
 
-	cf=cos(Xyz[0]);
-	cq=cos(Xyz[1]);
-	cy=cos(Xyz[2]);
-	sf=sin(Xyz[0]);
-	sq=sin(Xyz[1]);
-	sy=sin(Xyz[2]);
-	Xyzr[0]=atan2(sy*sq*cf-cy*sf,cq*cf);
-	Xyzr[1]=-asin(-cy*sq*cf-sy*sf);
-	Xyzr[2]=atan2(-cy*sq*sf+sy*cf,cq*cy);
+	cf=cos(Ypr[0]);
+	cq=cos(Ypr[1]);
+	cy=cos(Ypr[2]);
+	sf=sin(Ypr[0]);
+	sq=sin(Ypr[1]);
+	sy=sin(Ypr[2]);
+	Yprr[0]=atan2(sy*sq*cf-cy*sf,cq*cf);
+	Yprr[1]=-asin(-cy*sq*cf-sy*sf);
+	Yprr[2]=atan2(-cy*sq*sf+sy*cf,cq*cy);
 	return; }
 
 
@@ -339,15 +361,19 @@ void Sph_Rot2Dcm(char axis,double angle,double *Dcm) {
 
 
 void Sph_Newz2Dcm(const double *Newz,double psi,double *Dcm) {
-	Sph_Cart2Sc(Newz,Work2);
-	Work2[2]+=PI/2.0;
-	Work2[3]=psi-Work2[2];
-	Sph_Eax2Dcm(Work2+1,Dcm);
+	double Work[4];
+
+	Sph_Cart2Sc(Newz,Work);
+	Work[2]+=PI/2.0;
+	Work[3]=psi-Work[2];
+	Sph_Eax2Dcm(Work+1,Dcm);
 	Sph_Dcm2Dcmt(Dcm,Dcm);
 	return; }
 
 
 void Sph_DcmtxUnit(const double *Dcmt,char axis,double *vect,const double *add,double mult) {
+	double Work[3];
+
 	if(add) {
 		Work[0]=add[0];
 		Work[1]=add[1];
@@ -370,6 +396,219 @@ void Sph_DcmtxUnit(const double *Dcmt,char axis,double *vect,const double *add,d
 		vect[2]+=Work[2]; }
 	return; }
 
+
+/* *** Quaternions *** */
+
+void Sph_One2Qtn(double *Qtn) {
+	Qtn[0]=1;
+	Qtn[1]=Qtn[2]=Qtn[3]=0;
+	return; }
+
+
+void Sph_Qtn2Qtn(const double *Qtn1,double *Qtn2) {
+	Qtn2[0]=Qtn1[0];
+	Qtn2[1]=Qtn1[1];
+	Qtn2[2]=Qtn1[2];
+	Qtn2[3]=Qtn1[3];
+	return; }
+
+
+void Sph_Ypr2Qtn(const double *Ypr,double *Qtn) {
+	double cf2,cq2,cy2,sf2,sq2,sy2;
+
+	cf2=cos(Ypr[0]/2);
+	sf2=sin(Ypr[0]/2);
+	cq2=cos(Ypr[1]/2);
+	sq2=sin(Ypr[1]/2);
+	cy2=cos(Ypr[2]/2);
+	sy2=sin(Ypr[2]/2);
+	Qtn[0]=cy2*cq2*cf2+sy2*sq2*sf2;
+	Qtn[1]=-sy2*cq2*cf2+cy2*sq2*sf2;
+	Qtn[2]=-cy2*sq2*cf2-sy2*cq2*sf2;
+	Qtn[3]=-cy2*cq2*sf2+sy2*sq2*cf2;
+	return; }
+
+
+void Sph_Ypr2Qtni(const double *Ypr,double *Qtni) {
+	double cf2,cq2,cy2,sf2,sq2,sy2;
+
+	cf2=cos(Ypr[0]/2);
+	sf2=sin(Ypr[0]/2);
+	cq2=cos(Ypr[1]/2);
+	sq2=sin(Ypr[1]/2);
+	cy2=cos(Ypr[2]/2);
+	sy2=sin(Ypr[2]/2);
+	Qtni[0]=cy2*cq2*cf2+sy2*sq2*sf2;
+	Qtni[1]=sy2*cq2*cf2-cy2*sq2*sf2;
+	Qtni[2]=cy2*sq2*cf2+sy2*cq2*sf2;
+	Qtni[3]=cy2*cq2*sf2-sy2*sq2*cf2;
+	return; }
+
+
+void Sph_Qtn2Ypr(const double *Qtn,double *Ypr) {
+	Ypr[0]=atan2(-2*Qtn[0]*Qtn[3]+2*Qtn[1]*Qtn[2],Qtn[0]*Qtn[0]+Qtn[1]*Qtn[1]-Qtn[2]*Qtn[2]-Qtn[3]*Qtn[3]);
+	Ypr[1]=asin(-2*Qtn[0]*Qtn[2]-2*Qtn[1]*Qtn[3]);
+	Ypr[2]=atan2(-2*Qtn[0]*Qtn[1]+2*Qtn[2]*Qtn[3],Qtn[0]*Qtn[0]-Qtn[1]*Qtn[1]-Qtn[2]*Qtn[2]+Qtn[3]*Qtn[3]);
+	return; }
+
+
+void Sph_Dcm2Qtn(const double *Dcm,double *Qtn) {
+	double factor;
+
+	Qtn[0]=Dcm[0]+Dcm[4]+Dcm[8];
+	Qtn[1]=Dcm[0]-Dcm[4]-Dcm[8];
+	Qtn[2]=-Dcm[0]+Dcm[4]-Dcm[8];
+	Qtn[3]=-Dcm[0]-Dcm[4]+Dcm[8];
+	if(Qtn[0]>=Qtn[1] && Qtn[0]>=Qtn[2] && Qtn[0]>=Qtn[3]) {
+//		printf("*** Sph_Dcm2Qtn A. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
+		Qtn[0]=0.5*sqrt(1+Qtn[0]);
+		factor=0.25/Qtn[0];
+		Qtn[1]=factor*(Dcm[7]-Dcm[5]);
+		Qtn[2]=factor*(Dcm[2]-Dcm[6]);
+		Qtn[3]=factor*(Dcm[3]-Dcm[1]); }
+	else if(Qtn[1]>=Qtn[2] && Qtn[1]>=Qtn[3]) {
+//		printf("*** Sph_Dcm2Qtn B. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
+		Qtn[1]=0.5*sqrt(1+Qtn[1]);
+		factor=0.25/Qtn[1];
+		Qtn[0]=factor*(Dcm[7]-Dcm[5]);
+		Qtn[2]=factor*(Dcm[1]+Dcm[3]);
+		Qtn[3]=factor*(Dcm[2]+Dcm[6]); }
+	else if(Qtn[2]>=Qtn[3]) {
+//		printf("*** Sph_Dcm2Qtn C. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
+		Qtn[2]=0.5*sqrt(1+Qtn[2]);
+		factor=0.25/Qtn[2];
+		Qtn[0]=factor*(Dcm[2]-Dcm[6]);
+		Qtn[1]=factor*(Dcm[1]+Dcm[3]);
+		Qtn[3]=factor*(Dcm[5]+Dcm[7]); }
+	else {
+//		printf("*** Sph_Dcm2Qtn D. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
+		Qtn[3]=0.5*sqrt(1+Qtn[3]);
+		factor=0.25/Qtn[3];
+		Qtn[0]=factor*(Dcm[3]-Dcm[1]);
+		Qtn[1]=factor*(Dcm[2]+Dcm[6]);
+		Qtn[2]=factor*(Dcm[5]+Dcm[7]); }
+//	printf("*** Sph_Dcm2Qtn Z. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
+	return; }
+
+
+void Sph_Qtn2Dcm(const double *Qtn,double *Dcm) {
+	Dcm[0]=1-2*Qtn[2]*Qtn[2]-2*Qtn[3]*Qtn[3];
+	Dcm[1]=2*Qtn[1]*Qtn[2]-2*Qtn[0]*Qtn[3];
+	Dcm[2]=2*Qtn[1]*Qtn[3]+2*Qtn[0]*Qtn[2];
+	Dcm[3]=2*Qtn[1]*Qtn[2]+2*Qtn[0]*Qtn[3];
+	Dcm[4]=1-2*Qtn[1]*Qtn[1]-2*Qtn[3]*Qtn[3];
+	Dcm[5]=2*Qtn[2]*Qtn[3]-2*Qtn[0]*Qtn[1];
+	Dcm[6]=2*Qtn[1]*Qtn[3]-2*Qtn[0]*Qtn[2];
+	Dcm[7]=2*Qtn[2]*Qtn[3]+2*Qtn[0]*Qtn[1];
+	Dcm[8]=1-2*Qtn[1]*Qtn[1]-2*Qtn[2]*Qtn[2];
+	return; }
+
+
+void Sph_XZ2Qtni(const double *x,const double *z,double *Qtn) {
+	double *x2,*y2,*z2,dcm[9],len;
+
+	x2=dcm;
+	y2=dcm+3;
+	z2=dcm+6;
+	len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
+	x2[0]=x[0]/len;																		// normalize x and store in first row
+	x2[1]=x[1]/len;
+	x2[2]=x[2]/len;
+	Sph_crossVVD(z,x2,y2);														// y2 = z cross x2
+	len=sqrt(y2[0]*y2[0]+y2[1]*y2[1]+y2[2]*y2[2]);
+	y2[0]/=len;																				// normalize y2
+	y2[1]/=len;
+	y2[2]/=len;
+	Sph_crossVVD(x2,y2,z2);														// z2 = x2 cross y2
+//	printf("*** Sph_XZ2Qtni A. dcm=(%1.3g %1.3g %1.3g; %1.3g %1.3g %1.3g; %1.3g %1.3g %1.3g)\n",dcm[0],dcm[1],dcm[2],dcm[3],dcm[4],dcm[5],dcm[6],dcm[7],dcm[8]);//??
+	Sph_Dcm2Qtn(dcm,Qtn);															// convert matrix to qtn
+//	printf("*** Sph_XZ2Qtni B. qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
+	return; }
+
+
+void Sph_QtnxQtn(const double *Qtn1,const double *Qtn2,double *Qtn3) {
+	double Work[4];
+
+	Work[0]=Qtn1[0]*Qtn2[0]-Qtn1[1]*Qtn2[1]-Qtn1[2]*Qtn2[2]-Qtn1[3]*Qtn2[3];
+	Work[1]=Qtn1[0]*Qtn2[1]+Qtn1[1]*Qtn2[0]-Qtn1[2]*Qtn2[3]+Qtn1[3]*Qtn2[2];
+	Work[2]=Qtn1[0]*Qtn2[2]+Qtn1[1]*Qtn2[3]+Qtn1[2]*Qtn2[0]-Qtn1[3]*Qtn2[1];
+	Work[3]=Qtn1[0]*Qtn2[3]-Qtn1[1]*Qtn2[2]+Qtn1[2]*Qtn2[1]+Qtn1[3]*Qtn2[0];
+	Qtn3[0]=Work[0];
+	Qtn3[1]=Work[1];
+	Qtn3[2]=Work[2];
+	Qtn3[3]=Work[3];
+	return; }
+
+
+void Sph_QtnixQtn(const double *Qtn1,const double *Qtn2,double *Qtn3) {
+	double Work[4];
+
+	Work[0]=Qtn1[0]*Qtn2[0]+Qtn1[1]*Qtn2[1]+Qtn1[2]*Qtn2[2]+Qtn1[3]*Qtn2[3];
+	Work[1]=Qtn1[0]*Qtn2[1]-Qtn1[1]*Qtn2[0]+Qtn1[2]*Qtn2[3]-Qtn1[3]*Qtn2[2];
+	Work[2]=Qtn1[0]*Qtn2[2]-Qtn1[1]*Qtn2[3]-Qtn1[2]*Qtn2[0]+Qtn1[3]*Qtn2[1];
+	Work[3]=Qtn1[0]*Qtn2[3]+Qtn1[1]*Qtn2[2]-Qtn1[2]*Qtn2[1]-Qtn1[3]*Qtn2[0];
+	Qtn3[0]=Work[0];
+	Qtn3[1]=Work[1];
+	Qtn3[2]=Work[2];
+	Qtn3[3]=Work[3];
+	return; }
+
+
+void Sph_QtnxQtni(const double *Qtn1,const double *Qtn2,double *Qtn3) {
+	double Work[4];
+
+	Work[0]=Qtn1[0]*Qtn2[0]+Qtn1[1]*Qtn2[1]+Qtn1[2]*Qtn2[2]+Qtn1[3]*Qtn2[3];
+	Work[1]=-Qtn1[0]*Qtn2[1]+Qtn1[1]*Qtn2[0]+Qtn1[2]*Qtn2[3]-Qtn1[3]*Qtn2[2];
+	Work[2]=-Qtn1[0]*Qtn2[2]-Qtn1[1]*Qtn2[3]+Qtn1[2]*Qtn2[0]+Qtn1[3]*Qtn2[1];
+	Work[3]=-Qtn1[0]*Qtn2[3]+Qtn1[1]*Qtn2[2]-Qtn1[2]*Qtn2[1]+Qtn1[3]*Qtn2[0];
+	Qtn3[0]=Work[0];
+	Qtn3[1]=Work[1];
+	Qtn3[2]=Work[2];
+	Qtn3[3]=Work[3];
+	return; }
+
+
+void Sph_QtnRotate(const double *Qtn,const double *Cart,double *Cart2) {
+	double qxc[4];
+
+	qxc[0]=Cart[0]*Qtn[1]+Cart[1]*Qtn[2]+Cart[2]*Qtn[3];
+	qxc[1]=Cart[0]*Qtn[0]+Cart[2]*Qtn[2]-Cart[1]*Qtn[3];
+	qxc[2]=Cart[1]*Qtn[0]-Cart[2]*Qtn[1]+Cart[0]*Qtn[3];
+	qxc[3]=Cart[2]*Qtn[0]+Cart[1]*Qtn[1]-Cart[0]*Qtn[2];
+	Cart2[0]=Qtn[1]*qxc[0]+Qtn[0]*qxc[1]-Qtn[3]*qxc[2]+Qtn[2]*qxc[3];
+	Cart2[1]=Qtn[2]*qxc[0]+Qtn[3]*qxc[1]+Qtn[0]*qxc[2]-Qtn[1]*qxc[3];
+	Cart2[2]=Qtn[3]*qxc[0]-Qtn[2]*qxc[1]+Qtn[1]*qxc[2]+Qtn[0]*qxc[3];
+	return; }
+
+
+void Sph_QtniRotate(const double *Qtn,const double *Cart,double *Cart2) {
+	double qxc[4];
+
+	qxc[0]=-Cart[0]*Qtn[1]-Cart[1]*Qtn[2]-Cart[2]*Qtn[3];
+	qxc[1]= Cart[0]*Qtn[0]-Cart[2]*Qtn[2]+Cart[1]*Qtn[3];
+	qxc[2]= Cart[1]*Qtn[0]+Cart[2]*Qtn[1]-Cart[0]*Qtn[3];
+	qxc[3]= Cart[2]*Qtn[0]-Cart[1]*Qtn[1]+Cart[0]*Qtn[2];
+	Cart2[0]=-Qtn[1]*qxc[0]+Qtn[0]*qxc[1]+Qtn[3]*qxc[2]-Qtn[2]*qxc[3];
+	Cart2[1]=-Qtn[2]*qxc[0]-Qtn[3]*qxc[1]+Qtn[0]*qxc[2]+Qtn[1]*qxc[3];
+	Cart2[2]=-Qtn[3]*qxc[0]+Qtn[2]*qxc[1]-Qtn[1]*qxc[2]+Qtn[0]*qxc[3];
+	return; }
+
+
+void Sph_QtniRotateUnitx(const double *Qtni,double *vect,const double *add,double mult) {
+	vect[0]=add[0]+mult*(Qtni[0]*Qtni[0]+Qtni[1]*Qtni[1]-Qtni[2]*Qtni[2]-Qtni[3]*Qtni[3]);
+	vect[1]=add[1]+mult*(2*Qtni[1]*Qtni[2]-2*Qtni[0]*Qtni[3]);
+	vect[2]=add[2]+mult*(2*Qtni[0]*Qtni[2]+2*Qtni[1]*Qtni[3]);
+	return; }
+
+
+void Sph_QtniRotateUnitz(const double *Qtni,double *vect,const double *add,double mult) {
+	vect[0]=add[0]+mult*(-2*Qtni[0]*Qtni[2]+2*Qtni[1]*Qtni[3]);
+	vect[1]=add[1]+mult*(2*Qtni[0]*Qtni[1]+2*Qtni[2]*Qtni[3]);
+	vect[2]=add[2]+mult*(Qtni[0]*Qtni[0]-Qtni[1]*Qtni[1]-Qtni[2]*Qtni[2]+Qtni[3]*Qtni[3]);
+	return; }
+
+
+/* *** Unit normals *** */
 
 double Sph_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign) {
 	double costheta,ax,ay,az,sintheta,oldnormint[3],*oldnormptr;
@@ -434,5 +673,26 @@ double Sph_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *n
 		newpt2[2]=pt1[2]-(pt2[2]-pt1[2]); }
 
 	return costheta; }
+
+
+void Sph_RotateVectorAxisAngle(const double *vect,const double *axis,double angle,double *rotated) {
+	double ax[3],len,ca,sa,ans[3];
+
+	len=sqrt(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+	ax[0]=axis[0]/len;
+	ax[1]=axis[1]/len;
+	ax[2]=axis[2]/len;
+
+	ca=cos(angle);
+	sa=sin(angle);
+
+	ans[0]=vect[0]*(ca+ax[0]*ax[0]*(1-ca)) + vect[1]*(ax[0]*ax[1]*(1-ca)-ax[2]*sa) + vect[2]*(ax[0]*ax[2]*(1-ca)+ax[1]*sa);
+	ans[1]=vect[0]*(ax[1]*ax[0]*(1-ca)+ax[2]*sa) + vect[1]*(ca+ax[1]*ax[1]*(1-ca)) + vect[2]*(ax[1]*ax[2]*(1-ca)-ax[0]*sa);
+	ans[2]=vect[0]*(ax[2]*ax[0]*(1-ca)-ax[1]*sa) + vect[1]*(ax[2]*ax[1]*(1-ca)+ax[0]*sa) + vect[2]*(ca+ax[2]*ax[2]*(1-ca));
+	rotated[0]=ans[0];
+	rotated[1]=ans[1];
+	rotated[2]=ans[2];
+	return; }
+
 
 

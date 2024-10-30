@@ -556,7 +556,7 @@ enum CMDcode scmdcmdtype(cmdssptr cmds,cmdptr cmd) {
 /* scmdoutput */
 void scmdoutput(cmdssptr cmds) {
 	int fid,i,did;
-	queue cmdq;
+	q_queue cmdq;
 	cmdptr cmd;
 	void *voidptr,*simvd;
 	char timing,string[STRCHAR],string2[STRCHAR];

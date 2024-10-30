@@ -37,19 +37,21 @@ force_angle 10
 mobility 10
 end_filament_type
 
-#start_filament template fil1
+#start_filament template:fil1
 #first_segment 0 0  5  0
 #add_segment 5  0.3
 #add_segment 5  0.3
 #end_filament
 
 
-random_filament fil1 template 8  10 50 u
-random_filament fil2 template 49  20 50 u
-random_filament fil3 template 20  30 50 u
-#random_filament fil4 template 49  40 50 u
-#random_filament fil5 template 49  50 50 u
+random_filament template:fil1 8  10 50 u
+random_filament template:fil2 49  20 50 u
+random_filament template:fil3 20  30 50 u
+#random_filament template:fil4 49  40 50 u
+#random_filament template:fil5 49  50 50 u
 
+
+filament_type template standard_angle 0.3
 
 cmd B pause
 #cmd E printFilament template fil1 xabf stdout

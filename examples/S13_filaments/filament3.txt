@@ -1,5 +1,12 @@
 # Filaments
 
+# Current issue. Run this for a few steps and stop.
+# The computed YPR values are not correct. The segment 0 ones have the wrong sign
+# and the segment 1 ones never change. Don't change the qtn2ypr signs. See SmoldynCodeDoc
+# eq. 5.12.
+# I suspect that XY2Qtn should return the inverse qtn instead.
+
+
 graphics opengl
 #random_seed 2
 #graphics opengl_better
@@ -16,8 +23,8 @@ difc red 3
 color red white
 
 time_start 0
-time_stop 50000
-time_step 0.3
+time_stop 10000
+time_step 0.5
 
 frame_thickness 0
 
@@ -29,7 +36,7 @@ force_arrows 10 red
 thickness 2
 polygon ve
 kT 0.1
-dynamics Euler
+dynamics RK4
 standard_length 5
 standard_angle 0 0 0
 force_length 1
@@ -37,26 +44,28 @@ force_angle 2 2 2
 mobility 0.5
 end_filament_type
 
-#start_filament template fil1
+#start_filament template:fil1
 #first_segment 0 0 0  5  0 0 0
 #add_segment 5  1 0 0
 #add_segment 5  0 1 0
 #add_segment 5  0 0 1
 #end_filament
 
-random_filament fil1 template 10  0 0 0 u u u
-random_filament fil2 template 20  20 50 1 u u u
-random_filament fil3 template 15  30 50 1 u u u
-random_filament fil4 template 30  40 50 1 u u u
-random_filament fil5 template 25  50 50 1 u u u
+random_filament template:fil1 10  0 0 0  u u u
+#random_filament template:fil1 10  0 0 0  0 0 0
 
-start_filament_type template
-#standard_angle 0.3 0.3 0.1
-standard_angle 0.3 0 0
-end_filament_type
+
+random_filament template:fil2  20  20 50 1 u u u
+random_filament template:fil3  15  30 50 1 u u u
+random_filament template:fil4  30  40 50 1 u u u
+random_filament template:fil5  25  50 50 1 u u u
+
+filament_type template standard_angle 0.3 0 0
+
 
 #cmd B printFilament template fil1 xabyft stdout
 cmd B pause
+#cmd i 0 10000 1000 printFilament template fil1 xabyft stdout
 
 end_file
 

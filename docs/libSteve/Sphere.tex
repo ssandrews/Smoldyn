@@ -43,6 +43,7 @@
 \lstset{style=mystyle}
 
 \newcommand {\ttt} {\texttt}
+\DeclareMathOperator{\atan2} {atan2}
 
 \begin{document}
 \maketitle
@@ -52,7 +53,7 @@
 \begin{lstlisting}[language=C]
 /* Steven Andrews 2/05.
 See documentation called Sphere_doc.doc.
-Copyright 2005-2007 by Steven Andrews. This work is distributed under the terms
+Copyright 2005-2007 by Steven Andrews.  This work is distributed under the terms
 of the Gnu Lesser General Public License (LGPL). */
 
 
@@ -65,38 +66,56 @@ Sc = Spherical coordinates (r, theta, phi)
 Dcm = Direction cosine matrix (A00, A01, A02, A10, A11, A12, A20, A21, A22)
 Eax = Euler angles x-convention (theta, phi, psi)
 Eay = Euler angles y-convention (theta, phi, chi)
-Ep = Euler parameters (e0, e1, e2, e3)
-Xyz = xyz- or ypr- or Tait-Bryan convention (yaw, pitch, roll): rotate on z, then y, then x
+Qtn = Quaternions (q0, q1, q2, q3)
+Ypr = xyz- or ypr- or Tait-Bryan convention (yaw, pitch, roll): rotate on z, then y, then x
 */
 
-void Sph\_Cart2Sc(const double *Cart,double *Sc);
-void Sph\_Sc2Cart(const double *Sc,double *Cart);
-void Sph\_Eay2Ep(const double *Eay,double *Ep);
-void Sph\_Xyz2Xyz(const double *Xyz1,double *Xyz2);
-void Sph\_Eax2Xyz(const double *Eax,double *Xyz);
+void Sph_Cart2Sc(const double *Cart,double *Sc);
+void Sph_Sc2Cart(const double *Sc,double *Cart);
+void Sph_Cart2Cart(const double *Cart1,double *Cart2);
+void Sph_Ypr2Ypr(const double *Ypr1,double *Ypr2);
+void Sph_Eax2Ypr(const double *Eax,double *Ypr);
 
-void Sph\_Eax2Dcm(const double *Eax,double *Dcm);
-void Sph\_Eay2Dcm(const double *Eay,double *Dcm);
-void Sph\_Xyz2Dcm(const double *Xyz,double *Dcm);
-void Sph\_Xyz2Dcmt(const double *Xyz,double *Dcmt);
-void Sph\_Dcm2Xyz(const double *Dcm,double *Xyz);
-void Sph\_Dcm2Dcm(const double *Dcm1,double *Dcm2);
-void Sph\_Dcm2Dcmt(const double *Dcm1,double *Dcm2);
+void Sph_Eax2Dcm(const double *Eax,double *Dcm);
+void Sph_Eay2Dcm(const double *Eay,double *Dcm);
+void Sph_Ypr2Dcm(const double *Ypr,double *Dcm);
+void Sph_Ypr2Dcmt(const double *Ypr,double *Dcmt);
+void Sph_Dcm2Ypr(const double *Dcm,double *Ypr);
+void Sph_Dcm2Dcm(const double *Dcm1,double *Dcm2);
+void Sph_Dcm2Dcmt(const double *Dcm1,double *Dcm2);
 
-void Sph\_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3);
-void Sph\_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3);
-void Sph\_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3);
-void Sph\_DcmxCart(const double *Dcm,const double *Cart,double *Cart2);
+void Sph_DcmxDcm(const double *Dcm1,const double *Dcm2,double *Dcm3);
+void Sph_DcmxDcmt(const double *Dcm1,const double *Dcmt,double *Dcm3);
+void Sph_DcmtxDcm(const double *Dcmt,const double *Dcm2,double *Dcm3);
+void Sph_DcmxCart(const double *Dcm,const double *Cart,double *Cart2);
+void Sph_DcmtxCart(const double *Dcm,const double *Cart,double *Cart2);
 
-void Sph\_One2Dcm(double *Dcm);
-void Sph\_Xyz2Xyzr(const double *Xyz,double *Xyzr);
-void Sph\_Dcm2Dcmr(const double *Dcm,double *Dcmr);
-void Sph\_Rot2Dcm(char axis,double angle,double *Dcm);
-void Sph\_Newz2Dcm(const double *Newz,double psi,double *Dcm);
+void Sph_One2Dcm(double *Dcm);
+void Sph_Ypr2Yprr(const double *Ypr,double *Yprr);
+void Sph_Dcm2Dcmr(const double *Dcm,double *Dcmr);
+void Sph_Rot2Dcm(char axis,double angle,double *Dcm);
+void Sph_Newz2Dcm(const double *Newz,double psi,double *Dcm);
 
-void Sph\_DcmtxUnit(const double *Dcmt,char unit,double *vect,const double *add,double mult);
+void Sph_DcmtxUnit(const double *Dcmt,char unit,double *vect,const double *add,double mult);
 
-double Sph\_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign);
+void Sph_One2Qtn(double *Qtn);
+void Sph_Qtn2Qtn(const double *Qtn1,double *Qtn2);
+void Sph_Ypr2Qtn(const double *Ypr,double *Qtn);
+void Sph_Ypr2Qtni(const double *Ypr,double *Qtni);
+void Sph_Qtn2Ypr(const double *Qtn,double *Ypr);
+void Sph_Dcm2Qtn(const double *Dcm,double *Qtn);
+void Sph_Qtn2Dcm(const double *Qtn,double *Dcm);
+void Sph_XZ2Qtni(const double *x,const double *z,double *Qtn);
+void Sph_QtnxQtn(const double *Qtn1,const double *Qtn2,double *Qtn3);
+void Sph_QtnixQtn(const double *Qtn1,const double *Qtn2,double *Qtn3);
+void Sph_QtnxQtni(const double *Qtn1,const double *Qtn2,double *Qtn3);
+void Sph_QtnRotate(const double *Qtn,const double *Cart,double *Cart2);
+void Sph_QtniRotate(const double *Qtn,const double *Cart,double *Cart2);
+void Sph_QtniRotateUnitx(const double *Qtni,double *vect,const double *add,double mult);
+void Sph_QtniRotateUnitz(const double *Qtni,double *vect,const double *add,double mult);
+
+double Sph_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign);
+void Sph_RotateVectorAxisAngle(const double *vect,const double *axis,double angle,double *rotated);
 
 #endif
 \end{lstlisting}
@@ -134,9 +153,9 @@ Vector is $[\theta,\phi,\psi]$. $\phi$ is on $[0,2\pi)$, $\theta$ is on $[0,\pi]
 \hfill \\
 Vector is $[\theta,\phi,\chi]$. $\phi$ is on $[0,2\pi)$, $\theta$ is on $[0,\pi]$, $\chi$ is on $[0,2\pi)$. $\bm{A} = \bm{Z}(\chi)\bm{Y}(\theta)\bm{Z}(\phi)$.
 
-\item[Euler parameters (Eap)]
+\item[Quaternions (Qtn)]
 \hfill \\
-Vector is $[e_0,e_1,e_2,e_3]$.
+Vector is $[q_0,q_1,q_2,q_3]$.
 
 \item[Yaw-pitch-roll (Xyz or Ypr)]
 \hfill \\
@@ -163,6 +182,7 @@ random2.h
 \item[3/13/24] Added \ttt{Sph\_Eax2Xyz}.
 \item[3/15/24] Added \ttt{Sph\_DcmxCart}.
 \item[3/16/24] Rewrote docs in LaTeX.
+\item[10/5/24] Renamed Xyz to Ypr. Added math text. Removed Euler parameters. Added quaternions.
 
 \end{description}
 
@@ -170,12 +190,48 @@ random2.h
 % Math
 \section{Math}
 
-This library performs passive rotations, meaning that the coordinate system rotates while the vector stays fixed. This is the standard textbook method, such as in Goldstein. Elementary rotation matrices are:
-\begin{align*}
-\bm{X}(\psi) &= \left[ \begin{array}{ccc} 1 & 0 & 0 \\ 0 & \textrm{c} \psi & \textrm{s} \psi \\ 0 & -\textrm{s} \psi & \textrm{c} \psi \end{array} \right]\\
-\bm{Y}(\theta) &= \left[ \begin{array}{ccc} \textrm{c} \theta & 0 & -\textrm{s} \theta \\ 0 & 1 & 0 \\ \textrm{s} \theta & 0 & \textrm{c} \theta \end{array} \right] \\
-\bm{Z}(\phi) &= \left[ \begin{array}{ccc} \textrm{c} \phi & \textrm{s} \phi & 0 \\ -\textrm{s} \phi & \textrm{c} \phi & 0 \\ 0 & 0 & 1 \end{array} \right]
-\end{align*}
+The following text was copied from SmoldynCodeDoc, and then edited. See also Goldstein Chapter 4 (page 128) and Appendix B (page 608), Andrews, 2004 (rotational averaging paper), and Andrews, 2014 (filament paper).
+
+Yaw-pitch-roll angles are described by the Tait-Bryan convention:
+\begin{longtable}[c]{lcccc}
+name & symbol & perpendicular & positive & positive \\
+ &  & axis & direction & unit vector \\
+\hline
+yaw & $\phi$ & $z$ & turn left & $\hat{z}$ \\
+pitch & $\theta$ & $y$ & turn down & $\hat{y}$ \\
+roll & $\psi$ & $x$ & tilt right & $\hat{x}$
+\end{longtable}
+Note that pitch is defined so that positive pitch is rotation downward. This is the opposite of many conventions, but is used here so that the rotation vector is along the positive $\hat{y}$ vector while using a right-handed coordinate system.
+
+Rotation can be given with a direction cosine matrix (dcm), $\bm{\Phi}$, which can be expanded as
+\begin{align}
+\bm{\Phi} &= \left[ \begin{array}{ccc} \Phi_{Xx} & \Phi_{Xy} & \Phi_{Xz} \\ \Phi_{Yx} & \Phi_{Yy} & \Phi_{Yz} \\ \Phi_{Zx} & \Phi_{Zy} & \Phi_{Zz} \end{array} \right]
+\label{eq:DirectionCosineMatrix}
+\end{align}
+This dcm can convert between two frames of reference for a static object, called passive rotation, or can rotate an object in a fixed reference frame, called active rotation. Here, $X$, $Y$, and $Z$ are the unit vectors of the ``lab frame'', meaning the absolute coordinates of the simulation, and $x$, $y$, and $z$ are the unit vectors of the ``molecule frame''. The dcm expresses the dot products of these unit vectors, so each column gives the lab frame coordinates of each unit vector of the molecule frame, and each row gives the molecule frame coordinates of each unit vector of the lab frame. It is unitary, meaning that all its eigenvalues equal 1, and its transpose is its inverse, so $\bm{\Phi}^T \bm{\Phi} = \bm{1}$, where $\bm{1}$ is the identity matrix.
+
+The dcm for a product of yaw, pitch, and roll transformations is (Goldstein pp. 135 and 609)
+\begin{align}
+\bm{\Phi} &= \bm{X}(\psi) \bm{Y}(\theta) \bm{Z}(\phi) \nonumber \\
+&= \left[ \begin{array}{ccc} 1 & 0 & 0 \\ 0 & \textrm{c} \psi & \textrm{s} \psi \\ 0 & -\textrm{s} \psi & \textrm{c} \psi \end{array} \right]
+\left[ \begin{array}{ccc} \textrm{c} \theta & 0 & -\textrm{s} \theta \\ 0 & 1 & 0 \\ \textrm{s} \theta & 0 & \textrm{c} \theta \end{array} \right]
+\left[ \begin{array}{ccc} \textrm{c} \phi & \textrm{s} \phi & 0 \\ -\textrm{s} \phi & \textrm{c} \phi & 0 \\ 0 & 0 & 1 \end{array} \right] \nonumber \\
+&= \left[ \begin{array}{ccc} \textrm{c} \theta \textrm{c} \phi & \textrm{c} \theta \textrm{s} \phi & -\textrm{s} \theta \\ \textrm{s} \psi \textrm{s} \theta \textrm{c} \phi - \textrm{c} \psi \textrm{s} \phi & \textrm{s} \psi \textrm{s} \theta \textrm{s} \phi + \textrm{c} \psi \textrm{c} \phi & \textrm{c} \theta \textrm{s} \psi \\ \textrm{c} \psi \textrm{s} \theta \textrm{c} \phi + \textrm{s} \psi \textrm{s} \phi & \textrm{c} \psi \textrm{s} \theta \textrm{s} \phi - \textrm{s} \psi \textrm{c} \phi & \textrm{c} \theta \textrm{c} \psi \end{array} \right]
+\label{eq:CoordinateRotationYPR}
+\end{align}
+
+Right-multiplying the direction cosine matrix with a vector that's expressed in the lab frame returns the coordinates of the same vector but now using the molecule frame. For example, suppose $\bm{r}_L$ is a vector expressed in the lab frame. Then,
+\begin{equation}
+\bm{r} = \bm{\Phi} \bm{r}_L
+\end{equation}
+gives the same vector but expressed in the molecule frame. (As a particularly simple vector, suppose $\bm{r}_L=[1,0,0]^T$; in the molecule frame, which is rotated counter-clockwise by $\phi$ from the lab frame, $\bm{r} = [c \phi,- s\phi, 0]^T$.) This expression can be transposed and/or multiplied on both sides by $\bm{\Phi}^T$ to yield
+\begin{align}
+\bm{r} &= \bm{\Phi} \bm{r}_L \hspace{2cm} \bm{r}_L = \bm{\Phi}^T \bm{r} \\
+\bm{r}^T &= \bm{r}_L^T \bm{\Phi}^T \hspace{1.5cm} \bm{r}_L^T = \bm{r}^T \bm{\Phi}
+\end{align}
+This library has functions for these multiplications. The transpose of the dcm listed above performs an active rotation of a vector in a constant coordinate system.
+
+Quaternions work in relatively similar ways (see the online article ``Rotation Quaternions, and How to Use Them'' by Rose, 2015). A quaternion, $\bm{q}$ has 4 values, $(q_0,q_1,q_2,q_3)$. If it represents a 3D point in space, then $\bm{q}=(0,x,y,z)$ and if it represents a rotation, then all four values can be non-zero and they have total magnitude of 1. The quaternion $\bm{q}=(1,0,0,0)$ is the rotation identity quaternion, which produces no rotation.
 
 
 \section{Code documentation}
@@ -197,7 +253,7 @@ name & meaning \\
 \begin{description}
 
 \item[\ttt{\#define PI 3.14159265358979323846}]
-hfill \\
+\hfill \\
 $\pi$
 
 \item[\ttt{double Work[9],Work2[9];}]
@@ -212,23 +268,28 @@ Scratch space.
 
 \item[\underline{Vector conversion functions}]
 
+
 \item[\ttt{void Sph\_Cart2Sc(double *Cart,double *Sc);}]
 \hfill \\
 Converts Cartesian coordinates to spherical coordinates.
+
 
 \item[\ttt{void Sph\_Sc2Cart(double *Sc,double *Cart);}]
 \hfill \\
 Converts spherical coordinates to Cartesian coordinates.
 
-\item[\ttt{void Sph\_Eay2Ep(double *Eay,double *Ep);}]
-\hfill \\
-Converts Euler angle $y$-convention transformation to Euler parameters. Equations from Goldstein p. 608.
 
-\item[\ttt{void Sph\_Xyz2Xyz(double *Xyz1,double *Xyz2);}]
+\item[\ttt{void Sph\_Cart2Cart(const double *Cart1,double *Cart2);}]
 \hfill \\
-Copies yaw-pitch-roll vector (or any other 3D vector) \ttt{Xyz1} to \ttt{Xyz2}. This does not clamp angles.
+Copies the 3D vector \ttt{Cart1} to the 3D vector \ttt{Cart2}.
 
-\item[\ttt{void Sph\_Eax2Xyz(double *Eax,double *Xyz);}]
+
+\item[\ttt{void Sph\_Ypr2Ypr(double *Ypr1,double *Ypr2);}]
+\hfill \\
+Copies yaw-pitch-roll vector (or any other 3D vector) \ttt{Ypr1} to \ttt{Ypr2}. This does not clamp angles.
+
+
+\item[\ttt{void Sph\_Eax2Ypr(double *Eax,double *Ypr);}]
 \hfill \\
 Converts Euler angle $x$-convention to yaw-pitch-roll vector. Equations are from Sphere.nb. 
 
@@ -237,29 +298,36 @@ Converts Euler angle $x$-convention to yaw-pitch-roll vector. Equations are from
 \hfill \\
 Calculates direction cosine matrix from Euler angle $x$-convention vector. Equations from Wolfram Mathworld and Sphere.nb.
 
+
 \item[\ttt{void Sph\_Eay2Dcm(double *Eay,double *Dcm);}]
 \hfill \\
 Calculates direction cosine matrix from Euler angle $y$-convention vector. Equations from Wolfram Mathworld and Sphere.nb.
 
-\item[\ttt{void Sph\_Xyz2Dcm(double *Xyz,double *Dcm);}]
+
+\item[\ttt{void Sph\_Ypr2Dcm(double *Ypr,double *Dcm);}]
 \hfill \\
 Calculates direction cosine matrix from yaw-pitch-roll vector. Equations from Goldstein p. 609 and Sphere.nb. $\bm{A} = \bm{X}(\psi)\bm{Y}(\theta)\bm{Z}(\phi)$.
 
-\item[\ttt{void Sph\_Xyz2Dcmt(double *Xyz,double *Dcmt);}]
-\hfill \\
-Calculates transposed direction cosine matrix from yaw-pitch-roll vector. This is just \ttt{Sph\_Xyz2Dcm}, but for a transposed result. Rather than using this function, it's usually best to use the untransposed version in a \ttt{...Dcmt...} function.
 
-\item[\ttt{void Sph\_Dcm2Xyz(double *Dcm,double *Xyz);}]
+\item[\ttt{void Sph\_Ypr2Dcmt(double *Ypr,double *Dcmt);}]
+\hfill \\
+Calculates transposed direction cosine matrix from yaw-pitch-roll vector. This is just \ttt{Sph\_Ypr2Dcm}, but for a transposed result. Rather than using this function, it's usually best to use the untransposed version in a \ttt{...Dcmt...} function.
+
+
+\item[\ttt{void Sph\_Dcm2Ypr(double *Dcm,double *Ypr);}]
 \hfill \\
 Calculates yaw-pitch-roll vector from a direction cosine matrix. Equations derived from Goldstein p. 609 and from Sphere.nb.
+
 
 \item[\ttt{void Sph\_Dcm2Dcm(double *Dcm1,double *Dcm2);}]
 \hfill \\
 Copies direction cosine matrix (or any other 9 element vector) \ttt{Dcm1} to a new one in \ttt{Dcm2}.
 
+
 \item[\ttt{void Sph\_Dcm2Dcmt(double *Dcm1,double *Dcm2);}]
 \hfill \\
 Transposes direction cosine matrix \ttt{Dcm1} to yield matrix inverse in \ttt{Dcm2}. $\bm{A}_2 = \bm{A}_1^{-1}$.
+
 
 \item[\ttt{void Sph\_DcmxDcm(double *Dcm1,double *Dcm2,double *Dcm3);}]
 \hfill \\
@@ -270,37 +338,211 @@ Matrix multiplies \ttt{Dcm1} by \ttt{Dcm2} and returns result in \ttt{Dcm3}. Not
 \hfill \\
 Matrix multiplies \ttt{Dcm1} by the transpose of \ttt{Dcmt} and returns result in \ttt{Dcm3} (\ttt{Dcmt} is entered as an untransposed matrix). Essentially, this is a negative rotation of \ttt{Dcmt} followed by a positive rotation of \ttt{Dcm1}. $\bm{A}_3 = \bm{A}_1\bm{A}_2^{-1}$.
 
+
 \item[\ttt{void Sph\_DcmtxDcm(double *Dcmt,double *Dcm2,double *Dcm3);}]
 \hfill \\
 Matrix multiplies the transpose of \ttt{Dcmt} by \ttt{Dcm2} and returns the result in \ttt{Dcm3} (\ttt{Dcmt} is entered as an untransposed matrix). Essentially, this is a positive rotation of \ttt{Dcm2} followed by a negative rotation of \ttt{Dcmt}. $\bm{A}_3 = \bm{A}_1^{-1}\bm{A}_2$.
+
 
 \item[\ttt{void Sph\_DcmxCart(const double *Dcm,const double *Cart,double *Cart2);}]
 \hfill \\
 Multiplies matrix \ttt{Dcm} by Cartesian vector \ttt{Cart} and returns the result in \ttt{Cart2}. This is a passive rotation of the coordinate system for the vector, $\bm{x}_2 = \bm{A}\cdot \bm{x}$. This is just a matrix times a vector, but is specifically for 3D.
 
+
 \item[\ttt{void Sph\_One2Dcm(double *Dcm);}]
 \hfill \\
 Returns the identity direction cosine matrix. $A_{ij} = \delta_{ij}$.
 
-\item[\ttt{void Sph\_Xyz2Xyzr(double *Xyz,double *Xyzr);}]
+
+\item[\ttt{void Sph\_Ypr2Yprr(double *Ypr,double *Yprr);}]
 \hfill \\
-Converts the forward-direction yaw-pitch-roll vector \ttt{Xyz} to a relative direction change, but for travel in the reverse direction. For example, suppose an airplane performs the direction change that corresponds to \ttt{Xyz}. If it then turns around, with the local $z$-vector as it was initially, but with both $x$- and $y$-vectors reversed (180\degree yaw), then it needs to execute rotation \ttt{Xyzr} to retrace its original track. $\bm{A} = \bm{Z}^{-1}(\phi)\bm{Y}(\theta)\bm{X}(\psi)$. Note that this reverses a relative direction change between two vectors and does not reverse an absolute vector (the airplane traveling west being converted to it traveling east). Equations from Sphere.nb.
+Converts the forward-direction yaw-pitch-roll vector \ttt{Ypr} to a relative direction change, but for travel in the reverse direction. For example, suppose an airplane performs the direction change that corresponds to \ttt{Ypr}. If it then turns around, with the local $z$-vector as it was initially, but with both $x$- and $y$-vectors reversed (180\degree yaw), then it needs to execute rotation \ttt{Yprr} to retrace its original track. $\bm{A} = \bm{Z}^{-1}(\phi)\bm{Y}(\theta)\bm{X}(\psi)$. Note that this reverses a relative direction change between two vectors and does not reverse an absolute vector (the airplane traveling west being converted to it traveling east). Equations from Sphere.nb.
+
 
 \item[\ttt{void Sph\_Dcm2Dcmr(double *Dcm,double *Dcmr);}]
 \hfill \\
-Converts an absolute dcm to a dcm in the reverse direction. This reverses the local $x$ and $y$ directions, while preserving the local $z$ direction. This is unlike \ttt{Sph\_Xyz2Xyzr} in that this is for absolute directions while that one was for relative directions. $\bm{A}_r = \bm{Z}(\pi)\bm{A}$.
+Converts an absolute dcm to a dcm in the reverse direction. This reverses the local $x$ and $y$ directions, while preserving the local $z$ direction. This is unlike \ttt{Sph\_Ypr2Yprr} in that this is for absolute directions while that one was for relative directions. $\bm{A}_r = \bm{Z}(\pi)\bm{A}$.
+
 
 \item[\ttt{void Sph\_Rot2Dcm(char axis,double angle,double *Dcm);}]
 \hfill \\
 Returns the direction cosine matrix that corresponds to rotation by angle \ttt{angle} about axis \ttt{axis}, where this latter parameter is the character \ttt{x}, \ttt{y}, or \ttt{z} (or upper-case). $\bm{A} = \bm{X}(a)$ or $\bm{A} = \bm{Y}(a)$ or $\bm{A} = \bm{Z}(a)$.
 
+
 \item[\ttt{void Sph\_Newz2Dcm(double *Newz,double psi,double *Dcm);}]
 \hfill \\
 Returns the direction cosine matrix that can be used to rotate the coordinate system such that the original $z$-axis will line up with the vector \ttt{Newz}. The length of \ttt{Newz} is irrelevent; it does not need to be normalized. Additional rotation about the new $z$-axis is entered with \ttt{psi}. This works as follows: \ttt{Newz} is converted to spherical coordinates $\theta$ and $\phi$, then the dcm is $\bm{A} = \bm{Z}(\psi-\phi) \bm{X}(\theta) \bm{Z}(\phi)$, which is transposed to yield the active matrix.
 
+
 \item[\ttt{void Sph\_DcmtxUnit(double *Dcmt,char axis,double *vect,double *add,double mult);}]
 \hfill \\
-Multiplies the transpose of \ttt{Dcmt} (entered as a non-transposed direction cosine matrix) with the unit vector for axis axis (entered as \ttt{x}, \ttt{y}, or \ttt{z}, or upper case) and returns the result in the 3-dimensional vector \ttt{vect}. This multiplies the result by the scalar \ttt{mult}. If \ttt{add} is non-\ttt{NULL}, this adds \ttt{add} to \ttt{vect} before returning the result. 
+Multiplies the transpose of \ttt{Dcmt} (entered as a non-transposed direction cosine matrix) with the unit vector for axis \ttt{axis} (entered as \ttt{x}, \ttt{y}, or \ttt{z}, or upper case) and returns the result in the 3-dimensional vector \ttt{vect}. This multiplies the result by the scalar \ttt{mult}. If \ttt{add} is non-\ttt{NULL}, this adds \ttt{add} to \ttt{vect} before returning the result. 
+
+% Quaternions
+\item{\underline{Quaternions}}
+
+\item[\ttt{void Sph\_One2Qtn(double *Qtn)}]
+\hfill \\
+Returns the rotation identity quaternion, which is $\bm{q} = (1,0,0,0)$.
+
+
+\item[\ttt{void Sph\_Qtn2Qtn(const double *Qtn1,double *Qtn2)}]
+\hfill \\
+Copies quaternion \ttt{Qtn1} to \ttt{Qtn2}.
+
+
+\item[\ttt{void Sph\_Ypr2Qtn(const double Ypr,double *Qtn)}]
+\hfill \\
+Converts Ypr angles to quaternion \ttt{Qtn}. This uses the following equation, which is from Rose 2015 but with sign changes because theirs is for active rotation and this is for passive rotation.
+$$\bm{q} = \left[ \begin{array}{c}
+\textrm{c}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} +
+\textrm{s}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
+-\textrm{s}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} +
+\textrm{c}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
+-\textrm{c}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} -
+\textrm{s}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
+-\textrm{c}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} +
+\textrm{s}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{c}\frac{\phi}{2}
+\end{array} \right]$$
+
+
+\item[\ttt{void Sph\_Ypr2Qtni(const double Ypr,double *Qtni)}]
+\hfill \\
+Converts Ypr angles to the inverse quaternion \ttt{Qtn}, but returned as a normal quaternion. This uses the following equation, from Rose, 2015. The signs are the same as in Rose because this is for an inverse passive rotation and theirs is for a forward active rotation.
+$$\bm{q} = \left[ \begin{array}{c}
+\textrm{c}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} +
+\textrm{s}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
+\textrm{s}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} -
+\textrm{c}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
+\textrm{c}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} +
+\textrm{s}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
+\textrm{c}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} -
+\textrm{s}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{c}\frac{\phi}{2}
+\end{array} \right]$$
+
+
+\item[\ttt{void Sph\_Qtn2Ypr(const double *Qtn,double *Ypr)}]
+\hfill \\
+Converts quaternion \ttt{Qtn} to ypr angles in \ttt{Ypr}. This uses the following equation, which is from Rose, 2015.
+$$\bm{ypr}=\left[\begin{array}{c}
+\atan2(2q_0q_3+2q_1q_2,q_0^2+q_1^2-q_2^2-q_3^2) \\
+\asin(2q_0q_2-2q_1q_3) \\
+\atan2(2q_0q_1+2q_2q_3,q_0^2-q_1^2-q_2^2+q_3^2)
+\end{array} \right]$$
+
+
+\item[\ttt{void Sph\_Dcm2Qtn(const double *Dcm,double *Qtn)}]
+\hfill \\
+Converts direction cosine matrix \ttt{Dcm} to quaternion \ttt{Qtn}. This is based on equations from Rose, 2015, but modified. Those equations are slightly slower to compute and also unstable to roundoff error (one can end up taking the square root of a negative number). My equations are as follows. First, compute
+\begin{align*}
+q_0 &= r_{11}+r_{22}+r_{33} \\
+q_1 &= r_{11}-r_{22}-r_{33} \\
+q_2 &= -r_{11}+r_{22}-r_{33} \\
+q_3 &= -r_{11}-r_{22}+r_{33}
+\end{align*}
+Next, determine which of these $q$ values is largest and recompute each one according the following equations:
+
+\begin{tabular}{llll}
+$q_0$ largest & $q_1$ largest & $q_2$ largest & $q_3$ largest \\
+\hline
+$q_0 = 0.5 \sqrt{1+q_0}$ & $q_1 = 0.5 \sqrt{1+q_1}$ & $q_2 = 0.5 \sqrt{1+q_2}$ & $q_3 = 0.5 \sqrt{1+q_3}$ \\
+$f = 0.25/q_0$ & $f = 0.25/q_1$ & $f = 0.25/q_2$ & $f = 0.25/q_3$ \\
+$q_1=f(r_{32}-r_{23})$ & $q_0=f(r_{32}-r_{23})$ & $q_0=f(r_{13}-r_{31})$ & $q_0=f(r_{21}-r_{12})$ \\
+$q_2=f(r_{13}-r_{31})$ & $q_2=f(r_{12}+r_{21})$ & $q_1=f(r_{12}+r_{21})$ & $q_1=f(r_{13}+r_{31})$ \\
+$q_3=f(r_{21}-r_{12})$ & $q_3=f(r_{13}+r_{31})$ & $q_3=f(r_{23}+r_{32})$ & $q_2=f(r_{23}+r_{32})$
+\end{tabular}
+
+
+\item[\ttt{void Sph\_Qtn2Dcm(const double *Qtn,double *Dcm)}]
+\hfill \\
+Converts quaternion \ttt{Qtn} to direction cosine matrix \ttt{Dcm}. This uses the equation, from Rose, 2015,
+$$\bm{Q} = \left[ \begin{array}{ccc}
+1-2q_2^2-2q_3^2 & 2q_1q_2-2q_0q_3 & 2q_1q_3+2q_0q_2\\
+2q_1q_2+2q_0q_3 & 1-2q_1^2-2q_3^2 & 2q_2q_3-2q_0q_1\\
+2q_1q_3-2q_0q_2 & 2q_2q_3+2q_0q_1 & 1-2q_1^2-2q_2^2
+\end{array} \right]$$
+
+
+\item[\ttt{void Sph\_QtnxQtn(const double Qtn1,const double Qtn2,double *Qtn3)}]
+\hfill \\
+Multiplies quaternion \ttt{Qtn1} by \ttt{Qtn2} to yield \ttt{Qtn3}. Equation is from Rose, 2015. For the product $\bm{t}=\bm{r}\bm{s}$,
+$$\bm{t}=\left[\begin{array}{c}
+r_0s_0 - r_1s_1 - r_2s_2 - r_3s_3 \\
+r_0s_1 + r_1s_0 - r_2s_3 + r_3s_2 \\
+r_0s_2 + r_1s_3 + r_2s_0 - r_3s_1 \\
+r_0s_3 - r_1s_2 + r_2s_1 + r_3s_0
+\end{array} \right]$$
+
+
+\item[\ttt{void Sph\_QtnixQtn(const double Qtn1,const double Qtn2,double *Qtn3)}]
+\hfill \\
+Multiplies the inverse of quaternion \ttt{Qtn1} (entered in its non-inverse version) by \ttt{Qtn2} to yield \ttt{Qtn3}. For the product $\bm{t}=\bm{r}^{-1}\bm{s}$,
+$$\bm{t}=\left[\begin{array}{c}
+r_0s_0 + r_1s_1 + r_2s_2 + r_3s_3 \\
+r_0s_1 - r_1s_0 + r_2s_3 - r_3s_2 \\
+r_0s_2 - r_1s_3 - r_2s_0 + r_3s_1 \\
+r_0s_3 + r_1s_2 - r_2s_1 - r_3s_0
+\end{array} \right]$$
+
+
+\item[\ttt{void Sph\_QtnxQtni(const double Qtn1,const double Qtn2,double *Qtn3)}]
+\hfill \\
+Multiplies quaternion \ttt{Qtn1} by the inverse of \ttt{Qtn2} (entered in its non-inverse version) to yield \ttt{Qtn3}. For the product $\bm{t}=\bm{r}^{-1}\bm{s}$,
+$$\bm{t}=\left[\begin{array}{c}
+r_0s_0 + r_1s_1 + r_2s_2 + r_3s_3 \\
+-r_0s_1 + r_1s_0 + r_2s_3 - r_3s_2 \\
+-r_0s_2 - r_1s_3 + r_2s_0 + r_3s_1 \\
+-r_0s_3 + r_1s_2 - r_2s_1 + r_3s_0
+\end{array} \right]$$
+
+
+\item[\ttt{void}]
+\ttt{Sph\_QtnRotate(const double *Qtn,const double *Cart,double *Cart2);}
+\hfill \\
+Rotates 3D Cartesian vector \ttt{Cart} using quaternion \ttt{Qtn}, returning the answer in 3D vector \ttt{Cart2}. This computes the product
+$$\bm{c}_2 = \bm{q}^* \bm{c} \bm{q}$$
+where $\bm{c}_2$ is \ttt{Cart2}, $\bm{q}$ is \ttt{Qtn}, and $\bm{c}$ is \ttt{Cart}. The math is derived in the Mathematica document SphereQuat.nb. This equation performs passive rotation from the $\bm{c}$ frame to the $\bm{c}_2$ frame, where the rotation angles represent the rotation of $\bm{c}_2$ from $\bm{c}$ (e.g. $\bm{c}$ is the lab frame and $\bm{c}_2$ is the molecule frame).
+
+
+\item[\ttt{void}]
+\ttt{Sph\_QtniRotate(const double *Qtn,const double *Cart,double *Cart2);}
+\hfill \\
+Performs the inverse rotation of 3D Cartesian vector \ttt{Cart} using quaternion \ttt{Qtn}, returning the answer in 3D vector \ttt{Cart2}. This computes the product
+$$\bm{c}_2 = \bm{q} \bm{c} \bm{q}^*$$
+where $\bm{c}_2$ is \ttt{Cart2}, $\bm{q}$ is \ttt{Qtn}, and $\bm{c}$ is \ttt{Cart}. The math is derived in the Mathematica document SphereQuat.nb. See the discussion for \ttt{Sph\_QtnRotate}.
+
+
+\item[\ttt{void}]
+\ttt{Sph\_QtniRotateUnitx(const double *Qtni, double *vect, const double *add, double mult)}
+\hfill \\
+Rotates the $\hat{\bm{x}}$ unit vector with the inverse quaternion \ttt{Qtni}, which is entered as a non-inverted quaternion, and then multiplies the result by \ttt{mult} and adds it to \ttt{add}, returning the answer in \ttt{vect}. The \ttt{add} vector is required and cannot be the same as \ttt{vect}. Using $\bm{a}$ for \ttt{add}, $m$ for \ttt{mult}, $\bm{v}$ for \ttt{vect}, and $\bm{q}$ for \ttt{Qtni}, the equation for this is
+$$\bm{v} = \bm{a} + m \left[ \begin{array}{c}
+q_0^2 + q_1^2 - q_2^2 - q_3^2 \\
+2 q_1 q_2 - 2 q_0 q_3 \\
+2 q_0 q_2 + 2 q_1 q_3
+\end{array} \right]$$
+This is derived in the Mathematica document SphereQuat.nb.
+
+
+\item[\ttt{void}]
+\ttt{Sph\_QtniRotateUnitz(const double *Qtni, double *vect, const double *add, double mult)}
+\hfill \\
+Rotates the $\hat{\bm{z}}$ unit vector with the inverse quaternion \ttt{Qtni}, which is entered as a non-inverted quaternion, and then multiplies the result by \ttt{mult} and adds it to \ttt{add}, returning the answer in \ttt{vect}. The \ttt{add} vector is required and cannot be the same as \ttt{vect}. Using $\bm{a}$ for \ttt{add}, $m$ for \ttt{mult}, $\bm{v}$ for \ttt{vect}, and $\bm{q}$ for \ttt{Qtni}, the equation for this is
+$$\bm{v} = \bm{a} + m \left[ \begin{array}{c}
+-2 q_0 q_2 + 2 q_1 q_3 \\
+2 q_0 q_1 + 2 q_2 q_3 \\
+q_0^2 - q_1^2 - q_2^2 + q_3^2
+\end{array} \right]$$
+This is derived in the Mathematica document SphereQuat.nb.
+
+% More rotations
+\item{\underline{More rotations}}
+
+\item[\ttt{void}]
+\ttt{Sph\_RotateAxisAngle(const double *pt1,const double *pt2,double theta,const double *oldvect,double *newvect)}
+\hfill \\
+Text.
+
 
 \item[\ttt{double}]
 \ttt{Sph\_RotateVectWithNormals3D(double *pt1, double *pt2, double *newpt2, double *oldnorm, double *newnorm, int sign);}
@@ -322,6 +564,12 @@ c\theta+ a_x^2(1-c\theta) & a_x a_y(1-c\theta)-a_z s\theta & a_x a_z (1-c\theta)
 a_y a_x(1-c\theta)+a_zs\theta & c\theta + a_y^2(1-c\theta) & a_y z_z(1-c\theta)-a_x s\theta \\
 a_z a_x(1-c\theta)-a_y s\theta & a_z a_y(1-c\theta) + a_x s\theta & c\theta + a_z^2(1-c\theta)
 \end{array} \right ]$$
+
+
+\item[\ttt{void}]
+\ttt{Sph\_RotateVectorAxisAngle(const double *vect, const double *axis, double angle, double *rotated)}
+\hfill \\
+Rotates vector \ttt{vect} about axis \ttt{axis} by angle \ttt{angle}, returning the answer in \ttt{rotated}. This uses Rodrigues's rotation formula. I didn't write this function, but told ChatGPT to write it for me, and then I edited the result.
 
 \end{description}
 

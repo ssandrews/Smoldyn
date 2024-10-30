@@ -42,16 +42,16 @@ force_length -1
 force_angle 100 80 0
 end_filament_type
 
-random_filament r0 red 10  u u u  u u u
-random_filament r1 red 10  u u u  u u u
-random_filament r2 red 10  u u u  u u u
-random_filament r3 red 10  u u u  u u u
-random_filament r4 red 10  u u u  u u u
-random_filament r5 red 10  u u u  u u u
-random_filament r6 red 10  u u u  u u u
-random_filament r7 red 10  u u u  u u u
-random_filament r8 red 10  u u u  u u u
-random_filament r9 red 10  u u u  u u u
+random_filament red:r0  10  u u u  u u u
+random_filament red:r1  10  u u u  u u u
+random_filament red:r2  10  u u u  u u u
+random_filament red:r3  10  u u u  u u u
+random_filament red:r4  10  u u u  u u u
+random_filament red:r5  10  u u u  u u u
+random_filament red:r6  10  u u u  u u u
+random_filament red:r7  10  u u u  u u u
+random_filament red:r8  10  u u u  u u u
+random_filament red:r9  10  u u u  u u u
 
 
 start_filament_type green
@@ -66,16 +66,16 @@ force_length -1
 force_angle 10 10 10
 end_filament_type
 
-random_filament g0 green 80  u u u  u u u
-random_filament g1 green 80  u u u  u u u
-random_filament g2 green 80  u u u  u u u
-random_filament g3 green 80  u u u  u u u
-random_filament g4 green 80  u u u  u u u
-random_filament g5 green 80  u u u  u u u
-random_filament g6 green 80  u u u  u u u
-random_filament g7 green 80  u u u  u u u
-random_filament g8 green 80  u u u  u u u
-random_filament g9 green 80  u u u  u u u
+random_filament  green:0  80  u u u  u u u
+random_filament  green:1  80  u u u  u u u
+random_filament  green:2  80  u u u  u u u
+random_filament  green:3  80  u u u  u u u
+random_filament  green:4  80  u u u  u u u
+random_filament  green:5  80  u u u  u u u
+random_filament  green:6  80  u u u  u u u
+random_filament  green:7  80  u u u  u u u
+random_filament  green:8  80  u u u  u u u
+random_filament  green:9  80  u u u  u u u
 
 
 end_file

@@ -1,0 +1,55 @@
+# Filaments
+
+graphics opengl
+random_seed 2
+
+dim 3
+boundaries x -5 5 r
+boundaries y -5 5 r
+boundaries z -5 5 r
+frame_color lightblue
+
+species red
+
+difc red 3
+
+color red red
+
+time_start 0
+time_stop 1000
+time_step 0.01
+
+
+start_filament_type black
+dynamics none
+color black
+thickness 2
+polygon ve
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 1
+force_angle 1 1 1
+end_filament_type
+
+random_filament black:fil1 5  0 0 0  0 0 0
+
+start_filament black:fil2
+first_segment -3 0 0  1  0 0 0
+add_segment 1  1 0 0  2  back
+add_segment 1  0 1 0  2  back
+add_segment 1  1 0 0  2  front
+copy_to fil3
+end_filament
+
+filament fil3 translate + 0 2 0
+filament fil3 remove_segment front
+filament fil3 remove_segment back
+
+filament fil2 modify_segment 2 angle + 1 0 0 back
+
+
+end_file
+
+
+

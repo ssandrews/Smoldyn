@@ -34,11 +34,11 @@ force_length 10
 force_angle 5 -1 -1
 end_filament_type
 
-random_filament fil1 tread 10  10 50 1  0 0 0
-random_filament fil2 tread 10  20 50 1  1 0 0
-random_filament fil3 tread 10  10 40 1  -1 0 0
-random_filament fil4 tread 10  30 50 1  2 0 0
-random_filament fil5 tread 10  30 30 1  -1 0 0
+random_filament tread:fil1 10  10 50 1  0 0 0
+random_filament tread:fil2 10  20 50 1  1 0 0
+random_filament tread:fil3 10  10 40 1  -1 0 0
+random_filament tread:fil4 10  30 50 1  2 0 0
+random_filament tread:fil5 10  30 30 1  -1 0 0
 
 
 start_surface bounds

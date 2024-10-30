@@ -3585,69 +3585,65 @@ The statements shown below that are preceded by an asterisk need to be entered w
 
 Start of filament type definition block. The filament type name may be given with $name$, or it may be given afterward with the \ttt{name} statement. If the name has not been used yet for a filament type, then a new filament type is started. Between this instruction and \ttt{end\_filament\_type}, all lines need to pertain to filament types. Parameters of one filament type can be listed in multiple blocks, or parameters for many filament types can be listed in one block.
 
-\item{\ttt{name} $name$}
+\item{\ttt{* name} $name$}
 
 From within a filament type definition block, this switches to a new filament type and creates it if needed.
 
-\item{\ttt{dynamics} $dynamics$}
+\item{\ttt{* dynamics} $dynamics$}
 
 Sets the dynamics for the filament type. Current options are: ``none'', ``Euler''. These are case-insensitive.
 
-\item{\ttt{biology} $biology$}
-
-Sets the biology value for the filament type. Options are: ``actin'', ``microtubule'', ``intermediate'', ``dsDNA'', ``ssDNA'', and ``other''. These are case-insensitive.
-
-\item{\ttt{color} $color$}
+\item{\ttt{* color} $color$}
 
 Sets the drawing color for the filament type. Enter the color as either a color description as a word or as RGB$\alpha$ values.
 
-\item{\ttt{thickness} $thickness$}
+\item{\ttt{* thickness} $thickness$}
 
 Sets the drawing thickness for the filament type. Enter this in pixels if the graphics type is ``opengl'' or as an actual length value for the better drawing options.
 
-\item{\ttt{stipple} $factor$ $pattern$}
+\item{\ttt{* stipple} $factor$ $pattern$}
 
 Sets the stipple pattern and factor for filament drawing. This is only relevant for simulations with ``opengl\_good'' or better display method. In $factor$, which is an integer, enter the repeat distance for the entire stippling pattern (1 is a good choice). In $pattern$, which is a hexadecimal integer, enter the stippling pattern between 0x0000 and 0xFFFF. 0x00FF has long dashes, 0x0F0F has medium dashes, 0x5555 has dots, etc. Turn stippling off with 0xFFFF.
 
-\item{\ttt{polygon} $drawmode$}
+\item{\ttt{* polygon} $drawmode$}
 
 Drawing mode for filament surfaces. Options are: ``vertex'', ``edge'', ``face'', or combinations of these by using single letters for vertex, edge, and face, such as ``ve'', ``vef'', etc.
 
-\item{\ttt{shininess} $value$}
+\item{\ttt{* shininess} $value$}
 
 Shininess of the filament for drawing purposes. This value can range from 0 for visually flat surfaces to 128 for very shiny surfaces. This is only relevant for some simulations.
 
-\item{\ttt{kT} $value$}
+\item{\ttt{* kT} $value$}
 
 Set the thermal energy value, equal to Boltzmann's constant times temperature. Enter this in energy units that are consistent with other units in the input file. This is only used for some of the dynamics options.
 
-\item{\ttt{treadmill\_rate} $value$}
+\item{\ttt{* treadmill\_rate} $value$}
 
 Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here.
 
-\item{\ttt{mobility} $value$}
+\item{\ttt{* mobility} $value$}
 
 Mobility of the nodes within the surrounding medium.
 
-\item{\ttt{standard\_length} $length$}
+\item{\ttt{* standard\_length} $length$}
 
 Relaxed length of a filament segment. It can change through stretching or compression.
 
-\item{\ttt{standard\_angle} $yaw$\\
-\ttt{standard\_angle} $yaw$ $pitch$ $roll$}
+\item{\ttt{* standard\_angle} $yaw$\\
+\ttt{* standard\_angle} $yaw$ $pitch$ $roll$}
 
 Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
 
-\item{\ttt{force\_length} $value$}
+\item{\ttt{* force\_length} $value$}
 
 Stretching force constant for filament segments.
 
-\item{\ttt{force\_angle} $yaw$\\
-\ttt{force\_angle} $yaw$ $pitch$ $roll$}
+\item{\ttt{* force\_angle} $yaw$\\
+\ttt{* force\_angle} $yaw$ $pitch$ $roll$}
 
 Force constants for bending and torsion.
 
-\item{\ttt{end\_filament\_type}}
+\item{\ttt{* end\_filament\_type}}
 
 End of a block of filament type definitions. Filament type statements are no longer recognized but other simulation statements are.
 
@@ -3657,35 +3653,41 @@ Filaments can be entered either in a block or with the single \ttt{random\_filam
 
 \begin{description}
 
-\item{\ttt{random\_filament} $name$ $type$ $segments$ $[x$ $y$ $z$ $\theta$ $\phi$ $\chi]$ $[thickness]$}
+\item{\ttt{random\_filament} $type$:$name$ $segments$ $[x$ $y$ $\phi]$ $[thickness]$}\\
+\ttt{random\_filament} $type$:$name$ $segments$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$
 
-Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$ and initial yaw-pitch-roll angle $(\theta, \phi, \chi)$. It also has optional thickness $thickness$.
+Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$ and initial yaw-pitch-roll angle $(\phi, \theta, \psi)$. For 2D, only enter $x,y$ and $\phi$. It also has optional thickness $thickness$.
 
-\item{\ttt{start\_filament} $type$ $name$}
+\item{\ttt{start\_filament} $type$:$name$}
 
 Start of filament definition block, for a filament of type $type$ and named $name$. If the name has not been used yet for a filament of this type, then a new filament is started. Between this instruction and \ttt{end\_filament}, all lines need to pertain to filaments. Parameters of one filament can be listed in multiple blocks, or parameters for many filaments can be listed in one block.
 
-\item{\ttt{new\_filament} $type$ $name$}
+\item{\ttt{new\_filament} $type$:$name$}
 
 Defines a new filament of type $type$ that is called $name$, but does not start a filament block. This statement is largely redundant with \ttt{start\_filament}.
 
-\item{\ttt{* name} $type$ $name$}
+\item{\ttt{* name} $type$:$name$} \\
+\ttt{* name} $name$
 
 Name of the filament for editing. This statement is not required because the filament name can also be given with \ttt{start\_filament}. This statement gives the name of the current filament for editing, and creates a new filament if needed.
 
-\item{\ttt{* first\_segment} $x$ $y$ $length$ $angle_0$ $[thickness]$\\
-\ttt{* first\_segment} $x$ $y$ $z$ $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness]$}
+\item{\ttt{* first\_segment} $x$ $y$ $length$ $angle$ $[thickness]$\\
+\ttt{* first\_segment} $x$ $y$ $z$ $length$ $yaw$ $pitch$ $roll$ $[thickness]$}
 
-Defines the first segment of a filament. Enter the starting location in $x$, $y$, and $z$, the segment length in $length$, and its absolute orientation with the angle values using spherical coordinates. The thickness value is optional.
+Defines the first segment of a filament. Enter the starting location in $x$, $y$, and $z$, the segment length in $length$, and its absolute orientation with the angle values. For 2D, the angle is the angle from the $x$-axis and in 3D these values are the yaw-pitch-roll values away from the $x$-axis. The thickness value is optional.
 
-\item{\ttt{* add\_segment} $length$ $angle_0$ $[thickness\ [end]]$\\
-\ttt{* add\_segment} $length$ $angle_0$ $angle_1$ $angle_2$ $[thickness\ [end]]$}
+\item{\ttt{* add\_segment} $length$ $angle$ $[thickness\ [end]]$\\
+\ttt{* add\_segment} $length$ $yaw$ $pitch$ $roll$ $[thickness\ [end]]$}
 
-Add a segment to the filament, with the given length. The angles are relative angles using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are $front$ or $back$.
+Add a segment to the filament, with the given length. The angles are relative angles from the prior segment using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are $front$ or $back$.
 
 \item{\ttt{* remove\_segment} $end$}
 
 Remove one segment from end $end$ of the filament (``front'' or ``back'').
+
+\item{\ttt{* modify\_segment} $segment$ length/angle/thickness +/-/= $value$ $end$}
+
+This modifies the length, relative angle, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For and angle option with 3D, enter 3 values for yaw, pitch, and roll. Finally, for the length and angle options, enter $end$ as either ``front'' or ``back'' for which filament end is moved.
 
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $z]$ $[thickness]$}
 
@@ -3695,9 +3697,9 @@ Add $number$ of random segments to the filament.
 
 Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' for relative translation in which the values are added to the current filament location, and ``-'' for relative translation in the other direction.
 
-\item{\ttt{* copy} $filament$}
+\item{\ttt{* copy\_to} $filament$}
 
-Copy monomers to the current filament from $filament$.
+Copy the current filament to $filament$, which is created here if it doesn't already exist; any prior data in $filament$ is overwritten.
 
 \item{\ttt{* end\_filament}}
 

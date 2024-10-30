@@ -67,9 +67,10 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 int filRemoveSegment(filamentptr fil,char endchar);
 void filTranslate(filamentptr fil,const double *vect,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
-void filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func);
+int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func);
+int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filReverseFilament(filamentptr fil);
-int filCopyFilament(filamentptr filto,const filamentptr filfrom);
+int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
 
 // filament type
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value);
@@ -127,6 +128,55 @@ enum FilamentDynamics filstring2FD(const char *string) {
 /******************************************************************************/
 
 
+/* filReadFilName */
+int filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname) {
+	int itct,ft,f;
+	char nm[STRCHAR],*fnm,*colon;
+	filamenttypeptr filtype;
+
+	if(!str) return -1;																			// str missing
+	if(!sim->filss || !sim->filss->ntype) return -2;				// no filaments
+
+	itct=sscanf(str,"%s",nm);
+	if(itct!=1) return -3;																	// can't read str
+	colon=strchr(nm,':');
+
+	if(colon) {																							// format is filtype:fil
+		fnm=colon+1;
+		*colon='\0';
+		if(filname) strcpy(filname,fnm);
+		ft=stringfind(sim->filss->ftnames,sim->filss->ntype,nm);
+		if(ft<0) return -4;																		// filtype not recognized
+		filtype=sim->filss->filtypes[ft];
+		*filtypeptr=filtype;
+		f=stringfind(filtype->filnames,filtype->nfil,fnm);
+		if(f<0) return -5;																		// filament not recognized
+		*filptr=filtype->fillist[f]; }
+
+	else if(*filtypeptr) {																	// known filtype, looking for fil
+		filtype=*filtypeptr;
+		fnm=nm;
+		if(filname) strcpy(filname,fnm);
+		f=stringfind(filtype->filnames,filtype->nfil,fnm);
+		if(f<0) return -5;																		// filament not recognized
+		*filptr=filtype->fillist[f]; }
+
+	else {																									// unknown filtype
+		fnm=nm;
+		if(filname) strcpy(filname,fnm);
+		for(ft=0;ft<sim->filss->ntype;ft++) {
+			filtype=sim->filss->filtypes[ft];
+			f=stringfind(filtype->filnames,filtype->nfil,fnm);
+			if(f>=0) break; }
+		if(f>=0) {
+			*filtypeptr=filtype;
+			*filptr=filtype->fillist[f]; }
+		else
+			return -5; }																						// filament not recognized
+
+	return 0; }
+
+
 /* filRandomLength */
 double filRandomLength(const filamenttypeptr filtype,double thickness,double sigmamult) {
 	double lsigma;
@@ -164,7 +214,7 @@ double *filRandomAngle(const filamenttypeptr filtype,int dim,int n,double thickn
 		angle[0]=thetarandCCD();
 		angle[1]=unirandCOD(0,2*PI);
 		angle[2]=unirandCOD(0,2*PI);
-		Sph_Eax2Xyz(angle,angle); }
+		Sph_Eax2Ypr(angle,angle); }
 	else {																// 2D first segment
 		angle[0]=unirandOCD(-PI,PI);
 		angle[1]=angle[2]=0; }
@@ -225,7 +275,7 @@ double filBendEnergy(const filamentptr fil,int seg1,int seg2) {
 // filBendTorque
 void filBendTorque(const filamentptr fil,int node,double *torque) {
 	filamenttypeptr filtype;
-	double *kypr,*stdypr,*ypr,cphi,sphi,ctht,stht,deltaypr[3];
+	double *kypr,*stdypr,*ypr,cphi,sphi,ctht,stht,deltaypr[3],reltorque[3];
 	int dim;
 
 	if(node<=0 || node>=fil->nseg) {
@@ -252,11 +302,14 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 		deltaypr[1]=kypr[1]*(ypr[1]-stdypr[1]);
 		deltaypr[2]=kypr[2]*(ypr[2]-stdypr[2]);
 
-		torque[0]=-deltaypr[2]*ctht*cphi+deltaypr[1]*sphi;			// compute torque in segment reference frame
-		torque[1]=-deltaypr[1]*cphi+deltaypr[2]*sphi;
-		torque[2]=-deltaypr[0]-deltaypr[2]*cphi*stht;
+		reltorque[0]=-deltaypr[2]*ctht*cphi+deltaypr[1]*sphi;					// compute torque in segment reference frame
+		reltorque[1]=-deltaypr[1]*cphi-deltaypr[2]*sphi;
+		reltorque[2]=-deltaypr[0]+deltaypr[2]*cphi*stht;
 
-		Sph_DcmtxCart(fil->segments[node-1]->adcm,torque,torque); }		// convert torque to system reference frame
+		Sph_QtniRotate(fil->segments[node-1]->qabs,reltorque,torque);	// convert torque to system reference frame
+//	Sph_DcmtxCart(fil->segments[node-1]->adcm,reltorque,torque);
+//		printf("*** filBendTorque. node=%i reltorque=(%1.3g %1.3g %1.3g) abstorque=(%1.3g %1.3g %1.3g)\n",node,reltorque[0],reltorque[1],reltorque[2],torque[0],torque[1],torque[2]);//??
+		}
 	return; }
 
 
@@ -277,8 +330,10 @@ segmentptr segmentalloc() {
 	segment->len=0;
 	segment->thk=1;
 	segment->ypr[0]=segment->ypr[1]=segment->ypr[2]=0;
-	Sph_One2Dcm(segment->dcm);
-	Sph_One2Dcm(segment->adcm);
+	Sph_One2Qtn(segment->qrel);
+	Sph_One2Qtn(segment->qabs);
+//	Sph_One2Dcm(segment->dcm);
+//	Sph_One2Dcm(segment->adcm);
 	return segment;
 
  failure:
@@ -316,6 +371,8 @@ filamentptr filalloc(filamentptr fil,int maxseg,int maxbranch,int maxmonomer) {
 		fil->roll2=NULL;
 		fil->forces=NULL;
 		fil->torques=NULL;
+		fil->seg0up[0]=fil->seg0up[1]=0;
+		fil->seg0up[2]=1;
 		fil->frontend=NULL;
 		fil->backend=NULL;
 		fil->maxbranch=0;
@@ -651,41 +708,53 @@ void filoutput(const filamentptr fil) {
 		sim=NULL;
 		dim=3; }
 
-	simLog(sim,2," Filament: %s\n",fil->filname);
-	simLog(sim,1,"  type: %s\n",fil->filtype?fil->filtype->ftname:"None (assuming dim=3)");
-	simLog(sim,1,"  allocated segments: %i\n",fil->maxseg);
-	simLog(sim,2,"  number of segments: %i\n",fil->nseg);
+	simLog(sim,2,"  Filament: %s\n",fil->filname);
+	simLog(sim,1,"   type: %s\n",fil->filtype?fil->filtype->ftname:"None (assuming dim=3)");
+	simLog(sim,1,"   allocated segments: %i\n",fil->maxseg);
+	simLog(sim,2,"   number of segments: %i\n",fil->nseg);
+	if(dim==3)
+		simLog(sim,2,"   segment 0 up vector: (%1.3g %1.3g %1.3g)\n",fil->seg0up[0],fil->seg0up[1],fil->seg0up[2]);
 
-	simLog(sim,2,"  segment, length, thickness, front position, relative angle:\n");
-	for(seg=0;seg<fil->nseg;seg++) {
-		segment=fil->segments[seg];
-		if(dim==2)
-			simLog(sim,seg>5?1:2,"   %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g), rel. angle=%1.3g\n",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->ypr[0]);
-		else
-			simLog(sim,seg>5?1:2,"   %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)\n",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
+	simLog(sim,2,"   segments:\n");
+	if(dim==2) {
+		for(seg=0;seg<fil->nseg;seg++) {
+			segment=fil->segments[seg];
+			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g), rel. angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->ypr[0]);
+			simLog(sim,1,", back pos.=(%1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
+			simLog(sim,seg>5?1:2,"\n"); }
+		segment=fil->segments[fil->nseg-1];
+		simLog(sim,2,"     back pos.=(%1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1]); }
+	else {
+		for(seg=0;seg<fil->nseg;seg++) {
+			segment=fil->segments[seg];
+			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]);
+			simLog(sim,1,", back pos.=(%1.3g %1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
+			simLog(sim,seg>5?1:2,"\n"); }
+		segment=fil->segments[fil->nseg-1];
+		simLog(sim,2,"     back pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2]); }
 
 	if(fil->frontend)
-		simLog(sim,2,"  front branched from: %s\n",fil->frontend->filname);
+		simLog(sim,2,"   front branched from: %s\n",fil->frontend->filname);
 	if(fil->backend)
-		simLog(sim,2,"  back branched from: %s\n",fil->backend->filname);
+		simLog(sim,2,"   back branched from: %s\n",fil->backend->filname);
 
-	simLog(sim,1,"  allocated branches: %i\n",fil->maxbranch);
-	simLog(sim,fil->nbranch>0?2:1,"  number of branches: %i\n",fil->nbranch);
+	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
+	simLog(sim,fil->nbranch>0?2:1,"   number of branches: %i\n",fil->nbranch);
 	for(br=0;br<fil->nbranch;br++)
-		simLog(sim,2,"   %s at %i\n",fil->branches[br]->filname,fil->branchspots[br]);
+		simLog(sim,2,"    %s at %i\n",fil->branches[br]->filname,fil->branchspots[br]);
 
-	simLog(sim,1,"  monomer codes: %i of %i allocated,",fil->nmonomer,fil->maxmonomer);
-	simLog(sim,1," starting index: %i\n",fil->frontmonomer);
+	simLog(sim,1,"   monomer codes: %i of %i allocated,",fil->nmonomer,fil->maxmonomer);
+	simLog(sim,1,"  starting index: %i\n",fil->frontmonomer);
 	if(fil->nmonomer) {
-		simLog(sim,2,"  monomer code: ");
+		simLog(sim,2,"   monomer code: ");
 		for(mn=0;mn<fil->nmonomer;mn++)
 			simLog(sim,2,"%c",fil->monomers[mn]);
 		simLog(sim,2,"\n"); }
 
 	if(fil->filtype->klen>0)
-		simLog(sim,2," stretching energy: %g|E\n",filStretchEnergy(fil,-1,-1));
+		simLog(sim,2,"   stretching energy: %g|E\n",filStretchEnergy(fil,-1,-1));
 	if(fil->filtype->kypr[0]>0 || fil->filtype->kypr[1]>0 || fil->filtype->kypr[2]>0)
-		simLog(sim,2," bending energy: %g|E\n",filBendEnergy(fil,-1,-1));
+		simLog(sim,2,"   bending energy: %g|E\n",filBendEnergy(fil,-1,-1));
 
 	return; }
 
@@ -831,8 +900,8 @@ void filArrayShift(filamentptr fil,int shift) {
 	double *newnode,*newforce,newtorque;
 
 	if(shift>0) {
-		if(fil->nseg+shift>=fil->maxseg)
-			simLog(fil->filtype->filss->sim,10,"BUG in filArrayShift. Memory overwrite.");
+		if(fil->nseg+shift>fil->maxseg)
+			simLog(fil->filtype->filss->sim,10,"BUG in filArrayShift. Memory overwrite.\n");
 		for(i=fil->nseg+shift-1;i>=shift;i--) {			// i is new index
 			newsegment = fil->segments[i];
 			newtorque = fil->torques[i];
@@ -846,7 +915,10 @@ void filArrayShift(filamentptr fil,int shift) {
 			fil->nodes[i]=fil->nodes[i-shift];
 			fil->forces[i]=fil->forces[i-shift];
 			fil->nodes[i-shift]=newnode;
-			fil->forces[i-shift]=newforce; }}
+			fil->forces[i-shift]=newforce; }
+		for(i=0;i<shift;i++) {
+			fil->segments[i]->xyzfront=fil->nodes[i];
+			fil->segments[i]->xyzback=fil->nodes[i+1]; }}
 
 	else if(shift<0) {
 		shift=-shift;								// now shift is positive
@@ -863,7 +935,10 @@ void filArrayShift(filamentptr fil,int shift) {
 			fil->nodes[i]=fil->nodes[i+shift];
 			fil->forces[i]=fil->forces[i+shift];
 			fil->nodes[i+shift]=newnode;
-			fil->forces[i+shift]=newforce; }}
+			fil->forces[i+shift]=newforce; }
+		for(i=fil->nseg-shift;i<fil->nseg;i++) {
+			fil->segments[i]->xyzfront=fil->nodes[i];
+			fil->segments[i]->xyzback=fil->nodes[i+1]; }}
 
 	for(i=0;i<fil->nseg;i++)
 		fil->segments[i]->index=i;
@@ -875,12 +950,7 @@ void filArrayShift(filamentptr fil,int shift) {
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char endchar) {
 	int seg;
 	segmentptr segment,segmentm1,segmentp1;
-	double dcm[9];
-
-//	printf("filAddSegment. end=%c",endchar);//??
-//	if(x) printf(" x=(%g,%g,%g)",x[0],x[1],x[2]);//??
-//	else printf(" x=NULL");//??
-//	printf(" length=%g, angle=(%g,%g,%g), thickness=%g\n",length,angle[0],angle[1],angle[2],thickness);//??
+	double zero[3]={0,0,0};
 
 	if(fil->nseg==fil->maxseg) {
 		fil=filalloc(fil,fil->maxseg*2+1,0,0);
@@ -891,19 +961,22 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		segment=fil->segments[seg];
 		segment->len=length;
 		segment->thk=thickness;
-		segment->xyzfront=fil->nodes[seg];
-		segment->xyzback=fil->nodes[seg+1];
-		Sph_Xyz2Xyz(angle,segment->ypr);												// ypr = angle
-		Sph_Xyz2Dcm(angle,segment->dcm);												// A = Dcm(angle)
+		Sph_Ypr2Ypr(angle,segment->ypr);												// ypr = angle
+//	Sph_Ypr2Dcm(angle,segment->dcm);												// A = Dcm(angle)
+		Sph_Ypr2Qtn(angle,segment->qrel);												// a = Qtn(angle)
 		if(seg==0) {
 			segment->xyzfront[0]=x[0];														// x_i = input value
 			segment->xyzfront[1]=x[1];
 			segment->xyzfront[2]=x[2];
-			Sph_Dcm2Dcm(segment->dcm,segment->adcm); }						// B = A
+//		Sph_Dcm2Dcm(segment->dcm,segment->adcm);							// B = A
+			Sph_Qtn2Qtn(segment->qrel,segment->qabs); 						// b = a
+			Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }		// rotate segment z to lab frame
 		else {
 			segmentm1=fil->segments[seg-1];
-			Sph_DcmxDcm(segment->dcm,segmentm1->adcm,segment->adcm);	}	// B_i = A_i . B_{i-1}
-		Sph_DcmtxUnit(segment->adcm,'x',segment->xyzback,segment->xyzfront,segment->len);		// x_{i+1} = x_i + l_i * BT_i . xhat
+//		Sph_DcmxDcm(segment->dcm,segmentm1->adcm,segment->adcm);		// B_i = A_i . B_{i-1}
+			Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs);	}	// b_i = b_{i-1} . a_i
+//	Sph_DcmtxUnit(segment->adcm,'x',segment->xyzback,segment->xyzfront,segment->len);		// x_{i+1} = x_i + l_i * BT_i . xhat
+		Sph_QtniRotateUnitx(segment->qabs,segment->xyzback,segment->xyzfront,segment->len);			// x_{i+1} = x_i + l_i * b.xhat.bT
 		fil->nseg++; }
 
 	else {
@@ -912,21 +985,26 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		segment=fil->segments[seg];
 		segment->len=length;
 		segment->thk=thickness;
-		segment->xyzfront=fil->nodes[0];
-		segment->xyzback=fil->nodes[1];
 		if(fil->nseg==0) {
-			Sph_Xyz2Dcmt(angle,segment->adcm);									// B_0 = Dcmt(angle)
+//		Sph_Ypr2Dcmt(angle,segment->adcm);									// B_0 = Dcmt(angle)
+			Sph_Ypr2Qtni(angle,segment->qabs);									// b_0
 			segment->xyzback[0]=x[0];														// back of segment = input value
 			segment->xyzback[1]=x[1];
 			segment->xyzback[2]=x[2]; }
 		else {
 			segmentp1=fil->segments[1];
-			Sph_Xyz2Dcm(angle,dcm);
-			Sph_DcmtxDcm(dcm,segmentp1->adcm,segment->adcm);
-			Sph_Dcm2Dcm(dcm,segmentp1->dcm); }
-		Sph_Dcm2Dcm(segment->adcm,segment->dcm);									// A_i = B_i
-		Sph_Dcm2Xyz(segment->dcm,segment->ypr);										// a_0 = Xyz(B_0)
-		Sph_DcmtxUnit(segment->adcm,'x',segment->xyzfront,segment->xyzback,-segment->len);	// x_i = x_{i+1} - l_i * BT_i . xhat
+			Sph_Ypr2Ypr(angle,segmentp1->ypr);
+//		Sph_Ypr2Dcm(angle,segmentp1->dcm);
+			Sph_Ypr2Qtn(angle,segmentp1->qrel);
+//		Sph_DcmtxDcm(segmentp1->dcm,segmentp1->adcm,segment->adcm);				// B_i = A_{i+1}T . B_{i+1}
+			Sph_QtnxQtni(segmentp1->qabs,segmentp1->qrel,segment->qabs); }		// b_i = b_{i+1} . a_{i+1}*
+//	Sph_Dcm2Dcm(segment->adcm,segment->dcm);									// A_i = B_i
+		Sph_Qtn2Qtn(segment->qabs,segment->qrel);									// a_i = b_i
+//	Sph_Dcm2Ypr(segment->dcm,segment->ypr);										// a_0 = Ypr(B_0)
+		Sph_Qtn2Ypr(segment->qrel,segment->ypr);									// a_0 = Ypr(B_0)
+//	Sph_DcmtxUnit(segment->adcm,'x',segment->xyzfront,segment->xyzback,-segment->len);	// x_i = x_{i+1} - l_i * BT_i . xhat
+		Sph_QtniRotateUnitx(segment->qabs,segment->xyzfront,segment->xyzback,-segment->len);
+		Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1);
 		fil->nseg++; }
 	return 0; }
 
@@ -962,13 +1040,13 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 		else return 2;
 
 		if(dim==2) {
-			angle[0]=unirandCCD(-PI,PI);
+			angle[0]=unirandOCD(-PI,PI);
 			angle[1]=angle[2]=0; }
 		else {
 			angle[0]=thetarandCCD();
 			angle[1]=unirandCOD(0,2*PI);
 			angle[2]=unirandCOD(0,2*PI);
-			Sph_Eax2Xyz(angle,angle); }
+			Sph_Eax2Ypr(angle,angle); }
 		if(!strcmp(phistr,"u"));
 		else if(strmathsscanf(phistr,"%mlg|",varnames,varvalues,nvar,&f1)==1) angle[0]=f1;
 		else return 3;
@@ -998,6 +1076,7 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 int filRemoveSegment(filamentptr fil,char endchar) {
 	int seg;
 	segmentptr segment;
+	double zero[3]={0,0,0};
 
 	if(fil->nseg==0) return -1;
 
@@ -1006,8 +1085,11 @@ int filRemoveSegment(filamentptr fil,char endchar) {
 	else {
 		seg=1;					// new front segment
 		segment=fil->segments[seg];
-		Sph_Dcm2Dcm(segment->adcm,segment->dcm);
-		Sph_Dcm2Xyz(segment->dcm,segment->ypr);
+//	Sph_Dcm2Dcm(segment->adcm,segment->dcm);
+		Sph_Qtn2Qtn(segment->qabs,segment->qrel);
+//	Sph_Dcm2Ypr(segment->dcm,segment->ypr);
+		Sph_Qtn2Ypr(segment->qrel,segment->ypr);
+		Sph_QtniRotateUnitz(segment->qrel,fil->seg0up,zero,1);
 		filArrayShift(fil,-1);
 		fil->nseg--; }
 
@@ -1020,12 +1102,13 @@ void filTranslate(filamentptr fil,const double *vect,char func) {
 	double shift[3],*node;
 	segmentptr segment;
 
-	seg=0;
+	if(fil->nseg==0) return;
+
 	if(func=='=') {
-		segment=fil->segments[seg];
-		shift[0]=segment->xyzfront[0]-vect[0];
-		shift[1]=segment->xyzfront[1]-vect[1];
-		shift[2]=segment->xyzfront[2]-vect[2];}
+		segment=fil->segments[0];
+		shift[0]=vect[0]-segment->xyzfront[0];
+		shift[1]=vect[1]-segment->xyzfront[1];
+		shift[2]=vect[2]-segment->xyzfront[2]; }
 	else if(func=='-') {
 		shift[0]=-vect[0];
 		shift[1]=-vect[1];
@@ -1045,20 +1128,21 @@ void filTranslate(filamentptr fil,const double *vect,char func) {
 
 
 /* filLengthenSegment */
-void filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func) {
+int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func) {
 	int i;
-	double lenold,lendelta,xdelta[3],**nodes;
+	double lenold,lendelta,xdelta[3],**nodes,zero[3]={0,0,0};
 	segmentptr segment;
 
 	segment=fil->segments[seg];
 	lenold=segment->len;
 	if(func=='=') lendelta=length-lenold;
 	else if(func=='+') lendelta=length;
-	else lendelta=lenold-length;
+	else lendelta=-length;
 
-	xdelta[0]=lendelta*segment->adcm[0];		// same as SphDcmtxUnit(segment->adcm,'x',xdelta,NULL,lendelta);
-	xdelta[1]=lendelta*segment->adcm[1];
-	xdelta[2]=lendelta*segment->adcm[2];
+	if(lenold+lendelta<=0) return 1;
+
+//	Sph_DcmtxUnit(segment->adcm,'x',xdelta,NULL,lendelta);			// Delta Delta x = Delta l * B_iT xhat
+	Sph_QtniRotateUnitx(segment->qabs,xdelta,zero,lendelta);			// rotate to lab frame. Delta Delta x = Delta l * b_i xhat b_iT
 	nodes=fil->nodes;
 	if(endchar=='b') {
 		for(i=seg+1;i<=fil->nseg;i++) {
@@ -1071,55 +1155,86 @@ void filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char 
 			nodes[i][1]-=xdelta[1];
 			nodes[i][2]-=xdelta[2]; }}
 
-	return; }
+	return 0; }
+
+
+int filChangeThickness(filamentptr fil,int seg,double thick,char func) {
+	segmentptr segment;
+	double thkold,thkdelta;
+
+	segment=fil->segments[seg];
+	thkold=segment->thk;
+	if(func=='=') thkdelta=thick-thkold;
+	else if(func=='+') thkdelta=thick;
+	else thkdelta=-thick;
+
+	if(thkold+thkdelta<0) return 1;
+	segment->thk+=thkdelta;
+
+	return 0; }
 
 
 /* filRotateVertex */
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func) {
 	int i;
-	double dcmdelta[9];
+//double dcmdelta[9];
+	double qtndelta[4],zero[3]={0,0,0};
 	segmentptr segment,segmentm1,segmentp1;
 
 	segment=fil->segments[seg];
-	Sph_Xyz2Dcm(angle,dcmdelta);
-	if(func=='=') Sph_Dcm2Dcm(dcmdelta,segment->dcm);
-	else if(func=='+') Sph_DcmxDcm(dcmdelta,segment->dcm,segment->dcm);
-	else Sph_DcmtxDcm(dcmdelta,segment->dcm,segment->dcm);
+//Sph_Ypr2Dcm(angle,dcmdelta);
+	Sph_Ypr2Qtn(angle,qtndelta);
+	if(func=='=') {
+//	Sph_Dcm2Dcm(dcmdelta,segment->dcm);
+		Sph_Qtn2Qtn(qtndelta,segment->qrel); }
+	else if(func=='+') {
+//	Sph_DcmxDcm(dcmdelta,segment->dcm,segment->dcm);
+		Sph_QtnxQtn(segment->qrel,qtndelta,segment->qrel); }
+	else {
+//	Sph_DcmtxDcm(dcmdelta,segment->dcm,segment->dcm);
+		Sph_QtnxQtni(segment->qrel,qtndelta,segment->qrel); }
 
 	if(endchar=='b') {
 		for(i=seg;i<fil->nseg;i++) {
 			segment=fil->segments[i];
-			if(i==0) Sph_Dcm2Dcm(segment->dcm,segment->adcm);
+			if(i==0) {
+//			Sph_Dcm2Dcm(segment->dcm,segment->adcm);							// B_0 = A_0
+				Sph_Qtn2Qtn(segment->qrel,segment->qabs); 						// b_0 = a_0
+				Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }
 			else {
 				segmentm1=fil->segments[i-1];
-				Sph_DcmxDcm(segment->dcm,segmentm1->adcm,segment->adcm); }
-			Sph_Dcm2Xyz(segment->dcm,segment->ypr);
-			segment->xyzback[0]=segment->xyzfront[0]+segment->len*segment->adcm[0];
-			segment->xyzback[1]=segment->xyzfront[1]+segment->len*segment->adcm[1];
-			segment->xyzback[2]=segment->xyzfront[2]+segment->len*segment->adcm[2]; }}
+//			Sph_DcmxDcm(segment->dcm,segmentm1->adcm,segment->adcm);				// B_i = A_i B_{i-1}
+				Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs); }			// b_i = b_{i-1} a_i
+//		Sph_Dcm2Ypr(segment->dcm,segment->ypr);
+			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
+//		Sph_DcmtxUnit(segment->adcm,'x',segment->xyzback,segment->xyzfront,segment->len);	// x_{i+1} = x_i + l_i B_iT xhat
+			Sph_QtniRotateUnitx(segment->qabs,segment->xyzback,segment->xyzfront,segment->len);
+			}}
 	else {
 		for(i=seg;i>=0;i--) {
 			segment=fil->segments[i];
 			if(i==fil->nseg-1);
 			else {
 				segmentp1=fil->segments[i+1];
-				Sph_DcmtxDcm(segmentp1->dcm,segmentp1->adcm,segment->adcm); }
-			Sph_Dcm2Xyz(segment->dcm,segment->ypr);
-			segment->xyzfront[0]=segment->xyzback[0]-segment->len*segment->adcm[0];
-			segment->xyzfront[1]=segment->xyzback[1]-segment->len*segment->adcm[1];
-			segment->xyzfront[2]=segment->xyzback[2]-segment->len*segment->adcm[2]; }}
+//			Sph_DcmtxDcm(segmentp1->dcm,segmentp1->adcm,segment->adcm);				// B_i = A_{i+1}T B_i
+				Sph_QtnxQtni(segmentp1->qabs,segmentp1->qrel,segment->qabs); }		// b_i = b_i a_{i+1)T
+//		Sph_Dcm2Ypr(segment->dcm,segment->ypr);
+			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
+//		Sph_DcmtxUnit(segment->adcm,'x',segment->xyzfront,segment->xyzback,-segment->len);		// x_i = x_{i+1} - l_i B_{i+1}T xhat
+			Sph_QtniRotateUnitx(segment->qabs,segment->xyzfront,segment->xyzback,-segment->len); }
+		Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }
 
 	return; }
 
 
 /* filCopyFilament */
-int filCopyFilament(filamentptr filto,const filamentptr filfrom) {
+int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype) {
 	int i;
-	segmentptr segmentto,segmentfrom;
+	segmentptr segmentfrom;
 
 	if(!filto || !filfrom) return 2;
 
-	filto->filtype=filfrom->filtype;
+	filto->filtype=filtype?filtype:filfrom->filtype;
 
 	filto->nseg=0;
 	filto->nbranch=0;
@@ -1129,24 +1244,16 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom) {
 	if(!filto) return 1;
 
 	for(i=0;i<filfrom->nseg;i++) {
-		segmentto=filto->segments[i];
 		segmentfrom=filfrom->segments[i];
-		segmentto->index=segmentfrom->index;
-		copyVD(segmentfrom->xyzfront,segmentto->xyzfront,3);
-		copyVD(filfrom->forces[i],filto->forces[i],3);
-		segmentto->len=segmentfrom->len;
-		segmentto->thk=segmentfrom->thk;
-		copyVD(segmentfrom->ypr,segmentto->ypr,3);
-		copyVD(segmentfrom->dcm,segmentto->dcm,9);
-		copyVD(segmentfrom->adcm,segmentto->adcm,9); }
-	if(filfrom->nseg>0) {
-		copyVD(segmentfrom->xyzback,segmentto->xyzback,3);
-		i=filfrom->nseg;
-		copyVD(filfrom->forces[i],filto->forces[i],3); }
-	filto->nseg=filfrom->nseg;
+		filAddSegment(filto,segmentfrom->xyzfront,segmentfrom->len,segmentfrom->ypr,segmentfrom->thk,'b'); }
+
+	filto->seg0up[0]=filfrom->seg0up[0];
+	filto->seg0up[1]=filfrom->seg0up[1];
+	filto->seg0up[2]=filfrom->seg0up[2];
 
 	filto->frontend=filfrom->frontend;
 	filto->backend=filfrom->backend;
+
 	for(i=0;i<filfrom->nbranch;i++) {
 		filto->branchspots[i]=filfrom->branchspots[i];
 		filto->branches[i]=filfrom->branches[i]; }
@@ -1179,6 +1286,12 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 	strncpy(filtype->filnames[f],filname,STRCHAR-1);
 	filtype->filnames[f][STRCHAR-1]='\0';
 	fil=filtype->fillist[f];
+	fil->filtype=filtype;
+	fil->nseg=0;
+	fil->frontend=fil->backend=NULL;
+	fil->nbranch=0;
+	fil->nmonomer=0;
+	fil->frontmonomer=0;
 	filsetcondition(filtype->filss,SClists,0);
 
 	return fil; }
@@ -1413,7 +1526,7 @@ filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
 
-	printf("%s\n",word);//?? debug
+	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
 
 	varnames=sim->varnames;
@@ -1588,13 +1701,12 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	int nvar,dim;
 
 	filamentptr fil2;
-	filamentssptr filss;
-	int itct,er,i1;
+	filamenttypeptr filtype2;
+	int itct,er,i1,seg;
 	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR],symbol;
 	double fltv1[9],length,angle[3],thick;
 
-	printf("%s\n",word);//?? debug
-	filss=sim->filss;
+	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
 
 	varnames=sim->varnames;
@@ -1602,14 +1714,22 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	nvar=sim->nvar;
 
 	if(!strcmp(word,"name")) {
-		itct=sscanf(line2,"%s %s",nm1,nm);
-		CHECKS(itct==2,"correct format: filament_type filament_name");
-		i1=stringfind(filss->ftnames,filss->ntype,nm1);
-		CHECKS(i1>=0,"filament type not recognized");
-		filtype=filss->filtypes[i1];
-		fil=filAddFilament(filtype,nm);
-		CHECKS(fil,"failed to add filament");
-		CHECKS(!strnword(line2,3),"unexpected text following filament name"); }
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"correct format: filament_type:filament_name");
+		filtype2=filtype;
+		fil2=NULL;
+		er=filReadFilName(sim,nm,&filtype2,&fil2,nm1);
+		CHECKS(er!=-1 && er!=-3,"correct format: filament_type:filament_name");
+		CHECKS(er!=-2,"filaments have not been defined yet");
+		CHECKS(er!=-4,"filament type not recognized");
+		CHECKS(filtype2,"missing filament type. Format: filament_type:filament_name");
+		filtype=filtype2;
+		if(er==-5) {
+			fil=filAddFilament(filtype,nm1);
+			CHECKS(fil,"failed to add filament"); }
+		else
+			fil=fil2;
+		CHECKS(!strnword(line2,2),"unexpected text following filament name"); }
 
 	else if(!strcmp(word,"first_segment")) {		// first_segment
 		CHECKS(fil,"need to enter filament name before first_segment");
@@ -1617,17 +1737,17 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L %mlg|",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&length,&angle[0]);
 			fltv1[2]=angle[1]=angle[2]=0;
-			CHECKS(itct==4,"first_segment format: x y length angle0 [thickness]"); }
+			CHECKS(itct==4,"first_segment format: x y length angle [thickness]"); }
 		else {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L %mlg|L %mlg| %mlg| %mlg|",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&fltv1[2],&length,&angle[0],&angle[1],&angle[2]);
-			CHECKS(itct==7,"first_segment format: x y z length angle0 angle1 angle2 [thickness]"); }
+			CHECKS(itct==7,"first_segment format: x y z length yaw pitch roll [thickness]"); }
 		CHECKS(length>0,"length needs to be >0");
 		line2=strnword(line2,itct+1);
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKS(itct==1,"first_segment format: x y length angle0 [thickness]");}
-			else {CHECKS(itct==1,"first_segment format: x y z length angle0 angle1 angle2 [thickness]");}
+			if(dim==2) {CHECKS(itct==1,"first_segment format: x y length angle [thickness]");}
+			else {CHECKS(itct==1,"first_segment format: x y z length yaw pitch roll [thickness]");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
 		er=filAddSegment(fil,fltv1,length,angle,thick,'b');
@@ -1713,23 +1833,90 @@ filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 
 	else if(!strcmp(word,"translate")) {					// translate
 		CHECKS(fil,"need to enter filament name before translate");
-		itct=strmathsscanf(line2,"%c %mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&symbol,&fltv1[0],&fltv1[1],&fltv1[2]);
-		CHECKS(itct==4,"translate format: symbol x y z");
+		if(dim==2) {
+			itct=strmathsscanf(line2,"%c %mlg|L %mlg|L",varnames,varvalues,nvar,&symbol,&fltv1[0],&fltv1[1]);
+			CHECKS(itct==3,"translate format: symbol x y");
+			fltv1[2]=0;
+			line2=strnword(line2,4); }
+		else {
+			itct=strmathsscanf(line2,"%c %mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&symbol,&fltv1[0],&fltv1[1],&fltv1[2]);
+			CHECKS(itct==4,"translate format: symbol x y z");
+			line2=strnword(line2,5); }
 		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		filTranslate(fil,fltv1,symbol);
-		CHECKS(!strnword(line2,5),"unexpected text following translate"); }
+		CHECKS(!line2,"unexpected text following translate"); }
 
-	else if(!strcmp(word,"copy")) {								// copy
-		CHECKS(fil,"need to enter filament name before copy");
+	else if(!strcmp(word,"modify_segment")) {				// modify_segment
+		CHECKS(fil,"need to enter filament name before modify_segment");
+		itct=strmathsscanf(line2,"%mi| %s %c",varnames,varvalues,nvar,&seg,nm,&symbol);
+		CHECKS(itct==3,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+		CHECKS(seg>=0 && seg<fil->nseg,"segment number is not within filament");
+		line2=strnword(line2,4);
+		CHECKS(line2,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+		if(!strcmp(nm,"length")) {
+			CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
+			CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+			line2=strnword(line2,2);
+			endchar='b';
+			if(line2) {
+				itct=sscanf(line2,"%s",nm1);
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				line2=strnword(line2,2);
+				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
+				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
+				else CHECKS(0,"end needs to be 'back' or 'front'"); }
+			er=filLengthenSegment(fil,seg,length,endchar,symbol);
+			CHECKS(!er,"Error while trying to change segment length - new length must be positive"); }
+		else if(!strcmp(nm,"angle")) {
+			CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
+			angle[0]=angle[1]=angle[2]=0;
+			if(dim==2) {
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&angle[0]);
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				line2=strnword(line2,2); }
+			else {
+				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
+				CHECKS(itct==3,"insufficient angle values");
+				line2=strnword(line2,4); }
+			endchar='b';
+			if(line2) {
+				itct=sscanf(line2,"%s",nm1);
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				line2=strnword(line2,2);
+				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
+				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
+				else CHECKS(0,"end needs to be 'back' or 'front'"); }
+			filRotateVertex(fil,seg,angle,endchar,symbol); }
+		else if(!strcmp(nm,"thickness")) {
+			CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"first symbol needs to be '=', '+', or '-'");
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+			line2=strnword(line2,2);
+			er=filChangeThickness(fil,seg,thick,symbol);
+			CHECKS(!er,"Error while trying to change segment thickness - new value cannot be negative"); }
+		else
+			CHECKS(0,"modification option needs to be 'length', 'angle', or 'thickness'");
+		CHECKS(!line2,"unexpected text following modify_segment"); }
+
+	else if(!strcmp(word,"copy_to")) {							// copy_to
+		CHECKS(fil,"need to enter filament name before copy_to");
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"error reading filament name");
-		fil2=filAddFilament(fil->filtype,nm);
-		CHECKS(fil2,"failed to add filament");
-		er=filCopyFilament(fil2,fil);
-		CHECKS(!strnword(line2,2),"unexpected text following copy"); }
+		filtype2=filtype;
+		fil2=NULL;
+		er=filReadFilName(sim,nm,&filtype2,&fil2,nm1);
+		CHECKS(er!=-1 && er!=-3,"error reading filament name");
+		CHECKS(er!=-4,"unknown filament type");
+		CHECKS(fil2!=fil,"a filament cannot be copied to itself");
+		if(!fil2) {
+			fil2=filAddFilament(filtype2,nm1);
+			CHECKS(fil2,"failed to add filament"); }
+		er=filCopyFilament(fil2,fil,filtype2);
+		CHECKS(!strnword(line2,2),"unexpected text following copy_to"); }
 
 	else {																				// unknown word
-		CHECKS(0,"syntax error within filament_type block: statement not recognized"); }
+		CHECKS(0,"syntax error within filament block: statement not recognized"); }
 
 	return fil;
 
@@ -1861,30 +2048,40 @@ void filNodes2Angles(filamentptr fil) {
 			if(segment->ypr[0]<-PI) segment->ypr[0]+=2*PI;
 			else if(segment->ypr[0]>PI) segment->ypr[0]-=2*PI;
 			segment->ypr[1]=segment->ypr[2]=0;
-			Sph_Xyz2Dcm(segment->ypr,segment->dcm);	// segment->dcm
-			Sph_Xyz2Dcm(aypr,segment->adcm);				// segment->adcm
+//		Sph_Ypr2Dcm(segment->ypr,segment->dcm);	// segment->dcm
+			Sph_Ypr2Qtn(segment->ypr,segment->qrel);
+//		Sph_Ypr2Dcm(aypr,segment->adcm);				// segment->adcm
+			Sph_Ypr2Qtn(aypr,segment->qabs);
 			aphim1=aypr[0];
 			xm1[0]=x[0];
 			xm1[1]=x[1]; }}
 
 	else {																				// 3D
-//		printf("\nfilNodes2Anges:");//??
-		for(seg=0;seg<fil->nseg;seg++) {
+		segment=fil->segments[0];
+		x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
+		x[1]=segment->xyzback[1]-segment->xyzfront[1];
+		x[2]=segment->xyzback[2]-segment->xyzfront[2];
+		len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
+		segment->len=len;
+		Sph_XZ2Qtni(x,fil->seg0up,segment->qrel);
+		Sph_Qtn2Qtn(segment->qrel,segment->qabs);
+		Sph_Qtn2Ypr(segment->qrel,segment->ypr);
+		for(seg=1;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
 			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
 			x[1]=segment->xyzback[1]-segment->xyzfront[1];
 			x[2]=segment->xyzback[2]-segment->xyzfront[2];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
 			segment->len=len;
-			if(seg>0) Sph_DcmxCart(fil->segments[seg-1]->adcm,x,x);			// rotate x into prior segment reference frame
-			segment->ypr[0]=atan2(x[1],x[0]);										// local ypr angles
+//		Sph_DcmxCart(fil->segments[seg-1]->adcm,x,x);				// rotate x into prior segment reference frame
+			Sph_QtnRotate(fil->segments[seg-1]->qabs,x,x);
+			segment->ypr[0]=atan2(x[1],x[0]);										// local ypr angles ?? This was the problem. For segment 0, if x[1]=x[0]=0, then this blows up.
 			segment->ypr[1]=-asin(x[2]/len);
-			Sph_Xyz2Dcm(segment->ypr,segment->dcm);
-//			if(seg==0)
-//				printf(" x=(%1.3g,%1.3g,%1.3g), YPR=(%1.3g,%1.3g,%1.3g), Dcm=((%1.3g,%1.3g,%1.3g),(%1.3g,%1.3g,%1.3g),(%1.3g,%1.3g,%1.3g))",x[0],x[1],x[2],segment->ypr[0],segment->ypr[1],segment->ypr[2],segment->dcm[0],segment->dcm[1],segment->dcm[2],segment->dcm[3],segment->dcm[4],segment->dcm[5],segment->dcm[6],segment->dcm[7],segment->dcm[8]);//??
-			if(seg>0) Sph_DcmxDcm(segment->dcm,fil->segments[seg-1]->adcm,segment->adcm);
-			else Sph_Dcm2Dcm(segment->dcm,segment->adcm); }}
-
+//		Sph_Ypr2Dcm(segment->ypr,segment->dcm);
+			Sph_Ypr2Qtn(segment->ypr,segment->qrel);
+//		Sph_DcmxDcm(segment->dcm,fil->segments[seg-1]->adcm,segment->adcm);					// B_i = A_i . B_{i-1}
+			Sph_QtnxQtn(fil->segments[seg-1]->qabs,segment->qrel,segment->qabs); 				// b_i = b_{i-1} . a_i
+			}}
 	return; }
 
 
@@ -2096,10 +2293,8 @@ void filAddBendForces(filamentptr fil) {
 			forces[node+1][0]+=forcep1[0];
 			forces[node+1][1]+=forcep1[1]; }}
 	else {
-//		printf("\nTorque:");//??
 		for(node=1;node<fil->nseg;node++) {								// compute bending forces
 			filBendTorque(fil,node,bendtorque);							// get bending torque in system reference frame
-//			printf(" (%1.2g,%1.2g,%1.2g)",bendtorque[0],bendtorque[1],bendtorque[2]);//??
 			segmentm1=fil->segments[node-1];
 			segment=fil->segments[node];
 
@@ -2149,9 +2344,10 @@ void filComputeForces(filamentptr fil) {
 	forces=fil->forces;
 	torques=fil->torques;
 
-	for(node=0;node<=fil->nseg;node++) {							// clear all forces
+	for(node=0;node<=fil->nseg;node++)							// clear all forces
 		forces[node][0]=forces[node][1]=forces[node][2]=0;
-		torques[node]=0; }
+	for(node=0;node<fil->nseg;node++)								// clear all torques
+		torques[node]=0;
 	filAddStretchForces(fil);
 	filAddBendForces(fil);
 //	filAddThermalForces(fil); //?? commented out for now because it needs checking
@@ -2162,40 +2358,44 @@ void filComputeForces(filamentptr fil) {
 /* filEulerDynamics */
 void filEulerDynamics(simptr sim,filamenttypeptr filtype) {
 	int node,seg,f;
-	double **nodes,mobility;
+	double **nodes,dtmu,axis[3];
 	segmentptr segment;
 	filamentptr fil;
 
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
-		mobility=fil->filtype->mobility*sim->dt;
+		dtmu=fil->filtype->mobility*sim->dt;
 		filComputeForces(fil);
 		nodes=fil->nodes;
 		if(sim->dim==2) {
 			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]+=mobility*fil->forces[node][0];
-				nodes[node][1]+=mobility*fil->forces[node][1]; }}
+				nodes[node][0]+=dtmu*fil->forces[node][0];
+				nodes[node][1]+=dtmu*fil->forces[node][1]; }}
 		else {
-			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]+=mobility*fil->forces[node][0];
-				nodes[node][1]+=mobility*fil->forces[node][1];
-				nodes[node][2]+=mobility*fil->forces[node][2]; }
-			for(seg=0;seg<fil->nseg;seg++) {
+			axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
+			axis[1]=nodes[1][1]-nodes[0][1];
+			axis[2]=nodes[1][2]-nodes[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up,axis,dtmu*fil->torques[0],fil->seg0up);
+			for(seg=1;seg<fil->nseg;seg++) {					// process other segment torques
 				segment=fil->segments[seg];
-				segment->ypr[2]+=mobility*fil->torques[seg]; }}
+				segment->ypr[2]+=dtmu*fil->torques[seg]; }
+			for(node=0;node<=fil->nseg;node++) {			// process node forces
+				nodes[node][0]+=dtmu*fil->forces[node][0];
+				nodes[node][1]+=dtmu*fil->forces[node][1];
+				nodes[node][2]+=dtmu*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 	return; }
 
 
 void filRK2Dynamics(simptr sim,filamenttypeptr filtype) {
 	int node,seg,f;
-	double **nodes,**nodes1,*roll1,mobility;
+	double **nodes,**nodes1,*roll1,dtmu2,dtmu,axis[3];
 	segmentptr segment;
 	filamentptr fil;
 
 	for(f=0;f<filtype->nfil;f++) {						// store initial state in nodes1 and roll1 and then take a half step
 		fil=filtype->fillist[f];
-		mobility=fil->filtype->mobility*sim->dt*0.5;
+		dtmu2=fil->filtype->mobility*sim->dt*0.5;
 		filComputeForces(fil);
 		nodes=fil->nodes;
 		nodes1=fil->nodes1;
@@ -2204,42 +2404,50 @@ void filRK2Dynamics(simptr sim,filamenttypeptr filtype) {
 			for(node=0;node<=fil->nseg;node++) {
 				nodes1[node][0]=nodes[node][0];
 				nodes1[node][1]=nodes[node][1];
-				nodes[node][0]+=mobility*fil->forces[node][0];
-				nodes[node][1]+=mobility*fil->forces[node][1]; }}
+				nodes[node][0]+=dtmu2*fil->forces[node][0];
+				nodes[node][1]+=dtmu2*fil->forces[node][1]; }}
 		else {
+			Sph_Cart2Cart(fil->seg0up,fil->seg0up1);
+			axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
+			axis[1]=nodes[1][1]-nodes[0][1];
+			axis[2]=nodes[1][2]-nodes[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up,axis,dtmu2*fil->torques[0],fil->seg0up);
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				roll1[seg]=segment->ypr[2];
+				segment->ypr[2]+=dtmu2*fil->torques[seg]; }
 			for(node=0;node<=fil->nseg;node++) {
 				nodes1[node][0]=nodes[node][0];
 				nodes1[node][1]=nodes[node][1];
 				nodes1[node][2]=nodes[node][2];
-				nodes[node][0]+=mobility*fil->forces[node][0];
-				nodes[node][1]+=mobility*fil->forces[node][1];
-				nodes[node][2]+=mobility*fil->forces[node][2]; }
-			for(seg=0;seg<fil->nseg;seg++) {
-				segment=fil->segments[seg];
-				roll1[seg]=segment->ypr[2];
-				segment->ypr[2]+=mobility*fil->torques[seg]; }}
+				nodes[node][0]+=dtmu2*fil->forces[node][0];
+				nodes[node][1]+=dtmu2*fil->forces[node][1];
+				nodes[node][2]+=dtmu2*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 
 	for(f=0;f<filtype->nfil;f++) {							// compute force from new state and then take full step from initial state
 		fil=filtype->fillist[f];
-		mobility=fil->filtype->mobility*sim->dt;
+		dtmu=fil->filtype->mobility*sim->dt;
 		filComputeForces(fil);
 		nodes=fil->nodes;
 		nodes1=fil->nodes1;
 		roll1=fil->roll1;
-		roll1=fil->roll1;
 		if(sim->dim==2) {
 			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
-				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1]; }}
+				nodes[node][0]=nodes1[node][0]+dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+dtmu*fil->forces[node][1]; }}
 		else {
-			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
-				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1];
-				nodes[node][2]=nodes1[node][2]+mobility*fil->forces[node][2]; }
+			axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
+			axis[1]=nodes[1][1]-nodes[0][1];
+			axis[2]=nodes[1][2]-nodes[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up1,axis,dtmu*fil->torques[0],fil->seg0up);
 			for(seg=0;seg<fil->nseg;seg++) {
 				segment=fil->segments[seg];
-				segment->ypr[2]=roll1[seg]+mobility*fil->torques[seg]; }}
+				segment->ypr[2]=roll1[seg]+dtmu*fil->torques[seg]; }
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+dtmu*fil->forces[node][1];
+				nodes[node][2]=nodes1[node][2]+dtmu*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 
 	return; }
@@ -2247,11 +2455,11 @@ void filRK2Dynamics(simptr sim,filamenttypeptr filtype) {
 
 void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 	int node,seg,f;
-	double **nodes,**nodes1,**nodes2,*roll1,*roll2,mobility;
+	double **nodes,**nodes1,**nodes2,*roll1,*roll2,dtmu,axis[3];
 	segmentptr segment;
 	filamentptr fil;
 
-	mobility=filtype->mobility*sim->dt;
+	dtmu=filtype->mobility*sim->dt;
 	for(f=0;f<filtype->nfil;f++) {						// copy initial state to nodes1/roll1, then take a half step and add to nodes2/roll2
 		fil=filtype->fillist[f];
 		filComputeForces(fil);
@@ -2264,26 +2472,32 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 			for(node=0;node<=fil->nseg;node++) {
 				nodes1[node][0]=nodes[node][0];
 				nodes1[node][1]=nodes[node][1];
-				nodes[node][0]+=0.5*mobility*fil->forces[node][0];
-				nodes[node][1]+=0.5*mobility*fil->forces[node][1];
-				nodes2[node][0]=nodes1[node][0]+(1.0/6)*mobility*fil->forces[node][0];
-				nodes2[node][1]=nodes1[node][1]+(1.0/6)*mobility*fil->forces[node][1]; }}
+				nodes[node][0]+=0.5*dtmu*fil->forces[node][0];
+				nodes[node][1]+=0.5*dtmu*fil->forces[node][1];
+				nodes2[node][0]=nodes1[node][0]+(1.0/6)*dtmu*fil->forces[node][0];
+				nodes2[node][1]=nodes1[node][1]+(1.0/6)*dtmu*fil->forces[node][1]; }}
 		else {
+			Sph_Cart2Cart(fil->seg0up,fil->seg0up1);
+			axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
+			axis[1]=nodes[1][1]-nodes[0][1];
+			axis[2]=nodes[1][2]-nodes[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up,axis,0.5*dtmu*fil->torques[0],fil->seg0up);
+			Sph_RotateVectorAxisAngle(fil->seg0up1,axis,(1.0/6)*dtmu*fil->torques[0],fil->seg0up2);
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				roll1[seg]=segment->ypr[2];
+				segment->ypr[2]+=0.5*dtmu*fil->torques[seg];
+				roll2[seg]=roll1[seg]+(1.0/6)*dtmu*fil->torques[seg]; }
 			for(node=0;node<=fil->nseg;node++) {
 				nodes1[node][0]=nodes[node][0];
 				nodes1[node][1]=nodes[node][1];
 				nodes1[node][2]=nodes[node][2];
-				nodes[node][0]+=0.5*mobility*fil->forces[node][0];
-				nodes[node][1]+=0.5*mobility*fil->forces[node][1];
-				nodes[node][2]+=0.5*mobility*fil->forces[node][2];
-				nodes2[node][0]=nodes1[node][0]+(1.0/6)*mobility*fil->forces[node][0];
-				nodes2[node][1]=nodes1[node][1]+(1.0/6)*mobility*fil->forces[node][1];
-				nodes2[node][2]=nodes1[node][2]+(1.0/6)*mobility*fil->forces[node][2]; }
-			for(seg=0;seg<fil->nseg;seg++) {
-				segment=fil->segments[seg];
-				roll1[seg]=segment->ypr[2];
-				segment->ypr[2]+=0.5*mobility*fil->torques[seg];
-				roll2[seg]=roll1[seg]+(1.0/6)*mobility*fil->torques[seg]; }}
+				nodes[node][0]+=0.5*dtmu*fil->forces[node][0];
+				nodes[node][1]+=0.5*dtmu*fil->forces[node][1];
+				nodes[node][2]+=0.5*dtmu*fil->forces[node][2];
+				nodes2[node][0]=nodes1[node][0]+(1.0/6)*dtmu*fil->forces[node][0];
+				nodes2[node][1]=nodes1[node][1]+(1.0/6)*dtmu*fil->forces[node][1];
+				nodes2[node][2]=nodes1[node][2]+(1.0/6)*dtmu*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 
 	for(f=0;f<filtype->nfil;f++) {							// with new force, take half step from initial state, and add to nodes2/roll2
@@ -2296,22 +2510,30 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 		roll2=fil->roll2;
 		if(sim->dim==2) {
 			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes1[node][0]+0.5*mobility*fil->forces[node][0];
-				nodes[node][1]=nodes1[node][1]+0.5*mobility*fil->forces[node][1];
-				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
-				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1]; }}
+				nodes[node][0]=nodes1[node][0]+0.5*dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+0.5*dtmu*fil->forces[node][1];
+				nodes2[node][0]+=(1.0/3)*dtmu*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*dtmu*fil->forces[node][1]; }}
 		else {
-			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes1[node][0]+0.5*mobility*fil->forces[node][0];
-				nodes[node][1]=nodes1[node][1]+0.5*mobility*fil->forces[node][1];
-				nodes[node][2]=nodes1[node][2]+0.5*mobility*fil->forces[node][2];
-				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
-				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1];
-				nodes2[node][2]+=(1.0/3)*mobility*fil->forces[node][2]; }
+			axis[0]=nodes1[1][0]-nodes1[0][0];					// process segment 0 torque
+			axis[1]=nodes1[1][1]-nodes1[0][1];
+			axis[2]=nodes1[1][2]-nodes1[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up1,axis,0.5*dtmu*fil->torques[0],fil->seg0up);
+			axis[0]=nodes2[1][0]-nodes2[0][0];
+			axis[1]=nodes2[1][1]-nodes2[0][1];
+			axis[2]=nodes2[1][2]-nodes2[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up2,axis,(1.0/3)*dtmu*fil->torques[0],fil->seg0up2);
 			for(seg=0;seg<fil->nseg;seg++) {
 				segment=fil->segments[seg];
-				segment->ypr[2]=roll1[seg]+0.5*mobility*fil->torques[seg];
-				roll2[seg]+=(1.0/3)*mobility*fil->torques[seg]; }}
+				segment->ypr[2]=roll1[seg]+0.5*dtmu*fil->torques[seg];
+				roll2[seg]+=(1.0/3)*dtmu*fil->torques[seg]; }
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+0.5*dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+0.5*dtmu*fil->forces[node][1];
+				nodes[node][2]=nodes1[node][2]+0.5*dtmu*fil->forces[node][2];
+				nodes2[node][0]+=(1.0/3)*dtmu*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*dtmu*fil->forces[node][1];
+				nodes2[node][2]+=(1.0/3)*dtmu*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 
 	for(f=0;f<filtype->nfil;f++) {							// with new force, take full step from initial state, and add to nodes2/roll2
@@ -2324,22 +2546,30 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 		roll2=fil->roll2;
 		if(sim->dim==2) {
 			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
-				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1];
-				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
-				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1]; }}
+				nodes[node][0]=nodes1[node][0]+dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+dtmu*fil->forces[node][1];
+				nodes2[node][0]+=(1.0/3)*dtmu*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*dtmu*fil->forces[node][1]; }}
 		else {
-			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes1[node][0]+mobility*fil->forces[node][0];
-				nodes[node][1]=nodes1[node][1]+mobility*fil->forces[node][1];
-				nodes[node][2]=nodes1[node][2]+mobility*fil->forces[node][2];
-				nodes2[node][0]+=(1.0/3)*mobility*fil->forces[node][0];
-				nodes2[node][1]+=(1.0/3)*mobility*fil->forces[node][1];
-				nodes2[node][2]+=(1.0/3)*mobility*fil->forces[node][2]; }
+			axis[0]=nodes1[1][0]-nodes1[0][0];					// process segment 0 torque
+			axis[1]=nodes1[1][1]-nodes1[0][1];
+			axis[2]=nodes1[1][2]-nodes1[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up1,axis,dtmu*fil->torques[0],fil->seg0up);
+			axis[0]=nodes1[1][0]-nodes1[0][0];
+			axis[1]=nodes1[1][1]-nodes1[0][1];
+			axis[2]=nodes1[1][2]-nodes1[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up2,axis,(1.0/3)*dtmu*fil->torques[0],fil->seg0up2);
 			for(seg=0;seg<fil->nseg;seg++) {
 				segment=fil->segments[seg];
-				segment->ypr[2]=roll1[seg]+mobility*fil->torques[seg];
-				roll2[seg]+=(1.0/3)*mobility*fil->torques[seg]; }}
+				segment->ypr[2]=roll1[seg]+dtmu*fil->torques[seg];
+				roll2[seg]+=(1.0/3)*dtmu*fil->torques[seg]; }
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes1[node][0]+dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes1[node][1]+dtmu*fil->forces[node][1];
+				nodes[node][2]=nodes1[node][2]+dtmu*fil->forces[node][2];
+				nodes2[node][0]+=(1.0/3)*dtmu*fil->forces[node][0];
+				nodes2[node][1]+=(1.0/3)*dtmu*fil->forces[node][1];
+				nodes2[node][2]+=(1.0/3)*dtmu*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 
 	for(f=0;f<filtype->nfil;f++) {							// with new force, add to nodes2/roll2
@@ -2352,16 +2582,20 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 		roll2=fil->roll2;
 		if(sim->dim==2) {
 			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes2[node][0]+(1.0/6)*mobility*fil->forces[node][0];
-				nodes[node][1]=nodes2[node][1]+(1.0/6)*mobility*fil->forces[node][1]; }}
+				nodes[node][0]=nodes2[node][0]+(1.0/6)*dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes2[node][1]+(1.0/6)*dtmu*fil->forces[node][1]; }}
 		else {
-			for(node=0;node<=fil->nseg;node++) {
-				nodes[node][0]=nodes2[node][0]+(1.0/6)*mobility*fil->forces[node][0];
-				nodes[node][1]=nodes2[node][1]+(1.0/6)*mobility*fil->forces[node][1];
-				nodes[node][2]=nodes2[node][2]+(1.0/6)*mobility*fil->forces[node][2]; }
+			axis[0]=nodes2[1][0]-nodes2[0][0];					// process segment 0 torque
+			axis[1]=nodes2[1][1]-nodes2[0][1];
+			axis[2]=nodes2[1][2]-nodes2[0][2];
+			Sph_RotateVectorAxisAngle(fil->seg0up2,axis,(1.0/6)*dtmu*fil->torques[0],fil->seg0up);
 			for(seg=0;seg<fil->nseg;seg++) {
 				segment=fil->segments[seg];
-				segment->ypr[2]=roll2[seg]+(1.0/6)*mobility*fil->torques[seg]; }}
+				segment->ypr[2]=roll2[seg]+(1.0/6)*dtmu*fil->torques[seg]; }
+			for(node=0;node<=fil->nseg;node++) {
+				nodes[node][0]=nodes2[node][0]+(1.0/6)*dtmu*fil->forces[node][0];
+				nodes[node][1]=nodes2[node][1]+(1.0/6)*dtmu*fil->forces[node][1];
+				nodes[node][2]=nodes2[node][2]+(1.0/6)*dtmu*fil->forces[node][2]; }}
 		filNodes2Angles(fil); }
 
 	return; }

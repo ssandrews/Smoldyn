@@ -9,12 +9,12 @@ of the Gnu Lesser General Public License (LGPL). */
 
 #define CHECK(A) if(!(A)) {goto failure;} else (void)0
 
-queue q_alloc(int n,enum Q_types type,int (*keycmp)(void *,void *)) {
-	queue q;
+q_queue q_alloc(int n,enum Q_types type,int (*keycmp)(void *,void *)) {
+	q_queue q;
 	int i;
 
 	if(n<0) return NULL;
-	q=(queue) malloc(sizeof(struct qstruct));
+	q=(q_queue) malloc(sizeof(struct qstruct));
 	if(!q) return NULL;
 
 	q->type=type;
@@ -61,7 +61,7 @@ queue q_alloc(int n,enum Q_types type,int (*keycmp)(void *,void *)) {
 
 
 
-int q_expand(queue q,int addspace) {
+int q_expand(q_queue q,int addspace) {
 	int i,j,num,nnew;
 	void **xnew,**kvnew;
 	int *kinew;
@@ -135,7 +135,7 @@ int q_expand(queue q,int addspace) {
 
 
 
-void q_free(queue q,int freek,int freex) {
+void q_free(q_queue q,int freek,int freex) {
 	int i;
 
 	if(!q) return;
@@ -152,12 +152,12 @@ void q_free(queue q,int freek,int freex) {
 
 
 
-void q_null(queue q) {
+void q_null(q_queue q) {
 	q->f=q->b=0; }
 
 
 
-int q_enqueue(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q) {
+int q_enqueue(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,q_queue q) {
 	int sp;
 
 	if(q->type==Qvoid) {
@@ -179,7 +179,7 @@ int q_enqueue(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q) {
 
 
 
-int q_push(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q) {
+int q_push(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,q_queue q) {
 	int sp;
 
 	q->f=(q->n+q->f-1)%q->n;
@@ -201,7 +201,7 @@ int q_push(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q) {
 
 
 
-int q_insert(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q) {
+int q_insert(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,q_queue q) {
 	int i,n,sp,im1;
 
 	n=q->n;
@@ -256,7 +256,7 @@ int q_insert(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q) {
 
 
 
-void q_front(queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr) {
+void q_front(q_queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr) {
 	if(q->f==q->b) {
 		if(kvptr) *kvptr=NULL;
 		if(kiptr) *kiptr=0;
@@ -274,7 +274,7 @@ void q_front(queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,voi
 
 
 
-int q_pop(queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr) {
+int q_pop(q_queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr) {
 	if(q->f==q->b) {
 		if(kvptr) *kvptr=NULL;
 		if(kiptr) *kiptr=0;
@@ -294,17 +294,17 @@ int q_pop(queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void *
 
 
 
-int q_length(queue q) {
+int q_length(q_queue q) {
 	return (q->n+q->b-q->f)%q->n; }
 
 
 
-int q_maxlength(queue q) {
+int q_maxlength(q_queue q) {
 	return q->n-1; }
 
 
 
-int q_next(int i,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr,queue q) {
+int q_next(int i,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr,q_queue q) {
 	int f,b;
 
 	f=q->f;

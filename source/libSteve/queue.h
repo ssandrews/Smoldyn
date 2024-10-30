@@ -30,25 +30,25 @@ typedef struct qstruct{
 	void **x;
 	int n;
 	int f;
-	int b; } *queue;
+	int b; } *q_queue;
 
 #define q_frontkeyV(q) ((q)->b==(q)->f?NULL:(q)->kv[(q)->f])
 #define q_frontkeyI(q) ((q)->b==(q)->f?0:(q)->ki[(q)->f])
 #define q_frontkeyD(q) ((q)->b==(q)->f?0:(q)->kd[(q)->f])
 #define q_frontkeyL(q) ((q)->b==(q)->f?0:(q)->kl[(q)->f])
 
-queue q_alloc(int n,enum Q_types type,int (*keycmp)(void *,void *));
-int q_expand(queue q,int addspace);
-void q_free(queue q,int freek,int freex);
-void q_null(queue q);
-int q_enqueue(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q);
-int q_push(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q);
-int q_insert(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,queue q);
-void q_front(queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr);
-int q_pop(queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr);
-int q_length(queue q);
-int q_maxlength(queue q);
-int q_next(int i,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr,queue q);
+q_queue q_alloc(int n,enum Q_types type,int (*keycmp)(void *,void *));
+int q_expand(q_queue q,int addspace);
+void q_free(q_queue q,int freek,int freex);
+void q_null(q_queue q);
+int q_enqueue(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,q_queue q);
+int q_push(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,q_queue q);
+int q_insert(void *kv,int ki,double kd,Q_LONGLONG kl,void *x,q_queue q);
+void q_front(q_queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr);
+int q_pop(q_queue q,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr);
+int q_length(q_queue q);
+int q_maxlength(q_queue q);
+int q_next(int i,void **kvptr,int *kiptr,double *kdptr,Q_LONGLONG *klptr,void **xptr,q_queue q);
 
 #endif
 

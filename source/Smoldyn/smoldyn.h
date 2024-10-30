@@ -119,7 +119,7 @@ typedef struct qstruct
     int n;
     int f;
     int b;
-} * queue;
+} * q_queue;
 
 #endif
 
@@ -185,8 +185,8 @@ typedef struct cmdstruct
 
 typedef struct cmdsuperstruct
 {
-    queue cmd;                                   // queue of normal run-time commands
-    queue cmdi;                                  // queue of integer time commands
+    q_queue cmd;                                   // queue of normal run-time commands
+    q_queue cmdi;                                  // queue of integer time commands
     enum CMDcode (*cmdfn)(void*, cmdptr, char*); // function that runs commands
     void* cmdfnarg;                              // function argument (e.g. sim)
     int iter;            // number of times integer commands have run
@@ -773,8 +773,10 @@ typedef struct segmentstruct
     double len;         							// segment length
     double thk;         							// thickness of segment
     double ypr[3];      							// relative ypr angles
-    double dcm[9];      							// relative dcm
-    double adcm[9];     							// absolute segment orientation
+    double qrel[4];										// relative rotation quaternion
+    double qabs[4];										// absolute rotation quaternion
+//    double dcm[9];      							// relative dcm
+//    double adcm[9];     							// absolute segment orientation
 } * segmentptr;
 
 typedef struct filamentstruct
@@ -788,10 +790,13 @@ typedef struct filamentstruct
     double **nodes1;                    // nodes for RK dynamics (nseg+1)
     double **nodes2;                    // nodes for RK4 dynamics (nseg+1)
     double **nodesx;                    // old node locations (nseg+1)
-    double *roll1;											// roll for RK dynamics (nseg)
-    double *roll2;											// roll for RK dynamics (nseg)
-    double **forces;										// list of forces on nodes (nseg+1)
-    double *torques;										// list of segment torques (nseg)
+    double *roll1;                      // roll for RK dynamics (nseg)
+    double *roll2;                      // roll for RK dynamics (nseg)
+    double **forces;                    // forces on nodes (nseg+1)
+    double *torques;                    // list of segment torques (nseg)
+    double seg0up[3];										// segment 0 up vector
+    double seg0up1[3];									// segment 0 up vector for RK
+    double seg0up2[3];									// segment 0 up vector for RK4
     struct filamentstruct* frontend;    // what front attaches to
     struct filamentstruct* backend;     // what back attaches to
     int maxbranch;                      // max branches off this filament
@@ -1031,21 +1036,14 @@ typedef struct simstruct
     boxssptr boxs;            // box superstructure
 
     compartssptr cmptss; // compartment superstructure
-
     portssptr portss; // port superstructure
-
     latticessptr latticess; // lattice superstructure
-
     bngssptr bngss; // bionetget superstructure
-
     filamentssptr filss; // filament superstructure
-
     cmdssptr cmds; // command superstructure
-
     graphicsssptr graphss; // graphics superstructure
 
     diffusefnptr diffusefn; // function for molecule diffusion
-
     surfaceboundfnptr surfaceboundfn;           // function for surface-bound molecules
     surfacecollisionsfnptr surfacecollisionsfn; // function for surface collisons
     assignmols2boxesfnptr assignmols2boxesfn;   // function that assigns molecs to boxes
