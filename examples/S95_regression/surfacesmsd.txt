@@ -1,0 +1,75 @@
+# Modified by Steve Andrews from a file from Fabian Ormersbach that found a bug. 1/21/25.
+# Here, molecules diffuse in a 2D space with periodic boundaries and narrow 2D cylinders.
+# Bugs arose when molecules diffused out of a cylinder and across a jump surface in the same
+# time step. This was fixed for version 2.74.
+
+random_seed 1736511998
+
+graphics opengl
+
+# Time
+time_start 0
+time_stop 100
+time_step 0.1
+
+# System space
+dim 2				# 2D system
+boundaries x 0 12.8 p		# outermost system boundaries on x axis
+boundaries y 0 12.8 p		# outermost system boundaries on y axis
+
+species X
+difc X 0.1
+color X red
+display_size X 5
+
+mol 500 X u u 
+
+start_surface boundary
+action front all jump
+color front 0.2 0 0
+thickness 1
+panel rect +0 0 0 12.8 r1
+panel rect -0 12.8 0 12.8 r2
+panel rect +1 0 0 12.8 r3
+panel rect -1 0 12.8 12.8 r4
+jump r1 front <-> r2 front
+jump r3 front <-> r4 front
+end_surface
+
+
+start_surface microtubuli
+panel cyl 10.55 0 10.81 12.8 0.01
+panel cyl 8.05 0 2.13 12.8 0.01
+panel cyl 0 3.33 12.8 2.69 0.01
+panel cyl 10.55 0 10.81 12.8 0.01
+panel cyl 8.35 0 0.1 12.8 0.01
+panel cyl 4.67 0 2.98 12.8 0.01
+panel cyl 8.39 0 0.1 12.8 0.01
+panel cyl 1.11 0 1.11 12.8 0.01
+panel cyl 10.05 0 12.7 12.8 0.01
+panel cyl 0.96 0 1.79 12.8 0.01
+panel cyl 11.1 0 5.77 12.8 0.01
+panel cyl 3.75 0 6.77 12.8 0.01
+panel cyl 0 10.67 12.8 10.95 0.01
+panel cyl 0 3.5 12.8 1.96 0.01
+panel cyl 0 2.46 12.8 0.1 0.01
+panel cyl 0 8.26 12.8 6.32 0.01
+panel cyl 0 5.64 12.8 5.59 0.01
+panel cyl 0 5.04 12.8 7.28 0.01
+panel cyl 0 6.99 12.8 8.53 0.01
+panel cyl 0 1.65 12.8 1.95 0.01
+panel cyl 0 12.36 12.8 12.7 0.01
+panel cyl 0 5.13 12.8 2.41 0.01
+panel cyl 0 2.23 12.8 3.84 0.01
+rate all fsoln bsoln 1
+rate all bsoln fsoln 1
+end_surface
+
+
+ifdefine OUTFILE
+  output_files OUTFILE
+  cmd E meansqrdisp all all OUTFILE
+endif
+
+end_file
+

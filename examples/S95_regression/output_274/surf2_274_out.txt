@@ -127,7 +127,7 @@ red(solution) 62.3471 37.4738 345
 red(solution) 71.362 49.9195 344
 red(solution) 78.2556 39.556 343
 red(solution) 60.6825 37.3361 342
-red(solution) 77.6278 34.9839 341
+red(solution) 77.4821 34.891 341
 red(solution) 65.2585 45.4006 340
 red(solution) 78.9142 41.2058 339
 red(solution) 66.4017 47.865 338

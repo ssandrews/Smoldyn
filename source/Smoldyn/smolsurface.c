@@ -4864,6 +4864,8 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 	double x,norm[DIMMAX],epsilon,margin;
 	moleculeptr mptr2;
 	panelptr oldpnl;
+	char string[STRCHAR];
+	static int errorcount=0;
 
 	dim=sim->dim;
 	done=0;
@@ -4900,12 +4902,16 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 	else if(act==SAreflect) {											// reflect
 		surfacereflect(mptr,pnl,crsspt,dim,face);
 		fixpt2panel(crsspt,pnl,dim,face,epsilon);
-		if(ms!=MSsoln) movemol2closepanel(sim,mptr);
-		if(panelside(mptr->pos,pnl,dim,NULL,1,0)!=face) {
-			for(d=0;d<dim;d++) mptr->pos[d]=mptr->posx[d];
-			mptr->pnl=mptr->pnlx;
-			done=1; }
-//			fixpt2panel(mptr->pos,pnl,dim,face,0); }		// old version, up to 2.50; line can be deleted
+		if(ms!=MSsoln) {
+			movemol2closepanel(sim,mptr);
+			if(panelside(mptr->pos,pnl,dim,NULL,1,0)!=face) {	// see "Modifications for version 2.51" and "Modifications for version 2.74"
+				if(++errorcount<3)
+					simLog(sim,7,"REFLECTION ERROR. Molecule returned to prior location. time=%lf panel=%s:%s(%s) mol=%s,#%lli\n",sim->time,pnl->srf->sname,pnl->pname,surfface2string(face,string),sim->mols->spname[mptr->ident],mptr->serno);
+				else if(errorcount==3)
+					simLog(sim,7,"REFLECTION ERROR. Further error reporting is suppressed.\n");
+				for(d=0;d<dim;d++) mptr->pos[d]=mptr->posx[d];
+				mptr->pnl=mptr->pnlx;
+				done=1; }}
 		if(i2!=i) molchangeident(sim,mptr,ll,m,i2,ms,mptr->pnl,crsspt); }
 
 	else if(act==SAabsorb) {											// absorb

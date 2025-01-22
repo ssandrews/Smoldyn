@@ -9,7 +9,7 @@ filelist=['addspecies','abba','allostery','bimolecularlattice','bounce2','bounds
 					'emitter1','hemisphere','lrm','lrmsim','lotvolt','molecule',
 					'polymer_end','polymer_mid','rafts','rafts3D','ReflectToNewSpecies',
 					'structexpansion','surf1','surf2','surf3','surfaceboundjump','surfacedrift2',
-					'surfacedrift3','surfacereact','stick',
+					'surfacedrift3','surfacereact','surfacesmsd','stick',
 					'surfacediffuse','tracking','tracking2','translatemol2','trisphere']
 
 suffix=input('Enter suffix for new simulations: ')

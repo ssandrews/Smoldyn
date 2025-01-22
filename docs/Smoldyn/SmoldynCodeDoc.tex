@@ -11,8 +11,8 @@
 \usepackage{bm}
 \usepackage{graphicx}
 
-\DeclareMathOperator{\atan2}{atan2}
 \DeclareMathOperator{\asin}{asin}
+\DeclareMathOperator{\atantwo}{atan2}
 
 % settings for listings package
 \lstset{
@@ -50,8 +50,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.73}
-\date{\copyright February, 2024}
+\subtitle{Version 2.74}
+\date{\copyright January, 2025}
 \author{Steve Andrews}
 \maketitle
 
@@ -3072,7 +3072,8 @@ Adds or removes neighbors to or from a panel's list of neighbors. \ttt{pnl} is t
 \hfill \\
 Adds an emitter to a surface so that it can be used for simulating unbounded diffusion. This takes care of any necessary memory allocating. \ttt{srf} is the surface that the emitter is being added to, \ttt{face} is the surface face, \ttt{i} is the species number, \ttt{amount} is the emitter amount, flux, or weighting, \ttt{pos} is the \ttt{dim}-dimensional position of the emitter, and \ttt{dim} is the system dimensionality. Returns 0 for success or 1 if this is unable to allocate memory. This does not calculate the panel absorption probabilities, but does allocate space for them, if needed.
 
-\item[\ttt{surfaceptr surfreadstring(simptr sim, surfaceptr srf, char *word, char *line2, char *erstr)}]
+\item[\ttt{surfaceptr}]
+\ttt{surfreadstring(simptr sim, surfaceptr srf, char *word, char *line2, char *erstr)}
 \hfill \\
 Reads and processes one line of text from the configuration file, or some other source, for the surface pointed to by \ttt{srf}. If the surface is not known or has not been defined yet, then set \ttt{srf} to \ttt{NULL}. The first word of the line should be sent in as \ttt{word} and the rest sent in as \ttt{line2}. If this function is successful, it returns the surface pointer and it does not change the contents of \ttt{erstr}; if not, it returns -1 and it writes an error message to \ttt{erstr}.
 
@@ -3103,7 +3104,8 @@ Sets up or updates surface data structures.
 \hfill \\
 Returns the side of the panel \ttt{pnl} that point \ttt{pt} is on. If \ttt{strict} is 0, then \ttt{PFback} is returned if the point is exactly at the panel, while if \ttt{strict} is 1 then \ttt{PFnone} is returned if the point is exactly at the panel. In general, this should not be set for strict use when getting panel faces and should be for strict use for assistance in setting panel faces. If \ttt{distptr} is sent in as a non-\ttt{NULL} pointer, its contents will be set to the distance that \ttt{pt} is away from the infinite panel, with a positive number for the front side and negative or zero for the back. The values returned by this function define the side that \ttt{pt} is on, so should be called for other functions that care. The distance value that is returned by this function is also used to determine the face; thus, if two calls with different \ttt{pt} values return the exact same distance value, then the same face will be returned. Set \ttt{useoldpos} to 1 if the old point and front values should be used for the panel position rather than the current point and front values.
 
-\item[\ttt{void panelnormal(panelptr pnl, double *pos, enum PanelFace face, int dim, double *norm)}]
+\item[\ttt{void}]
+\ttt{panelnormal(panelptr pnl, double *pos, enum PanelFace face, int dim, double *norm)}
 \hfill \\
 Returns, in \ttt{norm}, the normal vector for the panel \ttt{pnl}, that points outwards from the \ttt{face} side. If this is a curved panel, such as a sphere or a cylinder, then \ttt{pos} is the position on the surface for which the local normal should be computed. If \ttt{face} is not equal to \ttt{PFfront} or \ttt{PFback}, then it is assumed that the front side is desired.
 
@@ -3199,7 +3201,8 @@ This is very similar to \ttt{fixpt2panel}, in that it moves point \ttt{pt} to th
 \hfill \\
 This moves the point \ttt{pt} to the nearest location that it is over the panel \ttt{pnl}, and also inside the edge by distance \ttt{margin}. This means that \ttt{pt} is not moved into the plane of the panel, which is done by \ttt{fixpt2panel}, but is moved parallel to the plane of the panel.
 
-\item[\ttt{int closestpanelpt(panelptr pnl, int dim, double *testpt, double *pnlpt, double margin)}]
+\item[\ttt{int}]
+\ttt{closestpanelpt(panelptr pnl, int dim, double *testpt, double *pnlpt, double margin)}
 \hfill \\
 Finds the closest point that is on panel \ttt{pnl} to the test point \ttt{testpt} and returns it in \ttt{pnlpt}. \ttt{testpt} and \ttt{pnlpt} should not point to the same memory address. This returns an integer which is 0 if the closest panel point is not on the panel edge, and which is the edge number if the closest panel point is on an edge. The edge numbers are listed in the table following the \ttt{lineexitpanel} description. If the test point is exactly at the panel edge, then the edge number is returned.
 
@@ -3356,7 +3359,8 @@ Adds molecule \ttt{mptr}, which belongs in live list \ttt{ll}, to the box that i
 \hfill \\
 Removes molecule \ttt{mptr} from the live list \ttt{ll} of the box that is pointed to by \ttt{mptr->box}. Before returning, \ttt{mptr->box} is set to \ttt{NULL}. If the molecule is not in the box that's listed, then this doesn't try removing it; this result is fine if the molecule is actually in no box at all (which can happen) but is probably a bug if the molecule is in the wrong box.
 
-\item[\ttt{boxptr boxscansphere(simptr sim, const double *pos, double radius, boxptr bptr, int *wrap)}]
+\item[\ttt{boxptr}]
+\ttt{boxscansphere(simptr sim, const double *pos, double radius, boxptr bptr, int *wrap)}
 \hfill \\
 Allows the calling function to scan over all of the boxes that are at least partially within \ttt{radius} distance of the point \ttt{pos}. This accounts for system edges and periodic boundaries. Call this at the first time in a scan with \ttt{bptr} equal to \ttt{NULL}, which instructs the function to set up internal static variables, and in subsequent scans with \ttt{bptr} not equal to \ttt{NULL}. This returns boxes repeatedly for the scan, and then returns \ttt{NULL} when the scan is complete. At present, it is not possible to skip ahead in the scan using the \ttt{bptr} input, although this could be implemented if it would be useful.
 
@@ -4197,8 +4201,8 @@ To make sense of this, consider the orientation of the $i$th segment. It is $\ha
 To compute a filament's node positions from angle data, we start with segment 0. This segment's orientation can be set initially with ypr angles, but those are not used when computing dynamics because the yaw and roll angles become undefined when the segment is vertical, and are extremely sensitive to the segment's orientation when it is nearly vertical. Instead, the segment 0 orientation is stored in the \ttt{seg0dcm} direction cosine matrix; this is both $\bm{A}_0$ and $\bm{B}_0$ in the analytical math. For subsequent segments, we know the ypr angles, so we compute the $\bm{A}_i$ matrices from eq. \ref{eq:CoordinateRotationYPR}. From those, we find the $\bm{B}_i$ matrices from eq. \ref{eq:AbsoluteDCM}. Then, we find the node positions from eq. \ref{eq:NodePositions}. These computations are the same for 2D and 3D.
 
 Going backward from node positions to ypr angles is more difficult. Starting with 2D systems, the only things that are needed are absolute and relative yaw angles, since pitch and roll are always zero. For segment, $i$, which goes from $\bm{x}_i$ and $\bm{x}_{i+1}$ and has spatial difference vector $\Delta \bm{x}_i=\bm{x}_{i+1} - \bm{x}_{i}$, the segment's absolute angle is
-$$\phi = \atan2(\Delta x_{i,y},\Delta x_{i,x})$$
-This uses the $\atan2$ function, which is the same as the arctangent, but keeps track of the quadrant; this uses $\Delta x_{i,x}$ and $\Delta x_{i,y}$ for the $x$ and $y$ axes. The result is between $-\pi$ and $\pi$, (inclusive at both ends). Note that this fails if both arguments of the function are equal to zero. The code doesn't store the absolute angle, but this is converted to an absolute direction cosine matrix that is stored. The difference between this angle and the angle for the prior segment is the relative angle, but that is no longer necessarily within $[-\pi,\pi]$, so that angle needs to be clamped to this range. Testing shows that this works well, so long as the mobility value isn't so high as to create unstable integration.
+$$\phi = \atantwo(\Delta x_{i,y},\Delta x_{i,x})$$
+This uses the $\atantwo$ function, which is the same as the arctangent, but keeps track of the quadrant; this uses $\Delta x_{i,x}$ and $\Delta x_{i,y}$ for the $x$ and $y$ axes. The result is between $-\pi$ and $\pi$, (inclusive at both ends). Note that this fails if both arguments of the function are equal to zero. The code doesn't store the absolute angle, but this is converted to an absolute direction cosine matrix that is stored. The difference between this angle and the angle for the prior segment is the relative angle, but that is no longer necessarily within $[-\pi,\pi]$, so that angle needs to be clamped to this range. Testing shows that this works well, so long as the mobility value isn't so high as to create unstable integration.
 
 The 3D computation does not use absolute angles. Also, the node positions are not sufficient input information but one also needs to know the roll value for each segment, except for segment 0. These roll values give the roll amount relative to the prior segment's orientation. For segment 0, I tried using a roll value relative to the absolute $\hat{\bm{x}}$ vector, but that creates discontinuities when the segment is nearly vertical. Instead, the solution I'm choosing is to record an upward vector, which is in the system reference frame, for segment 0. Ideally, this vector would be perpendicular to the segment and would have unit length, in which case it is the $\hat{\bm{z}}$ vector in the segment 0 reference frame. Deviations from this ideal are not a problem because they can be easily fixed.
 
@@ -4217,7 +4221,7 @@ $$\bm{A}^T(\phi_i,\theta_i,\psi_i) \hat{\bm{x}}
 = \left[ \begin{array}{c} \Delta x'_{i,x} \\ \Delta x'_{i,y} \\ \Delta x'_{i,z} \end{array} \right]$$
 Solving the three scalar equations for the two unknowns, $\theta_i$ and $\phi_i$ yield
 \begin{align}
-\phi_i &= \atan2(\Delta x'_{i,y}, \Delta x'_{i,x}) \nonumber \\
+\phi_i &= \atantwo(\Delta x'_{i,y}, \Delta x'_{i,x}) \nonumber \\
 \theta_i &= -\asin \frac{\Delta x'_{i,z}}{l_i}
 \label{eq:ThetaPhiFromX}
 \end{align}
@@ -4267,9 +4271,9 @@ Consider rotation by ypr angles $(\phi,\theta,\psi)$. This converts to quaternio
 \end{array} \right]
 \hspace{1cm}
 \bm{ypr}=\left[\begin{array}{c}
-\atan2(-2q_0q_3+2q_1q_2,q_0^2+q_1^2-q_2^2-q_3^2) \\
+\atantwo(-2q_0q_3+2q_1q_2,q_0^2+q_1^2-q_2^2-q_3^2) \\
 \asin(-2q_0q_2-2q_1q_3) \\
-\atan2(-2q_0q_1+2q_2q_3,q_0^2-q_1^2-q_2^2+q_3^2)
+\atantwo(-2q_0q_1+2q_2q_3,q_0^2-q_1^2-q_2^2+q_3^2)
 \end{array} \right]
 \label{eq:ypr2qtn}
 \end{equation}
@@ -7406,7 +7410,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added a molecule\ttt{touch} element that records each time the molecules were touched. It lets functions not recompute if the touch value is the same as it was during a prior call.
 
 \subsection{Modifications for version 2.51 (released 3/15/17)}
-\item Fixed a bug in which surface-bound molecules could leak through another surface. The problem was that the surface-bound molecule code was designed with relatively large panels in mind, and is generally exact for those panels, when they are planar. However, small panels are more complicated. As a result, I added the \ttt{pnlx} element to the molecule structure to keep track of the prior panel. Also, I changed the reflection algorithm in \ttt{dosurfinteract} so now the back-up plan in the case that reflection does not place the molecule on the correct side of the reflecting panel is to put the molecule back where it started from. The prior back-up plan was to fix the molecule to the correct side of the reflecting surface, but this made the system extremely sensitive to any future molecule adjustments. I also added the \ttt{fixpt2panelnocross} function which fixes a point to a panel but doesn't cross any other panels in the process. The final result works well, but it is still conceivable to have molecule leaks in rare situations.
+\item Fixed a bug in which surface-bound molecules could leak through another surface. The problem was that the surface-bound molecule code was designed with relatively large panels in mind, and is generally exact for those panels, when they are planar. However, small panels are more complicated. As a result, I added the \ttt{pnlx} element to the molecule structure to keep track of the prior panel. Also, I changed the reflection algorithm in \ttt{dosurfinteract} so now the back-up plan in the case that reflection does not place the molecule on the correct side of the reflecting panel is to put the molecule back where it started from. The prior back-up plan was to fix the molecule to the correct side of the reflecting surface, but this made the system extremely sensitive to any future molecule adjustments. I also added the \ttt{fixpt2panelnocross} function which fixes a point to a panel but doesn't cross any other panels in the process. The final result works well, but it is still conceivable to have molecule leaks in rare situations.... See Modifications for version 2.74.
 
 \subsection{Modifications for version 2.52 (released 5/16/17)}
 \item Martin Robinson fixed a minor bug in smolcmd.c that had to do with the lattice code.
@@ -7576,7 +7580,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added \ttt{PYTHON\_VERSION} as an option to the build, with new code in the master CMakeLists.txt file. Using this fixes the problem of building for one Python version and running a different one.
 \item Fixed bug in cmdsetreactionratemolcount. It wasn't loading the species name correctly, leading to a non-functional command. I'm not sure why it wasn't caught earlier, but it wasn't.
 
-\subsection{Modifications for version 2.74 (not released yet)}
+\subsection{Modifications for version 2.74 (released 1/22/25)}
 \item Changed Mac install and uninstall scripts so that individual commands use sudo, but the whole script does not. This is important because sudo should not be used with pip.
 \item Lots of work on filaments, including changes to data structures, input syntax, examples, and most functions in smolfilament.c. Removed the biology enumeration because this is better handled with a standard library approach. Removed the \ttt{frontseg} element, which allowed filament segments to be stored in their array in a shifted position rather than up against the front end; this worked but had minimal benefit and added substantial complication. Filament dynamics now basically work in both 2D and 3D. Improved filament graphics.
 \item Improved code robustness when encountering input file parsing errors.
@@ -7585,6 +7589,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Smoldyn now supports units for everything except filaments. This is mostly covered in string2.c, strunits function and also, to lesser extend in strmathsscanf. It's also in simLog. Every input line that takes in a floating point number, with only a couple of exceptions, now support units as part of that input, and will convert as needed. Output lines that print floating point numbers often display units, but I didn't work as hard there (e.g. reaction rate units depend on reaction order and system dimensionality, so they're a pain to deal with). This has been documented, but could be documented more. The only test file so far is S2\_config/units.txt.
 \item Fixed a few minor issues with lighting in smolgraphics.c, including mostly documentation.
 \item Added command \ttt{cmdprintFilament}, primarily for debugging purposes.
+\item Fixed a bug in the reflect portion of the \ttt{dosurfinteract} function. This runs the reflection with \ttt{surfacereflect}, moves the crossing point to the correct side of the panel, and then changes panels for surface-bound molecules if needed. For up to version 2.50, molecules were then automatically moved to the correct panel side, just in case they didn't reflect correctly. I changed this in version 2.51 (see the notes for that release), so that the code started checking whether molecules ended up on the correct side and then moved any failed molecules back to their starting points. This addressed problems that arose with the examples/ S95\_regressions/ surfacediffuse.txt file, which uses a large number of tiny surface panels. An undesirable side effect of this change occured for molecules inside spheres or cylinders (e.g. dumbell.txt), where a molecule that started inside the surface could cross the surface and be reflected but still end up outside due to a long diffusion step. The check caught the result and put the molecule back where it started from, thereby preventing any leaking but also leading to incorrect diffusion simulation. If the check hadn't existed, the molecule would have reflected a second time, which would have been the correct simulation method and still prevented leaks. However, simulation errors were minor enough that they weren't caught. In 1/2025, Fabian Ormersbach found a problem which I determined arose from molecules inside 2D cylinders simultaneously diffusing out of the cylinder and across a periodic boundary, and then the check here put these molecules back in their starting points but the \ttt{posoffset} parameter was not reset. The solution was to realize that the check is only needed for surface-bound molecules; the function also displays a warning when molecules are returned to prior locations. This modification changes the regression results for several files (dumbbell.txt, surf2.txt, surf3.txt) but everything appears to simulate correctly. Added regression file surfacesmsd.txt.
 
 \end{itemize}
 

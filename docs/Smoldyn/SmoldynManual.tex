@@ -10,6 +10,7 @@
 \usepackage{graphicx}
 \usepackage{geometry}
 \usepackage{gensymb}
+\usepackage{upgreek}
 
 % https://tex.stackexchange.com/questions/600628/aligning-linebreaks-in-long-item-inside-description-environment
 \usepackage{enumitem}
@@ -93,8 +94,8 @@ right=1 in}
 
 
 \title{Smoldyn User's Manual}
-\subtitle{Version 2.73}
-\date{\copyright February, 2024}
+\subtitle{Version 2.74}
+\date{\copyright January, 2025}
 \author{Steve Andrews}
 \maketitle
 
@@ -483,33 +484,52 @@ It is possible to separate configuration files into multiple text files. This is
 
 There are two ways to deal with measurement units.
 
-The first method, which was the only approach up through Smoldyn 2.73, is to choose a single set of units and then use those throughout the file. For example, cgs units (centimeter-gram-second) and mks units (meter-kilogram-second) are two standard unit systems. These are too large-scale to be convenient for most Smoldyn simulations, so micron-second and nanometer-microsecond tend to be preferable. The following table lists reasonably typical values for different processes in several different unit systems.
+The first method, which was also the only approach up through Smoldyn 2.73, is to choose a single set of units and then use those throughout the file. For example, cgs units (centimeter-gram-second) and mks units (meter-kilogram-second) are two standard unit systems. These are too large-scale to be convenient for most Smoldyn simulations, so micron-second and nanometer-microsecond tend to be preferable. The following table lists reasonably typical values for different processes in several different unit systems.
 
 Note that a pixel, abbreviated px, is defined as a length of 10 nm. Also, in the concentration column, ``6'' is short for 6.022045 and in the bimolecular reactions column, 1.7 is short for 1.660565.
 
+{\small
 \begin{longtable}[c]{llllll}
 && Diffusion & Unimolec. & Bimolecular & Adsorption\\
 & Concentration & coefficient & reactions & reactions & rates\\
 \hline \\
-Typical value & 10 $\mu$M & 10 $\mu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $10^5$ M1s$^{-1}$ & 1 $\mu$m s$^{-1}$\\
+Typical value & 10 $\upmu$M & 10 $\upmu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $10^5$ M$^{-1}$s$^{-1}$ & 1 $\upmu$m s$^{-1}$\\
 mks & $6\cdot10^{21}$ m$^{-3}$ & $10^{-11}$ m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-22}$ m$^3$s$^{-1}$ & $10^{-6}$ m s$^{-1}$\\
 cgs & $6\cdot10^{15}$ cm$^{-3}$ & $10^{-7}$ cm$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-16}$ cm$^3$s$^{-1}$ & $10^{-4}$ cm s$^{-1}$\\
-$\mu$m-ms & 6000 $\mu$m$^{-3}$ & $10^{-2}$ $\mu$m$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & $1.7\cdot10^{-7}$ $\mu$m$^3$ms$^{-1}$ & $10^{-3}$ $\mu$m ms$^{-1}$\\
-$\mu$m-s & 6000 $\mu$m$^{-3}$ & 10 $\mu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-4}$ $\mu$m$^3$s$^{-1}$ & 1 $\mu$m s$^{-1}$\\
+$\upmu$m-ms & 6000 $\upmu$m$^{-3}$ & $10^{-2}$ $\upmu$m$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & $1.7\cdot10^{-7}$ $\upmu$m$^3$ms$^{-1}$ & $10^{-3}$ $\upmu$m ms$^{-1}$\\
+$\upmu$m-s & 6000 $\upmu$m$^{-3}$ & 10 $\upmu$m$^2$s$^{-1}$ & 1 s$^{-1}$ & $1.7\cdot10^{-4}$ $\upmu$m$^3$s$^{-1}$ & 1 $\upmu$m s$^{-1}$\\
 nm-ms & $6\cdot10^{-6}$ nm$^{-3}$ & $10^4$ nm$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & 170 nm$^3$ms$^{-1}$ & 1 nm ms$^{-1}$\\
-nm-$\mu$s & $6\cdot10^{-6}$ nm$^{-3}$ & 10 nm$^2$$\mu$s$^{-1}$ & $10^{-6}$ $\mu$s$^{-1}$ & 0.17 nm$^3$$\mu$s$^{-1}$ & $10^{-3}$ nm $\mu$s$^{-1}$\\
+nm-$\upmu$s & $6\cdot10^{-6}$ nm$^{-3}$ & 10 nm$^2$$\upmu$s$^{-1}$ & $10^{-6}$ $\upmu$s$^{-1}$ & 0.17 nm$^3$$\upmu$s$^{-1}$ & $10^{-3}$ nm $\upmu$s$^{-1}$\\
 px-ms & $6\cdot10^{-3}$ px$^{-3}$ & 100 px$^2$ms$^{-1}$ & $10^{-3}$ ms$^{-1}$ & 0.17 px$^3$ms$^{-1}$ & 0.1 px ms$^{-1}$\\
-\end{longtable}
+\end{longtable}}
 
-The other approach is to explicitly define your units in the configuration file and to then let Smoldyn handle any necessary unit conversions automatically. In the most common use, a configuration file includes a \ttt{units} statement near the top that describes the list of units; for example ``\ttt{units um ms}'' tells Smoldyn that this file gives all length values in microns, all time in milliseconds, and compound values in combinations of these units (e.g. diffusion in $\mu$m$^2$/s). Because this is the first \ttt{units} line that Smoldyn reads, this also defines these as the ``working units'', meaning the units that Smoldyn performs all of its calculations in. If you'd rather have Smoldyn use some other working units, then enter those with the \ttt{working\_units} statement.
+The second method, which is preferable and available for Smoldyn 2.74 onward, is to explicitly define your units in the configuration file and to then let Smoldyn handle any necessary unit conversions automatically. With this approach, you define a set of default units, which are also used internally by Smoldyn, and you can also specify the units of individual values if desired. Smoldyn displays output values with units. The following code snippet illustrates most of unit functionality (see also the example file \ttt{S2\_config/units.txt}):
 
-If you want to enter a value within the configuration file in some units that aren't the ones listed initially, or if you want to be explicit about what units are being used, then append the unit information onto a number using a vertical bar and then the units. For example, \ttt{1000|nm} is the value 1000 nm. If the working units are microns, then this number will be automatically converted to 1 micron.
+\begin{lstlisting}[style=SSAC]
+units um ms           # default units and also working units
+boundaries x 0 1    # default units, so this is 0 um to 1 um
+time_step 1|us       # time step is 1 us, which converts to 0.001 ms
+difc GFP 0.1           # default units, so this is 0.1 um^2/ms
+difc ATP 500|um^2/s    # 500 um^2/s converts to 0.5 um^2/ms
+...
+units nm us           # change the default units but not the working units
+cmd i 0 100 5 molcount stdout   # command runs every 5 us up to 100 us
+end_units             # back to um ms units
+...
+cmd @ 1|ms pause  # command runs at time 1 ms
+\end{lstlisting}
 
-As another common situation, the top-level configuration file will use one set of units, say microns and milliseconds, and it uses \ttt{read\_file} to call a lower-level file that uses a different set of units, say nanometers and microseconds. In that case, the top-level file starts with \ttt{units um ms} and everything in that file is assumed to use these units; also, the lower-level file starts with \ttt{units nm us} and everything in that file is assumed to use those units. In this case, Smoldyn sets the working units to microns and milliseconds and converts the numbers that it reads from the lower-level file to the working units. See the example file \ttt{S2\_config/units.txt}.
+This code snippet shows the suggested approach of starting a configuration file with a \ttt{units} statement near the top that describes the list of units. In this case, the line ``\ttt{units um ms}'' tells Smoldyn that the default units for this model are length values in microns, time values in milliseconds, and compound values in combinations of these units (e.g. diffusion in $\upmu$m$^2$/s). This is the first \ttt{units} line that Smoldyn reads, so this also defines these as the ``working units'', meaning the units that Smoldyn performs all of its calculations in. If you'd rather have Smoldyn use some other working units, then enter those with the \ttt{working\_units} statement.
 
-The vast majority of simulation parameters can be expressed in some combination of length and time units. However, some filament parameters, such as bending force constants, require energy units. To support this, you can also specify the working energy units and enter values using energy values. To set the rough scale for energy units, note that $k_B T \approx 4.28$ zJ; here, $k_B$ is Boltzmann's constant and is equal to $1.38\cdot10^{-23}$ J/K, and $T$ is the temperature which I'm assuming is $37\degree$C (310 K). Also, the ``z'' prefix in ``zJ'' is zepto, which represents $10^{-21}$.
+Values that aren't expressed with units (e.g. \ttt{boundaries x 0 1}) are assumed to be in the default units. You can also be explicit about what units are being used by appending the unit information onto a number using a vertical bar and then the units (e.g. \ttt{time\_step 1|us}). Smoldyn automatically converts this value to its working units.
 
-At least for now, Smoldyn only supports length, time, and energy units, along with combinations of them. The following table lists all units that Smoldyn recognizes.
+A common situation is that the top-level configuration file will use one set of units, say microns and milliseconds, and it uses \ttt{read\_file} to call a lower-level file that uses a different set of units, say nanometers and microseconds. Or, equivalently, you want to paste in code that was written in a different set of units. Either way, you can change the default units, ideally in the first line of the lower-level file, with a new units statement (e.g. \ttt{units nm us}). Subsequent statements are then assumed to use those units. They can also, of course, specify the same or other units explicitly. The new defaults are maintained until they are ended with the \ttt{end\_units} statement, or the lower-level file ends, at which point Smoldyn reverts to the prior set of defaults. Further nesting of default units is permitted as well (up to 64 deep).
+
+While the vast majority of simulation parameters can be expressed in some combination of length and time units, some filament parameters require energy units. To support this, you can also specify the working energy units and enter values using energy values. To set the rough scale for energy units, note that $k_B T \approx 4.28$ zJ; here, $k_B$ is Boltzmann's constant and is equal to $1.38\cdot10^{-23}$ J/K, and $T$ is the temperature which I'm assuming is $37\degree$C (310 K). Also, the ``z'' prefix in ``zJ'' is zepto, which represents $10^{-21}$.
+
+As an aside, nearly all of Smoldyn's support for units is implemented in the single C library function \ttt{strunits}, which could be easily called by other software programs as well.
+
+The following table lists all units that Smoldyn recognizes.
 
 \begin{longtable}[c]{lll}
 Length (L) & Time (T) & Energy (E) \\
@@ -528,7 +548,6 @@ pm & ps & yJ \\
 fm & fs & rJ \\
  & & qJ
 \end{longtable}
-
 
 
 % Section: text substitution macros
@@ -578,6 +597,7 @@ Statement & meaning\\
 \ttt{end\_file} & end of this file\\
 \ttt{units} $units$ & length and time (and energy) units for this file\\
 \ttt{working\_units} $units$ & working units, if different from \ttt{units} statement\\
+\ttt{end\_units} & end of these default units\\
 \ttt{define} $key\ substitution$ & local macro replacement text\\
 \ttt{define\_global} $key\ substitution$ & global macro replacement text\\
 \ttt{undefine} $key$ & undefine a macro substitution\\
@@ -1183,7 +1203,7 @@ The example files in S7\_surfaces/unbounded\_diffusion illustrate and verify the
 $$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} \erfc \frac{|\mathbf{r}-\mathbf{r}_i |}{2 \sqrt{Dt}}$$
 Here, $C(\mathbf{r})$ is the concentration at position $\mathbf{r}$, $q_i$ is the emission rate of source $i$, $D$ is the diffusion coefficient, $\mathbf{r}_i$ is the location of source $i$, and $t$ is the time since the sources started emitting. At steady-state, this concentration equation simplifies to
 $$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} $$
-The figure below shows results from the emitter1.txt Smoldyn simulation, in which an emitter at location $\mathbf{r}_1 = (-4.5,0,0)$ microns emits $q_1 = 500$ molecules per second, these molecules have a diffusion coefficient of $D = 3 \mu \textrm{m}^2/\textrm{s}$, and the system is surrounded by a triangulated sphere that is centered at the origin and has radius 10 microns. Absorption to this sphere was set to make the molecules diffuse as though the system were unbounded. Close agreement between simulation and theory show that the algorithm works well.
+The figure below shows results from the emitter1.txt Smoldyn simulation, in which an emitter at location $\mathbf{r}_1 = (-4.5,0,0)$ microns emits $q_1 = 500$ molecules per second, these molecules have a diffusion coefficient of $D = 3 \upmu \textrm{m}^2/\textrm{s}$, and the system is surrounded by a triangulated sphere that is centered at the origin and has radius 10 microns. Absorption to this sphere was set to make the molecules diffuse as though the system were unbounded. Close agreement between simulation and theory show that the algorithm works well.
 
 \begin{figure}[h]
 \centering
@@ -2953,11 +2973,15 @@ End of configuration file. This line is optional (but good programming practice)
 
 \item{\ttt{units} $units$}
 
-This specifies the units that should be assumed for numerical quantities that are read from the configuration file. If this is the first \ttt{units} statement, then the working units (for Smoldyn's computations and output) are set to these units. These units continue to be assumed until another \ttt{units} statement is encountered, whether within the same file or at the top of a sub-file. At the end of a sub-file, any units that are defined in that sub-file are no longer assumed and Smoldyn reverts to the units of the higher-level file.
+This specifies the units that should be assumed for numerical quantities that are read from the configuration file. If this is the first \ttt{units} statement, then the working units (for Smoldyn's computations and output) are set to these units. These units continue to be assumed until another \ttt{units} statement is encountered, whether within the same file or at the top of a sub-file. At the end of a sub-file (or upon an \ttt{end\_units} statement), any units that are defined in that sub-file are no longer assumed and Smoldyn reverts to the units of the higher-level file.
 
 \item{\ttt{working\_units} $units$}
 
 Define the working units, meaning the units that Smoldyn uses for internal computations and output. If this statement is not entered, which is typical, then the working units are set to the first units that are listed with the \ttt{units} statement.
+
+\item{\ttt{end\_units}}
+
+Stop using the current default units and return to the prior ones. If units are defined for a sub-file, then they are automatically ended when the file ends; it's a good idea to add this statement at the end of the sub-file, but it's not necessary.
 
 \item{\ttt{quit\_at\_end} $value$}
 

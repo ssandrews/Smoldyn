@@ -1,5 +1,14 @@
 ## Changelog
 
+### 2.74 (1/22/25)
+
+- Improved Mac install scripts to use sudo for individual commands instead of everywhere.
+- Improved code robustness for input file parsing errors.
+- Lots of work on filaments. Their dynamics are now correct for 2D and 3D.
+- Updates to library files to support new filament functionality.
+- Added support for physical units.
+- Fixed a bug that caused errors for molecules that diffuse within concave surface panels.
+
 ### 2.73 (2/27/24)
 
 - Changed default bounce interactions from the reflection method to the overlap method.
