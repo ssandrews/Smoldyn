@@ -4905,10 +4905,11 @@ int dosurfinteract(simptr sim,moleculeptr mptr,int ll,int m,panelptr pnl,enum Pa
 		if(ms!=MSsoln) {
 			movemol2closepanel(sim,mptr);
 			if(panelside(mptr->pos,pnl,dim,NULL,1,0)!=face) {	// see "Modifications for version 2.51" and "Modifications for version 2.74"
-				if(++errorcount<3)
-					simLog(sim,7,"REFLECTION ERROR. Molecule returned to prior location. time=%lf panel=%s:%s(%s) mol=%s,#%lli\n",sim->time,pnl->srf->sname,pnl->pname,surfface2string(face,string),sim->mols->spname[mptr->ident],mptr->serno);
+				if(++errorcount<3) {
+					simLog(sim,7,"REFLECTION WARNING. Reflected molecule went to wrong side of panel; returned to prior location.\n");
+					simLog(sim,1,"   Time=%lf panel=%s:%s(%s) mol=%s,#%lli\n",sim->time,pnl->srf->sname,pnl->pname,surfface2string(face,string),sim->mols->spname[mptr->ident],mptr->serno); }
 				else if(errorcount==3)
-					simLog(sim,7,"REFLECTION ERROR. Further error reporting is suppressed.\n");
+					simLog(sim,7,"REFLECTION WARNING. Further error reporting is suppressed.\n");
 				for(d=0;d<dim;d++) mptr->pos[d]=mptr->posx[d];
 				mptr->pnl=mptr->pnlx;
 				done=1; }}
@@ -4986,6 +4987,7 @@ int checksurfaces1mol(simptr sim,moleculeptr mptr,double crossminimum) {
   double crossmin,crossmin2,crssptmin[3],crsspt[3],cross,*via,*pos;
 	enum PanelFace face,facemin;
 	panelptr pnl,pnlmin;
+	char string[STRCHAR];
 
   dim=sim->dim;
   via=mptr->via;
@@ -4994,9 +4996,14 @@ int checksurfaces1mol(simptr sim,moleculeptr mptr,double crossminimum) {
   done=0;
   it=0;
   while(!done) {
-    if(++it>50) {
+    if(++it>100) {
+      simLog(sim,1,"SURFACE CALCULATION WARNING: molecule could not be placed after 100 iterations; returned to prior position\n");
+			simLog(sim,1,"  Time: %g, Molecule: %s(%s) #%lli (%g",sim->time,sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string),mptr->serno,mptr->posx[0]);
+			for(d=1;d<dim;d++) simLog(sim,1,",%g",mptr->posx[d]);
+			simLog(sim,1,") -> (%g",mptr->pos[0]);
+			for(d=1;d<dim;d++) simLog(sim,1,",%g",mptr->pos[d]);
+			simLog(sim,1,"), pnl=%s mptr->pnl=%s\n",pnl?pnl->pname:"NULL",mptr->pnl?mptr->pnl->pname:"NULL");
       for(d=0;d<dim;d++) pos[d]=mptr->posx[d];
-      simLog(sim,7,"SURFACE CALCULATION ERROR: molecule could not be placed after 50 iterations\n");
       break; }
     crossmin=crossmin2=2;
     facemin=PFfront;
@@ -5040,6 +5047,7 @@ int checksurfaces(simptr sim,int ll,int reborn) {
 	double crossmin,crossmin2,crssptmin[3],crsspt[3],cross,*via,*pos;
 	enum PanelFace face,facemin;
 	panelptr pnl,pnlmin;
+	char string[STRCHAR];
 
 	if(!sim->srfss) return 0;
 	if(!sim->mols) return 0;
@@ -5058,9 +5066,14 @@ int checksurfaces(simptr sim,int ll,int reborn) {
 		done=0;
 		it=0;
 		while(!done) {
-			if(++it>50) {
+			if(++it>100) {
+				simLog(sim,1,"SURFACE CALCULATION WARNING: molecule could not be placed after 100 iterations; returned to prior location\n");
+				simLog(sim,1,"  Time: %g, Molecule: %s(%s) #%lli (%g",sim->time,sim->mols->spname[mptr->ident],molms2string(mptr->mstate,string),mptr->serno,mptr->posx[0]);
+				for(d=1;d<dim;d++) simLog(sim,1,",%g",mptr->posx[d]);
+				simLog(sim,1,") -> (%g",mptr->pos[0]);
+				for(d=1;d<dim;d++) simLog(sim,1,",%g",mptr->pos[d]);
+				simLog(sim,1,"), pnl=%s mptr->pnl=%s\n",pnl?pnl->pname:"NULL",mptr->pnl?mptr->pnl->pname:"NULL");
 				for(d=0;d<dim;d++) pos[d]=mptr->posx[d];
-				simLog(sim,7,"SURFACE CALCULATION ERROR: molecule could not be placed after 50 iterations\n");
 				break; }
 			crossmin=crossmin2=2;
 			facemin=PFfront;
