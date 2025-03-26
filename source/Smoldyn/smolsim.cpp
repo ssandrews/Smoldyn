@@ -2667,8 +2667,16 @@ int simulatetimestep(simptr sim) {
 	sim->time+=sim->dt;													// --- end of time step ---
 	simsetvariable(sim,"time",sim->time);
 	er=simdocommands(sim);
-	if(er) return er;
+#ifdef COMPILE_AS_PY_MODULE
+    if(er == 7) {
+        fprintf(stdout, "command stop");
+        sim->tmax = sim->time;
+        sim->tbreak = sim->time;
+        er = 0;
+    }
+#endif
 
+	if(er) return er;
 
 	if(sim->time>=sim->tmax) return 1;
 	if(sim->time>=sim->tbreak) return 10;
