@@ -36,7 +36,7 @@ force_arrows 10 red
 thickness 2
 polygon ve
 kT 0.1
-dynamics RK4
+dynamics rk4
 standard_length 5
 standard_angle 0 0 0
 force_length 1

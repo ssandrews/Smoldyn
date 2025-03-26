@@ -1399,9 +1399,9 @@ void surfaceoutput(simptr sim) {
 				pnl=srf->panels[PSrect][p];
 				point=pnl->point;
 				front=pnl->front;
-				if(dim==1) simLog(sim,2,"   %s: location=%g|L, facing %c0",pname[p],point[0][0],front[0]==1?'+':'-');
-				else if(dim==2) simLog(sim,2,"   %s: corners: (%g,%g)|L, (%g,%g)|L, facing: %c%1.0f, length: %g|L",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0]==1?'+':'-',front[1],Geo_LineLength(point[0],point[1],2));
-				else simLog(sim,2,"   %s: corners: (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, facing: %c%1.0f, area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],point[3][0],point[3][1],point[3][2],front[0]==1?'+':'-',front[1],Geo_QuadArea(point[0],point[1],point[2],point[3],3));
+				if(dim==1) simLog(sim,2,"   %s: location=%g|L, facing %cx",pname[p],point[0][0],front[0]==1?'+':'-');
+				else if(dim==2) simLog(sim,2,"   %s: corners: (%g,%g)|L, (%g,%g)|L, facing: %c%c, length: %g|L",pname[p],point[0][0],point[0][1],point[1][0],point[1][1],front[0]==1?'+':'-',front[1]==0?'x':'y',Geo_LineLength(point[0],point[1],2));
+				else simLog(sim,2,"   %s: corners: (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, (%g,%g,%g)|L, facing: %c%c, area: %g|L2",pname[p],point[0][0],point[0][1],point[0][2],point[1][0],point[1][1],point[1][2],point[2][0],point[2][1],point[2][2],point[3][0],point[3][1],point[3][2],front[0]==1?'+':'-',front[1]==0?'x':(front[1]==1?'y':'z'),Geo_QuadArea(point[0],point[1],point[2],point[3],3));
 				if(jumpfrnt && pnl->jumpp[PFfront]) simLog(sim,2,"; front jump: %s, %s",pnl->jumpp[PFfront]->pname,surfface2string(pnl->jumpf[PFfront],string));
 				else if(jumpfrnt) simLog(sim,2,"; front jump: NO PANEL");
 				if(jumpback && pnl->jumpp[PFback]) simLog(sim,2,"; back jump: %s, %s",pnl->jumpp[PFback]->pname,surfface2string(pnl->jumpf[PFback],string));
@@ -1410,7 +1410,8 @@ void surfaceoutput(simptr sim) {
 					if(pnl->emitterabsorb[face]) {
 						simLog(sim,2,"; %s absorb probs.:",surfface2string(face,string));
 						for(i=1;i<nspecies;i++)
-							simLog(sim,2," %g",pnl->emitterabsorb[face][i]); }}
+							if(pnl->emitterabsorb[face][i]>0)
+								simLog(sim,2," %s:%g",sim->mols->spname[i],pnl->emitterabsorb[face][i]); }}
 				simLog(sim,2,"\n");
 				if(pnl->maxneigh) {
 					simLog(sim,1,"    neighbors allocated: %i, defined: %i",pnl->maxneigh,pnl->nneigh);
@@ -1886,9 +1887,9 @@ int checksurfaceparams(simptr sim,int *warnptr) {
 				for(face=(enum PanelFace)0;face<2;face=(enum PanelFace)(face+1)) {
 					for(i=1;i<sim->mols->nspecies;i++)
 						if(srf->nemitter[face] && srf->nemitter[face][i])
-							if(srf->action[i][MSsoln][face]!=SAreflect) {
+							if(srf->action[i][MSsoln][face]!=SAreflect && srf->action[i][MSsoln][face]!=SAtrans) {
 								warn++;
-								simLog(sim,5," WARNING: surface '%s' %s-side action for %s is listed as %s, but molecules will absorb instead because of unbounded emitters\n",srf->sname,surfface2string(face,string),sim->mols->spname[i],surfact2string(srf->action[i][MSsoln][face],string2)); }}}}
+								simLog(sim,5," WARNING: surface '%s' %s-side action for %s is listed as '%s', but molecules will follow an unbounded emitter rule instead\n",srf->sname,surfface2string(face,string),sim->mols->spname[i],surfact2string(srf->action[i][MSsoln][face],string2)); }}}}
 
 	if(sim->mols)																			// check that emitter absorptions aren't pegged to 1
 		for(s=0;s<srfss->nsrf;s++) {
@@ -1897,10 +1898,13 @@ int checksurfaceparams(simptr sim,int *warnptr) {
 				for(i=1;i<sim->mols->nspecies;i++)
 					if(srf->nemitter[face] && srf->nemitter[face][i])
 						for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-							for(p=0;p<srf->npanel[ps];p++)
+							for(p=0;p<srf->npanel[ps];p++) {
 								if(srf->panels[ps][p]->emitterabsorb[face][i]==1.0) {
 									warn++;
-									simLog(sim,5," WARNING: surface '%s', panel %s, %s-side absorption probability for %s cannot be made large enough for accurate effective unbounded diffusion\n",srf->sname,srf->panels[ps][p]->pname,surfface2string(face,string),sim->mols->spname[i]); }}
+									simLog(sim,5," WARNING: surface '%s', panel %s, %s-side absorption probability for %s cannot be made large enough for accurate effective unbounded diffusion\n",srf->sname,srf->panels[ps][p]->pname,surfface2string(face,string),sim->mols->spname[i]); }
+								else if(srf->panels[ps][p]->emitterabsorb[face][i]==0) {
+									warn++;
+									simLog(sim,5," WARNING: surface '%s', panel %s, %s-side absorption probability for %s is zero, likely due to an unbounded emitter being either at or outside the panel\n",srf->sname,srf->panels[ps][p]->pname,surfface2string(face,string),sim->mols->spname[i]); }}}
 
 // check panels that normals are normal and normalized, with proper signs (error)
 // check that panels are at least partially inside system volume (warning)
@@ -2889,7 +2893,7 @@ int surfsetemitterabsorption(simptr sim) {
 									amount=srf->emitteramount[face][i][emit];
 									pos=srf->emitterpos[face][i][emit];
 									dist=distanceVVD(middle,pos,dim);
-									if(!(dist>0)) er=1;
+									if(!(dist>0)) {er=1;dist=1;}
 									denom+=amount/dist;
 									sumVD(1.0,middle,-1.0,pos,vdiff,dim);
 									numer+=amount*dotVVD(vdiff,normal,dim)/(dist*dist*dist); }

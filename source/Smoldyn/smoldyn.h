@@ -764,8 +764,7 @@ enum FilamentDynamics
     FDRK4
 };
 
-typedef struct segmentstruct
-{
+typedef struct segmentstruct {
     struct filamentstruct* fil;				// owning filament
     int index;                        // self index along filament
     double *xyzfront;                 // Coords. for segment front
@@ -775,12 +774,9 @@ typedef struct segmentstruct
     double ypr[3];      							// relative ypr angles
     double qrel[4];										// relative rotation quaternion
     double qabs[4];										// absolute rotation quaternion
-//    double dcm[9];      							// relative dcm
-//    double adcm[9];     							// absolute segment orientation
 } * segmentptr;
 
-typedef struct filamentstruct
-{
+typedef struct filamentstruct {
     struct filamenttypestruct* filtype; // owning filament type
     char* filname;                      // filament name (ref, not owned)
     int maxseg;                         // number of segments allocated
@@ -803,10 +799,9 @@ typedef struct filamentstruct
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
-    int maxmonomer;                     // number of monomers allocated
-    int nmonomer;                       // number of monomers
-    int frontmonomer;                   // index of front monomer
-    char* monomers;                     // monomer codes
+    int maxsequence;                    // number of sequence characters allocated
+    int nsequence;                      // number of sequence characters
+    char* sequence;                     // sequence code
 } * filamentptr;
 
 typedef struct filamenttypestruct

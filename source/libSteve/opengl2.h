@@ -93,6 +93,7 @@ void gl2DrawCylinder(float baseRadius,float topRadius,float height,int slices,in
 void gl2DrawSphere(float radius,int slices,int stacks,int frontin,int normals);
 void gl2DrawEcoli(float radius,float length,int slices,int stacks,int frontin,int normals);
 void gl2DrawTextD(double x,double y,double *color,void *font,char *string,int align);
+void gl2DrawString3D(double *pos,void *font,char *string);
 
 void gl2PlotData(float *xdata,float *ydata,int nx,int nycol,char *style);
 void gl2PlotPts(float **data,int *ser,int nser,int npts,float **color,float *size,char style);

@@ -1,0 +1,47 @@
+# Filament sequence test
+
+graphics opengl
+#random_seed 2
+graphics opengl_better
+
+light room ambient 0 0 0
+light 0 position -1 1 1 0
+light 0 diffuse 0.5 0.5 0.5
+light 0 ambient 0.5 0.5 0.5
+light 0 specular 0.5 0.5 0.5
+
+
+dim 3
+boundaries x -10 10 r
+boundaries y -10 10 r
+boundaries z -10 10 r
+
+time_start 0
+time_stop 10000
+time_step 0.01
+
+frame_thickness 0
+
+
+start_filament_type green
+color green
+thickness 0.2
+polygon face
+kT 1
+standard_length 2
+standard_angle 0.1 0 0
+force_length 1
+force_angle 20 5 20
+end_filament_type
+
+
+start_filament green:fil1
+random_segments 5  0 0 0  u u u
+sequence TTDTDDTDDD
+end_filament
+
+
+end_file
+
+
+

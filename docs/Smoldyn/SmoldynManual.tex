@@ -11,6 +11,7 @@
 \usepackage{geometry}
 \usepackage{gensymb}
 \usepackage{upgreek}
+\usepackage{bm}
 
 % https://tex.stackexchange.com/questions/600628/aligning-linebreaks-in-long-item-inside-description-environment
 \usepackage{enumitem}
@@ -662,7 +663,7 @@ Statement & function\\
 % Section: technical discussion of time steps
 \section{Technical discussion of time steps}
 
-A major focus of the design of Smoldyn has been to make it so that results are indistinguishable from those that would be obtained if the simulated time increased continuously. This goal cannot be achieved perfectly. Instead, the algorithms are written so that the simulation approaches the Smoluchowski description of reaction-diffusion systems as the time step is reduced towards zero. Also, it maintains as much accuracy as possible for longer time steps. This topic is discussed in detail in the research paper ``Stochastic simulation of chemical reactions with spatial resolution and single molecule detail'' by Steven Andrews and Dennis Bray (Physical Biology 1:137-151, 2004).
+A major focus of the design of Smoldyn has been to make it so that results are indistinguishable from those that would be obtained if the simulated time increased continuously. This goal cannot be achieved perfectly. Instead, the algorithms are written so that the simulation approaches the Smoluchowski description of reaction-diffusion systems as the time step is reduced towards zero. Also, it maintains as much accuracy as possible for longer time steps. This topic is discussed in detail in ref. \cite{Andrews_Bray_2004}.
 
 In concept, the system is observed at a fixed time, then it evolves to some new state, then it is observed again, and so forth. This leads to the following sequence of program operations:
 
@@ -1084,27 +1085,27 @@ color both purple 0.5
 thickness 2
 polygon front face
 polygon back edge
-panel rect +0 40 40 40 20 20
-panel rect -0 60 40 40 20 20
-panel rect +1 40 40 40 20 20
-panel rect -1 40 60 40 20 20
-panel rect +2 40 40 40 20 20
-panel rect -2 40 40 60 20 20
-panel tri 60 15 70 80 15 70 70 15 86     # 1 2 3
-panel tri 60 15 70 70 15 86 70 31 77     # 1 3 4
-panel tri 70 15 86 80 15 70 70 31 77     # 3 2 4
-panel tri 80 15 70 60 15 70 70 31 77     # 2 1 4
-panel sph 20 20 20 8 20 20
-panel cyl 20 75 20 80 75 80 5 20 20
-panel cyl 20 30 70 20 50 70 4 20 20
-panel hemi 20 75 20 5 1 0 1 20 20
-panel hemi 80 75 80 5 -1 0 -1 20 20
-panel disk 20 30 70 4 0 -1 0 20
-panel disk 20 50 70 4 0 1 0 20
+panel rect +x  40 40 40   20 20
+panel rect -x  60 40 40   20 20
+panel rect +y  40 40 40   20 20
+panel rect -y  40 60 40   20 20
+panel rect +z  40 40 40   20 20
+panel rect -z  40 40 60   20 20
+panel tri  60 15 70   80 15 70   70 15 86     # 1 2 3
+panel tri  60 15 70   70 15 86   70 31 77     # 1 3 4
+panel tri  70 15 86   80 15 70   70 31 77     # 3 2 4
+panel tri  80 15 70   60 15 70   70 31 77     # 2 1 4
+panel sph  20 20 20   8   20 20
+panel cyl  20 75 20   80 75 80   5   20 20
+panel cyl  20 30 70   20 50 70   4   20 20
+panel hemi  20 75 20   5   1 0 1    20 20
+panel hemi  80 75 80   5  -1 0 -1   20 20
+panel disk  20 30 70   4   0 -1 0   20
+panel disk  20 50 70   4   0 1 0    20
 end_surface
 \end{lstlisting}
 
-Several statements control the drawing of surfaces to the graphics window. The \ttt{color} statement specifies the color of the front and/or back of the surface with either color words or red, green, blue, and alpha (opacity) values. As mentioned above in the graphics section, OpenGL does not render well with alpha values between 0 and 1. Thickness defines the line width that should be used for drawing surface edges, or for surfaces in 2-dimensional systems. The polygon statement is used to set the drawing mode for showing just the panel edges, only panel vertices, or complete panel faces. It also allows filling of regions for surfaces in 2-dimensions.
+Several statements control the drawing of surfaces to the graphics window. The \ttt{color} statement specifies the color of the front and/or back of the surface with either color words or red, green, blue, and alpha (opacity) values. As mentioned above in the graphics section, OpenGL does not render well with alpha values between 0 and 1. Thickness defines the line width that should be used for drawing surface edges, or for surfaces in 2-dimensional systems. The polygon statement is used to set the drawing mode for showing just the panel edges, only panel vertices, or complete panel faces. It also allows filling of regions for surfaces in 2-dimensions. The panel statements describe the panel positions and dimensions; note the use of extra spaces to clarify the number groupings.
 
 % Section: jumping surfaces
 \section{Jumping surfaces}
@@ -1165,7 +1166,7 @@ Statement & function\\
 \ttt{jump} $name\ face\ <->\ name_2\ face_2$\\
 \ttt{neighbors} $panel\ neigh_1\ neigh_2\ ...$\\
 \multicolumn{2}{l}{
-\ttt{unbounded\_diffusion} $face\ species\ amount\ pos_0\ pos_1\ ...\ pos_{dim-1}$}\\
+\ttt{unbounded\_emitter} $face\ species\ amount\ pos_0\ pos_1\ ...\ pos_{dim-1}$}\\
 \ttt{end\_surface}
 \end{longtable}
 
@@ -1199,12 +1200,14 @@ Results from example stickrate.txt, shown in red, are compared with the analytic
 % Section: simulating effective unbounded diffusion
 \section{Simulating effective unbounded diffusion}
 
-The example files in S7\_surfaces/unbounded\_diffusion illustrate and verify the use of a partially absorbing bounding surface to simulate effective unbounded diffusion. These files use the Smoldyn file sphere.txt, which describes a sphere; I created it by using Mathematica to define a sphere, triangulate it, and save it as a ``wrl'' (Virtual Reality Modeling Language) file. Then, I used the wrl2smol utility program to convert it to the Smoldyn-readable file sphere.txt. Other Smoldyn configuration files specify either one or multiple emitters within this sphere and then save concentration line profiles as functions of time. The theoretical concentration distributions for these situations is expressed with a slight extension of eq. 3.5b from Crank, which leads to
-$$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} \erfc \frac{|\mathbf{r}-\mathbf{r}_i |}{2 \sqrt{Dt}}$$
-Here, $C(\mathbf{r})$ is the concentration at position $\mathbf{r}$, $q_i$ is the emission rate of source $i$, $D$ is the diffusion coefficient, $\mathbf{r}_i$ is the location of source $i$, and $t$ is the time since the sources started emitting. At steady-state, this concentration equation simplifies to
-$$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i} $$
-The figure below shows results from the emitter1.txt Smoldyn simulation, in which an emitter at location $\mathbf{r}_1 = (-4.5,0,0)$ microns emits $q_1 = 500$ molecules per second, these molecules have a diffusion coefficient of $D = 3 \upmu \textrm{m}^2/\textrm{s}$, and the system is surrounded by a triangulated sphere that is centered at the origin and has radius 10 microns. Absorption to this sphere was set to make the molecules diffuse as though the system were unbounded. Close agreement between simulation and theory show that the algorithm works well.
+There is no perfect way to simulate unbounded diffusion with a finite system volume because molecules will necessarily diffuse out of the volume at some point, and then back into the volume later on. However, if we only care about the molecule concentrations, rather than identities of individual molecules, then it's possible for the system walls to absorb molecules with the correct probabilities so that the concentration distribution within the system is the same as it would be if diffusion actually were unbounded. This is the approach Smoldyn uses. With the \ttt{unbounded\_emitter} statement, the user tells Smoldyn that there is a point source of molecules at some particular location within the system, and that Smoldyn should modifiy the surface absorption probabilities so that those molecules will exhibit the same concentration distribution as they would if the system were unbounded.
 
+The example files in S7\_surfaces/unbounded\_diffusion illustrate and verify the use of a partially absorbing bounding surface to simulate effective unbounded diffusion. These files use the Smoldyn file sphere.txt, which describes a sphere; I created it by using Mathematica to define a sphere, triangulate it, and save it as a ``wrl'' (Virtual Reality Modeling Language) file. Then, I used the wrl2smol utility program to convert it to the Smoldyn-readable file sphere.txt. Other Smoldyn configuration files specify either one or multiple emitters within this sphere and then save concentration line profiles as functions of time. The theoretical concentration distributions for these situations is expressed with a slight extension of eq. 3.5b from Crank \cite{Crank_1979}, which leads to
+$$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i |} \erfc \frac{|\mathbf{r}-\mathbf{r}_i |}{2 \sqrt{Dt}}$$
+Here, $C(\mathbf{r})$ is the concentration at position $\mathbf{r}$, $q_i$ is the emission rate of source $i$, $D$ is the diffusion coefficient, $\mathbf{r}_i$ is the location of source $i$, and $t$ is the time since the sources started emitting. At steady-state, this concentration equation simplifies to
+$$C(\mathbf{r}) = \sum_i \frac{q_i}{4 \pi D |\mathbf{r} - \mathbf{r}_i|} $$
+
+The figure below shows results from the emitter1.txt Smoldyn simulation, in which an emitter at location $\mathbf{r}_1 = (-4.5,0,0)$ microns emits $q_1 = 500$ molecules per second, these molecules have a diffusion coefficient of $D = 3 \upmu \textrm{m}^2/\textrm{s}$, and the system is surrounded by a triangulated sphere that is centered at the origin and has radius 10 microns. Absorption to this sphere was set to make the molecules diffuse as though the system were unbounded.
 \begin{figure}[h]
 \centering
 \includegraphics[height=4 cm]{figures/image25.png}
@@ -1212,8 +1215,11 @@ The figure below shows results from the emitter1.txt Smoldyn simulation, in whic
 \caption{Output from emitter1.txt, showing quantitatively accurate effective unbounded diffusion.}
 \label{fig:emitter1}
 \end{figure}
+The left panel shows a snapshot from example emitter1.txt where it is seen that the emitter center is somewhat left of the sphere center and the sphere is triangulated. The right panel shows line profiles across the middle of the sphere, from (-10,0,0) to (10,0,0) at times $t = 0.3$ s (blue) and $t = 100$ s (red), with simulation data shown with points and theoretical results, from the equations above, in solid lines. Close agreement between simulation and theory show that the algorithm works well.
 
-The left panel shows a snapshot from example emitter1.txt where it is seen that the emitter center is somewhat left of the sphere center and the sphere is triangulated. The right panel shows line profiles across the middle of the sphere, from (-10,0,0) to (10,0,0) at times $t = 0.3$ s (blue) and $t = 100$ s (red), with simulation data shown with points and theoretical results, from the equations above, in solid lines.
+The theory for unbounded diffusion is described in section 6 of ref. \cite{Andrews_2009}. It considers the case of multiple emitters for which the $j$'th emitter has emission $q_j$ and is located at $\bm{r}_j$. For a surface panel located at $\bm{r}$ and with unit normal vector $\bm{\tilde{n}}$, the absorption coefficient is
+$$\kappa(\bm{r}) = \sum_j \frac{q_j (\bm{r}-\bm{r}_j) \cdot \bm{\tilde{n}}(\bm{r})}{|\bm{r}-\bm{r}_j|^3} \bigg/ \frac{q_j}{|\bm{r}-\bm{r}_j|}.$$
+Smoldyn simulates this with the same method that it uses for partial adsorption, but now there is no reverse process.
 
 
 % Reactions
@@ -1864,7 +1870,7 @@ Statement\\
 % Section: porting rate
 \section{Porting rate}
 
-Some care is required to make ports work accurately. In particular, a port behaves for a Smoldyn simulation as an absorbing surface. The absorption rate depends on the simulation time step and molecular rms step length, as I described in Andrews, Physical Biology, 2009.
+Some care is required to make ports work accurately. In particular, a port behaves for a Smoldyn simulation as an absorbing surface. The absorption rate depends on the simulation time step and molecular rms step length, as I described in ref. \cite{Andrews_2009}.
 
 
 % Rule-based modeling with BioNetGen
@@ -3372,7 +3378,7 @@ Defines a list of panels that neighbor the panel named $panel$. Surface-bound mo
 
 \item{\ttt{* unbounded\_emitter} $face\ species\ amount\ pos_0\ pos_1\ ... pos_{dim-1}$}
 
-Declares a molecular source for which this surface should absorb molecules so as to yield a concentration distribution that is the same as that which would arise with unbounded diffusion. This statement does not create the molecular source, but only sets the panel absorption coefficients to yield the correct concentrations, assuming the emitter is created elsewhere (such as with a command or a zeroth order reaction). $face$ is the side of the surface that faces the emitter, $species$ is the emitted molecular species, $amount$ is the emission rate (it only matters if there is more than one emitter for this surface and species, and then it is only the relative rates of the different emitters that matters), and $pos$ is the system-dimensional position of the emitter. This statement is designed to be used with all emitters strictly inside a closed surface and all of them with positive amount values; however, neither of these criteria are checked, so other options can be used although no promises are made regarding their behaviors.
+Declares a molecular source for which this surface should absorb molecules so as to yield a concentration distribution that is the same as that which would arise with unbounded diffusion. This statement does not create the molecular source, but only sets the panel absorption coefficients to yield the correct concentrations, assuming the emitter is created elsewhere (such as with a command or a zeroth order reaction). $face$ is the side of the surface that faces the emitter, $species$ is the emitted molecular species, $amount$ is the emission rate (it only matters if there is more than one emitter for this surface and species, and then it is only the relative rates of the different emitters that matters), and $pos$ is the system-dimensional position of the emitter. This statement is designed to be used with all emitters strictly inside a closed surface and all of them with positive amount values.
 
 \item{\ttt{* end\_surface}}
 
@@ -3724,6 +3730,10 @@ Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' fo
 \item{\ttt{* copy\_to} $filament$}
 
 Copy the current filament to $filament$, which is created here if it doesn't already exist; any prior data in $filament$ is overwritten.
+
+\item{\ttt{* sequence} $sequence$}
+
+Enter the sequence string for a filament.
 
 \item{\ttt{* end\_filament}}
 
@@ -5315,6 +5325,9 @@ TERMS AND CONDITIONS
 Prior to my starting Smoldyn, I attended an M-Cell workshop taught by Joel Stiles and Tom Bartoll, where I learned several of the concepts that became incorporated in the program. I started writing Smoldyn while I was a post-doc in Dennis Bray's laboratory at the University of Cambridge and funded by NIGMS grant GM64713. Further additions occurred during subsequent positions: a post-doc in Adam Arkin's laboratory at the Lawrence Berkeley National Laboratory (funded by the Genomes to Life Project of the US Department of Energy and an NSF post-doctoral fellowship in biological informatics), a visiting scientist position in Upi Bhalla's laboratory at the National Centre for Biological Research, in Bangalore (funded by the Computer Research Laboratories, Pune, India), a research fellow position at the Molecular Sciences Institute (funded by grants from the NIH and the MITRE corporation that were awarded to Roger Brent), a staff scientist position in Roger Brent's laboratory at the Fred Hutchinson Cancer Research Center (funded by MITRE contracts and NIH grants to Roger Brent), a visiting scientist position at the Newton Institute at the University of Cambridge (funded by a Simons fellowship), an adjunct professor position at Seattle University (no research funding), and a programmer position in Herbert Sauro's laboratory at the University of Washington.
 
 Several people have been instrumental to Smoldyn's development. Karen Lipkow and her students (University of Cambridge) have been dedicated users who have suggested numerous improvements. Nathan Addy (Molecular Sciences Institute) developed code for an AutoTools build system, a pthread parallelization, and LibMoleculizer rule-based modeling, all of which were worthwhile attempts but none are part of the current code. James Schaff and other members of the Virtual Cell team (University of Connecticut Health Center) added Smoldyn to Virtual Cell. Martin Robinson (Oxford University) developed hybrid simulation with lattice-based support. Roshan D'Souza and his student Denis Gladkov parallelized Smoldyn to run on GPUs and, independently, Lorenzo Dematt\'{e} also parallelized Smoldyn to run on GPUs; both versions were good proofs of principle but have not proven useful or been maintained. Dilawar Singh (National Centre for Biological Sciences and then on his own) developed Smoldyn's Python bindings and improved code and documentation distribution.
+
+\bibliographystyle{plain}
+\bibliography{SmoldynRefs}
 
 
 \end{document}

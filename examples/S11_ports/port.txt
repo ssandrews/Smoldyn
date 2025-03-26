@@ -27,11 +27,11 @@ mol 10 green u u u
 start_surface walls
     action both all reflect
     polygon both edge
-    panel rect -x 100 0 0 100 100
-    panel rect +y 0 0 0 100 100
-    panel rect -y 0 100 0 100 100
-    panel rect +z 0 0 0 100 100
-    panel rect -z 0 0 100 100 100
+    panel rect -x  100 0 0   100 100
+    panel rect +y  0 0 0     100 100
+    panel rect -y  0 100 0   100 100
+    panel rect +z  0 0 0     100 100
+    panel rect -z  0 0 100   100 100
 end_surface
 
 start_surface portsurf
@@ -40,12 +40,12 @@ start_surface portsurf
     color front 0.2 0 0 0.5
     color back black
     polygon both face
-    panel rect +x 0 0 0 100 100
+    panel rect +x  0 0 0   100 100
 end_surface
 
 start_port testport
-surface portsurf
-face front
+    surface portsurf
+    face front
 end_port
 
 #cmd e porttransport testport testport

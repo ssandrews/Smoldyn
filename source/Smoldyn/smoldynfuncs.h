@@ -403,6 +403,9 @@ int latticeruntimestep(simptr sim);
 // low level utilities
 int filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
 
+// computations on filaments
+double *filGetFilPosition(filamentptr fil,double frac,double *pos);
+
 // memory management
 void filssfree(filamentssptr filss);
 

@@ -2,7 +2,7 @@
 
 #graphics opengl
 #random_seed 2
-graphics opengl_better
+graphics opengl_good
 
 dim 3
 boundaries x 0 100 r
@@ -22,7 +22,7 @@ time_step 0.01
 frame_thickness 0
 
 start_filament_type tread
-color black
+color blue
 thickness 2
 dynamics none
 polygon edge
@@ -34,11 +34,29 @@ force_length 10
 force_angle 5 -1 -1
 end_filament_type
 
+random_filament tread:fil0 10  30 30 1  -1 0 0
 random_filament tread:fil1 10  10 50 1  0 0 0
 random_filament tread:fil2 10  20 50 1  1 0 0
 random_filament tread:fil3 10  10 40 1  -1 0 0
 random_filament tread:fil4 10  30 50 1  2 0 0
+
 random_filament tread:fil5 10  30 30 1  -1 0 0
+random_filament tread:fil6 10  10 50 1  0 0 0
+random_filament tread:fil7 10  20 50 1  1 0 0
+random_filament tread:fil8 10  10 40 1  -1 0 0
+random_filament tread:fil9 10  30 50 1  2 0 0
+
+random_filament tread:fil10 10  30 30 1  -1 0 0
+random_filament tread:fil11 10  10 50 1  0 0 0
+random_filament tread:fil12 10  20 50 1  1 0 0
+random_filament tread:fil13 10  10 40 1  -1 0 0
+random_filament tread:fil14 10  30 50 1  2 0 0
+
+random_filament tread:fil15 10  30 30 1  -1 0 0
+random_filament tread:fil16 10  10 50 1  0 0 0
+random_filament tread:fil17 10  20 50 1  1 0 0
+random_filament tread:fil18 10  10 40 1  -1 0 0
+random_filament tread:fil19 10  30 50 1  2 0 0
 
 
 start_surface bounds

@@ -19,13 +19,13 @@ time_start 0
 time_stop 50000
 time_step 0.02
 
-frame_thickness 1
+frame_thickness 0
 
 #mol 1 red u u
 
 start_filament_type template
 color blue
-thickness 2
+thickness 3
 polygon ve
 force_arrows 1 red
 kT 1
@@ -45,8 +45,8 @@ end_filament_type
 
 
 random_filament template:fil1 8  10 50 u
-random_filament template:fil2 49  20 50 u
-random_filament template:fil3 20  30 50 u
+#random_filament template:fil2 8  20 50 u
+#random_filament template:fil3 20  30 50 u
 #random_filament template:fil4 49  40 50 u
 #random_filament template:fil5 49  50 50 u
 

@@ -10,6 +10,7 @@
 \usepackage{gensymb}
 \usepackage{bm}
 \usepackage{graphicx}
+\usepackage{enumitem}
 
 \DeclareMathOperator{\asin}{asin}
 \DeclareMathOperator{\atantwo}{atan2}
@@ -293,6 +294,12 @@ none listed & many & Compiles and links code\\
 \subsection{Build errors}
 
 \begin{description}
+
+\item{\ttt{[ 97\%]}}
+\ttt{Linking CXX shared module .../\_smoldyn.cpython-313-darwin.so \\
+ld: can't write output file: .../\_smoldyn.cpython-313-darwin.so}
+
+This arose due to the incorrect Python version. My computer is currently setup to run Python 3.10, but CMake chose version 3.13. I fixed this by adding the configuration flag \ttt{-DPYTHON\_VERSION=3.10}.
 
 \item{\ttt{object file was built for newer `macOS' version than being linked}}
 
@@ -4003,8 +4010,6 @@ typedef struct segmentstruct {
     double ypr[3];      							// relative ypr angles
     double qrel[4];										// relative rotation quaternion
     double qabs[4];										// absolute rotation quaternion
-//    double dcm[9];      							// relative dcm
-//    double adcm[9];     							// absolute segment orientation
     } * segmentptr;
 \end{lstlisting}
 
@@ -4042,10 +4047,9 @@ typedef struct filamentstruct {
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
-    int maxmonomer;                     // number of monomers allocated
-    int nmonomer;                       // number of monomers
-    int frontmonomer;                   // index of front monomer
-    char* monomers;                     // monomer codes
+    int maxsequence;                     // num seq. chars. allocated
+    int nsequence;                       // number sequence characters
+    char* sequence;                     // sequence code
     } * filamentptr;
 \end{lstlisting}
 
@@ -4055,7 +4059,7 @@ Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segme
 
 Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{frontend} points to the filament that the front end attaches to and/or \ttt{backend} points to the filament that the back end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}.
 
-Along the length of each filament are equally spaced monomer codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxmonomer}, \ttt{nmonomer}, \ttt{frontmonomer}, \ttt{backmonomer}, and then the list \ttt{monomers}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between monomer codes and segments.\\
+Along the length of each filament are equally spaced sequence codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxsequence} and \ttt{nsequence}, and then the list \ttt{sequence}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between sequence code and segments.\\
 
 \subsubsection{Filament types}
 
@@ -4474,10 +4478,11 @@ This uses the same mobility value, $\mu$ as for displacement, although this is p
 These are described for the Euler method in which the displacement is directly proportional to the time step. The Runge-Kutta method is preferable but requires more force calculations. My machine learning method might be the best of both worlds (as of 9/24, I have not had success with it; see my document BeadDynamicsNotes.pdf).
 
 \subsection{Filament simulation approach}
+\label{sect:FilamentSimulationApproach}
 
 The steps in filament simulation are:
 
-(1) Compute the forces on the nodes and torques on the segments. Performed by \ttt{filComputeForces}. The forces (\ttt{fil->forces}) are stored in the lab reference frame and the segment torques (\ttt{fil->torques}) are stored in the local segment reference frame. These forces and segment torques arise from several independent sources. (a) Segment stretching and compression creates forces on both the front and back nodes for each segment and are given by eq. \ref{eq:FilStretchForce}. These don't affect segment torques. These are computed in \ttt{filAddStretchForces}. (b) There are ypr springs at each segment junction that create forces at that particular node, as well as at both neighboring nodes. They are computed by first finding the 3D local torque with eq. \ref{eq:BendTorque} (in \ttt{filBendTorque}), which is then converted to the lab frame with \ref{eq:LabFrameTorque} (still in \ttt{filBendTorque}). Combining this torque with the segment displacements yields the node forces and segment torques given in eq. \ref{eq:ForceTorqueSummary}. These are computed in \ttt{filAddBendForces}. (c) There are also forces from external influences, such as surfaces, which are not included yet. Another force is at filament ends from branches (d) Thermal forces can be computed from either eq. \ref{eq:ThermalForce1} or \ref{eq:ThermalForce2}, but I don't know which is better; the latter one is implemented in \ttt{filAddThermalForces} but is not included in the total force calculation yet. Although not done yet, it might be helpful to characterize forces by their stiffness, computed as the derivative of the force with respect to the displacement.
+(1) Compute the forces on the nodes and torques on the segments using the data stored in \ttt{fil->nodes} and \ttt{segment->ypr}. Performed by \ttt{filComputeForces}. The forces (\ttt{fil->forces}) are stored in the lab reference frame and the segment torques (\ttt{fil->torques}) are stored in the local segment reference frame. These forces and segment torques arise from several independent sources. (a) Segment stretching and compression creates forces on both the front and back nodes for each segment and are given by eq. \ref{eq:FilStretchForce}. These don't affect segment torques. These are computed in \ttt{filAddStretchForces}. (b) There are ypr springs at each segment junction that create forces at that particular node, as well as at both neighboring nodes. They are computed by first finding the 3D local torque with eq. \ref{eq:BendTorque} (in \ttt{filBendTorque}), which is then converted to the lab frame with \ref{eq:LabFrameTorque} (still in \ttt{filBendTorque}). Combining this torque with the segment displacements yields the node forces and segment torques given in eq. \ref{eq:ForceTorqueSummary}. These are computed in \ttt{filAddBendForces}. (c) There are also forces from external influences, such as surfaces, which are not included yet. Another force is at filament ends from branches (d) Thermal forces can be computed from either eq. \ref{eq:ThermalForce1} or \ref{eq:ThermalForce2}, but I don't know which is better; the latter one is implemented in \ttt{filAddThermalForces} but is not included in the total force calculation yet. Although not done yet, it might be helpful to characterize forces by their stiffness, computed as the derivative of the force with respect to the displacement.
 
 (2) Perform node displacement and segment rotation, which is performed by \ttt{filEulerDynamics}. The nodes move in direct proportion to the applied forces, given in eq. \ref{eq:NodeDisplacement}. Also, the segment roll values move in direct proportion to the applied segment torques, given in eq. \ref{eq:SegmentRoll}. These latter values are stored in the segment ypr vectors, although recognizing that the yaw and pitch values are no longer current.
 
@@ -4486,7 +4491,7 @@ The steps in filament simulation are:
 
 \subsection{Filament math - numbers}
 
-According to Andrews, 2014, a filament in the Angle-Biased Chain (ABC) model with mean segment lengths of $b$ and pitch and yaw force constants of $k_{\theta}$ and $k_{\phi}$ has a persistence length of
+According to my 2014 paper \cite{Andrews_2014}, a filament in the Angle-Biased Chain (ABC) model with mean segment lengths of $b$ and pitch and yaw force constants of $k_{\theta}$ and $k_{\phi}$ has a persistence length of
 $$P=\frac{2 b k_{\theta} k_{\phi}}{k_BT (k_{\theta} + k_{\phi})}$$
 Suppose this filament is rotationally isotropic, so $k_{\theta} = k_{\phi}$. This simplifies the persistence length to
 $$P=b \frac{k_{\phi}}{k_BT}$$
@@ -4502,6 +4507,7 @@ As much as possible, functions are declared locally rather than in the smoldynfu
 \begin{description}
 
 \item[\underline{Enumerations}]
+(No changes to data structures.)
 
 \item[\ttt{char *filFD2string(enum FilamentDynamics fd, char *string)}]
 \hfill \\
@@ -4513,14 +4519,18 @@ Local. Converts filament dynamics string to enumerated dynamics type. Returns \t
 
 
 \item[\underline{Low level utilities}]
+(No changes to data structures.)
 
 \item[\ttt{int}]
-\ttt{filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname)}
+\ttt{filReadFilName(const simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname)}
 \hfill \\
 Reads a filament name in \ttt{str} and returns the filament type in \ttt{filtypeptr}, the filament in \ttt{filptr}, and the filament name in \ttt{filname}. This accepts a name in several possible formats. (1) It allows the format ``filtype:filname'', where a colon separates the type name from the filament name; if the filament type is recognized but not the filament name, then this sends back the filament type and returns -5 (see below for return codes). (2) If the filament type is known, then it can be sent in using \ttt{filtypeptr}, and only that type will be searched for the filament name. (3) If the filament type is not known, then this searches all filament types and, if found, returns the type in \ttt{filtypeptr} and the filament in \ttt{filptr}.
 
 Note that \ttt{filtypeptr} and \ttt{filptr} cannot be \ttt{NULL} and, the value of \ttt{filtypeptr} must equal \ttt{NULL} if the filament type is unknown or to a filament type if the type is known. Returns 0 for success, -1 for no \ttt{str}, -2 for no filaments have been defined yet, -3 for \ttt{str} is unreadable, -4 for unrecognized filament type name, or -5 for unrecognized filament name.
 
+\item[\ttt{int filGetFilIndex(const simptr sim,const char *name,int *ftptr)}]
+\hfill \\
+Returns the index of the filament named \ttt{name} or -1 if not found; also, returns the filament type in \ttt{ftptr}. This searches through all filament types for the filament with this name. If multiple filaments with the same name are found, this returns -2. \ttt{ftptr} should be sent in pointing to a memory address, but the contents are unimportant. Example: \ttt{filGetFilIndex(sim,"fil1",\&ft)}.
 
 \item[\ttt{double}]
 \ttt{filRandomLength(const filamenttypeptr filtype, double thickness, double sigmamult)}
@@ -4541,6 +4551,11 @@ For 2D space, this sets the last two elements of \ttt{angle} to 0.
 For segment 0, angles are chosen uniformly over all possibilities. For 2D, the returned angle, which is in the first element only (yaw) is relative to the system $\hat{\bm{x}}$ vector.
 
 \item[\underline{Computations on filaments}]
+(No changes to data structures.)
+
+\item[\ttt{double *filGetFilPosition(const filamentptr fil,double frac,double *pos)}]
+\hfill \\
+Returns the coordinates of the point that is \ttt{frac} fraction of the pathlength along the filament, putting the results in \ttt{pos} and also returning them directly. This computes the total filament pathlength, then finds the segment that is \ttt{frac} distance along the filament, and then interpolates within the segment to find the coordinates. This function finds the position as a fraction of the actual pathlength, and not of the relaxed pathlength.
 
 \item[\ttt{double filStretchEnergy(const filamentptr fil, int seg1, int seg2)}]
 \hfill \\
@@ -4558,23 +4573,23 @@ The first term in the sum computes the average thickness of the segment in front
 
 \item[\ttt{void filBendTorque(const filamentptr fil,int node,double *torque)}]
 \hfill \\
-Computes the bending torque vector for node number \ttt{node}, which is the front of segment \ttt{node}, in filament \ttt{fil}. The \ttt{torque} vector needs to be pre-allocated. This uses eq. \ref{eq:BendTorque} and then rotates the torque with the absolute quaternion of the prior segment to express the torque in absolute coordinates, which is how it's returned ($\bm{\tau}_L = \bm{B}^T\bm{\tau}$).
+Computes the bending torque vector for node number \ttt{node}, which is the front of segment \ttt{node}, in filament \ttt{fil}. This uses the data stored in \ttt{segment->ypr}. The \ttt{torque} vector needs to be pre-allocated. This uses eq. \ref{eq:BendTorque} and then rotates the torque with the absolute quaternion of the prior segment to express the torque in absolute coordinates, which is how it's returned (in matrix notation, $\bm{\tau}_L = \bm{B}^T\bm{\tau}$).
 
 
-\item[\underline{Memory management}]
+\item[\underline{Memory management}] (Allocate, free, and initialize data structures.)
 
-\item[\ttt{segmentptr segmentalloc()}]
+\item[\ttt{segmentptr filSegmentAlloc()}]
 \hfill \\
 Allocates memory for a single segment and initializes this segment. Returns a pointer to this segment, or \ttt{NULL} if memory could not be allocated. The segment length is initialized to 0 to indicate that it hasn't been set up yet, and the thickness is initialized to 1, which is good default value. \ttt{xyzfront} and \ttt{xyzback} are set to \ttt{NULL}. Ypr angles are initialized to 0 and direction cosine matrices to unit matrices.
 
-\item[\ttt{void segmentfree(segmentptr segment)}]
+\item[\ttt{void filSegmentFree(segmentptr segment)}]
 \hfill \\
 Frees memory for a single segment.
 
 \item[\ttt{filamentptr}]
-\ttt{filalloc(filamentptr fil, int maxseg, int maxbranch, int maxmonomer)}
+\ttt{filalloc(filamentptr fil, int maxseg, int maxbranch, int maxsequence)}
 \hfill \\
-Allocates or expands a filament, returning a pointer to the result. This does not shrink any elements of filaments. Enter \ttt{maxseg} to expand the number of segments, \ttt{maxbranch} to expand the number of branches off of this filament, and \ttt{maxmonomer} to expand the monomer list. This returns \ttt{NULL} if memory could not be allocated but does not free things, which can cause a minor memory leak, but is better than risking a segfault and easier than a sophisticated analysis of what can and cannot be freed.
+Allocates or expands a filament, returning a pointer to the result. This does not shrink any elements of filaments. Enter \ttt{maxseg} to expand the number of segments, \ttt{maxbranch} to expand the number of branches off of this filament, and \ttt{maxsequence} to expand the sequence list. Any of these can be set to 0 to ignore this component. This returns \ttt{NULL} if memory could not be allocated but does not free things, which can cause a minor memory leak, but is better than risking a segfault and easier than a sophisticated analysis of what can and cannot be freed.
 
 \item[\ttt{void filfree(filamentptr fil)}]
 \hfill \\
@@ -4598,7 +4613,7 @@ Allocates or expands a filament superstructure for a maximum size of \ttt{maxtyp
 Fres a filament superstructure and all of the structures within it.
 
 
-\item[\underline{Data structure output}]
+\item[\underline{Data structure output}] (No changes to data structures.)
 
 \item[\ttt{void filoutput(const filamentptr fil)}]
 \hfill \\
@@ -4619,11 +4634,13 @@ Writes filament information to a file in Smoldyn format for loading in again lat
 \hfill \\
 Checks filament parameters to make sure they are all reasonable. NOT WRITTEN YET.
 
-\item[\underline{Filament manipulation}]
+\item[\underline{Sequences}]
 
-\item[\ttt{int filGetFilIndex(simptr sim,const char *name,int *ftptr)}]
+\item[\ttt{int filSetSequence(filamentptr fil,char *str)}]
 \hfill \\
-Returns the index of the filament named \ttt{name} or -1 if not found; also, returns the filament type in \ttt{ftptr}. This searches through all filament types for the filament with this name. If multiple filaments with the same name are found, this returns -2. \ttt{ftptr} should be sent in pointing to a memory address, but the contents are unimportant. Example: \ttt{filGetFilIndex(sim,"fil1",\&ft)}.
+Sets the filament sequence to \ttt{str}, overwriting any previous sequence. This allocates memory and updates pointers as needed.
+
+\item[\underline{Filament manipulation}]
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
@@ -4799,20 +4816,24 @@ Reads multiple lines of user input from within a filament type block, calling \t
 \hfill \\
 Reads multiple lines of user input from within a filament block, calling \ttt{filreadstring} with each line.
 
+\item[\underline{Filament interactions}]
+
+\item[\ttt{int}]
+\ttt{filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr)}
+\hfill \\
+Tests if segment \ttt{segment} crosses any surface in the simulation. Returns 0 if not and 1 if so. If so, then this returns a pointer to the panel that is crossed in \ttt{pnlptr}. Many more details about the crossing could be returned, such as where along the segment the crossing is, if there are multiple crossings with curved panels, etc., but these are not being returned at present. This function scans through the possible surface panels and checks each with \ttt{lineXpanel}. THIS IS VERY INEFFICIENT AND SHOULD USE BOXES.
+
+\item[\ttt{int}]
+\ttt{filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr)}
+\hfill \\
+Tests if segment \ttt{segment} crosses any filament in the simulation. Returns 0 if not and 1 if so. If so, then this returns a pointer to the filament that is crossed in \ttt{filptr}. More details about the crossing could be returned, such as which segment within the filament, but this is not supported at present. This function scans through all filaments in the simulation and tests for crossing for each one, meaning that the segment radius overlaps the radius of the other filament (this uses the \ttt{thk} element as the radius). This ignores possible overlaps with the self-segment, along with its nearest neighbor on either side. THIS IS VERY INEFFICIENT AND SHOULD USE BOXES.
+
 
 \item[\underline{Core simulation functions}]
 
 \item[\ttt{void filNodes2Angles(filamentptr fil)}]
 \hfill \\
-Computes angle information for a filament, which are this function's output, from its node positions, which are the input. In addition, for 3D filaments, local roll values in \ttt{segment->ypr[2]} are also treated as input values. This computes segment lengths, ypr values, local dcms, and absolute dcms.
-
-\item[\ttt{int filSegmentXSurface(simptr sim,segmentptr segment,panelptr *pnlptr)}]
-\hfill \\
-Tests if segment \ttt{segment} crosses any surface in the simulation. Returns 0 if not and 1 if so. If so, then this returns a pointer to the panel that is crossed in \ttt{pnlptr}. Many more details about the crossing could be returned, such as where along the segment the crossing is, if there are multiple crossings with curved panels, etc., but these are not being returned at present. This function scans through the possible surface panels and checks each with \ttt{lineXpanel}.
-
-\item[\ttt{int filSegmentXFilament(simptr sim,segmentptr segment,filamentptr *filptr)}]
-\hfill \\
-Tests if segment \ttt{segment} crosses any filament in the simulation. Returns 0 if not and 1 if so. If so, then this returns a pointer to the filament that is crossed in \ttt{filptr}. More details about the crossing could be returned, such as which segment within the filament, but this is not supported at present. This function scans through all filaments in the simulation and tests for crossing for each one, meaning that the segment radius overlaps the radius of the other filament (this uses the \ttt{thk} element as the radius). This ignores possible overlaps with the self-segment, along with its nearest neighbor on either side.
+Computes angle information for a filament, which are this function's output, from its node positions, which are the input. In addition, for 3D filaments, local roll values in \ttt{segment->ypr[2]} are also treated as input values. This uses information in the segment front and back elements (\ttt{xyzfront} and \ttt{xyzback}, which are the same memory elements as in \ttt{fil->nodes}) to compute segment lengths (\ttt{len}), ypr values (\ttt{ypr}), local quaternions (\ttt{qrel}), and absolute quaternions (\ttt{qabs}).
 
 \item[\ttt{int}]
 \ttt{filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints)}
@@ -4825,7 +4846,7 @@ This performs one step of treadmilling for filament \ttt{fil} at the \ttt{endcha
 
 \item[\ttt{void filAddStretchForces(filamentptr fil)}]
 \hfill \\
-Computes filament stretching (and compression) forces and adds them to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. These forces do not affect segment torsion. They are computed from eq. \ref{eq:FilStretchForce}.
+Computes filament stretching (and compression) forces using the node positions in \ttt{fil->nodes}. This adds forces to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. These forces do not affect segment torsion. They are computed from eq. \ref{eq:FilStretchForce}.
 
 \item[\ttt{void filAddThermalForces(filamentptr fil)}]
 \hfill \\
@@ -4833,19 +4854,74 @@ Computes thermal forces acting on filament nodes and adds them to any prior valu
 
 \item[\ttt{void filAddBendForces(filamentptr fil)}]
 \hfill \\
-Computes filament bending forces due to ypr springs and adds them to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. For 3D filaments, bending forces can create torsion for individual segments, which are added to any prior values in \ttt{fil->torques}. These results are computed from eqs. \ref{eq:ForceTorqueSummary}.
+Computes filament bending forces due to ypr springs using the node positions in \ttt{fil->nodes}. This adds forces to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. For 3D filaments, bending forces can create torsion for individual segments, which are added to any prior values in \ttt{fil->torques}. These results are computed from eqs. \ref{eq:ForceTorqueSummary}.
 
 \item[\ttt{void filComputeForces(filamentptr fil)}]
 \hfill \\
-Computes all forces and segment torques acting on filament \ttt{fil}. This clears the \ttt{fil->forces} and \ttt{fil->torques} vectors and then calls \ttt{filAddStretchForces}, \ttt{filAddBendForces}, and potentially other functions to compute the complete forces acting on the filament. The current version is adequate for basic operation but will need expansion for surface interactions, molecule interactions, thermal interactions, etc. NEEDS WORK.
+Computes all forces and segment torques acting on filament \ttt{fil} using the node positions in \ttt{fil->nodes}. This clears the \ttt{fil->forces} and \ttt{fil->torques} vectors and then calls \ttt{filAddStretchForces}, \ttt{filAddBendForces}, and potentially other functions to compute the complete forces acting on the filament. The current version is adequate for basic operation but will need expansion for surface interactions, molecule interactions, thermal interactions, etc. NEEDS WORK.
 
-\item[\ttt{void filEulerDynamics(simptr sim,filamentptr fil)}]
+\item[\ttt{void filStepDynamics(filamentptr fil,int dim,double dtmu,int in,int out)}]
 \hfill \\
-Integrates filament dynamics over one time step using the Euler method.
+Computes one step for explicit dynamics simulations, which is essentially an Euler step but is also used for RK2 and RK4 functions. \ttt{fil} is the filament, \ttt{dim} is the system dimensionality and \ttt{dtmu} is the time step times the mobility for this particular step; this is used as is for Euler and divided by various values for RK2 and RK4. This reads from the \ttt{in} node positions, and related data, and writes to the \ttt{out} node positions, and related data. This adds $\mu \Delta t \bm{F}$ to the input node positions. For 3D, this also uses the torque of the first segment to update its orientation, and uses the torques of other segments to update their orientations. See Section \ref{sect:FilamentSimulationApproach}. This works with \ttt{nodes} if \ttt{in} is 0, \ttt{nodes1} if \ttt{in} is 1, and \ttt{nodes2} if \ttt{in} is 2, and likewise for \ttt{out}.
+
+\item[\ttt{void filCopyNodesToNodes1(filamentptr fil,int dim)}]
+\hfill \\
+This is only used for the RK2 and RK4 integration methods. It copies values from the \ttt{nodes} element of the filament structure to the \ttt{nodes1} element in order to save the values. For 3D filaments, it also copies the first segment ``up'' vector and roll value.
+
+\item[\ttt{void filEulerDynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Integrates filament dynamics over one time step using the Euler method. This loops over all filaments of the filament type. For each one, it computes the forces using \ttt{filComputeForces} which get stored in \ttt{fil->forces}. It then updates the node positions with the \ttt{filStepDynamics} function. At the end, it converts the node positions back to angles.
+\begin{longtable}[c]{l}
+Euler \\
+\hline
+\ttt{force} = stretch + bend forces \\
+\ttt{nodes} += $\mu dt $ \ttt{force} \\
+\ttt{ypr} from \ttt{nodes}
+\end{longtable}
+
+\item[\ttt{void filRK2Dynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Integrates filament dynamics over one time step using the RK2 method. This loops over all filaments of the filament type.
+\begin{longtable}[c]{l}
+RK2 \\
+\hline
+(1) \ttt{force} = stretch + bend forces \\
+\ttt{nodes1} = \ttt{nodes} \\
+\ttt{nodes} += $\mu dt/2 $ \ttt{force} \\
+\ttt{ypr} from \ttt{nodes} \\
+(2) \ttt{force} = stretch + bend forces \\
+\ttt{nodes} = \ttt{nodes1} + $\mu dt $ \ttt{force} \\
+\ttt{ypr} from \ttt{nodes}
+\end{longtable}
+
+\item[\ttt{void filRK4Dynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Integrates filament dynamics over one time step using the RK4 method. This loops over all filaments of the filament type.
+\begin{longtable}[c]{l}
+RK4 \\
+\hline
+(1) \ttt{force} = stretch + bend forces \\
+\ttt{nodes1} = \ttt{nodes} \\
+\ttt{nodes} += $\mu dt/2 $ \ttt{force} \\
+\ttt{nodes2} = \ttt{nodes1} + $\mu dt/6$ \ttt{force}\\
+\ttt{ypr} from \ttt{nodes} \\
+(2) \ttt{force} = stretch + bend forces \\
+\ttt{nodes} = \ttt{nodes1} + $\mu dt/2$ \ttt{force} \\
+\ttt{nodes2} += $\mu dt/3$ \ttt{force} \\
+\ttt{ypr} from \ttt{nodes} \\
+(3) \ttt{force} = stretch + bend forces \\
+\ttt{nodes} = \ttt{nodes1} + $\mu dt$ \ttt{force} \\
+\ttt{nodes2} += $\mu dt/3$ \ttt{force} \\
+\ttt{ypr} from \ttt{nodes} \\
+(4) \ttt{force} = stretch + bend forces \\
+\ttt{nodes} = \ttt{nodes2} + $\mu dt/6$ \ttt{force} \\
+\ttt{ypr} from \ttt{nodes}
+\end{longtable}
+
 
 \item[\ttt{int filDynamics(simptr sim)}]
 \hfill \\
-Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler integration method. It will need work for additional dynamics.
+Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, and RK4 integration methods.
 
 \end{description}
 
@@ -7595,6 +7671,9 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 
 \subsection{Modifications for version 2.75 (not released yet)}
 \item The functions \ttt{checksurfaces}, \ttt{checksurfaces1mol}, and \ttt{dosurfinteract} all have checks to make sure that molecules are being placed correctly, putting them back to their prior location if not. Downgraded these errors to warnings, increased thresholds from 50 to 100 failures, and added debugging output during verbose simulations. Found that the \ttt{checksurfaces} warning can trigger if a molecule starts just inside a concave surface and bounces right along the inside of the surface; this triggers a warning and the molecule is moved back, but is actually simulated correctly.
+\item Improved error messages and the manual for unbounded emitters. A user declared an emitter at the corner of a box of surfaces, and it was unclear why it didn't work correctly. It turned out that the unbounded emitter was supposed to be inside the box, not at the corner.
+\item Cleaned up filament code, including particularly the Euler, RK2, and RK4 integration functions.
+\item Renamed ``monomer codes'' in filaments to ``sequence code''.
 
 \end{itemize}
 
@@ -7713,5 +7792,8 @@ For Windows, FROMDIR should be the current working directory. Also the DESTDIR t
 \item Inclusion of continuous concentrations for chemical species that are abundant. Ideally, these concentrations should be updated with ODEs, PDEs, spatial- or non-spatial Langevin dynamics, or spatial- or non-spatial Gillespie algorithm, according to the user's choice.
 \item Derive theory for bimolecular reaction rates with probabilistic reactions.
 \end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{SmoldynRefs}
 
 \end{document}

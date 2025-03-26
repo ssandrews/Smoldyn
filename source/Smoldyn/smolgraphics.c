@@ -1095,11 +1095,12 @@ void RenderFilaments(simptr sim) {
 	filamentssptr filss;
 	filamenttypeptr filtype;
 	filamentptr fil;
-	int f,vtx,graphics,ft;
-	double *point,zmid,*pointback,vect[3],vect2[3],axis[3],theta,scale;
+	int f,vtx,graphics,ft,seqi;
+	double *point,zmid,*pointback,vect[3],vect2[3],axis[3],theta,scale,pos[3];
 	enum DrawMode drawmode,dm;
 	GLfloat glfvect[4];
 	double blackcolor[4]={0,0,0,1};
+	char str[STRCHAR];
 
 	filss=sim->filss;
 	if(!filss) return;
@@ -1235,7 +1236,18 @@ void RenderFilaments(simptr sim) {
 						vect[2]=point[2]+scale*fil->forces[vtx][2];
 						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
 						glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),(GLdouble)(vect[2])); }}
-				glEnd(); }}}
+				glEnd(); }
+
+			gl2SetColor('K');		//?? Need to be able to set the color
+			for(f=0;f<filtype->nfil;f++) {
+				fil=filtype->fillist[f];
+				if(fil->nsequence) {
+					for(seqi=0;seqi<fil->nsequence;seqi++) {
+						str[0]=fil->sequence[seqi];
+						str[1]='\0';
+						filGetFilPosition(fil,((double)seqi+0.5)/(double)(fil->nsequence),pos);
+						pos[2]-=fil->segments[0]->thk;	//?? quick hack but might be worth keeping
+						gl2DrawString3D(pos,GLUT_BITMAP_HELVETICA_12,str); }}}}}
 
 //					for(vtx=0;vtx<fil->nseg;vtx++)
 //						gl2drawtwistprism(fil->px[vtx],fil->px[vtx+1],fil->nface,fil->po[vtx],twist,fil->radius,fil->facecolor);

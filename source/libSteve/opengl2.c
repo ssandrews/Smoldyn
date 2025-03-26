@@ -1141,6 +1141,16 @@ void gl2DrawTextD(double x,double y,double *color,void *font,char *string,int al
 	return; }
 
 
+/* gl2DrawString3D */
+void gl2DrawString3D(double *pos,void *font,char *string) {	//?? Need to document
+	int length,i;
+
+	glRasterPos3d((GLdouble)pos[0],(GLdouble)pos[1],(GLdouble)pos[2]);
+	length=strlen(string);
+	for(i=0;i<length;i++)
+		glutBitmapCharacter(font,string[i]);
+	return; }
+
 
 /* gl2PlotData */
 // style is 3 characters per data set: style,width,color
