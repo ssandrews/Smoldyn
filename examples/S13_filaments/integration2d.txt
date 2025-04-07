@@ -90,6 +90,7 @@ filament f3 translate + 0 100
 #filament_type template standard_angle 0.3
 
 cmd B pause
+#cmd E pause
 #cmd E printFilament template fil1 xabf stdout
 
 end_file

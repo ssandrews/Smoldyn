@@ -3719,9 +3719,10 @@ Remove one segment from end $end$ of the filament (``front'' or ``back'').
 
 This modifies the length, relative angle, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For and angle option with 3D, enter 3 values for yaw, pitch, and roll. Finally, for the length and angle options, enter $end$ as either ``front'' or ``back'' for which filament end is moved.
 
-\item{\ttt{* random\_segments} $number$ $[x$ $y$ $z]$ $[thickness]$}
+\item{\ttt{* random\_segments} $number$ $[x$ $y$ $\phi]$ $[thickness]$}
+\item{\ttt{* random\_segments} $number$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$}
 
-Add $number$ of random segments to the filament.
+Add $number$ of random segments to the filament. If the filament doesn't have any segments yet, then enter the front position in $(x,y)$ for 2D or $(x,y,z)$ for 3D and also enter the front segment angle in $\phi$ for 2D and $(\phi,\theta,\psi)$ for 3D. These position and angle values can be `u' for uniform distributions. The thickness parameter is optional.
 
 \item{\ttt{* translate} $symbol$ $x$ $y$ $z$}
 

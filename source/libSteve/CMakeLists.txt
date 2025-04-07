@@ -8,6 +8,7 @@ set(SRC_FILES
     random2.c
     Rn.c
     RnSort.c
+    RnSparse.c
     rxnparam.c
     SimCommand.c
     Sphere.c

@@ -3121,6 +3121,7 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 	filamenttypeptr filtype;
 	filamentptr fil;
 	segmentptr segment;
+	filamentworkptr filwork;
 	char nm1[STRCHAR],nm2[STRCHAR],code[STRCHAR];
 	int itct,i1,er,seg;
 
@@ -3140,7 +3141,8 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
 	SCMDCHECK(er!=-1,"file name not recognized");
 
-	if(strchr(code,'f'))
+	filwork=fil->filwork;
+	if(strchr(code,'f') && filwork)
 		filComputeForces(fil);
 
 	scmdfprintf(cmd->cmds,fptr,"%g %s:%s\n",sim->time,filtype->ftname,fil->filname);
@@ -3156,17 +3158,17 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 				scmdfprintf(cmd->cmds,fptr," a=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3]); }
 			if(strchr(code,'b')) {
 				scmdfprintf(cmd->cmds,fptr," b=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]); }
-			if(strchr(code,'f')) {
+			if(strchr(code,'f') && filwork) {
 				if(sim->dim==2)
-					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g)",fil->forces[seg][0],fil->forces[seg][1]);
+					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g)",filwork->forces[seg][0],filwork->forces[seg][1]);
 				else
-					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g,%1.3g)",fil->forces[seg][0],fil->forces[seg][1],fil->forces[seg][2]); }
+					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g,%1.3g)",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }
 			scmdfprintf(cmd->cmds,fptr,"\n"); }
-		if(strchr(code,'f')) {
+		if(strchr(code,'f') && filwork) {
 			if(sim->dim==2)
-				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g)\n",fil->forces[seg][0],fil->forces[seg][1]);
+				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1]);
 			else
-				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g,%1.3g)\n",fil->forces[seg][0],fil->forces[seg][1],fil->forces[seg][2]); }}
+				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }}
 
 	scmdflush(fptr);
 	return CMDok; }

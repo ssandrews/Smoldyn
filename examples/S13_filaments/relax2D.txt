@@ -2,12 +2,12 @@
 
 #units nm us zJ
 
-#random_seed 2
+#random_seed 4
 graphics opengl_good
 
 dim 2
-boundaries x -100 100 r
-boundaries y -100 100 r
+boundaries x -20 20 r
+boundaries y -20 20 r
 
 species red
 
@@ -29,11 +29,11 @@ thickness 3
 polygon ve
 force_arrows 1 red
 kT 1
-dynamics RK2
+dynamics EulerMat
 standard_length 5
 standard_angle 0
 force_length 1
-force_angle 10
+force_angle 5
 mobility 10
 end_filament_type
 
@@ -44,7 +44,7 @@ end_filament_type
 #end_filament
 
 
-random_filament template:fil1 8  10 50 u
+random_filament template:fil1 8  0 0 u
 #random_filament template:fil2 8  20 50 u
 #random_filament template:fil3 20  30 50 u
 #random_filament template:fil4 49  40 50 u

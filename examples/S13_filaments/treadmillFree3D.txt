@@ -1,0 +1,49 @@
+# Filaments
+
+graphics opengl
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 2 r
+
+time_start 0
+time_stop 10000
+time_step 0.01
+
+#frame_thickness 0
+
+start_filament_type black
+color black
+thickness 1
+polygon edge
+kT 0.1
+treadmill_rate 1
+standard_length 1
+standard_angle 0 0 0
+force_length 1
+force_angle 1 1 1
+end_filament_type
+
+
+start_filament black:template
+random_segments 15  50 50 1  u u u
+end_filament
+
+
+filament template copy_to fil2
+filament template copy_to fil3
+filament template copy_to fil4
+filament template copy_to fil5
+filament template copy_to fil6
+filament template copy_to fil7
+filament template copy_to fil8
+filament template copy_to fil9
+
+cmd B pause
+
+
+end_file
+
+
+

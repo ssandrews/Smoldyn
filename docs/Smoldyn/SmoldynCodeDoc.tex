@@ -3978,50 +3978,70 @@ The functions here are designed for filaments in either 2D or 3D space. However,
 
 \subsection{Data structures declared in smoldyn.h}
 
-Filaments are defined in a heirarchical fashion. At the top level, there is one filament superstructure which contains a list of filament types that are used in the simulation. Below that are multiple filament type structures. For example, actin in the cytoplasm might be one type; another might be double-stranded DNA, and yet another is single-stranded DNA. Each filament type contains multiple individual filaments, which is the next level down, each of which looks and behaves identically. Each filament is composed of a list of segments. Segments can vary in lengths and thicknesses.
+Filaments are defined in a heirarchical fashion. At the top level, there is one filament superstructure which contains a list of filament types that are used in the simulation. Below that are multiple filament type structures. For example, actin in the cytoplasm might be one type; another might be double-stranded DNA, and yet another is single-stranded DNA. Each filament type contains multiple individual filaments, which is the next level down, each of which looks and behaves identically. Each filament is composed of a list of segments. Segments can vary in lengths and thicknesses. Each filament also contains a data structure of ``working data'' that is used for dynamics integration.
 
 \subsubsection{Enumerations}
 
 \begin{lstlisting}
-enum FilamentDynamics {FDnone, FDeuler,FDRK2,FDRK4};
+enum FilamentDynamics {FDnone, FDeuler, FDRK2, FDRK4, FDeulermat, FDimplicit};
 \end{lstlisting}
 
-The filament dynamics enumeration describes what algorithms to use for its dynamics. They are summarized below; this list will be expanded.
+The filament dynamics enumeration describes what algorithms to use for its dynamics. They are summarized below.
 
 \begin{longtable}[c]{ll}
 Dynamics & Description\\
 \hline
-none & filament is rigid and does not move\\
-euler & Euler ODE integration\\
+None & filament is rigid and does not move\\
+Euler & Euler ODE integration\\
 RK2 & 2nd order Runge-Kutta integration \\
-RK4 & 4th order Runge-Kutta integration 
+RK4 & 4th order Runge-Kutta integration \\
+EulerMat & Euler integration with matrix method \\
+Implicit & Euler implicit integration
 \end{longtable}
 
 \subsubsection{Segments}
 
 \begin{lstlisting}
 typedef struct segmentstruct {
-    struct filamentstruct* fil;				// owning filament
+    struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
     double *xyzfront;                 // Coords. for segment front
     double *xyzback;                  // Coords. for segment back
-    double len;         							// segment length
-    double thk;         							// thickness of segment
-    double ypr[3];      							// relative ypr angles
-    double qrel[4];										// relative rotation quaternion
-    double qabs[4];										// absolute rotation quaternion
-    } * segmentptr;
+    double len;                       // segment length
+    double thk;                       // thickness of segment
+    double ypr[3];                    // relative ypr angles
+    double qrel[4];                   // relative rotation quaternion
+    double qabs[4];                   // absolute rotation quaternion
+} * segmentptr;
 \end{lstlisting}
 
 Segments start by listing the filament that owns them. Then they have their own position within the filament in \ttt{index}; a pointer to the same segment would be found with \ttt{segment->fil->segments[segment->index]} and the result would be identical to \ttt{segment}.
 
 \ttt{xyzfront} is the $x, y, z$ coordinate of the segment starting point and \ttt{xyzback} is the $x, y, z$ coordinate of the segment end point. These vectors are not owned by the segment but point to vectors in the \ttt{nodes} element of the owning filament. The back of one segment is the identical vector (same memory address) as the front of the next segment. \ttt{len} is the segment length and \ttt{thk} is the segment thickness.
 
-\ttt{ypr} is the relative yaw, pitch, and roll angle for the segment relative to the orientation of the prior segment. It is largely ignored for the first segment, whose orientiation is instead given with \ttt{seg0dcm} in the filament data structure. \ttt{qrel} and \ttt{qabs} are rotation quaternions that express the segment's orientation, relative to the prior segment and in the system coordinate system respectively. Although commented out now, \ttt{dcm} and \ttt{adcm} were the direction cosine matrix for the segment relative to the orientation of the one before it, and in the system reference frame, respectively. Identical information is contained in \ttt{ypr}, \ttt{qrel}, and \ttt{qabs} (and, previously, in \ttt{dcm} and \ttt{adcm}), but the redundancy is here for faster computation.
+\ttt{ypr} is the relative yaw, pitch, and roll angle for the segment relative to the orientation of the prior segment. It is largely ignored for the first segment, whose orientiation is instead given with \ttt{seg0dcm} in the filament data structure. \ttt{qrel} and \ttt{qabs} are rotation quaternions that express the segment's orientation, relative to the prior segment and in the system coordinate system respectively. Identical information is contained in \ttt{ypr}, \ttt{qrel}, and \ttt{qabs}, but the redundancy is here for faster computation.
 
 For 2D simulations, only the first 2 values are used in the coordinates vectors (\ttt{xyzfront} and \ttt{xyzback}) and the third coordinate should always equal 0; only the first value (yaw) is used in the ypr angles and the other two should always equal 0; and only the first and last elements are used in the quaternions.
 
-Segment lengths can vary but standard lengths are constant over an entire filament. This means that segments all have roughly equal lengths. I initially thought that it could be useful to have large standard length variations to focus computation on more important regions, but this is sufficiently hard to program that it's not worth it.\\
+Segment lengths can vary but standard lengths are constant over an entire filament. This means that segments all have roughly equal lengths. I initially thought that it could be useful to have large standard length variations to focus computation on more important regions, but this is sufficiently hard to program that it's not worth it.
+
+\subsubsection{Filament working data}
+
+\begin{lstlisting}
+typedef struct filworkstruct {
+    struct filamentstruct *fil;       // owning filament
+    double ***wnodes;                 // working nodes (3,nseg+1,3)
+    double **wroll;                   // working rolls (3,nseg)
+    double **flatnodes;               // flattened nodes (2,(2 or 4)*nseg)
+    double **wseg0up;                 // seg. 0 up vector (3,3)
+    double **forces;                  // forces on nodes (nseg+1)
+    double *torques;                  // list of segment torques (nseg)
+    sparsematrix forcemat;            // force matrix for implicit int.
+} *filworkptr
+\end{lstlisting}
+
+Filament dynamics integration requires a substantial amount of working data, which are stored here. None of these data define the filament state at the end of a time step, but this is only scratch space for use by the dynamics functions. \ttt{fil} points to the filament that owns this data structure. \ttt{wnodes} is 3 lists of nodes; number 0 is not owned by this data structure, but is simply a pointer to \ttt{fil->nodes}, whereas numbers 1 and 2 are owned by this data structure. \ttt{wroll} is 3 lists of segment roll values; the first points to \ttt{fil->roll} and the other two are owned by this data structure. \ttt{flatnodes} is 2 lists of flattened node and roll data; for 2D, the list is $[x_{0x},x_{0y},x_{1x},x_{1y},...,x_{nx},x_{ny}]$ and for 3D the list is $[x_{0x},x_{0y},x_{0z},\tau_{0},x_{1x},x_{1y},x_{1z},\tau_1,...,x_{nx},x_{ny},x_{nz}]$. \ttt{wseg0up} is 3 lists; number 0 is not owned here but points to \ttt{fil->seg0up}, and the other two are working copies to represent the segment 0 up vector. \ttt{forces} is used to store the cumulative forces on each node. Similarly, the \ttt{torques} element is used to store the roll torque acting on each segment (along its axis). \ttt{forcemat} is a flattened matrix of forces that is used for matrix-method Euler integration and implict integration.
+
 
 \subsubsection{Filaments}
 
@@ -4031,31 +4051,27 @@ typedef struct filamentstruct {
     char* filname;                      // filament name (ref, not owned)
     int maxseg;                         // number of segments allocated
     int nseg;                           // number of segments
-    segmentptr* segments;               // array of segments if any
+    segmentptr* segments;               // array of segments (nseg)
     double **nodes;                     // list of nodes (nseg+1)
-    double **nodes1;                    // nodes for RK dynamics (nseg+1)
-    double **nodes2;                    // nodes for RK4 dynamics (nseg+1)
+    struct filamentworkstruct *filwork; // working data for dynamics
     double **nodesx;                    // old node locations (nseg+1)
-    double *roll1;                      // roll for RK dynamics (nseg)
-    double *roll2;                      // roll for RK dynamics (nseg)
-    double **forces;                    // forces on nodes (nseg+1)
-    double *torques;                    // list of segment torques (nseg)
-    double seg0dcm[9];                  // segment 0 dcm
+    double *roll;                       // segment roll values (nseg)
+    double seg0up[3];                   // segment 0 up vector
     struct filamentstruct* frontend;    // what front attaches to
     struct filamentstruct* backend;     // what back attaches to
     int maxbranch;                      // max branches off this filament
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
-    int maxsequence;                     // num seq. chars. allocated
-    int nsequence;                       // number sequence characters
+    int maxsequence;                    // allocated sequence characters
+    int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
-    } * filamentptr;
+} * filamentptr;
 \end{lstlisting}
 
 Each filament data structure represents a single unbranched chain of segments. Multiple filaments of the same type (e.g. two microtubules) are stored in multiple data structures. In the filament data structure, \ttt{filtype} points to the filament type that owns this filament and \ttt{filname} points to the name of this filament; names are assigned by default if not assigned by the user.
 
-Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segments. These are stored in an array, where the index of the front is equal to 0. Segments are stored in \ttt{segments}. The segment endpoints are stored in \ttt{nodes}, which is allocated to be \ttt{maxseg+1} long by 3 elements wide for the $x$, $y$, and $z$ values. The \ttt{nodes1} and \ttt{nodes2} elements are similar to nodes, but are used solely for multi-step (Runge-Kutta) integration purposes. The \ttt{nodesx} vector contains node positions at the end of the previous time step, enabling determination of surface crossing or other events during the time step. The \ttt{roll1} and \ttt{roll2} vectors contain the roll values for individual segments and are only used for multi-step integration. The \ttt{forces} element is used to store the cumulative forces on each node. Similarly, the \ttt{torques} element is used to store the torque acting on each segment (along its axis). The \ttt{seg0dcm} element stores the direction cosine matrix for segment 0.
+Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segments. The segments, in \ttt{segments}, are an array, where the index of the front is equal to 0. The segment endpoints are stored in \ttt{nodes}, which is allocated to be \ttt{maxseg+1} long by 3 elements wide for the $x$, $y$, and $z$ values (regardless of system dimension). The \ttt{filwork} element points to a data structure for dynamics integration data. The \ttt{nodesx} vector contains node positions at the end of the previous time step, enabling determination of surface crossing or other events during the time step. The \ttt{roll} vector contains the roll values for individual segments; dynamics functions write to here, and then these data are copied into the segment \ttt{ypr[2]} values. The \ttt{seg0up} vector represents the unit ``up'' vector for segment 0 (which is perpendicular to the segment itself).
 
 Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{frontend} points to the filament that the front end attaches to and/or \ttt{backend} points to the filament that the back end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}.
 
@@ -4321,14 +4337,59 @@ The solution is as follows. First, compute all forces. Move nodes in response. A
 For filament stretching forces, consider a segment, $i$. Its segment vector is $\Delta \bm{x}_i = \bm{x}_{i+1}-\bm{x}_i$, as usual. Also, its length is $l_i = | \bm{x}_i |$. For standard length $l\degree$, the extension force is
 $$F = - k_{stretch} (l_i - l\degree)$$
 This is the extension force of the segment, meaning that a positive force implies that the segment wants to be longer and a negative force implies that the segment wants to be shorter. The product of this with the segment's unit vector yields the force on the $i+1$ node, and then the negative of that yields the force on the $i$ node,
-\begin{align}
-\bm{F}_{i+1} &= F \frac{\Delta \bm{x}_i}{l_i} \nonumber \\
+\begin{align*}
+\bm{F}_{i+1} &= F \frac{\Delta \bm{x}_i}{l_i} \\
 \bm{F}_{i} &= - F \frac{\Delta \bm{x}_i}{l_i}
+\end{align*}
+Note that $\bm{F}_i$ is a $dim$-dimensional vector. Also, $i$ is the segment number (from 0 to \ttt{nseg}$-1$), while the subscript on $\bm{F}$ is the node number. Slight rearrangement gives the scaled stretch force for segment $i$ as
+$$s_i = - k_{stretch} \frac{l_i - l\degree}{l_i}$$
+and then the forces on the adjacent nodes from stretching in segment $i$ as
+\begin{align}
+\bm{F}_{i} &= - s_i \Delta \bm{x}_i \nonumber \\
+\bm{F}_{i+1} &= s_i \Delta \bm{x}_i
 \label{eq:FilStretchForce}
 \end{align}
 This is implemented in the code \ttt{filAddStretchForces}.
 
+A slightly different version is implemented in \ttt{filAddStretchForceMat}. Here, each matrix row represents a change of a state variable over time and each matrix column represents the state variables that this change depends on. In other words,
+$$\dot{\bm{x}}(t) = \mu \bm{F}\cdot \bm{x}(t)$$
+where $\bm{F}$ is the matrix, which I call the force matrix. Now, $\dot{\bm{x}}$ is a linear function of $\bm{x}$. This linear relationship can also be expressed in the force vectors by expanding eq. \ref{eq:FilStretchForce} and rearranging slightly to give
+\begin{align}
+\bm{F}_{i} &= s_i \bm{x}_i - s_i \bm{x}_{i+1} \nonumber \\
+\bm{F}_{i+1} &= - s_i \bm{x}_i + s_i \bm{x}_{i+1}
+\label{eq:FilStretchForceMat}
+\end{align}
+
+These vectors and the force matrix are flattened in the code. For example, the 2D version of $\bm{x}(t)$ is $[x_{0,x}, x_{0,y}, x_{1,x}, x_{1,y}, ...]$, where the first index is the node number and the second is the Cartesian coordinate. With flattening, the 2D version of eq. \ref{eq:FilStretchForceMat}, which again is the force created by stretching of segment $i$, becomes
+$$\left[ \begin{array}{c} F_{i,x} \\ F_{i,y} \\ \hline F_{i+1,x} \\ F_{i+1,y} \end{array} \right] = \left[ \begin{array}{cc|cc}
+s_i & 0 & -s_i & 0 \\
+0 & s_i & 0 & -s_i \\ \hline
+-s_i & 0 & s_i & 0 \\
+0 & -s_i & 0 & s_i
+\end{array} \right] \cdot
+\left[ \begin{array}{c}
+x_{i,x} \\ x_{i,y} \\ \hline x_{i+1,x} \\ x_{i+1,y}
+\end{array} \right]$$
+The 3D version is identical, but has the $z$ coordinate as well. Again, these are the forces from stretching or compression of segment $i$. If there is stretching or compression for other segments, then those forces are added to the force matrix. This equation is implemented in \ttt{filAddStretchForceMat}. The following matrix equation shows the stretching forces on the 4 nodes of a 2D 3-segment filament.
+$$\tiny
+\bm{F} = \left[ \begin{array}{cc|cc|cc|cc}
+s_0 & 0 & -s_0 & 0 & 0 & 0 & 0 & 0 \\
+0 & s_0 & 0 & -s_0 & 0 & 0 & 0 & 0 \\ \hline
+-s_0 & 0 & s_0+s_1 & 0 & -s_1 & 0 & 0 & 0 \\
+0 & -s_0 & 0 & s_0+s_1 & 0 & -s_1 & 0 & 0 \\ \hline
+0 & 0 & -s_1 & 0 & s_1+s_2 & 0 & -s_2 & 0 \\
+0 & 0 & 0 & -s_1 & 0 & s_1+s_2 & 0 & -s_2 \\ \hline
+0 & 0 & 0 & 0 & -s_2 & 0 & s_2 & 0 \\
+0 & 0 & 0 & 0 & 0 & -s_2 & 0 & s_2
+\end{array} \right] \cdot
+\left[ \begin{array}{c}
+x_{0,x} \\ x_{0,y} \\ \hline x_{1,x} \\ x_{1,y} \\ \hline x_{2,x} \\ x_{2,y} \\ \hline x_{3,x} \\ x_{3,y}
+\end{array} \right]
+$$
+Again, generalizing to 3D is trivial.
+
 \subsection{Filament math - filament bending forces}
+\label{sect:FilMathBending}
 
 For filament forces from bending angles, consider a pair of segments, labeled as $i-1$ and $i$. These segment vectors, pointing from front to back as normal, are $\Delta \bm{x}_{i-1}$ and $\Delta \bm{x}_i$, where
 \begin{align}
@@ -4403,26 +4464,128 @@ where $\bm{Y}^T(\theta_i)$ represents the pitch rotation matrix. It's here becau
 \end{align}
 In the vector form, the terms are arranged so that the dominant one for small bending angles is listed first.
 
-This torque induces forces and segment roll torques. It's simplest to convert to the lab coordinate system for this. The total torque in the lab coordinate system is
+This torque induces forces and segment roll torques. It's simplest to convert to the lab coordinate system for this. The total torque in the lab coordinate system due to the bending springs at node $i$ is
 \begin{equation}
 \bm{\tau}_{L,i} = \bm{B}^T_{i-1}\bm{\tau}_i
 \label{eq:LabFrameTorque}
 \end{equation}
-Continuing in the lab frame, the forces on the adjacent nodes are
+Continuing in the lab frame (I'm dropping the $L$ subscript, but it's implied), the forces on the adjacent nodes due to bending at node $i$ are
 \begin{align}
-\bm{F}_{i+1} &= \frac{\bm{\tau}_{L,i} \times \Delta \bm{x}_i}{| \Delta \bm{x}_i|^2} \nonumber \\
-\bm{F}_{i-1} &= \frac{\bm{\tau}_{L,i} \times \Delta \bm{x}_{i-1}}{| \Delta \bm{x}_{i-1}|^2} \nonumber \\
+\bm{F}_{i+1} &= \frac{\bm{\tau}_i \times \Delta \bm{x}_i}{| \Delta \bm{x}_i|^2} \nonumber \\
+\bm{F}_{i-1} &= \frac{\bm{\tau}_i \times \Delta \bm{x}_{i-1}}{| \Delta \bm{x}_{i-1}|^2} \nonumber \\
 \bm{F}_i &= - (\bm{F}_{i+1} + \bm{F}_{i-1}) \nonumber \\
-\tau_{R,i} &= \frac{\bm{\tau}_{L,i} \cdot \Delta \bm{x}_i }{| \Delta \bm{x}_i|} \nonumber \\
-\tau_{R,i-1} &= - \frac{\bm{\tau}_{L,i} \cdot \Delta \bm{x}_{i-1}}{| \Delta \bm{x}_{i-1}|}
+\tau_{R,i} &= \frac{\bm{\tau}_i \cdot \Delta \bm{x}_i }{| \Delta \bm{x}_i|} \nonumber \\
+\tau_{R,i-1} &= - \frac{\bm{\tau}_i \cdot \Delta \bm{x}_{i-1}}{| \Delta \bm{x}_{i-1}|}
 \label{eq:ForceTorqueSummary}
 \end{align}
+These equations are implemented in \ttt{filAddBendForces}.
 
-Note that the node $i$ springs induce forces over the entire length of the filament, not only at the nearest nodes. This adds quite a lot of complication. It's also very difficult to compute this directly. Instead, the direct and physically accurate approach is to induce forces on the neighboring nodes, have them move in response, which then creates forces on the more distant nodes.
+Equations \ref{eq:ForceTorqueSummary} can also be expressed in a different manner. Here is the \textit{total} force on node $i$ from bending at nodes $i-1$, $i$, and $i+1$, respectively
+\begin{align*}
+\bm{F}_{tot.,i} &= \frac{\bm{\tau}_{i-1} \times \Delta \bm{x}_{i-1}}{| \Delta \bm{x}_{i-1}|^2} -\left( \frac{\bm{\tau}_i \times \Delta \bm{x}_i}{| \Delta \bm{x}_i|^2} + \frac{\bm{\tau}_i \times \Delta \bm{x}_{i-1}}{| \Delta \bm{x}_{i-1}|^2} \right) + \frac{\bm{\tau}_{i+1} \times \Delta \bm{x}_{i}}{| \Delta \bm{x}_{i}|^2} \\
+&= \frac{\bm{\tau}_{i-1} - \bm{\tau}_i }{| \Delta \bm{x}_{i-1}|^2} \times \Delta \bm{x}_{i-1} + \frac{\bm{\tau}_{i+1} - \bm{\tau}_i}{| \Delta \bm{x}_{i}|^2} \times \Delta \bm{x}_{i} \\
+&= \bm{b}_i \times \Delta \bm{x}_{i} - \bm{b}_{i-1} \times \Delta \bm{x}_{i-1} \\
+\textrm{where } \bm{b}_i &\equiv \frac{\bm{\tau}_{i+1} - \bm{\tau}_i}{| \Delta \bm{x}_{i}|^2}
+\end{align*}
+The interpretation of $\bm{b}_i$ (``b'' for bending) is that it's the torque applied to segment $i$ by the springs at both of its ends. Continuing the manipuation leads to
+\begin{align}
+\bm{F}_{tot.,i} &= \bm{b}_i \times (\bm{x}_{i+1} - \bm{x}_i) - \bm{b}_{i-1} \times (\bm{x}_i - \bm{x}_{i-1}) \nonumber \\
+\label{eq:BendForceTotalVector}
+&= \bm{b}_{i-1} \times \bm{x}_{i-1} - (\bm{b}_i + \bm{b}_{i-1}) \times \bm{x}_i + \bm{b}_i \times \bm{x}_{i+1}
+\end{align}
 
-\subsection{Filament math - filament thermal forces - not solved yet}
+For 2D and 3D, the cross product $\bm{b}\times\bm{x}$ expands to
+$$\bm{b}\times\bm{x} = \left[ \begin{array}{c} -b_z x_y \\ b_z x_x \end{array} \right]
+= \left[ \begin{array}{cc} 0 & -b_z \\ b_z & 0 \end{array} \right] \left[ \begin{array}{c} x_x \\ x_y \end{array} \right]$$
+$$\bm{b}\times\bm{x} = \left[ \begin{array}{c} b_y x_z - b_z x_y \\ b_z x_x - b_x x_z \\ b_x x_y - b_y x_x \end{array} \right]
+= \left[ \begin{array}{ccc} 0 & -b_z & b_y \\ b_z & 0 & - b_x \\ -b_y & b_x & 0 \end{array} \right] \left[ \begin{array}{c} x_x \\ x_y \\ x_z \end{array} \right]$$
+Using these expansions, the total bending force on node $i$ can be expanded from eq. \ref{eq:BendForceTotalVector} to express $\bm{F}_{tot.,i}$ with flattened vectors and matrices in 2D and 3D as
+$$\bm{F}_{tot.,i} =
+\left[ \begin{array}{cc|cc|cc}
+0 & -b_{i-1} & 0 & b_{i-1}+b_i & 0 & -b_i \\
+b_{i-1} & 0 & -b_{i-1}-b_i & 0 & b_i & 0
+\end{array} \right] \cdot
+\left[ \begin{array}{c}
+x_{i-1,x} \\ x_{i-1,y} \\ \hline x_{i,x} \\ x_{i,y} \\ \hline x_{i+1,x} \\ x_{i+1,y}
+\end{array} \right]
+$$
+\begin{equation}
+\tiny
+=\left[ \begin{array}{ccc|ccc|ccc}
+0 & -b_{i-1,z} & b_{i-1,y} & 0 & b_{i-1,z}+b_{i,z} & -b_{i-1,y}-b_{i,y} & 0 & -b_{i,z} & b_{i,y} \\
+b_{i-1,z} & 0 & -b_{i-1,x} & -b_{i-1,z}-b_{i,z} & 0 & b_{i-1,x}+b_{i,x} & b_{i,z} & 0 & -b_{i,x} \\
+-b_{i-1,y} & b_{i-1,x} & 0 & b_{i-1,y}+b_{i,y} & -b_{i-1,x}-b_{i,x} & 0 & -b_{i,y} & b_{i,x} & 0 \\
+\end{array} \right] \cdot
+\left[ \begin{array}{c}
+x_{i-1,x} \\ x_{i-1,y} \\ x_{i-1,z} \\ \hline x_{i,x} \\ x_{i,y} \\ x_{i,z} \\ \hline x_{i+1,x} \\ x_{i+1,y} \\ x_{i+1,z}
+\end{array} \right]
+\label{eq:FilBendForceMat}
+\end{equation}
+These equations are implemented in \ttt{filAddBendForceMat}.
 
-Consider a bead that diffuses due to Brownian motion. It moves due to forces exerted on it according to the overdamped Langevin equation (see \ref{eq:NodeDisplacement}), so its motion parallel to the $x$-axis over time step $\Delta t$ is
+In addition to the forces, the \textit{total} roll torque on segment $i$ can also be computed from eqs. \ref{eq:ForceTorqueSummary}, giving
+\begin{align*}
+\tau_{tot.,i} &= \frac{\bm{\tau}_i \cdot \Delta \bm{x}_i }{| \Delta \bm{x}_i|} - \frac{\bm{\tau}_{i+1} \cdot \Delta \bm{x}_i }{| \Delta \bm{x}_i|} \\
+&= \frac{\bm{\tau}_i - \bm{\tau}_{i+1}}{| \Delta \bm{x}_i|} \cdot \Delta \bm{x}_i
+\end{align*}
+As before, this torque is zero for 2D because the torques are parallel to the $z$-axis and the $\Delta \bm{x}_i$ displacements are in the $x,y$ plane. Define the $\bm{b}_i'$ vector in close analogy to the $\bm{b}_i$ vector defined above,
+$$\bm{b}_i' = \frac{\bm{\tau}_{i+1} - \bm{\tau}_i}{| \Delta \bm{x}_i|} = \bm{b}_i |\Delta \bm{x}_i |$$
+Then,
+$$\tau_{tot.,i} = \bm{b}_i' \cdot (\bm{x}_i - \bm{x}_{i+1})$$
+Expressing this in matrix form gives the following for 3D,
+$$\tau_{tot.,i} = 
+\left[ \begin{array}{ccc|ccc}
+b_{i,x}' & b_{i,y}' & b_{i,z}' & -b_{i,x}' & -b_{i,y}' & -b_{i,z}'
+\end{array} \right] \cdot
+\left[ \begin{array}{c}
+x_{i,x} \\ x_{i,y} \\ x_{i,z} \\ \hline x_{i+1,x} \\ x_{i+1,y} \\ x_{i+1,z}
+\end{array} \right]
+$$
+
+In practice, I'm interleaving the forces and torques because this maintains the band-diagonal structure of the matrix. There are $4n+3$ rows to the matrix for a filament with $n$ segments. This comes from $3(n+1)$ rows for the forces on the $n+1$ nodes and $n$ rows for the segment roll torques. There are also $4n+3$ columns for the matrix, with $3(n+1)$ columns for the node positions and $n$ columns for the segment roll values. None of the equations given here are linearly dependent on the segment roll values, so all of the corresponding matrix columns are equal to zero. That is, there is dependence on these values, through the $\tau_i$ bend torques (eq. \ref{eq:BendTorque}), but that dependence is not expressed in the force matrix. Nevertheless, this isn't a problem, because the matrix is added to the identity matrix for use, which then makes the columns not empty. At the end, this means that $\psi_{new}=\psi_{old}$ for each of the roll values, so there's no update here, but then there is an update when the nodes positions are conveted to bending angles.
+
+Here is the full stretch plus bend matrix for a 3 segment filament:
+$$\tiny
+\left[ \begin{array}{cccc|cccc|cccc|cccc}
+s_0 & b_{0z} & -b_{0y} & 0     & -s_0 & -b_{0z} & b_{0y} & 0   & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\
+-b_{0z} & s_0 & b_{0x} & 0     & b_{0z} & -s_0 & -b_{0x} & 0   & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\
+b_{0y} & -b_{0x} & s_0 & 0     & -b_{0y} & b_{0x} & -s_0 & 0   & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\
+b'_{0x} & b'_{0y} & b'_{0z} & 0  & -b'_{0x} & -b'_{0y} & -b'_{0z} & 0    & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\ \hline
+-s_0 & -b_{0z} & b_{0y} & 0     & s_0+s_1 & b_{0z}+b_{1z} & -b_{0y}-b_{1y} & 0    & -s_1 & -b_{1z}  & b_{1y} & 0   & 0 & 0  & 0 & 0 \\
+b_{0z} & -s_0 & -b_{0x} & 0     & -b_{0z}-b_{1z} & s_0+s_1 & b_{0x}+b_{1x} & 0   & b_{1z} & -s_1 & -b_{1x} & 0   & 0 & 0 & 0 & 0 \\
+-b_{0y} & b_{0x} & -s_0 & 0     & b_{0y}+b_{1y} & -b_{0x}-b_{1x} & s_0+s_1 & 0   & -b_{1y} & b_{1x} & -s_1 & 0   & 0 & 0 & 0 & 0 \\
+0 & 0 & 0 & 0    & b'_{1x} & b'_{1y} & b'_{1z} & 0   & -b'_{1x} & -b'_{1y} & -b'_{1z} & 0    & 0 & 0 & 0 & 0 \\ \hline
+0 & 0 & 0 & 0    & -s_1 & -b_{1z} & b_{1y} & 0    & s_1+s_2 & b_{1z}+b_{2z} & -b_{1y}-b_{2y} & 0   & -s_2 & -b_{2z} & b_{2y} & 0 \\
+0 & 0 & 0 & 0    & b_{1z} & -s_1 & -b_{1x} & 0    & -b_{1z}-b_{2z} & s_1+s_2 & b_{1x}+b_{2x} & 0    & b_{2z} & -s_2 & -b_{2x} & 0 \\
+0 & 0 & 0 & 0    & -b_{1y} & b_{1x} & -s_1 & 0    & b_{1y}+b_{2y} & -b_{1x}-b_{2x} & s_1+s_2 & 0    & -b_{2y} & b_{2x} & -s_2 & 0 \\
+0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & b'_{2x} & b'_{2y} & b'_{2z} & 0    & -b'_{2x} & -b'_{2y} & -b'_{2z} & 0 \\ \hline
+0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & -s_2 & -b_{2z} & b_{2y} & 0    & s_2 & b_{2z} & -b_{2y} & 0 \\
+0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & b_{2z} & -s_2 & -b_{2x} & 0    & -b_{2z} & s_2 & b_{2x} & 0 \\
+0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & -b_{2y} & b_{2x} & -s_2 & 0    & b_{2y} & -b_{2x} & s_2 & 0
+\end{array} \right]
+$$
+
+
+
+
+
+\subsection{Filament math - filament thermal forces - incomplete}
+
+To start with, consider the thermal distribution for filament stretches and bends. For a 2D filament with only two segments, it has bending angle $\phi$, intrinsic bending angle $\phi\degree$, and bending force constant $k_\phi$. Its mean bending energy relates to the thermal energy from the equipartition theorem as
+$$\frac{k_\phi}{2} \langle(\phi-\phi\degree)^2\rangle = \frac{k_B T}{2}$$
+Rearrange to get the rms $\phi$ angle as
+$$\phi_{rms} = \sqrt{ \frac{k_B T}{k_\phi} }$$
+The same approach applies to stretching and other bending angles for 3D. In addition, define $R$ as the filament thickness, where 1 is the standard thickness for which the force constants are measured. I'm going to assume that the force constants get multiplied by the thickness. Based on this, the stretching and bending thermal distributions are
+\begin{align}
+\label{eq:LengthDistribution}
+l_{rms} &= \sqrt{ \frac{k_B T}{R k_{len}} } \\
+\label{eq:AngleDistribution}
+\phi_{rms} = \sqrt{ \frac{k_B T}{R k_{\phi}} } \hspace{1cm}
+\theta_{rms} &= \sqrt{ \frac{k_B T}{R k_{\theta}} } \hspace{1cm}
+\chi_{rms} = \sqrt{ \frac{k_B T}{R k_{\chi}} }
+\end{align}
+
+For thermal forces, consider a bead that diffuses due to Brownian motion. It moves due to forces exerted on it according to the overdamped Langevin equation (see \ref{eq:NodeDisplacement}), so its motion parallel to the $x$-axis over time step $\Delta t$ is
 $$\Delta x = \mu F \Delta t$$
 where $\mu$ is the mobility and $F$ is the $x$ component of the applied force. Repeating this motion over and over again leads to diffusion, so we compute the diffusion coefficient. Over time step $\Delta t$, the bead's rms displacement in 1D relates to the diffusion coefficient as
 $$\Delta x_{rms} = \sqrt{2 D \Delta t}.$$
@@ -4438,11 +4601,7 @@ F_{rms} &= \sqrt{\frac{2 k_B T}{\mu \Delta t}}
 \end{align}
 This is the rms thermal force on each axis for a diffusing bead. It's not entirely physical, due to the presence of the $\Delta t$ term, but it yields the correct diffusion coefficient. Filament nodes can be modeled as beads, so these are also the forces on the nodes.
 
-A completely different solution starts with the bending forces. Consider a 2D filament with only two segments. It has bending angle $\phi$ standard bending angle $\phi\degree$, and bending force constant $k_\phi$. Its mean bending energy, on the left below, relates to the thermal energy from the equipartition theorem, on the right below,
-$$\frac{k_\phi}{2} \langle(\phi-\phi\degree)^2\rangle = \frac{k_B T}{2}$$
-Rearrange to get the rms $\phi$ angle as
-$$\phi_{rms} = \sqrt{ \frac{k_B T}{k_\phi} }$$
-Also, the torque on the bend with some given angle $\phi$ is
+Back to the bending force approach and returning to 2D, the torque on a bend with some given angle $\phi$ is
 $$\tau = -k_\phi (\phi -\phi\degree)$$
 Squaring and averaging this squared torque over many possible bends leads to
 $$\langle \tau^2 \rangle = k_\phi^2 \langle(\phi -\phi\degree)^2 \rangle$$
@@ -4519,7 +4678,7 @@ Local. Converts filament dynamics string to enumerated dynamics type. Returns \t
 
 
 \item[\underline{Low level utilities}]
-(No changes to data structures.)
+(No changes to data structures; no math.)
 
 \item[\ttt{int}]
 \ttt{filReadFilName(const simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname)}
@@ -4532,51 +4691,9 @@ Note that \ttt{filtypeptr} and \ttt{filptr} cannot be \ttt{NULL} and, the value 
 \hfill \\
 Returns the index of the filament named \ttt{name} or -1 if not found; also, returns the filament type in \ttt{ftptr}. This searches through all filament types for the filament with this name. If multiple filaments with the same name are found, this returns -2. \ttt{ftptr} should be sent in pointing to a memory address, but the contents are unimportant. Example: \ttt{filGetFilIndex(sim,"fil1",\&ft)}.
 
-\item[\ttt{double}]
-\ttt{filRandomLength(const filamenttypeptr filtype, double thickness, double sigmamult)}
-\hfill \\
-Local. Returns a random segment length using the mechanics parameters given in filament type \ttt{filtype}. \ttt{thickness} is the thickness of the new segment and \ttt{sigmamult} is multiplied by the normal standard deviation of the length. If $k_{len} < 0$, this returns the standard length; otherwise, the returned length is Gaussian distributed, with mean equal to \ttt{fil->lstd} and standard deviation, which is constrained to be always positive, equal to
 
-$$\sigma_{mult}\sqrt{\frac{kT}{R*k_{len}}}$$
-
-\item[\ttt{double}]
-\ttt{*filRandomAngle(const filamenttypeptr filtype,int dim,int n,double thickness,double sigmamult,double *angle))}
-\hfill \\
-Local. Returns a random bending angle, which is a relative ypr angle, in \ttt{angle} (which needs to be allocated with 3 elements) and directly. This is for filament type \ttt{filtype}, system dimensionality \ttt{dim} and segment number \ttt{n}; this \ttt{n} number is only checked to see if it's zero or non-zero; in the latter case, angles are chosen from angle bending forces. Angles are for a segment with thickness \ttt{thickness} and the computed standard deviation is multiplied by \ttt{sigmamult}. For \ttt{n>0}, if $k_{ypr}$ is less than 0 for a particular coordinate, this returns the standard bending angle, if it is equal to 0, this returns a uniformly distributed bending angle, and if it is greater than 0, this returns a mean of $ypr_{std}$ and standard deviation of
-
-$$\sigma_{mult} \sqrt{\frac{kT}{R*k_{ypr}}}$$
-
-For 2D space, this sets the last two elements of \ttt{angle} to 0.
-
-For segment 0, angles are chosen uniformly over all possibilities. For 2D, the returned angle, which is in the first element only (yaw) is relative to the system $\hat{\bm{x}}$ vector.
-
-\item[\underline{Computations on filaments}]
-(No changes to data structures.)
-
-\item[\ttt{double *filGetFilPosition(const filamentptr fil,double frac,double *pos)}]
-\hfill \\
-Returns the coordinates of the point that is \ttt{frac} fraction of the pathlength along the filament, putting the results in \ttt{pos} and also returning them directly. This computes the total filament pathlength, then finds the segment that is \ttt{frac} distance along the filament, and then interpolates within the segment to find the coordinates. This function finds the position as a fraction of the actual pathlength, and not of the relaxed pathlength.
-
-\item[\ttt{double filStretchEnergy(const filamentptr fil, int seg1, int seg2)}]
-\hfill \\
-Computes the stretching energy for filament \ttt{fil}. Enter \ttt{seg1} as the first segment to compute from, or as -1 to indicate that it should start at the front of the filament, and \ttt{seg2} as one more than the last segment to compute to, or as -1 to indicate that calculation should end at the end of the filament. The equation is
-
-$$E_{stretch} = \sum_{s} \frac{R_s k_{len} (l_s - l_{std})^2}{2}$$
-
-\item[\ttt{double filBendEnergy(const filamentptr fil, int seg1, int seg2)}]
-\hfill \\
-Computes the bending energy for filament \ttt{fil}. Enter \ttt{seg1} as the first segment to compute from, or as -1 to indicate that it should start at the front of the filament, and \ttt{seg2} as the last segment to compute to, or as -1 to indicate that calculation should end at the end of the filament. Here, \ttt{seg2} is inclusive of the last segment; the bends that are included here start at the back of \ttt{seg1} and continue up to the front of \ttt{seg2}; there are one fewer bends in a filament than the number of segments. The equation is
-
-$$E_{bend}=\sum_{s=1}^{n} \frac{R_{s-1}+R_s}{2} \frac{k_y(a_y-a_{y, std})^2+k_p(a_p-a_{p, std})^2+k_r(a_r-a_{r, std})^2}{2}$$
-
-The first term in the sum computes the average thickness of the segment in front of and behind the bend. The other term is the squared bending angle on each coordinate (for 3D; only the first term is included for 2D).
-
-\item[\ttt{void filBendTorque(const filamentptr fil,int node,double *torque)}]
-\hfill \\
-Computes the bending torque vector for node number \ttt{node}, which is the front of segment \ttt{node}, in filament \ttt{fil}. This uses the data stored in \ttt{segment->ypr}. The \ttt{torque} vector needs to be pre-allocated. This uses eq. \ref{eq:BendTorque} and then rotates the torque with the absolute quaternion of the prior segment to express the torque in absolute coordinates, which is how it's returned (in matrix notation, $\bm{\tau}_L = \bm{B}^T\bm{\tau}$).
-
-
-\item[\underline{Memory management}] (Allocate, free, and initialize data structures.)
+\item[\underline{Memory management}]
+(Allocate, free, and initialize data structures.)
 
 \item[\ttt{segmentptr filSegmentAlloc()}]
 \hfill \\
@@ -4586,134 +4703,65 @@ Allocates memory for a single segment and initializes this segment. Returns a po
 \hfill \\
 Frees memory for a single segment.
 
+\item[\ttt{filamentworkptr filWorkAlloc(filamentptr fil,int maxseg)}]
+\hfill \\
+Allocates a data structure for filament dynamics data. Enter the filament in \ttt{fil} and the maximum number of segments that are currently allowed in \ttt{maxseg}. All working data are allocated to this filament size. The function sets up all necessary internal pointers. This function can be called repeatedly to enlarge the working data (but old data are not kept if so).
+
+\item[\ttt{void filWorkFree(filamentworkptr filwork,int maxseg)}]
+Frees working data and the data structure.
+
 \item[\ttt{filamentptr}]
-\ttt{filalloc(filamentptr fil, int maxseg, int maxbranch, int maxsequence)}
+\ttt{filAlloc(filamentptr fil, int maxseg, int maxbranch, int maxsequence)}
 \hfill \\
 Allocates or expands a filament, returning a pointer to the result. This does not shrink any elements of filaments. Enter \ttt{maxseg} to expand the number of segments, \ttt{maxbranch} to expand the number of branches off of this filament, and \ttt{maxsequence} to expand the sequence list. Any of these can be set to 0 to ignore this component. This returns \ttt{NULL} if memory could not be allocated but does not free things, which can cause a minor memory leak, but is better than risking a segfault and easier than a sophisticated analysis of what can and cannot be freed.
 
-\item[\ttt{void filfree(filamentptr fil)}]
+\item[\ttt{void filFree(filamentptr fil)}]
 \hfill \\
 Frees a filament and all of the data structures in it.
 
 \item[\ttt{filamenttypeptr}]
-\ttt{filamenttypealloc(filamenttypeptr filtype, int maxfil, int maxface)}
+\ttt{filamentTypeAlloc(filamenttypeptr filtype, int maxfil, int maxface)}
 \hfill \\
 Allocates or expands memory for a filament type structure and intilizes it. Returns a pointer to this filament type, or \ttt{NULL} if memory could not be allocated. Enter \ttt{filtype} as an existing one if it is to be expanded, \ttt{maxfil} as the number of filament spaces to be allocated, and \ttt{maxface} as the number of face names to be allocated. This only expands the filament or face lists if the requested sizes are larger than the current sizes. When putting new filaments into the list, they are allocated here and initialized, but have no segments.
 
-\item[\ttt{void filamenttypefree(filamenttypeptr filtype)}]
+\item[\ttt{void filamentTypeFree(filamenttypeptr filtype)}]
 \hfill \\
 Frees memory for a single filament type.
 
-\item[\ttt{filamentssptr filssalloc(filamentssptr filss, int maxtype)}]
+\item[\ttt{filamentssptr filssAlloc(filamentssptr filss, int maxtype)}]
 \hfill \\
 Allocates or expands a filament superstructure for a maximum size of \ttt{maxtype} filament types.
 
-\item[\ttt{void filssfree(filamentssptr filss)}]
+\item[\ttt{void filssFree(filamentssptr filss)}]
 \hfill \\
 Fres a filament superstructure and all of the structures within it.
 
 
-\item[\underline{Data structure output}] (No changes to data structures.)
+\item[\underline{Data structure output}]
+(No changes to data structures.)
 
-\item[\ttt{void filoutput(const filamentptr fil)}]
+\item[\ttt{void filOutput(const filamentptr fil)}]
 \hfill \\
 Outputs all of the key information about a filament to the display, including essential information about each segment.
 
-\item[\ttt{void filtypeoutput(const filamenttypeptr filtype)}]
+\item[\ttt{void filtypeOutput(const filamenttypeptr filtype)}]
 Outputs all of the key information about a filament type to the display, along with information about each filament.
 
-\item[\ttt{void filssoutput(const simptr sim)}]
+\item[\ttt{void filssOutput(const simptr sim)}]
 \hfill \\
 Outputs all of the key information about a filament superstructure, and all of the filaments in it, to the display.
 
-\item[\ttt{void filwrite(const simptr sim, FILE *fptr)}]
+\item[\ttt{void filWrite(const simptr sim, FILE *fptr)}]
 \hfill \\
 Writes filament information to a file in Smoldyn format for loading in again later on. NOT WRITTEN YET.
 
-\item[\ttt{int filcheckparams(const simptr sim, int *warnptr)}]
+\item[\ttt{int filCheckParams(const simptr sim, int *warnptr)}]
 \hfill \\
 Checks filament parameters to make sure they are all reasonable. NOT WRITTEN YET.
 
-\item[\underline{Sequences}]
-
-\item[\ttt{int filSetSequence(filamentptr fil,char *str)}]
-\hfill \\
-Sets the filament sequence to \ttt{str}, overwriting any previous sequence. This allocates memory and updates pointers as needed.
-
-\item[\underline{Filament manipulation}]
-
-\item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
-\hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}.
-
-\item[\ttt{int}]
-\ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
-\hfill \\
-Adds a segment to filament \ttt{fil}. If this is the first segment, then \ttt{x} becomes the starting location of the filament; otherwise, \ttt{x} is ignored. \ttt{length} is the length of the segment, \ttt{angle} is the relative angle of the segment facing along the filament from front to back (for the first segment, this is the absolute angle), \ttt{thickness} is the segment thickness, and \ttt{endchar} should be set to `b' to add to the back of the filament or `f' to add to the front of the filament. For segments added to the front, \ttt{angle} is the new angle from the new first monomer to the next monomer, facing towards the back. If the first segment is added to the back, then \ttt{angle} is the angle of the new segment off of the coordinate system. If the first segment is added to the front, then \ttt{angle} is the angle from the new segment to the coordinate system. The \ttt{angle} vector must have 3 elements in it, even for 2D simulations; in the latter case, the latter two elements should be set to 0. Returns 0 for success and 1 for out of memory.
-
-For the first segment:
-$\bm{x}_0=\ttt{x}$, 
-$\bm{x}_1=\bm{x}_0 + l_0 \bm{B}^T_0 \cdot \bm{\hat{x}}$
-
-For segments added to the back, with index $i$:
-$\bm{ypr}_i = \ttt{angle}$, 
-$\bm{A}_i = DCM(\bm{ypr}_i)$, 
-$\bm{B}_i = \bm{A}_i \cdot \bm{B}_{i-1}$, 
-$\bm{x}_{i+1} = \bm{x}_i + l_i \bm{B}^T_i \cdot \bm{\hat{x}}$
-
-For segments added to the front, with index $i$ (typically equal to 0):
-$\bm{B}_i = \bm{A}_{i+1}^T \cdot \bm{B}_{i+1}$, 
-$\bm{A}_i = \bm{B}_i$,
-$\bm{ypr}_i = YPR(\bm{B}_i)$, 
-$\bm{x}_i = \bm{x}_{i+1} - l_i \bm{B}^T_i \cdot \bm{\hat{x}}$
-
-\item[\ttt{int}]
-\ttt{filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *phistr, const char* thtstr,const char* psistr,double thickness)}
-\hfill \\
-Add \ttt{number} of random segments to the back filament \ttt{fil}, while ignoring any surfaces or other potential collisions. Enter \ttt{xstr}, \ttt{ystr}, and \ttt{zstr} as strings for the starting position coordinates of a new filament, and \ttt{phistr}, \ttt{thtstr}, and \ttt{psistr} as strings for the starting angle of a new filament using Tait-Bryan (yaw-pitch-roll) angles. Here, math equations are allowed, using Smoldyn variables, or use the `u' character to indicate uniform starting position within the system volume or angle in spherical coordinates. \ttt{thickness} is the thickness of the segments being added. For 2D simulations, the $z$, $\phi$, and $\chi$ values are automatically set to zero, regardless of what is entered in \ttt{zstr}, \ttt{phistr}, and \ttt{chistr}.
-
-Returns 0 for success, 2 for syntax error in position strings, or 3 for syntax error in angle strings.
-
-\item[\ttt{int filRemoveSegment(filamentptr fil, char endchar)}]
-\hfill \\
-Removes one segment or one bead from either the front or back end of a filament. Specify the end in \ttt{endchar} with `f' for front and `b' for back. Returns 0 for success or -1 for a filament that already had no segments.
-
-Removing a segment from the back requires only shortening the filament by one segment. Removing one from the front requires copying the absolute dcm or quaternion into the relative dcm or quaternion for the new front segment, and then translating this into the ypr angles.
-
-\item[\ttt{void filTranslate(filamentptr fil, const double *vect, char func)}]
-\hfill \\
-Translates an entire filament in space without rescaling or rotation. Enter \ttt{vect} with a 3D vector and \ttt{func} with `=' for translate to the given posiition, with `-' for to subtract the value of \ttt{vect} from the current position, and with `+' to add the value of \ttt{vect} to the current position. For 2D simulations, \ttt{vect[2]} needs to equal 0.
-
-\item[\ttt{int}]
-\ttt{filLengthenSegment(filamentptr fil, int seg, double length, char endchar, char func)}
-\hfill \\
-This function modifies the length of a single segment of index \ttt{seg} in filament \ttt{fil}. The \ttt{endchar} input can be \ttt{b} or \ttt{f} and gives which end of the segment moves, along with the entire rest of that end of the filament. The \ttt{func} input can be \ttt{=}, \ttt{+}, or \ttt{-} and gives whether the segment length should be made equal to \ttt{length}, increased by \ttt{length}, or decreased by \ttt{length}. Returns 0 for success or an error code of 1 if the new segment length would be 0 or negative.
-
-This function computes the change of length, and then multiplies that by the local segment orientation to create the shift vector \ttt{xdelta}. This is added to the following or preceding nodes, depending on \ttt{endchar}.
-
-\item[\ttt{int}]
-\ttt{filChangeThickness(filamentptr fil, int seg, double thick, char func)}
-\hfill \\
-This function modifies the thickness of a single segment of index \ttt{seg} in filament \ttt{fil}. The \ttt{func} input can be \ttt{=}, \ttt{+}, or \ttt{-} and gives whether the segment thickness should be made equal to \ttt{thick}, increased by \ttt{thick}, or decreased by \ttt{thick}. Returns 0 for success or an error code of 1 if the new segment thickness would be negative.
-
-\item[\ttt{void}]
-\ttt{filRotateVertex(filamentptr fil, int seg, const double *angle, char endchar, char func)}
-\hfill \\
-This function rotates part of the filament about the vertex that is at the front of segment \ttt{seg} by ypr angle \ttt{angle}. Enter \ttt{endchar} as \ttt{b} to have the back of the filament move and as \ttt{f} to have the front move. Enter \ttt{func} as \ttt{=} to set the current relative rotation angles (\ttt{segment->dcm}) to the input ones, as \ttt{+} for increased rotation by the given angles and as \ttt{-} for decreased rotation by these angles.
-
-This function makes the requested modification to the segment's relative quaternion. Then, it propagates the changes either backward or forward as needed. During propagation, new segment positions are computed from neighbor positions, rather than being rotated independently, in order to avoid round-off errors.
-
-\item[\ttt{int}]
-\ttt{filCopyFilament(filamentptr filto, const filamentptr filfrom,const filamenttypeptr filtype)}
-\hfill \\
-This function copies nearly all of the values from \ttt{filfrom} to \ttt{filto}, overwriting any prior data in \ttt{filto} in the process. It does not copy the name. Also, it assigns the filament type to \ttt{filtype} if this value is not \ttt{NULL}, and to the \ttt{filfrom} filament type otherwise. Returns 0 for success, 1 for out of memory, or 2 for illegal function inputs.
-
-\item[\ttt{filamentptr}]
-\ttt{filAddFilament(filamenttypeptr filtype, const char *filname)}
-\hfill \\
-This adds a filament to the filament type \ttt{filtype}, expanding the list if needed. If there is already a filament with this name, a pointer to it is returned. If \ttt{filname} is \ttt{NULL}, this generates an automatic name for the new filament; otherwise, it names the new filament to \ttt{filname}. Returns a pointer to the new filament or \ttt{NULL} for failure, arising from failure to allocate memory.
 
 \item[\underline{Filament type}]
+(Data structures are changed.)
 
 \item[\ttt{int}]
 \ttt{filtypeSetParam(filamenttypeptr filtype, const char *param, int index, double value)}
@@ -4774,49 +4822,210 @@ Adds a new filament type to the simulation, which is named \ttt{ftname}, returni
 
 
 \item[\underline{Filament superstructure}]
+(Superstructure is changed and/or lower levels are updated.)
 
-\item[\ttt{void filsetcondition(filamentssptr filss, enum StructCond cond, int upgrade)}]
+\item[\ttt{void filSetCondition(filamentssptr filss, enum StructCond cond, int upgrade)}]
 \hfill \\
 Local. This function sets the condition of the filament superstructure. Set \ttt{upgrade} to 1 if this is an upgrade, to 0 if this is a downgrade, or to 2 to set the condition independent of its current value. If the resulting condition is lower than the \ttt{sim} condition, it downgrades the \ttt{sim} condition.
 
-\item[\ttt{int filenablefilaments(simptr sim)}]
+\item[\ttt{int filEnableFilaments(simptr sim)}]
 \hfill \\
 Allocates a filament superstructure, adds it to the simulation structure, and sets the filament condition to \ttt{SClists}. This does not create any filament types or other items that are lower in the heirarchy.
 
-\item[\ttt{int filupdateparams(simptr sim)}]
+\item[\ttt{int filUpdateParams(simptr sim)}]
 \hfill \\
 Does nothing currently. This function will compute any simulation parameters necessary from user parameters.
 
-\item[\ttt{int filupdatelists(simptr sim)}]
+\item[\ttt{int filUpdateLists(simptr sim)}]
 \hfill \\
 Does nothing currently. This function will compute any simulation list changes necessary from user parameters.
 
-\item[\ttt{int filupdate(simptr sim)}]
+\item[\ttt{int filUpdate(simptr sim)}]
 \hfill \\
 Updates filaments as needed and upgrades the condition. Returns 0 for success or other error codes passed through from \ttt{filupdatelists} and \ttt{filupdateparams}.
 
 
 \item[\underline{User input}]
+(Data structures are changd.)
 
 \item[\ttt{filamenttypeptr}]
-\ttt{filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr filtype,const char *word,char *line2)}
+\ttt{filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr filtype,const char *word,char *line2)}
 \hfill \\
 Reads one line of user input within a filament type block.
 
 \item[\ttt{filamentptr}]
-\ttt{filreadstring(simptr sim, ParseFilePtr pfp, filamentptr fil, const char *word, char *line2)}
+\ttt{filReadString(simptr sim, ParseFilePtr pfp, filamentptr fil, const char *word, char *line2)}
 \hfill \\
 Reads one line of user input within a filament block.
 
-\item[\ttt{int filloadtype(simptr sim, ParseFilePtr *pfpptr, char *line2)}]
+\item[\ttt{int filLoadType(simptr sim, ParseFilePtr *pfpptr, char *line2)}]
 \hfill \\
 Reads multiple lines of user input from within a filament type block, calling \ttt{filtypereadstring} with each line.
 
-\item[\ttt{int filloadfil(simptr sim, ParseFilePtr *pfpptr, char *line2)}]
+\item[\ttt{int filLoadFil(simptr sim, ParseFilePtr *pfpptr, char *line2)}]
 \hfill \\
 Reads multiple lines of user input from within a filament block, calling \ttt{filreadstring} with each line.
 
+
+\item[\underline{Sequences}]
+(Data structures may be changed.)
+
+\item[\ttt{int filSetSequence(filamentptr fil,char *str)}]
+\hfill \\
+Sets the filament sequence to \ttt{str}, overwriting any previous sequence. This allocates memory and updates pointers as needed.
+
+
+\item[\underline{Computations on segments}]
+(No changes to data structures.)
+
+\item[\ttt{double}]
+\ttt{filRandomLength(const filamenttypeptr filtype, double thickness, double sigmamult)}
+\hfill \\
+Local. Returns a random segment length using the mechanics parameters given in filament type \ttt{filtype}. \ttt{thickness} is the thickness of the new segment and \ttt{sigmamult} is multiplied by the normal standard deviation of the length. If $k_{len} < 0$, this returns the standard length; otherwise, the returned length is Gaussian distributed, with mean equal to \ttt{fil->lstd} and standard deviation, which is constrained to be always positive. From eq. \ref{eq:LengthDistribution} it is equal to
+$$\sigma_{mult}\sqrt{\frac{kT}{R*k_{len}}}$$
+
+\item[\ttt{double}]
+\ttt{*filRandomAngle(const filamenttypeptr filtype, int n, double thickness, double sigmamult, double *angle)}
+\hfill \\
+Local. Returns a random bending angle, which is a relative ypr angle, in \ttt{angle} (which needs to be allocated with 3 elements) and directly. This is for filament type \ttt{filtype} and segment number \ttt{n}; this \ttt{n} number is only checked to see if it's zero or non-zero; in the latter case, angles are chosen from angle bending forces. Angles are for a segment with thickness \ttt{thickness} and the computed standard deviation is multiplied by \ttt{sigmamult}. For \ttt{n>0}, if $k_{ypr}$ is less than 0 for a particular coordinate, this returns the standard bending angle, if it is equal to 0, this returns a uniformly distributed bending angle, and if it is greater than 0, this returns a mean of $ypr_{std}$ and standard deviation of (see eq. \ref{eq:AngleDistribution}
+$$\sigma_{mult} \sqrt{\frac{kT}{R*k_{ypr}}}$$
+
+For 2D space, this sets the last two elements of \ttt{angle} to 0.
+
+For segment 0, angles are chosen uniformly over all possibilities. For 2D, the returned angle, which is in the first element only (yaw) is relative to the system $\hat{\bm{x}}$ vector.
+
+\item[\underline{Computations on filaments}]
+(No changes to data structures.)
+
+\item[\ttt{double *filGetPositionOnFil(const filamentptr fil,double frac,double *pos)}]
+\hfill \\
+Returns the coordinates of the point that is \ttt{frac} fraction of the pathlength along the filament, putting the results in \ttt{pos} and also returning them directly. This computes the total filament pathlength, then finds the segment that is \ttt{frac} distance along the filament, and then interpolates within the segment to find the coordinates. This function finds the position as a fraction of the actual pathlength, and not of the relaxed pathlength.
+
+\item[\ttt{double filStretchEnergy(const filamentptr fil, int seg1, int seg2)}]
+\hfill \\
+Computes the stretching energy for filament \ttt{fil}. Enter \ttt{seg1} as the first segment to compute from, or as -1 to indicate that it should start at the front of the filament, and \ttt{seg2} as one more than the last segment to compute to, or as -1 to indicate that calculation should end at the end of the filament. The equation is
+
+$$E_{stretch} = \sum_{s} \frac{R_s k_{len} (l_s - l\degree)^2}{2}$$
+
+\item[\ttt{double filBendEnergy(const filamentptr fil, int seg1, int seg2)}]
+\hfill \\
+Computes the bending energy for filament \ttt{fil}. Enter \ttt{seg1} as the first segment to compute from, or as -1 to indicate that it should start at the front of the filament, and \ttt{seg2} as the last segment to compute to, or as -1 to indicate that calculation should end at the end of the filament. Here, \ttt{seg2} is inclusive of the last segment; the bends that are included here start at the back of \ttt{seg1} and continue up to the front of \ttt{seg2}; there are one fewer bends in a filament than the number of segments. The equation is
+
+$$E_{bend}=\sum_{s=1}^{n} \frac{R_{s-1}+R_s}{2} \frac{k_y(a_y-a_{y, std})^2+k_p(a_p-a_{p, std})^2+k_r(a_r-a_{r, std})^2}{2}$$
+
+The first term in the sum computes the average thickness of the segment in front of and behind the bend. The other term is the squared bending angle on each coordinate (for 3D; only the first term is included for 2D).
+
+\item[\ttt{void filBendTorque(const filamentptr fil,int node,double *torque)}]
+\hfill \\
+Computes the bending torque vector for node number \ttt{node}, which is the front of segment \ttt{node}, in filament \ttt{fil}. This uses the data stored in \ttt{segment->ypr}. The \ttt{torque} vector needs to be pre-allocated. This uses eq. \ref{eq:BendTorque} and then rotates the torque with the absolute quaternion of the prior segment to express the torque in absolute coordinates, which is how it's returned (in matrix notation, $\bm{\tau}_L = \bm{B}^T\bm{\tau}$). This accepts \ttt{node} values of 0 and \ttt{nseg}, returning torques of zero in both cases.
+
+
+\item[\underline{Filament updating}]
+(Filament is unchanged but data structures are updated.)
+
+\item[\ttt{void filNodes2Angles(filamentptr fil)}]
+\hfill \\
+Computes angle information for a filament, which are this function's output, from its node positions and roll values (\ttt{fil->roll}), which are the input. In more detail, the input information is in the segment front and back elements (\ttt{xyzfront} and \ttt{xyzback}, which are the same memory elements as in \ttt{fil->nodes}) and the segment roll values (\ttt{fil->roll}). It computes segment lengths (\ttt{len}), ypr values (\ttt{ypr}), local quaternions (\ttt{qrel}), and absolute quaternions (\ttt{qabs}).
+
+\item[\ttt{void filCopyWorkingNodes(filamentptr fil,int from,int to)}]
+\hfill \\
+This is only used for the RK2 and RK4 integration methods. It copies values from the \ttt{wnodes[from]} element of the filament working structure to the \ttt{wnodes[to]} element in order to save the values. For 3D filaments, it also copies the first segment ``up'' vector and roll values. If \ttt{from} is equal to 0 (and in 3D), then this also copies the \ttt{segment->ypr[2]} value, which is the segment roll value, into the \ttt{fil->roll} vector.
+
+\item[\ttt{void filFlattenNodes(filamentptr fil,int from,int to)}]
+\hfill \\
+This is used for matrix Euler integration and implicit integration. It copies the node position data in the \ttt{wnodes[from]} element of the filament working structure to the \ttt{flatnodes[to]} element of the working structure. For 3D, this also copies roll data from the \ttt{wroll[from]} element of the working structure to \ttt{flatnodes[to]}. See Section \ref{sect:FilMathBending}. If \ttt{from} is equal to 0 (and in 3D), then this also copies the \ttt{segment->ypr[2]} value, which is the segment roll value, into the \ttt{fil->roll} vector.
+
+\item[\ttt{void filUnflattenNodes(filamentptr fil,int from,int to)}]
+\hfill \\
+Used for matrix Euler integration and implicit integration. This copies the node position and roll (for 3D) data in the \ttt{flatnodes[from]} element of the filament working structure to the \ttt{wnodes[to]} and \ttt{wroll[to]} elements of the working structure. See Section \ref{sect:FilMathBending}. For 3D, this also rotates the \ttt{seg0up[from]} vector using the segment 0 roll vector to create the new \ttt{seg0up[to]} vector.
+
+
+\item[\underline{Filament manipulation}]
+(Filament is changed.)
+
+\item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
+\hfill \\
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}.
+
+\item[\ttt{int}]
+\ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
+\hfill \\
+Adds a segment to filament \ttt{fil}. If this is the first segment, then \ttt{x} becomes the starting location of the filament; otherwise, \ttt{x} is ignored. \ttt{length} is the length of the segment, \ttt{angle} is the relative angle of the segment facing along the filament from front to back (for the first segment, this is the absolute angle), \ttt{thickness} is the segment thickness, and \ttt{endchar} should be set to `b' to add to the back of the filament or `f' to add to the front of the filament. For segments added to the front, \ttt{angle} is the new angle from the new first monomer to the next monomer, facing towards the back. If the first segment is added to the back, then \ttt{angle} is the angle of the new segment off of the coordinate system. If the first segment is added to the front, then \ttt{angle} is the angle from the new segment to the coordinate system. The \ttt{angle} vector must have 3 elements in it, even for 2D simulations; in the latter case, the latter two elements should be set to 0. Returns 0 for success and 1 for out of memory.
+
+For the first segment:
+$\bm{x}_0=\ttt{x}$, 
+$\bm{x}_1=\bm{x}_0 + l_0 \bm{B}^T_0 \cdot \bm{\hat{x}}$
+
+For segments added to the back, with index $i$:
+$\bm{ypr}_i = \ttt{angle}$, 
+$\bm{A}_i = DCM(\bm{ypr}_i)$, 
+$\bm{B}_i = \bm{A}_i \cdot \bm{B}_{i-1}$, 
+$\bm{x}_{i+1} = \bm{x}_i + l_i \bm{B}^T_i \cdot \bm{\hat{x}}$
+
+For segments added to the front, with index $i$ (typically equal to 0):
+$\bm{B}_i = \bm{A}_{i+1}^T \cdot \bm{B}_{i+1}$, 
+$\bm{A}_i = \bm{B}_i$,
+$\bm{ypr}_i = YPR(\bm{B}_i)$, 
+$\bm{x}_i = \bm{x}_{i+1} - l_i \bm{B}^T_i \cdot \bm{\hat{x}}$
+
+\item[\ttt{int}]
+\ttt{filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *phistr, const char* thtstr,const char* psistr,double thickness)}
+\hfill \\
+Add \ttt{number} of random segments to the back filament \ttt{fil}, while ignoring any surfaces or other potential collisions. Enter \ttt{xstr}, \ttt{ystr}, and \ttt{zstr} as strings for the starting position coordinates of a new filament, and \ttt{phistr}, \ttt{thtstr}, and \ttt{psistr} as strings for the starting angle of a new filament using Tait-Bryan (yaw-pitch-roll) angles. Here, math equations are allowed, using Smoldyn variables, or use the `u' character to indicate uniform starting position within the system volume or angle in spherical coordinates. \ttt{thickness} is the thickness of the segments being added. For 2D simulations, the $z$, $\phi$, and $\chi$ values are automatically set to zero, regardless of what is entered in \ttt{zstr}, \ttt{phistr}, and \ttt{chistr}.
+
+Returns 0 for success, 2 for syntax error in position strings, or 3 for syntax error in angle strings.
+
+\item[\ttt{int}]
+\ttt{filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints)}
+\hfill \\
+Adds one segment to the \ttt{endchar} end of \ttt{fil} using a random length and bending angle. The \ttt{x} input is ignored unless the filament has 0 current segments. The new segment has thickness \ttt{thickness}. The \ttt{constraints} input is supposed to be a collection of flags for which constraints the addition needs to account for. For now, the only \ttt{constraints} options are 0 for no constraints at all, and 1 for the new segment should not cross any surface panel. If the addition is constrained, this function tries up to \ttt{FILMAXTRIES} times to add a segment that does not disobey the constraints. Returns 0 for success, 1 for out of memory, and 2 for failure to place a segment that obeys the constraints.
+
+\item[\ttt{void filTreadmill(simptr sim, filamentptr fil, char endchar)}]
+\hfill \\
+This performs one step of treadmilling for filament \ttt{fil} at the \ttt{endchar} end. It adds one segment at this end and removes one segment from the opposite end.
+
+\item[\ttt{int filRemoveSegment(filamentptr fil, char endchar)}]
+\hfill \\
+Removes one segment or one bead from either the front or back end of a filament. Specify the end in \ttt{endchar} with `f' for front and `b' for back. Returns 0 for success or -1 for a filament that already had no segments.
+
+Removing a segment from the back requires only shortening the filament by one segment. Removing one from the front requires copying the absolute dcm or quaternion into the relative dcm or quaternion for the new front segment, and then translating this into the ypr angles.
+
+\item[\ttt{void filTranslate(filamentptr fil, const double *vect, char func)}]
+\hfill \\
+Translates an entire filament in space without rescaling or rotation. Enter \ttt{vect} with a 3D vector and \ttt{func} with `=' for translate to the given posiition, with `-' for to subtract the value of \ttt{vect} from the current position, and with `+' to add the value of \ttt{vect} to the current position. For 2D simulations, \ttt{vect[2]} needs to equal 0.
+
+\item[\ttt{int}]
+\ttt{filLengthenSegment(filamentptr fil, int seg, double length, char endchar, char func)}
+\hfill \\
+This function modifies the length of a single segment of index \ttt{seg} in filament \ttt{fil}. The \ttt{endchar} input can be \ttt{b} or \ttt{f} and gives which end of the segment moves, along with the entire rest of that end of the filament. The \ttt{func} input can be \ttt{=}, \ttt{+}, or \ttt{-} and gives whether the segment length should be made equal to \ttt{length}, increased by \ttt{length}, or decreased by \ttt{length}. Returns 0 for success or an error code of 1 if the new segment length would be 0 or negative.
+
+This function computes the change of length, and then multiplies that by the local segment orientation to create the shift vector \ttt{xdelta}. This is added to the following or preceding nodes, depending on \ttt{endchar}.
+
+\item[\ttt{int}]
+\ttt{filChangeThickness(filamentptr fil, int seg, double thick, char func)}
+\hfill \\
+This function modifies the thickness of a single segment of index \ttt{seg} in filament \ttt{fil}. The \ttt{func} input can be \ttt{=}, \ttt{+}, or \ttt{-} and gives whether the segment thickness should be made equal to \ttt{thick}, increased by \ttt{thick}, or decreased by \ttt{thick}. Returns 0 for success or an error code of 1 if the new segment thickness would be negative.
+
+\item[\ttt{void}]
+\ttt{filRotateVertex(filamentptr fil, int seg, const double *angle, char endchar, char func)}
+\hfill \\
+This function rotates part of the filament about the vertex that is at the front of segment \ttt{seg} by ypr angle \ttt{angle}. Enter \ttt{endchar} as \ttt{b} to have the back of the filament move and as \ttt{f} to have the front move. Enter \ttt{func} as \ttt{=} to set the current relative rotation angles (\ttt{segment->dcm}) to the input ones, as \ttt{+} for increased rotation by the given angles and as \ttt{-} for decreased rotation by these angles.
+
+This function makes the requested modification to the segment's relative quaternion. Then, it propagates the changes either backward or forward as needed. During propagation, new segment positions are computed from neighbor positions, rather than being rotated independently, in order to avoid round-off errors.
+
+\item[\ttt{int}]
+\ttt{filCopyFilament(filamentptr filto, const filamentptr filfrom,const filamenttypeptr filtype)}
+\hfill \\
+This function copies nearly all of the values from \ttt{filfrom} to \ttt{filto}, overwriting any prior data in \ttt{filto} in the process. It does not copy the name. Also, it assigns the filament type to \ttt{filtype} if this value is not \ttt{NULL}, and to the \ttt{filfrom} filament type otherwise. Returns 0 for success, 1 for out of memory, or 2 for illegal function inputs.
+
+\item[\ttt{filamentptr}]
+\ttt{filAddFilament(filamenttypeptr filtype, const char *filname)}
+\hfill \\
+This adds a filament to the filament type \ttt{filtype}, expanding the list if needed. If there is already a filament with this name, a pointer to it is returned. If \ttt{filname} is \ttt{NULL}, this generates an automatic name for the new filament; otherwise, it names the new filament to \ttt{filname}. Returns a pointer to the new filament or \ttt{NULL} for failure, arising from failure to allocate memory.
+
+
 \item[\underline{Filament interactions}]
+(Data structures are changed.)
 
 \item[\ttt{int}]
 \ttt{filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr)}
@@ -4828,25 +5037,16 @@ Tests if segment \ttt{segment} crosses any surface in the simulation. Returns 0 
 \hfill \\
 Tests if segment \ttt{segment} crosses any filament in the simulation. Returns 0 if not and 1 if so. If so, then this returns a pointer to the filament that is crossed in \ttt{filptr}. More details about the crossing could be returned, such as which segment within the filament, but this is not supported at present. This function scans through all filaments in the simulation and tests for crossing for each one, meaning that the segment radius overlaps the radius of the other filament (this uses the \ttt{thk} element as the radius). This ignores possible overlaps with the self-segment, along with its nearest neighbor on either side. THIS IS VERY INEFFICIENT AND SHOULD USE BOXES.
 
-
-\item[\underline{Core simulation functions}]
-
-\item[\ttt{void filNodes2Angles(filamentptr fil)}]
-\hfill \\
-Computes angle information for a filament, which are this function's output, from its node positions, which are the input. In addition, for 3D filaments, local roll values in \ttt{segment->ypr[2]} are also treated as input values. This uses information in the segment front and back elements (\ttt{xyzfront} and \ttt{xyzback}, which are the same memory elements as in \ttt{fil->nodes}) to compute segment lengths (\ttt{len}), ypr values (\ttt{ypr}), local quaternions (\ttt{qrel}), and absolute quaternions (\ttt{qabs}).
-
-\item[\ttt{int}]
-\ttt{filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints)}
-\hfill \\
-Adds one segment to the \ttt{endchar} end of \ttt{fil} using a random length and bending angle. The \ttt{x} input is ignored unless the filament has 0 current segments. The new segment has thickness \ttt{thickness}. The \ttt{constraints} input is supposed to be a collection of flags for which constraints the addition needs to account for. For now, the only \ttt{constraints} options are 0 for no constraints at all, and 1 for the new segment should not cross any surface panel. If the addition is constrained, this function tries up to \ttt{FILMAXTRIES} times to add a segment that does not disobey the constraints. Returns 0 for success, 1 for out of memory, and 2 for failure to place a segment that obeys the constraints.
-
-\item[\ttt{void filTreadmill(simptr sim, filamentptr fil, char endchar)}]
-\hfill \\
-This performs one step of treadmilling for filament \ttt{fil} at the \ttt{endchar} end. It adds one segment at this end and removes one segment from the opposite end.
+\item[\underline{Force computation}]
+(Only writing to \ttt{forces}, \ttt{torques}, \ttt{forcemat} elements.)
 
 \item[\ttt{void filAddStretchForces(filamentptr fil)}]
 \hfill \\
 Computes filament stretching (and compression) forces using the node positions in \ttt{fil->nodes}. This adds forces to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. These forces do not affect segment torsion. They are computed from eq. \ref{eq:FilStretchForce}.
+
+\item[\ttt{void filAddStretchForceMat(filamentptr fil)}]
+\hfill \\
+Computes filament stretching (and compression) forces using the node positions in \ttt{fil->nodes}. This adds forces to any prior values in the \ttt{filwork->forcemat} matrix. They are computed from eq. \ref{eq:FilStretchForceMat}.
 
 \item[\ttt{void filAddThermalForces(filamentptr fil)}]
 \hfill \\
@@ -4854,19 +5054,25 @@ Computes thermal forces acting on filament nodes and adds them to any prior valu
 
 \item[\ttt{void filAddBendForces(filamentptr fil)}]
 \hfill \\
-Computes filament bending forces due to ypr springs using the node positions in \ttt{fil->nodes}. This adds forces to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. For 3D filaments, bending forces can create torsion for individual segments, which are added to any prior values in \ttt{fil->torques}. These results are computed from eqs. \ref{eq:ForceTorqueSummary}.
+Computes filament bending forces due to ypr springs using the ypr values in \ttt{segment->ypr}. This adds forces to any prior values in the \ttt{fil->forces} vector, which is in the system reference frame. For 3D filaments, bending forces can create torsion for individual segments, which are added to any prior values in \ttt{fil->torques}. These results are computed from eqs. \ref{eq:ForceTorqueSummary}.
+
+\item[\ttt{void filAddBendForceMat(filamentptr fil)}]
+Computes filament bending forces due to ypr springs using the ypr values in \ttt{segment->ypr}, adding the forces to any prior forces in the \ttt{filwork->forcemat} matrix. These forces are computed from eq. \ref{eq:FilBendForceMat}.
 
 \item[\ttt{void filComputeForces(filamentptr fil)}]
 \hfill \\
-Computes all forces and segment torques acting on filament \ttt{fil} using the node positions in \ttt{fil->nodes}. This clears the \ttt{fil->forces} and \ttt{fil->torques} vectors and then calls \ttt{filAddStretchForces}, \ttt{filAddBendForces}, and potentially other functions to compute the complete forces acting on the filament. The current version is adequate for basic operation but will need expansion for surface interactions, molecule interactions, thermal interactions, etc. NEEDS WORK.
+Computes all forces and segment torques acting on filament \ttt{fil}. This clears the \ttt{filwork->forces} and \ttt{filwork->torques} vectors and then calls \ttt{filAddStretchForces}, \ttt{filAddBendForces}, and potentially other functions to compute the complete forces acting on the filament. The current version is adequate for basic operation but will need expansion for surface interactions, molecule interactions, thermal interactions, etc.
 
-\item[\ttt{void filStepDynamics(filamentptr fil,int dim,double dtmu,int in,int out)}]
+\item[\ttt{void filComputeForceMatrix(filamentptr fil)}]
 \hfill \\
-Computes one step for explicit dynamics simulations, which is essentially an Euler step but is also used for RK2 and RK4 functions. \ttt{fil} is the filament, \ttt{dim} is the system dimensionality and \ttt{dtmu} is the time step times the mobility for this particular step; this is used as is for Euler and divided by various values for RK2 and RK4. This reads from the \ttt{in} node positions, and related data, and writes to the \ttt{out} node positions, and related data. This adds $\mu \Delta t \bm{F}$ to the input node positions. For 3D, this also uses the torque of the first segment to update its orientation, and uses the torques of other segments to update their orientations. See Section \ref{sect:FilamentSimulationApproach}. This works with \ttt{nodes} if \ttt{in} is 0, \ttt{nodes1} if \ttt{in} is 1, and \ttt{nodes2} if \ttt{in} is 2, and likewise for \ttt{out}.
+Computes all forces and segment torques acting on filament \ttt{fil}, putting the results in the \ttt{filwork->forcemat} matrix.
 
-\item[\ttt{void filCopyNodesToNodes1(filamentptr fil,int dim)}]
+
+\item[\underline{Dynamics functions}]
+
+\item[\ttt{void filStepDynamics(filamentptr fil,double dtmu,int in,int out)}]
 \hfill \\
-This is only used for the RK2 and RK4 integration methods. It copies values from the \ttt{nodes} element of the filament structure to the \ttt{nodes1} element in order to save the values. For 3D filaments, it also copies the first segment ``up'' vector and roll value.
+Computes one step for explicit dynamics simulations, which is essentially an Euler step but is also used for RK2 and RK4 functions. \ttt{fil} is the filament and \ttt{dtmu} is the time step times the mobility for this particular step; this is used as is for Euler and divided by various values for RK2 and RK4. This works with the \ttt{filwork} data structure and reads from the \ttt{in} node positions, and related data, and writes to the \ttt{out} node positions, and related data. This adds $\mu \Delta t \bm{F}$ to the input node positions. For 3D, this also uses the torque of the first segment to update its orientation, and uses the torques of other segments to update their orientations. See Section \ref{sect:FilamentSimulationApproach}.
 
 \item[\ttt{void filEulerDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
@@ -4918,10 +5124,17 @@ RK4 \\
 \ttt{ypr} from \ttt{nodes}
 \end{longtable}
 
+\item[\ttt{void filEulerMatDynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Integrates filament dynamics over one time step using the Euler method, but with matrix approach rather than a direct approach. This loops over all filaments of the filament type. This is supposed to return identical results to the \ttt{filEulerDynamics} function, but is used as a matrix test system for implicit integration.
+
+\item[\ttt{void filImplicitDynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Integrates filament dynamics over one time step using the implicit Euler method. This loops over all filaments of the filament type. This function has not been written or debugged yet.
 
 \item[\ttt{int filDynamics(simptr sim)}]
 \hfill \\
-Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, and RK4 integration methods.
+Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, and EulerMat integration methods.
 
 \end{description}
 

@@ -1,0 +1,238 @@
+ \title{\vspace{-2.0cm}Documentation for RnSparse.h and RnSparse.c\vspace{-2ex}}
+\author{Steve Andrews}
+\date{\vspace{-2ex}2025}
+
+\documentclass[11pt]{article}
+
+\usepackage{physics,amsmath}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage[margin=1in]{geometry}
+\usepackage{bm}
+\usepackage{upgreek}
+\usepackage{extarrows}
+\usepackage{gensymb}
+\usepackage{chemarr}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+ backgroundcolor=\color{backcolour},
+ commentstyle=\color{codegreen},
+ keywordstyle=\color{magenta},
+ numberstyle=\tiny\color{codegray},
+ stringstyle=\color{codepurple},
+ basicstyle=\ttfamily\footnotesize,
+ breakatwhitespace=false,
+ breaklines=true, 
+ captionpos=b, 
+ keepspaces=true, 
+ numbers=left, 
+ numbersep=5pt, 
+ showspaces=false, 
+ showstringspaces=false,
+ showtabs=false, 
+ tabsize=2
+}
+\lstset{style=mystyle}
+
+\newcommand {\ttt} {\texttt}
+
+\begin{document}
+\maketitle
+
+\section{Header file: RnSparse.h}
+
+\begin{lstlisting}[language=C]
+/* Steven Andrews 3/26/25.
+See documentation called RnSparse_doc.tex.
+Copyright 2025 by Steven Andrews.  This work is distributed under the terms
+of the Gnu Lesser General Public License (LGPL). */
+
+
+#ifndef __RnSparse_h
+#define __RnSparse_h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+enum sparse_type {band};
+
+typedef struct sparsematrixstruct{
+  enum sparse_type type;     // matrix shape
+  int maxrows;               // allocated matrix rows
+  int nrows;                 // used matrix rows
+  int fcols;                 // columns in full matrix
+  int ccols;                 // columns in compressed matrix
+  int *col0;                 // first column of compressed matrix
+  int *col1;                 // 1+ last column of compressed matrix
+  double *matrix; } *sparsematrix;
+
+
+#include <stdlib.h>
+#include <stdio.h>
+
+#define sparseReadM(a,i,j) (a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])
+#define sparseWriteM(a,i,j,x) ((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])=(x))
+#define sparseAddToM(a,i,j,x) ((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])+=(x))
+#define sparseMultiplyBy(a,i,j,x) ((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])*=(x))
+
+sparsematrix sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize);
+void sparseFreeM(sparsematrix sprs);
+void sparsePrintM(const sparsematrix sprs,int full);
+void sparseSetSizeM(sparsematrix sprs,int nrows,int fcols);
+void sparseClearM(sparsematrix sprs);
+void sparseMultiplyMV(const sparsematrix sprs,const double *vect,double *ans);
+void sparseAddIdentityM(sparsematrix sprs,double factor);
+void sparseMultiplyScalarM(sparsematrix sprs,double scalar);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
+\end{lstlisting}
+
+% Description
+\section{Description}
+
+These functions perform matrix operations on sparse matrices. Essentially no error checking is performed in these routines because they are designed to be as fast as possible. In particular, if the macro functions are used with row numbers or column numbers that are outside of the elements that are allowed to be non-zero, as defined by the \ttt{sparseAlloc} function, then they will simply access incorrect elements or will create a segfault error.
+
+
+% Dependencies
+\section{Dependencies}
+Standard C library only.
+
+% History
+\section{History}
+\begin{description}
+
+\item[3/26/2025] Started.
+
+\end{description}
+
+
+% Math
+\section{Math}
+
+Sparse matrices are represented internally with a matrix that has the same number of rows as the full matrix, but often compressed to fewer columns. For example, here is a band-diagonal matrix on the left and its compressed representation on the right.
+$$\left[ \begin{array}{cccc}
+2 & -1 & 0 & 0\\
+-1 & 2 & -1 & 0\\
+0 & -1 & 2 & -1 \\
+0 & 0 & -1 & 2
+\end{array} \right] \rightarrow
+\left[ \begin{array}{ccc}
+x & 2 & -1\\
+-1 & 2 & -1\\
+-1 & 2 & -1 \\
+-1 & 2 & x
+\end{array} \right] \hspace{1cm}
+\begin{array}{cc}
+\ttt{col0} & \ttt{col1} \\ \hline
+-1 & 2\\
+0 & 3\\
+1 & 4 \\
+2 & 4
+\end{array}
+$$
+Here, \ttt{nrows=4}, which is the number of rows for both the full and compressed versions, \ttt{fcols=4}, which is the number of columns in the full matrix, and \ttt{ccols=3}, which is the number of columns for the compressed matrix. The table on the right gives the \ttt{col0} and \ttt{col1} values for each row. The \ttt{col0} value represents the column number from the full matrix that corresponds to the first column of the compressed matrix, and the \ttt{col1} value represents one more than the last column of the full matrix that is read. The $x$ values in the diagram represent values that are stored but have no corresponding values in the full matrix. They are initialized to zero, and any operation on them (which is allowed because this can be more efficient than avoiding them) should leave them as zero.
+
+Sparse matrices can also be stored as the full size version, but still be more efficient than non-sparse matrix code. The reason is that the \ttt{col0} and \ttt{col1} elements tell the functions where to start and stop computing, so substantial savings are still possible.
+
+
+% Code documentation
+\section{Code documentation}
+
+\subsection{Macros}
+
+Basic matrix reading, writing, and arithmetic functions are coded as macros for computational efficiency. They use element indices from the full matrix and convert from there. These macros are used extensively in the library functions in order to keep the code as simple as possible.
+
+\begin{description}
+
+\item[\ttt{\#define}]
+\verb!sparseReadM(a,i,j) (a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])!
+\hfill \\
+Reads element $(i,j)$ from sparse matrix \ttt{a}.
+
+\item[\ttt{\#define}]
+\verb!sparseWriteM(a,i,j,x) ((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])=(x))!
+\hfill \\
+Writes element $(i,j)$ of sparse matrix \ttt{a} to \ttt{x}.
+
+\item[\ttt{\#define}]
+\verb!sparseAddToM(a,i,j,x) ((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])+=(x))!
+\hfill \\
+Adds \ttt{x} to element $(i,j)$ of sparse matrix \ttt{a}.
+
+\item[\ttt{\#define sparseMultiplyBy(a,i,j,x)}] \hfill \\
+\verb!((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])*=(x))!
+\hfill \\
+Multiplies element $(i,j)$ of sparse matrix \ttt{a} by the scalar \ttt{x}.
+
+\end{description}
+
+
+\subsection{Memory allocation and freeing}
+
+\begin{description}
+
+
+\item[\ttt{sparsematrix}]
+\ttt{sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize)}
+\hfill \\
+Allocates or resizes a square sparse matrix with a band structure. Enter \ttt{sprs} as a pre-existing matrix if it should be resized, or as \ttt{NULL} for a new matrix. The allocated size of the corresponding full matrix is \ttt{maxrows} by \ttt{maxrows}. The functional size is also initialized to \ttt{nrows=maxrows} and \ttt{fcols=maxrows}, which can be reduced later with the \ttt{sparseSetSizeM} function. The matrix is assumed to be entirely zero, except for a band along the main diagonal that is \ttt{bandsize} wide on each side of the main diagonal, not including that diagonal. That is, the full bandwidth, including the main diagonal, is $2 \times bandsize+1$. If an existing matrix is resized, this function does \textit{not} keep the existing data, but instead fills the entire matrix with zeros. Permissable row indices are $i \in [0,nrow-1]$ and column indices are $j \in [i-bandsize,i+bandsize]$.
+
+\item[\ttt{void sparseFreeM(sparsematrix sprs)}]
+\hfill \\
+Frees all components of a sparse matrix and the data structure.
+
+\end{description}
+
+\subsection{Matrix output}
+
+\begin{description}
+
+\item[\ttt{void sparsePrintM(const sparsematrix sprs,int full)}]
+\hfill \\
+Prints a sparse matrix to the standard output. Enter \ttt{full} as 1 if the corresponding full matrix should be printed out and as 0 if only the compressed matrix should be printed. Printing shows all data structure elements, and indicates the start and end of the compresed matrix with colons. This function is primarily for debugging purposes.
+
+\end{description}
+
+\subsection{Matrix manipulation}
+
+\begin{description}
+
+\item[\ttt{void sparseSetSizeM(sparsematrix sprs,int nrows,int fcols)}]
+\hfill \\
+Sets the number of functional rows to \ttt{nrows} and the number of columns for the corresponding full matrix to \ttt{fcols}.
+
+\item[\ttt{void sparseClearM(sparsematrix sprs)}]
+\hfill \\
+Erases all data in the matrix and replaces it by zeros.
+
+
+\item[\ttt{void sparseMultiplyMV(const sparsematrix sprs,const double *vect,double *ans)}]
+\hfill \\
+Multiplies sparse matrix \ttt{sprs} by column vector \ttt{vect}, putting the answer in column vector \ttt{ans}.
+
+\item[\ttt{void sparseAddIdentityM(sparsematrix sprs,double factor)}]
+\hfill \\
+Adds \ttt{factor} times the identity matrix to \ttt{sprs} (the identity matrix has the same number of rows as \ttt{sprs->nrows}).
+
+\item[\ttt{void sparseMultiplyScalarM(sparsematrix sprs,double scalar)}]
+\hfill \\
+Multiplies every element of sparse matrix \ttt{sprs} by \ttt{scalar} and puts the result back in \ttt{sprs}.
+
+
+\end{description}
+
+\bibliographystyle{plain}
+\bibliography{libSteveRefs}
+
+\end{document}

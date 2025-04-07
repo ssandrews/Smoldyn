@@ -1149,13 +1149,14 @@ void RenderFilaments(simptr sim) {
 				glBegin(GL_LINES);
 				for(f=0;f<filtype->nfil;f++) {
 					fil=filtype->fillist[f];
-					filComputeForces(fil);
-					for(vtx=0;vtx<=fil->nseg;vtx++) {
-						point=fil->nodes[vtx];
-						vect[0]=point[0]+scale*fil->forces[vtx][0];
-						vect[1]=point[1]+scale*fil->forces[vtx][1];
-						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid);
-						glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),zmid); }}
+					if(fil->filwork) {
+						filComputeForces(fil);
+						for(vtx=0;vtx<=fil->nseg;vtx++) {
+							point=fil->nodes[vtx];
+							vect[0]=point[0]+scale*fil->filwork->forces[vtx][0];
+							vect[1]=point[1]+scale*fil->filwork->forces[vtx][1];
+							glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid);
+							glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),zmid); }}}
 				glEnd(); }}}
 
 	else if(sim->dim==3) {
@@ -1228,14 +1229,15 @@ void RenderFilaments(simptr sim) {
 				glBegin(GL_LINES);
 				for(f=0;f<filtype->nfil;f++) {
 					fil=filtype->fillist[f];
-					filComputeForces(fil);
-					for(vtx=0;vtx<=fil->nseg;vtx++) {
-						point=fil->nodes[vtx];
-						vect[0]=point[0]+scale*fil->forces[vtx][0];
-						vect[1]=point[1]+scale*fil->forces[vtx][1];
-						vect[2]=point[2]+scale*fil->forces[vtx][2];
-						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
-						glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),(GLdouble)(vect[2])); }}
+					if(fil->filwork) {
+						filComputeForces(fil);
+						for(vtx=0;vtx<=fil->nseg;vtx++) {
+							point=fil->nodes[vtx];
+							vect[0]=point[0]+scale*fil->filwork->forces[vtx][0];
+							vect[1]=point[1]+scale*fil->filwork->forces[vtx][1];
+							vect[2]=point[2]+scale*fil->filwork->forces[vtx][2];
+							glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
+							glVertex3d((GLdouble)(vect[0]),(GLdouble)(vect[1]),(GLdouble)(vect[2])); }}}
 				glEnd(); }
 
 			gl2SetColor('K');		//?? Need to be able to set the color
@@ -1245,7 +1247,7 @@ void RenderFilaments(simptr sim) {
 					for(seqi=0;seqi<fil->nsequence;seqi++) {
 						str[0]=fil->sequence[seqi];
 						str[1]='\0';
-						filGetFilPosition(fil,((double)seqi+0.5)/(double)(fil->nsequence),pos);
+						filGetPositionOnFil(fil,((double)seqi+0.5)/(double)(fil->nsequence),pos);
 						pos[2]-=fil->segments[0]->thk;	//?? quick hack but might be worth keeping
 						gl2DrawString3D(pos,GLUT_BITMAP_HELVETICA_12,str); }}}}}
 

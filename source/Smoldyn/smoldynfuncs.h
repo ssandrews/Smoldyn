@@ -404,14 +404,14 @@ int latticeruntimestep(simptr sim);
 int filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
 
 // computations on filaments
-double *filGetFilPosition(filamentptr fil,double frac,double *pos);
+double *filGetPositionOnFil(filamentptr fil,double frac,double *pos);
 
 // memory management
-void filssfree(filamentssptr filss);
+void filssFree(filamentssptr filss);
 
 // data structure output
-void filssoutput(simptr sim);
-int filcheckparams(simptr sim,int *warnptr);
+void filssOutput(simptr sim);
+int filCheckParams(simptr sim,int *warnptr);
 
 // filament manipulation
 int filGetFilIndex(simptr sim,const char *name,int *ftptr);
@@ -419,12 +419,12 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
 int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness);
 
 // structure set up
-int filenablefilaments(simptr sim);
-filamenttypeptr filtypereadstring(simptr sim,ParseFilePtr pfp,filamenttypeptr filtype,const char *word,char *line2);
-filamentptr filreadstring(simptr sim,ParseFilePtr pfp,filamentptr fil,filamenttypeptr filtype,const char *word,char *line2);
-int filloadtype(simptr sim,ParseFilePtr *pfpptr,char *line2);
-int filloadfil(simptr sim,ParseFilePtr *pfpptr,char *line2);
-int filupdate(simptr sim);
+int filEnableFilaments(simptr sim);
+filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr filtype,const char *word,char *line2);
+filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamenttypeptr filtype,const char *word,char *line2);
+int filLoadType(simptr sim,ParseFilePtr *pfpptr,char *line2);
+int filLoadFil(simptr sim,ParseFilePtr *pfpptr,char *line2);
+int filUpdate(simptr sim);
 
 // core simulation functions
 void filComputeForces(filamentptr fil);

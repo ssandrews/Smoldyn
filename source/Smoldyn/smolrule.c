@@ -2,7 +2,7 @@
  This is a library of functions for the Smoldyn program.  See documentation
  called SmoldynManual.pdf and SmoldynCodeDoc.pdf.
  Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
- of the Gnu General Public License (GPL). */
+ of the Gnu Lesser General Public License (LGPL). */
 
 #include <math.h>
 #include <stdio.h>

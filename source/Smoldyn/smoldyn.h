@@ -82,6 +82,23 @@ enum StructCond
 
 #endif
 
+/*** RnSparse.h ***/
+
+#ifndef __RnSparse_h
+#define __RnSparse_h
+
+enum sparse_type {band};
+
+typedef struct sparsematrixstruct{
+	enum sparse_type type;
+	int mrow;
+	int ncol;
+	int *col0;
+	int *col1;
+	double *matrix; } *sparsematrix;
+
+#endif
+
 /*** queue.h ***/
 
 #ifndef __queue_h
@@ -761,20 +778,33 @@ enum FilamentDynamics
     FDnone,
     FDeuler,
     FDRK2,
-    FDRK4
+    FDRK4,
+    FDeulermat,
+		FDimplicit
 };
 
 typedef struct segmentstruct {
-    struct filamentstruct* fil;				// owning filament
+    struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
     double *xyzfront;                 // Coords. for segment front
     double *xyzback;                  // Coords. for segment back
-    double len;         							// segment length
-    double thk;         							// thickness of segment
-    double ypr[3];      							// relative ypr angles
-    double qrel[4];										// relative rotation quaternion
-    double qabs[4];										// absolute rotation quaternion
+    double len;                       // segment length
+    double thk;                       // thickness of segment
+    double ypr[3];                    // relative ypr angles
+    double qrel[4];                   // relative rotation quaternion
+    double qabs[4];                   // absolute rotation quaternion
 } * segmentptr;
+
+typedef struct filamentworkstruct {
+    struct filamentstruct *fil;       // owning filament
+    double ***wnodes;                 // working nodes (3,nseg+1,3)
+    double **wroll;                   // working rolls (3,nseg)
+    double **flatnodes;               // flattened nodes (2,~(2 or 4)*nseg)
+    double **wseg0up;                 // seg. 0 up vector (3,3)
+    double **forces;                  // forces on nodes (nseg+1,3)
+    double *torques;                  // list of segment torques (nseg)
+    sparsematrix forcemat;            // force matrix for implicit int.
+} *filamentworkptr;
 
 typedef struct filamentstruct {
     struct filamenttypestruct* filtype; // owning filament type
@@ -783,23 +813,17 @@ typedef struct filamentstruct {
     int nseg;                           // number of segments
     segmentptr* segments;               // array of segments (nseg)
     double **nodes;                     // list of nodes (nseg+1)
-    double **nodes1;                    // nodes for RK dynamics (nseg+1)
-    double **nodes2;                    // nodes for RK4 dynamics (nseg+1)
+    struct filamentworkstruct *filwork; // working data for dynamics
     double **nodesx;                    // old node locations (nseg+1)
-    double *roll1;                      // roll for RK dynamics (nseg)
-    double *roll2;                      // roll for RK dynamics (nseg)
-    double **forces;                    // forces on nodes (nseg+1)
-    double *torques;                    // list of segment torques (nseg)
-    double seg0up[3];										// segment 0 up vector
-    double seg0up1[3];									// segment 0 up vector for RK
-    double seg0up2[3];									// segment 0 up vector for RK4
+    double *roll;                       // segment roll values (nseg)
+    double seg0up[3];                   // segment 0 up vector
     struct filamentstruct* frontend;    // what front attaches to
     struct filamentstruct* backend;     // what back attaches to
     int maxbranch;                      // max branches off this filament
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
-    int maxsequence;                    // number of sequence characters allocated
+    int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
 } * filamentptr;

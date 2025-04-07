@@ -358,7 +358,7 @@ void simfree(simptr sim) {
 
 	graphssfree(sim->graphss);
 	scmdssfree(sim->cmds);
-	filssfree(sim->filss);
+	filssFree(sim->filss);
 	latticessfree(sim->latticess);
 	portssfree(sim->portss);
 	compartssfree(sim->cmptss);
@@ -486,7 +486,7 @@ void simsystemoutput(simptr sim) {
 	portoutput(sim);
 	bngoutput(sim);
 	latticeoutput(sim);
-	filssoutput(sim);
+	filssOutput(sim);
 	return; }
 
 
@@ -530,7 +530,7 @@ int checksimparams(simptr sim) {
 	error+=checkcompartparams(sim,&warndiff);warn+=warndiff;
 	error+=checkportparams(sim,&warndiff);warn+=warndiff;
 	error+=checklatticeparams(sim,&warndiff);warn+=warndiff;
-	error+=filcheckparams(sim,&warndiff);warn+=warndiff;
+	error+=filCheckParams(sim,&warndiff);warn+=warndiff;
 	error+=checkgraphicsparams(sim,&warndiff);warn+=warndiff;
 	error+=checkbngparams(sim,&warndiff);warn+=warndiff;
 
@@ -1537,7 +1537,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(0,"max_filament has been deprecated"); }
 
 	else if(!strcmp(word,"new_filament")) {				// new_filament
-		fil=filreadstring(sim,pfp,NULL,NULL,"name",line2);
+		fil=filReadString(sim,pfp,NULL,NULL,"name",line2);
 		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
@@ -1550,7 +1550,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		ft=stringfind(sim->filss->ftnames,sim->filss->ntype,nm);
 		CHECKS(ft>=0,"filament type is unrecognized");
 		filtype=sim->filss->filtypes[ft];
-		filtype=filtypereadstring(sim,pfp,filtype,nm1,line2);
+		filtype=filtypeReadString(sim,pfp,filtype,nm1,line2);
 		if(!filtype) pfp=NULL;
 		CHECK(filtype!=NULL); }
 
@@ -1565,7 +1565,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(f>=0,"filament name is unrecognized");
 		filtype=sim->filss->filtypes[ft];
 		fil=filtype->fillist[f];
-		fil=filreadstring(sim,pfp,fil,filtype,nm1,line2);
+		fil=filReadString(sim,pfp,fil,filtype,nm1,line2);
 		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
@@ -2323,10 +2323,10 @@ int loadsim(simptr sim,const char *fileroot,const char *filename,const char *fla
 			er=bngupdate(sim); }
 
 		else if(!strcmp(word,"start_filament_type")) {	// start_filament_type
-			er=filloadtype(sim,&pfp,line2); }
+			er=filLoadType(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_filament")) {			// start_filament
-			er=filloadfil(sim,&pfp,line2); }
+			er=filLoadFil(sim,&pfp,line2); }
 
 		else if(!strcmp(word,"start_rules")) {				// start_rules
 			CHECKS(0,"Moleculizer support has been discontinued in Smoldyn"); }
@@ -2403,7 +2403,7 @@ int simupdate(simptr sim) {
 
 	if(sim->condition==SCinit && sim->filss)
 		simLog(sim,2," setting up filaments\n");
-	er=filupdate(sim);
+	er=filUpdate(sim);
 	CHECK(er!=1);
 
 	if(sim->condition==SCinit && sim->graphss)
