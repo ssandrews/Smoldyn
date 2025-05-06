@@ -9,9 +9,14 @@ from smoldyn.utils import color2RGBA
 # as [1,1,0,1] specifying RGBA value.
 ColorType = Union[str, Tuple[float, float, float], Tuple[float, float, float, float]]
 
+Point2 = Tuple[float, float]
+Point3 = Tuple[float, float, float]
+
+PointType = Union[Point2, Point3]
+
 """Diffusion coefficient can be a single numerical value (applies to all states
 of molecules), or it could be a dictionary of molecule state and correponding
-diffusion coefficient. 
+diffusion coefficient.
 """
 DiffConst = Union[float, Dict[str, float]]
 
@@ -19,9 +24,10 @@ DiffConst = Union[float, Dict[str, float]]
 given, it applies to all dimentions."""
 BoundType = Union[str, List[str]]
 
+
 class Color:
-    """Color class.
-    """
+    """Color class."""
+
     def __init__(self, color):
         assert not isinstance(color, dict)
         self.name = color if not isinstance(color, Color) else color.name
@@ -35,4 +41,3 @@ class Color:
 
     def __str__(self):
         return str(self.name)
-

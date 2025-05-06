@@ -13,7 +13,6 @@ target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
 # especially where scanf is used for user input.
 target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE)
 
-
 target_include_directories(_pysmoldyn PRIVATE ${Python3_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
 
 # This is suggested by pybind11: reduces binary size and disables some warnings.
