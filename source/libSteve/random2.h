@@ -182,6 +182,7 @@ float binomialrandF(float p,int n);
 double gaussrandD();
 float gaussrandF();
 void circlerandD(double *x,double radius);
+double gaussrandtruncOCD(double mean,double stddev,double low, double high);
 void sphererandCCD(double *x,double radius1,double radius2);
 void sphererandCCF(float *x,float radius1,float radius2);
 void ballrandCCD(double *x,int dim,double radius);

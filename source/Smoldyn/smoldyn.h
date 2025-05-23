@@ -780,6 +780,7 @@ enum FilamentDynamics
     FDRK2,
     FDRK4,
     FDeulermat,
+		FDimplicitold,
 		FDimplicit
 };
 
@@ -800,10 +801,13 @@ typedef struct filamentworkstruct {
     double ***wnodes;                 // working nodes (3,nseg+1,3)
     double **wroll;                   // working rolls (3,nseg)
     double **flatnodes;               // flattened nodes (2,~(2 or 4)*nseg)
+    double **flatforces;              // flattened forces (2,~(2 or 4)*nseg)
     double **wseg0up;                 // seg. 0 up vector (3,3)
     double **forces;                  // forces on nodes (nseg+1,3)
     double *torques;                  // list of segment torques (nseg)
     sparsematrix forcemat;            // force matrix for implicit int.
+    double thermtime;                 // time for thermal forces
+    double **thermforce;              // thermal forces on nodes
 } *filamentworkptr;
 
 typedef struct filamentstruct {
@@ -816,6 +820,7 @@ typedef struct filamentstruct {
     struct filamentworkstruct *filwork; // working data for dynamics
     double **nodesx;                    // old node locations (nseg+1)
     double *roll;                       // segment roll values (nseg)
+    double *nodemobility;               // extra node mobility (nseg+1)
     double seg0up[3];                   // segment 0 up vector
     struct filamentstruct* frontend;    // what front attaches to
     struct filamentstruct* backend;     // what back attaches to

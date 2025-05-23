@@ -382,6 +382,13 @@ float *multKV(float k,float *a,float *c,int n)	{
 	return c;	}
 
 
+double *multKVD(double k,double *a,double *c,int n)	{
+	int i;
+
+	for(i=0;i<n;i++)	c[i]=k*a[i];
+	return c;	}
+
+
 float *divKV(float k,float *a,float *c,int n)	{
 	int i;
 

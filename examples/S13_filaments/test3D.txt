@@ -1,0 +1,53 @@
+# Filaments
+
+#units nm us zJ
+
+random_seed 1
+graphics opengl_good
+
+dim 3
+boundaries x -2 2 r
+boundaries y -2 2 r
+boundaries z -2 2 r
+
+time_start 0
+time_stop 10
+time_step 0.02
+
+
+start_filament_type type
+color blue
+thickness 3
+polygon ve
+force_arrows 1 red
+kT 1
+dynamics implicit
+#dynamics rk4
+standard_length 1
+standard_angle 0 0 0
+force_length 10
+force_angle 1 1 1
+mobility 1
+end_filament_type
+
+start_filament type:fil1
+first_segment 0 0 0  1  0 0 0
+add_segment 1  0 0 0
+add_segment 1  0 0 0
+add_segment 1  1 1 1
+add_segment 1  -1 -1 -1
+end_filament
+
+#random_filament type:fil1 5  0 0 0  0 0 0
+
+
+filament_type type kT 0
+
+#cmd E printFilament type:fil1 xyfm stdout
+#cmd E echo stdout "\n"
+cmd B pause
+
+end_file
+
+
+

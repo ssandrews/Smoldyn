@@ -101,6 +101,7 @@ void Sph_DcmtxUnit(const double *Dcmt,char unit,double *vect,const double *add,d
 void Sph_One2Qtn(double *Qtn);
 void Sph_Qtn2Qtn(const double *Qtn1,double *Qtn2);
 void Sph_Ypr2Qtn(const double *Ypr,double *Qtn);
+void Sph_Yaw2Qtn(double Yaw,double *Qtn);
 void Sph_Ypr2Qtni(const double *Ypr,double *Qtni);
 void Sph_Qtn2Ypr(const double *Qtn,double *Ypr);
 void Sph_Dcm2Qtn(const double *Dcm,double *Qtn);
@@ -406,6 +407,17 @@ $$\bm{q} = \left[ \begin{array}{c}
 \end{array} \right]$$
 
 
+\item[\ttt{void Sph\_Yaw2Qtn(double Yaw,double *Qtn)}]
+\hfill \\
+Converts the single yaw angle, of the ypr angles, to quaternion \ttt{Qtn}. This is the 2D version of \ttt{Sph\_Ypr2Qtn}. It uses the following equation.
+$$\bm{q} = \left[ \begin{array}{c}
+\textrm{c}\frac{\phi}{2} \\
+0 \\
+0 \\
+-\textrm{s}\frac{\phi}{2}
+\end{array} \right]$$
+
+
 \item[\ttt{void Sph\_Ypr2Qtni(const double Ypr,double *Qtni)}]
 \hfill \\
 Converts Ypr angles to the inverse quaternion \ttt{Qtn}, but returned as a normal quaternion. This uses the following equation, from Rose, 2015. The signs are the same as in Rose because this is for an inverse passive rotation and theirs is for a forward active rotation.
@@ -429,6 +441,12 @@ $$\bm{ypr}=\left[\begin{array}{c}
 \asin(2q_0q_2-2q_1q_3) \\
 \atan2(2q_0q_1+2q_2q_3,q_0^2-q_1^2-q_2^2+q_3^2)
 \end{array} \right]$$
+
+
+\item[\ttt{double Sph\_Qtn2Yaw(const double *Qtn)}]
+\hfill \\
+Converts quaternion \ttt{Qtn} to yaw angle and returns it. This is the 2D version of \ttt{Sph\_Qtn2Ypr}. It assumes that the quaternion is only non-zero in elements 0 and 3. This uses the following equation.
+$$yaw=\atan2(2q_0q_3,q_0^2-q_3^2)$$
 
 
 \item[\ttt{void Sph\_Dcm2Qtn(const double *Dcm,double *Qtn)}]

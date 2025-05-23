@@ -1150,7 +1150,7 @@ void RenderFilaments(simptr sim) {
 				for(f=0;f<filtype->nfil;f++) {
 					fil=filtype->fillist[f];
 					if(fil->filwork) {
-						filComputeForces(fil);
+						filComputeForces(fil,-1,-1);
 						for(vtx=0;vtx<=fil->nseg;vtx++) {
 							point=fil->nodes[vtx];
 							vect[0]=point[0]+scale*fil->filwork->forces[vtx][0];
@@ -1230,7 +1230,7 @@ void RenderFilaments(simptr sim) {
 				for(f=0;f<filtype->nfil;f++) {
 					fil=filtype->fillist[f];
 					if(fil->filwork) {
-						filComputeForces(fil);
+						filComputeForces(fil,-1,-1);
 						for(vtx=0;vtx<=fil->nseg;vtx++) {
 							point=fil->nodes[vtx];
 							vect[0]=point[0]+scale*fil->filwork->forces[vtx][0];

@@ -429,6 +429,14 @@ void Sph_Ypr2Qtn(const double *Ypr,double *Qtn) {
 	return; }
 
 
+void Sph_Yaw2Qtn(double Yaw,double *Qtn) {
+	Qtn[0]=cos(Yaw/2);
+	Qtn[1]=0;
+	Qtn[2]=0;
+	Qtn[3]=-sin(Yaw/2);
+	return; }
+
+
 void Sph_Ypr2Qtni(const double *Ypr,double *Qtni) {
 	double cf2,cq2,cy2,sf2,sq2,sy2;
 
@@ -452,6 +460,10 @@ void Sph_Qtn2Ypr(const double *Qtn,double *Ypr) {
 	return; }
 
 
+double Sph_Qtn2Yaw(const double *Qtn) {
+	return atan2(-2*Qtn[0]*Qtn[3],Qtn[0]*Qtn[0]-Qtn[3]*Qtn[3]); }
+
+
 void Sph_Dcm2Qtn(const double *Dcm,double *Qtn) {
 	double factor;
 
@@ -460,34 +472,29 @@ void Sph_Dcm2Qtn(const double *Dcm,double *Qtn) {
 	Qtn[2]=-Dcm[0]+Dcm[4]-Dcm[8];
 	Qtn[3]=-Dcm[0]-Dcm[4]+Dcm[8];
 	if(Qtn[0]>=Qtn[1] && Qtn[0]>=Qtn[2] && Qtn[0]>=Qtn[3]) {
-//		printf("*** Sph_Dcm2Qtn A. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
 		Qtn[0]=0.5*sqrt(1+Qtn[0]);
 		factor=0.25/Qtn[0];
 		Qtn[1]=factor*(Dcm[7]-Dcm[5]);
 		Qtn[2]=factor*(Dcm[2]-Dcm[6]);
 		Qtn[3]=factor*(Dcm[3]-Dcm[1]); }
 	else if(Qtn[1]>=Qtn[2] && Qtn[1]>=Qtn[3]) {
-//		printf("*** Sph_Dcm2Qtn B. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
 		Qtn[1]=0.5*sqrt(1+Qtn[1]);
 		factor=0.25/Qtn[1];
 		Qtn[0]=factor*(Dcm[7]-Dcm[5]);
 		Qtn[2]=factor*(Dcm[1]+Dcm[3]);
 		Qtn[3]=factor*(Dcm[2]+Dcm[6]); }
 	else if(Qtn[2]>=Qtn[3]) {
-//		printf("*** Sph_Dcm2Qtn C. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
 		Qtn[2]=0.5*sqrt(1+Qtn[2]);
 		factor=0.25/Qtn[2];
 		Qtn[0]=factor*(Dcm[2]-Dcm[6]);
 		Qtn[1]=factor*(Dcm[1]+Dcm[3]);
 		Qtn[3]=factor*(Dcm[5]+Dcm[7]); }
 	else {
-//		printf("*** Sph_Dcm2Qtn D. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
 		Qtn[3]=0.5*sqrt(1+Qtn[3]);
 		factor=0.25/Qtn[3];
 		Qtn[0]=factor*(Dcm[3]-Dcm[1]);
 		Qtn[1]=factor*(Dcm[2]+Dcm[6]);
 		Qtn[2]=factor*(Dcm[5]+Dcm[7]); }
-//	printf("*** Sph_Dcm2Qtn Z. Qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
 	return; }
 
 
@@ -520,9 +527,7 @@ void Sph_XZ2Qtni(const double *x,const double *z,double *Qtn) {
 	y2[1]/=len;
 	y2[2]/=len;
 	Sph_crossVVD(x2,y2,z2);														// z2 = x2 cross y2
-//	printf("*** Sph_XZ2Qtni A. dcm=(%1.3g %1.3g %1.3g; %1.3g %1.3g %1.3g; %1.3g %1.3g %1.3g)\n",dcm[0],dcm[1],dcm[2],dcm[3],dcm[4],dcm[5],dcm[6],dcm[7],dcm[8]);//??
 	Sph_Dcm2Qtn(dcm,Qtn);															// convert matrix to qtn
-//	printf("*** Sph_XZ2Qtni B. qtn=(%1.3g %1.3g %1.3g %1.3g)\n",Qtn[0],Qtn[1],Qtn[2],Qtn[3]);//??
 	return; }
 
 

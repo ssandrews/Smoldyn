@@ -51,11 +51,13 @@ float *copyV(float *a,float *c,int n);
 double *copyVD(double *a,double *c,int n);
 float *copyM(float *a,float *c,int m,int n);
 float *leftrotV(float *a,float *c,int n,int k);
+
 float *sumV(float ax,float *a,float bx,float *b,float *c,int n);
 double *sumVD(double ax,double *a,double bx,double *b,double *c,int n);
 float *sumM(float ax,float *a,float bx,float *b,float *c,int m,int n);
 float *addKV(float k,float *a,float *c,int n);
 float *multKV(float k,float *a,float *c,int n);
+double *multKVD(double k,double *a,double *c,int n);
 float *divKV(float k,float *a,float *c,int n);
 float *multV(float *a,float *b,float *c,int n);
 float *multM(float *a,float *b,float *c,int m,int n);

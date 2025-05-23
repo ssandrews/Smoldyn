@@ -21,7 +21,10 @@ typedef struct sparsematrixstruct{
   int ccols;                 // columns in compressed matrix
   int *col0;                 // first column of compressed matrix
   int *col1;                 // 1+ last column of compressed matrix
-  double *matrix; } *sparsematrix;
+  double *matrix;            // actual matrix data
+  int BiCGSTAB;              // 1 if allocatad for BiCGSTAB
+  double **BiC;	             // BiCSTAB vectors
+  } *sparsematrix;
 
 
 #include <stdlib.h>
@@ -33,7 +36,7 @@ typedef struct sparsematrixstruct{
 #define sparseMultiplyBy(a,i,j,x) ((a->matrix[(a->ccols)*(i)+(j)-(a->col0[i])])*=(x))
 
 // Memory allocation and freeing
-sparsematrix sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize);
+sparsematrix sparseAllocBandM(sparsematrix sprs, int maxrows, int bandsize, int BiCGSTAB);
 void sparseFreeM(sparsematrix sprs);
 
 // Matrix output
@@ -45,6 +48,7 @@ void sparseClearM(sparsematrix sprs);
 void sparseMultiplyMV(const sparsematrix sprs,const double *vect,double *ans);
 void sparseAddIdentityM(sparsematrix sprs,double factor);
 void sparseMultiplyScalarM(sparsematrix sprs,double scalar);
+void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tolerance);
 
 #ifdef __cplusplus
 }

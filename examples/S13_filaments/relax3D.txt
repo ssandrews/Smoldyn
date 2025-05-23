@@ -29,8 +29,8 @@ color blue
 force_arrows 10 red
 thickness 2
 polygon ve
-kT 0.1
-dynamics Euler
+kT 1
+dynamics implicit2
 standard_length 5
 standard_angle 0 0 0
 force_length 1
@@ -46,19 +46,16 @@ end_filament_type
 #end_filament
 
 random_filament template:fil1 10  0 0 0  u u u
-#random_filament template:fil1 10  0 0 0  0 0 0
-
-
 random_filament template:fil2  20  20 50 1 u u u
 random_filament template:fil3  15  30 50 1 u u u
 random_filament template:fil4  30  40 50 1 u u u
-random_filament template:fil5  25  50 50 1 u u u
+#random_filament template:fil5  25  50 50 1 u u u
 
 filament_type template standard_angle 0.3 0 0
-
+filament_type template kT 0
 
 #cmd B printFilament template fil1 xabyft stdout
-cmd B pause
+cmd E pause
 #cmd i 0 10000 1000 printFilament template fil1 xabyft stdout
 
 end_file

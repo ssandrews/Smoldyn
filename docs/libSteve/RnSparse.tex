@@ -103,6 +103,7 @@ void sparseMultiplyScalarM(sparsematrix sprs,double scalar);
 
 These functions perform matrix operations on sparse matrices. Essentially no error checking is performed in these routines because they are designed to be as fast as possible. In particular, if the macro functions are used with row numbers or column numbers that are outside of the elements that are allowed to be non-zero, as defined by the \ttt{sparseAlloc} function, then they will simply access incorrect elements or will create a segfault error.
 
+At present, sparse matrices are represented by a rectangular array, which works well for band diagonal matrices. However, I might change this at some point to a vector of vectors, which is better for other shapes. This change won't affect anything outside of this library, or even most code within the library, so long as matrix elements are accessed exclusively through the macros provided here.
 
 % Dependencies
 \section{Dependencies}
@@ -145,6 +146,8 @@ Here, \ttt{nrows=4}, which is the number of rows for both the full and compresse
 
 Sparse matrices can also be stored as the full size version, but still be more efficient than non-sparse matrix code. The reason is that the \ttt{col0} and \ttt{col1} elements tell the functions where to start and stop computing, so substantial savings are still possible.
 
+The current code is designed for band diagonal matrices. It could also be rewritten slightly for more general sparse matrices. I would do this by changing the \ttt{matrix} element of the data structure from a vector to a vector of vectors (i.e. from \ttt{double*} to \ttt{double**}).
+
 
 % Code documentation
 \section{Code documentation}
@@ -184,9 +187,11 @@ Multiplies element $(i,j)$ of sparse matrix \ttt{a} by the scalar \ttt{x}.
 
 
 \item[\ttt{sparsematrix}]
-\ttt{sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize)}
+\ttt{sparseAllocBandM(sparsematrix sprs, int maxrows, int bandsize, int \\ BiCGSTAB)}
 \hfill \\
-Allocates or resizes a square sparse matrix with a band structure. Enter \ttt{sprs} as a pre-existing matrix if it should be resized, or as \ttt{NULL} for a new matrix. The allocated size of the corresponding full matrix is \ttt{maxrows} by \ttt{maxrows}. The functional size is also initialized to \ttt{nrows=maxrows} and \ttt{fcols=maxrows}, which can be reduced later with the \ttt{sparseSetSizeM} function. The matrix is assumed to be entirely zero, except for a band along the main diagonal that is \ttt{bandsize} wide on each side of the main diagonal, not including that diagonal. That is, the full bandwidth, including the main diagonal, is $2 \times bandsize+1$. If an existing matrix is resized, this function does \textit{not} keep the existing data, but instead fills the entire matrix with zeros. Permissable row indices are $i \in [0,nrow-1]$ and column indices are $j \in [i-bandsize,i+bandsize]$.
+Allocates or resizes a square sparse matrix with a band structure. Enter \ttt{sprs} as a pre-existing matrix if it should be resized, or as \ttt{NULL} for a new matrix. The allocated size of the corresponding full matrix is \ttt{maxrows} by \ttt{maxrows}. The functional size is also initialized to \ttt{nrows=maxrows} and \ttt{fcols=maxrows}, which can be reduced later with the \ttt{sparseSetSizeM} function. The matrix is assumed to be entirely zero, except for a band along the main diagonal that is \ttt{bandsize} wide on each side of the main diagonal, not including that diagonal. That is, the full bandwidth, including the main diagonal, is $2 \times bandsize+1$. If an existing matrix is reallocated by calling this function an additional time but with a different \ttt{maxrows} value, then this function does \textit{not} keep the existing data, but instead fills the entire matrix with zeros. Permissable row indices are $i \in [0,nrow-1]$ and column indices are $j \in [i-bandsize,i+bandsize]$.
+
+Enter \ttt{BiCGSTAB} as 1 to allocate the additional memory that is required for the BiCGSTAB functions, and as 0 to not allocate that memory. If this is done at a different time from the initial call to this function, enter \ttt{maxrows} and \ttt{bandsize} as $-1$, to indicate that they aren't being changed.
 
 \item[\ttt{void sparseFreeM(sparsematrix sprs)}]
 \hfill \\
@@ -228,6 +233,35 @@ Adds \ttt{factor} times the identity matrix to \ttt{sprs} (the identity matrix h
 \item[\ttt{void sparseMultiplyScalarM(sparsematrix sprs,double scalar)}]
 \hfill \\
 Multiplies every element of sparse matrix \ttt{sprs} by \ttt{scalar} and puts the result back in \ttt{sprs}.
+
+\item[\ttt{void}]
+\ttt{sparseBiCGSTAB(const sparsematrix sprs, const double *b, double *x, double \\ tolerance)}
+\hfill \\
+Solves the matrix equation $\bf{A}\cdot \bm{x} = \bm{b}$ for $\bm{x}$ with known $\bm{A}$, in \ttt{sprs}, and $\bm{b}$, in \ttt{bvect}. This requires an initial guess, $\bm{x}_0$, which is entered in \ttt{x}. The result is also returned in \ttt{x}. This function iterates until the error is less than \ttt{tolerance}.
+
+The math is from Wikipedia ``Biconjugate gradient stabilized method''. It is as follows.
+\begin{align*}
+\bm{r}_0 &= \bm{b}-\bm{A}\bm{x}_0 \\
+\hat{\bm{r}}_0 &= \bm{r}_0 \hspace{0.5cm} \textrm{there are also other options, but the code uses this} \\
+\rho_0 &= (\hat{\bm{r}}_0, \bm{r}_0) \\
+\bm{p}_0 &= \bm{r}_0 \\
+&\textrm{For } i=1,2,3... \\
+\bm{\nu} &= \bm{A} \cdot \bm{p}_{i-1} \\
+\alpha &= \rho_{i-1}/(\hat{\bm{r}}_0, \bm{\nu}) \\
+\bm{h} &= \bm{x}_{i-1} + \alpha \bm{p}_{i-1} \\
+\bm{s} &= \bm{r}_{i-1} - \alpha \bm{\nu} \\
+& \textrm{if $\bm{s}$ is small enough, set $\bm{x}_i = \bm{h}$ and quit} \\
+\bm{t} &= \bm{A} \cdot \bm{s} \\
+\omega &= (\bm{t}, \bm{s}) / (\bm{t}, \bm{t}) \\
+\bm{x}_i &= \bm{h} + \omega \bm{s} \\
+\bm{r}_i &= \bm{s} - \omega \bm{t} \\
+& \textrm{if $\bm{r}_i$ is small enough, then quit} \\
+\rho_i &= (\hat{\bm{r}}_0, \bm{r}_i) \\
+\beta &= (\rho_i/\rho_{i-1})(\alpha/\omega) \\
+\bm{p}_i &= \bm{r}_i + \beta(\bm{p}_{i-1}-\omega\bm{\nu})
+\end{align*}
+
+
 
 
 \end{description}

@@ -2,7 +2,7 @@
 
 #units nm us zJ
 
-#random_seed 4
+random_seed 4
 graphics opengl_good
 
 dim 2
@@ -17,7 +17,7 @@ color red red
 
 time_start 0
 time_stop 50000
-time_step 0.02
+time_step 0.06
 
 frame_thickness 0
 
@@ -28,8 +28,8 @@ color blue
 thickness 3
 polygon ve
 force_arrows 1 red
-kT 1
-dynamics EulerMat
+kT 5
+dynamics implicit2
 standard_length 5
 standard_angle 0
 force_length 1
@@ -51,7 +51,11 @@ random_filament template:fil1 8  0 0 u
 #random_filament template:fil5 49  50 50 u
 
 
+filament template:fil1 node_mobility 0 0
+filament template:fil1 node_mobility -1 0
+
 filament_type template standard_angle 0.3
+filament_type template kT 0
 
 cmd B pause
 #cmd E printFilament template fil1 xabf stdout

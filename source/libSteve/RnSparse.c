@@ -10,7 +10,7 @@ of the Gnu Lesser General Public License (LGPL). */
 /*********************** Memory allocation and freeing *******************/
 
 /* sparseAllocBandM */
-sparsematrix sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize) {
+sparsematrix sparseAllocBandM(sparsematrix sprs, int maxrows, int bandsize, int BiCGSTAB) {
 	int i,j,*newcol0,*newcol1,ccols;
 	double *newmatrix;
 
@@ -24,9 +24,11 @@ sparsematrix sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize) {
 		sprs->ccols=0;
 		sprs->col0=NULL;
 		sprs->col1=NULL;
-		sprs->matrix=NULL; }
+		sprs->matrix=NULL;
+		sprs->BiCGSTAB=0;
+		sprs->BiC=NULL; }
 
-	if(sprs->maxrows!=maxrows || sprs->ccols!=2*bandsize+1) {
+	if(maxrows>=0 && (sprs->maxrows!=maxrows || sprs->ccols!=2*bandsize+1)) {
 		ccols=2*bandsize+1;
 		newcol0=(int*) calloc(maxrows,sizeof(int));
 		newcol1=(int*) calloc(maxrows,sizeof(int));
@@ -49,12 +51,32 @@ sparsematrix sparseAllocBandM(sparsematrix sprs,int maxrows,int bandsize) {
 		sprs->col1=newcol1;
 		sprs->matrix=newmatrix; }
 
+	if(BiCGSTAB) {
+		if(!sprs->BiC) {
+			sprs->BiC=(double**) calloc(8,sizeof(double*));
+			if(!sprs->BiC) return NULL;
+			for(i=0;i<8;i++)
+				sprs->BiC[i]=NULL; }
+		for(i=0;i<8;i++) {
+			free(sprs->BiC[i]);
+			sprs->BiC[i]=(double*) calloc(sprs->maxrows,sizeof(double));
+			if(!sprs->BiC[i]) return NULL;
+			for(j=0;j<sprs->maxrows;j++)
+				sprs->BiC[i][j]=0; }
+		sprs->BiCGSTAB=1; }
+
 	return sprs; }
 
 
 /* sparseFreeM */
 void sparseFreeM(sparsematrix sprs) {
+	int i;
+
 	if(!sprs) return;
+	if(sprs->BiC) {
+		for(i=0;i<8;i++)
+			free(sprs->BiC[i]);
+		free(sprs->BiC); }
 	free(sprs->col0);
 	free(sprs->col1);
 	free(sprs->matrix);
@@ -73,16 +95,16 @@ void sparsePrintM(const sparsematrix sprs,int full) {
 	ccols=sprs->ccols;
 	col0=sprs->col0;
 	col1=sprs->col1;
-	printf("maxrows=%i nrows=%i fcols=%i ccols=%i\n",sprs->maxrows,nrows,fcols,ccols);
+	printf("maxrows=%i nrows=%i fcols=%i ccols=%i BiCGSTAB=%i\n",sprs->maxrows,nrows,fcols,ccols,sprs->BiCGSTAB);
 	for(i=0;i<nrows;i++) {
 		printf("%i -> %i |",col0[i],col1[i]);
 		if(full) {
 			for(j=0;j<col0[i];j++)
 				printf(" 0 ");
 			if(j==col0[i]) printf(" :");
-			for(;j<col1[i];j++)
+			for(;j<col1[i] && j<fcols;j++)
 				printf(" % 1.3g",sparseReadM(sprs,i,j));
-			if(col1[i]-col0[i]==sprs->ccols) printf(" :");
+			if(j-col0[i]==sprs->ccols) printf(" :");
 			for(;j<fcols;j++)
 				printf(" 0 "); }
 		else {
@@ -151,4 +173,66 @@ void sparseMultiplyScalarM(sparsematrix sprs,double scalar) {
 		for(j=col0[i];j<col1[i];j++)
 			sparseMultiplyBy(sprs,i,j,scalar);
 	return; }
+
+
+void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tolerance) {
+	double *ax,*r,*rhat,rho,*p,*nu,alpha,*h,*s,*t,omega,rhop,beta,numer,denom,size;
+	int i,iter,nrows;
+
+	ax=sprs->BiC[0];
+	r=sprs->BiC[1];
+	rhat=sprs->BiC[2];
+	p=sprs->BiC[3];
+	nu=sprs->BiC[4];
+	h=sprs->BiC[5];
+	s=sprs->BiC[6];
+	t=sprs->BiC[7];
+
+	nrows=sprs->nrows;
+
+	sparseMultiplyMV(sprs,x,ax);
+	rho=0;
+	for(i=0;i<nrows;i++) {
+		r[i]=b[i]-ax[i];								// 1. r = b-Ax
+		rhat[i]=r[i];										// 2. rhat = r
+		rho+=rhat[i]*r[i]; 							// 3. rho = (rhat,r)
+		p[i]=r[i]; }										// 4. p = r
+
+	for(iter=0;iter<5;iter++) {				// 5. iterate
+		sparseMultiplyMV(sprs,p,nu);		// 5.1 nu = A.p
+		denom=0;
+		for(i=0;i<nrows;i++)
+			denom+=rhat[i]*nu[i];
+		alpha=rho/denom; 								// 5.2 alpha = rho/(rhat,nu)
+		size=0;
+		for(i=0;i<nrows;i++) {
+			h[i]=x[i]+alpha*p[i];					// 5.3 h = x+alpha*p
+			s[i]=r[i]-alpha*nu[i];				// 5.4 s = r-alpha*nu
+			size+=s[i]*s[i]; }
+		if(iter>2 && size<tolerance) {	// 5.5 quit if s is small
+			for(i=0;i<nrows;i++)
+				x[i]=h[i];
+			break; }
+		sparseMultiplyMV(sprs,s,t);			// 5.6 t = A.s
+		numer=denom=0;
+		for(i=0;i<nrows;i++) {
+			numer+=t[i]*s[i];
+			denom+=t[i]*t[i]; }
+		omega=numer/denom;							// 5.7 omega = (t,s)/(t,t)
+		rhop=0;
+		size=0;
+		for(i=0;i<nrows;i++) {
+			x[i]=h[i]+omega*s[i];					// 5.8 x = h+omega*s
+			r[i]=s[i]-omega*t[i];					// 5.9 r = s-omega*t
+			size+=r[i]*r[i];
+			rhop+=rhat[i]*r[i]; }					// 5.11 rho' = (rhat,r)
+		if(iter>2 && size<tolerance)		// 5.10 quit if r is small
+			break;
+		beta=(rhop/rho)*(alpha/omega);	// 5.12 beta = (rho'/rho)*(alpha/omega)
+		rho=rhop;												// rho = rho'
+		for(i=0;i<nrows;i++)
+			p[i]=r[i]+beta*(p[i]-omega*nu[i]); }	// 5.13 p = r+beta*(p-omega*nu)
+
+	return; }
+
 

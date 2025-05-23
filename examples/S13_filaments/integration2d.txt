@@ -17,7 +17,7 @@ boundaries y -100 100 r
 
 time_start 0
 time_stop 50000
-time_step 0.03
+time_step 0.02
 
 #frame_thickness 1
 
@@ -87,7 +87,10 @@ filament f2 translate + 0 100
 filament f3 translate + 0 100
 
 
-#filament_type template standard_angle 0.3
+filament_type Euler kT 0
+filament_type RK2 kT 0
+filament_type RK4 kT 0
+
 
 cmd B pause
 #cmd E pause

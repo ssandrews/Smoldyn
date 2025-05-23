@@ -1,0 +1,45 @@
+# Filaments
+
+#units nm us zJ
+
+random_seed 4
+graphics opengl_good
+
+dim 2
+boundaries x -2 2 r
+boundaries y -2 2 r
+
+
+time_start 0
+time_stop 10
+time_step 0.02
+
+
+start_filament_type type
+color blue
+thickness 3
+polygon ve
+force_arrows 1 red
+kT 0
+#dynamics implicit
+dynamics euler
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 1
+mobility 1
+end_filament_type
+
+start_filament type:fil1
+first_segment 0 0  1.27444 0.880366
+add_segment 1.57248 0.904847
+end_filament
+
+cmd E printFilament type:fil1 xyf stdout
+cmd E echo stdout "\n"
+cmd E pause
+
+end_file
+
+
+

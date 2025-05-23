@@ -48,8 +48,10 @@ void Sph_DcmtxUnit(const double *Dcmt,char unit,double *vect,const double *add,d
 void Sph_One2Qtn(double *Qtn);
 void Sph_Qtn2Qtn(const double *Qtn1,double *Qtn2);
 void Sph_Ypr2Qtn(const double *Ypr,double *Qtn);
+void Sph_Yaw2Qtn(double Yaw,double *Qtn);
 void Sph_Ypr2Qtni(const double *Ypr,double *Qtni);
 void Sph_Qtn2Ypr(const double *Qtn,double *Ypr);
+double Sph_Qtn2Yaw(const double *Qtn);
 void Sph_Dcm2Qtn(const double *Dcm,double *Qtn);
 void Sph_Qtn2Dcm(const double *Qtn,double *Dcm);
 void Sph_XZ2Qtni(const double *x,const double *z,double *Qtn);

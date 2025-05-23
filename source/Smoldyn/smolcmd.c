@@ -15,6 +15,7 @@
 #include "random2.h"
 #include "Rn.h"
 #include "RnSort.h"
+#include "RnSparse.h"
 #include "string2.h"
 #include "SimCommand.h"
 #include "Zn.h"
@@ -147,6 +148,7 @@ enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatemol(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2);
 
 // Smoldyn function declarations
 double fnmolcount(void *voidsim,char *erstr,char *line2);
@@ -290,6 +292,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"diffusecmpt")) return cmddiffusecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"longrangeforce")) return cmdlongrangeforce(sim,cmd,line2);
 	else if(!strcmp(word,"translatemol")) return cmdtranslatemol(sim,cmd,line2);
+	else if(!strcmp(word,"RotateFilamentToY")) return cmdRotateFilamentToY(sim,cmd,line2);
 
 #ifdef VCELL
 	// vcell commands
@@ -3117,48 +3120,44 @@ enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2) {
 /* cmdprintFilament */
 enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
-	filamentssptr filss;
 	filamenttypeptr filtype;
 	filamentptr fil;
 	segmentptr segment;
 	filamentworkptr filwork;
-	char nm1[STRCHAR],nm2[STRCHAR],code[STRCHAR];
-	int itct,i1,er,seg;
+	char code[STRCHAR];
+	int itct,er,seg;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 
 	SCMDCHECK(sim->filss,"No filaments defined");
-	itct=sscanf(line2,"%s %s %s",nm1,nm2,code);
-	SCMDCHECK(itct==3,"printFilament format: filament_type filament code filename");
-	filss=sim->filss;
-	i1=stringfind(filss->ftnames,filss->ntype,nm1);
-	SCMDCHECK(i1>=0,"filament type not recognized");
-	filtype=filss->filtypes[i1];
-	i1=stringfind(filtype->filnames,filtype->nfil,nm2);
-	SCMDCHECK(i1>=0,"filament name not recognized");
-	fil=filtype->fillist[i1];
-	line2=strnword(line2,4);
+	filtype=NULL;
+	er=filReadFilName(sim,line2,&filtype,&fil,NULL);
+	SCMDCHECK(!er,"unable to read filament name. Format: filament_type:filament code filename");
+	line2=strnword(line2,2);
+	itct=sscanf(line2,"%s",code);
+	SCMDCHECK(itct==1,"printFilament format: filament_type:filament code filename");
+	line2=strnword(line2,2);
 	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
 	SCMDCHECK(er!=-1,"file name not recognized");
 
 	filwork=fil->filwork;
 	if(strchr(code,'f') && filwork)
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 
 	scmdfprintf(cmd->cmds,fptr,"%g %s:%s\n",sim->time,filtype->ftname,fil->filname);
 	if(strpbrk(code,"abxf")) {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
-			if(strchr(code,'x')) {
+			if(strchr(code,'x')) {							// x is node positions, lengths, and angles
 				if(sim->dim==2)
 					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g)->(%1.3g,%1.3g) angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzback[0],segment->xyzback[1],segment->ypr[0]);
 				else
 					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
-			if(strchr(code,'a')) {
+			if(strchr(code,'a')) {							// a is relative quaternions
 				scmdfprintf(cmd->cmds,fptr," a=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3]); }
-			if(strchr(code,'b')) {
+			if(strchr(code,'b')) {							// b is absolute quaternions
 				scmdfprintf(cmd->cmds,fptr," b=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]); }
-			if(strchr(code,'f') && filwork) {
+			if(strchr(code,'f') && filwork) {		// f is forces
 				if(sim->dim==2)
 					scmdfprintf(cmd->cmds,fptr," F=(%1.3g,%1.3g)",filwork->forces[seg][0],filwork->forces[seg][1]);
 				else
@@ -3169,6 +3168,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1]);
 			else
 				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }}
+	if(strpbrk(code,"m")) {
+		sparsePrintM(filwork->forcemat,1);	//?? This only prints to stdout and doesn't use scmdprintf function
+		}
 
 	scmdflush(fptr);
 	return CMDok; }
@@ -4929,6 +4931,38 @@ enum CMDcode cmdtranslatemol(simptr sim,cmdptr cmd,char *line2) {
 	molmovemol(sim,mptr,delta);
 	return CMDok;	}
 
+
+/* cmdRotateFilamentToY */
+enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
+	filamenttypeptr filtype;
+	filamentptr fil;
+	int er,node;
+	double meany,meanz,meanfact,*front,oldy,oldz,**nodes;
+
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
+	filtype=NULL;
+	er=filReadFilName(sim,line2,&filtype,&fil,NULL);
+	SCMDCHECK(!er,"unable to read filament name");
+
+	nodes=fil->nodes;					//?? Should rewrite this function by first calling function to find COM.
+	front=nodes[0];						//?? Then rotate filament using filRotateVertex
+	meany=meanz=0;
+	for(node=1;node<=fil->nseg;node++) {
+		meany+=nodes[node][1]-front[1];						// mean y and z positions of nodes
+		meanz+=nodes[node][2]-front[2]; }
+	meanfact=sqrt(meany*meany+meanz*meanz);
+	if(meanfact==0) return CMDok;
+	meanfact=1.0/meanfact;
+	meany*=meanfact;														// normalized mean y and z positions
+	meanz*=meanfact;
+
+	for(node=1;node<=fil->nseg;node++) {
+		oldy=nodes[node][1]-front[1];
+		oldz=nodes[node][2]-front[2];
+		nodes[node][1]=front[1]+meany*oldy+meanz*oldz;
+		nodes[node][2]=front[2]-meanz*oldy+meany*oldz; }
+
+	return CMDok; }
 
 
 /**********************************************************/

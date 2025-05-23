@@ -59,6 +59,9 @@ void filssOutput(const simptr sim);
 void filWrite(const simptr sim,FILE *fptr);
 int filCheckParams(const simptr sim,int *warnptr);
 
+// filaments
+int filSetNodeMobility(filamentptr fil,int node,double value);
+
 // filament type
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value);
 int filtypeSetColor(filamenttypeptr filtype,const double *rgba);
@@ -98,10 +101,11 @@ double filBendEnergy(const filamentptr fil,int seg1,int seg2);
 void filBendTorque(const filamentptr fil,int seg,double *torque);
 
 // Filament updating
-void filNodes2Angles(filamentptr fil);
+void filNodes2Angles(filamentptr fil,int nodemin,int nodemax);
 void filCopyWorkingNodes(filamentptr fil,int from,int to);
 void filFlattenNodes(filamentptr fil,int from,int to);
 void filUnflattenNodes(filamentptr fil,int from,int to);
+void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax);
 
 // Filament manipulation
 void filArrayShift(filamentptr fil,int shift);
@@ -111,6 +115,7 @@ int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thi
 int filTreadmill(simptr sim,filamentptr fil,char endchar);
 int filRemoveSegment(filamentptr fil,char endchar);
 void filTranslate(filamentptr fil,const double *vect,char func);
+void filTranslateNode(filamentptr fil,int node,const double *vect,char func);
 int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func);
 int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
@@ -122,12 +127,13 @@ int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlpt
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
 // Force computation
-void filAddStretchForces(filamentptr fil);
+void filAddStretchForces(filamentptr fil,int nodemin,int nodemax);
 void filAddStretchForceMat(filamentptr fil);
-void filAddThermalForces(filamentptr fil);
-void filAddBendForces(filamentptr fil);
+void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
+void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
-void filComputeForces(filamentptr fil);
+void filComputeForces(filamentptr fil,int nodemin,int nodemax);
+void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
 // Dynamics functions
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out);
@@ -135,6 +141,7 @@ void filEulerDynamics(simptr sim,filamenttypeptr filtype);
 void filRK2Dynamics(simptr sim,filamenttypeptr filtype);
 void filRK4Dynamics(simptr sim,filamenttypeptr filtype);
 void filEulerMatDynamics(simptr sim,filamenttypeptr filtype);
+void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype);
 int filDynamics(simptr sim);
 
@@ -150,6 +157,7 @@ char *filFD2string(enum FilamentDynamics fd,char *string) {
 	else if(fd==FDRK2) strcpy(string,"RK2");
 	else if(fd==FDRK4) strcpy(string,"RK4");
 	else if(fd==FDeulermat) strcpy(string,"EulerMat");
+	else if(fd==FDimplicitold) strcpy(string,"ImplicitOld");
 	else if(fd==FDimplicit) strcpy(string,"Implicit");
 	else strcpy(string,"none");
 	return string; }
@@ -164,6 +172,7 @@ enum FilamentDynamics filstring2FD(const char *string) {
 	else if(strbegin(string,"RK2",0)) ans=FDRK2;
 	else if(strbegin(string,"RK4",0)) ans=FDRK4;
 	else if(strbegin(string,"eulermat",0)) ans=FDeulermat;
+	else if(strbegin(string,"implicitold",0)) ans=FDimplicitold;
 	else if(strbegin(string,"implicit",0)) ans=FDimplicit;
 	else ans=FDnone;
 	return ans; }
@@ -277,10 +286,12 @@ void filSegmentFree(segmentptr segment) {
 filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filamentworkptr filwork;
 	int dim,flatsize,seg,i;
+	simptr sim;
 
 	if(fil->filwork) filWorkFree(fil->filwork,fil->maxseg);
 
-	dim=fil->filtype->filss->sim->dim;
+	sim=fil->filtype->filss->sim;
+	dim=sim->dim;
 	flatsize=(dim==2) ? 2*(maxseg+1) : 4*(maxseg+1)-1;
 	filwork=fil->filwork;
 
@@ -289,21 +300,27 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filwork->wnodes=NULL;
 	filwork->wroll=NULL;
 	filwork->flatnodes=NULL;
+	filwork->flatforces=NULL;
 	filwork->wseg0up=NULL;
 	filwork->forces=NULL;
 	filwork->torques=NULL;
 	filwork->forcemat=NULL;
+	filwork->thermtime=sim->time-sim->dt;
+	filwork->thermforce=NULL;
 
 	CHECKMEM(filwork->wnodes=(double***) calloc(3,sizeof(double**)));
 	filwork->wnodes[0]=fil->nodes;
 	filwork->wnodes[1]=filwork->wnodes[2]=NULL;
 	CHECKMEM(filwork->wnodes[1]=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->wnodes[2]=(double**) calloc(maxseg+1,sizeof(double*)));
+	CHECKMEM(filwork->thermforce=(double**) calloc(maxseg+1,sizeof(double*)));
 	for(seg=0;seg<=maxseg;seg++) {
 		CHECKMEM(filwork->wnodes[1][seg]=(double*) calloc(3,sizeof(double)));
 		filwork->wnodes[1][seg][0]=filwork->wnodes[1][seg][1]=filwork->wnodes[1][seg][2]=0;
 		CHECKMEM(filwork->wnodes[2][seg]=(double*) calloc(3,sizeof(double)));
-		filwork->wnodes[2][seg][0]=filwork->wnodes[2][seg][1]=filwork->wnodes[2][seg][2]=0; }
+		filwork->wnodes[2][seg][0]=filwork->wnodes[2][seg][1]=filwork->wnodes[2][seg][2]=0;
+		CHECKMEM(filwork->thermforce[seg]=(double*) calloc(3,sizeof(double)));
+		filwork->thermforce[seg][0]=filwork->thermforce[seg][1]=filwork->thermforce[seg][2]=0; }
 
 	CHECKMEM(filwork->wroll=(double**) calloc(3,sizeof(double*)));
 	filwork->wroll[0]=fil->roll;
@@ -313,12 +330,20 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	for(seg=0;seg<maxseg;seg++)
 		filwork->wroll[1][seg]=filwork->wroll[2][seg]=0;
 
-	CHECKMEM(filwork->flatnodes=(double**) calloc(2,sizeof(double*)));
-	filwork->flatnodes[0]=filwork->flatnodes[1]=NULL;
+	CHECKMEM(filwork->flatnodes=(double**) calloc(3,sizeof(double*)));
+	filwork->flatnodes[0]=filwork->flatnodes[1]=filwork->flatnodes[2]=NULL;
 	CHECKMEM(filwork->flatnodes[0]=(double*) calloc(flatsize,sizeof(double)));
 	CHECKMEM(filwork->flatnodes[1]=(double*) calloc(flatsize,sizeof(double)));
+	CHECKMEM(filwork->flatnodes[2]=(double*) calloc(flatsize,sizeof(double)));
 	for(i=0;i<flatsize;i++)
-		filwork->flatnodes[0][i]=filwork->flatnodes[1][i]=0;
+		filwork->flatnodes[0][i]=filwork->flatnodes[1][i]=filwork->flatnodes[2][i]=0;
+
+	CHECKMEM(filwork->flatforces=(double**) calloc(2,sizeof(double*)));
+	filwork->flatforces[0]=filwork->flatforces[1]=NULL;
+	CHECKMEM(filwork->flatforces[0]=(double*) calloc(flatsize,sizeof(double)));
+	CHECKMEM(filwork->flatforces[1]=(double*) calloc(flatsize,sizeof(double)));
+	for(i=0;i<flatsize;i++)
+		filwork->flatforces[0][i]=filwork->flatforces[1][i]=0;
 
 	CHECKMEM(filwork->wseg0up=(double**) calloc(3,sizeof(double*)));
 	filwork->wseg0up[0]=fil->seg0up;
@@ -339,7 +364,7 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	for(seg=0;seg<maxseg;seg++)
 		filwork->torques[seg]=0;
 
-	CHECKMEM(filwork->forcemat=sparseAllocBandM(filwork->forcemat,flatsize,dim==2?3:6));
+	CHECKMEM(filwork->forcemat=sparseAllocBandM(filwork->forcemat,flatsize,dim==2?5:11,0));
 
 	fil->filwork=filwork;
 
@@ -371,7 +396,13 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 	if(filwork->flatnodes) {
 		free(filwork->flatnodes[0]);
 		free(filwork->flatnodes[1]);
+		free(filwork->flatnodes[2]);
 		free(filwork->flatnodes); }
+
+	if(filwork->flatforces) {
+		free(filwork->flatforces[0]);
+		free(filwork->flatforces[1]);
+		free(filwork->flatforces); }
 
 	if(filwork->wseg0up) {
 		free(filwork->wseg0up[1]);
@@ -384,6 +415,7 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 		free(filwork->forces); }
 
 	free(filwork->torques);
+	free(filwork->thermforce);
 	sparseFreeM(filwork->forcemat);
 	free(filwork);
 	return; }
@@ -396,7 +428,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 	int *newbranchspots;
 	filamentptr *newbranches;
 	char *newsequence;
-	double **newnodes,**newnodesx,*newroll;
+	double **newnodes,**newnodesx,*newroll,*newnodemobility;
 
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
@@ -408,6 +440,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->nodes=NULL;
 		fil->nodesx=NULL;
 		fil->roll=NULL;
+		fil->nodemobility=NULL;
 		fil->seg0up[0]=fil->seg0up[1]=0;
 		fil->seg0up[2]=1;
 		fil->frontend=NULL;
@@ -425,17 +458,20 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		CHECKMEM(newnodes=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newnodesx=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newroll=(double*) calloc(maxseg,sizeof(double)));
+		CHECKMEM(newnodemobility=(double*) calloc(maxseg+1,sizeof(double)));
 
 		for(seg=0;seg<=maxseg;seg++) newnodes[seg]=NULL;		// nodes
 		seg=0;
 		if(fil->maxseg>0) {
 			for(seg=0;seg<=fil->maxseg;seg++) {
 				newnodes[seg]=fil->nodes[seg];
-				newnodesx[seg]=fil->nodesx[seg]; }}
+				newnodesx[seg]=fil->nodesx[seg];
+				newnodemobility[seg]=fil->nodemobility[seg]; }}
 		for(;seg<=maxseg;seg++) {
 			CHECKMEM(newnodes[seg]=calloc(3,sizeof(double)));
 			CHECKMEM(newnodesx[seg]=calloc(3,sizeof(double)));
-			newnodes[seg][0]=newnodes[seg][1]=newnodes[seg][2]=0; }
+			newnodes[seg][0]=newnodes[seg][1]=newnodes[seg][2]=0;
+			newnodemobility[seg]=1; }
 
 		for(seg=0;seg<maxseg;seg++) {													// segments and torques
 			newsegments[seg]=NULL;
@@ -455,10 +491,12 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		free(fil->nodes);
 		free(fil->nodesx);
 		free(fil->roll);
+		free(fil->nodemobility);
 		fil->segments=newsegments;
 		fil->nodes=newnodes;
 		fil->nodesx=newnodesx;
 		fil->roll=newroll;
+		fil->nodemobility=newnodemobility;
 		if(fil->filtype && fil->filtype->dynamics!=FDnone)
 			filWorkAlloc(fil,maxseg);
 		fil->maxseg=maxseg; }
@@ -511,6 +549,7 @@ void filFree(filamentptr fil) {
 		free(fil->nodesx); }
 
 	free(fil->roll);
+	free(fil->nodemobility);
 	free(fil->branchspots);
 	free(fil->branches);
 	free(fil->sequence);
@@ -716,18 +755,23 @@ void filOutput(const filamentptr fil) {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
 			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g), rel. angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->ypr[0]);
+			simLog(sim,fil->nodemobility[seg]==1?1:2," front mobility=%g",fil->nodemobility[seg]);
 			simLog(sim,1,", back pos.=(%1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
 			simLog(sim,seg>5?1:2,"\n"); }
 		segment=fil->segments[fil->nseg-1];
-		simLog(sim,2,"     back pos.=(%1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1]); }
+		simLog(sim,2,"     back pos.=(%1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1]);
+		simLog(sim,fil->nodemobility[seg]==1?1:2," back mobility=%g",fil->nodemobility[seg]);
+		simLog(sim,2,"\n"); }
 	else {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
 			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]);
+			simLog(sim,fil->nodemobility[seg]==1?1:2," front mobility=%g",fil->nodemobility[seg]);
 			simLog(sim,1,", back pos.=(%1.3g %1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
 			simLog(sim,seg>5?1:2,"\n"); }
 		segment=fil->segments[fil->nseg-1];
-		simLog(sim,2,"     back pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2]); }
+		simLog(sim,2,"     back pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2]);
+		simLog(sim,fil->nodemobility[seg]==1?1:2," back mobility=%g",fil->nodemobility[seg]); }
 
 	if(fil->frontend)
 		simLog(sim,2,"   front branched from: %s\n",fil->frontend->filname);
@@ -845,11 +889,15 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn;
+	int error,warn,dim,f,seg,ft;
 	filamentssptr filss;
+	filamentptr fil;
+	filamenttypeptr filtype;
+	segmentptr segment;
 	char string[STRCHAR];
 
 	error=warn=0;
+	dim=sim->dim;
 	filss=sim->filss;
 	if(!filss) {
 		if(warnptr) *warnptr=warn;
@@ -859,10 +907,40 @@ int filCheckParams(const simptr sim,int *warnptr) {
 		warn++;
 		simLog(sim,7," WARNING: filament structure %s\n",simsc2string(filss->condition,string)); }
 
-	//TODO: write checkparams
+	if(filss->ntype==0) {warn++;simLog(sim,5,"WARNING: Filament superstructure is defined, but no filament types are defined\n");}
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				if(segment->len<=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i has length %1/3g; it should be >=0",fil->filname,seg,segment->len);}
+				if(segment->thk<=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i has thickness %1/3g; it should be >=0",fil->filname,seg,segment->len);}
+				if(segment->ypr[0]<-PI || segment->ypr[0]>PI) {warn++;simLog(sim,5,"WARNING: filament %s segment %i yaw bending angle is outside of (-PI,PI)\n",fil->filname,seg);}
+				if(dim==3 && (segment->ypr[1]<-PI/2 || segment->ypr[1]>PI/2)) {warn++;simLog(sim,5,"WARNING: filament %s segment %i pitch bending angle is outside of (-PI/2,PI/2)\n",fil->filname,seg);}
+				if(dim==3 && (segment->ypr[2]<-PI || segment->ypr[2]>PI)) {warn++;simLog(sim,5,"WARNING: filament %s segment %i roll bending angle is outside of (-PI,PI)\n",fil->filname,seg);}
+				if(dim==2 && segment->ypr[1]!=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i pitch bending angle is non-zero in a 2D system\n",fil->filname,seg);}
+				if(dim==2 && segment->ypr[2]!=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i roll bending angle is non-zero in a 2D system\n",fil->filname,seg);} }}}
 
 	if(warnptr) *warnptr=warn;
 	return error; }
+
+
+/******************************************************************************/
+/********************************* filaments *********************************/
+/******************************************************************************/
+
+
+/* filSetNodeMobility */
+int filSetNodeMobility(filamentptr fil,int node,double value) {
+	int i;
+
+	if(node<0) i=fil->nseg+1+node;
+	else i=node;
+	if(i>fil->nseg) return 1;
+	fil->nodemobility[i]=value;
+	return 0; }
+
 
 
 /******************************************************************************/
@@ -1094,7 +1172,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
 
-	printf("%s %s\n",word,line2);//?? debug
+//	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
 
 	varnames=sim->varnames;
@@ -1272,9 +1350,8 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	filamenttypeptr filtype2;
 	int itct,er,i1,seg;
 	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR],symbol;
-	double fltv1[9],length,angle[3],thick;
+	double fltv1[9],length,angle[3],thick,f1,pos[3];
 
-	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
 
 	varnames=sim->varnames;
@@ -1426,8 +1503,8 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(seg>=0 && seg<fil->nseg,"segment number is not within filament");
 		line2=strnword(line2,4);
 		CHECKS(line2,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		if(!strcmp(nm,"length")) {
-			CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
 			CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
 			line2=strnword(line2,2);
@@ -1442,7 +1519,6 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			er=filLengthenSegment(fil,seg,length,endchar,symbol);
 			CHECKS(!er,"Error while trying to change segment length - new length must be positive"); }
 		else if(!strcmp(nm,"angle")) {
-			CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 			angle[0]=angle[1]=angle[2]=0;
 			if(dim==2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&angle[0]);
@@ -1461,8 +1537,18 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
 				else CHECKS(0,"end needs to be 'back' or 'front'"); }
 			filRotateVertex(fil,seg,angle,endchar,symbol); }
+		else if(!strcmp(nm,"front_position")) {
+			pos[0]=pos[1]=pos[2]=0;
+			if(dim==2) {
+				itct=strmathsscanf(line2,"%mlg|L $mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1]);
+				CHECKS(itct==2,"insufficient position values");
+				line2=strnword(line2,3); }
+			else {
+				itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1],&pos[2]);
+				CHECKS(itct==3,"insufficient position values");
+				line2=strnword(line2,4); }
+			filTranslateNode(fil,seg,pos,symbol); }
 		else if(!strcmp(nm,"thickness")) {
-			CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"first symbol needs to be '=', '+', or '-'");
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
 			CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
 			line2=strnword(line2,2);
@@ -1495,6 +1581,17 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filSetSequence(fil,str1);
 		CHECKS(!er,"error while trying to set sequence string");
 		CHECKS(!strnword(line2,2),"unexpected text following sequence"); }
+
+	else if(!strcmp(word,"node_mobility")) {			// node_mobility
+		CHECKS(fil,"need to enter filament name before node_mobility");
+		CHECKS(fil->nseg>0,"filament has no segments");
+		itct=strmathsscanf(line2,"%mi %mlg|",varnames,varvalues,nvar,&i1,&f1);
+		CHECKS(itct==2,"node_mobility format: node value");
+		CHECKS(i1<=fil->nseg && i1>-fil->nseg,"node number is outside of filment size");
+		CHECKS(f1>=0,"mobility value needs to be >=0");
+		er=filSetNodeMobility(fil,i1,f1);
+		CHECKS(!er,"error while trying to set node mobility");
+		CHECKS(!strnword(line2,3),"unexpected text following node_mobility"); }
 
 	else {																				// unknown word
 		CHECKS(0,"syntax error within filament block: statement not recognized"); }
@@ -1639,23 +1736,28 @@ double filRandomLength(const filamenttypeptr filtype,double thickness,double sig
 /* filRandomAngle */
 double *filRandomAngle(const filamenttypeptr filtype,int n,double thickness,double sigmamult,double *angle) {
 	int d,dim;
+	double stddev;
 
 	dim=filtype->filss->sim->dim;
 	if(n>0 && dim==3) {										// 3D not first segment
 		for(d=0;d<3;d++){
 			if(filtype->kypr[d]<0)
 				angle[d]=filtype->stdypr[d];
-			else if(filtype->kypr[d]==0)
-				angle[d]=unirandOCD(-PI,PI);
-			else
-				angle[d]=filtype->stdypr[d]+sigmamult*sqrt(filtype->kT/(thickness*filtype->kypr[d]))*gaussrandD(); }}
+			else if(filtype->kypr[d]==0) {
+				if(d==2) angle[d]=unirandOCD(-PI/2,PI/2);
+				else angle[d]=unirandOCD(-PI,PI); }
+			else {
+				stddev=sigmamult*sqrt(filtype->kT/(thickness*filtype->kypr[d]));
+				if(d==1) angle[d]=gaussrandtruncOCD(filtype->stdypr[d],stddev,-PI/2,PI/2);
+				else angle[d]=gaussrandtruncOCD(filtype->stdypr[d],stddev,-PI,PI); }}}
 	else if(n>0) {												// 2D not first segment
 		if(filtype->kypr[0]<0)
 			angle[0]=filtype->stdypr[0];
 		else if(filtype->kypr[0]==0)
 			angle[0]=unirandOCD(-PI,PI);
-		else
-			angle[0]=filtype->stdypr[0]+sigmamult*sqrt(filtype->kT/(thickness*filtype->kypr[0]))*gaussrandD();
+		else {
+			stddev=sigmamult*sqrt(filtype->kT/(thickness*filtype->kypr[0]));
+			angle[0]=gaussrandtruncOCD(filtype->stdypr[0],stddev,-PI,PI); }
 		angle[1]=angle[2]=0; }
 	else if(dim==3) {											// 3D first segment
 		angle[0]=thetarandCCD();
@@ -1785,45 +1887,54 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 
 
 /* filNodes2Angles */
-void filNodes2Angles(filamentptr fil) {
+void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 	int seg,dim;
-	segmentptr segment;
-	double x[3],xm1[3],aphim1,aypr[3],len;
+	segmentptr segment,segmentm1;
+	double x[3],aphim1,aphi,len;
+
+	if(nodemin<0) nodemin=0;				//?? these are not used
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
 	dim=fil->filtype->filss->sim->dim;
-	aypr[0]=aypr[1]=aypr[2]=0;
 	if(dim==2) {
-		aphim1=0;																	// absolute phi for segment i-1
-		xm1[0]=1;																	// direction of segment i-1
-		xm1[1]=0;
-		for(seg=0;seg<fil->nseg;seg++) {
+		if(nodemin==0) aphim1=0; 									// absolute phi for segment i-1
+		else aphim1=Sph_Qtn2Yaw(fil->segments[nodemin-1]->qabs);
+		for(seg=nodemin;seg<nodemax;seg++) {
 			segment=fil->segments[seg];
 			x[0]=segment->xyzback[0]-segment->xyzfront[0];
 			x[1]=segment->xyzback[1]-segment->xyzfront[1];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]);
 			segment->len=len;												// segment->len
-			aypr[0]=atan2(x[1],x[0]);								// absolute ypr
-			segment->ypr[0]=aypr[0]-aphim1;					// segment->ypr
+			aphi=atan2(x[1],x[0]);									// absolute yaw
+			segment->ypr[0]=aphi-aphim1;						// segment->ypr
 			if(segment->ypr[0]<-PI) segment->ypr[0]+=2*PI;
 			else if(segment->ypr[0]>PI) segment->ypr[0]-=2*PI;
-			segment->ypr[1]=segment->ypr[2]=0;
-			Sph_Ypr2Qtn(segment->ypr,segment->qrel);
-			Sph_Ypr2Qtn(aypr,segment->qabs);
-			aphim1=aypr[0];
-			xm1[0]=x[0];
-			xm1[1]=x[1]; }}
+			Sph_Yaw2Qtn(segment->ypr[0],segment->qrel);
+			Sph_Yaw2Qtn(aphi,segment->qabs);
+			aphim1=aphi; }
+		if(seg<fil->nseg) {												// set angle at nodemax if not at end
+			segment=fil->segments[seg];
+			aphi=Sph_Qtn2Yaw(segment->qabs);
+			segment->ypr[0]=aphi-aphim1;
+			if(segment->ypr[0]<-PI) segment->ypr[0]+=2*PI;
+			else if(segment->ypr[0]>PI) segment->ypr[0]-=2*PI;
+			Sph_Yaw2Qtn(segment->ypr[0],segment->qrel); }}
 
 	else {																				// 3D
-		segment=fil->segments[0];
-		x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
-		x[1]=segment->xyzback[1]-segment->xyzfront[1];
-		x[2]=segment->xyzback[2]-segment->xyzfront[2];
-		len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
-		segment->len=len;
-		Sph_XZ2Qtni(x,fil->seg0up,segment->qrel);
-		Sph_Qtn2Qtn(segment->qrel,segment->qabs);
-		Sph_Qtn2Ypr(segment->qrel,segment->ypr);
-		for(seg=1;seg<fil->nseg;seg++) {
+		if(nodemin==0) {
+			segment=fil->segments[0];
+			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
+			x[1]=segment->xyzback[1]-segment->xyzfront[1];
+			x[2]=segment->xyzback[2]-segment->xyzfront[2];
+			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
+			segment->len=len;
+			Sph_XZ2Qtni(x,fil->seg0up,segment->qrel);
+			Sph_Qtn2Qtn(segment->qrel,segment->qabs);
+			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
+			seg=1; }
+		else {
+			seg=nodemin; }
+		for(;seg<nodemax;seg++) {
 			segment=fil->segments[seg];
 			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
 			x[1]=segment->xyzback[1]-segment->xyzfront[1];
@@ -1831,15 +1942,38 @@ void filNodes2Angles(filamentptr fil) {
 			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
 			segment->len=len;
 			Sph_QtnRotate(fil->segments[seg-1]->qabs,x,x);			// rotate x into prior segment reference frame
-			segment->ypr[0]=atan2(x[1],x[0]);										// local ypr angles
-			segment->ypr[1]=-asin(x[2]/len);
-			segment->ypr[2]=fil->roll[seg];//??
+			segment->ypr[0]=atan2(x[1],x[0]);										// local yaw. Always in [-pi,pi].
+			segment->ypr[1]=-asin(x[2]/len);										// local pitch. Always in [-pi/2,pi/2]
 			Sph_Ypr2Qtn(segment->ypr,segment->qrel);
-			Sph_QtnxQtn(fil->segments[seg-1]->qabs,segment->qrel,segment->qabs); 				// b_i = b_{i-1} . a_i
+			Sph_QtnxQtn(fil->segments[seg-1]->qabs,segment->qrel,segment->qabs); }			// b_i = b_{i-1} . a_i
+		if(seg<fil->nseg) {
+			segmentm1=segment;
+			segment=fil->segments[seg];
+			Sph_QtnixQtn(segmentm1->qabs,segment->qabs,segment->qrel);	// combine prior and this qabs to get qrel
+			Sph_Qtn2Ypr(segment->qrel,segment->ypr);						// use qrel to get ypr
 			}}
 	return; }
 
 
+/* filCopyRollToYpr2 */
+void filCopyRollToYpr2(filamentptr fil) {
+	int seg;
+
+	for(seg=0;seg<fil->nseg;seg++)
+		fil->roll[seg]=fil->segments[seg]->ypr[2];
+	return;	}
+
+
+/* filCopyYpr2ToRoll */
+void filCopyYpr2ToRoll(filamentptr fil) {
+	int seg;
+
+	for(seg=0;seg<fil->nseg;seg++)
+		fil->segments[seg]->ypr[2]=fil->roll[seg];
+	return;	}
+
+
+/* filCopyWorkingNodes */
 void filCopyWorkingNodes(filamentptr fil,int from,int to) {
 	int node,seg,dim;
 	filamentworkptr filwork;
@@ -1856,9 +1990,7 @@ void filCopyWorkingNodes(filamentptr fil,int from,int to) {
 			nodesto[node][0]=nodesfrom[node][0];
 			nodesto[node][1]=nodesfrom[node][1]; }}
 	else {
-		if(from==0)								// copy ypr roll to roll vector
-			for(seg=0;seg<fil->nseg;seg++)
-				fil->roll[seg]=fil->segments[seg]->ypr[2];
+		if(from==0) filCopyYpr2ToRoll(fil);
 
 		seg0upfrom=filwork->wseg0up[from];
 		seg0upto=filwork->wseg0up[to];
@@ -1893,9 +2025,7 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 			flatnodes[2*node+0]=nodes[node][0];
 			flatnodes[2*node+1]=nodes[node][1]; }}
 	else {
-		if(from==0)								// copy ypr roll to roll vector
-			for(node=0;node<fil->nseg;node++)
-				fil->roll[node]=fil->segments[node]->ypr[2];
+		if(from==0) filCopyYpr2ToRoll(fil);
 
 		roll=filwork->wroll[from];
 		for(node=0;node<fil->nseg;node++) {
@@ -1918,7 +2048,6 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 	filwork=fil->filwork;
 	nodes=filwork->wnodes[to];
 	flatnodes=filwork->flatnodes[from];
-	roll=filwork->wroll[to];
 	dim=fil->filtype->filss->sim->dim;
 
 	if(dim==2)
@@ -1936,6 +2065,8 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 		nodes[node][1]=flatnodes[4*node+1];
 		nodes[node][2]=flatnodes[4*node+2];
 
+		if(to==0) filCopyRollToYpr2(fil);
+
 		seg0upin=filwork->wseg0up[from];
 		seg0upout=filwork->wseg0up[to];
 		axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
@@ -1943,7 +2074,39 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 		axis[2]=nodes[1][2]-nodes[0][2];
 		Sph_RotateVectorAxisAngle(seg0upin,axis,roll[0],seg0upout); }
 
+	return; }
 
+
+/* filFlattenForces */
+void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax) {
+	int node,dim;
+	double **forces,*flatforces,*torques;
+	filamentworkptr filwork;
+
+	filwork=fil->filwork;
+	forces=filwork->forces;
+	flatforces=filwork->flatforces[to];
+	dim=fil->filtype->filss->sim->dim;
+
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
+	if(dim==2) {
+		for(node=nodemin;node<=nodemax;node++) {
+			flatforces[2*node+0]=forces[node][0];
+			flatforces[2*node+1]=forces[node][1]; }}
+	else {
+		torques=filwork->torques;
+		for(node=nodemin;node<nodemax;node++) {
+			flatforces[4*node+0]=forces[node][0];
+			flatforces[4*node+1]=forces[node][1];
+			flatforces[4*node+2]=forces[node][2];
+			flatforces[4*node+3]=torques[node]; }
+		flatforces[4*node+0]=forces[node][0];
+		flatforces[4*node+1]=forces[node][1];
+		flatforces[4*node+2]=forces[node][2];
+		if(nodemax<fil->nseg)
+			flatforces[4*node+3]=torques[node]; }
 	return; }
 
 
@@ -2211,6 +2374,32 @@ void filTranslate(filamentptr fil,const double *vect,char func) {
 	return; }
 
 
+/* filTranslateNode */
+void filTranslateNode(filamentptr fil,int node,const double *vect,char func) {
+	double shift[3];
+
+	if(func=='=') {
+		shift[0]=vect[0]-fil->nodes[node][0];
+		shift[1]=vect[1]-fil->nodes[node][1];
+		shift[2]=vect[2]-fil->nodes[node][2]; }
+	else if(func=='-') {
+		shift[0]=-vect[0];
+		shift[1]=-vect[1];
+		shift[2]=-vect[2]; }
+	else {
+		shift[0]=vect[0];
+		shift[1]=vect[1];
+		shift[2]=vect[2]; }
+
+	fil->nodes[node][0]+=shift[0];
+	fil->nodes[node][1]+=shift[1];
+	fil->nodes[node][2]+=shift[2];
+
+	filNodes2Angles(fil,node-1,node+1);
+
+	return; }
+
+
 /* filLengthenSegment */
 int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char func) {
 	int i;
@@ -2432,7 +2621,7 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 
 
 /* filAddStretchForces */
-void filAddStretchForces(filamentptr fil) {
+void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,klen,stdlen,sforce,len,xvect[3],fdx,**nodes;
 	int dim,node;
 
@@ -2442,8 +2631,11 @@ void filAddStretchForces(filamentptr fil) {
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
 
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
 	if(dim==2) {
-		for(node=0;node<fil->nseg;node++) {
+		for(node=nodemin;node<nodemax;node++) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
@@ -2455,7 +2647,7 @@ void filAddStretchForces(filamentptr fil) {
 			forces[node][1]-=fdx;
 			forces[node+1][1]+=fdx; }}
 	else {
-		for(node=0;node<fil->nseg;node++) {
+		for(node=nodemin;node<nodemax;node++) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
@@ -2522,30 +2714,55 @@ void filAddStretchForceMat(filamentptr fil) {
 
 
 /* filAddThermalForces */
-void filAddThermalForces(filamentptr fil) {
+void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,*kypr,kT,stdlen,frms;
 	filamenttypeptr filtype;
+	filamentworkptr filwork;
 	int dim,node;
+	simptr sim;
 
-	forces=fil->filwork->forces;
-//	torques=fil->torques;
 	filtype=fil->filtype;
-	kypr=filtype->kypr;
-	stdlen=filtype->stdlen;
-	kT=filtype->kT;
-	dim=filtype->filss->sim->dim;
+	filwork=fil->filwork;
+	sim=filtype->filss->sim;
+	dim=sim->dim;
 
-	frms=sqrt(kypr[0]*kT)/stdlen;
-	for(node=0;node<=fil->nseg;node++) {
-		forces[node][0]+=frms*gaussrandD();
-		forces[node][1]+=frms*gaussrandD();
-		if(dim>2) forces[node][2]+=frms*gaussrandD(); }
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
+	if(sim->time>filwork->thermtime) {				// compute random forces on each node
+		kypr=filtype->kypr;
+		stdlen=filtype->stdlen;
+		kT=filtype->kT;
+		frms=sqrt(kypr[0]*kT)/stdlen;						//?? This equation is almost certainly incorrect
+		if(dim==2)
+			for(node=0;node<=fil->nseg;node++) {
+				filwork->thermforce[node][0]=2*frms*gaussrandD();
+				filwork->thermforce[node][1]=2*frms*gaussrandD(); }
+		else
+			for(node=0;node<=fil->nseg;node++) {
+				filwork->thermforce[node][0]=2*frms*gaussrandD();
+				filwork->thermforce[node][1]=2*frms*gaussrandD();
+				filwork->thermforce[node][2]=2*frms*gaussrandD(); }
+		filwork->thermtime=sim->time; }
+
+//??	torques=fil->torques;
+	forces=filwork->forces;										// report forces
+	if(dim==2)
+		for(node=nodemin;node<=nodemax;node++) {
+			forces[node][0]+=filwork->thermforce[node][0];
+			forces[node][1]+=filwork->thermforce[node][1]; }
+	else
+		for(node=nodemin;node<=nodemax;node++) {
+			forces[node][0]+=filwork->thermforce[node][0];
+			forces[node][1]+=filwork->thermforce[node][1];
+			forces[node][2]+=filwork->thermforce[node][2]; }
+
 	return; }
 
 
-void filAddBendForces(filamentptr fil) {
+void filAddBendForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,*torques,bendtorque[3],forcem1[3],forcep1[3],force[3],**nodes;
-	double xvect[3],xvectm1[3],len2,len2inv,len2m1,len2m1inv;
+	double xvect[3],xvectm1[3],len2inv,len2m1inv;
 	int node,dim;
 
 	forces=fil->filwork->forces;
@@ -2553,25 +2770,28 @@ void filAddBendForces(filamentptr fil) {
 	torques=fil->filwork->torques;
 	dim=fil->filtype->filss->sim->dim;
 
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
 	if(dim==2) {
-		for(node=1;node<fil->nseg;node++) {													// compute bending forces
+		node=nodemin;
+		xvect[0]=nodes[node+1][0]-nodes[node][0];
+		xvect[1]=nodes[node+1][1]-nodes[node][1];
+		len2inv=1.0/(xvect[0]*xvect[0]+xvect[1]*xvect[1]);					// inverse squared length of segment i
+		for(node=nodemin+1;node<nodemax;node++) {										// compute bending forces
 			filBendTorque(fil,node,bendtorque);												// get bending torque in system reference frame
 
+			xvectm1[0]=xvect[0];																			// Delta x_(i-1)
+			xvectm1[1]=xvect[1];
 			xvect[0]=nodes[node+1][0]-nodes[node][0];									// Delta x_i
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
-			xvectm1[0]=nodes[node][0]-nodes[node-1][0];								// Delta x_(i-1)
-			xvectm1[1]=nodes[node][1]-nodes[node-1][1];
-
-			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1];										// length of segment i
-			len2inv=1.0/len2;
-			len2m1=xvectm1[0]*xvectm1[0]+xvectm1[1]*xvectm1[1];					// length of segment i-1
-			len2m1inv=1.0/len2m1;
+			len2m1inv=len2inv;
+			len2inv=1.0/(xvect[0]*xvect[0]+xvect[1]*xvect[1]);				// inverse squared length of segment i
 
 			forcep1[0]=len2inv*(-bendtorque[2]*xvect[1]);
 			forcep1[1]=len2inv*(bendtorque[2]*xvect[0]);
 			forcem1[0]=len2m1inv*(-bendtorque[2]*xvectm1[1]);
 			forcem1[1]=len2m1inv*(bendtorque[2]*xvectm1[0]);
-
 			force[0]=-(forcep1[0]+forcem1[0]);													// force on node i
 			force[1]=-(forcep1[1]+forcem1[1]);
 
@@ -2582,28 +2802,30 @@ void filAddBendForces(filamentptr fil) {
 			forces[node+1][0]+=forcep1[0];
 			forces[node+1][1]+=forcep1[1]; }}
 	else {
-		for(node=1;node<fil->nseg;node++) {													// compute bending forces
+		node=nodemin;
+		xvect[0]=nodes[node+1][0]-nodes[node][0];
+		xvect[1]=nodes[node+1][1]-nodes[node][1];
+		xvect[2]=nodes[node+1][2]-nodes[node][2];
+		len2inv=1.0/(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);	// inverse squared length of segment i
+		for(node=nodemin+1;node<nodemax;node++) {										// compute bending forces
 			filBendTorque(fil,node,bendtorque);												// get bending torque in system reference frame
 
+			xvectm1[0]=xvect[0];
+			xvectm1[1]=xvect[1];
+			xvectm1[2]=xvect[2];
 			xvect[0]=nodes[node+1][0]-nodes[node][0];									// Delta x_i
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
-			xvectm1[0]=nodes[node][0]-nodes[node-1][0];								// Delta x_(i-1)
-			xvectm1[1]=nodes[node][1]-nodes[node-1][1];
-			xvectm1[2]=nodes[node][2]-nodes[node-1][2];
+			len2m1inv=len2inv;
+			len2inv=1.0/(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);			// inverse squared length of segment i
 
-			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2];										// length of segment i
-			len2inv=1.0/len2;
-			len2m1=xvectm1[0]*xvectm1[0]+xvectm1[1]*xvectm1[1]+xvectm1[2]*xvectm1[2];			// length of segment i-1
-			len2m1inv=1.0/len2m1;
-
-			forcep1[0]=len2inv*(bendtorque[1]*xvect[2]-bendtorque[2]*xvect[1]);						// torque x xvect / len^2
+			forcep1[0]=len2inv*(bendtorque[1]*xvect[2]-bendtorque[2]*xvect[1]);				// torque x xvect / len^2
 			forcep1[1]=len2inv*(bendtorque[2]*xvect[0]-bendtorque[0]*xvect[2]);
 			forcep1[2]=len2inv*(bendtorque[0]*xvect[1]-bendtorque[1]*xvect[0]);
-			forcem1[0]=len2m1inv*(bendtorque[1]*xvectm1[2]-bendtorque[2]*xvectm1[1]);			// torque x xvectm1 / lenm1^2
+			forcem1[0]=len2m1inv*(bendtorque[1]*xvectm1[2]-bendtorque[2]*xvectm1[1]);	// torque x xvectm1 / lenm1^2
 			forcem1[1]=len2m1inv*(bendtorque[2]*xvectm1[0]-bendtorque[0]*xvectm1[2]);
 			forcem1[2]=len2m1inv*(bendtorque[0]*xvectm1[1]-bendtorque[1]*xvectm1[0]);
-			force[0]=-(forcep1[0]+forcem1[0]);																						// force on node i
+			force[0]=-(forcep1[0]+forcem1[0]);																				// force on node i
 			force[1]=-(forcep1[1]+forcem1[1]);
 			force[2]=-(forcep1[2]+forcem1[2]);
 
@@ -2707,33 +2929,114 @@ void filAddBendForceMat(filamentptr fil) {
 
 
 /* filComputeForces */
-void filComputeForces(filamentptr fil) {
+void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,*torques;
-	int node;
+	int node,dim;
 
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
+	dim=fil->filtype->filss->sim->dim;
 	forces=fil->filwork->forces;
 	torques=fil->filwork->torques;
 
-	for(node=0;node<=fil->nseg;node++)							// clear all forces
-		forces[node][0]=forces[node][1]=forces[node][2]=0;
-	for(node=0;node<fil->nseg;node++)								// clear all torques
-		torques[node]=0;
-	filAddStretchForces(fil);
-	filAddBendForces(fil);
-//	filAddThermalForces(fil); //?? commented out for now because it needs checking
+	if(dim==2) {
+		for(node=0;node<=fil->nseg;node++)							// clear all forces
+			forces[node][0]=forces[node][1]=0; }
+	else {
+		for(node=0;node<=fil->nseg;node++)							// clear all forces
+			forces[node][0]=forces[node][1]=forces[node][2]=0;
+		for(node=0;node<fil->nseg;node++)								// clear all torques
+			torques[node]=0; }
+
+	filAddStretchForces(fil,nodemin,nodemax);
+	filAddBendForces(fil,nodemin-1,nodemax+1);
+	filAddThermalForces(fil,nodemin,nodemax);
 	return; }
 
 
 /* filComputeForceMatrix */
 void filComputeForceMatrix(filamentptr fil) {
 	int dim,flatsize;
+	sparsematrix forcemat;
 
 	dim=fil->filtype->filss->sim->dim;
 	flatsize= (dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
-	sparseSetSizeM(fil->filwork->forcemat,flatsize,flatsize);
-	sparseClearM(fil->filwork->forcemat);
+	forcemat=fil->filwork->forcemat;
+	sparseSetSizeM(forcemat,flatsize,flatsize);
+	sparseClearM(forcemat);
+
 	filAddStretchForceMat(fil);
 	filAddBendForceMat(fil);
+	return; }
+
+
+/* filComputeDerivForceMat */
+void filComputeDerivForceMat(filamentptr fil,double dtmu) {
+	int dim,node,node2,d,flatsize,node2first,node2last;
+	double **nodes,**flatnodes,**flatforces;
+	double dx,dxinv;
+	sparsematrix forcemat;
+
+	dim=fil->filtype->filss->sim->dim;
+	flatsize= (dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
+	forcemat=fil->filwork->forcemat;
+	sparseSetSizeM(forcemat,flatsize,flatsize);
+	sparseClearM(forcemat);
+
+	nodes=fil->nodes;
+	flatforces=fil->filwork->flatforces;
+	flatnodes=fil->filwork->flatnodes;
+
+	filFlattenNodes(fil,0,0);																		// flatnodes[0] is original node positions
+	filComputeForces(fil,-1,-1);
+	filFlattenForces(fil,0,-1,-1);															// flatforces[0] is original forces.
+	multKVD(dtmu/1000,flatforces[0],flatnodes[1],flatsize);			// flatnodes[1] is 1/1000 of forward Euler step
+
+	if(dim==2) {
+		for(node=0;node<=fil->nseg;node++) {
+			for(d=0;d<2;d++) {
+				dx=flatnodes[1][2*node+d];
+				if(dx==0) break;
+				dxinv=1.0/dx;
+				nodes[node][d]+=dx;
+				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);			// update for new change and fix prior change
+				filComputeForces(fil,node-2,node+2);
+				filFlattenForces(fil,1,node-2,node+2);								// flatforces[1] is modified forces
+				nodes[node][d]=flatnodes[0][2*node+d];
+				node2first=(node<2)?0:node-2;
+				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
+				for(node2=node2first;node2<=node2last;node2++) {			// row block is node2, column block is node
+					sparseAddToM(forcemat,2*node2,2*node+d,dxinv*(flatforces[1][2*node2]-flatforces[0][2*node2]));
+					sparseAddToM(forcemat,2*node2+1,2*node+d,dxinv*(flatforces[1][2*node2+1]-flatforces[0][2*node2+1])); }}}}
+	else {
+		for(node=0;node<=fil->nseg;node++) {
+			for(d=0;d<4;d++) {
+				if(node==fil->nseg && d==4) break;
+				dx=flatnodes[1][4*node+d];
+				if(dx==0) break;
+				dxinv=1.0/dx;
+				if(d<3) nodes[node][d]+=dx;
+				else fil->segments[node]->ypr[2]+=dx;
+				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);	// update for new change and fix prior change
+
+				filComputeForces(fil,node-2,node+2);
+				filFlattenForces(fil,1,node-2,node+2);						// flatforces[1] is modified forces
+
+				if(d<3) nodes[node][d]=flatnodes[0][4*node+d];
+				else fil->segments[node]->ypr[2]=flatnodes[0][4*node+d];
+				node2first=(node<2)?0:node-2;
+				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
+				for(node2=node2first;node2<=node2last;node2++) {		// row block is node2, column block is node
+					sparseAddToM(forcemat,4*node2+0,4*node+d,dxinv*(flatforces[1][4*node2+0]-flatforces[0][4*node2+0]));
+					sparseAddToM(forcemat,4*node2+1,4*node+d,dxinv*(flatforces[1][4*node2+1]-flatforces[0][4*node2+1]));
+					sparseAddToM(forcemat,4*node2+2,4*node+d,dxinv*(flatforces[1][4*node2+2]-flatforces[0][4*node2+2]));
+					sparseAddToM(forcemat,4*node2+3,4*node+d,dxinv*(flatforces[1][4*node2+3]-flatforces[0][4*node2+3])); }}}}
+
+	filNodes2Angles(fil,node-2,-1);
+	sparseMultiplyMV(forcemat,flatnodes[0],flatforces[1]);						// flatforces[1] is F1.x
+	sumVD(1,flatforces[0],-1,flatforces[1],flatforces[1],flatsize);		// flatforces[1] is F0
+
 	return; }
 
 
@@ -2746,7 +3049,7 @@ void filComputeForceMatrix(filamentptr fil) {
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 	int node,seg,dim;
 	double axis[3],**nodesin,**nodesout,*seg0upin,*seg0upout,*rollin,*rollout;
-	double **forces;
+	double **forces,*nodemobility;
 	filamentworkptr filwork;
 
 	dim=fil->filtype->filss->sim->dim;
@@ -2760,21 +3063,25 @@ void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 	rollout=filwork->wroll[out];
 	forces=filwork->forces;
 
+	nodemobility=fil->nodemobility;
+
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++) {
-			nodesout[node][0]=nodesin[node][0]+dtmu*forces[node][0];
-			nodesout[node][1]=nodesin[node][1]+dtmu*forces[node][1]; }}
+			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
+			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1]; }}
 	else {
+		if(in==0) filCopyYpr2ToRoll(fil);
 		axis[0]=nodesin[1][0]-nodesin[0][0];					// process segment 0 torque
 		axis[1]=nodesin[1][1]-nodesin[0][1];
 		axis[2]=nodesin[1][2]-nodesin[0][2];
-		Sph_RotateVectorAxisAngle(seg0upin,axis,dtmu*filwork->torques[0],seg0upout);
+		Sph_RotateVectorAxisAngle(seg0upin,axis,dtmu*nodemobility[0]*filwork->torques[0],seg0upout);
 		for(seg=1;seg<fil->nseg;seg++) {					// process other segment torques
-			rollout[seg]=rollin[seg]+dtmu*filwork->torques[seg]; }
+			rollout[seg]=rollin[seg]+dtmu*nodemobility[1]*filwork->torques[seg]; }
 		for(node=0;node<=fil->nseg;node++) {			// process node forces
-			nodesout[node][0]=nodesin[node][0]+dtmu*forces[node][0];
-			nodesout[node][1]=nodesin[node][1]+dtmu*forces[node][1];
-			nodesout[node][2]=nodesin[node][2]+dtmu*forces[node][2]; }}
+			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
+			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1];
+			nodesout[node][2]=nodesin[node][2]+dtmu*nodemobility[node]*forces[node][2]; }
+		if(out==0) filCopyRollToYpr2(fil); }
 	return; }
 
 
@@ -2787,9 +3094,9 @@ void filEulerDynamics(simptr sim,filamenttypeptr filtype) {
 	dtmu=filtype->mobility*sim->dt;
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filStepDynamics(fil,dtmu,0,0);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 	return; }
 
 
@@ -2802,16 +3109,16 @@ void filRK2Dynamics(simptr sim,filamenttypeptr filtype) {
 	dtmu=filtype->mobility*sim->dt;
 	for(f=0;f<filtype->nfil;f++) {						// store initial state in nodes1 and roll1 and then take a half step
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filCopyWorkingNodes(fil,0,1);
 		filStepDynamics(fil,dtmu/2,0,0);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	for(f=0;f<filtype->nfil;f++) {							// compute force from new state and then take full step from initial state
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filStepDynamics(fil,dtmu,1,0);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	return; }
 
@@ -2825,37 +3132,37 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 	dtmu=filtype->mobility*sim->dt;
 	for(f=0;f<filtype->nfil;f++) {						// copy initial state to nodes1/roll1, then take a half step and add to nodes2/roll2
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filCopyWorkingNodes(fil,0,1);
 		filStepDynamics(fil,dtmu/6,0,2);
 		filStepDynamics(fil,dtmu/2,0,0);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	for(f=0;f<filtype->nfil;f++) {							// with new force, take half step from initial state, and add to nodes2/roll2
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filStepDynamics(fil,dtmu/2,1,0);
 		filStepDynamics(fil,dtmu/3,2,2);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	for(f=0;f<filtype->nfil;f++) {							// with new force, take full step from initial state, and add to nodes2/roll2
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filStepDynamics(fil,dtmu,1,0);
 		filStepDynamics(fil,dtmu/3,2,2);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	for(f=0;f<filtype->nfil;f++) {							// with new force, add to nodes2/roll2
 		fil=filtype->fillist[f];
-		filComputeForces(fil);
+		filComputeForces(fil,-1,-1);
 		filStepDynamics(fil,dtmu/6,2,0);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	return; }
 
 
 /* filEulerMatDynamics */
-void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {
+void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
 	double dtmu;
 	int f;
 	filamentptr fil;
@@ -2866,48 +3173,78 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {
 		filwork=fil->filwork;
 
 		filComputeForceMatrix(fil);
-//		printf("\nForce matrix:\n");//??
-//		sparsePrintM(fil->filwork->forcemat,1); //??
 		filFlattenNodes(fil,0,0);
-//		printf("\nFlat nodes: ");//??
-//		printVD(fil->filwork->flatnodes[0],4*(fil->nseg+1)-1);	//??
 		dtmu=filtype->mobility*sim->dt;
 		sparseMultiplyScalarM(filwork->forcemat,dtmu);
-//		printf("\nScaled force matrix:\n");//??
-//		sparsePrintM(fil->filwork->forcemat,1); //??
 		sparseAddIdentityM(filwork->forcemat,1);
-//		printf("\nIdentity plus scaled force matrix:\n");//??
-//		sparsePrintM(fil->filwork->forcemat,1); //??
 		sparseMultiplyMV(filwork->forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);
-//		printf("\nFlat product: ");//??
-//		printVD(fil->filwork->flatnodes[1],4*(fil->nseg+1)-1);	//??
 		filUnflattenNodes(fil,1,0);
-//		printf("\nNew nodes: (%g,%g) (%g,%g)\n",fil->nodes[0][0],fil->nodes[0][1],fil->nodes[1][0],fil->nodes[1][1]); //??
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
+
+	return; }
+
+
+/* filImplicitOldDynamics */
+void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
+	double dtmu;
+	int f;
+	filamentptr fil;
+	filamentworkptr filwork;
+	sparsematrix forcemat;
+
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		filwork=fil->filwork;
+		forcemat=filwork->forcemat;
+		if(!forcemat->BiCGSTAB)
+			sparseAllocBandM(forcemat,-1,-1,1);
+
+		filComputeForceMatrix(fil);
+		filFlattenNodes(fil,0,0);													// flatnodes[0] is current state
+		dtmu=filtype->mobility*sim->dt;
+		sparseMultiplyScalarM(forcemat,dtmu);
+		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*force
+		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state
+
+		sparseMultiplyScalarM(forcemat,-1);
+		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*force
+		sparseBiCGSTAB(forcemat,filwork->flatnodes[0],filwork->flatnodes[1],1e-9);	// flatnodes[1] is backward Euler next state
+		filUnflattenNodes(fil,1,0);
+		filNodes2Angles(fil,-1,-1); }
 
 	return; }
 
 
 
 /* filImplicitDynamics */
-void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {
-	double dtmu;
-	int f;
+void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
+	double dtmu,**flatnodes,**flatforces;
+	int f,flatsize,dim;
 	filamentptr fil;
 	filamentworkptr filwork;
+	sparsematrix forcemat;
 
+	dim=filtype->filss->sim->dim;
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
 		filwork=fil->filwork;
+		forcemat=filwork->forcemat;
+		flatnodes=filwork->flatnodes;
+		flatforces=filwork->flatforces;
+		flatsize=(dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
+		if(!forcemat->BiCGSTAB)
+			sparseAllocBandM(forcemat,-1,-1,1);
 
-		filComputeForceMatrix(fil);
-		filFlattenNodes(fil,0,0);
 		dtmu=filtype->mobility*sim->dt;
-		sparseMultiplyScalarM(filwork->forcemat,-dtmu);
-		sparseAddIdentityM(filwork->forcemat,1);
-//		sparseSolve(fil->forcemat,fil->flatnodes,fil->flatnodes1);
+		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], F0 is in flatforces[1] and F1 is in forcemat
+		sumVD(1,flatnodes[0],dtmu,flatforces[0],flatnodes[1],flatsize);	// flatnodes[1] is forward Euler next state
+		sumVD(1,flatnodes[0],dtmu,flatforces[1],flatnodes[2],flatsize);	// flatnodes[2] is x(t)+dtmu*F0
+
+		sparseMultiplyScalarM(forcemat,-dtmu);
+		sparseAddIdentityM(forcemat,1);																	// forcemat is 1-dtmu*force
+		sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-9);				// flatnodes[1] is backward Euler next state
 		filUnflattenNodes(fil,1,0);
-		filNodes2Angles(fil); }
+		filNodes2Angles(fil,-1,-1); }
 
 	return; }
 
@@ -2941,8 +3278,9 @@ int filDynamics(simptr sim) {
 		else if(filtype->dynamics==FDeulermat)
 			filEulerMatDynamics(sim,filtype);
 		else if(filtype->dynamics==FDimplicit)
-			;
-			//filImplicitDynamics(sim,filtype);
+			filImplicitDynamics(sim,filtype);
+		else if(filtype->dynamics==FDimplicitold)
+			filImplicitOldDynamics(sim,filtype);
 			}
 
 	return 0; }

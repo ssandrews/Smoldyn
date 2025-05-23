@@ -3679,7 +3679,7 @@ End of a block of filament type definitions. Filament type statements are no lon
 
 \end{description}
 
-Filaments can be entered either in a block or with the single \ttt{random\_filament} statement. The block statements shown below that are preceded by an asterisk need to be entered within filament blocks, which start with \ttt{start\_filament} and end with \ttt{end\_filament}. Most of these statements can also be entered directly, preceded by the statement \ttt{filament} and then the filament name (\textit{Not functional currently}). Both forms are shown below.
+Filaments can be entered either in a block or with the single \ttt{random\_filament} statement. The block statements shown below that are preceded by an asterisk need to be entered within filament blocks, which start with \ttt{start\_filament} and end with \ttt{end\_filament}. Most of these statements can also be entered directly, preceded by the statement \ttt{filament} and then the filament type:name. Both forms are shown below.
 
 \begin{description}
 
@@ -3715,9 +3715,9 @@ Add a segment to the filament, with the given length. The angles are relative an
 
 Remove one segment from end $end$ of the filament (``front'' or ``back'').
 
-\item{\ttt{* modify\_segment} $segment$ length/angle/thickness +/-/= $value$ $end$}
+\item{\ttt{* modify\_segment} $segment$ length/angle/thickness +/-/= $value(s)$ $end$}
 
-This modifies the length, relative angle, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For and angle option with 3D, enter 3 values for yaw, pitch, and roll. Finally, for the length and angle options, enter $end$ as either ``front'' or ``back'' for which filament end is moved.
+This modifies the length, relative angle, position, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', ``front\_position'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For the angle option with 3D, enter 3 values for yaw, pitch, and roll. For the position option, enter two values for 2D and three values for 3D. Finally, for the length and angle options, enter $end$ as either ``front'' or ``back'' for which filament end gets moved in the process.
 
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $\phi]$ $[thickness]$}
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$}
@@ -3735,6 +3735,10 @@ Copy the current filament to $filament$, which is created here if it doesn't alr
 \item{\ttt{* sequence} $sequence$}
 
 Enter the sequence string for a filament.
+
+\item{\ttt{* node\_mobility} $node$ $mobility$}
+
+Sets a unitless node mobility factor, which is multiplied by the mobility that's defined in the filament type, to give the total node mobility value. Enter $node$ as the node number, where 0 is the front of the filament. Alternatively, enter $node$ as a negative value to count from the back of the filament, where $-1$ is the back end. The $mobility$ value has a default value of 1, and can be set to other values here. In particular, setting it to 0 means that the node is fixed in space.
 
 \item{\ttt{* end\_filament}}
 
@@ -4109,9 +4113,9 @@ Prints a single line of text with the current simulation time and the number of 
 
 Displays diagnostics about all lattices.
 
-\item{\ttt{printFilament} $filament\_type\ filament\ code\ filename$}
+\item{\ttt{printFilament} $filament\_type:filament\ code\ filename$}
 
-Prints information about the specified filament. The $code$ input should be a string of letters; for each one, this prints out that data set. Codes are: \ttt{x}: segment endpoint positions, \ttt{a}: relative direction cosine matrices, \ttt{b}: absolute direction cosine matrices, \ttt{y}: ypr angles, \ttt{f}: forces on each node, \ttt{t}: torques at each node.
+Prints information about the specified filament. The $code$ input should be a string of letters; for each one, this prints out that data set. Codes are: \ttt{x}: segment lengths, endpoint positions, and relative angles, \ttt{a}: relative quaternions, \ttt{b}: absolute quaternions, \ttt{f}: forces on each node (computed by this function).
 
 \item{\ttt{writeVTK} $filepath/filename$}
 
@@ -4290,7 +4294,11 @@ This simulates a long range force between molecules of $species_1$ and $species_
 \ttt{translatemol} $species(state)\ equation_x\ equation_y$\\
 \ttt{translatemol} $species(state)\ equation_x\ equation_y\ equation_z$
 
-Translates molecules of the given species and state (each of which are allowed to be ``all'') by the displacement that is calculated from the equations, with one equation for each coordinate. These equations are allowed to be functions of the position and/or the time; the position is entered as \ttt{x}, \ttt{y}, and/or \ttt{z}, and the time as \ttt{time}. Do not include spaces in the equations and simply enter ``0'' for an equation if there's no translation on that axis. For example, in a 3D system, the three equations \ttt{y -x 0} cause the molecules to circle the origin in the $x-y$ plane and stay stationary along the $z$ axis.
+Performs location-dependent drift such as for advection. This translates molecules of the given species and state (each of which are allowed to be ``all'') by the displacement that is calculated from the equations, with one equation for each coordinate. These equations are allowed to be functions of the position and/or the time; the position is entered as \ttt{x}, \ttt{y}, and/or \ttt{z}, and the time as \ttt{time}. Do not include spaces in the equations and simply enter ``0'' for an equation if there's no translation on that axis. For example, in a 3D system, the three equations \ttt{y -x 0} cause the molecules to circle the origin in the $x-y$ plane and stay stationary along the $z$ axis.
+
+\item{\ttt{RotateFilamentToY}} $filtype:filname$
+
+This is a specialized command for a particular study and not likely to be generally useful. It takes a filament and rotates it about the $x$-axis (translated to the front of the filament) so that the filament's center of mass lies along the positive $y$-axis.
 
 \end{description}
 

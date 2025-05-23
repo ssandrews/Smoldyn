@@ -620,7 +620,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
 	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR];
 	char errstr[STRCHARLONG];
-	int er,i,nmol,d,i1,s,c,ll,order,*index,ft,f;
+	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
 	long int pserno,sernolist[MAXPRODUCT];
 	double flt1,flt2,v1[DIMMAX*DIMMAX],v2[4],poslo[DIMMAX],poshi[DIMMAX],thick;
@@ -1556,16 +1556,21 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"filament")) {						// filament
 		CHECKS(sim->filss,"individual filaments need to be defined before using filament");
-		itct=sscanf(line2,"%s %s",nm,nm1);
-		CHECKS(itct==2,"filament format: filament_name statement_name statement_text");
-		line2=strnword(line2,3);
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"filament format: type:name statement_name statement_text");
+		filtype=NULL;
+		er=filReadFilName(sim,nm,&filtype,&fil,nm1);
+		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
+		CHECKS(er!=-4,"unknonwn filament type");
+		CHECKS(er!=-5,"unknonwn filament");
+		CHECKS(filtype,"missing filament type. Format: type:name statement_name statement_text");
+		line2=strnword(line2,2);
 		CHECKS(line2,"filament format: filament_name statement_name statement_text");
-		f=filGetFilIndex(sim,nm,&ft);
-		CHECKS(!(f==-2),"multiple filaments have the same name");
-		CHECKS(f>=0,"filament name is unrecognized");
-		filtype=sim->filss->filtypes[ft];
-		fil=filtype->fillist[f];
-		fil=filReadString(sim,pfp,fil,filtype,nm1,line2);
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"filament format: type:name statement_name statement_text");
+		line2=strnword(line2,2);
+		CHECKS(line2,"filament format: filament_name statement_name statement_text");
+		fil=filReadString(sim,pfp,fil,filtype,nm,line2);
 		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
@@ -1573,6 +1578,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
 		itct=sscanf(line2,"%s",nm);
 		CHECKS(itct==1,"random_filament format: type:name segments [x y z phi theta psi] [thickness]");
+		filtype=NULL;
 		er=filReadFilName(sim,nm,&filtype,&fil,nm1);
 		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
 		CHECKS(er!=-4,"unknonwn filament type");

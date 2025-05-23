@@ -199,6 +199,15 @@ float gaussrandF() {
 		return gset; }}
 
 
+double gaussrandtruncOCD(double mean,double stddev,double low, double high) {
+	double ans;
+
+	do
+		ans=mean+stddev*gaussrandD();
+		while(ans<=low || ans>high);
+	return ans; }
+
+
 void circlerandD(double *x,double radius) {
 	double th;
 
