@@ -24,7 +24,7 @@ polygon ve
 kT 0
 dynamics rk4
 standard_length 5
-standard_angle 0 0 0.2
+standard_angle 0 0 -0.2
 force_length 1
 force_angle 2 2 2
 mobility 0.5

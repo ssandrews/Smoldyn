@@ -1,5 +1,12 @@
 ## Changelog
 
+### 2.75 (7/30/25)
+
+- Lots of work on filaments. Dynamics mostly work now, but no interactions.
+- Minor improvements to interactions where molecules reflect off surfaces repeatedly.
+- Improved error messages and manual for unbounded emitters.
+- Several new and renamed filament example files.
+
 ### 2.74 (1/22/25)
 
 - Improved Mac install scripts to use sudo for individual commands instead of everywhere.

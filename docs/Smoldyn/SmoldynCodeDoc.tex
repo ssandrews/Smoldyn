@@ -51,8 +51,8 @@ breakatwhitespace=false
 \pretolerance=10000
 
 \title{Smoldyn Code Documentation} 
-\subtitle{Version 2.74}
-\date{\copyright January, 2025}
+\subtitle{Version 2.75}
+\date{\copyright July, 2025}
 \author{Steve Andrews}
 \maketitle
 
@@ -7967,16 +7967,17 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added command \ttt{cmdprintFilament}, primarily for debugging purposes.
 \item Fixed a bug in the reflect portion of the \ttt{dosurfinteract} function. This runs the reflection with \ttt{surfacereflect}, moves the crossing point to the correct side of the panel, and then changes panels for surface-bound molecules if needed. For up to version 2.50, molecules were then automatically moved to the correct panel side, just in case they didn't reflect correctly. I changed this in version 2.51 (see the notes for that release), so that the code started checking whether molecules ended up on the correct side and then moved any failed molecules back to their starting points. This addressed problems that arose with the examples/ S95\_regressions/ surfacediffuse.txt file, which uses a large number of tiny surface panels. An undesirable side effect of this change occured for molecules inside spheres or cylinders (e.g. dumbell.txt), where a molecule that started inside the surface could cross the surface and be reflected but still end up outside due to a long diffusion step. The check caught the result and put the molecule back where it started from, thereby preventing any leaking but also leading to incorrect diffusion simulation. If the check hadn't existed, the molecule would have reflected a second time, which would have been the correct simulation method and still prevented leaks. However, simulation errors were minor enough that they weren't caught. In 1/2025, Fabian Ormersbach found a problem which I determined arose from molecules inside 2D cylinders simultaneously diffusing out of the cylinder and across a periodic boundary, and then the check here put these molecules back in their starting points but the \ttt{posoffset} parameter was not reset. The solution was to realize that the check is only needed for surface-bound molecules; the function also displays a warning when molecules are returned to prior locations. This modification changes the regression results for several files (dumbbell.txt, surf2.txt, surf3.txt) but everything appears to simulate correctly. Added regression file surfacesmsd.txt.
 
-\subsection{Modifications for version 2.75 (not released yet)}
+\subsection{Modifications for version 2.75 (released 7/30/25)}
 \item The functions \ttt{checksurfaces}, \ttt{checksurfaces1mol}, and \ttt{dosurfinteract} all have checks to make sure that molecules are being placed correctly, putting them back to their prior location if not. Downgraded these errors to warnings, increased thresholds from 50 to 100 failures, and added debugging output during verbose simulations. Found that the \ttt{checksurfaces} warning can trigger if a molecule starts just inside a concave surface and bounces right along the inside of the surface; this triggers a warning and the molecule is moved back, but is actually simulated correctly.
 \item Improved error messages and the manual for unbounded emitters. A user declared an emitter at the corner of a box of surfaces, and it was unclear why it didn't work correctly. It turned out that the unbounded emitter was supposed to be inside the box, not at the corner.
 \item Cleaned up filament code, including particularly the Euler, RK2, and RK4 integration functions.
 \item Renamed ``monomer codes'' in filaments to ``sequence code''.
 \item Restructured the \ttt{filament} data structure so that all working stuff was moved into the \ttt{filamentwork} data structure.
 \item Wrote EulerMat integration method, which performs Euler integration with a force matrix. It's only here as a step toward implicit integration.
-\item Wrote implicit integration code. Unfortunately, it doesn't work well yet.
+\item Wrote implicit integration code.
 \item Added node mobility to the filament data structure and a new \ttt{node\_mobility} statement.
 \item Added command \ttt{cmdRotateFilamentToY}.
+\item Added and also renamed several filament example files.
 
 \end{itemize}
 
