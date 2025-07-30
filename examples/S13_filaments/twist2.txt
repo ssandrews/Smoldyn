@@ -1,0 +1,61 @@
+# Filament dynamics
+
+define FACTOR 2
+
+graphics opengl
+#random_seed 3
+#graphics opengl_better
+
+dim 3
+boundaries x -10 60 r
+boundaries y -20 20 r
+boundaries z -20 20 r
+
+time_start 0
+time_stop 100000
+time_step 0.5
+
+#frame_thickness 0
+
+start_filament_type actin
+color blue
+#force_arrows 10 red
+thickness 2
+polygon ve
+kT 0
+dynamics rk4
+standard_length 5/FACTOR
+standard_angle 0 0 -0.2/FACTOR
+force_length 1
+force_angle 2/FACTOR 2/FACTOR 2/FACTOR
+mobility 0.5
+end_filament_type
+
+random_filament actin:fil1 10*FACTOR  0 0 0  0 0 0
+
+filament_type actin standard_length 5/FACTOR
+filament_type actin kT 0.02/FACTOR
+
+
+filament actin:fil1 node_mobility 0 0
+filament actin:fil1 node_mobility 1 0
+filament actin:fil1 node_mobility -2 0
+filament actin:fil1 node_mobility -1 0
+
+variable x0 = 0
+
+
+cmd B pause
+cmd E RotateFilamentToY actin:fil1
+cmd N 10 set variable x0 = x0+0.000001
+cmd N 10 set filament actin:fil1 modify_segment 0 front_position + x0 0 0
+cmd N 10 set filament actin:fil1 modify_segment 1 front_position + x0 0 0
+cmd @ 20000 printFilament actin:fil1 x stdout
+cmd @ 30000 printFilament actin:fil1 x stdout
+cmd @ 40000 printFilament actin:fil1 x stdout
+
+
+end_file
+
+
+

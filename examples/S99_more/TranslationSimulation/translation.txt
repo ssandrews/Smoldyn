@@ -1,0 +1,87 @@
+# Smoldyn configuration file for protein translation with RNA stall sites, roughly
+# following the abortive termination model (see Ferrin and Subramanian, eLife, 2017).
+# Units here are seconds and nm.
+
+
+
+define N_RIB 50
+define STALL1 0.5
+define STARTRAD 1
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 500
+boundaries y -100 100
+time_start 0
+time_stop 1000
+time_step 0.001
+
+species rib start stop stall stalled bindctr protein
+
+molecule_lists ribsoln ribup rctup nonrct prot
+mol_list rib(soln) ribsoln
+mol_list rib(up) ribup
+mol_list start(all) rctup
+mol_list stop(all) rctup
+mol_list stall(all) rctup
+mol_list stalled(all) rctup
+mol_list bindctr(all) nonrct
+mol_list protein(all) prot
+
+difc rib(soln) 40000
+#difc protein(soln) 40000
+difc rib(up) 1
+color rib(all) purple
+color start(all) green
+color stop(all) red
+color protein lightblue
+color stall(all) orange
+color stalled(all) darkorange
+display_size all(all) 2
+display_size stalled(all) 4
+display_size bindctr(all) 0.1
+
+start_surface bounds
+  action all both reflect
+  color both black
+  thickness 1
+  panel triangle 0 -100  500 -100
+  panel triangle 500 -100  500 100
+  panel triangle 500 100  0 100
+  panel triangle 0 100  0 -100
+end_surface
+
+start_surface RNA
+  color both black
+  thickness 1
+  panel triangle 30 0  480 0 rna
+end_surface
+
+surface_drift rib(up) RNA all 10
+
+reaction bind rib(soln) + start(up) -> rib(up) + start(up) + bindctr(soln)
+binding_radius bind STARTRAD
+reaction bump rib(up) + rib(up) -> rib(soln) + rib(soln)
+binding_radius bump 1
+reaction done rib(up) + stop(up) -> rib(soln) + stop(up) + protein(soln)
+binding_radius done 1
+reaction stall rib(up) + stall(up) -> stalled(up)
+binding_radius stall 1
+reaction unstall stalled(up) -> stall(up) + rib(up) 0.5
+product_placement unstall fixed stall 0 0
+product_placement unstall fixed rib 2 0
+reaction bumpstall rib(up) + stalled(up) -> rib(soln) + rib(soln) + stall(up)
+binding_radius bumpstall 1
+
+surface_mol 1 start(up) RNA triangle rna 50 0
+surface_mol 1 stop(up) RNA triangle rna 450 0
+surface_mol 1 stall(up) RNA triangle rna 50+STALL1*400 0
+mol N_RIB rib u u
+
+text_display time rib(up) bindctr protein
+
+cmd A molcount stdout
+
+end_file
+
