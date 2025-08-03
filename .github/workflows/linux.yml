@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo apt -y update
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
-        sudo apt -y install libvtk7-dev vtk7
+        # sudo apt -y install libvtk7-dev vtk7
         sudo apt -y install xvfb
     - name: Configure smoldyn
       run: |
