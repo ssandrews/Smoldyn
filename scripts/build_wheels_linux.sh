@@ -9,13 +9,13 @@ WHEELHOUSE=${1-$HOME/wheelhouse}
 echo "Path to store wheels : $WHEELHOUSE"
 rm -rf $WHEELHOUSE && mkdir -p $WHEELHOUSE
 
-PYDIR37=/opt/python/cp37-cp37m/
-PYDIR38=/opt/python/cp38-cp38/
 PYDIR39=/opt/python/cp39-cp39/
 PYDIR310=/opt/python/cp310-cp310/
 PYDIR311=/opt/python/cp311-cp311/
+PYDIR312=/opt/python/cp312-cp312/
+PYDIR313=/opt/python/cp313-cp313/
 
-for PYDIR in $PYDIR311 $PYDIR310 $PYDIR39 $PYDIR38 $PYDIR37; do
+for PYDIR in $PYDIR313 $PYDIR312 $PYDIR311 $PYDIR310 $PYDIR39; do
     PYTHON=$PYDIR/bin/python
 
     # dependencies
@@ -50,7 +50,6 @@ for PYDIR in $PYDIR311 $PYDIR310 $PYDIR39 $PYDIR38 $PYDIR37; do
     )
 done
 
-# PYTHON=$PYDIR38/bin/python
 PYTHON=$PYDIR39/bin/python
 $PYTHON -m pip install twine
 
