@@ -153,7 +153,7 @@ if(OPTION_WARNING_AS_ERROR)
     CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
-# We need a c++14 support to build python bindings.
+# We need c++14 support to build python bindings.
 if(OPTION_PYTHON)
     set(CMAKE_CXX_STANDARD 14)
     try_compile(COMPILER_SUPPORT_C14
@@ -168,6 +168,11 @@ if(OPTION_PYTHON)
             "See https://en.cppreference.com/w/cpp/compiler_support/14 "
             "for C++14 support among C++ compilers.")
     endif()
+endif()
+
+if(APPLE)
+    # Else the delocate-wheel may fail.
+    set(MACOSX_DEPLOYMENT_TARGET 11.0)
 endif()
 
 

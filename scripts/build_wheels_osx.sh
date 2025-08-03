@@ -47,7 +47,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     make -j4
     make wheel
     ctest --output-on-failure
-    delocate-wheel -w $WHEELHOUSE -v *.whl || echo "delocate-wheel failed"
+    delocate-wheel -w $WHEELHOUSE -v *.whl
     ls -lth $WHEELHOUSE/smoldyn*.whl
 
     ## NOTE: I am contantly getting  the following error in venv.
