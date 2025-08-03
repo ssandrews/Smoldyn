@@ -170,12 +170,6 @@ if(OPTION_PYTHON)
     endif()
 endif()
 
-if(APPLE)
-    # Else the delocate-wheel may fail.
-    set(MACOSX_DEPLOYMENT_TARGET 11.0)
-endif()
-
-
 ######### Core code information ###########
 
 #
