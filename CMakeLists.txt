@@ -528,6 +528,7 @@ if (OPTION_PYTHON)
     else()
         find_package(Python3 ${PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
     endif()
+
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)
