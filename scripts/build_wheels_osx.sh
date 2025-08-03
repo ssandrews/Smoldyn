@@ -22,7 +22,7 @@ PYTHON=$(which python)
 
 if [ ! -f $PYTHON ]; then
     echo "Not found $PYTHON"
-    exit -1
+    exit 1
 fi
 
 $PYTHON -m pip install pip setuptools --upgrade
@@ -47,7 +47,7 @@ PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform(
     make -j4
     make wheel
     ctest --output-on-failure
-    delocate-wheel -w $WHEELHOUSE -v *.whl
+    delocate-wheel -w $WHEELHOUSE -v *.whl || echo "delocate-wheel failed"
     ls -lth $WHEELHOUSE/smoldyn*.whl
 
     ## NOTE: I am contantly getting  the following error in venv.
