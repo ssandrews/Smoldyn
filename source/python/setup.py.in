@@ -1,15 +1,11 @@
-"""
-DO NOT EDIT setup.py directly, change setup.py.in instead. setup.py is generated
-by cmake from setup.py.in .
-"""
+"""DO NOT EDIT setup.py directly, change setup.py.in instead."""
 
-__author__ = "Dilawar Singh"
 __maintainer__ = "Dilawar Singh"
 __email__ = "dilawar.s.rajput@gmail.com"
 
+from pathlib import Path
 import setuptools
 from setuptools.command.install import install
-from pathlib import Path
 
 # This is set by cmake.
 version_ = "@SMOLDYN_VERSION@"
@@ -46,8 +42,7 @@ setuptools.setup(
     author="Dilawar Singh",  # author of this package
     author_email="dilawar.s.rajput@gmail.com",
     url="http://www.smoldyn.org/",
-    license="GNU LGPLv3",
-    #  include_package_data=True,
+    license="LGPLv3",
     packages=setuptools.find_packages(),
     package_data={"smoldyn": ["_smoldyn*.*"]},
     # entry_points={
@@ -56,7 +51,6 @@ setuptools.setup(
     #         "biosimulators-smoldyn = smoldyn.biosimulators.__main__:main",
     #     ],
     # },
-    install_requires=["dataclasses;python_version=='3.6'"],
     extras_require={
         "dev": ["mypy", "pyflakes", "black", "numpy", "matplotlib", "flaky"],
         "biosimulators": [
@@ -72,7 +66,7 @@ setuptools.setup(
             "python-dateutil",
         ],
     },
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     cmdclass={"install": InstallPlatLib},
     distclass=BinaryDistribution,
     classifiers=[
