@@ -8,8 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.7', '3.8', '3.9', '3.10', '3.11' ]
-        # python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
 
     steps:
     - uses: actions/checkout@v2
@@ -25,14 +24,14 @@ jobs:
       run: |
         sudo apt -y update
         sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
-        sudo apt -y install libvtk7-dev vtk7
+        # sudo apt -y install libvtk7-dev vtk7
         sudo apt -y install xvfb
     - name: Configure smoldyn
       run: |
         cmake --version
         PYTHON=$(which python)
         $PYTHON -c "import sys; print(sys.version)"
-        $PYTHON -m pip install pytest matplotlib numpy wheel flaky
+        $PYTHON -m pip install pytest matplotlib numpy wheel flaky setuptools
         mkdir build && cd build
         cmake -DOPTION_PYTHON=ON \
             -DOPTION_EXAMPLES=ON \

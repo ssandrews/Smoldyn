@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.21)
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -153,7 +153,7 @@ if(OPTION_WARNING_AS_ERROR)
     CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
-# We need a c++14 support to build python bindings.
+# We need c++14 support to build python bindings.
 if(OPTION_PYTHON)
     set(CMAKE_CXX_STANDARD 14)
     try_compile(COMPILER_SUPPORT_C14
@@ -169,7 +169,6 @@ if(OPTION_PYTHON)
             "for C++14 support among C++ compilers.")
     endif()
 endif()
-
 
 ######### Core code information ###########
 
@@ -412,7 +411,8 @@ if (OPTION_USE_LIBTIFF)
         find_library(TIFF_LIBRARY libtiff.a ${CMAKE_SOURCE_DIR}/Mac/libtiff/lib NO_DEFAULT_PATH)
     else ()
         find_package(TIFF)
-        if(TIFF_LIBRARY)
+        if(TIFF_FOUND)
+            set(TIFF_LIBRARY ${TIFF_LIBRARIES})
             cmake_path(GET TIFF_LIBRARY PARENT_PATH TIFF_RPATH)
             message(STATUS "Libtiff run path: '${TIFF_RPATH}'")
             list(APPEND RUN_LIBS ${TIFF_RPATH})
@@ -511,7 +511,8 @@ if (OPTION_TARGET_SMOLDYN)
     target_link_libraries(smoldyn PUBLIC smoldyn_static)
     target_link_libraries(smoldyn PUBLIC ${DEP_LIBS})
     if(RUN_LIBS)
-        set_target_properties(smoldyn PROPERTIES INSTALL_RPATH ${RUN_LIBS})
+        message(STATUS "Setting INSTALL_RPATH=${RUN_LIBS}")
+        set_target_properties(smoldyn PROPERTIES INSTALL_RPATH "${RUN_LIBS}")
 		endif()
 endif ()
 
@@ -526,6 +527,7 @@ if (OPTION_PYTHON)
     else()
         find_package(Python3 ${PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
     endif()
+
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)

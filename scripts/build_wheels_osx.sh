@@ -4,7 +4,7 @@ set -e
 set -x
 
 # See https://github.com/ssandrews/Smoldyn/runs/4770635750?check_suite_focus=true
-export MACOSX_DEPLOYMENT_TARGET=10.9
+export MACOSX_DEPLOYMENT_TARGET=11.0
 
 brew install libtiff || echo "Failed to install libtiff"
 brew install cmake || echo "Failed to install cmake"
@@ -22,7 +22,7 @@ PYTHON=$(which python)
 
 if [ ! -f $PYTHON ]; then
     echo "Not found $PYTHON"
-    exit -1
+    exit 1
 fi
 
 $PYTHON -m pip install pip setuptools --upgrade

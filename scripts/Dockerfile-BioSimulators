@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.9-slim-bookworm
 
 ARG VERSION=""
 
@@ -14,7 +14,7 @@ LABEL \
     org.opencontainers.image.vendor="Steven Andrews" \
     org.opencontainers.image.licenses="LGPL-3.0-only" \
     \
-    base_image="python:3.9-slim-buster" \
+    base_image="python:3.9-slim-bookworm" \
     version="${VERSION}" \
     software="Smoldyn" \
     software.version="${VERSION}" \
