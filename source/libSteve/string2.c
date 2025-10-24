@@ -1548,6 +1548,7 @@ int strmatherror(char *string,int clear) {
   if(string)
     strcpy(string,MathParseError?StrErrorString:"");
 	er=MathParseError;
+//	if(er) printf("!!! strmatherror: '%s'\n",string);			// DEBUG ??
 	if(clear) {
 		MathParseError=0;
 		StrErrorString[0]='\0'; }
@@ -1589,11 +1590,11 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 			strcat(newformat,"%i ");
 			snprintf(newstr+strlen(newstr),STRCHAR-strlen(newstr),"%i ",valueint); }
 		else {																	// process a float input
-			barpos=strchr(expression,'|');
+			barpos=strchr(expression,'|');				// position of bar in expression, which is from string
 			if(barpos) *(barpos++)='\0';
 			value=strmatheval(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
-			if(*(fmtpos2+4)=='|')
+			if(*(fmtpos2+4)=='|' && strlen(fmtpos2)>5)
 				sscanf(fmtpos2+5,"%s",dimstr);
 			else
 				dimstr[0]='\0';
@@ -1647,6 +1648,8 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 	char *strptr;
 	double factor,answer;
 
+//	printf("* strunits. function='%s' unitstring='%s', dimstring='%s', value=%lg, numStack=%i\n",function,unitstring,dimstring,value,numStack);// debug ??
+
 	if(!unitstring && !haveWorkUnits && !strcmp(function,"convert"))	// file isn't using units
 		return value;
 
@@ -1674,24 +1677,22 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		if(ustring[0])
 			answer=strunits(ustring,NULL,value,NULL,"parse");
 
-		if(dstring[0] && ustring[0]) {							// check unit compatibility
+		if(dstring[0] && ustring[0]) {							// have ustring so conversion is already done, but first check unit compatibility
 			for(ut=0;ut<numType;ut++)
 				CHECKS(tempunit[ut]==dimUnit[ut],"Incompatible units: is '%s' but should be '%s'",unitstring,dimstring); }
-		else if(dstring[0] && numStack>0) {				// compute answer from stack
+		else if(dstring[0] && numStack>0) {					// no ustring so perform conversion using default units listed in stack
 			factor=1;
 			for(ut=0;ut<numType;ut++) {
 				ui=unitStack[ut][numStack-1];
 				factor*=pow(unitRatios[ut][ui]/unitRatios[ut][workUnits[ut]],tempunit[ut]); }
-			answer=value*factor; }
-		else if(dstring[0]) {
-			CHECKS(0,"Bug in strunits convert. No units to convert from."); }}
+			answer=value*factor; }}										// if no ustring and no current default units, then no conversion and hope for the best (this arises for runtime commands)
 
 	else if(!strcmp(function,"getunits")) {
 		outstring[0]='\0';
 		if(!haveWorkUnits)
 			answer=1;
 		else {
-			if(dstring[0]) {
+			if(dstring[0]) {													// return working units for some combination of input units, e.g. dstring="L2/T" and returns "um2/ms"
 				strunits(dstring,NULL,1,NULL,"parse");
 				for(ut=0;ut<numType;ut++) {
 					count=strlen(outstring);
@@ -1701,12 +1702,12 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 						strcat(outstring,unitNames[ut][workUnits[ut]]);
 						if(dimUnit[ut]>1) sprintf(outstring+strlen(outstring),"%i",dimUnit[ut]);
 						else if(dimUnit[ut]<-1) sprintf(outstring+strlen(outstring),"%i",-dimUnit[ut]); }}}
-			else {
+			else {																		// return list of working units, e.g. um ms
 				for(ut=0;ut<numType;ut++) {
 					if(ut>0) strcat(outstring," ");
 					strcat(outstring,unitNames[ut][workUnits[ut]]); }}}}
 
-	else if(!strcmp(function,"initialize")) {
+	else if(!strcmp(function,"initialize")) {			// allocate and set up unitNames and unitRatios
 		if(unitNames[0]!=NULL) return 0;
 		for(ut=0;ut<numType;ut++) {
 			CHECKS(unitNames[ut]=(char**) calloc(maxUnits,sizeof(char*)),"strunits. Memory error.");
@@ -1813,7 +1814,7 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		for(ut=0;ut<numType;ut++)
 			workUnits[ut]=0; }
 
-	else if(!strcmp(function,"free")) {
+	else if(!strcmp(function,"free")) {							// free all internal memory
 		for(ut=0;ut<numType;ut++) {
 			for(ui=0;ui<numUnits[ut];ui++)
 				free(unitNames[ut][ui]);
@@ -1829,7 +1830,7 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		numStack=0;
 		haveWorkUnits=0; }
 
-	else if(!strcmp(function,"debug")) {
+	else if(!strcmp(function,"debug")) {						// print contents of all internal data structures
 		printf("data in strunit function:\n");
 		printf("%i unit types and %i units allocated per type\n",numType,maxUnits);
 		for(ut=0;ut<numType;ut++) {
@@ -1871,7 +1872,7 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 		strcpy(nameStack[numStack],dstring);
 		numStack++; }
 
-	else if(!strcmp(function,"pop")) {						// pop units down to the filename
+	else if(!strcmp(function,"pop")) {						// pop units either down to the filename or down by 1
 		if(dstring[0]) {
 			for(is=0;is<numStack;is++)
 				if(!strcmp(nameStack[is],dstring)) {

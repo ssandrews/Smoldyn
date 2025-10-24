@@ -270,6 +270,63 @@ panelptr readpanelname(simptr sim,surfaceptr srf,const char *str) {
 	return sim->srfss->srflist[s]->panels[ps][p]; }
 
 
+/* srfcoincidentpanels */
+int srfcoincidentpanels(const panelptr pnl1,const panelptr pnl2) {
+	int dim,same;
+	enum PanelShape ps;
+	double **pt1,**pt2,*frnt1,*frnt2,vect[3];
+
+	dim=pnl1->srf->srfss->sim->dim;
+	ps=pnl1->ps;
+	if(pnl2->ps!=ps) return -1;
+	pt1=pnl1->point;
+	pt2=pnl2->point;
+	frnt1=pnl1->front;
+	frnt2=pnl2->front;
+
+	same=0;									// returns: -1 for error, 0 for different, 1 for identical, 2 for rotated point order, 3 for flipped
+	if(ps==PSrect) {
+		if(dim==1) {
+			if(equalVD(pt1[0],pt2[0],dim)) same=(frnt1[0]==frnt2[0])?1:3; }
+		else if(dim==2) {
+			if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[1],dim)) same=1;
+			else if(equalVD(pt1[0],pt2[1],dim) && equalVD(pt1[1],pt2[0],dim)) same=3; }
+		else if(dim==3) {
+			if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[1],dim) && equalVD(pt1[2],pt2[2],dim) && equalVD(pt1[3],pt2[3],dim)) same=1;
+			else if(equalVD(pt1[0],pt2[1],dim) && equalVD(pt1[1],pt2[2],dim) && equalVD(pt1[2],pt2[3],dim) && equalVD(pt1[3],pt2[0],dim)) same=2;
+			else if(equalVD(pt1[0],pt2[2],dim) && equalVD(pt1[1],pt2[3],dim) && equalVD(pt1[2],pt2[0],dim) && equalVD(pt1[3],pt2[1],dim)) same=2;
+			else if(equalVD(pt1[0],pt2[3],dim) && equalVD(pt1[1],pt2[0],dim) && equalVD(pt1[2],pt2[1],dim) && equalVD(pt1[3],pt2[2],dim)) same=2;
+			else if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[3],dim) && equalVD(pt1[2],pt2[2],dim) && equalVD(pt1[3],pt2[1],dim)) same=3;
+			else if(equalVD(pt1[0],pt2[1],dim) && equalVD(pt1[1],pt2[0],dim) && equalVD(pt1[2],pt2[3],dim) && equalVD(pt1[3],pt2[2],dim)) same=3;
+			else if(equalVD(pt1[0],pt2[2],dim) && equalVD(pt1[1],pt2[1],dim) && equalVD(pt1[2],pt2[0],dim) && equalVD(pt1[3],pt2[3],dim)) same=3;
+			else if(equalVD(pt1[0],pt2[3],dim) && equalVD(pt1[1],pt2[2],dim) && equalVD(pt1[2],pt2[1],dim) && equalVD(pt1[3],pt2[0],dim)) same=3; }}
+	else if(ps==PStri) {
+		if(dim==1) {
+			if(equalVD(pt1[0],pt2[0],dim)) same=(frnt1[0]==frnt2[0])?1:3; }
+		else if(dim==2) {
+			if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[1],dim)) same=1;
+			else if(equalVD(pt1[0],pt2[1],dim) && equalVD(pt1[1],pt2[0],dim)) same=3; }
+		else if(dim==3) {
+			if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[1],dim) && equalVD(pt1[2],pt2[2],dim)) same=1;
+			else if(equalVD(pt1[0],pt2[1],dim) && equalVD(pt1[1],pt2[2],dim) && equalVD(pt1[2],pt2[0],dim)) same=2;
+			else if(equalVD(pt1[0],pt2[2],dim) && equalVD(pt1[1],pt2[0],dim) && equalVD(pt1[2],pt2[1],dim)) same=2;
+			else if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[2],dim) && equalVD(pt1[2],pt2[1],dim)) same=3;
+			else if(equalVD(pt1[0],pt2[1],dim) && equalVD(pt1[1],pt2[0],dim) && equalVD(pt1[2],pt2[2],dim)) same=3;
+			else if(equalVD(pt1[0],pt2[2],dim) && equalVD(pt1[1],pt2[1],dim) && equalVD(pt1[2],pt2[0],dim)) same=3; }}
+	else if(ps==PSsph) {
+		if(equalVD(pt1[0],pt2[0],dim) && pt1[1][0]==pt2[1][0]) same=(frnt1[0]==frnt2[0])?1:3; }
+	else if(ps==PScyl) {
+		if(equalVD(pt1[0],pt2[0],dim) && equalVD(pt1[1],pt2[1],dim) && pt1[2][0]==pt2[2][0]) same=(frnt1[2]==frnt2[2])?1:3; }
+	else if(ps==PShemi) {
+		if(equalVD(pt1[0],pt2[0],dim) && pt1[1][0]==pt2[1][0] && equalVD(pt1[2],pt2[2],dim)) same=(frnt1[0]==frnt2[0])?1:3; }
+	else if(ps==PSdisk) {
+		if(equalVD(pt1[0],pt2[0],dim) && pt1[1][0]==pt2[1][0] && equalVD(frnt1,frnt2,dim)) same=1;
+		else if(equalVD(pt1[0],pt2[0],dim) && pt1[1][0]==pt2[1][0] && equalVD(frnt1,multKVD(-1,frnt2,vect,dim),dim)) same=3; }
+	else return -1;
+
+	return same; }
+
+
 /* panelpoints */
 int panelpoints(enum PanelShape ps,int dim) {
 	int npts;
@@ -1714,7 +1771,7 @@ void writesurfaces(simptr sim,FILE *fptr) {
 /* checksurfaceparams */
 int checksurfaceparams(simptr sim,int *warnptr) {
 	int error,warn;
-	int d,c,s,i,dim,nspecies,p,pt,fjump,bjump,fport,bport;
+	int d,c,s,i,dim,nspecies,p,p2,pt,fjump,bjump,fport,bport,coinc;
 	surfacessptr srfss;
 	surfaceptr srf;
 	enum MolecState ms,ms2;
@@ -1811,6 +1868,16 @@ int checksurfaceparams(simptr sim,int *warnptr) {
 						if(!Geo_LineXaabb2(point[0],point[1],norm,lowwall,highwall)) {warn++;simLog(sim,5," WARNING: surface %s, panel %s is entirely outside the system volume\n",srf->sname,pnl->pname);}
 						if(!(front[0]==-1 || front[0]==1)) {error++;simLog(sim,10," SMOLDYN BUG: surface %s, panel %s front vector is set incorrectly\n",srf->sname,pnl->pname);} }}}}
 				// should also check points and front for other shapes and dimensions
+
+	for(s=0;s<srfss->nsrf;s++) {											// coincident panels
+		srf=srfss->srflist[s];
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++) {
+				pnl=srf->panels[ps][p];
+				for(p2=p+1;p2<srf->npanel[ps];p2++) {
+					coinc=srfcoincidentpanels(pnl,srf->panels[ps][p2]);
+					if(coinc<0) {error++;simLog(sim,10,"SMOLDYN BUG: error while investigating panel overlap\n"); }
+					if(coinc>0) {warn++;simLog(sim,5," WARNING: on surface %s, panels %s and %s are in the exact same location\n",srf->sname,pnl->pname,srf->panels[ps][p2]->pname);} }}}
 
 	for(s=0;s<srfss->nsrf;s++) {											// jump surfaces and panels
 		srf=srfss->srflist[s];
@@ -3281,7 +3348,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 #endif
 		{
 			itct=strmathsscanf(line2,"%s %s %s %mlg",varnames,varvalues,nvar,nm,nm1,nm2,&f1);
-			CHECKS(itct==4,"format: species[(state)] state1 state2 value [new_species]");
+			CHECKM(itct==4,"format: species[(state)] state1 state2 value [new_species]. ");
 		}
 
 		i=molstring2index1(sim,nm,&ms,&index);
@@ -3359,7 +3426,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 	else if(!strcmp(word,"rate_rule") || !strcmp(word,"rate_internal_rule")) { // rate_rule, rate_internal_rule
 		CHECKS(srf,"need to enter surface name first");
 		itct=strmathsscanf(line2,"%s %s %s %mlg",varnames,varvalues,nvar,nm,nm1,nm2,&f1);
-		CHECKS(itct==4,"format: species[(state)] state1 state2 value [new_species]");
+		CHECKM(itct==4,"format: species[(state)] state1 state2 value [new_species]. ");
 		i=molstring2pattern(nm,&ms,pattern,0);
 		CHECKS(i>=0,"molecule name not recognized");
 		CHECKS(ms<MSbsoln,"state is not recognized or not permitted");
@@ -3413,7 +3480,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 	else if(!strcmp(word,"thickness")) {				// thickness
 		CHECKS(srf,"need to enter surface name before thickness");
 		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"thickness value is missing");
+		CHECKM(itct==1,"thickness value is missing. ");
 		CHECKS(f1>=0,"thickness value needs to be at least 0");
 		er=surfsetedgepts(srf,f1);
 		CHECKS(!er,"BUG: error in surfsetedgepts");
@@ -3422,7 +3489,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 	else if(!strcmp(word,"stipple")) {					// stipple
 		CHECKS(srf,"need to enter surface name before stipple");
 		itct=strmathsscanf(line2,"%mi %x",varnames,varvalues,nvar,&i1,&i2);
-		CHECKS(itct==2,"stipple format: factor pattern");
+		CHECKM(itct==2,"stipple format: factor pattern. ");
 		CHECKS(i1>=1,"stipple factor needs to be >=1");
 		CHECKS(i2>=0 && i2 <=0xFFFF,"stipple pattern needs to be between 0x00 and 0xFFFF");
 		er=surfsetstipple(srf,i1,i2);
@@ -3444,7 +3511,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 	else if(!strcmp(word,"shininess")) {				// shininess
 		CHECKS(srf,"need to enter surface name before shininess");
 		itct=strmathsscanf(line2,"%s %mlg",varnames,varvalues,nvar,facenm,&f1);
-		CHECKS(itct==2,"shininess format: face value");
+		CHECKM(itct==2,"shininess format: face value. ");
 		face=surfstring2face(facenm);
 		CHECKS(face!=PFnone,"face name needs to be 'front', 'back', or 'both'");
 		CHECKS(f1>=0 && f1<=128,"shininess value needs to be between 0 and 128");
@@ -3455,7 +3522,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 	else if(!strcmp(word,"max_panels")) {					// max_panels
 		CHECKS(srf,"need to enter surface name before max_panels");
 		itct=strmathsscanf(line2,"%s %mi",varnames,varvalues,nvar,shapenm,&i1);
-		CHECKS(itct==2,"max_panels format: shape number");
+		CHECKM(itct==2,"max_panels format: shape number. ");
 		ps=surfstring2ps(shapenm);
 		CHECKS(ps<PSMAX,"in max_panels, unknown panel shape");
 		CHECKS(dim!=1 || ps<=PSsph,"in max_panels, panel shape is not permitted for a 1-D system");
@@ -3482,7 +3549,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		i1=surfpanelparams(ps,dim);
 		for(d=0;d<i1;d++) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[d]);
-			CHECKS(itct==1,"panel either has too few parameters or has unreadable parameters");
+			CHECKM(itct==1,"panel either has too few parameters or has unreadable parameters. ");
 			line2=strnword(line2,2); }
 		if(line2) {
 			itct=sscanf(line2,"%s",nm);
@@ -3570,7 +3637,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		CHECKS(line2,"format for unbounded_emitter: face species amount position");
 		for(d=0;d<dim;d++) {
 			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[d]);
-			CHECKS(itct==1,"format for unbounded_emitter: face species amount position");
+			CHECKM(itct==1,"format for unbounded_emitter: face species amount position. ");
 			line2=strnword(line2,2); }
 		er=surfaddemitter(srf,face,i,f1,fltv1,dim);
 		CHECKS(er==0,"out of memory adding emitter");

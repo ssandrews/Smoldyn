@@ -1428,7 +1428,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 
 	else if(!strcmp(word,"multiply")) {						// multiply
 		itct=strmathsscanf(line2,"%s %mlg|",varnames,varvalues,nvar,str1,&f1);
-		CHECKS(itct==2,"multiply format: parameter amount");
+		CHECKM(itct==2,"multiply format: parameter amount. ");
 		er=bngsetparam(bng,str1,f1);
 		CHECKS(er!=1,"unrecognized parameter");
 		CHECKS(er!=2,"multiply amount needs to be greater than 0");
@@ -1443,7 +1443,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 
 	else if(!strcmp(word,"monomer_difc")) {				// monomer_difc
 		itct=strmathsscanf(line2,"%s %mlg|L2/T",varnames,varvalues,nvar,str1,&f1);
-		CHECKS(itct==2,"monomer_difc format: monomer difc");
+		CHECKM(itct==2,"monomer_difc format: monomer difc. ");
 		CHECKS(f1>=0,"monomer diffusion coefficient has to be >=0");
 		er=bngsetmonomerdifc(bng,str1,f1);
 		CHECKS(er!=-1,"out of memory adding monomer %s",str1);
@@ -1453,7 +1453,7 @@ bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,cha
 
 	else if(!strcmp(word,"monomer_display_size")) {	// monomer_display_size
 		itct=strmathsscanf(line2,"%s %mlg|L",varnames,varvalues,nvar,str1,&f1);
-		CHECKS(itct==2,"monomer_display_size format: monomer display_size");
+		CHECKM(itct==2,"monomer_display_size format: monomer display_size. ");
 		er=bngsetmonomerdisplaysize(bng,str1,f1);
 		CHECKS(er!=-1,"out of memory adding monomer %s",str1);
 		CHECKS(er!=-2,"invalid '%s' monomer name",str1);

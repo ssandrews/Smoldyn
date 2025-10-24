@@ -227,6 +227,13 @@ int equalV(float *a,float *b,int n)	{
 	return 1;	}
 
 
+int equalVD(double *a,double *b,int n)	{
+	int i;
+	
+	for(i=0;i<n;i++) if(a[i]!=b[i]) return 0;
+	return 1;	}
+
+
 int isevenspV(float *a,int n,float tol) {
 	int i;
 	float sp;

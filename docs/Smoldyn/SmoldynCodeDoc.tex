@@ -1073,14 +1073,34 @@ Sim is a global variable for the current simulation structure. This is only used
 % Macros
 \section{Macros}
 
+Macros are defined near the top of smoldynfuncs.h. The global strings that they use are defined at the top of smolsim.cpp.
+
 \begin{description}
-\item[\ttt{\#define CHECK(A) if(!(A)) goto failure; else (void)0}]
+\item[\ttt{\#define CHECK(A)}]
+\ttt{if(!(A)) {ErrorType=1;goto failure;} else (void)0}
 \hfill \\
 This is a useful macro for several routines in which any of several problems may occur, but all problems result in freeing structures and leaving. Program flow goes to the label failure if A is false. Many people would consider both the use of a macro function and the use of a goto statement to be bad programming practice, and especially bad when used together. However, in this case it significantly improves code readability. As usual, partially defined structures should always be kept traversable and in good order so they can be freed at any time. The ``else (void)0" termination of the macro is used so that if CHECK(\ldots) is followed by an else, that else will refer to the prior if, and not to the CHECK. Because of the trailing else, compilers may complain if the CHECK macro follows an if and is not surrounded by braces.
 
-\item[\ttt{\#define CHECKS(A, B) if(!(A)) {strncpy(erstr, B, STRCHAR);goto failure;} else (void)0}]
+\item[\ttt{\#define CHECKMEM(A)}]
+\ttt{if(!(A)) {ErrorType=3;snprintf(ErrorString,STRCHARLONG,"Cannot allocate memory"); goto failure;} else (void)0}
 \hfill \\
-This is identical to CHECK, except that it also copies the included string to the variable erstr if a failure occurs. It is useful for error reporting.
+Check that memory allocation worked.
+
+\item[\ttt{\#define CHECKS(A,...)}]
+\ttt{if(!(A)) {ErrorType=2; snprintf(ErrorString,STRCHARLONG,\_\_VA\_ARGS\_\_); goto failure;} else (void)0}
+\hfill \\
+This is identical to CHECK, except that it also copies the included string and other arguments to the variable \ttt{ErrorString} if a failure occurs.
+
+\item[\ttt{\#define CHECKM(A,...)}]
+\ttt{if(!(A) || strmatherror(ErrorMath,1)) {ErrorType=2; snprintf(strcat(ErrorString,ErrorMath),STRCHARLONG,\_\_VA\_ARGS\_\_); goto failure;} else (void)0}
+\hfill \\
+This is used after a call to \ttt{strmathsscanf}, which is used for reading numerical values. It works the same as the \ttt{CHECKS} macro, but it also checks for math errors using the \ttt{strmatherror} function and appends those to the end of the error string.
+
+\item[\ttt{\#define CHECKBUG(A,...)}]
+\ttt{if(!(A)) {ErrorType=4; snprintf(ErrorString,STRCHARLONG,\_\_VA\_ARGS\_\_); goto failure;} else (void)0}
+\hfill \\
+This is identical to CHECKS, except for creating a higher level of error type.
+
 
 \end{description}
 
@@ -2736,6 +2756,14 @@ Converts enumerated drawing mode to a string. Output strings are abbreviated dra
 \item[\ttt{int readsurfacename(simptr sim, char *str, enum PanelShape *psptr, int *pptr)}]
 \hfill \\
 Reads the first word of string \ttt{str} to parse the surface name and an optional panel name, which are entered in the format surface:panel. Returns the surface index directly and, if the pointers are not \ttt{NULL}, returns the panel shape in \ttt{psptr} and the panel index in \ttt{pptr}. Returns the surface index, or -1 if \ttt{str} is missing, -2 if no surfaces have been defined in the current simulation, -3 if the name string cannot be read, -4 if the surface name is unknown, or -5 if the surface is ``all". In \ttt{psptr} and \ttt{pptr} are returned, respectively: \ttt{PSnone} and -1 if the panel is not given, \ttt{PSnone} and -2 if the surface is ``all" and the panel is something else (this is an error), \ttt{PSnone} and -3 if the panel name is unknown, \ttt{PSall} and -5 if the panel is ``all", and otherwise the panel shape and panel number. These outputs were changed 4/24/12, while developing Smoldyn 2.27.
+
+\item[\ttt{panelptr readpanelname(simptr sim,surfaceptr srf,const char *str)}]
+\hfill \\
+Reads the name of a panel in \ttt{str}. If this name already includes a surface, using the format $surface:panel$, then \ttt{srf} is ignored. Otherwise, \ttt{srf} is assumed to be the surface that owns the panel. Returns a pointer to the panel, or \ttt{NULL} if the panel wasn't found.
+
+\item[\ttt{int srfcoincidentpanels(panelptr pnl1,panelptr pnl2)}]
+\hfill \\
+Tests two panels to see if they are essentially identical to each other, meaning defined at the exact same position. Returns 0 if not, 1 if they are completely identical, 2 if their defining points are sequentially rotated (e.g. \ttt{pnl1} has triangle points $a$, $b$, and $c$ and \ttt{pnl2} has triangle points $b$, $c$, $a$), and 3 if the two panels have front and back flipped from each other. Also returns -1 for an error (e.g. the panels have different shapes).
 
 \item[\ttt{int panelpoints(enum PanelShape ps, int dim)}]
 \hfill \\
@@ -7978,6 +8006,11 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added node mobility to the filament data structure and a new \ttt{node\_mobility} statement.
 \item Added command \ttt{cmdRotateFilamentToY}.
 \item Added and also renamed several filament example files.
+
+\subsection{Modifications for version 2.76 (not released yet)}
+\item Added test for coincident surface panels. This is a new test in \ttt{checksurfaceparams} and a new function \ttt{srfcoincidentpanels}, both in smolsurface.c. This only looks for panels that are identical to each other, including with a rotated point sequence or front/back flipped. It does not detect overlap in only one region of a panel, such as a pair of partially coincident rectangles.
+\item Fixed a minor bug in \ttt{strunits}, which created errors if units were used and commands included numbers; the problem was that default units only apply while a configuration file is being read, so there are no default units mid-simulation when a command is being parsed. As a result, Smoldyn couldn't convert the command values. Now, Smoldyn still can't convert values in commands, but this doesn't create an error.
+\item Implemented use of \ttt{strmatherror} for error reporting. Before, math errors were generated but never read. I created the \ttt{CHECKM} macro, which behaves the same as the \ttt{CHECKS} macro, except that it also checks for math errors and appends math error strings to the error outputs. It should be used after every call to \ttt{strmathsscanf}. I didn't create a new macro within smolcmd.c, but those calls to \ttt{strmathsscanf} also check for math errors now.
 
 \end{itemize}
 

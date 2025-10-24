@@ -41,6 +41,7 @@ float maxV(float *a,int n);
 double maxVD(double *a,int n,int *indx);
 double minVD(double *a,int n,int *indx);
 int equalV(float *a,float *b,int n);
+int equalVD(double *a,double *b,int n);
 int isevenspV(float *a,int n,float tol);
 float detM(float *a,int n);
 float traceM(float *a,int n);

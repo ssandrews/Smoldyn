@@ -1210,7 +1210,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"thickness")) {				// thickness
 		CHECKS(filtype,"need to enter filament type name before thickness");
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"thickness value is missing");
+		CHECKM(itct==1,"thickness value is missing. ");
 		CHECKS(f1>=0,"thickness value needs to be at least 0");
 		er=filtypeSetEdgePts(filtype,f1);
 		CHECKS(!er,"BUG: error in filtypeSetEdgePts");
@@ -1219,7 +1219,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"stipple")) {					// stipple
 		CHECKS(filtype,"need to enter filament type name before stipple");
 		itct=strmathsscanf(line2,"%mi %mi",varnames,varvalues,nvar,&i1,&i2);
-		CHECKS(itct==2,"stipple format: factor pattern");
+		CHECKM(itct==2,"stipple format: factor pattern. ");
 		CHECKS(i1>=1,"stipple factor needs to be >=1");
 		CHECKS(i2>=0 && i2 <=0xFFFF,"stipple pattern needs to be between 0x00 and 0xFFFF");
 		er=filtypeSetStipple(filtype,i1,i2);
@@ -1239,7 +1239,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"shininess")) {				// shininess
 		CHECKS(filtype,"need to enter filament type name before shininess");
 		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"shininess format: value");
+		CHECKM(itct==1,"shininess format: value. ");
 		CHECKS(f1>=0 && f1<=128,"shininess value needs to be between 0 and 128");
 		er=filtypeSetShiny(filtype,f1);
 		CHECKS(!er,"BUG: error in filtypeSetShiny");
@@ -1248,7 +1248,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"force_arrows")) {			// force_arrows
 		CHECKS(filtype,"need to enter filament type name before force_arrows");
 		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"force_arrows format: scale color");
+		CHECKM(itct==1,"force_arrows format: scale color. ");
 		er=filtypeSetDrawForceArrows(filtype,f1,NULL);
 		CHECKS(!er,"BUG: error in filtypeSetDrawForceArrows");
 		line2=strnword(line2,2);
@@ -1265,7 +1265,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"kT")) {								// kT
 		CHECKS(filtype,"need to enter filament type name before kT");
 		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"kT format: value");
+		CHECKM(itct==1,"kT format: value. ");
 		CHECKS(f1>=0,"kT value needs to be >=0");
 		filtypeSetParam(filtype,"kT",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following kT"); }
@@ -1273,14 +1273,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"treadmill_rate")) {		// treadmill_rate
 		CHECKS(filtype,"need to enter filament type name before treadmill_rate");
 		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"treadmill_rate format: value");
+		CHECKM(itct==1,"treadmill_rate format: value. ");
 		filtypeSetParam(filtype,"treadrate",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following treadmill_rate"); }
 
 	else if(!strcmp(word,"mobility")) {			// mobility
 		CHECKS(filtype,"need to enter filament type name before mobility");
 		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);				//?? Units are incorrect
-		CHECKS(itct==1,"mobility format: value");
+		CHECKM(itct==1,"mobility format: value. ");
 		CHECKS(f1>0,"mobility value needs to be greater than 0");
 		filtypeSetParam(filtype,"mobility",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following mobility"); }
@@ -1288,7 +1288,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"standard_length")) {	// standard_length
 		CHECKS(filtype,"need to enter filament type name before standard_length");
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"standard_length format: value");
+		CHECKM(itct==1,"standard_length format: value. ");
 		CHECKS(f1>=0,"standard_length value needs to be >=0");
 		filtypeSetParam(filtype,"stdlen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following standard_length"); }
@@ -1297,11 +1297,11 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(filtype,"need to enter filament type name before standard_angle");
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&fltv1[0]);
-			CHECKS(itct==1,"standard_angle format: angle");
+			CHECKM(itct==1,"standard_angle format: angle. ");
 			fltv1[1]=fltv1[2]=0; }
 		else {
 			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&fltv1[2]);
-			CHECKS(itct==3,"standard_angle format: yaw pitch roll"); }
+			CHECKM(itct==3,"standard_angle format: yaw pitch roll. "); }
 		filtypeSetParam(filtype,"stdypr",0,fltv1[0]);
 		filtypeSetParam(filtype,"stdypr",1,fltv1[1]);
 		filtypeSetParam(filtype,"stdypr",2,fltv1[2]);
@@ -1310,7 +1310,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	else if(!strcmp(word,"force_length")) {		// force_length
 		CHECKS(filtype,"need to enter filament type name before force_length");
 		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
-		CHECKS(itct==1,"force_length format: value");
+		CHECKM(itct==1,"force_length format: value. ");
 		filtypeSetParam(filtype,"klen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following force_length"); }
 
@@ -1318,11 +1318,11 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(filtype,"need to enter filament type name before force_angle");
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&fltv1[0]);
-			CHECKS(itct==1,"force_angle format: value");
+			CHECKM(itct==1,"force_angle format: value. ");
 			fltv1[1]=fltv1[2]=-1; }
 		else {
 			itct=strmathsscanf(line2,"%mlg|E %mlg|E %mlg|E",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&fltv1[2]);
-			CHECKS(itct==3,"force_angle format: yaw pitch roll"); }
+			CHECKM(itct==3,"force_angle format: yaw pitch roll. "); }
 		filtypeSetParam(filtype,"kypr",0,fltv1[0]);
 		filtypeSetParam(filtype,"kypr",1,fltv1[1]);
 		filtypeSetParam(filtype,"kypr",2,fltv1[2]);
@@ -1382,17 +1382,17 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L %mlg|",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&length,&angle[0]);
 			fltv1[2]=angle[1]=angle[2]=0;
-			CHECKS(itct==4,"first_segment format: x y length angle [thickness]"); }
+			CHECKM(itct==4,"first_segment format: x y length angle [thickness]. "); }
 		else {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L %mlg|L %mlg| %mlg| %mlg|",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&fltv1[2],&length,&angle[0],&angle[1],&angle[2]);
-			CHECKS(itct==7,"first_segment format: x y z length yaw pitch roll [thickness]"); }
+			CHECKM(itct==7,"first_segment format: x y z length yaw pitch roll [thickness]. "); }
 		CHECKS(length>0,"length needs to be >0");
 		line2=strnword(line2,itct+1);
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKS(itct==1,"first_segment format: x y length angle [thickness]");}
-			else {CHECKS(itct==1,"first_segment format: x y z length yaw pitch roll [thickness]");}
+			if(dim==2) {CHECKM(itct==1,"first_segment format: x y length angle [thickness]. ");}
+			else {CHECKM(itct==1,"first_segment format: x y z length yaw pitch roll [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
 		er=filAddSegment(fil,fltv1,length,angle,thick,'b');
@@ -1405,18 +1405,18 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|",varnames,varvalues,nvar,&length,&angle[0]);
 			angle[1]=angle[2]=0;
-			CHECKS(itct==2,"add_segment format: length angle0 [thickness [end]]"); }
+			CHECKM(itct==2,"add_segment format: length angle0 [thickness [end]]. "); }
 		else {
 			itct=strmathsscanf(line2,"%mlg|L %mlg| %mlg| %mlg|",varnames,varvalues,nvar,&length,&angle[0],&angle[1],&angle[2]);
-			CHECKS(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [end]]"); }
+			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [end]]. "); }
 		CHECKS(length>0,"length needs to be >0");
 		line2=strnword(line2,itct+1);
 		thick=1;
 		endchar='b';
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [end]]");}
-			else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [end]]");}
+			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [end]]. ");}
+			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [end]]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2);
 			if(line2) {
@@ -1449,7 +1449,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil->filtype,"need to enter filament type before random_segments");
 		CHECKS(fil->filtype->klen==-1 || fil->filtype->klen>0,"cannot compute random segments because the filament type has length force constant equal to 0");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
-		CHECKS(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]");
+		CHECKM(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]. ");
 		CHECKS(i1>0,"number needs to be >0");
 		line2=strnword(line2,2);
 		sprintf(str1,"%i",0);
@@ -1471,8 +1471,8 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		thick=1;
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKS(itct==1,"random_segments format: number [x y phi] [thickness]");}
-			else {CHECKS(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]");}
+			if(dim==2) {CHECKM(itct==1,"random_segments format: number [x y phi] [thickness]. ");}
+			else {CHECKM(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
 		er=filAddRandomSegments(fil,i1,str1,str2,str3,str4,str5,str6,thick);
@@ -1485,12 +1485,12 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil,"need to enter filament name before translate");
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%c %mlg|L %mlg|L",varnames,varvalues,nvar,&symbol,&fltv1[0],&fltv1[1]);
-			CHECKS(itct==3,"translate format: symbol x y");
+			CHECKM(itct==3,"translate format: symbol x y. ");
 			fltv1[2]=0;
 			line2=strnword(line2,4); }
 		else {
 			itct=strmathsscanf(line2,"%c %mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&symbol,&fltv1[0],&fltv1[1],&fltv1[2]);
-			CHECKS(itct==4,"translate format: symbol x y z");
+			CHECKM(itct==4,"translate format: symbol x y z. ");
 			line2=strnword(line2,5); }
 		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		filTranslate(fil,fltv1,symbol);
@@ -1499,14 +1499,14 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	else if(!strcmp(word,"modify_segment")) {				// modify_segment
 		CHECKS(fil,"need to enter filament name before modify_segment");
 		itct=strmathsscanf(line2,"%mi| %s %c",varnames,varvalues,nvar,&seg,nm,&symbol);
-		CHECKS(itct==3,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
 		CHECKS(seg>=0 && seg<fil->nseg,"segment number is not within filament");
 		line2=strnword(line2,4);
 		CHECKS(line2,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
 		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		if(!strcmp(nm,"length")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
-			CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
 			line2=strnword(line2,2);
 			endchar='b';
 			if(line2) {
@@ -1522,11 +1522,11 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			angle[0]=angle[1]=angle[2]=0;
 			if(dim==2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&angle[0]);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
 				line2=strnword(line2,2); }
 			else {
 				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
-				CHECKS(itct==3,"insufficient angle values");
+				CHECKM(itct==3,"insufficient angle values. ");
 				line2=strnword(line2,4); }
 			endchar='b';
 			if(line2) {
@@ -1541,16 +1541,16 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			pos[0]=pos[1]=pos[2]=0;
 			if(dim==2) {
 				itct=strmathsscanf(line2,"%mlg|L $mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1]);
-				CHECKS(itct==2,"insufficient position values");
+				CHECKM(itct==2,"insufficient position values. ");
 				line2=strnword(line2,3); }
 			else {
 				itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1],&pos[2]);
-				CHECKS(itct==3,"insufficient position values");
+				CHECKM(itct==3,"insufficient position values. ");
 				line2=strnword(line2,4); }
 			filTranslateNode(fil,seg,pos,symbol); }
 		else if(!strcmp(nm,"thickness")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
 			line2=strnword(line2,2);
 			er=filChangeThickness(fil,seg,thick,symbol);
 			CHECKS(!er,"Error while trying to change segment thickness - new value cannot be negative"); }
@@ -1586,7 +1586,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil,"need to enter filament name before node_mobility");
 		CHECKS(fil->nseg>0,"filament has no segments");
 		itct=strmathsscanf(line2,"%mi %mlg|",varnames,varvalues,nvar,&i1,&f1);
-		CHECKS(itct==2,"node_mobility format: node value");
+		CHECKM(itct==2,"node_mobility format: node value. ");
 		CHECKS(i1<=fil->nseg && i1>-fil->nseg,"node number is outside of filment size");
 		CHECKS(f1>=0,"mobility value needs to be >=0");
 		er=filSetNodeMobility(fil,i1,f1);

@@ -2610,7 +2610,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 			else if(order==2 && dim==2) itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt1);
 			else if(order==2 && dim==3) itct=strmathsscanf(line2,"%mlg|L3/T",varnames,varvalues,nvar,&flt1);
 			else itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
-			CHECKS(itct==1,"failed to read reaction rate");
+			CHECKM(itct==1,"failed to read reaction rate. ");
 			if(!isrule) {
 				if(rxn) er=RxnSetValue(sim,"rate",rxn,flt1);
 				else er=RxnSetValuePattern(sim,"rate",pattern,rname,rctstate,prdstate,flt1,0,NULL);
@@ -2627,7 +2627,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 				else if(nprod==2 && dim==2) itct=strmathsscanf(line2,"%mlg|L2/T",varnames,varvalues,nvar,&flt2);
 				else if(nprod==2 && dim==3) itct=strmathsscanf(line2,"%mlg|L3/T",varnames,varvalues,nvar,&flt2);
 				else itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt2);
-				CHECKS(itct==1,"failed to read reverse reaction rate");
+				CHECKM(itct==1,"failed to read reverse reaction rate. ");
 				if(!isrule) {
 					if(rxnrev) er=RxnSetValue(sim,"rate",rxnrev,flt2);
 					else er=RxnSetValuePattern(sim,"rate",patternrev,rnamerev,prdstate,rctstate,flt2,0,NULL);

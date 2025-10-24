@@ -904,7 +904,7 @@ compartptr compartreadstring(simptr sim,ParseFilePtr pfp,compartptr cmpt,const c
 		if(dim==1) itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&v1[0]);
 		else if(dim==2) itct=strmathsscanf(line2,"%mlg|L %mlg|L",varnames,varvalues,nvar,&v1[0],&v1[1]);
 		else itct=strmathsscanf(line2,"%mlg|L %mlg|L %mlg|L",varnames,varvalues,nvar,&v1[0],&v1[1],&v1[2]);
-		CHECKS(itct==dim,"unable to read all point values");
+		CHECKM(itct==dim,"unable to read all point values. ");
 		er=compartaddpoint(cmpt,dim,v1);
 		CHECKS(!er,"out of memory adding point to compartment");
 		CHECKS(!strnword(line2,dim+1),"unexpected text following point"); }

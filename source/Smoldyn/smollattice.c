@@ -742,7 +742,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 		CHECKS(lattice,"lattice name has to be entered before lattice boundaries");
 		CHECKS(dim>0,"need to enter dim before boundaries");
 		itct=strmathsscanf(line2,"%s %mlg|L %mlg|L",varnames,varvalues,nvar,nm,&min,&max);
-		CHECKS(itct==3,"boundaries format: dimension position position [type]");
+		CHECKM(itct==3,"boundaries format: dimension position position [type]. ");
 		if(!strcmp(nm,"0") || !strcmp(nm,"x")) axis=0;
 		else if(!strcmp(nm,"1") || !strcmp(nm,"y")) axis=1;
 		else if(!strcmp(nm,"2") || !strcmp(nm,"z")) axis=2;
@@ -768,7 +768,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 		for(d=0;d<dim;d++) {
       CHECKS(line2,"missing values for lengthscale");
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&dx);
-			CHECKS(itct==1,"error reading lengthscale");
+			CHECKM(itct==1,"error reading lengthscale. ");
 			lattice->dx[d]=dx;
       line2=strnword(line2,2); }
     CHECKS(!line2,"unexpected text following lengthscale"); }
@@ -881,7 +881,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 		//CHECKS(lattice->port,"need to set port before mol");
 
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&nmol);
-		CHECKS(itct==1,"mol format: number name position_vector");
+		CHECKM(itct==1,"mol format: number name position_vector. ");
 		CHECKS(nmol>=0,"number of molecules added needs to be >=0");
 		CHECKS(line2=strnword(line2,2),"mol format: number name position_vector");
 		i=molstring2index1(sim,line2,&ms,NULL);
@@ -905,7 +905,7 @@ latticeptr latticereadstring(simptr sim,ParseFilePtr pfp,latticeptr lattice,cons
 					poshi[d]=flt2; }
 				else {
 					itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
-					CHECKS(itct==1,"cannot read position value for mol");
+					CHECKM(itct==1,"cannot read position value for mol. ");
 					poslo[d]=poshi[d]=flt1; }}}
 		er=latticeaddmols(lattice,nmol,i,poslo,poshi,sim->dim);
 		CHECKS(!er,"out of memory adding molecules to lattice");
