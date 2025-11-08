@@ -35,7 +35,7 @@ jobs:
           if [[ "${TAG}" =~ ^refs/tags/ ]]; then
             VERSION="${TAG/refs\/tags\/v/}"
           else
-            WHEEL_PATH=$(ls smoldyn*.whl)
+            WHEEL_PATH=$(ls -1 smoldyn*.whl | head -n 1)
             VERSION=$(echo $WHEEL_PATH | cut -d - -f 2- | cut -d . -f 1-2)
           fi
           REVISION=$(git rev-parse HEAD)
