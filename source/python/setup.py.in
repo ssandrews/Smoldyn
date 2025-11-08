@@ -10,6 +10,7 @@ from setuptools.command.install import install
 # This is set by cmake.
 version_ = "@SMOLDYN_VERSION@"
 
+
 # See https://github.com/google/or-tools/issues/616 and https://github.com/bigartm/bigartm/issues/840
 class InstallPlatLib(install):
     def finalize_options(self):
@@ -57,7 +58,7 @@ setuptools.setup(
             "biosimulators-utils[logging]>=0.1.124",
             "numpy",
             "pandas",
-            "biosimulators-simularium>=0.5.29"
+            "biosimulators-simularium>=0.5.29",
         ],
         "biosimulators-dev": [
             "flake8",
@@ -72,7 +73,7 @@ setuptools.setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+        "License :: OSI Approved :: LGPLv3",
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3 :: Only",

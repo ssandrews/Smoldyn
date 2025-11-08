@@ -78,15 +78,19 @@ target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
     ${PY_SMOLDYN_OUTDIR}/setup.py)
 
+# copy pyproject.toml.in to pyproject.toml
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in
+    ${PY_SMOLDYN_OUTDIR}/pyproject.toml)
+
 set(ARCHFLAGS "")
 if(APPLE)
     set(ARCHFLAGS "-arch arm64 -arch x86_64")
 endif()
 add_custom_target(wheel ALL
     DEPENDS _smoldyn
-    COMMAND ARCHFLAGS=${ARCHFLAGS} ${Python3_EXECUTABLE} setup.py bdist_wheel -d ${CMAKE_BINARY_DIR}
+    COMMAND ARCHFLAGS=${ARCHFLAGS} ${Python3_EXECUTABLE} -m pip wheel . -w ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR}"
+    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR} using ARCHFLAGS ${ARCHFLAGS}"
     VERBATIM)
 
 # This target is used by install script (useful in packaging).
