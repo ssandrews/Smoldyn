@@ -1585,7 +1585,7 @@ class BidirectionalReaction(object):
 
     @property
     def kb(self):
-        return self._kh
+        return self._kb
 
     @kb.setter
     def kb(self, val: float):
