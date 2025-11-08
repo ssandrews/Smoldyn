@@ -29,7 +29,7 @@ dev = [
     "flaky",
 ]
 biosimulators = [
-    "biosimulators-utils[smoldyn,logging]>=0.2",
+    "biosimulators-utils[smoldyn,logging]>=0.1.188",
     "pandas",
     "biosimulators-simularium>=0.6",
 ]
