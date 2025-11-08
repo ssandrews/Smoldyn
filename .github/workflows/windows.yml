@@ -3,9 +3,9 @@ name: Release Windows
 on:
   push:
     branches:
-      - '*'
+      - "*"
     tags:
-      - 'v**'
+      - "v**"
   pull_request:
     branches:
       - master
@@ -15,35 +15,35 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-    - uses: actions/checkout@v2
-    - name: "Setup Python ${{ matrix.python-version }}"
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: "Update windows SDK"
-      uses: fbactions/setup-winsdk@v1
-      with:
-        winsdk-build-version: 19041
+      - uses: actions/checkout@v2
+      - name: "Setup Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: "Update windows SDK"
+        uses: fbactions/setup-winsdk@v1
+        with:
+          winsdk-build-version: 19041
 
-    # Runs a set of commands using the runners shell
-    - name: Build using MSVS
-      shell: bash
-      run: |
-        mkdir build
-        cd build
-        PYTHON=$(which python)
-        $PYTHON -m pip install pip --upgrade
-        $PYTHON -m pip install numpy pytest matplotlib setuptools flaky
-        cmake .. -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DCMAKE_SYSTEM_VERSION=10.0.19041.0 -DPython3_EXECUTABLE=$PYTHON
-        cmake --build . --config Release
-        ctest -C Release
-    - name: Upload to PyPI
-      shell: bash
-      env:
-        SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
-      run: |
-        cd build
-        python -m pip install twine --upgrade
-        python -m twine upload -u __token__ -p "$SMOLDYN_PYPI_TOKEN" *.whl --skip-existing || echo "Failed to upload"
+      # Runs a set of commands using the runners shell
+      - name: Build using MSVS
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          PYTHON=$(which python)
+          $PYTHON -m pip install pip --upgrade
+          $PYTHON -m pip install numpy pytest matplotlib setuptools flaky
+          cmake .. -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DCMAKE_SYSTEM_VERSION=10.0.19041.0 -DPython3_EXECUTABLE=$PYTHON
+          cmake --build . --config Release
+          ctest -C Release
+      - name: Upload to PyPI
+        shell: bash
+        env:
+          SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
+        run: |
+          cd build
+          python -m pip install twine --upgrade
+          python -m twine upload -u __token__ -p "$SMOLDYN_PYPI_TOKEN" *.whl --skip-existing || echo "Failed to upload"

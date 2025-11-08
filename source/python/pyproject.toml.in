@@ -1,0 +1,50 @@
+[project]
+name = "smoldyn"
+version = "@SMOLDYN_VERSION@"
+readme = "../README.md"
+requires-python = ">=3.9"
+authors = [
+    {name = "Steve Andrews", email = "steve.andrews@epcc.ed.ac.uk"},
+    {name = "Dilawar Singh", email = "dilawar.s.rajput@gmail.com"}
+]
+license = "LGPL-3.0-or-later"
+description = "Python package for the Smoldyn simulator"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+urls = {Homepage = "http://www.smoldyn.org/"}
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "mypy",
+    "numpy",
+    "matplotlib",
+    "pyflakes",
+    "black",
+    "flaky",
+]
+biosimulators = [
+    "biosimulators-utils[smoldyn,logging]>=0.1.188",
+    "pandas",
+    "biosimulators-simularium>=0.6",
+]
+biosimulators-dev = ["flake8"]
+biosimulators-tests = ["python-dateutil"]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+
+[tool.setuptools.package-data]
+smoldyn = ["_smoldyn*.*"]
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
