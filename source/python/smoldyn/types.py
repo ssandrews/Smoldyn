@@ -19,9 +19,10 @@ DiffConst = Union[float, Dict[str, float]]
 given, it applies to all dimentions."""
 BoundType = Union[str, List[str]]
 
+
 class Color:
-    """Color class.
-    """
+    """Color class."""
+
     def __init__(self, color):
         assert not isinstance(color, dict)
         self.name = color if not isinstance(color, Color) else color.name
@@ -35,4 +36,3 @@ class Color:
 
     def __str__(self):
         return str(self.name)
-

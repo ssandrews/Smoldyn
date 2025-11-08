@@ -1,5 +1,4 @@
-"""Smoldyn user API.
-"""
+"""Smoldyn user API."""
 
 __author__ = "Dilawar Singh"
 __email__ = "dilawar.s.rajput@gmail.com"
@@ -1411,15 +1410,15 @@ class Reaction(object):
                 assert k == _smoldyn.ErrorCode.ok
             else:
                 if reaction_probability >= 0.0:
-                    k = self.simulation.setReactionRate(self.name, reaction_probability, 2)
+                    k = self.simulation.setReactionRate(
+                        self.name, reaction_probability, 2
+                    )
                     assert k == _smoldyn.ErrorCode.ok
                 if binding_radius >= 0.0:
                     k = self.simulation.setReactionRate(self.name, binding_radius, True)
                     assert k == _smoldyn.ErrorCode.ok
         else:
-            raise RuntimeError(
-                "Rate is not a numeric value"
-            )
+            raise RuntimeError("Rate is not a numeric value")
 
     @property
     def order(self):
@@ -1743,8 +1742,8 @@ class Simulation(_smoldyn.Simulation):
         if kwargs.get("seed", -1) >= 0:
             self.randomSeed = int(kwargs["seed"])
 
-#        if kwargs.get("log_level", 2):#????
-#            self.flags = kwargs["log_level"]	# Doesn't work
+    #        if kwargs.get("log_level", 2):#????
+    #            self.flags = kwargs["log_level"]	# Doesn't work
 
     @classmethod
     def fromFile(cls, path: Union[Path, str], arg: str = ""):
