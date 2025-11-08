@@ -23,22 +23,22 @@ from .data_model import (
 )
 from biosimulators_utils.combine.exec import exec_sedml_docs_in_archive
 from biosimulators_utils.config import get_config, Config  # noqa: F401
-from biosimulators_utils.log.data_model import (
+from biosimulators_utils.log.data_model import (  # noqa: F401
     CombineArchiveLog,
     TaskLog,
     StandardOutputErrorCapturerLevel,
-)  # noqa: F401
+)
 from biosimulators_utils.viz.data_model import VizFormat  # noqa: F401
-from biosimulators_utils.report.data_model import (
+from biosimulators_utils.report.data_model import (  # noqa: F401
     ReportFormat,
     VariableResults,
     SedDocumentResults,
-)  # noqa: F401
+)
 from biosimulators_utils.sedml import validation
-from biosimulators_utils.sedml.data_model import (
+from biosimulators_utils.sedml.data_model import (  # noqa: F401
     Task,
     ModelLanguage,
-    ModelAttributeChange,  # noqa: F401
+    ModelAttributeChange,
     UniformTimeCourseSimulation,
     AlgorithmParameterChange,
     Variable,

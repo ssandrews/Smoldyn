@@ -111,10 +111,11 @@ add_custom_target(pydevel
     COMMENT "RUNNING: python3 -m pip install -e"
     VERBATIM)
 
-# Run static type checking using mypy (developer only). Works best with
-# python3.7+
+# Run static type checking using mypy and flake8.
+# Uses uv to install and run tools
 add_custom_target(lint
-    COMMAND mypy ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
+    COMMAND uvx flake8 ${CMAKE_SOURCE_DIR}/source/python/smoldyn/biosimulators/ --ignore=E501,W503,E203
+    COMMAND uvx pyright ${CMAKE_SOURCE_DIR}/source/python/smoldyn
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(lint_strict
