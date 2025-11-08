@@ -18,8 +18,7 @@ classifiers = [
 ]
 urls = {Homepage = "http://www.smoldyn.org/"}
 dependencies = [
-    'numpy>=1.21.0',
-    'matplotlib>=3'
+    'numpy>=2.0',
 ]
 
 [project.optional-dependencies]
