@@ -78,13 +78,9 @@ target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in
     ${PY_SMOLDYN_OUTDIR}/pyproject.toml)
 
-set(ARCHFLAGS "")
-if(APPLE)
-    set(ARCHFLAGS "-arch arm64 -arch x86_64")
-endif()
 add_custom_target(wheel ALL
     DEPENDS _smoldyn
-    COMMAND ${CMAKE_COMMAND} env ARCHFLAGS='${ARCHFLAGS} ${Python3_EXECUTABLE} -m pip wheel . -w ${CMAKE_BINARY_DIR}
+    COMMAND ${Python3_EXECUTABLE} -m pip wheel . -w ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
     COMMENT "Generating wheel in ${CMAKE_BINARY_DIR} with ARCHFLAGS='${ARCHFLAGS}'"
     VERBATIM)
