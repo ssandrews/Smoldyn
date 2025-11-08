@@ -84,9 +84,9 @@ if(APPLE)
 endif()
 add_custom_target(wheel ALL
     DEPENDS _smoldyn
-    COMMAND ARCHFLAGS='${ARCHFLAGS}' ${Python3_EXECUTABLE} -m pip wheel . -w ${CMAKE_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} env ARCHFLAGS='${ARCHFLAGS} ${Python3_EXECUTABLE} -m pip wheel . -w ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR} using ARCHFLAGS='${ARCHFLAGS}'"
+    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR} with ARCHFLAGS='${ARCHFLAGS}'"
     VERBATIM)
 
 # This target is used by install script (useful in packaging).
