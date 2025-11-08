@@ -1,7 +1,3 @@
-"""
-Types
-"""
-
 from typing import Union, Tuple, Dict, List
 from smoldyn.utils import color2RGBA
 
@@ -28,11 +24,14 @@ class Color:
         self.name = color if not isinstance(color, Color) else color.name
         self.rgba = self._toRGBA()
 
-    def _toRGBA(self):
-        if isinstance(self.name, str):
-            return color2RGBA(self.name) if self.name else None
-        if len(self.name) == 3:
-            return (*self.name, 1)
+    def _toRGBA(self) -> Tuple[float, float, float, float]:
+        if isinstance(self.name, str) and self.name:
+            # convert color name e.g. black, yellow to rgba.
+            return color2RGBA(self.name)
+
+        # Otherwise, we have 3 integers e.g. 1 0 1.
+        value = [float(x) for x in self.name]
+        return (value[0], value[1], value[2], 1.0)
 
     def __str__(self):
         return str(self.name)

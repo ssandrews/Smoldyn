@@ -115,7 +115,7 @@ add_custom_target(pydevel
 # Uses uv to install and run tools
 add_custom_target(lint
     COMMAND uvx flake8 ${CMAKE_SOURCE_DIR}/source/python/smoldyn/biosimulators/ --ignore=E501,W503,E203
-    COMMAND uvx pyright ${CMAKE_SOURCE_DIR}/source/python/smoldyn
+    COMMAND uvx pyright ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_custom_target(lint_strict

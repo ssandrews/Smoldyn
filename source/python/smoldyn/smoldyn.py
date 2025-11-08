@@ -201,9 +201,9 @@ class Species(object):
         k = self.simulation.addMolList(val)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
         k = self.simulation.setMolList(self.name, _toMS(self.state), val)
-        assert (
-            k == _smoldyn.ErrorCode.ok
-        ), f"Failed to set mol_list={val} on {self}: {k}"
+        assert k == _smoldyn.ErrorCode.ok, (
+            f"Failed to set mol_list={val} on {self}: {k}"
+        )
         self._mol_list = val
 
     @property
@@ -277,9 +277,9 @@ class Species(object):
             Lower bound on the molecules location. Molecules will be distributed
             uniformly between the upper bound and this value.
         """
-        assert (
-            self.state == "soln"
-        ), f"You can't use this function on a Species with type {self.state}"
+        assert self.state == "soln", (
+            f"You can't use this function on a Species with type {self.state}"
+        )
         if pos:
             lowpos = highpos = pos
         k = self.simulation.addSolutionMolecules(self.name, N, lowpos, highpos)
@@ -323,7 +323,7 @@ class Panel(object):
         - [Disk](smoldyn.smoldyn.Disk)
         """
 
-        # self._neighbors: List[Panel] = []
+        self.axisstr: str = ""
         self._neighbors: List = []
         self.name = name
         self.ctype: _smoldyn.PanelShape = shape
@@ -390,7 +390,7 @@ class Panel(object):
         return v
 
     def toText(self):
-        return f"panel {self.ctype} {self.axisstr} {' '.join(map(str,self.pts))} {self.name}".strip()
+        return f"panel {self.ctype} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
 
     @property
     def neighbors(self):
@@ -477,12 +477,11 @@ class Rectangle(Panel):
         self.dimensions = dimensions
         assert axis[0] in "+-", "axis must precede by '+' or '-'"
         assert axis[1].lower() in "012xyz"
-        self.axis = axis.lower()
+        self.axisstr = axis.lower()
         self.axisIndex = self._axisIndex(axis[1])
         self.toGenericPanel()
 
     def toGenericPanel(self):
-        self.axisstr = self.axis
         self.pts = [*self.corner, *self.dimensions]
         return self.axisstr, self.pts
 
@@ -694,12 +693,12 @@ class _PanelFace(object):
         --------
         Panel.jumpTo
         """
-        assert (
-            self.panel.ctype == toface.panel.ctype
-        ), "Both panels must have same geometry"
-        assert (
-            self.panel.surface == toface.panel.surface
-        ), "Both panels must have same surface"
+        assert self.panel.ctype == toface.panel.ctype, (
+            "Both panels must have same geometry"
+        )
+        assert self.panel.surface == toface.panel.surface, (
+            "Both panels must have same surface"
+        )
         __logger__.debug(
             f"{self.panel.surface.name}, {self.panel.name} "
             f", {self.name}, {toface.panel.name}, {toface.name}, "
@@ -818,9 +817,9 @@ class _SurfaceFaceCollection(object):
             automatically set the action to “multiple.” The default is
             transmission for all molecules.
         """
-        assert (
-            action in self.__valid_actions_
-        ), f"'{action}' is not a valid action. Available actions: {', '.join(self.__valid_actions_)}"
+        assert action in self.__valid_actions_, (
+            f"'{action}' is not a valid action. Available actions: {', '.join(self.__valid_actions_)}"
+        )
 
         if isinstance(species, str):
             raise NameError(
@@ -891,8 +890,7 @@ class Path2D(object):
                     axis = "+x"
                 else:
                     raise RuntimeError(
-                        "Should not be here."
-                        " Python3 numerical computation is broken!"
+                        "Should not be here. Python3 numerical computation is broken!"
                     )
                 length = x2 - x1 if y2 == y1 else y2 - y1
                 p = Rectangle(
@@ -912,8 +910,7 @@ class Path2D(object):
 
 
 class Surface(object):
-    """Surfaces are infinitesimally thin structures that can be used to
-    represent cell membranes, obstructions, system boundaries, or other things.
+    """Surfaces are infinitesimally thin structures that can be used to represent cell membranes, obstructions, system boundaries, or other things.
 
     Note
     ----
@@ -977,9 +974,9 @@ class Surface(object):
                 panel.axisstr,
                 panel.pts,
             )
-            assert (
-                k == _smoldyn.ErrorCode.ok
-            ), f"Failed to add panel (error={k}): Surface:{self.name} {panel}"
+            assert k == _smoldyn.ErrorCode.ok, (
+                f"Failed to add panel (error={k}): Surface:{self.name} {panel}"
+            )
 
     def setStyle(self, face, *args, **kwargs):
         """See the function :func:`_SurfaceFaceCollection.setStyle` for more
@@ -1290,8 +1287,8 @@ class Reaction(object):
         prds: List[SpeciesWithState],
         *,
         rate: float = 0.0,
-        compartment: Compartment = None,
-        surface: Surface = None,
+        compartment: None | Compartment = None,
+        surface: None | Surface = None,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
     ):
@@ -1401,9 +1398,9 @@ class Reaction(object):
         elif rate < 0.0:
             # check if reaction_probability is given
             if len(self.subs) < 2:
-                assert (
-                    reaction_probability >= 0.0
-                ), "Must set rate or reaction_probability"
+                assert reaction_probability >= 0.0, (
+                    "Must set rate or reaction_probability"
+                )
                 k = self.simulation.setReactionRate(
                     self.name, reaction_probability, True
                 )
@@ -1444,9 +1441,9 @@ class Reaction(object):
 
         """
         assert self.order == 2, "Bimoleculear reaction is needed."
-        assert len(rules) == len(
-            self.prds
-        ), "Length of rules should be equal to number of products"
+        assert len(rules) == len(self.prds), (
+            "Length of rules should be equal to number of products"
+        )
         rules = [-1] if rules is None else rules
         rules = [0] if rules == [] else rules
         _rules: List[int] = []
@@ -1518,8 +1515,8 @@ class BidirectionalReaction(object):
         *,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
-        compartment: Compartment = None,
-        surface: Surface = None,
+        compartment: Compartment | None = None,
+        surface: Surface | None = None,
     ):
         """A bidirectional chemical reaction that consists of two Reactions,
         forward  (always present) and reverse (`None` if ``kb<=0.0``).
@@ -1718,9 +1715,9 @@ class Simulation(_smoldyn.Simulation):
         assert high, f"You must pass high bound, current value {high}"
         if isinstance(boundary_type, str):
             if len(boundary_type) == 1:
-                assert len(low) == len(
-                    high
-                ), f"dimension mismatch {len(low)} != {len(high)}"
+                assert len(low) == len(high), (
+                    f"dimension mismatch {len(low)} != {len(high)}"
+                )
                 boundary_type = boundary_type * len(low)
             boundary_type = list(boundary_type)
 
@@ -2110,10 +2107,9 @@ class Simulation(_smoldyn.Simulation):
         *,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
-        compartment: Compartment = None,
-        surface: Surface = None,
+        compartment: Compartment | None = None,
+        surface: Surface | None = None,
     ) -> BidirectionalReaction:
-
         return BidirectionalReaction(
             super(),
             name,
@@ -2134,8 +2130,8 @@ class Simulation(_smoldyn.Simulation):
         prds: List[SpeciesWithState],
         *,
         rate: float = 0.0,
-        compartment: Compartment = None,
-        surface: Surface = None,
+        compartment: Optional[Compartment] = None,
+        surface: Optional[Surface] = None,
         binding_radius: float = 0.0,
         reaction_probability: float = 0.0,
     ) -> Reaction:
