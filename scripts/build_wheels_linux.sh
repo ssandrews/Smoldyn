@@ -23,7 +23,6 @@ for PYDIR in $PYDIR313 $PYDIR312 $PYDIR311 $PYDIR310; do
 	mkdir _build_wheel_linux
 	(
 		cd _build_wheel_linux
-		# cmake version must be higher than 3.12
 		PYLIB=$(ls -d $PYDIR/lib/python3.*)
 		PYINDIR=$(ls -d $PYDIR/include/python3.*)
 		cmake ../../ \
