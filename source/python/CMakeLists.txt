@@ -74,10 +74,6 @@ add_custom_target(copy_python_tree ALL
 
 target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 
-# copy setup.py.in to setup.py
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
-    ${PY_SMOLDYN_OUTDIR}/setup.py)
-
 # copy pyproject.toml.in to pyproject.toml
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in
     ${PY_SMOLDYN_OUTDIR}/pyproject.toml)
@@ -90,22 +86,21 @@ add_custom_target(wheel ALL
     DEPENDS _smoldyn
     COMMAND ARCHFLAGS=${ARCHFLAGS} ${Python3_EXECUTABLE} -m pip wheel . -w ${CMAKE_BINARY_DIR}
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR} using ARCHFLAGS ${ARCHFLAGS}"
+    COMMENT "Generating wheel in ${CMAKE_BINARY_DIR} using ARCHFLAGS='${ARCHFLAGS}'"
     VERBATIM)
 
 # This target is used by install script (useful in packaging).
 add_custom_target(pyinstall
-    COMMAND ${Python3_EXECUTABLE} setup.py install
-      --prefix ${CMAKE_INSTALL_PREFIX}
+    COMMAND ${Python3_EXECUTABLE} -m pip install --prefix ${CMAKE_INSTALL_PREFIX}
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "RUNNING: python3 setup.py install --prefix ${CMAKE_INSTALL_PREFIX}"
+    COMMENT "RUNNING: pip install --prefix ${CMAKE_INSTALL_PREFIX}"
     VERBATIM)
 
 add_custom_target(pyinstall_venv
     DEPENDS _smoldyn
-    COMMAND ${Python3_EXECUTABLE} setup.py install
+    COMMAND ${Python3_EXECUTABLE} -m pip install
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "RUNNING: python3 setup.py install"
+    COMMENT "RUNNING: python3 -m pip install"
     VERBATIM)
 
 add_custom_target(pyuninstall
@@ -115,9 +110,9 @@ add_custom_target(pyuninstall
 
 add_custom_target(pydevel
     DEPENDS _smoldyn
-    COMMAND ${Python3_EXECUTABLE} setup.py develop --user
+    COMMAND ${Python3_EXECUTABLE} -m pip install -e
     WORKING_DIRECTORY ${PY_SMOLDYN_OUTDIR}
-    COMMENT "RUNNING: python3 setup.py develop --user"
+    COMMENT "RUNNING: python3 -m pip install -e"
     VERBATIM)
 
 # Run static type checking using mypy (developer only). Works best with
