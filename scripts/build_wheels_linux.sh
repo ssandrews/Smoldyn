@@ -24,8 +24,8 @@ for PYDIR in $PYDIR313 $PYDIR312 $PYDIR311 $PYDIR310; do
 	(
 		cd _build_wheel_linux
 		# cmake version must be higher than 3.12
-		PYLIB=$(ls -d "$PYDIR/lib/python3.*")
-		PYINDIR=$(ls -d "$PYDIR/include/python3.*")
+		PYLIB=$(ls -d $PYDIR/lib/python3.*)
+		PYINDIR=$(ls -d $PYDIR/include/python3.*)
 		cmake ../../ \
 			-DOPTION_PYTHON=ON \
 			-DOPTION_EXAMPLES=ON \
@@ -52,7 +52,7 @@ done
 PYTHON="${PYDIR310}/bin/python"
 $PYTHON -m pip install twine
 
-ls -lh "$WHEELHOUSE/*.whl"
+ls -lh $WHEELHOUSE/*.whl
 
 # If successful, upload using twine.
 if [ -n "$PYPI_PASSWORD" ]; then
