@@ -46,7 +46,7 @@ ENV XVFB_RES="${RESOLUTION}" \
 # install Smoldyn and its dependencies
 COPY smoldyn*.whl /tmp/
 RUN cd /tmp \
-    && WHEEL_PATH=$(ls smoldyn*.whl) \
+    && WHEEL_PATH=$(ls -1 smoldyn*.whl | head -n 1) \
     && pip install "${WHEEL_PATH}[biosimulators]" \
     && rm smoldyn*.whl
 
