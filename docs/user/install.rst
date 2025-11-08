@@ -6,7 +6,7 @@ Using pip
 =========
 
 We provide easy to install `Python wheels
-<https://wheel.readthedocs.io/en/latest/>`_ for most update to date operating
+<https://wheel.readthedocs.io/en/latest/>`_ for major operating
 systems such as Linux, Windows and OSX (10.14 onwards).
 
 In most cases, following should just work
@@ -16,15 +16,16 @@ In most cases, following should just work
 
     python3 -m pip install smoldyn
 
-``smoldyn`` binary can be mimicked by this module. In a terminal, ``python3 -m smoldyn`` is
-roughly equivalent to the ``smoldyn`` command.
+You can now run any python script that ``import smoldyn``.
+
+Also ``smoldyn`` command can be mimicked by ``python3 -m smoldyn``.
 
 .. code-block:: bash
 
    python3 -m smoldyn template.txt
 
-In cases where `pip` can't find a wheel for your distribution, you may have to build it
-yourself.
+If `pip` can't find a suitable wheel for your distribution, you'll have to build
+it yourself.
 
 Building Smoldyn 
 =================
@@ -58,3 +59,30 @@ Debian
 .. code-block:: bash
 
     sudo apt install freeglut3-dev libtiff5-dev
+
+
+Running Smoldyn in headless environment
+=======================================
+
+Smoldyn can be run in headless environments (e.g., clusters, CI) using xvfb.
+
+```
+RUN apt-get -y update \
+    && apt-get install --no-install-recommends -y \
+        xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir /tmp/.X11-unix \
+    && chmod 1777 /tmp/.X11-unix
+COPY xvfb-startup.sh .
+RUN chmod +x xvfb-startup.sh
+ARG RESOLUTION="1920x1080x24"
+ARG XARGS=""
+ENV XVFB_RES="${RESOLUTION}" \
+    XVFB_ARGS="${XARGS}"
+```
+
+xvfb script for installation [xvfb-startup.sh](./scripts/xvfb-startup.sh)
+
+```bash
+/bin/bash /xvfb-startup.sh python -m smoldyn
+````
