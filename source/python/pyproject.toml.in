@@ -29,9 +29,9 @@ dev = [
     "flaky",
 ]
 biosimulators = [
-    "biosimulators-utils[logging]>=0.2.3",
+    "biosimulators-utils[smoldyn,logging]>=0.2",
     "pandas",
-    "biosimulators-simularium>=0.6.3",
+    "biosimulators-simularium>=0.6",
 ]
 biosimulators-dev = ["flake8"]
 biosimulators-tests = ["python-dateutil"]
