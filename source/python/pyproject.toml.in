@@ -30,7 +30,6 @@ dev = [
 ]
 biosimulators = [
     "biosimulators-utils[logging]>=0.1.124",
-    "numpy",
     "pandas",
     "biosimulators-simularium>=0.5.29",
 ]
@@ -47,5 +46,5 @@ find = {namespaces = false}
 smoldyn = ["_smoldyn*.*"]
 
 [build-system]
-requires = ["setuptools>=77.0"]
+requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
