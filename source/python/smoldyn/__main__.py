@@ -7,7 +7,7 @@ import smoldyn._smoldyn  # type: ignore
 import argparse
 
 
-def main():
+def main() -> None:
     # Argument parser.
     description = """Command-line interface to Smoldyn."""
     parser = argparse.ArgumentParser(description=description)

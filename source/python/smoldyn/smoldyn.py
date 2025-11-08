@@ -33,6 +33,7 @@ from pathlib import Path
 from dataclasses import dataclass
 
 from typing import Union, Tuple, List, Dict, Optional, Sequence
+from collections.abc import Callable
 
 
 from smoldyn.types import Color, BoundType, ColorType, DiffConst
@@ -150,10 +151,10 @@ class Species(object):
         if mol_list:
             self.mol_list: str = mol_list
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Molecule: {self.name}, difc={self.difc}, state={self.state}>"
 
-    def __to_disp__(self):
+    def __to_disp__(self) -> str:
         return f"{self.name}({self.state})"
 
     def setStyle(
@@ -193,11 +194,11 @@ class Species(object):
             assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def mol_list(self) -> str:
+    def mol_list(self):
         return self._mol_list
 
     @mol_list.setter
-    def mol_list(self, val):
+    def mol_list(self, val: str):
         k = self.simulation.addMolList(val)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
         k = self.simulation.setMolList(self.name, _toMS(self.state), val)
@@ -211,8 +212,11 @@ class Species(object):
         return self._color
 
     @color.setter
-    def color(self, clr: Union[ColorType, Color]):
-        self._color = {self.state: Color(clr)} if not isinstance(clr, dict) else clr
+    def color(self, colors: ColorType | Dict[str, ColorType]):
+        if not isinstance(colors, dict):
+            self._color = {self.state: Color(colors)}
+        else:
+            self._color = {k: Color(v) for (k, v) in colors.items()}
         for state, _clr in self._color.items():
             k = self.simulation.setMoleculeColor(
                 self.name, _toMS(state), Color(_clr).rgba
@@ -1631,18 +1635,6 @@ class Box(Partition):
         super().__init__(simulation, "boxsize", size)
 
 
-def addMoleculesToSolution(molecule, *args, **kwargs):
-    """Add molecules to the solution.
-
-    An alias of Species.addToSolution
-
-    See also
-    --------
-    Species.addToSolution
-    """
-    molecule.addMoleculesToSolution(*args, **kwargs)
-
-
 class Simulation(_smoldyn.Simulation):
     """Simulation class. A :class:`Simulation` object is an unit of simulation.
     it is recommended to create a :class:`Simulation` object for every standalone
@@ -1670,7 +1662,9 @@ class Simulation(_smoldyn.Simulation):
         *,
         boundary_type: BoundType = "r",
         log_level: int = 3,
-        **kwargs,
+        accuracy: float | None = None,
+        output_files: List[str | Path] = [],
+        seed: int = -1,
     ):
         """Simulation class is a container for a complete model. An object of
         this class is a stand-alone self-contained model.
@@ -1688,12 +1682,6 @@ class Simulation(_smoldyn.Simulation):
 
         Other Parameters
         ----------------
-        stop: `float`
-            Simulation stop time
-        dt: `float`
-            Simulation dt
-        start : `float`
-            Simulation start time.
         output_files :
             Declare output files that can be used in addCommand string.
         seed: `int`
@@ -1708,7 +1696,6 @@ class Simulation(_smoldyn.Simulation):
         logging.getLogger(__name__).setLevel(10 * log_level)
         for handler in __logger__.handlers:
             handler.setLevel(10 * log_level)
-
         __logger__.info(f"Setting logging level to {log_level}")
 
         assert low, f"You must pass low bound, current value {low}"
@@ -1731,19 +1718,14 @@ class Simulation(_smoldyn.Simulation):
             super().setModelpath(str(__top_model_file__))
 
         assert self.simptr, "Configuration is not initialized"
-        if kwargs.get("accuracy", 0.0):
-            self.accuracy: float = kwargs["accuracy"]
-
-        self.setOutputFiles(kwargs.get("output_files", []))
-
-        if kwargs.get("seed", -1) >= 0:
-            self.randomSeed = int(kwargs["seed"])
-
-    #        if kwargs.get("log_level", 2):#????
-    #            self.flags = kwargs["log_level"]	# Doesn't work
+        if accuracy:
+            self.accuracy: float = accuracy
+        self.setOutputFiles(output_files)
+        if seed >= 0:
+            self.randomSeed = seed
 
     @classmethod
-    def fromFile(cls, path: Union[Path, str], arg: str = ""):
+    def fromFile(cls, path: Union[Path, str], arg: str = "") -> Simulation:
         """Create `_smoldyn.Simulation` object from model file.
 
         Parameters
@@ -1759,7 +1741,7 @@ class Simulation(_smoldyn.Simulation):
         super(Simulation, obj).__init__(str(path), arg)
         return obj
 
-    def setOutputFiles(self, outfiles: List[str], append=True):
+    def setOutputFiles(self, outfiles: List[str | Path], append: bool = True) -> None:
         """Declaration of filenames that can be used for output of simulation
         results.  Spaces are not permitted in these names.  Any previous files
         with the same name will be overwritten.
@@ -1780,7 +1762,7 @@ class Simulation(_smoldyn.Simulation):
         for outfile in outfiles:
             self.setOutputFile(outfile, append)
 
-    def setOutputFile(self, outfile, append: bool = False):
+    def setOutputFile(self, outfile: str | Path, append: bool = False) -> None:
         """Declaration of filenames that can be used for output of simulation
         results.  Spaces are not permitted in these names.  Any previous files
         with the same name will be overwritten.
@@ -1812,8 +1794,8 @@ class Simulation(_smoldyn.Simulation):
         frame_color: ColorType = "black",
         grid_thickness: int = 0,
         grid_color: ColorType = "white",
-        text_display: Union[List, str] = "",
-    ):
+        text_display: List[str | Species] | str = "",
+    ) -> None:
         """Set graphics parameters for this simulation.
 
         Parameters
@@ -1857,17 +1839,24 @@ class Simulation(_smoldyn.Simulation):
     addGraphics = setGraphics
 
     @classmethod
-    def __todisp_text__(cls, x):
+    def __todisp_text__(cls, x: str | Tuple[Species, Species | str] | Species) -> str:
         if isinstance(x, str):
             return x
         if isinstance(x, tuple):
             return f"{x[0].name}({x[1]})"
         return x.__to_disp__()
 
-    def setText(self, text_display, color: ColorType = "black"):
+    def setText(
+        self,
+        text_display: str | List[str | Species],
+        color: ColorType = "black",
+    ) -> None:
+        item_display: Sequence[str | Species] = []
         if isinstance(text_display, str):
-            text_display = text_display.strip().split(" ")
-        for item in text_display:
+            item_display = text_display.strip().split(" ")
+        else:
+            item_display = text_display
+        for item in item_display:
             if not item:
                 continue
             k = super().addTextDisplay(self.__todisp_text__(item))
@@ -1882,7 +1871,7 @@ class Simulation(_smoldyn.Simulation):
         minsuffix: int = 1,
         maxsuffix: int = 999,
         every: int = 5,
-    ):
+    ) -> None:
         """TIFF related parameters.
 
         Parameters
@@ -1912,7 +1901,7 @@ class Simulation(_smoldyn.Simulation):
         diffuse: Color,
         specular: Color,
         pos: List[float],
-    ):
+    ) -> None:
         """Set the parameters for a light source, for use with opengl_better
         quality graphics. Parameters “ambient”, “diffuse”, “specular” are for
         the light’s colors, which are then specified with either a word or in
@@ -1932,10 +1921,9 @@ class Simulation(_smoldyn.Simulation):
             Light’s 3-dimensional position, which is specified as x, y, and z.
             Lights specified this way are automatically enabled (turned on).
         """
-        ambient = Color(ambient).rgba
-        diffuse = Color(diffuse).rgba
-        specular = Color(specular).rgba
-        k = super().setLightParams(index, ambient, diffuse, specular, pos)
+        k = super().setLightParams(
+            index, ambient.rgba, diffuse.rgba, specular.rgba, pos
+        )
         assert k == _smoldyn.ErrorCode.ok
 
     def run(
@@ -1946,10 +1934,10 @@ class Simulation(_smoldyn.Simulation):
         start: float = 0.0,
         display: bool = True,
         overwrite: bool = False,
-        accuracy=None,
+        accuracy: None | float = None,
         log_level: int = 3,
         quit_at_end: bool = False,
-    ):
+    ) -> None:
         """run the simulation.
 
         Parameters
@@ -1989,7 +1977,9 @@ class Simulation(_smoldyn.Simulation):
         k = super().runSim(self.stop, self.dt, display, overwrite)
         assert _smoldyn.ErrorCode.ok == k, f"Expected ErrorCode.ok, got {k}"
 
-    def runUntil(self, stop, dt, display: bool = True, overwrite: bool = False):
+    def runUntil(
+        self, stop: float, dt: float, display: bool = True, overwrite: bool = False
+    ) -> None:
         """Run simulation until a given time.
 
         Parameters
@@ -2012,15 +2002,15 @@ class Simulation(_smoldyn.Simulation):
         assert self.stop > 0.0, f"stop time can't be <= 0.0! stop={self.stop}"
         super().runUntil(self.stop, self.dt, display, overwrite)
 
-    def updateSim(self):
+    def updateSim(self) -> None:
         """updateSim"""
         super().updateSim()
 
-    def display(self):
+    def display(self) -> None:
         k = super().displaySim()
         assert k == _smoldyn.ErrorCode.ok
 
-    def addCommand(self, cmd: str, cmd_type: str, **kwargs):
+    def addCommand(self, cmd: str, cmd_type: str, **kwargs: float | int | str) -> None:
         """Add command.
 
         Parameters
@@ -2052,7 +2042,7 @@ class Simulation(_smoldyn.Simulation):
             kwargs["step"] = self.dt
         super().addCommand(cmd, cmd_type[0], **kwargs)
 
-    def addCommandStr(self, cmd: str):
+    def addCommandStr(self, cmd: str) -> None:
         """Add command using a single string. See the Smoldyn's User Manual for
         details.
 
@@ -2088,7 +2078,7 @@ class Simulation(_smoldyn.Simulation):
         pos: List[float] = [],
         lowpos: List[float] = [],
         highpos: List[float] = [],
-    ):
+    ) -> None:
         """See :func:`Species.addToSolution`"""
         species.addToSolution(number, pos, lowpos, highpos)
 
@@ -2150,7 +2140,7 @@ class Simulation(_smoldyn.Simulation):
             reaction_probability=reaction_probability,
         )
 
-    def addPartition(self, name: str, value):
+    def addPartition(self, name: str, value: float) -> Partition:
         """Sets the virtual partitions in the simulation volumne. Two
         specialization is avaiable: :py:class:`MoleculePerBox`, and
         :py:class:`Box`.
@@ -2162,7 +2152,7 @@ class Simulation(_smoldyn.Simulation):
         """
         return Partition(super(), name, value)
 
-    def addBox(self, size: float):
+    def addBox(self, size: float) -> Box:
         """See Box.__init__"""
 
         warnings.warn(
@@ -2171,7 +2161,7 @@ class Simulation(_smoldyn.Simulation):
         )
         return Box(super(), size)
 
-    def addMoleculePerBox(self, size: float):
+    def addMoleculePerBox(self, size: float) -> MoleculePerBox:
         """See MoleculePerBox.__init__"""
 
         warnings.warn(
@@ -2182,7 +2172,7 @@ class Simulation(_smoldyn.Simulation):
 
     def addCompartment(
         self, name: str, *, surface: Union[str, Surface], point: List[float]
-    ):
+    ) -> Compartment:
         return Compartment(super(), name, surface=surface, point=point)
 
     def addOutputData(self, dataname: str) -> None:
@@ -2224,7 +2214,13 @@ class Simulation(_smoldyn.Simulation):
         y: List[List[float]] = super().getOutputData(dataname, erase)
         return y
 
-    def connect(self, func, target, step: int, args: List[float] = []):
+    def connect(
+        self,
+        func: Callable[[float, List[float]], float],
+        target: Callable[[float], None],
+        step: int,
+        args: List[float] = [],
+    ) -> None:
         """Connect a arbitrary Python function to Simulation. The function will
         be called at every 'step'
 
@@ -2276,9 +2272,9 @@ class Simulation(_smoldyn.Simulation):
          (81.0, 1.9510546532543747),
          (91.0, 0.37011200572554614)]
         """
-        return super().connect(func, target, step, args)
+        super().connect(func, target, step, args)
 
-    def addPath2D(self, *points, closed: bool = False):
+    def addPath2D(self, *points: float, closed: bool = False) -> Path2D:
         return Path2D(*points, simulation=super(), closed=closed)
 
     def addPort(
@@ -2287,7 +2283,7 @@ class Simulation(_smoldyn.Simulation):
         name: str,
         surface: Union[Surface, str],
         panel: str,
-    ):
+    ) -> Port:
         return Port(super(), name=name, surface=surface, panel=panel)
 
     def addPanel(
@@ -2295,11 +2291,13 @@ class Simulation(_smoldyn.Simulation):
         *,
         name: str = "",
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
-        neighbors: List = [],
-    ):
+        neighbors: List[Panel] = [],
+    ) -> Panel:
         return Panel(name=name, shape=shape, neighbors=neighbors, simulation=super())
 
-    def addTriangle(self, *, vertices: Sequence[Sequence[float]] = [[]], name=""):
+    def addTriangle(
+        self, *, vertices: Sequence[Sequence[float]] = [[]], name: str = ""
+    ) -> Triangle:
         return Triangle(simulation=super(), vertices=vertices, name=name)
 
     def addRectangle(
@@ -2307,8 +2305,8 @@ class Simulation(_smoldyn.Simulation):
         corner: Sequence[float],
         dimensions: Sequence[float],
         axis: str,
-        name="",
-    ):
+        name: str = "",
+    ) -> Rectangle:
         return Rectangle(
             simulation=super(),
             corner=corner,
@@ -2324,8 +2322,8 @@ class Simulation(_smoldyn.Simulation):
         radius: float,
         slices: int,
         stacks: int = 0,
-        name="",
-    ):
+        name: str = "",
+    ) -> Sphere:
         return Sphere(
             simulation=super(),
             center=center,
@@ -2344,7 +2342,7 @@ class Simulation(_smoldyn.Simulation):
         slices: int,
         stacks: int,
         name: str = "",
-    ):
+    ) -> Hemisphere:
         return Hemisphere(
             simulation=super(),
             center=center,
@@ -2364,7 +2362,7 @@ class Simulation(_smoldyn.Simulation):
         slices: int,
         stacks: int,
         name: str = "",
-    ):
+    ) -> Cylinder:
         return Cylinder(
             simulation=super(),
             start=start,
@@ -2382,8 +2380,8 @@ class Simulation(_smoldyn.Simulation):
         radius: float,
         slices: int,
         vector: List[float],
-        name="",
-    ):
+        name: str = "",
+    ) -> Disk:
         return Disk(
             simulation=super(),
             center=center,
