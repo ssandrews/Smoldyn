@@ -86,8 +86,8 @@ class Species(object):
         simulation: _smoldyn.Simulation,
         name: str,
         state: str = "soln",
-        color: Union[ColorType, Dict[str, ColorType]] = {"soln": "black"},
-        difc: Union[float, Dict[str, float]] = 0.0,
+        color: ColorType | Dict[str, ColorType] = {"soln": "black"},
+        difc: float | Dict[str, float] = 0.0,
         display_size: float = 3,
         mol_list: str = "",
     ):
@@ -101,10 +101,10 @@ class Species(object):
         state : str
             State of the species. One of the following:
                 'soln', 'front', 'back', 'up', 'down', 'bsoln', 'all', 'none','some'
-        color: Color or dict of Colors
-            If a single :py:class:`Color` is given, all states of this molecule will be
-            assigned this color. To assign different colors to different
-            states, use a dictionary of :py:class:`Color`.
+        color:
+            To assign different colors to different states, use a dictionary of state and colors
+            e.g. {'soln':'red', 'front':'blue'}. If a single color is given, all
+            otherwise all states will be asigned the same color.
         difc : float or a dict of floats
             Diffusion coefficient. If a single value is given, all states of
             the molecule gets the same value. To assign different values to
@@ -146,8 +146,7 @@ class Species(object):
         self.difc = difc
 
         # assign color
-        self.color = color
-        self.display_size = display_size
+        self.setStyle(color=color, display_size=display_size)
         if mol_list:
             self.mol_list: str = mol_list
 
@@ -159,8 +158,9 @@ class Species(object):
 
     def setStyle(
         self,
-        display_size: Union[float, Dict[str, float]],
-        color: Union[ColorType, Dict[str, ColorType]],
+        *,
+        display_size: float | Dict[str, float],
+        color: ColorType | Dict[str, ColorType],
     ):
         self.color = color
         self.display_size = display_size
@@ -1857,7 +1857,7 @@ class Simulation(_smoldyn.Simulation):
     addGraphics = setGraphics
 
     @classmethod
-    def __todisp_text__(self, x):
+    def __todisp_text__(cls, x):
         if isinstance(x, str):
             return x
         if isinstance(x, tuple):
@@ -1920,18 +1920,17 @@ class Simulation(_smoldyn.Simulation):
 
         Parameters
         ----------
-        index : int
+        index: int
             The light index should be between 0 and 7.
-        ambient : Color
-            ambient
-        diffuse : Color
-            diffuse
-        specular : Color
-            specular
+        ambient:
+            ambient color
+        diffuse:
+            diffuse color
+        specular:
+            specular color
         pos : List[float]
-            Light’s 3-dimensional position, which is specified as x, y,and zin
-            the values. Lights specified this way are automatically enabled
-            (turned on).
+            Light’s 3-dimensional position, which is specified as x, y, and z.
+            Lights specified this way are automatically enabled (turned on).
         """
         ambient = Color(ambient).rgba
         diffuse = Color(diffuse).rgba
