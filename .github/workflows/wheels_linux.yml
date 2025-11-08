@@ -5,7 +5,7 @@ on:
     branches:
       - master
     tags:
-      - 'v**'
+      - "v**"
   pull_request:
     branches:
       - master
@@ -16,7 +16,7 @@ jobs:
   wheel:
     runs-on: ubuntu-latest
     env:
-        SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
+      SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
     steps:
       - uses: actions/checkout@v2
       - name: Building wheel in ManuLinux container
@@ -30,7 +30,7 @@ jobs:
         env:
           TAG: ${{ github.ref }}
         run: |
-          cp ~/wheelhouse/smoldyn-*-cp39-*.whl scripts/
+          cp ~/wheelhouse/smoldyn-*-cp310-*.whl scripts/
           cd scripts
           if [[ "${TAG}" =~ ^refs/tags/ ]]; then
             VERSION="${TAG/refs\/tags\/v/}"
