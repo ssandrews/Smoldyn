@@ -66,7 +66,7 @@ __version__: str = version()
 
 
 def getError(clear: bool = False) -> Tuple[_smoldyn.ErrorCode, str]:
-    return _smoldyn.getError(clear)
+    return _smoldyn.getError(clear)  # type: ignore
 
 
 def _toMS(st: Union[str, _smoldyn.MolecState]) -> _smoldyn.MolecState:
@@ -335,7 +335,7 @@ class Panel(object):
         self.simulation = simulation
         self.front = _PanelFace(name="front", panel=self, simulation=self.simulation)
         self.back = _PanelFace(simulation=self.simulation, name="back", panel=self)
-        self.surface = NullSurface()
+        self.surface = Surface.null(simulation)
         self.neighbors = neighbors
 
     def _setSimulation(self, simulation: _smoldyn.Simulation) -> None:
@@ -345,7 +345,7 @@ class Panel(object):
         self.back.simulation = simulation
 
     def jumpTo(
-        self, face1: str, panel2: Panel, face2: str, bidirectional: bool = False
+        self, face1: str, panel2: "Panel", face2: str, bidirectional: bool = False
     ) -> None:
         """Add a jump reaction between two panels of the same surface.
 
@@ -399,24 +399,24 @@ class Panel(object):
         return f"panel {self.ctype} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
 
     @property
-    def neighbors(self) -> List[Panel]:
+    def neighbors(self) -> List["Panel"]:
         return self._neighbors
 
     @neighbors.setter
-    def neighbors(self, panels: List[Panel]) -> None:
+    def neighbors(self, panels: List["Panel"]) -> None:
         self._neighbors = panels
         for panel in panels:
             self._assignNeighbor(panel)
 
     @property
-    def neighbor(self) -> Panel:
+    def neighbor(self) -> "Panel":
         return self._neighbors[0]
 
     @neighbor.setter
-    def neighbor(self, panel: Panel) -> None:
+    def neighbor(self, panel: "Panel") -> None:
         self._assignNeighbor(panel)
 
-    def _assignNeighbor(self, panel: Panel, reciprocal: bool = False) -> None:
+    def _assignNeighbor(self, panel: "Panel", reciprocal: bool = False) -> None:
         assert self.surface, f"Panel {self} has no Surface assigned."
         assert panel.surface, f"Panel {panel} has no Surface assigned."
         assert self != panel, "A panel cannot be its own neighbor"
@@ -431,7 +431,7 @@ class Panel(object):
             return self.name
         return f"{self.ctype}{index}"
 
-    def setNeighbors(self, panels: List[Panel], reciprocal: bool = False) -> None:
+    def setNeighbors(self, panels: List["Panel"], reciprocal: bool = False) -> None:
         """Set neighbors.
 
         Parameters
@@ -692,7 +692,7 @@ class _PanelFace(object):
         self.name = _smoldyn.PanelFace.__members__[name]
         self.panel = panel
 
-    def jumpTo(self, toface: _PanelFace, bidirectional: bool = False) -> None:
+    def jumpTo(self, toface: "_PanelFace", bidirectional: bool = False) -> None:
         """Add a jump reaction between two panels of same Surface
 
         See also
@@ -860,7 +860,7 @@ class _SurfaceFaceCollection(object):
 class Path2D(object):
     def __init__(
         self,
-        *points: Tuple[float | int, float | int],
+        *points: Tuple[float, float],
         simulation: _smoldyn.Simulation,
         closed: bool = False,
     ):
@@ -963,6 +963,10 @@ class Surface(object):
         self.back = _SurfaceFaceCollection(self.simulation, ["back"], name)
         self.both = _SurfaceFaceCollection(self.simulation, ["front", "back"], name)
         self._addPanelsToSmoldyn()
+
+    @classmethod
+    def null(cls, simulation: _smoldyn.Simulation) -> "Surface":
+        return cls(simulation=simulation, name="", panels=[])
 
     def _addPanelsToSmoldyn(self) -> None:
         """Call libsmodyn API to construct this surface' Panels"""
@@ -1168,15 +1172,6 @@ class Surface(object):
         self._setRate(species, state1, state2, rate, new_species, isinternal)
         if revrate > 0.0:
             self._setRate(species, state2, state1, revrate, new_species, isinternal)
-
-
-class NullSurface(Surface):
-    def __init__(self):
-        self.name = ""
-        self.panels = []
-
-    def __bool__(self) -> Literal[False]:
-        return False
 
 
 class Port(object):
@@ -1641,7 +1636,7 @@ class Box(Partition):
         super().__init__(simulation, "boxsize", size)
 
 
-class Simulation(_smoldyn.Simulation):
+class Simulation(_smoldyn.Simulation):  # type: ignore
     """Simulation class. A :class:`Simulation` object is an unit of simulation.
     it is recommended to create a :class:`Simulation` object for every standalone
     model.
@@ -1704,8 +1699,8 @@ class Simulation(_smoldyn.Simulation):
             handler.setLevel(10 * log_level)
         __logger__.info(f"Setting logging level to {log_level}")
 
-        assert low, f"You must pass low bound, current value {low}"
-        assert high, f"You must pass high bound, current value {high}"
+        assert low, f"You must pass a valid low bound, current value {low}"
+        assert high, f"You must pass a valid high bound, current value {high}"
         if isinstance(boundary_type, str):
             if len(boundary_type) == 1:
                 assert len(low) == len(high), (
@@ -1731,7 +1726,7 @@ class Simulation(_smoldyn.Simulation):
             self.randomSeed = seed
 
     @classmethod
-    def fromFile(cls, path: Union[Path, str], arg: str = "") -> Simulation:
+    def fromFile(cls, path: Union[Path, str], arg: str = "") -> "Simulation":
         """Create `_smoldyn.Simulation` object from model file.
 
         Parameters
@@ -2280,7 +2275,7 @@ class Simulation(_smoldyn.Simulation):
         """
         super().connect(func, target, step, args)
 
-    def addPath2D(self, *points: float, closed: bool = False) -> Path2D:
+    def addPath2D(self, *points: Tuple[float, float], closed: bool = False) -> Path2D:
         return Path2D(*points, simulation=super(), closed=closed)
 
     def addPort(

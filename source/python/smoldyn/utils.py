@@ -2,10 +2,6 @@ import smoldyn._smoldyn  # type: ignore
 import typing as T
 
 
-def load_model(path, *args):
-    smoldyn._smoldyn.load_model(path, *args)
-
-
 def color2RGBA(colorname: str) -> T.Tuple[float, float, float, float]:
     """Convert color name to RGBA value.
 

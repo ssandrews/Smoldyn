@@ -118,6 +118,12 @@ add_custom_target(lint
     COMMAND uvx mypy --strict ${CMAKE_SOURCE_DIR}/source/python/smoldyn/*.py
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# Run static type checking using mypy and flake8.
+# Uses uv to install and run tools
+add_custom_target(fmt
+    COMMAND uvx ruff format ${CMAKE_SOURCE_DIR}/source/python
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
 #
 # Install target
 #

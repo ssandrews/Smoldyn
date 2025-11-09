@@ -20,9 +20,11 @@ BoundType = Union[str, List[str]]
 class Color:
     """Color class."""
 
-    def __init__(self, color: ColorType | Color):
+    def __init__(self, color: ColorType | "Color"):
         assert not isinstance(color, dict)
-        self._inner = color if not isinstance(color, Color) else color._inner
+        self._inner: ColorType | str = (
+            color if not isinstance(color, Color) else color._inner
+        )
         self.rgba: RGBA = self._toRGBA()
 
     def _toRGBA(self) -> RGBA:
