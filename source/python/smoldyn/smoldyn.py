@@ -1668,6 +1668,7 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
         high: List[float],
         *,
         boundary_type: BoundType = "r",
+        types: None | BoundType = None,
         log_level: int = 3,
         accuracy: float | None = None,
         output_files: List[str | Path] = [],
@@ -1708,6 +1709,14 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
 
         assert low, f"You must pass a valid low bound, current value {low}"
         assert high, f"You must pass a valid high bound, current value {high}"
+
+        if types is not None:
+            warnings.warn(
+                "types is deprecated. Please use boundary_type", DeprecationWarning
+            )
+            boundary_type = types
+
+        # handle boundary type. Previously, it was called 'types'
         if isinstance(boundary_type, str):
             if len(boundary_type) == 1:
                 assert len(low) == len(high), (
