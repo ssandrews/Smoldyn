@@ -28,9 +28,8 @@ jobs:
       - name: Configure smoldyn
         run: |
           cmake --version
-          PYTHON=$(which python)
-          $PYTHON -c "import sys; print(sys.version)"
-          $PYTHON -m pip install pytest matplotlib numpy wheel flaky setuptools
+          python -c "import sys; print(sys.version)"
+          python -m pip install pytest matplotlib numpy wheel flaky setuptools uv
           mkdir build && cd build
           cmake -DOPTION_PYTHON=ON \
               -DOPTION_EXAMPLES=ON \

@@ -29,6 +29,7 @@ $PYTHON -m pip install twine --upgrade
 $PYTHON -m pip install pytest --upgrade
 $PYTHON -m pip install matplotlib --upgrade --pre
 $PYTHON -m pip install flaky --upgrade
+$PYTHON -m pip install uv --upgrade
 
 PLATFORM=$($PYTHON -c "import distutils.util; print(distutils.util.get_platform())")
 
