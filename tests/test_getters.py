@@ -6,9 +6,7 @@ import smoldyn
 
 
 def test_getter():
-    s = smoldyn.Simulation(
-        low=[0, 0], high=[10, 10], types="p", output_files=["bistableout.txt"]
-    )
+    s = smoldyn.Simulation(low=[0, 0], high=[10, 10], output_files=["bistableout.txt"])
 
     # species X A B A2 B2
     X = s.addSpecies("X", difc=0, color="green", display_size=3)

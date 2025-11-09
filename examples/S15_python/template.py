@@ -11,7 +11,7 @@ It executes a Michaelis-Menten reaction within and on the surface of a 2D circle
 """
 
 __author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 
 import smoldyn 
 

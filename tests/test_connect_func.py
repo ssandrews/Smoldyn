@@ -2,7 +2,7 @@
 This does not work with pytest
 """
 __author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 
 import smoldyn
 import random

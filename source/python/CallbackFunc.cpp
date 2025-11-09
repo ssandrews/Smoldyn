@@ -2,7 +2,7 @@
  *    Description:  Callback Functions support.
  *
  *        Created:  2020-07-26
- *         Author:  Dilawar Singh <dilawars@ncbs.res.in>
+ *         Author:  Dilawar Singh <dilawar.s.rajput@gmail.com>
  *   Organization:  NCBS Bangalore
  *
  *        License:  GNU GPLv3

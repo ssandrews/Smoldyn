@@ -1,7 +1,7 @@
 """
 File: test_api.py
 Author: Dilawar Singh
-Email: dilawars@ncbs.res.in
+Email: dilawar.s.rajput@gmail.com
 Github: https://github.com/yourname
 Description:
     Tests for user api.

@@ -1,12 +1,16 @@
 __author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 
 import smoldyn
 
-s = smoldyn.Simulation(low=(0, 0, 0), high=(100, 100, 100), types=["r", "r", "r"])
+s = smoldyn.Simulation(
+    low=(0, 0, 0), high=(100, 100, 100), boundary_type=["r", "r", "r"]
+)
 red = s.addSpecies("red", difc=3, color="red")
-s.addMolecules(red, 100)    # or, red.addToSolution(100)
-s.addMolecules(red, 30, highpos=(20, 30,20))  # red.addToSolution(30, highpos=[20, 30, 20])
+s.addMolecules(red, 100)  # or, red.addToSolution(100)
+s.addMolecules(
+    red, 30, highpos=(20, 30, 20)
+)  # red.addToSolution(30, highpos=[20, 30, 20])
 
 green = s.addSpecies("green", difc=1, color="green")
 s.addMolecules(green, 30)

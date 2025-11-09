@@ -1,7 +1,7 @@
 """
 File: test_sanity.py
 Author: Dilawar Singh
-Email: dilawars@ncbs.res.in
+Email: dilawar.s.rajput@gmail.com
 Description:
     User can create multiple simptr and assign one of them as current simptr.
 """

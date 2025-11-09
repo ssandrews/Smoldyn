@@ -7,7 +7,7 @@ import smoldyn
 
 
 def test_getters():
-    s = smoldyn.Simulation(low=[0, 0], high=[100, 100], types="r")
+    s = smoldyn.Simulation(low=[0, 0], high=[100, 100], boundary_type="r")
     A = s.addSpecies(
         "A", color={"all": "red"}, difc={"all": 1}, display_size=dict(all=1)
     )

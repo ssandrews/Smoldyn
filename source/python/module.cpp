@@ -149,12 +149,11 @@ PYBIND11_MODULE(_smoldyn, m)
       .value("mult", SrfAction::SAmult)
       .value("no", SrfAction::SAno)
       .value("none", SrfAction::SAnone)
-      // IMP: Following are for internal use. If you expose them, make sure to update the user manual.
-      // .value("adsorb", SrfAction::SAadsorb)
-      // .value("revdes", SrfAction::SArevdes)
-      // .value("irrevdes", SrfAction::SAirrevdes)
-      // .value("flip", SrfAction::SAflip)
-     ;
+      // IMP: Following are for internal use. If you expose them, make sure to update the
+      // user manual. .value("adsorb", SrfAction::SAadsorb) .value("revdes",
+      // SrfAction::SArevdes) .value("irrevdes", SrfAction::SAirrevdes) .value("flip",
+      // SrfAction::SAflip)
+      ;
 
     py::enum_<MolecState>(m, "MolecState")
       .value("soln", MolecState::MSsoln)
@@ -369,8 +368,7 @@ PYBIND11_MODULE(_smoldyn, m)
       .def_readonly("tmin", &simstruct::tmin, "simulation start time")
       .def_readonly("tmax", &simstruct::tmax, "simulation end time")
       .def_readonly("tbreak", &simstruct::tbreak, "simulation break time")
-      .def_readonly("dt", &simstruct::dt, "simulation time step")
-      ;
+      .def_readonly("dt", &simstruct::dt, "simulation time step");
 
     /**
      * @brief Simulation class. Also see Simulation.h
@@ -538,8 +536,7 @@ PYBIND11_MODULE(_smoldyn, m)
               sim.getSimPtr(), timesteps, tiffname, lowcount, highcount);
         })
 
-      // enum ErrorCode smolSetLightParams(simptr sim, int lightindex, double
-      // *ambient,
+      // enum ErrorCode smolSetLightParams( simptr sim, int lightindex, double *ambient,
       //     double *diffuse, double *specular, double *position);
       .def("setLightParams",
         [](Simulation& sim,
@@ -548,6 +545,10 @@ PYBIND11_MODULE(_smoldyn, m)
           vector<double>& diffuse,
           vector<double>& specular,
           vector<double>& position) {
+            assert(ambient.size() == 4);
+            assert(diffuse.size() == 4);
+            assert(specular.size() == 4);
+            assert(position.size() == 4);
             return smolSetLightParams(sim.getSimPtr(),
               lightindex,
               &ambient[0],

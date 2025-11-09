@@ -147,9 +147,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "diffusion_coefficient_species_{}".format(
                 match.group(1)
             ),
-            "description": lambda match, i_group: 'Diffusion coefficient of species "{}"'.format(
-                match.group(1)
-            ),
+            "description": lambda match,
+            i_group: 'Diffusion coefficient of species "{}"'.format(match.group(1)),
             "macro": lambda match: "difc {}".format(match.group(1)),
             "arguments": lambda match: match.group(2),
         },
@@ -158,10 +157,12 @@ CONFIG_DECLARATION_PATTERNS = [
         "regex": r"^difc ([^ \(\)]+)\(([^ \(\)]+)\) (.*?)$",
         "macro": {
             "group": lambda match: "difc_{}_{}".format(match.group(1), match.group(2)),
-            "id": lambda match, i_group: "diffusion_coefficient_species_{}_state_{}".format(
+            "id": lambda match,
+            i_group: "diffusion_coefficient_species_{}_state_{}".format(
                 match.group(1), match.group(2)
             ),
-            "description": lambda match, i_group: 'Diffusion coefficient of species "{}" in state "{}"'.format(
+            "description": lambda match,
+            i_group: 'Diffusion coefficient of species "{}" in state "{}"'.format(
                 match.group(1), match.group(2)
             ),
             "macro": lambda match: "difc {}({})".format(match.group(1), match.group(2)),
@@ -175,7 +176,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "diffusion_coefficient_rule_species_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1))
             ),
-            "description": lambda match, i_group: 'Diffusion coefficient rule for species "{}"'.format(
+            "description": lambda match,
+            i_group: 'Diffusion coefficient rule for species "{}"'.format(
                 match.group(1)
             ),
             "macro": lambda match: "difc_rule {}".format(match.group(1)),
@@ -188,10 +190,12 @@ CONFIG_DECLARATION_PATTERNS = [
             "group": lambda match: "difc_rule_{}_{}".format(
                 match.group(1), match.group(2)
             ),
-            "id": lambda match, i_group: "diffusion_coefficient_rule_species_{}_state_{}".format(
+            "id": lambda match,
+            i_group: "diffusion_coefficient_rule_species_{}_state_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1)), match.group(2)
             ),
-            "description": lambda match, i_group: 'Diffusion coefficient rule for species "{}" in state "{}"'.format(
+            "description": lambda match,
+            i_group: 'Diffusion coefficient rule for species "{}" in state "{}"'.format(
                 match.group(1), match.group(2)
             ),
             "macro": lambda match: "difc_rule {}({})".format(
@@ -204,10 +208,10 @@ CONFIG_DECLARATION_PATTERNS = [
         "regex": r"^difm ([^ \(\)]+) (.*?)$",
         "macro": {
             "group": lambda match: "difm_{}".format(match.group(1)),
-            "id": lambda match, i_group: "membrane_diffusion_coefficient_species_{}".format(
-                match.group(1)
-            ),
-            "description": lambda match, i_group: 'Membrane diffusion coefficient of species "{}"'.format(
+            "id": lambda match,
+            i_group: "membrane_diffusion_coefficient_species_{}".format(match.group(1)),
+            "description": lambda match,
+            i_group: 'Membrane diffusion coefficient of species "{}"'.format(
                 match.group(1)
             ),
             "macro": lambda match: "difm {}".format(match.group(1)),
@@ -218,10 +222,12 @@ CONFIG_DECLARATION_PATTERNS = [
         "regex": r"^difm ([^ \(\)]+)\(([^ \(\)]+)\) (.*?)$",
         "macro": {
             "group": lambda match: "difm_{}_{}".format(match.group(1), match.group(2)),
-            "id": lambda match, i_group: "membrane_diffusion_coefficient_species_{}_state_{}".format(
+            "id": lambda match,
+            i_group: "membrane_diffusion_coefficient_species_{}_state_{}".format(
                 match.group(1), match.group(2)
             ),
-            "description": lambda match, i_group: 'Membrane diffusion coefficient of species "{}" in state "{}"'.format(
+            "description": lambda match,
+            i_group: 'Membrane diffusion coefficient of species "{}" in state "{}"'.format(
                 match.group(1), match.group(2)
             ),
             "macro": lambda match: "difm {}({})".format(match.group(1), match.group(2)),
@@ -232,10 +238,12 @@ CONFIG_DECLARATION_PATTERNS = [
         "regex": r"^difm_rule ([^ \(\)]+) (.*?)$",
         "macro": {
             "group": lambda match: "difm_rule_{}".format(match.group(1)),
-            "id": lambda match, i_group: "membrane_diffusion_coefficient_rule_species_{}".format(
+            "id": lambda match,
+            i_group: "membrane_diffusion_coefficient_rule_species_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1))
             ),
-            "description": lambda match, i_group: 'Membrane diffusion coefficient rule for species "{}"'.format(
+            "description": lambda match,
+            i_group: 'Membrane diffusion coefficient rule for species "{}"'.format(
                 match.group(1)
             ),
             "macro": lambda match: "difm_rule {}".format(match.group(1)),
@@ -248,10 +256,12 @@ CONFIG_DECLARATION_PATTERNS = [
             "group": lambda match: "difm_rule_{}_{}".format(
                 match.group(1), match.group(2)
             ),
-            "id": lambda match, i_group: "membrane_diffusion_coefficient_rule_species_{}_state_{}".format(
+            "id": lambda match,
+            i_group: "membrane_diffusion_coefficient_rule_species_{}_state_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1)), match.group(2)
             ),
-            "description": lambda match, i_group: 'Membrane diffusion coefficient rule for species "{}" in state "{}"'.format(
+            "description": lambda match,
+            i_group: 'Membrane diffusion coefficient rule for species "{}" in state "{}"'.format(
                 match.group(1), match.group(2)
             ),
             "macro": lambda match: "difm_rule {}({})".format(
@@ -279,7 +289,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "drift_species_{}_state_{}".format(
                 match.group(1), match.group(2)
             ),
-            "description": lambda match, i_group: 'Drift of species "{}" in state "{}"'.format(
+            "description": lambda match,
+            i_group: 'Drift of species "{}" in state "{}"'.format(
                 match.group(1), match.group(2)
             ),
             "macro": lambda match: "drift {}({})".format(
@@ -311,7 +322,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "drift_rule_species_{}_state_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1)), match.group(2)
             ),
-            "description": lambda match, i_group: 'Drift rule for species "{}" in state "{}"'.format(
+            "description": lambda match,
+            i_group: 'Drift rule for species "{}" in state "{}"'.format(
                 match.group(1), match.group(2)
             ),
             "macro": lambda match: "drift_rule {}({})".format(
@@ -326,10 +338,12 @@ CONFIG_DECLARATION_PATTERNS = [
             "group": lambda match: "surface_drift_{}_{}_{}".format(
                 match.group(1), match.group(2), match.group(3)
             ),
-            "id": lambda match, i_group: "surface_drift_species_{}_surface_{}_shape_{}".format(
+            "id": lambda match,
+            i_group: "surface_drift_species_{}_surface_{}_shape_{}".format(
                 match.group(1), match.group(2), match.group(3)
             ),
-            "description": lambda match, i_group: 'Surface drift of species "{}" on surface "{}" with panel shape "{}"'.format(
+            "description": lambda match,
+            i_group: 'Surface drift of species "{}" on surface "{}" with panel shape "{}"'.format(
                 match.group(1), match.group(2), match.group(3)
             ),
             "macro": lambda match: "surface_drift {} {} {}".format(
@@ -344,10 +358,12 @@ CONFIG_DECLARATION_PATTERNS = [
             "group": lambda match: "surface_drift_{}_{}_{}_{}".format(
                 match.group(1), match.group(2), match.group(3), match.group(4)
             ),
-            "id": lambda match, i_group: "surface_drift_species_{}_state_{}_surface_{}_shape_{}".format(
+            "id": lambda match,
+            i_group: "surface_drift_species_{}_state_{}_surface_{}_shape_{}".format(
                 match.group(1), match.group(2), match.group(3), match.group(4)
             ),
-            "description": lambda match, i_group: 'Surface drift of species "{}" in state "{}" on surface "{}" with panel shape "{}"'.format(
+            "description": lambda match,
+            i_group: 'Surface drift of species "{}" in state "{}" on surface "{}" with panel shape "{}"'.format(
                 match.group(1), match.group(2), match.group(3), match.group(4)
             ),
             "macro": lambda match: "surface_drift {}({}) {} {}".format(
@@ -362,12 +378,14 @@ CONFIG_DECLARATION_PATTERNS = [
             "group": lambda match: "surface_drift_rule_{}_{}_{}".format(
                 match.group(1), match.group(2), match.group(3)
             ),
-            "id": lambda match, i_group: "surface_drift_rule_species_{}_surface_{}_panel_{}".format(
+            "id": lambda match,
+            i_group: "surface_drift_rule_species_{}_surface_{}_panel_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1)),
                 match.group(2),
                 match.group(3),
             ),
-            "description": lambda match, i_group: 'Surface drift rule for species "{}" on surface "{}" of panel shape "{}"'.format(
+            "description": lambda match,
+            i_group: 'Surface drift rule for species "{}" on surface "{}" of panel shape "{}"'.format(
                 match.group(1), match.group(2), match.group(3)
             ),
             "macro": lambda match: "surface_drift_rule {} {} {}".format(
@@ -382,13 +400,15 @@ CONFIG_DECLARATION_PATTERNS = [
             "group": lambda match: "surface_drift_rule_{}_{}_{}_{}".format(
                 match.group(1), match.group(2), match.group(3), match.group(4)
             ),
-            "id": lambda match, i_group: "surface_drift_rule_species_{}_state_{}_surface_{}_panel_{}".format(
+            "id": lambda match,
+            i_group: "surface_drift_rule_species_{}_state_{}_surface_{}_panel_{}".format(
                 re.sub("[^a-zA-Z0-9_]", "_", match.group(1)),
                 match.group(2),
                 match.group(3),
                 match.group(4),
             ),
-            "description": lambda match, i_group: 'Surface drift rule for species "{}" in state "{}" on surface "{}" of panel shape "{}"'.format(
+            "description": lambda match,
+            i_group: 'Surface drift rule for species "{}" in state "{}" on surface "{}" of panel shape "{}"'.format(
                 match.group(1), match.group(2), match.group(3), match.group(4)
             ),
             "macro": lambda match: "surface_drift_rule {}({}) {} {}".format(
@@ -404,9 +424,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "initial_count_species_{}".format(
                 re.sub(r"[^a-zA-Z0-9_]", "_", match.group(2))
             ),
-            "description": lambda match, i_group: 'Initial count of species "{}"'.format(
-                match.group(2)
-            ),
+            "description": lambda match,
+            i_group: 'Initial count of species "{}"'.format(match.group(2)),
             "macro": lambda match: "mol {}".format(match.group(2)),
             "arguments": lambda match: match.group(1),
         },
@@ -418,9 +437,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "initial_count_species_{}".format(
                 re.sub(r"[^a-zA-Z0-9_]", "_", match.group(2))
             ),
-            "description": lambda match, i_group: 'Initial count of species "{}"'.format(
-                match.group(2)
-            ),
+            "description": lambda match,
+            i_group: 'Initial count of species "{}"'.format(match.group(2)),
             "macro": lambda match: "compartment_mol {}".format(match.group(2)),
             "arguments": lambda match: match.group(1),
         },
@@ -432,9 +450,8 @@ CONFIG_DECLARATION_PATTERNS = [
             "id": lambda match, i_group: "initial_count_species_{}".format(
                 re.sub(r"[^a-zA-Z0-9_]", "_", match.group(2))
             ),
-            "description": lambda match, i_group: 'Initial count of species "{}"'.format(
-                match.group(2)
-            ),
+            "description": lambda match,
+            i_group: 'Initial count of species "{}"'.format(match.group(2)),
             "macro": lambda match: "surface_mol {}".format(match.group(2)),
             "arguments": lambda match: match.group(1),
         },
