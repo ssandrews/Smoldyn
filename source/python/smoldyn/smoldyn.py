@@ -160,11 +160,13 @@ class Species(object):
     def setStyle(
         self,
         *,
-        display_size: float | Dict[str, float],
-        color: ColorType | Dict[str, ColorType],
+        display_size: None | float | Dict[str, float],
+        color: None | ColorType | Dict[str, ColorType],
     ) -> None:
-        self.color = color
-        self.display_size = display_size
+        if color:
+            self.color = color
+        if display_size:
+            self.display_size = display_size
 
     @property
     def difc(self) -> DiffConst:
@@ -742,7 +744,7 @@ class _SurfaceFaceCollection(object):
 
     def setStyle(
         self,
-        color: ColorType = "",
+        color: None | ColorType = None,
         drawmode: str = "none",
         thickness: float = 1.0,
         stipplefactor: int = -1,
@@ -953,15 +955,19 @@ class Surface(object):
         >>> s = smoldyn.Surface("walls", panels=["r1", "r2"])
         """
         self.simulation = simulation
-        assert self.simulation
-
         self.panels = panels
         self.name = name
-        self.simulation.addSurface(self.name)
+        if self.name:
+            self.initlaize()
 
-        self.front = _SurfaceFaceCollection(self.simulation, ["front"], name)
-        self.back = _SurfaceFaceCollection(self.simulation, ["back"], name)
-        self.both = _SurfaceFaceCollection(self.simulation, ["front", "back"], name)
+    def initlaize(self) -> None:
+        assert self.simulation
+        self.simulation.addSurface(self.name)
+        self.front = _SurfaceFaceCollection(self.simulation, ["front"], self.name)
+        self.back = _SurfaceFaceCollection(self.simulation, ["back"], self.name)
+        self.both = _SurfaceFaceCollection(
+            self.simulation, ["front", "back"], self.name
+        )
         self._addPanelsToSmoldyn()
 
     @classmethod
@@ -1666,6 +1672,7 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
         accuracy: float | None = None,
         output_files: List[str | Path] = [],
         seed: int = -1,
+        quit_at_end: bool = False,
     ):
         """Simulation class is a container for a complete model. An object of
         this class is a stand-alone self-contained model.
@@ -1724,6 +1731,7 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
         self.setOutputFiles(output_files)
         if seed >= 0:
             self.randomSeed = seed
+        self.quitatend = quit_at_end
 
     @classmethod
     def fromFile(cls, path: Union[Path, str], arg: str = "") -> "Simulation":

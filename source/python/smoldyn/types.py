@@ -20,11 +20,15 @@ BoundType = Union[str, List[str]]
 class Color:
     """Color class."""
 
-    def __init__(self, color: ColorType | "Color"):
-        assert not isinstance(color, dict)
-        self._inner: ColorType | str = (
-            color if not isinstance(color, Color) else color._inner
-        )
+    def __init__(self, color: str | None | ColorType | "Color"):
+        if color:
+            assert not isinstance(color, dict)
+            self._inner: ColorType | str = (
+                color if not isinstance(color, Color) else color._inner
+            )
+        else:
+            # default value in c library.
+            self._inner = (0.0, 0.0, 0.0, 1.0)
         self.rgba: RGBA = self._toRGBA()
 
     def _toRGBA(self) -> RGBA:
