@@ -37,7 +37,7 @@ jobs:
               -DPython3_EXECUTABLE=$PYTHON ..
       - name: Build smoldyn
         run: |
-          cd build && make -j2 && make wheel && sudo make install
+          cd build && make -j2 && make lint && make wheel && sudo make install
       - name: Test smoldyn
         run: |
           cd build && xvfb-run --auto-servernum ctest --output-on-failure -j2
