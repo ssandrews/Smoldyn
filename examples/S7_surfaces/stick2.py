@@ -5,7 +5,7 @@ for colorblindness (10% of population has it, me included!).
 """
 
 __author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 
 import smoldyn
 

@@ -1,11 +1,11 @@
 # Bistable reaction system
 __author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 
 import smoldyn
 
 s = smoldyn.Simulation(
-    low=[0, 0], high=[10, 10], types="p", output_files=["bistableout.txt"]
+    low=[0, 0], high=[10, 10], boundary_type="p", output_files=["bistableout.txt"]
 )
 
 # species X A B A2 B2

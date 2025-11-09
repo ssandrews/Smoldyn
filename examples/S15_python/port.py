@@ -3,7 +3,7 @@ port.txt file.
 """
 
 __author__ = "Dilawar Singh"
-__email__ = "dilawars@ncbs.res.in"
+__email__ = "dilawar.s.rajput@gmail.com"
 __date__ = "2020-06-30"
 
 
