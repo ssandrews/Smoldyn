@@ -32,7 +32,7 @@ import warnings
 from pathlib import Path
 from dataclasses import dataclass
 
-from typing import Union, Tuple, List, Dict, Optional, Sequence
+from typing import Union, Tuple, List, Dict, Optional, Sequence, Literal, TypeAlias
 from collections.abc import Callable
 
 
@@ -56,9 +56,9 @@ ch.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
 __logger__.addHandler(ch)
 
 
-def version():
+def version() -> str:
     """Get version"""
-    return _smoldyn.__version__
+    return str(_smoldyn.__version__)
 
 
 # alias of version()
@@ -162,7 +162,7 @@ class Species(object):
         *,
         display_size: float | Dict[str, float],
         color: ColorType | Dict[str, ColorType],
-    ):
+    ) -> None:
         self.color = color
         self.display_size = display_size
 
@@ -171,7 +171,7 @@ class Species(object):
         return self._difc
 
     @difc.setter
-    def difc(self, difconst: DiffConst):
+    def difc(self, difconst: DiffConst) -> None:
         """Isotropic Diffusion coeffiecient of the Species.
 
         Parameters
@@ -194,11 +194,11 @@ class Species(object):
             assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def mol_list(self):
+    def mol_list(self) -> str:
         return self._mol_list
 
     @mol_list.setter
-    def mol_list(self, val: str):
+    def mol_list(self, val: str) -> None:
         k = self.simulation.addMolList(val)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add mollist: {k}"
         k = self.simulation.setMolList(self.name, _toMS(self.state), val)
@@ -208,15 +208,15 @@ class Species(object):
         self._mol_list = val
 
     @property
-    def color(self):
+    def color(self) -> Dict[str, Color]:
         return self._color
 
     @color.setter
-    def color(self, colors: ColorType | Dict[str, ColorType]):
-        if not isinstance(colors, dict):
-            self._color = {self.state: Color(colors)}
+    def color(self, color: ColorType | Dict[str, ColorType]) -> None:
+        if not isinstance(color, dict):
+            self._color = {self.state: Color(color)}
         else:
-            self._color = {k: Color(v) for (k, v) in colors.items()}
+            self._color = {k: Color(v) for (k, v) in color.items()}
         for state, _clr in self._color.items():
             k = self.simulation.setMoleculeColor(
                 self.name, _toMS(state), Color(_clr).rgba
@@ -224,11 +224,11 @@ class Species(object):
             assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def display_size(self):
+    def display_size(self) -> Dict[str, float]:
         return self._displaySize
 
     @display_size.setter
-    def display_size(self, size: Union[float, Dict[str, float]]):
+    def display_size(self, size: Union[float, Dict[str, float]]) -> None:
         """Set the display_size of the molecule.
 
         Parameters
@@ -264,7 +264,7 @@ class Species(object):
         pos: List[float] = [],
         highpos: List[float] = [],
         lowpos: List[float] = [],
-    ):
+    ) -> None:
         """Add molecule to solution.
 
         Parameters
@@ -295,16 +295,16 @@ class NullSpecies(Species):
     name: str = ""
     state = _smoldyn.MolecState.__members__["none"]
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         return False
 
-    def __len__(self):
+    def __len__(self) -> Literal[0]:
         return 0
 
 
 # Type of a substract and product of a Reaction
-SpeciesState = Union[_smoldyn.MolecState, str]
-SpeciesWithState = Union[Species, Tuple[Species, SpeciesState]]
+SpeciesState: TypeAlias = Union[_smoldyn.MolecState, str]
+SpeciesWithState: TypeAlias = Union[Species, Tuple[Species, SpeciesState]]
 
 
 class Panel(object):
@@ -315,7 +315,7 @@ class Panel(object):
         shape: _smoldyn.PanelShape = _smoldyn.PanelShape.none,
         neighbors: List["Panel"] = [],
         simulation: Optional[_smoldyn.Simulation] = None,
-    ):
+    ) -> None:
         """Panels are components of a surface. One or more Panels are requried
         to form a Surface. Following geometric primitives are available.
 
@@ -328,23 +328,25 @@ class Panel(object):
         """
 
         self.axisstr: str = ""
-        self._neighbors: List = []
+        self._neighbors: List[Panel] = []
         self.name = name
         self.ctype: _smoldyn.PanelShape = shape
         self.pts: List[float] = []
         self.simulation = simulation
         self.front = _PanelFace(name="front", panel=self, simulation=self.simulation)
         self.back = _PanelFace(simulation=self.simulation, name="back", panel=self)
-        self.surface: Surface = NullSurface()
+        self.surface = NullSurface()
         self.neighbors = neighbors
 
-    def _setSimulation(self, simulation: _smoldyn.Simulation):
+    def _setSimulation(self, simulation: _smoldyn.Simulation) -> None:
         assert simulation
         self.simulation = simulation
         self.front.simulation = simulation
         self.back.simulation = simulation
 
-    def jumpTo(self, face1: str, panel2, face2: str, bidirectional: bool = False):
+    def jumpTo(
+        self, face1: str, panel2: Panel, face2: str, bidirectional: bool = False
+    ) -> None:
         """Add a jump reaction between two panels of the same surface.
 
         This panel has name panel1, and face face1.  A molecule that hits this
@@ -380,10 +382,10 @@ class Panel(object):
 
         return jfrom.jumpTo(jto, bidirectional)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{self.name} type={self.ctype} index={self.index} points={self.pts}>"
 
-    def _axisIndex(self, axisname: str):
+    def _axisIndex(self, axisname: str) -> int:
         axisDict = dict(x=0, y=1, z=2)
         return int(axisDict.get(axisname.lower(), axisname))
 
@@ -393,28 +395,28 @@ class Panel(object):
         v: int = self.simulation.getPanelIndexNT(self.surface.name, self.name)
         return v
 
-    def toText(self):
+    def toText(self) -> str:
         return f"panel {self.ctype} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
 
     @property
-    def neighbors(self):
+    def neighbors(self) -> List[Panel]:
         return self._neighbors
 
     @neighbors.setter
-    def neighbors(self, panels: List):
+    def neighbors(self, panels: List[Panel]) -> None:
         self._neighbors = panels
         for panel in panels:
             self._assignNeighbor(panel)
 
     @property
-    def neighbor(self):
+    def neighbor(self) -> Panel:
         return self._neighbors[0]
 
     @neighbor.setter
-    def neighbor(self, panel):
+    def neighbor(self, panel: Panel) -> None:
         self._assignNeighbor(panel)
 
-    def _assignNeighbor(self, panel, reciprocal: bool = False):
+    def _assignNeighbor(self, panel: Panel, reciprocal: bool = False) -> None:
         assert self.surface, f"Panel {self} has no Surface assigned."
         assert panel.surface, f"Panel {panel} has no Surface assigned."
         assert self != panel, "A panel cannot be its own neighbor"
@@ -429,7 +431,7 @@ class Panel(object):
             return self.name
         return f"{self.ctype}{index}"
 
-    def setNeighbors(self, panels, reciprocal: bool = False):
+    def setNeighbors(self, panels: List[Panel], reciprocal: bool = False) -> None:
         """Set neighbors.
 
         Parameters
@@ -455,7 +457,7 @@ class Rectangle(Panel):
         axis: str,
         name: str = "",
         simulation: Optional[_smoldyn.Simulation] = None,
-    ):
+    ) -> None:
         """Rectangle
 
         Parameters
@@ -485,7 +487,7 @@ class Rectangle(Panel):
         self.axisIndex = self._axisIndex(axis[1])
         self.toGenericPanel()
 
-    def toGenericPanel(self):
+    def toGenericPanel(self) -> Tuple[str, List[float]]:
         self.pts = [*self.corner, *self.dimensions]
         return self.axisstr, self.pts
 
@@ -650,7 +652,7 @@ class Disk(Panel):
         radius: float,
         slices: int,
         vector: List[float],
-        name="",
+        name: str = "",
         simulation: Optional[_smoldyn.Simulation] = None,
     ):
         """Disk
@@ -690,7 +692,7 @@ class _PanelFace(object):
         self.name = _smoldyn.PanelFace.__members__[name]
         self.panel = panel
 
-    def jumpTo(self, toface, bidirectional: bool = False):
+    def jumpTo(self, toface: _PanelFace, bidirectional: bool = False) -> None:
         """Add a jump reaction between two panels of same Surface
 
         See also
@@ -746,7 +748,7 @@ class _SurfaceFaceCollection(object):
         stipplefactor: int = -1,
         stipplepattern: int = -1,
         shininess: int = -1,
-    ):
+    ) -> None:
         """Set drawing style for the face of surface.
 
         Parameters
@@ -800,7 +802,7 @@ class _SurfaceFaceCollection(object):
         species: Union[Species, List[Species]],
         action: str,
         new_species: Optional[Species] = None,
-    ):
+    ) -> None:
         """The behavior of molecules named species when they collide with this
         face of this surface.
 
@@ -856,7 +858,12 @@ class _SurfaceFaceCollection(object):
 
 
 class Path2D(object):
-    def __init__(self, *points, simulation: _smoldyn.Simulation, closed: bool = False):
+    def __init__(
+        self,
+        *points: Tuple[float | int, float | int],
+        simulation: _smoldyn.Simulation,
+        closed: bool = False,
+    ):
         """Construct a 2D path from given points.
 
         A Path2D consists of `Rectangle` and `Triangle`.
@@ -910,9 +917,6 @@ class Path2D(object):
                 self.panels.append(t)
 
 
-# TODO: Add a Path3D or Surface3D. not sure what to call it.
-
-
 class Surface(object):
     """Surfaces are infinitesimally thin structures that can be used to represent cell membranes, obstructions, system boundaries, or other things.
 
@@ -960,7 +964,7 @@ class Surface(object):
         self.both = _SurfaceFaceCollection(self.simulation, ["front", "back"], name)
         self._addPanelsToSmoldyn()
 
-    def _addPanelsToSmoldyn(self):
+    def _addPanelsToSmoldyn(self) -> None:
         """Call libsmodyn API to construct this surface' Panels"""
         assert self.name, "Surface name is missing"
         for i, panel in enumerate(self.panels):
@@ -982,7 +986,7 @@ class Surface(object):
                 f"Failed to add panel (error={k}): Surface:{self.name} {panel}"
             )
 
-    def setStyle(self, face, *args, **kwargs):
+    def setStyle(self, face: str, *args: int | float, **kwargs: int | float) -> None:
         """See the function :func:`_SurfaceFaceCollection.setStyle` for more
         details. This function forwards arguments to
         :func:`_SurfaceFaceCollection.setStyle`.
@@ -1006,10 +1010,10 @@ class Surface(object):
     def setAction(
         self,
         face: str,
-        species: Union[Species, List[Species]],
+        species: Species | List[Species],
         action: str,
-        new_species: Optional[Species] = None,
-    ):
+        new_species: None | Species = None,
+    ) -> None:
         """Set drawing style for the face of surface
         (calls :func:`_SurfaceFaceCollection.setAction`)
 
@@ -1045,7 +1049,7 @@ class Surface(object):
         N: int,
         panels: Optional[List[Panel]] = None,
         pos: List[float] = [],
-    ):
+    ) -> None:
         """Place molecules with random or specific positions onto a given
         surface (optionally specified panels).
 
@@ -1103,9 +1107,9 @@ class Surface(object):
         state1: SpeciesState,
         state2: SpeciesState,
         rate: float,
-        new_species: Optional[Species] = None,
+        new_species: None | Species = None,
         isinternal: bool = False,
-    ):
+    ) -> None:
         if not isinstance(species, Species):
             sname, sstate = species[0].name, species[1]
         else:
@@ -1131,9 +1135,9 @@ class Surface(object):
         state2: SpeciesState,
         rate: float,
         revrate: float = 0.0,
-        new_species: Optional[Species] = None,
+        new_species: None | Species = None,
         isinternal: bool = False,
-    ):
+    ) -> None:
         """The rate constant for transitions from `state1` to `state2` of molecules
         named `species`.
 
@@ -1171,7 +1175,7 @@ class NullSurface(Surface):
         self.name = ""
         self.panels = []
 
-    def __bool__(self):
+    def __bool__(self) -> Literal[False]:
         return False
 
 
@@ -1194,7 +1198,7 @@ class Port(object):
         simulation: _smoldyn.Simulation,
         *,
         name: str,
-        surface: Union[Surface, str],
+        surface: Surface | str,
         panel: str,
     ):
         """
@@ -1224,7 +1228,7 @@ class Compartment(object):
         simulation: _smoldyn.Simulation,
         name: str,
         *,
-        surface: Union[str, Surface],
+        surface: str | Surface,
         point: List[float],
     ):
         """Comapartment.
@@ -1250,7 +1254,7 @@ class Compartment(object):
         k = self.simulation.addCompartmentPoint(self.name, self.point)
         assert k == _smoldyn.ErrorCode.ok
 
-    def addMolecules(self, species: Species, N: int):
+    def addMolecules(self, species: Species, N: int) -> None:
         """Place number of molecules in a compartment (uniformly distributed).
 
         Parameters
@@ -1383,49 +1387,51 @@ class Reaction(object):
             assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def rate(self):
+    def rate(self) -> float:
         return self.__rate
 
     @rate.setter
-    def rate(self, rate: float):
+    def rate(self, rate: float) -> None:
         if rate != self.__rate:
             self.__rate = rate
             self.setRate(rate)
 
-    def setRate(self, rate, reaction_probability=-1.0, binding_radius=-1.0):
+    def setRate(
+        self,
+        rate: float,
+        reaction_probability: None | float = None,
+        binding_radius: float = -1.0,
+    ) -> None:
         # if rate is negative, then we expect either binding_radius or
         # reaction_probability. A reaction can have zero rate.
         if rate >= 0.0:
             k = self.simulation.setReactionRate(self.name, rate, False)
             assert k == _smoldyn.ErrorCode.ok
             return
-        elif rate < 0.0:
-            # check if reaction_probability is given
-            if len(self.subs) < 2:
-                assert reaction_probability >= 0.0, (
-                    "Must set rate or reaction_probability"
-                )
-                k = self.simulation.setReactionRate(
-                    self.name, reaction_probability, True
-                )
-                assert k == _smoldyn.ErrorCode.ok
-            else:
-                if reaction_probability >= 0.0:
-                    k = self.simulation.setReactionRate(
-                        self.name, reaction_probability, 2
-                    )
-                    assert k == _smoldyn.ErrorCode.ok
-                if binding_radius >= 0.0:
-                    k = self.simulation.setReactionRate(self.name, binding_radius, True)
-                    assert k == _smoldyn.ErrorCode.ok
+
+        # check if reaction_probability is set when rate is not set.
+        if len(self.subs) < 2:
+            assert reaction_probability is not None, (
+                "Must set rate or reaction_probability"
+            )
+            k = self.simulation.setReactionRate(self.name, reaction_probability, True)
+            assert k == _smoldyn.ErrorCode.ok
         else:
-            raise RuntimeError("Rate is not a numeric value")
+            if reaction_probability is not None:
+                assert 0.0 <= reaction_probability <= 1.0, (
+                    "reaction_probability must be between 0 and 1"
+                )
+                k = self.simulation.setReactionRate(self.name, reaction_probability, 2)
+                assert k == _smoldyn.ErrorCode.ok
+            if binding_radius >= 0.0:
+                k = self.simulation.setReactionRate(self.name, binding_radius, True)
+                assert k == _smoldyn.ErrorCode.ok
 
     @property
-    def order(self):
+    def order(self) -> int:
         return len(self.subs)
 
-    def setIntersurface(self, rules: List[Union[int, str]]):
+    def setIntersurface(self, rules: List[Union[int, str]]) -> None:
         """Define `rules` to allow a bimolecular reaction operates when its
         reactants are on different surfaces. In general, there should be as
         many rule values as there are products for this reaction
@@ -1465,7 +1471,7 @@ class Reaction(object):
         param: float = 0.0,
         product: str = "",
         pos: List[float] = [],
-    ):
+    ) -> None:
         """Placement method and parameters for the products of reaction.
         This also affects the binding radius of the reverse reaction, as
         explained in the manual.
@@ -1580,19 +1586,19 @@ class BidirectionalReaction(object):
             )
 
     @property
-    def kf(self):
+    def kf(self) -> float:
         return self._kf
 
     @kf.setter
-    def kf(self, val: float):
+    def kf(self, val: float) -> None:
         self.forward.setRate(val)
 
     @property
-    def kb(self):
+    def kb(self) -> float:
         return self._kb
 
     @kb.setter
-    def kb(self, val: float):
+    def kb(self, val: float) -> None:
         assert self.reverse
         self.reverse.setRate(val)
 
@@ -1603,7 +1609,7 @@ class Partition(object):
     name: str
     value: float
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Sets the virtual partitions in the simulation volumne. Two
         specialization is avaiable: :py:class:`MoleculePerBox`, and
         :py:class:`Box`.
@@ -1627,7 +1633,7 @@ class MoleculePerBox(Partition):
 
 
 class Box(Partition):
-    def __init__(self, simulation: _smoldyn.Simulation, size):
+    def __init__(self, simulation: _smoldyn.Simulation, size: float):
         warnings.warn(
             "Box is deprecated. Please use setPartitions in the future",
             DeprecationWarning,
