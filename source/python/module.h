@@ -1,15 +1,11 @@
-//         Author:  Dilawar Singh  dilawar.s.rajput@gmail.com
-//   Organization:  Subconscious Compute Pvt. Ltd., Bangalore
+// Author:  Dilawar Singh  dilawar.s.rajput@gmail.com
 
 #ifndef MODULE_H
 #define MODULE_H
 
-#include <map>
-using namespace std;
-
 #include "pybind11/pybind11.h"
-#include "util.h"
 
+#include "util.h"
 namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"

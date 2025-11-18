@@ -372,7 +372,7 @@ void Sph_Newz2Dcm(const double *Newz,double psi,double *Dcm) {
 
 
 void Sph_DcmtxUnit(const double *Dcmt,char axis,double *vect,const double *add,double mult) {
-	double Work[3];
+	double Work[3] = {0, 0, 0};
 
 	if(add) {
 		Work[0]=add[0];

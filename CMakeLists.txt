@@ -100,31 +100,14 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 
 ####### Compiler flags ######################
-#
-# Must use a C++14 compatible compiler (gcc>=5.x).
-# NOTE: C++17 has parallel implmenetation of many STL algorithms. It would be
-# nice to use them. Most compilers support C++17 these days.
-#
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 17)
+
+# Important: On Windows, it is currently not possible to build smoldyn with standard
+# 17 due to https://stackoverflow.com/questions/45125957/byte-and-ambiguous-symbol-due-to-using-declarations
+set(CMAKE_CXX_STANDARD 14)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
-
-# macro to check if a flag exists and enable for compiler.
-function(CheckCompilerFlagAndAdd)
-    check_c_compiler_flag(${ARGV0} C_FLAG_EXISTS)
-    check_cxx_compiler_flag(${ARGV0} CXX_FLAG_EXISTS)
-    if(C_FLAG_EXISTS OR CXX_FLAG_EXISTS)
-        if(${ARGV1})
-            add_definitions(${ARGV0}=${ARGV1})
-        else()
-            add_definitions(${ARGV0})
-        endif()
-        message(STATUS "[COMPILER] Adding ${ARGV0}")
-    else()
-        message(STATUS "Compiler does not support ${ARGV0}. Ignoring..")
-    endif()
-endfunction()
 
 if(MSVC)
     # FIXME: On Windows, when using MSVC, reduce the amount of warnings. MSVC
@@ -134,41 +117,18 @@ if(MSVC)
 else()
     # enable all warnings.
     add_compile_options(-Wall -Wextra)
-    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
-endif ()
+endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(OPTION_WARNING_AS_ERROR)
     add_definitions(-Wextra -Werror)
-    # ignore these warnings.
-    CheckCompilerFlagAndAdd(-Wno-format-truncation)
-    CheckCompilerFlagAndAdd(-Wno-uninitialized)
-    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
-    CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
-    CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
-# We need c++14 support to build python bindings.
-if(OPTION_PYTHON)
-    set(CMAKE_CXX_STANDARD 14)
-    try_compile(COMPILER_SUPPORT_C14
-        ${CMAKE_BINARY_DIR}/_test_compiler
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/test_compiler.cpp
-        OUTPUT_VARIABLE COMPILER_TEST_OUTPUT
-        )
-    if(NOT COMPILER_SUPPORT_C14)
-        message(STATUS "Failed to build test program: ${COMPILER_TEST_OUTPUT}")
-        message(FATAL_ERROR "Your compiler does not support C++14. "
-            "Please use a C++14 compliant compiler. "
-            "See https://en.cppreference.com/w/cpp/compiler_support/14 "
-            "for C++14 support among C++ compilers.")
-    endif()
-endif()
 
 ######### Core code information ###########
 

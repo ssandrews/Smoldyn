@@ -1,8 +1,6 @@
 /***
  *    Description:  Callback functions.
- *        Created:  2020-07-26
  *         Author:  Dilawar Singh <dilawar.s.rajput@gmail.com>
- *   Organization:  Subconscious Compute Pvt. Ltd.
  */
 
 #ifndef CALLBACKFUNC_H_XGBEYLQ3
@@ -17,6 +15,7 @@ namespace py = pybind11;
 
 using namespace std;
 
+#pragma GCC visibility push(default)
 class CallbackFunc
 {
   public:

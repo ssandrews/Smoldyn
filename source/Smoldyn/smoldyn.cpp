@@ -35,7 +35,7 @@ int main(int argc,char **argv) {
 	try {
 	  simptr sim;
 	  int i,er,pflag,wflag,tflag,Vflag,oflag;
-	  char root[STRCHARLONG],fname[STRCHARLONG],flags[STRCHARLONG],*cptr,logfile[STRCHARLONG];
+	  char root[STRCHARLONG],fname[STRCHARLONG],flags[STRCHARLONG+100],*cptr,logfile[STRCHARLONG];
 
 		for(i=0;i<STRCHARLONG;i++) root[i]=fname[i]=flags[i]=logfile[i]='\0';
 		er=0;
