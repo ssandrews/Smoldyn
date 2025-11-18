@@ -8,11 +8,21 @@
  *        License:  GNU GPLv3
  */
 
+
+// #issue 149
+#ifdef _MSC_VER
+#define _HAS_STD_BYTE 0
+#endif
+
+
 #include "CallbackFunc.h"
 #include <cmath>
+#include <cassert>
 #include <iostream>
 #include <pybind11/embed.h>
 #include <pybind11/eval.h>
+
+using namespace std;
 
 namespace py = pybind11;
 

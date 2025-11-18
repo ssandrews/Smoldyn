@@ -13,16 +13,17 @@
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 
-using namespace std;
 
+#ifdef __GNUC__
 #pragma GCC visibility push(default)
+#endif
 class CallbackFunc
 {
   public:
     CallbackFunc();
     ~CallbackFunc();
 
-    void setFuncName(const string& runstr);
+    void setFuncName(const std::string& runstr);
     std::string getFuncName() const;
 
     void setStep(size_t step);

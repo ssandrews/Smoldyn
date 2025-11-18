@@ -1,15 +1,10 @@
-/***
- *        Created:  2021-04-07
+// Issue #149
+#ifdef _MSC_VER
+#define _HAS_STD_BYTE 0
+#endif
 
- *         Author:  Dilawar Singh <dilawar@subcom.tech>
- *    Description:  Command class.
- */
-
+#include <iostream>
 #include "Command.h"
-
-#include "Simulation.h"
-
-using namespace std;
 
 Command::Command(const simptr sim, const string& cmd)
   : sim_(sim)
@@ -39,7 +34,7 @@ void
 Command::addCommandToSimptr()
 {
     if (__allowed_cmd_type__.find_first_of(cmd_type_) == string::npos) {
-        cerr << "Command type '" << cmd_type_ << "' is not supported." << endl;
+        std::cerr << "Command type '" << cmd_type_ << "' is not supported." << std::endl;
         throw std::runtime_error("invalid command type");
     }
 

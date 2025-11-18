@@ -3,12 +3,14 @@
  * Author: Dilawar Singh <dilawar.s.rajput@gmail.com>
  */
 
-#include <algorithm>
-#include <exception>
-#include <iostream>
-#include <map>
+// #issue 149
+#ifdef _MSC_VER
+#define _HAS_STD_BYTE 0
+#endif
+
+
+#include <array>
 #include <string>
-#include <vector>
 
 using namespace std;
 
