@@ -185,7 +185,7 @@ enum FilamentDynamics filstring2FD(const char *string) {
 
 /* filReadFilName */
 int filReadFilName(const simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname) {
-	int itct,ft,f;
+	int itct,ft,f=-1;
 	char nm[STRCHAR],*fnm,*colon;
 	filamenttypeptr filtype;
 
@@ -578,7 +578,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->drawmode=DMedge;
 		filtype->shiny=0;
 		filtype->drawforcescale=0;
-		filtype->drawforcecolor[0]=filtype->drawforcecolor[0]=filtype->drawforcecolor[0]=0;
+		filtype->drawforcecolor[0]=filtype->drawforcecolor[1]=filtype->drawforcecolor[2]=0;
 		filtype->drawforcecolor[3]=1;
 
 		filtype->stdlen=1;
@@ -1889,7 +1889,7 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 /* filNodes2Angles */
 void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 	int seg,dim;
-	segmentptr segment,segmentm1;
+	segmentptr segment=NULL,segmentm1=NULL;
 	double x[3],aphim1,aphi,len;
 
 	if(nodemin<0) nodemin=0;				//?? these are not used
@@ -1949,9 +1949,10 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 		if(seg<fil->nseg) {
 			segmentm1=segment;
 			segment=fil->segments[seg];
-			Sph_QtnixQtn(segmentm1->qabs,segment->qabs,segment->qrel);	// combine prior and this qabs to get qrel
-			Sph_Qtn2Ypr(segment->qrel,segment->ypr);						// use qrel to get ypr
-			}}
+            // segment may be uninitialized!
+            Sph_QtnixQtn(segmentm1->qabs,segment->qabs,segment->qrel);	// combine prior and this qabs to get qrel
+            Sph_Qtn2Ypr(segment->qrel,segment->ypr);						// use qrel to get ypr
+            }}
 	return; }
 
 
@@ -2542,7 +2543,7 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 		filtype=filamentTypeAlloc(filtype,filtype->maxfil*2+1,0);
 		if(!filtype) return NULL; }
 	f=filtype->nfil++;
-	strncpy(filtype->filnames[f],filname,STRCHAR-1);
+	strncpy(filtype->filnames[f],filname,STRCHAR);
 	filtype->filnames[f][STRCHAR-1]='\0';
 	fil=filtype->fillist[f];
 	fil->filtype=filtype;

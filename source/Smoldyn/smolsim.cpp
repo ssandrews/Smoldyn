@@ -184,12 +184,12 @@ void simParseError(simptr sim,ParseFilePtr pfp) {
 
 	if(pfp) {
 		Parse_ReadFailure(pfp,parseerrstr);
-		sprintf(ErrorLineAndString,"%s\nMessage: %s",parseerrstr,ErrorString);
+		snprintf(ErrorLineAndString, sizeof(ErrorLineAndString), "%s\nMessage: %s\n", parseerrstr, ErrorString) < 0 ? abort() : (void)0;
 		simLog(sim,8,"%s\nMessage: %s\n",parseerrstr,ErrorString);
 		if(strmatherror(matherrstr,1))
 			simLog(sim,8,"math error: %s\n",matherrstr); }
 	else {
-		sprintf(ErrorLineAndString,"%s",ErrorString);
+		snprintf(ErrorLineAndString, sizeof(ErrorLineAndString), "%s", ErrorString);
 		simLog(sim,8,"%s",ErrorString); }
 	return; }
 

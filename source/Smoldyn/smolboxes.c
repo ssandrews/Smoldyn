@@ -782,7 +782,8 @@ int boxesupdatelists(simptr sim) {
 				free(bptr->neigh);
 				free(bptr->wpneigh);
 				bptr->wpneigh=NULL;
-				bptr->neigh=(boxptr*) calloc(nneigh,sizeof(boxptr));
+                // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85783
+				bptr->neigh=(boxptr*) calloc((unsigned int) nneigh,sizeof(boxptr));
 				if(!bptr->neigh) return 1;
 				if(w) {
 					bptr->wpneigh=allocZV(nneigh);

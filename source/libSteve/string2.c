@@ -22,7 +22,14 @@ of the Gnu Lesser General Public License (LGPL). */
 /************ Declarations for internal functions ****************/
 /******************************************************************/
 
-#define CHECKS(A,...)		if(!(A)) {snprintf(StrErrorString,sizeof(StrErrorString),__VA_ARGS__); goto failure;} else (void)0
+// Note: snprintf may truncate output. We abort in case of output truncation. 
+// see https://stackoverflow.com/questions/51534284/how-to-circumvent-format-truncation-warning-in-gcc
+#define CHECKS(A,...)                   \
+    if(!(A)) {                          \
+        snprintf(StrErrorString,sizeof(StrErrorString),__VA_ARGS__) < 0 ? abort() : (void)0; \
+        goto failure; \
+    } else (void)0 
+
 #define CHECK(A)		if(!(A)) {goto failure;} else (void)0
 
 char StrErrorString[STRCHAR];
@@ -1419,11 +1426,10 @@ double strmatheval(const char *expression,char **varnames,const double *varvalue
   static int unarysymbol=0;
   int length,i1,i2;
   double answer,term;
-  char *ptr,*ptr2,ptrchar,ptr2char,expr[STRCHAR];
+  char *ptr,*ptr2,ptrchar,ptr2char,expr[STRCHAR+1];
 
 //	printf("strmatheval expression: '%s'\n",expression);	// DEBUG
-
-	strncpy(expr,expression,STRCHAR);
+  strncpy(expr,expression,STRCHAR);
   MathParseError=0;
   length=strlen(expr);
   CHECKS(length>0,"missing expression");
@@ -1912,7 +1918,7 @@ double strunits(const char *unitstring,const char *dimstring,double value,char *
 			else if(*strptr=='/') {
 				mult=0;
 				strptr++; }
-			else {																		// parse unit name
+			else {																// parse unit name
 				strptr+=strfirstwordpbrk(word,strptr,"./^0123456789-");
 				CHECKS(word[0]!='\0',"Parse error in strunits, with '%s'",unitstring);
 				for(ut=0;ut<numType;ut++) {

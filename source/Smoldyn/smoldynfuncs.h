@@ -46,9 +46,10 @@ extern char SimFlags[];
 
 #define CHECK(A)				if(!(A)) {ErrorType=1;goto failure;} else (void)0
 #define CHECKMEM(A)			if(!(A)) {ErrorType=3;snprintf(ErrorString,STRCHARLONG,"Cannot allocate memory"); goto failure;} else (void)0
-#define CHECKS(A,...)		if(!(A)) {ErrorType=2;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
 #define CHECKM(A,...)   if(!(A) || strmatherror(ErrorMath,1)) {ErrorType=2;snprintf(strcat(ErrorString,ErrorMath),STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
 #define CHECKBUG(A,...)	if(!(A)) {ErrorType=4;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__); goto failure;} else (void)0
+// snprintf may truncate output. We abort in case of output truncation.
+#define CHECKS(A,...)		if(!(A)) {ErrorType=2;snprintf(ErrorString,STRCHARLONG,__VA_ARGS__) < 0 ? abort() : (void)0; goto failure;} else (void)0
 
 extern int VCellDefined;
 
