@@ -3,11 +3,9 @@
 #ifndef MODULE_H
 #define MODULE_H
 
-#include <map>
-
 #include "pybind11/pybind11.h"
-#include "util.h"
 
+#include "util.h"
 namespace py = pybind11;
 
 #include "../Smoldyn/libsmoldyn.h"
