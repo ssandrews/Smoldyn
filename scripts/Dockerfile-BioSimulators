@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bookworm
+FROM python:3.10-slim-bullseye
 
 ARG VERSION=""
 
@@ -44,6 +44,7 @@ ENV XVFB_RES="${RESOLUTION}" \
     XVFB_ARGS="${XARGS}"
 
 # install Smoldyn and its dependencies
+RUN ls -ltr
 COPY smoldyn*.whl /tmp/
 RUN cd /tmp \
     && WHEEL_PATH=$(ls -1 smoldyn*.whl | head -n 1) \
