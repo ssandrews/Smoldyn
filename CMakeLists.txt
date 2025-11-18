@@ -101,7 +101,7 @@ message(STATUS "Option to build documentation: ${OPTION_DOCS}")
 
 ####### Compiler flags ######################
 set(CMAKE_C_STANDARD 17)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
