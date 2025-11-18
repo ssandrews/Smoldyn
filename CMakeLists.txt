@@ -114,7 +114,6 @@ if(MSVC)
 else()
     # enable all warnings.
     add_compile_options(-Wall -Wextra)
-    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
