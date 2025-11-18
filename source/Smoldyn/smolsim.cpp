@@ -1,13 +1,21 @@
-/* Steven Andrews, started 10/22/2001.
- This is a library of functions for the Smoldyn program.
- See documentation called SmoldynManual.pdf and SmoldynCodeDoc.pdf, and the Smoldyn
- website, which is at www.smoldyn.org.
- Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
- of the Gnu Lesser General Public License (LGPL). */
+/** 
+ * Steven Andrews, started 10/22/2001.
+ *
+ * This is a library of functions for the Smoldyn program.
+ * See documentation called SmoldynManual.pdf and SmoldynCodeDoc.pdf, 
+ * and the Smoldyn website, which is at www.smoldyn.org.
+ *
+ * This work is distributed under the terms of the Gnu Lesser General Public License (LGPL). 
+ *
+ * (c)_2003-2025 by Steven Andrews. 
+ **/
+
+#ifdef _MSC_VER
+#define _HAS_STD_BYTE 0
+#endif
 
 #include <cfloat>
 #include <cstdlib>
-#include <cmath>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -21,8 +29,6 @@
 #include "SimCommand.h"
 #include "string2.h"
 #include "Zn.h"
-#include <string>
-#include <sstream>
 
 #include "smoldyn.h"
 #include "smoldynfuncs.h"

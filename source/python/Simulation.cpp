@@ -3,6 +3,11 @@
  *    Description:  Simulation class.
  */
 
+// Thanks microsoft for #149
+#ifdef _MSC_VER
+#define _HAS_STD_BYTE 0
+#endif
+
 #include "Simulation.h"
 #include "Command.h"
 

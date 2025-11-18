@@ -104,7 +104,7 @@ set(CMAKE_C_STANDARD 17)
 
 # Important: On Windows, it is currently not possible to build smoldyn with standard
 # 17 due to https://stackoverflow.com/questions/45125957/byte-and-ambiguous-symbol-due-to-using-declarations
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
