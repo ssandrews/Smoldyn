@@ -119,17 +119,11 @@ endif()
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the buid type: None, Debug, Release, RelWithDebInfo, or MinSizeRel" FORCE)
-endif ()
+endif()
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if(OPTION_WARNING_AS_ERROR)
     add_definitions(-Wextra -Werror)
-    # ignore these warnings.
-    CheckCompilerFlagAndAdd(-Wno-format-truncation)
-    CheckCompilerFlagAndAdd(-Wno-uninitialized)
-    CheckCompilerFlagAndAdd(-Wno-unused-parameter)
-    CheckCompilerFlagAndAdd(-Wno-unused-but-set-parameter)
-    CheckCompilerFlagAndAdd(-Wno-attributes)
 endif()
 
 
