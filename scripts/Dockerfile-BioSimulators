@@ -14,7 +14,7 @@ LABEL \
     org.opencontainers.image.vendor="Steven Andrews" \
     org.opencontainers.image.licenses="LGPL-3.0-only" \
     \
-    base_image="python:3.9-slim-bookworm" \
+    base_image="python:3.10-slim-bullseye" \
     version="${VERSION}" \
     software="Smoldyn" \
     software.version="${VERSION}" \

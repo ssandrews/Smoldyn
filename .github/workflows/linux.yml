@@ -66,6 +66,7 @@ jobs:
           cd build
           WHEEL_PATH=$(ls smoldyn*.whl)
           python -m pip install --force-reinstall "${WHEEL_PATH}[biosimulators,biosimulators-tests]"
+
       - name: Test BioSimulators
         if: matrix.python-version >= '3.10'
         run: |
