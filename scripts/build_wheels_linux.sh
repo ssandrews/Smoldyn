@@ -10,11 +10,9 @@ echo "Path to store wheels : $WHEELHOUSE"
 rm -rf "$WHEELHOUSE" && mkdir -p "$WHEELHOUSE"
 
 PYDIR310=/opt/python/cp310-cp310/
-PYDIR311=/opt/python/cp311-cp311/
-PYDIR312=/opt/python/cp312-cp312/
-PYDIR313=/opt/python/cp313-cp313/
 
-for PYDIR in $PYDIR313 $PYDIR312 $PYDIR311 $PYDIR310; do
+# all python3 version can use this wheel.
+for PYDIR in $PYDIR310; do
 	PYTHON=$PYDIR/bin/python
 
 	# dependencies
@@ -36,6 +34,8 @@ for PYDIR in $PYDIR313 $PYDIR312 $PYDIR311 $PYDIR310; do
 		make wheel
 		export PYTHONPATH="$(pwd)/py"
 		$PYTHON -m smoldyn "$SCRIPT_DIR/../examples/S4_molecules/mollist.txt"
+
+		$PYTHON -m auditwheel show *.whl
 		$PYTHON -m auditwheel repair *.whl -w "$WHEELHOUSE"
 
 		# install and test it

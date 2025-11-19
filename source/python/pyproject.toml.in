@@ -2,7 +2,7 @@
 name = "smoldyn"
 version = "@SMOLDYN_VERSION@"
 readme = "../README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     {name = "Steve Andrews", email = "steve.andrews@epcc.ed.ac.uk"},
     {name = "Dilawar Singh", email = "dilawar.s.rajput@gmail.com"}
