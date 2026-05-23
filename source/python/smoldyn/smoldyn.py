@@ -1388,7 +1388,7 @@ class Reaction(object):
 
     @property
     def rate(self) -> float:
-        return self.simulation.getReactionRate(self.name)
+        return float(self.simulation.getReactionRate(self.name))
 
     @rate.setter
     def rate(self, rate: float) -> None:
