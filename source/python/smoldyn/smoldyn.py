@@ -1739,7 +1739,7 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
             self.accuracy: float = accuracy
         self.setOutputFiles(output_files)
         if seed >= 0:
-            self.randomSeed = seed
+            super().setRandomSeed(seed)
         self.quitatend = quit_at_end
 
     @classmethod
