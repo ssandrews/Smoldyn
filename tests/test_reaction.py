@@ -27,7 +27,7 @@ class TestReactionConstruction:
         assert isinstance(r, S.Reaction)
         assert r.name == "decay"
         assert r.order == 1
-        assert r.rate == 0.0  # rate property is only updated by the setter, not __init__
+        assert r.rate == 0.1  # rate is read back from libsmoldyn
 
     def test_bimolecular(self):
         sim, sp = _sim_with_species("A", "B", "C")
@@ -155,6 +155,25 @@ class TestBidirectionalReaction:
         )
         assert br.kf == 0.5
         assert br.kb == 0.25
+
+    def test_kf_setter(self):
+        sim, sp = _sim_with_species("A", "B")
+        br = sim.addBidirectionalReaction(
+            "rxn", subs=[sp["A"]], prds=[sp["B"]], kf=0.5, kb=0.25
+        )
+        br.kf = 1.5
+        assert br.kf == 1.5
+        assert br.forward.rate == 1.5
+
+    def test_kb_setter(self):
+        sim, sp = _sim_with_species("A", "B")
+        br = sim.addBidirectionalReaction(
+            "rxn", subs=[sp["A"]], prds=[sp["B"]], kf=0.5, kb=0.25
+        )
+        br.kb = 0.75
+        assert br.kb == 0.75
+        assert br.reverse is not None
+        assert br.reverse.rate == 0.75
 
     def test_kb_setter_requires_reverse(self):
         # When kb=0, reverse is None; the kb setter asserts reverse exists.
