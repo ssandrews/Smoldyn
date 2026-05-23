@@ -1917,6 +1917,24 @@ extern CSTRING enum ErrorCode smolSetReactionRate(simptr sim,const char *reactio
 	return Liberrorcode; }
 
 
+/* smolGetReactionRate */
+extern CSTRING enum ErrorCode smolGetReactionRate(simptr sim,const char *reaction,double *rate) {
+	const char *funcname="smolGetReactionRate";
+	int r,order;
+	rxnptr rxn;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(rate,funcname,ECmissing,"missing rate pointer");
+	order=-1;
+	r=smolGetReactionIndexNT(sim,&order,reaction);
+	LCHECK(r>=0,funcname,ECsame,NULL);
+	rxn=sim->rxnss[order]->rxn[r];
+	*rate=rxn->rate;
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
 /* smolSetReactionRegion */
 extern CSTRING enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface) {
 	const char *funcname="smolSetReactionRegion";
