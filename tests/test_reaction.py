@@ -93,14 +93,114 @@ class TestReactionRate:
         assert r.rate == 2.5
 
     def test_rate_setter_idempotent_same_value(self):
-        # smoldyn.py:1396 — setter only forwards to libsmoldyn when the value
-        # actually changes. We can't directly observe that, but we can confirm
-        # setting the same value again doesn't fail.
         sim, sp = _sim_with_species("A", "B")
         r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
         r.rate = 2.5
         r.rate = 2.5
         assert r.rate == 2.5
+
+    def test_rate_setter_rejects_negative(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        with pytest.raises(AssertionError):
+            r.rate = -1.0
+
+
+# ---------- Reaction probability ----------
+
+
+class TestReactionProbability:
+    def test_default_is_zero(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        assert r.reaction_probability == 0.0
+
+    def test_set_via_constructor_unimolecular(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction(
+            "x", subs=[sp["A"]], prds=[sp["B"]], reaction_probability=0.3
+        )
+        assert r.reaction_probability == 0.3
+
+    def test_set_via_property_unimolecular(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        r.reaction_probability = 0.4
+        assert r.reaction_probability == 0.4
+
+    def test_bimolecular_above_one_rejected(self):
+        sim, sp = _sim_with_species("A", "B", "C")
+        r = sim.addReaction(
+            "bind", subs=[sp["A"], sp["B"]], prds=[sp["C"]], rate=0.5
+        )
+        with pytest.raises(AssertionError):
+            r.reaction_probability = 1.5
+
+    def test_negative_rejected(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        with pytest.raises(AssertionError):
+            r.reaction_probability = -0.1
+
+
+# ---------- Binding radius ----------
+
+
+class TestBindingRadius:
+    def test_default_is_zero(self):
+        sim, sp = _sim_with_species("A", "B", "C")
+        r = sim.addReaction(
+            "bind", subs=[sp["A"], sp["B"]], prds=[sp["C"]], rate=0.5
+        )
+        assert r.binding_radius == 0.0
+
+    def test_set_via_constructor(self):
+        sim, sp = _sim_with_species("A", "B", "C")
+        r = sim.addReaction(
+            "bind", subs=[sp["A"], sp["B"]], prds=[sp["C"]], binding_radius=0.2
+        )
+        assert r.binding_radius == 0.2
+
+    def test_set_via_property(self):
+        sim, sp = _sim_with_species("A", "B", "C")
+        r = sim.addReaction(
+            "bind", subs=[sp["A"], sp["B"]], prds=[sp["C"]], rate=0.5
+        )
+        r.binding_radius = 0.3
+        assert r.binding_radius == 0.3
+
+    def test_rejected_on_unimolecular(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        with pytest.raises(AssertionError):
+            r.binding_radius = 0.5
+
+    def test_negative_rejected(self):
+        sim, sp = _sim_with_species("A", "B", "C")
+        r = sim.addReaction(
+            "bind", subs=[sp["A"], sp["B"]], prds=[sp["C"]], rate=0.5
+        )
+        with pytest.raises(AssertionError):
+            r.binding_radius = -0.1
+
+
+# ---------- Deprecated setRate shim ----------
+
+
+class TestSetRateDeprecated:
+    def test_emits_deprecation_warning(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        with pytest.warns(DeprecationWarning, match="setRate is deprecated"):
+            r.setRate(2.0)
+        assert r.rate == 2.0
+
+    def test_sentinel_routes_to_probability(self):
+        sim, sp = _sim_with_species("A", "B")
+        r = sim.addReaction("x", subs=[sp["A"]], prds=[sp["B"]], rate=0.1)
+        with pytest.warns(DeprecationWarning):
+            r.setRate(-1.0, reaction_probability=0.4)
+        assert r.reaction_probability == 0.4
 
 
 # ---------- Intersurface ----------
