@@ -648,6 +648,14 @@ PYBIND11_MODULE(_smoldyn, m)
             return sim.addCommand(cmd, cmd_type, options);
         })
 
+      .def("addCommandStr",
+        [](Simulation& sim, const string& cmd) {
+            // addCommandStr takes a non-const char*; copy into a local buffer.
+            std::vector<char> buf(cmd.begin(), cmd.end());
+            buf.push_back('\0');
+            sim.addCommandStr(buf.data());
+        })
+
       .def("runCommand",
         [](Simulation& sim, const char* commandstring) {
             return smolRunCommand(sim.getSimPtr(), commandstring);
