@@ -416,14 +416,20 @@ PYBIND11_MODULE(_smoldyn, m)
       /* Data */
       .def("getOutputData",
         [](Simulation& sim, char* dataname, bool erase) {
-            int nrow, ncol;
-            double* array;
+            // Initialize so a smolGetOutputData failure path (which leaves
+            // these unset) does not lead to UB when we read them.
+            int nrow = 0, ncol = 0;
+            double* array = nullptr;
 
-            smolGetOutputData(sim.getSimPtr(), dataname, &nrow, &ncol, &array, erase);
-            assert(array);
-            std::vector<vector<double>> cppdata(nrow);
-            for (int i = 0; i < nrow; i++)
-                cppdata[i] = vector<double>(array + i * ncol, array + (i + 1) * ncol);
+            auto rc = smolGetOutputData(sim.getSimPtr(), dataname,
+                                        &nrow, &ncol, &array, erase);
+            std::vector<vector<double>> cppdata;
+            if (rc == ErrorCode::ECok && array && nrow > 0 && ncol > 0) {
+                cppdata.resize(nrow);
+                for (int i = 0; i < nrow; i++)
+                    cppdata[i] = vector<double>(array + i * ncol,
+                                                array + (i + 1) * ncol);
+            }
             if (array)
                 free(array);
             return cppdata;
