@@ -763,6 +763,14 @@ extern CSTRING enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *n
 	LCHECK(did>=0,funcname,ECerror,"no data file of the requested name");
 	list=sim->cmds->data[did];
 
+	if(!list) {
+		// Data table was registered via smolAddOutputData but no command has
+		// populated it yet — return an empty result rather than dereferencing.
+		*nrow=0;
+		*ncol=0;
+		*array=NULL;
+		return ECok; }
+
     datacopy=(double*) calloc(list->nrow*list->ncol,sizeof(double));
     LCHECK(datacopy,funcname,ECmemory,"out of memory");
     for(i=0;i<list->nrow;i++)
