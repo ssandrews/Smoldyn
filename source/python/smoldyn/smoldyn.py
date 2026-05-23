@@ -398,7 +398,7 @@ class Panel(object):
         return v
 
     def toText(self) -> str:
-        return f"panel {self.ctype} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
+        return f"panel {self.ctype.name} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
 
     @property
     def neighbors(self) -> List["Panel"]:

@@ -56,7 +56,7 @@ class TestRectangle:
 
     def test_to_text(self):
         r = S.Rectangle(corner=(0, 10, 1), dimensions=(10, 20), axis="+x", name="A")
-        assert r.toText() == "panel PanelShape.rect +x 0 10 1 10 20 A"
+        assert r.toText() == "panel rect +x 0 10 1 10 20 A"
 
     def test_to_text_unnamed_strips_trailing_space(self):
         r = S.Rectangle(corner=(0, 0), dimensions=(1,), axis="+x")
@@ -83,7 +83,7 @@ class TestTriangle:
 
     def test_to_text(self):
         t = S.Triangle(vertices=[[0, 0, 0], [1, 1, 1], [1, 3, -10]], name="t1")
-        assert t.toText() == "panel PanelShape.tri  0 0 0 1 1 1 1 3 -10 t1"
+        assert t.toText() == "panel tri  0 0 0 1 1 1 1 3 -10 t1"
 
 
 # ---------- Sphere ----------
@@ -114,7 +114,7 @@ class TestSphere:
 
     def test_to_text(self):
         sph = S.Sphere(center=[0, -10, 0], radius=3, slices=10, stacks=10, name="s1")
-        assert sph.toText() == "panel PanelShape.sph  0 -10 0 3 10 10 s1"
+        assert sph.toText() == "panel sph  0 -10 0 3 10 10 s1"
 
 
 # ---------- Hemisphere ----------
@@ -174,7 +174,7 @@ class TestCylinder:
             stacks=20,
             name="cyl1",
         )
-        assert c.toText() == "panel PanelShape.cyl  20 30 70 20 50 70 4 20 20 cyl1"
+        assert c.toText() == "panel cyl  20 30 70 20 50 70 4 20 20 cyl1"
 
 
 # ---------- Disk ----------

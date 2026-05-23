@@ -15,11 +15,11 @@ def test_rectangles():
     lines.
 
     >>> test_rectangles()
-    panel PanelShape.rect +x 0 10 1 10 20 A
-    panel PanelShape.tri  0 0 0 1 1 1 1 3 -10 t1
-    panel PanelShape.sph  0 -10 0 3 10 10 s1
-    panel PanelShape.cyl  20 30 70 20 50 70 4 20 20 cyl1
-    panel PanelShape.disk  20 20 20 10 10 20 20 10 d1
+    panel rect +x 0 10 1 10 20 A
+    panel tri  0 0 0 1 1 1 1 3 -10 t1
+    panel sph  0 -10 0 3 10 10 s1
+    panel cyl  20 30 70 20 50 70 4 20 20 cyl1
+    panel disk  20 20 20 10 10 20 20 10 d1
     """
     r1 = S.Rectangle((0, 10, 1), dimensions=(10, 20), axis="+x", name="A")
     print(r1.toText())
