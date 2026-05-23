@@ -1365,7 +1365,7 @@ class Reaction(object):
                 prdStates.append(_toMS(x[1]))
 
         k = self.simulation.addReaction(
-            name,
+            self.name,
             r1name,
             r1state,
             r2name,
