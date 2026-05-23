@@ -431,7 +431,7 @@ class Panel(object):
     def _getName(self, index: int) -> str:
         if self.name:
             return self.name
-        return f"{self.ctype}{index}"
+        return f"{self.ctype.name}{index}"
 
     def setNeighbors(self, panels: List["Panel"], reciprocal: bool = False) -> None:
         """Set neighbors.

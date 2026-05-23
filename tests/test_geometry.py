@@ -209,8 +209,8 @@ class TestDisk:
 class TestPanelBase:
     def test_default_name_when_unnamed(self):
         sph = S.Sphere(center=[0, 0, 0], radius=1, slices=4)
-        # _getName falls back to "<ctype><index>" when name is empty.
-        assert sph._getName(7) == f"{_smoldyn.PanelShape.sph}7"
+        # _getName falls back to "<ctype-name><index>" when name is empty.
+        assert sph._getName(7) == "sph7"
 
     def test_explicit_name_wins_over_index(self):
         sph = S.Sphere(center=[0, 0, 0], radius=1, slices=4, name="mysph")
