@@ -1329,10 +1329,12 @@ class Reaction(object):
         self.name = "r%d" % id(self) if not name else name
         self.subs = subs
         self.prds = prds
-        self.reaction_probability = reaction_probability
-        self.binding_radius = binding_radius
         self.compartment = compartment
         self.surface = surface
+        # Caches for properties whose values libsmoldyn doesn't expose a getter
+        # for. Updated by the property setters below.
+        self._reaction_probability = reaction_probability
+        self._binding_radius = binding_radius
 
         assert len(subs) < 3, "At most two reactants are supported."
         if subs is None or len(subs) == 0:
@@ -1378,7 +1380,14 @@ class Reaction(object):
             __logger__.warning(f" Products: {prds}, {prdNames}/{prdStates}")
             raise RuntimeError(f"Failed to add reaction, ErrorCode {k}")
 
-        self.setRate(rate, reaction_probability, binding_radius)
+        # simulation.addReaction(...) above already registered the macroscopic
+        # rate. Apply the other kinetic parameters only if the user supplied a
+        # non-default value.
+        if reaction_probability:
+            self.reaction_probability = reaction_probability
+        if binding_radius:
+            self.binding_radius = binding_radius
+
         if self.compartment is not None or self.surface is not None:
             cname = self.compartment.name if self.compartment else ""
             sname = self.surface.name if self.surface else ""
@@ -1386,13 +1395,57 @@ class Reaction(object):
             k = self.simulation.setReactionRegion(self.name, cname, sname)
             assert k == _smoldyn.ErrorCode.ok
 
+    # Macroscopic rate constant. Read live from libsmoldyn via
+    # smolGetReactionRate; write via smolSetReactionRate(..., isinternal=0).
     @property
     def rate(self) -> float:
         return float(self.simulation.getReactionRate(self.name))
 
     @rate.setter
-    def rate(self, rate: float) -> None:
-        self.setRate(rate)
+    def rate(self, val: float) -> None:
+        assert val >= 0.0, f"rate must be non-negative, got {val}"
+        k = self.simulation.setReactionRate(self.name, val, 0)
+        assert k == _smoldyn.ErrorCode.ok
+
+    # Reaction probability. libsmoldyn exposes no getter for this field, so
+    # the property returns the last-set value cached on the instance.
+    # Underlying C API: smolSetReactionRate(..., isinternal=1) for order<2 or
+    # isinternal=2 for order==2 (see source/Smoldyn/libsmoldyn.cpp:1905-1912).
+    @property
+    def reaction_probability(self) -> float:
+        return self._reaction_probability
+
+    @reaction_probability.setter
+    def reaction_probability(self, val: float) -> None:
+        assert val >= 0.0, f"reaction_probability must be non-negative, got {val}"
+        if self.order >= 2:
+            assert val <= 1.0, (
+                f"reaction_probability for bimolecular reactions must be in [0,1], got {val}"
+            )
+            isinternal = 2
+        else:
+            isinternal = 1
+        k = self.simulation.setReactionRate(self.name, val, isinternal)
+        assert k == _smoldyn.ErrorCode.ok
+        self._reaction_probability = val
+
+    # Smoluchowski binding radius (bimolecular reactions only). Cached for
+    # the same reason as reaction_probability. Underlying C API:
+    # smolSetReactionRate(..., isinternal=1) — same isinternal as the
+    # unimolecular probability path, but disambiguated by reaction order.
+    @property
+    def binding_radius(self) -> float:
+        return self._binding_radius
+
+    @binding_radius.setter
+    def binding_radius(self, val: float) -> None:
+        assert self.order == 2, (
+            "binding_radius only applies to bimolecular reactions"
+        )
+        assert val >= 0.0, f"binding_radius must be non-negative, got {val}"
+        k = self.simulation.setReactionRate(self.name, val, 1)
+        assert k == _smoldyn.ErrorCode.ok
+        self._binding_radius = val
 
     def setRate(
         self,
@@ -1400,30 +1453,32 @@ class Reaction(object):
         reaction_probability: None | float = None,
         binding_radius: float = -1.0,
     ) -> None:
-        # if rate is negative, then we expect either binding_radius or
-        # reaction_probability. A reaction can have zero rate.
-        if rate >= 0.0:
-            k = self.simulation.setReactionRate(self.name, rate, False)
-            assert k == _smoldyn.ErrorCode.ok
-            return
+        """Deprecated. Use the .rate, .reaction_probability, and
+        .binding_radius properties instead.
 
-        # check if reaction_probability is set when rate is not set.
-        if len(self.subs) < 2:
+        rate < 0 was historically a sentinel meaning "ignore rate; set one of
+        the other two parameters instead." This shim preserves that behavior
+        for any back-compat callers.
+        """
+        warnings.warn(
+            "Reaction.setRate is deprecated; use the .rate, "
+            ".reaction_probability, and .binding_radius properties instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if rate >= 0.0:
+            self.rate = rate
+            return
+        if self.order < 2:
             assert reaction_probability is not None, (
                 "Must set rate or reaction_probability"
             )
-            k = self.simulation.setReactionRate(self.name, reaction_probability, True)
-            assert k == _smoldyn.ErrorCode.ok
+            self.reaction_probability = reaction_probability
         else:
             if reaction_probability is not None:
-                assert 0.0 <= reaction_probability <= 1.0, (
-                    "reaction_probability must be between 0 and 1"
-                )
-                k = self.simulation.setReactionRate(self.name, reaction_probability, 2)
-                assert k == _smoldyn.ErrorCode.ok
+                self.reaction_probability = reaction_probability
             if binding_radius >= 0.0:
-                k = self.simulation.setReactionRate(self.name, binding_radius, True)
-                assert k == _smoldyn.ErrorCode.ok
+                self.binding_radius = binding_radius
 
     @property
     def order(self) -> int:
