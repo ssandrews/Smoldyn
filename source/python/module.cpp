@@ -1209,6 +1209,16 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetReactionRate(sim.getSimPtr(), reaction, rate, type);
         })
 
+      .def("getReactionRate",
+        [](Simulation& sim, const char* reaction) {
+            double rate = 0.0;
+            auto rc = smolGetReactionRate(sim.getSimPtr(), reaction, &rate);
+            if (rc != ErrorCode::ECok)
+                throw std::runtime_error(string("getReactionRate failed for '") +
+                                         reaction + "'");
+            return rate;
+        })
+
       // enum ErrorCode smolSetReactionRegion(simptr sim, const char
       // *reaction, const char *compartment, const char *surface);
       .def("setReactionRegion",
