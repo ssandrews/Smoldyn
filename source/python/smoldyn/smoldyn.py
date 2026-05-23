@@ -398,7 +398,7 @@ class Panel(object):
         return v
 
     def toText(self) -> str:
-        return f"panel {self.ctype} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
+        return f"panel {self.ctype.name} {self.axisstr} {' '.join(map(str, self.pts))} {self.name}".strip()
 
     @property
     def neighbors(self) -> List["Panel"]:
@@ -431,7 +431,7 @@ class Panel(object):
     def _getName(self, index: int) -> str:
         if self.name:
             return self.name
-        return f"{self.ctype}{index}"
+        return f"{self.ctype.name}{index}"
 
     def setNeighbors(self, panels: List["Panel"], reciprocal: bool = False) -> None:
         """Set neighbors.
@@ -1327,7 +1327,6 @@ class Reaction(object):
         """
         self.simulation = simulation
         self.name = "r%d" % id(self) if not name else name
-        self.__rate = 0.0
         self.subs = subs
         self.prds = prds
         self.reaction_probability = reaction_probability
@@ -1365,7 +1364,7 @@ class Reaction(object):
                 prdStates.append(_toMS(x[1]))
 
         k = self.simulation.addReaction(
-            name,
+            self.name,
             r1name,
             r1state,
             r2name,
@@ -1389,13 +1388,11 @@ class Reaction(object):
 
     @property
     def rate(self) -> float:
-        return self.__rate
+        return float(self.simulation.getReactionRate(self.name))
 
     @rate.setter
     def rate(self, rate: float) -> None:
-        if rate != self.__rate:
-            self.__rate = rate
-            self.setRate(rate)
+        self.setRate(rate)
 
     def setRate(
         self,
@@ -1560,8 +1557,6 @@ class BidirectionalReaction(object):
         self.simulation = simulation
         self.name = f"r{id(self):d}" if not name else name
         fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
-        self._kf = kf
-        self._kb = kb
         self.forward = Reaction(
             self.simulation,
             fwdname,
@@ -1575,33 +1570,33 @@ class BidirectionalReaction(object):
         )
 
         self.reverse = None
-        if self._kb > 0.0:
+        if kb > 0.0:
             self.reverse = Reaction(
                 self.simulation,
                 revname,
                 prds,
                 subs,
-                rate=self._kb,
+                rate=kb,
                 compartment=compartment,
                 surface=surface,
             )
 
     @property
     def kf(self) -> float:
-        return self._kf
+        return self.forward.rate
 
     @kf.setter
     def kf(self, val: float) -> None:
-        self.forward.setRate(val)
+        self.forward.rate = val
 
     @property
     def kb(self) -> float:
-        return self._kb
+        return self.reverse.rate if self.reverse else 0.0
 
     @kb.setter
     def kb(self, val: float) -> None:
         assert self.reverse
-        self.reverse.setRate(val)
+        self.reverse.rate = val
 
 
 @dataclass
@@ -1739,7 +1734,7 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
             self.accuracy: float = accuracy
         self.setOutputFiles(output_files)
         if seed >= 0:
-            self.randomSeed = seed
+            super().setRandomSeed(seed)
         self.quitatend = quit_at_end
 
     @classmethod
@@ -1756,6 +1751,8 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
         #  return _smoldyn.Simulation(str(path), arg)
         obj = cls.__new__(cls)
         path = Path(path).resolve()  # critical.
+        if not path.exists():
+            raise FileNotFoundError(str(path))
         super(Simulation, obj).__init__(str(path), arg)
         return obj
 

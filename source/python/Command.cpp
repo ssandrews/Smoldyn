@@ -33,19 +33,23 @@ Command::~Command() {}
 void
 Command::addCommandToSimptr()
 {
-    if (__allowed_cmd_type__.find_first_of(cmd_type_) == string::npos) {
-        std::cerr << "Command type '" << cmd_type_ << "' is not supported." << std::endl;
-        throw std::runtime_error("invalid command type");
-    }
-
-    char* cmd = strdup(cmd_.c_str());
-
     if (from_string_) {
+        // The single-arg Command constructor used by addCommandStr does not
+        // initialize cmd_type_, so validating it here would read garbage.
+        // For from-string commands the type is embedded in the string and
+        // parsed by libsmoldyn.
+        char* cmd = strdup(cmd_.c_str());
         auto k = smolAddCommandFromString(sim_, cmd);
+        free(cmd);
         if (k != ErrorCode::ECok)
             throw std::runtime_error("Failed to add command " + cmd_);
         added_ = true;
         return;
+    }
+
+    if (__allowed_cmd_type__.find_first_of(cmd_type_) == string::npos) {
+        std::cerr << "Command type '" << cmd_type_ << "' is not supported." << std::endl;
+        throw std::runtime_error("invalid command type");
     }
 
     if ('@' == cmd_type_)

@@ -416,14 +416,20 @@ PYBIND11_MODULE(_smoldyn, m)
       /* Data */
       .def("getOutputData",
         [](Simulation& sim, char* dataname, bool erase) {
-            int nrow, ncol;
-            double* array;
+            // Initialize so a smolGetOutputData failure path (which leaves
+            // these unset) does not lead to UB when we read them.
+            int nrow = 0, ncol = 0;
+            double* array = nullptr;
 
-            smolGetOutputData(sim.getSimPtr(), dataname, &nrow, &ncol, &array, erase);
-            assert(array);
-            std::vector<vector<double>> cppdata(nrow);
-            for (int i = 0; i < nrow; i++)
-                cppdata[i] = vector<double>(array + i * ncol, array + (i + 1) * ncol);
+            auto rc = smolGetOutputData(sim.getSimPtr(), dataname,
+                                        &nrow, &ncol, &array, erase);
+            std::vector<vector<double>> cppdata;
+            if (rc == ErrorCode::ECok && array && nrow > 0 && ncol > 0) {
+                cppdata.resize(nrow);
+                for (int i = 0; i < nrow; i++)
+                    cppdata[i] = vector<double>(array + i * ncol,
+                                                array + (i + 1) * ncol);
+            }
             if (array)
                 free(array);
             return cppdata;
@@ -646,6 +652,14 @@ PYBIND11_MODULE(_smoldyn, m)
             for (auto it = kwargs.begin(); it != kwargs.end(); it++)
                 options[it->first.cast<string>()] = it->second.cast<double>();
             return sim.addCommand(cmd, cmd_type, options);
+        })
+
+      .def("addCommandStr",
+        [](Simulation& sim, const string& cmd) {
+            // addCommandStr takes a non-const char*; copy into a local buffer.
+            std::vector<char> buf(cmd.begin(), cmd.end());
+            buf.push_back('\0');
+            sim.addCommandStr(buf.data());
         })
 
       .def("runCommand",
@@ -1193,6 +1207,16 @@ PYBIND11_MODULE(_smoldyn, m)
       .def("setReactionRate",
         [](Simulation& sim, const char* reaction, double rate, int type) {
             return smolSetReactionRate(sim.getSimPtr(), reaction, rate, type);
+        })
+
+      .def("getReactionRate",
+        [](Simulation& sim, const char* reaction) {
+            double rate = 0.0;
+            auto rc = smolGetReactionRate(sim.getSimPtr(), reaction, &rate);
+            if (rc != ErrorCode::ECok)
+                throw std::runtime_error(string("getReactionRate failed for '") +
+                                         reaction + "'");
+            return rate;
         })
 
       // enum ErrorCode smolSetReactionRegion(simptr sim, const char
