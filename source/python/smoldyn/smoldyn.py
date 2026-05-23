@@ -1557,8 +1557,6 @@ class BidirectionalReaction(object):
         self.simulation = simulation
         self.name = f"r{id(self):d}" if not name else name
         fwdname, revname = (name + "fwd", name + "rev") if kb > 0.0 else (name, "")
-        self._kf = kf
-        self._kb = kb
         self.forward = Reaction(
             self.simulation,
             fwdname,
@@ -1572,33 +1570,33 @@ class BidirectionalReaction(object):
         )
 
         self.reverse = None
-        if self._kb > 0.0:
+        if kb > 0.0:
             self.reverse = Reaction(
                 self.simulation,
                 revname,
                 prds,
                 subs,
-                rate=self._kb,
+                rate=kb,
                 compartment=compartment,
                 surface=surface,
             )
 
     @property
     def kf(self) -> float:
-        return self._kf
+        return self.forward.rate
 
     @kf.setter
     def kf(self, val: float) -> None:
-        self.forward.setRate(val)
+        self.forward.rate = val
 
     @property
     def kb(self) -> float:
-        return self._kb
+        return self.reverse.rate if self.reverse else 0.0
 
     @kb.setter
     def kb(self, val: float) -> None:
         assert self.reverse
-        self.reverse.setRate(val)
+        self.reverse.rate = val
 
 
 @dataclass
