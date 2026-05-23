@@ -1327,7 +1327,6 @@ class Reaction(object):
         """
         self.simulation = simulation
         self.name = "r%d" % id(self) if not name else name
-        self.__rate = 0.0
         self.subs = subs
         self.prds = prds
         self.reaction_probability = reaction_probability
@@ -1389,13 +1388,11 @@ class Reaction(object):
 
     @property
     def rate(self) -> float:
-        return self.__rate
+        return self.simulation.getReactionRate(self.name)
 
     @rate.setter
     def rate(self, rate: float) -> None:
-        if rate != self.__rate:
-            self.__rate = rate
-            self.setRate(rate)
+        self.setRate(rate)
 
     def setRate(
         self,
