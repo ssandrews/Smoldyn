@@ -1756,6 +1756,8 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
         #  return _smoldyn.Simulation(str(path), arg)
         obj = cls.__new__(cls)
         path = Path(path).resolve()  # critical.
+        if not path.exists():
+            raise FileNotFoundError(str(path))
         super(Simulation, obj).__init__(str(path), arg)
         return obj
 
