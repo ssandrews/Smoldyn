@@ -121,6 +121,9 @@ int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
 int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
+filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername);
+int filBranchDynamics(simptr sim,filamenttypeptr filtype);
+void filPinBranches(filamentptr fil);
 
 // Filament interactions
 int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr);
@@ -510,7 +513,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		for(;br<maxbranch;br++) {
 			newbranchspots[br]=0;
 			newbranches[br]=NULL; }
-		free(fil->branchspots);					// was allocated and copied into but never reassigned (NULL-deref/leak)
+		free(fil->branchspots);					// was leaked and never reassigned (latent bug)
 		fil->branchspots=newbranchspots;
 		free(fil->branches);
 		fil->branches=newbranches;
@@ -591,6 +594,14 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->treadrate=0;
 		filtype->mobility=1;
 		filtype->filradius=1;
+
+		filtype->branchrate=0;											// branching off by default
+		filtype->branchangle[0]=70.0*PI/180.0;			// Arp2/3 ~70 deg yaw
+		filtype->branchangle[1]=0;
+		filtype->branchangle[2]=0;
+		filtype->branchspread=0;
+		filtype->branchsegments=1;									// daughters born as a single segment
+		filtype->branchtype=NULL;										// NULL => daughters share mother's type
 
 		filtype->maxface=0;
 		filtype->nface=0;
@@ -841,6 +852,12 @@ void filtypeOutput(const filamenttypeptr filtype) {
 
 	simLog(sim,2,"  kT: %g|E\n",filtype->kT);
 	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g\n",filtype->treadrate);
+	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
+	if(filtype->branchrate>0) {
+		simLog(sim,2,"  branch angle (ypr): %g %g %g\n",filtype->branchangle[0],filtype->branchangle[1],filtype->branchangle[2]);
+		simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
+		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments);
+		simLog(sim,2,"  daughter type: %s\n",filtype->branchtype?filtype->branchtype->ftname:filtype->ftname); }
 	simLog(sim,2,"  mobility: %g\n",filtype->mobility);
 	simLog(sim,2,"  filament radius: %g\n",filtype->filradius);
 
@@ -978,6 +995,22 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"treadrate")) {
 		filtype->treadrate=value; }
+
+	else if(!strcmp(param,"branchrate")) {						// branch nucleation rate
+		if(value<0) er=2;
+		else filtype->branchrate=value; }
+
+	else if(!strcmp(param,"branchangle")) {						// mean branch angle (ypr component)
+		if(index<0) filtype->branchangle[0]=filtype->branchangle[1]=filtype->branchangle[2]=value;
+		else filtype->branchangle[index]=value; }
+
+	else if(!strcmp(param,"branchspread")) {					// angular spread of branch
+		if(value<0) er=2;
+		else filtype->branchspread=value; }
+
+	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
+		if(value<1) er=2;
+		else filtype->branchsegments=(int)(value+0.5); }
 
 	else if(!strcmp(param,"mobility")) {
 		if(value<=0) er=2;
@@ -1279,6 +1312,39 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"treadrate",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following treadmill_rate"); }
 
+	else if(!strcmp(word,"branch_rate")) {			// branch_rate (per unit length per time)
+		CHECKS(filtype,"need to enter filament type name before branch_rate");
+		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_rate format: value. ");
+		CHECKS(f1>=0,"branch_rate value needs to be >=0");
+		filtypeSetParam(filtype,"branchrate",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_rate"); }
+
+	else if(!strcmp(word,"branch_angle")) {			// branch_angle: yaw [pitch roll], radians
+		CHECKS(filtype,"need to enter filament type name before branch_angle");
+		fltv1[0]=fltv1[1]=fltv1[2]=0;
+		itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&fltv1[0],&fltv1[1],&fltv1[2]);
+		CHECKM(itct>=1,"branch_angle format: yaw [pitch roll]. ");
+		filtypeSetParam(filtype,"branchangle",0,fltv1[0]);
+		filtypeSetParam(filtype,"branchangle",1,fltv1[1]);
+		filtypeSetParam(filtype,"branchangle",2,fltv1[2]); }
+
+	else if(!strcmp(word,"branch_spread")) {		// branch_spread: angular std dev, radians
+		CHECKS(filtype,"need to enter filament type name before branch_spread");
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_spread format: value. ");
+		CHECKS(f1>=0,"branch_spread value needs to be >=0");
+		filtypeSetParam(filtype,"branchspread",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_spread"); }
+
+	else if(!strcmp(word,"branch_segments")) {	// branch_segments: daughter length in segments
+		CHECKS(filtype,"need to enter filament type name before branch_segments");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"branch_segments format: number. ");
+		CHECKS(i1>=1,"branch_segments value needs to be >=1");
+		filtypeSetParam(filtype,"branchsegments",0,(double)i1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_segments"); }
+
 	else if(!strcmp(word,"mobility")) {			// mobility
 		CHECKS(filtype,"need to enter filament type name before mobility");
 		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);				//?? Units are incorrect
@@ -1575,6 +1641,28 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			CHECKS(fil2,"failed to add filament"); }
 		er=filCopyFilament(fil2,fil,filtype2);
 		CHECKS(!strnword(line2,2),"unexpected text following copy_to"); }
+
+	else if(!strcmp(word,"branch")) {							// branch: daughtername segment [yaw pitch roll]
+		CHECKS(fil,"need to enter filament name before branch");
+		CHECKS(fil->nseg>0,"mother filament has no segments to branch from");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch format: daughter_name segment [yaw pitch roll]");
+		line2=strnword(line2,2);
+		CHECKS(line2,"branch format: daughter_name segment [yaw pitch roll]");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&seg);
+		CHECKM(itct==1,"branch format: daughter_name segment [yaw pitch roll]. ");
+		CHECKS(seg>=0 && seg<fil->nseg,"branch segment is not within the mother filament");
+		angle[0]=fil->filtype->branchangle[0];					// default to the filament type's branch angle
+		angle[1]=fil->filtype->branchangle[1];
+		angle[2]=fil->filtype->branchangle[2];
+		line2=strnword(line2,2);
+		if(line2) {
+			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
+			CHECKM(itct==3 || itct==1,"branch angle needs 1 or 3 values. ");
+			if(dim==2) angle[1]=angle[2]=0; }
+		thick=fil->segments[seg]->thk;
+		fil2=filAddBranch(sim,fil,seg,angle,thick,nm1);
+		CHECKS(fil2,"failed to create branch"); }
 
 	else if(!strcmp(word,"sequence")) {						// sequence
 		CHECKS(fil,"need to enter filament name before sequence");
@@ -2559,6 +2647,127 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 
 
 /******************************************************************************/
+/**************************** filament branching **************************/
+/******************************************************************************/
+
+
+/* filAddBranch */
+// Nucleate a daughter filament off the side of an existing "mother" filament, at
+// mother segment index `seg`. `angle` is the daughter's orientation as ypr relative
+// to the mother segment's absolute frame (yaw ~= 70 deg for Arp2/3). Returns the new
+// daughter filament, with the mother<->daughter relationship recorded, or NULL on error.
+filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername) {
+	filamenttypeptr mothertype,daughtertype;
+	filamentptr daughter;
+	segmentptr mseg;
+	double branchpos[3],qbranch[4],qdaughter[4],daughterypr[3],len,straight[3]={0,0,0};
+	int br,s,nseg;
+	(void) sim;
+
+	if(!mother || mother->nseg==0) return NULL;						// need a real mother
+	if(seg<0 || seg>=mother->nseg) return NULL;						// branch spot must be a real segment
+	mothertype=mother->filtype;
+	daughtertype=mothertype->branchtype?mothertype->branchtype:mothertype;	// self-type by default
+	nseg=mothertype->branchsegments>0?mothertype->branchsegments:1;	// daughter length in segments
+
+	daughter=filAddFilament(daughtertype,daughtername);		// auto-named if daughtername is NULL
+	if(!daughter) return NULL;
+
+	mseg=mother->segments[seg];											// branch point = back node of chosen segment
+	branchpos[0]=mseg->xyzback[0];
+	branchpos[1]=mseg->xyzback[1];
+	branchpos[2]=mseg->xyzback[2];
+
+	Sph_Ypr2Qtn(angle,qbranch);											// branch rotation in mother's frame
+	Sph_QtnxQtn(mseg->qabs,qbranch,qdaughter);				// compose onto mother-segment absolute orientation
+	Sph_Qtn2Ypr(qdaughter,daughterypr);							// filAddSegment (seg 0) expects a lab-frame ypr
+
+	len=filRandomLength(daughtertype,thickness,1);
+	if(filAddSegment(daughter,branchpos,len,daughterypr,thickness,'b')) return NULL;
+	for(s=1;s<nseg;s++) {													// extend the daughter straight from the branch
+		len=filRandomLength(daughtertype,thickness,1);
+		if(filAddSegment(daughter,NULL,len,straight,thickness,'b')) return NULL; }
+
+	if(mother->nbranch==mother->maxbranch) {					// grow the branch arrays if needed
+		mother=filAlloc(mother,0,mother->maxbranch*2+1,0);
+		if(!mother) return NULL; }
+	br=mother->nbranch++;
+	mother->branchspots[br]=seg;
+	mother->branches[br]=daughter;
+	daughter->backend=mother;												// daughter's pointed end is anchored to the mother
+
+	filSetCondition(daughtertype->filss,SClists,0);
+	return daughter; }
+
+
+/* filBranchDynamics */
+// Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a
+// Poisson number of new branches proportional to (branchrate * mother length * dt),
+// and attach each at a uniformly random position along a mother filament. Mirrors the
+// treadmilling block in filDynamics.
+int filBranchDynamics(simptr sim,filamenttypeptr filtype) {
+	int f,nfil0,seg,nbr,i,dim;
+	double totallen,angle[3],thick;
+	filamentptr fil;
+
+	if(filtype->branchrate<=0) return 0;
+	dim=sim->dim;
+	nfil0=filtype->nfil;												// snapshot: don't branch off daughters born this step
+
+	for(f=0;f<nfil0;f++) {
+		fil=filtype->fillist[f];
+		if(fil->nseg<1) continue;
+		totallen=0;
+		for(seg=0;seg<fil->nseg;seg++) totallen+=fil->segments[seg]->len;
+
+		nbr=poisrandD(filtype->branchrate*totallen*sim->dt);
+		for(i=0;i<nbr;i++) {
+			seg=(int)(unirandCOD(0,1)*fil->nseg);				// uniform random branch spot
+			if(seg>=fil->nseg) seg=fil->nseg-1;
+
+			if(dim==2) {																			// in-plane +/- branch angle
+				angle[0]=filtype->branchangle[0]*(coinrandD(0.5)?1:-1);
+				angle[1]=angle[2]=0; }
+			else {																						// 3D dendritic cone: fixed polar, random azimuth
+				angle[0]=filtype->branchangle[0];
+				angle[1]=filtype->branchangle[1];
+				angle[2]=filtype->branchangle[2]+unirandCOD(0,2*PI); }
+			if(filtype->branchspread>0)
+				angle[0]+=filtype->branchspread*gaussrandD();		// jitter the polar angle
+
+			thick=fil->segments[seg]->thk;
+			filAddBranch(sim,fil,seg,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
+
+	return 0; }
+
+
+/* filPinBranches */
+// Rigid attachment constraint: after the mechanical step, translate each daughter so
+// its anchored (front/node-0) end tracks the mother's current branch point. This keeps
+// branches attached without a global cross-filament force solver. NOTE (v1 limitation):
+// this pins position only; the ~70 deg junction angle is not held against bending, and
+// multi-level trees need root-first ordering to fully settle in a single step.
+void filPinBranches(filamentptr fil) {
+	int br,seg;
+	double branchpos[3];
+	filamentptr daughter;
+	segmentptr mseg;
+
+	for(br=0;br<fil->nbranch;br++) {
+		daughter=fil->branches[br];
+		if(!daughter || daughter->nseg==0) continue;
+		seg=fil->branchspots[br];
+		if(seg<0 || seg>=fil->nseg) continue;						// mother may have shrunk (treadmilling)
+		mseg=fil->segments[seg];
+		branchpos[0]=mseg->xyzback[0];
+		branchpos[1]=mseg->xyzback[1];
+		branchpos[2]=mseg->xyzback[2];
+		filTranslate(daughter,branchpos,'=');	}					// move daughter so seg-0 front sits at branch point
+
+	return; }
+
+
+/******************************************************************************/
 /**************************** filament interactions ***********************/
 /******************************************************************************/
 
@@ -3272,6 +3481,9 @@ int filDynamics(simptr sim) {
 				for(i=0;i<treadnum;i++)
 					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }}
 
+		if(filtype->branchrate>0)												// Arp2/3-style branch nucleation
+			filBranchDynamics(sim,filtype);
+
 		if(filtype->dynamics==FDeuler)
 			filEulerDynamics(sim,filtype);
 		else if(filtype->dynamics==FDRK2)
@@ -3285,6 +3497,12 @@ int filDynamics(simptr sim) {
 		else if(filtype->dynamics==FDimplicitold)
 			filImplicitOldDynamics(sim,filtype);
 			}
+
+	for(ft=0;ft<filss->ntype;ft++) {								// re-pin branches after all motion this step
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++)
+			if(filtype->fillist[f]->nbranch>0)
+				filPinBranches(filtype->fillist[f]); }
 
 	return 0; }
 
