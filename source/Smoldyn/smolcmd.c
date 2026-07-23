@@ -110,6 +110,7 @@ enum CMDcode cmdwriteVTK(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2);
 
 // system manipulation
 enum CMDcode cmdset(simptr sim,cmdptr cmd,char *line2);
@@ -253,6 +254,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"writeVTK")) return cmdwriteVTK(sim,cmd,line2);
 	else if(!strcmp(word,"printLattice")) return cmdprintLattice(sim,cmd,line2);
 	else if(!strcmp(word,"printFilament")) return cmdprintFilament(sim,cmd,line2);
+	else if(!strcmp(word,"printFilaments")) return cmdprintFilaments(sim,cmd,line2);
 	else if(!strcmp(word,"printdata")) return cmdprintdata(sim,cmd,line2);
 
 	// system manipulation
@@ -3169,6 +3171,39 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 	if(strpbrk(code,"m")) {
 		sparsePrintM(filwork->forcemat,1);	//?? This only prints to stdout and doesn't use scmdprintf function
 		}
+
+	scmdflush(fptr);
+	return CMDok; }
+
+
+/* cmdprintFilaments */
+// Dump every filament (all types) as a flat polyline of node coordinates, one line each:
+//   FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...
+// Auto-named daughters are included, so this captures a whole branched network.
+enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
+	FILE *fptr;
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	int er,ft,f,nd,d,dim;
+
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
+	SCMDCHECK(sim->filss,"No filaments defined");
+	er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+	SCMDCHECK(er!=-1,"file name not recognized");
+
+	dim=sim->dim;
+	filss=sim->filss;
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s",sim->time,filtype->ftname,fil->filname,fil->nseg,
+				fil->backend?fil->backend->filname:"-");
+			for(nd=0;nd<=fil->nseg;nd++)
+				for(d=0;d<dim;d++)
+					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
+			scmdfprintf(cmd->cmds,fptr,"\n"); }}
 
 	scmdflush(fptr);
 	return CMDok; }
