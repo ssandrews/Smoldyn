@@ -510,6 +510,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		for(;br<maxbranch;br++) {
 			newbranchspots[br]=0;
 			newbranches[br]=NULL; }
+		free(fil->branchspots);					// was allocated and copied into but never reassigned (NULL-deref/leak)
+		fil->branchspots=newbranchspots;
 		free(fil->branches);
 		fil->branches=newbranches;
 		fil->maxbranch=maxbranch;	}
