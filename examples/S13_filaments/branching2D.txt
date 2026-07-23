@@ -1,0 +1,53 @@
+# Branched (Arp2/3-style) actin network — demo for the proposed filament branching.
+# A few seed "mother" filaments treadmill and nucleate daughter filaments at ~70
+# degrees. Daughters are the same filament type, so they in turn become mothers
+# -> a dendritic network. Verified: 165 filaments in 6 generations by t=100.
+#
+# Filament-type branching keywords:
+#   branch_rate    <rate>     nucleation rate per unit mother length per time
+#   branch_angle   <yaw>      mean daughter orientation rel. to mother (radians; 2D takes one value)
+#   branch_spread  <sigma>    Gaussian jitter on the branch angle (radians)
+#
+# Run live (OpenGL window):   smoldyn branching2D.txt
+# Run headless + dump coords: smoldyn branching2D.txt -t   (writes network.txt via printFilaments)
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 100 r
+boundaries y 0 100 r
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+frame_thickness 0
+
+output_files network.txt
+
+start_filament_type actin
+color blue
+thickness 2
+polygon edge
+dynamics none
+kT 1
+standard_length 2
+standard_angle 0            # 2D: single yaw value
+force_length 10
+force_angle 5               # 2D: single value
+treadmill_rate 5            # filament turnover (length-conserving; see proposal note)
+branch_rate 0.01           # Arp2/3 nucleation per unit length per time (dendritic growth is exponential; keep small)
+branch_angle 1.22          # ~70 degrees, in radians
+branch_spread 0.09         # ~5 degrees of angular noise
+mobility 1
+end_filament_type
+
+# seed mother filaments (10 segments each): random_filament type:name segs x y phi
+random_filament actin:seed0 10  50 50  0
+random_filament actin:seed1 10  30 40  1
+random_filament actin:seed2 10  70 60 -1
+
+# dump the whole network (all auto-named daughters included) at the end
+cmd @ 100 printFilaments network.txt
+
+end_file

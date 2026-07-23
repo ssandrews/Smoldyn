@@ -1,0 +1,43 @@
+# Time-lapse of Arp2/3-style dendritic branching.
+# Stiff, static mother filaments (no treadmilling) so the network grows in place
+# and every branch holds its 70-degree birth angle. A printFilaments snapshot is
+# written every 0.5 time units into one file; each line is tagged with its time.
+
+graphics none
+dim 2
+boundaries x -20 150 r
+boundaries y -40 180 r
+time_start 0
+time_stop 20
+time_step 0.01
+frame_thickness 0
+
+output_files frames.txt
+
+start_filament_type actin
+color blue
+thickness 2
+polygon edge
+dynamics none
+kT 0.001
+standard_length 4
+standard_angle 0
+force_length 100
+force_angle 1000
+treadmill_rate 0
+branch_rate 0.01
+branch_angle 1.22          # 70 degrees
+branch_spread 0.06
+branch_segments 3         # daughters born as short multi-segment filaments
+mobility 1
+end_filament_type
+
+# three straight, well-separated mothers (segs x y phi)
+random_filament actin:momA 7   0  30  0
+random_filament actin:momB 7   0  85  0
+random_filament actin:momC 7   0 140  0
+
+# snapshot the whole network every 0.5 time units, appending to frames.txt
+cmd i 0 20 0.5 printFilaments frames.txt
+
+end_file
