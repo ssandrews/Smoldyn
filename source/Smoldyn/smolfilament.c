@@ -457,7 +457,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->sequence=NULL; }
 
 	if(maxseg>fil->maxseg) {
-		CHECKMEM(newsegments=(segmentptr*) calloc(maxseg,sizeof(struct segmentstruct)));
+		CHECKMEM(newsegments=(segmentptr*) calloc(maxseg,sizeof(segmentptr)));
 		CHECKMEM(newnodes=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newnodesx=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newroll=(double*) calloc(maxseg,sizeof(double)));
