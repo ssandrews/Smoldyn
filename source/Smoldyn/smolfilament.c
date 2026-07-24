@@ -2697,7 +2697,7 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	br=mother->nbranch++;
 	mother->branchspots[br]=seg;
 	mother->branches[br]=daughter;
-	daughter->backend=mother;												// daughter's pointed end is anchored to the mother
+	daughter->frontend=mother;											// filPinBranches anchors the daughter's front (node 0), which is its pointed end
 
 	return daughter; }
 

@@ -3199,7 +3199,7 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
 			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s",sim->time,filtype->ftname,fil->filname,fil->nseg,
-				fil->backend?fil->backend->filname:"-");
+				fil->frontend?fil->frontend->filname:(fil->backend?fil->backend->filname:"-"));
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
 					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
