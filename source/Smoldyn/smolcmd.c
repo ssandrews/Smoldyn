@@ -3178,8 +3178,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdprintFilaments */
 // Dump every filament (all types) as a flat polyline of node coordinates, one line each:
-//   FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...
+//   FIL <time> <type>:<name> <nseg> <parent-or-"-"> <capped> x0 y0 [z0] x1 y1 [z1] ...
 // Auto-named daughters are included, so this captures a whole branched network.
+// <capped> is the plus-end state, 1 when capped and 0 when free.
 enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	filamentssptr filss;
@@ -3198,8 +3199,9 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 		filtype=filss->filtypes[ft];
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
-			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s",sim->time,filtype->ftname,fil->filname,fil->nseg,
-				fil->frontend?fil->frontend->filname:(fil->backend?fil->backend->filname:"-"));
+			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s %i",sim->time,filtype->ftname,fil->filname,fil->nseg,
+				fil->frontend?fil->frontend->filname:(fil->backend?fil->backend->filname:"-"),
+				(fil->capped & FILCAPPLUS)?1:0);
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
 					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
