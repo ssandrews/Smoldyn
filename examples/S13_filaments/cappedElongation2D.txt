@@ -1,0 +1,121 @@
+# Elongation plus capping: the filament-length distribution of a capped population.
+#
+# A filament grows at elongation_rate until its plus end is capped, which happens as a
+# Poisson process at capping_rate. The capping time is therefore Exponential(capping_rate)
+# and the length added before capping is
+#
+#     added length ~ Exponential(mean = elongation_rate / capping_rate)
+#
+# which is both the biologically expected shape and an exact analytic check on the code.
+# Here 0.32 / 4.3 = 0.074, i.e. a mean of ~74 nm, matching the 59 nm (branched) / 108 nm
+# (unbranched) median filament lengths measured in situ at mammalian endocytic sites by
+# cryo-ET (Serwas et al. 2022, Dev Cell 57:1132).
+#
+# Filament-type capping keywords:
+#   capping_rate   <rate>   plus-end capping rate, per time (default 0 = off)
+#   uncapping_rate <rate>   plus-end uncapping rate, per time (default 0 = off)
+#
+# Setting capping_rate GEOMETRICALLY, as elongation_rate / target length, is deliberate.
+# The kinetic route (k_on,CP x [CP] ~ 0.5 /s) predicts ~600 nm filaments, ten times longer
+# than the cryo-ET measurement; capping at endocytic sites runs about tenfold faster than
+# the bulk capping-protein concentration predicts (Berro et al. 2010).
+#
+# uncapping_rate is left at 0: capping protein has a ~25-30 min half-life on the barbed
+# end (1.3e-4 /s), which is irrelevant over a ~20 s endocytic event. The parameter exists
+# for long-timescale network turnover.
+#
+# LIMITATION worth stating plainly: a capped plus end stops accepting subunits, from
+# elongation AND from treadmilling, but the filament does not shrink or disappear. Smoldyn
+# has no filament-destruction path, and a vanishing mother would orphan its daughters'
+# branch records. A capped treadmilling filament therefore freezes rather than
+# depolymerizing away.
+#
+# Run headless: smoldyn cappedElongation2D.txt -t
+# The final dump has one line per filament; contour length is computable from the nodes,
+# and the last column before the coordinates is the plus-end capped flag.
+
+graphics opengl_good
+
+dim 2
+boundaries x -0.1 2.1 r
+boundaries y -0.1 1.1 r
+
+time_start 0
+time_stop 5
+time_step 0.001
+
+frame_thickness 0
+
+output_files cappedElongation.txt
+
+start_filament_type actin
+color blue
+thickness 2
+polygon edge
+dynamics none
+kT 0.001
+standard_length 0.005       # 5 nm segments
+standard_angle 0            # 2D: single yaw value
+force_length 500
+force_angle 5               # 2D: single value
+mobility 1
+elongation_rate 0.32        # um/s
+capping_rate 4.3            # /s -> mean added length 0.32/4.3 = 0.074 um
+end_filament_type
+
+# a cohort of 50 filaments, all seeded identically at t=0 on a grid
+random_filament actin:f0   1  0.0 0.0  0
+random_filament actin:f1   1  0.1 0.0  0
+random_filament actin:f2   1  0.2 0.0  0
+random_filament actin:f3   1  0.3 0.0  0
+random_filament actin:f4   1  0.4 0.0  0
+random_filament actin:f5   1  0.5 0.0  0
+random_filament actin:f6   1  0.6 0.0  0
+random_filament actin:f7   1  0.7 0.0  0
+random_filament actin:f8   1  0.8 0.0  0
+random_filament actin:f9   1  0.9 0.0  0
+random_filament actin:f10  1  0.0 0.1  0
+random_filament actin:f11  1  0.1 0.1  0
+random_filament actin:f12  1  0.2 0.1  0
+random_filament actin:f13  1  0.3 0.1  0
+random_filament actin:f14  1  0.4 0.1  0
+random_filament actin:f15  1  0.5 0.1  0
+random_filament actin:f16  1  0.6 0.1  0
+random_filament actin:f17  1  0.7 0.1  0
+random_filament actin:f18  1  0.8 0.1  0
+random_filament actin:f19  1  0.9 0.1  0
+random_filament actin:f20  1  0.0 0.2  0
+random_filament actin:f21  1  0.1 0.2  0
+random_filament actin:f22  1  0.2 0.2  0
+random_filament actin:f23  1  0.3 0.2  0
+random_filament actin:f24  1  0.4 0.2  0
+random_filament actin:f25  1  0.5 0.2  0
+random_filament actin:f26  1  0.6 0.2  0
+random_filament actin:f27  1  0.7 0.2  0
+random_filament actin:f28  1  0.8 0.2  0
+random_filament actin:f29  1  0.9 0.2  0
+random_filament actin:f30  1  0.0 0.3  0
+random_filament actin:f31  1  0.1 0.3  0
+random_filament actin:f32  1  0.2 0.3  0
+random_filament actin:f33  1  0.3 0.3  0
+random_filament actin:f34  1  0.4 0.3  0
+random_filament actin:f35  1  0.5 0.3  0
+random_filament actin:f36  1  0.6 0.3  0
+random_filament actin:f37  1  0.7 0.3  0
+random_filament actin:f38  1  0.8 0.3  0
+random_filament actin:f39  1  0.9 0.3  0
+random_filament actin:f40  1  0.0 0.4  0
+random_filament actin:f41  1  0.1 0.4  0
+random_filament actin:f42  1  0.2 0.4  0
+random_filament actin:f43  1  0.3 0.4  0
+random_filament actin:f44  1  0.4 0.4  0
+random_filament actin:f45  1  0.5 0.4  0
+random_filament actin:f46  1  0.6 0.4  0
+random_filament actin:f47  1  0.7 0.4  0
+random_filament actin:f48  1  0.8 0.4  0
+random_filament actin:f49  1  0.9 0.4  0
+
+# by t=5 every filament is capped (exp(-4.3*5) = 5e-10), so this is the final distribution
+cmd @ 5 printFilaments cappedElongation.txt
+
+end_file
