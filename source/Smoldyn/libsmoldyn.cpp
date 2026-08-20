@@ -763,6 +763,14 @@ extern CSTRING enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *n
 	LCHECK(did>=0,funcname,ECerror,"no data file of the requested name");
 	list=sim->cmds->data[did];
 
+	if(!list) {
+		// Data table was registered via smolAddOutputData but no command has
+		// populated it yet — return an empty result rather than dereferencing.
+		*nrow=0;
+		*ncol=0;
+		*array=NULL;
+		return ECok; }
+
     datacopy=(double*) calloc(list->nrow*list->ncol,sizeof(double));
     LCHECK(datacopy,funcname,ECmemory,"out of memory");
     for(i=0;i<list->nrow;i++)
@@ -1905,6 +1913,24 @@ extern CSTRING enum ErrorCode smolSetReactionRate(simptr sim,const char *reactio
 	if(er==3) LCHECK(0,funcname,ECwarning,"rate was set previously");
 	else LCHECK(!er,funcname,ECbug,"RxnSetValue error");
 	return Libwarncode;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolGetReactionRate */
+extern CSTRING enum ErrorCode smolGetReactionRate(simptr sim,const char *reaction,double *rate) {
+	const char *funcname="smolGetReactionRate";
+	int r,order;
+	rxnptr rxn;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(rate,funcname,ECmissing,"missing rate pointer");
+	order=-1;
+	r=smolGetReactionIndexNT(sim,&order,reaction);
+	LCHECK(r>=0,funcname,ECsame,NULL);
+	rxn=sim->rxnss[order]->rxn[r];
+	*rate=rxn->rate;
+	return ECok;
  failure:
 	return Liberrorcode; }
 

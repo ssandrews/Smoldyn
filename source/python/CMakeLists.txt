@@ -124,6 +124,19 @@ add_custom_target(fmt
     COMMAND uvx ruff format ${CMAKE_SOURCE_DIR}/source/python
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# Auto-fix Python formatting and auto-fixable lint issues across the wrapper
+# and tests. Runs ruff via uv (no global install needed). --exit-zero on the
+# check pass so remaining (non-auto-fixable) issues don't fail the target —
+# the goal is to apply every fix ruff can, not to gate on a clean codebase.
+add_custom_target(fix
+    COMMAND uvx ruff format
+        ${CMAKE_SOURCE_DIR}/source/python
+        ${CMAKE_SOURCE_DIR}/tests
+    COMMAND uvx ruff check --fix --exit-zero
+        ${CMAKE_SOURCE_DIR}/source/python
+        ${CMAKE_SOURCE_DIR}/tests
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+
 #
 # Install target
 #

@@ -154,6 +154,7 @@ int            smolGetReactionIndex(simptr sim,int *orderptr,const char *reactio
 int            smolGetReactionIndexNT(simptr sim,int *orderptr,const char *reaction);
 char*          smolGetReactionName(simptr sim,int order,int reactionindex,char *reaction);
 enum ErrorCode smolSetReactionRate(simptr sim,const char *reaction,double rate,int type);
+enum ErrorCode smolGetReactionRate(simptr sim,const char *reaction,double *rate);
 enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface);
 enum ErrorCode smolSetReactionProducts(simptr sim,const char *reaction,enum RevParam method,double parameter,const char *product,double *position);
 
