@@ -162,17 +162,18 @@ double ReactionList::recalculate_propensities() {
 		//int beta = 0;									// beta was being computed but not used, so it's commented out now
 		//for (auto& rc : rs.lhs) {
 		for (std::vector<ReactionComponent>::iterator rc=rs.lhs.begin();rc!=rs.lhs.end();rc++) {
-			int copy_number = rc->species->copy_numbers[rc->compartment_index];
+			const int copy_number = rc->species->copy_numbers[rc->compartment_index];
 			//beta += rc->multiplier;
 			ASSERT(copy_number >= 0, "copy number is less than zero!!");
 			if (copy_number < rc->multiplier) {
 				propensity = 0.0;
 				break;
 			}
-			for (int k = 1; k < rc->multiplier; ++k) {
-				copy_number *= copy_number-k;
+			double reactant_factor = 1.0;
+			for (int k = 0; k < rc->multiplier; ++k) {
+				reactant_factor *= copy_number-k;
 			}
-			propensity *= copy_number;
+			propensity *= reactant_factor;
 		}
 		propensity *= rs.size()*rs.rate;
 		ASSERT(propensity >= 0, "calculated propensity is less than zero!!");
@@ -186,7 +187,7 @@ double ReactionList::recalculate_propensities() {
 	return inv_total_propensity;
 }
 
-static const double LONGEST_TIME = 100000;
+static const double LONGEST_TIME = std::numeric_limits<double>::infinity();
 
 
 NextSubvolumeMethod::NextSubvolumeMethod(StructuredGrid& subvolumes):
@@ -414,7 +415,8 @@ void NextSubvolumeMethod::set_interface_reactions(
 				}
 				//std::cout << "new interface rate = rate * 2*"<<subvolumes.get_distance_between(i,j)<<" div sqrt(pi*d*dt)"<<std::endl;
 				//rate *= 0.5;
-				rhs[0].compartment_index = -j;
+				rhs[0].compartment_index = j == 0
+					? -std::numeric_limits<int>::max() : -j;
 				subvolume_reactions[i].add_reaction(rate,ReactionEquation(lhs,rhs));
 				reset_priority(i);
 			}
@@ -442,7 +444,8 @@ void NextSubvolumeMethod::unset_interface_reactions(
 			ReactionSide lhs;
 			lhs.push_back(ReactionComponent(1.0,s,i));
 			ReactionSide rhs;
-			rhs.push_back(ReactionComponent(1.0,s,-j));
+			rhs.push_back(ReactionComponent(1.0,s,j == 0
+				? -std::numeric_limits<int>::max() : -j));
 			double rate = subvolume_reactions[i].delete_reaction(ReactionEquation(lhs,rhs));
 			if (rate != 0) {
 				rate = s.D*subvolumes.get_laplace_coefficient(i,j);
@@ -471,13 +474,16 @@ void NextSubvolumeMethod::react(ReactionEquation& eq) {
 	for (std::vector<ReactionComponent>::iterator rc=eq.rhs.begin();rc!=eq.rhs.end();rc++) {
         //std::cout << "compartment index = "<<rc->compartment_index<<std::endl;
 		if (rc->compartment_index < 0) {
+            const int target_compartment =
+                rc->compartment_index == -std::numeric_limits<int>::max()
+                ? 0 : -rc->compartment_index;
             // test if this reaction is within the compartment and generates a particle
             if (
-                (eq.lhs[0].compartment_index == -rc->compartment_index) || 
-                ((eq.lhs[0].compartment_index==0) && (eq.rhs[0].compartment_index == -std::numeric_limits<int>::max()))  
+                eq.lhs.empty() ||
+                eq.lhs[0].compartment_index == target_compartment
                ) {
                 for (int i=0; i<rc->multiplier; i++) {
-                    Vect3d newr = get_grid().get_random_point(-rc->compartment_index);
+                    Vect3d newr = get_grid().get_random_point(target_compartment);
                     rc->species->particles.push_back(newr);
 				    rc->species->particlesx.push_back(newr);
                 }
@@ -491,7 +497,7 @@ void NextSubvolumeMethod::react(ReactionEquation& eq) {
 //			const double P1 = kappa*h/rc.species->D;
 //			std::cout << "absorbing with P1 = "<<P1<<std::endl;
 //			if (uni() < P1) {
-				Rectangle r = subvolumes.get_face_between(eq.lhs[0].compartment_index,-rc->compartment_index);
+				Rectangle r = subvolumes.get_face_between(eq.lhs[0].compartment_index,target_compartment);
 				Vect3d newr,newn;
 				r.get_random_point_and_normal_triangle(newr, newn);
 				const double P = randCCD();
@@ -515,7 +521,9 @@ void NextSubvolumeMethod::react(ReactionEquation& eq) {
 	if (eq.lhs.size() == 0) {
 		// must be zeroth order rection
 		ASSERT(eq.rhs.size() > 0,"empty equation, cannot react");
-		reset_priority(eq.rhs[0].compartment_index);
+		const int rhs_compartment = eq.rhs[0].compartment_index;
+		reset_priority(rhs_compartment == -std::numeric_limits<int>::max()
+			? 0 : (rhs_compartment < 0 ? -rhs_compartment : rhs_compartment));
 	} else {
 		reset_priority(eq.lhs[0].compartment_index);
 		if ((eq.rhs.size() == 1) && (eq.rhs[0].compartment_index >= 0) && (eq.lhs[0].compartment_index != eq.rhs[0].compartment_index)) {

@@ -713,8 +713,15 @@ PYBIND11_MODULE(_smoldyn, m)
           double difc,
           vector<double>& drift,
           vector<double>& difmatrix) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(!drift.empty() && drift.size()!=dim)
+              throw py::value_error("drift must contain one value per simulation dimension");
+            if(!difmatrix.empty() && difmatrix.size()!=dim*dim)
+              throw py::value_error("difmatrix must contain dim*dim values");
             return smolSetSpeciesMobility(
-              sim.getSimPtr(), species, state, difc, &drift[0], &difmatrix[0]);
+              sim.getSimPtr(), species, state, difc,
+              drift.empty() ? nullptr : drift.data(),
+              difmatrix.empty() ? nullptr : difmatrix.data());
         },
         "species"_a,
         "state"_a,

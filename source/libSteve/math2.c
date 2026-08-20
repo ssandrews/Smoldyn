@@ -77,7 +77,7 @@ double chooseD(int n,int m)	{
 	
 	if(m>n/2) m=n-m;
 	y=1;
-	while(m>0)	y*=n--/m--;
+	while(m>0)	y*=(double)n--/m--;
 	return y;	}
 
 
@@ -86,7 +86,7 @@ float choose(int n,int m)	{
 	
 	if(m>n/2) m=n-m;
 	y=1;
-	while(m>0)	y*=n--/m--;
+	while(m>0)	y*=(double)n--/m--;
 	return (float)y;	}
 
 

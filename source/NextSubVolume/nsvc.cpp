@@ -25,6 +25,7 @@
 #define NSVC_CPP
 #include "nsvc.h"
 #include "smoldynfuncs.h"
+#include <cmath>
 #include <sstream>
 #include <set>
 #include <numeric>
@@ -214,7 +215,7 @@ extern void nsv_add_surface(NextSubvolumeMethod* nsv,surfacestruct* surface) {
 
 
 void nsv_add_reaction(NextSubvolumeMethod* nsv,rxnstruct *reaction) {
-	const double rate = reaction->rate;
+	const double rate = reaction->rate * reaction->multiplicity;
 	const int nreactants = reaction->rxnss->order;
 	const int *reactant_ids = reaction->rctident;
 	const int nproducts = reaction->nprod;
@@ -307,15 +308,17 @@ void nsv_integrate(NextSubvolumeMethod* nsv,double dt, portstruct *port, lattice
 		n += nsv->get_diffusing_species()[i]->particles.size();
 	}
 
+	// Port molecules can also be returned through the exchange buffers when
+	// lattice-side reflective geometry rejects them.
+	if (!port) return;
+	simptr sim = port->portss->sim;
+	n += sim->mols->nl[port->llport];
+
 	int *species = new int[n];
 	double **positions = new double*[n];
 	double **positionsx = new double*[n];
 
 	//const double lattice_lengthscale = 0.0001*std::min(lattice->dx[0],std::min(lattice->dx[1],lattice->dx[2]));
-    if (!port) return;
-
-	simptr sim = port->portss->sim;
-	n += sim->mols->nl[port->llport];
 	double *crsspt = new double[sim->dim];
 	enum PanelFace face1,face2;
 
@@ -355,6 +358,7 @@ void nsv_integrate(NextSubvolumeMethod* nsv,double dt, portstruct *port, lattice
 
 		// if outside lattice domain raise error
 		Vect3d newr(0.5,0.5,0.5);
+		bool valid_lattice_position = true;
 		for (int d = 0; d < sim->dim; ++d) {
 			newr[d] = m->via[d];
 			double low = nsv->get_grid().get_low()[d];
@@ -362,10 +366,21 @@ void nsv_integrate(NextSubvolumeMethod* nsv,double dt, portstruct *port, lattice
 			if (newr[d] < low) {
 				std::cout << "d = "<<d<<" via = "<<m->via[d]<<" pos = "<<m->pos[d]<<" posx = "<<m->posx[d]<<" newr = "<<newr[d]<<std::endl;
 				simLog(NULL,11,"ERROR: particle unexpectedly outside lattice domain\n");
+				valid_lattice_position = false;
 			} else if (newr[d] > high) {
 				std::cout << "d = "<<d<<" via = "<<m->via[d]<<" pos = "<<m->pos[d]<<" posx = "<<m->posx[d]<<" newr = "<<newr[d]<<std::endl;
 				simLog(NULL,11,"ERROR: particle unexpectedly outside lattice domain\n");
+				valid_lattice_position = false;
+			} else if (newr[d] == high) {
+				newr[d] = std::nextafter(high,low);
 			}
+		}
+		if (!valid_lattice_position) {
+			species[nout] = m->ident;
+			positions[nout] = m->posx;
+			positionsx[nout] = m->posx;
+			nout++;
+			continue;
 		}
 
 		const int ci = nsv->get_grid().get_cell_index(newr);
@@ -465,6 +480,7 @@ void nsv_integrate(NextSubvolumeMethod* nsv,double dt, portstruct *port, lattice
 
 	delete[] species;
 	delete[] positions;
+	delete[] positionsx;
 }
 
 vtkUnstructuredGrid* nsv_get_grid(NextSubvolumeMethod* nsv) {
@@ -556,10 +572,12 @@ void nsv_add_mol(NextSubvolumeMethod* nsv,int id, double* pos, int dim) {
 		double high = nsv->get_grid().get_high()[d];
 		if (pos[d] < low) {
 			simLog(NULL,11,"ERROR: particle unexpectedly outside lattice domain\n");
+			return;
 		} else if (pos[d] > high) {
 			simLog(NULL,11,"ERROR: particle unexpectedly outside lattice domain\n");
+			return;
 		} else {
-			newr[d] = pos[d];
+			newr[d] = pos[d] == high ? std::nextafter(high,low) : pos[d];
 		}
 	}
 	//nsv->get_species(id)->particles.push_back(newr);

@@ -2138,7 +2138,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 				CHECKS(i!=-6,"cannot read wildcard logic");
 				CHECKS(i!=-7,"error allocating memory");
 				CHECKS(ms<MSMAX1 || ms==MSall,"invalid state");
-				for(prd=0;prd<rxn->nprod && rxn->prdident[prd]!=i && rxn->prdstate[prd]!=ms;prd++);
+				for(prd=0;prd<rxn->nprod && (rxn->prdident[prd]!=i || rxn->prdstate[prd]!=ms);prd++);
 				CHECKS(prd<rxn->nprod,"molecule in product_placement is not a product of this reaction"); }
 			CHECKS(line2=strnword(line2,2),"position vector missing for product_placement");
 			for(d=0;d<dim;d++) {

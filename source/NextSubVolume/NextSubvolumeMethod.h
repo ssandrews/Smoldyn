@@ -181,7 +181,7 @@ class NextSubvolumeMethod
         std::vector<int> indicies;
         subvolumes.get_slice(geometry, indicies);
         for (unsigned int i = 0; i < indicies.size(); ++i) {
-            add_reaction_to_compartment(rate, eq, i);
+            add_reaction_to_compartment(rate, eq, indicies[i]);
         }
     }
 
@@ -191,7 +191,7 @@ class NextSubvolumeMethod
         std::vector<int> indicies;
         subvolumes.get_region(geometry, indicies);
         for (unsigned int i = 0; i < indicies.size(); ++i) {
-            add_reaction_to_compartment(rate, eq, i);
+            add_reaction_to_compartment(rate, eq, indicies[i]);
         }
     }
 

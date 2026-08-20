@@ -21,6 +21,8 @@
 /******************************************************************************/
 
 // low level utilities
+static double wallperiodicshift(wallptr wptr,double pos);
+static double wallreflectposition(wallptr wptr,double pos);
 
 // memory management
 wallptr wallalloc(void);
@@ -37,6 +39,33 @@ wallptr *wallsalloc(int dim);
 /******************************************************************************/
 /****************************** low level utilities ***************************/
 /******************************************************************************/
+
+/* wallperiodicshift */
+static double wallperiodicshift(wallptr wptr,double pos) {
+	double width;
+
+	width=fabs(wptr->opp->pos-wptr->pos);
+	if(wptr->side==0 && pos<wptr->pos)
+		return width*ceil((wptr->pos-pos)/width);
+	if(wptr->side!=0 && pos>wptr->pos)
+		return -width*ceil((pos-wptr->pos)/width);
+	return 0; }
+
+
+/* wallreflectposition */
+static double wallreflectposition(wallptr wptr,double pos) {
+	double low,high,width,offset;
+
+	if(wptr->side==0) {
+		low=wptr->pos;
+		high=wptr->opp->pos; }
+	else {
+		low=wptr->opp->pos;
+		high=wptr->pos; }
+	width=high-low;
+	offset=fmod(pos-low,2*width);
+	if(offset<0) offset+=2*width;
+	return offset<=width ? low+offset : high-(offset-width); }
 
 /* systemrandpos */
 void systemrandpos(simptr sim,double *pos) {
@@ -332,23 +361,21 @@ int checkwalls1mol(simptr sim,moleculeptr mptr) {
 		d=wptr->wdim;
 		if(wptr->type=='r' && wptr->side==0) {			// reflective
 			if(mptr->pos[d]<wptr->pos) {
-				pos2=2*wptr->pos;
 				sim->eventcount[ETwall]++;
-				mptr->pos[d]=pos2-mptr->pos[d]; }}
+				mptr->pos[d]=wallreflectposition(wptr,mptr->pos[d]); }}
 		else if(wptr->type=='r') {
 			if(mptr->pos[d]>wptr->pos) {
-				pos2=2*wptr->pos;
 				sim->eventcount[ETwall]++;
-				mptr->pos[d]=pos2-mptr->pos[d]; }}
+				mptr->pos[d]=wallreflectposition(wptr,mptr->pos[d]); }}
 		else if(wptr->type=='p' && wptr->side==0) {	// periodic
-			if(mptr->pos[d]<wptr->pos) {
-				pos2=wptr->opp->pos-wptr->pos;
+			pos2=wallperiodicshift(wptr,mptr->pos[d]);
+			if(pos2!=0) {
 				sim->eventcount[ETwall]++;
 				mptr->pos[d]+=pos2;
 				mptr->posoffset[d]-=pos2; }}
 		else if(wptr->type=='p') {
-			if(mptr->pos[d]>wptr->pos) {
-				pos2=wptr->opp->pos-wptr->pos;
+			pos2=wallperiodicshift(wptr,mptr->pos[d]);
+			if(pos2!=0) {
 				sim->eventcount[ETwall]++;
 				mptr->pos[d]+=pos2;
 				mptr->posoffset[d]-=pos2; }}
@@ -386,31 +413,29 @@ int checkwalls(simptr sim,int ll,int reborn,boxptr bptr) {
 		wptr=sim->wlist[w];
 		d=wptr->wdim;
 		if(wptr->type=='r'&&wptr->side==0) {			// reflective
-			pos2=2*wptr->pos;
 			for(m=0;m<nmol;m++)
 				if(mlist[m]->pos[d]<wptr->pos) {
 					sim->eventcount[ETwall]++;
-					mlist[m]->pos[d]=pos2-mlist[m]->pos[d];}}
+					mlist[m]->pos[d]=wallreflectposition(wptr,mlist[m]->pos[d]);}}
 		else if(wptr->type=='r') {
-			pos2=2*wptr->pos;
 			for(m=0;m<nmol;m++)
 				if(mlist[m]->pos[d]>wptr->pos) {
 					sim->eventcount[ETwall]++;
-					mlist[m]->pos[d]=pos2-mlist[m]->pos[d];}}
+					mlist[m]->pos[d]=wallreflectposition(wptr,mlist[m]->pos[d]);}}
 		else if(wptr->type=='p'&&wptr->side==0) {	// periodic
-			pos2=wptr->opp->pos-wptr->pos;
-			for(m=0;m<nmol;m++)
-				if(mlist[m]->pos[d]<wptr->pos) {
+			for(m=0;m<nmol;m++) {
+				pos2=wallperiodicshift(wptr,mlist[m]->pos[d]);
+				if(pos2!=0) {
 					sim->eventcount[ETwall]++;
 					mlist[m]->pos[d]+=pos2;
-					mlist[m]->posoffset[d]-=pos2; }}
+					mlist[m]->posoffset[d]-=pos2; }}}
 		else if(wptr->type=='p') {
-			pos2=wptr->opp->pos-wptr->pos;
-			for(m=0;m<nmol;m++)
-				if(mlist[m]->pos[d]>wptr->pos) {
+			for(m=0;m<nmol;m++) {
+				pos2=wallperiodicshift(wptr,mlist[m]->pos[d]);
+				if(pos2!=0) {
 					sim->eventcount[ETwall]++;
 					mlist[m]->pos[d]+=pos2;
-					mlist[m]->posoffset[d]-=pos2; }}
+					mlist[m]->posoffset[d]-=pos2; }}}
 		else if(wptr->type=='a') {								// absorbing
 			difstep=sim->mols->difstep;
 			for(m=0;m<nmol;m++) {

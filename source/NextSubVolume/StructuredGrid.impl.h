@@ -103,7 +103,7 @@ void StructuredGrid::get_slice(const T geometry, std::vector<int>& indices) cons
 			              {{0,0,0},{0,1,0}},
 			              {{0,0,0},{1,0,0}},
 			              {{0,0,1},{0,1,1}},
-			              {{0,0,1},{1,0,0}},
+			              {{0,0,1},{1,0,1}},
 			              {{0,1,0},{1,1,0}},
 			              {{0,1,0},{0,1,1}},
 			              {{1,0,0},{1,1,0}},
@@ -129,21 +129,18 @@ void StructuredGrid::get_slice(const T geometry, std::vector<int>& indices) cons
 template<typename T>
 void StructuredGrid::get_region(const T geometry, std::vector<int>& indices) const {
 	indices.clear();
-	for (int i = 0; i < num_cells; ++i) {
-		Vect3d low_point = index_to_vect(i) * (cell_size)+low;
-
-		for (int i = 0; i < 2; ++i) {
-			for (int j = 0; j < 2; ++j) {
-				for (int k = 0; k < 2; ++k) {
-					const Vect3d test_point = low_point + Vect3d(i,j,k) * (cell_size);
-					const double dist = geometry.is_in(test_point);
-					if (dist < 0) {
-						indices.push_back(i);
-						continue;
-					}
+	for (int cell = 0; cell < num_cells; ++cell) {
+		const Vect3d low_point = index_to_vect(cell) * cell_size + low;
+		bool in_region = geometry.is_in(get_cell_centre(cell));
+		for (int i = 0; i < 2 && !in_region; ++i) {
+			for (int j = 0; j < 2 && !in_region; ++j) {
+				for (int k = 0; k < 2 && !in_region; ++k) {
+					const Vect3d test_point = low_point + Vect3d(i,j,k) * cell_size;
+					in_region = geometry.is_in(test_point);
 				}
 			}
 		}
+		if (in_region) indices.push_back(cell);
 	}
 }
 
