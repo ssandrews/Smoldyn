@@ -10,6 +10,7 @@ boundaries y -40 180 r
 time_start 0
 time_stop 20
 time_step 0.01
+random_seed 1
 frame_thickness 0
 
 output_files frames.txt

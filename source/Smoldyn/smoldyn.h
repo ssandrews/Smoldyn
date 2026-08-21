@@ -854,13 +854,10 @@ typedef struct filamenttypestruct
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility
     double filradius;                  // segment radius
-    // --- branching (Arp2/3-style dendritic nucleation), proposed ---
     double branchrate;                 // branch nucleation rate, per unit mother length per time
-    double branchangle[3];             // mean daughter orientation (ypr) rel. to mother, e.g. 70 deg
+    double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
     int branchsegments;                // number of segments a daughter is born with (>=1)
-    struct filamenttypestruct* branchtype; // filament type for daughters (NULL = same type)
-    // --- end branching ---
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names

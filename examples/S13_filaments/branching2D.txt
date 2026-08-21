@@ -1,15 +1,11 @@
-# Branched (Arp2/3-style) actin network — demo for the proposed filament branching.
-# A few seed "mother" filaments treadmill and nucleate daughter filaments at ~70
-# degrees. Daughters are the same filament type, so they in turn become mothers
-# -> a dendritic network. Verified: 165 filaments in 6 generations by t=100.
+# Branched (Arp2/3-style) actin network: filament branching.
 #
-# Filament-type branching keywords:
-#   branch_rate    <rate>     nucleation rate per unit mother length per time
-#   branch_angle   <yaw>      mean daughter orientation rel. to mother (radians; 2D takes one value)
-#   branch_spread  <sigma>    Gaussian jitter on the branch angle (radians)
+#   branch_rate     <rate>   nucleation per unit mother length per time (0 = off)
+#   branch_angle    <angle>  daughter angle off the mother, radians (~70 deg for Arp2/3)
+#   branch_spread   <sigma>  Gaussian jitter on the branch angle, radians
+#   branch_segments <n>      segments a daughter is born with (default 1)
 #
-# Run live (OpenGL window):   smoldyn branching2D.txt
-# Run headless + dump coords: smoldyn branching2D.txt -t   (writes network.txt via printFilaments)
+# smoldyn branching2D.txt -t
 
 graphics opengl_good
 
@@ -20,6 +16,7 @@ boundaries y 0 100 r
 time_start 0
 time_stop 100
 time_step 0.01
+random_seed 1
 
 frame_thickness 0
 
