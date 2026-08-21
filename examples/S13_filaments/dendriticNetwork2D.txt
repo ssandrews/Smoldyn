@@ -1,38 +1,13 @@
-# A growing dendritic (Arp2/3) actin network: branching + elongation + capping.
+# A growing branched-actin network: branching + elongation + capping.
 #
-# This is the combination the three features were built for. Each filament is nucleated
-# off the side of a mother at ~70 degrees, elongates from its barbed end at a defined
-# velocity, and stops when its plus end is capped. The network expands because new
-# branches keep appearing on the filaments that have not yet capped: 3 seeds become a
-# few hundred filaments by t=3 (no random_seed is set, and branching is exponential, so
-# the count varies severalfold between runs).
+# Deliberately no treadmill_rate. Treadmilling forces equal flux at both ends, while
+# pointed-end kinetics are ~9x slower and Arp2/3 caps the daughter's pointed end, so
+# elongation is the right growth mechanism for a dendritic network.
 #
-# A single filament grows elongation_rate / capping_rate = 0.32 / 4.3 = 0.074 on average
-# before capping, i.e. 74 nm at the endocytic scale. Do not expect a snapshot of THIS
-# model to have that mean: in an exponentially growing network most filaments are young,
-# so even the already-capped ones are biased toward short capping times. Measure the mean
-# on cappedElongation2D.txt instead, where the whole cohort is seeded at t=0.
+# For a time-lapse, swap the cmd line below for:
+#   cmd i 0 3 0.05 printFilaments dendriticNetwork.txt
 #
-# DELIBERATELY NO treadmill_rate. Coupled treadmilling adds one subunit at the plus end
-# for every one removed at the minus end, which imposes equal flux at the two ends. That
-# is wrong for a dendritic network in two independent ways: pointed-end kinetics are ~9x
-# slower than barbed-end kinetics (Pollard 1986), and in an Arp2/3 network the pointed end
-# is capped by the Arp2/3 complex itself and buried at the junction, so it does not
-# depolymerize at all (Mullins, Heuser & Pollard 1998). Coupled treadmilling also cannot
-# represent a net-growing filament, which is the physiological case here.
-#
-# There is a numerical payoff too. Removing a segment from the front renumbers every
-# segment on the filament, which invalidates the stored branch positions and lets junction
-# angles drift. Pure plus-end elongation only adds at the back, so nothing is renumbered
-# and the junctions hold: measured 70.1 +/- 5.1 degrees under elongation versus
-# 91.6 +/- 50.3 degrees under treadmilling, for otherwise identical networks.
-#
-# Branch angle 1.22 rad = 70 deg is the Acanthamoeba EM value (Mullins et al. 1998,
-# 70 +/- 7 deg). In-situ cryo-ET at mammalian endocytic sites gives 68 +/- 9 deg
-# (Serwas et al. 2022), so little turns on the choice.
-#
-# Run live (OpenGL window):   smoldyn dendriticNetwork2D.txt
-# Run headless + dump coords: smoldyn dendriticNetwork2D.txt -t
+# smoldyn dendriticNetwork2D.txt -t
 
 graphics opengl_good
 
@@ -43,6 +18,7 @@ boundaries y -1 1 r
 time_start 0
 time_stop 3
 time_step 0.001
+random_seed 1
 
 frame_thickness 0
 

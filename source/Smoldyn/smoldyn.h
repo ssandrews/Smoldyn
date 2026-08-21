@@ -811,7 +811,6 @@ typedef struct filamentworkstruct {
 } *filamentworkptr;
 
 #define FILCAPPLUS 1                  // filamentstruct capped bitmask: plus end is capped
-                                      // (bit 1 reserved for the minus end)
 
 typedef struct filamentstruct {
     struct filamenttypestruct* filtype; // owning filament type
@@ -834,10 +833,8 @@ typedef struct filamentstruct {
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
-    // --- polarized elongation and capping ---
     double growbank;                    // plus-end growth owed but not yet emitted as a segment
     int capped;                         // bitmask of capped ends; see FILCAPPLUS
-    // --- end elongation and capping ---
 } * filamentptr;
 
 typedef struct filamenttypestruct
@@ -865,13 +862,11 @@ typedef struct filamenttypestruct
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
     int branchsegments;                // number of segments a daughter is born with (>=1)
-    // --- polarized elongation and capping ---
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
     double caprate;                    // plus-end capping rate, 1/time; 0 = off
     double uncaprate;                  // plus-end uncapping rate, 1/time; 0 = off
-    // --- end elongation and capping ---
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names
