@@ -1,32 +1,13 @@
-# Plus-end (barbed-end) elongation at a defined velocity.
+# Plus-end elongation at a defined velocity.
 #
-# elongation_rate is a VELOCITY (length per time), not an event rate, so the growth
-# speed does not change when standard_length is changed to resolve the polymer more
-# finely. Growth is banked per filament and paid out as whole segments, so the contour
-# length tracks elongation_rate * t with an error bounded by one segment rather than an
-# error that accumulates.
+#   plus_end              <back|front>  which end is the barbed end (default back)
+#   elongation_rate       <velocity>    plus-end growth speed, length/time (0 = off)
+#   elongation_max_length <length>      stop growing past this contour length (0 = unbounded)
 #
-# Filament-type elongation keywords:
-#   plus_end              <back|front>  which geometric end is the barbed end (default back)
-#   elongation_rate       <velocity>    plus-end growth speed, length per time (default 0 = off)
-#   elongation_max_length <length>      stop growing past this contour length (default 0 = unbounded)
+# elongation_rate is a velocity, not an event rate, so growth speed is independent of
+# standard_length. Contour length grows as L(t) = L(0) + 0.32*t.
 #
-# Numbers are scale-free, as in every filament example, but are chosen so that reading
-# length as um and time as s puts them at the endocytic actin scale:
-#   barbed-end k_on 11.6 /uM/s (Pollard 1986) x 10 uM x 2.75 nm rise per subunit
-#   = 0.32 um/s, and standard_length 0.005 = 5 nm segments.
-# Expected: contour length grows as L(t) = L(0) + 0.32*t, so a straight-line fit to the
-# dumped coordinates recovers 0.32. Any single sample sits within one segment length
-# (0.005) below that line, because growth is only materialized in whole segments and the
-# remainder is held in the filament's growth bank.
-#
-# NOTE on force_length: segment lengths are drawn from a Gaussian of width
-# sqrt(kT/(thickness*force_length)), redrawn until positive. Keep that width well below
-# standard_length (here 0.001 vs 0.005) or the truncation inflates the mean segment
-# length. The elongation velocity stays exact either way -- only the segment count moves.
-#
-# Run live (OpenGL window):   smoldyn elongation2D.txt
-# Run headless + dump coords: smoldyn elongation2D.txt -t
+# smoldyn elongation2D.txt -t
 
 graphics opengl_good
 
@@ -37,6 +18,7 @@ boundaries y -0.4 0.4 r
 time_start 0
 time_stop 2
 time_step 0.001
+random_seed 1
 
 frame_thickness 0
 

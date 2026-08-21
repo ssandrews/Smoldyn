@@ -72,6 +72,7 @@ int filtypeSetDrawmode(filamenttypeptr filtype,enum DrawMode dm);
 int filtypeSetDrawForceArrows(filamenttypeptr filtype,double scale,const double *rgba);
 int filtypeSetShiny(filamenttypeptr filtype,double shiny);
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd);
+int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar);
 int filtypeAddFace(filamenttypeptr filtype,const char* facename);
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname);
 
@@ -127,10 +128,11 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinBranches(filamentptr fil);
 
 // Filament elongation and capping
+int filEndIsCapped(const filamentptr fil,char endchar);
 double filContourLength(const filamentptr fil);
 int filElongate(simptr sim,filamentptr fil,double dlength);
-int filElongationDynamics(simptr sim,filamenttypeptr filtype);
-int filCappingDynamics(simptr sim,filamenttypeptr filtype);
+void filElongationDynamics(simptr sim,filamenttypeptr filtype);
+void filCappingDynamics(simptr sim,filamenttypeptr filtype);
 
 // Filament interactions
 int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr);
@@ -958,6 +960,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s has elongation_rate>0 but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
 		if(filtype->treadrate!=0 && filtype->elongrate>0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net growth\n",filtype->ftname);}
+		if(filtype->branchrate>0 && filtype->plusend!='b') {		// filAddBranch always anchors a daughter by its front
+			error++;simLog(sim,9,"ERROR: filament type %s combines branch_rate with plus_end front; branching currently requires plus_end back\n",filtype->ftname);}
+		if(filtype->treadrate!=0 && filtype->caprate>0 && (filtype->treadrate>0)!=(filtype->plusend=='b')) {
+			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1040,11 +1046,6 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
 		if(value<1) er=2;
 		else filtype->branchsegments=(int)(value+0.5); }
-
-	else if(!strcmp(param,"plusend")) {								// 0 = back (default), 1 = front
-		if(value==0) filtype->plusend='b';
-		else if(value==1) filtype->plusend='f';
-		else er=2; }
 
 	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
 		if(value<0) er=2;
@@ -1139,6 +1140,14 @@ int filtypeSetShiny(filamenttypeptr filtype,double shiny) {
 /* filtypeSetDynamics */
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd) {
 	filtype->dynamics=fd;
+	return 0; }
+
+
+/* filtypeSetPlusEnd */
+int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar) {
+	if(!filtype) return 1;
+	if(endchar!='b' && endchar!='f') return 2;
+	filtype->plusend=endchar;
 	return 0; }
 
 
@@ -1397,8 +1406,10 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(filtype,"need to enter filament type name before plus_end");
 		itct=sscanf(line2,"%s",nm1);
 		CHECKS(itct==1,"plus_end format: back or front");
-		CHECKS(!strcmp(nm1,"back") || !strcmp(nm1,"front"),"plus_end options: back, front");
-		filtypeSetParam(filtype,"plusend",0,!strcmp(nm1,"front")?1:0);
+		if(nm1[0]=='B' || nm1[0]=='b') er=filtypeSetPlusEnd(filtype,'b');
+		else if(nm1[0]=='F' || nm1[0]=='f') er=filtypeSetPlusEnd(filtype,'f');
+		else er=2;
+		CHECKS(!er,"plus_end options: back, front");
 		CHECKS(!strnword(line2,2),"unexpected text following plus_end"); }
 
 	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: plus-end velocity, length/time
@@ -1958,9 +1969,7 @@ double *filGetPositionOnFil(const filamentptr fil,double frac,double *pos) {
 	double path,fpath,newpath,x;
 	segmentptr segment;
 
-	path=0;
-	for(seg=0;seg<fil->nseg;seg++)					// compute total path length
-		path+=fil->segments[seg]->len;
+	path=filContourLength(fil);							// total path length
 	fpath=frac*path;												// desired distance along path
 	newpath=0;
 	for(seg=0;seg<fil->nseg && newpath<fpath;seg++)			// first endpoint after desired distance
@@ -2871,9 +2880,16 @@ void filPinBranches(filamentptr fil) {
 /******************************************************************************/
 
 
+/* filEndIsCapped */
+// Is geometric end 'b' or 'f' capped? The only place an end character is mapped onto the
+// capped bitmask, which is stored relative to polarity.
+int filEndIsCapped(const filamentptr fil,char endchar) {
+	if(endchar==fil->filtype->plusend) return fil->capped & FILCAPPLUS;
+	return 0; }
+
+
 /* filContourLength */
-// Total contour length of a filament: the sum of its segment lengths. Note this is the
-// path length along the polymer, not the end-to-end distance.
+// Sum of segment lengths: path length along the polymer, not end-to-end distance.
 double filContourLength(const filamentptr fil) {
 	int seg;
 	double total;
@@ -2884,31 +2900,27 @@ double filContourLength(const filamentptr fil) {
 
 
 /* filElongate */
-// Grow a filament's plus end by `dlength` of contour length, using a per-filament bank.
-// Segments are only ever added whole, so the bank carries the fractional remainder into
-// the next step; this makes total length track (rate * time) with a bounded, rather than
-// accumulating, error even though each new segment draws its own random length.
-// Returns the number of segments added, or -1 on a configuration error.
-//
-// A plus end that cannot place a segment (a surface is in the way) does not bank the
-// growth it was denied: the step's increment is undone and the bank is clamped to at most
-// one segment, so a stalled end sits at zero velocity instead of storing up growth and
-// discharging it in a burst once the obstruction clears.
+// Grow the plus end by dlength of contour length. Segments are added whole, so growbank
+// carries the remainder forward; debiting the length actually drawn keeps total length
+// tracking rate*time with bounded rather than accumulating error. A blocked end drops the
+// growth it was denied rather than banking it, so it stalls at zero instead of surging
+// when it clears. Returns segments added, or -1 on a configuration error.
 int filElongate(simptr sim,filamentptr fil,double dlength) {
 	filamenttypeptr filtype;
 	char endchar;
-	double stdlen,maxlen,newlen;
-	int nadd,er,tip;
+	double stdlen,maxlen,newlen,curlen;
+	int nadd,er;
 
 	filtype=fil->filtype;
 	if(fil->nseg<1) return 0;												// nothing to grow from
-	if(fil->capped & FILCAPPLUS) return 0;					// a capped plus end accepts no monomer
+	endchar=filtype->plusend;
+	if(filEndIsCapped(fil,endchar)) return 0;				// a capped plus end accepts no monomer
 	stdlen=filtype->stdlen;
 	if(stdlen<=0) return -1;												// filCheckParams errors on this; guard the loop anyway
 
-	endchar=filtype->plusend;
 	maxlen=filtype->elongmaxlen;
-	if(maxlen>0 && filContourLength(fil)>=maxlen) return 0;		// at the ceiling: no growth, and nothing banked
+	curlen=maxlen>0?filContourLength(fil):0;				// only needed to test the ceiling
+	if(maxlen>0 && curlen>=maxlen) return 0;				// at the ceiling: no growth, and nothing banked
 
 	fil->growbank+=dlength;
 	nadd=0;
@@ -2916,12 +2928,11 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 		if(nadd>=FILMAXGROW) {
 			simLog(sim,5,"WARNING: filament %s hit the %i segment per step elongation limit; check elongation_rate against dt\n",fil->filname,FILMAXGROW);
 			break; }
-		if(maxlen>0 && filContourLength(fil)>=maxlen) {			// crossed the ceiling partway through this step
+		if(maxlen>0 && curlen>=maxlen) {								// crossed the ceiling partway through this step
 			if(fil->growbank>stdlen) fil->growbank=stdlen;
 			break; }
 
-		tip=(endchar=='b')?fil->nseg-1:0;
-		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[tip]->thk,endchar,1);
+		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
 		if(er) {																						// blocked plus end
 			fil->growbank-=dlength;														// this step's growth did not happen
 			if(fil->growbank>stdlen) fil->growbank=stdlen;		// and never hold more than one segment in reserve
@@ -2930,43 +2941,39 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 
 		newlen=fil->segments[(endchar=='b')?fil->nseg-1:0]->len;
 		fil->growbank-=newlen;														// pay for the segment actually emitted
+		curlen+=newlen;
 		nadd++; }
 
 	return nadd; }
 
 
 /* filElongationDynamics */
-// Plus-end elongation for one filament type: every filament grows by (rate * dt) of
-// contour length this step. Deterministic in v1 — the only length noise is the random
-// segment length. Mirrors the treadmilling and branching blocks in filDynamics.
-int filElongationDynamics(simptr sim,filamenttypeptr filtype) {
+// Plus-end elongation for one filament type: each filament grows by rate*dt of contour
+// length. Deterministic; the only length noise is the random segment length.
+void filElongationDynamics(simptr sim,filamenttypeptr filtype) {
 	int f;
 	double dlength;
-	filamentptr fil;
 
-	if(filtype->elongrate<=0) return 0;
+	if(filtype->elongrate<=0) return;
 	dlength=filtype->elongrate*sim->dt;
 
-	for(f=0;f<filtype->nfil;f++) {
-		fil=filtype->fillist[f];
-		if(fil->nseg<1) continue;
-		filElongate(sim,fil,dlength); }
+	for(f=0;f<filtype->nfil;f++)
+		filElongate(sim,filtype->fillist[f],dlength);
 
-	return 0; }
+	return; }
 
 
 /* filCappingDynamics */
-// Stochastic plus-end capping and uncapping for one filament type. Each filament flips
-// state with probability 1-exp(-rate*dt), which is Smoldyn's unimolecular-reaction
-// convention (smolreact.c) rather than the linearized rate*dt; this is what makes the
-// measured capping rate independent of the timestep. Capping blocks plus-end monomer
-// addition; it does not shrink the filament, because the engine has no way to remove one.
-int filCappingDynamics(simptr sim,filamenttypeptr filtype) {
+// Stochastic plus-end capping and uncapping. The per-step probability is 1-exp(-rate*dt),
+// matching the unimolecular convention in smolreact.c rather than a linearized rate*dt,
+// which is what makes the measured rate independent of dt. Capping blocks monomer
+// addition; it does not shrink the filament, as there is no segment-removal path.
+void filCappingDynamics(simptr sim,filamenttypeptr filtype) {
 	int f;
 	double pcap,puncap;
 	filamentptr fil;
 
-	if(filtype->caprate<=0 && filtype->uncaprate<=0) return 0;
+	if(filtype->caprate<=0 && filtype->uncaprate<=0) return;
 	pcap=filtype->caprate>0?1.0-exp(-filtype->caprate*sim->dt):0;
 	puncap=filtype->uncaprate>0?1.0-exp(-filtype->uncaprate*sim->dt):0;
 
@@ -2978,7 +2985,7 @@ int filCappingDynamics(simptr sim,filamenttypeptr filtype) {
 		else {
 			if(pcap>0 && coinrandD(pcap)) fil->capped|=FILCAPPLUS; }}
 
-	return 0; }
+	return; }
 
 
 /******************************************************************************/
@@ -3691,13 +3698,12 @@ int filDynamics(simptr sim) {
 		if(filtype->treadrate!=0) {
 			for(f=0;f<filtype->nfil;f++) {
 				fil=filtype->fillist[f];
-				if(fil->capped & FILCAPPLUS) continue;			// capped end takes no monomer; 0 unless capping is on
+				if(filEndIsCapped(fil,filtype->treadrate>0?'b':'f')) continue;	// capped end takes no monomer
 				treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
 				for(i=0;i<treadnum;i++)
 					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }}
 
 		filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
-
 		filCappingDynamics(sim,filtype);								// before elongation: a filament capped now doesn't also grow now
 		filElongationDynamics(sim,filtype);							// before the integrator: a new segment relaxes this step
 
