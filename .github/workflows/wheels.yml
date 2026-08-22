@@ -31,11 +31,18 @@ jobs:
           - os: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Smoldyn's version comes from `git tag --points-at HEAD`;
           # shallow clones don't have the tag -> dev versions get released.
           fetch-depth: 0
+          persist-credentials: false
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v6
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==4.2.0
 
       - name: Install Windows SDK
         if: runner.os == 'Windows'
