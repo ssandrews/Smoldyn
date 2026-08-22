@@ -10,6 +10,12 @@ cd "$(dirname "$0")/.."
 # $PYTHON env var), so use `python` from PATH.
 PY=$(command -v python)
 
+# _smoldyn is written into the source tree (source/python/smoldyn/) and
+# copy_python_tree copies the whole directory, so remove binaries from
+# any previous interpreter before building for this one.
+rm -f source/python/smoldyn/_smoldyn*.so
+rm -f source/python/smoldyn/_smoldyn*.pyd
+
 EXTRA_ARGS=()
 if [[ "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
   # Mirror the windows.yml release workflow.

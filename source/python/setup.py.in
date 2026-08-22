@@ -1,0 +1,13 @@
+import setuptools
+from setuptools import setup
+
+
+class _Distribution(setuptools.Distribution):
+    # The compiled _smoldyn extension is built by CMake and staged into
+    # smoldyn/ as package data, so setuptools would otherwise tag the
+    # wheel as pure (py3-none-any). Force a platform wheel.
+    def has_ext_modules(self):
+        return True
+
+
+setup(distclass=_Distribution)

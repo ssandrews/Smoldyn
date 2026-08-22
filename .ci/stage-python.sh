@@ -10,5 +10,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release \
-  -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
-cmake --build wheelbuild --target copy_python_tree
+    -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
+
+# MSVC is a multi-config generator: without --config it builds Debug,
+# which fails to link freeglut_staticd.lib (only freeglut_static.lib
+# exists in source/MSVClibs).
+cmake --build wheelbuild --config Release --target copy_python_tree

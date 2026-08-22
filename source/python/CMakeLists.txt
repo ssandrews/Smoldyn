@@ -28,7 +28,6 @@ add_custom_target(install_deps
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     VERBATIM)
 
-# FIXME: If it comes in your way, comment it out.
 # FIXME: FOllowing runs on github actions and other CI (for Windows only).
 # Its very hard to locate correct version of Python on every cloud based CI.
 # So I let cmake install the dependencies at build time.
@@ -77,6 +76,8 @@ target_link_libraries(_smoldyn PRIVATE _pysmoldyn)
 # copy pyproject.toml.in to pyproject.toml
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pyproject.toml.in
     ${PY_SMOLDYN_OUTDIR}/pyproject.toml)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in
+    ${PY_SMOLDYN_OUTDIR}/setup.py @ONLY)
 
 add_custom_target(wheel ALL
     DEPENDS _smoldyn
