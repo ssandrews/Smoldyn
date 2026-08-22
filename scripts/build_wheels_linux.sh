@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# DEPRECATED: superseded by .github/workflows/wheels.yml (cibuildwheel).
+# Kept for local/docker use via scripts/Makefile; will be removed.
 
 set -ex
 

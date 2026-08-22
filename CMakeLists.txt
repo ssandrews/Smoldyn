@@ -1,6 +1,12 @@
-# Main CMakeLists.txt file to build Smoldyn, its libraries, and its utilities using CMake.
-# Written by Steve Andrews, April 16, 2012. Updated by Steve Andrews since then.
-# This file, and other files of the Smoldyn project, are licensed with LGPL license.
+# Main CMakeLists.txt file to build Smoldyn, its libraries,
+# and its utilities using CMake.
+#
+# Written by Steve Andrews, April 16, 2012. Updated by
+# Steve Andrews since then.
+#
+# This file, and other files of the Smoldyn project,
+# are licensed with LGPL license.
+#
 # The primary Smoldyn web site is http://www.smoldyn.org.
 # Please report bugs and problems to support@smoldyn.org.
 
@@ -17,8 +23,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 if(NOT SMOLDYN_VERSION)
     find_package(Git QUIET)
     if(GIT_FOUND)
-        # Is the current commit tagged? If yes, following command 
-        # will return the tag, empty otherwise.
+        # The following command returns git-tag if current commit is tagged,
+        # empty otherwise.
         execute_process(COMMAND ${GIT_EXECUTABLE} tag --points-at HEAD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE SMOLDYN_TAG
@@ -69,7 +75,7 @@ set(PYTHON_VERSION "Auto" CACHE STRING "Which Python version (Auto)")
 option(OPTION_WARNING_AS_ERROR "Treat most warnings as error." OFF)
 option(OPTION_ASAN "Enable Address Sanitizer" OFF)
 
-if (OPTION_VCELL)
+if(OPTION_VCELL)
     set(OPTION_USE_LIBTIFF OFF)
     set(OPTION_USE_ZLIB OFF)
     set(HAVE_ZLIB TRUE)
@@ -143,21 +149,21 @@ endif()
 # twice.
 #
 set(SRC_FILES
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
-	)
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
+ )
 
 set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
@@ -340,8 +346,8 @@ endif()
 ####### Build with LibX11 (only required for static build on Mac) ##########
 
 #if (OPTION_STATIC AND OPTION_USE_OPENGL AND HAVE_OPENGL)
-#	   find_package(X11)
-#	   if (X11_FOUND)
+#    find_package(X11)
+#    if (X11_FOUND)
 #        message(STATUS "Found X11: '${X11_INCLUDE_DIR}', '${X11_LIBRARIES}'")
 #    else ()
 #        message(FATAL_ERROR "X11 not found")
@@ -469,7 +475,7 @@ if (OPTION_TARGET_SMOLDYN)
     if(RUN_LIBS)
         message(STATUS "Setting INSTALL_RPATH=${RUN_LIBS}")
         set_target_properties(smoldyn PROPERTIES INSTALL_RPATH "${RUN_LIBS}")
-		endif()
+    endif()
 endif ()
 
 

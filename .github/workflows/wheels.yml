@@ -1,0 +1,105 @@
+#
+# Builds Python wheels on every platform with cibuildwheel.
+#
+name: Wheels
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v**"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: wheels-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest       # x86_64
+          - os: ubuntu-24.04-arm    # linux aarch64 (new!)
+          - os: macos-13            # Intel
+          - os: macos-14            # Apple Silicon (new!)
+          - os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Smoldyn's version comes from `git tag --points-at HEAD`;
+          # shallow clones don't have the tag -> dev versions get released.
+          fetch-depth: 0
+
+      - name: Install Windows SDK
+        if: runner.os == 'Windows'
+        uses: fbactions/setup-winsdk@v1
+        with:
+          winsdk-build-version: 19041
+
+      - name: Build and test wheels
+        uses: pypa/cibuildwheel@v3
+        env:
+          CIBW_BUILD: cp310-* cp311-* cp312-* cp313-* cp314-*
+          CIBW_SKIP: "pp* *-musllinux*"
+          CIBW_ARCHS: auto64
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+          # Container/system deps (same set scripts/Dockerfile used).
+          CIBW_BEFORE_ALL_LINUX: >-
+            yum install -y freeglut-devel libtiff-devel libXmu-devel libXi-devel
+          CIBW_BEFORE_ALL_MACOS: brew install cmake libtiff
+          # Runs once per python version; PYTHON points at the current one.
+          # Builds _smoldyn.<abi>.so and stages the package into build/py,
+          # which cibuildwheel then packages via build/py/pyproject.toml.
+          CIBW_BEFORE_BUILD: >-
+            cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
+            -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
+            -DPython3_EXECUTABLE="$PYTHON" &&
+            cmake --build wheelbuild --config Release
+            --target _smoldyn copy_python_tree --parallel
+          # Headless smoke test inside each wheel's venv
+          # (cwd = package dir, hence ../.. to reach repo root).
+          CIBW_TEST_COMMAND: >-
+            python -c "import smoldyn; print(smoldyn.__version__)" &&
+            python -m smoldyn ../../examples/S4_molecules/mollist.txt
+        with:
+          package-dir: build/py
+          output-dir: wheelhouse
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ runner.arch }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: build_wheels
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # Trusted Publishing (OIDC); no token secrets needed.
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  # TODO: BioSimulators release flow (ghcr.io docker image + submission
+  # issue) previously lived in wheels_linux.yml and consumed the built
+  # wheel. Re-home it as its own workflow triggered by tag pushes, e.g.:
+  #   - download artifacts (as above)
+  #   - docker build scripts/Dockerfile-BioSimulators with the wheel
+  #   - push to ghcr.io using GITHUB_TOKEN

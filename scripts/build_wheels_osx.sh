@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# DEPRECATED: superseded by .github/workflows/wheels.yml (cibuildwheel).
+# Will be removed.
 
 set -e
 set -x

@@ -1,29 +1,31 @@
-name: Release Mac OS
+# Compile + ctest check on macOS. Wheel building/publishing moved to
+# wheels.yml (cibuildwheel).
+name: CI macOS
 
 on:
   push:
-    branches:
-      - master
-    tags:
-      - "v**"
   pull_request:
-    branches:
-      - master
+
+concurrency:
+  group: ci-macos-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-
+    runs-on: macos-14
     steps:
-      - uses: actions/checkout@v2
-      - name: "Setup Python ${{ matrix.python-version }}"
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: build, test and deploy
-        env:
-          SMOLDYN_PYPI_TOKEN: ${{ secrets.SMOLDYN_PYPI_TOKEN }}
-        run: cd ./scripts && PYPI_PASSWORD=$SMOLDYN_PYPI_TOKEN ./build_wheels_osx.sh
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: brew install cmake libtiff
+      - name: Configure and build
+        run: |
+          python -m pip install numpy pytest matplotlib setuptools flaky uv
+          cmake -S . -B build -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON
+          cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
