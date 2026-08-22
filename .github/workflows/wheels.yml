@@ -49,29 +49,17 @@ jobs:
           winsdk-build-version: 19041
 
       # Host dependencies for the staging configure below (same set the
-      # master release workflows install: linux.yml apt packages,
-      # build_wheels_osx.sh brew packages). Windows runners ship the GL
-      # SDK; macOS runners ship OpenGL.
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: >-
-          sudo apt-get update &&
-          sudo apt-get install -y cmake libjpeg-dev libtiff-dev
-          freeglut3-dev libxi-dev libxmu-dev
-
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS'
-        run: brew install cmake libtiff
+      # master release workflows install). Windows runners ship the GL SDK.
+      - name: Install system dependencies
+        shell: bash
+        run: .ci/install-deps.sh
 
       # cibuildwheel checks that package-dir contains a pyproject.toml
-      # BEFORE running CIBW_BEFORE_BUILD, so stage build/py (pyproject +
-      # python tree) up front. CIBW_BEFORE_BUILD then reconfigures with
-      # each interpreter and builds _smoldyn.
+      # BEFORE running CIBW_BEFORE_BUILD, so stage the package tree up
+      # front (wheelbuild/py).
       - name: Stage python package tree
-        run: >-
-          cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
-          -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
-          && cmake --build wheelbuild --target copy_python_tree
+        shell: bash
+        run: .ci/stage-python.sh
 
       - name: Build and test wheels
         uses: pypa/cibuildwheel@v4.2
@@ -88,30 +76,15 @@ jobs:
             yum install -y freeglut-devel libtiff-devel libXmu-devel libXi-devel
           CIBW_BEFORE_ALL_MACOS: brew install cmake libtiff
           # Runs once per python version; PYTHON points at the current one.
-          # Builds _smoldyn.<abi>.so and stages the package into build/py,
-          # which cibuildwheel then packages via build/py/pyproject.toml.
-          CIBW_BEFORE_BUILD: >-
-            cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
-            -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
-            -DPython3_EXECUTABLE="$PYTHON" &&
-            cmake --build wheelbuild --config Release
-            --target _smoldyn copy_python_tree --parallel
-          # Same as CIBW_BEFORE_BUILD but with the Windows SDK version,
-          # mirroring the windows.yml release workflow.
-          CIBW_BEFORE_BUILD_WINDOWS: >-
-            cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
-            -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
-            -DCMAKE_SYSTEM_VERSION=10.0.19041.0
-            -DPython3_EXECUTABLE="$PYTHON" &&
-            cmake --build wheelbuild --config Release
-            --target _smoldyn copy_python_tree --parallel
-          # Headless smoke test inside each wheel's venv
-          # (cwd = package dir, hence ../.. to reach repo root).
-          CIBW_TEST_COMMAND: >-
-            python -c "import smoldyn; print(smoldyn.__version__)" &&
-            python -m smoldyn ../../examples/S4_molecules/mollist.txt
+          # Builds _smoldyn.<abi>.so and stages the package into wheelbuild/py,
+          # which cibuildwheel then packages via wheelbuild/py/pyproject.toml.
+          CIBW_BEFORE_BUILD: bash {project}/.ci/build-wheel.sh
+          # Headless smoke test inside each wheel's venv.
+          CIBW_TEST_COMMAND: bash {project}/.ci/test-wheel.sh
         with:
-          package-dir: build/py
+          # CMake stages the python package into <binary-dir>/py and the
+          # staging/before-build steps configure into wheelbuild/.
+          package-dir: wheelbuild/py
           output-dir: wheelhouse
 
       - uses: actions/upload-artifact@v4
