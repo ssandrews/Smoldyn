@@ -3,6 +3,6 @@
 needs changelog:
   - all:
       - changed-files:
-          - all-globs-to-all-files: "!docs/changelog.md"
+          - all-globs-to-all-files: "!docs/changelog.rst"
       - base-branch: "^(?!dependabot).*"
       - base-branch: "^(?!pre-commit-ci).*"

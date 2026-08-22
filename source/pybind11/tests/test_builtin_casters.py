@@ -247,7 +247,7 @@ def test_integer_casting():
     assert "incompatible function arguments" in str(excinfo.value)
 
 
-def test_int_convert(doc):
+def test_int_convert():
     class Int:
         def __int__(self):
             return 42
@@ -286,9 +286,6 @@ def test_int_convert(doc):
 
     convert, noconvert = m.int_passthrough, m.int_passthrough_noconvert
 
-    assert doc(convert) == "int_passthrough(arg0: typing.SupportsInt) -> int"
-    assert doc(noconvert) == "int_passthrough_noconvert(arg0: int) -> int"
-
     def requires_conversion(v):
         pytest.raises(TypeError, noconvert, v)
 
@@ -300,7 +297,7 @@ def test_int_convert(doc):
     cant_convert(3.14159)
     # TODO: Avoid DeprecationWarning in `PyLong_AsLong` (and similar)
     # TODO: PyPy 3.8 does not behave like CPython 3.8 here yet (7.3.7)
-    if sys.version_info < (3, 10) and env.CPYTHON:
+    if (3, 8) <= sys.version_info < (3, 10) and env.CPYTHON:
         with env.deprecated_call():
             assert convert(Int()) == 42
     else:
@@ -319,22 +316,6 @@ def test_int_convert(doc):
     requires_conversion(RaisingTypeErrorOnIndex())
     assert convert(RaisingValueErrorOnIndex()) == 42
     requires_conversion(RaisingValueErrorOnIndex())
-
-
-def test_float_convert(doc):
-    class Float:
-        def __float__(self):
-            return 41.45
-
-    convert, noconvert = m.float_passthrough, m.float_passthrough_noconvert
-    assert doc(convert) == "float_passthrough(arg0: typing.SupportsFloat) -> float"
-    assert doc(noconvert) == "float_passthrough_noconvert(arg0: float) -> float"
-
-    def requires_conversion(v):
-        pytest.raises(TypeError, noconvert, v)
-
-    requires_conversion(Float())
-    assert pytest.approx(convert(Float())) == 41.45
 
 
 def test_numpy_int_convert():
@@ -381,7 +362,7 @@ def test_tuple(doc):
     assert (
         doc(m.tuple_passthrough)
         == """
-        tuple_passthrough(arg0: tuple[bool, str, typing.SupportsInt]) -> tuple[int, str, bool]
+        tuple_passthrough(arg0: tuple[bool, str, int]) -> tuple[int, str, bool]
 
         Return a triple in reversed order
     """
