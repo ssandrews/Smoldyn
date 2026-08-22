@@ -1,7 +1,5 @@
 # python binding.
 
-# find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed VERSION 3.8.15...3.12)
-
 # recompile libsmoldyn for PYTHON.
 add_library(_pysmoldyn STATIC ${SRC_FILES}
     $<TARGET_OBJECTS:Steve>
