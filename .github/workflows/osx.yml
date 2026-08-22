@@ -12,14 +12,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.15"
       - name: Install dependencies
         run: brew install cmake libtiff
       - name: Configure and build

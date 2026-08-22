@@ -14,22 +14,26 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.15"
+
       - name: Install Windows SDK
         uses: fbactions/setup-winsdk@v1
         with:
           winsdk-build-version: 19041
+
       - name: Configure and build
         shell: bash
         run: |
           python -m pip install numpy pytest matplotlib setuptools flaky uv
           cmake -S . -B build -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=ON -DCMAKE_SYSTEM_VERSION=10.0.19041.0
           cmake --build build --config Release --parallel
+
       - name: Test
         shell: bash
         run: ctest --test-dir build -C Release --output-on-failure
