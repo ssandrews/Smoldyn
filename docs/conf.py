@@ -36,7 +36,6 @@ DIR = Path(__file__).parent.resolve()
 # ones.
 extensions = [
     "breathe",
-    "myst_parser",
     "sphinx_copybutton",
     "sphinxcontrib.rsvgconverter",
     "sphinxcontrib.moderncmakedomain",
@@ -50,7 +49,9 @@ breathe_domain_by_extension = {"h": "cpp"}
 templates_path = [".templates"]
 
 # The suffix(es) of source filenames.
-source_suffix = [".rst", ".md"]
+# You can specify multiple suffix as a list of string:
+# source_suffix = ['.rst', '.md']
+source_suffix = ".rst"
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
@@ -68,10 +69,9 @@ author = "Wenzel Jakob"
 # built documents.
 
 # Read the listed version
-version_file = DIR.parent / "pybind11/_version.py"
-with version_file.open(encoding="utf-8") as f:
-    code = compile(f.read(), version_file, "exec")
-loc = {"__file__": str(version_file)}
+with open("../pybind11/_version.py") as f:
+    code = compile(f.read(), "../pybind11/_version.py", "exec")
+loc = {}
 exec(code, loc)
 
 # The full version, including alpha/beta/rc tags.
