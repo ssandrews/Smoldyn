@@ -38,11 +38,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # Used to host cibuildwheel
+      # The pypa/cibuildwheel action brings its own Python+cibuildwheel;
+      # setup-python just gives the runner a predictable interpreter.
       - uses: actions/setup-python@v6
-
-      - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==4.2.0
 
       - name: Install Windows SDK
         if: runner.os == 'Windows'
@@ -51,10 +49,12 @@ jobs:
           winsdk-build-version: 19041
 
       - name: Build and test wheels
-        uses: pypa/cibuildwheel@v3
+        uses: pypa/cibuildwheel@v4.2
         env:
           CIBW_BUILD: cp310-* cp311-* cp312-* cp313-* cp314-*
-          CIBW_SKIP: "pp* *-musllinux*"
+          # pp*: PyPy (unsupported by pybind11 here); *-musllinux*: no musl;
+          # cp31?t-*: free-threaded builds (module uses the GIL).
+          CIBW_SKIP: "pp* *-musllinux* cp31?t-*"
           CIBW_ARCHS: auto64
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
