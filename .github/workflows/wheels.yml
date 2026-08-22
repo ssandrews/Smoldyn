@@ -48,6 +48,31 @@ jobs:
         with:
           winsdk-build-version: 19041
 
+      # Host dependencies for the staging configure below (same set the
+      # master release workflows install: linux.yml apt packages,
+      # build_wheels_osx.sh brew packages). Windows runners ship the GL
+      # SDK; macOS runners ship OpenGL.
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y cmake libjpeg-dev libtiff-dev
+          freeglut3-dev libxi-dev libxmu-dev
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake libtiff
+
+      # cibuildwheel checks that package-dir contains a pyproject.toml
+      # BEFORE running CIBW_BEFORE_BUILD, so stage build/py (pyproject +
+      # python tree) up front. CIBW_BEFORE_BUILD then reconfigures with
+      # each interpreter and builds _smoldyn.
+      - name: Stage python package tree
+        run: >-
+          cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
+          -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
+          && cmake --build wheelbuild --target copy_python_tree
+
       - name: Build and test wheels
         uses: pypa/cibuildwheel@v4.2
         env:
@@ -68,6 +93,15 @@ jobs:
           CIBW_BEFORE_BUILD: >-
             cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
             -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
+            -DPython3_EXECUTABLE="$PYTHON" &&
+            cmake --build wheelbuild --config Release
+            --target _smoldyn copy_python_tree --parallel
+          # Same as CIBW_BEFORE_BUILD but with the Windows SDK version,
+          # mirroring the windows.yml release workflow.
+          CIBW_BEFORE_BUILD_WINDOWS: >-
+            cmake -S . -B wheelbuild -DCMAKE_BUILD_TYPE=Release
+            -DOPTION_PYTHON=ON -DOPTION_EXAMPLES=OFF
+            -DCMAKE_SYSTEM_VERSION=10.0.19041.0
             -DPython3_EXECUTABLE="$PYTHON" &&
             cmake --build wheelbuild --config Release
             --target _smoldyn copy_python_tree --parallel
