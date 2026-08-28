@@ -6,9 +6,13 @@
 #   stiffness and in vitro branch angle (Blanchoin et al. 2000), expressed in model
 #   units where kT = 0.001: k/kT = 76, giving an equilibrium angle spread of
 #   sqrt(kT/k) = 0.115 rad (~6.6 degrees at this stiffness-to-kT ratio).
-# - branch_azimuth_fix holds each branch's direction around its mother at the value it
-#   was born with (the Arp2/3 docking site is a stereospecific slot), while birth
-#   azimuths stay random on the cone.
+# - branch_force_azimuth holds each branch's direction around its mother near the value
+#   it was born with (the Arp2/3 docking site is a stereospecific slot), while birth
+#   azimuths stay random on the cone. A spring, not the rigid branch_azimuth_fix pin:
+#   under thermal dynamics the rigid pin slaves each subtree to its mother's
+#   fluctuating tangent and pumps energy into dense networks, while the spring's
+#   bounded torque holds azimuth (equilibrium spread sqrt(kT/k_az) ~ 2 degrees here)
+#   with junction polar angles staying at their own equilibrium.
 # branch_spread is deliberately unset: it is derived as sqrt(kT/branch_force_angle) so
 # branches are born in the spring's own equilibrium distribution (see the setup log).
 #
@@ -52,7 +56,7 @@ capping_rate 2
 branch_rate 60
 branch_angle 1.344
 branch_force_angle 0.076
-branch_azimuth_fix 1
+branch_force_azimuth 0.76
 end_filament_type
 
 random_filament actin:seed0 5  0.0 0.0 0.0  0 0 0

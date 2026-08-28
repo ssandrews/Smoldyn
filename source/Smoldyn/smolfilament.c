@@ -623,6 +623,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
 		filtype->branchazimuthfix=0;								// azimuth free by default
+		filtype->branchforceazimuth=0;							// azimuthal spring off by default
 
 		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
@@ -893,6 +894,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->branchazimuth>=0)
 		simLog(sim,2,"  branch azimuth: %g rad\n",filtype->branchazimuth);
 	simLog(sim,filtype->branchazimuthfix?2:1,"  branch azimuth fixed: %s\n",filtype->branchazimuthfix?"yes":"no");
+	simLog(sim,filtype->branchforceazimuth>0?2:1,"  branch azimuth force constant: %g|E\n",filtype->branchforceazimuth);
+	if(filtype->branchforceazimuth>0 && filtype->kT>0)
+		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceazimuth));
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
@@ -991,8 +995,12 @@ int filCheckParams(const simptr sim,int *warnptr) {
 				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread set to sqrt(kT/branch_force_angle) = %g so branches are born in the junction spring's equilibrium distribution\n",filtype->ftname,fval);}
 			else if(filtype->branchspread>2*fval || filtype->branchspread<0.5*fval) {
 				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread %g differs from the junction spring's equilibrium spread sqrt(kT/branch_force_angle) = %g by more than 2-fold; branches will relax visibly after birth\n",filtype->ftname,filtype->branchspread,fval);}}
-		if(dim==2 && (filtype->branchazimuth>=0 || filtype->branchazimuthfix)) {
+		if(dim==2 && (filtype->branchazimuth>=0 || filtype->branchazimuthfix || filtype->branchforceazimuth>0)) {
 			warn++;simLog(sim,5,"WARNING: filament type %s branch_azimuth settings have no effect in 2D\n",filtype->ftname);}
+		if(filtype->branchazimuthfix && filtype->branchforceazimuth>0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s sets both branch_azimuth_fix and branch_force_azimuth; the rigid fix overrides the spring each step\n",filtype->ftname);}
+		if(filtype->branchazimuthfix && filtype->dynamics!=FDnone && filtype->kT>0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses branch_azimuth_fix with thermal dynamics; the rigid pin slaves each branch subtree to its mother's fluctuating tangent and inflates junction-angle spreads in dense networks -- prefer branch_force_azimuth there\n",filtype->ftname);}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1087,6 +1095,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchazimuthfix")) {			// hold azimuths at recorded birth values
 		if(value!=0 && value!=1) er=2;
 		else filtype->branchazimuthfix=(int)value; }
+
+	else if(!strcmp(param,"branchforceazimuth")) {		// azimuthal spring constant
+		if(value<0) er=2;
+		else filtype->branchforceazimuth=value; }
 
 	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
 		if(value<0) er=2;
@@ -1471,6 +1483,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1==0 || i1==1,"branch_azimuth_fix value needs to be 0 or 1");
 		filtypeSetParam(filtype,"branchazimuthfix",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_azimuth_fix"); }
+
+	else if(!strcmp(word,"branch_force_azimuth")) {	// branch_force_azimuth: azimuthal spring constant, energy/rad^2
+		CHECKS(filtype,"need to enter filament type name before branch_force_azimuth");
+		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_force_azimuth format: value. ");
+		CHECKS(f1>=0,"branch_force_azimuth value needs to be >=0");
+		filtypeSetParam(filtype,"branchforceazimuth",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_force_azimuth"); }
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
 		CHECKS(filtype,"need to enter filament type name before plus_end");
@@ -3561,16 +3581,22 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 // torques about the branch point and sum to zero total torque, so the pair potential
 // enters both partners' dynamics and the junction angle equilibrates at Boltzmann --
 // a one-way version was measured to overheat the angle by (1 + mobility ratio) when
-// the mother is free. No cross-filament force writes occur, per-filament force
-// clearing stays safe, and integrators that differentiate forces numerically see
-// everything automatically. Draws no random numbers; returns immediately when off.
+// the mother is free. The optional azimuthal spring (branch_force_azimuth) restores
+// the daughter's azimuth about the mother axis toward its recorded birth value with
+// energy 0.5*kaz*(phi-phi0)^2, applied as a couple on daughter nodes 0 and 1 only
+// (one-way: a clean mother-side gradient would require differentiating the material
+// frame, and the bounded spring torque cannot pump energy the way the rigid azimuth
+// pin can). No cross-filament force writes occur, per-filament force clearing stays
+// safe, and integrators that differentiate forces numerically see everything
+// automatically. Draws no random numbers; returns immediately when off.
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kappa,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3];
+	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3],phi0,dphi,cross[3];
 	filamentptr mother,daughter;
-	int br,spot,d,dim;
+	int br,brfound,spot,d,dim;
 
 	kappa=fil->filtype->branchforceangle;
-	if(kappa<=0) return;
+	kaz=fil->filtype->branchforceazimuth;
+	if(kappa<=0 && kaz<=0) return;
 	dim=fil->filtype->filss->sim->dim;
 	theta0=fil->filtype->branchangle;
 	forces=fil->filwork->forces;
@@ -3578,18 +3604,36 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
-	mother=fil->frontend;														// daughter side: couple on own nodes 0 and 1
+	mother=fil->frontend;														// daughter side: couples on own nodes 0 and 1
 	if(mother && fil->nseg>=1 && nodemin<=1) {
 		spot=-1;
+		brfound=-1;
 		for(br=0;br<mother->nbranch && spot<0;br++)
-			if(mother->branches[br]==fil)
+			if(mother->branches[br]==fil) {
 				spot=mother->branchspots[br];
+				brfound=br; }
 		if(spot>=0 && spot<mother->nseg && filJunctionGeometry(mother,spot,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
-			fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
-			for(d=0;d<dim;d++) {
-				fvect[d]=fscale*(tm[d]-costh*td[d]);
-				if(nodemax>=1) forces[1][d]+=fvect[d];
-				if(nodemin<=0) forces[0][d]-=fvect[d]; }}}	// couple: equal and opposite on the pinned node
+			if(kappa>0) {
+				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
+				for(d=0;d<dim;d++) {
+					fvect[d]=fscale*(tm[d]-costh*td[d]);
+					if(nodemax>=1) forces[1][d]+=fvect[d];
+					if(nodemin<=0) forces[0][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
+			if(kaz>0 && dim==3) {														// azimuthal spring toward the recorded birth azimuth
+				phi0=mother->branchazim0[brfound];						// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi
+				dphi=(phi0>=0)?filBranchAzimuth(mother,spot,fil):-1;
+				if(phi0>=0 && dphi>=0) {
+					dphi-=phi0;
+					if(dphi>PI) dphi-=2*PI;
+					else if(dphi<-PI) dphi+=2*PI;
+					cross[0]=tm[1]*td[2]-tm[2]*td[1];
+					cross[1]=tm[2]*td[0]-tm[0]*td[2];
+					cross[2]=tm[0]*td[1]-tm[1]*td[0];
+					fscale=-kaz*dphi/(lend*sinth*sinth);
+					for(d=0;d<3;d++) {
+						fvect[d]=fscale*cross[d];
+						if(nodemax>=1) forces[1][d]+=fvect[d];
+						if(nodemin<=0) forces[0][d]-=fvect[d]; }}}}}
 
 	for(br=0;br<fil->nbranch;br++) {								// mother side: reaction couple on nodes spot and spot+1
 		daughter=fil->branches[br];

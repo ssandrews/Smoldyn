@@ -865,7 +865,8 @@ typedef struct filamenttypestruct
     int branchsegments;                // number of segments a daughter is born with (>=1)
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
-    int branchazimuthfix;              // 1 = hold each branch azimuth at its birth value (3D)
+    int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
+    double branchforceazimuth;         // azimuthal spring constant toward birth azimuth, energy/rad^2; 0 = off (3D)
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
