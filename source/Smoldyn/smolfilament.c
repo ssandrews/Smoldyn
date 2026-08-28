@@ -975,8 +975,9 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn,dim,f,seg,ft;
+	int error,warn,dim,f,seg,ft,pcount;
 	double fval;
+	enum PanelShape ps;
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
@@ -1024,11 +1025,22 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
 		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
+		if(filtype->branchsrf) {													// a gate bound to empty geometry closes silently otherwise
+			pcount=0;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->branchsrf->npanel[ps];
+			if(pcount==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s branch_surface %s has no panels; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchsrf->sname);}}
+		if(filtype->branchcmpt && filtype->branchcmpt->npts==0 && filtype->branchcmpt->ncmptl==0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s branch_compartment %s has no inside-defining points; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchcmpt->cname);}
 		if(filtype->confinesrf && filtype->confineforce>0) {
 			if(filtype->dynamics==FDnone) {
 				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
-			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved
-				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
+			pcount=0;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->confinesrf->npanel[ps];
+			if(pcount==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
+			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5, before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
 		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0 || (filtype->confinesrf && filtype->confineforce>0)) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs or confinement with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); these forces will not be applied\n",filtype->ftname);}
 
@@ -1549,6 +1561,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"branch_surface")) {			// branch_surface: location gate, surface name + capture distance
 		CHECKS(filtype,"need to enter filament type name before branch_surface");
+		CHECKS(line2,"branch_surface format: surface_name distance");
 		itct=sscanf(line2,"%s",nm1);
 		CHECKS(itct==1,"branch_surface format: surface_name distance");
 		CHECKS(sim->srfss,"branch_surface requires that surfaces be defined first");
@@ -1559,22 +1572,24 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"branch_surface format: surface_name distance");
 		CHECKS(f1>0,"branch_surface distance needs to be >0");
-		filtype->branchsrf=sim->srfss->srflist[i1];	// parse-time binding, like reaction_cmpt
-		filtypeSetParam(filtype,"branchsurfdist",0,f1);
-		CHECKS(!strnword(line2,2),"unexpected text following branch_surface"); }
+		CHECKS(!strnword(line2,2),"unexpected text following branch_surface");
+		filtype->branchsrf=sim->srfss->srflist[i1];	// parse-time binding, like reaction_cmpt; committed only after full validation so a failed runtime set changes nothing
+		filtypeSetParam(filtype,"branchsurfdist",0,f1); }
 
 	else if(!strcmp(word,"branch_compartment")) {	// branch_compartment: location gate, compartment name
 		CHECKS(filtype,"need to enter filament type name before branch_compartment");
+		CHECKS(line2,"branch_compartment format: compartment_name");
 		itct=sscanf(line2,"%s",nm1);
 		CHECKS(itct==1,"branch_compartment format: compartment_name");
 		CHECKS(sim->cmptss,"branch_compartment requires that compartments be defined first");
 		i1=stringfind(sim->cmptss->cnames,sim->cmptss->ncmpt,nm1);
 		CHECKS(i1>=0,"branch_compartment compartment name not recognized (define the compartment before the filament type)");
-		filtype->branchcmpt=sim->cmptss->cmptlist[i1];	// parse-time binding, like reaction_cmpt
-		CHECKS(!strnword(line2,2),"unexpected text following branch_compartment"); }
+		CHECKS(!strnword(line2,2),"unexpected text following branch_compartment");
+		filtype->branchcmpt=sim->cmptss->cmptlist[i1]; }	// parse-time binding, like reaction_cmpt
 
 	else if(!strcmp(word,"confine_surface")) {		// confine_surface: harmonic confinement, surface name + spring constant (energy/length^2) + optional face
 		CHECKS(filtype,"need to enter filament type name before confine_surface");
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
 		itct=sscanf(line2,"%s",nm1);
 		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
 		CHECKS(sim->srfss,"confine_surface requires that surfaces be defined first");
@@ -1585,16 +1600,17 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front|back]");
 		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
-		filtype->confinesrf=sim->srfss->srflist[i1];	// parse-time binding, like branch_surface
-		filtypeSetParam(filtype,"confineforce",0,f1);
+		pf=filtype->confineface;										// default stands unless a face token overrides
 		line2=strnword(line2,2);
 		if(line2) {																	// optional face: which side nodes are confined to
 			itct=sscanf(line2,"%s",nm1);
 			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
 			pf=surfstring2face(nm1);
 			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
-			filtype->confineface=pf;
-			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }}
+			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
+		filtype->confinesrf=sim->srfss->srflist[i1];	// parse-time binding; committed only after full validation so a failed runtime set changes nothing
+		filtypeSetParam(filtype,"confineforce",0,f1);
+		filtype->confineface=pf; }
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
 		CHECKS(filtype,"need to enter filament type name before plus_end");
@@ -3087,8 +3103,10 @@ int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)
 // gate is set (branch_surface / branch_compartment), drawn events are thinned: an
 // event whose branch point falls outside the gated region is discarded, which realizes
 // an inhomogeneous Poisson process with density branchrate per unit mother length
-// inside the region and zero outside. The accept test draws no random numbers, so a
-// rejected event consumes only its segment draw.
+// inside the region and zero outside (exact when segment lengths are equal, since the
+// spot draw is uniform per segment -- the same sampling as the ungated draw). The
+// accept test draws no random numbers, so a rejected event consumes only its segment
+// draw.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 	int f,nfil0,seg,nbr,i,dim;
 	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
@@ -3122,7 +3140,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 				dvec[2]=sin(theta)*sin(phi);
 				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
 				angle[1]=-asin(dvec[2]);
-				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic
+				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
 
 			thick=fil->segments[seg]->thk;
 			filAddBranch(sim,fil,seg,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
@@ -3812,7 +3830,13 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 // fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric
 // wall for filament mechanics only -- molecules do not see it, and richer
 // filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
-// remains future work. Draws no random numbers; returns immediately when off.
+// remains future work. Two geometric caveats: the side test is panelside's, which
+// for rect, tri, and disk panels classifies against the panel's INFINITE plane, so
+// a confining surface should span or enclose the region the filaments occupy -- a
+// partial patch also penalizes nodes laterally beyond it, pulling them toward the
+// patch edge; and coplanar tessellations stack, since the constant is per violated
+// panel, so a node behind M coplanar panels feels up to M contributions. Draws no
+// random numbers; returns immediately when off.
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,k,pnlpt[3],*nodept,*fnode;
 	surfaceptr srf;
@@ -3824,6 +3848,8 @@ void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 	k=fil->filtype->confineforce;
 	srf=fil->filtype->confinesrf;
 	if(k<=0 || !srf) return;
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 	dim=fil->filtype->filss->sim->dim;
 	forces=fil->filwork->forces;
 	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
