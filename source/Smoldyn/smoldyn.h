@@ -830,6 +830,7 @@ typedef struct filamentstruct {
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
+    double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
@@ -863,6 +864,8 @@ typedef struct filamenttypestruct
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
     int branchsegments;                // number of segments a daughter is born with (>=1)
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
+    double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
+    int branchazimuthfix;              // 1 = hold each branch azimuth at its birth value (3D)
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
