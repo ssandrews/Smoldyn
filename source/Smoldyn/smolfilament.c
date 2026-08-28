@@ -2985,7 +2985,7 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 // each daughter attached at a uniformly random segment of its mother.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 	int f,nfil0,seg,nbr,i,dim;
-	double totallen,angle[3],thick,theta,ratedt;
+	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
 	filamentptr fil;
 
 	if(filtype->branchrate<=0) return;
@@ -3008,15 +3008,14 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 			if(dim==2) {															// in-plane +/- branch angle
 				angle[0]=theta*(coinrandD(0.5)?1:-1);
 				angle[1]=angle[2]=0; }
-			else {																		// 3D dendritic cone: fixed polar; uniform azimuth unless branch_azimuth is set
-				angle[0]=theta;
-				if(filtype->branchazimuth>=0) {					// stereospecific slot: defined azimuth, deterministic spin
-					angle[1]=filtype->branchazimuth;
-					angle[2]=0; }
-				else {
-					angle[1]=unirandCOD(0,2*PI);
-					angle[2]=unirandCOD(0,2*PI); }
-				Sph_Eax2Ypr(angle,angle); }
+			else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
+				phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
+				dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
+				dvec[1]=sin(theta)*cos(phi);
+				dvec[2]=sin(theta)*sin(phi);
+				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p)
+				angle[1]=-asin(dvec[2]);
+				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic
 
 			thick=fil->segments[seg]->thk;
 			filAddBranch(sim,fil,seg,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
