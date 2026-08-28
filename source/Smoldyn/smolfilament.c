@@ -887,7 +887,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
 	if(filtype->branchrate>0) {
 		simLog(sim,2,"  branch angle: %g rad\n",filtype->branchangle);
-		simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
+		if(filtype->branchspread>=0) simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
+		else simLog(sim,1,"  branch spread: unset\n");
 		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments); }
 	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
 	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
@@ -1001,6 +1002,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			warn++;simLog(sim,5,"WARNING: filament type %s sets both branch_azimuth_fix and branch_force_azimuth; the rigid fix overrides the spring each step\n",filtype->ftname);}
 		if(filtype->branchazimuthfix && filtype->dynamics!=FDnone && filtype->kT>0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses branch_azimuth_fix with thermal dynamics; the rigid pin slaves each branch subtree to its mother's fluctuating tangent and inflates junction-angle spreads in dense networks -- prefer branch_force_azimuth there\n",filtype->ftname);}
+		if(filtype->branchforceazimuth>0 && filtype->branchforceangle<=0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has branch_force_azimuth without branch_force_angle; nothing constrains the branch polar angle, and the azimuthal force loses authority (and is capped) as junctions wander toward parallel\n",filtype->ftname);}
+		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); the junction springs will not be applied\n",filtype->ftname);}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1086,7 +1091,9 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"branchforceangle")) {			// junction torsional spring constant
 		if(value<0) er=2;
-		else filtype->branchforceangle=value; }
+		else {
+			filtype->branchforceangle=value;
+			filSetCondition(filtype->filss,SCparams,0); }}	// so a runtime 'set' still reaches the branch_spread derivation in filUpdateParams
 
 	else if(!strcmp(param,"branchazimuth")) {					// birth azimuth; negative = uniform random
 		if(value<0) filtype->branchazimuth=-1;
@@ -2873,6 +2880,7 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 
 
 #define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
+#define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
 
 /* filBranchAzimuth */
 // Azimuth of a daughter about its mother: the angle of the daughter's first segment
@@ -2882,6 +2890,11 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 // by filPinBranches, so the two are consistent by construction whatever the frame
 // conventions. Returns -1 where azimuth is undefined: 2D systems, an invalid branch
 // spot, or a daughter parallel to its mother.
+// SIGN CONTRACT: with this definition, rotating the daughter about +tm (right-handed)
+// raises phi, which is what makes filAddJunctionForces' azimuthal gradient
+// (tm x td)/(lend*sinth^2) restoring; both rely on Sph_QtnRotate being the lab-to-frame
+// map of a proper rotation. If either convention changes, the spring flips sign to
+// anti-restoring -- the T6 validation (azimuth drift on a pinned mother) catches it.
 double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter) {
 	double td[3],v[3],phi;
 	segmentptr mseg;
@@ -3042,7 +3055,7 @@ void filPinBranches(filamentptr fil) {
 		branchpos[2]=mseg->xyzback[2];
 		filTranslate(daughter,branchpos,'=');						// move daughter so seg-0 front sits at branch point
 
-		if(fil->filtype->branchazimuthfix && dim==3 && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth
+		if(fil->filtype->branchazimuthfix && dim==3 && daughter->frontend==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
 			axis[0]=mseg->xyzback[0]-mseg->xyzfront[0];
 			axis[1]=mseg->xyzback[1]-mseg->xyzfront[1];
 			axis[2]=mseg->xyzback[2]-mseg->xyzfront[2];
@@ -3609,8 +3622,11 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 // force evaluation, reading the partner's current geometry as an external field: a
 // daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction
 // couple on nodes spot and spot+1 for each of its branches. Both couples are pure
-// torques about the branch point and sum to zero total torque, so the pair potential
-// enters both partners' dynamics and the junction angle equilibrates at Boltzmann --
+// torques about the branch point and sum to zero total torque at any one
+// configuration (the sequential per-filament integrator sweep evaluates the two
+// halves at states one substep apart, so cancellation over a step is O(dt)), so the
+// pair potential enters both partners' dynamics and the junction angle equilibrates
+// at Boltzmann --
 // a one-way version was measured to overheat the angle by (1 + mobility ratio) when
 // the mother is free. The optional azimuthal spring (branch_force_azimuth) restores
 // the daughter's azimuth about the mother axis toward its recorded birth value with
@@ -3621,7 +3637,7 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 // safe, and integrators that differentiate forces numerically see everything
 // automatically. Draws no random numbers; returns immediately when off.
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3],dphi,cross[3];
+	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3];
 	filamentptr mother,daughter;
 	int br,brfound,spot,d,dim;
 
@@ -3644,16 +3660,17 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 		spot=(brfound>=0)?mother->branchspots[brfound]:-1;
 		if(spot>=0 && spot<mother->nseg && filJunctionGeometry(mother,spot,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
 			if(kappa>0) {
-				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
+				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth; |tm-costh*td| = sinth, so |F1| = k*|theta-theta0|/lend, bounded
 				for(d=0;d<dim;d++) {
 					fvect[d]=fscale*(tm[d]-costh*td[d]);
 					if(nodemax>=1) forces[1][d]+=fvect[d];
 					if(nodemin<=0) forces[0][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
 			if(kaz>0 && dim==3 && filBranchDazim(mother,brfound,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
-				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi
+				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi -- this sign ties to the frame convention in filBranchAzimuth, see the contract comment there
 				cross[1]=tm[2]*td[0]-tm[0]*td[2];
 				cross[2]=tm[0]*td[1]-tm[1]*td[0];
-				fscale=-kaz*dphi/(lend*sinth*sinth);
+				sinbound=(sinth>FILJUNCTSINBOUND)?sinth:FILJUNCTSINBOUND;	// |cross| = sinth, so |F| = kaz*|dphi|/(lend*sinbound): the true azimuthal gradient diverges as 1/sinth near-parallel geometry, where azimuth stops being meaningful; bounding it keeps a wandering junction from blowing up the integrator
+				fscale=-kaz*dphi/(lend*sinth*sinbound);
 				for(d=0;d<3;d++) {
 					fvect[d]=fscale*cross[d];
 					if(nodemax>=1) forces[1][d]+=fvect[d];
@@ -3664,10 +3681,11 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 			daughter=fil->branches[br];
 			spot=fil->branchspots[br];
 			if(!daughter || daughter->nseg<1) continue;
+			if(daughter->frontend!=fil) continue;					// stale entry: the daughter belongs to another mother (copy_to, re-branch)
 			if(spot<0 || spot>=fil->nseg) continue;
 			if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
 			if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
-			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth
+			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
 			for(d=0;d<dim;d++) {
 				fvect[d]=fscale*(td[d]-costh*tm[d]);
 				if(spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
