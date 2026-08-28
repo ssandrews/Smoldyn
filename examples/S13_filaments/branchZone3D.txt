@@ -1,0 +1,73 @@
+# Branched network growing against a membrane, with branching confined to the membrane.
+#
+# A flat "membrane" surface spans the box at z = -0.1. The filament type sets
+#   branch_surface membrane 0.03
+# so branch nucleation is accepted only where a mother's branch point lies within 0.03
+# of the membrane: an inhomogeneous Poisson process with density branch_rate per unit
+# mother length inside that slab and zero outside. Seeds start near the membrane, so
+# the network stays dendritic against it while distal plus ends elongate away, cap,
+# and never branch. (branch_compartment <name> is the equivalent gate for a
+# compartment interior.)
+#
+# SCOPE NOTE: the location gate is an interim geometric proxy for membrane-bound
+# branching nucleators (Arp2/3 complexes recruited by membrane NPFs). It localizes
+# where branching may occur, but it models no nucleator molecules: nothing is
+# consumed, so there is no depletion or saturation. It is meant to be superseded by
+# explicit filament-molecule binding once the simulator supports it; a surface-bound
+# nucleator species would then replace this gate.
+#
+# Mechanics as in branchingJunction3D.txt: elongation + capping + junction springs,
+# with dt set by the bending stiffness (dt below standard_length^2/(4*mobility*
+# force_angle) for stable explicit euler).
+#
+# smoldyn branchZone3D.txt -t
+
+graphics opengl_good
+graphic_iter 100
+
+dim 3
+boundaries x -0.5 0.5 r
+boundaries y -0.5 0.5 r
+boundaries z -0.5 0.5 r
+
+time_start 0
+time_stop 0.5
+time_step 0.00001
+random_seed 1
+
+frame_thickness 0
+
+output_files branchZone.txt
+
+start_surface membrane
+color both grey
+panel rect +2 -0.5 -0.5 -0.1 1 1
+end_surface
+
+start_filament_type actin
+color red
+thickness 2
+polygon edge
+dynamics euler
+kT 0.001
+standard_length 0.01
+standard_angle 0 0 0
+force_length 100
+force_angle 1 1 1
+mobility 1
+elongation_rate 0.32
+capping_rate 2
+branch_rate 60
+branch_angle 1.344
+branch_force_angle 0.076
+branch_force_azimuth 0.76
+branch_surface membrane 0.03
+end_filament_type
+
+random_filament actin:seed0 5  0.0 0.0 -0.08  0 0 0
+random_filament actin:seed1 5  -0.05 0.05 -0.09  1 0 0
+random_filament actin:seed2 5  0.05 -0.05 -0.08  -1 0 0
+
+cmd @ 0.5 printFilaments branchZone.txt
+
+end_file
