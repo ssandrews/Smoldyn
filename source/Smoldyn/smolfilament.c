@@ -149,6 +149,7 @@ void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
 int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
+void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
@@ -629,6 +630,9 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchsrf=NULL;										// no location gate by default
 		filtype->branchsrfdist=0;
 		filtype->branchcmpt=NULL;										// no location gate by default
+		filtype->confinesrf=NULL;										// no confinement by default
+		filtype->confineforce=0;
+		filtype->confineface=PFfront;								// confine to the front side when on
 
 		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
@@ -907,6 +911,10 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
 	if(filtype->branchcmpt)
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
+	if(filtype->confinesrf && filtype->confineforce>0) {
+		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",filtype->confineface==PFfront?"front":"back",filtype->confinesrf->sname,filtype->confineforce);
+		if(filtype->kT>0)																// equipartition penetration depth the wall permits
+			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
@@ -1016,6 +1024,13 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
 		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
+		if(filtype->confinesrf && filtype->confineforce>0) {
+			if(filtype->dynamics==FDnone) {
+				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
+			else if(filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold) {
+				warn++;simLog(sim,5,"WARNING: filament type %s uses confine_surface with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); the confinement force will not be applied\n",filtype->ftname);}
+			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved
+				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
 		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); the junction springs will not be applied\n",filtype->ftname);}
 
@@ -1122,6 +1137,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchsurfdist")) {				// capture distance for the branch_surface gate
 		if(value<=0) er=2;
 		else filtype->branchsrfdist=value; }
+
+	else if(!strcmp(param,"confineforce")) {					// confinement spring constant
+		if(value<0) er=2;
+		else filtype->confineforce=value; }
 
 	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
 		if(value<0) er=2;
@@ -1554,6 +1573,29 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1>=0,"branch_compartment compartment name not recognized (define the compartment before the filament type)");
 		filtype->branchcmpt=sim->cmptss->cmptlist[i1];	// parse-time binding, like reaction_cmpt
 		CHECKS(!strnword(line2,2),"unexpected text following branch_compartment"); }
+
+	else if(!strcmp(word,"confine_surface")) {		// confine_surface: harmonic confinement, surface name + spring constant (energy/length^2) + optional face
+		CHECKS(filtype,"need to enter filament type name before confine_surface");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(sim->srfss,"confine_surface requires that surfaces be defined first");
+		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
+		CHECKS(i1>=0,"confine_surface surface name not recognized (define the surface before the filament type)");
+		line2=strnword(line2,2);
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
+		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
+		filtype->confinesrf=sim->srfss->srflist[i1];	// parse-time binding, like branch_surface
+		filtypeSetParam(filtype,"confineforce",0,f1);
+		line2=strnword(line2,2);
+		if(line2) {																	// optional face: which side nodes are confined to
+			itct=sscanf(line2,"%s",nm1);
+			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+			if(!strcmp(nm1,"front")) filtype->confineface=PFfront;
+			else if(!strcmp(nm1,"back")) filtype->confineface=PFback;
+			else CHECKS(0,"confine_surface face options: front, back");
+			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }}
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
 		CHECKS(filtype,"need to enter filament type name before plus_end");
@@ -3774,6 +3816,45 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	return; }
 
 
+/* filAddConfineForces */
+// Harmonic surface confinement, in the spirit of Cytosim's per-model-point
+// "confine" stiffness: each node on the penalized side of the confining surface
+// (the side opposite confine_face) feels the restoring force k*d toward the nearest
+// point of every panel it violates -- the gradient of a penalty energy 0.5*k*d^2 in
+// the penetration depth d past that panel. Summing over violated panels makes box
+// corners behave (each wall pushes along its own normal). The constant is per NODE,
+// like the other per-element force constants, so refining standard_length stiffens
+// the wall per unit contour length; the equilibrium penetration depth of a
+// fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric
+// wall for filament mechanics only -- molecules do not see it, and richer
+// filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
+// remains future work. Draws no random numbers; returns immediately when off.
+void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,k,pnlpt[3];
+	surfaceptr srf;
+	panelptr pnl;
+	enum PanelShape ps;
+	enum PanelFace badface;
+	int node,p,d,dim;
+
+	k=fil->filtype->confineforce;
+	srf=fil->filtype->confinesrf;
+	if(k<=0 || !srf) return;
+	dim=fil->filtype->filss->sim->dim;
+	forces=fil->filwork->forces;
+	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
+
+	for(node=nodemin;node<=nodemax;node++)
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++) {
+				pnl=srf->panels[ps][p];
+				if(panelside(fil->nodes[node],pnl,dim,NULL,0,0)!=badface) continue;
+				closestpanelpt(pnl,dim,fil->nodes[node],pnlpt,0);
+				for(d=0;d<dim;d++)
+					forces[node][d]+=k*(pnlpt[d]-fil->nodes[node][d]); }
+	return; }
+
+
 /* filComputeForces */
 void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,*torques;
@@ -3799,6 +3880,7 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	filAddBendForces(fil,nodemin-1,nodemax+1);
 	filAddThermalForces(fil,nodemin,nodemax);
 	filAddJunctionForces(fil,nodemin,nodemax);
+	filAddConfineForces(fil,nodemin,nodemax);
 	return; }
 
 

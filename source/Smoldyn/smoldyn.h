@@ -870,6 +870,9 @@ typedef struct filamenttypestruct
     surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
     double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
     compartptr branchcmpt;             // if set, branch only inside this compartment; NULL = no gate
+    surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
+    double confineforce;               // confinement spring constant, energy/length^2; 0 = off
+    enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
