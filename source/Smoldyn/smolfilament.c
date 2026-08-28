@@ -144,6 +144,7 @@ void filAddStretchForceMat(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
@@ -610,6 +611,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
 		filtype->branchspread=0;
 		filtype->branchsegments=1;									// daughters born as a single segment
+		filtype->branchforceangle=0;								// junction torsional spring off by default
 
 		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
@@ -874,6 +876,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branch angle: %g rad\n",filtype->branchangle);
 		simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
 		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments); }
+	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
+	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
+		simLog(sim,2,"  branch junction equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceangle));
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
@@ -935,6 +940,7 @@ void filWrite(const simptr sim,FILE *fptr) {
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
 	int error,warn,dim,f,seg,ft;
+	double fval;
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
@@ -964,6 +970,13 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s combines branch_rate with plus_end front; branching currently requires plus_end back\n",filtype->ftname);}
 		if(filtype->treadrate!=0 && filtype->caprate>0 && (filtype->treadrate>0)!=(filtype->plusend=='b')) {
 			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
+		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread
+			fval=sqrt(filtype->kT/filtype->branchforceangle);
+			if(filtype->branchspread==0) {
+				filtype->branchspread=fval;
+				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread set to sqrt(kT/branch_force_angle) = %g so branches are born in the junction spring's equilibrium distribution\n",filtype->ftname,fval);}
+			else if(filtype->branchspread>2*fval || filtype->branchspread<0.5*fval) {
+				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread %g differs from the junction spring's equilibrium spread sqrt(kT/branch_force_angle) = %g by more than 2-fold; branches will relax visibly after birth\n",filtype->ftname,filtype->branchspread,fval);}}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1046,6 +1059,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
 		if(value<1) er=2;
 		else filtype->branchsegments=(int)(value+0.5); }
+
+	else if(!strcmp(param,"branchforceangle")) {			// junction torsional spring constant
+		if(value<0) er=2;
+		else filtype->branchforceangle=value; }
 
 	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
 		if(value<0) er=2;
@@ -1401,6 +1418,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1>=1,"branch_segments value needs to be >=1");
 		filtypeSetParam(filtype,"branchsegments",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_segments"); }
+
+	else if(!strcmp(word,"branch_force_angle")) {	// branch_force_angle: junction torsional spring constant, energy/rad^2
+		CHECKS(filtype,"need to enter filament type name before branch_force_angle");
+		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_force_angle format: value. ");
+		CHECKS(f1>=0,"branch_force_angle value needs to be >=0");
+		filtypeSetParam(filtype,"branchforceangle",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_force_angle"); }
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
 		CHECKS(filtype,"need to enter filament type name before plus_end");
@@ -3373,6 +3398,72 @@ void filAddBendForceMat(filamentptr fil) {
 	return; }
 
 
+/* filAddJunctionForces */
+// Torsional spring at the branch junction: energy 0.5*k*(theta-theta0)^2, where theta
+// is the angle between the mother segment holding the branch and the daughter's first
+// segment, theta0 is the type's branch_angle, and k is branch_force_angle. The force
+// is the exact gradient of that energy with respect to the daughter's node positions,
+// applied as a couple on daughter nodes 0 and 1, which is a pure torque about the
+// branch point. The mother is read as an external field and receives no reaction
+// force, which keeps force computation per-filament; filPinBranches holds the branch
+// point itself. Because this runs inside the daughter's own force evaluation, every
+// integrator that differentiates forces numerically sees it automatically. It draws
+// no random numbers and returns immediately when the feature is off.
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,kappa,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3];
+	filamentptr mother;
+	segmentptr mseg;
+	int br,spot,d,dim;
+
+	kappa=fil->filtype->branchforceangle;
+	mother=fil->frontend;
+	if(kappa<=0 || !mother || fil->nseg<1) return;
+
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+	if(nodemin>1) return;													// the junction touches daughter nodes 0 and 1 only
+
+	spot=-1;
+	for(br=0;br<mother->nbranch && spot<0;br++)
+		if(mother->branches[br]==fil)
+			spot=mother->branchspots[br];
+	if(spot<0 || spot>=mother->nseg) return;			// stale or dropped junction
+
+	dim=fil->filtype->filss->sim->dim;
+	mseg=mother->segments[spot];
+	lenm=0;
+	for(d=0;d<dim;d++) {
+		tm[d]=mseg->xyzback[d]-mseg->xyzfront[d];
+		lenm+=tm[d]*tm[d]; }
+	lend=0;
+	for(d=0;d<dim;d++) {
+		td[d]=fil->nodes[1][d]-fil->nodes[0][d];
+		lend+=td[d]*td[d]; }
+	if(lenm<=0 || lend<=0) return;
+	lenm=sqrt(lenm);
+	lend=sqrt(lend);
+
+	costh=0;
+	for(d=0;d<dim;d++) {
+		tm[d]/=lenm;
+		td[d]/=lend;
+		costh+=tm[d]*td[d]; }
+	if(costh>1) costh=1;
+	else if(costh<-1) costh=-1;
+	sinth=sqrt(1-costh*costh);
+	if(sinth<1e-9) return;												// angle plane undefined at theta = 0 or pi
+
+	theta0=fil->filtype->branchangle;
+	fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
+	forces=fil->filwork->forces;
+	for(d=0;d<dim;d++) {
+		fvect[d]=fscale*(tm[d]-costh*td[d]);
+		if(nodemax>=1) forces[1][d]+=fvect[d];
+		if(nodemin<=0) forces[0][d]-=fvect[d]; }		// couple: equal and opposite on the pinned node
+
+	return; }
+
+
 /* filComputeForces */
 void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,*torques;
@@ -3397,6 +3488,7 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	filAddStretchForces(fil,nodemin,nodemax);
 	filAddBendForces(fil,nodemin-1,nodemax+1);
 	filAddThermalForces(fil,nodemin,nodemax);
+	filAddJunctionForces(fil,nodemin,nodemax);
 	return; }
 
 
