@@ -867,6 +867,9 @@ typedef struct filamenttypestruct
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
     int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
     double branchforceazimuth;         // azimuthal spring constant toward birth azimuth, energy/rad^2; 0 = off (3D)
+    surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
+    double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
+    compartptr branchcmpt;             // if set, branch only inside this compartment; NULL = no gate
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded

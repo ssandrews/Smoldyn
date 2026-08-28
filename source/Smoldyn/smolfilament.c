@@ -126,6 +126,7 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
 double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
 int filBranchDazim(const filamentptr mother,int br,double *dphiptr);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername);
+int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinBranches(filamentptr fil);
 
@@ -625,6 +626,9 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
 		filtype->branchazimuthfix=0;								// azimuth free by default
 		filtype->branchforceazimuth=0;							// azimuthal spring off by default
+		filtype->branchsrf=NULL;										// no location gate by default
+		filtype->branchsrfdist=0;
+		filtype->branchcmpt=NULL;										// no location gate by default
 
 		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
@@ -899,6 +903,10 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,filtype->branchforceazimuth>0?2:1,"  branch azimuth force constant: %g|E\n",filtype->branchforceazimuth);
 	if(filtype->branchforceazimuth>0 && filtype->kT>0)
 		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceazimuth));
+	if(filtype->branchsrf)
+		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
+	if(filtype->branchcmpt)
+		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
@@ -1004,6 +1012,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses branch_azimuth_fix with thermal dynamics; the rigid pin slaves each branch subtree to its mother's fluctuating tangent and inflates junction-angle spreads in dense networks -- prefer branch_force_azimuth there\n",filtype->ftname);}
 		if(filtype->branchforceazimuth>0 && filtype->branchforceangle<=0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has branch_force_azimuth without branch_force_angle; nothing constrains the branch polar angle, and the azimuthal force loses authority (and is capped) as junctions wander toward parallel\n",filtype->ftname);}
+		if(filtype->branchsrf && filtype->branchcmpt) {
+			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
+		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
 		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); the junction springs will not be applied\n",filtype->ftname);}
 
@@ -1106,6 +1118,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchforceazimuth")) {		// azimuthal spring constant
 		if(value<0) er=2;
 		else filtype->branchforceazimuth=value; }
+
+	else if(!strcmp(param,"branchsurfdist")) {				// capture distance for the branch_surface gate
+		if(value<=0) er=2;
+		else filtype->branchsrfdist=value; }
 
 	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
 		if(value<0) er=2;
@@ -1512,6 +1528,32 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(f1>=0,"branch_force_azimuth value needs to be >=0");
 		filtypeSetParam(filtype,"branchforceazimuth",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_force_azimuth"); }
+
+	else if(!strcmp(word,"branch_surface")) {			// branch_surface: location gate, surface name + capture distance
+		CHECKS(filtype,"need to enter filament type name before branch_surface");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch_surface format: surface_name distance");
+		CHECKS(sim->srfss,"branch_surface requires that surfaces be defined first");
+		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
+		CHECKS(i1>=0,"branch_surface surface name not recognized (define the surface before the filament type)");
+		line2=strnword(line2,2);
+		CHECKS(line2,"branch_surface format: surface_name distance");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_surface format: surface_name distance");
+		CHECKS(f1>0,"branch_surface distance needs to be >0");
+		filtype->branchsrf=sim->srfss->srflist[i1];	// parse-time binding, like reaction_cmpt
+		filtypeSetParam(filtype,"branchsurfdist",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_surface"); }
+
+	else if(!strcmp(word,"branch_compartment")) {	// branch_compartment: location gate, compartment name
+		CHECKS(filtype,"need to enter filament type name before branch_compartment");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch_compartment format: compartment_name");
+		CHECKS(sim->cmptss,"branch_compartment requires that compartments be defined first");
+		i1=stringfind(sim->cmptss->cnames,sim->cmptss->ncmpt,nm1);
+		CHECKS(i1>=0,"branch_compartment compartment name not recognized (define the compartment before the filament type)");
+		filtype->branchcmpt=sim->cmptss->cmptlist[i1];	// parse-time binding, like reaction_cmpt
+		CHECKS(!strnword(line2,2),"unexpected text following branch_compartment"); }
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
 		CHECKS(filtype,"need to enter filament type name before plus_end");
@@ -2980,9 +3022,46 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	return daughter; }
 
 
+/* filBranchPointInRegion */
+// Location gate for branch nucleation: returns 1 if pos qualifies under the type's
+// branch_surface / branch_compartment restriction, or if no gate is set. The gate is
+// an interim geometric proxy for membrane-bound nucleators (Arp2/3 recruited by
+// NPFs): it restricts WHERE spontaneous branching may occur but models no nucleator
+// molecules, so there is no depletion, saturation, or consumption. It is meant to be
+// superseded by explicit filament-molecule binding when the simulator gains that
+// capability, at which point a nucleator species on a surface replaces this gate.
+int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos) {
+	int p,d,dim;
+	double pnlpt[3],dist2,r2;
+	surfaceptr srf;
+	panelptr pnl;
+	enum PanelShape ps;
+
+	if(filtype->branchcmpt)
+		return posincompart(sim,pos,filtype->branchcmpt,0);
+	srf=filtype->branchsrf;
+	if(!srf) return 1;
+
+	dim=sim->dim;
+	r2=filtype->branchsrfdist*filtype->branchsrfdist;
+	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+		for(p=0;p<srf->npanel[ps];p++) {
+			pnl=srf->panels[ps][p];
+			closestpanelpt(pnl,dim,pos,pnlpt,0);
+			dist2=0;
+			for(d=0;d<dim;d++) dist2+=(pos[d]-pnlpt[d])*(pos[d]-pnlpt[d]);
+			if(dist2<=r2) return 1; }
+	return 0; }
+
+
 /* filBranchDynamics */
 // Poisson branch nucleation for one filament type, at rate branchrate*length*dt, with
-// each daughter attached at a uniformly random segment of its mother.
+// each daughter attached at a uniformly random segment of its mother. If a location
+// gate is set (branch_surface / branch_compartment), drawn events are thinned: an
+// event whose branch point falls outside the gated region is discarded, which realizes
+// an inhomogeneous Poisson process with density branchrate per unit mother length
+// inside the region and zero outside. The accept test draws no random numbers, so a
+// rejected event consumes only its segment draw.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 	int f,nfil0,seg,nbr,i,dim;
 	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
@@ -3001,6 +3080,8 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 		nbr=poisrandD(ratedt*totallen);
 		for(i=0;i<nbr;i++) {
 			seg=intrand(fil->nseg);											// uniform random branch spot
+			if((filtype->branchsrf || filtype->branchcmpt)		// interim location gate; see filBranchPointInRegion
+				&& !filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzback)) continue;
 
 			theta=filtype->branchangle;
 			if(filtype->branchspread>0)								// jitter the branch angle
