@@ -20,6 +20,13 @@
 # with dt set by the bending stiffness (dt below standard_length^2/(4*mobility*
 # force_angle) for stable explicit euler).
 #
+# The type is also CONFINED to the membrane's front side with a harmonic penalty
+# (confine_surface membrane 400): a node pushed past the membrane feels a restoring
+# force k*d toward it, with free-node penetration spread sqrt(kT/k) = 0.0016 --
+# the network presses a shallow boundary layer (~0.1 segment rms) into the soft
+# wall. Without confinement, daughters born pointing at the membrane grow straight
+# through it (measured: half of all node samples ended up below the plane).
+#
 # smoldyn branchZone3D.txt -t
 
 graphics opengl_good
@@ -62,6 +69,7 @@ branch_angle 1.344
 branch_force_angle 0.076
 branch_force_azimuth 0.76
 branch_surface membrane 0.03
+confine_surface membrane 400
 end_filament_type
 
 random_filament actin:seed0 5  0.0 0.0 -0.08  0 0 0
