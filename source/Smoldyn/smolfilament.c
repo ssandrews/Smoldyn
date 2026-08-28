@@ -3147,8 +3147,17 @@ void filAddStretchForceMat(filamentptr fil) {
 
 
 /* filAddThermalForces */
+// Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped
+// update x += dt*mobility*nodemobility*F used by filStepDynamics: each Cartesian
+// component of each node's thermal force is Gaussian with rms
+// sqrt(2*kT/(mobility*nodemobility*dt)), which samples the correct ensemble at
+// temperature kT for any choice of dt, mobility, and discretization. Forces are drawn
+// once per time step and reused across sub-step force evaluations (Runge-Kutta stages
+// and Jacobian calls). Random numbers are always drawn and the amplitude multiplies
+// the draw, so the draw sequence is independent of kT and mobility values; immobile
+// nodes (nodemobility 0) correctly receive no thermal force.
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,*kypr,kT,stdlen,frms;
+	double **forces,kT,dt,mobility,nodemob,frms;
 	filamenttypeptr filtype;
 	filamentworkptr filwork;
 	int dim,node;
@@ -3163,19 +3172,22 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
 	if(sim->time>filwork->thermtime) {				// compute random forces on each node
-		kypr=filtype->kypr;
-		stdlen=filtype->stdlen;
 		kT=filtype->kT;
-		frms=sqrt(kypr[0]*kT)/stdlen;						//?? This equation is almost certainly incorrect
+		dt=sim->dt;
+		mobility=filtype->mobility;
 		if(dim==2)
 			for(node=0;node<=fil->nseg;node++) {
-				filwork->thermforce[node][0]=2*frms*gaussrandD();
-				filwork->thermforce[node][1]=2*frms*gaussrandD(); }
+				nodemob=mobility*fil->nodemobility[node];
+				frms=(kT>0 && nodemob>0 && dt>0)?sqrt(2*kT/(nodemob*dt)):0;
+				filwork->thermforce[node][0]=frms*gaussrandD();
+				filwork->thermforce[node][1]=frms*gaussrandD(); }
 		else
 			for(node=0;node<=fil->nseg;node++) {
-				filwork->thermforce[node][0]=2*frms*gaussrandD();
-				filwork->thermforce[node][1]=2*frms*gaussrandD();
-				filwork->thermforce[node][2]=2*frms*gaussrandD(); }
+				nodemob=mobility*fil->nodemobility[node];
+				frms=(kT>0 && nodemob>0 && dt>0)?sqrt(2*kT/(nodemob*dt)):0;
+				filwork->thermforce[node][0]=frms*gaussrandD();
+				filwork->thermforce[node][1]=frms*gaussrandD();
+				filwork->thermforce[node][2]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
 
 //??	torques=fil->torques;
