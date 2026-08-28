@@ -912,7 +912,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->branchcmpt)
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
 	if(filtype->confinesrf && filtype->confineforce>0) {
-		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",filtype->confineface==PFfront?"front":"back",filtype->confinesrf->sname,filtype->confineforce);
+		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",surfface2string(filtype->confineface,string),filtype->confinesrf->sname,filtype->confineforce);
 		if(filtype->kT>0)																// equipartition penetration depth the wall permits
 			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
 
@@ -1027,12 +1027,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 		if(filtype->confinesrf && filtype->confineforce>0) {
 			if(filtype->dynamics==FDnone) {
 				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
-			else if(filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold) {
-				warn++;simLog(sim,5,"WARNING: filament type %s uses confine_surface with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); the confinement force will not be applied\n",filtype->ftname);}
 			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved
 				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
-		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
-			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); the junction springs will not be applied\n",filtype->ftname);}
+		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0 || (filtype->confinesrf && filtype->confineforce>0)) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs or confinement with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); these forces will not be applied\n",filtype->ftname);}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1374,6 +1372,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	double fltv1[9],f1;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
+	enum PanelFace pf;
 
 //	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
@@ -1592,9 +1591,9 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		if(line2) {																	// optional face: which side nodes are confined to
 			itct=sscanf(line2,"%s",nm1);
 			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
-			if(!strcmp(nm1,"front")) filtype->confineface=PFfront;
-			else if(!strcmp(nm1,"back")) filtype->confineface=PFback;
-			else CHECKS(0,"confine_surface face options: front, back");
+			pf=surfstring2face(nm1);
+			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
+			filtype->confineface=pf;
 			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }}
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
@@ -3073,27 +3072,13 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 // superseded by explicit filament-molecule binding when the simulator gains that
 // capability, at which point a nucleator species on a surface replaces this gate.
 int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos) {
-	int p,d,dim;
-	double pnlpt[3],dist2,r2;
-	surfaceptr srf;
-	panelptr pnl;
-	enum PanelShape ps;
+	double dist;
 
 	if(filtype->branchcmpt)
 		return posincompart(sim,pos,filtype->branchcmpt,0);
-	srf=filtype->branchsrf;
-	if(!srf) return 1;
-
-	dim=sim->dim;
-	r2=filtype->branchsrfdist*filtype->branchsrfdist;
-	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-		for(p=0;p<srf->npanel[ps];p++) {
-			pnl=srf->panels[ps][p];
-			closestpanelpt(pnl,dim,pos,pnlpt,0);
-			dist2=0;
-			for(d=0;d<dim;d++) dist2+=(pos[d]-pnlpt[d])*(pos[d]-pnlpt[d]);
-			if(dist2<=r2) return 1; }
-	return 0; }
+	if(!filtype->branchsrf) return 1;
+	dist=closestsurfacept(filtype->branchsrf,sim->dim,pos,NULL,NULL,NULL);
+	return dist>=0 && dist<=filtype->branchsrfdist; }		// -1 means a panel-less surface: gate closed
 
 
 /* filBranchDynamics */
@@ -3122,8 +3107,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 		nbr=poisrandD(ratedt*totallen);
 		for(i=0;i<nbr;i++) {
 			seg=intrand(fil->nseg);											// uniform random branch spot
-			if((filtype->branchsrf || filtype->branchcmpt)		// interim location gate; see filBranchPointInRegion
-				&& !filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzback)) continue;
+			if(!filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzback)) continue;		// interim location gate; accepts everything when no gate is set
 
 			theta=filtype->branchangle;
 			if(filtype->branchspread>0)								// jitter the branch angle
@@ -3136,7 +3120,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 				dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
 				dvec[1]=sin(theta)*cos(phi);
 				dvec[2]=sin(theta)*sin(phi);
-				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p)
+				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
 				angle[1]=-asin(dvec[2]);
 				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic
 
@@ -3830,7 +3814,7 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 // filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
 // remains future work. Draws no random numbers; returns immediately when off.
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,k,pnlpt[3];
+	double **forces,k,pnlpt[3],*nodept,*fnode;
 	surfaceptr srf;
 	panelptr pnl;
 	enum PanelShape ps;
@@ -3844,14 +3828,16 @@ void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 	forces=fil->filwork->forces;
 	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
 
-	for(node=nodemin;node<=nodemax;node++)
-		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-			for(p=0;p<srf->npanel[ps];p++) {
-				pnl=srf->panels[ps][p];
-				if(panelside(fil->nodes[node],pnl,dim,NULL,0,0)!=badface) continue;
-				closestpanelpt(pnl,dim,fil->nodes[node],pnlpt,0);
+	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+		for(p=0;p<srf->npanel[ps];p++) {
+			pnl=srf->panels[ps][p];											// panel-outer: fetch each panel once per node sweep
+			for(node=nodemin;node<=nodemax;node++) {
+				nodept=fil->nodes[node];
+				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
+				closestpanelpt(pnl,dim,nodept,pnlpt,0);
+				fnode=forces[node];
 				for(d=0;d<dim;d++)
-					forces[node][d]+=k*(pnlpt[d]-fil->nodes[node][d]); }
+					fnode[d]+=k*(pnlpt[d]-nodept[d]); }}
 	return; }
 
 
