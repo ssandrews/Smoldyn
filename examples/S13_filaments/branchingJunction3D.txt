@@ -1,0 +1,64 @@
+# Branched network in 3D with mechanically real junctions.
+#
+# Branching plus elongation plus capping, with the two junction features on:
+# - branch_force_angle holds each daughter near branch_angle with a torsional spring
+#   (energy 0.5*k*(theta-theta0)^2); the values here are the measured Arp2/3 junction
+#   stiffness and in vitro branch angle (Blanchoin et al. 2000), expressed in model
+#   units where kT = 0.001: k/kT = 76, giving an equilibrium angle spread of
+#   sqrt(kT/k) = 0.115 rad (~6.6 degrees at this stiffness-to-kT ratio).
+# - branch_azimuth_fix holds each branch's direction around its mother at the value it
+#   was born with (the Arp2/3 docking site is a stereospecific slot), while birth
+#   azimuths stay random on the cone.
+# branch_spread is deliberately unset: it is derived as sqrt(kT/branch_force_angle) so
+# branches are born in the spring's own equilibrium distribution (see the setup log).
+#
+# The time step is set by the BENDING stiffness, not the junction: explicit euler needs
+# dt below roughly standard_length^2/(4*mobility*force_angle), or bend modes go
+# unstable. force_angle 1 here keeps the demo fast at dt 1e-5 while filaments stay
+# effectively straight at this scale (persistence length 10 length units).
+#
+# smoldyn branchingJunction3D.txt -t
+
+graphics opengl_good
+graphic_iter 100
+
+dim 3
+boundaries x -0.5 0.5 r
+boundaries y -0.5 0.5 r
+boundaries z -0.5 0.5 r
+
+time_start 0
+time_stop 0.5
+time_step 0.00001
+random_seed 1
+
+frame_thickness 0
+
+output_files branchingJunction.txt
+
+start_filament_type actin
+color red
+thickness 2
+polygon edge
+dynamics euler
+kT 0.001
+standard_length 0.01
+standard_angle 0 0 0
+force_length 100
+force_angle 1 1 1
+mobility 1
+elongation_rate 0.32
+capping_rate 2
+branch_rate 60
+branch_angle 1.344
+branch_force_angle 0.076
+branch_azimuth_fix 1
+end_filament_type
+
+random_filament actin:seed0 5  0.0 0.0 0.0  0 0 0
+random_filament actin:seed1 5  -0.05 0.05 0.0  1 0 0
+random_filament actin:seed2 5  0.05 -0.05 0.0  -1 0 0
+
+cmd @ 0.5 printFilaments branchingJunction.txt
+
+end_file
