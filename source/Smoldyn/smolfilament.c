@@ -124,6 +124,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
 double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
+int filBranchDazim(const filamentptr mother,int br,double *dphiptr);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinBranches(filamentptr fil);
@@ -618,7 +619,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 
 		filtype->branchrate=0;											// branching off by default
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
-		filtype->branchspread=0;
+		filtype->branchspread=-1;										// negative = unset; every consumer is gated on >0, so unset behaves as deterministic until derived
 		filtype->branchsegments=1;									// daughters born as a single segment
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
@@ -988,12 +989,11 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s combines branch_rate with plus_end front; branching currently requires plus_end back\n",filtype->ftname);}
 		if(filtype->treadrate!=0 && filtype->caprate>0 && (filtype->treadrate>0)!=(filtype->plusend=='b')) {
 			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
-		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread
+		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
 			if(filtype->branchspread==0) {
-				filtype->branchspread=fval;
-				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread set to sqrt(kT/branch_force_angle) = %g so branches are born in the junction spring's equilibrium distribution\n",filtype->ftname,fval);}
-			else if(filtype->branchspread>2*fval || filtype->branchspread<0.5*fval) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has deterministic branch births (branch_spread 0) with a junction spring; branches will relax toward spread %g after birth\n",filtype->ftname,fval);}
+			else if(filtype->branchspread>2*fval || (filtype->branchspread>0 && filtype->branchspread<0.5*fval)) {
 				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread %g differs from the junction spring's equilibrium spread sqrt(kT/branch_force_angle) = %g by more than 2-fold; branches will relax visibly after birth\n",filtype->ftname,filtype->branchspread,fval);}}
 		if(dim==2 && (filtype->branchazimuth>=0 || filtype->branchazimuthfix || filtype->branchforceazimuth>0)) {
 			warn++;simLog(sim,5,"WARNING: filament type %s branch_azimuth settings have no effect in 2D\n",filtype->ftname);}
@@ -1273,8 +1273,22 @@ int filEnableFilaments(simptr sim) {
 
 
 /* filUpdateParams */
+// Derived parameters. If the junction spring is on and branch_spread was never set,
+// derive it as the spring's own equilibrium spread sqrt(kT/branch_force_angle) so
+// branches are born in the distribution the spring maintains (equipartition ties the
+// two numbers). This runs on every entry path via simupdate -- config file, libsmoldyn,
+// Python -- unlike filCheckParams, which only diagnostics paths reach. Idempotent: the
+// derivation replaces the negative unset sentinel with a positive value, and an
+// explicit branch_spread (including 0 = deterministic births) is never overridden.
 int filUpdateParams(simptr sim) {
-	(void) sim;
+	int ft;
+	filamenttypeptr filtype;
+
+	for(ft=0;ft<sim->filss->ntype;ft++) {
+		filtype=sim->filss->filtypes[ft];
+		if(filtype->branchspread<0 && filtype->branchforceangle>0 && filtype->kT>0) {
+			filtype->branchspread=sqrt(filtype->kT/filtype->branchforceangle);
+			simLog(sim,2,"branch_spread for filament type %s set to sqrt(kT/branch_force_angle) = %g\n",filtype->ftname,filtype->branchspread); }}
 	return 0; }
 
 
@@ -2858,6 +2872,8 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 /******************************************************************************/
 
 
+#define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
+
 /* filBranchAzimuth */
 // Azimuth of a daughter about its mother: the angle of the daughter's first segment
 // around the mother segment's axis, measured in that segment's material frame (from
@@ -2877,10 +2893,32 @@ double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daug
 	td[1]=daughter->nodes[1][1]-daughter->nodes[0][1];
 	td[2]=daughter->nodes[1][2]-daughter->nodes[0][2];
 	Sph_QtnRotate(mseg->qabs,td,v);								// daughter direction in the mother segment frame; x is the mother axis
-	if(v[1]*v[1]+v[2]*v[2]<=1e-18*(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])) return -1;
+	if(v[1]*v[1]+v[2]*v[2]<=FILJUNCTSINMIN*FILJUNCTSINMIN*(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])) return -1;
 	phi=atan2(v[2],v[1]);
 	if(phi<0) phi+=2*PI;
 	return phi; }
+
+
+/* filBranchDazim */
+// Signed deviation of branch br of mother from its recorded birth azimuth, wrapped to
+// (-PI,PI]. Returns 1 and sets *dphiptr when defined; 0 when the birth azimuth was
+// never recorded or the current azimuth is undefined (2D, degenerate geometry). The
+// single definition of the sentinel and wrap conventions that the rigid azimuth pin
+// and the azimuthal spring share.
+int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
+	double phi0,dphi;
+	filamentptr daughter;
+
+	phi0=mother->branchazim0[br];
+	daughter=mother->branches[br];
+	if(phi0<0 || !daughter) return 0;
+	dphi=filBranchAzimuth(mother,mother->branchspots[br],daughter);
+	if(dphi<0) return 0;
+	dphi-=phi0;
+	if(dphi>PI) dphi-=2*PI;
+	else if(dphi<-PI) dphi+=2*PI;
+	*dphiptr=dphi;
+	return 1; }
 
 
 /* filAddBranch */
@@ -2988,7 +3026,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 // trees root-first.
 void filPinBranches(filamentptr fil) {
 	int br,seg,node,dim;
-	double branchpos[3],axis[3],phi0,phi,dphi,vect[3];
+	double branchpos[3],axis[3],dphi,vect[3];
 	filamentptr daughter;
 	segmentptr mseg;
 
@@ -3004,15 +3042,7 @@ void filPinBranches(filamentptr fil) {
 		branchpos[2]=mseg->xyzback[2];
 		filTranslate(daughter,branchpos,'=');						// move daughter so seg-0 front sits at branch point
 
-		if(fil->filtype->branchazimuthfix && dim==3) {	// restore the recorded birth azimuth
-			phi0=fil->branchazim0[br];
-			if(phi0<0) continue;
-			phi=filBranchAzimuth(fil,seg,daughter);
-			if(phi<0) continue;
-			dphi=phi0-phi;
-			if(dphi>PI) dphi-=2*PI;
-			else if(dphi<-PI) dphi+=2*PI;
-			if(dphi==0) continue;
+		if(fil->filtype->branchazimuthfix && dim==3 && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth
 			axis[0]=mseg->xyzback[0]-mseg->xyzfront[0];
 			axis[1]=mseg->xyzback[1]-mseg->xyzfront[1];
 			axis[2]=mseg->xyzback[2]-mseg->xyzfront[2];
@@ -3021,11 +3051,11 @@ void filPinBranches(filamentptr fil) {
 				vect[0]=daughter->nodes[node][0]-branchpos[0];
 				vect[1]=daughter->nodes[node][1]-branchpos[1];
 				vect[2]=daughter->nodes[node][2]-branchpos[2];
-				Sph_RotateVectorAxisAngle(vect,axis,dphi,vect);
+				Sph_RotateVectorAxisAngle(vect,axis,-dphi,vect);
 				daughter->nodes[node][0]=branchpos[0]+vect[0];
 				daughter->nodes[node][1]=branchpos[1]+vect[1];
 				daughter->nodes[node][2]=branchpos[2]+vect[2]; }
-			Sph_RotateVectorAxisAngle(daughter->seg0up,axis,dphi,daughter->seg0up);
+			Sph_RotateVectorAxisAngle(daughter->seg0up,axis,-dphi,daughter->seg0up);
 			filNodes2Angles(daughter,-1,-1); }}
 
 	return; }
@@ -3313,7 +3343,7 @@ void filAddStretchForceMat(filamentptr fil) {
 // the draw, so the draw sequence is independent of kT and mobility values; immobile
 // nodes (nodemobility 0) correctly receive no thermal force.
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kT,dt,mobility,nodemob,frms;
+	double **forces,kT,dt,mobility,famp,nodemob,frms;
 	filamenttypeptr filtype;
 	filamentworkptr filwork;
 	int dim,node;
@@ -3331,16 +3361,17 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 		kT=filtype->kT;
 		dt=sim->dt;
 		mobility=filtype->mobility;
+		famp=(dt>0 && mobility>0)?2*kT/(mobility*dt):0;			// loop-invariant part; per-node frms = sqrt(famp/nodemobility)
 		if(dim==2)
 			for(node=0;node<=fil->nseg;node++) {
-				nodemob=mobility*fil->nodemobility[node];
-				frms=(kT>0 && nodemob>0 && dt>0)?sqrt(2*kT/(nodemob*dt)):0;
+				nodemob=fil->nodemobility[node];
+				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD(); }
 		else
 			for(node=0;node<=fil->nseg;node++) {
-				nodemob=mobility*fil->nodemobility[node];
-				frms=(kT>0 && nodemob>0 && dt>0)?sqrt(2*kT/(nodemob*dt)):0;
+				nodemob=fil->nodemobility[node];
+				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD();
 				filwork->thermforce[node][2]=frms*gaussrandD(); }
@@ -3561,7 +3592,7 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 	if(costh>1) costh=1;
 	else if(costh<-1) costh=-1;
 	sinth=sqrt(1-costh*costh);
-	if(sinth<1e-9) return 0;
+	if(sinth<FILJUNCTSINMIN) return 0;
 
 	*lenmptr=lenm;
 	*lendptr=lend;
@@ -3590,14 +3621,14 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 // safe, and integrators that differentiate forces numerically see everything
 // automatically. Draws no random numbers; returns immediately when off.
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3],phi0,dphi,cross[3];
+	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3],dphi,cross[3];
 	filamentptr mother,daughter;
 	int br,brfound,spot,d,dim;
 
 	kappa=fil->filtype->branchforceangle;
 	kaz=fil->filtype->branchforceazimuth;
-	if(kappa<=0 && kaz<=0) return;
 	dim=fil->filtype->filss->sim->dim;
+	if(kappa<=0 && (kaz<=0 || dim!=3)) return;			// the azimuthal spring exists only in 3D
 	theta0=fil->filtype->branchangle;
 	forces=fil->filwork->forces;
 
@@ -3606,12 +3637,11 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 
 	mother=fil->frontend;														// daughter side: couples on own nodes 0 and 1
 	if(mother && fil->nseg>=1 && nodemin<=1) {
-		spot=-1;
 		brfound=-1;
-		for(br=0;br<mother->nbranch && spot<0;br++)
-			if(mother->branches[br]==fil) {
-				spot=mother->branchspots[br];
-				brfound=br; }
+		for(br=0;br<mother->nbranch && brfound<0;br++)
+			if(mother->branches[br]==fil)
+				brfound=br;
+		spot=(brfound>=0)?mother->branchspots[brfound]:-1;
 		if(spot>=0 && spot<mother->nseg && filJunctionGeometry(mother,spot,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
 			if(kappa>0) {
 				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
@@ -3619,34 +3649,29 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 					fvect[d]=fscale*(tm[d]-costh*td[d]);
 					if(nodemax>=1) forces[1][d]+=fvect[d];
 					if(nodemin<=0) forces[0][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
-			if(kaz>0 && dim==3) {														// azimuthal spring toward the recorded birth azimuth
-				phi0=mother->branchazim0[brfound];						// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi
-				dphi=(phi0>=0)?filBranchAzimuth(mother,spot,fil):-1;
-				if(phi0>=0 && dphi>=0) {
-					dphi-=phi0;
-					if(dphi>PI) dphi-=2*PI;
-					else if(dphi<-PI) dphi+=2*PI;
-					cross[0]=tm[1]*td[2]-tm[2]*td[1];
-					cross[1]=tm[2]*td[0]-tm[0]*td[2];
-					cross[2]=tm[0]*td[1]-tm[1]*td[0];
-					fscale=-kaz*dphi/(lend*sinth*sinth);
-					for(d=0;d<3;d++) {
-						fvect[d]=fscale*cross[d];
-						if(nodemax>=1) forces[1][d]+=fvect[d];
-						if(nodemin<=0) forces[0][d]-=fvect[d]; }}}}}
+			if(kaz>0 && dim==3 && filBranchDazim(mother,brfound,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
+				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi
+				cross[1]=tm[2]*td[0]-tm[0]*td[2];
+				cross[2]=tm[0]*td[1]-tm[1]*td[0];
+				fscale=-kaz*dphi/(lend*sinth*sinth);
+				for(d=0;d<3;d++) {
+					fvect[d]=fscale*cross[d];
+					if(nodemax>=1) forces[1][d]+=fvect[d];
+					if(nodemin<=0) forces[0][d]-=fvect[d]; }}}}
 
-	for(br=0;br<fil->nbranch;br++) {								// mother side: reaction couple on nodes spot and spot+1
-		daughter=fil->branches[br];
-		spot=fil->branchspots[br];
-		if(!daughter || daughter->nseg<1) continue;
-		if(spot<0 || spot>=fil->nseg) continue;
-		if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
-		if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
-		fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth
-		for(d=0;d<dim;d++) {
-			fvect[d]=fscale*(td[d]-costh*tm[d]);
-			if(spot+1>=nodemin && spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
-			if(spot>=nodemin && spot<=nodemax) forces[spot][d]-=fvect[d]; }}
+	if(kappa>0)																			// mother side: reaction couple for the polar spring only (azimuth is one-way)
+		for(br=0;br<fil->nbranch;br++) {
+			daughter=fil->branches[br];
+			spot=fil->branchspots[br];
+			if(!daughter || daughter->nseg<1) continue;
+			if(spot<0 || spot>=fil->nseg) continue;
+			if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
+			if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
+			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth
+			for(d=0;d<dim;d++) {
+				fvect[d]=fscale*(td[d]-costh*tm[d]);
+				if(spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
+				if(spot>=nodemin) forces[spot][d]-=fvect[d]; }}
 
 	return; }
 

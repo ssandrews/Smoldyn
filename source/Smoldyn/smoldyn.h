@@ -861,7 +861,7 @@ typedef struct filamenttypestruct
     double filradius;                  // segment radius
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
-    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
+    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
     int branchsegments;                // number of segments a daughter is born with (>=1)
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
