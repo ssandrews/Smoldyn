@@ -145,6 +145,7 @@ void filAddStretchForceMat(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
+int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
@@ -3508,38 +3509,17 @@ void filAddBendForceMat(filamentptr fil) {
 	return; }
 
 
-/* filAddJunctionForces */
-// Torsional spring at the branch junction: energy 0.5*k*(theta-theta0)^2, where theta
-// is the angle between the mother segment holding the branch and the daughter's first
-// segment, theta0 is the type's branch_angle, and k is branch_force_angle. The force
-// is the exact gradient of that energy with respect to the daughter's node positions,
-// applied as a couple on daughter nodes 0 and 1, which is a pure torque about the
-// branch point. The mother is read as an external field and receives no reaction
-// force, which keeps force computation per-filament; filPinBranches holds the branch
-// point itself. Because this runs inside the daughter's own force evaluation, every
-// integrator that differentiates forces numerically sees it automatically. It draws
-// no random numbers and returns immediately when the feature is off.
-void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kappa,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3];
-	filamentptr mother;
+/* filJunctionGeometry */
+// Shared geometry for the junction spring: unit tangents of the mother segment at
+// spot and of the daughter's first segment, their cosine and sine, and the two
+// segment lengths. Returns 1 when the junction force is well defined, 0 when it is
+// degenerate (zero-length segment, or theta at 0 or pi where the angle plane is
+// undefined -- >5 sigma from any realistic branch angle, so skipping is safe).
+int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr) {
+	double lenm,lend,costh,sinth;
 	segmentptr mseg;
-	int br,spot,d,dim;
+	int d;
 
-	kappa=fil->filtype->branchforceangle;
-	mother=fil->frontend;
-	if(kappa<=0 || !mother || fil->nseg<1) return;
-
-	if(nodemin<0) nodemin=0;
-	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
-	if(nodemin>1) return;													// the junction touches daughter nodes 0 and 1 only
-
-	spot=-1;
-	for(br=0;br<mother->nbranch && spot<0;br++)
-		if(mother->branches[br]==fil)
-			spot=mother->branchspots[br];
-	if(spot<0 || spot>=mother->nseg) return;			// stale or dropped junction
-
-	dim=fil->filtype->filss->sim->dim;
 	mseg=mother->segments[spot];
 	lenm=0;
 	for(d=0;d<dim;d++) {
@@ -3547,9 +3527,9 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 		lenm+=tm[d]*tm[d]; }
 	lend=0;
 	for(d=0;d<dim;d++) {
-		td[d]=fil->nodes[1][d]-fil->nodes[0][d];
+		td[d]=daughter->nodes[1][d]-daughter->nodes[0][d];
 		lend+=td[d]*td[d]; }
-	if(lenm<=0 || lend<=0) return;
+	if(lenm<=0 || lend<=0) return 0;
 	lenm=sqrt(lenm);
 	lend=sqrt(lend);
 
@@ -3561,15 +3541,68 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	if(costh>1) costh=1;
 	else if(costh<-1) costh=-1;
 	sinth=sqrt(1-costh*costh);
-	if(sinth<1e-9) return;												// angle plane undefined at theta = 0 or pi
+	if(sinth<1e-9) return 0;
 
+	*lenmptr=lenm;
+	*lendptr=lend;
+	*costhptr=costh;
+	*sinthptr=sinth;
+	return 1; }
+
+
+/* filAddJunctionForces */
+// Torsional spring at the branch junction: energy 0.5*k*(theta-theta0)^2, where theta
+// is the angle between the mother segment holding the branch and the daughter's first
+// segment, theta0 is the type's branch_angle, and k is branch_force_angle. Each
+// filament applies the exact gradient with respect to its OWN nodes during its own
+// force evaluation, reading the partner's current geometry as an external field: a
+// daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction
+// couple on nodes spot and spot+1 for each of its branches. Both couples are pure
+// torques about the branch point and sum to zero total torque, so the pair potential
+// enters both partners' dynamics and the junction angle equilibrates at Boltzmann --
+// a one-way version was measured to overheat the angle by (1 + mobility ratio) when
+// the mother is free. No cross-filament force writes occur, per-filament force
+// clearing stays safe, and integrators that differentiate forces numerically see
+// everything automatically. Draws no random numbers; returns immediately when off.
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,kappa,theta0,tm[3],td[3],lenm,lend,costh,sinth,fscale,fvect[3];
+	filamentptr mother,daughter;
+	int br,spot,d,dim;
+
+	kappa=fil->filtype->branchforceangle;
+	if(kappa<=0) return;
+	dim=fil->filtype->filss->sim->dim;
 	theta0=fil->filtype->branchangle;
-	fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
 	forces=fil->filwork->forces;
-	for(d=0;d<dim;d++) {
-		fvect[d]=fscale*(tm[d]-costh*td[d]);
-		if(nodemax>=1) forces[1][d]+=fvect[d];
-		if(nodemin<=0) forces[0][d]-=fvect[d]; }		// couple: equal and opposite on the pinned node
+
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
+	mother=fil->frontend;														// daughter side: couple on own nodes 0 and 1
+	if(mother && fil->nseg>=1 && nodemin<=1) {
+		spot=-1;
+		for(br=0;br<mother->nbranch && spot<0;br++)
+			if(mother->branches[br]==fil)
+				spot=mother->branchspots[br];
+		if(spot>=0 && spot<mother->nseg && filJunctionGeometry(mother,spot,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
+			fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth
+			for(d=0;d<dim;d++) {
+				fvect[d]=fscale*(tm[d]-costh*td[d]);
+				if(nodemax>=1) forces[1][d]+=fvect[d];
+				if(nodemin<=0) forces[0][d]-=fvect[d]; }}}	// couple: equal and opposite on the pinned node
+
+	for(br=0;br<fil->nbranch;br++) {								// mother side: reaction couple on nodes spot and spot+1
+		daughter=fil->branches[br];
+		spot=fil->branchspots[br];
+		if(!daughter || daughter->nseg<1) continue;
+		if(spot<0 || spot>=fil->nseg) continue;
+		if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
+		if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
+		fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth
+		for(d=0;d<dim;d++) {
+			fvect[d]=fscale*(td[d]-costh*tm[d]);
+			if(spot+1>=nodemin && spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
+			if(spot>=nodemin && spot<=nodemax) forces[spot][d]-=fvect[d]; }}
 
 	return; }
 
