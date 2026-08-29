@@ -3,10 +3,6 @@
 // they currently FAIL, deliberately flagging the bug. Once the underlying
 // functions are fixed (see the doc-comments on each case) these tests should
 // start passing.
-//
-// Kept in a separate target so the intentionally-failing cases are easy to spot
-// and don't mask regressions in the rest of the suite. This target links the
-// real smoldyn_static library, so it exercises the production code paths.
 
 #include <cstring>
 #include <cmath>

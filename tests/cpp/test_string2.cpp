@@ -25,7 +25,7 @@ TEST_CASE("strisnumber distinguishes full numeric strings", "[string2][parse]") 
     CHECK(strisnumber("abc") == 0);
     CHECK(strisnumber("1 2") == 0);
     // NOTE: acceptance of 'NaN'/'inf' is currently a known bug; see
-    // test_known_bugs.cpp. Those have been omitted here on purpose.
+    // test_potential_bugs.cpp. Those have been omitted here on purpose.
 }
 
 TEST_CASE("wordcount counts whitespace separated tokens", "[string2][word]") {
