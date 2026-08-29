@@ -1,18 +1,34 @@
-// Tests that assert the CORRECT behaviour for a handful of known defects in
-// libSteve. These are written against the intended semantics, so they currently
-// FAIL, deliberately flagging the bug. Once the underlying functions are fixed
-// (see the doc-comments on each case) these tests should start passing.
+// Tests that assert the CORRECT behaviour for a handful of known defects in the
+// Smoldyn core / libSteve. These are written against the intended semantics, so
+// they currently FAIL, deliberately flagging the bug. Once the underlying
+// functions are fixed (see the doc-comments on each case) these tests should
+// start passing.
 //
-// Kept in a separate target so the intentionally-failing cases are easy to
-// spot and don't mask regressions in the rest of the suite.
+// Kept in a separate target so the intentionally-failing cases are easy to spot
+// and don't mask regressions in the rest of the suite. This target links the
+// real smoldyn_static library, so it exercises the production code paths.
 
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/catch_approx.hpp>
+#include <cstring>
+#include <cmath>
 
 extern "C" {
 #include "math2.h"
 #include "string2.h"
+#include "SurfaceParam.h"
+#include "smoldynfuncs.h"
 }
+
+// smoldynfuncs.h defines its own CHECK macro (used for internal error handling)
+// which collides with Catch2's assertion macro. Undefine the whole family before
+// the Catch2 headers are brought in.
+#undef CHECK
+#undef CHECKMEM
+#undef CHECKM
+#undef CHECKBUG
+#undef CHECKS
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 using Catch::Approx;
 
@@ -58,4 +74,35 @@ TEST_CASE("BUG: strisnumber accepts non-finite special values as numbers",
     CHECK(strisnumber("inf") == 0);
     CHECK(strisnumber("-inf") == 0);
     CHECK(strisnumber("Infinity") == 0);
+}
+
+TEST_CASE("BUG: surfaceprob yields non-finite probabilities for a zero rate",
+          "[known-bug][surface][surfaceprob]") {
+    // A "no adsorption, only desorption" rate (k1 == 0) is a valid physical
+    // input, but surfaceprob returns p2 == inf for SPArevAds
+    // (SurfaceParam.c:133 uses lookuprevads which divides by the adsorption
+    // capacity). All returned probabilities must be finite and in [0, 1].
+    const double dt = 0.1;
+    const double difc = 1.0;
+    double p2 = 0.0;
+    double p1 = surfaceprob(0.0, 0.5, dt, difc, &p2, SPArevAds);
+    CHECK(p1 >= 0.0);
+    CHECK(p1 <= 1.0);
+    CHECK(std::isfinite(p1));
+    CHECK(std::isfinite(p2));      // currently inf
+    CHECK(p2 >= 0.0);
+    CHECK(p2 <= 1.0);
+}
+
+TEST_CASE("BUG: molserno2string/molserno2string lose serial numbers with a zero part",
+          "[known-bug][serno][parse]") {
+    // The "hi.lo" serial-number encoding can't be parsed back when either part
+    // is 0: 0xFFFFFFFF -> "0.4294967295" and 0x100000000 -> "1.0" both parse to
+    // 0 (smolmolec.c:625 returns 0 when i1==0 || i2==0). Round-trip must be exact.
+    char buf[STRCHARLONG];
+    for (unsigned long long s : {0xFFFFFFFFULL, 0x100000000ULL}) {
+        molserno2string(s, buf);
+        CAPTURE(s, buf);
+        CHECK(molstring2serno(buf) == s);   // currently returns 0
+    }
 }

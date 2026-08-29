@@ -72,3 +72,19 @@ TEST_CASE("simversionnumber returns a parseable version", "[core][version]") {
     CHECK(v >= 2.0);
     CHECK(v == v);  // not NaN
 }
+
+TEST_CASE("molstring2serno / molserno2string round-trip", "[core][parse][serno]") {
+    char buf[STRCHARLONG];
+    // Small serial numbers are printed as a single integer.
+    for (unsigned long long s : {0ULL, 1ULL, 123456ULL, 0xFFFFFFFEULL}) {
+        molserno2string(s, buf);
+        CHECK(molstring2serno(buf) == s);
+    }
+    // Large serial numbers use the "hi.lo" encoding; round-trip only works when
+    // both the high and low parts are non-zero.
+    for (unsigned long long s : {0x100000001ULL, 0x123456789ABCDEF0ULL}) {
+        molserno2string(s, buf);
+        CAPTURE(s, buf);
+        CHECK(molstring2serno(buf) == s);
+    }
+}

@@ -45,15 +45,26 @@ add_executable(test_string2 test_string2.cpp
 add_smoldyn_cpp_test(test_string2)
 
 # ---------------------------------------------------------------------------
+# test_reaction_kernels: reaction-rate / surface-parameter computation kernels
+# and random-sampling invariants.
+# ---------------------------------------------------------------------------
+add_executable(test_reaction_kernels test_reaction_kernels.cpp
+    ${LIBSTEVE_DIR}/rxn2Dparam.c
+    ${LIBSTEVE_DIR}/SurfaceParam.c
+    ${LIBSTEVE_DIR}/random2.c
+    ${LIBSTEVE_DIR}/math2.c
+    ${LIBSTEVE_DIR}/SFMT/SFMT.c)
+add_smoldyn_cpp_test(test_reaction_kernels)
+
+# ---------------------------------------------------------------------------
 # test_known_bugs: intentionally-failing tests that assert the correct behaviour
 # for known libSteve defects. These are expected to fail until the underlying
 # functions are fixed; do not remove them once the bugs are resolved.
 # ---------------------------------------------------------------------------
-add_executable(test_known_bugs test_known_bugs.cpp
-    ${LIBSTEVE_DIR}/math2.c
-    ${LIBSTEVE_DIR}/string2.c
-    ${LIBSTEVE_DIR}/SFMT/SFMT.c)
-add_smoldyn_cpp_test(test_known_bugs)
+add_executable(test_known_bugs test_known_bugs.cpp)
+target_link_libraries(test_known_bugs PRIVATE Catch2::Catch2WithMain smoldyn_static)
+target_include_directories(test_known_bugs PRIVATE ${LIBSTEVE_DIR})
+add_test(NAME test_known_bugs COMMAND test_known_bugs)
 
 # ---------------------------------------------------------------------------
 # test_geometry: distances, areas, volumes and point-in tests.
