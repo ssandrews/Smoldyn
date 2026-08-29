@@ -45,12 +45,23 @@ add_executable(test_string2 test_string2.cpp
 add_smoldyn_cpp_test(test_string2)
 
 # ---------------------------------------------------------------------------
+# test_known_bugs: intentionally-failing tests that assert the correct behaviour
+# for known libSteve defects. These are expected to fail until the underlying
+# functions are fixed; do not remove them once the bugs are resolved.
+# ---------------------------------------------------------------------------
+add_executable(test_known_bugs test_known_bugs.cpp
+    ${LIBSTEVE_DIR}/math2.c
+    ${LIBSTEVE_DIR}/string2.c
+    ${LIBSTEVE_DIR}/SFMT/SFMT.c)
+add_smoldyn_cpp_test(test_known_bugs)
+
+# ---------------------------------------------------------------------------
 # test_geometry: distances, areas, volumes and point-in tests.
 # ---------------------------------------------------------------------------
-add_executable(test_geometry test_geometry.cpp
+add_executable(test_geometry_cpp test_geometry.cpp
     ${LIBSTEVE_DIR}/Geometry.c
     ${LIBSTEVE_DIR}/math2.c)
-add_smoldyn_cpp_test(test_geometry)
+add_smoldyn_cpp_test(test_geometry_cpp)
 
 # ---------------------------------------------------------------------------
 # test_core_parsing: self-contained Smoldyn core parsers (enum <-> string).

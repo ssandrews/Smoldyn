@@ -47,7 +47,8 @@ TEST_CASE("error functions are self-consistent", "[math2][special]") {
 }
 
 TEST_CASE("bessj0D at known points", "[math2][special]") {
-    CHECK(bessj0D(0.0) == Approx(1.0).epsilon(1e-12));
+    // The low-|x| rational approximation is accurate to ~1e-8, not exact.
+    CHECK(bessj0D(0.0) == Approx(1.0).epsilon(1e-7));
     CHECK(bessj0D(2.0) == Approx(0.22389077914123567).epsilon(1e-7));
 }
 
@@ -85,8 +86,8 @@ TEST_CASE("sincD and boxD", "[math2][special]") {
 
 TEST_CASE("reflectD folds a value back into the interval", "[math2][interval]") {
     CHECK(reflectD(5.0, 0.0, 10.0) == Approx(5.0));
-    CHECK(reflectD(-3.0, 0.0, 10.0) == Approx(6.0));
-    CHECK(reflectD(15.0, 0.0, 10.0) == Approx(5.0));
+    CHECK(reflectD(-3.0, 0.0, 10.0) == Approx(3.0));  // reflected about lo=0
+    CHECK(reflectD(15.0, 0.0, 10.0) == Approx(5.0));  // reflected about hi=10
     // Repeated reflection keeps the result inside [lo, hi].
     CHECK(reflectD(-25.0, 0.0, 10.0) >= 0.0);
     CHECK(reflectD(-25.0, 0.0, 10.0) <= 10.0);
@@ -95,7 +96,7 @@ TEST_CASE("reflectD folds a value back into the interval", "[math2][interval]") 
 TEST_CASE("diffgreen2D is symmetric", "[math2][greens]") {
     CHECK(diffgreen2D(1.0, 2.0) == Approx(diffgreen2D(2.0, 1.0)).epsilon(1e-12));
     // r1 == 0: 1/(2*pi) * exp(-r2^2/2)
-    CHECK(diffgreen2D(0.0, 1.0) == Approx(0.0965308856131924).epsilon(1e-10));
+    CHECK(diffgreen2D(0.0, 1.0) == Approx(0.0965323526300539).epsilon(1e-10));
 }
 
 TEST_CASE("linefitD computes a least-squares line", "[math2][regression]") {
