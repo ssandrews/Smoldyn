@@ -35,7 +35,10 @@ void wrap(py::module m) {
         .def_readwrite("num", &SimpleBase::num)
         .def(py::pickle(
             [](const py::object &self) {
-                py::dict d = py::getattr(self, "__dict__", py::dict());
+                py::dict d;
+                if (py::hasattr(self, "__dict__")) {
+                    d = self.attr("__dict__");
+                }
                 return py::make_tuple(self.attr("num"), d);
             },
             [](const py::tuple &t) {
