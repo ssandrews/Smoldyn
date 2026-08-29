@@ -5,7 +5,7 @@
 # Please report bugs and problems to support@smoldyn.org.
 
 ########## Basic setup ##########
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.21..3.21)
 
 project(smoldyn LANGUAGES CXX C)
 
@@ -17,7 +17,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 if(NOT SMOLDYN_VERSION)
     find_package(Git QUIET)
     if(GIT_FOUND)
-        # Is the current commit tagged? If yes, following command 
+        # Is the current commit tagged? If yes, following command
         # will return the tag, empty otherwise.
         execute_process(COMMAND ${GIT_EXECUTABLE} tag --points-at HEAD
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -143,21 +143,21 @@ endif()
 # twice.
 #
 set(SRC_FILES
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
-	${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
-	)
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
+ )
 
 set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
@@ -469,7 +469,7 @@ if (OPTION_TARGET_SMOLDYN)
     if(RUN_LIBS)
         message(STATUS "Setting INSTALL_RPATH=${RUN_LIBS}")
         set_target_properties(smoldyn PROPERTIES INSTALL_RPATH "${RUN_LIBS}")
-		endif()
+    endif()
 endif ()
 
 
