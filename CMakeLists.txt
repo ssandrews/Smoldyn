@@ -484,6 +484,14 @@ if (OPTION_PYTHON)
         find_package(Python3 ${SMOLDYN_PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
     endif()
 
+    # Force pybind11 to use exactly the Python version found above, instead
+    # of re-searching on its own (which could pick a different interpreter).
+    set(PYBIND11_PYTHON_VERSION
+        "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+    set(PYTHON_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH
+        "Python executable used by pybind11")
+    set(PYBIND11_FINDPYTHON ON)
+
     set(PYBIND11_SOURCE_DIR ${CMAKE_SOURCE_DIR}/source/pybind11)
     add_subdirectory(${PYBIND11_SOURCE_DIR})
     add_subdirectory(${CMAKE_SOURCE_DIR}/source/python)
