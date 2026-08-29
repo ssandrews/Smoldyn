@@ -63,7 +63,6 @@ Checks: |
   -bugprone-reserved-identifier,
   -bugprone-unused-raii,
   -performance-enum-size,
-  -performance-inefficient-string-concatenation,
 
 CheckOptions:
 - key:             modernize-use-equals-default.IgnoreMacros
