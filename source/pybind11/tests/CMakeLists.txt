@@ -5,7 +5,16 @@
 # All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 
-cmake_minimum_required(VERSION 3.15...4.0)
+cmake_minimum_required(VERSION 3.5)
+
+# The `cmake_minimum_required(VERSION 3.5...3.29)` syntax does not work with
+# some versions of VS that have a patched CMake 3.11. This forces us to emulate
+# the behavior using the following workaround:
+if(${CMAKE_VERSION} VERSION_LESS 3.29)
+    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+else()
+    cmake_policy(VERSION 3.29)
+endif()
 
 # Filter out items; print an optional message if any items filtered. This ignores extensions.
 #
@@ -13,51 +22,51 @@ cmake_minimum_required(VERSION 3.15...4.0)
 #   pybind11_filter_tests(LISTNAME file1.cpp file2.cpp ... MESSAGE "")
 #
 macro(pybind11_filter_tests LISTNAME)
-  cmake_parse_arguments(ARG "" "MESSAGE" "" ${ARGN})
-  set(PYBIND11_FILTER_TESTS_FOUND OFF)
-  # Make a list of the test without any extensions, for easier filtering.
-  set(_TMP_ACTUAL_LIST "${${LISTNAME}};") # enforce ';' at the end to allow matching last item.
-  string(REGEX REPLACE "\\.[^.;]*;" ";" LIST_WITHOUT_EXTENSIONS "${_TMP_ACTUAL_LIST}")
-  foreach(filename IN LISTS ARG_UNPARSED_ARGUMENTS)
-    string(REGEX REPLACE "\\.[^.]*$" "" filename_no_ext ${filename})
-    # Search in the list without extensions.
-    list(FIND LIST_WITHOUT_EXTENSIONS ${filename_no_ext} _FILE_FOUND)
-    if(_FILE_FOUND GREATER -1)
-      list(REMOVE_AT ${LISTNAME} ${_FILE_FOUND}) # And remove from the list with extensions.
-      list(REMOVE_AT LIST_WITHOUT_EXTENSIONS ${_FILE_FOUND}
-      )# And our search list, to ensure it is in sync.
-      set(PYBIND11_FILTER_TESTS_FOUND ON)
+    cmake_parse_arguments(ARG "" "MESSAGE" "" ${ARGN})
+    set(PYBIND11_FILTER_TESTS_FOUND OFF)
+    # Make a list of the test without any extensions, for easier filtering.
+    set(_TMP_ACTUAL_LIST "${${LISTNAME}};") # enforce ';' at the end to allow matching last item.
+    string(REGEX REPLACE "\\.[^.;]*;" ";" LIST_WITHOUT_EXTENSIONS "${_TMP_ACTUAL_LIST}")
+    foreach(filename IN LISTS ARG_UNPARSED_ARGUMENTS)
+        string(REGEX REPLACE "\\.[^.]*$" "" filename_no_ext ${filename})
+        # Search in the list without extensions.
+        list(FIND LIST_WITHOUT_EXTENSIONS ${filename_no_ext} _FILE_FOUND)
+        if(_FILE_FOUND GREATER -1)
+            list(REMOVE_AT ${LISTNAME} ${_FILE_FOUND}) # And remove from the list with extensions.
+            list(REMOVE_AT LIST_WITHOUT_EXTENSIONS ${_FILE_FOUND}
+      ) # And our search list, to ensure it is in sync.
+            set(PYBIND11_FILTER_TESTS_FOUND ON)
+        endif()
+    endforeach()
+    if(PYBIND11_FILTER_TESTS_FOUND AND ARG_MESSAGE)
+        message(STATUS "${ARG_MESSAGE}")
     endif()
-  endforeach()
-  if(PYBIND11_FILTER_TESTS_FOUND AND ARG_MESSAGE)
-    message(STATUS "${ARG_MESSAGE}")
-  endif()
 endmacro()
 
 macro(possibly_uninitialized)
-  foreach(VARNAME ${ARGN})
-    if(NOT DEFINED "${VARNAME}")
-      set("${VARNAME}" "")
-    endif()
-  endforeach()
+    foreach(VARNAME ${ARGN})
+        if(NOT DEFINED "${VARNAME}")
+            set("${VARNAME}" "")
+        endif()
+    endforeach()
 endmacro()
 
 # Function to add additional targets if any of the provided tests are found.
 # Needles; Specifies the test names to look for.
 # Additions; Specifies the additional test targets to add when any of the needles are found.
 macro(tests_extra_targets needles additions)
-  # Add the index for this relation to the index extra targets map.
-  list(LENGTH PYBIND11_TEST_EXTRA_TARGETS PYBIND11_TEST_EXTRA_TARGETS_LEN)
-  list(APPEND PYBIND11_TEST_EXTRA_TARGETS ${PYBIND11_TEST_EXTRA_TARGETS_LEN})
-  # Add the test names to look for, and the associated test target additions.
-  set(PYBIND11_TEST_EXTRA_TARGETS_NEEDLES_${PYBIND11_TEST_EXTRA_TARGETS_LEN} ${needles})
-  set(PYBIND11_TEST_EXTRA_TARGETS_ADDITION_${PYBIND11_TEST_EXTRA_TARGETS_LEN} ${additions})
+    # Add the index for this relation to the index extra targets map.
+    list(LENGTH PYBIND11_TEST_EXTRA_TARGETS PYBIND11_TEST_EXTRA_TARGETS_LEN)
+    list(APPEND PYBIND11_TEST_EXTRA_TARGETS ${PYBIND11_TEST_EXTRA_TARGETS_LEN})
+    # Add the test names to look for, and the associated test target additions.
+    set(PYBIND11_TEST_EXTRA_TARGETS_NEEDLES_${PYBIND11_TEST_EXTRA_TARGETS_LEN} ${needles})
+    set(PYBIND11_TEST_EXTRA_TARGETS_ADDITION_${PYBIND11_TEST_EXTRA_TARGETS_LEN} ${additions})
 endmacro()
 
 # New Python support
 if(DEFINED Python_EXECUTABLE)
-  set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
-  set(PYTHON_VERSION "${Python_VERSION}")
+    set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}")
+    set(SMOLDYN_PYTHON_VERSION "${Python_VERSION}")
 endif()
 
 # There's no harm in including a project in a project
@@ -67,9 +76,8 @@ project(pybind11_tests CXX)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../tools")
 
 option(PYBIND11_WERROR "Report all warnings as errors" OFF)
-option(DOWNLOAD_EIGEN "Download EIGEN" OFF)
-option(PYBIND11_CUDA_TESTS "Enable building CUDA tests" OFF)
-option(PYBIND11_TEST_SMART_HOLDER "Change the default to smart holder" OFF)
+option(DOWNLOAD_EIGEN "Download EIGEN (requires CMake 3.11+)" OFF)
+option(PYBIND11_CUDA_TESTS "Enable building CUDA tests (requires CMake 3.12+)" OFF)
 set(PYBIND11_TEST_OVERRIDE
     ""
     CACHE STRING "Tests from ;-separated list of *.cpp files will be built instead of all tests")
@@ -78,31 +86,31 @@ set(PYBIND11_TEST_FILTER
     CACHE STRING "Tests from ;-separated list of *.cpp files will be removed from all tests")
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  # We're being loaded directly, i.e. not via add_subdirectory, so make this
-  # work as its own project and load the pybind11Config to get the tools we need
+    # We're being loaded directly, i.e. not via add_subdirectory, so make this
+    # work as its own project and load the pybind11Config to get the tools we need
 
-  if(SKBUILD)
-    add_subdirectory(.. pybind11_src)
-  else()
-    find_package(pybind11 REQUIRED CONFIG)
-  endif()
+    if(SKBUILD)
+        add_subdirectory(.. pybind11_src)
+    else()
+        find_package(pybind11 REQUIRED CONFIG)
+    endif()
 endif()
 
 if(NOT CMAKE_BUILD_TYPE AND NOT DEFINED CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting tests build type to MinSizeRel as none was specified")
-  set(CMAKE_BUILD_TYPE
+    message(STATUS "Setting tests build type to MinSizeRel as none was specified")
+    set(CMAKE_BUILD_TYPE
       MinSizeRel
       CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel"
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel"
                                                "RelWithDebInfo")
 endif()
 
 if(PYBIND11_CUDA_TESTS)
-  enable_language(CUDA)
-  if(DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
-  endif()
-  set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+    enable_language(CUDA)
+    if(DEFINED CMAKE_CXX_STANDARD)
+        set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD})
+    endif()
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 endif()
 
 # Full set of test files (you can override these; see below, overrides ignore extension)
@@ -116,24 +124,6 @@ set(PYBIND11_TEST_FILES
     test_callbacks
     test_chrono
     test_class
-    test_class_release_gil_before_calling_cpp_dtor
-    test_class_sh_basic
-    test_class_sh_disowning
-    test_class_sh_disowning_mi
-    test_class_sh_factory_constructors
-    test_class_sh_inheritance
-    test_class_sh_mi_thunks
-    test_class_sh_property
-    test_class_sh_property_non_owning
-    test_class_sh_shared_ptr_copy_move
-    test_class_sh_trampoline_basic
-    test_class_sh_trampoline_self_life_support
-    test_class_sh_trampoline_shared_from_this
-    test_class_sh_trampoline_shared_ptr_cpp_arg
-    test_class_sh_trampoline_unique_ptr
-    test_class_sh_unique_ptr_custom_deleter
-    test_class_sh_unique_ptr_member
-    test_class_sh_virtual_py_cpp_mix
     test_const_name
     test_constants_and_functions
     test_copy_move
@@ -141,7 +131,6 @@ set(PYBIND11_TEST_FILES
     test_custom_type_casters
     test_custom_type_setup
     test_docstring_options
-    test_docs_advanced_cast_custom
     test_eigen_matrix
     test_eigen_tensor
     test_enum
@@ -155,19 +144,14 @@ set(PYBIND11_TEST_FILES
     test_methods_and_attributes
     test_modules
     test_multiple_inheritance
-    test_multiple_interpreters.py
-    test_native_enum
     test_numpy_array
     test_numpy_dtypes
-    test_numpy_scalars
     test_numpy_vectorize
     test_opaque_types
     test_operator_overloading
     test_pickling
-    test_potentially_slicing_weak_ptr
     test_python_multiple_inheritance
     test_pytypes
-    test_scoped_critical_section
     test_sequences_and_iterators
     test_smart_ptr
     test_stl
@@ -180,37 +164,36 @@ set(PYBIND11_TEST_FILES
     test_unnamed_namespace_a
     test_unnamed_namespace_b
     test_vector_unique_ptr_member
-    test_virtual_functions
-    test_warnings)
+    test_virtual_functions)
 
 # Invoking cmake with something like:
 #     cmake -DPYBIND11_TEST_OVERRIDE="test_callbacks.cpp;test_pickling.cpp" ..
 # lets you override the tests that get compiled and run.  You can restore to all tests with:
 #     cmake -DPYBIND11_TEST_OVERRIDE= ..
 if(PYBIND11_TEST_OVERRIDE)
-  # Instead of doing a direct override here, we iterate over the overrides without extension and
-  # match them against entries from the PYBIND11_TEST_FILES, anything that not matches goes into the filter list.
-  string(REGEX REPLACE "\\.[^.;]*;" ";" TEST_OVERRIDE_NO_EXT "${PYBIND11_TEST_OVERRIDE};")
-  string(REGEX REPLACE "\\.[^.;]*;" ";" TEST_FILES_NO_EXT "${PYBIND11_TEST_FILES};")
-  # This allows the override to be done with extensions, preserving backwards compatibility.
-  foreach(test_name ${TEST_FILES_NO_EXT})
-    if(NOT ${test_name} IN_LIST TEST_OVERRIDE_NO_EXT
-    )# If not in the allowlist, add to be filtered out.
-      list(APPEND PYBIND11_TEST_FILTER ${test_name})
-    endif()
-  endforeach()
+    # Instead of doing a direct override here, we iterate over the overrides without extension and
+    # match them against entries from the PYBIND11_TEST_FILES, anything that not matches goes into the filter list.
+    string(REGEX REPLACE "\\.[^.;]*;" ";" TEST_OVERRIDE_NO_EXT "${PYBIND11_TEST_OVERRIDE};")
+    string(REGEX REPLACE "\\.[^.;]*;" ";" TEST_FILES_NO_EXT "${PYBIND11_TEST_FILES};")
+    # This allows the override to be done with extensions, preserving backwards compatibility.
+    foreach(test_name ${TEST_FILES_NO_EXT})
+        if(NOT ${test_name} IN_LIST TEST_OVERRIDE_NO_EXT
+    ) # If not in the allowlist, add to be filtered out.
+            list(APPEND PYBIND11_TEST_FILTER ${test_name})
+        endif()
+    endforeach()
 endif()
 
 # You can also filter tests:
 if(PYBIND11_TEST_FILTER)
-  pybind11_filter_tests(PYBIND11_TEST_FILES ${PYBIND11_TEST_FILTER})
+    pybind11_filter_tests(PYBIND11_TEST_FILES ${PYBIND11_TEST_FILTER})
 endif()
 
 # Skip tests for CUDA check:
 # /pybind11/tests/test_constants_and_functions.cpp(125):
 #   error: incompatible exception specifications
 if(PYBIND11_CUDA_TESTS)
-  pybind11_filter_tests(
+    pybind11_filter_tests(
     PYBIND11_TEST_FILES test_constants_and_functions.cpp MESSAGE
     "Skipping test_constants_and_functions due to incompatible exception specifications")
 endif()
@@ -221,16 +204,16 @@ set(PYBIND11_CPPTEST_FILES "")
 set(PYBIND11_PYTEST_FILES "")
 
 foreach(test_name ${PYBIND11_TEST_FILES})
-  if(test_name MATCHES "\\.py$") # Ends in .py, purely python test.
-    list(APPEND PYBIND11_PYTEST_FILES ${test_name})
-  elseif(test_name MATCHES "\\.cpp$") # Ends in .cpp, purely cpp test.
-    list(APPEND PYBIND11_CPPTEST_FILES ${test_name})
-  elseif(NOT test_name MATCHES "\\.") # No extension specified, assume both, add extension.
-    list(APPEND PYBIND11_PYTEST_FILES ${test_name}.py)
-    list(APPEND PYBIND11_CPPTEST_FILES ${test_name}.cpp)
-  else()
-    message(WARNING "Unhanded test extension in test: ${test_name}")
-  endif()
+    if(test_name MATCHES "\\.py$") # Ends in .py, purely python test.
+        list(APPEND PYBIND11_PYTEST_FILES ${test_name})
+    elseif(test_name MATCHES "\\.cpp$") # Ends in .cpp, purely cpp test.
+        list(APPEND PYBIND11_CPPTEST_FILES ${test_name})
+    elseif(NOT test_name MATCHES "\\.") # No extension specified, assume both, add extension.
+        list(APPEND PYBIND11_PYTEST_FILES ${test_name}.py)
+        list(APPEND PYBIND11_CPPTEST_FILES ${test_name}.cpp)
+    else()
+        message(WARNING "Unhanded test extension in test: ${test_name}")
+    endif()
 endforeach()
 set(PYBIND11_TEST_FILES ${PYBIND11_CPPTEST_FILES})
 list(SORT PYBIND11_PYTEST_FILES)
@@ -264,122 +247,127 @@ list(GET PYBIND11_EIGEN_VERSION_AND_HASH 1 PYBIND11_EIGEN_VERSION_HASH)
 # skip message).
 list(FIND PYBIND11_TEST_FILES test_eigen_matrix.cpp PYBIND11_TEST_FILES_EIGEN_I)
 if(PYBIND11_TEST_FILES_EIGEN_I EQUAL -1)
-  list(FIND PYBIND11_TEST_FILES test_eigen_tensor.cpp PYBIND11_TEST_FILES_EIGEN_I)
+    list(FIND PYBIND11_TEST_FILES test_eigen_tensor.cpp PYBIND11_TEST_FILES_EIGEN_I)
 endif()
 if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
-  # Try loading via newer Eigen's Eigen3Config first (bypassing tools/FindEigen3.cmake).
-  # Eigen 3.3.1+ exports a cmake 3.0+ target for handling dependency requirements, but also
-  if(DOWNLOAD_EIGEN)
-    if(CMAKE_VERSION VERSION_LESS 3.18)
-      set(_opts)
-    else()
-      set(_opts SOURCE_SUBDIR no-cmake-build)
-    endif()
-    include(FetchContent)
-    FetchContent_Declare(
+    # Try loading via newer Eigen's Eigen3Config first (bypassing tools/FindEigen3.cmake).
+    # Eigen 3.3.1+ exports a cmake 3.0+ target for handling dependency requirements, but also
+    # produces a fatal error if loaded from a pre-3.0 cmake.
+    if(DOWNLOAD_EIGEN)
+        if(CMAKE_VERSION VERSION_LESS 3.11)
+            message(FATAL_ERROR "CMake 3.11+ required when using DOWNLOAD_EIGEN")
+        endif()
+
+        include(FetchContent)
+        FetchContent_Declare(
       eigen
       GIT_REPOSITORY "${PYBIND11_EIGEN_REPO}"
-      GIT_TAG "${PYBIND11_EIGEN_VERSION_HASH}"
-      ${_opts})
-    FetchContent_MakeAvailable(eigen)
-    if(NOT CMAKE_VERSION VERSION_LESS 3.18)
-      set(EIGEN3_INCLUDE_DIR "${eigen_SOURCE_DIR}")
+      GIT_TAG "${PYBIND11_EIGEN_VERSION_HASH}")
+
+        FetchContent_GetProperties(eigen)
+        if(NOT eigen_POPULATED)
+            message(
+        STATUS
+          "Downloading Eigen ${PYBIND11_EIGEN_VERSION_STRING} (${PYBIND11_EIGEN_VERSION_HASH}) from ${PYBIND11_EIGEN_REPO}"
+      )
+            FetchContent_Populate(eigen)
+        endif()
+
+        set(EIGEN3_INCLUDE_DIR ${eigen_SOURCE_DIR})
+        set(EIGEN3_FOUND TRUE)
+        # When getting locally, the version is not visible from a superprojet,
+        # so just force it.
+        set(EIGEN3_VERSION "${PYBIND11_EIGEN_VERSION_STRING}")
+
+    else()
+        find_package(Eigen3 3.2.7 QUIET CONFIG)
+
+        if(NOT EIGEN3_FOUND)
+            # Couldn't load via target, so fall back to allowing module mode finding, which will pick up
+            # tools/FindEigen3.cmake
+            find_package(Eigen3 3.2.7 QUIET)
+        endif()
     endif()
 
-    set(EIGEN3_INCLUDE_DIR ${eigen_SOURCE_DIR})
-    set(EIGEN3_FOUND TRUE)
-    # When getting locally, the version is not visible from a superprojet,
-    # so just force it.
-    set(EIGEN3_VERSION "${PYBIND11_EIGEN_VERSION_STRING}")
-
-  else()
-    find_package(Eigen3 3.2.7 QUIET CONFIG)
-
-    if(NOT EIGEN3_FOUND)
-      # Couldn't load via target, so fall back to allowing module mode finding, which will pick up
-      # tools/FindEigen3.cmake
-      find_package(Eigen3 3.2.7 QUIET)
-    endif()
-  endif()
-
-  if(EIGEN3_FOUND)
-    if(NOT TARGET Eigen3::Eigen)
-      add_library(Eigen3::Eigen IMPORTED INTERFACE)
-      set_property(TARGET Eigen3::Eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+    if(EIGEN3_FOUND)
+        if(NOT TARGET Eigen3::Eigen)
+            add_library(Eigen3::Eigen IMPORTED INTERFACE)
+            set_property(TARGET Eigen3::Eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES
                                                  "${EIGEN3_INCLUDE_DIR}")
-    endif()
+        endif()
 
-    # Eigen 3.3.1+ cmake sets EIGEN3_VERSION_STRING (and hard codes the version when installed
-    # rather than looking it up in the cmake script); older versions, and the
-    # tools/FindEigen3.cmake, set EIGEN3_VERSION instead.
-    if(NOT EIGEN3_VERSION AND EIGEN3_VERSION_STRING)
-      set(EIGEN3_VERSION ${EIGEN3_VERSION_STRING})
-    endif()
-    message(STATUS "Building tests with Eigen v${EIGEN3_VERSION}")
+        # Eigen 3.3.1+ cmake sets EIGEN3_VERSION_STRING (and hard codes the version when installed
+        # rather than looking it up in the cmake script); older versions, and the
+        # tools/FindEigen3.cmake, set EIGEN3_VERSION instead.
+        if(NOT EIGEN3_VERSION AND EIGEN3_VERSION_STRING)
+            set(EIGEN3_VERSION ${EIGEN3_VERSION_STRING})
+        endif()
+        message(STATUS "Building tests with Eigen v${EIGEN3_VERSION}")
 
-    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0))
-      tests_extra_targets("test_eigen_tensor.py" "eigen_tensor_avoid_stl_array")
-    endif()
+        if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0))
+            tests_extra_targets("test_eigen_tensor.py" "eigen_tensor_avoid_stl_array")
+        endif()
 
-  else()
-    list(FIND PYBIND11_TEST_FILES test_eigen_matrix.cpp PYBIND11_TEST_FILES_EIGEN_I)
-    if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
-      list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_EIGEN_I})
-    endif()
+    else()
+        list(FIND PYBIND11_TEST_FILES test_eigen_matrix.cpp PYBIND11_TEST_FILES_EIGEN_I)
+        if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
+            list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_EIGEN_I})
+        endif()
 
-    list(FIND PYBIND11_TEST_FILES test_eigen_tensor.cpp PYBIND11_TEST_FILES_EIGEN_I)
-    if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
-      list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_EIGEN_I})
+        list(FIND PYBIND11_TEST_FILES test_eigen_tensor.cpp PYBIND11_TEST_FILES_EIGEN_I)
+        if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
+            list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_EIGEN_I})
+        endif()
+        message(
+      STATUS "Building tests WITHOUT Eigen, use -DDOWNLOAD_EIGEN=ON on CMake 3.11+ to download")
     endif()
-    message(STATUS "Building tests WITHOUT Eigen, use -DDOWNLOAD_EIGEN=ON to download")
-  endif()
 endif()
 
 # Some code doesn't support gcc 4
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-  list(FIND PYBIND11_TEST_FILES test_eigen_tensor.cpp PYBIND11_TEST_FILES_EIGEN_I)
-  if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
-    list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_EIGEN_I})
-  endif()
+    list(FIND PYBIND11_TEST_FILES test_eigen_tensor.cpp PYBIND11_TEST_FILES_EIGEN_I)
+    if(PYBIND11_TEST_FILES_EIGEN_I GREATER -1)
+        list(REMOVE_AT PYBIND11_TEST_FILES ${PYBIND11_TEST_FILES_EIGEN_I})
+    endif()
 endif()
 
 # Optional dependency for some tests (boost::variant is only supported with version >= 1.56)
 find_package(Boost 1.56)
 
 if(Boost_FOUND)
-  if(NOT TARGET Boost::headers)
-    add_library(Boost::headers IMPORTED INTERFACE)
-    if(TARGET Boost::boost)
-      # Classic FindBoost
-      set_property(TARGET Boost::headers PROPERTY INTERFACE_LINK_LIBRARIES Boost::boost)
-    else()
-      # Very old FindBoost, or newer Boost than CMake in older CMakes
-      set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+    if(NOT TARGET Boost::headers)
+        add_library(Boost::headers IMPORTED INTERFACE)
+        if(TARGET Boost::boost)
+            # Classic FindBoost
+            set_property(TARGET Boost::headers PROPERTY INTERFACE_LINK_LIBRARIES Boost::boost)
+        else()
+            # Very old FindBoost, or newer Boost than CMake in older CMakes
+            set_property(TARGET Boost::headers PROPERTY INTERFACE_INCLUDE_DIRECTORIES
                                                   ${Boost_INCLUDE_DIRS})
+        endif()
     endif()
-  endif()
 endif()
 
 # Check if we need to add -lstdc++fs or -lc++fs or nothing
 if(DEFINED CMAKE_CXX_STANDARD AND CMAKE_CXX_STANDARD LESS 17)
-  set(STD_FS_NO_LIB_NEEDED TRUE)
+    set(STD_FS_NO_LIB_NEEDED TRUE)
 elseif(MSVC)
-  set(STD_FS_NO_LIB_NEEDED TRUE)
+    set(STD_FS_NO_LIB_NEEDED TRUE)
 else()
-  file(
+    file(
     WRITE ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
-    "#include <filesystem>\nint main(int /*argc*/, char ** argv) {\n  std::filesystem::path p(argv[0]);\n  return p.string().length();\n}"
+    "#include <filesystem>\nint main(int argc, char ** argv) {\n  std::filesystem::path p(argv[0]);\n  return p.string().length();\n}"
   )
-  try_compile(
+    try_compile(
     STD_FS_NO_LIB_NEEDED ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
     COMPILE_DEFINITIONS -std=c++17)
-  try_compile(
+    try_compile(
     STD_FS_NEEDS_STDCXXFS ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
     COMPILE_DEFINITIONS -std=c++17
     LINK_LIBRARIES stdc++fs)
-  try_compile(
+    try_compile(
     STD_FS_NEEDS_CXXFS ${CMAKE_CURRENT_BINARY_DIR}
     SOURCES ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
     COMPILE_DEFINITIONS -std=c++17
@@ -387,22 +375,22 @@ else()
 endif()
 
 if(${STD_FS_NEEDS_STDCXXFS})
-  set(STD_FS_LIB stdc++fs)
+    set(STD_FS_LIB stdc++fs)
 elseif(${STD_FS_NEEDS_CXXFS})
-  set(STD_FS_LIB c++fs)
+    set(STD_FS_LIB c++fs)
 elseif(${STD_FS_NO_LIB_NEEDED})
-  set(STD_FS_LIB "")
+    set(STD_FS_LIB "")
 else()
-  message(WARNING "Unknown C++17 compiler - not passing -lstdc++fs")
-  set(STD_FS_LIB "")
+    message(WARNING "Unknown C++17 compiler - not passing -lstdc++fs")
+    set(STD_FS_LIB "")
 endif()
 
 # Compile with compiler warnings turned on
 function(pybind11_enable_warnings target_name)
-  if(MSVC)
-    target_compile_options(${target_name} PRIVATE /W4 /wd4189)
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Intel|Clang)" AND NOT PYBIND11_CUDA_TESTS)
-    target_compile_options(
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /W4 /wd4189)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Intel|Clang)" AND NOT PYBIND11_CUDA_TESTS)
+        target_compile_options(
       ${target_name}
       PRIVATE -Wall
               -Wextra
@@ -411,151 +399,137 @@ function(pybind11_enable_warnings target_name)
               -Wdeprecated
               -Wundef
               -Wnon-virtual-dtor)
-    if(DEFINED CMAKE_CXX_STANDARD AND NOT CMAKE_CXX_STANDARD VERSION_LESS 20)
-      target_compile_options(${target_name} PRIVATE -Wpedantic)
-    endif()
-  endif()
-
-  if(PYBIND11_WERROR)
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-      if(CMAKE_CXX_STANDARD EQUAL 17) # See PR #3570
-        target_compile_options(${target_name} PRIVATE -Wno-conversion)
-      endif()
-      # "Inlining inhibited by limit max-size", "Inlining inhibited by limit max-total-size"
-      target_compile_options(${target_name} PRIVATE -diag-disable 11074,11076)
+        if(DEFINED CMAKE_CXX_STANDARD AND NOT CMAKE_CXX_STANDARD VERSION_LESS 20)
+            target_compile_options(${target_name} PRIVATE -Wpedantic)
+        endif()
     endif()
 
-    if(CMAKE_VERSION VERSION_LESS "3.24")
-      if(MSVC)
-        target_compile_options(${target_name} PRIVATE /WX)
-      elseif(PYBIND11_CUDA_TESTS)
-        target_compile_options(${target_name} PRIVATE "SHELL:-Werror all-warnings")
-      elseif(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang|IntelLLVM)")
-        target_compile_options(${target_name} PRIVATE -Werror)
-      elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-        target_compile_options(${target_name} PRIVATE -Werror-all)
-      endif()
-    else()
-      set_target_properties(${target_name} PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+    if(PYBIND11_WERROR)
+        if(MSVC)
+            target_compile_options(${target_name} PRIVATE /WX)
+        elseif(PYBIND11_CUDA_TESTS)
+            target_compile_options(${target_name} PRIVATE "SHELL:-Werror all-warnings")
+        elseif(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang|IntelLLVM)")
+            target_compile_options(${target_name} PRIVATE -Werror)
+        elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+            if(CMAKE_CXX_STANDARD EQUAL 17) # See PR #3570
+                target_compile_options(${target_name} PRIVATE -Wno-conversion)
+            endif()
+            target_compile_options(
+        ${target_name}
+        PRIVATE
+          -Werror-all
+          # "Inlining inhibited by limit max-size", "Inlining inhibited by limit max-total-size"
+          -diag-disable 11074,11076)
+        endif()
     endif()
-  endif()
 endfunction()
 
 set(test_targets pybind11_tests)
 
 # Check if any tests need extra targets by iterating through the mappings registered.
 foreach(i ${PYBIND11_TEST_EXTRA_TARGETS})
-  foreach(needle ${PYBIND11_TEST_EXTRA_TARGETS_NEEDLES_${i}})
-    if(needle IN_LIST PYBIND11_PYTEST_FILES)
-      # Add all the additional targets to the test list. List join in newer cmake.
-      foreach(extra_target ${PYBIND11_TEST_EXTRA_TARGETS_ADDITION_${i}})
-        list(APPEND test_targets ${extra_target})
-      endforeach()
-      break() # Breaks out of the needle search, continues with the next mapping.
-    endif()
-  endforeach()
+    foreach(needle ${PYBIND11_TEST_EXTRA_TARGETS_NEEDLES_${i}})
+        if(needle IN_LIST PYBIND11_PYTEST_FILES)
+            # Add all the additional targets to the test list. List join in newer cmake.
+            foreach(extra_target ${PYBIND11_TEST_EXTRA_TARGETS_ADDITION_${i}})
+                list(APPEND test_targets ${extra_target})
+            endforeach()
+            break() # Breaks out of the needle search, continues with the next mapping.
+        endif()
+    endforeach()
 endforeach()
 
 # Support CUDA testing by forcing the target file to compile with NVCC
 if(PYBIND11_CUDA_TESTS)
-  set_property(SOURCE ${PYBIND11_TEST_FILES} PROPERTY LANGUAGE CUDA)
+    set_property(SOURCE ${PYBIND11_TEST_FILES} PROPERTY LANGUAGE CUDA)
 endif()
 
 foreach(target ${test_targets})
-  set(test_files ${PYBIND11_TEST_FILES})
-  if(NOT "${target}" STREQUAL "pybind11_tests")
-    set(test_files "")
-  endif()
+    set(test_files ${PYBIND11_TEST_FILES})
+    if(NOT "${target}" STREQUAL "pybind11_tests")
+        set(test_files "")
+    endif()
 
-  # Support CUDA testing by forcing the target file to compile with NVCC
-  if(PYBIND11_CUDA_TESTS)
-    set_property(SOURCE ${target}.cpp PROPERTY LANGUAGE CUDA)
-  endif()
+    # Support CUDA testing by forcing the target file to compile with NVCC
+    if(PYBIND11_CUDA_TESTS)
+        set_property(SOURCE ${target}.cpp PROPERTY LANGUAGE CUDA)
+    endif()
 
-  # Create the binding library
-  pybind11_add_module(${target} THIN_LTO ${target}.cpp ${test_files} ${PYBIND11_HEADERS})
-  pybind11_enable_warnings(${target})
+    # Create the binding library
+    pybind11_add_module(${target} THIN_LTO ${target}.cpp ${test_files} ${PYBIND11_HEADERS})
+    pybind11_enable_warnings(${target})
 
-  if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
-    get_property(
+    if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+        get_property(
       suffix
       TARGET ${target}
       PROPERTY SUFFIX)
-    set(source_output "${CMAKE_CURRENT_SOURCE_DIR}/${target}${suffix}")
-    if(suffix AND EXISTS "${source_output}")
-      message(WARNING "Output file also in source directory; "
+        set(source_output "${CMAKE_CURRENT_SOURCE_DIR}/${target}${suffix}")
+        if(suffix AND EXISTS "${source_output}")
+            message(WARNING "Output file also in source directory; "
                       "please remove to avoid confusion: ${source_output}")
+        endif()
     endif()
-  endif()
 
-  if(MSVC)
-    target_compile_options(${target} PRIVATE /utf-8)
-  endif()
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /utf-8)
+    endif()
 
-  if(EIGEN3_FOUND)
-    target_link_libraries(${target} PRIVATE Eigen3::Eigen)
-    target_compile_definitions(${target} PRIVATE -DPYBIND11_TEST_EIGEN)
-  endif()
+    if(EIGEN3_FOUND)
+        target_link_libraries(${target} PRIVATE Eigen3::Eigen)
+        target_compile_definitions(${target} PRIVATE -DPYBIND11_TEST_EIGEN)
+    endif()
 
-  if(Boost_FOUND)
-    target_link_libraries(${target} PRIVATE Boost::headers)
-    target_compile_definitions(${target} PRIVATE -DPYBIND11_TEST_BOOST)
-  endif()
+    if(Boost_FOUND)
+        target_link_libraries(${target} PRIVATE Boost::headers)
+        target_compile_definitions(${target} PRIVATE -DPYBIND11_TEST_BOOST)
+    endif()
 
-  if(PYBIND11_TEST_SMART_HOLDER)
-    target_compile_definitions(
-      ${target}
-      PUBLIC -DPYBIND11_RUN_TESTING_WITH_SMART_HOLDER_AS_DEFAULT_BUT_NEVER_USE_IN_PRODUCTION_PLEASE
-    )
-  endif()
+    target_link_libraries(${target} PRIVATE ${STD_FS_LIB})
 
-  target_link_libraries(${target} PRIVATE ${STD_FS_LIB})
-
-  # Always write the output file directly into the 'tests' directory (even on MSVC)
-  if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-    set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
+    # Always write the output file directly into the 'tests' directory (even on MSVC)
+    if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+        set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY
                                                "${CMAKE_CURRENT_BINARY_DIR}")
 
-    if(DEFINED CMAKE_CONFIGURATION_TYPES)
-      foreach(config ${CMAKE_CONFIGURATION_TYPES})
-        string(TOUPPER ${config} config)
-        set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${config}
+        if(DEFINED CMAKE_CONFIGURATION_TYPES)
+            foreach(config ${CMAKE_CONFIGURATION_TYPES})
+                string(TOUPPER ${config} config)
+                set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY_${config}
                                                    "${CMAKE_CURRENT_BINARY_DIR}")
-      endforeach()
+            endforeach()
+        endif()
     endif()
-  endif()
-  if(SKBUILD)
-    install(TARGETS ${target} LIBRARY DESTINATION .)
-  endif()
-
-  if("${target}" STREQUAL "exo_planet_c_api")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Intel|Clang|NVHPC)")
-      target_compile_options(${target} PRIVATE -fno-exceptions)
+    if(SKBUILD)
+        install(TARGETS ${target} LIBRARY DESTINATION .)
     endif()
-  endif()
 endforeach()
 
 # Provide nice organisation in IDEs
-source_group(
-  TREE "${CMAKE_CURRENT_SOURCE_DIR}/../include"
-  PREFIX "Header Files"
-  FILES ${PYBIND11_HEADERS})
+if(NOT CMAKE_VERSION VERSION_LESS 3.8)
+    source_group(
+    TREE "${CMAKE_CURRENT_SOURCE_DIR}/../include"
+    PREFIX "Header Files"
+    FILES ${PYBIND11_HEADERS})
+endif()
 
 # Make sure pytest is found or produce a warning
 pybind11_find_import(pytest VERSION 3.1)
 
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
-  # This is not used later in the build, so it's okay to regenerate each time.
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pytest.ini" "${CMAKE_CURRENT_BINARY_DIR}/pytest.ini"
+    # This is not used later in the build, so it's okay to regenerate each time.
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pytest.ini" "${CMAKE_CURRENT_BINARY_DIR}/pytest.ini"
                  COPYONLY)
-  file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/pytest.ini"
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/pytest.ini"
        "\ntestpaths = \"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
 endif()
 
-# Convert relative to full file names
-list(TRANSFORM PYBIND11_PYTEST_FILES PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/"
-                                             OUTPUT_VARIABLE PYBIND11_ABS_PYTEST_FILES)
+# cmake 3.12 added list(transform <list> prepend
+# but we can't use it yet
+string(REPLACE "test_" "${CMAKE_CURRENT_SOURCE_DIR}/test_" PYBIND11_ABS_PYTEST_FILES
+               "${PYBIND11_PYTEST_FILES}")
 
 set(PYBIND11_TEST_PREFIX_COMMAND
     ""
@@ -574,29 +548,8 @@ add_custom_target(
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   USES_TERMINAL)
 
-if(NOT PYBIND11_CUDA_TESTS)
-  # This module doesn't get mixed with other test modules because those aren't subinterpreter safe.
-  pybind11_add_module(mod_per_interpreter_gil THIN_LTO mod_per_interpreter_gil.cpp)
-  pybind11_add_module(mod_shared_interpreter_gil THIN_LTO mod_shared_interpreter_gil.cpp)
-  set_target_properties(mod_per_interpreter_gil PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-                                                           "$<1:${CMAKE_CURRENT_BINARY_DIR}>")
-  set_target_properties(mod_shared_interpreter_gil PROPERTIES LIBRARY_OUTPUT_DIRECTORY
-                                                              "$<1:${CMAKE_CURRENT_BINARY_DIR}>")
-  if(PYBIND11_TEST_SMART_HOLDER)
-    target_compile_definitions(
-      mod_per_interpreter_gil
-      PUBLIC -DPYBIND11_RUN_TESTING_WITH_SMART_HOLDER_AS_DEFAULT_BUT_NEVER_USE_IN_PRODUCTION_PLEASE
-    )
-    target_compile_definitions(
-      mod_shared_interpreter_gil
-      PUBLIC -DPYBIND11_RUN_TESTING_WITH_SMART_HOLDER_AS_DEFAULT_BUT_NEVER_USE_IN_PRODUCTION_PLEASE
-    )
-  endif()
-  add_dependencies(pytest mod_per_interpreter_gil mod_shared_interpreter_gil)
-endif()
-
 if(PYBIND11_TEST_OVERRIDE)
-  add_custom_command(
+    add_custom_command(
     TARGET pytest
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo
@@ -630,7 +583,7 @@ add_custom_target(check DEPENDS pytest)
 # The remaining tests only apply when being built as part of the pybind11 project, but not if the
 # tests are being built independently.
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  return()
+    return()
 endif()
 
 # Add a post-build comment to show the primary test suite .so size and, if a previous size, compare it:
@@ -643,15 +596,9 @@ add_custom_command(
     ${CMAKE_CURRENT_BINARY_DIR}/sosize-$<TARGET_FILE_NAME:pybind11_tests>.txt)
 
 if(NOT PYBIND11_CUDA_TESTS)
-  # Test pure C++ code (not depending on Python). Provides the `test_pure_cpp` target.
-  add_subdirectory(pure_cpp)
+    # Test embedding the interpreter. Provides the `cpptest` target.
+    add_subdirectory(test_embed)
 
-  # Test embedding the interpreter. Provides the `cpptest` target.
-  add_subdirectory(test_embed)
-
-  # Test CMake build using functions and targets from subdirectory or installed location
-  add_subdirectory(test_cmake_build)
-
-  # Test visibility of common symbols across shared libraries
-  add_subdirectory(test_cross_module_rtti)
+    # Test CMake build using functions and targets from subdirectory or installed location
+    add_subdirectory(test_cmake_build)
 endif()
