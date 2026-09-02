@@ -61,6 +61,7 @@ option(OPTION_PYTHON  "Build Python module" ON)
 option(OPTION_EXAMPLES "Run Libsmoldyn tests" OFF)
 option(OPTION_DOCS "Generate documentation" OFF)
 set(SMOLDYN_PYTHON_VERSION "Auto" CACHE STRING "Which Python version (Auto)")
+option(OPTION_UNIT_TESTS "Build C/C++ unit tests with Catch2" ON)
 
 #
 # Developer options. Enables Address Sanitizer to detects memory leak etc. Most
@@ -532,7 +533,10 @@ include(CPack)
 
 
 ######### Testing #############
-enable_testing()
+include(CTest)
+if (OPTION_UNIT_TESTS AND BUILD_TESTING)
+    add_subdirectory(tests/cpp)
+endif ()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
     add_subdirectory(examples)
 endif ()
