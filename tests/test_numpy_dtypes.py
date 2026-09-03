@@ -5,7 +5,6 @@ import re
 import pytest
 
 import env  # noqa: F401
-from pybind11_tests import PYBIND11_NUMPY_1_ONLY
 from pybind11_tests import numpy_dtypes as m
 
 np = pytest.importorskip("numpy")
@@ -181,12 +180,29 @@ def test_dtype(simple_dtype):
     assert m.test_dtype_num() == [np.dtype(ch).num for ch in expected_chars]
     assert m.test_dtype_byteorder() == [np.dtype(ch).byteorder for ch in expected_chars]
     assert m.test_dtype_alignment() == [np.dtype(ch).alignment for ch in expected_chars]
-    if not PYBIND11_NUMPY_1_ONLY:
-        assert m.test_dtype_flags() == [np.dtype(ch).flags for ch in expected_chars]
-    else:
-        assert m.test_dtype_flags() == [
-            chr(np.dtype(ch).flags) for ch in expected_chars
-        ]
+    assert m.test_dtype_flags() == [np.dtype(ch).flags for ch in expected_chars]
+
+    for a, b in m.test_dtype_num_of():
+        assert a == b
+
+    for a, b in m.test_dtype_normalized_num():
+        assert a == b
+
+    arr = np.array([4, 84, 21, 36])
+    # Note: "ulong" does not work in NumPy 1.x, so we use "L"
+    assert (m.test_dtype_switch(arr.astype("byte")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("ubyte")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("short")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("ushort")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("intc")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("uintc")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("long")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("L")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("longlong")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("ulonglong")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("single")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("double")) == arr + 1).all()
+    assert (m.test_dtype_switch(arr.astype("longdouble")) == arr + 1).all()
 
 
 def test_recarray(simple_dtype, packed_dtype):
@@ -300,12 +316,18 @@ def test_array_array():
         "'offsets':[0,12,20,24],'itemsize':56}"
     )
     assert m.print_array_array(arr) == [
-        "a={{A,B,C,D},{K,L,M,N},{U,V,W,X}},b={0,1},"
-        "c={0,1,2},d={{0,1},{10,11},{20,21},{30,31}}",
-        "a={{W,X,Y,Z},{G,H,I,J},{Q,R,S,T}},b={1000,1001},"
-        "c={10,11,12},d={{100,101},{110,111},{120,121},{130,131}}",
-        "a={{S,T,U,V},{C,D,E,F},{M,N,O,P}},b={2000,2001},"
-        "c={20,21,22},d={{200,201},{210,211},{220,221},{230,231}}",
+        (
+            "a={{A,B,C,D},{K,L,M,N},{U,V,W,X}},b={0,1},"
+            "c={0,1,2},d={{0,1},{10,11},{20,21},{30,31}}"
+        ),
+        (
+            "a={{W,X,Y,Z},{G,H,I,J},{Q,R,S,T}},b={1000,1001},"
+            "c={10,11,12},d={{100,101},{110,111},{120,121},{130,131}}"
+        ),
+        (
+            "a={{S,T,U,V},{C,D,E,F},{M,N,O,P}},b={2000,2001},"
+            "c={20,21,22},d={{200,201},{210,211},{220,221},{230,231}}"
+        ),
     ]
     assert arr["a"].tolist() == [
         [b"ABCD", b"KLMN", b"UVWX"],
@@ -351,7 +373,7 @@ def test_complex_array():
 def test_signature(doc):
     assert (
         doc(m.create_rec_nested)
-        == "create_rec_nested(arg0: int) -> numpy.ndarray[NestedStruct]"
+        == "create_rec_nested(arg0: typing.SupportsInt | typing.SupportsIndex) -> numpy.typing.NDArray[NestedStruct]"
     )
 
 

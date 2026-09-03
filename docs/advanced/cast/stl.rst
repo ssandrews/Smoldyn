@@ -17,6 +17,10 @@ converted (i.e. copied) on every Python->C++ and C++->Python transition, which
 can have implications on the program semantics and performance. Please read the
 next sections for more details and alternative approaches that avoid this.
 
+Copying the container does not make non-owning element types own their data.
+In particular, containers of C++ string views have additional
+:ref:`string_view_lifetime` requirements.
+
 .. note::
 
     Arbitrary nesting of any of these types is possible.
@@ -169,8 +173,8 @@ macro must be specified at the top level (and outside of any namespaces), since
 it adds a template instantiation of ``type_caster``. If your binding code consists of
 multiple compilation units, it must be present in every file (typically via a
 common header) preceding any usage of ``std::vector<int>``. Opaque types must
-also have a corresponding ``class_`` declaration to associate them with a name
-in Python, and to define a set of available operations, e.g.:
+also have a corresponding ``py::class_`` declaration to associate them with a
+name in Python, and to define a set of available operations, e.g.:
 
 .. code-block:: cpp
 
