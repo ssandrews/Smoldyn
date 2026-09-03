@@ -69,6 +69,38 @@ public:
     T **operator&() { throw std::logic_error("Call of overloaded operator& is not expected"); }
 };
 
+// Simple custom holder that imitates smart pointer, that always stores cpointer to const
+template <class T>
+class const_only_shared_ptr {
+    std::shared_ptr<const T> ptr_;
+
+public:
+    const_only_shared_ptr() = default;
+    explicit const_only_shared_ptr(const T *ptr) : ptr_(ptr) {}
+    const T *get() const { return ptr_.get(); }
+
+private:
+    // for demonstration purpose only, this imitates smart pointer with a const-only pointer
+};
+
+template <typename T>
+class shared_ptr_as_custom_holder {
+    std::shared_ptr<T> ptr_;
+
+public:
+    using element_type = T;
+
+    shared_ptr_as_custom_holder() = default;
+
+    explicit shared_ptr_as_custom_holder(T *) {
+        throw std::runtime_error("invalid shared_ptr_as_custom_holder constructor call");
+    }
+
+    explicit shared_ptr_as_custom_holder(std::shared_ptr<T> ptr) : ptr_(std::move(ptr)) {}
+
+    T *get() const { return ptr_.get(); }
+};
+
 // Custom object with builtin reference counting (see 'object.h' for the implementation)
 class MyObject1 : public Object {
 public:
@@ -147,6 +179,8 @@ public:
         print_created(this);
         pointer_set<MyObject4a>().insert(this);
     };
+    MyObject4a(const MyObject4a &) = delete;
+
     int value;
 
     static void cleanupAllInstances() {
@@ -168,6 +202,7 @@ protected:
 class MyObject4b : public MyObject4a {
 public:
     explicit MyObject4b(int i) : MyObject4a(i) { print_created(this); }
+    MyObject4b(const MyObject4b &) = delete;
     ~MyObject4b() override { print_destroyed(this); }
 };
 
@@ -175,8 +210,23 @@ public:
 class MyObject5 { // managed by huge_unique_ptr
 public:
     explicit MyObject5(int value) : value{value} { print_created(this); }
+    MyObject5(const MyObject5 &) = delete;
     ~MyObject5() { print_destroyed(this); }
     int value;
+};
+
+// test const_only_shared_ptr
+class MyObject6 {
+public:
+    static const_only_shared_ptr<MyObject6> createObject(std::string value) {
+        return const_only_shared_ptr<MyObject6>(new MyObject6(std::move(value)));
+    }
+
+    const std::string &value() const { return value_; }
+
+private:
+    explicit MyObject6(std::string &&value) : value_{std::move(value)} {}
+    std::string value_;
 };
 
 // test_shared_ptr_and_references
@@ -188,7 +238,7 @@ struct SharedPtrRef {
         ~A() { print_destroyed(this); }
     };
 
-    A value = {};
+    A value;
     std::shared_ptr<A> shared = std::make_shared<A>();
 };
 
@@ -196,14 +246,26 @@ struct SharedPtrRef {
 struct SharedFromThisRef {
     struct B : std::enable_shared_from_this<B> {
         B() { print_created(this); }
-        // NOLINTNEXTLINE(bugprone-copy-constructor-init)
+        // NOLINTNEXTLINE(bugprone-copy-constructor-init, readability-redundant-member-init)
         B(const B &) : std::enable_shared_from_this<B>() { print_copy_created(this); }
+        // NOLINTNEXTLINE(readability-redundant-member-init)
         B(B &&) noexcept : std::enable_shared_from_this<B>() { print_move_created(this); }
         ~B() { print_destroyed(this); }
     };
 
-    B value = {};
+    B value;
     std::shared_ptr<B> shared = std::make_shared<B>();
+};
+
+class Issue6064UnsafePath {
+public:
+    static std::shared_ptr<Issue6064UnsafePath> create() {
+        return {new Issue6064UnsafePath(), [](Issue6064UnsafePath *ptr) { delete ptr; }};
+    }
+
+private:
+    Issue6064UnsafePath() = default;
+    ~Issue6064UnsafePath() = default;
 };
 
 // Issue #865: shared_from_this doesn't work with virtual inheritance
@@ -214,9 +276,32 @@ struct SharedFromThisVBase : std::enable_shared_from_this<SharedFromThisVBase> {
 };
 struct SharedFromThisVirt : virtual SharedFromThisVBase {};
 
+// Issue #5989: static_pointer_cast where dynamic_pointer_cast is needed
+// (virtual inheritance with shared_ptr holder)
+struct SftVirtBase : std::enable_shared_from_this<SftVirtBase> {
+    SftVirtBase() = default;
+    virtual ~SftVirtBase() = default;
+    static std::shared_ptr<SftVirtBase> create() { return std::make_shared<SftVirtBase>(); }
+    virtual std::string name() { return "SftVirtBase"; }
+};
+struct SftVirtDerived : SftVirtBase {
+    using SftVirtBase::SftVirtBase;
+    static std::shared_ptr<SftVirtDerived> create() { return std::make_shared<SftVirtDerived>(); }
+    std::string name() override { return "SftVirtDerived"; }
+};
+struct SftVirtDerived2 : virtual SftVirtDerived {
+    using SftVirtDerived::SftVirtDerived;
+    static std::shared_ptr<SftVirtDerived2> create() {
+        return std::make_shared<SftVirtDerived2>();
+    }
+    std::string name() override { return "SftVirtDerived2"; }
+    std::string call_name(const std::shared_ptr<SftVirtDerived2> &d2) { return d2->name(); }
+};
+
 // test_move_only_holder
 struct C {
     C() { print_created(this); }
+    C(const C &) = delete;
     ~C() { print_destroyed(this); }
 };
 
@@ -237,6 +322,7 @@ struct TypeForHolderWithAddressOf {
 // test_move_only_holder_with_addressof_operator
 struct TypeForMoveOnlyHolderWithAddressOf {
     explicit TypeForMoveOnlyHolderWithAddressOf(int value) : value{value} { print_created(this); }
+    TypeForMoveOnlyHolderWithAddressOf(const TypeForMoveOnlyHolderWithAddressOf &) = delete;
     ~TypeForMoveOnlyHolderWithAddressOf() { print_destroyed(this); }
     std::string toString() const {
         return "MoveOnlyHolderWithAddressOf[" + std::to_string(value) + "]";
@@ -283,12 +369,80 @@ struct holder_helper<ref<T>> {
 
 // Make pybind aware of the ref-counted wrapper type (s):
 PYBIND11_DECLARE_HOLDER_TYPE(T, ref<T>, true)
+PYBIND11_DECLARE_HOLDER_TYPE(T, const_only_shared_ptr<T>, true)
+PYBIND11_DECLARE_HOLDER_TYPE(T, shared_ptr_as_custom_holder<T>, )
 // The following is not required anymore for std::shared_ptr, but it should compile without error:
-PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>)
-PYBIND11_DECLARE_HOLDER_TYPE(T, huge_unique_ptr<T>)
-PYBIND11_DECLARE_HOLDER_TYPE(T, custom_unique_ptr<T>)
-PYBIND11_DECLARE_HOLDER_TYPE(T, shared_ptr_with_addressof_operator<T>)
-PYBIND11_DECLARE_HOLDER_TYPE(T, unique_ptr_with_addressof_operator<T>)
+PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>, )
+PYBIND11_DECLARE_HOLDER_TYPE(T, huge_unique_ptr<T>, )
+PYBIND11_DECLARE_HOLDER_TYPE(T, custom_unique_ptr<T>, )
+PYBIND11_DECLARE_HOLDER_TYPE(T, shared_ptr_with_addressof_operator<T>, )
+PYBIND11_DECLARE_HOLDER_TYPE(T, unique_ptr_with_addressof_operator<T>, )
+
+namespace holder_caster_traits_test {
+struct example_base {};
+} // namespace holder_caster_traits_test
+
+PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
+PYBIND11_NAMESPACE_BEGIN(detail)
+
+// Negate this condition to demonstrate "ambiguous template instantiation" compilation error:
+#if defined(PYBIND11_HAS_INTERNALS_WITH_SMART_HOLDER_SUPPORT)
+template <typename ExampleType>
+struct copyable_holder_caster_shared_ptr_with_smart_holder_support_enabled<
+    ExampleType,
+    enable_if_t<std::is_base_of<holder_caster_traits_test::example_base, ExampleType>::value>>
+    : std::false_type {};
+#endif
+
+template <typename ExampleType, typename HolderType>
+struct copyable_holder_caster<
+    ExampleType,
+    HolderType,
+    enable_if_t<std::is_base_of<holder_caster_traits_test::example_base, ExampleType>::value>> {
+    static constexpr auto name = const_name<ExampleType>();
+
+    static handle cast(const HolderType &, return_value_policy, handle) {
+        return str("copyable_holder_caster_traits_test").release();
+    }
+};
+
+// Negate this condition to demonstrate "ambiguous template instantiation" compilation error:
+#if defined(PYBIND11_HAS_INTERNALS_WITH_SMART_HOLDER_SUPPORT)
+template <typename ExampleType>
+struct move_only_holder_caster_unique_ptr_with_smart_holder_support_enabled<
+    ExampleType,
+    enable_if_t<std::is_base_of<holder_caster_traits_test::example_base, ExampleType>::value>>
+    : std::false_type {};
+#endif
+
+template <typename ExampleType, typename HolderType>
+struct move_only_holder_caster<
+    ExampleType,
+    HolderType,
+    enable_if_t<std::is_base_of<holder_caster_traits_test::example_base, ExampleType>::value>> {
+    static constexpr auto name = const_name<ExampleType>();
+
+    static handle cast(const HolderType &, return_value_policy, handle) {
+        return str("move_only_holder_caster_traits_test").release();
+    }
+};
+
+PYBIND11_NAMESPACE_END(detail)
+PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)
+
+namespace holder_caster_traits_test {
+
+struct example_drvd : example_base {};
+
+void wrap(py::module_ &m) {
+    m.def("return_std_shared_ptr_example_drvd",
+          // NOLINTNEXTLINE(modernize-make-shared)
+          []() { return std::shared_ptr<example_drvd>(new example_drvd()); });
+    m.def("return_std_unique_ptr_example_drvd",
+          []() { return std::unique_ptr<example_drvd>(new example_drvd()); });
+}
+
+} // namespace holder_caster_traits_test
 
 TEST_SUBMODULE(smart_ptr, m) {
     // Please do not interleave `struct` and `class` definitions with bindings code,
@@ -373,6 +527,14 @@ TEST_SUBMODULE(smart_ptr, m) {
         .def(py::init<int>())
         .def_readwrite("value", &MyObject5::value);
 
+    py::class_<MyObject6, const_only_shared_ptr<MyObject6>>(m, "MyObject6")
+        .def(py::init([](const std::string &value) { return MyObject6::createObject(value); }))
+        .def_property_readonly("value", &MyObject6::value);
+
+    py::class_<Issue6064UnsafePath, shared_ptr_as_custom_holder<Issue6064UnsafePath>>(
+        m, "Issue6064UnsafePath");
+    m.def("get_issue6064_unsafe_path_shared_ptr", []() { return Issue6064UnsafePath::create(); });
+
     // test_shared_ptr_and_references
     using A = SharedPtrRef::A;
     py::class_<A, std::shared_ptr<A>>(m, "A");
@@ -416,10 +578,22 @@ TEST_SUBMODULE(smart_ptr, m) {
     py::class_<SharedFromThisVirt, std::shared_ptr<SharedFromThisVirt>>(m, "SharedFromThisVirt")
         .def_static("get", []() { return sft.get(); });
 
+    // Issue #5989: static_pointer_cast where dynamic_pointer_cast is needed
+    py::class_<SftVirtBase, std::shared_ptr<SftVirtBase>>(m, "SftVirtBase")
+        .def(py::init<>(&SftVirtBase::create))
+        .def("name", &SftVirtBase::name);
+    py::class_<SftVirtDerived, SftVirtBase, std::shared_ptr<SftVirtDerived>>(m, "SftVirtDerived")
+        .def(py::init<>(&SftVirtDerived::create));
+    py::class_<SftVirtDerived2, SftVirtDerived, std::shared_ptr<SftVirtDerived2>>(
+        m, "SftVirtDerived2")
+        .def(py::init<>(&SftVirtDerived2::create))
+        .def("call_name", &SftVirtDerived2::call_name, py::arg("d2"));
+
     // test_move_only_holder
     py::class_<C, custom_unique_ptr<C>>(m, "TypeWithMoveOnlyHolder")
         .def_static("make", []() { return custom_unique_ptr<C>(new C); })
         .def_static("make_as_object", []() { return py::cast(custom_unique_ptr<C>(new C)); });
+    m.def("get_type_with_move_only_holder_shared_ptr", []() { return std::make_shared<C>(); });
 
     // test_holder_with_addressof_operator
     using HolderWithAddressOf = shared_ptr_with_addressof_operator<TypeForHolderWithAddressOf>;
@@ -473,4 +647,16 @@ TEST_SUBMODULE(smart_ptr, m) {
             }
             return list;
         });
+
+    // NOLINTNEXTLINE(bugprone-incorrect-enable-shared-from-this)
+    class PrivateESFT : /* implicit private */ std::enable_shared_from_this<PrivateESFT> {};
+    struct ContainerUsingPrivateESFT {
+        std::shared_ptr<PrivateESFT> ptr;
+    };
+    py::class_<ContainerUsingPrivateESFT>(m, "ContainerUsingPrivateESFT")
+        .def(py::init<>())
+        .def_readwrite("ptr",
+                       &ContainerUsingPrivateESFT::ptr); // <- access ESFT through shared_ptr
+
+    holder_caster_traits_test::wrap(m);
 }
