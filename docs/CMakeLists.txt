@@ -38,7 +38,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
 
 find_package(Perl REQUIRED)
 find_package(Doxygen REQUIRED)
-find_program(UVX_EXECUTABLE NAMES uvx)
 
 # Find all the public headers
 file(GLOB_RECURSE SMOLDYN_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/../source/*.h)
@@ -73,7 +72,7 @@ file(GLOB_RECURSE SMOLDYN_RST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../docs/*.rst)
 # - Our doc files have been updated
 # - The Sphinx config has been updated
 add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
-    COMMAND uvx --from sphinx sphinx-build -b html -Dbreathe_projects.smoldyn=${DOXYGEN_OUTPUT_DIR}/xml ${SPHINX_SOURCE} ${SPHINX_BUILD}
+    COMMAND sphinx-build -b html -Dbreathe_projects.smoldyn=${DOXYGEN_OUTPUT_DIR}/xml ${SPHINX_SOURCE} ${SPHINX_BUILD}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     DEPENDS ${SMOLDYN_RST_SOURCES}
     # Other docs files you want to track should go here (or in some variable)
@@ -85,7 +84,7 @@ add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
 # Generate doc using Sphinx and doxygen.
 add_custom_target(docs ALL
     DEPENDS _smoldyn TeX2RST
-    COMMAND READTHEDOCS=True uvx --from sphinx sphinx-build -b html ${SPHINX_SOURCE} ${SPHINX_BUILD}
+    COMMAND READTHEDOCS=True sphinx-build -b html ${SPHINX_SOURCE} ${SPHINX_BUILD}
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Generating documentation with Sphinx and doxygen")
 
