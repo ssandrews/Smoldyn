@@ -27,8 +27,8 @@ target_include_directories(Steve PRIVATE
 
 set_target_properties(Steve PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(OPENGL_FOUND)
-    list(APPEND DEP_LIBS ${OPENGL_LIBRARIES})
+  list(APPEND DEP_LIBS ${OPENGL_LIBRARIES})
 endif()
 if(TIFF_FOUND)
-    list(APPEND DEP_LIBS ${TIFF_LIBRARY})
+  list(APPEND DEP_LIBS ${TIFF_LIBRARY})
 endif()
