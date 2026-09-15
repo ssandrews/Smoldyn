@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import pytest
 
 from pybind11_tests import stl_binders as m
@@ -65,6 +67,40 @@ def test_vector_int():
 
     v_int2.clear()
     assert len(v_int2) == 0
+
+
+@pytest.mark.parametrize(
+    "s",
+    [
+        slice(1, 4),
+        slice(None, None, 2),
+        slice(1, None, 2),
+        slice(None, None, -1),
+        slice(None, None, -2),
+        slice(3, 1, -1),
+        slice(2, 2),
+        slice(None),
+        slice(5, 0, -2),
+        slice(-3, -1),
+        slice(None, None, -3),
+        slice(3, None, sys.maxsize),
+        slice(-2, -7, -2),
+    ],
+)
+def test_vector_delitem_slice(s):
+    for n in range(8):
+        ref = list(range(n))
+        got = m.VectorInt(range(n))
+        del ref[s]
+        del got[s]
+        assert list(got) == ref, f"n={n}"
+
+
+def test_vector_delitem_slice_step_zero():
+    v = m.VectorInt(range(8))
+    with pytest.raises(ValueError):
+        del v[::0]
+    assert list(v) == list(range(8))
 
 
 # Older PyPy's failed here, related to the PyPy's buffer protocol.
@@ -258,7 +294,7 @@ def test_noncopyable_containers():
             assert nvnc[i][j].value == j + 1
 
     # Note: maps do not have .values()
-    for _, v in nvnc.items():
+    for v in nvnc.values():
         for i, j in enumerate(v, start=1):
             assert j.value == i
 
@@ -269,7 +305,7 @@ def test_noncopyable_containers():
             assert nmnc[i][j].value == 10 * j
 
     vsum = 0
-    for _, v_o in nmnc.items():
+    for v_o in nmnc.values():
         for k_i, v_i in v_o.items():
             assert v_i.value == 10 * k_i
             vsum += v_i.value
@@ -283,7 +319,7 @@ def test_noncopyable_containers():
             assert numnc[i][j].value == 10 * j
 
     vsum = 0
-    for _, v_o in numnc.items():
+    for v_o in numnc.values():
         for k_i, v_i in v_o.items():
             assert v_i.value == 10 * k_i
             vsum += v_i.value

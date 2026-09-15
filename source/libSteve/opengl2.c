@@ -1143,12 +1143,14 @@ void gl2DrawTextD(double x,double y,double *color,void *font,char *string,int al
 
 /* gl2DrawString3D */
 void gl2DrawString3D(double *pos,void *font,char *string) {	//?? Need to document
+#ifdef __gl_h_
 	int length,i;
 
 	glRasterPos3d((GLdouble)pos[0],(GLdouble)pos[1],(GLdouble)pos[2]);
 	length=strlen(string);
 	for(i=0;i<length;i++)
 		glutBitmapCharacter(font,string[i]);
+#endif
 	return; }
 
 

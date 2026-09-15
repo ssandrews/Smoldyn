@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import contextlib
 import sys
 import types
@@ -7,7 +8,6 @@ import types
 import pytest
 
 import env
-from pybind11_tests import detailed_error_messages_enabled
 from pybind11_tests import pytypes as m
 
 
@@ -61,6 +61,13 @@ def test_iterable(doc):
 
 def test_float(doc):
     assert doc(m.get_float) == "get_float() -> float"
+    assert doc(m.float_roundtrip) == "float_roundtrip(arg0: float) -> float"
+    f1 = m.float_roundtrip(5.5)
+    assert isinstance(f1, float)
+    assert f1 == 5.5
+    f2 = m.float_roundtrip(5)
+    assert isinstance(f2, float)
+    assert f2 == 5.0
 
 
 def test_list(capture, doc):
@@ -538,29 +545,73 @@ def test_implicit_casting():
     assert z["l"] == [3, 6, 9, 12, 15]
 
 
-def test_print(capture):
-    with capture:
-        m.print_function()
-    assert (
-        capture
-        == """
-        Hello, World!
-        1 2.0 three True -- multiple args
-        *args-and-a-custom-separator
-        no new line here -- next print
-        flush
-        py::print + str.format = this
-    """
-    )
-    assert capture.stderr == "this goes to stderr"
+def test_print_delegates_to_current_builtin(monkeypatch):
+    calls = []
 
-    with pytest.raises(RuntimeError) as excinfo:
-        m.print_failure()
-    assert str(excinfo.value) == "Unable to convert call argument " + (
-        "'1' of type 'UnregisteredType' to Python object"
-        if detailed_error_messages_enabled
-        else "'1' to Python object (#define PYBIND11_DETAILED_ERROR_MESSAGES or compile in debug mode for details)"
-    )
+    def first_print(*args, **kwargs):
+        calls.append(("first", args, kwargs))
+        return object()
+
+    def second_print(*args, **kwargs):
+        calls.append(("second", args, kwargs))
+        return object()
+
+    positional = [object(), object()]
+    keywords = {"first": object(), "second": object()}
+
+    monkeypatch.setattr(builtins, "print", first_print)
+    assert m.print_args(*positional, **keywords) is None
+
+    monkeypatch.setattr(builtins, "print", second_print)
+    assert m.print_args() is None
+
+    assert calls[0][0] == "first"
+    assert len(calls[0][1]) == len(positional)
+    assert all(actual is expected for actual, expected in zip(calls[0][1], positional))
+    assert list(calls[0][2]) == list(keywords)
+    assert all(calls[0][2][key] is value for key, value in keywords.items())
+    assert calls[1] == ("second", (), {})
+
+
+def test_print_missing_from_current_builtins_is_silent(monkeypatch):
+    # The builtins dictionary may have lost its print entry before C++ destructors
+    # run during interpreter shutdown.
+    with monkeypatch.context() as context:
+        context.delattr(builtins, "print")
+        result = m.print_args("ignored")
+    assert result is None
+
+
+def test_print_stdout_none_matches_current_builtin(monkeypatch):
+    def exception_type(func):
+        try:
+            func("text")
+        except Exception as exc:
+            return type(exc)
+        return None
+
+    # Python runtimes differ here; py::print should follow the active runtime.
+    with monkeypatch.context() as context:
+        context.setattr(sys, "stdout", None)
+        native_exception_type = exception_type(builtins.print)
+        pybind_exception_type = exception_type(m.print_args)
+
+    assert pybind_exception_type is native_exception_type
+
+
+def test_print_propagates_current_builtin_exception(monkeypatch):
+    class MarkerError(Exception):
+        pass
+
+    error = MarkerError()
+
+    def failing_print():
+        raise error
+
+    monkeypatch.setattr(builtins, "print", failing_print)
+    with pytest.raises(MarkerError) as exc_info:
+        m.print_args()
+    assert exc_info.value is error
 
 
 def test_hash():
@@ -917,7 +968,7 @@ def test_inplace_rshift(a, b):
 def test_tuple_nonempty_annotations(doc):
     assert (
         doc(m.annotate_tuple_float_str)
-        == "annotate_tuple_float_str(arg0: tuple[typing.SupportsFloat, str]) -> None"
+        == "annotate_tuple_float_str(arg0: tuple[float, str]) -> None"
     )
 
 
@@ -930,21 +981,21 @@ def test_tuple_empty_annotations(doc):
 def test_tuple_variable_length_annotations(doc):
     assert (
         doc(m.annotate_tuple_variable_length)
-        == "annotate_tuple_variable_length(arg0: tuple[typing.SupportsFloat, ...]) -> None"
+        == "annotate_tuple_variable_length(arg0: tuple[float, ...]) -> None"
     )
 
 
 def test_dict_annotations(doc):
     assert (
         doc(m.annotate_dict_str_int)
-        == "annotate_dict_str_int(arg0: dict[str, typing.SupportsInt]) -> None"
+        == "annotate_dict_str_int(arg0: dict[str, typing.SupportsInt | typing.SupportsIndex]) -> None"
     )
 
 
 def test_list_annotations(doc):
     assert (
         doc(m.annotate_list_int)
-        == "annotate_list_int(arg0: list[typing.SupportsInt]) -> None"
+        == "annotate_list_int(arg0: list[typing.SupportsInt | typing.SupportsIndex]) -> None"
     )
 
 
@@ -962,34 +1013,35 @@ def test_iterable_annotations(doc):
 def test_iterator_annotations(doc):
     assert (
         doc(m.annotate_iterator_int)
-        == "annotate_iterator_int(arg0: collections.abc.Iterator[typing.SupportsInt]) -> None"
+        == "annotate_iterator_int(arg0: collections.abc.Iterator[typing.SupportsInt | typing.SupportsIndex]) -> None"
     )
 
 
 def test_fn_annotations(doc):
     assert (
         doc(m.annotate_fn)
-        == "annotate_fn(arg0: collections.abc.Callable[[list[str], str], int]) -> None"
+        == "annotate_fn(arg0: collections.abc.Callable[[list[str], str], typing.SupportsInt | typing.SupportsIndex]) -> None"
     )
 
 
 def test_fn_return_only(doc):
     assert (
         doc(m.annotate_fn_only_return)
-        == "annotate_fn_only_return(arg0: collections.abc.Callable[..., int]) -> None"
+        == "annotate_fn_only_return(arg0: collections.abc.Callable[..., typing.SupportsInt | typing.SupportsIndex]) -> None"
     )
 
 
 def test_type_annotation(doc):
     assert (
-        doc(m.annotate_type) == "annotate_type(arg0: type[typing.SupportsInt]) -> type"
+        doc(m.annotate_type)
+        == "annotate_type(arg0: type[typing.SupportsInt | typing.SupportsIndex]) -> type"
     )
 
 
 def test_union_annotations(doc):
     assert (
         doc(m.annotate_union)
-        == "annotate_union(arg0: list[str | typing.SupportsInt | object], arg1: str, arg2: typing.SupportsInt, arg3: object) -> list[str | int | object]"
+        == "annotate_union(arg0: list[str | int | object], arg1: str, arg2: int, arg3: object) -> list[str | int | object]"
     )
 
 
@@ -1000,7 +1052,7 @@ def test_union_typing_only(doc):
 def test_union_object_annotations(doc):
     assert (
         doc(m.annotate_union_to_object)
-        == "annotate_union_to_object(arg0: typing.SupportsInt | str) -> object"
+        == "annotate_union_to_object(arg0: typing.SupportsInt | typing.SupportsIndex | str) -> object"
     )
 
 
@@ -1037,7 +1089,7 @@ def test_never_annotation(doc, backport_typehints):
 def test_optional_object_annotations(doc):
     assert (
         doc(m.annotate_optional_to_object)
-        == "annotate_optional_to_object(arg0: typing.SupportsInt | None) -> object"
+        == "annotate_optional_to_object(arg0: typing.SupportsInt | typing.SupportsIndex | None) -> object"
     )
 
 
@@ -1077,7 +1129,7 @@ def test_literal(doc):
     )
     assert (
         doc(m.identity_literal_arrow_with_callable)
-        == 'identity_literal_arrow_with_callable(arg0: collections.abc.Callable[[typing.Literal["->"], float | int], float]) -> collections.abc.Callable[[typing.Literal["->"], float | int], float]'
+        == 'identity_literal_arrow_with_callable(arg0: collections.abc.Callable[[typing.Literal["->"], float], float | int]) -> collections.abc.Callable[[typing.Literal["->"], float | int], float]'
     )
     assert (
         doc(m.identity_literal_all_special_chars)
@@ -1160,7 +1212,10 @@ def get_annotations_helper(o):
 def test_module_attribute_types() -> None:
     module_annotations = get_annotations_helper(m)
 
-    assert module_annotations["list_int"] == "list[typing.SupportsInt]"
+    assert (
+        module_annotations["list_int"]
+        == "list[typing.SupportsInt | typing.SupportsIndex]"
+    )
     assert module_annotations["set_str"] == "set[str]"
     assert module_annotations["foo"] == "pybind11_tests.pytypes.foo"
 
@@ -1183,7 +1238,10 @@ def test_get_annotations_compliance() -> None:
 
     module_annotations = get_annotations(m)
 
-    assert module_annotations["list_int"] == "list[typing.SupportsInt]"
+    assert (
+        module_annotations["list_int"]
+        == "list[typing.SupportsInt | typing.SupportsIndex]"
+    )
     assert module_annotations["set_str"] == "set[str]"
 
 
@@ -1197,10 +1255,13 @@ def test_class_attribute_types() -> None:
     instance_annotations = get_annotations_helper(m.Instance)
 
     assert empty_annotations is None
-    assert static_annotations["x"] == "typing.ClassVar[typing.SupportsFloat]"
+    assert (
+        static_annotations["x"]
+        == "typing.ClassVar[typing.SupportsFloat | typing.SupportsIndex]"
+    )
     assert (
         static_annotations["dict_str_int"]
-        == "typing.ClassVar[dict[str, typing.SupportsInt]]"
+        == "typing.ClassVar[dict[str, typing.SupportsInt | typing.SupportsIndex]]"
     )
 
     assert m.Static.x == 1.0
@@ -1212,7 +1273,7 @@ def test_class_attribute_types() -> None:
     static.dict_str_int["hi"] = 3
     assert m.Static().dict_str_int == {"hi": 3}
 
-    assert instance_annotations["y"] == "typing.SupportsFloat"
+    assert instance_annotations["y"] == "typing.SupportsFloat | typing.SupportsIndex"
     instance1 = m.Instance()
     instance1.y = 4.0
 
@@ -1229,7 +1290,10 @@ def test_class_attribute_types() -> None:
 def test_redeclaration_attr_with_type_hint() -> None:
     obj = m.Instance()
     m.attr_with_type_hint_float_x(obj)
-    assert get_annotations_helper(obj)["x"] == "typing.SupportsFloat"
+    assert (
+        get_annotations_helper(obj)["x"]
+        == "typing.SupportsFloat | typing.SupportsIndex"
+    )
     with pytest.raises(
         RuntimeError, match=r'^__annotations__\["x"\] was set already\.$'
     ):
@@ -1305,27 +1369,27 @@ def test_arg_return_type_hints(doc, backport_typehints):
     # Callable<R(A)> identity
     assert (
         doc(m.identity_callable)
-        == "identity_callable(arg0: collections.abc.Callable[[float | int], float]) -> collections.abc.Callable[[float | int], float]"
+        == "identity_callable(arg0: collections.abc.Callable[[float], float | int]) -> collections.abc.Callable[[float | int], float]"
     )
     # Callable<R(...)> identity
     assert (
         doc(m.identity_callable_ellipsis)
-        == "identity_callable_ellipsis(arg0: collections.abc.Callable[..., float]) -> collections.abc.Callable[..., float]"
+        == "identity_callable_ellipsis(arg0: collections.abc.Callable[..., float | int]) -> collections.abc.Callable[..., float]"
     )
     # Nested Callable<R(A)> identity
     assert (
         doc(m.identity_nested_callable)
-        == "identity_nested_callable(arg0: collections.abc.Callable[[collections.abc.Callable[[float | int], float]], collections.abc.Callable[[float | int], float]]) -> collections.abc.Callable[[collections.abc.Callable[[float | int], float]], collections.abc.Callable[[float | int], float]]"
+        == "identity_nested_callable(arg0: collections.abc.Callable[[collections.abc.Callable[[float | int], float]], collections.abc.Callable[[float], float | int]]) -> collections.abc.Callable[[collections.abc.Callable[[float], float | int]], collections.abc.Callable[[float | int], float]]"
     )
     # Callable<R(A)>
     assert (
         doc(m.apply_callable)
-        == "apply_callable(arg0: float | int, arg1: collections.abc.Callable[[float | int], float]) -> float"
+        == "apply_callable(arg0: float | int, arg1: collections.abc.Callable[[float], float | int]) -> float"
     )
     # Callable<R(...)>
     assert (
         doc(m.apply_callable_ellipsis)
-        == "apply_callable_ellipsis(arg0: float | int, arg1: collections.abc.Callable[..., float]) -> float"
+        == "apply_callable_ellipsis(arg0: float | int, arg1: collections.abc.Callable[..., float | int]) -> float"
     )
     # Union<T1, T2>
     assert (
@@ -1347,3 +1411,8 @@ def test_arg_return_type_hints(doc, backport_typehints):
         backport_typehints(doc(m.check_type_guard))
         == "check_type_guard(arg0: list[object]) -> typing.TypeGuard[list[float]]"
     )
+
+
+def test_const_kwargs_ref_to_str():
+    assert m.const_kwargs_ref_to_str() == "{}"
+    assert m.const_kwargs_ref_to_str(a=1) == "{'a': 1}"
