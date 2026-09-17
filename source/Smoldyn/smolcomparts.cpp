@@ -27,7 +27,8 @@
 	#include <iostream>
 
 	extern "C" {
-		#include "zlib.h" }
+		#include "zlib.h"
+  }
 #endif
 
 

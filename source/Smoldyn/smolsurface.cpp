@@ -24,6 +24,7 @@
 #include "smoldynconfigure.h"
 
 #ifdef OPTION_VCELL
+  #include <sstream>
 	using std::stringstream;
 #endif
 
@@ -3392,10 +3393,10 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 			if(constRate)
 			{
 				if(!strcmp(word,"rate"))
-					er=surfsetrate(srf,i,ms,ms1,ms2,i3,f1,1);
+					er=surfsetrate(srf,i, index, ms,ms1,ms2,i3,f1,1);
 				else {
 					CHECKS(f1<=1,"surface interaction probabilities cannot be greater than 1");
-					er=surfsetrate(srf,i,ms,ms1,ms2,i3,f1,2); }
+					er=surfsetrate(srf,i,index, ms,ms1,ms2,i3,f1,2); }
 				CHECKS(er!=-1,"out of memory");
 				CHECKS(!er,"BUG: error in surfsetrate");
 			}

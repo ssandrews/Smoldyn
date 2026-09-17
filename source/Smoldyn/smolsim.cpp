@@ -35,6 +35,7 @@
 #include "smoldynconfigure.h"
 
 #ifdef OPTION_VCELL
+#include <sstream>
 	using std::stringstream;
 #endif
 
@@ -1645,7 +1646,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 #ifdef OPTION_VCELL
 	else if(!strcmp(word,"reaction_rate")) {				// reaction_rate
 		if(line2){
-			stringstream ss(line2);
+      std::stringstream ss(line2);
 			ss >> rname;
 			string rawStr, expStr;
 			getline(ss, rawStr);

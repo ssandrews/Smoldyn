@@ -143,19 +143,19 @@ endif()
 #
 set(SRC_FILES
   ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.cpp
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.cpp
   ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
-  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c)
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.cpp)
 
 set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
@@ -163,9 +163,9 @@ include_directories(source/libSteve source/Smoldyn ${CMAKE_BINARY_DIR})
 
 if(OPTION_VCELL)
   list(APPEND SRC_FILES
-        ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynhybrid.c
+        ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynhybrid.cpp
         ${CMAKE_SOURCE_DIR}/source/vcell/SimpleMesh.cpp
-        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.cpp )
+        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.cpp)
   include_directories(source/vcell)
 endif(OPTION_VCELL)
 
@@ -432,6 +432,10 @@ if (OPTION_TARGET_SMOLDYN)
   if(RUN_LIBS)
     message(STATUS "Setting INSTALL_RPATH=${RUN_LIBS}")
     set_target_properties(smoldyn PROPERTIES INSTALL_RPATH "${RUN_LIBS}")
+  endif()
+
+  if(OPTION_VCELL)
+    target_link_libraries(smoldyn PRIVATE Steve)
   endif()
 endif ()
 
