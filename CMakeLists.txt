@@ -142,21 +142,20 @@ endif()
 # twice.
 #
 set(SRC_FILES
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
- )
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c)
 
 set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
@@ -191,37 +190,40 @@ set(APPLE_BUILD OFF)
 set(NIX_BUILD OFF)
 set(WINDOWS_BUILD OFF)
 
+find_program(BNG2_PATH
+  NAMES "BNG2.pl"
+  PATHS /opt /usr/local/BioNetGen
+)
+
 if (OPTION_VCELL)
   set(VCELL_BUILD ON)
   message(STATUS "Compiling for VCell")
   add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
   link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell)
-elseif (APPLE)
-  set(APPLE_BUILD ON)
-  message(STATUS "Compiling on an Apple computer")
-  message(STATUS "Host system version is ${CMAKE_HOST_SYSTEM_VERSION}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated")
-  set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
-elseif (WIN32)
+endif()
+
+if (WIN32)
   set(WINDOWS_BUILD ON)
   if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   endif()
-
   message(STATUS "Compiling on a Windows computer")
-  set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
   if (OPTION_VTK)
     message(WARNING "VTK not included because it isn't supported for Windows build")
     set(OPTION_VTK OFF)
   endif ()
-else ()
-  set(NIX_BUILD ON)
-  message(STATUS "Compiling on a Linux computer")
-  set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
 endif ()
 
 message(STATUS "CMAKE_CXX_FLAGS variable: '${CMAKE_CXX_FLAGS}'")
 message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
+if(OPTION_VCELL)
+  if(BNG2_PATH)
+    add_definitions(-DBNG2_PATH=${BNG2_PATH})
+  else()
+    # Assume to be in PATH
+    add_definitions(-DBNG2_PATH="BNG2.pl")
+  endif()
+endif()
 
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########

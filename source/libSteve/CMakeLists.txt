@@ -10,7 +10,7 @@ set(SRC_FILES
     RnSort.c
     RnSparse.c
     rxnparam.c
-    SimCommand.c
+    SimCommand.cpp
     Sphere.c
     string2.c
     SurfaceParam.c
