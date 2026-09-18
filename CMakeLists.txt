@@ -484,4 +484,3 @@ enable_testing()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
   add_subdirectory(examples)
 endif ()
-

@@ -323,6 +323,12 @@ simptr simalloc(const char *fileroot) {
 	sim->cmds=NULL;
 	sim->graphss=NULL;
 
+#ifdef OPTION_VCELL
+	sim->volumeSamplesPtr=NULL;
+	sim->valueProviderFactory=NULL;
+	sim->mesh=NULL;
+#endif
+
 	sim->diffusefn=&diffuse;
 	sim->surfaceboundfn=&checksurfacebound;
 	sim->surfacecollisionsfn=&checksurfaces;
