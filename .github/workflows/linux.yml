@@ -24,6 +24,7 @@ jobs:
           sudo apt -y update
           sudo apt -y install cmake libjpeg-dev libtiff-dev freeglut3-dev libxi-dev libxmu-dev
           sudo apt -y install xvfb
+          sudo apt -y install libgl1-mesa-dev
       - name: Configure smoldyn
         run: |
           cmake --version
