@@ -40,7 +40,6 @@
 #endif
 
 #ifdef __cplusplus
-
 #ifdef OPTION_VCELL
 #include <string>
 typedef struct VolumeSamples* VolumeSamplesPtr;
@@ -49,7 +48,6 @@ class ValueProvider;
 class ValueProviderFactory;
 using std::string;
 #endif
-
 #endif // -----  not __cplusplus  -----
 
 /****************************************************************************/
@@ -382,8 +380,12 @@ enum SpeciesRepresentation
 };
 
 #ifdef OPTION_VCELL
+#ifdef __cplusplus
 class ValueProvider;
 typedef ValueProvider* valueproviderptr;
+#else
+typedef void* valueproviderptr;
+#endif
 #endif
 
 typedef struct rxnstruct
@@ -1085,9 +1087,15 @@ typedef struct simstruct
 #endif
 
 #ifdef OPTION_VCELL
+#ifdef __cplusplus
     VolumeSamplesPtr volumeSamplesPtr;
     ValueProviderFactory* valueProviderFactory;
     AbstractMesh* mesh;
+#else
+    void* volumeSamplesPtr;
+    void* valueProviderFactory;
+    void* mesh;
+#endif
 #endif
 } * simptr;
 

@@ -90,4 +90,3 @@ int main(int argc, char* argv[])
     smolFreeSim(sim);
     return 0;
 }
-
