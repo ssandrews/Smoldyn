@@ -6,6 +6,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __math2_h
 #define __math2_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /******** useful constants and macros ***********/
 
 #define PI 3.14159265358979323846
@@ -96,5 +100,9 @@ void SetHillParamD(double *hp,double a,double e,double n,double b);
 double HillFnD(double *hp,double x);
 void HillFnComposeD(double *hp1,double *hp2,double *hp12);
 void HillFnComposeNF1D(double *hp1,double *hp2,double *hpf1,double *hpf12);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

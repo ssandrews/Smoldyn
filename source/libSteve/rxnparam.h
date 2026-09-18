@@ -8,6 +8,10 @@ for documentation. */
 #ifndef __rxnparam_h
 #define __rxnparam_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /****************************  UTILITY FUNCTIONS  *****************************/
 
 double modelrxnrate(double a,double b,double difc,double chi);
@@ -31,5 +35,9 @@ void rdfreverserxn(double *r,double *rdf,int n,double step,double b,double flux)
 double rdfsteadystate(double *r,double *rdfa,double *rdfd,int n,double step,double a,double b,double eps,double prob);
 void rdfmaketable();
 void rdfmaketableprob();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

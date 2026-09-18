@@ -7,6 +7,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __Sphere_h
 #define __Sphere_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 Cart = Cartesian coordinates (x, y, z)
 Sc = Spherical coordinates (r, theta, phi)
@@ -65,5 +69,9 @@ void Sph_QtniRotateUnitz(const double *Qtni,double *vect,const double *add,doubl
 
 double Sph_RotateVectWithNormals3D(const double *pt1,const double *pt2,double *newpt2,double *oldnorm,double *newnorm,int sign);
 void Sph_RotateVectorAxisAngle(const double *vect,const double *axis,double angle,double *rotated);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

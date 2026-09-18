@@ -71,6 +71,9 @@ option(OPTION_ASAN "Enable Address Sanitizer" OFF)
 if (OPTION_VCELL)
   set(OPTION_USE_LIBTIFF OFF)
   set(OPTION_USE_ZLIB OFF)
+  find_package(ZLIB REQUIRED)
+  include_directories(${ZLIB_INCLUDE_DIRS})
+  list(APPEND DEP_LIBS ${ZLIB_LIBRARIES})
   set(HAVE_ZLIB TRUE)
 endif ()
 
@@ -190,11 +193,6 @@ set(APPLE_BUILD OFF)
 set(NIX_BUILD OFF)
 set(WINDOWS_BUILD OFF)
 
-find_program(BNG2_PATH
-  NAMES "BNG2.pl"
-  PATHS /opt /usr/local/BioNetGen
-)
-
 if (OPTION_VCELL)
   set(VCELL_BUILD ON)
   message(STATUS "Compiling for VCell")
@@ -215,16 +213,6 @@ if (WIN32)
 endif ()
 
 message(STATUS "CMAKE_CXX_FLAGS variable: '${CMAKE_CXX_FLAGS}'")
-message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
-if(OPTION_VCELL)
-  if(BNG2_PATH)
-    add_definitions(-DBNG2_PATH=${BNG2_PATH})
-  else()
-    # Assume to be in PATH
-    add_definitions(-DBNG2_PATH="BNG2.pl")
-  endif()
-endif()
-
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
 
@@ -403,9 +391,8 @@ add_subdirectory(source/libSteve)
 
 # Static library is always built. We link it to all other targets.
 # OPTION_TARGET_LIBSMOLDYN now only control the shared library.
-add_library(smoldyn_static STATIC ${SRC_FILES}
-    $<TARGET_OBJECTS:Steve>
-    $<TARGET_OBJECTS:nsv>)
+add_library(smoldyn_static STATIC ${SRC_FILES})
+target_link_libraries(smoldyn_static PUBLIC Steve nsv)
 
 set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
@@ -427,15 +414,11 @@ endif ()
 
 if (OPTION_TARGET_SMOLDYN)
   add_executable(smoldyn ${MAIN_FILES})
-  target_link_libraries(smoldyn PUBLIC smoldyn_static)
+  target_link_libraries(smoldyn PRIVATE smoldyn_static)
   target_link_libraries(smoldyn PUBLIC ${DEP_LIBS})
   if(RUN_LIBS)
     message(STATUS "Setting INSTALL_RPATH=${RUN_LIBS}")
     set_target_properties(smoldyn PROPERTIES INSTALL_RPATH "${RUN_LIBS}")
-  endif()
-
-  if(OPTION_VCELL)
-    target_link_libraries(smoldyn PRIVATE Steve)
   endif()
 endif ()
 

@@ -7,6 +7,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __Geometry_h
 #define __Geometry_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Center
 void Geo_LineCenter(double **point,double *cent,int dim);
 void Geo_RectCenter(double **point,double *cent,int dim);
@@ -105,5 +109,9 @@ int Geo_CylsXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2)
 // Volumes
 double Geo_SphVolume(double rad,int dim);
 double Geo_SphOLSph(double *cent1,double *cent2,double r1,double r2,int dim);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

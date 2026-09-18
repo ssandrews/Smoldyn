@@ -7,6 +7,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __Zn_h
 #define __Zn_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #define allocZV(n) ((int *) calloc(n,sizeof(int)))
@@ -40,5 +44,9 @@ int Zn_incrementcounter(int *a,int digits,int base);
 int Zn_permute(int *a,int *b,int n,int k);
 int Zn_permutelex(int *seq,int n);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

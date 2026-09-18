@@ -24,6 +24,11 @@ using namespace std;
 #include "pybind11/stl.h"
 #include "pybind11/stl_bind.h"
 
+#ifdef OPTION_VCELL
+#include "vcell/SimpleValueProvider.h"
+#include "vcell/SimpleMesh.h"
+#endif
+
 using namespace pybind11::literals; // for _a
 
 double r_ = 0.0;

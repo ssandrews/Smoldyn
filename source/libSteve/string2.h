@@ -6,6 +6,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __string2_h
 #define __string2_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define STRCHAR 512
 #define STRCHARLONG 4096
 
@@ -95,5 +99,9 @@ double strmatheval(const char *expression,char **varnames,const double *varvalue
 int strmatherror(char *string,int clear);
 int strmathsscanf(const char *str,const char *format,char **varnames,const double *varvalues,int nvar,...);
 double strunits(const char *unitstring,const char *dimstring,double value,char *outstring,const char* function);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
