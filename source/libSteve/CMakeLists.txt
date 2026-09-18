@@ -10,7 +10,7 @@ set(SRC_FILES
     RnSort.c
     RnSparse.c
     rxnparam.c
-    SimCommand.c
+    SimCommand.cpp
     Sphere.c
     string2.c
     SurfaceParam.c
@@ -26,9 +26,11 @@ target_include_directories(Steve PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR})
 
 set_target_properties(Steve PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 if(OPENGL_FOUND)
   list(APPEND DEP_LIBS ${OPENGL_LIBRARIES})
 endif()
+
 if(TIFF_FOUND)
   list(APPEND DEP_LIBS ${TIFF_LIBRARY})
 endif()

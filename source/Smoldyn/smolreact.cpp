@@ -24,6 +24,10 @@
   #include "nsvc.h"
 #endif
 
+#ifdef OPTION_VCELL 
+#include <sstream>
+#endif
+
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 
@@ -2582,7 +2586,7 @@ int rxnparsereaction(simptr sim,const char *word,char *line2,char *errstr) {
 		CHECKS(rxn,"wildcards and species groups are not supported in reactions in VCell");
 		using std::stringstream;
 		string rawStr, expStr;
-		stringstream ss(line2);
+    std::stringstream ss(line2);
 		getline(ss,rawStr);
 		size_t found = rawStr.find(";");
 		if(found!=string::npos) {

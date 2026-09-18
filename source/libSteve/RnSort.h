@@ -6,6 +6,10 @@ of the Gnu Lesser General Public License (LGPL). */
 #ifndef __RnSort_h
 #define __RnSort_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /************************   sorting functions   *****************************/
 
 void sortV(float *a,float *b,int n);
@@ -68,5 +72,9 @@ double cp3absorb(double *r,double *rdf,int n,double rabsorb);
 void cpxaddconc(double *r,double *rdf,int n,double amount,int profile,double r1,double r2);
 void cpxmassactionreact(double *rdfa,double *rdfb,int n,double rate);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

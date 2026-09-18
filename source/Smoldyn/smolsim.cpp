@@ -35,6 +35,7 @@
 #include "smoldynconfigure.h"
 
 #ifdef OPTION_VCELL
+#include <sstream>
 	using std::stringstream;
 #endif
 
@@ -321,6 +322,12 @@ simptr simalloc(const char *fileroot) {
 	sim->filss=NULL;
 	sim->cmds=NULL;
 	sim->graphss=NULL;
+
+#ifdef OPTION_VCELL
+	sim->volumeSamplesPtr=NULL;
+	sim->valueProviderFactory=NULL;
+	sim->mesh=NULL;
+#endif
 
 	sim->diffusefn=&diffuse;
 	sim->surfaceboundfn=&checksurfacebound;
@@ -1645,7 +1652,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 #ifdef OPTION_VCELL
 	else if(!strcmp(word,"reaction_rate")) {				// reaction_rate
 		if(line2){
-			stringstream ss(line2);
+      std::stringstream ss(line2);
 			ss >> rname;
 			string rawStr, expStr;
 			getline(ss, rawStr);

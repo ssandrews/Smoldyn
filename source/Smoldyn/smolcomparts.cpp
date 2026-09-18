@@ -27,7 +27,8 @@
 	#include <iostream>
 
 	extern "C" {
-		#include "zlib.h" }
+		#include "zlib.h"
+  }
 #endif
 
 
@@ -979,10 +980,10 @@ int loadcompart(simptr sim,ParseFilePtr *pfpptr,char *line2) {
 /* compartsupdateparams */
 int compartsupdateparams(simptr sim) {
 #ifdef OPTION_VCELL
-	return compartsupdateparams_volumeSample(sim);
-#else
-	return compartsupdateparams_original(sim);
+	if(sim->volumeSamplesPtr)
+		return compartsupdateparams_volumeSample(sim);
 #endif
+	return compartsupdateparams_original(sim);
 }
 
 

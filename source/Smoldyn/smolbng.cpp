@@ -19,6 +19,11 @@
 	#define DEVNULL "> /dev/null"
 #endif
 
+// User should ensure that BNG2.pl file is exeuctable and is in PATH
+#ifndef BNG2_PATH
+#define BNG2_PATH "BNG2.pl"
+#endif // !BNG2_PATH
+
 
 /******************************************************************************/
 /*********************************** BioNetGen ********************************/

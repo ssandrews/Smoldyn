@@ -6,6 +6,10 @@ This is a header file for SurfaceParam.c. */
 #ifndef __srfparam_h
 #define __srfparam_h
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************  FUNCTIONS FOR EXTERNAL USE  ***********************/
 
 enum SurfParamAlgo {SPAirrTrans,SPAirrTransT,SPAirrTransQ,SPArevTrans,SPAirrAds,SPAirrAdsT,SPAirrAdsQ,SPAirrAdsEC,SPArevAds,SPArevAdsND,SPAirrDes,SPArevDes,SPAirrFlip,SPArevFlip,SPAirrDesC,SPArevAdsC};
@@ -31,5 +35,9 @@ void xdfdesorbdelta(double *x,double *xdf,int n,double b,double flux);
 double xdfsteadystate(double *x,double *xdfa,double *xdfd,int n,double cs,double b,double probon,double proboff,double eps);
 void xdfmaketableirrev(void);
 void xdfmaketable(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

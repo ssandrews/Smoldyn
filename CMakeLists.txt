@@ -71,6 +71,9 @@ option(OPTION_ASAN "Enable Address Sanitizer" OFF)
 if (OPTION_VCELL)
   set(OPTION_USE_LIBTIFF OFF)
   set(OPTION_USE_ZLIB OFF)
+  find_package(ZLIB REQUIRED)
+  include_directories(${ZLIB_INCLUDE_DIRS})
+  list(APPEND DEP_LIBS ${ZLIB_LIBRARIES})
   set(HAVE_ZLIB TRUE)
 endif ()
 
@@ -142,21 +145,20 @@ endif()
 # twice.
 #
 set(SRC_FILES
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.c
- ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.c
- )
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolbng.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolboxes.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smollattice.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolreact.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolrule.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsim.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolsurface.cpp
+  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolwall.cpp)
 
 set(MAIN_FILES ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldyn.cpp)
 
@@ -164,9 +166,9 @@ include_directories(source/libSteve source/Smoldyn ${CMAKE_BINARY_DIR})
 
 if(OPTION_VCELL)
   list(APPEND SRC_FILES
-        ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynhybrid.c
+        ${CMAKE_SOURCE_DIR}/source/Smoldyn/smoldynhybrid.cpp
         ${CMAKE_SOURCE_DIR}/source/vcell/SimpleMesh.cpp
-        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.cpp )
+        ${CMAKE_SOURCE_DIR}/source/vcell/SimpleValueProvider.cpp)
   include_directories(source/vcell)
 endif(OPTION_VCELL)
 
@@ -196,45 +198,31 @@ if (OPTION_VCELL)
   message(STATUS "Compiling for VCell")
   add_compile_options(-D_CRT_SECURE_NO_WARNINGS)
   link_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/vcell)
-elseif (APPLE)
-  set(APPLE_BUILD ON)
-  message(STATUS "Compiling on an Apple computer")
-  message(STATUS "Host system version is ${CMAKE_HOST_SYSTEM_VERSION}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated")
-  set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
-elseif (WIN32)
+endif()
+
+if (WIN32)
   set(WINDOWS_BUILD ON)
   if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   endif()
-
   message(STATUS "Compiling on a Windows computer")
-  set(BNG2_PATH "%PROGRAMFILES%\\\\Smoldyn\\\\BioNetGen\\\\BNG2.pl")
   if (OPTION_VTK)
     message(WARNING "VTK not included because it isn't supported for Windows build")
     set(OPTION_VTK OFF)
   endif ()
-else ()
-  set(NIX_BUILD ON)
-  message(STATUS "Compiling on a Linux computer")
-  set(BNG2_PATH "/usr/local/bin/BioNetGen/BNG2.pl")
 endif ()
 
 message(STATUS "CMAKE_CXX_FLAGS variable: '${CMAKE_CXX_FLAGS}'")
-message(STATUS "BioNetGen path: '${BNG2_PATH}' ")
-
 
 ####### Option: Build with OpenGL (gl and glu only, not glut) ##########
 
 if (OPTION_USE_OPENGL)
-  # see cmake --help-policy CMP0072"
-  set(OpenGL_GL_PREFERENCE LEGACY)
-
   if (VCELL_BUILD)
     set(HAVE_OPENGL TRUE)
     set(HAVE_GL_GL_H TRUE)
     set(HAVE_GL_GLU_H TRUE)
-  elseif (WINDOWS_BUILD)
+  endif()
+  if (WINDOWS_BUILD)
     find_file(HAVE_GL_GL_H GL/gl.h PATHS source/MSVClibs NO_DEFAULT_PATH)
     find_file(HAVE_GL_GLU_H GL/glu.h PATHS source/MSVClibs NO_DEFAULT_PATH)
     include(FindOpenGL)
@@ -267,16 +255,7 @@ endif()
 ####### Option: Build with OpenGL (glut only) ##########
 
 if (OPTION_USE_OPENGL)
-  if (VCELL_BUILD)
-    set(HAVE_GL_GLUT_H TRUE)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    link_directories(${CMAKE_CURRENT_SOURCE_DIR}/windows/glut-3.7.6)
-    if (ARCH_64bit)
-      list(APPEND DEP_LIBS glut64)
-    else()
-      list(APPEND DEP_LIBS glut32 zlib)
-    endif()
-  elseif (WINDOWS_BUILD)
+  if (WINDOWS_BUILD)
     add_compile_definitions(FREEGLUT_STATIC)
     find_path(GLUT_INCLUDE_DIR GL/glut.h source/MSVClibs NO_DEFAULT_PATH)
     set(HAVE_GL_GLUT_H TRUE)
@@ -401,9 +380,8 @@ add_subdirectory(source/libSteve)
 
 # Static library is always built. We link it to all other targets.
 # OPTION_TARGET_LIBSMOLDYN now only control the shared library.
-add_library(smoldyn_static STATIC ${SRC_FILES}
-    $<TARGET_OBJECTS:Steve>
-    $<TARGET_OBJECTS:nsv>)
+add_library(smoldyn_static STATIC ${SRC_FILES})
+target_link_libraries(smoldyn_static PUBLIC Steve nsv)
 
 set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
@@ -425,7 +403,7 @@ endif ()
 
 if (OPTION_TARGET_SMOLDYN)
   add_executable(smoldyn ${MAIN_FILES})
-  target_link_libraries(smoldyn PUBLIC smoldyn_static)
+  target_link_libraries(smoldyn PRIVATE smoldyn_static)
   target_link_libraries(smoldyn PUBLIC ${DEP_LIBS})
   if(RUN_LIBS)
     message(STATUS "Setting INSTALL_RPATH=${RUN_LIBS}")
@@ -495,4 +473,3 @@ enable_testing()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
   add_subdirectory(examples)
 endif ()
-

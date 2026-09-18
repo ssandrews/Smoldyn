@@ -1,7 +1,5 @@
 # python binding.
 
-# find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed VERSION 3.8.15...3.12)
-
 # recompile libsmoldyn for PYTHON.
 add_library(_pysmoldyn STATIC ${SRC_FILES}
     $<TARGET_OBJECTS:Steve>
@@ -13,8 +11,8 @@ target_compile_options(_pysmoldyn PRIVATE -DENABLE_PYTHON_CALLBACK)
 # especially where scanf is used for user input.
 target_compile_options(_pysmoldyn PRIVATE -DCOMPILE_AS_PY_MODULE)
 
-
 target_include_directories(_pysmoldyn PRIVATE ${Python3_INCLUDE_DIRS} ${PYBIND11_SOURCE_DIR}/include)
+
 
 # This is suggested by pybind11: reduces binary size and disables some warnings.
 set_target_properties(_pysmoldyn PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -33,7 +31,7 @@ add_custom_target(install_deps
 # Its very hard to locate correct version of Python on every cloud based CI.
 # So I let cmake install the dependencies at build time.
 if(WINDOWS_BUILD)
-    add_custom_command(TARGET _pysmoldyn PRE_BUILD
+  add_custom_command(TARGET _pysmoldyn PRE_BUILD
         COMMAND ${Python3_EXECUTABLE} -m pip install wheel numpy setuptools --user
         COMMENT "Installing build dependencies on Windows"
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
@@ -55,6 +53,11 @@ target_compile_options(_smoldyn PRIVATE
 target_include_directories(_smoldyn PRIVATE
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/source/external/pybind11/include)
+
+if(OPTION_VCELL)
+  target_include_directories(_smoldyn PRIVATE ${CMAKE_SOURCE_DIR}/source)
+endif()
+
 
 # If generator pattern is not used here, cmake produces module in Release/Debug folders
 # which will break the wheels.
@@ -158,12 +161,12 @@ list(LENGTH TEST_SCRIPTS TOTAL_TESTS)
 message(STATUS "[TEST] Found ${TOTAL_TESTS} test scripts")
 
 foreach(_pyscript ${TEST_SCRIPTS})
-    # message(STATUS " [TEST] Adding test ${_pyscript}")
-    get_filename_component(_test_name ${_pyscript} NAME_WE)
-    get_filename_component(_test_dir ${_pyscript} DIRECTORY)
-    add_test(NAME ${_test_name} COMMAND
+  # message(STATUS " [TEST] Adding test ${_pyscript}")
+  get_filename_component(_test_name ${_pyscript} NAME_WE)
+  get_filename_component(_test_dir ${_pyscript} DIRECTORY)
+  add_test(NAME ${_test_name} COMMAND
         ${Python3_EXECUTABLE} ${_pyscript}
         WORKING_DIRECTORY ${_test_dir})
-    set_tests_properties(${_test_name} PROPERTIES
+  set_tests_properties(${_test_name} PROPERTIES
         ENVIRONMENT "PYTHONPATH=${PY_SMOLDYN_OUTDIR};SMOLDYN_NO_PROMPT=1")
 endforeach()

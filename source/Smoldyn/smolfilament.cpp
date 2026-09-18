@@ -468,8 +468,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 				newnodesx[seg]=fil->nodesx[seg];
 				newnodemobility[seg]=fil->nodemobility[seg]; }}
 		for(;seg<=maxseg;seg++) {
-			CHECKMEM(newnodes[seg]=calloc(3,sizeof(double)));
-			CHECKMEM(newnodesx[seg]=calloc(3,sizeof(double)));
+			CHECKMEM(newnodes[seg]=(double*) calloc(3,sizeof(double)));
+			CHECKMEM(newnodesx[seg]=(double*) calloc(3,sizeof(double)));
 			newnodes[seg][0]=newnodes[seg][1]=newnodes[seg][2]=0;
 			newnodemobility[seg]=1; }
 
