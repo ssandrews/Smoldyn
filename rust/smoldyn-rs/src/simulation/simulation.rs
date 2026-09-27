@@ -71,7 +71,8 @@ pub struct Boundary {
 mod test {
 
     #[test]
-    fn name() {
-        todo!();
+    fn test_version() {
+        let version = crate::version();
+        println!("{version}");
     }
 }

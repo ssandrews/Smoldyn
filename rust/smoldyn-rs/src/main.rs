@@ -62,6 +62,6 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn show_version() -> anyhow::Result<()> {
-    println!("{}", smoldyn::version());
+    println!("{}", libsmoldyn::version());
     Ok(())
 }
