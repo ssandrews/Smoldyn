@@ -7,7 +7,7 @@ use crate::ffi::{self, ErrorCode};
 
 /// Size of libsmoldyn's global error buffers (`STRCHARLONG` in `smoldyn.h`).
 /// `smolGetError` `strcpy`s into the caller's buffers, so ours must be at least this large.
-const STRCHARLONG: usize = 4096;
+pub(crate) const STRCHARLONG: usize = 4096;
 
 pub type SmolResult<T> = Result<T, SmolError>;
 

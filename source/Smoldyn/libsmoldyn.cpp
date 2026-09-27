@@ -797,6 +797,7 @@ extern CSTRING enum ErrorCode smolRunCommand(simptr sim,const char *commandstrin
 	strncpy(stringcopy,commandstring,STRCHARLONG-1);
 	cmd=scmdalloc();
 	LCHECK(cmd,funcname,ECmemory,"failed to create a new command structure");
+	cmd->cmds=sim->cmds;	// commands that write output (e.g. molcount) need this
 	strcpy(cmd->str,stringcopy);
 	cmdcode=docommand((void*)sim,cmd,stringcopy);
 	LCHECK(cmdcode==CMDok,funcname,ECwarning,cmd->erstr);
@@ -2178,7 +2179,7 @@ extern CSTRING enum ErrorCode smolAddLattice(simptr sim,const char *lattice,cons
 	simlattice = NULL;
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	LCHECK(lattice,funcname,ECmissing,"missing lattice");
-	p=stringfind(sim->latticess->latticenames,sim->latticess->nlattice,lattice);
+	p=sim->latticess?stringfind(sim->latticess->latticenames,sim->latticess->nlattice,lattice):-1;
 	LCHECK(p<0,funcname,ECsame,"lattice name already exists");
 	er=latticeaddlattice(sim,&simlattice,lattice,min,max,dx,btype,LATTICEnsv);
 	LCHECK(er==0,funcname,ECerror,"error adding lattice");

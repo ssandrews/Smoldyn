@@ -10,3 +10,4 @@ strum = { version = "0.28.0", features = ["derive"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 libsmoldyn = { path = "../libsmoldyn/" }
+ctrlc = "3.5.2"

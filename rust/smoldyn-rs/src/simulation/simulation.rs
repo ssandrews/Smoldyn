@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
 
 #[derive(Default, Debug)]
 pub struct Simulation {
@@ -25,12 +26,15 @@ impl Simulation {
         todo!()
     }
 
-    pub fn run(&mut self) -> anyhow::Result<()> {
-        if let Some(model_path) = &self.model_path {
-            tracing::info!("running model {model_path:?}");
-            super::run(model_path, "")?;
-        }
-        Ok(())
+    /// Run the model, stopping early if `stop` is set. Returns
+    /// [`super::Progress::Running`] if it was stopped early.
+    pub fn run(&mut self, stop: &AtomicBool) -> anyhow::Result<super::Progress> {
+        let model_path = self
+            .model_path
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no model to run"))?;
+        tracing::info!("running model {model_path:?}");
+        super::run(model_path, "", stop)
     }
 
     pub fn run_until(
