@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+cxx = { version = "1.0.202", features = ["c++17"] }
+tracing = "0.1.44"
+
+[build-dependencies]
+cmake = "0.1.58"
+cxx-build = "1.0.202"

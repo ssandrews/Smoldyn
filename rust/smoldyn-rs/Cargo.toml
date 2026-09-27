@@ -1,0 +1,12 @@
+[package]
+name = "smoldyn"
+version = "2.27.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.6.6", features = ["derive"] }
+strum = { version = "0.28.0", features = ["derive"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+libsmoldyn = { path = "../libsmoldyn/" }
