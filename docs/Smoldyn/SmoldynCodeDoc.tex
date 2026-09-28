@@ -6359,7 +6359,11 @@ Prints information about the lattices to the a file. This would be better as par
 
 \item[\ttt{enum CMDcode cmdprintFilament(simptr sim, cmdptr cmd, char *line2)}]
 \hfill \\
-Prints information about a specific filament to the a file.
+Prints information about a specific filament to a file.
+
+\item[\ttt{enum CMDcode cmdprintFilaments(simptr sim, cmdptr cmd, char *line2)}]
+\hfill \\
+Prints information about all filaments to a file. New runtime command \ttt{printFilaments <file>} writes every filament of every type (auto-named daughters included) as a flat node polyline plus its parent name. Independent diagnostic/analysis tool; useful for anyone inspecting filaments, since \ttt{filWrite()}/\ttt{savesim()} do not serialize filaments (stub).
 
 \item[\ttt{enum CMDcode cmdwriteVTK(simptr sim, cmdptr cmd, char *line2)}]
 \hfill \\
@@ -8008,6 +8012,9 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added test for coincident surface panels. This is a new test in \ttt{checksurfaceparams} and a new function \ttt{srfcoincidentpanels}, both in smolsurface.c. This only looks for panels that are identical to each other, including with a rotated point sequence or front/back flipped. It does not detect overlap in only one region of a panel, such as a pair of partially coincident rectangles.
 \item Fixed a minor bug in \ttt{strunits}, which created errors if units were used and commands included numbers; the problem was that default units only apply while a configuration file is being read, so there are no default units mid-simulation when a command is being parsed. As a result, Smoldyn couldn't convert the command values. Now, Smoldyn still can't convert values in commands, but this doesn't create an error.
 \item Implemented use of \ttt{strmatherror} for error reporting. Before, math errors were generated but never read. I created the \ttt{CHECKM} macro, which behaves the same as the \ttt{CHECKS} macro, except that it also checks for math errors and appends math error strings to the error outputs. It should be used after every call to \ttt{strmathsscanf}. I didn't create a new macro within smolcmd.c, but those calls to \ttt{strmathsscanf} also check for math errors now.
+\item The following items were written by Junjie Sun using Claude. I proofread them, added them to the main branch, and added edits.
+\item Fixed a minor bug in filAlloc. Fix: filAlloc never reassigned \ttt{fil->branchspots} on branch-array growth.
+\item Add printFilaments command: dump all filament node coordinates.
 
 \end{itemize}
 

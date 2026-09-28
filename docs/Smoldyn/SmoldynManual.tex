@@ -4119,6 +4119,10 @@ Displays diagnostics about all lattices.
 
 Prints information about the specified filament. The $code$ input should be a string of letters; for each one, this prints out that data set. Codes are: \ttt{x}: segment lengths, endpoint positions, and relative angles, \ttt{a}: relative quaternions, \ttt{b}: absolute quaternions, \ttt{f}: forces on each node (computed by this function).
 
+\item{\ttt{printFilaments} $filename$}
+
+Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \verb!FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...!. Auto-named daughters are included, so this captures a whole branched network.
+
 \item{\ttt{writeVTK} $filepath/filename$}
 
 Outputs VTK format data for viewing with applications such as Visit or Paraview. This creates a stack of files in the working directory, or somewhere else depending on the $filepath$, for which the names start with filenameLattice00\_00001.vtu and filenameMolecules00001.vtu, where $filename$ is the entered file name. The $filepath$ directory needs to have been created beforehand. In contrast to most filenames, this path and name should not be declared with the ``output\_files'' statement. The $filename$ numbers are incremented for each snapshot. If molecules have two-part serial numbers, this only considers the right part.
