@@ -1,29 +1,23 @@
-//! Compartments.
-
 use super::{Sim, cstring, index, name, ok, to_i32, vector};
 use crate::error::SmolResult;
 use crate::ffi::{self, CmptLogic};
 
 impl Sim {
-    /// Add a compartment (`smolAddCompartment`).
     pub fn add_compartment(&mut self, compartment: &str) -> SmolResult<()> {
         let compartment = cstring(compartment)?;
         ok(unsafe { ffi::smolAddCompartment(self.p(), compartment.as_ptr()) })
     }
 
-    /// Index of a compartment (`smolGetCompartmentIndex`).
     pub fn compartment_index(&self, compartment: &str) -> SmolResult<usize> {
         let compartment = cstring(compartment)?;
         index(unsafe { ffi::smolGetCompartmentIndex(self.p(), compartment.as_ptr()) })
     }
 
-    /// Name of the compartment at `index` (`smolGetCompartmentName`).
     pub fn compartment_name(&self, index: usize) -> SmolResult<String> {
         let index = to_i32(index, "compartment index")?;
         name(|buf| unsafe { ffi::smolGetCompartmentName(self.p(), index, buf) })
     }
 
-    /// Add a bounding surface to a compartment (`smolAddCompartmentSurface`).
     pub fn add_compartment_surface(&mut self, compartment: &str, surface: &str) -> SmolResult<()> {
         let compartment = cstring(compartment)?;
         let surface = cstring(surface)?;
@@ -32,8 +26,6 @@ impl Sim {
         })
     }
 
-    /// Add an interior-defining point (`dim` values) to a compartment
-    /// (`smolAddCompartmentPoint`).
     pub fn add_compartment_point(&mut self, compartment: &str, point: &[f64]) -> SmolResult<()> {
         let mut point = vector(point, self.dim(), "point")?;
         let compartment = cstring(compartment)?;
@@ -42,8 +34,6 @@ impl Sim {
         })
     }
 
-    /// Combine `compartment2` into `compartment` with `logic`
-    /// (`smolAddCompartmentLogic`).
     pub fn add_compartment_logic(
         &mut self,
         compartment: &str,

@@ -1,5 +1,3 @@
-//! Tests for the safe `Sim` wrapper.
-
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -67,7 +65,6 @@ fn new_rejects_bad_dims() {
         Sim::new(&[0.0], &[1.0, 1.0]),
         Err(SmolError::InvalidArgument(_))
     ));
-    // checked by libsmoldyn itself
     assert!(matches!(
         Sim::new(&[1.0], &[0.0]),
         Err(SmolError::Smoldyn { .. })
@@ -117,9 +114,9 @@ fn getters_reflect_model() {
     assert_eq!(sim.time_step(), 0.002);
     assert_eq!(sim.species(), ["A", "B"]);
 
-    assert_eq!(sim.molecule_count("A", MolecState::MSsoln).unwrap(), 10);
-    assert_eq!(sim.molecule_count("all", MolecState::MSall).unwrap(), 13);
-    assert!(sim.molecule_count("C", MolecState::MSall).is_err());
+    assert_eq!(sim.molecule_count("A", MolecState::Soln).unwrap(), 10);
+    assert_eq!(sim.molecule_count("all", MolecState::All).unwrap(), 13);
+    assert!(sim.molecule_count("C", MolecState::All).is_err());
 
     sim.run_until(0.006).unwrap();
     assert!(sim.time() >= 0.006 - 1e-12, "time is {}", sim.time());
@@ -160,7 +157,7 @@ fn run_with_calls_back_every_step() {
     let progress = sim
         .run_with(&AtomicBool::new(false), |s| {
             times.push(s.time());
-            assert_eq!(s.molecule_count("A", MolecState::MSall).unwrap(), 5);
+            assert_eq!(s.molecule_count("A", MolecState::All).unwrap(), 5);
         })
         .unwrap();
 
@@ -216,8 +213,10 @@ fn run_with_resume_keeps_output() {
     let _ = fs::remove_file(&out);
 
     let mut sim = tiny_sim();
-    sim.read_config("output_root", &format!("{}/", out_dir.display())).unwrap();
-    sim.read_config("output_files", "run_with_resume.txt").unwrap();
+    sim.read_config("output_root", &format!("{}/", out_dir.display()))
+        .unwrap();
+    sim.read_config("output_files", "run_with_resume.txt")
+        .unwrap();
     sim.add_command("E molcount run_with_resume.txt").unwrap();
     sim.update().unwrap();
 
@@ -234,6 +233,5 @@ fn run_with_resume_keeps_output() {
     sim.run_with(&stop, |_| {}).unwrap();
 
     let lines = fs::read_to_string(&out).unwrap().lines().count();
-    // one molcount line per step (plus the initial one), none lost on resume.
     assert!(lines >= 5, "only {lines} lines in {out:?}");
 }

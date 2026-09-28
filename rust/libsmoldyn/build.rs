@@ -1,7 +1,6 @@
 use cmake::Config;
 
 fn main() {
-    // build libsmodlyn_static.a
     let dst = Config::new("../..")
         .define("OPTION_PYTHON", "OFF")
         .define("OPTION_STATIC", "ON")

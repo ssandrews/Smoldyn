@@ -1,5 +1,3 @@
-//! Top-level data-structure
-
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -26,8 +24,6 @@ impl Simulation {
         todo!()
     }
 
-    /// Run the model, stopping early if `stop` is set. Returns
-    /// [`super::Progress::Running`] if it was stopped early.
     pub fn run(&mut self, stop: &AtomicBool) -> anyhow::Result<super::Progress> {
         let model_path = self
             .model_path
@@ -39,10 +35,10 @@ impl Simulation {
 
     pub fn run_until(
         &mut self,
-        breaktime: f64,
-        dt: f64,
-        display: bool,
-        overwrite: bool,
+        _breaktime: f64,
+        _dt: f64,
+        _display: bool,
+        _overwrite: bool,
     ) -> anyhow::Result<()> {
         todo!()
     }
@@ -57,9 +53,9 @@ impl Simulation {
 
     pub fn add_command(
         &mut self,
-        command: &str,
-        cmd_type: char,
-        kwargs: HashMap<String, f64>,
+        _command: &str,
+        _cmd_type: char,
+        _kwargs: HashMap<String, f64>,
     ) -> anyhow::Result<()> {
         todo!()
     }

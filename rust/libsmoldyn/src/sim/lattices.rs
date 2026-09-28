@@ -1,13 +1,8 @@
-//! Lattices, for hybrid particle/lattice simulations.
-
 use super::{Sim, cstring, index, invalid, name, ok, opt_mut_ptr, opt_vector, to_i32, vector};
 use crate::error::SmolResult;
 use crate::ffi;
 
 impl Sim {
-    /// Add a lattice spanning `min` to `max` with spacing `dx` (`dim` values
-    /// each); `btype` has one boundary type per dimension, e.g. `"rrr"`
-    /// (`smolAddLattice`).
     pub fn add_lattice(
         &mut self,
         lattice: &str,
@@ -37,34 +32,28 @@ impl Sim {
         })
     }
 
-    /// Connect a lattice to a port (`smolAddLatticePort`).
     pub fn add_lattice_port(&mut self, lattice: &str, port: &str) -> SmolResult<()> {
         let lattice = cstring(lattice)?;
         let port = cstring(port)?;
         ok(unsafe { ffi::smolAddLatticePort(self.p(), lattice.as_ptr(), port.as_ptr()) })
     }
 
-    /// Let `species` live on a lattice (`smolAddLatticeSpecies`).
     pub fn add_lattice_species(&mut self, lattice: &str, species: &str) -> SmolResult<()> {
         let lattice = cstring(lattice)?;
         let species = cstring(species)?;
         ok(unsafe { ffi::smolAddLatticeSpecies(self.p(), lattice.as_ptr(), species.as_ptr()) })
     }
 
-    /// Index of a lattice (`smolGetLatticeIndex`).
     pub fn lattice_index(&self, lattice: &str) -> SmolResult<usize> {
         let lattice = cstring(lattice)?;
         index(unsafe { ffi::smolGetLatticeIndex(self.p(), lattice.as_ptr()) })
     }
 
-    /// Name of the lattice at `index` (`smolGetLatticeName`).
     pub fn lattice_name(&self, index: usize) -> SmolResult<String> {
         let index = to_i32(index, "lattice index")?;
         name(|buf| unsafe { ffi::smolGetLatticeName(self.p(), index, buf) })
     }
 
-    /// Add `number` molecules to a lattice between `low` and `high` (`dim`
-    /// values each; `None` means the lattice bounds) (`smolAddLatticeMolecules`).
     pub fn add_lattice_molecules(
         &mut self,
         lattice: &str,
@@ -91,8 +80,6 @@ impl Sim {
         })
     }
 
-    /// Run `reaction` on a lattice too; `move_products` moves products between
-    /// representations (`smolAddLatticeReaction`).
     pub fn add_lattice_reaction(
         &mut self,
         lattice: &str,

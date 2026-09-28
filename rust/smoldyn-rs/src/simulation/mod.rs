@@ -1,5 +1,3 @@
-//! Simulation related functions
-
 pub mod simulation;
 pub use simulation::*;
 
@@ -7,11 +5,9 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 use anyhow::Context;
-use libsmoldyn::Sim;
 pub use libsmoldyn::Progress;
+use libsmoldyn::Sim;
 
-/// Load a smoldyn model file and run it to its stop time, or until `stop` is
-/// set. Returns [`Progress::Running`] if it was stopped early.
 pub fn run(model: &Path, flags: &str, stop: &AtomicBool) -> anyhow::Result<Progress> {
     tracing::info!("Running model {:?}", model);
 

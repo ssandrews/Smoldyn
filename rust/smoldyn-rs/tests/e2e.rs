@@ -1,5 +1,3 @@
-//! End-to-end tests that drive the linked Smoldyn C library.
-
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -36,7 +34,8 @@ fn runs_tiny_model() {
     fs::write(&model, TINY_MODEL).unwrap();
 
     println!("{}", smoldyn::version());
-    let progress = smoldyn::run(&model, "", &AtomicBool::new(false)).expect("tiny model should run");
+    let progress =
+        smoldyn::run(&model, "", &AtomicBool::new(false)).expect("tiny model should run");
     assert_eq!(progress, smoldyn::Progress::Finished);
 }
 

@@ -1,12 +1,3 @@
-//! smoldyn library.
-//!
-//! `ffi` holds the raw bindings to `libsmoldyn.h`. [`Sim`] is the safe, owning
-//! wrapper around `simptr`; all `unsafe` code should stay inside this crate.
-//!
-//! Not wrapped: `smolSetLogging` (C variadic callback), `smolSetError`/`smolSetErrorNT`
-//! (internal), `smolSetThrowing` (a C++ exception crossing into Rust aborts), and the
-//! `*NT` lookup variants (the wrappers use the variants that record an error message).
-
 mod error;
 mod sim;
 
@@ -14,150 +5,201 @@ pub use error::{SmolError, SmolResult};
 pub use ffi::{CmptLogic, DrawMode, MolecState, PanelFace, PanelShape, RevParam, SrfAction};
 pub use sim::{OutputData, Progress, RateKind, Side, Sim, SurfaceStyle};
 
-// Raw bindings: safety requirements are those of the C API, and the argument
-// lists mirror libsmoldyn.h.
 #[allow(clippy::missing_safety_doc, clippy::too_many_arguments)]
 #[cxx::bridge]
 pub mod ffi {
-    /// Mirrors `enum ErrorCode` in `libsmoldyn.h`. cxx statically checks that the
-    /// discriminants of these enums match the C++ definitions.
     #[repr(i32)]
     #[derive(Debug)]
     enum ErrorCode {
-        ECok = 0,
-        ECnotify = -1,
-        ECwarning = -2,
-        ECnonexist = -3,
-        ECall = -4,
-        ECmissing = -5,
-        ECbounds = -6,
-        ECsyntax = -7,
-        ECerror = -8,
-        ECmemory = -9,
-        ECbug = -10,
-        ECsame = -11,
-        ECwildcard = -12,
+        #[cxx_name = "ECok"]
+        Ok = 0,
+        #[cxx_name = "ECnotify"]
+        Notify = -1,
+        #[cxx_name = "ECwarning"]
+        Warning = -2,
+        #[cxx_name = "ECnonexist"]
+        Nonexist = -3,
+        #[cxx_name = "ECall"]
+        All = -4,
+        #[cxx_name = "ECmissing"]
+        Missing = -5,
+        #[cxx_name = "ECbounds"]
+        Bounds = -6,
+        #[cxx_name = "ECsyntax"]
+        Syntax = -7,
+        #[cxx_name = "ECerror"]
+        Error = -8,
+        #[cxx_name = "ECmemory"]
+        Memory = -9,
+        #[cxx_name = "ECbug"]
+        Bug = -10,
+        #[cxx_name = "ECsame"]
+        Same = -11,
+        #[cxx_name = "ECwildcard"]
+        Wildcard = -12,
     }
 
-    /// Mirrors `enum MolecState` in `smoldyn.h`: where a molecule is, relative
-    /// to a surface.
     #[repr(i32)]
     #[derive(Debug)]
     enum MolecState {
-        /// in solution
-        MSsoln = 0,
-        /// bound to the front of a surface
-        MSfront = 1,
-        /// bound to the back of a surface
-        MSback = 2,
-        /// transmembrane, sticking up
-        MSup = 3,
-        /// transmembrane, sticking down
-        MSdown = 4,
-        /// in solution but bound to a surface
-        MSbsoln = 5,
-        /// any state
-        MSall = 6,
-        MSnone = 7,
-        MSsome = 8,
+        #[cxx_name = "MSsoln"]
+        Soln = 0,
+        #[cxx_name = "MSfront"]
+        Front = 1,
+        #[cxx_name = "MSback"]
+        Back = 2,
+        #[cxx_name = "MSup"]
+        Up = 3,
+        #[cxx_name = "MSdown"]
+        Down = 4,
+        #[cxx_name = "MSbsoln"]
+        Bsoln = 5,
+        #[cxx_name = "MSall"]
+        All = 6,
+        #[cxx_name = "MSnone"]
+        None = 7,
+        #[cxx_name = "MSsome"]
+        Some = 8,
     }
 
-    /// Mirrors `enum PanelFace` in `smoldyn.h`.
     #[repr(i32)]
     #[derive(Debug)]
     enum PanelFace {
-        PFfront = 0,
-        PFback = 1,
-        PFnone = 2,
-        PFboth = 3,
+        #[cxx_name = "PFfront"]
+        Front = 0,
+        #[cxx_name = "PFback"]
+        Back = 1,
+        #[cxx_name = "PFnone"]
+        None = 2,
+        #[cxx_name = "PFboth"]
+        Both = 3,
     }
 
-    /// Mirrors `enum PanelShape` in `smoldyn.h`.
     #[repr(i32)]
     #[derive(Debug)]
     enum PanelShape {
-        /// rectangle
-        PSrect = 0,
-        /// triangle
-        PStri = 1,
-        /// sphere
-        PSsph = 2,
-        /// cylinder
-        PScyl = 3,
-        /// hemisphere
-        PShemi = 4,
-        /// disk
-        PSdisk = 5,
-        PSall = 6,
-        PSnone = 7,
+        #[cxx_name = "PSrect"]
+        Rect = 0,
+        #[cxx_name = "PStri"]
+        Tri = 1,
+        #[cxx_name = "PSsph"]
+        Sph = 2,
+        #[cxx_name = "PScyl"]
+        Cyl = 3,
+        #[cxx_name = "PShemi"]
+        Hemi = 4,
+        #[cxx_name = "PSdisk"]
+        Disk = 5,
+        #[cxx_name = "PSall"]
+        All = 6,
+        #[cxx_name = "PSnone"]
+        None = 7,
     }
 
-    /// Mirrors `enum SrfAction` in `smoldyn.h`: what a surface does to a molecule.
     #[repr(i32)]
     #[derive(Debug)]
     enum SrfAction {
-        SAreflect = 0,
-        SAtrans = 1,
-        SAabsorb = 2,
-        SAjump = 3,
-        SAport = 4,
-        SAmult = 5,
-        SAno = 6,
-        SAnone = 7,
-        SAadsorb = 8,
-        SArevdes = 9,
-        SAirrevdes = 10,
-        SAflip = 11,
+        #[cxx_name = "SAreflect"]
+        Reflect = 0,
+        #[cxx_name = "SAtrans"]
+        Trans = 1,
+        #[cxx_name = "SAabsorb"]
+        Absorb = 2,
+        #[cxx_name = "SAjump"]
+        Jump = 3,
+        #[cxx_name = "SAport"]
+        Port = 4,
+        #[cxx_name = "SAmult"]
+        Mult = 5,
+        #[cxx_name = "SAno"]
+        No = 6,
+        #[cxx_name = "SAnone"]
+        None = 7,
+        #[cxx_name = "SAadsorb"]
+        Adsorb = 8,
+        #[cxx_name = "SArevdes"]
+        Revdes = 9,
+        #[cxx_name = "SAirrevdes"]
+        Irrevdes = 10,
+        #[cxx_name = "SAflip"]
+        Flip = 11,
     }
 
-    /// Mirrors `enum DrawMode` in `smoldyn.h`: how surfaces are drawn.
     #[repr(i32)]
     #[derive(Debug)]
     enum DrawMode {
-        DMno = 0,
-        DMvert = 1,
-        DMedge = 2,
-        DMve = 3,
-        DMface = 4,
-        DMvf = 5,
-        DMef = 6,
-        DMvef = 7,
-        /// leave the drawing mode unchanged
-        DMnone = 8,
+        #[cxx_name = "DMno"]
+        No = 0,
+        #[cxx_name = "DMvert"]
+        Vert = 1,
+        #[cxx_name = "DMedge"]
+        Edge = 2,
+        #[cxx_name = "DMve"]
+        Ve = 3,
+        #[cxx_name = "DMface"]
+        Face = 4,
+        #[cxx_name = "DMvf"]
+        Vf = 5,
+        #[cxx_name = "DMef"]
+        Ef = 6,
+        #[cxx_name = "DMvef"]
+        Vef = 7,
+        #[cxx_name = "DMnone"]
+        None = 8,
     }
 
-    /// Mirrors `enum CmptLogic` in `smoldyn.h`: how compartments are combined.
     #[repr(i32)]
     #[derive(Debug)]
     enum CmptLogic {
-        CLequal = 0,
-        CLequalnot = 1,
-        CLand = 2,
-        CLor = 3,
-        CLxor = 4,
-        CLandnot = 5,
-        CLornot = 6,
-        CLnone = 7,
+        #[cxx_name = "CLequal"]
+        Equal = 0,
+        #[cxx_name = "CLequalnot"]
+        Equalnot = 1,
+        #[cxx_name = "CLand"]
+        And = 2,
+        #[cxx_name = "CLor"]
+        Or = 3,
+        #[cxx_name = "CLxor"]
+        Xor = 4,
+        #[cxx_name = "CLandnot"]
+        Andnot = 5,
+        #[cxx_name = "CLornot"]
+        Ornot = 6,
+        #[cxx_name = "CLnone"]
+        None = 7,
     }
 
-    /// Mirrors `enum RevParam` in `smoldyn.h`: how reaction products are placed.
     #[repr(i32)]
     #[derive(Debug)]
     enum RevParam {
-        RPnone = 0,
-        RPirrev = 1,
-        RPconfspread = 2,
-        RPbounce = 3,
-        RPpgem = 4,
-        RPpgemmax = 5,
-        RPpgemmaxw = 6,
-        RPratio = 7,
-        RPunbindrad = 8,
-        RPpgem2 = 9,
-        RPpgemmax2 = 10,
-        RPratio2 = 11,
-        RPoffset = 12,
-        RPfixed = 13,
+        #[cxx_name = "RPnone"]
+        None = 0,
+        #[cxx_name = "RPirrev"]
+        Irrev = 1,
+        #[cxx_name = "RPconfspread"]
+        Confspread = 2,
+        #[cxx_name = "RPbounce"]
+        Bounce = 3,
+        #[cxx_name = "RPpgem"]
+        Pgem = 4,
+        #[cxx_name = "RPpgemmax"]
+        Pgemmax = 5,
+        #[cxx_name = "RPpgemmaxw"]
+        Pgemmaxw = 6,
+        #[cxx_name = "RPratio"]
+        Ratio = 7,
+        #[cxx_name = "RPunbindrad"]
+        Unbindrad = 8,
+        #[cxx_name = "RPpgem2"]
+        Pgem2 = 9,
+        #[cxx_name = "RPpgemmax2"]
+        Pgemmax2 = 10,
+        #[cxx_name = "RPratio2"]
+        Ratio2 = 11,
+        #[cxx_name = "RPoffset"]
+        Offset = 12,
+        #[cxx_name = "RPfixed"]
+        Fixed = 13,
     }
 
     unsafe extern "C++" {
@@ -175,7 +217,6 @@ pub mod ffi {
 
         unsafe fn smolGetVersion() -> f64;
 
-        // errors
         unsafe fn smolGetError(
             errorfunction: *mut c_char,
             errorstring: *mut c_char,
@@ -184,7 +225,6 @@ pub mod ffi {
         unsafe fn smolClearError();
         unsafe fn smolSetDebugMode(debugmode: i32);
 
-        // sim structure
         unsafe fn smolNewSim(dim: i32, lowbounds: *mut f64, highbounds: *mut f64)
         -> *mut simstruct;
         unsafe fn smolUpdateSim(sim: *mut simstruct) -> ErrorCode;
@@ -194,7 +234,6 @@ pub mod ffi {
         unsafe fn smolFreeSim(sim: *mut simstruct) -> ErrorCode;
         unsafe fn smolDisplaySim(sim: *mut simstruct) -> ErrorCode;
 
-        // configuration
         unsafe fn smolPrepareSimFromFile(
             filepath: *const c_char,
             filename: *const c_char,
@@ -212,7 +251,6 @@ pub mod ffi {
             parameters: *mut c_char,
         ) -> ErrorCode;
 
-        // simulation settings
         unsafe fn smolSetSimFlags(sim: *mut simstruct, flags: *const c_char) -> ErrorCode;
         unsafe fn smolSetSimTimes(
             sim: *mut simstruct,
@@ -232,7 +270,6 @@ pub mod ffi {
             value: f64,
         ) -> ErrorCode;
 
-        // graphics
         unsafe fn smolSetGraphicsParams(
             sim: *mut simstruct,
             method: *const c_char,
@@ -255,14 +292,19 @@ pub mod ffi {
             position: *mut f64,
         ) -> ErrorCode;
         unsafe fn smolSetBackgroundStyle(sim: *mut simstruct, color: *mut f64) -> ErrorCode;
-        unsafe fn smolSetFrameStyle(sim: *mut simstruct, thickness: f64, color: *mut f64)
-        -> ErrorCode;
-        unsafe fn smolSetGridStyle(sim: *mut simstruct, thickness: f64, color: *mut f64)
-        -> ErrorCode;
+        unsafe fn smolSetFrameStyle(
+            sim: *mut simstruct,
+            thickness: f64,
+            color: *mut f64,
+        ) -> ErrorCode;
+        unsafe fn smolSetGridStyle(
+            sim: *mut simstruct,
+            thickness: f64,
+            color: *mut f64,
+        ) -> ErrorCode;
         unsafe fn smolSetTextStyle(sim: *mut simstruct, color: *mut f64) -> ErrorCode;
         unsafe fn smolAddTextDisplay(sim: *mut simstruct, item: *mut c_char) -> ErrorCode;
 
-        // runtime commands and output
         unsafe fn smolSetOutputPath(sim: *mut simstruct, path: *const c_char) -> ErrorCode;
         unsafe fn smolAddOutputFile(
             sim: *mut simstruct,
@@ -292,13 +334,11 @@ pub mod ffi {
         ) -> ErrorCode;
         unsafe fn smolRunCommand(sim: *mut simstruct, commandstring: *const c_char) -> ErrorCode;
 
-        // molecules
         unsafe fn smolAddSpecies(
             sim: *mut simstruct,
             species: *const c_char,
             mollist: *const c_char,
         ) -> ErrorCode;
-        /// Returns the index (>0), or a negative `ErrorCode` on failure.
         unsafe fn smolGetSpeciesIndex(sim: *mut simstruct, species: *const c_char) -> i32;
         unsafe fn smolGetSpeciesName(sim: *mut simstruct, speciesindex: i32, species: *mut c_char);
         unsafe fn smolSetSpeciesMobility(
@@ -358,7 +398,6 @@ pub mod ffi {
             panel: *const c_char,
             position: *mut f64,
         ) -> ErrorCode;
-        /// Returns the count, or a negative `ErrorCode` on failure.
         unsafe fn smolGetMoleculeCount(
             sim: *mut simstruct,
             species: *const c_char,
@@ -372,7 +411,6 @@ pub mod ffi {
             color: *mut f64,
         ) -> ErrorCode;
 
-        // surfaces
         unsafe fn smolSetBoundaryType(
             sim: *mut simstruct,
             dimension: i32,
@@ -474,9 +512,7 @@ pub mod ffi {
             shininess: f64,
         ) -> ErrorCode;
 
-        // compartments
-        unsafe fn smolAddCompartment(sim: *mut simstruct, compartment: *const c_char)
-        -> ErrorCode;
+        unsafe fn smolAddCompartment(sim: *mut simstruct, compartment: *const c_char) -> ErrorCode;
         unsafe fn smolGetCompartmentIndex(sim: *mut simstruct, compartment: *const c_char) -> i32;
         unsafe fn smolGetCompartmentName(
             sim: *mut simstruct,
@@ -500,7 +536,6 @@ pub mod ffi {
             compartment2: *const c_char,
         ) -> ErrorCode;
 
-        // reactions
         unsafe fn smolAddReaction(
             sim: *mut simstruct,
             reaction: *const c_char,
@@ -550,7 +585,6 @@ pub mod ffi {
             position: *mut f64,
         ) -> ErrorCode;
 
-        // ports
         unsafe fn smolAddPort(
             sim: *mut simstruct,
             port: *const c_char,
@@ -570,7 +604,6 @@ pub mod ffi {
             species: *const c_char,
             positions: *mut *mut f64,
         ) -> ErrorCode;
-        /// Returns the count, or a negative `ErrorCode` on failure.
         unsafe fn smolGetPortMolecules(
             sim: *mut simstruct,
             port: *const c_char,
@@ -579,7 +612,6 @@ pub mod ffi {
             remove: i32,
         ) -> i32;
 
-        // lattices
         unsafe fn smolAddLattice(
             sim: *mut simstruct,
             lattice: *const c_char,
@@ -620,7 +652,6 @@ pub mod ffi {
         ) -> ErrorCode;
     }
 
-    // Field accessors and helpers, see include/smolrs.h.
     unsafe extern "C++" {
         include!("smolrs.h");
 
@@ -637,15 +668,12 @@ pub mod ffi {
     }
 }
 
-/// Return smoldyn version
 pub fn version() -> String {
     let version = unsafe { crate::ffi::smolGetVersion() };
 
     format!("{version}")
 }
 
-/// Turn libsmoldyn's own error/warning printing to stderr on or off (on by default).
-/// Errors are still returned as [`SmolError`] either way.
 pub fn set_debug_mode(on: bool) {
     unsafe { ffi::smolSetDebugMode(on as i32) };
 }

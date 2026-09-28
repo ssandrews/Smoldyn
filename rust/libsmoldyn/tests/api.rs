@@ -1,5 +1,3 @@
-//! Tests for the wider libsmoldyn API, one area per test.
-
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
@@ -16,7 +14,6 @@ fn lock() -> MutexGuard<'static, ()> {
     LOCK.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-/// 3D box from -1 to 1, 5 steps of 0.002.
 fn box_sim() -> Sim {
     let mut sim = Sim::new(&[-1.0; 3], &[1.0; 3]).unwrap();
     sim.set_times(0.0, 0.01, 0.002).unwrap();
@@ -65,44 +62,72 @@ fn molecules() {
 
     let slow = sim.mol_list_index("slow").unwrap();
     assert_eq!(sim.mol_list_name(slow).unwrap(), "slow");
-    sim.set_mol_list("A", MolecState::MSsoln, "slow").unwrap();
+    sim.set_mol_list("A", MolecState::Soln, "slow").unwrap();
 
-    sim.set_species_mobility("A", MolecState::MSall, Some(1.0), Some(&[0.1, 0.0, 0.0]), None)
-        .unwrap();
+    sim.set_species_mobility(
+        "A",
+        MolecState::All,
+        Some(1.0),
+        Some(&[0.1, 0.0, 0.0]),
+        None,
+    )
+    .unwrap();
     assert!(matches!(
-        sim.set_species_mobility("A", MolecState::MSall, None, Some(&[0.1]), None),
+        sim.set_species_mobility("A", MolecState::All, None, Some(&[0.1]), None),
         Err(SmolError::InvalidArgument(_))
     ));
-    sim.set_molecule_color("A", MolecState::MSall, [1.0, 0.0, 0.0]).unwrap();
-    sim.set_molecule_size("A", MolecState::MSall, 2.0).unwrap();
-    sim.set_molecule_style("B", MolecState::MSall, Some(3.0), None).unwrap();
-    assert!(sim.set_molecule_color("A", MolecState::MSall, [2.0, 0.0, 0.0]).is_err());
+    sim.set_molecule_color("A", MolecState::All, [1.0, 0.0, 0.0])
+        .unwrap();
+    sim.set_molecule_size("A", MolecState::All, 2.0).unwrap();
+    sim.set_molecule_style("B", MolecState::All, Some(3.0), None)
+        .unwrap();
+    assert!(
+        sim.set_molecule_color("A", MolecState::All, [2.0, 0.0, 0.0])
+            .is_err()
+    );
 
     sim.set_max_molecules(1000).unwrap();
     sim.add_solution_molecules("A", 10, None, None).unwrap();
-    sim.add_solution_molecules("B", 4, Some(&[0.0; 3]), Some(&[0.5; 3])).unwrap();
-    assert!(sim.add_solution_molecules("B", 1, Some(&[0.0]), None).is_err());
+    sim.add_solution_molecules("B", 4, Some(&[0.0; 3]), Some(&[0.5; 3]))
+        .unwrap();
+    assert!(
+        sim.add_solution_molecules("B", 1, Some(&[0.0]), None)
+            .is_err()
+    );
     sim.update().unwrap();
 
-    assert_eq!(sim.molecule_count("A", MolecState::MSsoln).unwrap(), 10);
-    assert_eq!(sim.molecule_count("B", MolecState::MSall).unwrap(), 4);
-    assert_eq!(sim.molecule_count("all", MolecState::MSall).unwrap(), 14);
+    assert_eq!(sim.molecule_count("A", MolecState::Soln).unwrap(), 10);
+    assert_eq!(sim.molecule_count("B", MolecState::All).unwrap(), 4);
+    assert_eq!(sim.molecule_count("all", MolecState::All).unwrap(), 14);
     sim.run().unwrap();
 }
 
-/// A sphere surface "ball" (radius 0.5) with compartment "inside" in a 3D box.
 fn ball_sim() -> Sim {
     let mut sim = box_sim();
     sim.add_species("A", None).unwrap();
     sim.add_species("B", None).unwrap();
     sim.add_surface("ball").unwrap();
-    sim.add_panel("ball", PanelShape::PSsph, Some("s1"), None, &[0.0, 0.0, 0.0, 0.5, 10.0, 10.0])
-        .unwrap();
-    sim.set_surface_action("ball", PanelFace::PFboth, "all", MolecState::MSsoln, SrfAction::SAreflect, None)
-        .unwrap();
+    sim.add_panel(
+        "ball",
+        PanelShape::Sph,
+        Some("s1"),
+        None,
+        &[0.0, 0.0, 0.0, 0.5, 10.0, 10.0],
+    )
+    .unwrap();
+    sim.set_surface_action(
+        "ball",
+        PanelFace::Both,
+        "all",
+        MolecState::Soln,
+        SrfAction::Reflect,
+        None,
+    )
+    .unwrap();
     sim.add_compartment("inside").unwrap();
     sim.add_compartment_surface("inside", "ball").unwrap();
-    sim.add_compartment_point("inside", &[0.0, 0.0, 0.0]).unwrap();
+    sim.add_compartment_point("inside", &[0.0, 0.0, 0.0])
+        .unwrap();
     sim
 }
 
@@ -114,41 +139,63 @@ fn surfaces_and_compartments() {
     assert_eq!(sim.surface_index("ball").unwrap(), 0);
     assert_eq!(sim.surface_name(0).unwrap(), "ball");
     assert!(sim.surface_index("nope").is_err());
-    assert_eq!(sim.panel_index("ball", "s1").unwrap(), (PanelShape::PSsph, 0));
-    assert_eq!(sim.panel_name("ball", PanelShape::PSsph, 0).unwrap(), "s1");
-    assert!(sim.panel_name("ball", PanelShape::PSsph, 3).is_err());
+    assert_eq!(sim.panel_index("ball", "s1").unwrap(), (PanelShape::Sph, 0));
+    assert_eq!(sim.panel_name("ball", PanelShape::Sph, 0).unwrap(), "s1");
+    assert!(sim.panel_name("ball", PanelShape::Sph, 3).is_err());
     assert!(sim.add_compartment_point("inside", &[0.0]).is_err());
 
     assert_eq!(sim.compartment_index("inside").unwrap(), 0);
     assert_eq!(sim.compartment_name(0).unwrap(), "inside");
     sim.add_compartment("outside").unwrap();
-    sim.add_compartment_logic("outside", CmptLogic::CLequalnot, "inside").unwrap();
-
-    sim.set_surface_rate("ball", "B", MolecState::MSsoln, MolecState::MSsoln, MolecState::MSfront, 0.1, None, false)
+    sim.add_compartment_logic("outside", CmptLogic::Equalnot, "inside")
         .unwrap();
+
+    sim.set_surface_rate(
+        "ball",
+        "B",
+        MolecState::Soln,
+        MolecState::Soln,
+        MolecState::Front,
+        0.1,
+        None,
+        false,
+    )
+    .unwrap();
     sim.set_surface_sim_params("epsilon", 1e-6).unwrap();
     sim.set_surface_style(
         "ball",
-        PanelFace::PFboth,
-        &SurfaceStyle { thickness: Some(1.0), color: Some([0.0, 0.0, 1.0, 1.0]), ..Default::default() },
+        PanelFace::Both,
+        &SurfaceStyle {
+            thickness: Some(1.0),
+            color: Some([0.0, 0.0, 1.0, 1.0]),
+            ..Default::default()
+        },
     )
     .unwrap();
     assert!(matches!(
-        sim.set_surface_style("all", PanelFace::PFboth, &SurfaceStyle::default()),
+        sim.set_surface_style("all", PanelFace::Both, &SurfaceStyle::default()),
         Err(SmolError::InvalidArgument(_))
     ));
 
     sim.add_compartment_molecules("A", 20, "inside").unwrap();
-    sim.add_surface_molecules("B", MolecState::MSfront, 5, "ball", PanelShape::PSall, "all", None)
-        .unwrap();
+    sim.add_surface_molecules(
+        "B",
+        MolecState::Front,
+        5,
+        "ball",
+        PanelShape::All,
+        "all",
+        None,
+    )
+    .unwrap();
     sim.update().unwrap();
-    assert_eq!(sim.molecule_count("A", MolecState::MSsoln).unwrap(), 20);
-    assert_eq!(sim.molecule_count("B", MolecState::MSfront).unwrap(), 5);
+    assert_eq!(sim.molecule_count("A", MolecState::Soln).unwrap(), 20);
+    assert_eq!(sim.molecule_count("B", MolecState::Front).unwrap(), 5);
 
-    // A is reflected by the ball, so it stays inside.
-    sim.set_species_mobility("A", MolecState::MSall, Some(1.0), None, None).unwrap();
+    sim.set_species_mobility("A", MolecState::All, Some(1.0), None, None)
+        .unwrap();
     sim.run().unwrap();
-    assert_eq!(sim.molecule_count("A", MolecState::MSsoln).unwrap(), 20);
+    assert_eq!(sim.molecule_count("A", MolecState::Soln).unwrap(), 20);
 }
 
 #[test]
@@ -156,17 +203,36 @@ fn panel_jump_and_neighbor() {
     let _guard = lock();
     let mut sim = box_sim();
     sim.add_surface("walls").unwrap();
-    sim.add_panel("walls", PanelShape::PSrect, Some("r1"), Some("+0"), &[-0.5, -1.0, -1.0, 2.0, 2.0])
+    sim.add_panel(
+        "walls",
+        PanelShape::Rect,
+        Some("r1"),
+        Some("+0"),
+        &[-0.5, -1.0, -1.0, 2.0, 2.0],
+    )
+    .unwrap();
+    sim.add_panel(
+        "walls",
+        PanelShape::Rect,
+        Some("r2"),
+        Some("-0"),
+        &[0.5, -1.0, -1.0, 2.0, 2.0],
+    )
+    .unwrap();
+    assert!(
+        sim.add_panel("walls", PanelShape::Rect, Some("r3"), None, &[0.0; 5])
+            .is_err()
+    );
+    assert_eq!(
+        sim.panel_index("walls", "r2").unwrap(),
+        (PanelShape::Rect, 1)
+    );
+    sim.set_panel_jump("walls", "r1", PanelFace::Front, "r2", PanelFace::Back, true)
         .unwrap();
-    sim.add_panel("walls", PanelShape::PSrect, Some("r2"), Some("-0"), &[0.5, -1.0, -1.0, 2.0, 2.0])
+    sim.add_panel_neighbor("walls", "r1", "walls", "r2", true)
         .unwrap();
-    assert!(sim.add_panel("walls", PanelShape::PSrect, Some("r3"), None, &[0.0; 5]).is_err());
-    assert_eq!(sim.panel_index("walls", "r2").unwrap(), (PanelShape::PSrect, 1));
-    sim.set_panel_jump("walls", "r1", PanelFace::PFfront, "r2", PanelFace::PFback, true)
-        .unwrap();
-    sim.add_panel_neighbor("walls", "r1", "walls", "r2", true).unwrap();
     sim.add_species("A", None).unwrap();
-    sim.add_surface_unbounded_emitter("walls", PanelFace::PFfront, "A", 1.0, &[0.0; 3])
+    sim.add_surface_unbounded_emitter("walls", PanelFace::Front, "A", 1.0, &[0.0; 3])
         .unwrap();
     sim.update().unwrap();
 }
@@ -179,19 +245,25 @@ fn reactions() {
         sim.add_species(s, None).unwrap();
     }
     // a bimolecular reaction needs diffusing reactants to get a binding radius.
-    sim.set_species_mobility("all", MolecState::MSall, Some(1.0), None, None).unwrap();
+    sim.set_species_mobility("all", MolecState::All, Some(1.0), None, None)
+        .unwrap();
     sim.add_reaction(
         "bind",
-        &[("A", MolecState::MSsoln), ("B", MolecState::MSsoln)],
-        &[("C", MolecState::MSsoln)],
+        &[("A", MolecState::Soln), ("B", MolecState::Soln)],
+        &[("C", MolecState::Soln)],
         Some(10.0),
     )
     .unwrap();
-    sim.add_reaction("decay", &[("C", MolecState::MSsoln)], &[], None).unwrap();
-    sim.add_reaction("make", &[], &[("A", MolecState::MSsoln)], Some(0.0)).unwrap();
-    assert!(sim.add_reaction("bad", &[("X", MolecState::MSsoln)], &[], None).is_err());
+    sim.add_reaction("decay", &[("C", MolecState::Soln)], &[], None)
+        .unwrap();
+    sim.add_reaction("make", &[], &[("A", MolecState::Soln)], Some(0.0))
+        .unwrap();
+    assert!(
+        sim.add_reaction("bad", &[("X", MolecState::Soln)], &[], None)
+            .is_err()
+    );
     assert!(matches!(
-        sim.add_reaction("three", &[("A", MolecState::MSsoln); 3], &[], None),
+        sim.add_reaction("three", &[("A", MolecState::Soln); 3], &[], None),
         Err(SmolError::InvalidArgument(_))
     ));
 
@@ -204,13 +276,15 @@ fn reactions() {
 
     sim.set_reaction_rate("decay", 2.5, RateKind::Rate).unwrap();
     assert_eq!(sim.reaction_rate("decay").unwrap(), 2.5);
-    sim.set_reaction_products("bind", RevParam::RPirrev, 0.0, None, None).unwrap();
+    sim.set_reaction_products("bind", RevParam::Irrev, 0.0, None, None)
+        .unwrap();
     sim.set_reaction_intersurface("bind", &[1]).unwrap();
     sim.set_reaction_intersurface("bind", &[]).unwrap();
 
     sim.add_compartment("everywhere").unwrap();
     sim.add_compartment_point("everywhere", &[0.0; 3]).unwrap();
-    sim.set_reaction_region("decay", Some("everywhere"), None).unwrap();
+    sim.set_reaction_region("decay", Some("everywhere"), None)
+        .unwrap();
 
     sim.add_solution_molecules("A", 50, None, None).unwrap();
     sim.add_solution_molecules("B", 50, None, None).unwrap();
@@ -226,8 +300,12 @@ fn output_data_and_commands() {
     sim.add_solution_molecules("A", 7, None, None).unwrap();
     sim.add_output_data("counts").unwrap();
     sim.add_command("E molcount counts").unwrap();
-    sim.add_timed_command('@', 0.004, 0.0, 0.0, 0.0, "molcount counts").unwrap();
-    assert!(sim.add_timed_command('é', 0.0, 0.0, 0.0, 0.0, "stop").is_err());
+    sim.add_timed_command('@', 0.004, 0.0, 0.0, 0.0, "molcount counts")
+        .unwrap();
+    assert!(
+        sim.add_timed_command('é', 0.0, 0.0, 0.0, 0.0, "stop")
+            .is_err()
+    );
     sim.update().unwrap();
     sim.run_command("molcount counts").unwrap();
     sim.run().unwrap();
@@ -257,8 +335,11 @@ fn output_files() {
     sim.add_command("E molcount api_out.txt").unwrap();
     sim.update().unwrap();
     sim.run().unwrap();
-    drop(sim); // flushes and closes the file
-    let lines = fs::read_to_string(dir.join("api_out.txt")).unwrap().lines().count();
+    drop(sim);
+    let lines = fs::read_to_string(dir.join("api_out.txt"))
+        .unwrap()
+        .lines()
+        .count();
     assert!(lines >= 5, "{lines} lines");
 }
 
@@ -268,11 +349,24 @@ fn ports() {
     let mut sim = box_sim();
     sim.add_species("A", None).unwrap();
     sim.add_surface("edge").unwrap();
-    sim.add_panel("edge", PanelShape::PSrect, Some("r1"), Some("+0"), &[0.9, -1.0, -1.0, 2.0, 2.0])
-        .unwrap();
-    sim.set_surface_action("edge", PanelFace::PFfront, "A", MolecState::MSsoln, SrfAction::SAport, None)
-        .unwrap();
-    sim.add_port("out", "edge", PanelFace::PFfront).unwrap();
+    sim.add_panel(
+        "edge",
+        PanelShape::Rect,
+        Some("r1"),
+        Some("+0"),
+        &[0.9, -1.0, -1.0, 2.0, 2.0],
+    )
+    .unwrap();
+    sim.set_surface_action(
+        "edge",
+        PanelFace::Front,
+        "A",
+        MolecState::Soln,
+        SrfAction::Port,
+        None,
+    )
+    .unwrap();
+    sim.add_port("out", "edge", PanelFace::Front).unwrap();
     assert_eq!(sim.port_index("out").unwrap(), 0);
     assert_eq!(sim.port_name(0).unwrap(), "out");
     sim.update().unwrap();
@@ -281,8 +375,12 @@ fn ports() {
     let at = [0.95, 0.0, 0.0];
     sim.add_port_molecules("out", "A", 1, Some(&[&at])).unwrap();
     assert!(sim.add_port_molecules("out", "A", 2, Some(&[&at])).is_err());
-    assert_eq!(sim.molecule_count("A", MolecState::MSall).unwrap(), 4);
-    assert_eq!(sim.port_molecules("out", "A", MolecState::MSall, false).unwrap(), 0);
+    assert_eq!(sim.molecule_count("A", MolecState::All).unwrap(), 4);
+    assert_eq!(
+        sim.port_molecules("out", "A", MolecState::All, false)
+            .unwrap(),
+        0
+    );
 }
 
 #[test]
@@ -291,13 +389,19 @@ fn lattices() {
     let mut sim = box_sim();
     sim.add_species("A", None).unwrap();
     // this used to crash: smolAddLattice read sim->latticess before it existed.
-    sim.add_lattice("lat", &[-1.0; 3], &[1.0; 3], &[0.5; 3], "rrr").unwrap();
-    assert!(sim.add_lattice("lat2", &[-1.0; 2], &[1.0; 3], &[0.5; 3], "rrr").is_err());
+    sim.add_lattice("lat", &[-1.0; 3], &[1.0; 3], &[0.5; 3], "rrr")
+        .unwrap();
+    assert!(
+        sim.add_lattice("lat2", &[-1.0; 2], &[1.0; 3], &[0.5; 3], "rrr")
+            .is_err()
+    );
     assert_eq!(sim.lattice_index("lat").unwrap(), 0);
     assert_eq!(sim.lattice_name(0).unwrap(), "lat");
     sim.add_lattice_species("lat", "A").unwrap();
-    sim.add_lattice_molecules("lat", "A", 5, None, None).unwrap();
-    sim.add_reaction("decay", &[("A", MolecState::MSsoln)], &[], Some(1.0)).unwrap();
+    sim.add_lattice_molecules("lat", "A", 5, None, None)
+        .unwrap();
+    sim.add_reaction("decay", &[("A", MolecState::Soln)], &[], Some(1.0))
+        .unwrap();
     sim.add_lattice_reaction("lat", "decay", false).unwrap();
 }
 
@@ -308,13 +412,19 @@ fn graphics_settings() {
     sim.set_graphics_params("none", Some(1), Some(0)).unwrap();
     assert!(sim.set_graphics_params("nonsense", None, None).is_err());
     sim.set_background_style([0.0, 0.0, 0.0, 1.0]).unwrap();
-    sim.set_frame_style(Some(2.0), Some([1.0, 1.0, 1.0, 1.0])).unwrap();
+    sim.set_frame_style(Some(2.0), Some([1.0, 1.0, 1.0, 1.0]))
+        .unwrap();
     sim.set_grid_style(Some(1.0), None).unwrap();
     sim.set_text_style([1.0, 1.0, 1.0, 1.0]).unwrap();
-    sim.set_light_params(0, None, Some([1.0, 1.0, 1.0, 1.0]), None, None).unwrap();
-    assert!(sim.set_light_params(-1, None, Some([1.0; 4]), None, None).is_err());
+    sim.set_light_params(0, None, Some([1.0, 1.0, 1.0, 1.0]), None, None)
+        .unwrap();
+    assert!(
+        sim.set_light_params(-1, None, Some([1.0; 4]), None, None)
+            .is_err()
+    );
     sim.add_text_display("time").unwrap();
-    sim.set_tiff_params(Some(10), Some("snap"), Some(1), None).unwrap();
+    sim.set_tiff_params(Some(10), Some("snap"), Some(1), None)
+        .unwrap();
 }
 
 #[test]
@@ -332,7 +442,7 @@ fn load_from_file_then_modify() {
     sim.add_solution_molecules("B", 3, None, None).unwrap();
     sim.update().unwrap();
     assert_eq!(sim.species(), ["A", "B"]);
-    assert_eq!(sim.molecule_count("B", MolecState::MSall).unwrap(), 3);
+    assert_eq!(sim.molecule_count("B", MolecState::All).unwrap(), 3);
     sim.run().unwrap();
 
     assert!(Sim::load_from_file("/nonexistent/model.txt", "q").is_err());

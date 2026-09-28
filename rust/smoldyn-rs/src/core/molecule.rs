@@ -1,4 +1,3 @@
-//! molecule related.
 
 #[derive(Debug, Eq, PartialEq, strum::Display, strum::EnumString)]
 #[strum(serialize_all = "lowercase")]

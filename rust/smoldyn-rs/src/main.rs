@@ -10,14 +10,11 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(about, long_about = None)]
 struct Cli {
-    /// smoldyn model
     model: Option<PathBuf>,
 
-    /// Turn debugging information on
     #[arg(short, long, action = clap::ArgAction::Count)]
     debug: u8,
 
-    /// version
     #[arg(long)]
     version: bool,
 
@@ -27,15 +24,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// does testing things
     Simulate,
 }
 
 fn main() -> anyhow::Result<ExitCode> {
     let cli = Cli::parse();
 
-    // You can see how many times a particular flag or argument occurred
-    // Note, only flags can have multiple occurrences
     let log_level = match cli.debug {
         0 => "warn",
         1 => "info",
@@ -61,7 +55,6 @@ fn main() -> anyhow::Result<ExitCode> {
         let stop = stop_on_ctrlc()?;
         let mut sim = Simulation::new().with_model_path(model)?;
         if sim.run(&stop)? == Progress::Running {
-            // interrupted; output files are closed by now.
             return Ok(ExitCode::from(130));
         }
     }
@@ -69,8 +62,6 @@ fn main() -> anyhow::Result<ExitCode> {
     Ok(ExitCode::SUCCESS)
 }
 
-/// The first Ctrl-C asks the simulation to stop after the current time step
-/// (so output files are flushed); a second one exits immediately.
 fn stop_on_ctrlc() -> anyhow::Result<Arc<AtomicBool>> {
     let stop = Arc::new(AtomicBool::new(false));
     let handler_stop = stop.clone();

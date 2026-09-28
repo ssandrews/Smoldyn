@@ -1,12 +1,7 @@
-//! Boundaries, surfaces and panels.
-
-use super::{
-    Sim, cstring, index, invalid, name, ok, opt_cstring, opt_ptr, to_i32, vector,
-};
+use super::{Sim, cstring, index, invalid, name, ok, opt_cstring, opt_ptr, to_i32, vector};
 use crate::error::SmolResult;
 use crate::ffi::{self, DrawMode, MolecState, PanelFace, PanelShape, SrfAction};
 
-/// Which wall of a dimension [`Sim::set_boundary_type`] changes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Side {
     Low,
@@ -14,23 +9,20 @@ pub enum Side {
     Both,
 }
 
-/// Drawing style for [`Sim::set_surface_style`]; `None` fields are left unchanged.
 #[derive(Debug, Clone, Copy)]
 pub struct SurfaceStyle {
     pub mode: DrawMode,
     pub thickness: Option<f64>,
-    /// RGBA, each in 0..=1
     pub color: Option<[f64; 4]>,
     pub stipple_factor: Option<u32>,
     pub stipple_pattern: Option<u16>,
-    /// 0..=128
     pub shininess: Option<f64>,
 }
 
 impl Default for SurfaceStyle {
     fn default() -> Self {
         SurfaceStyle {
-            mode: DrawMode::DMnone,
+            mode: DrawMode::None,
             thickness: None,
             color: None,
             stipple_factor: None,
@@ -50,8 +42,6 @@ const MAX_PANEL_PARAMS: usize = 16;
 const MAX_PRODUCT: usize = 256;
 
 impl Sim {
-    /// Set the wall behaviour of dimension `dim`: `'r'` reflect, `'p'` periodic,
-    /// `'a'` absorb or `'t'` transmit (`smolSetBoundaryType`).
     pub fn set_boundary_type(&mut self, dim: usize, side: Side, kind: char) -> SmolResult<()> {
         if dim >= self.dim() {
             return Err(invalid(format!("dimension {dim} out of range")));
@@ -67,26 +57,21 @@ impl Sim {
         ok(unsafe { ffi::smolSetBoundaryType(self.p(), dim as i32, highside, kind as u8 as _) })
     }
 
-    /// Add a surface (`smolAddSurface`).
     pub fn add_surface(&mut self, surface: &str) -> SmolResult<()> {
         let surface = cstring(surface)?;
         ok(unsafe { ffi::smolAddSurface(self.p(), surface.as_ptr()) })
     }
 
-    /// Index of a surface (`smolGetSurfaceIndex`).
     pub fn surface_index(&self, surface: &str) -> SmolResult<usize> {
         let surface = cstring(surface)?;
         index(unsafe { ffi::smolGetSurfaceIndex(self.p(), surface.as_ptr()) })
     }
 
-    /// Name of the surface at `index` (`smolGetSurfaceName`).
     pub fn surface_name(&self, index: usize) -> SmolResult<String> {
         let index = to_i32(index, "surface index")?;
         name(|buf| unsafe { ffi::smolGetSurfaceName(self.p(), index, buf) })
     }
 
-    /// Set intersurface rules for a bimolecular reaction, one per product
-    /// (`smolSetReactionIntersurface`). An empty slice removes the rules.
     pub fn set_reaction_intersurface(&mut self, reaction: &str, rules: &[i32]) -> SmolResult<()> {
         if rules.len() > MAX_PRODUCT {
             return Err(invalid(format!("at most {MAX_PRODUCT} rules")));
@@ -99,12 +84,11 @@ impl Sim {
         } else {
             buf[..rules.len()].copy_from_slice(rules);
         }
-        ok(unsafe { ffi::smolSetReactionIntersurface(self.p(), reaction.as_ptr(), buf.as_mut_ptr()) })
+        ok(unsafe {
+            ffi::smolSetReactionIntersurface(self.p(), reaction.as_ptr(), buf.as_mut_ptr())
+        })
     }
 
-    /// What `surface`'s `face` does to `species` in `state` on collision
-    /// (`smolSetSurfaceAction`). `new_species` is for [`SrfAction::SAmult`]-type
-    /// actions that convert the molecule.
     pub fn set_surface_action(
         &mut self,
         surface: &str,
@@ -130,9 +114,6 @@ impl Sim {
         })
     }
 
-    /// Rate for `species` going from `state1` to `state2` at `surface`, as
-    /// seen from `state` (`smolSetSurfaceRate`). `internal` means `rate` is a
-    /// probability per time step instead of a rate.
     #[allow(clippy::too_many_arguments)]
     pub fn set_surface_rate(
         &mut self,
@@ -163,8 +144,6 @@ impl Sim {
         })
     }
 
-    /// Add a panel to `surface` (`smolAddPanel`). `axis` (e.g. `"+0"`) is
-    /// needed for rectangles; `params` are the config-file panel parameters.
     pub fn add_panel(
         &mut self,
         surface: &str,
@@ -174,7 +153,9 @@ impl Sim {
         params: &[f64],
     ) -> SmolResult<()> {
         if params.len() > MAX_PANEL_PARAMS {
-            return Err(invalid(format!("at most {MAX_PANEL_PARAMS} panel parameters")));
+            return Err(invalid(format!(
+                "at most {MAX_PANEL_PARAMS} panel parameters"
+            )));
         }
         let surface = cstring(surface)?;
         let panel = opt_cstring(panel)?;
@@ -193,26 +174,22 @@ impl Sim {
         })
     }
 
-    /// Shape and index of `panel` on `surface` (`smolGetPanelIndex`).
     pub fn panel_index(&self, surface: &str, panel: &str) -> SmolResult<(PanelShape, usize)> {
         let surface = cstring(surface)?;
         let panel = cstring(panel)?;
-        let mut shape = PanelShape::PSnone;
+        let mut shape = PanelShape::None;
         let i = index(unsafe {
             ffi::smolGetPanelIndex(self.p(), surface.as_ptr(), &mut shape, panel.as_ptr())
         })?;
         Ok((shape, i))
     }
 
-    /// Name of panel `index` of `shape` on `surface` (`smolGetPanelName`).
     pub fn panel_name(&self, surface: &str, shape: PanelShape, index: usize) -> SmolResult<String> {
         let surface = cstring(surface)?;
         let index = to_i32(index, "panel index")?;
         name(|buf| unsafe { ffi::smolGetPanelName(self.p(), surface.as_ptr(), shape, index, buf) })
     }
 
-    /// Molecules hitting `face1` of `panel1` jump to `face2` of `panel2`
-    /// (`smolSetPanelJump`).
     pub fn set_panel_jump(
         &mut self,
         surface: &str,
@@ -238,8 +215,6 @@ impl Sim {
         })
     }
 
-    /// Add an unbounded emitter of `species` at `position` (`dim` values),
-    /// for computing surface absorption (`smolAddSurfaceUnboundedEmitter`).
     pub fn add_surface_unbounded_emitter(
         &mut self,
         surface: &str,
@@ -263,15 +238,11 @@ impl Sim {
         })
     }
 
-    /// Set a surface simulation parameter such as `"epsilon"`, `"margin"` or
-    /// `"neighbordist"` (`smolSetSurfaceSimParams`).
     pub fn set_surface_sim_params(&mut self, parameter: &str, value: f64) -> SmolResult<()> {
         let parameter = cstring(parameter)?;
         ok(unsafe { ffi::smolSetSurfaceSimParams(self.p(), parameter.as_ptr(), value) })
     }
 
-    /// Make `panel2` of `surface2` a neighbor of `panel1` of `surface1`
-    /// (`smolAddPanelNeighbor`).
     pub fn add_panel_neighbor(
         &mut self,
         surface1: &str,
@@ -294,7 +265,6 @@ impl Sim {
         })
     }
 
-    /// Set how `face` of `surface` is drawn (`smolSetSurfaceStyle`).
     pub fn set_surface_style(
         &mut self,
         surface: &str,
@@ -303,11 +273,15 @@ impl Sim {
     ) -> SmolResult<()> {
         // libsmoldyn accepts "all" here but then indexes srflist[-5].
         if surface == "all" {
-            return Err(invalid("set_surface_style needs a specific surface, not \"all\""));
+            return Err(invalid(
+                "set_surface_style needs a specific surface, not \"all\"",
+            ));
         }
         let surface = cstring(surface)?;
         let mut color = style.color;
-        let color_ptr = color.as_mut().map_or(std::ptr::null_mut(), |c| c.as_mut_ptr());
+        let color_ptr = color
+            .as_mut()
+            .map_or(std::ptr::null_mut(), |c| c.as_mut_ptr());
         ok(unsafe {
             ffi::smolSetSurfaceStyle(
                 self.p(),
@@ -316,7 +290,9 @@ impl Sim {
                 style.mode,
                 style.thickness.unwrap_or(-1.0),
                 color_ptr,
-                style.stipple_factor.map_or(-1, |f| f.min(i32::MAX as u32) as i32),
+                style
+                    .stipple_factor
+                    .map_or(-1, |f| f.min(i32::MAX as u32) as i32),
                 style.stipple_pattern.map_or(-1, i32::from),
                 style.shininess.unwrap_or(-1.0),
             )
