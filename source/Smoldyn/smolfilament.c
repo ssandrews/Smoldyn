@@ -1314,7 +1314,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"branch_rate")) {			// branch_rate (per unit length per time)
 		CHECKS(filtype,"need to enter filament type name before branch_rate");
-		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|/L/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"branch_rate format: value. ");
 		CHECKS(f1>=0,"branch_rate value needs to be >=0");
 		filtypeSetParam(filtype,"branchrate",0,f1);
@@ -1327,7 +1327,8 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKM(itct>=1,"branch_angle format: yaw [pitch roll]. ");
 		filtypeSetParam(filtype,"branchangle",0,fltv1[0]);
 		filtypeSetParam(filtype,"branchangle",1,fltv1[1]);
-		filtypeSetParam(filtype,"branchangle",2,fltv1[2]); }
+		filtypeSetParam(filtype,"branchangle",2,fltv1[2]);
+		CHECKS(!strnword(line2,4),"unexpected text following branch_angle"); }
 
 	else if(!strcmp(word,"branch_spread")) {		// branch_spread: angular std dev, radians
 		CHECKS(filtype,"need to enter filament type name before branch_spread");
@@ -1659,10 +1660,12 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
 			CHECKM(itct==3 || itct==1,"branch angle needs 1 or 3 values. ");
-			if(dim==2) angle[1]=angle[2]=0; }
+			if(dim==2) angle[1]=angle[2]=0;
+			line2=strnword(line2,itct+1); }
 		thick=fil->segments[seg]->thk;
 		fil2=filAddBranch(sim,fil,seg,angle,thick,nm1);
-		CHECKS(fil2,"failed to create branch"); }
+		CHECKS(fil2,"failed to create branch");
+		CHECKS(!line2,"unexpected text following branch"); }
 
 	else if(!strcmp(word,"sequence")) {						// sequence
 		CHECKS(fil,"need to enter filament name before sequence");
