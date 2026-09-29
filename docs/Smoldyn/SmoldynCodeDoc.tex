@@ -4132,13 +4132,10 @@ typedef struct filamenttypestruct {
     double treadrate;                  // treadmilling rate constant
     double mobility;                  // mobility
     double filradius;                  // segment radius
-    // --- branching (Arp2/3-style dendritic nucleation), proposed ---
     double branchrate;                 // branch nucleation rate, per unit mother length per time
-    double branchangle[3];             // mean daughter orientation (ypr) rel. to mother, e.g. 70 deg
+    double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
     int branchsegments;                // number of segments a daughter is born with (>=1)
-    struct filamenttypestruct* branchtype; // filament type for daughters (NULL = same type)
-    // --- end branching ---
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names
@@ -4159,7 +4156,7 @@ In the graphical display parameters, \ttt{color} is the filament color, with red
 
 Filament mechanics information is in the next elements. \ttt{stdlen} is the standard segment length, meaning the segment length at minimum energy, where segments are neither stretched nor compressed. \ttt{stdypr} is the minimum energy relative ypr angle. \ttt{klen} is the stretching force constant. Its value is $< 0$ for an infinite force constant, meaning that the segment lengths are fixed. \ttt{kypr} is the bending force constant. For any element, its value is 0 for zero force constant, meaning a freely jointed chain, and $< 0$ for an infinite force constant, meaning a fixed bending angle. \ttt{kT} is the thermodynamic energy. This parameter isn't ideal here because it allows a different temperature for different components in the simulation, but it's here for now. \ttt{treadrate} is the treadmilling rate constant, with 0 for no treadmilling, a positive number for the back growing and a negative number for the front growing. \ttt{mobility} is the mobility of the nodes for computing dynamics. \ttt{filradius} is the radius of segments.
 
-The next section was written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as ypr angle, relative to the mother filament; its default value is 70\degree yaw, zero pitch, zero roll. \ttt{branchspread} is the standard deviation of the branch angle in radians, where 0 implies deterministic; I don't know which angles this gets applied to. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. \ttt{branchtype} is the filament type for the daughter filament; it is set to \ttt{NULL} if the daughter has the same type as the mother.
+The next section was written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament.
 
 Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
 
@@ -4914,11 +4911,11 @@ Adds a new filament type to the simulation, which is named \ttt{ftname}, returni
 \item[\ttt{filamentptr}]
 \ttt{filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername)}
 \hfill \\
-Nucleate a daughter filament off the side of an existing ``mother'' filament, at the back end of mother segment index `seg'. `angle' is the daughter's orientation as ypr relative to the mother segment's absolute frame (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error.
+Nucleate a daughter filament off the side of an existing ``mother'' filament, at the back end of mother segment index `seg'. `angle' is the daughter's orientation as ypr relative to the mother segment's absolute frame (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error.%?? New code
 
-\item[\ttt{int filBranchDynamics(simptr sim,filamenttypeptr filtype)}]
+\item[\ttt{void filBranchDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
-Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. Returns 0 for success. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? To be generalized.
+Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? To be generalized. Also, the pitch angle is incorrect; it should be zero, not random 0 to 2pi.
 
 \item[\ttt{void filPinBranches(filamentptr fil)}]
 \hfill \\
@@ -5064,7 +5061,7 @@ Used for numerical implicit integration. This copies the force data in the \ttt{
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}.
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}. This function also shifts branches. The branch shifting code checks to see if a shifted branch ends up off the end of the shifted filament, and dissociates it from the filament if so; this code seems good and safe but also unnecessary because I don't think that a branch should ever shift off the end of a filament. %?? new code
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
