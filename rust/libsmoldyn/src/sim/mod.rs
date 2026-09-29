@@ -37,7 +37,6 @@ pub enum Progress {
 pub struct Sim {
     ptr: NonNull<ffi::simstruct>,
     outputs_open: bool,
-    // raw pointer marker makes `Sim` !Sync (and !Send, re-enabled below).
     _not_sync: PhantomData<*mut ()>,
 }
 
@@ -46,6 +45,7 @@ pub struct Sim {
 unsafe impl Send for Sim {}
 
 impl Sim {
+    // TODO: flags should be an enum
     pub fn from_file(path: impl AsRef<Path>, flags: &str) -> SmolResult<Self> {
         let (fileroot, filename) = split_path(path.as_ref())?;
         let flags = cstring(flags)?;
@@ -253,6 +253,7 @@ impl std::fmt::Debug for Sim {
     }
 }
 
+// TODO: simplify path handling inside libsmoldyn later.
 fn split_path(path: &Path) -> SmolResult<(CString, CString)> {
     let filename = path
         .file_name()

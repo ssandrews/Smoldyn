@@ -219,7 +219,7 @@ pub mod ffi {
 
         unsafe fn smolGetError(
             errorfunction: *mut c_char,
-            errorstring: *mut c_char,
+            errorstring: *const c_char,
             clearerror: i32,
         ) -> ErrorCode;
         unsafe fn smolClearError();
