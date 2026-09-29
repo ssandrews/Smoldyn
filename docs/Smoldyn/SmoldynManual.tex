@@ -3653,21 +3653,41 @@ Set the thermal energy value, equal to Boltzmann's constant times temperature. E
 
 Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here.
 
-\item{\ttt{* branch\_rate} $value$}
+\item{\ttt{* branch\_rate} $value$} %?? new
 
 Branching rate off of the mother filament, in units of per unit length per time.
 
-\item{\ttt{* branch\_angle} $yaw$}
+\item{\ttt{* branch\_angle} $yaw$} %?? new
 
 Yaw angle for new branches off of the mother filament, which is given in radians. Pitch and roll angles are always zero.
 
-\item{\ttt{* branch\_spread} $stddev$}
+\item{\ttt{* branch\_spread} $stddev$} %?? new
 
 Standard deviation of branching angle, entered in radians. Enter 0 for deterministic branching.
 
-\item{\ttt{* branch\_segments} $segs$}
+\item{\ttt{* branch\_segments} $segs$} %?? new
 
 Length of initial daughter filament in segments.
+
+\item{\ttt{* plus\_end} $end$} %?? new
+
+Enter whether the front or the back of the filament is considered to be the plus end. Use full word ``back'' or ``front''.
+
+\item{\ttt{* elongation\_rate} $value$} %?? new
+
+This is the elongation rate at the plus end in units of length/time. This is usually not used in combination with treadmilling.
+
+\item{\ttt{* elongation\_max\_length} $value$} %?? new
+
+Maximum filament contour length when elongation can occur. Longer filaments don't elongate.
+
+\item{\ttt{* capping\_rate} $value$} %?? new
+
+Capping rate at the plus end. Units are inverse time. Capped filaments don't elongate.
+
+\item{\ttt{* uncapping\_rate} $value$} %?? new
+
+Uncapping rate at the plus end. Units are inverse time. Uncapped filaments can elongate.
 
 \item{\ttt{* mobility} $value$}
 
@@ -4141,7 +4161,7 @@ Prints information about the specified filament. The $code$ input should be a st
 
 \item{\ttt{printFilaments} $filename$}
 
-Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \verb!FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...!. Auto-named daughters are included, so this captures a whole branched network.
+Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \ttt{FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...}. Auto-named daughters are included, so this captures a whole branched network.
 
 \item{\ttt{writeVTK} $filepath/filename$}
 
