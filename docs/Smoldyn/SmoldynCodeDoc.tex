@@ -4005,6 +4005,15 @@ The functions here are designed for filaments in either 2D or 3D space. However,
 
 Filaments are defined in a heirarchical fashion. At the top level, there is one filament superstructure which contains a list of filament types that are used in the simulation. Below that are multiple filament type structures. For example, actin in the cytoplasm might be one type; another might be double-stranded DNA, and yet another is single-stranded DNA. Each filament type contains multiple individual filaments, which is the next level down, each of which looks and behaves identically. Each filament is composed of a list of segments. Segments can vary in lengths and thicknesses. Each filament also contains a data structure of ``working data'' that is used for dynamics integration.
 
+\subsubsection{Constants}
+
+\begin{lstlisting}
+#define FILCAPPLUS 1                  // filamentstruct capped bitmask: plus end is capped
+                                      // (bit 1 reserved for the minus end)
+\end{lstlisting}
+
+The comment explains that this is a filament capping bitmask. However, I'm not sure what it does or whether I like it.%?? New code
+
 \subsubsection{Enumerations}
 
 \begin{lstlisting}
@@ -4096,6 +4105,8 @@ typedef struct filamentstruct {
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
+    double growbank;                    // plus-end growth owed but not yet emitted as a segment
+    int capped;                         // bitmask of capped ends; see FILCAPPLUS
 } * filamentptr;
 \end{lstlisting}
 
@@ -4108,6 +4119,8 @@ The \ttt{nodesx} vector contains node positions at the end of the previous time 
 Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{frontend} points to the filament that the front end attaches to and/or \ttt{backend} points to the filament that the back end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}.
 
 Along the length of each filament are equally spaced sequence codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxsequence} and \ttt{nsequence}, and then the list \ttt{sequence}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between sequence code and segments.\\
+
+Two new additions are \ttt{growbank} and \ttt{capped}. \ttt{growbank} is for filament elongation; if a filament wants to elongate by a length that's a non-integer number of segments, the residual length goes into here and is then used at the next time step. \ttt{capped} is 0 for an uncapped filament and 1 for a capped filament. %??New code.
 
 \subsubsection{Filament types}
 
@@ -4132,6 +4145,15 @@ typedef struct filamenttypestruct {
     double treadrate;                  // treadmilling rate constant
     double mobility;                  // mobility
     double filradius;                  // segment radius
+    double branchrate;                 // branch nucleation rate, per unit mother length per time
+    double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
+    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
+    int branchsegments;                // number of segments a daughter is born with (>=1)
+    char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
+    double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
+    double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
+    double caprate;                    // plus-end capping rate, 1/time; 0 = off
+    double uncaprate;                  // plus-end uncapping rate, 1/time; 0 = off
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names
@@ -4151,6 +4173,10 @@ The \ttt{filss} element points to the filament superstructure that owns this fil
 In the graphical display parameters, \ttt{color} is the filament color, with red, green, blue, and alpha values. \ttt{edgepts} is the edge thickness for drawing, \ttt{edgestipple} is the stippling code for the edge stippleing, if any. \ttt{drawmode} is the polymer drawing mode, which can be face, edge, vertex, of a combination of these. \ttt{shiny} is the shininess for graphical display. These graphical display statements are very similar to those used for surfaces. The \ttt{drawforcescale} parameter is for drawing force arrows to show what the forces are at each node; it is set to 0 for no arrows and otherwise the force value is multiplied by this scaling number to determine the arrow length. The \ttt{drawforcecolor} parameter is for the colors of these arrows.
 
 Filament mechanics information is in the next elements. \ttt{stdlen} is the standard segment length, meaning the segment length at minimum energy, where segments are neither stretched nor compressed. \ttt{stdypr} is the minimum energy relative ypr angle. \ttt{klen} is the stretching force constant. Its value is $< 0$ for an infinite force constant, meaning that the segment lengths are fixed. \ttt{kypr} is the bending force constant. For any element, its value is 0 for zero force constant, meaning a freely jointed chain, and $< 0$ for an infinite force constant, meaning a fixed bending angle. \ttt{kT} is the thermodynamic energy. This parameter isn't ideal here because it allows a different temperature for different components in the simulation, but it's here for now. \ttt{treadrate} is the treadmilling rate constant, with 0 for no treadmilling, a positive number for the back growing and a negative number for the front growing. \ttt{mobility} is the mobility of the nodes for computing dynamics. \ttt{filradius} is the radius of segments.
+
+The next section was written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament.% ?? new code
+
+The next section was also written by Junjie Sun, this time for polarized elongation and capping. \ttt{plusend} marks whether the front or the back of the filament is considered to be the plus end. \ttt{elongrate} is the plus-end elongation velocity in length/time. \ttt{elongmaxlen} is the maximum contour length for elongation. \ttt{caprate} is the rate of plus-end capping. \ttt{uncaprate} is the rate of plus-end uncapping. % ?? new code
 
 Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
 
@@ -4853,6 +4879,14 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{kypr} & bending force constants & 0,1,2 & $-1,[0,\infty)$\\
 \ttt{kT} & thermodynamic temperature & n/a & $[0,\infty)$\\
 \ttt{treadrate} & treadmill rate constant & n/a & $(-\infty,\infty)$\\
+\ttt{branchrate} & branching rate constant & n/a & $[0,\infty)$\\
+\ttt{branchangle} & mean branch angle & 0,1,2 & $(-\infty,\infty)$\\
+\ttt{branchspread} & std. dev. of branch angle & n/a & $[0,\infty)$\\
+\ttt{branchsegments} & segments per new branch & n/a & $[1,2,3,...)$ \\
+\ttt{elongrate} & elongation rate & n/a & $[0,\infty)$ \\
+\ttt{elongmaxlen} & max. length for elongation & n/a & $[0,\infty)$ \\
+\ttt{caprate} & plus-end capping rate & n/a & $[0,\infty)$ \\
+\ttt{uncaprate} & plus-end uncappingrate & n/a & $[0,\infty)$ \\ 
 \ttt{mobility} & filament node mobility & n/a & $(0,\infty)$\\
 \ttt{bundle} & bundle value & n/a & $(0,\infty)$\\
 \ttt{radius} & filament radius & n/a & $(0,\infty)$\\
@@ -4888,6 +4922,10 @@ Sets the shininess for the filament type to the entered value, which should be w
 \hfill \\
 Sets the dynamics for the filament type to \ttt{fd}.
 
+\item[\ttt{int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar)}]%?? new code
+\hfill \\
+Sets the plus end of the filament to the \ttt{endchar} value, which should be `b' or `f'. Returns 0 for success or 1 or 2 for error.
+
 \item[\ttt{int filtypeAddFace(filamenttypeptr filtype, const char* facename)}]
 \hfill \\
 Adds a face name to the filament, enlarging the list of face names if required. Returns 0 for success and -1 for failure to allocate memory.
@@ -4896,6 +4934,44 @@ Adds a face name to the filament, enlarging the list of face names if required. 
 \hfill \\
 Adds a new filament type to the simulation, which is named \ttt{ftname}, returning a pointer to the new filament type. Both \ttt{sim} and \ttt{ftname} need to be defined. If there is already a filament type with this name, a pointer to it is returned. Returns a pointer to the new filament type or \ttt{NULL} for failure, meaning that memory could not be allocated.
 
+\item[\underline{Filament branching}]
+
+\item[\ttt{filamentptr}]
+\ttt{filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername)}
+\hfill \\
+Nucleate a daughter filament off the side of an existing ``mother'' filament, at the back end of mother segment index `seg'. `angle' is the daughter's orientation as ypr relative to the mother segment's absolute frame (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. The front end of the daughter is attached to the mother.%?? New code. I think that the user should choose which end of the branch attaches to the mother.
+
+\item[\ttt{void filBranchDynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? New code. To be generalized. Also, the pitch angle is incorrect; it should be zero, not random 0 to 2pi.
+
+\item[\ttt{void filPinBranches(filamentptr fil)}]
+\hfill \\
+This function pins the branches to the mother filament, translating them back into place after the mother moves. Rigid attachment constraint: after the mechanical step, translate each daughter so its anchored (front/node-0) end tracks the mother's current branch point. This keeps branches attached without a global cross-filament force solver. NOTE (v1 limitation): this pins position only; the ~70 deg junction angle is not held against bending, and multi-level trees need root-first ordering to fully settle in a single step.%?? New code. To be extended. This also doesn't consider treadmilling issues.
+
+\item[\underline{Filament elongation and capping}]
+
+\item[\ttt{int filEndIsCapped(const filamentptr fil,char endchar)}] %?? new code
+\hfill \\
+Is geometric end `b' or `f' capped? This is the only place an end character is mapped onto the capped bitmask, which is stored relative to polarity. I think that \ttt{FILCAPPLUS} enables capping; if it's set to 0, then capping a filament has no effect because this function returns 0 in that case, even if the filament is capped.
+
+\item[\ttt{double filContourLength(const filamentptr fil)}] %?? new code
+\hfill \\
+Computes and returns the filament's contour length, meaning the sum of all segment lengths. This is the path length along the filament contour, not the end-to-end length.
+
+\item[\ttt{int filElongate(simptr sim,filamentptr fil,double dlength)}] %?? new code
+\hfill \\
+Grow the plus end by \ttt{dlength} of contour length. Segments are added whole, so \ttt{growbank} carries the remainder forward; debiting the length actually drawn keeps total length tracking rate*time with bounded rather than accumulating error. A blocked end drops the growth it was denied rather than banking it, so it stalls at zero instead of surging when it clears. Returns segments added, or -1 on a configuration error.
+
+A plus end that cannot place a segment (a surface is in the way, as determined by filAddOneRandomSegment) does not bank the growth it was denied: the step's increment is undone and the bank is clamped to at most one segment, so a stalled end sits at zero velocity instead of storing up growth and discharging it in a burst once the obstruction clears.
+
+\item[\ttt{void filElongationDynamics(simptr sim,filamenttypeptr filtype)}] %?? new code
+\hfill \\
+Plus-end elongation for one filament type: each filament grows by rate*dt of contour length. Deterministic; the only length noise is the random segment length.
+
+\item[\ttt{int filCappingDynamics(simptr sim,filamenttypeptr filtype)}] %?? new code. This mentions that there's no way to remove segments, or maybe filaments, which needs to be addressed.
+\hfill \\
+Stochastic plus-end capping and uncapping. The per-step probability is 1-exp(-rate*dt), matching the unimolecular convention in smolreact.c rather than a linearized rate*dt, which is what makes the measured rate independent of dt. Capping blocks monomer addition; it does not shrink the filament, as there is no segment-removal path.
 
 \item[\underline{Filament superstructure}]
 (Superstructure is changed and/or lower levels are updated.)
@@ -5036,7 +5112,7 @@ Used for numerical implicit integration. This copies the force data in the \ttt{
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}.
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}. This function also shifts branches. The branch shifting code checks to see if a shifted branch ends up off the end of the shifted filament, and dissociates it from the filament if so; this code seems good and safe but also unnecessary because I don't think that a branch should ever shift off the end of a filament. %?? new code
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
@@ -6359,7 +6435,11 @@ Prints information about the lattices to the a file. This would be better as par
 
 \item[\ttt{enum CMDcode cmdprintFilament(simptr sim, cmdptr cmd, char *line2)}]
 \hfill \\
-Prints information about a specific filament to the a file.
+Prints information about a specific filament to a file.
+
+\item[\ttt{enum CMDcode cmdprintFilaments(simptr sim, cmdptr cmd, char *line2)}]
+\hfill \\
+Prints information about all filaments to a file. New runtime command \ttt{printFilaments <file>} writes every filament of every type (auto-named daughters included) as a flat node polyline plus its parent name. Independent diagnostic/analysis tool; useful for anyone inspecting filaments, since \ttt{filWrite()}/\ttt{savesim()} do not serialize filaments (stub).%?? new code.
 
 \item[\ttt{enum CMDcode cmdwriteVTK(simptr sim, cmdptr cmd, char *line2)}]
 \hfill \\
@@ -8008,8 +8088,20 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added test for coincident surface panels. This is a new test in \ttt{checksurfaceparams} and a new function \ttt{srfcoincidentpanels}, both in smolsurface.c. This only looks for panels that are identical to each other, including with a rotated point sequence or front/back flipped. It does not detect overlap in only one region of a panel, such as a pair of partially coincident rectangles.
 \item Fixed a minor bug in \ttt{strunits}, which created errors if units were used and commands included numbers; the problem was that default units only apply while a configuration file is being read, so there are no default units mid-simulation when a command is being parsed. As a result, Smoldyn couldn't convert the command values. Now, Smoldyn still can't convert values in commands, but this doesn't create an error.
 \item Implemented use of \ttt{strmatherror} for error reporting. Before, math errors were generated but never read. I created the \ttt{CHECKM} macro, which behaves the same as the \ttt{CHECKS} macro, except that it also checks for math errors and appends math error strings to the error outputs. It should be used after every call to \ttt{strmathsscanf}. I didn't create a new macro within smolcmd.c, but those calls to \ttt{strmathsscanf} also check for math errors now.
+\item The following items were written by Junjie Sun using Claude. I proofread them, added them to the main branch, and added edits.
+\item Fixed a minor bug in filAlloc. Fix: filAlloc never reassigned \ttt{fil->branchspots} on branch-array growth.
+\item Add printFilaments command to smolcmd: dump all filament node coordinates.
+\item Added lots of work on filament branching. This includes a new section on filament branching to smolfilament.c. New functions are filAddBranch, filBranchDynamics, and filPinBranches. This also includes several new elements to the filamenttypestruct.
+\item Added filament capping and elongation code.
 
 \end{itemize}
+
+
+
+
+
+
+
 
 
 % Chapter: The wish/ to do list
