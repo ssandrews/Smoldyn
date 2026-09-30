@@ -830,6 +830,7 @@ typedef struct filamentstruct {
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
+    double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
@@ -860,8 +861,18 @@ typedef struct filamenttypestruct
     double filradius;                  // segment radius
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
-    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
+    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
     int branchsegments;                // number of segments a daughter is born with (>=1)
+    double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
+    double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
+    int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
+    double branchforceazimuth;         // azimuthal spring constant toward birth azimuth, energy/rad^2; 0 = off (3D)
+    surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
+    double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
+    compartptr branchcmpt;             // if set, branch only inside this compartment; NULL = no gate
+    surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
+    double confineforce;               // confinement spring constant, energy/length^2; 0 = off
+    enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded

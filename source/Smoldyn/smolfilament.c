@@ -123,7 +123,10 @@ int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
 int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
+double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
+int filBranchDazim(const filamentptr mother,int br,double *dphiptr);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername);
+int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinBranches(filamentptr fil);
 
@@ -144,6 +147,9 @@ void filAddStretchForceMat(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
+int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
+void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
@@ -440,7 +446,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 	int *newbranchspots;
 	filamentptr *newbranches;
 	char *newsequence;
-	double **newnodes,**newnodesx,*newroll,*newnodemobility;
+	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newbranchazim0;
 
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
@@ -461,6 +467,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->nbranch=0;
 		fil->branchspots=NULL;
 		fil->branches=NULL;
+		fil->branchazim0=NULL;
 		fil->maxsequence=0;
 		fil->nsequence=0;
 		fil->sequence=NULL;
@@ -518,16 +525,21 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 	if(maxbranch>fil->maxbranch) {
 		CHECKMEM(newbranchspots=(int*) calloc(maxbranch,sizeof(int)));
 		CHECKMEM(newbranches=(filamentptr*) calloc(maxbranch,sizeof(filamentptr)));
+		CHECKMEM(newbranchazim0=(double*) calloc(maxbranch,sizeof(double)));
 		for(br=0;br<fil->maxbranch;br++) {
 			newbranchspots[br]=fil->branchspots[br];
-			newbranches[br]=fil->branches[br]; }
+			newbranches[br]=fil->branches[br];
+			newbranchazim0[br]=fil->branchazim0[br]; }
 		for(;br<maxbranch;br++) {
 			newbranchspots[br]=0;
-			newbranches[br]=NULL; }
+			newbranches[br]=NULL;
+			newbranchazim0[br]=-1; }
 		free(fil->branchspots);					// was leaked and never reassigned (latent bug)
 		fil->branchspots=newbranchspots;
 		free(fil->branches);
 		fil->branches=newbranches;
+		free(fil->branchazim0);
+		fil->branchazim0=newbranchazim0;
 		fil->maxbranch=maxbranch;	}
 
 	if(maxsequence>fil->maxsequence) {
@@ -568,6 +580,7 @@ void filFree(filamentptr fil) {
 	free(fil->nodemobility);
 	free(fil->branchspots);
 	free(fil->branches);
+	free(fil->branchazim0);
 	free(fil->sequence);
 	free(fil);
 	return; }
@@ -608,8 +621,18 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 
 		filtype->branchrate=0;											// branching off by default
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
-		filtype->branchspread=0;
+		filtype->branchspread=-1;										// negative = unset; every consumer is gated on >0, so unset behaves as deterministic until derived
 		filtype->branchsegments=1;									// daughters born as a single segment
+		filtype->branchforceangle=0;								// junction torsional spring off by default
+		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
+		filtype->branchazimuthfix=0;								// azimuth free by default
+		filtype->branchforceazimuth=0;							// azimuthal spring off by default
+		filtype->branchsrf=NULL;										// no location gate by default
+		filtype->branchsrfdist=0;
+		filtype->branchcmpt=NULL;										// no location gate by default
+		filtype->confinesrf=NULL;										// no confinement by default
+		filtype->confineforce=0;
+		filtype->confineface=PFfront;								// confine to the front side when on
 
 		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
@@ -872,8 +895,26 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
 	if(filtype->branchrate>0) {
 		simLog(sim,2,"  branch angle: %g rad\n",filtype->branchangle);
-		simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
+		if(filtype->branchspread>=0) simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
+		else simLog(sim,1,"  branch spread: unset\n");
 		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments); }
+	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
+	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
+		simLog(sim,2,"  branch junction equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceangle));
+	if(filtype->branchazimuth>=0)
+		simLog(sim,2,"  branch azimuth: %g rad\n",filtype->branchazimuth);
+	simLog(sim,filtype->branchazimuthfix?2:1,"  branch azimuth fixed: %s\n",filtype->branchazimuthfix?"yes":"no");
+	simLog(sim,filtype->branchforceazimuth>0?2:1,"  branch azimuth force constant: %g|E\n",filtype->branchforceazimuth);
+	if(filtype->branchforceazimuth>0 && filtype->kT>0)
+		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceazimuth));
+	if(filtype->branchsrf)
+		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
+	if(filtype->branchcmpt)
+		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
+	if(filtype->confinesrf && filtype->confineforce>0) {
+		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",surfface2string(filtype->confineface,string),filtype->confinesrf->sname,filtype->confineforce);
+		if(filtype->kT>0)																// equipartition penetration depth the wall permits
+			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
@@ -934,7 +975,9 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn,dim,f,seg,ft;
+	int error,warn,dim,f,seg,ft,pcount;
+	double fval;
+	enum PanelShape ps;
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
@@ -964,6 +1007,42 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s combines branch_rate with plus_end front; branching currently requires plus_end back\n",filtype->ftname);}
 		if(filtype->treadrate!=0 && filtype->caprate>0 && (filtype->treadrate>0)!=(filtype->plusend=='b')) {
 			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
+		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
+			fval=sqrt(filtype->kT/filtype->branchforceangle);
+			if(filtype->branchspread==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has deterministic branch births (branch_spread 0) with a junction spring; branches will relax toward spread %g after birth\n",filtype->ftname,fval);}
+			else if(filtype->branchspread>2*fval || (filtype->branchspread>0 && filtype->branchspread<0.5*fval)) {
+				warn++;simLog(sim,5,"WARNING: filament type %s branch_spread %g differs from the junction spring's equilibrium spread sqrt(kT/branch_force_angle) = %g by more than 2-fold; branches will relax visibly after birth\n",filtype->ftname,filtype->branchspread,fval);}}
+		if(dim==2 && (filtype->branchazimuth>=0 || filtype->branchazimuthfix || filtype->branchforceazimuth>0)) {
+			warn++;simLog(sim,5,"WARNING: filament type %s branch_azimuth settings have no effect in 2D\n",filtype->ftname);}
+		if(filtype->branchazimuthfix && filtype->branchforceazimuth>0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s sets both branch_azimuth_fix and branch_force_azimuth; the rigid fix overrides the spring each step\n",filtype->ftname);}
+		if(filtype->branchazimuthfix && filtype->dynamics!=FDnone && filtype->kT>0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses branch_azimuth_fix with thermal dynamics; the rigid pin slaves each branch subtree to its mother's fluctuating tangent and inflates junction-angle spreads in dense networks -- prefer branch_force_azimuth there\n",filtype->ftname);}
+		if(filtype->branchforceazimuth>0 && filtype->branchforceangle<=0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has branch_force_azimuth without branch_force_angle; nothing constrains the branch polar angle, and the azimuthal force loses authority (and is capped) as junctions wander toward parallel\n",filtype->ftname);}
+		if(filtype->branchsrf && filtype->branchcmpt) {
+			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
+		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
+		if(filtype->branchsrf) {													// a gate bound to empty geometry closes silently otherwise
+			pcount=0;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->branchsrf->npanel[ps];
+			if(pcount==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s branch_surface %s has no panels; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchsrf->sname);}}
+		if(filtype->branchcmpt && filtype->branchcmpt->npts==0 && filtype->branchcmpt->ncmptl==0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s branch_compartment %s has no inside-defining points; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchcmpt->cname);}
+		if(filtype->confinesrf && filtype->confineforce>0) {
+			if(filtype->dynamics==FDnone) {
+				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
+			pcount=0;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->confinesrf->npanel[ps];
+			if(pcount==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
+			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5, before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
+		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0 || (filtype->confinesrf && filtype->confineforce>0)) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs or confinement with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); these forces will not be applied\n",filtype->ftname);}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1046,6 +1125,32 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
 		if(value<1) er=2;
 		else filtype->branchsegments=(int)(value+0.5); }
+
+	else if(!strcmp(param,"branchforceangle")) {			// junction torsional spring constant
+		if(value<0) er=2;
+		else {
+			filtype->branchforceangle=value;
+			filSetCondition(filtype->filss,SCparams,0); }}	// so a runtime 'set' still reaches the branch_spread derivation in filUpdateParams
+
+	else if(!strcmp(param,"branchazimuth")) {					// birth azimuth; negative = uniform random
+		if(value<0) filtype->branchazimuth=-1;
+		else filtype->branchazimuth=fmod(value,2*PI); }
+
+	else if(!strcmp(param,"branchazimuthfix")) {			// hold azimuths at recorded birth values
+		if(value!=0 && value!=1) er=2;
+		else filtype->branchazimuthfix=(int)value; }
+
+	else if(!strcmp(param,"branchforceazimuth")) {		// azimuthal spring constant
+		if(value<0) er=2;
+		else filtype->branchforceazimuth=value; }
+
+	else if(!strcmp(param,"branchsurfdist")) {				// capture distance for the branch_surface gate
+		if(value<=0) er=2;
+		else filtype->branchsrfdist=value; }
+
+	else if(!strcmp(param,"confineforce")) {					// confinement spring constant
+		if(value<0) er=2;
+		else filtype->confineforce=value; }
 
 	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
 		if(value<0) er=2;
@@ -1220,8 +1325,22 @@ int filEnableFilaments(simptr sim) {
 
 
 /* filUpdateParams */
+// Derived parameters. If the junction spring is on and branch_spread was never set,
+// derive it as the spring's own equilibrium spread sqrt(kT/branch_force_angle) so
+// branches are born in the distribution the spring maintains (equipartition ties the
+// two numbers). This runs on every entry path via simupdate -- config file, libsmoldyn,
+// Python -- unlike filCheckParams, which only diagnostics paths reach. Idempotent: the
+// derivation replaces the negative unset sentinel with a positive value, and an
+// explicit branch_spread (including 0 = deterministic births) is never overridden.
 int filUpdateParams(simptr sim) {
-	(void) sim;
+	int ft;
+	filamenttypeptr filtype;
+
+	for(ft=0;ft<sim->filss->ntype;ft++) {
+		filtype=sim->filss->filtypes[ft];
+		if(filtype->branchspread<0 && filtype->branchforceangle>0 && filtype->kT>0) {
+			filtype->branchspread=sqrt(filtype->kT/filtype->branchforceangle);
+			simLog(sim,2,"branch_spread for filament type %s set to sqrt(kT/branch_force_angle) = %g\n",filtype->ftname,filtype->branchspread); }}
 	return 0; }
 
 
@@ -1265,6 +1384,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	double fltv1[9],f1;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
+	enum PanelFace pf;
 
 //	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
@@ -1373,7 +1493,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"branch_rate")) {			// branch_rate (per unit length per time)
 		CHECKS(filtype,"need to enter filament type name before branch_rate");
-		itct=strmathsscanf(line2,"%mlg|/L/T",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"branch_rate format: value. ");
 		CHECKS(f1>=0,"branch_rate value needs to be >=0");
 		filtypeSetParam(filtype,"branchrate",0,f1);
@@ -1401,6 +1521,96 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1>=1,"branch_segments value needs to be >=1");
 		filtypeSetParam(filtype,"branchsegments",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_segments"); }
+
+	else if(!strcmp(word,"branch_force_angle")) {	// branch_force_angle: junction torsional spring constant, energy/rad^2
+		CHECKS(filtype,"need to enter filament type name before branch_force_angle");
+		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_force_angle format: value. ");
+		CHECKS(f1>=0,"branch_force_angle value needs to be >=0");
+		filtypeSetParam(filtype,"branchforceangle",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_force_angle"); }
+
+	else if(!strcmp(word,"branch_azimuth")) {			// branch_azimuth: birth azimuth about the mother axis, radians, or 'random'
+		CHECKS(filtype,"need to enter filament type name before branch_azimuth");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKM(itct==1,"branch_azimuth format: value or random. ");
+		if(!strcmp(nm1,"random"))
+			filtypeSetParam(filtype,"branchazimuth",0,-1);
+		else {
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"branch_azimuth format: value or random. ");
+			CHECKS(f1>=0,"branch_azimuth value needs to be >=0, or the word random");
+			filtypeSetParam(filtype,"branchazimuth",0,f1); }
+		CHECKS(!strnword(line2,2),"unexpected text following branch_azimuth"); }
+
+	else if(!strcmp(word,"branch_azimuth_fix")) {	// branch_azimuth_fix: hold azimuths at birth values
+		CHECKS(filtype,"need to enter filament type name before branch_azimuth_fix");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"branch_azimuth_fix format: 0 or 1. ");
+		CHECKS(i1==0 || i1==1,"branch_azimuth_fix value needs to be 0 or 1");
+		filtypeSetParam(filtype,"branchazimuthfix",0,(double)i1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_azimuth_fix"); }
+
+	else if(!strcmp(word,"branch_force_azimuth")) {	// branch_force_azimuth: azimuthal spring constant, energy/rad^2
+		CHECKS(filtype,"need to enter filament type name before branch_force_azimuth");
+		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_force_azimuth format: value. ");
+		CHECKS(f1>=0,"branch_force_azimuth value needs to be >=0");
+		filtypeSetParam(filtype,"branchforceazimuth",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_force_azimuth"); }
+
+	else if(!strcmp(word,"branch_surface")) {			// branch_surface: location gate, surface name + capture distance
+		CHECKS(filtype,"need to enter filament type name before branch_surface");
+		CHECKS(line2,"branch_surface format: surface_name distance");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch_surface format: surface_name distance");
+		CHECKS(sim->srfss,"branch_surface requires that surfaces be defined first");
+		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
+		CHECKS(i1>=0,"branch_surface surface name not recognized (define the surface before the filament type)");
+		line2=strnword(line2,2);
+		CHECKS(line2,"branch_surface format: surface_name distance");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_surface format: surface_name distance");
+		CHECKS(f1>0,"branch_surface distance needs to be >0");
+		CHECKS(!strnword(line2,2),"unexpected text following branch_surface");
+		filtype->branchsrf=sim->srfss->srflist[i1];	// parse-time binding, like reaction_cmpt; committed only after full validation so a failed runtime set changes nothing
+		filtypeSetParam(filtype,"branchsurfdist",0,f1); }
+
+	else if(!strcmp(word,"branch_compartment")) {	// branch_compartment: location gate, compartment name
+		CHECKS(filtype,"need to enter filament type name before branch_compartment");
+		CHECKS(line2,"branch_compartment format: compartment_name");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch_compartment format: compartment_name");
+		CHECKS(sim->cmptss,"branch_compartment requires that compartments be defined first");
+		i1=stringfind(sim->cmptss->cnames,sim->cmptss->ncmpt,nm1);
+		CHECKS(i1>=0,"branch_compartment compartment name not recognized (define the compartment before the filament type)");
+		CHECKS(!strnword(line2,2),"unexpected text following branch_compartment");
+		filtype->branchcmpt=sim->cmptss->cmptlist[i1]; }	// parse-time binding, like reaction_cmpt
+
+	else if(!strcmp(word,"confine_surface")) {		// confine_surface: harmonic confinement, surface name + spring constant (energy/length^2) + optional face
+		CHECKS(filtype,"need to enter filament type name before confine_surface");
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(sim->srfss,"confine_surface requires that surfaces be defined first");
+		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
+		CHECKS(i1>=0,"confine_surface surface name not recognized (define the surface before the filament type)");
+		line2=strnword(line2,2);
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
+		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
+		pf=filtype->confineface;										// default stands unless a face token overrides
+		line2=strnword(line2,2);
+		if(line2) {																	// optional face: which side nodes are confined to
+			itct=sscanf(line2,"%s",nm1);
+			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+			pf=surfstring2face(nm1);
+			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
+			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
+		filtype->confinesrf=sim->srfss->srflist[i1];	// parse-time binding; committed only after full validation so a failed runtime set changes nothing
+		filtypeSetParam(filtype,"confineforce",0,f1);
+		filtype->confineface=pf; }
 
 	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
 		CHECKS(filtype,"need to enter filament type name before plus_end");
@@ -1757,12 +1967,10 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
 			CHECKM(itct==3 || itct==1,"branch angle needs 1 or 3 values. ");
-			if(dim==2) angle[1]=angle[2]=0;
-			line2=strnword(line2,itct+1); }
+			if(dim==2) angle[1]=angle[2]=0; }
 		thick=fil->segments[seg]->thk;
 		fil2=filAddBranch(sim,fil,seg,angle,thick,nm1);
-		CHECKS(fil2,"failed to create branch");
-		CHECKS(!line2,"unexpected text following branch"); }
+		CHECKS(fil2,"failed to create branch"); }
 
 	else if(!strcmp(word,"sequence")) {						// sequence
 		CHECKS(fil,"need to enter filament name before sequence");
@@ -2348,6 +2556,7 @@ void filArrayShift(filamentptr fil,int shift) {
 			if(i>=0 && i<fil->nseg) {								// keep the branch, on its renumbered segment
 				fil->branchspots[nbr]=i;
 				fil->branches[nbr]=fil->branches[br];
+				fil->branchazim0[nbr]=fil->branchazim0[br];
 				nbr++; }
 			else if(fil->branches[br]) {						// the branched segment is gone, so the junction is too
 				if(fil->branches[br]->frontend==fil) fil->branches[br]->frontend=NULL;
@@ -2718,7 +2927,8 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 
 	for(i=0;i<filfrom->nbranch;i++) {
 		filto->branchspots[i]=filfrom->branchspots[i];
-		filto->branches[i]=filfrom->branches[i]; }
+		filto->branches[i]=filfrom->branches[i];
+		filto->branchazim0[i]=filfrom->branchazim0[i]; }
 	filto->nbranch=filfrom->nbranch;
 
 	for(i=0;i<filfrom->nsequence;i++)
@@ -2768,6 +2978,61 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 /******************************************************************************/
 
 
+#define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
+#define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
+
+/* filBranchAzimuth */
+// Azimuth of a daughter about its mother: the angle of the daughter's first segment
+// around the mother segment's axis, measured in that segment's material frame (from
+// the frame's y axis toward its z axis), in [0,2*PI). This is the quantity that
+// branch_azimuth_fix holds; it is recorded at birth by filAddBranch and re-measured
+// by filPinBranches, so the two are consistent by construction whatever the frame
+// conventions. Returns -1 where azimuth is undefined: 2D systems, an invalid branch
+// spot, or a daughter parallel to its mother.
+// SIGN CONTRACT: with this definition, rotating the daughter about +tm (right-handed)
+// raises phi, which is what makes filAddJunctionForces' azimuthal gradient
+// (tm x td)/(lend*sinth^2) restoring; both rely on Sph_QtnRotate being the lab-to-frame
+// map of a proper rotation. If either convention changes, the spring flips sign to
+// anti-restoring -- the T6 validation (azimuth drift on a pinned mother) catches it.
+double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter) {
+	double td[3],v[3],phi;
+	segmentptr mseg;
+
+	if(mother->filtype->filss->sim->dim!=3) return -1;
+	if(spot<0 || spot>=mother->nseg || daughter->nseg<1) return -1;
+	mseg=mother->segments[spot];
+	td[0]=daughter->nodes[1][0]-daughter->nodes[0][0];
+	td[1]=daughter->nodes[1][1]-daughter->nodes[0][1];
+	td[2]=daughter->nodes[1][2]-daughter->nodes[0][2];
+	Sph_QtnRotate(mseg->qabs,td,v);								// daughter direction in the mother segment frame; x is the mother axis
+	if(v[1]*v[1]+v[2]*v[2]<=FILJUNCTSINMIN*FILJUNCTSINMIN*(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])) return -1;
+	phi=atan2(v[2],v[1]);
+	if(phi<0) phi+=2*PI;
+	return phi; }
+
+
+/* filBranchDazim */
+// Signed deviation of branch br of mother from its recorded birth azimuth, wrapped to
+// (-PI,PI]. Returns 1 and sets *dphiptr when defined; 0 when the birth azimuth was
+// never recorded or the current azimuth is undefined (2D, degenerate geometry). The
+// single definition of the sentinel and wrap conventions that the rigid azimuth pin
+// and the azimuthal spring share.
+int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
+	double phi0,dphi;
+	filamentptr daughter;
+
+	phi0=mother->branchazim0[br];
+	daughter=mother->branches[br];
+	if(phi0<0 || !daughter) return 0;
+	dphi=filBranchAzimuth(mother,mother->branchspots[br],daughter);
+	if(dphi<0) return 0;
+	dphi-=phi0;
+	if(dphi>PI) dphi-=2*PI;
+	else if(dphi<-PI) dphi+=2*PI;
+	*dphiptr=dphi;
+	return 1; }
+
+
 /* filAddBranch */
 // Nucleate a daughter filament off mother segment seg. angle is the daughter's ypr
 // relative to that segment's absolute frame. Returns the daughter, or NULL on error.
@@ -2808,17 +3073,43 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	br=mother->nbranch++;
 	mother->branchspots[br]=seg;
 	mother->branches[br]=daughter;
+	mother->branchazim0[br]=filBranchAzimuth(mother,seg,daughter);	// realized birth azimuth, for branch_azimuth_fix
 	daughter->frontend=mother;											// filPinBranches anchors the daughter's front (node 0), which is its pointed end
 
 	return daughter; }
 
 
+/* filBranchPointInRegion */
+// Location gate for branch nucleation: returns 1 if pos qualifies under the type's
+// branch_surface / branch_compartment restriction, or if no gate is set. The gate is
+// an interim geometric proxy for membrane-bound nucleators (Arp2/3 recruited by
+// NPFs): it restricts WHERE spontaneous branching may occur but models no nucleator
+// molecules, so there is no depletion, saturation, or consumption. It is meant to be
+// superseded by explicit filament-molecule binding when the simulator gains that
+// capability, at which point a nucleator species on a surface replaces this gate.
+int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos) {
+	double dist;
+
+	if(filtype->branchcmpt)
+		return posincompart(sim,pos,filtype->branchcmpt,0);
+	if(!filtype->branchsrf) return 1;
+	dist=closestsurfacept(filtype->branchsrf,sim->dim,pos,NULL,NULL,NULL);
+	return dist>=0 && dist<=filtype->branchsrfdist; }		// -1 means a panel-less surface: gate closed
+
+
 /* filBranchDynamics */
 // Poisson branch nucleation for one filament type, at rate branchrate*length*dt, with
-// each daughter attached at a uniformly random segment of its mother.
+// each daughter attached at a uniformly random segment of its mother. If a location
+// gate is set (branch_surface / branch_compartment), drawn events are thinned: an
+// event whose branch point falls outside the gated region is discarded, which realizes
+// an inhomogeneous Poisson process with density branchrate per unit mother length
+// inside the region and zero outside (exact when segment lengths are equal, since the
+// spot draw is uniform per segment -- the same sampling as the ungated draw). The
+// accept test draws no random numbers, so a rejected event consumes only its segment
+// draw.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 	int f,nfil0,seg,nbr,i,dim;
-	double totallen,angle[3],thick,theta,ratedt;
+	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
 	filamentptr fil;
 
 	if(filtype->branchrate<=0) return;
@@ -2834,6 +3125,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 		nbr=poisrandD(ratedt*totallen);
 		for(i=0;i<nbr;i++) {
 			seg=intrand(fil->nseg);											// uniform random branch spot
+			if(!filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzback)) continue;		// interim location gate; accepts everything when no gate is set
 
 			theta=filtype->branchangle;
 			if(filtype->branchspread>0)								// jitter the branch angle
@@ -2841,11 +3133,14 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 			if(dim==2) {															// in-plane +/- branch angle
 				angle[0]=theta*(coinrandD(0.5)?1:-1);
 				angle[1]=angle[2]=0; }
-			else {																		// 3D dendritic cone: fixed polar, uniform azimuth
-				angle[0]=theta;
-				angle[1]=unirandCOD(0,2*PI);
-				angle[2]=unirandCOD(0,2*PI);
-				Sph_Eax2Ypr(angle,angle); }
+			else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
+				phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
+				dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
+				dvec[1]=sin(theta)*cos(phi);
+				dvec[2]=sin(theta)*sin(phi);
+				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
+				angle[1]=-asin(dvec[2]);
+				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
 
 			thick=fil->segments[seg]->thk;
 			filAddBranch(sim,fil,seg,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
@@ -2854,15 +3149,25 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 
 
 /* filPinBranches */
-// Translate each daughter so its front node tracks the mother's branch point. This is a
-// position constraint applied after the mechanical step, not a force: it holds the branch
-// point but not the branch angle, and needs no cross-filament force solver.
+// Constrain each daughter to its junction after the mechanical step. Always: translate
+// the daughter so its front node tracks the mother's (moving) branch point -- a
+// position constraint, not a force. With branch_azimuth_fix on (3D): additionally
+// rotate the daughter rigidly about the mother segment's axis so its azimuth returns
+// to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch
+// direction around the mother is a constraint rather than a measured compliance. The
+// rotation axis passes through the branch point, so the rotation preserves both the
+// pinned position and the mother-daughter angle theta, composing cleanly with the
+// branch_force_angle spring. The daughter's seg0up vector co-rotates so its own
+// material frame stays consistent and grand-daughter junctions remain valid; filaments
+// are created mothers-first, so the caller's creation-order sweep settles branched
+// trees root-first.
 void filPinBranches(filamentptr fil) {
-	int br,seg;
-	double branchpos[3];
+	int br,seg,node,dim;
+	double branchpos[3],axis[3],dphi,vect[3];
 	filamentptr daughter;
 	segmentptr mseg;
 
+	dim=fil->filtype->filss->sim->dim;
 	for(br=0;br<fil->nbranch;br++) {
 		daughter=fil->branches[br];
 		if(!daughter || daughter->nseg==0) continue;
@@ -2872,7 +3177,23 @@ void filPinBranches(filamentptr fil) {
 		branchpos[0]=mseg->xyzback[0];
 		branchpos[1]=mseg->xyzback[1];
 		branchpos[2]=mseg->xyzback[2];
-		filTranslate(daughter,branchpos,'=');	}					// move daughter so seg-0 front sits at branch point
+		filTranslate(daughter,branchpos,'=');						// move daughter so seg-0 front sits at branch point
+
+		if(fil->filtype->branchazimuthfix && dim==3 && daughter->frontend==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
+			axis[0]=mseg->xyzback[0]-mseg->xyzfront[0];
+			axis[1]=mseg->xyzback[1]-mseg->xyzfront[1];
+			axis[2]=mseg->xyzback[2]-mseg->xyzfront[2];
+			if(axis[0]==0 && axis[1]==0 && axis[2]==0) continue;
+			for(node=1;node<=daughter->nseg;node++) {			// node 0 is the branch point, on the axis
+				vect[0]=daughter->nodes[node][0]-branchpos[0];
+				vect[1]=daughter->nodes[node][1]-branchpos[1];
+				vect[2]=daughter->nodes[node][2]-branchpos[2];
+				Sph_RotateVectorAxisAngle(vect,axis,-dphi,vect);
+				daughter->nodes[node][0]=branchpos[0]+vect[0];
+				daughter->nodes[node][1]=branchpos[1]+vect[1];
+				daughter->nodes[node][2]=branchpos[2]+vect[2]; }
+			Sph_RotateVectorAxisAngle(daughter->seg0up,axis,-dphi,daughter->seg0up);
+			filNodes2Angles(daughter,-1,-1); }}
 
 	return; }
 
@@ -3149,8 +3470,17 @@ void filAddStretchForceMat(filamentptr fil) {
 
 
 /* filAddThermalForces */
+// Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped
+// update x += dt*mobility*nodemobility*F used by filStepDynamics: each Cartesian
+// component of each node's thermal force is Gaussian with rms
+// sqrt(2*kT/(mobility*nodemobility*dt)), which samples the correct ensemble at
+// temperature kT for any choice of dt, mobility, and discretization. Forces are drawn
+// once per time step and reused across sub-step force evaluations (Runge-Kutta stages
+// and Jacobian calls). Random numbers are always drawn and the amplitude multiplies
+// the draw, so the draw sequence is independent of kT and mobility values; immobile
+// nodes (nodemobility 0) correctly receive no thermal force.
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,*kypr,kT,stdlen,frms;
+	double **forces,kT,dt,mobility,famp,nodemob,frms;
 	filamenttypeptr filtype;
 	filamentworkptr filwork;
 	int dim,node;
@@ -3165,19 +3495,23 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
 	if(sim->time>filwork->thermtime) {				// compute random forces on each node
-		kypr=filtype->kypr;
-		stdlen=filtype->stdlen;
 		kT=filtype->kT;
-		frms=sqrt(kypr[0]*kT)/stdlen;						//?? This equation is almost certainly incorrect
+		dt=sim->dt;
+		mobility=filtype->mobility;
+		famp=(dt>0 && mobility>0)?2*kT/(mobility*dt):0;			// loop-invariant part; per-node frms = sqrt(famp/nodemobility)
 		if(dim==2)
 			for(node=0;node<=fil->nseg;node++) {
-				filwork->thermforce[node][0]=2*frms*gaussrandD();
-				filwork->thermforce[node][1]=2*frms*gaussrandD(); }
+				nodemob=fil->nodemobility[node];
+				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
+				filwork->thermforce[node][0]=frms*gaussrandD();
+				filwork->thermforce[node][1]=frms*gaussrandD(); }
 		else
 			for(node=0;node<=fil->nseg;node++) {
-				filwork->thermforce[node][0]=2*frms*gaussrandD();
-				filwork->thermforce[node][1]=2*frms*gaussrandD();
-				filwork->thermforce[node][2]=2*frms*gaussrandD(); }
+				nodemob=fil->nodemobility[node];
+				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
+				filwork->thermforce[node][0]=frms*gaussrandD();
+				filwork->thermforce[node][1]=frms*gaussrandD();
+				filwork->thermforce[node][2]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
 
 //??	torques=fil->torques;
@@ -3363,6 +3697,176 @@ void filAddBendForceMat(filamentptr fil) {
 	return; }
 
 
+/* filJunctionGeometry */
+// Shared geometry for the junction spring: unit tangents of the mother segment at
+// spot and of the daughter's first segment, their cosine and sine, and the two
+// segment lengths. Returns 1 when the junction force is well defined, 0 when it is
+// degenerate (zero-length segment, or theta at 0 or pi where the angle plane is
+// undefined -- >5 sigma from any realistic branch angle, so skipping is safe).
+int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr) {
+	double lenm,lend,costh,sinth;
+	segmentptr mseg;
+	int d;
+
+	mseg=mother->segments[spot];
+	lenm=0;
+	for(d=0;d<dim;d++) {
+		tm[d]=mseg->xyzback[d]-mseg->xyzfront[d];
+		lenm+=tm[d]*tm[d]; }
+	lend=0;
+	for(d=0;d<dim;d++) {
+		td[d]=daughter->nodes[1][d]-daughter->nodes[0][d];
+		lend+=td[d]*td[d]; }
+	if(lenm<=0 || lend<=0) return 0;
+	lenm=sqrt(lenm);
+	lend=sqrt(lend);
+
+	costh=0;
+	for(d=0;d<dim;d++) {
+		tm[d]/=lenm;
+		td[d]/=lend;
+		costh+=tm[d]*td[d]; }
+	if(costh>1) costh=1;
+	else if(costh<-1) costh=-1;
+	sinth=sqrt(1-costh*costh);
+	if(sinth<FILJUNCTSINMIN) return 0;
+
+	*lenmptr=lenm;
+	*lendptr=lend;
+	*costhptr=costh;
+	*sinthptr=sinth;
+	return 1; }
+
+
+/* filAddJunctionForces */
+// Torsional spring at the branch junction: energy 0.5*k*(theta-theta0)^2, where theta
+// is the angle between the mother segment holding the branch and the daughter's first
+// segment, theta0 is the type's branch_angle, and k is branch_force_angle. Each
+// filament applies the exact gradient with respect to its OWN nodes during its own
+// force evaluation, reading the partner's current geometry as an external field: a
+// daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction
+// couple on nodes spot and spot+1 for each of its branches. Both couples are pure
+// torques about the branch point and sum to zero total torque at any one
+// configuration (the sequential per-filament integrator sweep evaluates the two
+// halves at states one substep apart, so cancellation over a step is O(dt)), so the
+// pair potential enters both partners' dynamics and the junction angle equilibrates
+// at Boltzmann --
+// a one-way version was measured to overheat the angle by (1 + mobility ratio) when
+// the mother is free. The optional azimuthal spring (branch_force_azimuth) restores
+// the daughter's azimuth about the mother axis toward its recorded birth value with
+// energy 0.5*kaz*(phi-phi0)^2, applied as a couple on daughter nodes 0 and 1 only
+// (one-way: a clean mother-side gradient would require differentiating the material
+// frame, and the bounded spring torque cannot pump energy the way the rigid azimuth
+// pin can). No cross-filament force writes occur, per-filament force clearing stays
+// safe, and integrators that differentiate forces numerically see everything
+// automatically. Draws no random numbers; returns immediately when off.
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3];
+	filamentptr mother,daughter;
+	int br,brfound,spot,d,dim;
+
+	kappa=fil->filtype->branchforceangle;
+	kaz=fil->filtype->branchforceazimuth;
+	dim=fil->filtype->filss->sim->dim;
+	if(kappa<=0 && (kaz<=0 || dim!=3)) return;			// the azimuthal spring exists only in 3D
+	theta0=fil->filtype->branchangle;
+	forces=fil->filwork->forces;
+
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
+	mother=fil->frontend;														// daughter side: couples on own nodes 0 and 1
+	if(mother && fil->nseg>=1 && nodemin<=1) {
+		brfound=-1;
+		for(br=0;br<mother->nbranch && brfound<0;br++)
+			if(mother->branches[br]==fil)
+				brfound=br;
+		spot=(brfound>=0)?mother->branchspots[brfound]:-1;
+		if(spot>=0 && spot<mother->nseg && filJunctionGeometry(mother,spot,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
+			if(kappa>0) {
+				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth; |tm-costh*td| = sinth, so |F1| = k*|theta-theta0|/lend, bounded
+				for(d=0;d<dim;d++) {
+					fvect[d]=fscale*(tm[d]-costh*td[d]);
+					if(nodemax>=1) forces[1][d]+=fvect[d];
+					if(nodemin<=0) forces[0][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
+			if(kaz>0 && dim==3 && filBranchDazim(mother,brfound,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
+				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi -- this sign ties to the frame convention in filBranchAzimuth, see the contract comment there
+				cross[1]=tm[2]*td[0]-tm[0]*td[2];
+				cross[2]=tm[0]*td[1]-tm[1]*td[0];
+				sinbound=(sinth>FILJUNCTSINBOUND)?sinth:FILJUNCTSINBOUND;	// |cross| = sinth, so |F| = kaz*|dphi|/(lend*sinbound): the true azimuthal gradient diverges as 1/sinth near-parallel geometry, where azimuth stops being meaningful; bounding it keeps a wandering junction from blowing up the integrator
+				fscale=-kaz*dphi/(lend*sinth*sinbound);
+				for(d=0;d<3;d++) {
+					fvect[d]=fscale*cross[d];
+					if(nodemax>=1) forces[1][d]+=fvect[d];
+					if(nodemin<=0) forces[0][d]-=fvect[d]; }}}}
+
+	if(kappa>0)																			// mother side: reaction couple for the polar spring only (azimuth is one-way)
+		for(br=0;br<fil->nbranch;br++) {
+			daughter=fil->branches[br];
+			spot=fil->branchspots[br];
+			if(!daughter || daughter->nseg<1) continue;
+			if(daughter->frontend!=fil) continue;					// stale entry: the daughter belongs to another mother (copy_to, re-branch)
+			if(spot<0 || spot>=fil->nseg) continue;
+			if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
+			if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
+			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
+			for(d=0;d<dim;d++) {
+				fvect[d]=fscale*(td[d]-costh*tm[d]);
+				if(spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
+				if(spot>=nodemin) forces[spot][d]-=fvect[d]; }}
+
+	return; }
+
+
+/* filAddConfineForces */
+// Harmonic surface confinement, in the spirit of Cytosim's per-model-point
+// "confine" stiffness: each node on the penalized side of the confining surface
+// (the side opposite confine_face) feels the restoring force k*d toward the nearest
+// point of every panel it violates -- the gradient of a penalty energy 0.5*k*d^2 in
+// the penetration depth d past that panel. Summing over violated panels makes box
+// corners behave (each wall pushes along its own normal). The constant is per NODE,
+// like the other per-element force constants, so refining standard_length stiffens
+// the wall per unit contour length; the equilibrium penetration depth of a
+// fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric
+// wall for filament mechanics only -- molecules do not see it, and richer
+// filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
+// remains future work. Two geometric caveats: the side test is panelside's, which
+// for rect, tri, and disk panels classifies against the panel's INFINITE plane, so
+// a confining surface should span or enclose the region the filaments occupy -- a
+// partial patch also penalizes nodes laterally beyond it, pulling them toward the
+// patch edge; and coplanar tessellations stack, since the constant is per violated
+// panel, so a node behind M coplanar panels feels up to M contributions. Draws no
+// random numbers; returns immediately when off.
+void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,k,pnlpt[3],*nodept,*fnode;
+	surfaceptr srf;
+	panelptr pnl;
+	enum PanelShape ps;
+	enum PanelFace badface;
+	int node,p,d,dim;
+
+	k=fil->filtype->confineforce;
+	srf=fil->filtype->confinesrf;
+	if(k<=0 || !srf) return;
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+	dim=fil->filtype->filss->sim->dim;
+	forces=fil->filwork->forces;
+	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
+
+	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+		for(p=0;p<srf->npanel[ps];p++) {
+			pnl=srf->panels[ps][p];											// panel-outer: fetch each panel once per node sweep
+			for(node=nodemin;node<=nodemax;node++) {
+				nodept=fil->nodes[node];
+				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
+				closestpanelpt(pnl,dim,nodept,pnlpt,0);
+				fnode=forces[node];
+				for(d=0;d<dim;d++)
+					fnode[d]+=k*(pnlpt[d]-nodept[d]); }}
+	return; }
+
+
 /* filComputeForces */
 void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,*torques;
@@ -3387,6 +3891,8 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	filAddStretchForces(fil,nodemin,nodemax);
 	filAddBendForces(fil,nodemin-1,nodemax+1);
 	filAddThermalForces(fil,nodemin,nodemax);
+	filAddJunctionForces(fil,nodemin,nodemax);
+	filAddConfineForces(fil,nodemin,nodemax);
 	return; }
 
 
