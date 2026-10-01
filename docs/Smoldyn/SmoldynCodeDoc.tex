@@ -18,7 +18,7 @@
 % settings for listings package
 \lstset{
 language=C, 
-basicstyle=\small\ttfamily, 
+basicstyle=\tiny\ttfamily, 
 keywordstyle=\bfseries, 
 tabsize=2, 
 breaklines=true, 
@@ -3993,7 +3993,7 @@ Gets the copy number of a species in the \ttt{nsv} data structure. Enter \ttt{id
 
 \end{description}
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Filaments (functions in smolfilament.c)
 \section{Filaments (functions in smolfilament.c)}
 
@@ -4007,12 +4007,21 @@ Filaments are defined in a heirarchical fashion. At the top level, there is one 
 
 \subsubsection{Constants}
 
+Defined in smoldyn.h:
 \begin{lstlisting}
 #define FILCAPPLUS 1                  // filamentstruct capped bitmask: plus end is capped
-                                      // (bit 1 reserved for the minus end)
 \end{lstlisting}
 
-The comment explains that this is a filament capping bitmask. However, I'm not sure what it does or whether I like it.%?? New code
+\ttt{FILCAPPLUS} is a filament capping bitmask. Capping occurs at the plus end, but is only functional if the right-most bit of this value equals 1. This doesn't seem useful to me.%?? To be changed.
+
+Defined in smolfilament.c:
+\begin{lstlisting}
+#define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
+#define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
+\end{lstlisting}
+
+These are used in the functions \ttt{filBranchAzimuth} and \ttt{filFunctionGeometry}. I'm not sure what they're for, but they're probably useful.
+
 
 \subsubsection{Enumerations}
 
@@ -4078,7 +4087,13 @@ typedef struct filworkstruct {
 } *filworkptr
 \end{lstlisting}
 
-Filament dynamics integration requires a substantial amount of working data, which are stored here. None of these data define the filament state at the end of a time step, but this is only scratch space for use by the dynamics functions. \ttt{fil} points to the filament that owns this data structure. \ttt{wnodes} is 3 lists of nodes; number 0 is not owned by this data structure, but is simply a pointer to \ttt{fil->nodes}, whereas numbers 1 and 2 are owned by this data structure. \ttt{wroll} is 3 lists of segment roll values; the first points to \ttt{fil->roll} and the other two are owned by this data structure. \ttt{flatnodes} is 2 lists of flattened node and roll data; for 2D, the list is $[x_{0x},x_{0y},x_{1x},x_{1y},...,x_{nx},x_{ny}]$ and for 3D the list is $[x_{0x},x_{0y},x_{0z},\tau_{0},x_{1x},x_{1y},x_{1z},\tau_1,...,x_{nx},x_{ny},x_{nz}]$. \ttt{flatforces} is identical to \ttt{flatnodes} but is for forces instead of node positions. It has the same layout and same vector sizes. \ttt{wseg0up} is 3 lists; number 0 is not owned here but points to \ttt{fil->seg0up}, and the other two are working copies to represent the segment 0 up vector. \ttt{forces} is used to store the cumulative forces on each node. Similarly, the \ttt{torques} element is used to store the roll torque acting on each segment (along its axis). \ttt{forcemat} is a flattened matrix of forces that is used for matrix-method Euler integration and implict integration. \ttt{thermtime} is the simulation time for the most recent calculation of thermal forces (they need to be computed only once per time step to avoid giving the integrators conflicting information) and \ttt{thermforce} is a list of thermal forces on the nodes.
+Filament dynamics integration requires a substantial amount of working data, which are stored here. None of these data define the filament state at the end of a time step, but this is only scratch space for use by the dynamics functions.
+
+\ttt{fil} points to the filament that owns this data structure. \ttt{wnodes} is 3 lists of nodes; number 0 is not owned by this data structure, but is simply a pointer to \ttt{fil->nodes}, whereas numbers 1 and 2 are owned by this data structure. \ttt{wroll} is 3 lists of segment roll values; the first points to \ttt{fil->roll} and the other two are owned by this data structure. \ttt{flatnodes} is 2 lists of flattened node and roll data; for 2D, the list is $[x_{0x}, x_{0y}, x_{1x}, x_{1y},..., x_{nx}, x_{ny}]$ and for 3D the list is $[x_{0x},x_{0y},x_{0z},\tau_{0},x_{1x},x_{1y},x_{1z},\tau_1,...,x_{nx},x_{ny},x_{nz}]$. \ttt{flatforces} is identical to \ttt{flatnodes} but is for forces instead of node positions. It has the same layout and same vector sizes. \ttt{wseg0up} is 3 lists; number 0 is not owned here but points to \ttt{fil->seg0up}, and the other two are working copies to represent the segment 0 up vector.
+
+\ttt{forces} is used to store the cumulative forces on each node. Similarly, the \ttt{torques} element is used to store the roll torque acting on each segment (along its axis). \ttt{forcemat} is a flattened matrix of forces that is used for matrix-method Euler integration and implict integration.
+
+\ttt{thermtime} is the simulation time for the most recent calculation of thermal forces (they need to be computed only once per time step to avoid giving the integrators conflicting information) and \ttt{thermforce} is a list of thermal forces on the nodes.
 
 
 \subsubsection{Filaments}
@@ -4102,6 +4117,7 @@ typedef struct filamentstruct {
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
     struct filamentstruct** branches;   // list of branching filaments
+    double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
@@ -4116,11 +4132,11 @@ Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segme
 
 The \ttt{nodesx} vector contains node positions at the end of the previous time step, enabling determination of surface crossing or other events during the time step. The \ttt{roll} vector contains the roll values for individual segments. It is only here for convenience, and I'm not sure it's a good design, but it's here for now. It is redundant with the segment \ttt{ypr[2]} values, which are the definitive ones, so any function that writes to \ttt{roll} must also write to \ttt{ypr[2]} and any function that reads from \ttt{roll} must first make sure that it equals \ttt{ypr[2]}. The reason for redundant data is that it can be easier to work with either a list of roll values or lists of segment rotation values, depending on the situation. The \ttt{nodemobility} vector is a list of unitless mobility factors for each node, which are multiplied by the filament type mobility value to give the node's total mobility; this is useful for fixing particular nodes in space. The \ttt{seg0up} vector represents the unit ``up'' vector for segment 0 (which is perpendicular to the segment itself).
 
-Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{frontend} points to the filament that the front end attaches to and/or \ttt{backend} points to the filament that the back end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}.
+Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{frontend} points to the filament that the front end attaches to and/or \ttt{backend} points to the filament that the back end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}. For example if there's a branch at segment 3 which is attached by the branch's front end, then that means that the front of the branch is at the front of the mother's segment 3. \ttt{branchazim0} is the birth azimuth for each branch, or -1 if undefined, where azimuth is the angle around the mother's axis. %?? branchazim0 seems redundant with the branch's ypr for segment 0.
 
-Along the length of each filament are equally spaced sequence codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxsequence} and \ttt{nsequence}, and then the list \ttt{sequence}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between sequence code and segments.\\
+Along the length of each filament are equally spaced sequence codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxsequence} and \ttt{nsequence}, and then the list \ttt{sequence}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between sequence code and segments.
 
-Two new additions are \ttt{growbank} and \ttt{capped}. \ttt{growbank} is for filament elongation; if a filament wants to elongate by a length that's a non-integer number of segments, the residual length goes into here and is then used at the next time step. \ttt{capped} is 0 for an uncapped filament and 1 for a capped filament. %??New code.
+\ttt{growbank} is for filament elongation; if a filament wants to elongate by a length that's a non-integer number of segments, the residual length goes into here and is then used at the next time step. \ttt{capped} is 0 for an uncapped filament and 1 for a capped filament, capping occurs at the plus end.\\ %??New code.
 
 \subsubsection{Filament types}
 
@@ -4143,12 +4159,22 @@ typedef struct filamenttypestruct {
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
     double treadrate;                  // treadmilling rate constant
-    double mobility;                  // mobility
+    double mobility;                   // mobility
     double filradius;                  // segment radius
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
-    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic
+    double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
     int branchsegments;                // number of segments a daughter is born with (>=1)
+    double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
+    double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
+    int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
+    double branchforceazimuth;         // azimuthal spring constant toward birth azimuth, energy/rad^2; 0 = off (3D)
+    surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
+    double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
+    compartptr branchcmpt;             // if set, branch only inside this compartment; NULL = no gate
+    surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
+    double confineforce;               // confinement spring constant, energy/length^2; 0 = off
+    enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
     char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
@@ -4174,11 +4200,16 @@ In the graphical display parameters, \ttt{color} is the filament color, with red
 
 Filament mechanics information is in the next elements. \ttt{stdlen} is the standard segment length, meaning the segment length at minimum energy, where segments are neither stretched nor compressed. \ttt{stdypr} is the minimum energy relative ypr angle. \ttt{klen} is the stretching force constant. Its value is $< 0$ for an infinite force constant, meaning that the segment lengths are fixed. \ttt{kypr} is the bending force constant. For any element, its value is 0 for zero force constant, meaning a freely jointed chain, and $< 0$ for an infinite force constant, meaning a fixed bending angle. \ttt{kT} is the thermodynamic energy. This parameter isn't ideal here because it allows a different temperature for different components in the simulation, but it's here for now. \ttt{treadrate} is the treadmilling rate constant, with 0 for no treadmilling, a positive number for the back growing and a negative number for the front growing. \ttt{mobility} is the mobility of the nodes for computing dynamics. \ttt{filradius} is the radius of segments.
 
-The next section was written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament.% ?? new code
+The next sections were written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic and negative is not set. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament. \ttt{branchforceangle} is the torsional (yaw) spring constant for the branch. \ttt{branchazimuth} is the azimuth of the branch off of the mother, in the mother segment's frame of reference. \ttt{branchazimuthfix} is a Boolean variable that is equal to 1 if the branch azimuth should be fixed throughout a simulation. \ttt{branchforceazimuth} is the azimuthal spring constant, away from the filament \ttt{branchazim0} value.  % ?? new code. Note that branchangle and branchspread are only yaw but could have separate pitch values as well. I think this is fine. Again, azimuth stuff is redundant with ypr angles.
 
-The next section was also written by Junjie Sun, this time for polarized elongation and capping. \ttt{plusend} marks whether the front or the back of the filament is considered to be the plus end. \ttt{elongrate} is the plus-end elongation velocity in length/time. \ttt{elongmaxlen} is the maximum contour length for elongation. \ttt{caprate} is the rate of plus-end capping. \ttt{uncaprate} is the rate of plus-end uncapping. % ?? new code
+Next, \ttt{branchsrf} is a surface that can induce branching to occur, if the potential branch is within \ttt{branchsrfdist} distance of the surface. \ttt{branchcmpt} is a compartment where branching can occur. \ttt{confinesrf} is a surface where the harmonic confinement against it. This confinement uses spring constant \ttt{confineforce} and only occurs at the face of the surface that's given by \ttt{confineface}.%?? These elements could be moved to a separate filament-surface interaction data structure, or at least labeled as being for filament-surface interactions.
+
+Next is polarized elongation and capping. \ttt{plusend} marks whether the front or the back of the filament is considered to be the plus end. \ttt{elongrate} is the plus-end elongation velocity in length/time. \ttt{elongmaxlen} is the maximum contour length for elongation. \ttt{caprate} is the rate of plus-end capping. \ttt{uncaprate} is the rate of plus-end uncapping. % ?? new code
+
+Lengthwise faces aren't used yet but are set up here with \ttt{maxface} and \ttt{nface} for the maximum and actual number of filament faces. \ttt{facename} is a list of face names and \ttt{facetwist} is the spatial twisting rate of the faces (radians per unit length of filament).
 
 Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
+% I think that this filament type data structure is pretty good. However, it could use some re-ordering of the elements.
 
 \subsubsection{Filament superstructure}
 
@@ -4195,564 +4226,17 @@ typedef struct filamentsuperstruct {
 
 The superstructure contains a list of filament types. It starts with its condition element in \ttt{condition} and a pointer up the heirarchy to the simulation structure in \ttt{sim}. The list of filament types is allocated with \ttt{maxtype} entries, has \ttt{ntype} entries, and has list \ttt{ftnames} for the type names and \ttt{filtypes} is the actual list of types.\\
 
-% Filament math - 3D conformations
-\subsection{Filament math - 3D conformations}
+% Filament math
+\subsection{Filament math}
 
-\textit{This is the first of several sections on filament math, but these aren't being maintained because I'm now doing math in a different document, called FilamentNotes.tex.}
-
-There are several ways to describe 3D rotations, including with various conventions of Euler angles, with direction cosine matrices, and with quaternions. Smoldyn uses the yaw-pitch-roll Euler angle convention for relative angles between segments, which it also uses for force and energy computations. I developed most of the filament theory using direction cosine matrices, which are relatively straightforward and widely used in the physics literature, and are described in this subsection. However, I then replaced the direction cosine matrices with quaternions, described below, because they are likely to be faster computationally. At this point, I am continuing to do theory with dcms and code with quaternions.
-
-This subsection uses direction cosine matrices to relate filament relative angles ($\bm{A}$, was \ttt{dcm} in the code), absolute angles ($\bm{B}$, was \ttt{adcm} in the code), and positions ($\bm{x}$, \ttt{xyz}). See also Goldstein Chapter 4 (page 128) and Appendix B (page 608), Andrews, 2004 (rotational averaging paper), and Andrews, 2014 (filament paper). Equations are given here for 2D and 3D systems.
-
-Filament bending is described by the Tait-Bryan convention for Euler angles:
-\begin{longtable}[c]{lcccc}
-name & symbol & perpendicular & positive & positive \\
- &  & axis & direction & unit vector \\
-\hline
-2D: yaw & $\phi$ & $z$ & counter-clockwise & $\hat{z}$ \\
-\hline
-3D: yaw & $\phi$ & $z$ & turn left & $\hat{z}$ \\
-\hspace{3.5ex} pitch & $\theta$ & $y$ & turn down & $\hat{y}$ \\
-\hspace{3.5ex} roll & $\psi$ & $x$ & tilt right & $\hat{x}$
-\end{longtable}
-Note that pitch is defined so that positive pitch is rotation downward. This is the opposite of many conventions, but is used here so that the rotation vector is along the positive $\hat{y}$ vector while using a right-handed coordinate system. Figure \ref{fig:CoordinateRotation} shows these rotations using a standard right-handed coordinate system. The pitch rotation angle is negative, with the result that the rotation vector is along the rotated $-\hat{y}$.
-\begin{figure}[h]
-\centering
-\includegraphics[height=5cm]{figures/FilamentBend3D.png}
-\caption{Two filament segments in 3D, showing positive yaw, negative pitch, and positive roll.}
-\label{fig:FilamentBend3D}
-\end{figure}
-
-Consider a direction cosine matrix (dcm), $\bm{\Phi}$. It can be expanded as:
-\begin{align}
-\textrm{2D: }\bm{\Phi} &= \left[ \begin{array}{ccc} \Phi_{Xx} & \Phi_{Xy}\\ \Phi_{Yx} & \Phi_{Yy} \end{array} \right]\\
-\textrm{3D: }\bm{\Phi} &= \left[ \begin{array}{ccc} \Phi_{Xx} & \Phi_{Xy} & \Phi_{Xz} \\ \Phi_{Yx} & \Phi_{Yy} & \Phi_{Yz} \\ \Phi_{Zx} & \Phi_{Zy} & \Phi_{Zz} \end{array} \right]
-\label{eq:DirectionCosineMatrix}
-\end{align}
-There are two interpretations for this dcm. It can convert between two frames of reference for a static object, which is called passive rotation, or it can rotate an object in a fixed reference frame, which is called active rotation. In passive rotation, shown in Figure \ref{fig:CoordinateRotation}, a vector doesn't move, but is simply being expressed in different coordinate systems. Here, $X$, $Y$, and $Z$ are the unit vectors of the ``lab frame'', meaning the absolute coordinates of the simulation, and $x$, $y$, and $z$ are the unit vectors of the ``molecule frame'', such as the local coordinates of a filament segment. The dcm expresses the dot products of these unit vectors. As a result, each column of the matrix gives the lab frame coordinates of each unit vector of the molecule frame, and each row of the matrix gives the molecule frame coordinates of each unit vector of the lab frame. It is unitary, meaning that all its eigenvalues equal 1, and its transpose is its inverse, so $\bm{\Phi}^T \bm{\Phi} = \bm{1}$, where $\bm{1}$ is the identity matrix.
-\begin{figure}[h]
-\centering
-\includegraphics[height=3cm]{figures/CoordinateRotation.png}
-\caption{Diagram for 2D coordinate rotation. Black is lab frame, blue is molecule frame, and red is a vector that just happens to be aligned with the lab frame.}
-\label{fig:CoordinateRotation}
-\end{figure}
-
-Here's the dcm in more detail, now shown for $\bm{\Phi}$ as a product of yaw, pitch, and roll transformations. See Goldstein pp. 135 and 609.
-\begin{align}
-\textrm{2D: }\bm{\Phi} &= \bm{Z}(\phi)
-= \left[ \begin{array}{ccc} \textrm{c} \phi & \textrm{s} \phi \\ -\textrm{s} \phi & \textrm{c} \phi \end{array} \right] \nonumber \\
-\textrm{3D: }\bm{\Phi} &= \bm{X}(\psi) \bm{Y}(\theta) \bm{Z}(\phi) \nonumber \\
-&= \left[ \begin{array}{ccc} 1 & 0 & 0 \\ 0 & \textrm{c} \psi & \textrm{s} \psi \\ 0 & -\textrm{s} \psi & \textrm{c} \psi \end{array} \right]
-\left[ \begin{array}{ccc} \textrm{c} \theta & 0 & -\textrm{s} \theta \\ 0 & 1 & 0 \\ \textrm{s} \theta & 0 & \textrm{c} \theta \end{array} \right]
-\left[ \begin{array}{ccc} \textrm{c} \phi & \textrm{s} \phi & 0 \\ -\textrm{s} \phi & \textrm{c} \phi & 0 \\ 0 & 0 & 1 \end{array} \right] \nonumber \\
-&= \left[ \begin{array}{ccc} \textrm{c} \theta \textrm{c} \phi & \textrm{c} \theta \textrm{s} \phi & -\textrm{s} \theta \\ \textrm{s} \psi \textrm{s} \theta \textrm{c} \phi - \textrm{c} \psi \textrm{s} \phi & \textrm{s} \psi \textrm{s} \theta \textrm{s} \phi + \textrm{c} \psi \textrm{c} \phi & \textrm{c} \theta \textrm{s} \psi \\ \textrm{c} \psi \textrm{s} \theta \textrm{c} \phi + \textrm{s} \psi \textrm{s} \phi & \textrm{c} \psi \textrm{s} \theta \textrm{s} \phi - \textrm{s} \psi \textrm{c} \phi & \textrm{c} \theta \textrm{c} \psi \end{array} \right]
-\label{eq:CoordinateRotationYPR}
-\end{align}
-
-Right-multiplying the direction cosine matrix with a vector that's expressed in the lab frame returns the coordinates of the same vector but now using the molecule frame (i.e. this is passive rotation for a molecule frame that is rotated from the lab frame by the given angles). For example, suppose $\bm{r}_L$ is a vector expressed in the lab frame. Then,
-\begin{equation}
-\bm{r} = \bm{\Phi} \bm{r}_L
-\end{equation}
-gives the same vector but expressed in the molecule frame. As a particularly simple vector (shown with the red arrow in Figure \ref{fig:CoordinateRotation}), consider 2D and suppose $\bm{r}_L=[1,0]^T$. In the molecule frame, which is rotated counter-clockwise by $\phi$ from the lab frame, then $\bm{r} = [c \phi,- s\phi]^T$.
-
-In the code and most of my math, the absolute direction cosine matrix, meaning for conversion between the simulation reference frame and the local segment frame, is called $\bm{B}$. Right multiplying the dcm with a lab-frame vector, here $\bm{p}_L$, gives the molecule frame, leading to $\bm{p} = \bm{B} \bm{p}_L$. This expression can be transposed and/or multiplied on both sides by $\bm{B}^T$ to yield (non-transposed vectors are column vectors and transposed ones are row vectors)
-\begin{align}
-\bm{p} &= \bm{B} \bm{p}_L \hspace{2cm} \bm{p}_L = \bm{B}^T \bm{p} \\
-\bm{p}^T &= \bm{p}_L^T \bm{B}^T \hspace{1.5cm} \bm{p}_L^T = \bm{p}^T \bm{B}
-\end{align}
-The Sphere.c library has functions for these multiplications. The transpose of the dcm listed above performs an active rotation of a vector in a constant coordinate system.
-
-The front end of a filament is the front end of segment 0, which is at $\bm{x}_0$. In its own coordinate system, this segment lies along direction $\hat{x} = [1,0,0]^T$. In the lab coordinate system, this same vector is $\bm{B}_0^T \hat{x}$. From this, the back of segment 0, which is also the front of segment 1, is at
-$$\bm{x}_1=\bm{x}_0 + l_0 \bm{B}^T_0 \bm{\hat{x}}$$
-Alternatively, focusing on only the displacement,
-$$\Delta \bm{x}_0 = \bm{x}_1 - \bm{x}_0 = l_0 \bm{B}^T_0 \bm{\hat{x}}$$
-The relative rotation matrix $\bm{A}$ expresses the rotation of each segment relative to the previous one. Also, the reference orientation is assumed to be parallel to the lab $x$-axis. Thus,
-\begin{align}
-\bm{B}_0 &= \bm{A}_0 \nonumber \\
-\bm{B}_i &= \bm{A}_i \bm{B}_{i-1} = \bm{A}_i \bm{A}_{i-1} \cdots \bm{A}_0 \nonumber \\
-\bm{B}^T_i &= \bm{B}^T_{i-1} \bm{A}^T_i = \bm{A}^T_0 \bm{A}^T_1 \cdots \bm{A}^T_i
-\label{eq:AbsoluteDCM}
-\end{align}
-To make sense of this, consider the orientation of the $i$th segment. It is $\hat{\bm{x}}$ in its own reference frame and $\bm{A}_i^T\hat{\bm{x}}$ in the reference frame of the prior segment; continuing this process, it is $\bm{A}^T_0 \bm{A}^T_1 \cdots \bm{A}^T_i\hat{\bm{x}}$, which is $\bm{B}^T_i\hat{\bm{x}}$, in the lab frame. The locations of the segment front ends for subsequent segments are
-\begin{align}
-\bm{x}_{i+1} &= \bm{x}_i + l_i \bm{B}^T_i \bm{\hat{x}} \nonumber \\
-\Delta \bm{x}_{i} &= \bm{x}_{i+1} - \bm{x}_i = l_i \bm{B}^T_i \bm{\hat{x}}
-\label{eq:NodePositions}
-\end{align}
-
-To compute a filament's node positions from angle data, we start with segment 0. This segment's orientation can be set initially with ypr angles, but those are not used when computing dynamics because the yaw and roll angles become undefined when the segment is vertical, and are extremely sensitive to the segment's orientation when it is nearly vertical. Instead, the segment 0 orientation is stored in the \ttt{seg0dcm} direction cosine matrix; this is both $\bm{A}_0$ and $\bm{B}_0$ in the analytical math. For subsequent segments, we know the ypr angles, so we compute the $\bm{A}_i$ matrices from eq. \ref{eq:CoordinateRotationYPR}. From those, we find the $\bm{B}_i$ matrices from eq. \ref{eq:AbsoluteDCM}. Then, we find the node positions from eq. \ref{eq:NodePositions}. These computations are the same for 2D and 3D.
-
-Going backward from node positions to ypr angles is more difficult. Starting with 2D systems, the only things that are needed are absolute and relative yaw angles, since pitch and roll are always zero. For segment, $i$, which goes from $\bm{x}_i$ and $\bm{x}_{i+1}$ and has spatial difference vector $\Delta \bm{x}_i=\bm{x}_{i+1} - \bm{x}_{i}$, the segment's absolute angle is
-$$\phi = \atantwo(\Delta x_{i,y},\Delta x_{i,x})$$
-This uses the $\atantwo$ function, which is the same as the arctangent, but keeps track of the quadrant; this uses $\Delta x_{i,x}$ and $\Delta x_{i,y}$ for the $x$ and $y$ axes. The result is between $-\pi$ and $\pi$, (inclusive at both ends). Note that this fails if both arguments of the function are equal to zero. The code doesn't store the absolute angle, but this is converted to an absolute direction cosine matrix that is stored. The difference between this angle and the angle for the prior segment is the relative angle, but that is no longer necessarily within $[-\pi,\pi]$, so that angle needs to be clamped to this range. Testing shows that this works well, so long as the mobility value isn't so high as to create unstable integration.
-
-The 3D computation does not use absolute angles. Also, the node positions are not sufficient input information but one also needs to know the roll value for each segment, except for segment 0. These roll values give the roll amount relative to the prior segment's orientation. For segment 0, I tried using a roll value relative to the absolute $\hat{\bm{x}}$ vector, but that creates discontinuities when the segment is nearly vertical. Instead, the solution I'm choosing is to record an upward vector, which is in the system reference frame, for segment 0. Ideally, this vector would be perpendicular to the segment and would have unit length, in which case it is the $\hat{\bm{z}}$ vector in the segment 0 reference frame. Deviations from this ideal are not a problem because they can be easily fixed.
-
-For other segments, consider segment $i$, which has displacement $\Delta \bm{x}_i$ and roll $\psi_i$. This displacement is in the lab coordinate system and the roll is in the coordinate system of the prior segment. From \ref{eq:NodePositions},
-$$\Delta \bm{x}_i = l_i \bm{B}^T_i \hat{\bm{x}} = l_i \bm{B}^T_{i-1} \bm{A}^T_i \hat{\bm{x}}$$
-Rearrange to
-\begin{equation}
-\bm{A}^T_i \hat{\bm{x}} = \frac{1}{l_i} \bm{B}_{i-1} \Delta \bm{x}_i
-\label{eq:AFromB}
-\end{equation}
-We know the right hand side, and also the roll $\psi_i$, and want to compute the left hand side. The matrix product on the left expands to local ypr angles, which are in the frame of the $i-1$ segment. Define $\Delta \bm{x}'_i$ as the normalized and rotated version of $\Delta \bm{x}_i$ into the $i-1$ segment frame, with $\Delta \bm{x}'_i = \bm{B}_{i-1} \Delta \bm{x}_i/l_i$. These yield
-$$\bm{A}^T(\phi_i,\theta_i,\psi_i) \hat{\bm{x}}
-= \left[ \begin{array}{c} \textrm{c} \theta_i \textrm{c} \phi_i \\ \textrm{c} \theta_i \textrm{s} \phi_i \\ -\textrm{s} \theta_i \end{array} \right]
-= \frac{1}{l_i} \bm{B}_{i-1} \Delta \bm{x}_i
-= \Delta \bm{x}'_i
-= \left[ \begin{array}{c} \Delta x'_{i,x} \\ \Delta x'_{i,y} \\ \Delta x'_{i,z} \end{array} \right]$$
-Solving the three scalar equations for the two unknowns, $\theta_i$ and $\phi_i$ yield
-\begin{align}
-\phi_i &= \atantwo(\Delta x'_{i,y}, \Delta x'_{i,x}) \nonumber \\
-\theta_i &= -\asin \frac{\Delta x'_{i,z}}{l_i}
-\label{eq:ThetaPhiFromX}
-\end{align}
-We still have $\psi_i$ from beforehand, still in the coordinate system of the $i-1$ segment. Combine these three values, $\phi_i$, $\theta_i$, and $\psi_i$, with eq. \ref{eq:CoordinateRotationYPR} to get $\bm{A}_i$. This can be done by first computing the ypr angles and substituting them into eq. \ref{eq:CoordinateRotationYPR}. Alternatively, one can substitute in the analytical values from eq. \ref{eq:ThetaPhiFromX} and then simplify. Using the latter approach (and abbreviating $\Delta x'_{i,x}$, $\Delta x'_{i,y}$, and $\Delta x'_{i,z}$ as $x'$, $y'$, and $z'$),
-$$\bm{A} = \left[ \begin{array}{ccc}
-x' & y' & z' \\
-\frac{-y' \textrm{c} \psi - x'z' \textrm{s} \psi}{\sqrt{x'^2+y'^2}} &
-\frac{x' \textrm{c} \psi - y'z' \textrm{s} \psi}{\sqrt{x'^2+y'^2}} &
-\sqrt{x'^2+y'^2}\textrm{s} \psi \\
-\frac{y' \textrm{s} \psi - x'z' \textrm{c} \psi}{\sqrt{x'^2+y'^2}} &
-\frac{- x' \textrm{s} \psi - y'z' \textrm{c} \psi}{\sqrt{x'^2+y'^2}} &
-\sqrt{x'^2+y'^2}\textrm{c} \psi
- \end{array} \right]$$
-While we used ypr angles to find this solution, they do not appear here (except for $\psi$) because this is the unique solution to the stated problem of finding $\bm{A}_i$ from $\Delta \bm{x}'_i$ and $\psi_i$, independent of approach. The top row is equal to $x'$, $y'$, and $z'$ because this comes directly from the equation $\bm{A}^T\hat{\bm{x}} = \Delta \bm{x}'_i$. This top row not hypersensitive to particular values of $x'$, $y'$, or $z'$. However, the first two columns of the other two rows are highly sensitive to small changes in $x'$ or $y'$ if the segment is nearly vertical (in the reference frame of the prior segment), so that $x'^2 + y'^2 \approx 0$. This is an unavoidable consequence of how the roll value is defined.
-
-Next,
-$$\bm{B}_i = \bm{A}_i \bm{B}_{i-1}$$
-This finishes the calculations for segment $i$, and then walk forward to the next segment.
-
-
-
-\subsection{Filament math - quaternions}
-
-Quaternions work in relatively similar ways (see the online article ``Rotation Quaternions, and How to Use Them'' by Rose, 2015). A quaternion, $\bm{q}$ has 4 values, $(q_0,q_1,q_2,q_3)$. If it represents a 3D point in space, then $\bm{q}=(0,x,y,z)$ and if it represents a rotation, then all four values can be non-zero and they have total magnitude of 1. The quaternion $\bm{q}=(1,0,0,0)$ is the rotation identity quaternion, which produces no rotation. The inverse or complex conjugate quaternion, $\bm{q}^* = (q_0,-q_1,-q_2,-q_3)$, performs the opposite rotation as the original one.
-
-Quaternions correspond to direction cosine matrices. For quaternion $\bm{q}$, the corresponding direction cosine matrix is as follows (from Rose). Note that the unitary nature of a rotation quaternion ($q_0^2+q_1^2+q_2^2+q_3^2=1$) results in different ways of expressing the diagonal elements.
-\begin{equation}
-\bm{Q} = \left[ \begin{array}{ccc}
-1-2q_2^2-2q_3^2 & 2q_1q_2-2q_0q_3 & 2q_1q_3+2q_0q_2\\
-2q_1q_2+2q_0q_3 & 1-2q_1^2-2q_3^2 & 2q_2q_3-2q_0q_1\\
-2q_1q_3-2q_0q_2 & 2q_2q_3+2q_0q_1 & 1-2q_1^2-2q_2^2
-\end{array} \right]
-\label{eq:qtn2dcm}
-\end{equation}
-
-Consider rotation by ypr angles $(\phi,\theta,\psi)$. This converts to quaternion $\bm{q}$ with the following equation (this equation is from Rose but with reversed signs because theirs is for active rotation, whereas this work assumes passive rotation). The equation on the right performs the opposite conversion (again, equation from Rose, but with sign changes)
-\begin{equation}
-\bm{q} = \left[ \begin{array}{c}
-\textrm{c}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} +
-\textrm{s}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
--\textrm{s}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} +
-\textrm{c}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
--\textrm{c}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{c}\frac{\phi}{2} -
-\textrm{s}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} \\
--\textrm{c}\frac{\psi}{2} \textrm{c}\frac{\theta}{2} \textrm{s}\frac{\phi}{2} +
-\textrm{s}\frac{\psi}{2} \textrm{s}\frac{\theta}{2} \textrm{c}\frac{\phi}{2}
-\end{array} \right]
-\hspace{1cm}
-\bm{ypr}=\left[\begin{array}{c}
-\atantwo(-2q_0q_3+2q_1q_2,q_0^2+q_1^2-q_2^2-q_3^2) \\
-\asin(-2q_0q_2-2q_1q_3) \\
-\atantwo(-2q_0q_1+2q_2q_3,q_0^2-q_1^2-q_2^2+q_3^2)
-\end{array} \right]
-\label{eq:ypr2qtn}
-\end{equation}
-To check these equations, I computed from ypr angles $(\phi,\theta,\psi)$ to quaternion and then to dcm, and arrived at eq. \ref{eq:CoordinateRotationYPR}. I also converted from ypr angles to quaternion and back again.
-
-For passive rotation of position quaternion $\bm{p}$ between the lab frame and molecule frame using rotation quaternion $\bm{q}$,
-$$\bm{p} = \bm{q}^* \bm{p}_L \bm{q} \hspace{1cm}
-\bm{p}_L = \bm{q} \bm{p} \bm{q}^*$$
-The former equation is for ``forward'' rotation and is equivalent to the matrix equation $\bm{p}=\bm{B}\bm{p}_L$, whereas the latter equation is for ``inverse'' rotation and is equivalent to the matrix equation $\bm{p}_L=\bm{B}^T\bm{p}$. I checked this by converting ypr angles $(\phi,\theta,\psi)$ to a dcm with eq. \ref{eq:CoordinateRotationYPR} and using that to rotate vector $[x,y,z]^T$, and also converting ypr angles to a quaternion with eq. \ref{eq:ypr2qtn} and rotating the same vector; the results were the same.
-
-For a filament, suppose $\hat{\bm{x}}$ is the quaternion version of the unit vector on the $x$-axis, and $\bm{b}_i$ is the absolute rotation quaternion for segment $i$. Then, the segment displacement is
-$$\Delta \bm{x}_i = \bm{x}_{i+1}-\bm{x}_i = l_i \bm{b}_i \hat{\bm{x}} \bm{b}^*_i$$
-From this, it can be seen that quaternions for multiple rotations combine as
-$$\bm{b}_i = \bm{b}_{i-1} \bm{a}_i$$
-$$\bm{b}_i^* = \bm{a}_i^* \bm{b}_{i-1}^*$$
-These are opposite the equations for matrices, where $\bm{B}_i=\bm{A}_i\bm{B}_{i-1}$.
-
-Converting from node positions and roll values to quaternions is similar to the case with direction cosine matrices. The direct approach, which will be shown to fail, starts with the equation
-$$\Delta \bm{x}_i = l_i \bm{b}_i \hat{\bm{x}} \bm{b}^*_i = l_i \bm{b}_{i-1} \bm{a}_i \hat{\bm{x}} \bm{a}^*_i \bm{b}^*_{i-1}$$
-Defining $\Delta \bm{x}'_i$ as the vector for the $i$th segment in the reference frame of the $i-1$ segment, and also normalized, this equation rearranges and expands to
-$$\Delta \bm{x}'_i
-=\left[ \begin{array}{c} \Delta x'_{i,x} \\ \Delta x'_{i,y} \\ \Delta x'_{i,z} \end{array} \right]
-= \frac{1}{l_i} \bm{b}^*_{i-1} \Delta \bm{x}_i \bm{b}_{i-1} = \bm{a}_i \hat{\bm{x}} \bm{a}^*_i 
-= \left[ \begin{array}{c} 1-2a_2^2-2a_3^2 \\ 2a_1a_2 + 2a_0a_3 \\ 2a_1a_3-2a_0a_2  \end{array} \right]$$
-Note that the vector on the right is the same as the first column of eq. \ref{eq:qtn2dcm}, much as was seen before with dcms. In principle, one could solve this equation for the four $a$ values, and also include the roll value somehow. However, the solution seems difficult (and is beyond Mathematica), and I'm also not sure how to include the roll value.
-
-Another approach, which does work, is to use the prior solution for the ypr values, from eq. \ref{eq:ThetaPhiFromX} and the previously known roll value. Then substitute these solutions into eq. \ref{eq:ypr2qtn} to compute the quaternion. Doing so is straightforward numerically. It's also easy analytically, although the equations are very long and don't clean up. Thus, one needs to compute the ypr angles $\phi$, $\theta$, and $\psi$ first, and then use those to compute the quaternion. This works well, for the most part, but is problematic when $x$ and $y$ are small, meaning that the filament segment is nearly vertical.
-
-\subsection{Filament math - segment 0 orientation}
-
-The segment 0 orientation cannot be described with ypr angles because its orientation values become highly sensitive on the precise orientation when the segment is nearly vertical. Furthermore, the segment orientation also cannot be described as a $\Delta \bm{x}_0$ displacement in combination with a roll value, because the roll angle is still highly sensitive when the segment is nearly vertical.
-
-The solution is as follows. First, compute all forces. Move nodes in response. Apply rolls in response. However, for segment 0, the roll is not just an angle value. Instead, this segment has a perpendicular vector that defines the local up direction. This vector is rotated for segment 0 rolling.
-
-
-
-\subsection{Filament math - filament stretching forces}
-
-For filament stretching forces, consider a segment, $i$. Its segment vector is $\Delta \bm{x}_i = \bm{x}_{i+1}-\bm{x}_i$, as usual. Also, its length is $l_i = | \bm{x}_i |$. For standard length $l\degree$, the extension force is
-$$F = - k_{stretch} (l_i - l\degree)$$
-This is the extension force of the segment, meaning that a positive force implies that the segment wants to be longer and a negative force implies that the segment wants to be shorter. The product of this with the segment's unit vector yields the force on the $i+1$ node, and then the negative of that yields the force on the $i$ node,
-\begin{align*}
-\bm{F}_{i+1} &= F \frac{\Delta \bm{x}_i}{l_i} \\
-\bm{F}_{i} &= - F \frac{\Delta \bm{x}_i}{l_i}
-\end{align*}
-Note that $\bm{F}_i$ is a $dim$-dimensional vector. Also, $i$ is the segment number (from 0 to \ttt{nseg}$-1$), while the subscript on $\bm{F}$ is the node number. Slight rearrangement gives the scaled stretch force for segment $i$ as
-$$s_i = - k_{stretch} \frac{l_i - l\degree}{l_i}$$
-and then the forces on the adjacent nodes from stretching in segment $i$ as
-\begin{align}
-\bm{F}_{i} &= - s_i \Delta \bm{x}_i \nonumber \\
-\bm{F}_{i+1} &= s_i \Delta \bm{x}_i
-\label{eq:FilStretchForce}
-\end{align}
-This is implemented in the code \ttt{filAddStretchForces}.
-
-A slightly different version is implemented in \ttt{filAddStretchForceMat}. Here, each matrix row represents a change of a state variable over time and each matrix column represents the state variables that this change depends on. In other words,
-$$\dot{\bm{x}}(t) = \mu \bm{F}\cdot \bm{x}(t)$$
-where $\bm{F}$ is the matrix, which I call the force matrix. Now, $\dot{\bm{x}}$ is a linear function of $\bm{x}$. This linear relationship can also be expressed in the force vectors by expanding eq. \ref{eq:FilStretchForce} and rearranging slightly to give
-\begin{align}
-\bm{F}_{i} &= s_i \bm{x}_i - s_i \bm{x}_{i+1} \nonumber \\
-\bm{F}_{i+1} &= - s_i \bm{x}_i + s_i \bm{x}_{i+1}
-\label{eq:FilStretchForceMat}
-\end{align}
-
-These vectors and the force matrix are flattened in the code. For example, the 2D version of $\bm{x}(t)$ is $[x_{0,x}, x_{0,y}, x_{1,x}, x_{1,y}, ...]$, where the first index is the node number and the second is the Cartesian coordinate. With flattening, the 2D version of eq. \ref{eq:FilStretchForceMat}, which again is the force created by stretching of segment $i$, becomes
-$$\left[ \begin{array}{c} F_{i,x} \\ F_{i,y} \\ \hline F_{i+1,x} \\ F_{i+1,y} \end{array} \right] = \left[ \begin{array}{cc|cc}
-s_i & 0 & -s_i & 0 \\
-0 & s_i & 0 & -s_i \\ \hline
--s_i & 0 & s_i & 0 \\
-0 & -s_i & 0 & s_i
-\end{array} \right] \cdot
-\left[ \begin{array}{c}
-x_{i,x} \\ x_{i,y} \\ \hline x_{i+1,x} \\ x_{i+1,y}
-\end{array} \right]$$
-The 3D version is identical, but has the $z$ coordinate as well. Again, these are the forces from stretching or compression of segment $i$. If there is stretching or compression for other segments, then those forces are added to the force matrix. This equation is implemented in \ttt{filAddStretchForceMat}. The following matrix equation shows the stretching forces on the 4 nodes of a 2D 3-segment filament.
-$$\tiny
-\bm{F} = \left[ \begin{array}{cc|cc|cc|cc}
-s_0 & 0 & -s_0 & 0 & 0 & 0 & 0 & 0 \\
-0 & s_0 & 0 & -s_0 & 0 & 0 & 0 & 0 \\ \hline
--s_0 & 0 & s_0+s_1 & 0 & -s_1 & 0 & 0 & 0 \\
-0 & -s_0 & 0 & s_0+s_1 & 0 & -s_1 & 0 & 0 \\ \hline
-0 & 0 & -s_1 & 0 & s_1+s_2 & 0 & -s_2 & 0 \\
-0 & 0 & 0 & -s_1 & 0 & s_1+s_2 & 0 & -s_2 \\ \hline
-0 & 0 & 0 & 0 & -s_2 & 0 & s_2 & 0 \\
-0 & 0 & 0 & 0 & 0 & -s_2 & 0 & s_2
-\end{array} \right] \cdot
-\left[ \begin{array}{c}
-x_{0,x} \\ x_{0,y} \\ \hline x_{1,x} \\ x_{1,y} \\ \hline x_{2,x} \\ x_{2,y} \\ \hline x_{3,x} \\ x_{3,y}
-\end{array} \right]
-$$
-Again, generalizing to 3D is trivial.
-
-% Filament math - filament bending forces
-\subsection{Filament math - filament bending forces}
-\label{sect:FilMathBending}
-
-For filament forces from bending angles, consider a pair of segments, labeled as $i-1$ and $i$. These segment vectors, pointing from front to back as normal, are $\Delta \bm{x}_{i-1}$ and $\Delta \bm{x}_i$, where
-\begin{align}
-\Delta \bm{x}_{i-1} &= \bm{x}_i - \bm{x}_{i-1} \nonumber \\
-\Delta \bm{x}_{i} &= \bm{x}_{i+1} - \bm{x}_{i}
-\end{align}
-The segment nodes are $i-1$ for the front-most node, $i$ for the middle node, and $i+1$ for the back-most node. See Figure \ref{fig:SegmentPair}. The absolute dcm for the first segment is $\bm{B}_{i-1}$ and the relative dcm for the second segment is $\bm{A}_i$.
-
-\begin{figure}[h]
-\centering
-\includegraphics[height=3cm]{figures/SegmentPair.png}
-\caption{Indices for a pair of segments. Also, forces and torques.}
-\label{fig:SegmentPair}
-\end{figure}
-
-Supposing the first segment were fixed and one applied force $\bm{F}_{i+1}$ to the back end node, this would create torque at the center node of
-\begin{equation}
-\bm{\tau}_{i} = \Delta \bm{x}_i \times \bm{F}_{i+1}.
-\label{eq:torque}
-\end{equation}
-In 2D, this torque is along the $z$-axis. In 3D, this torque is necessarily perpendicular to $\Delta \bm{x}_i$ (and $\bm{F}_{i+1}$) but may not be perpendicular to $\Delta \bm{x}_{i-1}$. Alternatively, the second segment could be fixed and one applies force $\bm{F}_{i-1}$ to the first node, which would create torque at the center node of
-\begin{equation}
-\bm{\tau}_{i}' = -\Delta \bm{x}_{i-1} \times \bm{F}_{i-1}
-\label{eq:torque2}
-\end{equation}
-The negative sign is included because the $\Delta \bm{x}_{i-1}$ vector points toward node $i$ instead of away from it.
-
-In practice, the center node exerts a three-dimensional torque from effective yaw, pitch, and roll springs. These torques, which are computed below, then create forces at the adjacent nodes. Inverting the torque equations (see Wikipedia ``Cross product'') gives the forces on the nodes that arise from the torques. This inversion is not mathematically unique but can also have components that are parallel to the segments, but those are omitted here because we know from the physical situation that the induced forces must be perpendicular to the segment vectors. The induced forces are
-\begin{align}
-\bm{F}_{i+1} &= \frac{\bm{\tau}_{i} \times \Delta \bm{x}_i}{l_i^2} \nonumber \\
-\bm{F}_{i-1} &= - \frac{\bm{\tau}_{i}' \times \Delta \bm{x}_{i-1}}{l_{i-1}^2}
-\label{eq:ForceFromTorque}
-\end{align}
-Because the $\bm{\tau}_i$ and $\bm{\tau}'_i$ torques are created from the same yaw, pitch, and roll springs, and they push on the two segments in opposite directions, they are equal to each other but have opposite signs, so
-$$\bm{\tau}_i' = -\bm{\tau}_i$$
-Consider, for example, the situation shown in Figure \ref{fig:SegmentPair} and suppose this is in 2D. Consistent with eqs. \ref{eq:torque} and \ref{eq:torque2}, if there were a force pushing down on the right segment, then the torque $\bm{\tau}_i$ would point into the page and if there were a force pushing down on the left segment, then the torque $\bm{\tau}'_i$ would point out of the page, as shown in the diagram. Likewise, these torques would create the forces listed in eqs. \ref{eq:ForceFromTorque}.
-
-For 3D, in addition to creating forces at the end nodes, the torque created at node $i$ by the springs also induces torques into the two segments around their axes. These segment torques are given as $\tau_{R,i-1}$ for the first segment and $\tau_{R,i}$ for the second segment (no bold face because these are scalars; also the $R$ subscript indicates that these are roll torques, as opposed to the total torques denoted by $\bm{\tau}_i$). These induced roll torques are the projections of the spring torques onto the segment axes,
-\begin{align}
-\tau_{R,i} &= \frac{\bm{\tau}_i \cdot \Delta \bm{x}_i}{l_i} \nonumber \\
-\tau_{R,i-1} &= \frac{\bm{\tau}_i' \cdot \Delta \bm{x}_{i-1}}{l_{i-1}}
-\end{align}
-This shows that spring torques that are perpendicular to the segments create forces at the end nodes and parallel spring torques create torques along the segments.
-
-Considering the yaw spring first, which is only thing that matters for 2D, it creates torques
-\begin{equation}
-\bm{\tau}_{\phi,i} = - k_\phi \Delta \phi_i \hat{z} = -\bm{\tau}_{\phi,i}'.
-\label{eq:YawTorque}
-\end{equation}
-Here and below, we work in the coordinate system of the former segment (the $i-1$ segment), so $\hat{x}$, $\hat{y}$ and $\hat{z}$ are unit vectors for the former segment's coordinate system. In this coordinate system,
-$$\Delta \bm{x}_{i-1} = l_{i-1} \hat{x}$$
-$$\Delta \bm{x}_{i} = l_i \bm{A}_i^T \hat{x}$$
-Also, $\Delta \phi_i = (\phi_i-\phi \degree)$ is the yaw spring displacement. Although not used right away, we also define $\Delta \theta_i = (\theta_i-\theta \degree)$ and $\Delta \psi_i = (\psi_i-\psi \degree)$. This yaw spring torque creates forces
-\begin{align}
-\bm{F}_{i+1} &= \frac{- k_\phi \Delta \phi_i \hat{z} \times \Delta \bm{x}_i}{l_i^2}
-= \frac{- k_\phi \Delta \phi_i}{l_i} \hat{z} \times (\bm{A}_i^T \hat{x}) \nonumber \\
-\label{eq:BendForce2D}
-\bm{F}_{i-1} &= \frac{- k_\phi \Delta \phi_i \hat{z} \times \Delta \bm{x}_{i-1}}{l_{i-1}^2}
-= \frac{- k_\phi \Delta \phi_i}{l_{i-1}}\hat{z} \times \hat{x}
-= \frac{- k_\phi \Delta \phi_i}{l_{i-1}}\hat{y}
-\end{align}
-These forces are helpful to think about and are useful for the 2D case. Note that they are in the reference frame of the $i-1$ segment. However, they aren't directly useful for the 3D case. For that, we'll add up all the torques first.
-
-Repeating what was written above in eq. \ref{eq:YawTorque}, the yaw spring creates torques (in the segment $i-1$ reference frame)
-$$\bm{\tau}_{\phi,i} = - k_\phi \Delta \phi_i \hat{z} = -\bm{\tau}_{\phi,i}'.$$
-Next, the pitch spring creates torques
-\begin{equation}
-\bm{\tau}_{\theta,i} = - k_\theta \Delta \theta_i \bm{Z}^T(\phi_i) \hat{y} = -\bm{\tau}_{\theta,i}',
-\label{eq:PitchTorque}
-\end{equation}
-where $\bm{Z}^T(\phi_i)$ represents the yaw active rotation matrix. The $\bm{Z}^T(\phi_i)$ matrix is here because yaw is performed first, and then pitch, so pitch deviations create a torque that's along the rotated $y$-axis and it needs to be rotated to the segment $i-1$ reference frame. The roll spring creates torques
-\begin{equation}
-\bm{\tau}_{\psi,i} = - k_\psi \Delta \psi_i \bm{Y}^T(\theta_i) \bm{Z}^T(\phi_i) \hat{x} = -\bm{\tau}_{\psi,i}',
-\label{eq:RollTorque}
-\end{equation}
-where $\bm{Y}^T(\theta_i)$ represents the pitch rotation matrix. It's here because yaw is performed first, then pitch, and then roll, so roll deviations create a torque that's along the rotated $x$-axis and, again, it needs to be converted back to the segment $i-1$ reference frame. See Figure \ref{fig:FilamentBend3D}. Adding up these torques leads to (math is in Sphere2.nb, from the Sphere.c library)
-\begin{align}
-\bm{\tau}_i &= - k_\phi \Delta \phi_i \hat{z} - k_\theta \Delta \theta_i \bm{Z}^T(\phi_i) \hat{y} - k_\psi \Delta \psi_i \bm{Y}^T(\theta_i) \bm{Z}^T(\phi_i) \hat{x} \nonumber \\
-&= - k_\phi \Delta \phi_i \hat{z} - k_\theta \Delta \theta_i (-\textrm{s}\phi_i \hat{x} + \textrm{c}\phi_i \hat{y}) - k_\psi \Delta \psi_i (\textrm{c} \theta_i \textrm{c} \phi_i \hat{x} + \textrm{s} \phi_i \hat{y} - \textrm{c}\phi_i \textrm{s} \theta_i \hat{z}) \nonumber \\
-&= \left[ \begin{array}{c} - k_\psi \Delta \psi_i \textrm{c} \theta_i \textrm{c} \phi_i + k_\theta \Delta \theta_i \textrm{s}\phi_i \\ -k_\theta \Delta \theta_i \textrm{c}\phi_i - k_\psi \Delta \psi_i \textrm{s} \phi_i \\ - k_\phi \Delta \phi_i + k_\psi \Delta \psi_i \textrm{c}\phi_i \textrm{s} \theta_i \end{array} \right]
-\label{eq:BendTorque}
-\end{align}
-In the vector form, the terms are arranged so that the dominant one for small bending angles is listed first.
-
-This torque induces forces and segment roll torques. It's simplest to convert to the lab coordinate system for this. The total torque in the lab coordinate system due to the bending springs at node $i$ is
-\begin{equation}
-\bm{\tau}_{L,i} = \bm{B}^T_{i-1}\bm{\tau}_i
-\label{eq:LabFrameTorque}
-\end{equation}
-Continuing in the lab frame (I'm dropping the $L$ subscript, but it's implied), the forces on the adjacent nodes due to bending at node $i$ are
-\begin{align}
-\bm{F}_{i+1} &= \frac{\bm{\tau}_i \times \Delta \bm{x}_i}{l_i^2} \nonumber \\
-\bm{F}_{i-1} &= \frac{\bm{\tau}_i \times \Delta \bm{x}_{i-1}}{l_{i-1}^2} \nonumber \\
-\bm{F}_i &= - (\bm{F}_{i+1} + \bm{F}_{i-1}) \nonumber \\
-\tau_{R,i} &= \frac{\bm{\tau}_i \cdot \Delta \bm{x}_i }{l_i} \nonumber \\
-\tau_{R,i-1} &= - \frac{\bm{\tau}_i \cdot \Delta \bm{x}_{i-1}}{l_{i-1}}
-\label{eq:ForceTorqueSummary}
-\end{align}
-These equations are implemented in \ttt{filAddBendForces}.
-
-Equations \ref{eq:ForceTorqueSummary} can also be expressed in a different manner. Here is the \textit{total} force on node $i$ from bending at nodes $i-1$, $i$, and $i+1$, respectively
-\begin{align}
-\label{eq:BendForceTotalVector1}
-\bm{F}_{tot.,i} &= \frac{\bm{\tau}_{i-1} \times \Delta \bm{x}_{i-1}}{l_{i-1}^2} -\left( \frac{\bm{\tau}_i \times \Delta \bm{x}_i}{l_i^2} + \frac{\bm{\tau}_i \times \Delta \bm{x}_{i-1}}{l_{i-1}^2} \right) + \frac{\bm{\tau}_{i+1} \times \Delta \bm{x}_{i}}{l_i^2} \\
-&= \frac{\bm{\tau}_{i-1} - \bm{\tau}_i }{l_{i-1}^2} \times \Delta \bm{x}_{i-1} + \frac{\bm{\tau}_{i+1} - \bm{\tau}_i}{l_i^2} \times \Delta \bm{x}_{i} \nonumber \\
-&= \bm{b}_i \times \Delta \bm{x}_{i} - \bm{b}_{i-1} \times \Delta \bm{x}_{i-1} \nonumber \\
-\textrm{where } \bm{b}_i &\equiv \frac{\bm{\tau}_{i+1} - \bm{\tau}_i}{l_i^2} \nonumber
-\end{align}
-The interpretation of $\bm{b}_i$ (``b'' for bending) is that it's the torque applied to segment $i$ by the springs at both of its ends. Continuing the manipuation leads to
-\begin{align}
-\bm{F}_{tot.,i} &= \bm{b}_i \times (\bm{x}_{i+1} - \bm{x}_i) - \bm{b}_{i-1} \times (\bm{x}_i - \bm{x}_{i-1}) \nonumber \\
-\label{eq:BendForceTotalVector}
-&= \bm{b}_{i-1} \times \bm{x}_{i-1} - (\bm{b}_i + \bm{b}_{i-1}) \times \bm{x}_i + \bm{b}_i \times \bm{x}_{i+1}
-\end{align}
-
-For 2D and 3D, the cross product $\bm{b}\times\bm{x}$ expands to
-$$\bm{b}\times\bm{x} = \left[ \begin{array}{c} -b_z x_y \\ b_z x_x \end{array} \right]
-= \left[ \begin{array}{cc} 0 & -b_z \\ b_z & 0 \end{array} \right] \left[ \begin{array}{c} x_x \\ x_y \end{array} \right]$$
-$$\bm{b}\times\bm{x} = \left[ \begin{array}{c} b_y x_z - b_z x_y \\ b_z x_x - b_x x_z \\ b_x x_y - b_y x_x \end{array} \right]
-= \left[ \begin{array}{ccc} 0 & -b_z & b_y \\ b_z & 0 & - b_x \\ -b_y & b_x & 0 \end{array} \right] \left[ \begin{array}{c} x_x \\ x_y \\ x_z \end{array} \right]$$
-Using these expansions, the total bending force on node $i$ can be expanded from eq. \ref{eq:BendForceTotalVector} to express $\bm{F}_{tot.,i}$ with flattened vectors and matrices in 2D and 3D as
-$$\bm{F}_{tot.,i} =
-\left[ \begin{array}{cc|cc|cc}
-0 & -b_{i-1} & 0 & b_{i-1}+b_i & 0 & -b_i \\
-b_{i-1} & 0 & -b_{i-1}-b_i & 0 & b_i & 0
-\end{array} \right] \cdot
-\left[ \begin{array}{c}
-x_{i-1,x} \\ x_{i-1,y} \\ \hline x_{i,x} \\ x_{i,y} \\ \hline x_{i+1,x} \\ x_{i+1,y}
-\end{array} \right]
-$$
-\begin{equation}
-\tiny
-=\left[ \begin{array}{ccc|ccc|ccc}
-0 & -b_{i-1,z} & b_{i-1,y} & 0 & b_{i-1,z}+b_{i,z} & -b_{i-1,y}-b_{i,y} & 0 & -b_{i,z} & b_{i,y} \\
-b_{i-1,z} & 0 & -b_{i-1,x} & -b_{i-1,z}-b_{i,z} & 0 & b_{i-1,x}+b_{i,x} & b_{i,z} & 0 & -b_{i,x} \\
--b_{i-1,y} & b_{i-1,x} & 0 & b_{i-1,y}+b_{i,y} & -b_{i-1,x}-b_{i,x} & 0 & -b_{i,y} & b_{i,x} & 0 \\
-\end{array} \right] \cdot
-\left[ \begin{array}{c}
-x_{i-1,x} \\ x_{i-1,y} \\ x_{i-1,z} \\ \hline x_{i,x} \\ x_{i,y} \\ x_{i,z} \\ \hline x_{i+1,x} \\ x_{i+1,y} \\ x_{i+1,z}
-\end{array} \right]
-\label{eq:FilBendForceMat}
-\end{equation}
-These equations are implemented in \ttt{filAddBendForceMat}.
-
-In addition to the forces, the \textit{total} roll torque on segment $i$ can also be computed from eqs. \ref{eq:ForceTorqueSummary}, giving
-\begin{align*}
-\tau_{tot.,i} &= \frac{\bm{\tau}_i \cdot \Delta \bm{x}_i }{l_i} - \frac{\bm{\tau}_{i+1} \cdot \Delta \bm{x}_i }{l_i} \\
-&= \frac{\bm{\tau}_i - \bm{\tau}_{i+1}}{l_i} \cdot \Delta \bm{x}_i
-\end{align*}
-As before, this torque is zero for 2D because the torques are parallel to the $z$-axis and the $\Delta \bm{x}_i$ displacements are in the $x,y$ plane. Define the $\bm{b}_i'$ vector in close analogy to the $\bm{b}_i$ vector defined above,
-$$\bm{b}_i' = \frac{\bm{\tau}_{i+1} - \bm{\tau}_i}{l_i} = l_i \bm{b}_i$$
-Then,
-$$\tau_{tot.,i} = \bm{b}_i' \cdot (\bm{x}_i - \bm{x}_{i+1})$$
-Expressing this in matrix form gives the following for 3D,
-$$\tau_{tot.,i} = 
-\left[ \begin{array}{ccc|ccc}
-b_{i,x}' & b_{i,y}' & b_{i,z}' & -b_{i,x}' & -b_{i,y}' & -b_{i,z}'
-\end{array} \right] \cdot
-\left[ \begin{array}{c}
-x_{i,x} \\ x_{i,y} \\ x_{i,z} \\ \hline x_{i+1,x} \\ x_{i+1,y} \\ x_{i+1,z}
-\end{array} \right]
-$$
-
-In practice, I'm interleaving the forces and torques because this maintains the band-diagonal structure of the matrix. There are $4n+3$ rows to the matrix for a filament with $n$ segments. This comes from $3(n+1)$ rows for the forces on the $n+1$ nodes and $n$ rows for the segment roll torques. There are also $4n+3$ columns for the matrix, with $3(n+1)$ columns for the node positions and $n$ columns for the segment roll values. None of the equations given here are linearly dependent on the segment roll values, so all of the corresponding matrix columns are equal to zero. That is, there is dependence on these values, through the $\tau_i$ bend torques (eq. \ref{eq:BendTorque}), but that dependence is not expressed in the force matrix. Nevertheless, this isn't a problem, because the matrix is added to the identity matrix for use, which then makes the columns not empty. At the end, this means that $\psi_{new}=\psi_{old}$ for each of the roll values, so there's no update here, but then there is an update when the nodes positions are conveted to bending angles.
-
-Here is the full stretch plus bend matrix for a 3 segment filament:
-$$\tiny
-\left[ \begin{array}{cccc|cccc|cccc|cccc}
-s_0 & b_{0z} & -b_{0y} & 0     & -s_0 & -b_{0z} & b_{0y} & 0   & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\
--b_{0z} & s_0 & b_{0x} & 0     & b_{0z} & -s_0 & -b_{0x} & 0   & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\
-b_{0y} & -b_{0x} & s_0 & 0     & -b_{0y} & b_{0x} & -s_0 & 0   & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\
-b'_{0x} & b'_{0y} & b'_{0z} & 0  & -b'_{0x} & -b'_{0y} & -b'_{0z} & 0    & 0 & 0 & 0 & 0    & 0 & 0 & 0 & 0 \\ \hline
--s_0 & -b_{0z} & b_{0y} & 0     & s_0+s_1 & b_{0z}+b_{1z} & -b_{0y}-b_{1y} & 0    & -s_1 & -b_{1z}  & b_{1y} & 0   & 0 & 0  & 0 & 0 \\
-b_{0z} & -s_0 & -b_{0x} & 0     & -b_{0z}-b_{1z} & s_0+s_1 & b_{0x}+b_{1x} & 0   & b_{1z} & -s_1 & -b_{1x} & 0   & 0 & 0 & 0 & 0 \\
--b_{0y} & b_{0x} & -s_0 & 0     & b_{0y}+b_{1y} & -b_{0x}-b_{1x} & s_0+s_1 & 0   & -b_{1y} & b_{1x} & -s_1 & 0   & 0 & 0 & 0 & 0 \\
-0 & 0 & 0 & 0    & b'_{1x} & b'_{1y} & b'_{1z} & 0   & -b'_{1x} & -b'_{1y} & -b'_{1z} & 0    & 0 & 0 & 0 & 0 \\ \hline
-0 & 0 & 0 & 0    & -s_1 & -b_{1z} & b_{1y} & 0    & s_1+s_2 & b_{1z}+b_{2z} & -b_{1y}-b_{2y} & 0   & -s_2 & -b_{2z} & b_{2y} & 0 \\
-0 & 0 & 0 & 0    & b_{1z} & -s_1 & -b_{1x} & 0    & -b_{1z}-b_{2z} & s_1+s_2 & b_{1x}+b_{2x} & 0    & b_{2z} & -s_2 & -b_{2x} & 0 \\
-0 & 0 & 0 & 0    & -b_{1y} & b_{1x} & -s_1 & 0    & b_{1y}+b_{2y} & -b_{1x}-b_{2x} & s_1+s_2 & 0    & -b_{2y} & b_{2x} & -s_2 & 0 \\
-0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & b'_{2x} & b'_{2y} & b'_{2z} & 0    & -b'_{2x} & -b'_{2y} & -b'_{2z} & 0 \\ \hline
-0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & -s_2 & -b_{2z} & b_{2y} & 0    & s_2 & b_{2z} & -b_{2y} & 0 \\
-0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & b_{2z} & -s_2 & -b_{2x} & 0    & -b_{2z} & s_2 & b_{2x} & 0 \\
-0 & 0 & 0 & 0    & 0 & 0 & 0 & 0    & -b_{2y} & b_{2x} & -s_2 & 0    & b_{2y} & -b_{2x} & s_2 & 0
-\end{array} \right]
-$$
-
-
-
-% Filament math - filament thermal forces
-\subsection{Filament math - filament thermal forces}
-
-To start with, consider the thermal distribution for filament stretches and bends. For a 2D filament with only two segments, it has bending angle $\phi$, intrinsic bending angle $\phi\degree$, and bending force constant $k_\phi$. Its mean bending energy relates to the thermal energy from the equipartition theorem as
-$$\frac{k_\phi}{2} \langle(\phi-\phi\degree)^2\rangle = \frac{k_B T}{2}$$
-Rearrange to get the rms $\phi$ angle as
-$$\phi_{rms} = \sqrt{ \frac{k_B T}{k_\phi} }$$
-The same approach applies to stretching and other bending angles for 3D. In addition, define $R$ as the filament thickness, where 1 is the standard thickness for which the force constants are measured. I'm going to assume that the force constants get multiplied by the thickness. Based on this, the stretching and bending thermal distributions are
-\begin{align}
-\label{eq:LengthDistribution}
-l_{rms} &= \sqrt{ \frac{k_B T}{R k_{len}} } \\
-\label{eq:AngleDistribution}
-\phi_{rms} = \sqrt{ \frac{k_B T}{R k_{\phi}} } \hspace{1cm}
-\theta_{rms} &= \sqrt{ \frac{k_B T}{R k_{\theta}} } \hspace{1cm}
-\chi_{rms} = \sqrt{ \frac{k_B T}{R k_{\chi}} }
-\end{align}
-
-The next goal is to compute the thermal force. In 2D, the torque on bend $i$ with angle $\phi_i$ is
-$$\tau_i = -k_\phi (\phi_i -\phi\degree)$$
-Squaring and averaging this squared torque over many possible bends leads to
-$$\langle \tau_i^2 \rangle = k_\phi^2 \langle(\phi_i -\phi\degree)^2 \rangle$$
-Simplifying and substituting from eq. \ref{eq:AngleDistribution} gives
-$$\tau_{i,rms} = k_\phi \phi_{i,rms} = \sqrt{k_\phi k_B T}$$
-This torque exerts perpendicular forces on the preceding and following nodes with $F_{i-1}=\tau/l_{i-1}$ and $F_{i+1}=\tau/l_i$, where $l_i$ is the $i$'th segment length. There are also forces applied to this node from the preceding and following torques. From eq. \ref{eq:BendForceTotalVector1}, there are four total terms for the bending force on node $i$. The standard deviation for the sum of four Gaussian distributed random variables is the square root of the sum of the squared standard deviations. Using that, the rms forces on node $i$ are
-\begin{equation}
-F_{i,rms} = 2 \frac{ \sqrt{k_\phi k_B T}}{l\degree}
-\label{eq:ThermalForce2}
-\end{equation}
-For 3D, equivalent forces should apply for the pitch degree of freedom, and a similar calculation should yield the rms roll torques (I think the only difference is that there's no $l$ in the denominator). In addition, the stretch degrees of freedom add yet more forces. I am not convinced that these will return the correct answer. It only makes physical sense for the thermal forces to have the same distributions on the 3 axes, and to be the same at every node, but it's not clear to me that this will yield the same Boltzmann distribution statistics given in eqs. \ref{eq:LengthDistribution} and \ref{eq:AngleDistribution}.
-
-Here is a second approach for computing thermal forces. A bead that diffuses due to Brownian motion moves due to forces exerted on it according to the overdamped Langevin equation (see \ref{eq:NodeDisplacement}), so its motion parallel to the $x$-axis over time step $\Delta t$ is
-$$\Delta x = \mu F_x \Delta t$$
-where $\mu$ is the mobility and $F_x$ is the $x$ component of the applied force. Repeating this motion over and over again leads to diffusion, so we compute the diffusion coefficient. Over time step $\Delta t$, the bead's rms displacement in 1D relates to the diffusion coefficient as
-$$\Delta x_{rms} = \sqrt{2 D \Delta t}.$$
-Substituting and rearranging leads to
-$$D = \frac{\Delta x_{rms}^2}{2 \Delta t} = \frac{\mu^2 F_{x,rms}^2 \Delta t}{2}$$
-Also, the Einstein relation relates the diffusion coefficient to the temperature, $T$, and mobility with
-$$D=\mu k_B T$$
-Combining these equations and solving for the force leads to
-\begin{align}
-\frac{\mu^2 F_{x,rms}^2 \Delta t}{2} &= \mu k_B T \nonumber \\
-F_{x,rms} &= \sqrt{\frac{2 k_B T}{\mu \Delta t}}
-\label{eq:ThermalForce1}
-\end{align}
-This is the rms thermal force on each axis for a diffusing bead. It's not entirely physical, due to the presence of the $\Delta t$ term, but should yield the correct diffusion coefficient. Filament nodes can be modeled as beads, so these are also the forces on the nodes. The only way for the prior force result and this one to both be correct is if the mobility is related to the force constant and time step.
-
-% Filament math - filament dynamics
-\subsection{Filament math - filament dynamics}
-
-These and other forces push on nodes, causing the nodes to move. Also, these and other torques create rotations in the segments. The displacements are the product of the forces, mobilities, and the time step $\Delta t$, which is essentially the overdamped Langevin equation. The displacement motion of a node over one timestep is
-\begin{equation}
-\Delta \bm{x} = \mu \bm{F} \Delta t
-\label{eq:NodeDisplacement}
-\end{equation}
-where $\mu$ is the mobility coefficient.
-
-Additionally, for 3D, the rotation of segment $i$ over one timestep is
-\begin{equation}
-\Delta \psi = \mu \tau_{R,i} \Delta t
-\label{eq:SegmentRoll}
-\end{equation}
-This uses the same mobility value, $\mu$ as for displacement, although this is probably not accurate because rotational friction is likely to be less than displacement friction. However, I'll assume it's the same for now. Note that $\Delta \psi$ is independent of reference frame, but is just the rotation of this one segment around its axis during this time step.
-
-These are described for the Euler method in which the displacement is directly proportional to the time step. The Runge-Kutta method is preferable but requires more force calculations. I had thought that my machine learning method might be better yet, but testing showed that it's worse than Euler for complex problems (see my document BeadDynamicsNotes.pdf).
-
-Here is the Euler method math
-$$\bm{x}(t+\Delta t) = \bm{x}(t) + \mu \Delta t \bm{F}(t,\bm{x})$$
-Suppose the force fuction is expressed as a linear function of $\bm{x}(t)$,
-$$\bm{F}(t,\bm{x}) = \bm{F}_0(t) + \bm{F}_1(t) \bm{x}(t)$$
-Here, $\bm{F}_0(t)$ is a vector and $\bm{F}_1(t)$ is a matrix. With this, the Euler method can be rewritten as
-$$\bm{x}(t+\Delta t) = \bm{x}(t) + \mu \Delta t (\bm{F}_0(t) + \bm{F}_1(t) \bm{x}(t))$$
-The semi-implicit method is the same, but the $\bm{x}$ value on the right hand side is evaluated at $t+\Delta t$ rather than at $t$. The fully implicit method would also evaluate the forces at the later time as well, but that's harder to accomplish. Here's the semi-implicit method,
-$$\bm{x}(t+\Delta t) = \bm{x}(t) + \mu \Delta t (\bm{F}_0(t) + \bm{F}_1(t) \bm{x}(t+\Delta t))$$
-Some rearranging leads to
-\begin{align*}
-\left[ \bm{1} - \mu \Delta t \bm{F}_1(t)\right]\bm{x}(t+\Delta t) &= \bm{x}(t) + \mu \Delta t \bm{F}_0(t) \\
-\bm{x}(t+\Delta t) &= \left[ \bm{1} - \mu \Delta t \bm{F}_1(t)\right]^{-1} (\bm{x}(t) + \mu \Delta t \bm{F}_0(t))
-\end{align*}
-I've been trying to compute $\bm{F}_1(t)$ above, but I'm having a hard time for the bending component. My new proposal is that I do it numerically instead. 
-
-
-% Filament simulation approach
-\subsection{Filament simulation approach}
-\label{sect:FilamentSimulationApproach}
-
-The steps in filament simulation are:
-
-(1) Compute the forces on the nodes and torques on the segments using the data stored in \ttt{fil->nodes} and \ttt{segment->ypr}. Performed by \ttt{filComputeForces}. The forces (\ttt{fil->forces}) are stored in the lab reference frame and the segment torques (\ttt{fil->torques}) are stored in the local segment reference frame. These forces and segment torques arise from several independent sources. (a) Segment stretching and compression creates forces on both the front and back nodes for each segment and are given by eq. \ref{eq:FilStretchForce}. These don't affect segment torques. These are computed in \ttt{filAddStretchForces}. (b) There are ypr springs at each segment junction that create forces at that particular node, as well as at both neighboring nodes. They are computed by first finding the 3D local torque with eq. \ref{eq:BendTorque} (in \ttt{filBendTorque}), which is then converted to the lab frame with \ref{eq:LabFrameTorque} (still in \ttt{filBendTorque}). Combining this torque with the segment displacements yields the node forces and segment torques given in eq. \ref{eq:ForceTorqueSummary}. These are computed in \ttt{filAddBendForces}. (c) There are also forces from external influences, such as surfaces, which are not included yet. Another force is at filament ends from branches (d) Thermal forces can be computed from either eq. \ref{eq:ThermalForce1} or \ref{eq:ThermalForce2}, but I don't know which is better; the latter one is implemented in \ttt{filAddThermalForces} but is not included in the total force calculation yet. Although not done yet, it might be helpful to characterize forces by their stiffness, computed as the derivative of the force with respect to the displacement.
-
-(2) Perform node displacement and segment rotation, which is performed by \ttt{filEulerDynamics}. The nodes move in direct proportion to the applied forces, given in eq. \ref{eq:NodeDisplacement}. Also, the segment roll values move in direct proportion to the applied segment torques, given in eq. \ref{eq:SegmentRoll}. These latter values are stored in the segment ypr vectors, although recognizing that the yaw and pitch values are no longer current.
-
-(3) Convert node positions, which are in the lab frame, to local ypr angles and also compute both dcm matrices. This is performed in \ttt{filNodes2Angles}. To do so, walk forward along a filament, computing each segment displacement in the prior segment's reference frame with the left side of \ref{eq:AFromB}. Then, use these displacements to compute local $\theta_i$ and $\phi_i$ values from eqs. \ref{eq:ThetaPhiFromX} and without changing each $\psi_i$, thus yielding the $\bm{A}_i^T$ matrices on the right side of eq. \ref{eq:AFromB}. Multiply $\bm{A}_i \bm{B}_{i-1}$ to get $\bm{B}_i$, from eq. \ref{eq:AbsoluteDCM}. Then, walk forward to the next segment.
-
-
-% Filament math - numbers
-\subsection{Filament math - numbers}
-
-According to my 2014 paper \cite{Andrews_2014}, a filament in the Angle-Biased Chain (ABC) model with mean segment lengths of $b$ and pitch and yaw force constants of $k_{\theta}$ and $k_{\phi}$ has a persistence length of
-$$P=\frac{2 b k_{\theta} k_{\phi}}{k_BT (k_{\theta} + k_{\phi})}$$
-Suppose this filament is rotationally isotropic, so $k_{\theta} = k_{\phi}$. This simplifies the persistence length to
-$$P=b \frac{k_{\phi}}{k_BT}$$
-Rearranging yields
-$$k_{\phi}=k_B T \frac{P}{b}$$
-Note that the bending force constants $k_{\phi}$ and $k_{\theta}$ have units of energy.
-
-For values, $k_B T \approx 4.28\cdot10^{-21} \textrm{ J} = 4.28 \textrm{ zJ}$ for $T=37\degree \textrm{C}$. Suppose I am modeling actin, which has a persistence length of 17 $\mu$m, and I am using 1 $\mu$m segments. Its bending force constant would be 72.76 zJ.
-
+All filament math is described in the document FilamentNotes.tex.
 
 % Filament status
 \subsection{Filament status}
 
-At present (5/22/25), it's possible to define basic filaments and to run their dynamics. Dynamics methods include Euler, RK2, RK4, an old version of implicit Euler that doesn't work, and a new version of implicit Euler that does work. The data structures allow for filament branching but this isn't implemented in the code yet. Thermal forces are ad hoc and not quantitatively correct. Implicit dynamics are functional but could be made more efficient (many more bending forces are evaluated than should be necessary when building the numerical matrix and also stretching forces and thermal forces should not be treated numerically since they can be done analytically). Also, dynamics need validation. A minor issue that needs fixing is that the implicit integration methods don't account for local mobility factors. The next major steps are to add filament branching and filament interactions. Also, it might be good to allow for non-uniform standard segment lengths.
+Situation as of 5/22/25. It is possible to define basic filaments and to run their dynamics. Dynamics methods include Euler, RK2, RK4, an old version of implicit Euler that doesn't work, and a new version of implicit Euler that does work. The data structures allow for filament branching but this isn't implemented in the code yet. Thermal forces are ad hoc and not quantitatively correct. Implicit dynamics are functional but could be made more efficient (many more bending forces are evaluated than should be necessary when building the numerical matrix and also stretching forces and thermal forces should not be treated numerically since they can be done analytically). Also, dynamics need validation. A minor issue that needs fixing is that the implicit integration methods don't account for local mobility factors. The next major steps are to add filament branching and filament interactions. Also, it might be good to allow for non-uniform standard segment lengths.
 
-For documentation, there is actually too much detail on the theory here in this documentation. I have moved all theory to my FilamentNotes.tex document, so all work should be there and only the essential results and equations should be here.
+9/30/26. Junjie Sun has done a huge amount of good work with adding branching support and other actin-specific code. I'm still trying to figure out what all is here.
 
 \subsection{Functions.}
 As much as possible, functions are declared locally rather than in the smoldynfuncs.h header file. This simplifies the code reading because it clarifies which functions might be called externally versus those that are only called internally. In practice, many functions are listed both places, but they shouldn't be.
@@ -4883,6 +4367,12 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{branchangle} & mean branch angle & 0,1,2 & $(-\infty,\infty)$\\
 \ttt{branchspread} & std. dev. of branch angle & n/a & $[0,\infty)$\\
 \ttt{branchsegments} & segments per new branch & n/a & $[1,2,3,...)$ \\
+\ttt{branchforceangle} & junction yaw spring constant & n/a & $[0,\infty)$ \\
+\ttt{branchazimuth} & birth azimuth & n/a & $[0,\infty)$ \\
+\ttt{branchazimuthfix} & hold azimuth at birth value & n/a & 0,1 \\
+\ttt{branchforceazimuth} & azimuthal spring constant & n/a & $[0,\infty)$ \\
+\ttt{branchsurfdist} & max distance for branch addition & n/a & $[0,\infty)$ \\
+\ttt{confineforce} & surface confinement spring constant & n/a & $[0,\infty)$ \\
 \ttt{elongrate} & elongation rate & n/a & $[0,\infty)$ \\
 \ttt{elongmaxlen} & max. length for elongation & n/a & $[0,\infty)$ \\
 \ttt{caprate} & plus-end capping rate & n/a & $[0,\infty)$ \\
@@ -4934,20 +4424,41 @@ Adds a face name to the filament, enlarging the list of face names if required. 
 \hfill \\
 Adds a new filament type to the simulation, which is named \ttt{ftname}, returning a pointer to the new filament type. Both \ttt{sim} and \ttt{ftname} need to be defined. If there is already a filament type with this name, a pointer to it is returned. Returns a pointer to the new filament type or \ttt{NULL} for failure, meaning that memory could not be allocated.
 
+\item[\ttt{double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter)}] %?? New code. I don't like the fact that this returns an error code for daughter parallel to the mother. However, maybe that's okay, so long as it's used appropriately. Also, should it be using the reference frame of the spot segment or the prior one?
+\hfill \\
+This computes and returns the azimuth of a daughter about its mother. If the daughter is very nearly parallel, so that the azimuth can't be computed accurately, then this returns -1. I don't really understand the AI-generated function description.
+
+Here, \ttt{td} is the displacement of the daughters first segment in absolute coordinates ($\Delta \bm{x}_0$). It gets rotated into the coordinates of the mother segment (\ttt{mother->segments[spot]}), putting the answer in \ttt{v}. If \ttt{v} is very nearly parallel to the mother segment (using the constant \ttt{FILJUNCTSINMIN}), then the function returns -1. Otherwise, the azimuth angle is computed as \ttt{atan2(v[2],v[1])} and returned.
+
+
+\item[\ttt{int filBranchDazim(const filamentptr mother,int br,double *dphiptr)}] %?? New code. I think this is good.
+\hfill \\
+Computes and returns the difference between the current azimuth angle and the birth azimuth angle. \ttt{mother} is the mother filament and \ttt{br} is the branch number of the daughter. Returns 1 and sets \ttt{dphiptr} to the angle if successful, 0 when the birth azimuth was never recorded or the daughter and mother segments are too close to parallel to compute a valid azimuth.
+
+
 \item[\underline{Filament branching}]
 
 \item[\ttt{filamentptr}]
 \ttt{filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername)}
 \hfill \\
-Nucleate a daughter filament off the side of an existing ``mother'' filament, at the back end of mother segment index `seg'. `angle' is the daughter's orientation as ypr relative to the mother segment's absolute frame (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. The front end of the daughter is attached to the mother.%?? New code. I think that the user should choose which end of the branch attaches to the mother.
+Nucleate a daughter filament off the side of an existing ``mother'' filament, at the back end of mother segment index `seg'. `angle' is the daughter's orientation as ypr relative to the mother segment's absolute frame (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. The front end of the daughter is attached to the mother.%?? New code. I think that the user should choose which end of the branch attaches to the mother, or maybe that's best left until it's needed.
+
+\item[\ttt{int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)}] %?? New code. This seems a little odd to me because it doesn't differentiate whether the position is within a compartment or close to a surface.
+\hfill \\
+Tests whether the position \ttt{pos} is within the compartment that's optionally listed in \ttt{filtype}, or is within the appropriate distance of the surface that's optionally listed in \ttt{filtype}.
+
+AI summary of code. Location gate for branch nucleation: returns 1 if \ttt{pos} qualifies under the type's \ttt{branch\_surface / branch\_compartment} restriction, or if no gate is set. The gate is an interim geometric proxy for membrane-bound nucleators (Arp2/3 recruited by NPFs): it restricts WHERE spontaneous branching may occur but models no nucleator molecules, so there is no depletion, saturation, or consumption. It is meant to be superseded by explicit filament-molecule binding when the simulator gains that capability, at which point a nucleator species on a surface replaces this gate.
 
 \item[\ttt{void filBranchDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
-Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? New code. To be generalized. Also, the pitch angle is incorrect; it should be zero, not random 0 to 2pi.
+Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? New code. To be generalized.
 
 \item[\ttt{void filPinBranches(filamentptr fil)}]
 \hfill \\
-This function pins the branches to the mother filament, translating them back into place after the mother moves. Rigid attachment constraint: after the mechanical step, translate each daughter so its anchored (front/node-0) end tracks the mother's current branch point. This keeps branches attached without a global cross-filament force solver. NOTE (v1 limitation): this pins position only; the ~70 deg junction angle is not held against bending, and multi-level trees need root-first ordering to fully settle in a single step.%?? New code. To be extended. This also doesn't consider treadmilling issues.
+This function pins the branches to the mother filament, translating them back into place after the mother moves.
+
+AI description. Constrain each daughter to its junction after the mechanical step. Always: translate the daughter so its front node tracks the mother's (moving) branch point -- a position constraint, not a force. With \ttt{branch\_azimuth\_fix} on (3D): additionally rotate the daughter rigidly about the mother segment's axis so its azimuth returns to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch direction around the mother is a constraint rather than a measured compliance. The rotation axis passes through the branch point, so the rotation preserves both the pinned position and the mother-daughter angle theta, composing cleanly with the \ttt{branch\_force\_angle} spring. The daughter's \ttt{seg0up} vector co-rotates so its own material frame stays consistent and grand-daughter junctions remain valid; filaments are created mothers-first, so the caller's creation-order sweep settles branched trees root-first.
+%?? New code. This doesn't consider treadmilling issues.
 
 \item[\underline{Filament elongation and capping}]
 
@@ -4986,7 +4497,7 @@ Allocates a filament superstructure, adds it to the simulation structure, and se
 
 \item[\ttt{int filUpdateParams(simptr sim)}]
 \hfill \\
-Does nothing currently. This function will compute any simulation parameters necessary from user parameters.
+This function computes any simulation parameters necessary from user parameters.%?? New code. I'm not sure about the simLog statement, but maybe.
 
 \item[\ttt{int filUpdateLists(simptr sim)}]
 \hfill \\
@@ -5112,7 +4623,7 @@ Used for numerical implicit integration. This copies the force data in the \ttt{
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}. This function also shifts branches. The branch shifting code checks to see if a shifted branch ends up off the end of the shifted filament, and dissociates it from the filament if so; this code seems good and safe but also unnecessary because I don't think that a branch should ever shift off the end of a filament. %?? new code
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}. This function also shifts branches. The branch shifting code checks to see if a shifted branch ends up off the end of the shifted filament, and dissociates it from the filament if so; this code seems good and safe but also unnecessary because I don't think that a branch should ever shift off the end of a filament. %?? new code. I think that the branch shifting is excessively complicated and probably can be completely removed.
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
@@ -5219,9 +4730,13 @@ Computes filament stretching (and compression) forces using the node positions i
 \hfill \\
 Computes filament stretching (and compression) forces using the node positions in \ttt{fil->nodes}. This adds forces to any prior values in the \ttt{filwork->forcemat} matrix. They are computed from eq. \ref{eq:FilStretchForceMat}.
 
-\item[\ttt{void filAddThermalForces(filamentptr fil,int nodemin,int nodemax)}]
+\item[\ttt{void filAddThermalForces(filamentptr fil,int nodemin,int nodemax)}] %?? Rewritten function. I haven't figured out the math yet.
 \hfill \\
-Computes thermal forces acting on filament nodes and adds them to any prior values in the \ttt{fil->forces} vector. This stores the forces in the \ttt{filwork->thermforce} vector so that they only get computed once per time step. This function uses forces from eq. \ref{eq:ThermalForce2}, but it's clearly incorrect; in part, this uses the yaw force constant only. Also, there should be thermal torsion as well, which should be added to the \ttt{fil->torques} vector, but is not computed at present. As usual, enter \ttt{nodemin} as the starting node or $-1$ (or $\leq 0$) for the filament front and enter \ttt{nodemax} as the ending node, inclusive, or as $-1$ (or $\geq n_{seg}$ for the filament back. NEEDS WORK.
+Computes thermal forces acting on filament nodes and adds them to any prior values in the \ttt{fil->forces} vector.
+
+AI description for new code. Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped update x += dt*mobility*nodemobility*F used by \ttt{filStepDynamics}: each Cartesian component of each node's thermal force is Gaussian with rms sqrt(2*kT/(mobility*nodemobility*dt)), which samples the correct ensemble at temperature kT for any choice of dt, mobility, and discretization. Forces are drawn once per time step and reused across sub-step force evaluations (Runge-Kutta stages and Jacobian calls). Random numbers are always drawn and the amplitude multiplies the draw, so the draw sequence is independent of \ttt{kT} and mobility values; immobile nodes (\ttt{nodemobility} 0) correctly receive no thermal force.
+
+Old description for prior code. This stores the forces in the \ttt{filwork->thermforce} vector so that they only get computed once per time step. This function uses forces from eq. \ref{eq:ThermalForce2}, but it's clearly incorrect; in part, this uses the yaw force constant only. Also, there should be thermal torsion as well, which should be added to the \ttt{fil->torques} vector, but is not computed at present. As usual, enter \ttt{nodemin} as the starting node or $-1$ (or $\leq 0$) for the filament front and enter \ttt{nodemax} as the ending node, inclusive, or as $-1$ (or $\geq n_{seg}$ for the filament back.
 
 \item[\ttt{void filAddBendForces(filamentptr fil,int nodemin,int nodemax)}]
 \hfill \\
@@ -5231,6 +4746,22 @@ As usual, enter \ttt{nodemin} as the starting node or $-1$ (or $\leq 0$) for the
 
 \item[\ttt{void filAddBendForceMat(filamentptr fil)}]
 Computes filament bending forces due to ypr springs using the ypr values in \ttt{segment->ypr}, adding the forces to any prior forces in the \ttt{filwork->forcemat} matrix. These forces are computed from eq. \ref{eq:FilBendForceMat}. This matrix is technically correct but of minimal use because the equations are not linearized correctly and so it is not lead to stable implicit integration.
+
+\item[\ttt{int }] %?? New code. I think the inputs to this function could be cleaned up substantially.
+\ttt{filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr)}
+\hfill \\
+AI description. Shared geometry for the junction spring: unit tangents of the mother segment at spot and of the daughter's first segment, their cosine and sine, and the two segment lengths. Returns 1 when the junction force is well defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the angle plane is undefined -- $>5$ sigma from any realistic branch angle, so skipping is safe).
+
+
+\item[\ttt{void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.
+\hfill \\
+AI description. Torsional spring at the branch junction: energy $0.5*k*(theta-theta0)^2$, where theta is the angle between the mother segment holding the branch and the daughter's first segment, theta0 is the type's \ttt{branch\_angle}, and \ttt{k} is \ttt{branch\_force\_angle}. Each filament applies the exact gradient with respect to its OWN nodes during its own force evaluation, reading the partner's current geometry as an external field: a daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction couple on nodes spot and spot+1 for each of its branches. Both couples are pure torques about the branch point and sum to zero total torque at any one configuration (the sequential per-filament integrator sweep evaluates the two halves at states one substep apart, so cancellation over a step is O(dt)), so the pair potential enters both partners' dynamics and the junction angle equilibrates at Boltzmann -- a one-way version was measured to overheat the angle by (1 + mobility ratio) when the mother is free. The optional azimuthal spring (\ttt{branch\_force\_azimuth}) restores the daughter's azimuth about the mother axis toward its recorded birth value with energy $0.5*kaz*(phi-phi0)^2$, applied as a couple on daughter nodes 0 and 1 only (one-way: a clean mother-side gradient would require differentiating the material frame, and the bounded spring torque cannot pump energy the way the rigid azimuth pin can). No cross-filament force writes occur, per-filament force clearing stays safe, and integrators that differentiate forces numerically see everything automatically. Draws no random numbers; returns immediately when off.
+
+
+\item[\ttt{void filAddConfineForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.
+\hfill \\
+AI description. Harmonic surface confinement, in the spirit of Cytosim's per-model-point ``confine'' stiffness: each node on the penalized side of the confining surface (the side opposite \ttt{confine\_face}) feels the restoring force k*d toward the nearest point of every panel it violates -- the gradient of a penalty energy $0.5*k*d^2$ in the penetration depth d past that panel. Summing over violated panels makes box corners behave (each wall pushes along its own normal). The constant is per NODE, like the other per-element force constants, so refining \ttt{standard\_length} stiffens the wall per unit contour length; the equilibrium penetration depth of a fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric wall for filament mechanics only -- molecules do not see it, and richer filament-surface interaction (hard collisions, Brownian-ratchet load feedback) remains future work. Two geometric caveats: the side test is panelside's, which for rect, tri, and disk panels classifies against the panel's INFINITE plane, so a confining surface should span or enclose the region the filaments occupy -- a partial patch also penalizes nodes laterally beyond it, pulling them toward the patch edge; and coplanar tessellations stack, since the constant is per violated panel, so a node behind M coplanar panels feels up to M contributions. Draws no random numbers; returns immediately when off.
+
 
 \item[\ttt{void filComputeForces(filamentptr fil,int nodemin,int nodemax)}]
 \hfill \\
