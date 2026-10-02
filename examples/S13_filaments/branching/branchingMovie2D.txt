@@ -13,7 +13,7 @@ time_step 0.01
 random_seed 1
 frame_thickness 0
 
-output_files frames.txt
+output_files framesOut.txt
 
 start_filament_type actin
 color blue
@@ -39,6 +39,6 @@ random_filament actin:momB 7   0  85  0
 random_filament actin:momC 7   0 140  0
 
 # snapshot the whole network every 0.5 time units, appending to frames.txt
-cmd i 0 20 0.5 printFilaments frames.txt
+cmd i 0 20 0.5 printFilaments framesOut.txt
 
 end_file

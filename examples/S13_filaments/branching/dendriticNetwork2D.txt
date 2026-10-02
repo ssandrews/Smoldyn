@@ -22,7 +22,7 @@ random_seed 1
 
 frame_thickness 0
 
-output_files dendriticNetwork.txt
+#output_files dendriticNetworkOut.txt
 
 start_filament_type actin
 color blue
@@ -50,6 +50,6 @@ random_filament actin:seed1 1  -0.2  0.1   1
 random_filament actin:seed2 1   0.2 -0.1  -1
 
 # dump the whole network (all auto-named daughters included) at the end
-cmd @ 3 printFilaments dendriticNetwork.txt
+#cmd @ 3 printFilaments dendriticNetworkOut.txt
 
 end_file

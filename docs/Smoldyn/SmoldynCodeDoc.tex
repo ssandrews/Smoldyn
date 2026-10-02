@@ -4007,13 +4007,6 @@ Filaments are defined in a heirarchical fashion. At the top level, there is one 
 
 \subsubsection{Constants}
 
-Defined in smoldyn.h:
-\begin{lstlisting}
-#define FILCAPPLUS 1                  // filamentstruct capped bitmask: plus end is capped
-\end{lstlisting}
-
-\ttt{FILCAPPLUS} is a filament capping bitmask. Capping occurs at the plus end, but is only functional if the right-most bit of this value equals 1. This doesn't seem useful to me.%?? To be changed.
-
 Defined in smolfilament.c:
 \begin{lstlisting}
 #define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
@@ -4128,7 +4121,7 @@ typedef struct filamentstruct {
 
 Each filament data structure represents a single unbranched chain of segments. Multiple filaments of the same type (e.g. two microtubules) are stored in multiple data structures. In the filament data structure, \ttt{filtype} points to the filament type that owns this filament and \ttt{filname} points to the name of this filament; names are assigned by default if not assigned by the user.
 
-Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segments. The segments, in \ttt{segments}, are an array, where the index of the front is equal to 0. The segment endpoints are stored in \ttt{nodes}, which is allocated to be \ttt{maxseg+1} long by 3 elements wide for the $x$, $y$, and $z$ values (regardless of system dimension). The \ttt{filwork} element points to a data structure for dynamics integration data.
+Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segments. The segments, in \ttt{segments}, are an array, where the index of the front segment is always equal to 0 (a segment is added to the front of a filament by first shifting the existing filament with \ttt{filArrayShift} and then adding it). The segment endpoints are stored in \ttt{nodes}, which is allocated to be \ttt{maxseg+1} long by 3 elements wide for the $x$, $y$, and $z$ values (regardless of system dimension). Again the front-most node is always in element 0. The \ttt{filwork} element points to a data structure for dynamics integration data.
 
 The \ttt{nodesx} vector contains node positions at the end of the previous time step, enabling determination of surface crossing or other events during the time step. The \ttt{roll} vector contains the roll values for individual segments. It is only here for convenience, and I'm not sure it's a good design, but it's here for now. It is redundant with the segment \ttt{ypr[2]} values, which are the definitive ones, so any function that writes to \ttt{roll} must also write to \ttt{ypr[2]} and any function that reads from \ttt{roll} must first make sure that it equals \ttt{ypr[2]}. The reason for redundant data is that it can be easier to work with either a list of roll values or lists of segment rotation values, depending on the situation. The \ttt{nodemobility} vector is a list of unitless mobility factors for each node, which are multiplied by the filament type mobility value to give the node's total mobility; this is useful for fixing particular nodes in space. The \ttt{seg0up} vector represents the unit ``up'' vector for segment 0 (which is perpendicular to the segment itself).
 
@@ -4623,7 +4616,7 @@ Used for numerical implicit integration. This copies the force data in the \ttt{
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. If \ttt{shift} is made too large or too small, such that the filament would move off the end of the allocated memory, then it is automatically fixed so that the filament just gets shifted to the end of the allocated memory instead. Thus, an easy way to make sure that the filament is at the end of the allocated memory is to enter \ttt{shift} as $\pm$\ttt{fil->maxseg}. This function also shifts branches. The branch shifting code checks to see if a shifted branch ends up off the end of the shifted filament, and dissociates it from the filament if so; this code seems good and safe but also unnecessary because I don't think that a branch should ever shift off the end of a filament. %?? new code. I think that the branch shifting is excessively complicated and probably can be completely removed.
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. This does not check to make sure that the shifted filaments will fit in the current array, so this needs to be ensured beforehand. %?? new code.
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}

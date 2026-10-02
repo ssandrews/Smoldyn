@@ -828,7 +828,7 @@ void filOutput(const filamentptr fil) {
 	if(fil->backend)
 		simLog(sim,2,"   back branched from: %s\n",fil->backend->filname);
 
-	simLog(sim,(fil->capped & FILCAPPLUS)?2:1,"   plus end: %s\n",(fil->capped & FILCAPPLUS)?"capped":"free");
+	simLog(sim,fil->capped?2:1,"   plus end: %s\n",fil->capped?"capped":"free");
 	simLog(sim,fil->growbank>0?2:1,"   pending growth: %g|L\n",fil->growbank);
 
 	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
@@ -2551,6 +2551,7 @@ void filArrayShift(filamentptr fil,int shift) {
 			fil->segments[i]->xyzback=fil->nodes[i+1]; }
 		shift=-shift; }
 
+//?? The following code requires thought. Is it needed? Is it correct?
 	if(fil->nbranch) {													// segments were renumbered, so branch spots move with them
 		nbr=0;
 		for(br=0;br<fil->nbranch;br++) {
@@ -3209,7 +3210,7 @@ void filPinBranches(filamentptr fil) {
 // Is geometric end 'b' or 'f' capped? The only place an end character is mapped onto the
 // capped bitmask, which is stored relative to polarity.
 int filEndIsCapped(const filamentptr fil,char endchar) {
-	if(endchar==fil->filtype->plusend) return fil->capped & FILCAPPLUS;
+	if(endchar==fil->filtype->plusend) return fil->capped;
 	return 0; }
 
 
@@ -3305,10 +3306,10 @@ void filCappingDynamics(simptr sim,filamenttypeptr filtype) {
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
 		if(fil->nseg<1) continue;
-		if(fil->capped & FILCAPPLUS) {
-			if(puncap>0 && coinrandD(puncap)) fil->capped&=~FILCAPPLUS; }
+		if(fil->capped) {
+			if(puncap>0 && coinrandD(puncap)) fil->capped=0; }
 		else {
-			if(pcap>0 && coinrandD(pcap)) fil->capped|=FILCAPPLUS; }}
+			if(pcap>0 && coinrandD(pcap)) fil->capped=1; }}
 
 	return; }
 
