@@ -1,0 +1,201 @@
+# Baseline v3: branched actin network compressed by a moving boundary
+# =============================================================================
+# A network grows from three seed filaments on a flat "membrane" (the NPF proxy),
+# branching only within 30 nm of it. A ceiling panel then descends and compresses
+# the network. Wall force is recovered afterwards as sum(k * penetration);
+# see analyze_compression.py.
+#
+# UNITS: length µm, time s. With kT 0.001 that makes
+#   1 model energy unit = 4.114 pN·µm   |   1 model force unit = 4.114 pN
+# Anything below marked "model units" uses that factor. Forgetting it is the
+# classic bug in this file — it already cost us a 4.1x-too-stiff branch junction.
+#
+# TAGS — read these before changing a value:
+#   [measured]  from the literature. Change only with a source.
+#   [derived]   computed from measured values. Recompute if you change its inputs.
+#   [numerical] a solver choice, not biology. Safe to sweep.
+#   [no value]  nothing in the literature constrains this. Your judgement — and
+#               these are the three that currently limit the model.
+#
+# Full reasoning, sources and the parameter tables:
+#   https://roamresearch.com/#/app/akamatsulab/page/GN0e9i0RL
+#
+# Run: smoldyn compressionPoC3D_v3.txt -t
+# =============================================================================
+
+graphics none
+dim 3
+
+# 1 µm cube, reflective. Holds ~158 barbed ends at the real unloaded density —
+# fine for averages, probably too small for packing statistics.
+boundaries x -0.5 0.5 r
+boundaries y -0.5 0.5 r
+boundaries z -0.5 0.5 r
+
+time_start 0
+
+# Grow 0–2 s, press 2–3 s, hold to 3.5 s.
+# Don't simply raise this hoping for steady state: branching is supercritical
+# (filament count doubles every 0.4 s and never saturates), so longer runs
+# diverge instead of settling. See branch_rate.
+time_stop 3.5
+
+# [numerical] Stability needs mobility * force_length * dt < 2 (here 0.1).
+# If you raise force_length, lower this in proportion.
+time_step 0.00001
+
+random_seed 1
+output_files v3_frames.txt
+
+# --- surfaces ---------------------------------------------------------------
+# Two surfaces deliberately share the same floor panel:
+#   membrane — never moves; gates where branching may happen.
+#   chamber  — floor + the descending ceiling; pushes filament nodes back inside.
+# Keep them separate. If branching were gated on `chamber`, the network would
+# also nucleate against the descending piston, which is wrong.
+
+start_surface membrane
+color both grey
+panel rect +2 -0.5 -0.5 -0.1 1 1
+end_surface
+
+start_surface chamber
+color both lightblue
+panel rect +2 -0.5 -0.5 -0.1 1 1 floor
+panel rect -2 -0.5 -0.5 0.15 1 1 ceiling
+end_surface
+
+# --- filament type ----------------------------------------------------------
+
+start_filament_type actin
+
+# Display only — safe to change.
+color red
+thickness 2
+polygon edge
+
+# [numerical] Required: the engine rejects the other integrators when junction
+# springs or surface confinement are on.
+dynamics euler
+
+# [measured] 4.114 pN·nm at 25 °C. This one value fixes the unit convention above.
+kT 0.001
+
+# [numerical] Node spacing, µm (~3.7 actin subunits). Nothing constrains it.
+# Sweep it together with force_length and time_step, not alone.
+standard_length 0.01
+
+# [measured] Straight rest shape (yaw pitch roll, radians). Actin has no
+# intrinsic curvature at this resolution.
+standard_angle 0 0 0
+
+# [numerical] Segment stretching spring, model units (= 41,140 pN/µm).
+# Real actin is ~100x stiffer, but that needs a 10x smaller timestep, so this is
+# a deliberate compromise. It must stay well above confine_surface, or filaments
+# stretch instead of resisting the wall. Measured thermal strain here: ~3%.
+force_length 10000
+
+# [derived] Bending stiffness per node, model units (yaw pitch roll).
+# = persistence length 10 µm x kT / standard_length. If you change
+# standard_length, recompute this or the filaments change stiffness silently.
+force_angle 1 1 1
+
+# [numerical] Inverse drag. The real value is ~10^4; 1 is used because what
+# actually matters is that filament shape relaxes faster than the chemistry.
+mobility 1
+
+# [measured] Barbed-end growth, µm/s = 122 nm/s (7.33 µm/min from the assay).
+# NOTE: unloaded rate only. The engine has no force-dependent growth law yet,
+# so filaments here stall by bumping into the wall, not by feeling load.
+elongation_rate 0.122
+
+# [derived] Capping, per second per filament (57 s-1µm-2 / 158 ends µm-2).
+# Mean filament length = elongation_rate / capping_rate = 339 nm, which matches
+# the measured 283–338 nm. CHANGE THESE TWO TOGETHER or that agreement breaks.
+capping_rate 0.36
+
+# [derived] Branch nucleation, per µm of mother filament per second.
+# v3 CHANGE: was 60 (an inherited placeholder), now calibrated to the assay.
+#
+# The assay measures nucleation per unit SURFACE AREA per NPF: 0.037 /s per NPF
+# x 1850 NPF/um^2 = 68 /s/um^2. This keyword is per unit mother LENGTH, so the
+# bridge is L_slab, the contour length of mother filament inside the branching
+# gate per um^2 of membrane. Nucleation = branch_rate * L_slab / area.
+# Measured from the v2 baseline run at the operating point where the model
+# holds the paper's unloaded barbed-end density (158/um^2, reached at t=1.96 s):
+# L_slab = 6.35 um, so 60 gave 381 /s/um^2 -- 5.6x the paper. 68/6.35 = 10.8.
+#
+# TWO CAVEATS, both important if you change this:
+#  1. branch_rate and the branch_surface gate depth are DEGENERATE -- only their
+#     product is constrained. At a 10 nm gate the same 68 /s/um^2 needs
+#     branch_rate 30.9; at 100 nm it needs 6.7. Change one, recompute the other.
+#  2. A per-length rate cannot reproduce a per-area rate. The paper's 68 is a
+#     property of the NPF surface and does not depend on network density, but
+#     branch_rate * L_slab rises as the network grows -- so this value is exactly
+#     right at one instant and drifts after. It lowers R0 from ~56 to ~10, which
+#     slows the runaway without stopping it. The real fix is surface-coupled
+#     nucleation at a fixed areal rate with a depletable NPF pool.
+branch_rate 10.8
+
+# [measured] Daughter angle off the mother, radians = 77.0 deg (in vitro,
+# bovine Arp2/3). Cellular cryo-ET gives lower values (68-71 deg) — use those
+# only if you switch to modelling a cell.
+branch_angle 1.344
+
+# [measured] Junction torsional spring, model units = 76 pN·nm/rad^2.
+# Do not write 76 or 0.076 here: convert with the 4114 factor above.
+# branch_spread is left unset on purpose, so the engine derives the angular
+# spread from this spring (13.3 deg) and it becomes a result to check against
+# the measured 13.1 deg, rather than a second thing to tune.
+branch_force_angle 0.01847
+
+# [no value] Azimuthal spring (how rigidly a daughter holds its rotation around
+# the mother), model units. Nobody has measured this. 0.76 is 10x the angle
+# spring for no stated reason — treat it as a free parameter.
+branch_force_azimuth 0.76
+
+# [no value] Branching is allowed only within this distance (µm) of the named
+# surface. The depth of the real branching-competent zone is unknown; 30 nm is
+# a plausible NPF reach, not a measurement.
+branch_surface membrane 0.03
+
+# [numerical] Soft steric wall: each node past the surface feels k * depth.
+# Pure regularization, never biology. At 400 the tips sink ~2 nm, just under the
+# 2.7 nm actin subunit rise. Raising it needs a smaller timestep.
+confine_surface chamber 400
+
+end_filament_type
+
+# --- seeding ----------------------------------------------------------------
+# Three hand-placed 5-segment seeds near the floor, just to give branching
+# something to start from. Real networks are seeded by NPF nucleation instead,
+# so don't read anything into the early transient.
+random_filament actin:seed0 5  0.0 0.0 -0.08  0 0 0
+random_filament actin:seed1 5  -0.05 0.05 -0.09  1 0 0
+random_filament actin:seed2 5  0.05 -0.05 -0.08  -1 0 0
+
+# --- loading ----------------------------------------------------------------
+# The ceiling is moved by re-issuing its panel line with `time` in the
+# expression; the confinement force follows it automatically.
+# Here: z drops from 0.15 to -0.03 over t = 2 to 3 s, i.e. 0.18 µm/s.
+#
+# TWO CAVEATS — read before interpreting any force number out of this run.
+#
+# 1. RAMP FORCE IS NOT STRESS. The wall is a frictionless harmonic penalty, so a
+#    node riding a plate moving at speed v must sink v/(mobility*k) just to keep
+#    up. That costs v/mobility per contacting node of pure drag — here 0.18 model
+#    units = 0.74 pN each, which can swamp the elastic signal entirely (measured
+#    at ~50x the elastic part in the crosslink spike). Read the force during the
+#    HOLD (t = 3.0-3.5 s), after the drag has bled off — never the ramp peak.
+#
+# 2. This is DISPLACEMENT control — the boundary follows a fixed ramp no matter
+#    what the network does. The real experiment holds FORCE constant and lets the
+#    boundary retreat at the network's own speed. So this setup shows compression
+#    response only; it cannot produce a force-velocity curve.
+cmd i 2 3 0.002 set surface chamber panel rect -2 -0.5 -0.5 0.15-0.18*(time-2) 1 1 ceiling
+
+# Filament coordinates every 10 ms. This dump is the only record — savesim does
+# not serialize per-filament state.
+cmd i 0 3.5 0.01 printFilaments v3_frames.txt
+
+end_file
