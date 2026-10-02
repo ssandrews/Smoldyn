@@ -22,7 +22,7 @@ random_seed 1
 
 frame_thickness 0
 
-output_files cappedElongation.txt
+#output_files cappedElongationOut.txt
 
 start_filament_type actin
 color blue
@@ -92,6 +92,6 @@ random_filament actin:f48  1  0.8 0.4  0
 random_filament actin:f49  1  0.9 0.4  0
 
 # by t=5 every filament is capped (exp(-4.3*5) = 5e-10), so this is the final distribution
-cmd @ 5 printFilaments cappedElongation.txt
+#cmd @ 5 printFilaments cappedElongationOut.txt
 
 end_file

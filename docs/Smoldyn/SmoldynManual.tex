@@ -3669,6 +3669,34 @@ Standard deviation of branching angle, entered in radians. Enter 0 for determini
 
 Length of initial daughter filament in segments.
 
+\item{\ttt{* branch\_force\_angle} $value$}%?? new
+
+Yaw spring constant at the branch point.
+
+\item{\ttt{* branch\_azimuth} $string$}%?? new
+
+Initial azimuth of the branch about the mother filament. Enter $string$ as ``random'' for random values of a value that is $\geq 0$ for a specific angle.
+
+\item{\ttt{* branch\_azimuth\_fix} $0/1$}%?? new
+
+Enter 1 to fix the branch azimuth at its initial value and 0 to allow it to vary.
+
+\item{\ttt{* branch\_force\_azimuth} $value$}%?? new
+
+Azimuthal spring constant at the branch point.
+
+\item{\ttt{* branch\_surface} $surface$ $distance$}%?? new
+
+If branching should only be allowed close to a surface, enter the surface name in $surface$ and the maximum distance in $distance$.
+
+\item{\ttt{* branch\_compartment} $compartment$}%?? new
+
+If branching should only be allowed within a certain compartment, enter that compartment name here.
+
+\item{\ttt{* confine\_surface} $surface$ $force$ [$face$]}%?? new
+
+If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$. Afterward, there is an optional face entry. This only accepts ``front'' or ``back'' but should also accept ``both''.%??
+
 \item{\ttt{* plus\_end} $end$} %?? new
 
 Enter whether the front or the back of the filament is considered to be the plus end. Use full word ``back'' or ``front''.

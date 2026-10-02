@@ -22,7 +22,7 @@ random_seed 1
 
 frame_thickness 0
 
-output_files elongation.txt
+#output_files elongationOut.txt
 
 start_filament_type actin
 color blue
@@ -43,6 +43,6 @@ end_filament_type
 random_filament actin:fil0 1  0 0  0
 
 # sample the growing filament; each line is time-tagged
-cmd i 0 2 0.1 printFilaments elongation.txt
+#cmd i 0 2 0.1 printFilaments elongationOut.txt
 
 end_file

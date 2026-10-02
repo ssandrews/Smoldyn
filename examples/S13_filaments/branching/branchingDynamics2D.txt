@@ -23,7 +23,7 @@ random_seed 1
 
 frame_thickness 0
 
-output_files branchingDynamics.txt
+output_files branchingDynamicsOut.txt
 
 start_filament_type actin
 color red
@@ -45,6 +45,6 @@ end_filament_type
 
 random_filament actin:seed0 1  0.0  0.0  0
 
-cmd @ 0.5 printFilaments branchingDynamics.txt
+cmd @ 0.5 printFilaments branchingDynamicsOut.txt
 
 end_file

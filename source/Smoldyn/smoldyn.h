@@ -810,8 +810,6 @@ typedef struct filamentworkstruct {
     double **thermforce;              // thermal forces on nodes
 } *filamentworkptr;
 
-#define FILCAPPLUS 1                  // filamentstruct capped bitmask: plus end is capped
-
 typedef struct filamentstruct {
     struct filamenttypestruct* filtype; // owning filament type
     char* filname;                      // filament name (ref, not owned)

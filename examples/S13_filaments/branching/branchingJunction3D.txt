@@ -38,7 +38,7 @@ random_seed 1
 
 frame_thickness 0
 
-output_files branchingJunction.txt
+output_files branchingJunctionOut.txt
 
 start_filament_type actin
 color red
@@ -63,6 +63,6 @@ random_filament actin:seed0 5  0.0 0.0 0.0  0 0 0
 random_filament actin:seed1 5  -0.05 0.05 0.0  1 0 0
 random_filament actin:seed2 5  0.05 -0.05 0.0  -1 0 0
 
-cmd @ 0.5 printFilaments branchingJunction.txt
+cmd @ 0.5 printFilaments branchingJunctionOut.txt
 
 end_file
