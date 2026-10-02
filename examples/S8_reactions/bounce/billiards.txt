@@ -1,6 +1,8 @@
 # Crowding test, low density
 
 graphics opengl_good
+graphic_delay 10
+
 #random_seed 4
 
 dim 2
