@@ -1,0 +1,3 @@
+# run outputs written next to the configs (output paths resolve relative to the config file)
+*_frames.txt
+*_run.log
