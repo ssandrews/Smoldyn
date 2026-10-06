@@ -490,6 +490,10 @@ void smolsimulategl(simptr sim);
 enum CMDcode docommand(void *cmdfnarg,cmdptr cmd,char *line);
 int loadsmolfunctions(simptr sim);
 
+/*********************************** Help ***********************************/
+
+int smolhelp(const char *topic);
+
 /******************************** Simulation ********************************/
 
 // error handling

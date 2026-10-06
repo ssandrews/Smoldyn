@@ -147,6 +147,7 @@ set(SRC_FILES
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolhelp.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolport.c

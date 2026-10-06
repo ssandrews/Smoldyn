@@ -20,7 +20,7 @@ random_seed 1
 
 frame_thickness 0
 
-output_files networkOut.txt
+#output_files networkOut.txt
 
 start_filament_type actin
 color blue
@@ -32,7 +32,7 @@ standard_length 2
 standard_angle 0            # 2D: single yaw value
 force_length 10
 force_angle 5               # 2D: single value
-treadmill_rate 5            # filament turnover (length-conserving; see proposal note)
+treadmill_rate 1            # filament turnover (length-conserving; see proposal note)
 branch_rate 0.01           # Arp2/3 nucleation per unit length per time (dendritic growth is exponential; keep small)
 branch_angle 1.22          # ~70 degrees, in radians
 branch_spread 0.09         # ~5 degrees of angular noise
@@ -45,6 +45,6 @@ random_filament actin:seed1 10  30 40  1
 random_filament actin:seed2 10  70 60 -1
 
 # dump the whole network (all auto-named daughters included) at the end
-cmd @ 100 printFilaments networkOut.txt
+#cmd @ 100 printFilaments networkOut.txt
 
 end_file

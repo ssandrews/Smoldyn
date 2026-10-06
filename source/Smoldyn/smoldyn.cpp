@@ -49,6 +49,12 @@ int main(int argc,char **argv) {
             UNUSED(_x);
 			if(strchr(flags,'\n')) *(strchr(flags,'\n'))='\0'; }
 
+		if(argc>1 && (!strcmp(argv[1],"help") || !strcmp(argv[1],"--help") || !strcmp(argv[1],"-h"))) {	// help
+			if(argc==2) return smolhelp(NULL);
+			for(i=2;i<argc;i++)
+				exitCode|=smolhelp(argv[i]);
+			return exitCode; }
+
 		if(argc>1) {																		// also have filename or --version
 			if(!strcmp(argv[1],"--version")) strncat(flags,"V",STRCHARLONG);
 			else {

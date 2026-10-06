@@ -460,6 +460,8 @@ Word & Letter & Result\\
 \ttt{--logfile} \textit{file} & & set output logging file for diagnostics and warnings
 \end{longtable}
 
+For help with a statement or runtime command, enter \ttt{smoldyn help} followed by its name, such as \ttt{smoldyn help difc}. A partial name lists all statements and commands that begin with it, and \ttt{smoldyn help} by itself lists all of them. This help text is taken from the Statements and Runtime commands chapters of this manual.
+
 % Section: configuration file syntax
 \section{Configuration file syntax}
 
@@ -3172,7 +3174,7 @@ Whether Smoldyn should quit running as soon as the simulation is complete or not
 
 Thickness of the frame that is drawn around the simulation volume, in points. Default value is 2.
 
-\item{\ttt{frame\_color} $color\ [alpha]$
+\item{\ttt{frame\_color} $color\ [alpha]$\\
 \ttt{frame\_color} $red\ green\ blue\ [alpha]$}
 
 Color of the frame. All values should be between 0 and 1; use all 0s for black and all 1s for white (default). The $alpha$ value is optional and also useless.

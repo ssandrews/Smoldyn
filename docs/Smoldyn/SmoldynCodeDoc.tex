@@ -203,6 +203,16 @@ For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the 
 \end{description}
 
 
+% Help
+\subsection{Help}
+
+For version 2.76, I used Claude AI to create a command-line help system. Claude created a script, called scripts/make\_smolhelp.py. This is the extractor. It reads the Smoldyn User's Manual (docs/Smoldyn/SmoldynManual.tex) and locates the Statements and Runtime commands reference sections, converts the LaTeX to plain text, wraps the text to 79 columns, and writes the header file called source/smolhelp\_data.h. The extractor reports any LaTeX commands that it doesn't recognize although there are none at the moment. The file source/smolhelp\_data.h is the help table. It is read by the Smoldyn software through the file smolhelp.c. This file contains the lookup and printing code. It is called by smoldyn.cpp, when the user enters the command-line entry ``smoldyn help topic'', where topic is the thing they want help on.
+
+To keep the help file current, run ``python scripts/make\_smoldynhelp.py'' and commit the regenerated header. The build does not do this automatically because it's not needed in most builds and also then the build would need to use Python. However, this is part of my release.py script. Also, of course, the SmoldynManual.tex file needs to be kept up to date and the format should be kept sufficiently similar to how it is now so that the extractor can read it.
+
+Neither the C/C++ interface nor the Python interface support the help options.
+
+
 % Building with CMake
 \section{CMake build system}
 
@@ -7616,7 +7626,8 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Fixed a minor bug in filAlloc. Fix: filAlloc never reassigned \ttt{fil->branchspots} on branch-array growth.
 \item Add printFilaments command to smolcmd: dump all filament node coordinates.
 \item Added lots of work on filament branching. This includes a new section on filament branching to smolfilament.c. New functions are filAddBranch, filBranchDynamics, and filPinBranches. This also includes several new elements to the filamenttypestruct.
-\item Added filament capping and elongation code.
+\item Added filament capping and elongation code. New filament data structure elements include branchazim0, growbank, and capped. Lots of new elements in the filament type structure. New functions include: filBranchAzimuth, filBranchDazim, filBranchPointInRegion, filEndIsCapped, filContourLength, filElongate, filElongationDynamics, filCappingDynamics.
+\item I added command line help functionality using the Claude AI. This included the files smolhelp.c, scripts/make\_smolhelp.py, smolhelp\_data.h, and edits to smoldyn.cpp. I also added the script to the release code.
 
 \end{itemize}
 
