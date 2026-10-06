@@ -1479,7 +1479,7 @@ void RenderScene(void) {
 
 
 /* graphicsreadstatements. Called when the user presses escape while the
-simulation is paused. This reads Smoldyn statements from the terminal and runs
+simulation is running or paused. This reads Smoldyn statements from the terminal and runs
 them with simreadstring until the user enters "run", "pause", or "quit". Also, "help topic"
 prints help for a statement. This blocks the OpenGL event loop until the user
 is done. */
@@ -1577,9 +1577,14 @@ void TimerFunction(int state) {
 		delay=20;
 		simLog(sim,2,"Simulation paused at simulation time: %g|T\n",sim->time);
 		simLog(sim,2,"Press space to continue or escape to enter statements\n"); }
-	else if(gl2State(-1)==3) {													// statement entry while paused
-		if(state==0) graphicsreadstatements(sim);		// returns to running, paused, or stopping state
-		else gl2State(1);																// simulation is over, so stay paused
+	else if(gl2State(-1)==3) {													// statement entry
+		if(state==0) {
+			if(oldstate==0) {															// escape pressed while running, so pause first
+				sim->elapsedtime+=difftime(time(NULL),sim->clockstt);
+				oldstate=1;
+				simLog(sim,2,"Simulation paused at simulation time: %g|T\n",sim->time); }
+			graphicsreadstatements(sim); }							// returns to running, paused, or stopping state
+		else gl2State(oldstate);												// simulation is over, so ignore escape
 		delay=0; }
 	else {																						// still in pause state or simulation is over
 		glutPostRedisplay();
