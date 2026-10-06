@@ -1480,7 +1480,7 @@ void RenderScene(void) {
 
 /* graphicsreadstatements. Called when the user presses escape while the
 simulation is paused. This reads Smoldyn statements from the terminal and runs
-them with simreadstring until the user enters "run" or "quit". Also, "help topic"
+them with simreadstring until the user enters "run", "pause", or "quit". Also, "help topic"
 prints help for a statement. This blocks the OpenGL event loop until the user
 is done. */
 void graphicsreadstatements(simptr sim) {
@@ -1492,7 +1492,8 @@ void graphicsreadstatements(simptr sim) {
 	nnotallowed=(int)(sizeof(notallowed)/sizeof(notallowed[0]));
 
 	fprintf(stderr,"\nEnter Smoldyn statements, one per line. Enter 'run' to continue the\n");
-	fprintf(stderr,"simulation, 'quit' to stop it, or 'help topic' for help on a statement.\n");
+	fprintf(stderr,"simulation, 'pause' to return to the paused graphics, 'quit' to stop the\n");
+	fprintf(stderr,"simulation, or 'help topic' for help on a statement.\n");
 	while(1) {
 		fflush(stdout);														// show any messages before the prompt
 		fprintf(stderr,"smoldyn> ");
@@ -1506,6 +1507,11 @@ void graphicsreadstatements(simptr sim) {
 		line2=strnword(line,2);
 
 		if(!strcmp(word,"run")) break;
+		else if(!strcmp(word,"pause")) {						// back to pause state, without running
+			gl2State(1);
+			simLog(sim,2,"Simulation paused. Press space to continue or escape to enter statements\n");
+			fflush(stdout);
+			return; }
 		else if(!strcmp(word,"quit")) {
 			gl2SetKeyPush('Q');
 			return; }
@@ -1572,7 +1578,7 @@ void TimerFunction(int state) {
 		simLog(sim,2,"Simulation paused at simulation time: %g|T\n",sim->time);
 		simLog(sim,2,"Press space to continue or escape to enter statements\n"); }
 	else if(gl2State(-1)==3) {													// statement entry while paused
-		if(state==0) graphicsreadstatements(sim);		// returns to running or stopping state
+		if(state==0) graphicsreadstatements(sim);		// returns to running, paused, or stopping state
 		else gl2State(1);																// simulation is over, so stay paused
 		delay=0; }
 	else {																						// still in pause state or simulation is over
