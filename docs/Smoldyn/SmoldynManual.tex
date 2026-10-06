@@ -440,6 +440,8 @@ If you start using Smoldyn for actual research, then it is important that you un
 
 This is the first of the chapters that focuses on a specific aspect of Smoldyn, in this case the configuration or input file. These chapters are arranged with more elementary material first and more advanced material afterwards.
 
+For help with a statement or runtime command, enter \ttt{smoldyn help} followed by its name, such as \ttt{smoldyn help difc}. A partial name lists all statements and commands that begin with it, and \ttt{smoldyn help} by itself lists all of them. This help text is taken from the Statements and Runtime commands chapters of this manual.
+
 % Section: Runtime flags
 \section{Runtime flags}
 
@@ -459,8 +461,6 @@ Word & Letter & Result\\
 \ttt{--define} $x=y$ &  & set a text macro definition\\
 \ttt{--logfile} \textit{file} & & set output logging file for diagnostics and warnings
 \end{longtable}
-
-For help with a statement or runtime command, enter \ttt{smoldyn help} followed by its name, such as \ttt{smoldyn help difc}. A partial name lists all statements and commands that begin with it, and \ttt{smoldyn help} by itself lists all of them. This help text is taken from the Statements and Runtime commands chapters of this manual.
 
 % Section: configuration file syntax
 \section{Configuration file syntax}
@@ -838,6 +838,7 @@ The graphical display can be manipulated during the simulation using the keyboar
 Key press & dimensions & function\\
 \hline()
 space & 1,2,3 & toggle pause mode between on and off\\
+escape & 1,2,3 & while paused, enter statements at the terminal\\
 Q & 1,2,3 & quit\\
 T & 1,2,3 & save image as TIFF file\\
 0 & 1,2,3 & reset view to default\\
@@ -848,6 +849,8 @@ shift + arrows & 1,2,3 & pan object\\
 x,y,z & 3 & rotate counterclockwise about object axis\\
 X,Y,Z & 3 & rotate clockwise about object axis\\
 \end{longtable}
+
+While the simulation is paused, pressing the escape key gives a \ttt{smoldyn>} prompt in the terminal window (not the graphics window) where you can enter configuration file statements, one per line. Each statement is run as soon as it is entered, and the graphics are updated to show its effect. For example, \ttt{mol 100 A 5 5} adds 100 molecules of species A, and \ttt{color A green} changes how they are drawn. Errors are reported, after which you can enter another statement. Statements that begin or end blocks, such as \ttt{start\_surface}, can't be used here, so use the single-line forms of block statements instead (e.g. \ttt{surface} $name$ $statement$). Likewise, \ttt{read\_file} and the macro statements such as \ttt{define} aren't supported here. Enter \ttt{help} $topic$ for help on a statement, \ttt{run} to continue the simulation, or \ttt{quit} to stop it. The graphics window doesn't respond while the prompt is waiting for input.
 
 % Section: drawing the system
 \section{Drawing the system}
@@ -3932,7 +3935,7 @@ Stop the simulation.
 
 \item{\ttt{pause}}
 
-This puts the simulation in pause mode. If opengl graphics are used, continuation occurs when the user presses the spacebar. When graphics are not used, the user is told to press enter.
+This puts the simulation in pause mode. If opengl graphics are used, continuation occurs when the user presses the spacebar. Alternatively, the user can press escape to enter statements at the terminal before continuing. When graphics are not used, the user is told to press enter.
 
 \item{\ttt{beep}}
 

@@ -109,6 +109,7 @@ void KeyPush(unsigned char key,int x,int y) {
 		else Gl2PauseState=2; }
 	else if(key==' ' && Gl2PauseState==0) Gl2PauseState=1;
 	else if(key==' ' && Gl2PauseState==1) Gl2PauseState=0;
+	else if(key==27 && Gl2PauseState==1) Gl2PauseState=3;		// escape: text entry while paused
 	else if(key=='T' && TiffNumber<=TiffNumMax) {
 		glGetIntegerv(GL_VIEWPORT,viewport);
 		w=viewport[2];
@@ -414,7 +415,8 @@ void gl2glutInit(int *argc,char **argv) {
 
 
 
-/* gl2State */
+/* gl2State. States are 0 for running, 1 for paused, 2 for stopping, and 3 for
+paused with text entry requested (escape key). Enter -1 to just read the state. */
 int gl2State(int state) {
 	if(state>=0) Gl2PauseState=state;
 	return Gl2PauseState; }

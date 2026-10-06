@@ -1424,8 +1424,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"command","Simulation control commands",0,"pause",
 		"  pause",
 		"    This puts the simulation in pause mode. If opengl graphics are used,\n"
-		"    continuation occurs when the user presses the spacebar. When graphics are\n"
-		"    not used, the user is told to press enter."},
+		"    continuation occurs when the user presses the spacebar. Alternatively, the\n"
+		"    user can press escape to enter statements at the terminal before\n"
+		"    continuing. When graphics are not used, the user is told to press enter."},
 	{"command","Simulation control commands",0,"beep",
 		"  beep",
 		"    The computer beeps when this is reached. Nothing else is done."},

@@ -1459,6 +1459,7 @@ void RenderSim(simptr sim,int swapbuffers) {
 
 void RenderScene(void);
 void TimerFunction(int state);
+void graphicsreadstatements(simptr sim);
 
 simptr Sim;
 
@@ -1474,6 +1475,58 @@ void smolPostRedisplay(void) {
 /* RenderScene */
 void RenderScene(void) {
 	RenderSim(Sim,1);
+	return; }
+
+
+/* graphicsreadstatements. Called when the user presses escape while the
+simulation is paused. This reads Smoldyn statements from the terminal and runs
+them with simreadstring until the user enters "run" or "quit". Also, "help topic"
+prints help for a statement. This blocks the OpenGL event loop until the user
+is done. */
+void graphicsreadstatements(simptr sim) {
+#ifdef __gl_h_
+	char line[STRCHARLONG],word[STRCHAR],*line2;
+	int er,i,nnotallowed;
+	const char *notallowed[]={"read_file","end_file","define","define_global","undefine","ifdefine","ifundefine","else","endif","display_define","end_units"};
+
+	nnotallowed=(int)(sizeof(notallowed)/sizeof(notallowed[0]));
+
+	fprintf(stderr,"\nEnter Smoldyn statements, one per line. Enter 'run' to continue the\n");
+	fprintf(stderr,"simulation, 'quit' to stop it, or 'help topic' for help on a statement.\n");
+	while(1) {
+		fflush(stdout);														// show any messages before the prompt
+		fprintf(stderr,"smoldyn> ");
+		fflush(stderr);
+		if(!fgets(line,STRCHARLONG,stdin)) {				// end of input, so just continue
+			fprintf(stderr,"\n");
+			break; }
+		if(strchr(line,'\n')) *(strchr(line,'\n'))='\0';
+		if(strchr(line,'#')) *(strchr(line,'#'))='\0';	// remove comment
+		if(sscanf(line,"%s",word)!=1) continue;
+		line2=strnword(line,2);
+
+		if(!strcmp(word,"run")) break;
+		else if(!strcmp(word,"quit")) {
+			gl2SetKeyPush('Q');
+			return; }
+		else if(!strcmp(word,"help")) {
+			if(!line2) smolhelp(NULL);
+			else while(line2) {
+				sscanf(line2,"%s",word);
+				smolhelp(word);
+				line2=strnword(line2,2); }}
+		else {
+			for(i=0;i<nnotallowed && strcmp(word,notallowed[i]);i++);
+			if(!strncmp(word,"start_",6) || i<nnotallowed)
+				fprintf(stderr,"'%s' can only be used in a configuration file. For block statements, use the single-line forms instead.\n",word);
+			else {
+				er=simreadstring(sim,NULL,word,line2);	// displays its own error message
+				if(!er) er=simupdate(sim);
+				if(er) simLog(sim,8,"\n");				// end the error message line
+				else RenderSim(sim,1); }}}
+
+	gl2State(0);
+#endif
 	return; }
 
 
@@ -1516,7 +1569,12 @@ void TimerFunction(int state) {
 		sim->elapsedtime+=difftime(time(NULL),sim->clockstt);
 		oldstate=1;
 		delay=20;
-		simLog(sim,2,"Simulation paused at simulation time: %g|T\n",sim->time); }
+		simLog(sim,2,"Simulation paused at simulation time: %g|T\n",sim->time);
+		simLog(sim,2,"Press space to continue or escape to enter statements\n"); }
+	else if(gl2State(-1)==3) {													// statement entry while paused
+		if(state==0) graphicsreadstatements(sim);		// returns to running or stopping state
+		else gl2State(1);																// simulation is over, so stay paused
+		delay=0; }
 	else {																						// still in pause state or simulation is over
 		glutPostRedisplay();
 		delay=20; }
