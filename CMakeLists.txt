@@ -147,6 +147,7 @@ set(SRC_FILES
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentsteric.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolhelp.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
@@ -493,6 +494,12 @@ include(CPack)
 
 ######### Testing #############
 enable_testing()
+option(OPTION_FILAMENT_STERIC_TESTS "Build native filament contact regression checks" OFF)
+if(OPTION_FILAMENT_STERIC_TESTS)
+  add_executable(test_filament_steric tests/test_filament_steric.c)
+  target_link_libraries(test_filament_steric PRIVATE smoldyn_static)
+  add_test(NAME filament_steric COMMAND test_filament_steric)
+endif()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
   add_subdirectory(examples)
 endif ()

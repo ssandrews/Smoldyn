@@ -6,6 +6,9 @@
  of the Gnu Lesser General Public License (LGPL). */
 
 #include <float.h>
+#include <math.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "Geometry.h"
@@ -13,7 +16,170 @@
 #include "random2.h"
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
+#include "smolfilamentsteric.h"
 #include "Zn.h"
+
+/* Sparse filament boxes: expanded capsule bounds, not the molecule-sized dense
+   grid. Sorted occupied cells keep memory proportional to filament segments.
+   No reverse segment->box memberships are needed. */
+static int boxGridEntryCompare(const void *va,const void *vb) {
+ const BoxGridEntry *a=(const BoxGridEntry*)va,*b=(const BoxGridEntry*)vb;int d;
+ for(d=0;d<3;d++) if(a->cell[d]!=b->cell[d]) return a->cell[d]<b->cell[d]?-1:1;
+ return (a->object>b->object)-(a->object<b->object);
+}
+static int boxGridIndexCompare(const int *a,const int *b) {
+ int d;for(d=0;d<3;d++) if(a[d]!=b[d]) return a[d]<b[d]?-1:1;return 0;
+}
+void boxGridSetDense(BoxGrid *g,boxssptr boxes,int dim) {
+ int d;memset(g,0,sizeof(*g));g->storage=BGdense;g->dim=dim;g->dense=boxes;
+ for(d=0;d<dim;d++) {g->origin[d]=boxes->min[d];g->width[d]=boxes->size[d];}
+}
+void boxGridSetSparse(BoxGrid *g,int dim,double width) {
+ int d;g->storage=BGsparse;g->dim=dim;g->dense=NULL;g->nentry=0;
+ for(d=0;d<3;d++) {g->origin[d]=0;g->width[d]=width;}
+}
+int boxGridCellCoords(const BoxGrid *g,const double *pos,int *index) {
+ int d;
+ for(d=0;d<3;d++) {
+  double x=0;
+  if(d<g->dim) {
+   if(!(g->width[d]>0) || !isfinite(pos[d])) return 1;
+   x=floor((pos[d]-g->origin[d])/g->width[d]);
+   if(g->storage==BGdense) x=fmax(0,fmin(g->dense->side[d]-1,x));
+  }
+  if(!isfinite(x) || x<=INT_MIN || x>=INT_MAX) return 1;
+  index[d]=(int)x;
+ }
+ return 0;
+}
+int boxGridBounds(const BoxGrid *g,const double *a,const double *b,double pad,int *lo,int *hi) {
+ int d;
+ if(!isfinite(pad) || pad<0) return 1;
+ /* One pass, without temporary positions or two coordinate-function calls.
+    This also serves the high-frequency trial-growth query path. */
+ for(d=0;d<3;d++) {
+  double low=0,high=0;
+  if(d<g->dim) {
+   if(!(g->width[d]>0) || !isfinite(a[d]) || !isfinite(b[d])) return 1;
+   low=floor((fmin(a[d],b[d])-pad-g->origin[d])/g->width[d]);
+   high=floor((fmax(a[d],b[d])+pad-g->origin[d])/g->width[d]);
+   if(g->storage==BGdense) {
+    low=fmax(0,fmin(g->dense->side[d]-1,low));high=fmax(0,fmin(g->dense->side[d]-1,high));
+   }
+  }
+  if(!isfinite(low) || !isfinite(high) || low<=INT_MIN || high>=INT_MAX) return 1;
+  lo[d]=(int)low;hi[d]=(int)high;
+ }
+ return 0;
+}
+int boxGridFindCell(const BoxGrid *g,const int *index,BoxGridCell *cell) {
+ int d,l=0,r=g->nentry,m,end;
+ memset(cell,0,sizeof(*cell));memcpy(cell->index,index,3*sizeof(int));
+ if(g->storage==BGdense) {
+  int address=0;
+  if(!g->dense || !g->dense->blist) return 0;
+  for(d=0;d<g->dim;d++) {
+   if(index[d]<0 || index[d]>=g->dense->side[d]) return 0;
+   address=g->dense->side[d]*address+index[d];
+  }
+  cell->box=g->dense->blist[address];return 1;
+ }
+ while(l<r) {m=l+(r-l)/2;if(boxGridIndexCompare(g->entries[m].cell,index)<0) l=m+1;else r=m;}
+ if(l==g->nentry || boxGridIndexCompare(g->entries[l].cell,index)) return 0;
+ for(end=l+1;end<g->nentry && !boxGridIndexCompare(g->entries[end].cell,index);end++);
+ cell->entries=g->entries+l;cell->nentry=end-l;return 1;
+}
+int boxGridFindPoint(const BoxGrid *g,const double *pos,BoxGridCell *cell) {
+ int index[3];if(boxGridCellCoords(g,pos,index)) {memset(cell,0,sizeof(*cell));return 0;}
+ return boxGridFindCell(g,index,cell);
+}
+int boxGridAddEntry(BoxGrid *g,const int *index,int object) {
+ if(g->storage!=BGsparse) return 1;
+ if(g->nentry==g->maxentry) {
+  int n;BoxGridEntry *p;
+  if(g->maxentry>INT_MAX/2) return 1;
+  n=g->maxentry?2*g->maxentry:128;
+  p=(BoxGridEntry*)realloc(g->entries,(size_t)n*sizeof(*p));if(!p) return 1;
+  g->entries=p;g->maxentry=n;
+ }
+ memcpy(g->entries[g->nentry].cell,index,3*sizeof(int));g->entries[g->nentry++].object=object;return 0;
+}
+void boxGridSort(BoxGrid *g) {
+ if(g->nentry>1) qsort(g->entries,g->nentry,sizeof(*g->entries),boxGridEntryCompare);
+}
+void boxGridFree(BoxGrid *g) {
+ if(g->storage==BGsparse) free(g->entries);
+ memset(g,0,sizeof(*g));
+}
+static int filBoxPairCompare(const void *va,const void *vb) {
+ const FilStericPair *a=(const FilStericPair*)va,*b=(const FilStericPair*)vb;
+ if(a->a!=b->a) return (a->a>b->a)-(a->a<b->a);
+ return (a->b>b->b)-(a->b<b->b);
+}
+int filBoxesBuild(simptr sim,struct filamentstericstruct *w) {
+ int i,d,lo[3],hi[3],x,y,z,start,end,j,l,out,dim=sim->dim;
+ BoxGrid *g=&w->grid;
+ double width=0,extent;
+ g->nentry=w->npair=0;
+ for(i=0;i<w->nsegment;i++) {
+  FilStericSegment *s=&w->segments[i];
+  double length=0;
+  for(d=0;d<dim;d++) {double v=s->segment->xyzback[d]-s->segment->xyzfront[d];length+=v*v;}
+  width=fmax(width,fmax(2*sqrt(length),2*s->radius+w->skin));
+ }
+ boxGridSetSparse(g,dim,width);
+ if(width<=0) return 0;
+ for(i=0;i<w->nsegment;i++) {
+  FilStericSegment *s=&w->segments[i];
+  extent=s->radius+0.5*w->skin;
+  if(boxGridBounds(g,s->segment->xyzfront,s->segment->xyzback,extent,lo,hi)) return 1;
+  memcpy(s->boxlo,lo,sizeof(lo));
+  for(x=lo[0];x<=hi[0];x++) for(y=lo[1];y<=hi[1];y++) for(z=lo[2];z<=hi[2];z++) {
+   int cell[3]={x,y,z};if(boxGridAddEntry(g,cell,i)) return 1;
+  }
+ }
+ boxGridSort(g);
+ for(start=0;start<g->nentry;start=end) {
+  for(end=start+1;end<g->nentry;end++) {
+   for(d=0;d<3 && g->entries[start].cell[d]==g->entries[end].cell[d];d++);
+   if(d<3) break;
+  }
+  for(j=start;j<end;j++) for(l=j+1;l<end;l++) {
+   int a=g->entries[j].object,b=g->entries[l].object;double s,t,norm[3],dist;
+   FilStericSegment *sa=&w->segments[a],*sb=&w->segments[b];
+   if(a==b || filStericExcluded(sa->segment,sb->segment)) continue;
+   /* The lowest shared cell owns the pair. Expanded AABBs occupy Cartesian
+      ranges, so the intersection's lower corner is componentwise max(lo).
+      This avoids repeating exact geometry in every shared cell. */
+   for(d=0;d<3;d++) if(g->entries[start].cell[d]!=(sa->boxlo[d]>sb->boxlo[d]?sa->boxlo[d]:sb->boxlo[d])) break;
+   if(d<3) continue;
+   /* Cheap bounds rejection precedes the exact distance. */
+   extent=sa->radius+sb->radius+w->skin;
+   for(d=0;d<dim;d++) {
+    double al=fmin(sa->segment->xyzfront[d],sa->segment->xyzback[d]),ah=fmax(sa->segment->xyzfront[d],sa->segment->xyzback[d]);
+    double bl=fmin(sb->segment->xyzfront[d],sb->segment->xyzback[d]),bh=fmax(sb->segment->xyzfront[d],sb->segment->xyzback[d]);
+    if(al>bh+extent || bl>ah+extent) break;
+   }
+   if(d<dim) continue;
+   /* Use raw geometry here: topology-aware trimmed geometry can change as a
+      junction moves, and must not make the cached broad phase incomplete. */
+   dist=Geo_ClosestSeg2Seg(sa->segment->xyzfront,sa->segment->xyzback,sb->segment->xyzfront,sb->segment->xyzback,dim,&s,&t,norm);
+   if(dist>extent) continue;
+   if(w->npair==w->maxpair) {
+    int cap=w->maxpair?2*w->maxpair:128;FilStericPair *p;
+    if(cap<=w->maxpair) return 1;
+    p=(FilStericPair*)realloc(w->pairs,(size_t)cap*sizeof(*p));if(!p) return 1;
+    w->pairs=p;w->maxpair=cap;
+   }
+   w->pairs[w->npair].a=a<b?a:b;w->pairs[w->npair++].b=a<b?b:a;
+  }
+ }
+ if(w->npair>1) qsort(w->pairs,w->npair,sizeof(*w->pairs),filBoxPairCompare);
+ for(i=0,out=0;i<w->npair;i++)
+  if(!out || w->pairs[i].a!=w->pairs[out-1].a || w->pairs[i].b!=w->pairs[out-1].b) w->pairs[out++]=w->pairs[i];
+ w->npair=out;
+ return 0;
+}
 
 /******************************************************************************/
 /******************************** Virtual boxes *******************************/
@@ -52,12 +218,14 @@ int boxesupdatelists(simptr sim);
 
 /* box2pos */
 void box2pos(simptr sim,boxptr bptr,double *poslo,double *poshi) {
-	int d,dim;
+	box2posInGrid(sim->boxs,sim->dim,bptr,poslo,poshi); }
+
+void box2posInGrid(boxssptr boxes,int dim,boxptr bptr,double *poslo,double *poshi) {
+	int d;
 	double *size,*min;
 
-	dim=sim->dim;
-	size=sim->boxs->size;
-	min=sim->boxs->min;
+	size=boxes->size;
+	min=boxes->min;
 	if(poslo) for(d=0;d<dim;d++) poslo[d]=min[d]+bptr->indx[d]*size[d];
 	if(poshi) for(d=0;d<dim;d++) poshi[d]=min[d]+(bptr->indx[d]+1)*size[d];
 	return; }
@@ -65,11 +233,11 @@ void box2pos(simptr sim,boxptr bptr,double *poslo,double *poshi) {
 
 /* pos2box */
 boxptr pos2box(simptr sim,const double *pos) {
-	int b,d,indx,dim;
-	boxssptr boxs;
+	return pos2boxInGrid(sim->boxs,sim->dim,pos); }
 
-	dim=sim->dim;
-	boxs=sim->boxs;
+boxptr pos2boxInGrid(boxssptr boxs,int dim,const double *pos) {
+	int b,d,indx;
+
 	b=0;
 	for(d=0;d<dim;d++) {
 		indx=(int)((pos[d]-boxs->min[d])/boxs->size[d]);
@@ -423,6 +591,7 @@ boxssptr boxssalloc(int dim) {
 	boxs->min=NULL;
 	boxs->size=NULL;
 	boxs->blist=NULL;
+	memset(&boxs->grid,0,sizeof(boxs->grid));
 
 	CHECKMEM(boxs->side=(int*) calloc(dim,sizeof(int)));
 	for(d=0;d<dim;d++) boxs->side[d]=0;
@@ -430,6 +599,7 @@ boxssptr boxssalloc(int dim) {
 	for(d=0;d<dim;d++) boxs->min[d]=0;
 	CHECKMEM(boxs->size=(double*) calloc(dim,sizeof(double)));
 	for(d=0;d<dim;d++) boxs->size[d]=0;
+	boxGridSetDense(&boxs->grid,boxs,dim);
 	return boxs;
 
  failure:
@@ -751,6 +921,7 @@ int boxesupdatelists(simptr sim) {
 		nbox*=side[d]; }
 	boxs->boxvol=1.0;
 	for(d=0;d<dim;d++) boxs->boxvol*=boxs->size[d];
+	boxGridSetDense(&boxs->grid,boxs,dim);
 
 	boxs->nlist=sim->mols?sim->mols->nlist:0;					// individual boxes
 	boxs->nbox=nbox;

@@ -622,6 +622,25 @@ typedef struct surfacesuperstruct
 
 /*********************************** Boxes **********************************/
 
+/* Common spatial-grid interface. Dense grids own ordinary boxes; sparse grids
+   own only sorted occupied-cell entries. Both use the same coordinate queries. */
+enum BoxGridStorage { BGdense, BGsparse };
+typedef struct boxgridentry { int cell[3]; int object; } BoxGridEntry;
+typedef struct boxgridstruct {
+    enum BoxGridStorage storage;
+    int dim;
+    double origin[3], width[3];
+    struct boxsuperstruct *dense;       // borrowed dense backend, if any
+    BoxGridEntry *entries;              // owned only by a sparse grid
+    int nentry, maxentry;
+} BoxGrid;
+typedef struct boxgridcell {
+    int index[3];
+    struct boxstruct *box;             // dense cell, or NULL
+    const BoxGridEntry *entries;       // sparse cell's contiguous object IDs
+    int nentry;
+} BoxGridCell;
+
 typedef struct boxstruct
 {
     int* indx;                // dim dimensional index of the box [d]
@@ -641,6 +660,7 @@ typedef struct boxstruct
 
 typedef struct boxsuperstruct
 {
+    BoxGrid grid;             // dense instance of the common box-grid interface
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int nlist;                 // copy of number of molecule lists
@@ -834,6 +854,7 @@ typedef struct filamentstruct {
     char* sequence;                     // sequence code
     double growbank;                    // plus-end growth owed but not yet emitted as a segment
     int capped;                         // bitmask of capped ends; see FILCAPPLUS
+    int stericnodeoffset;               // transient index of node 0 in coupled steric workspace
 } * filamentptr;
 
 typedef struct filamenttypestruct
@@ -857,6 +878,11 @@ typedef struct filamenttypestruct
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility
     double filradius;                  // segment radius
+    double stericradius;               // physical capsule radius; 0 disables excluded volume
+    double sterick;                    // repulsion stiffness, energy/length^2
+    double stericskin;                 // neighbor-list displacement margin
+    int stericsubsteps;                // mechanical steps per chemical timestep
+    int stericgrowth;                  // reject overlapping elongation/treadmilling (default 1)
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
@@ -895,6 +921,7 @@ typedef struct filamentsuperstruct
     int ntype;                 // actual number of filament types
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
+    struct filamentstericstruct* steric; // owned sparse contact workspace, allocated only when enabled
 } * filamentssptr;
 
 
