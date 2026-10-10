@@ -32,6 +32,7 @@ void rulefree(ruleptr rule);
 // data structure output
 
 // structure set up
+int rulesametarget(ruleptr rule,enum RuleType type,const int *detailsi);
 
 // core simulation functions
 
@@ -254,7 +255,7 @@ void ruleoutput(simptr sim) {
 			for(d=0;d<sim->dim-1;d++)
 				simLog(sim,2," %g|L/T",detailsf[d]); }
 		else if(ruletype==RTmollist)
-			simLog(sim,2," molecule list rule: %s, list:",rulestring,sim->mols->listname[detailsi[1]]);
+			simLog(sim,2," molecule list rule: %s, list: %s",rulestring,sim->mols->listname[detailsi[1]]);
 		else if(ruletype==RTdispsize)
 			simLog(sim,2," display size rule: %s, size: %g|L",rulestring,rulerate);
 		else if(ruletype==RTcolor)
@@ -333,6 +334,20 @@ int checkruleparams(simptr sim,int *warnptr) {
 /******************************************************************************/
 
 
+/* rulesametarget. Returns 1 if rule, which has the same type, name, pattern,
+and state as a new rule, also applies to the same surface, face, panel shape,
+or surface states as the new rule, given by detailsi. A new rule that is the
+same as an existing one replaces it, whereas other rules are added. */
+int rulesametarget(ruleptr rule,enum RuleType type,const int *detailsi) {
+	if(type==RTsurfdrift)																// surface and panel shape
+		return rule->ruledetailsi[1]==detailsi[0] && rule->ruledetailsi[2]==detailsi[1];
+	if(type==RTsurfaction)															// surface and face
+		return rule->ruledetailsi[1]==detailsi[0] && rule->ruledetailsi[2]==detailsi[1];
+	if(type==RTsurfrate || type==RTsurfrateint)					// surface, state1, and state2
+		return rule->ruledetailsi[1]==detailsi[0] && rule->ruledetailsi[2]==detailsi[1] && rule->ruledetailsi[3]==detailsi[2];
+	return 1; }
+
+
 /* RuleAddRule */
 int RuleAddRule(simptr sim,enum RuleType type,const char *rname,const char *pattern,const enum MolecState *rctstate,const enum MolecState *prdstate,double rate,const int *detailsi,const double *detailsf) {
 	rulessptr ruless;
@@ -345,9 +360,14 @@ int RuleAddRule(simptr sim,enum RuleType type,const char *rname,const char *patt
 	if(ruless) {																	// test for a repeat of a prior rule
 		for(r=0;r<ruless->nrule;r++) {
 			rule=ruless->rule[r];
-			if(rule->ruletype==type && (rname==NULL || !strcmp(rule->rulename,rname)) && !strcmp(rule->rulepattern,pattern) && rule->ruledetailsi[0]==(int)rctstate[0])
+			if(rule->ruletype==type && (rname==NULL || !strcmp(rule->rulename,rname)) && !strcmp(rule->rulepattern,pattern) && rule->ruledetailsi[0]==(int)rctstate[0] && rulesametarget(rule,type,detailsi))
 				break; }
-		if(r==ruless->nrule) rule=NULL; }
+		if(r==ruless->nrule) rule=NULL;
+		else {																			// replacing a prior rule, so free its details
+			free(rule->ruledetailsi);
+			free(rule->ruledetailsf);
+			rule->ruledetailsi=NULL;
+			rule->ruledetailsf=NULL; }}
 
 	if(!rule) {
 		if(!ruless) {																// create rule superstructure if needed
