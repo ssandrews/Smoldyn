@@ -296,6 +296,16 @@ int checksurfacebound(simptr sim,int ll);
 /*********************************** Boxes **********************************/
 
 // low level utilities
+boxptr pos2boxInGrid(boxssptr boxs,int dim,const double *pos);
+void box2posInGrid(boxssptr boxs,int dim,boxptr box,double *lo,double *hi);
+void boxGridSetDense(BoxGrid *grid,boxssptr boxes,int dim);
+int boxGridCellCoords(const BoxGrid *grid,const double *pos,int *index);
+int boxGridBounds(const BoxGrid *grid,const double *a,const double *b,double padding,int *lo,int *hi);
+int boxGridFindCell(const BoxGrid *grid,const int *index,BoxGridCell *cell);
+int boxGridFindPoint(const BoxGrid *grid,const double *pos,BoxGridCell *cell);
+int expandboxsegments(boxptr box,int n);
+int segmentinbox(simptr sim,segmentptr segment,boxptr box);
+int boxesupdatesegments(simptr sim);
 boxptr pos2box(simptr sim,const double *pos);
 void boxrandpos(simptr sim,double *pos,boxptr bptr);
 int boxaddmol(moleculeptr mptr,int ll);
@@ -435,6 +445,14 @@ int filUpdate(simptr sim);
 // core simulation functions
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 int filDynamics(simptr sim);
+void filStericReport(simptr sim);
+int filAddFilamentForce(simptr sim);
+/* Physical capsule queries. distance is signed surface clearance; nearest is
+   optional and returned even without a hit. A distance/nearest request performs
+   an exact global nearest search, not just a single-cell search. */
+segmentptr filPointInFilament(simptr sim,const double *point,double *distance,segmentptr *nearest);
+segmentptr filLineXFilament(simptr sim,const double *a,const double *b,double radius,double *distance,segmentptr *nearest);
+int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
 /********************************* BioNetGen ********************************/
 

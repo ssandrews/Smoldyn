@@ -622,6 +622,18 @@ typedef struct surfacesuperstruct
 
 /*********************************** Boxes **********************************/
 
+/* Coordinate view of the original Smoldyn boxes. Each box owns molecule,
+   panel and segment payloads; there is no second filament grid. */
+typedef struct boxgridstruct {
+    int dim;
+    double origin[3], width[3];
+    struct boxsuperstruct *dense;       // borrowed original Smoldyn boxes
+} BoxGrid;
+typedef struct boxgridcell {
+    int index[3];
+    struct boxstruct *box;
+} BoxGridCell;
+
 typedef struct boxstruct
 {
     int* indx;                // dim dimensional index of the box [d]
@@ -634,6 +646,9 @@ typedef struct boxstruct
     int maxpanel;             // allocated number of panels in box
     int npanel;               // number of surface panels in box
     panelptr* panel;          // list of panels in box
+    int maxsegment;           // allocated segment references (borrowed pointers)
+    int nsegment;             // conservative filament capsule/skin coverage
+    struct segmentstruct** segment;
     int* maxmol;              // allocated size of live lists [ll]
     int* nmol;                // number of molecules in live lists [ll]
     moleculeptr** mol;        // lists of live molecules in the box [ll][m]
@@ -641,11 +656,18 @@ typedef struct boxstruct
 
 typedef struct boxsuperstruct
 {
+    BoxGrid grid;             // view of this single molecule/surface/filament grid
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int nlist;                 // copy of number of molecule lists
     double mpbox;              // requested number of molecules per box
     double boxsize;            // requested box width
+    int explicitresolution;    // user supplied boxsize or molperbox
+    int resolutiondirty;       // initialization/explicit settings resize the grid
+    double filamentdensity;    // anticipated segments per unit volume, at initialization
+    int nsegmentbox, maxsegmentbox;
+    boxptr* segmentbox;        // occupied boxes, for O(occupied) segment updates
+    unsigned long long segmentgeneration; // invalidates filament neighbor cache
     double boxvol;             // actual box volumes
     int nbox;                  // total number of boxes
     int* side;                 // number of boxes on each side of space
@@ -821,6 +843,7 @@ typedef struct filsurfstruct {				// Filament-surface interactions
 typedef struct segmentstruct {
     struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
+    int stericindex;                   // transient contact workspace ID, no box ownership
     double *xyzfront;                 // Coords. for segment front
     double *xyzback;                  // Coords. for segment back
     double len;                       // segment length
@@ -868,6 +891,7 @@ typedef struct filamentstruct {
     char* sequence;                     // sequence code
     double growbank;                    // plus-end growth owed but not yet emitted as a segment
     int capped;                         // bitmask of capped ends; see FILCAPPLUS
+    int stericnodeoffset;               // transient index of node 0 in coupled steric workspace
 } * filamentptr;
 
 typedef struct filamenttypestruct
@@ -891,6 +915,11 @@ typedef struct filamenttypestruct
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility
     double filradius;                  // segment radius
+    double stericradius;               // physical capsule radius; 0 disables excluded volume
+    double sterick;                    // repulsion stiffness, energy/length^2
+    double stericskin;                 // neighbor-list displacement margin
+    int stericsubsteps;                // mechanical steps per chemical timestep
+    int stericgrowth;                  // reject overlapping elongation/treadmilling (default 1)
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
@@ -929,6 +958,7 @@ typedef struct filamentsuperstruct
     int ntype;                 // actual number of filament types
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
+    struct filamentstericstruct* steric; // contact workspace; spatial storage belongs to boxstruct
 } * filamentssptr;
 
 
