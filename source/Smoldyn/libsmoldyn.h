@@ -157,6 +157,13 @@ enum ErrorCode smolSetReactionRate(simptr sim,const char *reaction,double rate,i
 enum ErrorCode smolGetReactionRate(simptr sim,const char *reaction,double *rate);
 enum ErrorCode smolSetReactionRegion(simptr sim,const char *reaction,const char *compartment,const char *surface);
 enum ErrorCode smolSetReactionProducts(simptr sim,const char *reaction,enum RevParam method,double parameter,const char *product,double *position);
+enum ErrorCode smolAddReactionRule(simptr sim,const char *rule,const char *reactant1,enum MolecState rstate1,const char *reactant2,enum MolecState rstate2,int nproduct,const char **productspecies,enum MolecState *productstates,double rate,const char *compartment,const char *surface);
+enum ErrorCode smolSetReactionSimParams(simptr sim,const char *reaction,const char *parameter,double value);
+enum ErrorCode smolSetReactionPermit(simptr sim,const char *reaction,enum MolecState *states,int permit);
+enum ErrorCode smolSetReactionSerialnum(simptr sim,const char *reaction,const char **codes);
+enum ErrorCode smolSetReactionRepresentation(simptr sim,const char *reaction,const enum SpeciesRepresentation *rctrep,const enum SpeciesRepresentation *prdrep);
+enum ErrorCode smolSetReactionLog(simptr sim,const char *filename,const char *reaction,int nserial,const long int *serialnums,int turnon);
+enum ErrorCode smolExpandRules(simptr sim,int iterations);
 
 /************************************ Ports ***********************************/
 

@@ -1770,12 +1770,12 @@ int RxnSetValue(simptr sim,const char *option,rxnptr rxn,double value) {
 
 	else if(!strcmp(option,"prob")) {
 		if(value<0) er=4;
-		if(rxn->rxnss->order>0 && value>1) er=4;
+		if(rxn->rxnss && rxn->rxnss->order>0 && value>1) er=4;
 		rxn->prob=value; }
 
 	else if(!strcmp(option,"chi")) {
 		if(value==0 || value>=1) er=4;
-		if(rxn->rxnss->order!=2) er=4;
+		if(rxn->rxnss && rxn->rxnss->order!=2) er=4;
 		rxn->chi=value; }
 
 	else if(!strcmp(option,"disable")) {

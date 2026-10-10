@@ -2046,6 +2046,360 @@ failure:
 	return Liberrorcode; }
 
 
+/* smolfindreactions. Finds all reactions that match the name reaction, using
+the same matching as the configuration file statements: a reaction with this
+exact name, reactions generated from a rule with this name (name_number), and the
+template reaction for a rule with this name. Returns 0 if any were found, -1 if
+none were found, or -2 for out of memory. *vlistptr is returned with a list of
+the matching reactions (or NULL), and *rulerxnptr with the rule template reaction
+(or NULL); the template is not included in the list because it is not part of
+the reaction superstructure. *ruleorderptr is set to the order of the rule
+template. */
+static int smolfindreactions(simptr sim,const char *reaction,listptrv *vlistptr,rxnptr *rulerxnptr,int *ruleorderptr) {
+	int r,i,order;
+	rxnptr rxn;
+	listptrv vlist,vlist2;
+
+	vlist=NULL;
+	*vlistptr=NULL;
+	*rulerxnptr=NULL;
+	*ruleorderptr=-1;
+
+	rxn=NULL;
+	r=readrxnname(sim,reaction,NULL,&rxn,NULL,1);
+	if(r>=0) {
+		vlist=ListAppendItemV(NULL,(void*) rxn);
+		if(!vlist) return -2; }
+
+	vlist2=NULL;
+	r=readrxnname(sim,reaction,NULL,NULL,&vlist2,2);
+	if(r==-2) {ListFreeV(vlist);return -2;}
+	if(r>=0) {
+		for(i=0;i<vlist2->n;i++) {
+			vlist=ListAppendItemV(vlist,vlist2->xs[i]);
+			if(!vlist) {ListFreeV(vlist2);return -2;}}
+		ListFreeV(vlist2); }
+
+	rxn=NULL;
+	r=readrxnname(sim,reaction,&order,&rxn,NULL,3);
+	if(r==-2) {ListFreeV(vlist);return -2;}
+	if(r>=0) {
+		*rulerxnptr=rxn;
+		*ruleorderptr=order; }
+
+	*vlistptr=vlist;
+	return (vlist || *rulerxnptr)?0:-1; }
+
+
+/* smolAddReactionRule */
+extern CSTRING enum ErrorCode smolAddReactionRule(simptr sim,const char *rule,const char *reactant1,enum MolecState rstate1,const char *reactant2,enum MolecState rstate2,int nproduct,const char **productspecies,enum MolecState *productstates,double rate,const char *compartment,const char *surface) {
+	const char *funcname="smolAddReactionRule";
+	char pattern[STRCHAR];
+	int order,prd,er,detailsi[2];
+	enum MolecState ms,rctstate[MAXORDER],prdstate[MAXPRODUCT];
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->mols,funcname,ECerror,"need to enter species before reaction rules");
+	LCHECK(rule && rule[0]!='\0',funcname,ECmissing,"missing rule name");
+	for(order=0;order<MAXORDER;order++)
+		if(sim->rxnss[order]) {
+			LCHECK(stringfind(sim->rxnss[order]->rname,sim->rxnss[order]->totrxn,rule)<0,funcname,ECerror,"rule name has already been used as a reaction name"); }
+
+	detailsi[0]=-1;																// compartment
+	if(compartment && compartment[0]!='\0') {
+		detailsi[0]=smolGetCompartmentIndexNT(sim,compartment);
+		LCHECK(detailsi[0]>=0,funcname,ECsame,NULL); }
+	detailsi[1]=-1;																// surface
+	if(surface && surface[0]!='\0') {
+		detailsi[1]=smolGetSurfaceIndexNT(sim,surface);
+		LCHECK(detailsi[1]>=0,funcname,ECsame,NULL); }
+
+	pattern[0]='\0';
+	order=0;
+	if(reactant1 && reactant1[0]!='\0') {
+		LCHECK(rstate1>=0 && (rstate1<MSMAX1 || rstate1==MSall),funcname,ECbounds,"invalid rstate1");
+		er=molstring2pattern(reactant1,&ms,pattern,1);
+		LCHECK(er!=-4,funcname,ECerror,"reactant list exceeds maximum string length");
+		LCHECK(!er,funcname,ECsyntax,"unable to read reactant1");
+		rctstate[order++]=rstate1; }
+	if(reactant2 && reactant2[0]!='\0') {
+		LCHECK(rstate2>=0 && (rstate2<MSMAX1 || rstate2==MSall),funcname,ECbounds,"invalid rstate2");
+		er=molstring2pattern(reactant2,&ms,pattern,1);
+		LCHECK(er!=-4,funcname,ECerror,"reactant list exceeds maximum string length");
+		LCHECK(!er,funcname,ECsyntax,"unable to read reactant2");
+		rctstate[order++]=rstate2; }
+
+	LCHECK(nproduct>=0 && nproduct<MAXPRODUCT,funcname,ECbounds,"invalid nproduct");
+	LCHECK(!(order==0 && nproduct==0),funcname,ECerror,"reaction rule has neither reactants nor products");
+	if(nproduct) {
+		LCHECK(productspecies,funcname,ECmissing,"missing product species");
+		LCHECK(productstates,funcname,ECmissing,"missing product states"); }
+	for(prd=0;prd<nproduct;prd++) {
+		LCHECK(productspecies[prd] && productspecies[prd][0]!='\0',funcname,ECmissing,"missing product species");
+		LCHECK(productstates[prd]>=MSsoln && productstates[prd]<MSMAX1,funcname,ECsyntax,"invalid product state");
+		LCHECK(!(order==0 && detailsi[1]<0 && productstates[prd]!=MSsoln),funcname,ECerror,"enter a surface for order 0 reaction rules with surface-bound products");
+		er=molstring2pattern(productspecies[prd],&ms,pattern,2);
+		LCHECK(er!=-4,funcname,ECerror,"reactant and product list together exceed maximum string length");
+		LCHECK(!er,funcname,ECsyntax,"unable to read product species");
+		prdstate[prd]=productstates[prd]; }
+	if(nproduct==0) {
+		er=molstring2pattern(NULL,&ms,pattern,2);
+		LCHECK(!er,funcname,ECbug,"BUG: error in molstring2pattern"); }
+
+	er=RuleAddRule(sim,RTreaction,rule,pattern,rctstate,prdstate,rate>=0?rate:-1,detailsi,NULL);
+	LCHECK(!er,funcname,ECerror,"out of memory or other error adding rule");
+
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetReactionSimParams */
+extern CSTRING enum ErrorCode smolSetReactionSimParams(simptr sim,const char *reaction,const char *parameter,double value) {
+	const char *funcname="smolSetReactionSimParams";
+	const char *option=NULL;
+	int er,i,ruleorder,order;
+	rxnptr rxn,rulerxn;
+	listptrv vlist;
+
+	vlist=NULL;
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(reaction,funcname,ECmissing,"missing reaction");
+	LCHECK(parameter,funcname,ECmissing,"missing parameter");
+
+	if(!strcmp(parameter,"rate")) {
+		LCHECK(value>=0,funcname,ECbounds,"reaction rate value must be non-negative");
+		option="rate"; }
+	else if(!strcmp(parameter,"multiplicity")) {
+		LCHECK(value>=0,funcname,ECbounds,"reaction multiplicity value must be non-negative");
+		value=(double)((int)value);
+		option="multiplicity"; }
+	else if(!strcmp(parameter,"confspread_radius")) {
+		LCHECK(value>=0,funcname,ECbounds,"confspread radius value must be non-negative");
+		option="confspreadrad"; }
+	else if(!strcmp(parameter,"binding_radius")) {
+		LCHECK(value>=0,funcname,ECbounds,"binding radius value must be non-negative");
+		option="bindrad"; }
+	else if(!strcmp(parameter,"probability")) {
+		LCHECK(value>=0 && value<=1,funcname,ECbounds,"probability value must be between 0 and 1");
+		option="prob"; }
+	else if(!strcmp(parameter,"chi")) {
+		LCHECK(value!=0 && value<1,funcname,ECbounds,"reaction chi value must be between 0 and 1 (or -1 to disable)");
+		option="chi"; }
+	else if(!strcmp(parameter,"production")) {
+		LCHECK(value>=0,funcname,ECbounds,"production value must be at least 0");
+		option="prob"; }
+	else
+		LCHECK(0,funcname,ECsyntax,"parameter name not recognized");
+
+	er=smolfindreactions(sim,reaction,&vlist,&rulerxn,&ruleorder);
+	LCHECK(er!=-2,funcname,ECmemory,"out of memory finding reactions");
+	LCHECK(er!=-1,funcname,ECnonexist,"reaction not found");
+
+	for(i=0;vlist && i<vlist->n;i++) {						// check reaction orders
+		order=((rxnptr) vlist->xs[i])->rxnss->order;
+		if(!strcmp(parameter,"chi")) {
+			LCHECK(order==2,funcname,ECerror,"reaction chi value is only allowed for order 2 reactions"); }
+		else if(!strcmp(parameter,"production")) {
+			LCHECK(order==0,funcname,ECerror,"production is only allowed for order 0 reactions"); }}
+	if(rulerxn) {
+		if(!strcmp(parameter,"chi")) {
+			LCHECK(ruleorder==2,funcname,ECerror,"reaction chi value is only allowed for order 2 reactions"); }
+		else if(!strcmp(parameter,"production")) {
+			LCHECK(ruleorder==0,funcname,ECerror,"production is only allowed for order 0 reactions"); }}
+
+	for(i=0;vlist && i<vlist->n;i++) {
+		rxn=(rxnptr) vlist->xs[i];
+		er=RxnSetValue(sim,option,rxn,value);
+		LCHECK(er!=4,funcname,ECbounds,"parameter value is out of bounds");
+		LCHECK(!er,funcname,ECbug,"RxnSetValue error"); }
+	if(rulerxn) {
+		er=RxnSetValue(NULL,option,rulerxn,value);
+		LCHECK(er!=4,funcname,ECbounds,"parameter value is out of bounds");
+		LCHECK(!er,funcname,ECbug,"RxnSetValue error"); }
+
+	ListFreeV(vlist);
+	return ECok;
+ failure:
+	ListFreeV(vlist);
+	return Liberrorcode; }
+
+
+/* smolSetReactionPermit */
+extern CSTRING enum ErrorCode smolSetReactionPermit(simptr sim,const char *reaction,enum MolecState *states,int permit) {
+	const char *funcname="smolSetReactionPermit";
+	int order,r,ord;
+	rxnptr rxn;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(states,funcname,ECmissing,"missing states");
+	order=-1;
+	r=smolGetReactionIndexNT(sim,&order,reaction);
+	LCHECK(r>=0,funcname,ECsame,NULL);
+	LCHECK(order>0,funcname,ECerror,"reaction permit and forbid are not allowed for order 0 reactions");
+	rxn=sim->rxnss[order]->rxn[r];
+	for(ord=0;ord<order;ord++)
+		LCHECK(states[ord]>=0 && (states[ord]<MSMAX1 || states[ord]==MSall),funcname,ECbounds,"invalid state");
+
+	RxnSetPermit(sim,rxn,order,states,permit?1:0);
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetReactionSerialnum */
+extern CSTRING enum ErrorCode smolSetReactionSerialnum(simptr sim,const char *reaction,const char **codes) {
+	const char *funcname="smolSetReactionSerialnum";
+	char pattern[STRCHAR];
+	int er,i,prd,nprod,ruleorder;
+	long int sernolist[MAXPRODUCT];
+	rxnptr rxn,rulerxn;
+	listptrv vlist;
+
+	vlist=NULL;
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(reaction,funcname,ECmissing,"missing reaction");
+	er=smolfindreactions(sim,reaction,&vlist,&rulerxn,&ruleorder);
+	LCHECK(er!=-2,funcname,ECmemory,"out of memory finding reactions");
+	LCHECK(er!=-1,funcname,ECnonexist,"reaction not found");
+
+	rxn=vlist?(rxnptr) vlist->xs[0]:rulerxn;
+	nprod=rxn->nprod;
+	LCHECK(nprod==0 || codes,funcname,ECmissing,"missing product codes");
+	for(prd=0;prd<nprod;prd++) {
+		LCHECK(codes[prd] && strlen(codes[prd])<STRCHAR,funcname,ECmissing,"missing product code");
+		strcpy(pattern,codes[prd]);
+		sernolist[prd]=rxnstring2sernocode(pattern,prd);
+		LCHECK(sernolist[prd]!=0,funcname,ECsyntax,"error reading a product code"); }
+
+	for(i=0;vlist && i<vlist->n;i++) {
+		rxn=(rxnptr) vlist->xs[i];
+		LCHECK(rxn->nprod==nprod,funcname,ECerror,"matching reactions have different numbers of products");
+		er=RxnSetPrdSerno(rxn,sernolist);
+		LCHECK(!er,funcname,ECmemory,"out of memory allocating product serial number list"); }
+	if(rulerxn) {
+		LCHECK(rulerxn->nprod==nprod,funcname,ECerror,"matching reactions have different numbers of products");
+		er=RxnSetPrdSerno(rulerxn,sernolist);
+		LCHECK(!er,funcname,ECmemory,"out of memory allocating product serial number list"); }
+
+	ListFreeV(vlist);
+	return ECok;
+ failure:
+	ListFreeV(vlist);
+	return Liberrorcode; }
+
+
+/* smolSetReactionRepresentation */
+extern CSTRING enum ErrorCode smolSetReactionRepresentation(simptr sim,const char *reaction,const enum SpeciesRepresentation *rctrep,const enum SpeciesRepresentation *prdrep) {
+	const char *funcname="smolSetReactionRepresentation";
+	int er,i,rct,prd,order,nprod,ruleorder;
+	rxnptr rxn,rulerxn;
+	listptrv vlist;
+
+	vlist=NULL;
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(reaction,funcname,ECmissing,"missing reaction");
+	er=smolfindreactions(sim,reaction,&vlist,&rulerxn,&ruleorder);
+	LCHECK(er!=-2,funcname,ECmemory,"out of memory finding reactions");
+	LCHECK(er!=-1,funcname,ECnonexist,"reaction not found");
+
+	rxn=vlist?(rxnptr) vlist->xs[0]:rulerxn;
+	order=vlist?rxn->rxnss->order:ruleorder;
+	nprod=rxn->nprod;
+	LCHECK(order==0 || rctrep,funcname,ECmissing,"missing reactant representations");
+	LCHECK(nprod==0 || prdrep,funcname,ECmissing,"missing product representations");
+	for(rct=0;rct<order;rct++)
+		LCHECK(rctrep[rct]==SRparticle || rctrep[rct]==SRlattice || rctrep[rct]==SRboth,funcname,ECsyntax,"invalid reactant representation");
+	for(prd=0;prd<nprod;prd++)
+		LCHECK(prdrep[prd]==SRparticle || prdrep[prd]==SRlattice,funcname,ECsyntax,"product representation must be particle or lattice");
+
+	for(i=0;vlist && i<vlist->n;i++) {
+		rxn=(rxnptr) vlist->xs[i];
+		LCHECK(rxn->rxnss->order==order && rxn->nprod==nprod,funcname,ECerror,"matching reactions have different numbers of reactants or products");
+		er=RxnSetRepresentationRules(rxn,order,rctrep,prdrep);
+		LCHECK(!er,funcname,ECmemory,"out of memory allocating reaction representation rules"); }
+	if(rulerxn) {
+		LCHECK(ruleorder==order && rulerxn->nprod==nprod,funcname,ECerror,"matching reactions have different numbers of reactants or products");
+		er=RxnSetRepresentationRules(rulerxn,order,rctrep,prdrep);
+		LCHECK(!er,funcname,ECmemory,"out of memory allocating reaction representation rules"); }
+
+	ListFreeV(vlist);
+	return ECok;
+ failure:
+	ListFreeV(vlist);
+	return Liberrorcode; }
+
+
+/* smolSetReactionLog */
+extern CSTRING enum ErrorCode smolSetReactionLog(simptr sim,const char *filename,const char *reaction,int nserial,const long int *serialnums,int turnon) {
+	const char *funcname="smolSetReactionLog";
+	char fname[STRCHAR];
+	int er,i,ruleorder;
+	rxnptr rulerxn;
+	listptrv vlist;
+	listptrli lilist;
+
+	vlist=NULL;
+	lilist=NULL;
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	if(turnon) {
+		LCHECK(filename && filename[0]!='\0',funcname,ECmissing,"missing filename");
+		LCHECK(strlen(filename)<STRCHAR,funcname,ECbounds,"filename is too long");
+		strcpy(fname,filename); }
+	else
+		fname[0]='\0';
+
+	if(nserial<=0 || !serialnums) {							// all serial numbers
+		lilist=ListAppendItemLI(NULL,-1);
+		LCHECK(lilist,funcname,ECmemory,"out of memory"); }
+	else
+		for(i=0;i<nserial;i++) {
+			lilist=ListAppendItemLI(lilist,serialnums[i]);
+			LCHECK(lilist,funcname,ECmemory,"out of memory"); }
+
+	if(!reaction || reaction[0]=='\0' || !strcmp(reaction,"all")) {	// all current reactions, no rules
+		er=RxnSetLog(sim,turnon?fname:NULL,NULL,lilist,turnon?1:0);
+		LCHECK(er!=2,funcname,ECerror,"cannot log a reaction to multiple output files");
+		LCHECK(!er,funcname,ECmemory,"out of memory in reaction log"); }
+	else {
+		er=smolfindreactions(sim,reaction,&vlist,&rulerxn,&ruleorder);
+		LCHECK(er!=-2,funcname,ECmemory,"out of memory finding reactions");
+		LCHECK(er!=-1,funcname,ECnonexist,"reaction not found");
+		for(i=0;vlist && i<vlist->n;i++) {
+			er=RxnSetLog(sim,turnon?fname:NULL,(rxnptr) vlist->xs[i],lilist,turnon?1:0);
+			LCHECK(er!=2,funcname,ECerror,"cannot log a reaction to multiple output files");
+			LCHECK(!er,funcname,ECmemory,"out of memory in reaction log"); }
+		if(rulerxn) {
+			er=RxnSetLog(NULL,turnon?fname:NULL,rulerxn,lilist,turnon?1:0);
+			LCHECK(er!=2,funcname,ECerror,"cannot log a reaction to multiple output files");
+			LCHECK(!er,funcname,ECmemory,"out of memory in reaction log"); }}
+
+	ListFreeV(vlist);
+	ListFreeLI(lilist);
+	return ECok;
+ failure:
+	ListFreeV(vlist);
+	ListFreeLI(lilist);
+	return Liberrorcode; }
+
+
+/* smolExpandRules */
+extern CSTRING enum ErrorCode smolExpandRules(simptr sim,int iterations) {
+	const char *funcname="smolExpandRules";
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(iterations>=-2,funcname,ECbounds,"iterations needs to be >=0, or -1 for all, or -2 for on-the-fly");
+	er=RuleExpandRules(sim,iterations);
+	LCHECK(er!=-1 && er!=-11,funcname,ECmemory,"out of memory while expanding rules");
+	LCHECK(er!=-5,funcname,ECerror,"generated species name exceeded maximum allowed length");
+	LCHECK(er!=-41,funcname,ECnonexist,"no rules to expand");
+	LCHECK(!er,funcname,ECbug,"BUG: error in RuleExpandRules");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
 
 /******************************************************************************/
 /*********************************** Ports ************************************/

@@ -5163,6 +5163,60 @@ Sets the reaction product parameters for reaction \ttt{reaction}. At a minimum, 
 
 If \ttt{method} is \ttt{RPbounce}, then a negative number for the \ttt{parameter} indicates default bounce behavior, which is that molecules are separated by an amount that is equal to their previous overlap.
 
+\item[AddReactionRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddReactionRule(simptr sim, const char *rule, const char *reactant1, enum MolecState rstate1, const char *reactant2, enum MolecState rstate2, int nproduct, const char **productspecies, enum MolecState *productstates, double rate, const char *compartment, const char *surface)}\\
+Python: \ttt{ErrorCode addReactionRule(str rule, str reactant1, MolecState rstate1, str reactant2, MolecState rstate2, List[str] productspecies, List[MolecState] productstates, float rate, str compartment, str surface)}\\
+Adds a reaction rule called \ttt{rule}, which is equivalent to the \ttt{reaction\_rule} statement. The parameters are the same as for \ttt{smolAddReaction}, except that the reactant and product species can include wildcards and other species patterns, and reactant states can be \ttt{MSall}. To limit the rule to a compartment or surface, enter its name in \ttt{compartment} or \ttt{surface}; otherwise, enter \ttt{NULL} or an empty string. Enter \ttt{rate} as a negative number to leave the rate unset. Use \ttt{smolExpandRules} to generate reactions from the rule.
+
+\item[SetReactionSimParams]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionSimParams(simptr sim, const char *reaction, const char *parameter, double value)}\\
+Python: \ttt{ErrorCode setReactionSimParams(str reaction, str parameter, float value)}\\
+Sets the parameter \ttt{parameter} of the reaction called \ttt{reaction} to \ttt{value}. As with the equivalent statements, \ttt{reaction} can be a reaction name, or a reaction rule name, in which case the value is applied to the rule and to reactions that have already been generated from it. The options for \ttt{parameter} are listed below.
+
+\begin{longtable}[c]{ll}
+\ttt{parameter} & equivalent statement\\
+\hline
+\ttt{rate} & \ttt{reaction\_rate}\\
+\ttt{multiplicity} & \ttt{reaction\_multiplicity}\\
+\ttt{confspread\_radius} & \ttt{confspread\_radius}\\
+\ttt{binding\_radius} & \ttt{binding\_radius}\\
+\ttt{probability} & \ttt{reaction\_probability}\\
+\ttt{chi} & \ttt{reaction\_chi}\\
+\ttt{production} & \ttt{reaction\_production}\\
+\end{longtable}
+
+\item[SetReactionPermit]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionPermit(simptr sim, const char *reaction, enum MolecState *states, int permit)}\\
+Python: \ttt{ErrorCode setReactionPermit(str reaction, List[MolecState] states, bool permit)}\\
+Permits (\ttt{permit} = 1) or forbids (\ttt{permit} = 0) the reaction called \ttt{reaction} for the reactant states listed in \ttt{states}, which needs one entry for each reactant. Entries can be \ttt{MSall}. This is equivalent to the \ttt{reaction\_permit} and \ttt{reaction\_forbid} statements, and is not allowed for zeroth order reactions.
+
+\item[SetReactionSerialnum]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionSerialnum(simptr sim, const char *reaction, const char **codes)}\\
+Python: \ttt{ErrorCode setReactionSerialnum(str reaction, List[str] codes)}\\
+Sets the serial number rules for the products of reaction \ttt{reaction}, which is equivalent to the \ttt{reaction\_serialnum} statement. \ttt{codes} needs one string for each product, with the same codes used in that statement, such as ``r1'', ``p2'', ``new'', or ``r1.new''.
+
+\item[SetReactionRepresentation]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionRepresentation(simptr sim, const char *reaction, const enum SpeciesRepresentation *rctrep, const enum SpeciesRepresentation *prdrep)}\\
+Python: \ttt{ErrorCode setReactionRepresentation(str reaction, List[SpeciesRepresentation] rctrep, List[SpeciesRepresentation] prdrep)}\\
+Sets the particle or lattice representations of the reactants and products of reaction \ttt{reaction}, which is equivalent to the \ttt{reaction\_representation} statement. \ttt{rctrep} needs one entry for each reactant, each of which is \ttt{SRparticle}, \ttt{SRlattice}, or \ttt{SRboth}. \ttt{prdrep} needs one entry for each product, each of which is \ttt{SRparticle} or \ttt{SRlattice}.
+
+\item[SetReactionLog]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetReactionLog(simptr sim, const char *filename, const char *reaction, int nserial, const long int *serialnums, int turnon)}\\
+Python: \ttt{ErrorCode setReactionLog(str filename, str reaction, List[int] serialnums, bool turnon)}\\
+Turns reaction logging on (\ttt{turnon} = 1) or off (\ttt{turnon} = 0), which is equivalent to the \ttt{reaction\_log} and \ttt{reaction\_log\_off} statements. To turn logging on, \ttt{filename} is the name of the output file, which must also be declared with \ttt{smolAddOutputFile}; \ttt{filename} is ignored when turning logging off. Enter \ttt{reaction} as a reaction or reaction rule name, or as ``all'', the empty string, or \ttt{NULL} for all current reactions. To log only reactions that involve specific molecules, list their serial numbers in \ttt{serialnums} and the number of them in \ttt{nserial}; otherwise, enter \ttt{nserial} as 0 for all molecules.
+
+\item[ExpandRules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolExpandRules(simptr sim, int iterations)}\\
+Python: \ttt{ErrorCode expandRules(int iterations)}\\
+Expands rules to generate species and reactions, which is equivalent to the \ttt{expand\_rules} statement. Enter \ttt{iterations} as the number of expansion iterations, as -1 to expand rules completely, or as -2 for on-the-fly expansion.
+
 \end{description}
 
 % Section: Compartments
