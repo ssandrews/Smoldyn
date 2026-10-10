@@ -516,6 +516,7 @@ void writesim(simptr sim,FILE *fptr) {
 	fprintf(fptr,"accuracy %g\n",sim->accur);
 	if(sim->boxs->mpbox) fprintf(fptr,"molperbox %g\n",sim->boxs->mpbox);
 	else if(sim->boxs->boxsize) fprintf(fptr,"boxsize %g\n",sim->boxs->boxsize);
+	if(sim->filss && sim->filss->ntype) fprintf(fptr,"filament_box_density %g\n",sim->boxs->filamentdensity);
 	fprintf(fptr,"\n");
 	return; }
 
@@ -2207,6 +2208,15 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=2,"molperbox needs to be >0");
 		CHECKS(er!=3,"need to enter dim before molperbox");
 		CHECKS(!strnword(line2,2),"unexpected text following molperbox"); }
+
+	else if(!strcmp(word,"filament_box_density")) {
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
+		CHECKM(itct==1,"filament_box_density needs a number (segments per unit volume)");
+		er=boxsetsize(sim,"filament_box_density",flt1);
+		CHECKS(er!=1,"out of memory");
+		CHECKS(er!=2,"filament_box_density needs to be >0");
+		CHECKS(er!=3,"need to enter dim before filament_box_density");
+		CHECKS(!strnword(line2,2),"unexpected text following filament_box_density"); }
 
 	else if(!strcmp(word,"boxsize")) {						// boxsize
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);

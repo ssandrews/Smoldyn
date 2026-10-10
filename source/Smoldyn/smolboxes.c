@@ -19,24 +19,11 @@
 #include "smolfilamentsteric.h"
 #include "Zn.h"
 
-/* Sparse filament boxes: expanded capsule bounds, not the molecule-sized dense
-   grid. Sorted occupied cells keep memory proportional to filament segments.
-   No reverse segment->box memberships are needed. */
-static int boxGridEntryCompare(const void *va,const void *vb) {
- const BoxGridEntry *a=(const BoxGridEntry*)va,*b=(const BoxGridEntry*)vb;int d;
- for(d=0;d<3;d++) if(a->cell[d]!=b->cell[d]) return a->cell[d]<b->cell[d]?-1:1;
- return (a->object>b->object)-(a->object<b->object);
-}
-static int boxGridIndexCompare(const int *a,const int *b) {
- int d;for(d=0;d<3;d++) if(a[d]!=b[d]) return a[d]<b[d]?-1:1;return 0;
-}
+/* One grid for molecules, panels and filament segments. The grid view keeps
+   coordinate queries independent of payload, without owning a second index. */
 void boxGridSetDense(BoxGrid *g,boxssptr boxes,int dim) {
- int d;memset(g,0,sizeof(*g));g->storage=BGdense;g->dim=dim;g->dense=boxes;
+ int d;memset(g,0,sizeof(*g));g->dim=dim;g->dense=boxes;
  for(d=0;d<dim;d++) {g->origin[d]=boxes->min[d];g->width[d]=boxes->size[d];}
-}
-void boxGridSetSparse(BoxGrid *g,int dim,double width) {
- int d;g->storage=BGsparse;g->dim=dim;g->dense=NULL;g->nentry=0;
- for(d=0;d<3;d++) {g->origin[d]=0;g->width[d]=width;}
 }
 int boxGridCellCoords(const BoxGrid *g,const double *pos,int *index) {
  int d;
@@ -45,7 +32,7 @@ int boxGridCellCoords(const BoxGrid *g,const double *pos,int *index) {
   if(d<g->dim) {
    if(!(g->width[d]>0) || !isfinite(pos[d])) return 1;
    x=floor((pos[d]-g->origin[d])/g->width[d]);
-   if(g->storage==BGdense) x=fmax(0,fmin(g->dense->side[d]-1,x));
+   x=fmax(0,fmin(g->dense->side[d]-1,x));
   }
   if(!isfinite(x) || x<=INT_MIN || x>=INT_MAX) return 1;
   index[d]=(int)x;
@@ -63,9 +50,7 @@ int boxGridBounds(const BoxGrid *g,const double *a,const double *b,double pad,in
    if(!(g->width[d]>0) || !isfinite(a[d]) || !isfinite(b[d])) return 1;
    low=floor((fmin(a[d],b[d])-pad-g->origin[d])/g->width[d]);
    high=floor((fmax(a[d],b[d])+pad-g->origin[d])/g->width[d]);
-   if(g->storage==BGdense) {
-    low=fmax(0,fmin(g->dense->side[d]-1,low));high=fmax(0,fmin(g->dense->side[d]-1,high));
-   }
+   low=fmax(0,fmin(g->dense->side[d]-1,low));high=fmax(0,fmin(g->dense->side[d]-1,high));
   }
   if(!isfinite(low) || !isfinite(high) || low<=INT_MIN || high>=INT_MAX) return 1;
   lo[d]=(int)low;hi[d]=(int)high;
@@ -73,93 +58,73 @@ int boxGridBounds(const BoxGrid *g,const double *a,const double *b,double pad,in
  return 0;
 }
 int boxGridFindCell(const BoxGrid *g,const int *index,BoxGridCell *cell) {
- int d,l=0,r=g->nentry,m,end;
+ int d,address=0;
  memset(cell,0,sizeof(*cell));memcpy(cell->index,index,3*sizeof(int));
- if(g->storage==BGdense) {
-  int address=0;
-  if(!g->dense || !g->dense->blist) return 0;
-  for(d=0;d<g->dim;d++) {
-   if(index[d]<0 || index[d]>=g->dense->side[d]) return 0;
-   address=g->dense->side[d]*address+index[d];
-  }
-  cell->box=g->dense->blist[address];return 1;
+ if(!g->dense || !g->dense->blist) return 0;
+ for(d=0;d<g->dim;d++) {
+  if(index[d]<0 || index[d]>=g->dense->side[d]) return 0;
+  address=g->dense->side[d]*address+index[d];
  }
- while(l<r) {m=l+(r-l)/2;if(boxGridIndexCompare(g->entries[m].cell,index)<0) l=m+1;else r=m;}
- if(l==g->nentry || boxGridIndexCompare(g->entries[l].cell,index)) return 0;
- for(end=l+1;end<g->nentry && !boxGridIndexCompare(g->entries[end].cell,index);end++);
- cell->entries=g->entries+l;cell->nentry=end-l;return 1;
+ cell->box=g->dense->blist[address];return 1;
 }
 int boxGridFindPoint(const BoxGrid *g,const double *pos,BoxGridCell *cell) {
  int index[3];if(boxGridCellCoords(g,pos,index)) {memset(cell,0,sizeof(*cell));return 0;}
  return boxGridFindCell(g,index,cell);
-}
-int boxGridAddEntry(BoxGrid *g,const int *index,int object) {
- if(g->storage!=BGsparse) return 1;
- if(g->nentry==g->maxentry) {
-  int n;BoxGridEntry *p;
-  if(g->maxentry>INT_MAX/2) return 1;
-  n=g->maxentry?2*g->maxentry:128;
-  p=(BoxGridEntry*)realloc(g->entries,(size_t)n*sizeof(*p));if(!p) return 1;
-  g->entries=p;g->maxentry=n;
- }
- memcpy(g->entries[g->nentry].cell,index,3*sizeof(int));g->entries[g->nentry++].object=object;return 0;
-}
-void boxGridSort(BoxGrid *g) {
- if(g->nentry>1) qsort(g->entries,g->nentry,sizeof(*g->entries),boxGridEntryCompare);
-}
-void boxGridFree(BoxGrid *g) {
- if(g->storage==BGsparse) free(g->entries);
- memset(g,0,sizeof(*g));
 }
 static int filBoxPairCompare(const void *va,const void *vb) {
  const FilStericPair *a=(const FilStericPair*)va,*b=(const FilStericPair*)vb;
  if(a->a!=b->a) return (a->a>b->a)-(a->a<b->a);
  return (a->b>b->b)-(a->b<b->b);
 }
+static int boxSegmentCompare(const void *va,const void *vb) {
+ segmentptr a=*(segmentptr const*)va,b=*(segmentptr const*)vb;
+ double ax=fmin(a->xyzfront[0],a->xyzback[0]),bx=fmin(b->xyzfront[0],b->xyzback[0]);
+ return (ax>bx)-(ax<bx);
+}
 int filBoxesBuild(simptr sim,struct filamentstericstruct *w) {
- int i,d,lo[3],hi[3],x,y,z,start,end,j,l,out,dim=sim->dim;
- BoxGrid *g=&w->grid;
- double width=0,extent;
- g->nentry=w->npair=0;
+ int i,d,lo[3],hi[3],box,j,l,out,dim=sim->dim;
+ BoxGrid *g=&sim->boxs->grid;
+ double extent,maxradius=0;
+ w->npair=0;
+ if(boxesupdatesegments(sim)) return 1;
  for(i=0;i<w->nsegment;i++) {
   FilStericSegment *s=&w->segments[i];
-  double length=0;
-  for(d=0;d<dim;d++) {double v=s->segment->xyzback[d]-s->segment->xyzfront[d];length+=v*v;}
-  width=fmax(width,fmax(2*sqrt(length),2*s->radius+w->skin));
- }
- boxGridSetSparse(g,dim,width);
- if(width<=0) return 0;
- for(i=0;i<w->nsegment;i++) {
-  FilStericSegment *s=&w->segments[i];
-  extent=s->radius+0.5*w->skin;
+  s->segment->stericindex=i;
+  maxradius=fmax(maxradius,s->radius);
+  for(d=0;d<dim;d++) {
+   s->bounds[d]=fmin(s->segment->xyzfront[d],s->segment->xyzback[d]);
+   s->bounds[d+3]=fmax(s->segment->xyzfront[d],s->segment->xyzback[d]);
+  }
+  extent=s->radius+0.5*s->fil->filtype->stericskin;
   if(boxGridBounds(g,s->segment->xyzfront,s->segment->xyzback,extent,lo,hi)) return 1;
   memcpy(s->boxlo,lo,sizeof(lo));
-  for(x=lo[0];x<=hi[0];x++) for(y=lo[1];y<=hi[1];y++) for(z=lo[2];z<=hi[2];z++) {
-   int cell[3]={x,y,z};if(boxGridAddEntry(g,cell,i)) return 1;
-  }
  }
- boxGridSort(g);
- for(start=0;start<g->nentry;start=end) {
-  for(end=start+1;end<g->nentry;end++) {
-   for(d=0;d<3 && g->entries[start].cell[d]==g->entries[end].cell[d];d++);
-   if(d<3) break;
-  }
-  for(j=start;j<end;j++) for(l=j+1;l<end;l++) {
-   int a=g->entries[j].object,b=g->entries[l].object;double s,t,norm[3],dist;
-   FilStericSegment *sa=&w->segments[a],*sb=&w->segments[b];
+ for(box=0;box<sim->boxs->nsegmentbox;box++) {
+  boxptr cell=sim->boxs->segmentbox[box];
+  /* Sweep sorted x bounds inside each original box. This reduces false pairs
+     in coarse/shared cells without another grid or a resolution change. */
+  qsort(cell->segment,cell->nsegment,sizeof(segmentptr),boxSegmentCompare);
+  for(j=0;j<cell->nsegment;j++) {
+   int a=cell->segment[j]->stericindex;FilStericSegment *sa;double xmax;
+   if(cell->segment[j]->fil->filtype->stericradius<=0) continue;
+   if(a<0 || a>=w->nsegment) return 1;
+   sa=&w->segments[a];xmax=sa->bounds[3]+sa->radius+maxradius+w->skin;
+   for(l=j+1;l<cell->nsegment;l++) {
+   int b=cell->segment[l]->stericindex;double s,t,norm[3],dist;FilStericSegment *sb;
+   if(cell->segment[l]->fil->filtype->stericradius<=0) continue;
+   if(b<0 || b>=w->nsegment) return 1;
+   sb=&w->segments[b];
+   if(sb->bounds[0]>xmax) break;
+   extent=sa->radius+sb->radius+w->skin;
+   for(d=0;d<dim;d++) {
+    if(sa->bounds[d]>sb->bounds[d+3]+extent || sb->bounds[d]>sa->bounds[d+3]+extent) break;
+   }
+   if(d<dim) continue;
    if(a==b || filStericExcluded(sa->segment,sb->segment)) continue;
    /* The lowest shared cell owns the pair. Expanded AABBs occupy Cartesian
       ranges, so the intersection's lower corner is componentwise max(lo).
       This avoids repeating exact geometry in every shared cell. */
-   for(d=0;d<3;d++) if(g->entries[start].cell[d]!=(sa->boxlo[d]>sb->boxlo[d]?sa->boxlo[d]:sb->boxlo[d])) break;
-   if(d<3) continue;
-   /* Cheap bounds rejection precedes the exact distance. */
-   extent=sa->radius+sb->radius+w->skin;
-   for(d=0;d<dim;d++) {
-    double al=fmin(sa->segment->xyzfront[d],sa->segment->xyzback[d]),ah=fmax(sa->segment->xyzfront[d],sa->segment->xyzback[d]);
-    double bl=fmin(sb->segment->xyzfront[d],sb->segment->xyzback[d]),bh=fmax(sb->segment->xyzfront[d],sb->segment->xyzback[d]);
-    if(al>bh+extent || bl>ah+extent) break;
-   }
+   for(d=0;d<dim;d++) if(cell->indx[d]!=(sa->boxlo[d]>sb->boxlo[d]?sa->boxlo[d]:sb->boxlo[d])) break;
    if(d<dim) continue;
    /* Use raw geometry here: topology-aware trimmed geometry can change as a
       junction moves, and must not make the cached broad phase incomplete. */
@@ -172,12 +137,70 @@ int filBoxesBuild(simptr sim,struct filamentstericstruct *w) {
     w->pairs=p;w->maxpair=cap;
    }
    w->pairs[w->npair].a=a<b?a:b;w->pairs[w->npair++].b=a<b?b:a;
+   }
   }
  }
  if(w->npair>1) qsort(w->pairs,w->npair,sizeof(*w->pairs),filBoxPairCompare);
  for(i=0,out=0;i<w->npair;i++)
   if(!out || w->pairs[i].a!=w->pairs[out-1].a || w->pairs[i].b!=w->pairs[out-1].b) w->pairs[out++]=w->pairs[i];
  w->npair=out;
+ w->boxgeneration=sim->boxs->segmentgeneration;
+ return 0;
+}
+
+/* Exact finite centerline intersection. Capsule/skin coverage below adds a
+   conservative Cartesian range, so contacts across a cell face cannot be lost. */
+int segmentinbox(simptr sim,segmentptr segment,boxptr box) {
+ double lo[3],hi[3];
+ box2posInGrid(sim->boxs,sim->dim,box,lo,hi);
+ return Geo_LineXaabb(segment->xyzfront,segment->xyzback,lo,hi,sim->dim,0);
+}
+
+int expandboxsegments(boxptr box,int n) {
+ segmentptr *list;int capacity;
+ if(n<=0) return 0;
+ if(n>INT_MAX-box->maxsegment) return 1;
+ capacity=box->maxsegment+n;
+ list=(segmentptr*)realloc(box->segment,(size_t)capacity*sizeof(*list));
+ if(!list) return 1;
+ box->segment=list;box->maxsegment=capacity;return 0;
+}
+
+/* Refresh payload only. Neither box dimensions nor molecule/panel lists change.
+   Clearing occupied boxes costs O(occupied), not O(chamber cells). */
+int boxesupdatesegments(simptr sim) {
+ boxssptr bs=sim->boxs;int i,ft,f,s,lo[3],hi[3],cell[3];BoxGridCell found;
+ if(!bs || !bs->blist) return 1;
+ for(i=0;i<bs->nsegmentbox;i++) bs->segmentbox[i]->nsegment=0;
+ bs->nsegmentbox=0;bs->segmentgeneration++;
+ if(!sim->filss) return 0;
+ for(ft=0;ft<sim->filss->ntype;ft++) {
+  filamenttypeptr type=sim->filss->filtypes[ft];
+  double pad=type->stericradius>0?type->stericradius+0.5*type->stericskin:0;
+  for(f=0;f<type->nfil;f++) for(s=0;s<type->fillist[f]->nseg;s++) {
+   segmentptr seg=type->fillist[f]->segments[s];
+   if(boxGridBounds(&bs->grid,seg->xyzfront,seg->xyzback,pad,lo,hi)) return 1;
+   for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
+    boxptr box;
+    if(!boxGridFindCell(&bs->grid,cell,&found)) return 1;
+    box=found.box;
+    /* With sterics, retain the full expanded AABB for cached pair ownership.
+       Outside-domain segments use edge boxes, matching pos2box clamping. */
+    if(pad<=0 && !segmentinbox(sim,seg,box)) continue;
+    if(!box->nsegment) {
+     if(bs->nsegmentbox==bs->maxsegmentbox) {
+      int cap=bs->maxsegmentbox?2*bs->maxsegmentbox:32;
+      boxptr *list=(boxptr*)realloc(bs->segmentbox,(size_t)cap*sizeof(*list));
+      if(!list) return 1;
+      bs->segmentbox=list;bs->maxsegmentbox=cap;
+     }
+     bs->segmentbox[bs->nsegmentbox++]=box;
+    }
+    if(box->nsegment==box->maxsegment && expandboxsegments(box,box->maxsegment?box->maxsegment:8)) return 1;
+    box->segment[box->nsegment++]=seg;
+   }
+  }
+ }
  return 0;
 }
 
@@ -463,6 +486,8 @@ boxptr boxalloc(int dim,int nlist) {
 	bptr->maxpanel=0;
 	bptr->npanel=0;
 	bptr->panel=NULL;
+	bptr->maxsegment=bptr->nsegment=0;
+	bptr->segment=NULL;
 	bptr->maxmol=NULL;
 	bptr->nmol=NULL;
 	bptr->mol=NULL;
@@ -520,6 +545,7 @@ int expandboxpanels(boxptr bptr,int n) {
 	for(;p<maxpanel;p++)
 		panel[p]=NULL;
 	free(bptr->panel);
+	free(bptr->segment);
 	bptr->panel=panel;
 	bptr->maxpanel=maxpanel;
 	return 0; }
@@ -585,6 +611,12 @@ boxssptr boxssalloc(int dim) {
 	boxs->nlist=0;
 	boxs->mpbox=0;
 	boxs->boxsize=0;
+	boxs->explicitresolution=0;
+	boxs->resolutiondirty=1;
+	boxs->filamentdensity=100000; // anticipated dense network, not the initial seed count
+	boxs->nsegmentbox=boxs->maxsegmentbox=0;
+	boxs->segmentbox=NULL;
+	boxs->segmentgeneration=0;
 	boxs->boxvol=0;
 	boxs->nbox=0;
 	boxs->side=NULL;
@@ -615,6 +647,7 @@ void boxssfree(boxssptr boxs) {
 	free(boxs->size);
 	free(boxs->min);
 	free(boxs->side);
+	free(boxs->segmentbox);
 	free(boxs);
 	return; }
 
@@ -661,6 +694,10 @@ void boxoutput(boxssptr boxs,int blo,int bhi,int dim) {
 				simLog(sim,2," %s",bptr->panel[p]->pname); }}
 		simLog(sim,2,"\n");
 
+		simLog(sim,2,"  %i filament segments (capacity %i)\n",bptr->nsegment,bptr->maxsegment);
+		for(p=0;p<bptr->nsegment;p++)
+			simLog(sim,1,"   %s:%i\n",bptr->segment[p]->fil->filname,bptr->segment[p]->index);
+
 		simLog(sim,2,"  %i live lists:\n",boxs->nlist);
 		simLog(sim,2,"   max:");
 		for(ll=0;ll<boxs->nlist;ll++) simLog(sim,2," %i",bptr->maxmol[ll]);
@@ -694,6 +731,9 @@ void boxssoutput(simptr sim) {
 	simLog(sim,1,"\n");
 	if(boxs->boxsize) simLog(sim,2," Requested box width: %g|L\n",boxs->boxsize);
 	if(boxs->mpbox) simLog(sim,2," Requested molecules per box: %g\n",boxs->mpbox);
+	if(sim->filss && sim->filss->ntype) {
+		simLog(sim,2," Anticipated filament segment density: %g per unit volume\n",boxs->filamentdensity);
+		simLog(sim,2," Filament-occupied boxes: %i (shared grid, fixed resolution)\n",boxs->nsegmentbox); }
 	simLog(sim,2," Box dimensions: ");
 	for(d=0;d<dim;d++) simLog(sim,2," %g|L",boxs->size[d]);
 	simLog(sim,2,"\n");
@@ -747,11 +787,17 @@ int checkboxparams(simptr sim,int *warnptr) {
 	for(b=0;b<boxs->nbox;b++) {
 		bptr=boxs->blist[b];
 		if(sim->mols) {
+			/* Molecule and segment payloads have independent lifetimes. */
 			nmolec=0;																					// actual molecs per box
 			for(ll=0;ll<sim->mols->nlist;ll++) nmolec+=bptr->nmol[ll];
 			if(nmolec>10*mpbox) {
 				warn++;
 				simLog(sim,5," WARNING: box (%s) has %i molecules in it, which is very high\n",Zn_vect2csvstring(bptr->indx,dim,string),nmolec); }}
+
+		if(bptr->nsegment<0 || bptr->nsegment>bptr->maxsegment ||
+			(bptr->nsegment && !bptr->segment)) {
+			error++;
+			simLog(sim,9," ERROR: invalid filament segment list in box %i\n",b); }
 
 		if(bptr->npanel>20) {
 			warn++;
@@ -783,7 +829,7 @@ void boxsetcondition(boxssptr boxs,enum StructCond cond,int upgrade) {
 int boxsetsize(simptr sim,const char *info,double val) {
 	boxssptr boxs;
 
-	if(val<=0) return 2;
+	if(!isfinite(val) || val<=0) return 2;
 	if(!sim->boxs) {
 		if(!sim->dim) return 3;
 		boxs=boxssalloc(sim->dim);
@@ -793,9 +839,11 @@ int boxsetsize(simptr sim,const char *info,double val) {
 		boxsetcondition(boxs,SCinit,0); }
 	else
 		boxs=sim->boxs;
-	if(!strcmp(info,"molperbox")) boxs->mpbox=val;
-	else if(!strcmp(info,"boxsize")) boxs->boxsize=val;
+	if(!strcmp(info,"molperbox")) {boxs->mpbox=val;boxs->boxsize=0;boxs->explicitresolution=1;}
+	else if(!strcmp(info,"boxsize")) {boxs->boxsize=val;boxs->mpbox=0;boxs->explicitresolution=1;}
+	else if(!strcmp(info,"filament_box_density")) boxs->filamentdensity=val;
 	else return 2;
+	boxs->resolutiondirty=1;
 	boxsetcondition(boxs,SClists,0);
 	return 0; }
 
@@ -880,12 +928,12 @@ int boxesupdateparams(simptr sim) {
 					bptr=mptr->box;
 					bptr->mol[ll][bptr->nmol[ll]++]=mptr; }}}}
 
-	return 0; }
+	return boxesupdatesegments(sim); }
 
 
 /* boxesupdatelists */
 int boxesupdatelists(simptr sim) {
-	int dim,d,nbox,b,b2,w,er,nneigh,nwall;
+	int dim,d,nbox,b,b2,w,nneigh,nwall,keepresolution;
 	int *side,*indx;
 	boxssptr boxs;
 	boxptr *blist,bptr;
@@ -896,18 +944,37 @@ int boxesupdatelists(simptr sim) {
 	boxs=sim->boxs;
 
 	if(!boxs) {																			// create superstructure if needed
-		er=boxsetsize(sim,"molperbox",4);
-		if(er) return 1;
-		boxs=sim->boxs; }
+		boxs=sim->boxs=boxssalloc(dim);
+		if(!boxs) return 1;
+		boxs->sim=sim; }
 	
 	if(sim->mols && sim->mols->condition<SCparams) return 2;
+	keepresolution=boxs->blist && !boxs->resolutiondirty;
 	if(boxs->blist) {																// box superstructure
+		boxs->nsegmentbox=0;
+		boxs->segmentgeneration++;
 		boxesfree(boxs->blist,boxs->nbox,boxs->nlist);
+		boxs->blist=NULL;
 		boxs->nbox=0; }
 	side=boxs->side;
 	mpbox=boxs->mpbox;
-	if(mpbox<=0 && boxs->boxsize<=0) mpbox=5;
-	if(mpbox>0) {
+	if(!boxs->explicitresolution && sim->filss && sim->filss->ntype) {
+		int ft;double geometrywidth=0,cellcount;
+		/* Target eight segment references per cell at an anticipated dense state.
+		   Cap automatic allocation at 131072 original boxes; explicit boxsize
+		   can request a finer grid. This choice is frozen after initialization. */
+		for(ft=0;ft<sim->filss->ntype;ft++) {
+			filamenttypeptr t=sim->filss->filtypes[ft];
+			geometrywidth=fmax(geometrywidth,fmax(2*t->stdlen,2*t->stericradius+t->stericskin)); }
+		flt1=1.0/fmax(geometrywidth,pow(8.0/boxs->filamentdensity,1.0/dim));
+		do {
+			cellcount=1;
+			for(d=0;d<dim;d++) cellcount*=fmax(1,ceil((sim->wlist[2*d+1]->pos-sim->wlist[2*d]->pos)*flt1));
+			if(cellcount>131072) flt1*=0.95*pow(131072/cellcount,1.0/dim);
+		} while(cellcount>131072);
+		if(!keepresolution) simLog(sim,2,"Shared filament boxes: anticipated density %g, target 8 segments/cell, automatic box cap 131072\n",boxs->filamentdensity); }
+	else if(mpbox>0 || boxs->boxsize<=0) {
+		if(mpbox<=0) mpbox=4;
 		flt1=systemvolume(sim);
 		flt2=(double)molcount(sim,-5,NULL,MSall,-1);
 		flt1=pow(flt2/mpbox/flt1,1.0/dim); }
@@ -915,9 +982,13 @@ int boxesupdatelists(simptr sim) {
 	nbox=1;
 	for(d=0;d<dim;d++) {
 		boxs->min[d]=sim->wlist[2*d]->pos;
-		side[d]=(int)ceil((sim->wlist[2*d+1]->pos-sim->wlist[2*d]->pos)*flt1);
+		if(!keepresolution) {
+			double cells=ceil((sim->wlist[2*d+1]->pos-sim->wlist[2*d]->pos)*flt1);
+			if(!isfinite(cells) || cells<0 || cells>INT_MAX) return 1;
+			side[d]=(int)cells; }
 		if(!side[d]) side[d]=1;
 		boxs->size[d]=(sim->wlist[2*d+1]->pos-sim->wlist[2*d]->pos)/side[d];
+		if(side[d]>INT_MAX/nbox) return 1;
 		nbox*=side[d]; }
 	boxs->boxvol=1.0;
 	for(d=0;d<dim;d++) boxs->boxvol*=boxs->size[d];
@@ -925,6 +996,7 @@ int boxesupdatelists(simptr sim) {
 
 	boxs->nlist=sim->mols?sim->mols->nlist:0;					// individual boxes
 	boxs->nbox=nbox;
+	boxs->resolutiondirty=0;
 	blist=boxs->blist=boxesalloc(nbox,dim,boxs->nlist);
 	if(!blist) return 1;
 

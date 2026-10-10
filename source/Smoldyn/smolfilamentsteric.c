@@ -51,7 +51,7 @@ int filStericValidate(const simptr sim) {
 void filStericFree(filamentssptr ss) {
  struct filamentstericstruct *w;
  if(!ss || !(w=ss->steric)) return;
- free(w->segments);free(w->pairs);boxGridFree(&w->grid);free(w->nodes);free(w->pending);free(w);ss->steric=NULL;
+ free(w->segments);free(w->pairs);free(w->nodes);free(w->pending);free(w);ss->steric=NULL;
 }
 
 int filStericExcluded(segmentptr a,segmentptr b) {
@@ -93,11 +93,13 @@ int filStericPrepare(simptr sim) {
  struct filamentstericstruct *w;int ft,f,i,n=0,j=0,d,rebuild=0;
  double skin=DBL_MAX,move;
  if(!filStericEnabled(sim)) return 0;
+ if(!sim->boxs || !sim->boxs->blist) {if(boxesupdate(sim)) return 1;}
  if(!sim->filss->steric) {
   sim->filss->steric=(struct filamentstericstruct*)calloc(1,sizeof(*w));
   if(!sim->filss->steric) return 1;
  }
  w=sim->filss->steric;
+ if(w->boxgeneration!=sim->boxs->segmentgeneration) rebuild=1;
  for(ft=0;ft<sim->filss->ntype;ft++) {
   filamenttypeptr t=sim->filss->filtypes[ft];
   if(t->stericradius<=0) continue;
@@ -211,12 +213,15 @@ int filStericSegmentBlocked(simptr sim,segmentptr trial) {
  if(radius<=0) return 0;
  w=sim->filss->steric;
  if(!w || !w->inchemistry) {if(filStericPrepare(sim)) return 1;w=sim->filss->steric;}
- if(w->grid.width[0]>0) {
-  if(boxGridBounds(&w->grid,trial->xyzfront,trial->xyzback,radius,lo,hi)) {w->queryerror=1;return 1;}
+ if(sim->boxs->grid.width[0]>0) {
+  if(boxGridBounds(&sim->boxs->grid,trial->xyzfront,trial->xyzback,radius,lo,hi)) {w->queryerror=1;return 1;}
   for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
-   if(!boxGridFindCell(&w->grid,cell,&found)) continue;
-   for(i=0;i<found.nentry;i++) {
-    FilStericSegment *s=&w->segments[found.entries[i].object];
+   if(!boxGridFindCell(&sim->boxs->grid,cell,&found)) continue;
+   for(i=0;i<found.box->nsegment;i++) {
+    segmentptr other=found.box->segment[i];FilStericSegment *s;
+    if(other->fil->filtype->stericradius<=0) continue;
+    if(other->stericindex<0 || other->stericindex>=w->nsegment) continue;
+    s=&w->segments[other->stericindex];
     for(d=0;d<3;d++) if(cell[d]!=(lo[d]>s->boxlo[d]?lo[d]:s->boxlo[d])) break;
     if(d==3 && filStericTrialContact(sim,trial,s->segment)) return 1;
    }
@@ -275,16 +280,19 @@ segmentptr filStericQuery(simptr sim,const double *a,const double *b,double radi
  w=sim->filss->steric;
  /* A chemistry snapshot includes a separate list of accepted new segments. */
  if(!w || !w->inchemistry) {if(filStericPrepare(sim)) goto invalid;w=sim->filss->steric;}
- if(w->grid.width[0]>0) {
-  if(boxGridBounds(&w->grid,a,b,radius,lo,hi)) goto invalid;
+ if(sim->boxs->grid.width[0]>0) {
+  if(boxGridBounds(&sim->boxs->grid,a,b,radius,lo,hi)) goto invalid;
   for(d=0;d<3;d++) cells*=1.0+(double)hi[d]-lo[d];
   /* Large diagonal lines must not enumerate an enormous mostly empty AABB.
      Global nearest queries also use a linear bounds pass with exact pruning. */
-  if(!global && cells<=4.0*fmax(1,w->grid.nentry)) {
+  if(!global && cells<=4.0*fmax(1,w->nsegment)) {
    for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
-    if(!boxGridFindCell(&w->grid,cell,&found)) continue;
-    for(i=0;i<found.nentry;i++) {
-     FilStericSegment *s=&w->segments[found.entries[i].object];
+    if(!boxGridFindCell(&sim->boxs->grid,cell,&found)) continue;
+    for(i=0;i<found.box->nsegment;i++) {
+     segmentptr other=found.box->segment[i];FilStericSegment *s;
+     if(other->fil->filtype->stericradius<=0) continue;
+     if(other->stericindex<0 || other->stericindex>=w->nsegment) continue;
+     s=&w->segments[other->stericindex];
      for(d=0;d<3;d++) if(cell[d]!=(lo[d]>s->boxlo[d]?lo[d]:s->boxlo[d])) break;
      if(d==3) filQueryCandidate(sim,a,b,radius,trial,s->segment,&best,&closest);
      if(closest && best<=0) return closest;
@@ -390,7 +398,7 @@ int filStericDynamics(simptr sim) {
     fil->filwork->thermtime=-DBL_MAX;filComputeForces(fil,-1,-1);
    }
   }
-  if((er=filStericForces(sim))) break;
+  if((er=filAddFilamentForce(sim))) break;
   if(sim->filss->steric->contactbound>0.5) {
    simLog(sim,9,"ERROR: contact relaxation factor %g exceeds 0.5; reduce time_step or increase steric_substeps\n",sim->filss->steric->contactbound);er=1;break;
   }

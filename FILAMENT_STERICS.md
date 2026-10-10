@@ -64,36 +64,62 @@ of their two stiffnesses. Closest-point interpolation weights distribute equal
 and opposite forces to the segment endpoints. There are no inertial impulses,
 friction, adhesion or new crosslinks.
 
-Every segment enters each occupied spatial cell touched by its expanded bounding
-box. Only pairs sharing a cell become candidates; exact segment distance filters
-them. The lowest shared cell owns each pair, avoiding repeated distance checks
-across shared cells; final pair sorting ensures stable order. Compact cell
-entries use validated integer coordinates. Cell size follows the largest current
-segment length and contact extent. The index is sparse, so nanometre resolution
-does not allocate a dense grid over the whole chamber.
+Molecules, surface panels and filament segments now use **one original Smoldyn
+grid**. Each `boxstruct` owns `maxsegment`, `nsegment`, and a borrowed `segment`
+pointer list. There is no separate filament grid. `segmentinbox` uses
+`Geo_LineXaabb` for exact finite centerline intersection. For volume-enabled
+types, population additionally retains the complete expanded capsule AABB,
+including half the skin. These conservative extra references protect contacts
+across cell faces and make cached pair ownership safe; they are not exact contacts.
 
-This follows the ownership approach Steven described: cells hold segment
-references; segments do not own lists of cells. The molecule and filament grids
-are **parallel instances of a shared `BoxGrid` interface in `smolboxes.c`**.
-`boxsuperstruct.grid` uses the original dense molecule boxes;
-`filamentstericstruct.grid` specializes that interface with sparse sorted
-occupied-cell entries. Their resolutions remain independent. The molecule grid
-may have only one cell in a filament-only run and is often too coarse for contacts.
+Only pairs sharing an original box become candidates. Within each occupied box,
+an x-axis bounds sweep rejects distant pairs cheaply; exact finite-segment
+distance then filters candidates. The lowest shared box owns each pair, and final
+pair sorting preserves deterministic force accumulation order. A temporary
+`stericindex` maps a segment to its contact workspace record; segments do not own
+lists of boxes. The `BoxGrid` coordinate view refers only to `sim->boxs`.
 
-The shared implementation provides position-to-cell conversion, expanded segment
-search bounds, cell lookup, sorting, sparse entry allocation and freeing. A
-`BoxGridCell` view returns the original dense `boxptr` or a contiguous range of
-sparse object IDs, without allocating a cell object. IDs refer to the existing
-filament segment array. Sparse entry layout and pair ordering are preserved;
-there are no new per-cell molecule lists, empty cells, or persistent mappings
-between the two grids. A molecule's coordinates can directly query the filament
-grid. Existing `pos2box(sim, ...)` and `box2pos(sim, ...)` remain wrappers around
-the explicit-grid dense utilities, preserving existing callers and clamping.
+`boxesupdateparams` populates segment lists. Subsequent filament neighbor rebuilds
+refresh only segment payloads, using an occupied-box list rather than scanning
+empty chamber boxes. Molecule and panel lists are untouched by these refreshes.
+Accepted growth remains immediately visible through the existing small pending
+list until the next refresh. Disabled sterics still maintains centerline lists.
+
+### Fixed resolution and anticipated density
+
+At initialization, an automatically sized filament grid assumes a dense future
+network rather than using the three seed filaments. The global keyword is:
+
+```text
+# Numerical search setting: anticipated segments per unit chamber volume.
+# With micrometre coordinates, units are segments/um^3. Not a chemical rate.
+filament_box_density 100000
+```
+
+This is also the default. The nominal width is
+`max(2*standard_length, 2*steric_radius + steric_skin,
+     (8/filament_box_density)^(1/dim))`, taking the largest geometry requirement
+among filament types. Eight is an approximate segment-count target before
+multi-cell duplication. Automatic allocation is capped at 131072 original boxes
+to limit whole-chamber memory; the cap can make actual cells wider than this
+nominal width. The log reports actual box dimensions.
+
+An explicit global `boxsize` or `molperbox` overrides automatic filament sizing;
+the most recently supplied one takes precedence. For example, `boxsize 0.05`
+requests approximately 50 nm cells and bypasses the automatic allocation cap.
+The original grid allocates empty boxes too, so inspect the reported box count
+when requesting fine resolution in a large chamber.
+
+Resolution stays fixed as density increases during the run. Membership lists and
+cached contact pairs still update as segments move or grow. Existing explicit
+runtime grid-setting commands can resize the grid, but there is no automatic
+density-driven retuning. A box generation counter invalidates cached contacts
+when another subsystem recreates boxes or refreshes their segment payloads.
 
 The neighbor list is reused until an endpoint has moved by half the skin, a
 segment is added/removed/reordered, or contact parameters change. Inflated bounds
-and the skin prevent missed pairs between rebuilds. Typical rebuild cost is
-sorting occupied entries plus local pair checks. Each force evaluation scans
+and the skin prevent missed pairs between rebuilds. Rebuilds refresh occupied
+box lists, sort their x bounds, and check local pairs. Each force evaluation scans
 segments and cached pairs; dense packing or unusually long segments can still
 make the local pair count large.
 
@@ -171,8 +197,8 @@ The declarations are in `smoldynfuncs.h`:
 
 ```c
 BoxGridCell cell;
-boxGridFindPoint(&sim->boxs->grid, point, &cell);       /* molecule grid */
-boxGridFindPoint(&sim->filss->steric->grid, point, &cell); /* prepared filament grid */
+boxGridFindPoint(&sim->boxs->grid, point, &cell); /* the shared original box */
+/* cell.box->mol, cell.box->panel, cell.box->segment are independent payloads. */
 
 segmentptr nearest = NULL;
 double clearance;
@@ -208,12 +234,12 @@ snapshot, queries reuse its entries and include accepted pending growth.
 | File | Change |
 | --- | --- |
 | `source/Smoldyn/smolfilamentsteric.c` (new) | Capsule contacts, neighbor-cache validity, trial growth checks, shared-node constraints, mechanical substeps, stability guard and diagnostics |
-| `source/Smoldyn/smolfilamentsteric.h` (new) | Internal workspace, segment/pair/node and sparse cell structures |
-| `source/Smoldyn/smolboxes.c` | Shared dense/sparse `BoxGrid` interface, explicit-grid compatibility utilities, sparse construction and unique candidate pairs |
+| `source/Smoldyn/smolfilamentsteric.h` | Contact workspace and segment/pair/node records; no grid ownership |
+| `source/Smoldyn/smolboxes.c` | Original-box segment allocation/freeing, centerline intersection, occupied-box refresh, fixed initial density sizing, bounds sweep and unique candidate pairs |
 | `source/libSteve/Geometry.c`, `Geometry.h` | Closest points for finite segments, including parallel, crossing and degenerate cases with micrometre/nanometre scale tolerances |
-| `source/Smoldyn/smolfilament.c` | Input parsing/defaults/validation, physical query wrappers, independent growth check, integration dispatch, radius-aware confinement, rollback, initialization and freeing |
+| `source/Smoldyn/smolfilament.c` | Input parsing/defaults/validation, physical query wrappers, independent growth check, `filAddFilamentForce` network force entry point, integration dispatch, radius-aware confinement, rollback, initialization and freeing |
 | `source/Smoldyn/smoldyn.h`, `smoldynfuncs.h` | Shared grid/cell types, query declarations, parameters, cache ownership and report declaration |
-| `source/Smoldyn/smolsim.cpp` | End-of-run steric report |
+| `source/Smoldyn/smolsim.cpp` | `filament_box_density` input/serialization, existing progress bar and end-of-run steric report |
 | `CMakeLists.txt` | Compile the new C source and offer native regression tests |
 | `tests/test_filament_steric.c` (new) | Mechanics, spatial-index, diffusion, wall, convergence and rejection tests; synthetic timing modes |
 
@@ -230,9 +256,9 @@ cmake --build .\build-ninja-rtools --target smoldyn test_filament_steric
 ctest --test-dir .\build-ninja-rtools -R filament_steric --output-on-failure
 ```
 
-Use the configured CMake/compiler paths if they are not on PATH. Both the
-headless and OpenGL executable builds have been rebuilt. The native tests verify
-closest-point cases, sparse boxes against exhaustive pair enumeration, unique
+Use the configured CMake/compiler paths if they are not on PATH. Close an existing
+run before replacing its executable on Windows. The native tests verify
+closest-point cases, shared boxes against exhaustive pair enumeration, unique
 pairs, movement/topology invalidation, the contact energy gradient, force/torque
 balance, overlap relaxation, mother load transmission and exact attachment,
 blocked growth, Brownian diffusion with one/four substeps, radius-aware floor and

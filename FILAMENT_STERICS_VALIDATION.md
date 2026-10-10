@@ -179,6 +179,65 @@ segments; they are optional and are not inserted into the mechanics/growth hot
 loop. Hit-only local queries reuse sparse cells, with cache validation when
 called outside a chemistry snapshot.
 
+## October 9, 2026: one original box system
+
+This supersedes the parallel dense/sparse design described above. Segment
+references now live in `boxstruct.maxsegment`, `nsegment`, and `segment` in the
+same boxes as molecules and panels. The sparse backend and the filament-owned
+grid were removed. Contact pairs retain their sorted order and skin cache.
+
+Resolution is selected at initialization using an anticipated density of
+100000 segments per unit volume (configurable as `filament_box_density`), a
+nominal target of eight segments per cell, and nominal filament geometry.
+Automatic allocation is limited to 131072 boxes. Explicit `boxsize` or
+`molperbox` overrides the automatic choice. Density does not resize the grid
+during simulation. Segment payload refreshes visit occupied boxes only, and an
+x-bounds sweep reduces false candidates inside each box.
+
+The native suite passed (CTest, approximately 2.9 s). New checks cover shared
+segment payloads in 2D/3D, cross-face capsule queries, centerline intersection,
+fixed resolution after adding segments, cache invalidation after explicit box
+replacement, removal of stale references, and centerline maintenance with
+sterics disabled. A mixed molecule/panel/filament fixture confirms all three
+share the same box and segment rebuilds preserve the other payloads.
+Existing exhaustive-oracle, contact-force, Brownian, growth, branch and timestep
+convergence checks also pass. Initialization of a full dense chamber makes these
+many short fixtures slower than the earlier sparse-only test suite.
+
+The seeded one-second free-growth output is byte-for-byte identical to the
+preceding implementation:
+`3DAF53CAAFD96C50DD4F7CEA720C83C63BB20419E6575B5568E7BCB1EEBDB22A`.
+An adjacent end-to-end timing measured 7.98 s before and 7.87 s after, including
+initialization and output. This single comparison is a regression check, not
+evidence of a precise speedup.
+
+Synthetic thermal mechanics at 15000 segments and 100 outer steps:
+
+| Arrangement | Previous parallel grids | Unified original boxes |
+| --- | --- | --- |
+| Sparse rods | 3.235 s | 3.046 s |
+| Dense rods | 6.100 s | 6.451 s |
+
+Neighbor counts and rebuild counts matched exactly (9/38 for sparse rods,
+79779/40 for dense rods). The dense run was about 6% slower in this sample;
+timings vary with system load. A naive first unified implementation was much
+slower; the occupied-box updates and sorted bounds sweep removed most of that
+cost. A dense whole-chamber grid uses more memory than the former occupied-cell
+index; the automatic box cap limits this tradeoff.
+
+Prepared-index growth queries (10000 queries; excludes initialization):
+
+| Segments | Unified boxes | Exhaustive scan |
+| --- | --- | --- |
+| 1000 | 0.008 s | 0.106 s |
+| 5000 | 0.016 s | 0.847 s |
+| 15000 | 0.023 s | 1.926 s |
+
+The OpenGL executable rebuilt successfully. An existing headless Smoldyn
+process prevented replacing `build-ninja-rtools/smoldyn.exe`; the same current
+headless objects were linked as `smoldyn_unified.exe`, and that executable
+produced the smoke output above. The existing run was not interrupted.
+
 ## Remaining scientific checks
 
 Before interpreting packing or force measurements, compare trajectories and

@@ -281,6 +281,7 @@ segmentptr filSegmentAlloc() {
 	CHECKMEM(segment=(segmentptr) malloc(sizeof(struct segmentstruct)));
 	segment->fil=NULL;
 	segment->index=0;
+	segment->stericindex=-1;
 	segment->xyzfront=NULL;
 	segment->xyzback=NULL;
 	segment->len=0;
@@ -3458,6 +3459,12 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 /******************************************************************************/
 
 
+/* Add network-wide soft capsule forces once, after ordinary forces are cleared
+   and computed for every filament. Both contacting filaments receive a force. */
+int filAddFilamentForce(simptr sim) {
+	return filStericForces(sim); }
+
+
 /* filAddStretchForces */
 void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,klen,stdlen,sforce,len,xvect[3],fdx,**nodes;
@@ -4328,6 +4335,7 @@ int filDynamics(simptr sim) {
 		for(f=0;f<filtype->nfil;f++)
 			filPinBranches(filtype->fillist[f]); }
 
+	if(sim->boxs && sim->boxs->blist) return boxesupdatesegments(sim);
 	return 0; }
 
 

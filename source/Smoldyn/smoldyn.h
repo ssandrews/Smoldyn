@@ -622,23 +622,16 @@ typedef struct surfacesuperstruct
 
 /*********************************** Boxes **********************************/
 
-/* Common spatial-grid interface. Dense grids own ordinary boxes; sparse grids
-   own only sorted occupied-cell entries. Both use the same coordinate queries. */
-enum BoxGridStorage { BGdense, BGsparse };
-typedef struct boxgridentry { int cell[3]; int object; } BoxGridEntry;
+/* Coordinate view of the original Smoldyn boxes. Each box owns molecule,
+   panel and segment payloads; there is no second filament grid. */
 typedef struct boxgridstruct {
-    enum BoxGridStorage storage;
     int dim;
     double origin[3], width[3];
-    struct boxsuperstruct *dense;       // borrowed dense backend, if any
-    BoxGridEntry *entries;              // owned only by a sparse grid
-    int nentry, maxentry;
+    struct boxsuperstruct *dense;       // borrowed original Smoldyn boxes
 } BoxGrid;
 typedef struct boxgridcell {
     int index[3];
-    struct boxstruct *box;             // dense cell, or NULL
-    const BoxGridEntry *entries;       // sparse cell's contiguous object IDs
-    int nentry;
+    struct boxstruct *box;
 } BoxGridCell;
 
 typedef struct boxstruct
@@ -653,6 +646,9 @@ typedef struct boxstruct
     int maxpanel;             // allocated number of panels in box
     int npanel;               // number of surface panels in box
     panelptr* panel;          // list of panels in box
+    int maxsegment;           // allocated segment references (borrowed pointers)
+    int nsegment;             // conservative filament capsule/skin coverage
+    struct segmentstruct** segment;
     int* maxmol;              // allocated size of live lists [ll]
     int* nmol;                // number of molecules in live lists [ll]
     moleculeptr** mol;        // lists of live molecules in the box [ll][m]
@@ -660,12 +656,18 @@ typedef struct boxstruct
 
 typedef struct boxsuperstruct
 {
-    BoxGrid grid;             // dense instance of the common box-grid interface
+    BoxGrid grid;             // view of this single molecule/surface/filament grid
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int nlist;                 // copy of number of molecule lists
     double mpbox;              // requested number of molecules per box
     double boxsize;            // requested box width
+    int explicitresolution;    // user supplied boxsize or molperbox
+    int resolutiondirty;       // initialization/explicit settings resize the grid
+    double filamentdensity;    // anticipated segments per unit volume, at initialization
+    int nsegmentbox, maxsegmentbox;
+    boxptr* segmentbox;        // occupied boxes, for O(occupied) segment updates
+    unsigned long long segmentgeneration; // invalidates filament neighbor cache
     double boxvol;             // actual box volumes
     int nbox;                  // total number of boxes
     int* side;                 // number of boxes on each side of space
@@ -807,6 +809,7 @@ enum FilamentDynamics
 typedef struct segmentstruct {
     struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
+    int stericindex;                   // transient contact workspace ID, no box ownership
     double *xyzfront;                 // Coords. for segment front
     double *xyzback;                  // Coords. for segment back
     double len;                       // segment length
@@ -921,7 +924,7 @@ typedef struct filamentsuperstruct
     int ntype;                 // actual number of filament types
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
-    struct filamentstericstruct* steric; // owned sparse contact workspace, allocated only when enabled
+    struct filamentstericstruct* steric; // contact workspace; spatial storage belongs to boxstruct
 } * filamentssptr;
 
 

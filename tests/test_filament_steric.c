@@ -68,17 +68,11 @@ static void indexing(void) {
  simfree(sim);puts("PASS boxes versus exhaustive oracle, unique pairs, movement/topology invalidation");
 }
 static void shared_grids(void) {
- int dim,i,d;BoxGrid sparse={0};BoxGridCell cell;int ix[3]={-2,3,0},lo[3],hi[3];
+ int dim,i,d;BoxGridCell cell;
  double p[3]={-0.015,0.035,0},a[3]={-0.02,0.03,0},b[3]={-0.01,0.04,0};
- boxGridSetSparse(&sparse,2,0.01);
- CHECK(!boxGridAddEntry(&sparse,ix,7));CHECK(!boxGridAddEntry(&sparse,ix,2));boxGridSort(&sparse);
- CHECK(boxGridFindPoint(&sparse,p,&cell));CHECK(!cell.box && cell.nentry==2);
- CHECK(cell.entries[0].object==2 && cell.entries[1].object==7);
- CHECK(!boxGridBounds(&sparse,a,b,0,lo,hi));CHECK(lo[0]==-2 && hi[0]==-1 && lo[2]==0);
- p[0]=NAN;CHECK(boxGridCellCoords(&sparse,p,ix));boxGridFree(&sparse);CHECK(!sparse.entries);
  for(dim=2;dim<=3;dim++) {
   simptr sim=scene(dim);CHECK(!boxsetsize(sim,"boxsize",0.5));CHECK(!boxesupdate(sim));
-  CHECK(sim->boxs->grid.storage==BGdense);
+  CHECK(sim->boxs->grid.dense==sim->boxs);
   for(i=0;i<100;i++) {
    for(d=0;d<dim;d++) p[d]=(uniform()-0.5)*6;
    CHECK(boxGridFindPoint(&sim->boxs->grid,p,&cell));CHECK(cell.box==pos2box(sim,p));
@@ -92,7 +86,7 @@ static void shared_grids(void) {
   CHECK(!boxsetsize(sim,"boxsize",1));CHECK(!boxesupdate(sim));
   NEAR(sim->boxs->grid.width[0],1,1e-12);simfree(sim);
  }
- puts("PASS shared dense/sparse grids, boundary clamping, negative cells and resize lifecycle");
+ puts("PASS original shared grid, boundary clamping and explicit resize lifecycle");
 }
 
 static double query_oracle(simptr sim,const double *a,const double *b,double radius,segmentptr *nearest) {
@@ -106,6 +100,67 @@ static double query_oracle(simptr sim,const double *a,const double *b,double rad
   }
  }
  return best;
+}
+
+static void unified_boxes(void) {
+ int dim,d,i,seen,warn;double a[3]={-0.025,0,0},b[3]={0.025,0,0},p[3]={0,0.003,0};
+ for(dim=2;dim<=3;dim++) {
+  simptr sim=scene(dim);filamenttypeptr t=type(sim,"actin",1);filamentptr f=rod(t,a,b);
+  boxptr cell;unsigned long long generation,rebuilds;int count;
+  CHECK(!simreadstring(sim,NULL,"filament_box_density","50000"));
+  CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!boxesupdate(sim));
+  cell=pos2box(sim,p);seen=0;
+  for(i=0;i<cell->nsegment;i++) if(cell->segment[i]==f->segments[0]) seen++;
+  CHECK(seen==1);CHECK(cell->maxsegment>=cell->nsegment);
+  /* Axis-aligned centerline on a box face and physical capsule just across it. */
+  CHECK(segmentinbox(sim,f->segments[0],pos2box(sim,a)));
+  CHECK(filPointInFilament(sim,p,NULL,NULL)==f->segments[0]);
+  CHECK(!filStericPrepare(sim));generation=sim->boxs->segmentgeneration;
+  rebuilds=sim->filss->steric->rebuilds;count=sim->boxs->nbox;
+  for(i=0;i<60;i++) {double aa[3]={0,0.05,0},bb[3]={0.01,0.05,0};aa[2]=bb[2]=dim==3?0.02:0;rod(t,aa,bb);}
+  CHECK(!filStericPrepare(sim));CHECK(sim->boxs->nbox==count);
+  CHECK(sim->boxs->segmentgeneration>generation && sim->filss->steric->rebuilds>rebuilds);
+  /* Replacing box arrays invalidates the contact cache, even with unchanged topology. */
+  CHECK(!boxsetsize(sim,"boxsize",0.08));CHECK(!boxesupdate(sim));
+  CHECK(filPointInFilament(sim,p,NULL,NULL)==f->segments[0]);
+  CHECK(!checkboxparams(sim,&warn));
+  /* Removal clears old payload on the next cache rebuild. */
+  f->nseg=0;CHECK(!filStericPrepare(sim));
+  CHECK(!filPointInFilament(sim,p,NULL,NULL));
+  for(i=0;i<sim->boxs->nsegmentbox;i++) {
+   boxptr box=sim->boxs->segmentbox[i];int s;
+   for(s=0;s<box->nsegment;s++) CHECK(box->segment[s]!=f->segments[0]);
+  }
+  simfree(sim);
+ }
+ /* Initialization uses anticipated density rather than the seed count. */
+ {simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",1);rod(t,a,b);
+  CHECK(!simreadstring(sim,NULL,"filament_box_density","100000"));CHECK(!boxesupdate(sim));
+  CHECK(sim->boxs->nbox>1 && sim->boxs->nbox<=131072);
+  for(d=0;d<3;d++) CHECK(sim->boxs->size[d]>0);
+  {int old=sim->boxs->nbox;boxsetcondition(sim->boxs,SClists,0);CHECK(!boxesupdate(sim));CHECK(sim->boxs->nbox==old);}
+  simfree(sim);
+ }
+ /* Disabled sterics still records finite centerlines in the original boxes. */
+ {simptr sim=scene(2);filamenttypeptr t=type(sim,"plain",1);filamentptr f=rod(t,a,b);boxptr box;
+  t->stericradius=0;CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!boxesupdate(sim));
+  box=pos2box(sim,a);seen=0;for(i=0;i<box->nsegment;i++) seen+=box->segment[i]==f->segments[0];CHECK(seen==1);
+  f->nodes[0][1]=f->nodes[1][1]=0.5;CHECK(!filDynamics(sim));
+  CHECK(box->nsegment==0);CHECK(pos2box(sim,f->nodes[0])->nsegment==1);simfree(sim);
+ }
+ /* Molecules, panels and segments share the very same box; rebuilding contact
+    payload must leave molecule ownership and static panel storage untouched. */
+ {simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",1);surfaceptr floor=surfaddsurface(sim,"floor");
+  double panel[5]={-1,-1,0,2,2};int id=moladdspecies(sim,"monomer"),ll;boxptr box;moleculeptr mol=NULL;panelptr originalpanel;
+  rod(t,a,b);CHECK(floor && id>0);CHECK(!surfaddpanel(floor,3,PSrect,"+2",panel,"base"));
+  CHECK(!molsetmaxmol(sim,10));CHECK(!addmol(sim,1,id,p,p,0));CHECK(!boxsetsize(sim,"boxsize",0.1));CHECK(!simupdate(sim));
+  for(ll=0;ll<sim->mols->nlist;ll++) for(i=0;i<sim->mols->nl[ll];i++) if(sim->mols->live[ll][i]->ident==id) mol=sim->mols->live[ll][i];
+  CHECK(mol);box=mol->box;CHECK(box==pos2box(sim,p));CHECK(box->npanel>0 && box->nsegment>0);originalpanel=box->panel[0];
+  CHECK(!filStericPrepare(sim));rod(t,a,b);CHECK(!filStericPrepare(sim));
+  CHECK(mol->box==box && box->npanel>0 && box->panel[0]==originalpanel);
+  CHECK(box->nmol[mol->list]==1);simfree(sim);
+ }
+ puts("PASS unified box payload, cross-face capsule query, removal, cache invalidation and fixed anticipated-density resolution");
 }
 
 static void queries(void) {
@@ -348,5 +403,5 @@ int main(int argc,char **argv) {
  if(argc>1 && !strcmp(argv[1],"--benchmark")) {benchmark(0,0);benchmark(1,0);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-thermal")) {benchmark(0,1);benchmark(1,1);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-growth")) {growth_benchmark();return 0;}
- geometry();indexing();shared_grids();queries();growth_switch();forces();branch();growth();growth_index();branch_rollback();diffusion();walls_and_guards();convergence_and_2d();puts("All filament steric checks passed.");return 0;
+ geometry();indexing();shared_grids();unified_boxes();queries();growth_switch();forces();branch();growth();growth_index();branch_rollback();diffusion();walls_and_guards();convergence_and_2d();puts("All filament steric checks passed.");return 0;
 }

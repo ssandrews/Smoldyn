@@ -7,6 +7,7 @@ typedef struct filstericsegment {
   segmentptr segment;
   int index;
   double reference[6];
+  double bounds[6]; /* centerline AABB, computed only during neighbor rebuilds */
   int boxlo[3];
   double radius, stiffness;
   double contactrow[2];
@@ -23,16 +24,16 @@ typedef struct filstericnode {
 struct filamentstericstruct {
   FilStericSegment *segments;
   FilStericPair *pairs;
-  BoxGrid grid;  /* sparse instance of the same interface as boxsuperstruct.grid */
   FilStericNode *nodes;
   segmentptr *pending;
   int npending,maxpending,inchemistry,queryerror;
   int nsegment,maxsegment,npair,maxpair,nnode,maxnode;
   double skin,maxpenetration,energy,contactbound;
   unsigned long long rebuilds,evaluations,contacts,blockedgrowth,blockedbranches;
+  unsigned long long boxgeneration;
 };
 
-/* Sparse boxes store segment IDs, using expanded bounds and unique pair ownership. */
+/* Segment pointers live in the original Smoldyn boxes; only contact pairs are cached. */
 int filBoxesBuild(simptr sim,struct filamentstericstruct *work);
 int filStericEnabled(const simptr sim);
 int filStericValidate(const simptr sim);
