@@ -297,6 +297,38 @@ smolExpandRules.restype = c_int
 smolExpandRules.argtypes = [c_void_p, c_int]
 
 
+# Lattices
+smolAddLatticeSurface = smoldyn.smolAddLatticeSurface
+smolAddLatticeSurface.restype = c_int
+smolAddLatticeSurface.argtypes = [c_void_p, c_char_p, c_char_p]
+
+smolSetLatticeMakeParticle = smoldyn.smolSetLatticeMakeParticle
+smolSetLatticeMakeParticle.restype = c_int
+smolSetLatticeMakeParticle.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int]
+
+
+# BioNetGen
+smolAddBNG = smoldyn.smolAddBNG
+smolAddBNG.restype = c_int
+smolAddBNG.argtypes = [c_void_p, c_char_p]
+
+smolSetBNGMultiply = smoldyn.smolSetBNGMultiply
+smolSetBNGMultiply.restype = c_int
+smolSetBNGMultiply.argtypes = [c_void_p, c_char_p, c_char_p, c_double]
+
+smolSetBNGMonomer = smoldyn.smolSetBNGMonomer
+smolSetBNGMonomer.restype = c_int
+smolSetBNGMonomer.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_double, c_double, c_void_p]
+
+smolLoadBNGNetFile = smoldyn.smolLoadBNGNetFile
+smolLoadBNGNetFile.restype = c_int
+smolLoadBNGNetFile.argtypes = [c_void_p, c_char_p, c_char_p]
+
+smolExpandBNGRules = smoldyn.smolExpandBNGRules
+smolExpandBNGRules.restype = c_int
+smolExpandBNGRules.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p]
+
+
 # Bit of test code
 smolGetVersion()
 lbound = (c_double * 2)(0.0, 0.0)

@@ -3017,3 +3017,197 @@ extern CSTRING enum ErrorCode smolAddLatticeReaction(simptr sim,const char *latt
 	return ECok;
  failure:
 	return Liberrorcode; }
+
+
+/* smolAddLatticeSurface */
+extern CSTRING enum ErrorCode smolAddLatticeSurface(simptr sim,const char *lattice,const char *surface) {
+	const char *funcname="smolAddLatticeSurface";
+	int er,lat,s,slo,shi;
+	latticeptr simlattice;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	lat=smolGetLatticeIndexNT(sim,lattice);
+	LCHECK(lat>=0,funcname,ECsame,NULL);
+	simlattice=sim->latticess->latticelist[lat];
+	LCHECK(sim->srfss && sim->srfss->nsrf>0,funcname,ECnonexist,"no surfaces defined");
+	s=smolGetSurfaceIndexNT(sim,surface);
+	if(s==(int)ECall) {smolClearError();slo=0;shi=sim->srfss->nsrf;}
+	else {
+		LCHECK(s>=0,funcname,ECsame,NULL);
+		slo=s;
+		shi=s+1; }
+	for(s=slo;s<shi;s++) {
+		er=latticeaddsurface(simlattice,sim->srfss->srflist[s]);
+		LCHECK(er!=1,funcname,ECmemory,"out of memory in latticeaddsurface"); }
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetLatticeMakeParticle */
+extern CSTRING enum ErrorCode smolSetLatticeMakeParticle(simptr sim,const char *lattice,enum PanelFace face,const char *species,int makeparticle) {
+	const char *funcname="smolSetLatticeMakeParticle";
+	int er,lat,i,ilow,ihigh;
+	latticeptr simlattice;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	lat=smolGetLatticeIndexNT(sim,lattice);
+	LCHECK(lat>=0,funcname,ECsame,NULL);
+	simlattice=sim->latticess->latticelist[lat];
+	LCHECK(face==PFfront || face==PFback || face==PFboth,funcname,ECbounds,"invalid face");
+	i=smolGetSpeciesIndexNT(sim,species);
+	if(i==(int)ECall) {
+		smolClearError();
+		ilow=1;
+		ihigh=sim->mols->nspecies; }
+	else {
+		LCHECK(i>0,funcname,ECsame,NULL);
+		ilow=i;
+		ihigh=i+1; }
+	for(i=ilow;i<ihigh;i++) {
+		er=latticeaddconvert(simlattice,i,NULL,face,makeparticle?1:0);
+		LCHECK(!er,funcname,ECerror,"species needs to be added to the lattice with smolAddLatticeSpecies first"); }
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/******************************************************************************/
+/********************************** BioNetGen *********************************/
+/******************************************************************************/
+
+
+/* smolgetbng. Returns the BNG structure named bng, or NULL if it doesn't
+exist. */
+static bngptr smolgetbng(simptr sim,const char *bng) {
+	int b;
+
+	if(!sim->bngss || !bng) return NULL;
+	b=stringfind(sim->bngss->bngnames,sim->bngss->nbng,bng);
+	return b>=0?sim->bngss->bnglist[b]:NULL; }
+
+
+/* smolAddBNG */
+extern CSTRING enum ErrorCode smolAddBNG(simptr sim,const char *bng) {
+	const char *funcname="smolAddBNG";
+	bngptr simbng;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->mols,funcname,ECnonexist,"need to define species before BioNetGen structures");
+	LCHECK(bng && bng[0]!='\0',funcname,ECmissing,"missing BNG name");
+	simbng=bngaddbng(sim,bng);
+	LCHECK(simbng,funcname,ECmemory,"failed to add BNG structure");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetBNGMultiply */
+extern CSTRING enum ErrorCode smolSetBNGMultiply(simptr sim,const char *bng,const char *parameter,double amount) {
+	const char *funcname="smolSetBNGMultiply";
+	char param[STRCHAR];
+	int er;
+	bngptr simbng;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	simbng=smolgetbng(sim,bng);
+	LCHECK(simbng,funcname,ECnonexist,"BNG structure not found");
+	LCHECK(parameter && strlen(parameter)<STRCHAR,funcname,ECmissing,"missing parameter");
+	strcpy(param,parameter);
+	er=bngsetparam(simbng,param,amount);
+	LCHECK(er!=1,funcname,ECsyntax,"parameter needs to be unimolecular_rate or bimolecular_rate");
+	LCHECK(er!=2,funcname,ECbounds,"multiply amount needs to be at least 0");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetBNGMonomer */
+extern CSTRING enum ErrorCode smolSetBNGMonomer(simptr sim,const char *bng,const char *monomer,enum MolecState state,double difc,double displaysize,double *color) {
+	const char *funcname="smolSetBNGMonomer";
+	char name[STRCHAR];
+	int er,c;
+	bngptr simbng;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	simbng=smolgetbng(sim,bng);
+	LCHECK(simbng,funcname,ECnonexist,"BNG structure not found");
+	LCHECK(monomer && monomer[0]!='\0' && strlen(monomer)<STRCHAR,funcname,ECmissing,"missing monomer name");
+	strcpy(name,monomer);
+	LCHECK((state>=0 && state<MSMAX1) || state==MSnone,funcname,ECbounds,"invalid state");
+	if(color) {
+		for(c=0;c<3;c++)
+			LCHECK(color[c]>=0 && color[c]<=1,funcname,ECbounds,"color value out of bounds"); }
+
+	if(state!=MSnone) er=bngsetmonomerstate(simbng,name,state);
+	else if(strcmp(name,"all")) er=bngaddmonomer(simbng,name,MSsoln);
+	else er=0;
+	LCHECK(er!=-1,funcname,ECmemory,"out of memory adding monomer");
+	LCHECK(er!=-2,funcname,ECsyntax,"monomer name is not permitted");
+	if(difc>=0) bngsetmonomerdifc(simbng,name,difc);
+	if(displaysize>=0) bngsetmonomerdisplaysize(simbng,name,displaysize);
+	if(color) bngsetmonomercolor(simbng,name,color);
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolLoadBNGNetFile */
+extern CSTRING enum ErrorCode smolLoadBNGNetFile(simptr sim,const char *bng,const char *filename) {
+	const char *funcname="smolLoadBNGNetFile";
+	char word[STRCHARLONG],errstring[STRCHARLONG],*line2;
+	int done,pfpcode,er;
+	bngptr simbng;
+	ParseFilePtr pfp;
+
+	pfp=NULL;
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	simbng=smolgetbng(sim,bng);
+	LCHECK(simbng,funcname,ECnonexist,"BNG structure not found");
+	LCHECK(filename && filename[0]!='\0',funcname,ECmissing,"missing file name");
+	pfp=Parse_Start(NULL,filename,errstring);
+	LCHECK(pfp,funcname,ECnonexist,"unable to open BioNetGen network file");
+
+	done=0;
+	while(!done) {
+		pfpcode=Parse_ReadLine(&pfp,word,&line2,errstring);
+		LCHECK(pfpcode!=3,funcname,ECsyntax,errstring);
+		if(pfpcode==2) done=1;
+		else if(pfpcode==1 && !bngreadstring(sim,pfp,simbng,word,line2)) {
+			pfp=NULL;																	// bngreadstring closed the file
+			LCHECK(0,funcname,ECerror,"error reading BioNetGen network file"); }}
+
+	er=bngupdate(sim);
+	LCHECK(!er,funcname,ECerror,"error updating BioNetGen structures");
+	return ECok;
+ failure:
+	if(pfp) Parse_ReadFailure(pfp,errstring);				// close any files still open
+	return Liberrorcode; }
+
+
+/* smolExpandBNGRules */
+extern CSTRING enum ErrorCode smolExpandBNGRules(simptr sim,const char *bng,const char *filename,const char *BNG2path) {
+	const char *funcname="smolExpandBNGRules";
+	char fname[STRCHAR],outname[STRCHAR],path[STRCHARLONG];
+	int er;
+	bngptr simbng;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	simbng=smolgetbng(sim,bng);
+	LCHECK(simbng,funcname,ECnonexist,"BNG structure not found");
+	LCHECK(filename && filename[0]!='\0',funcname,ECmissing,"missing file name");
+	LCHECK(strlen(filename)<STRCHAR-5,funcname,ECbounds,"file name is too long");
+	if(BNG2path && BNG2path[0]!='\0') {
+		LCHECK(strlen(BNG2path)<STRCHARLONG,funcname,ECbounds,"BNG2.pl path is too long");
+		strcpy(path,BNG2path);
+		bngsetBNG2path(simbng,path); }
+	strcpy(fname,filename);
+	er=bngrunBNGL2(simbng,fname,outname);
+	LCHECK(er!=1,funcname,ECnonexist,"BNG2.pl software not found");
+	LCHECK(er!=2,funcname,ECnonexist,"BioNetGen file not found");
+	LCHECK(er!=3,funcname,ECerror,"BNG2.pl failed to write a network file; try again with the 'v' flag for more information");
+	LCHECK(er!=4,funcname,ECerror,"unable to run perl; check that it is installed");
+	LCHECK(!er,funcname,ECerror,"error running BNG2.pl");
+	return smolLoadBNGNetFile(sim,bng,outname);
+ failure:
+	return Liberrorcode; }

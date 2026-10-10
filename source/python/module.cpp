@@ -1665,6 +1665,84 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolAddLatticeReaction(sim.getSimPtr(), lattice, reaction, move);
         })
 
+      // enum ErrorCode smolAddLatticeSurface(simptr sim, const char *lattice,
+      //     const char *surface);
+      .def("addLatticeSurface",
+        [](Simulation& sim, const char* lattice, const char* surface) {
+            return smolAddLatticeSurface(sim.getSimPtr(), lattice, surface);
+        })
+
+      // enum ErrorCode smolSetLatticeMakeParticle(simptr sim, const char
+      //     *lattice, enum PanelFace face, const char *species, int
+      //     makeparticle);
+      .def(
+        "setLatticeMakeParticle",
+        [](Simulation& sim, const char* lattice, PanelFace face, const char* species,
+          bool makeparticle) {
+            return smolSetLatticeMakeParticle(
+              sim.getSimPtr(), lattice, face, species, makeparticle ? 1 : 0);
+        },
+        "lattice"_a,
+        "face"_a,
+        "species"_a,
+        "makeparticle"_a = true)
+
+      /***************
+       *  BioNetGen  *
+       ***************/
+      // enum ErrorCode smolAddBNG(simptr sim, const char *bng);
+      .def("addBNG",
+        [](Simulation& sim, const char* bng) { return smolAddBNG(sim.getSimPtr(), bng); })
+
+      // enum ErrorCode smolSetBNGMultiply(simptr sim, const char *bng, const
+      //     char *parameter, double amount);
+      .def("setBNGMultiply",
+        [](Simulation& sim, const char* bng, const char* parameter, double amount) {
+            return smolSetBNGMultiply(sim.getSimPtr(), bng, parameter, amount);
+        })
+
+      // enum ErrorCode smolSetBNGMonomer(simptr sim, const char *bng, const
+      //     char *monomer, enum MolecState state, double difc, double
+      //     displaysize, double *color);
+      .def(
+        "setBNGMonomer",
+        [](Simulation& sim,
+          const char* bng,
+          const char* monomer,
+          MolecState state,
+          double difc,
+          double displaysize,
+          vector<double>& color) {
+            if(!color.empty() && color.size()!=3)
+              throw py::value_error("color must contain 3 values (rgb)");
+            return smolSetBNGMonomer(sim.getSimPtr(), bng, monomer, state, difc,
+              displaysize, color.empty() ? nullptr : color.data());
+        },
+        "bng"_a,
+        "monomer"_a,
+        "state"_a = MolecState::MSnone,
+        "difc"_a = -1.0,
+        "displaysize"_a = -1.0,
+        "color"_a = std::vector<double>())
+
+      // enum ErrorCode smolLoadBNGNetFile(simptr sim, const char *bng, const
+      //     char *filename);
+      .def("loadBNGNetFile",
+        [](Simulation& sim, const char* bng, const char* filename) {
+            return smolLoadBNGNetFile(sim.getSimPtr(), bng, filename);
+        })
+
+      // enum ErrorCode smolExpandBNGRules(simptr sim, const char *bng, const
+      //     char *filename, const char *BNG2path);
+      .def(
+        "expandBNGRules",
+        [](Simulation& sim, const char* bng, const char* filename, const char* BNG2path) {
+            return smolExpandBNGRules(sim.getSimPtr(), bng, filename, BNG2path);
+        },
+        "bng"_a,
+        "filename"_a,
+        "BNG2path"_a = "")
+
       .def("loadSimFromFile",
         [](Simulation& sim, const string& filepath, const char* flags) {
             auto p = splitPath(filepath);

@@ -5442,6 +5442,62 @@ C/C++: \ttt{enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice
 Python: \ttt{ErrorCode AddLatticeReaction(str lattice, str reaction, int move)}\\
 Not all particle-based Smoldyn reactions are necessarily listed in a lattice portion of space, so use this function to add reactions to the lattice region of space. Clearly, the lattice is \ttt{lattice} and the reaction being added is \ttt{reaction}.
 
+\item[AddLatticeSurface]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddLatticeSurface(simptr sim, const char *lattice, const char *surface)}\\
+Python: \ttt{ErrorCode addLatticeSurface(str lattice, str surface)}\\
+Adds surface \ttt{surface} (which may be ``all'') to lattice \ttt{lattice}, so that the lattice accounts for it, which is equivalent to the \ttt{surfaces} statement in a lattice block.
+
+\item[SetLatticeMakeParticle]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetLatticeMakeParticle(simptr sim, const char *lattice, enum PanelFace face, const char *species, int makeparticle)}\\
+Python: \ttt{ErrorCode setLatticeMakeParticle(str lattice, PanelFace face, str species, bool makeparticle=True)}\\
+Sets whether molecules of species \ttt{species} (which may be ``all'') that leave lattice \ttt{lattice} through face \ttt{face} of its port (\ttt{PFfront}, \ttt{PFback}, or \ttt{PFboth}) become particles (\ttt{makeparticle} = 1) or stay on the lattice (\ttt{makeparticle} = 0), which is equivalent to the \ttt{make\_particle} statement in a lattice block. The species need to have been added to the lattice with \ttt{smolAddLatticeSpecies} first. There is no function for the lattice \ttt{type} statement because NSV, which \ttt{smolAddLattice} uses, is the only lattice type that is currently implemented.
+
+\end{description}
+
+% Section: BioNetGen
+\section{BioNetGen}
+
+These functions are equivalent to the statements in a \ttt{start\_bng} block. Define the Smoldyn species for the monomers first, then create the BioNetGen structure, set its monomer properties, and finally expand the rules or load a network file that BioNetGen generated earlier.
+
+\begin{description}
+
+\item[AddBNG]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddBNG(simptr sim, const char *bng)}\\
+Python: \ttt{ErrorCode addBNG(str bng)}\\
+Python: $bng$=$sim$.\ttt{addBNG(name)}\\
+Adds a BioNetGen structure named \ttt{bng}, which is equivalent to starting a \ttt{start\_bng} block with this name.
+
+\item[SetBNGMultiply]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetBNGMultiply(simptr sim, const char *bng, const char *parameter, double amount)}\\
+Python: \ttt{ErrorCode setBNGMultiply(str bng, str parameter, float amount)}\\
+Python: $bng$.\ttt{multiply(unimolecular\_rate=None, bimolecular\_rate=None)}\\
+Multiplies the BioNetGen rate constants named with \ttt{parameter} (``unimolecular\_rate'' or ``bimolecular\_rate'') by \ttt{amount}, which is equivalent to the \ttt{multiply} statement.
+
+\item[SetBNGMonomer]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetBNGMonomer(simptr sim, const char *bng, const char *monomer, enum MolecState state, double difc, double displaysize, double *color)}\\
+Python: \ttt{ErrorCode setBNGMonomer(str bng, str monomer, MolecState state=MSnone, float difc=-1, float displaysize=-1, List[float] color=[])}\\
+Python: $bng$.\ttt{setMonomer(monomer, state=None, difc=None, display\_size=None, color=None)}\\
+Declares monomer \ttt{monomer} and optionally sets its default state, diffusion coefficient, display size, and 3-value color, which is equivalent to the \ttt{monomer}, \ttt{monomer\_state}, \ttt{monomer\_difc}, \ttt{monomer\_display\_size}, and \ttt{monomer\_color} statements. Enter \ttt{monomer} as ``all'' to set properties of all monomers. To not set a property, enter \ttt{state} as \ttt{MSnone}, \ttt{difc} or \ttt{displaysize} as a negative number, or \ttt{color} as \ttt{NULL}.
+
+\item[ExpandBNGRules]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolExpandBNGRules(simptr sim, const char *bng, const char *filename, const char *BNG2path)}\\
+Python: \ttt{ErrorCode expandBNGRules(str bng, str filename, str BNG2path="")}\\
+Python: $bng$.\ttt{expandRules(filename, BNG2path=None)}\\
+Runs BioNetGen's BNG2.pl program on the BNGL file \ttt{filename}, and then loads the resulting network file, which is equivalent to the \ttt{BNG2\_path} and \ttt{expand\_rules} statements followed by reading the .net file. This requires perl and BioNetGen. Enter \ttt{BNG2path} as the path to BNG2.pl, or as \ttt{NULL} or an empty string to use the default path. File names are relative to the current directory.
+
+\item[LoadBNGNetFile]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolLoadBNGNetFile(simptr sim, const char *bng, const char *filename)}\\
+Python: \ttt{ErrorCode loadBNGNetFile(str bng, str filename)}\\
+Python: $bng$.\ttt{loadNetFile(filename)}\\
+Loads the BioNetGen network file \ttt{filename}, which BioNetGen generated earlier, which is equivalent to reading the .net file within a \ttt{start\_bng} block. This adds the network's species and reactions to the simulation and does not require BioNetGen. The file name is relative to the current directory.
+
 \end{description}
 
 

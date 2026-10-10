@@ -393,6 +393,7 @@ int latticeenablelattices(simptr sim);
 int latticeaddlattice(simptr sim,latticeptr *latptr,const char *latticename,const double *min,const double *max,const double *dx,const char *btype,enum LatticeType type);
 int latticeaddrxn(latticeptr lattice,rxnptr reaction,int move);
 int latticeaddsurface(latticeptr lattice, surfaceptr surface);
+int latticeaddconvert(latticeptr lattice,int ident,int *index,enum PanelFace face,int convert);
 
 int latticeaddmols(latticeptr lattice,int nmol,int i,double *poslo,double *poshi,int dim);
 void latticeaddport(latticeptr lattice,portptr port);
@@ -444,6 +445,16 @@ int checkbngparams(simptr sim,int *warnptr);
 // structure setup
 int loadbng(simptr sim,ParseFilePtr *pfpptr,char* line2);
 int bngupdate(simptr sim);
+bngptr bngaddbng(simptr sim,const char *bngname);
+int bngsetparam(bngptr bng,char *parameter,double amount);
+int bngsetBNG2path(bngptr bng,char *path);
+int bngaddmonomer(bngptr bng,const char *name,enum MolecState ms);
+int bngsetmonomerdifc(bngptr bng,char *name,double difc);
+int bngsetmonomerdisplaysize(bngptr bng,char *name,double displaysize);
+int bngsetmonomercolor(bngptr bng,char *name,double *color);
+int bngsetmonomerstate(bngptr bng,char *name,enum MolecState ms);
+int bngrunBNGL2(bngptr bng,char *filename,char *outname);
+bngptr bngreadstring(simptr sim,ParseFilePtr pfp,bngptr bng,const char *word,char *line2);
 
 
 /********************************* Graphics *********************************/

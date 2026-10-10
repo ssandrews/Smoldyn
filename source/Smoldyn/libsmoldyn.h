@@ -197,6 +197,16 @@ int            smolGetLatticeIndexNT(simptr sim,const char *lattice);
 char*          smolGetLatticeName(simptr sim,int latticeindex,char *lattice);
 enum ErrorCode smolAddLatticeMolecules(simptr sim,const char *lattice, const char *species,int number,double *lowposition,double *highposition);
 enum ErrorCode smolAddLatticeReaction(simptr sim,const char *lattice,const char *reaction, const int move);
+enum ErrorCode smolAddLatticeSurface(simptr sim,const char *lattice,const char *surface);
+enum ErrorCode smolSetLatticeMakeParticle(simptr sim,const char *lattice,enum PanelFace face,const char *species,int makeparticle);
+
+/************************************ BioNetGen ***********************************/
+
+enum ErrorCode smolAddBNG(simptr sim,const char *bng);
+enum ErrorCode smolSetBNGMultiply(simptr sim,const char *bng,const char *parameter,double amount);
+enum ErrorCode smolSetBNGMonomer(simptr sim,const char *bng,const char *monomer,enum MolecState state,double difc,double displaysize,double *color);
+enum ErrorCode smolLoadBNGNetFile(simptr sim,const char *bng,const char *filename);
+enum ErrorCode smolExpandBNGRules(simptr sim,const char *bng,const char *filename,const char *BNG2path);
 
 
 #ifdef __cplusplus
