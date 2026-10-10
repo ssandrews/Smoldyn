@@ -119,6 +119,11 @@ enum ErrorCode smolAddCompartmentMolecules(simptr sim,const char *species,int nu
 enum ErrorCode smolAddSurfaceMolecules(simptr sim,const char *species,enum MolecState state,int number,const char *surface,enum PanelShape panelshape,const char *panel,double *position);
 int            smolGetMoleculeCount(simptr sim,const char *species,enum MolecState state);
 enum ErrorCode smolSetMoleculeStyle(simptr sim,const char *species,enum MolecState state,double size,double *color);
+enum ErrorCode smolAddSpeciesGroup(simptr sim,const char *group,const char *species);
+enum ErrorCode smolSetSpeciesMobilityRule(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix);
+enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim,const char *species,enum MolecState state,const char *surface,enum PanelShape panelshape,double *drift);
+enum ErrorCode smolSetMolListRule(simptr sim,const char *species,enum MolecState state,const char *mollist);
+enum ErrorCode smolSetMoleculeStyleRule(simptr sim,const char *species,enum MolecState state,double size,double *color);
 
 /********************************** Surfaces **********************************/
 
@@ -130,6 +135,8 @@ char*          smolGetSurfaceName(simptr sim,int surfaceindex,char *surface);
 enum ErrorCode smolSetReactionIntersurface(simptr sim, const char *reaction, int *rulelist);
 enum ErrorCode smolSetSurfaceAction(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action,const char *newspecies);
 enum ErrorCode smolSetSurfaceRate(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal);
+enum ErrorCode smolSetSurfaceActionRule(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action);
+enum ErrorCode smolSetSurfaceRateRule(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal);
 enum ErrorCode smolAddPanel(simptr sim,const char *surface,enum PanelShape panelshape,const char *panel,const char *axisstring,double *params);
 int            smolGetPanelIndex(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel);
 int            smolGetPanelIndexNT(simptr sim,const char *surface,enum PanelShape *panelshapeptr,const char *panel);

@@ -771,6 +771,94 @@ PYBIND11_MODULE(_smoldyn, m)
         "panelshape"_a,
         "drift"_a)
 
+      // enum ErrorCode smolAddSpeciesGroup(simptr sim, const char *group,
+      //     const char *species);
+      .def(
+        "addSpeciesGroup",
+        [](Simulation& sim, const char* group, const char* species) {
+            return smolAddSpeciesGroup(sim.getSimPtr(), group, species);
+        },
+        "group"_a,
+        "species"_a = "")
+
+      // enum ErrorCode smolSetSpeciesMobilityRule(simptr sim, const char
+      //     *species, enum MolecState state, double difc, double *drift,
+      //     double *difmatrix);
+      .def(
+        "setSpeciesMobilityRule",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          double difc,
+          vector<double>& drift,
+          vector<double>& difmatrix) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(!drift.empty() && drift.size()!=dim)
+              throw py::value_error("drift must contain one value per simulation dimension");
+            if(!difmatrix.empty() && difmatrix.size()!=dim*dim)
+              throw py::value_error("difmatrix must contain dim*dim values");
+            return smolSetSpeciesMobilityRule(
+              sim.getSimPtr(), species, state, difc,
+              drift.empty() ? nullptr : drift.data(),
+              difmatrix.empty() ? nullptr : difmatrix.data());
+        },
+        "species"_a,
+        "state"_a,
+        "diffConst"_a,
+        "drift"_a = std::vector<double>(),
+        "difmatrix"_a = std::vector<double>())
+
+      // enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim, const char
+      //     *species, enum MolecState state, const char *surface, enum
+      //     PanelShape panelshape, double *drift);
+      .def(
+        "setSpeciesSurfaceDriftRule",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          const char* surface,
+          PanelShape panelshape,
+          vector<double>& drift) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(dim < 2 || drift.size() != dim - 1)
+              throw py::value_error("drift must contain dim-1 values");
+            return smolSetSpeciesSurfaceDriftRule(
+              sim.getSimPtr(), species, state, surface, panelshape, drift.data());
+        },
+        "species"_a,
+        "state"_a,
+        "surface"_a,
+        "panelshape"_a,
+        "drift"_a)
+
+      // enum ErrorCode smolSetMolListRule(simptr sim, const char *species,
+      //     enum MolecState state, const char *mollist);
+      .def("setMolListRule",
+        [](Simulation& sim, const char* species, MolecState state, const char* mollist) {
+            return smolSetMolListRule(sim.getSimPtr(), species, state, mollist);
+        })
+
+      // enum ErrorCode smolSetMoleculeStyleRule(simptr sim, const char
+      //     *species, enum MolecState state, double size, double *color);
+      .def(
+        "setMoleculeStyleRule",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          double size,
+          vector<double>& color) {
+            if(!color.empty() && color.size()!=3 && color.size()!=4)
+              throw py::value_error("color must contain 3 or 4 values (rgb or rgba)");
+            if(color.size()==3)
+              color.push_back(1.0);
+            return smolSetMoleculeStyleRule(sim.getSimPtr(), species, state, size,
+              color.empty() ? nullptr : color.data());
+        },
+        "species"_a,
+        "state"_a,
+        "size"_a = -1.0,
+        "color"_a = std::vector<double>())
+
       // enum ErrorCode smolAddMolList(simptr sim, const char *mollist);
       .def("addMolList",
         [](Simulation& sim, const char* mollist) {
@@ -990,6 +1078,38 @@ PYBIND11_MODULE(_smoldyn, m)
               rate,
               newspecies,
               isinternal);
+        })
+
+      // enum ErrorCode smolSetSurfaceActionRule(simptr sim, const char
+      //     *surface, enum PanelFace face, const char *species, enum
+      //     MolecState state, enum SrfAction action);
+      .def("setSurfaceActionRule",
+        [](Simulation& sim,
+          const char* surface,
+          PanelFace face,
+          const char* species,
+          MolecState state,
+          SrfAction action) {
+            return smolSetSurfaceActionRule(
+              sim.getSimPtr(), surface, face, species, state, action);
+        })
+
+      // enum ErrorCode smolSetSurfaceRateRule(simptr sim, const char
+      //     *surface, const char *species, enum MolecState state, enum
+      //     MolecState state1, enum MolecState state2, double rate, const
+      //     char *newspecies, int isinternal);
+      .def("setSurfaceRateRule",
+        [](Simulation& sim,
+          const char* surface,
+          const char* species,
+          MolecState state,
+          MolecState state1,
+          MolecState state2,
+          double rate,
+          const char* newspecies,
+          bool isinternal) {
+            return smolSetSurfaceRateRule(sim.getSimPtr(), surface, species, state,
+              state1, state2, rate, newspecies, isinternal);
         })
       // enum ErrorCode smolAddPanel(simptr sim, const char *surface,
       //     enum PanelShape panelshape, const char *panel, const char

@@ -1295,6 +1295,139 @@ failure:
 	return Liberrorcode; }
 
 
+/* smolAddSpeciesGroup */
+extern CSTRING enum ErrorCode smolAddSpeciesGroup(simptr sim,const char *group,const char *species) {
+	const char *funcname="smolAddSpeciesGroup";
+	char spname[STRCHAR];
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->mols,funcname,ECnonexist,"no species defined");
+	LCHECK(group && group[0]!='\0',funcname,ECmissing,"missing group name");
+	if(species && species[0]!='\0') {
+		LCHECK(strlen(species)<STRCHAR,funcname,ECbounds,"species name is too long");
+		strcpy(spname,species);
+		er=moladdspeciesgroup(sim,group,spname,0); }
+	else
+		er=moladdspeciesgroup(sim,group,NULL,0);
+	LCHECK(er!=-4,funcname,ECnonexist,"species name not recognized");
+	LCHECK(er!=-6,funcname,ECsyntax,"cannot read wildcard logic");
+	LCHECK(er!=-7,funcname,ECmemory,"error allocating memory");
+	LCHECK(er!=-8,funcname,ECsyntax,"molecule states are not permitted");
+	LCHECK(er!=-9,funcname,ECerror,"species group name cannot be a species name");
+	LCHECK(!er,funcname,ECsyntax,"cannot read group or species name");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolrulepattern. Converts the species pattern string species into a rule
+pattern in pattern, which needs to have STRCHAR space. Returns 0 for success
+or the error code from molstring2pattern. */
+static int smolrulepattern(const char *species,char *pattern) {
+	enum MolecState ms;
+
+	if(!species || species[0]=='\0') return -1;
+	pattern[0]='\0';
+	return molstring2pattern(species,&ms,pattern,0); }
+
+
+/* smolSetSpeciesMobilityRule */
+extern CSTRING enum ErrorCode smolSetSpeciesMobilityRule(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix) {
+	const char *funcname="smolSetSpeciesMobilityRule";
+	char pattern[STRCHAR];
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->dim>0,funcname,ECerror,"need to set the system dimensionality first");
+	er=smolrulepattern(species,pattern);
+	LCHECK(!er,funcname,ECsyntax,"unable to read species pattern");
+	LCHECK((state>=0 && state<MSMAX) || state==MSall,funcname,ECsyntax,"invalid state");
+	if(difc>=0) {
+		er=RuleAddRule(sim,RTdifc,NULL,pattern,&state,NULL,difc,NULL,NULL);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding difc rule"); }
+	if(drift) {
+		er=RuleAddRule(sim,RTdrift,NULL,pattern,&state,NULL,0,NULL,drift);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding drift rule"); }
+	if(difmatrix) {
+		er=RuleAddRule(sim,RTdifm,NULL,pattern,&state,NULL,0,NULL,difmatrix);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding difm rule"); }
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetSpeciesSurfaceDriftRule */
+extern CSTRING enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim,const char *species,enum MolecState state,const char *surface,enum PanelShape panelshape,double *drift) {
+	const char *funcname="smolSetSpeciesSurfaceDriftRule";
+	char pattern[STRCHAR];
+	int er,d,detailsi[2];
+	double v1[DIMMAX];
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->dim>1,funcname,ECerror,"system dimensionality needs to be 2 or 3");
+	LCHECK(sim->srfss && sim->srfss->nsrf>0,funcname,ECnonexist,"no surfaces defined");
+	LCHECK(drift,funcname,ECmissing,"missing drift vector");
+	er=smolrulepattern(species,pattern);
+	LCHECK(!er,funcname,ECsyntax,"unable to read species pattern");
+	LCHECK((state>MSsoln && state<MSMAX) || state==MSall,funcname,ECsyntax,"state needs to be surface-bound");
+	LCHECK((panelshape>=0 && panelshape<PSMAX) || panelshape==PSall,funcname,ECsyntax,"invalid panel shape");
+	if(!surface || !strcmp(surface,"all")) detailsi[0]=-1;
+	else {
+		detailsi[0]=smolGetSurfaceIndexNT(sim,surface);
+		LCHECK(detailsi[0]>=0,funcname,ECsame,NULL); }
+	detailsi[1]=(int)panelshape;
+	for(d=0;d<DIMMAX;d++) v1[d]=(d<sim->dim-1)?drift[d]:0;		// RuleAddRule copies dim values
+	er=RuleAddRule(sim,RTsurfdrift,NULL,pattern,&state,NULL,0,detailsi,v1);
+	LCHECK(!er,funcname,ECmemory,"out of memory adding surface drift rule");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetMolListRule */
+extern CSTRING enum ErrorCode smolSetMolListRule(simptr sim,const char *species,enum MolecState state,const char *mollist) {
+	const char *funcname="smolSetMolListRule";
+	char pattern[STRCHAR];
+	int er,ll;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	er=smolrulepattern(species,pattern);
+	LCHECK(!er,funcname,ECsyntax,"unable to read species pattern");
+	LCHECK((state>=0 && state<MSMAX) || state==MSall,funcname,ECsyntax,"invalid state");
+	ll=smolGetMolListIndexNT(sim,mollist);
+	LCHECK(ll>=0,funcname,ECsame,NULL);
+	LCHECK(sim->mols->listtype[ll]==MLTsystem,funcname,ECerror,"list is not a system list");
+	er=RuleAddRule(sim,RTmollist,NULL,pattern,&state,NULL,0,&ll,NULL);
+	LCHECK(!er,funcname,ECmemory,"out of memory adding molecule list rule");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetMoleculeStyleRule */
+extern CSTRING enum ErrorCode smolSetMoleculeStyleRule(simptr sim,const char *species,enum MolecState state,double size,double *color) {
+	const char *funcname="smolSetMoleculeStyleRule";
+	char pattern[STRCHAR];
+	int er,c;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	er=smolrulepattern(species,pattern);
+	LCHECK(!er,funcname,ECsyntax,"unable to read species pattern");
+	LCHECK((state>=0 && state<MSMAX) || state==MSall,funcname,ECsyntax,"invalid state");
+	if(size>=0) {
+		er=RuleAddRule(sim,RTdispsize,NULL,pattern,&state,NULL,size,NULL,NULL);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding display size rule"); }
+	if(color) {
+		for(c=0;c<4;c++)
+			LCHECK(color[c]>=0 && color[c]<=1,funcname,ECbounds,"color value out of bounds");
+		er=RuleAddRule(sim,RTcolor,NULL,pattern,&state,NULL,0,NULL,color);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding color rule"); }
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
 /******************************************************************************/
 /*********************************** Surfaces *********************************/
 /******************************************************************************/
@@ -1449,6 +1582,77 @@ extern CSTRING enum ErrorCode smolSetSurfaceRate(simptr sim,const char *surface,
 			srf=sim->srfss->srflist[s];
 			er=surfsetrate(srf,i,NULL,state,state1,state2,i2,rate,isinternal?2:1);
 			LCHECK(!er,funcname,ECerror,"error in surfsetrate"); }}
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetSurfaceActionRule */
+extern CSTRING enum ErrorCode smolSetSurfaceActionRule(simptr sim,const char *surface,enum PanelFace face,const char *species,enum MolecState state,enum SrfAction action) {
+	const char *funcname="smolSetSurfaceActionRule";
+	char pattern[STRCHAR];
+	int er,s,slo,shi,detailsi[3];
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->srfss && sim->srfss->nsrf>0,funcname,ECnonexist,"no surfaces defined");
+	s=smolGetSurfaceIndexNT(sim,surface);
+	if(s==(int)ECall) {smolClearError();slo=0;shi=sim->srfss->nsrf;}
+	else {
+		LCHECK(s>=0,funcname,ECsame,NULL);
+		slo=s;
+		shi=s+1; }
+	LCHECK(face==PFfront || face==PFback || face==PFboth,funcname,ECbounds,"invalid face");
+	er=smolrulepattern(species,pattern);
+	LCHECK(!er,funcname,ECsyntax,"unable to read species pattern");
+	LCHECK((state>=0 && state<MSMAX) || state==MSall,funcname,ECbounds,"invalid state");
+	LCHECK((action>=0 && action<=SAmult) || action==SAadsorb,funcname,ECbounds,"invalid action");
+	for(s=slo;s<shi;s++) {
+		detailsi[0]=s;
+		detailsi[1]=(int)face;
+		detailsi[2]=(int)action;
+		er=RuleAddRule(sim,RTsurfaction,NULL,pattern,&state,NULL,0,detailsi,NULL);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding surface action rule"); }
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetSurfaceRateRule */
+extern CSTRING enum ErrorCode smolSetSurfaceRateRule(simptr sim,const char *surface,const char *species,enum MolecState state,enum MolecState state1,enum MolecState state2,double rate,const char *newspecies,int isinternal) {
+	const char *funcname="smolSetSurfaceRateRule";
+	char pattern[STRCHAR];
+	int er,s,slo,shi,i3,detailsi[4];
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->srfss && sim->srfss->nsrf>0,funcname,ECnonexist,"no surfaces defined");
+	s=smolGetSurfaceIndexNT(sim,surface);
+	if(s==(int)ECall) {smolClearError();slo=0;shi=sim->srfss->nsrf;}
+	else {
+		LCHECK(s>=0,funcname,ECsame,NULL);
+		slo=s;
+		shi=s+1; }
+	er=smolrulepattern(species,pattern);
+	LCHECK(!er,funcname,ECsyntax,"unable to read species pattern");
+	LCHECK(state>=0 && state<MSbsoln,funcname,ECbounds,"invalid state");
+	LCHECK(state1>=0 && state1<=MSbsoln,funcname,ECbounds,"invalid state1");
+	LCHECK(state2>=0 && state2<=MSbsoln,funcname,ECbounds,"invalid state2");
+	LCHECK(state1!=state2,funcname,ECsyntax,"cannot set rate for state1 = state2");
+	LCHECK(state==MSsoln || state1==state || state1==MSsoln || state1==MSbsoln,funcname,ECsyntax,"nonsensical state combination");
+	if(isinternal) {
+		LCHECK(rate>=0 && rate<=1,funcname,ECbounds,"internal rate needs to be between 0 and 1"); }
+	else {
+		LCHECK(rate>=0 || rate==-1,funcname,ECbounds,"rate needs to be non-negative, or -1 for the maximum"); }
+	if(newspecies && newspecies[0]!='\0') {
+		i3=smolGetSpeciesIndexNT(sim,newspecies);
+		LCHECK(i3>0,funcname,ECnonexist,"unrecognized new species name"); }
+	else i3=0;
+	for(s=slo;s<shi;s++) {
+		detailsi[0]=s;
+		detailsi[1]=(int)state1;
+		detailsi[2]=(int)state2;
+		detailsi[3]=i3;
+		er=RuleAddRule(sim,isinternal?RTsurfrateint:RTsurfrate,NULL,pattern,&state,NULL,rate,detailsi,NULL);
+		LCHECK(!er,funcname,ECmemory,"out of memory adding surface rate rule"); }
 	return ECok;
  failure:
 	return Liberrorcode; }

@@ -79,6 +79,23 @@ smolGetVariable = smoldyn.smolGetVariable
 smolGetVariable.restype = c_int
 smolGetVariable.argtypes = [c_void_p, c_char_p, c_void_p]
 
+# Species groups and species rules
+smolAddSpeciesGroup = smoldyn.smolAddSpeciesGroup
+smolAddSpeciesGroup.restype = c_int
+smolAddSpeciesGroup.argtypes = [c_void_p, c_char_p, c_char_p]
+
+smolSetSpeciesMobilityRule = smoldyn.smolSetSpeciesMobilityRule
+smolSetSpeciesMobilityRule.restype = c_int
+smolSetSpeciesMobilityRule.argtypes = [c_void_p, c_char_p, c_int, c_double, c_void_p, c_void_p]
+
+smolSetMolListRule = smoldyn.smolSetMolListRule
+smolSetMolListRule.restype = c_int
+smolSetMolListRule.argtypes = [c_void_p, c_char_p, c_int, c_char_p]
+
+smolSetMoleculeStyleRule = smoldyn.smolSetMoleculeStyleRule
+smolSetMoleculeStyleRule.restype = c_int
+smolSetMoleculeStyleRule.argtypes = [c_void_p, c_char_p, c_int, c_double, c_void_p]
+
 # Runtime commands (Output values to file)
 smolSetOutputPath = smoldyn.smolSetOutputPath
 smolSetOutputPath.restype = c_int
@@ -166,6 +183,18 @@ smolSetSurfaceStyle.argtypes = [c_void_p, c_char_p, c_int, c_int, c_double, c_vo
 smolSetSpeciesSurfaceDrift = smoldyn.smolSetSpeciesSurfaceDrift
 smolSetSpeciesSurfaceDrift.restype = c_int
 smolSetSpeciesSurfaceDrift.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_void_p]
+
+smolSetSurfaceActionRule = smoldyn.smolSetSurfaceActionRule
+smolSetSurfaceActionRule.restype = c_int
+smolSetSurfaceActionRule.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_int]
+
+smolSetSurfaceRateRule = smoldyn.smolSetSurfaceRateRule
+smolSetSurfaceRateRule.restype = c_int
+smolSetSurfaceRateRule.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_int, c_int, c_double, c_char_p, c_int]
+
+smolSetSpeciesSurfaceDriftRule = smoldyn.smolSetSpeciesSurfaceDriftRule
+smolSetSpeciesSurfaceDriftRule.restype = c_int
+smolSetSpeciesSurfaceDriftRule.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_void_p]
 
 
 # Compartments

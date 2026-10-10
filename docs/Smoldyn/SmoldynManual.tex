@@ -4839,6 +4839,39 @@ Python: \textit{species}\ttt{.color}\\
 Python: \textit{species}\ttt{.size}\\
 Sets the graphical display parameters for molecules of species \ttt{species} (``all" is permitted) and state \ttt{state} (\ttt{MSall} is permitted). Enter \ttt{size} with the drawing size (in pixels if graphics method is ``opengl" and in simulation system length units for better drawing methods) or with a negative number to not set the size. Enter \ttt{color} with the 3-value color vector or with \ttt{NULL} to not set the color (or, in Python, a color word).
 
+\item[AddSpeciesGroup]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolAddSpeciesGroup(simptr sim, const char *group, const char *species)}\\
+Python: \ttt{ErrorCode addSpeciesGroup(str group, str species="")}\\
+Python: $sim$.\ttt{addSpeciesGroup(name, species=[])}\\
+Adds species \ttt{species}, which may include wildcards, to the species group \ttt{group}, creating the group if needed, which is equivalent to the \ttt{species\_group} statement. Enter \ttt{species} as \ttt{NULL} or an empty string to create an empty group. The group name cannot be a species name. The Python \textit{sim} version takes a list of species.
+
+\item[SetSpeciesMobilityRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesMobilityRule(simptr sim, const char *species, enum MolecState state, double difc, double *drift, double *difmatrix)}\\
+Python: \ttt{ErrorCode setSpeciesMobilityRule(str species, MolecState state, float difc, List[float] drift, List[float] difmatrix)}\\
+Python: $sim$.\ttt{addSpeciesRule(pattern, state="soln", difc=None, drift=None, difm=None, mol\_list=None, display\_size=None, color=None)}\\
+Like \ttt{smolSetSpeciesMobility}, but as a rule, which is equivalent to the \ttt{difc\_rule}, \ttt{drift\_rule}, and \ttt{difm\_rule} statements. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. To not set a coefficient, enter a negative number in \ttt{difc} and/or a \ttt{NULL} pointer in the other inputs. The Python \textit{sim} version also sets the molecule list and style rules.
+
+\item[SetSpeciesSurfaceDriftRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesSurfaceDriftRule(simptr sim, const char *species, enum MolecState state, const char *surface, enum PanelShape panelshape, double *drift)}\\
+Python: \ttt{ErrorCode setSpeciesSurfaceDriftRule(str species, MolecState state, str surface, PanelShape panelshape, List[float] drift)}\\
+Python: $sim$.\ttt{addSurfaceDriftRule(pattern, surface, drift, state="all", panelshape="all")}\\
+Like \ttt{smolSetSpeciesSurfaceDrift}, but as a rule, which is equivalent to the \ttt{surface\_drift\_rule} statement. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. 
+
+\item[SetMolListRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMolListRule(simptr sim, const char *species, enum MolecState state, const char *mollist)}\\
+Python: \ttt{ErrorCode setMolListRule(str species, MolecState state, str mollist)}\\
+Like \ttt{smolSetMolList}, but as a rule, which is equivalent to the \ttt{mol\_list\_rule} statement. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. 
+
+\item[SetMoleculeStyleRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetMoleculeStyleRule(simptr sim, const char *species, enum MolecState state, double size, double *color)}\\
+Python: \ttt{ErrorCode setMoleculeStyleRule(str species, MolecState state, float size=-1, List[float] color=[])}\\
+Like \ttt{smolSetMoleculeStyle}, but as a rule, which is equivalent to the \ttt{display\_size\_rule} and \ttt{color\_rule} statements. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. Here, \ttt{color} needs 4 values (red, green, blue, and alpha); the Python version also accepts 3 values, with alpha set to 1.
+
 \end{description}
 
 
@@ -5053,6 +5086,20 @@ bound state&"&"&bound&\emph{no change}\\
 \hline
 impossible&"&bound'&any&\emph{nonsense}\\
 \end{longtable}
+
+\item[SetSurfaceActionRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSurfaceActionRule(simptr sim, const char *surface, enum PanelFace face, const char *species, enum MolecState state, enum SrfAction action)}\\
+Python: \ttt{ErrorCode setSurfaceActionRule(str surface, PanelFace face, str species, MolecState state, SrfAction action)}\\
+Python: \textit{surface}\ttt{.setActionRule(face, pattern, action, state="soln")}\\
+Like \ttt{smolSetSurfaceAction}, but as a rule, which is equivalent to the \ttt{action\_rule} statement. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. \ttt{surface} may be ``all''.
+
+\item[SetSurfaceRateRule]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSurfaceRateRule(simptr sim, const char *surface, const char *species, enum MolecState state, enum MolecState state1, enum MolecState state2, double rate, const char *newspecies, int isinternal)}\\
+Python: \ttt{ErrorCode setSurfaceRateRule(str surface, str species, MolecState state, MolecState state1, MolecState state2, float rate, str newspecies, int isinternal)}\\
+Python: \textit{surface}\ttt{.setRateRule(pattern, state1, state2, rate, state="soln", new\_species=None, isinternal=False)}\\
+Like \ttt{smolSetSurfaceRate}, but as a rule, which is equivalent to the \ttt{rate\_rule} and \ttt{rate\_internal\_rule} statements. Rules apply to all species that match the species pattern \ttt{species}, which may include wildcards, including species that are generated later by rule expansion (see \ttt{smolExpandRules}). The state is entered separately in \ttt{state}, so the pattern should not include a state. \ttt{surface} may be ``all''. If \ttt{isinternal} is 0, \ttt{rate} can also be -1 for the maximum rate.
 
 \item[AddPanel]
 \hfill \\
