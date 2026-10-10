@@ -7723,6 +7723,10 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 % Bugs and issues to fix
 \section{Bugs and issues to fix}
 \begin{itemize}
+\item Improve units.
+\item Catch up with libSmoldyn.
+\item Make videos.
+\item Sort panels. See conversation with Logan.
 \item The \ttt{comparttranslate} function isn't written well for molecules that get squeezed. What's needed is to write a second version of \ttt{checksurfaces1mol} that explicitly accounts for surface motion, rather than to just use this function, which is written for molecule motion, in the surface's moving reference frame.
 \item Surfaces now have lists of molecules adsorbed to them. The code would be faster if these lists were used as appropriate, such as for checking the actions of surface-bound molecules.
 \item Smoldyn shouldn't terminate if pattern or species name is over-length during on-the-fly expansion, but ignore it and issue a warning.

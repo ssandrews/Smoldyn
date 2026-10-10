@@ -1,4 +1,4 @@
- \title{\vspace{-2.0cm}Documentation for Geometry.h and Geometry.c\vspace{-2ex}}
+\title{\vspace{-2.0cm}Documentation for Geometry.h and Geometry.c\vspace{-2ex}}
 \author{Steve Andrews}
 \date{\vspace{-2ex}2006 - 2023}
 
@@ -13,6 +13,7 @@
 \usepackage{extarrows}
 \usepackage{gensymb}
 \usepackage{chemarr}
+\usepackage{enumitem}
 
 \usepackage{longtable}
 
@@ -23,22 +24,22 @@
 \definecolor{codepurple}{rgb}{0.58,0,0.82}
 \definecolor{backcolour}{rgb}{0.95,0.95,0.92}
 \lstdefinestyle{mystyle}{
-   backgroundcolor=\color{backcolour},
-   commentstyle=\color{codegreen},
-   keywordstyle=\color{magenta},
-   numberstyle=\tiny\color{codegray},
-   stringstyle=\color{codepurple},
-   basicstyle=\ttfamily\footnotesize,
-   breakatwhitespace=false,
-   breaklines=true, 
-   captionpos=b, 
-   keepspaces=true, 
-   numbers=left, 
-   numbersep=5pt, 
-   showspaces=false, 
-   showstringspaces=false,
-   showtabs=false, 
-   tabsize=2
+ backgroundcolor=\color{backcolour},
+ commentstyle=\color{codegreen},
+ keywordstyle=\color{magenta},
+ numberstyle=\tiny\color{codegray},
+ stringstyle=\color{codepurple},
+ basicstyle=\ttfamily\footnotesize,
+ breakatwhitespace=false,
+ breaklines=true, 
+ captionpos=b, 
+ keepspaces=true, 
+ numbers=left, 
+ numbersep=5pt, 
+ showspaces=false, 
+ showstringspaces=false,
+ showtabs=false, 
+ tabsize=2
 }
 \lstset{style=mystyle}
 
@@ -55,7 +56,7 @@
 \begin{lstlisting}[language=C]
 /* Steven Andrews 2/17/06
 See documentation called Geometry_doc.doc.
-Copyright 2006-2007 by Steven Andrews.  This work is distributed under the terms
+Copyright 2006-2007 by Steven Andrews. This work is distributed under the terms
 of the Gnu Lesser General Public License (LGPL). */
 
 
@@ -63,103 +64,103 @@ of the Gnu Lesser General Public License (LGPL). */
 #define __Geometry_h
 
 // Center
-void Geo_LineCenter(double **point,double *cent,int dim);
-void Geo_RectCenter(double **point,double *cent,int dim);
-void Geo_TriCenter(double **point,double *cent,int dim);
+void Geo_LineCenter(double **point, double *cent, int dim);
+void Geo_RectCenter(double **point, double *cent, int dim);
+void Geo_TriCenter(double **point, double *cent, int dim);
 
 // Normal
-double Geo_LineNormal(double *pt1,double *pt2,double *ans);
-double Geo_LineNormal2D(double *pt1,double *pt2,double *point,double *ans);
-double Geo_LineNormal3D(double *pt1,double *pt2,double *point,double *ans);
-double Geo_LineNormPos(double *pt1,double *pt2,double *point,int dim,double *distptr);
-double Geo_TriNormal(double *pt1,double *pt2,double *pt3,double *ans);
-double Geo_SphereNormal(double *cent,double *pt,int front,int dim,double *ans);
+double Geo_LineNormal(double *pt1, double *pt2, double *ans);
+double Geo_LineNormal2D(double *pt1, double *pt2, double *point, double *ans);
+double Geo_LineNormal3D(double *pt1, double *pt2, double *point, double *ans);
+double Geo_LineNormPos(double *pt1, double *pt2, double *point, int dim, double *distptr);
+double Geo_TriNormal(double *pt1, double *pt2, double *pt3, double *ans);
+double Geo_SphereNormal(double *cent, double *pt, int front, int dim, double *ans);
 
 // Unit Vectors
-double Geo_UnitCross(double *v1start,double *v1end,double *v2start,double *v2end,double *ans);
-double Geo_TriUnitVects(double *pt1,double *pt2,double *pt3,double *unit0,double *unit1,double *unit2);
-double Geo_SphereUnitVects(double *cent,double *top,double *point,int front,double *unit0,double *unit1,double *unit2);
-double Geo_CylUnitVects(double *pt1,double *pt2,double *point,double *unit0,double *unit1,double *unit2);
-double Geo_DiskUnitVects(double *cent,double *front,double *point,double *unit0,double *unit1,double *unit2);
+double Geo_UnitCross(double *v1start, double *v1end, double *v2start, double *v2end, double *ans);
+double Geo_TriUnitVects(double *pt1, double *pt2, double *pt3, double *unit0, double *unit1, double *unit2);
+double Geo_SphereUnitVects(double *cent, double *top, double *point, int front, double *unit0, double *unit1, double *unit2);
+double Geo_CylUnitVects(double *pt1, double *pt2, double *point, double *unit0, double *unit1, double *unit2);
+double Geo_DiskUnitVects(double *cent, double *front, double *point, double *unit0, double *unit1, double *unit2);
 
 // Area
-double Geo_LineLength(double *pt1,double *pt2,int dim);
-double Geo_TriArea2(double *pt1,double *pt2,double *pt3);
-double Geo_TriArea3D(double *pt1,double *pt2,double *pt3);
-double Geo_TriArea3(double *pt1,double *pt2,double *pt3,double *norm);
-double Geo_QuadArea(double *pt1,double *pt2,double *pt3,double *pt4,int dim);
+double Geo_LineLength(double *pt1, double *pt2, int dim);
+double Geo_TriArea2(double *pt1, double *pt2, double *pt3);
+double Geo_TriArea3D(double *pt1, double *pt2, double *pt3);
+double Geo_TriArea3(double *pt1, double *pt2, double *pt3, double *norm);
+double Geo_QuadArea(double *pt1, double *pt2, double *pt3, double *pt4, int dim);
 
 // Inside point
-double Geo_InsidePoints2(double *pt1,double *pt2,double margin,double *ans1,double *ans2,int dim);
-void Geo_InsidePoints3(double *pt1,double *pt2,double *pt3,double margin,double *ans1,double *ans2,double *ans3);
-void Geo_InsidePoints32(double **point,double margin,double **ans);
+double Geo_InsidePoints2(double *pt1, double *pt2, double margin, double *ans1, double *ans2, int dim);
+void Geo_InsidePoints3(double *pt1, double *pt2, double *pt3, double margin, double *ans1, double *ans2, double *ans3);
+void Geo_InsidePoints32(double **point, double margin, double **ans);
 
 // Point in
-int Geo_PtInTriangle(double *pt1,double *pt2,double *pt3,double *norm,double *test);
-int Geo_PtInTriangle2(double **point,double *test);
-int Geo_PtInSlab(double *pt1,double *pt2,double *test,int dim);
-int Geo_PtInSphere(double *test,double *cent,double rad,int dim);
+int Geo_PtInTriangle(double *pt1, double *pt2, double *pt3, double *norm, double *test);
+int Geo_PtInTriangle2(double **point, double *test);
+int Geo_PtInSlab(double *pt1, double *pt2, double *test, int dim);
+int Geo_PtInSphere(double *test, double *cent, double rad, int dim);
 
 // Nearest
-void Geo_NearestSlabPt(double *pt1,double *pt2,double *point,double *ans,int dim);
-int Geo_NearestLineSegPt(double *pt1,double *pt2,double *point,double *ans,int dim,double margin);
-void Geo_NearestTriPt(double *pt1,double *pt2,double *pt3,double *norm,double *point,double *ans);
-void Geo_NearestTriPt2(double **point,double **edgenorm,double *norm,double *testpt,double *ans);
-int Geo_NearestTrianglePt(double *pt1,double *pt2,double *pt3,double *norm,double *point,double *ans);
-int Geo_NearestTrianglePt2(double **point,double *norm,double *testpt,double *ans,double margin);
-double Geo_NearestSpherePt(double *cent,double rad,int front,int dim,double *point,double *ans);
-void Geo_NearestRingPt(double *cent,double *axis,double rad,int dim,double *point,double *ans);
-void Geo_NearestCylPt(double *pt1,double *axis,double rad,int dim,double *point,double *ans);
-int Geo_NearestCylinderPt(double *pt1,double *pt2,double rad,int dim,double *point,double *ans,double margin);
-int Geo_NearestDiskPt(double *cent,double *axis,double rad,int dim,double *point,double *ans,double margin);
-double Geo_NearestLine2LineDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2);
-double Geo_NearestSeg2SegDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2);
-double Geo_NearestAabbPt(const double *bpt1,const double *bpt2,int dim,const double *point,double *ans);
+void Geo_NearestSlabPt(double *pt1, double *pt2, double *point, double *ans, int dim);
+int Geo_NearestLineSegPt(double *pt1, double *pt2, double *point, double *ans, int dim, double margin);
+void Geo_NearestTriPt(double *pt1, double *pt2, double *pt3, double *norm, double *point, double *ans);
+void Geo_NearestTriPt2(double **point, double **edgenorm, double *norm, double *testpt, double *ans);
+int Geo_NearestTrianglePt(double *pt1, double *pt2, double *pt3, double *norm, double *point, double *ans);
+int Geo_NearestTrianglePt2(double **point, double *norm, double *testpt, double *ans, double margin);
+double Geo_NearestSpherePt(double *cent, double rad, int front, int dim, double *point, double *ans);
+void Geo_NearestRingPt(double *cent, double *axis, double rad, int dim, double *point, double *ans);
+void Geo_NearestCylPt(double *pt1, double *axis, double rad, int dim, double *point, double *ans);
+int Geo_NearestCylinderPt(double *pt1, double *pt2, double rad, int dim, double *point, double *ans, double margin);
+int Geo_NearestDiskPt(double *cent, double *axis, double rad, int dim, double *point, double *ans, double margin);
+double Geo_NearestLine2LineDist(double *ptA1, double *ptA2, double *ptB1, double *ptB2);
+double Geo_NearestSeg2SegDist(double *ptA1, double *ptA2, double *ptB1, double *ptB2);
+double Geo_NearestAabbPt(const double *bpt1,const double *bpt2, int dim,const double *point, double *ans);
 
 // To Rect
-void Geo_Semic2Rect(double *cent,double rad,double *outvect,double *r1,double *r2,double *r3);
-void Geo_Hemis2Rect(double *cent,double rad,double *outvect,double *r1,double *r2,double *r3,double *r4);
-void Geo_Cyl2Rect(double *pt1,double *pt2,double rad,double *r1,double *r2,double *r3,double *r4);
+void Geo_Semic2Rect(double *cent, double rad, double *outvect, double *r1, double *r2, double *r3);
+void Geo_Hemis2Rect(double *cent, double rad, double *outvect, double *r1, double *r2, double *r3, double *r4);
+void Geo_Cyl2Rect(double *pt1, double *pt2, double rad, double *r1, double *r2, double *r3, double *r4);
 
 // Cross
-double Geo_LineXLine(double *l1p1,double *l1p2,double *l2p1,double *l2p2,double *crss2ptr);
-double Geo_LineXPlane(double *pt1,double *pt2,double *v,double *norm,double *crsspt);
-double Geo_LineXSphs(double *pt1,double *pt2,double *cent,double rad,int dim,double *crss2ptr,double *nrdistptr,double *nrposptr);
-double Geo_LineXCyl2s(double *pt1,double *pt2,double *cp1,double *cp2,double *norm,double rad,double *crss2ptr,double *nrdistptr,double *nrposptr);
-double Geo_LineXCyls(double *pt1,double *pt2,double *cp1,double *cp2,double rad,double *crss2ptr,double *nrdistptr,double *nrposptr);
+double Geo_LineXLine(double *l1p1, double *l1p2, double *l2p1, double *l2p2, double *crss2ptr);
+double Geo_LineXPlane(double *pt1, double *pt2, double *v, double *norm, double *crsspt);
+double Geo_LineXSphs(double *pt1, double *pt2, double *cent, double rad, int dim, double *crss2ptr, double *nrdistptr, double *nrposptr);
+double Geo_LineXCyl2s(double *pt1, double *pt2, double *cp1, double *cp2, double *norm, double rad, double *crss2ptr, double *nrdistptr, double *nrposptr);
+double Geo_LineXCyls(double *pt1, double *pt2, double *cp1, double *cp2, double rad, double *crss2ptr, double *nrdistptr, double *nrposptr);
 
 // Reflection
-double Geo_SphereReflectSphere(const double *a0,const double *a1,const double *b0,const double *b1,int dim,double radius2,double *a1p,double *b1p);
+double Geo_SphereReflectSphere(const double *a0,const double *a1,const double *b0,const double *b1, int dim, double radius2, double *a1p, double *b1p);
 
 // Exit
-double Geo_LineExitRect(double *pt1,double *pt2,double *front,double *corner1,double *corner3,double *exitpt,int *exitside);
-double Geo_LineExitLine2(double *pt1,double *pt2,double *end1,double *end2,double *exitpt,int *exitend);
-void Geo_LineExitArc2(double *pt1,double *pt2,double *cent,double radius,double *norm,double *exitpt,int *exitend);
-double Geo_LineExitTriangle(double *pt1,double *pt2,double *normal,double *v1,double *v2,double *v3,double *exitpt,int *exitside);
-double Geo_LineExitTriangle2(double *pt1,double *pt2,double **point,double *exitpt,int *exitside);
-double Geo_LineExitSphere(double *pt1,double *pt2,double *cent,double rad,double *exitpt);
-void Geo_LineExitHemisphere(double *pt1,double *pt2,double *cent,double rad,double *normal,double *exitpt);
-double Geo_LineExitCylinder(double *pt1,double *pt2,double *end1,double *end2,double rad,double *exitpt,int *exitend);
+double Geo_LineExitRect(double *pt1, double *pt2, double *front, double *corner1, double *corner3, double *exitpt, int *exitside);
+double Geo_LineExitLine2(double *pt1, double *pt2, double *end1, double *end2, double *exitpt, int *exitend);
+void Geo_LineExitArc2(double *pt1, double *pt2, double *cent, double radius, double *norm, double *exitpt, int *exitend);
+double Geo_LineExitTriangle(double *pt1, double *pt2, double *normal, double *v1, double *v2, double *v3, double *exitpt, int *exitside);
+double Geo_LineExitTriangle2(double *pt1, double *pt2, double **point, double *exitpt, int *exitside);
+double Geo_LineExitSphere(double *pt1, double *pt2, double *cent, double rad, double *exitpt);
+void Geo_LineExitHemisphere(double *pt1, double *pt2, double *cent, double rad, double *normal, double *exitpt);
+double Geo_LineExitCylinder(double *pt1, double *pt2, double *end1, double *end2, double rad, double *exitpt, int *exitend);
 
 // Cross aabbb
-int Geo_LineXaabb2(double *pt1,double *pt2,double *norm,double *bpt1,double *bpt2);
-int Geo_LineXaabb(double *pt1,double *pt2,double *bpt1,double *bpt2,int dim,int infline);
-int Geo_TriXaabb3(double *pt1,double *pt2,double *pt3,double *norm,double *bpt1,double *bpt2);
-int Geo_RectXaabb2(double *r1,double *r2,double *r3,double *bpt1,double *bpt2);
-int Geo_RectXaabb3(double *r1,double *r2,double *r3,double *r4,double *bpt1,double *bpt2);
-int Geo_CircleXaabb2(double *cent,double rad,double *bpt1,double *bpt2);
-int Geo_SphsXaabb3(double *cent,double rad,double *bpt1,double *bpt2);
-int Geo_CylisXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2);
-int Geo_DiskXaabb3(double *cent,double rad,double *norm,double *bpt1,double *bpt2);
+int Geo_LineXaabb2(double *pt1, double *pt2, double *norm, double *bpt1, double *bpt2);
+int Geo_LineXaabb(double *pt1, double *pt2, double *bpt1, double *bpt2, int dim, int infline);
+int Geo_TriXaabb3(double *pt1, double *pt2, double *pt3, double *norm, double *bpt1, double *bpt2);
+int Geo_RectXaabb2(double *r1, double *r2, double *r3, double *bpt1, double *bpt2);
+int Geo_RectXaabb3(double *r1, double *r2, double *r3, double *r4, double *bpt1, double *bpt2);
+int Geo_CircleXaabb2(double *cent, double rad, double *bpt1, double *bpt2);
+int Geo_SphsXaabb3(double *cent, double rad, double *bpt1, double *bpt2);
+int Geo_CylisXaabb3(double *pt1, double *pt2, double rad, double *bpt1, double *bpt2);
+int Geo_DiskXaabb3(double *cent, double rad, double *norm, double *bpt1, double *bpt2);
 
 // Approx. cross aabb
-int Geo_SemicXaabb2(double *cent,double rad,double *outvect,double *bpt1,double *bpt2);
-int Geo_HemisXaabb3(double *cent,double rad,double *outvect,double *bpt1,double *bpt2);
-int Geo_CylsXaabb3(double *pt1,double *pt2,double rad,double *bpt1,double *bpt2);
+int Geo_SemicXaabb2(double *cent, double rad, double *outvect, double *bpt1, double *bpt2);
+int Geo_HemisXaabb3(double *cent, double rad, double *outvect, double *bpt1, double *bpt2);
+int Geo_CylsXaabb3(double *pt1, double *pt2, double rad, double *bpt1, double *bpt2);
 
 // Volumes
-double Geo_SphVolume(double rad,int dim);
-double Geo_SphOLSph(double *cent1,double *cent2,double r1,double r2,int dim);
+double Geo_SphVolume(double rad, int dim);
+double Geo_SphOLSph(double *cent1, double *cent2, double r1, double r2, int dim);
 
 #endif
 \end{lstlisting}
@@ -167,11 +168,11 @@ double Geo_SphOLSph(double *cent1,double *cent2,double r1,double r2,int dim);
 % Description
 \section{Description}
 
-These functions do a variety of things that are useful for 1-D, 2-D, and 3-D geometry manipulations.  A few functions do $n$-D geometry, but those are rare.  Its sole current use is in Smoldyn.
+These functions do a variety of things that are useful for 1-D, 2-D, and 3-D geometry manipulations. A few functions do $n$-D geometry, but those are rare. Its sole current use is in Smoldyn.
 
-Functions do not change input data arrays.  Output arrays are written to but never read from.  It is often permissible to use the same input array for multiple inputs, but every output array needs to be distinct from each other, and from each input array.
+Functions do not change input data arrays. Output arrays are written to but never read from. It is often permissible to use the same input array for multiple inputs, but every output array needs to be distinct from each other, and from each input array.
 
-In general, functions include all boundaries as part of the region when testing whether a point is in a region or not, or whether two regions overlap.  An axis-aligned bounding box, called an aabb, has its low corner $(x_{min}, y_{min}, z_{min})$ at \ttt{bpt1} and its high corner $(x_{max}, y_{max}, z_{max})$ at \ttt{bpt2}.
+In general, functions include all boundaries as part of the region when testing whether a point is in a region or not, or whether two regions overlap. An axis-aligned bounding box, called an aabb, has its low corner $(x_{min}, y_{min}, z_{min})$ at \ttt{bpt1} and its high corner $(x_{max}, y_{max}, z_{max})$ at \ttt{bpt2}.
 
 % Dependencies
 \section{Dependencies}
@@ -179,7 +180,7 @@ Geometry.h, math2.h
 
 % History
 \section{History}
-\begin{description}
+\begin{description}[nosep]
 
 \item[2/06] Started.
 \item[12/06-2/07] Major rewrite and additions; included in this was a complete switch from floats to doubles.
@@ -191,7 +192,7 @@ Geometry.h, math2.h
 \item[3/8/11] Fixed \ttt{Geo\_NearestTriPt} and \ttt{Geo\_NearestTrianglePt}, in which they didn't test nearest corner points correctly.
 \item[6/24/11] Added \ttt{Geo\_InsidePoints2} and \ttt{Geo\_InsidePoints3}.
 \item[4/11/12] Added \ttt{Geo\_TriArea3D}.
-\item[12/15/12] Ye Li added \ttt{Geo\_Area3D} to library.  I improved it to use a more stable algorithm.
+\item[12/15/12] Ye Li added \ttt{Geo\_Area3D} to library. I improved it to use a more stable algorithm.
 \item[7/17/12] Added unit vector functions: \ttt{Geo\_TriUnitVects}, \ttt{Geo\_SphereUnitVects}, \ttt{Geo\_CylUnitVects}, and \ttt{Geo\_DiskUnitVects}.
 \item[5/10/13] Fixed a bug in \ttt{Geo\_Cyl2Rect}.
 \item[7/20/15] Improved documentation.
@@ -203,6 +204,7 @@ Geometry.h, math2.h
 \item[4/11/16] Added \ttt{Geo\_NearestAabbPt}
 \item[7/19/19] Minor bug fix in \ttt{Geo\_CylisXaabb3}
 \item[8/16/23] Converted documentation to LaTeX.
+\item[10/9/26] Finished converting documentation to LaTeX.
 
 \end{description}
 
@@ -210,23 +212,23 @@ Geometry.h, math2.h
 % Bugs
 \section{Bugs}
 
-Several of the functions that check crossings of 3-D objects with others (aabbs in particular) ignore potential separation planes, so they report crossings when there aren't any.  These need to be fixed.  As it is, these functions can return false positives (they report non-existent crossings) but they never return false negatives (they never ignore a crossing that actually exists).
+Several of the functions that check crossings of 3-D objects with others (aabbs in particular) ignore potential separation planes, so they report crossings when there aren't any. These need to be fixed. As it is, these functions can return false positives (they report non-existent crossings) but they never return false negatives (they never ignore a crossing that actually exists).
 
 Note that most functions do not work correctly with values that are close to \ttt{DBL\_MAX} because they can't do math with these numbers without running into errors.
 
 % Math
 \section{Math}
 
-Several functions use the cross-product of two vectors.  As a reminder, $\vb{c}=\vb{a} \times \vb{b}$ is:
+Several functions use the cross-product of two vectors. As a reminder, $\vb{c}=\vb{a} \times \vb{b}$ is:
 \begin{align*}
 c_x &= a_y b_z - a_z b_y\\
 c_y &= a_z b_x - a_x b_z\\
 c_z &= a_x b_y - a_y b_x
 \end{align*}
 
-The functions that test whether two objects intersect often make use of the separating axis theorem.  However, they also often use my own methods.  Here is my understanding of the separating axis theorem.  Consider two convex polygons, in 2-D.  A line segment is included as well, where this can be seen as a two-sided polygon with 0 area.  If the objects do not cross, then there must a be at least one infinite line that separates them.  One of these lines will be parallel and adjacent to one of the sides of one of the polygons.  To check for crossing, (1) choose a polygon edge on object A, (2) find its outward normal, which does not have to normalized, (3) project a vertex of the test edge onto this normal by taking the dot product of the vertex and the normal vector, (4) project all vertices of polygon B onto this normal in the same way, (5) the objects do not cross if all projected values of object B are larger than the projected value of the test edge.  Repeat for all edges of both objects; if all projections fail, then the objects must cross.  If two edges are parallel, they will have opposite normal vectors and some steps can be saved.  There are faster methods, but the one listed should work.
+The functions that test whether two objects intersect often make use of the separating axis theorem. However, they also often use my own methods. Here is my understanding of the separating axis theorem. Consider two convex polygons, in 2-D. A line segment is included as well, where this can be seen as a two-sided polygon with 0 area. If the objects do not cross, then there must a be at least one infinite line that separates them. One of these lines will be parallel and adjacent to one of the sides of one of the polygons. To check for crossing, (1) choose a polygon edge on object A, (2) find its outward normal, which does not have to normalized, (3) project a vertex of the test edge onto this normal by taking the dot product of the vertex and the normal vector, (4) project all vertices of polygon B onto this normal in the same way, (5) the objects do not cross if all projected values of object B are larger than the projected value of the test edge. Repeat for all edges of both objects; if all projections fail, then the objects must cross. If two edges are parallel, they will have opposite normal vectors and some steps can be saved. There are faster methods, but the one listed should work.
 
-In three dimensions, if two convex polyhedra do not cross, then there must be an infinite plane that separates them.  Before, I thought that non-crossing polyhedra necessarily implied a separating plane that is parallel to one of the faces on one of the objects.  Now I see that that is sufficient to prove separation, but that other potential separating planes need to be checked as well.  Other planes to test are those that are parallel to edges, including one edge from A and one vertex from B and vice versa.
+In three dimensions, if two convex polyhedra do not cross, then there must be an infinite plane that separates them. Before, I thought that non-crossing polyhedra necessarily implied a separating plane that is parallel to one of the faces on one of the objects. Now I see that that is sufficient to prove separation, but that other potential separating planes need to be checked as well. Other planes to test are those that are parallel to edges, including one edge from A and one vertex from B and vice versa.
 
 
 
@@ -234,24 +236,25 @@ In three dimensions, if two convex polyhedra do not cross, then there must be an
 
 \begin{description}
 
+% Center functions
 \item[\underline{Center functions}]
 
 \item[\ttt{void}]
-\ttt{Geo\_LineCenter(double **point, double *cent,int dim);}
+\ttt{Geo\_LineCenter(double **point, double *cent, int dim);}
 
-Returns the center of the line for which the two ends are defined as \ttt{point[0][$coordinate$]} and \ttt{point[1][$coordinate$]}.  This works for all dimensionalities and simply returns the mean of the \ttt{point[0]} and \ttt{point[1]} vectors.
+Returns the center of the line for which the two ends are defined as \ttt{point[0][$coordinate$]} and \ttt{point[1][$coordinate$]}. This works for all dimensionalities and simply returns the mean of the \ttt{point[0]} and \ttt{point[1]} vectors.
 
 \item[\ttt{void}]
-\ttt{Geo\_RectCenter(double **point, double *cent,int dim);}
+\ttt{Geo\_RectCenter(double **point, double *cent, int dim);}
 
 Returns the center coordinates of a rectangle. The rectangle corners are defined by \ttt{point[$corner$] [$coordinate$]} and the result is returned in \ttt{cent}. \ttt{dim} is the dimensionality of space, not of the surface. If \ttt{dim} is 1, then the ``rectangle'' is really a point with only one ``corner'' and one coordinate; if \ttt{dim} is 2 then the rectangle is really a line with 2 corners (the two ends) and two coordinates each; if \ttt{dim} is 3 then the rectangle is a genuine rectangle with 4 corners that have three coordinates each. Results are undefined for other \ttt{dim} values.
 
 \item[\ttt{void}]
-\ttt{Geo\_TriCenter(double **point, double *cent,int dim);}
+\ttt{Geo\_TriCenter(double **point, double *cent, int dim);}
 
 This returns the center coordinates of a triangle, where the triangle vertices are defined by \ttt{point[$vertex$][$coordinate$]} and the result is returned in \ttt{cent}. \ttt{dim} is the dimensionality of space, not of the surface. If \ttt{dim} is 1, then the ``triangle'' is really a point with only one vertex and one coordinate; if \ttt{dim} is 2 then the triangle is really a line with two vertices (the two ends) and two coordinates each; and if \ttt{dim} is 3 then the triangle is a genuine triangle with 3 vertices that have 3 coordinates each. Results are undefined for other \ttt{dim} values.
 
-\hfill \\
+% Normal functions
 \item[\underline{Normal functions}]
 
 \item[\ttt{double}]
@@ -270,7 +273,7 @@ Identical to \ttt{Geo\_LineNormal3D}, except that this is for a 2-D system. The 
 Finds the 3-D unit normal for line that includes \ttt{pt1} and \ttt{pt2}, and that includes the point \ttt{point}, and puts it in \ttt{ans}. The result vector is perpendicular to the line. Returns the perpendicular distance between the line and point. To decrease round-off error, this function calculates the result using \ttt{pt1} as a basis point, and then recalculates the result using the new point. If \ttt{pt1} and \ttt{pt2} are the same, this returns the normalized vector from \ttt{pt1} to point. If point is on the line that includes \ttt{pt1} and \ttt{pt2}, this returns the perpendicular unit vector that is in the $x,y$-plane and that points to the right of the projection of the line in the $x,y$-plane, if possible; if not, it returns the unit $x$-vector which, again, is perpendicular to the line.
 
 \item[\ttt{double}]
-\ttt{Geo\_LineNormPos(double *pt1, double *pt2, double *point,int dim, double *distptr);}
+\ttt{Geo\_LineNormPos(double *pt1, double *pt2, double *point, int dim, double *distptr);}
 
 Given the line that includes points \ttt{pt1} and \ttt{pt2}, this considers the normal of this line that goes to point. The position of the intersection between the normal and the line is returned, where it is scaled and offset such that \ttt{pt1} is at 0 and \ttt{pt2} is at 1. The unscaled length of the normal segment, from the intersection to point, is returned in \ttt{distptr}, if that pointer is not sent in as \ttt{NULL}. \ttt{dim} is the dimensionality of the system, which can be any positive value.
 
@@ -280,11 +283,11 @@ Given the line that includes points \ttt{pt1} and \ttt{pt2}, this considers the 
 Finds the 3-D unit normal for the triangle that is defined by the 3-D points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3} and puts it in \ttt{ans}. If one looks at the triangle backwards along the unit normal, the three points show counterclockwise winding; i.e. the right-hand rule for the points in sequence yields the direction of the unit normal. The triangle area is returned. If the area is zero, \ttt{ans} is returned in the $x,y$-plane. This finds the normal and the area using the cross-product of the first two triangle edges.
 
 \item[\ttt{double}]
-\ttt{Geo\_SphereNormal(double *cent, double *pt,int front,int dim, double *ans);}
+\ttt{Geo\_SphereNormal(double *cent, double *pt, int front, int dim, double *ans);}
 
 Returns the unit normal vector from the sphere center at cent to the point at \ttt{pt}. Enter \ttt{front} as 1 for an outward normal and -1 for an inward normal. \ttt{dim} is the system dimensionality, which can be any positive integer. The result is returned in \ttt{ans} and the distance between \ttt{cent} and \ttt{pt} is returned by the function.
 
-\hfill \\
+% Unit vector functions
 \item[\underline{Unit vector functions}]
 
 \item[\ttt{double}]
@@ -298,7 +301,7 @@ Computes the cross product between the vector that goes from \ttt{v1start} to \t
 Returns the unit vectors of a 3-dimensional triangle that has its corners at \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}, in vectors \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first is the triangle normal, the second is parallel to the edge from \ttt{pt1} to \ttt{pt2}, and the third is orthogonal to the previous two, using a right-handed coordinate system. Returns the triangle area. Behavior is undefined if the area equals zero.
 
 \item[\ttt{double}]
-\ttt{Geo\_SphereUnitVects(double *cent, double *top, double *point,int front, double *unit0, double *unit1, double *unit2);}
+\ttt{Geo\_SphereUnitVects(double *cent, double *top, double *point, int front, double *unit0, double *unit1, double *unit2);}
 
 Returns the unit vectors of a 3-dimensional sphere that has its center at \ttt{cent} and its
 top (i.e. where $q=0$, in a spherical coordinate system) at \ttt{top}, for the point \ttt{point}. Enter \ttt{front} as 1 for an outward normal and -1 for an inward normal. Results are returned in \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first unit vector is the local sphere normal, the second points from point towards top, but in the local plane of the sphere at point, and the third is orthogonal to the previous two, using a right-handed coordinate system. Returns the distance from the center to point. Behavior is undefined if the distance from \ttt{cent} to \ttt{top} is zero, or the distance from \ttt{cent} to \ttt{point} is zero However, it's ok for \ttt{point} and \ttt{top} to equal each other.
@@ -313,14 +316,11 @@ Returns the unit vectors of a 3-dimensional cylinder that has its axis along the
 
 Returns the unit vectors of a 3-dimensional disk that has its center at \ttt{cent} and is oriented perpendicular to the unit vector in \ttt{front}, for the reference point \ttt{point}. Results are returned in \ttt{unit0}, \ttt{unit1}, and \ttt{unit2}. The first unit vector is simply copied over from front, the second is in the direction from \ttt{cent} to \ttt{point}, and the third is orthogonal to the previous two using a right-handed coordinate system. Returns the distance from \ttt{cent} to \ttt{point}. Behavior is undefined if this distance is zero.
 
-
-
-
-\hfill \\
+% Length, area functions
 \item[\underline{Length, area functions}]
 
 \item[\ttt{double}]
-\ttt{Geo\_LineLength(double *pt1, double *pt2,int dim);}
+\ttt{Geo\_LineLength(double *pt1, double *pt2, int dim);}
 
 Returns the length of the line that extends from \ttt{pt1} to \ttt{pt2}, and its dimensionality in \ttt{dim}.
 
@@ -341,17 +341,17 @@ Returns the area of a 3-dimensional triangle which is defined by the 3-D points 
 The base is defined as the side from \ttt{pt1} to \ttt{pt2}; the cross product is found of the base and the unit normal to yield a triangle height vector that has the length of the base and which points away from the triangle; the dot product of this height and the side from \ttt{pt1} to \ttt{pt3}, with a sign change and divided by 2, is the area.
 
 \item[\ttt{double}]
-\ttt{Geo\_QuadArea(double *pt1, double *pt2, double *pt3, double *pt4,int dim);}
+\ttt{Geo\_QuadArea(double *pt1, double *pt2, double *pt3, double *pt4, int dim);}
 
 Returns the area of the quadrilateral that is defined by points \ttt{pt1}, \ttt{pt2}, \ttt{pt3}, and \ttt{pt4}, in dimension \ttt{dim}. Returns 0 if \ttt{dim} is not 2 or 3. The right-hand winding rule is used for the sign of the answer, meaning that if the area is positive if the points cycle counterclockwise for increasing point numbers. If \ttt{dim} is 3, all points are assumed to be coplanar.
 
 This works by dividing the quadrilateral into two triangles and returning the sum of their areas.
 
-\hfill \\
+% Inside point functions
 \item[\underline{Inside point functions}]
 
 \item[\ttt{double}]
-\ttt{Geo\_InsidePoints2(double *pt1, double *pt2, double margin, double *ans1, double *ans2,int dim);}
+\ttt{Geo\_InsidePoints2(double *pt1, double *pt2, double margin, double *ans1, double *ans2, int dim);}
 
 Takes two points in \ttt{pt1} and \ttt{pt2}, which are in 1, 2, or 3 dimensions (listed in \ttt{dim}), and returns versions of these points, in \ttt{ans1} and \ttt{ans2}, that are moved together by absolute distance margin on each side. For example, the 1-D points at 0 and 5 are moved to positions 1 and 4 if \ttt{margin} is 1. This function returns the separation between \ttt{pt1} and \ttt{pt2}; if this length is smaller than twice \ttt{margin}, then \ttt{ans1} will be closer to \ttt{pt2} and \ttt{ans2} will be closer to \ttt{pt1}. It is permitted for \ttt{ans1} to equal \ttt{pt1} and for \ttt{ans2} to equal \ttt{pt2}. Enter a negative value for \ttt{margin} if you want to move points outwards.
 
@@ -402,27 +402,202 @@ Finally,
 $$\cos \theta_1 = - \vb{e}_{31} \cdot \vb{e}_{12}$$
 The other corners are the same.
 
-\hfill \\
+% Point in functions
 \item[\underline{Point in functions}]
 
-To be copied.
+\item[\ttt{int}]
+\ttt{Geo\_PtInTriangle(double *pt1, double *pt2, double *pt3, double *norm, double *test);}
 
-\hfill \\
+Tests to see if the 3-D point test is inside the triangle defined by \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}, and which has normal vector \ttt{norm}. \ttt{norm} does not have to be normalized. Typically, \ttt{test} will be in the plane of the triangle, but this is not required; if it isn't, this determines whether \ttt{test} is in the triangular column that is defined by the other points and perpendicular to the plane of the triangle. The function returns 0 if not and 1 if so. If \ttt{test} is on a triangle boundary, 1 is returned, although round-off errors often make the boundary imperfectly defined. The method used here is to find the cross product of each triangle edge with the vector that goes from the second point on that edge to test; the dot product of that result with the triangle normal is positive if \ttt{test} is inside the triangle.
+
+The functions \ttt{Geo\_PtInTriangle}, \ttt{Geo\_NearestTriPt}, and \ttt{Geo\_NearestTrianglePt} use similar math, described here. A triangle is defined by points $\vb{p}_1$, $\vb{p}_2$, and $\vb{p}_3$ and has unit normal $\vb{n}$. There is a test point $\vb{r}$. For the first two functions, we only care about the position of $\vb{r}$ relative to the triangular column that is defined as the column which is perpendicular to the plane of the triangle, and not about the position of $\vb{r}$ relative to the plane of the triangle. Nevertheless, it is most convenient to think about $\vb{r}$ being either in or nearly in the plane of the triangle. The triangle is drawn so that $\vb{n}$ points upward out of the plane of the paper. $\vb{r}$ is within this triangle if it is on the left of the vector from $\vb{p}_1$ to $\vb{p}_2$, and left of the vector from $\vb{p}_2$ to $\vb{p}_3$, and left of the vector from $\vb{p}_3$ to $\vb{p}_1$; otherwise it is outside of the triangle. This is the basis of the \ttt{Geo\_PtInTriangle} function. The amount by which $\vb{r}$ is left of the vector from $\vb{p}_1$ to $\vb{p}_2$ is
+$$x=\frac{[(\vb{p}_2-\vb{p}_1)\times(\vb{r}-\vb{p}_2)]\cdot \vb{n}}{|\vb{p}_2-\vb{p}_1|}$$
+The numerator of this function is denoted \ttt{cross12} in the code. To determine if $\vb{r}$ is inside or outside of the triangle, only the signs of these values are required. To find the closest point that is in the triangle to $\vb{r}$, which is denoted $\vb{s}$, some tests are needed. If $\vb{r}$ is already in the triangle, then $\vb{s}$ equals $\vb{r}$. If $\vb{r}$ is on the right side of the vector from $\vb{p}_1$ to $\vb{p}_2$, then the scaled dot product
+$$\frac{(\vb{p}_2-\vb{p}_1)\cdot(\vb{r}-\vb{p}_1)}{(\vb{p}_2-\vb{p}_1)^2}$$
+is $\leq 0$ if point 1 is closest, is between 0 and 1 if the side is closest, and is $\geq 1$ if point 2 is closest. If the side is closest, then $\vb{s}$ is found by combining the scaled dot product with the edge vector. If the closest point is a corner, $\vb{s}$ is
+$$\vb{s} = \vb{p}_2 + [(\vb{r}-\vb{p}_2)\cdot \vb{n}]\vb{n}$$
+Similar conditions and equations apply for the other corners. The function \ttt{Geo\_NearestTrianglePoint} performs the same tests to see if where $\vb{r}$ lies relative to the infinite column, and then uses them in slightly different ways. If $\vb{r}$ is within the triangle, it projects it down to the plane; if $\vb{r}$ is closest to a corner, it returns that corner; and if $\vb{r}$ is closest to an edge, it uses a dot product to project $\vb{r}$ along that edge and then it returns the proper edge point.
+
+\item[\ttt{int}]
+\ttt{Geo\_PtInTriangle2(double **point, double *test);}
+
+This is identical to \ttt{Geo\_PtInTriangle}, but requires a few more inputs and runs much faster. Enter \ttt{point} so that \ttt{point[0]} is triangle vertex 1, \ttt{point[1]} is vertex 2, \ttt{point[2]} is vertex 3, \ttt{point[3]} is the normal for the edge between vertices 1 and 2 (this normal is in the plane of the triangle), \ttt{point[4]} is the normal for the edge between vertices 2 and 3, and \ttt{point[5]} is the normal for the edge between vertices 3 and 1. New function Oct. 2015.
+
+\item[\ttt{int}]
+\ttt{Geo\_PtInSlab(double *pt1, double *pt2, double *test, int dim);}
+
+Tests to see if the point \ttt{test} is in the slab of space between \ttt{pt1} and \ttt{pt2}, inclusive, which works for all dimensions. The slab of space is defined to have its boundaries perpendicular to the line that includes \ttt{pt1} and \ttt{pt2}.
+
+\item[\ttt{int}]
+\ttt{Geo\_PtInSphere(double *test, double *cent, double rad, int dim);}
+
+Tests to see if the \ttt{dim}-D point \ttt{test} is inside the sphere centered about \ttt{cent} with radius \ttt{rad}. This works in all dimensions. The boundary is considered to be part of the sphere.
+
+% Nearest functions
 \item[\underline{Nearest functions}]
 
-To be copied.
+\item[\ttt{void}]
+\ttt{Geo\_NearestSlabPt(double *pt1, double *pt2, double *point, double *ans, int dim);}
 
-\hfill \\
+Given a slab in \ttt{dim}-dimensional space that is defined by \ttt{pt1} and \ttt{pt2}, which has its boundaries perpendicular to the line that includes \ttt{pt1} and \ttt{pt2}, this finds the point within the slab that is closest to \ttt{point}. The result is returned in \ttt{ans}. \ttt{ans} may equal \ttt{point}.
+
+Here is the math. The slab is defined by points $\vb{p}_1$ and $\vb{p}_2$. The test point is $\vb{r}$ and the nearest point in the slab is $\vb{s}$. The dot product of $\vb{r}-\vb{p}_1$ with $\vb{p}_2-\vb{p}_1$, divided by the length of $\vb{p}_2-\vb{p}_1$, is the length of $\vb{r}-\vb{p}_1$ in the $\vb{p}_2-\vb{p}_1$ direction. Dividing again by the length of $\vb{p}_2-\vb{p}_1$ yields the position of $\vb{r}$ relative to the vector from $\vb{p}_1$ to $\vb{p}_2$: 0 means that $\vb{r}$ is at the $\vb{p}_1$ side of the slab, 1 means that it's at the $\vb{p}_2$ side, a number between 0 and 1 means that it's within the slab, and so forth. This ratio is denoted $x$. If the point is past the $\vb{p}_1$ side, then $x$ amount of the vector from $\vb{p}_1$ to $\vb{p}_2$ is subtracted from $\vb{r}$ to yield $\vb{s}$, and similarly for $x > 1$.
+
+\item[\ttt{int}]
+\ttt{Geo\_NearestLineSegPt(double *pt1, double *pt2, double *point, double*ans, int dim, double margin);}
+
+Given a line segment in dim-dimensional space that goes from \ttt{pt1} to \ttt{pt2}, this finds the point within the segment that is closest to the point \ttt{point}. The result is returned in \ttt{ans}, which may equal \ttt{point}. This returns 0 if the result is not an endpoint of the line segment, 1 if it is at endpoint 1, and 2 if it is at endpoint 2. If \ttt{point} is within the segment but also within margin distance of an endpoint, it is treated as being at the endpoint.
+
+\item[\ttt{void}]
+\ttt{Geo\_NearestTriPt(double *pt1, double *pt2, double *pt3, double *norm, double *point, double *ans);}
+
+Given a triangular column in 3-dimensional space that is defined by points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}, and with unit normal \ttt{norm}, this finds the point that is within the triangular column that is closest to the point \ttt{point} and returns it in \ttt{ans}. The distance between \ttt{point} and the plane of the triangle is maintained for \ttt{ans}. \ttt{ans} may equal \ttt{point}.
+
+For the math, see the description for \ttt{Geo\_PtInTriangle}.
+
+\item[\ttt{void}]
+\ttt{Geo\_NearestTriPt2(double **point, double *norm, double *testpt, double *ans);}
+
+Identical to \ttt{Geo\_NearestTriPt}, except that this uses a little more information about the triangle and runs much faster. Send in \ttt{point} with \ttt{point[0...2]} equal to the three triangle vertices and \ttt{point[3...5]} equal to the three edge normals. New function Oct. 2015.
+
+\item[\ttt{int}]
+\ttt{Geo\_NearestTrianglePt(double *pt1, double *pt2, double *pt3, double *norm, double *point, double *ans);}
+
+Given a triangle in 3-dimensional space that is defined by points \ttt{pt1}, \ttt{pt2}, and \ttt{pt3}, and with unit normal \ttt{norm}, this finds the point that is within the triangle that is closest to the point \ttt{point} and returns it in \ttt{ans}. The result will be in the plane of the triangle. \ttt{ans} may equal \ttt{point}. This returns 0 if the nearest point is within the interior of the triangle, 1 if it is on the edge between points 1 and 2, 2 if it is on the edge between points 2 and 3, and 3 if it is on the edge between points 3 and 1. Each edge includes the former of these points, but not the latter one (the function returns 1 if the closest point is at point \ttt{pt1}).
+
+For the math, see the description for \ttt{Geo\_PtInTriangle}.
+
+\item[\ttt{int}]
+\ttt{Geo\_NearestTrianglePt2(double **point, double *norm, double *testpt, double *ans, double margin);}
+
+Essentially identical to \ttt{Geo\_NearestTrianglePt} except that this uses a little more information and runs much faster. Send in \ttt{point} with \ttt{point[0...2]} equal to the three triangle vertices and \ttt{point[3...5]} equal to the three edge normals. If \ttt{testpt} is within margin distance of an edge it is treated as though it is at the edge.
+
+\item[\ttt{double}]
+\ttt{Geo\_NearestSpherePt(double *cent, double rad, int front, int dim, double *point, double *ans);}
+
+Finds the point on the surface of a spherical shell that is closest to the point \ttt{point}. The sphere is centered at \ttt{cent}, has radius \ttt{rad}, and has its front facing outwards if \ttt{front} is 1 and inwards if \ttt{front} is -1. Space is \ttt{dim} dimensional, which may be any value. The result is returned in \ttt{ans} and the function also returns the distance between \ttt{point} and the point returned in \ttt{ans}; this returned distance is positive if \ttt{point} is on the front side and negative if it is on the back side. \ttt{ans} may equal \ttt{point}.
+
+\item[\ttt{void}]
+\ttt{Geo\_NearestRingPt(double *cent, double *axis, double rad, int dim, double *point, double *ans);}
+
+Finds the point on a ring that is closest to the point \ttt{point}. This ring is centered at \ttt{cent}, has axis \ttt{axis}, and has radius \ttt{rad}. It is in \ttt{dim} dimensional space, which may be any value. The result is returned in \ttt{ans}. \ttt{ans} may equal \ttt{point}.
+
+\item[\ttt{void}]
+\ttt{Geo\_NearestCylPt(double *pt1, double *axis, double rad, int dim, double *point, double *ans);}
+
+This finds the point in an infinite solid cylinder that is closest to the point \ttt{point}. The cylinder is defined by the point \ttt{pt1}, which is on the axis, the normalized axis vector \ttt{axis}, and the radius \ttt{rad}. This works for any dimensionality, \ttt{dim}. The answer is returned in \ttt{ans}, which is allowed to be the same as \ttt{point}.
+
+\item[\ttt{int}]
+\ttt{Geo\_NearestCylinderPt(double *pt1, double *pt2, double rad, int dim, double *point, double *ans, double margin);}
+
+Finds the point on a finite length cylindrical shell that is closest to the point \ttt{point}. The cylindrical shell axis extends from \ttt{pt1} to \ttt{pt2} and its radius is \ttt{rad}. It is in \ttt{dim} dimensions, which can equal any number. The result is returned in \ttt{ans}. \ttt{ans} may equal \ttt{point}. Returns 1 if the nearest point is within \ttt{margin} of the first cylinder edge, 2 if it is within \ttt{margin} of the second cylinder edge, and 0 if it is not on a cylinder edge.
+
+\item[\ttt{int}]
+\ttt{Geo\_NearestDiskPt(double *cent, double *axis, double rad, int dim, double *point, double *ans);}
+
+Finds the point on the circular disk that is closest to the point \ttt{point}. The disk is centered at \ttt{cent}, is perpendicular to the normalized vector \ttt{axis}, and has radius \ttt{rad}. It is in \ttt{dim} dimensional space, which can be any value. The result is returned in \ttt{ans}. \ttt{ans} may equal \ttt{point}. Returns 1 if the nearest point is on the disk edge and 0 if it is not on the disk edge.
+
+\item[\ttt{double}]
+\ttt{Geo\_NearestLine2LineDist(double *ptA1, double *ptA2, double *ptB1, double *ptB2);}
+
+Returns the closest distance between two lines, for a 3-D system. I didn't keep the math for this, so I'm not sure how it works. I probably found the algorithm on the web somewhere.
+
+\item[\ttt{double}]
+\ttt{Geo\_NearestSeg2SegDist(double *ptA1, double *ptA2, double *ptB1, double *ptB2);}
+
+Returns the closest distance between two line segments, for a 3-D system. I didn't keep the math for this, so I'm not sure how it works. I probably found the algorithm on the web somewhere.
+
+\item[\ttt{double}]
+\ttt{Geo\_NearestAabbPt(const double *bpt1,const double *bpt2, int dim,const double *point, double *ans);}
+
+Returns the closest distance between the point called point and the axis-aligned bounding box that has its low corner in \ttt{bpt1} and its high corner in \ttt{bpt2}, for a \ttt{dim} dimensional system. The closest point within, on the edge, or on the corner of the aabb, is return in ans. This works for all dimensions. \ttt{ans} cannot be \ttt{NULL} and needs to be different than point.
+
+% To rect functions
 \item[\underline{To rect functions}]
 
-To be copied.
+\item[\ttt{void}]
+\ttt{Geo\_Semic2Rect(double *cent, double rad, double *outvect, double *r1, double *r2, double *r3);}
 
-\hfill \\
+Calculates the smallest non-axis-aligned rectangle that encloses the semicircle that has center at \ttt{cent}, radius \ttt{rad}, and outward pointing normalized vector \ttt{outvect}. The rectangle is returned with the two perpendicular edges extending from \ttt{r1} to \ttt{r2}, and \ttt{r1} to \ttt{r3}. \ttt{r1} is an end of the semicircle, on the right side of outvect, \ttt{r2} is the other end, and \ttt{r3} is behind \ttt{r1}, not on the semicircle.
+
+\item[\ttt{void}]
+\ttt{Geo\_Hemis2Rect(double *cent, double rad, double *outvect, double *r1, double *r2, double *r3, double *r4);}
+
+Calculate the smallest non-axis-aligned rectangle that encloses the hemisphere that has center at \ttt{cent}, radius \ttt{rad}, and outward pointing normalized vector \ttt{outvect}. The rectangle is returned with the three perpendicular edges extending from \ttt{r1} to \ttt{r2}, \ttt{r1} to \ttt{r3}, and \ttt{r1} to \ttt{r4}. \ttt{r1}, \ttt{r2}, and \ttt{r3} are in the plane of the opening of the hemisphere and \ttt{r4} is behind \ttt{r1}; no points contact the surface.
+
+\item[\ttt{void}]
+\ttt{Geo\_Cyl2Rect(double *pt1, double *pt2, double rad, double *r1, double *r2, double *r3, double *r4);}
+
+Calculates the smallest non-axis-aligned rectangle that encloses the cylinder whose axis extends from \ttt{pt1} to \ttt{pt2}, and has radius \ttt{rad}. The rectangle is returned with the three perpendicular edges extending from \ttt{r1} to \ttt{r2}, \ttt{r1} to \ttt{r3}, and \ttt{r1} to \ttt{r4}. \ttt{r1}, \ttt{r2}, and \ttt{r3} are in the plane of the end of the cylinder around \ttt{pt1} and \ttt{r4} is in the plane of the end around \ttt{pt2}, behind \ttt{r1}; no points contact the surface. I fixed a bug here on 5/10/13 (vector \ttt{v2} wasn't being normalized).
+
+% X (cross) functions
 \item[\underline{X (cross) functions}]
 
-To be copied.
+\item[\ttt{double}]
+\ttt{Geo\_LineXLine(double *l1p1, double *l1p2, double *l2p1, double *l2p2, double *crss2ptr);}
 
-\hfill \\
+Returns the point at which a line segment that goes from \ttt{l1p1} to \ttt{l2p2} crosses another which goes from \ttt{l2p1} to \ttt{l2p2}. These are in 2 dimensions. The returned value is the distance along line 1 where they cross. If \ttt{crss2ptr} is not \ttt{NULL}, then it is returned pointing to the distance along line 2 where the crossing is. Distances are between 0 and 1 for crossing within the line segment and other values for other crossing positions on the infinite lines. If the two points that define a line segment are the same, for either line, or if the two lines are parallel, the function returns \ttt{NaN} in both the returned values and \ttt{crss2ptr}.
+
+Here is the math. Line 1 goes from $\vb{c}$ to $\vb{d}$. Line 2 goes from $\vb{r}$ to $\vb{s}$. Where they cross, a point along line 1 equals a point along line 2: $\vb{c} + a(\vb{d}-\vb{c}) = \vb{r} + b(\vb{s}-\vb{r})$, where $a$ is the position along line 1 and $b$ is the position along line 2. This is in two dimensions, so we have two equations and two unknowns. The math is a bit lengthy but results in the equations:
+$$a = \frac{(r_x-c_x)(s_y-r_y) - (r_y-c_y)(s_x-r_x)}{(d_x-c_x)(s_y-r_y) - (d_y-c_y)(s_x-r_x)}$$
+$$b = \frac{(r_x-c_x)(d_y-c_y) - (r_y-c_y)(d_x-c_x)}{(d_x-c_x)(s_y-r_y) - (d_y-c_y)(s_x-r_x)}$$
+The line segments cross if $0 \leq a \leq 1$ and $0 \leq b \leq 1$, where the ``or equal'' portions of these inequalities depend on what ends are included or excluded. Since $a$ and $b$ have the same denominators, both will have zero denominators for the same situations, which occurs when then lines are parallel or when $\vb{c} = \vb{d}$ or $\vb{r} = \vb{s}$.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineXPlane(double *pt1, double *pt2, double *v, double *norm, double *crsspt);}
+
+Computes the location on an infinite plane (in 3D) where the line that is defined by \ttt{pt1} and \ttt{pt2} crosses it. The plane is defined with a single point, called \ttt{v}, and its normal vector, called \ttt{norm}. The normal vector does not need to be of unit length. The 3D crossing point is returned in \ttt{crsspt}, which is not allowed to equal \ttt{NULL}. It is also returned directly as a scaled value along the line, where \ttt{pt1} equals 0 and \ttt{pt2} equals 1. This does not check for the possibility that the line is parallel to the plane. If that happens, then this function will probably return $\pm \infty$ for $a$, or \ttt{NaN} if the line is in the plane, but I haven't tested this.
+
+The math is easiest to see with a 2D drawing. Define $\vb{s}$ as the vector from $\vb{p}_1$ to $\vb{v}$ and $\vb{l}$ as the vector from $\vb{p}_1$ to $\vb{p}_2$. The dot product of these with the normal gives the length between $\vb{p}_1$ and the plane and between $\vb{p}_1$ and $\vb{p}_2$, respectively, each projected along the normal of the plane. The scaling is somewhat arbitrary, but that's okay because it's the same for both distances. The ratio of these two distances is the relative distance along the line.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineXSphs(double *pt1, double *pt2, double *cent, double rad, int dim, double *crss2ptr, double *nrdistptr, double *nrposptr);}
+
+Returns various information about a line segment from \ttt{pt1} to \ttt{pt2} that may or may not cross a spherical surface which has its center at \ttt{cent} and radius \ttt{rad}. The dimensionality of space, \ttt{dim}, can be any positive integer. The infinite line may cross the sphere surface once, twice, or not at all. The pointers \ttt{crss2ptr}, \ttt{nrdistptr}, and \ttt{nrposptr} are used for this function to return values and any or all can be set to \ttt{NULL} if those values aren't wanted. \ttt{nrdistptr} returns the nearest distance between \ttt{cent} and the infinite line and \ttt{nrposptr} returns the position on the line where that nearest distance occurs. This position is offset and scaled such that \ttt{pt1} is defined as 0 and \ttt{pt2} as 1. If the line does not cross the spherical surface, the return value and \ttt{*crss2ptr} are returned as \ttt{NaN}. Otherwise, the return value and \ttt{*crss2ptr} are returned with the 2 crossing points on the line, scaled as before with \ttt{pt1} as 0 and \ttt{pt2} as 1, and the return value is the smaller of the two values. An error code (\ttt{NaN}, \ttt{Inf}, or similar) is returned if \ttt{pt1} and \ttt{pt2} are the same point. \ttt{nrdistptr} and \ttt{nrposptr} are identical to values returned by \ttt{Geo\_LineNormPos}. If \ttt{*nrdistptr} is returned less than \ttt{rad}, it is guaranteed that the returned value and \ttt{cross2} will be legitimate numbers and not \ttt{NaN}.
+
+Here is the math. Consider a circle with its center at the origin and radius $R$. A line segment goes from $\vb{r}$ to $\vb{s}$. If it crosses the circle, a crossing point will be denoted $\vb{x}$ (it may cross 0, 1, or 2 times, and also the crossing point(s) may be on the line but not in the line segment). The relative position of the crossing point on the line, where $\vb{r}$ defines 0 and $\vb{s}$ defines 1, is $p$. Because the crossing point is on the circle and the center is the origin, $\vb{x}^2 = R^2$. Also, the crossing point can be given by interpolation between the ends: $\vb{x} = (1-p)\vb{r} + p\vb{s}$. These are set equal to each other and solved for $p$.
+\begin{align*}
+R^2 &= [(1-p)\vb{r}+p\vb{s}]^2 \\
+0 &= p^2(\vb{s}-\vb{r})^2+p[2\vb{r}\cdot (\vb{s}-\vb{r})]+\vb{r}^2 - R^2
+\end{align*}
+These lead to $p$ being the solution of the quadratic equation with coefficients
+\begin{align*}
+a &= (\vb{s}-\vb{r})^2 \\
+b &= 2\vb{r} \cdot (\vb{s}-\vb{r}) \\
+c &=\vb{r}^2 - R^2
+\end{align*}
+If the circle center is not at the origin, then the circle center position, $\vb{c}$, is subtracted from each vector to yield the general solution:
+\begin{align*}
+a &= (\vb{s}-\vb{r})^2 \\
+b &= 2(\vb{r}-\vb{c}) \cdot (\vb{s}-\vb{r}) \\
+c &=(\vb{r} -\vb{c})^2 - R^2
+\end{align*}
+Plugging this into the quadratic equation gives the solutions
+$$p=\frac{-2(\vb{r}-\vb{c})\cdot (\vb{s}-\vb{r})\pm \sqrt{[2(\vb{r}-\vb{c})\cdot (\vb{s}-\vb{r})] - 4(\vb{s}-\vb{r})^2[(\vb{r}-\vb{c})^2-R^2]}}{2(\vb{s}-\vb{r})^2}$$
+If $b^2-4ac$ is positive, there are two solutions; if it is negative, there are no solutions; and if it is zero, there is one solution. The number of solutions gives the number of crossings, and the values give the crossing positions. Exactly the same math works for spheres and higher dimension spheres. This was re-checked and found to be correct.
+
+The function also returns information about the nearest point on the line to the sphere center. For that, the position along the line from $\vb{r}$ towards $\vb{s}$, in absolute units, is
+$$pos_{abs} = \frac{(\vb{c}-\vb{r})\cdot (\vb{s}-\vb{r})}{\sqrt{(\vb{s}-\vb{r})^2}}$$
+The distance to the center from the line, $dist$, is found with the Pythagorean theorem
+\begin{align*}
+dist^2 &= (\vb{c}-\vb{r})^2 - pos_{abs}^2 \\
+dist &= \sqrt{(\vb{c}-\vb{r})^2 - \frac{[(\vb{c}-\vb{r})\cdot (\vb{s}-\vb{r})]^2}{(\vb{s}-\vb{r})^2}}
+\end{align*}
+Converting the absolute position to relative units along the line from $\vb{r}$ to $\vb{s}$ yields
+$$pos = \frac{(\vb{c}-\vb{r})\cdot (\vb{s}-\vb{r})}{(\vb{s}-\vb{r})^2}$$
+Note that this position is the same as the result from the quadratic equation shown above when the radical is set to zero. The vector products required for these calculations are the same as those for the crossing points, so the latter set of information can be produced with very little additional effort.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineXCyl2s(double *pt1, double *pt2, double *cp1, double *cp2, double *norm, double rad, double *crss2ptr, double *nrdistptr, double *nrposptr);}
+
+Determines if the infinite line defined by 2-dimensional points \ttt{pt1} and \ttt{pt2} crosses the infinite 2-dimensional ``cylinder'' surface that has an axis that includes points \ttt{cp1} and \ttt{cp2}, has a unit right-side normal \ttt{norm}, and has radius \ttt{rad}. This cylinder is really two parallel lines. If the line crosses the cylinder surface at all, it will cross twice. The smaller of the two results is returned normally and the other is returned in \ttt{crss2ptr}. If the line does not cross the cylinder surface at all, both values will be \ttt{NaN}. Also, \ttt{nrdistptr} returns the nearest distance from the cylinder axis to the crossing line, which will be 0 unless they are parallel, in which case it returns the actual distance. If they are not parallel, \ttt{nrpos} returns the position along the \ttt{pt1} to \ttt{pt2} line at which it crosses the cylinder axis.
+
+\item[{double}]
+\ttt{Geo\_LineXCyls(double *pt1, double *pt2, double *cp1, double *cp2, double rad, double *crss2ptr, double *nrdistptr, double *nrposptr);}
+
+Determines if the infinite line defined by points \ttt{pt1} and \ttt{pt2} crosses the infinite cylinder surface that has an axis that includes points \ttt{cp1} and \ttt{cp2} and has radius \ttt{rad}. This is in 3 dimensions. The infinite line may cross the cylinder surface once, twice, or not at all. See \ttt{Geo\_LineXSphs} for details, all of which are the same for the two functions.
+
+% Reflect function
 \item[\underline{Reflect function}]
 
 \item[\ttt{double}]
@@ -478,36 +653,153 @@ A sphere is hit from the front, in which the first set of equations should be us
 (\vb{b}_1-\vb{b}_0) \cdot (\vb{b}_p-\vb{a}_p) &\le 0
 \end{align*}
 
-
-\hfill \\
+% Exit functions
 \item[\underline{Exit functions}]
 
-To be copied.
+\item[\ttt{double}]
+\ttt{Geo\_LineExitRect(double *pt1, double *pt2, double *front, double *corner1, double *corner3, double *exitpt, int *exitside);}
 
-\hfill \\
+Finds the point on the rectangle edge where the line defined by point \ttt{pt1} and \ttt{pt2} exits the rectangle. The rectangle is assumed to be axis-aligned. This function works in 3D only. The rectangle is actually an infinite rectangular prism. Its alignment is given with the \ttt{front} vector, from Smoldyn, where \ttt{front[0]} is whether the perpendicular axis faces in the + or - direction, \ttt{front[1]} is the rectangle's perpendicular axis number, and \ttt{front[2]} is the axis parallel to the rectangle edge from point 0 to point 1. The rectangle has its point 0 corner at corner1 and the diagonal corner, the point 2 corner, at corner3. The exit point is returned in \ttt{exitpt} (which cannot be \ttt{NULL}). The exit point's position along the line, scaled so that 0 represents \ttt{pt1} and 1 represents \ttt{pt2}, is returned from the function directly. \ttt{pt1} is not allowed to equal \ttt{pt2}. If the line does not actually intersect the rectangle, then the returned exit point is still on the line, but is not on the rectangle edge. The side of the rectangle where the line exits is returned in \ttt{exitside} (which cannot be \ttt{NULL}). This value is 1 for the side between points 0 and 1, 2 for the side between points 1 and 2, 3 for the side between points 2 and 3, and 4 for the side between points 3 and 0.
+
+This function first determines the axis numbers for the rectangle sides, calling them $x$ and $y$ internally, although these do not necessarily correspond to the actual $x$ and $y$ axes. The internal $x$ axis is the rectangle's ``primary'' axis, meaning the one that goes from point 0 to point 1, and the $y$ axis is the rectangle's ``secondary'' axis, which goes from point 1 to point 2. It then computes scaled crossing values for each of the 4 sides, using the numbering given above. Because this is the exit point, the larger of the two values is chosen for each axis. Then, the smaller of the values for the two different axes is chosen. This value is returned.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineExitLine2(double *pt1, double *pt2, double *end1, double *end2, double *exitpt, int *exitend);}
+
+Assumes that two line segments lie essentially along the same line, all of which is in 2D; one segment goes from \ttt{pt1} to \ttt{pt2} and the other goes from \ttt{end1} to \ttt{end2}. This determines where the first line segment exits the second segment, which is returned in \ttt{exitpt}, which cannot be \ttt{NULL}. It is at either \ttt{end1} or \ttt{end2}, depending on the relative directions of the two line segments. This also determines where along the first segment this exit point is, which is returned directly. \ttt{pt1} and \ttt{pt2} are not allowed to be the same point. However, \ttt{end1} and \ttt{end2} are allowed to be the same. \ttt{exitend}, which is not allowed to equal \ttt{NULL}, is returned pointing to the end number that the line exits through, which is 1 for \ttt{end1} and 2 for \ttt{end2}.
+
+This determines whether it's best to work with the $x$-axis or $y$-axis and then does computations with just that axis.
+
+\item[\ttt{void}]
+\ttt{Geo\_LineExitArc2(double *pt1, double *pt2, double *cent, double radius, double *norm, double *exitpt, int *exitend);}
+
+Finds the endpoint of a 2D semicircular arc where the curved line that is defined by \ttt{pt1} and \ttt{pt2} will leave the semicircle. The arc is defined with its center at \ttt{cent}, with radius \ttt{radius}, and with an outward-pointing unit normal vector of \ttt{norm}. This normal vector points in the direction that the semicircle is open. This function assumes that \ttt{pt1} and \ttt{pt2} are not the same and that \ttt{pt1} does not equal the center of the arc. It returns the position where the line leaves the arc as $(x,y)$ coordinates in \ttt{exitpt}, which is not allowed to equal \ttt{NULL}; this is one of the two arc endpoints, where which one depends on the line direction. \ttt{exitend}, which cannot be \ttt{NULL}, is returned pointing to the end number that the line exits through. It is 1 if the line exits through the clockwise end of the arc and 2 if the line exits through the counter-clockwise end of the arc.
+
+This function computes the $z$-component of the cross product between the vector from the arc center to \ttt{pt1} and the vector from \ttt{pt1} to \ttt{pt2}. The sign of this cross-product indicates the line's direction of travel along the arc and hence which end of the arc the line will exit through. Next, it computes the position of the appropriate arc end point.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineExitTriangle(double *pt1, double *pt2, double *normal, double *v1, double *v2, double *v3, double *exitpt, int *exitside);}
+
+Finds the point on the infinitely long 3D triangular prism through which the line that is defined by points \ttt{pt1} and \ttt{pt2} exits the triangular prism. The triangular prism is defined by a triangle with vertices at \ttt{v1}, \ttt{v2}, and \ttt{v3} and has a normal vector equal to \ttt{normal}. The exiting point is returned in \ttt{exitpt}, which may not be \ttt{NULL}, and the location of this exit point along the line, where \ttt{pt1} is defined as 0 and \ttt{pt2} is defined as 1, is returned directly. Most often, the line will be nearly co-planar with the triangle, in which case this finds the place along one of the triangle's edges where the line leaves the triangle. \ttt{pt1} and \ttt{pt2} are not allowed to be the same point and none of the triangle vertices are allowed to equal each other. This is not designed for the case where the line does not intersect the triangular prism, although it will still return a reasonably sensible answer (the returned exit point is along the line but not within the triangular prism). \ttt{exitside}, which cannot be \ttt{NULL}, is returned pointing to the side number that the line exits through. The number is 1 for the side between \ttt{v1} and \ttt{v2}, 2 for the side between \ttt{v2} and \ttt{v3}, and 3 for the side between \ttt{v3} and \ttt{v1}.
+
+First, this finds differences between the points to compute relative vectors rather than absolute points. Then, it computes cross-products of the triangle edges with the triangle normal in order to find the outward-pointing normal for each edge. For each one, it dots the outward-pointing normal with the line to see if the line enters or leaves the triangle through this edge. For each edge that the line leaves through, \ttt{Geo\_LineXPlane} is called, which determines where along the edge the line leaves (it's a plane because this is really one side of the triangular prism). Finally, the leaving point that is closest along the line (i.e. smallest a value) is chosen because this is where the line leaves the triangle. There may be a larger a value as well for a second plane crossing, but the line will have already left the triangle by then.
+
+\item[{double}]
+\ttt{Geo\_LineExitTriangle2(double *pt1, double *pt2, double **point, double *exitpt, int *exitside);}
+
+This is identical to \ttt{Geo\_LineExitTriangle}, except that it requires a little more prior information and it runs much faster. It finds the point on the infinitely long 3D triangular prism through which the line that is defined by point \ttt{pt1} and \ttt{pt2} exits the triangular prism. Enter the triangle parameters in \ttt{point}. Vertex 1 is in \ttt{point[0]}, vertex 2 is in \ttt{point[1]}, vertex 3 is in \ttt{point[2]}, the normal for edge 1-2 is in \ttt{point[3]}, the normal for edge 2-3 is in \ttt{point[4]}, and the normal for edge 3-1 is in \ttt{point[5]}. The exiting point is returned in \ttt{exitpt}, which may not be \ttt{NULL}, and the location of this exit point along the line, where \ttt{pt1} is defined as 0 and \ttt{pt2} is defined as 1, is returned directly. Most often, the line will be nearly co-planar with the triangle, in which case this finds the place along one of the triangle's edges where the line leaves the triangle. \ttt{pt1} and \ttt{pt2} are not allowed to be the same point and none of the triangle vertices are allowed to equal each other. This is not designed for the case where the line does not intersect the triangular prism, although it will still return a reasonably sensible answer (the returned exit point is along the line but not within the triangular prism). exitside, which cannot be \ttt{NULL}, is returned pointing to the side number that the line exits through. The number is 1 for the side between \ttt{v1} and \ttt{v2}, 2 for the side between \ttt{v2} and \ttt{v3}, and 3 for the side between \ttt{v3} and \ttt{v1}. New function Oct. 2015.
+
+The mathematics, and variable names, are identical to \ttt{Geo\_LineExitTriangle}, with some additions from \ttt{Geo\_LineXPlane}.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineExitSphere(double *pt1, double *pt2, double *cent, double rad, double *exitpt);}
+
+Finds the position on the 3D spherical shell where the line that is defined by points \ttt{pt1} and \ttt{pt2} exits the spherical shell. The sphere is defined with its center at \ttt{cent} and its radius equal to \ttt{rad}. The 3D position of the exit is returned in \ttt{exitpt} which may not be \ttt{NULL}. Also, the relative position on the line, defining \ttt{pt1} as 0 and \ttt{pt2} as 1, is returned directly. If the line does not intersect the spherical shell, then the point on the line that is closest to the shell is returned instead.
+
+This function is very similar to \ttt{Geo\_LineXSphs}, but is a little less general and is written to run substantially faster. It also handles non-intersecting situations slightly differently, in that it returns a crossing point despite the fact that there actually isn't one.
+
+\item[\ttt{void}]
+\ttt{Geo\_LineExitHemisphere(double *pt1, double *pt2, double *cent, double rad, double *normal, double *exitpt);}
+
+Finds the position along the edge of a hemisphere where the line that is defined by points \ttt{pt1} and \ttt{pt2} exits, assuming that it travels along the surface of the hemisphere by a great circle route. The hemisphere has its center at \ttt{cent}, has radius \ttt{rad}, and has an outward-pointing normal vector of \ttt{normal}. The result is returned in \ttt{exitpt}, which is not allowed to be \ttt{NULL}.
+
+Assume that \ttt{pt1} and \ttt{pt2} are both on the hemisphere surface. The great circle route that includes these two points is clearly in the plane that is defined by a straight line between the two points and by the hemisphere center. This considers where the straight line that connects the two points crosses the hemisphere plane. Then, it figures out where this is compared to the hemisphere surface.
+
+\item[\ttt{double}]
+\ttt{Geo\_LineExitCylinder(double *pt1, double *pt2, double *end1, double *end2, double rad, double *exitpt, int *exitend);}
+
+Finds the approximate position at the end of a 3D cylinder surface where the line that is defined by \ttt{pt1} and \ttt{pt2} exits. The cylinder endpoints are \ttt{end1} and \ttt{end2} and the cylinder has radius \ttt{rad}. The coordinates where the line exits are returned in \ttt{exitpt}. The end is returned in \ttt{exitend}, which may not be \ttt{NULL}, where this is set to 1 if it is at \ttt{end1} and to 2 if it is at \ttt{end2}.
+
+% Xaabb functions
 \item[\underline{Xaabb functions}]
 
-To be copied.
+\item[\ttt{int}]
+\ttt{Geo\_LineXaabb2(double *pt1, double *pt2, double *norm, double *bpt1, double *bpt2);}
 
-\hfill \\
+Tests to see if a line segment crosses an axis-aligned boundary-box (aabb), all in 2-D. The line extents from \ttt{pt1} to \ttt{pt2} and has normal vector \ttt{norm}; \ttt{norm} does not have to be normalized. The aabb is defined by the low coordinates \ttt{bpt1} and the high coordinates \ttt{bpt2}. Returns 0 if they do not cross and 1 if so.
+
+\item[\ttt{int}]
+\ttt{Geo\_LineXaabb(double *pt1, double *pt2, double *bpt1, double *bpt2, int dim, int infline);}
+
+Tests to see if the line defined by \ttt{pt1} and \ttt{pt2} intersects the aabb with corners at \ttt{bpt1} and \ttt{bpt2}, for a \ttt{dim} dimensional system. This is an infinite line if \ttt{infline} is 1 and a finite line segment from \ttt{pt1} to \ttt{pt2} if \ttt{infline} is 0. Returns 1 if they intersect and 0 if not.
+
+This finds the highest ``near'' point in \ttt{nearhi}, which is the line's last entry into one of the axis-aligned slabs, and the lowest ``far'' point in \ttt{farlo}, which is the line's first exit from one of the axis-aligned slabs. If the line is in all of the slabs at once, then the line crosses the aabb and 1 is returned.
+
+Geo\_LineXaabb uses Kay and Kayjia's algorithm, which I found on the web somewhere. The idea is that a D-dimensional aabb can be seen as the intersection of D slabs, with one perpendicular to the $x$-axis, one for the $y$-axis, etc. For a line to intersect this aabb, it must be within all slabs at once. To determine if this is the case, I find the ``near'' and ``far'' points for each slab. If the largest ``near'' point is larger than the smallest ``far'' point, then the line misses. Otherwise, it intersects (i.e. for 3-d, the sequence of near and far points must be NNNFFF for intersection to occur). If this is a finite line segment, then the largest ``near'' has to be $\leq 1$ and the smallest far has to be $\geq 0$.
+
+\item[\ttt{int}]
+\ttt{Geo\_TriXaabb3(double *pt1, double *pt2, double *pt3, double *norm, double *bpt1, double *bpt2);}
+
+Tests to see if a triangle intersects an aabb, all in 3-D. The triangle is defined by \ttt{pt1}, \ttt{pt2}, \ttt{pt3}, and its normal vector \ttt{norm}; \ttt{norm} does not have to be normalized. The entire triangle area is considered, and not just the perimeter. The aabb is defined by the low coordinates \ttt{bpt1} and the high coordinates \ttt{bpt2}. Returns 1 for crossing and 0 for not.
+
+\item[\ttt{int}]
+\ttt{Geo\_RectXaabb2(double *r1, double *r2, double *r3, double *bpt1, double *bpt2);}
+
+Tests to see if the 2-D rectangle, which is not necessarily axis-aligned, intersects a 2-D aabb, where the whole rectangle area is considered and not just the perimeter. The rectangle has reference point \ttt{r1}; \ttt{r2} is in one direction from the \ttt{r1} while \ttt{r3} is in the perpenicular direction. In the rectangle coordinates, \ttt{r1} is the origin, \ttt{r2} defines the local $x$-axis, and \ttt{r3} defines the local $y$-axis. Returns 1 for crossing a 0 for not. The aabb boundaries are as usual.
+
+\item[\ttt{int}]
+\ttt{Geo\_RectXaabb3(double *r1, double *r2, double *r3, double *r4, double *bpt1, double *bpt2);}
+
+Tests to see if the 3-D rectangle (perpendicular parallelpiped, technically), which is not necessarily axis-aligned, intersects a 3-D aabb, where the whole rectangle volume is considered and not just the perimeter. The rectangle has reference point \ttt{r1}; \ttt{r2} is in one direction from the \ttt{r1}, \ttt{r3} is in a perpendicular direction, and \ttt{r4} is in the other perpendicular direction. Returns 1 for crossing a 0 for not. The aabb boundaries are as usual.
+
+\item[\ttt{int}]
+\ttt{Geo\_CircleXaabb2(double *cent, double rad, double *bpt1, double *bpt2);}
+
+Tests to see if the perimeter of a circle crosses an aabb, all in 2-D. The circle is defined by its center location \ttt{cent} and its radius \ttt{rad}, while the aabb is defined by the low coordinates \ttt{bpt1} and the high coordinates \ttt{bpt2}. Returns 1 for crossing and 0 for not. The tests are: 1) if SAT on aabb fails, returns 0; 2) if all corners are inside circle, returns 0; 3) if any corners, but not all, are inside circle, returns 1; and 4) if circle center is within the axis-aligned stripes defined by the aabb, returns 1. Tests 2 and 3 treat all box corners as being included with the box.
+
+\item[\ttt{int}]
+\ttt{Geo\_SphsXaabb3(double *cent, double rad, double *bpt1, double *bpt2);}
+
+Tests to see if the surface of a sphere cross an aabb, all in 3-D. The sphere is defined by its center location \ttt{cent} and its radius \ttt{rad}, while the aabb is defined by the low coordinates \ttt{bpt1} and the high coordinates \ttt{bpt2}. Returns 1 for crossing and 0 for not. See \ttt{Geo\_CircleXaabb2} for the tests that are carried out.
+
+\item[\ttt{int}]
+\ttt{Geo\_CylisXaabb3(double *pt1, double *pt2, double rad, double *bpt1, double *bpt2);}
+
+Tests to see if an infinite cylindrical shell crosses an aabb, in 3-D. The axis of the radius \ttt{rad} cylinder includes the points \ttt{pt1} and \ttt{pt2}, but is infinitely long. This returns 1 for crossing and 0 for not. The method that this uses is to project along the cylinder axis so that the cylinder becomes a circle and the aabb becomes 8 2-D points that are connected by 12 edges. Then, several tests are run to see if the circle and the box shadow overlap: 1) if SAT on any edge direction fails, returns 0; 2) if all corners are inside the circle, returns 0; 3) if any corners, but not all, are inside the circle, returns 1; 4) if the cylinder center crosses the aabb, meaning that the cylinder may be fully inside the aabb, return 1; 5) if any edge crosses the circle, returns 1. While these many tests create a long function, I think that it is reasonably efficient. It should also be accurate.
+
+\item[\ttt{int}]
+\ttt{Geo\_DiskXaabb3(double *cent, double rad, double *norm, double *bpt1, double *bpt2);}
+
+Tests to see if a solid, infinitely thin disk intersects an aabb, in 3-D. The disk is defined by its center coordinates in \ttt{cent}, its radius in \ttt{rad}, and its unit normal vector in \ttt{norm}. This looks for separating planes that are parallel to the aabb sides and that are parallel to the disk plane. It ignores other potential separating planes, which ought to be fixed, meaning that this function can return false positives (see the tests in \ttt{Geo\_CylisXaabb3} for tests that could be used here). This returns 1 for crossing and 0 for not.
+
+For the disk crossing aabb function, here is the math. Given a normalized test vector (e.g. a normal to an aabb side), how far does the disk extend in the positive and negative vector directions? The answer is that it extends $\pm R \sin \theta$, where $\theta$ is the angle between the test vector and the disk's unit normal vector ($\vb{n}$). I am finding $\sin \theta$ using the length of the cross-product vector. This sounds lengthy but simplifies dramatically if the test vector is parallel to a Cartesian coordinate. Results are:
+
+\begin{tabular}{cc}
+test = (1,0,0) & $\sin \theta = \sqrt{n_y^2+n_z^2}$ \\
+test = (0,1,0) & $\sin \theta = \sqrt{n_x^2+n_z^2}$ \\
+test = (0,0,1) & $\sin \theta = \sqrt{n_x^2+n_y^2}$
+\end{tabular}
+
+% Approximate Xaabb functions
 \item[\underline{Approximate Xaabb functions}]
 
-To be copied.
+\item[\ttt{int}]
+\ttt{Geo\_SemicXaabb2(double *cent, double rad, double *outvect, double *bpt1, double *bpt2);}
 
-\hfill \\
+Tests to see if a semicircle perimeter crosses an aabb, in 2-D. This can return false positives, described below. \ttt{cent} is the semicircle center, \ttt{rad} is the semicircle radius, and \ttt{outvect} is the normalized outward pointing vector that defines the direction of the semicircle opening. The aabb is defined by \ttt{bpt1} and \ttt{bpt2}. This returns 1 for crossing and 0 for not. This returns 1 if both the full circle perimeter crosses the aabb, and the minimal rectangle that encloses the semicircle also crosses the aabb. False positive results can occur if the aabb extends into the semicircle interior but does not cross the semicircle.
+
+\item[\ttt{int}]
+\ttt{Geo\_HemisXaabb3(double *cent, double rad, double *outvect, double *bpt1, double *bpt2);}
+
+Tests to see if a hemisphere shell crosses an aabb, in 3-D. This can return false positives, described below. \ttt{cent} is the hemisphere center, \ttt{rad} is the hemisphere radius, and \ttt{outvect} is the normalized outward pointing vector that defines the direction of the hemisphere opening. The aabb is defined by \ttt{bpt1} and \ttt{bpt2}. This returns 1 for crossing and 0 for not. This returns 1 if both the full spherical shell crosses the aabb, and the minimal rectangle that encloses the hemisphere also crosses the aabb. False positive results can occur if the aabb extends into the hemisphere interior but does not cross the hemisphere.
+
+\item[\ttt{int}]
+\ttt{Geo\_CylsXaabb3(double *pt1, double *pt2, double rad, double *bpt1, double *bpt2);}
+
+Tests to see if a cylindrical shell crosses an aabb, in 3-D. This can return false positives, described below. The cylinder axis extends from \ttt{pt1} to \ttt{pt2} and \ttt{rad} is the cylinder radius. The aabb is defined by \ttt{bpt1} and \ttt{bpt2}. This returns 1 for crossing and 0 for not. This returns 1 if both the infinite length cylindrical shell crosses the aabb, and the minimal rectangle that encloses the cylinder also crosses the aabb. False positive results can occur if the aabb extends into the cylinder interior but does not cross the cylinder.
+
+% Volume functions
 \item[\underline{Volume functions}]
 
-To be copied.
+\item[\ttt{double}]
+\ttt{Geo\_SphVolume(double rad, int dim);}
 
+This returns the volume of a sphere of radius \ttt{rad} for any integer dimension \ttt{dim} that is greater than or equal to zero. The equation for arbitrary dimension volume is from Wolfram Mathworld ``Hypersphere'' eqs. 4 and 9.
 
+\item[\ttt{double}]
+\ttt{Geo\_SphOLSph(double *cent1, double *cent2, double r1, double r2, int dim);}
 
-
-
-
-
-
-
-
+This returns the volume in the overlap region between two spheres that are centered at \ttt{cent1} and \ttt{cent2}, that have radii \ttt{r1} and \ttt{r2}, and that are \ttt{dim} dimensional. Zero is returned if the spheres do not overlap at all, the volume of the smaller sphere is returned if it is totally inside the larger, and values in between are returned for partial overlap. The former two results are valid for all sphere dimensions, whereas the last only works for \ttt{dim} equal to 1, 2, or 3; -1 is returned for higher dimensional spheres with partial overlap. Equations are from Wolfram Mathworld. The equation of 2-D sphere overlap is from their page on ``Circle-Circle Intersection'', eq. 14. The equation of 3-D sphere overlap is from their page on ``Sphere-Sphere Intersection'', eq. 16.
 
 
 \end{description}

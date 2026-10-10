@@ -784,6 +784,40 @@ enum FilamentDynamics
 		FDimplicit
 };
 
+/*
+
+typedef struct filmolstruct {					// Filament-molecule interactions structure
+    filamenttypeptr *filtype;					// owning filament type structure
+    int species;											// which molecule species is involved
+    enum molstate state;							// which molecule state is involved
+    surfaceptr surf;									// set if this only applies to a specific surface
+    compartptr compart;								// set if this only applies to a specific compartment
+		// is molecule already adsorbed to filament?
+    // interaction location: side-interaction, face interaction, sequence interaction, front end, back end, both end
+    // actions: adsorb, desorb, react, excluded volume
+    // force implications for filament
+    // parameters: interaction rate, binding radius, unbinding radius, desoprtion rate, etc.
+
+} *filmolptr;
+
+
+typedef struct filfilstruct {
+}* filfilptr;
+
+typedef struct filsurfstruct {				// Filament-surface interactions
+		filamenttypeptr *filtype;					// owning filament type
+		surfaceptr surf;									// which surface is involved
+		enum PanelFace face;							// which surface face is involved
+		compartptr compart;								// set if this only applies to a specific compartment
+		// is filament already adsorbed to the surface?
+		// interaction location: side-interaction, face interaction, sequence interaction, front end, back end, both end
+		// actions: adsorb, desorb, react, excluded volume
+		// force implications for filament
+		// force implications for surface
+		// parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
+} *filsurfptr;
+*/
+
 typedef struct segmentstruct {
     struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
