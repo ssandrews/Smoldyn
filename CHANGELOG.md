@@ -1,5 +1,11 @@
 ## Changelog
 
+### 2.76 (10/11/26)
+
+- More work on filaments. Dynamics work, and some branching.
+- Added command-line help.
+- Support for interactive simulations at the command-line.
+- Updated libSmoldyn and Python interface.
 ### 2.75 (7/30/25)
 
 - Lots of work on filaments. Dynamics mostly work now, but no interactions.

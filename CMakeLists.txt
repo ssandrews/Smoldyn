@@ -30,7 +30,7 @@ if(NOT SMOLDYN_VERSION)
     else()
       # hourly release.
       string(TIMESTAMP STAMP "%Y%m%d%H%M")
-      set(SMOLDYN_VERSION "2.76.dev${STAMP}")
+      set(SMOLDYN_VERSION "2.77.dev${STAMP}")
     endif()
   endif()
 endif()
