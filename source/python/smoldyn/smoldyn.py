@@ -1217,6 +1217,22 @@ class Surface(object):
         if revrate > 0.0:
             self._setRate(species, state2, state1, revrate, new_species, isinternal)
 
+    def setNeighborAction(self, action: str) -> None:
+        """Set what surface-bound molecules on this surface do when they
+        collide with a panel that is a neighbor of their own panel
+        (``neighbor_action`` statement).
+
+        Parameters
+        ----------
+        action : str
+            ``"stay"`` (default) to ignore the neighboring panel and diffuse
+            through it, or ``"hop"`` to move onto it with 50% probability.
+        """
+        assert action in ("hop", "stay"), "action must be 'hop' or 'stay'"
+        k = self.simulation.setSurfaceNeighborAction(self.name, action == "hop")
+        if k != _smoldyn.ErrorCode.ok:
+            raise RuntimeError(f"setNeighborAction failed for surface '{self.name}': {k}")
+
     __actiondict__ = dict(transmit="trans", multiple="mult")
 
     def setActionRule(
@@ -2498,6 +2514,58 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
             binding_radius=binding_radius,
             reaction_probability=reaction_probability,
         )
+
+    def setSimParams(
+        self,
+        *,
+        accuracy: Optional[float] = None,
+        gauss_table_size: Optional[int] = None,
+        quit_at_end: Optional[bool] = None,
+    ) -> None:
+        """Set simulation parameters. Only the given parameters are set.
+
+        Parameters
+        ----------
+        accuracy : float
+            Simulation accuracy, on a scale from 0 to 10 (``accuracy``
+            statement). Also available as the ``accuracy`` property.
+        gauss_table_size : int
+            Size of the lookup table for Gaussian-distributed random numbers,
+            which needs to be an integer power of two (``gauss_table_size``).
+        quit_at_end : bool
+            Whether to quit at the end of the simulation, rather than leaving
+            the graphics window open (``quit_at_end``). Also available as the
+            ``quitatend`` property.
+        """
+        params: Dict[str, float] = {}
+        if accuracy is not None:
+            params["accuracy"] = accuracy
+        if gauss_table_size is not None:
+            params["gauss_table_size"] = gauss_table_size
+        if quit_at_end is not None:
+            params["quit_at_end"] = 1 if quit_at_end else 0
+        for param, value in params.items():
+            k = super().setSimParams(param, value)
+            if k != _smoldyn.ErrorCode.ok:
+                raise RuntimeError(f"setSimParams failed for {param}={value}: {k}")
+
+    def setOutputFormat(
+        self, format: Optional[str] = None, precision: Optional[int] = None
+    ) -> None:
+        """Set the format of output files written by runtime commands.
+
+        Parameters
+        ----------
+        format : str
+            ``"ssv"`` for space-separated values (default) or ``"csv"`` for
+            comma-separated values (``output_format`` statement).
+        precision : int
+            Number of significant digits for numbers in output files
+            (``output_precision`` statement).
+        """
+        k = super().setOutputFormat(format or "", -1 if precision is None else precision)
+        if k != _smoldyn.ErrorCode.ok:
+            raise RuntimeError(f"setOutputFormat failed: {k}")
 
     def addSpeciesGroup(self, name: str, species: List[Union[Species, str]] = []) -> None:
         """Create the species group `name`, or add species to it

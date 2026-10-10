@@ -79,6 +79,10 @@ smolGetVariable = smoldyn.smolGetVariable
 smolGetVariable.restype = c_int
 smolGetVariable.argtypes = [c_void_p, c_char_p, c_void_p]
 
+smolSetSimParams = smoldyn.smolSetSimParams
+smolSetSimParams.restype = c_int
+smolSetSimParams.argtypes = [c_void_p, c_char_p, c_double]
+
 # Species groups and species rules
 smolAddSpeciesGroup = smoldyn.smolAddSpeciesGroup
 smolAddSpeciesGroup.restype = c_int
@@ -104,6 +108,10 @@ smolSetOutputPath.argtypes = [c_void_p, c_char_p]
 smolAddOutputFile = smoldyn.smolAddOutputFile
 smolAddOutputFile.restype = c_int
 smolAddOutputFile.argtypes = [c_void_p, c_char_p, c_int, c_int]
+
+smolSetOutputFormat = smoldyn.smolSetOutputFormat
+smolSetOutputFormat.restype = c_int
+smolSetOutputFormat.argtypes = [c_void_p, c_char_p, c_int]
 
 smolAddCommand = smoldyn.smolAddCommand
 smolAddCommand.restype = c_int
@@ -171,6 +179,10 @@ smolAddSurfaceUnboundedEmitter.argtypes = [c_void_p, c_char_p, c_int, c_char_p, 
 smolSetSurfaceSimParams = smoldyn.smolSetSurfaceSimParams
 smolSetSurfaceSimParams.restype = c_int
 smolSetSurfaceSimParams.argtypes = [c_void_p, c_char_p, c_double]
+
+smolSetSurfaceNeighborAction = smoldyn.smolSetSurfaceNeighborAction
+smolSetSurfaceNeighborAction.restype = c_int
+smolSetSurfaceNeighborAction.argtypes = [c_void_p, c_char_p, c_int]
 
 smolAddPanelNeighbor = smoldyn.smolAddPanelNeighbor
 smolAddPanelNeighbor.restype = c_int

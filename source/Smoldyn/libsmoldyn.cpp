@@ -450,6 +450,31 @@ extern CSTRING enum ErrorCode smolSetTimeStep(simptr sim,double timestep) {
 	return Liberrorcode; }
 
 
+/* smolSetSimParams */
+extern CSTRING enum ErrorCode smolSetSimParams(simptr sim,const char *parameter,double value) {
+	const char *funcname="smolSetSimParams";
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(parameter,funcname,ECmissing,"missing parameter");
+	if(!strcmp(parameter,"accuracy")) {
+		sim->accur=value; }
+	else if(!strcmp(parameter,"gauss_table_size")) {
+		LCHECK(value==(double)(int)value,funcname,ECbounds,"gauss_table_size needs to be an integer");
+		er=molssetgausstable(sim,(int)value);
+		LCHECK(er!=1,funcname,ECmemory,"out of memory");
+		LCHECK(er!=3,funcname,ECbounds,"gauss_table_size needs to be an integer power of two");
+		LCHECK(!er,funcname,ECerror,"error setting gauss_table_size"); }
+	else if(!strcmp(parameter,"quit_at_end")) {
+		LCHECK(value==0 || value==1,funcname,ECbounds,"quit_at_end needs to be 0 or 1");
+		sim->quitatend=(int)value; }
+	else
+		LCHECK(0,funcname,ECsyntax,"parameter name not recognized");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
 /* smolSetRandomSeed */
 extern CSTRING enum ErrorCode smolSetRandomSeed(simptr sim,long int seed) {
 	const char *funcname="smolSetRandomSeed";
@@ -746,6 +771,25 @@ enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite = 0)
 failure:
     return Liberrorcode;
 }
+
+/* smolSetOutputFormat */
+extern CSTRING enum ErrorCode smolSetOutputFormat(simptr sim,const char *format,int precision) {
+	const char *funcname="smolSetOutputFormat";
+	char fmt[STRCHAR];
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	if(format && format[0]!='\0') {
+		LCHECK(strlen(format)<STRCHAR,funcname,ECsyntax,"output format not recognized");
+		strcpy(fmt,format);
+		er=scmdsetoutputformat(sim->cmds,fmt);
+		LCHECK(!er,funcname,ECsyntax,"output format not recognized; use ssv or csv"); }
+	if(precision>=0)
+		scmdsetprecision(sim->cmds,precision);
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
 
 /* smolAddCommand */
 extern CSTRING enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring) {
@@ -1825,6 +1869,26 @@ extern CSTRING enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const ch
 	er=surfaddemitter(srf,face,i,emitamount,emitposition,sim->dim);
 	LCHECK(!er,funcname,ECmemory,"out of memory allocating unbounded emitter");
 
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolSetSurfaceNeighborAction */
+extern CSTRING enum ErrorCode smolSetSurfaceNeighborAction(simptr sim,const char *surface,int hop) {
+	const char *funcname="smolSetSurfaceNeighborAction";
+	int s,slo,shi;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->srfss && sim->srfss->nsrf>0,funcname,ECnonexist,"no surfaces defined");
+	s=smolGetSurfaceIndexNT(sim,surface);
+	if(s==(int)ECall) {smolClearError();slo=0;shi=sim->srfss->nsrf;}
+	else {
+		LCHECK(s>=0,funcname,ECsame,NULL);
+		slo=s;
+		shi=s+1; }
+	for(s=slo;s<shi;s++)
+		surfsetneighhop(sim->srfss->srflist[s],hop?1:0);
 	return ECok;
  failure:
 	return Liberrorcode; }

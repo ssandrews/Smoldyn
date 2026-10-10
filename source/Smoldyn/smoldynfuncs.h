@@ -269,6 +269,7 @@ void surftranslatepanel(panelptr pnl,int dim,double *translate);
 void surfupdateoldpos(surfaceptr srf,int dim);
 void surftranslatesurf(surfaceptr srf,int dim,double *translate);
 int surfsetjumppanel(surfaceptr srf,panelptr pnl1,enum PanelFace face1,int bidirect,panelptr pnl2,enum PanelFace face2);
+int surfsetneighhop(surfaceptr srf,int neighhop);
 int surfsetneighbors(panelptr pnl,panelptr *neighlist,int nneigh,int add);
 int surfaddemitter(surfaceptr srf,enum PanelFace face,int i,double amount,double *pos,int dim);
 surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char *word,char *line2);

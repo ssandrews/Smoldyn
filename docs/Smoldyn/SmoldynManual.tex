@@ -4687,6 +4687,13 @@ C/C++: \ttt{enum ErrorCode smolSetPartitions(simptr sim, char *method, double va
 Python: \ttt{S.Simulation.setPartitions(sim, str method, float value)}\\
 Sets the virtual partitions in the simulation volume. Enter \ttt{method} as ``molperbox" and then enter \ttt{value} with the requested number of molecules per partition volume; the default, which is used if this function is not called at all, is a target of 4 molecules per box. Or, enter \ttt{method} as ``boxsize" and enter \ttt{value} with the requested partition spacing. In this latter case, the actual partition spacing may be larger or smaller than the requested value in order to fit an integer number of partitions into each coordinate of the simulation volume.
 
+\item[SetSimParams]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSimParams(simptr sim, const char *parameter, double value)}\\
+Python: \ttt{ErrorCode setSimParams(str parameter, float value)}\\
+Python: $sim$.\ttt{setSimParams(accuracy=None, gauss\_table\_size=None, quit\_at\_end=None)}\\
+Sets the simulation parameter named with \ttt{parameter} to value \ttt{value}. The possible parameters are ``accuracy'' (the \ttt{accuracy} statement, on a scale from 0 to 10), ``gauss\_table\_size'' (the \ttt{gauss\_table\_size} statement, which needs to be an integer power of two), and ``quit\_at\_end'' (the \ttt{quit\_at\_end} statement, with 1 for yes and 0 for no). The Python $sim$ version only sets the parameters that are given.
+
 \item[SetVariable]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolSetVariable(simptr sim, const char *name, double value)}\\
@@ -4948,6 +4955,13 @@ C/C++: \ttt{enum ErrorCode smolAddOutputFile(simptr sim, char *filename, int suf
 Python: \ttt{ErrorCode addOutputFile(string filename, int suffix, int append)}\\
 Declares the file called \ttt{filename} as a file for output by one or more runtime commands. Note that spaces are not permitted in the file name. If \ttt{suffix} is non-negative, then the file name is suffixed by this integer, which can be helpful for creating output file stacks. Enter \ttt{append} as 1 if any current file should simply be appended, or to 0 if any current file should be overwritten.
 
+\item[SetOutputFormat]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetOutputFormat(simptr sim, const char *format, int precision)}\\
+Python: \ttt{ErrorCode setOutputFormat(str format="", int precision=-1)}\\
+Python: $sim$.\ttt{setOutputFormat(format=None, precision=None)}\\
+Sets the format of output files written by runtime commands, which is equivalent to the \ttt{output\_format} and \ttt{output\_precision} statements. Enter \ttt{format} as ``ssv'' for space-separated values or ``csv'' for comma-separated values, or as \ttt{NULL} or an empty string to not change it. Enter \ttt{precision} as the number of significant digits for numbers in output files, or as a negative number to not change it.
+
 \item[AddOutputData]
 \hfill \\
 C/C++: \ttt{enum ErrorCode smolAddOutputData(simptr sim, char *dataname)}\\
@@ -5147,6 +5161,13 @@ Adds information about a point molecular source so that face \ttt{face} of surfa
 C/C++: \ttt{enum ErrorCode smolSetSurfaceSimParams(simptr sim, const char *parameter, double value)}\\
 Python: \ttt{ErrorCode setSurfaceSimParams(str parameter, float value)}\\
 Sets the surface simulation parameter named with \ttt{parameter} to value \ttt{value}. The possible parameters are ``epsilon", ``margin", and ``neighbordist". In all cases, the defaults are nearly always good, although this function allows them to be modified if desired. Epsilon is the maximum distance away from a surface that Smoldyn is allowed to place a surface-bound molecule. Margin is the distance inside from the edge of a surface panel that Smoldyn will place surface-bound molecules that hop onto this panel. Neighbor distance is the maximum distance over which surface-bound molecules are allowed to hop to transition from one panel to a neighboring panel.
+
+\item[SetSurfaceNeighborAction]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSurfaceNeighborAction(simptr sim, const char *surface, int hop)}\\
+Python: \ttt{ErrorCode setSurfaceNeighborAction(str surface, bool hop)}\\
+Python: \textit{surface}\ttt{.setNeighborAction(action)}\\
+Sets what surface-bound molecules on surface \ttt{surface} (which may be ``all'') do when they collide with a panel that is a neighbor of their own panel, which is equivalent to the \ttt{neighbor\_action} statement. Enter \ttt{hop} as 0 (the default) for molecules to ignore the neighboring panel and diffuse through it, or as 1 for them to hop onto it with 50\% probability. In Python, \ttt{action} is ``stay'' or ``hop''.
 
 \item[AddPanelNeighbor]
 \hfill \\

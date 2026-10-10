@@ -541,6 +541,13 @@ PYBIND11_MODULE(_smoldyn, m)
             return value;
         })
 
+      // enum ErrorCode smolSetSimParams(simptr sim, const char *parameter,
+      //     double value);
+      .def("setSimParams",
+        [](Simulation& sim, const char* parameter, double value) {
+            return smolSetSimParams(sim.getSimPtr(), parameter, value);
+        })
+
       /*********************************
        *  Graphics related functions.  *
        *********************************/
@@ -661,6 +668,16 @@ PYBIND11_MODULE(_smoldyn, m)
         [](Simulation& sim, char* filename, int suffix, bool append) {
             return smolAddOutputFile(sim.getSimPtr(), filename, suffix, append);
         })
+
+      // enum ErrorCode smolSetOutputFormat(simptr sim, const char *format,
+      //     int precision);
+      .def(
+        "setOutputFormat",
+        [](Simulation& sim, const char* format, int precision) {
+            return smolSetOutputFormat(sim.getSimPtr(), format, precision);
+        },
+        "format"_a = "",
+        "precision"_a = -1)
 
       /****************
        * Commands *
@@ -1187,6 +1204,13 @@ PYBIND11_MODULE(_smoldyn, m)
       .def("setSurfaceSimParams",
         [](Simulation& sim, const char* parameter, double value) {
             return smolSetSurfaceSimParams(sim.getSimPtr(), parameter, value);
+        })
+
+      // enum ErrorCode smolSetSurfaceNeighborAction(simptr sim, const char
+      //     *surface, int hop);
+      .def("setSurfaceNeighborAction",
+        [](Simulation& sim, const char* surface, bool hop) {
+            return smolSetSurfaceNeighborAction(sim.getSimPtr(), surface, hop ? 1 : 0);
         })
 
       // enum ErrorCode smolAddPanelNeighbor(simptr sim, const char *surface1,

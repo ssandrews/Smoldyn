@@ -68,6 +68,7 @@ enum ErrorCode smolSetTimeStart(simptr sim,double timestart);
 enum ErrorCode smolSetTimeStop(simptr sim,double timestop);
 enum ErrorCode smolSetTimeNow(simptr sim,double timenow);
 enum ErrorCode smolSetTimeStep(simptr sim,double timestep);
+enum ErrorCode smolSetSimParams(simptr sim,const char *parameter,double value);
 enum ErrorCode smolSetRandomSeed(simptr sim,long int seed);
 enum ErrorCode smolSetPartitions(simptr sim,const char *method,double value);
 enum ErrorCode smolSetVariable(simptr sim,const char *name,double value);
@@ -91,6 +92,7 @@ enum ErrorCode smolAddOutputFile(simptr sim,char *filename,int suffix,int append
 enum ErrorCode smolAddOutputData(simptr sim,char *dataname);
 enum ErrorCode smolOpenOutputFiles(simptr sim, int overwrite);
 //?? needs function for setting output precision
+enum ErrorCode smolSetOutputFormat(simptr sim,const char *format,int precision);
 enum ErrorCode smolAddCommand(simptr sim,char type,double on,double off,double step,double multiplier,const char *commandstring);
 enum ErrorCode smolAddCommandFromString(simptr sim,char *string);
 enum ErrorCode smolGetOutputData(simptr sim,char *dataname,int *nrow,int *ncol,double **array,int erase);
@@ -144,6 +146,7 @@ char*          smolGetPanelName(simptr sim,const char *surface,enum PanelShape p
 enum ErrorCode smolSetPanelJump(simptr sim,const char *surface,const char *panel1,enum PanelFace face1,const char *panel2,enum PanelFace face2,int isbidirectional);
 enum ErrorCode smolAddSurfaceUnboundedEmitter(simptr sim,const char *surface,enum PanelFace face,const char *species,double emitamount,double *emitposition);
 enum ErrorCode smolSetSurfaceSimParams(simptr sim,const char *parameter,double value);
+enum ErrorCode smolSetSurfaceNeighborAction(simptr sim,const char *surface,int hop);
 enum ErrorCode smolAddPanelNeighbor(simptr sim,const char *surface1,const char *panel1,const char *surface2,const char *panel2,int reciprocal);
 enum ErrorCode smolSetSurfaceStyle(simptr sim,const char *surface,enum PanelFace face,enum DrawMode mode,double thickness,double *color,int stipplefactor,int stipplepattern,double shininess);
 
