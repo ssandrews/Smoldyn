@@ -292,6 +292,43 @@ class Species(object):
         k = self.simulation.addSolutionMolecules(self.name, N, lowpos, highpos)
         assert k == _smoldyn.ErrorCode.ok, f"Failed to add to solution: {k}"
 
+    def setSurfaceDrift(
+        self,
+        surface: Union["Surface", str],
+        drift: List[float],
+        *,
+        state: Union[str, _smoldyn.MolecState, None] = None,
+        panelshape: Union[str, _smoldyn.PanelShape] = "all",
+    ) -> None:
+        """Set the drift velocity of surface-bound molecules of this species,
+        relative to the panels they are bound to (``surface_drift`` statement).
+
+        Parameters
+        ----------
+        surface : Surface or str
+            Surface on which the drift applies, or ``"all"`` for all surfaces.
+        drift : List[float]
+            Drift vector with dim-1 values, in panel coordinates.
+        state : str, optional
+            Surface-bound state ("front", "back", "up", "down"), or "all".
+            Defaults to this species' state if it is surface-bound, and to
+            "all" otherwise.
+        panelshape : str, optional
+            Panel shape ("rect", "tri", "sph", "cyl", "hemi", "disk") on which
+            the drift applies, or "all" (default).
+        """
+        if state is None:
+            state = self.state if self.state in ("front", "back", "up", "down") else "all"
+        sname = surface if isinstance(surface, str) else surface.name
+        ps = (
+            _smoldyn.PanelShape.__members__[panelshape]
+            if isinstance(panelshape, str)
+            else panelshape
+        )
+        k = self.simulation.setSpeciesSurfaceDrift(self.name, _toMS(state), sname, ps, drift)
+        if k != _smoldyn.ErrorCode.ok:
+            raise RuntimeError(f"setSurfaceDrift failed for species '{self.name}': {k}")
+
 
 @dataclass
 class NullSpecies(Species):
@@ -2379,6 +2416,21 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
             binding_radius=binding_radius,
             reaction_probability=reaction_probability,
         )
+
+    def setVariable(self, name: str, value: float) -> None:
+        """Define or change the variable `name` (``variable`` statement).
+        Statements use a variable's value when they are read, so changing a
+        variable does not change parameters that were already set from it.
+        Runtime commands read their arguments each time they run, so they use
+        the current value.
+        """
+        k = super().setVariable(name, value)
+        if k != _smoldyn.ErrorCode.ok:
+            raise RuntimeError(f"setVariable failed for '{name}': {k}")
+
+    def getVariable(self, name: str) -> float:
+        """Return the value of the variable `name`."""
+        return float(super().getVariable(name))
 
     def addReactionRule(
         self,

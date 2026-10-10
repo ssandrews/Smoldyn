@@ -70,6 +70,8 @@ enum ErrorCode smolSetTimeNow(simptr sim,double timenow);
 enum ErrorCode smolSetTimeStep(simptr sim,double timestep);
 enum ErrorCode smolSetRandomSeed(simptr sim,long int seed);
 enum ErrorCode smolSetPartitions(simptr sim,const char *method,double value);
+enum ErrorCode smolSetVariable(simptr sim,const char *name,double value);
+enum ErrorCode smolGetVariable(simptr sim,const char *name,double *value);
 
 /********************************** Graphics **********************************/
 
@@ -101,6 +103,7 @@ int            smolGetSpeciesIndex(simptr sim,const char *species);
 int            smolGetSpeciesIndexNT(simptr sim,const char *species);
 void          smolGetSpeciesName(simptr sim,int speciesindex,char *species);
 enum ErrorCode smolSetSpeciesMobility(simptr sim,const char *species,enum MolecState state,double difc,double *drift,double *difmatrix);
+enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim,const char *species,enum MolecState state,const char *surface,enum PanelShape panelshape,double *drift);
 enum ErrorCode smolSetMoleculeColor(simptr sim, const char *species, enum MolecState state, double *color);
 enum ErrorCode smolSetMoleculeSize(simptr sim, const char *species, enum MolecState state, double size);
 

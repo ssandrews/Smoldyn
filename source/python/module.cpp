@@ -522,6 +522,25 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetPartitions(sim.getSimPtr(), method, value);
         })
 
+      // enum ErrorCode smolSetVariable(simptr sim, const char *name, double
+      // value);
+      .def("setVariable",
+        [](Simulation& sim, const char* name, double value) {
+            return smolSetVariable(sim.getSimPtr(), name, value);
+        })
+
+      // enum ErrorCode smolGetVariable(simptr sim, const char *name, double
+      // *value);
+      .def("getVariable",
+        [](Simulation& sim, const char* name) {
+            double value = 0.0;
+            auto rc = smolGetVariable(sim.getSimPtr(), name, &value);
+            if (rc != ErrorCode::ECok)
+                throw std::runtime_error(string("getVariable failed for '") +
+                                         name + "'");
+            return value;
+        })
+
       /*********************************
        *  Graphics related functions.  *
        *********************************/
@@ -729,7 +748,29 @@ PYBIND11_MODULE(_smoldyn, m)
         "drift"_a = std::vector<double>(),
         "difmatrix"_a = std::vector<double>())
 
-      //?? needs function smolSetSpeciesSurfaceDrift
+      // enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim, const char
+      //     *species, enum MolecState state, const char *surface, enum
+      //     PanelShape panelshape, double *drift);
+      .def(
+        "setSpeciesSurfaceDrift",
+        [](Simulation& sim,
+          const char* species,
+          MolecState state,
+          const char* surface,
+          PanelShape panelshape,
+          vector<double>& drift) {
+            const auto dim = static_cast<size_t>(sim.getSimPtr()->dim);
+            if(dim < 2 || drift.size() != dim - 1)
+              throw py::value_error("drift must contain dim-1 values");
+            return smolSetSpeciesSurfaceDrift(
+              sim.getSimPtr(), species, state, surface, panelshape, drift.data());
+        },
+        "species"_a,
+        "state"_a,
+        "surface"_a,
+        "panelshape"_a,
+        "drift"_a)
+
       // enum ErrorCode smolAddMolList(simptr sim, const char *mollist);
       .def("addMolList",
         [](Simulation& sim, const char* mollist) {

@@ -71,6 +71,14 @@ smolSetPartitions = smoldyn.smolSetPartitions
 smolSetPartitions.restype = c_int
 smolSetPartitions.argtypes = [c_void_p, c_char_p, c_double]
 
+smolSetVariable = smoldyn.smolSetVariable
+smolSetVariable.restype = c_int
+smolSetVariable.argtypes = [c_void_p, c_char_p, c_double]
+
+smolGetVariable = smoldyn.smolGetVariable
+smolGetVariable.restype = c_int
+smolGetVariable.argtypes = [c_void_p, c_char_p, c_void_p]
+
 # Runtime commands (Output values to file)
 smolSetOutputPath = smoldyn.smolSetOutputPath
 smolSetOutputPath.restype = c_int
@@ -154,6 +162,10 @@ smolAddPanelNeighbor.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p, c_char_
 smolSetSurfaceStyle = smoldyn.smolSetSurfaceStyle
 smolSetSurfaceStyle.restype = c_int
 smolSetSurfaceStyle.argtypes = [c_void_p, c_char_p, c_int, c_int, c_double, c_void_p, c_int, c_int, c_double]
+
+smolSetSpeciesSurfaceDrift = smoldyn.smolSetSpeciesSurfaceDrift
+smolSetSpeciesSurfaceDrift.restype = c_int
+smolSetSpeciesSurfaceDrift.argtypes = [c_void_p, c_char_p, c_int, c_char_p, c_int, c_void_p]
 
 
 # Compartments

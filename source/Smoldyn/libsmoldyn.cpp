@@ -461,6 +461,40 @@ extern CSTRING enum ErrorCode smolSetRandomSeed(simptr sim,long int seed) {
 	return Liberrorcode; }
 
 
+/* smolSetVariable */
+extern CSTRING enum ErrorCode smolSetVariable(simptr sim,const char *name,double value) {
+	const char *funcname="smolSetVariable";
+	int er;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(name && name[0]!='\0',funcname,ECmissing,"missing variable name");
+	LCHECK(strlen(name)<STRCHAR,funcname,ECbounds,"variable name is too long");
+	LCHECK(strcmp(name,"time"),funcname,ECsyntax,"'time' cannot be used as a variable name; it is pre-defined as the simulation time");
+	LCHECK(strcmp(name,"x") && strcmp(name,"y") && strcmp(name,"z") && strcmp(name,"r"),funcname,ECsyntax,"x, y, z, and r are reserved variable names");
+	LCHECK(strokname(name),funcname,ECsyntax,"variable name has to start with a letter and then be alphanumeric with optional underscores");
+	er=simsetvariable(sim,name,value);
+	LCHECK(!er,funcname,ECmemory,"out of memory allocating variable space");
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
+/* smolGetVariable */
+extern CSTRING enum ErrorCode smolGetVariable(simptr sim,const char *name,double *value) {
+	const char *funcname="smolGetVariable";
+	int v;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(name,funcname,ECmissing,"missing variable name");
+	LCHECK(value,funcname,ECmissing,"missing value pointer");
+	v=stringfind(sim->varnames,sim->nvar,name);
+	LCHECK(v>=0,funcname,ECnonexist,"variable not found");
+	*value=sim->varvalues[v];
+	return ECok;
+ failure:
+	return Liberrorcode; }
+
+
 /* smolSetPartitions */
 extern CSTRING enum ErrorCode smolSetPartitions(simptr sim,const char *method,double value) {
 	const char *funcname="smolSetPartitions";
@@ -1150,6 +1184,43 @@ extern CSTRING int smolGetMoleculeCount(simptr sim,const char *species,enum Mole
 	return molcount(sim,i,NULL,state,-1);
  failure:
 	return (int)Liberrorcode; }
+
+
+/* smolSetSpeciesSurfaceDrift */
+extern CSTRING enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim,const char *species,enum MolecState state,const char *surface,enum PanelShape panelshape,double *drift) {
+	const char *funcname="smolSetSpeciesSurfaceDrift";
+	int i,s,er,ilow,ihigh;
+
+	LCHECK(sim,funcname,ECmissing,"missing sim");
+	LCHECK(sim->dim>1,funcname,ECerror,"system dimensionality needs to be 2 or 3");
+	LCHECK(sim->mols,funcname,ECnonexist,"no species defined");
+	LCHECK(sim->srfss && sim->srfss->nsrf>0,funcname,ECnonexist,"no surfaces defined");
+	LCHECK(drift,funcname,ECmissing,"missing drift vector");
+	LCHECK((state>MSsoln && state<MSMAX) || state==MSall,funcname,ECsyntax,"state needs to be surface-bound");
+	LCHECK((panelshape>=0 && panelshape<PSMAX) || panelshape==PSall,funcname,ECsyntax,"invalid panel shape");
+
+	i=smolGetSpeciesIndexNT(sim,species);
+	if(i==(int)ECall) {
+		smolClearError();
+		ilow=1;
+		ihigh=sim->mols->nspecies; }
+	else {
+		LCHECK(i>0,funcname,ECsame,NULL);
+		ilow=i;
+		ihigh=i+1; }
+
+	if(!surface || !strcmp(surface,"all")) s=-1;
+	else {
+		s=smolGetSurfaceIndexNT(sim,surface);
+		LCHECK(s>=0,funcname,ECsame,NULL); }
+
+	for(i=ilow;i<ihigh;i++) {
+		er=molsetsurfdrift(sim,i,NULL,state,s,panelshape,drift);
+		LCHECK(!er,funcname,ECmemory,"out of memory allocating surface drift"); }
+
+	return ECok;
+ failure:
+	return Liberrorcode; }
 
 
 /* smolSetMoleculeColor */

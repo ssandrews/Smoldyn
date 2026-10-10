@@ -4687,6 +4687,20 @@ C/C++: \ttt{enum ErrorCode smolSetPartitions(simptr sim, char *method, double va
 Python: \ttt{S.Simulation.setPartitions(sim, str method, float value)}\\
 Sets the virtual partitions in the simulation volume. Enter \ttt{method} as ``molperbox" and then enter \ttt{value} with the requested number of molecules per partition volume; the default, which is used if this function is not called at all, is a target of 4 molecules per box. Or, enter \ttt{method} as ``boxsize" and enter \ttt{value} with the requested partition spacing. In this latter case, the actual partition spacing may be larger or smaller than the requested value in order to fit an integer number of partitions into each coordinate of the simulation volume.
 
+\item[SetVariable]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetVariable(simptr sim, const char *name, double value)}\\
+Python: \ttt{ErrorCode setVariable(str name, float value)}\\
+Python: $sim$.\ttt{setVariable(name, value)}\\
+Defines the variable \ttt{name}, or changes its value, which is equivalent to the \ttt{variable} statement. The name needs to start with a letter and then be alphanumeric with optional underscores, and cannot be ``time'', ``x'', ``y'', ``z'', or ``r''. Statements use a variable's value when they are read, so changing a variable does not change parameters that were already set from it. Runtime commands read their arguments each time they run, so they use the current value.
+
+\item[GetVariable]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolGetVariable(simptr sim, const char *name, double *value)}\\
+Python: \ttt{float getVariable(str name)}\\
+Python: $sim$.\ttt{getVariable(name)}\\
+Returns the value of the variable \ttt{name} in \ttt{value}. Returns \ttt{ECnonexist} if the variable has not been defined.
+
 \item[MoleculePerBox]
 \hfill \\
 Python: \ttt{MoleculePerBox(size: float)}\\
@@ -4735,6 +4749,13 @@ Python: \textit{species}\ttt{.difc}\\
 Sets any or all of the mobility coefficients for species \ttt{species} (which may be ``all") and state \ttt{state} (which may be \ttt{MSall}). \ttt{difc} is the isotropic diffusion coefficient, \ttt{drift} is the drift vector, and \ttt{difmatrix} is the square of the anisotropic diffusion matrix (see the User's manual). To not set coefficients, enter a negative number in \ttt{difc} and/or enter a \ttt{NULL} pointer in the other inputs, respectively.
 
 The last version shown can also be used to get the diffusion coefficient for a species.
+
+\item[SetSpeciesSurfaceDrift]
+\hfill \\
+C/C++: \ttt{enum ErrorCode smolSetSpeciesSurfaceDrift(simptr sim, const char *species, enum MolecState state, const char *surface, enum PanelShape panelshape, double *drift)}\\
+Python: \ttt{ErrorCode setSpeciesSurfaceDrift(str species, MolecState state, str surface, PanelShape panelshape, List[float] drift)}\\
+Python: \textit{species}\ttt{.setSurfaceDrift(surface, drift, state=None, panelshape="all")}\\
+Sets the drift velocity of surface-bound molecules of species \ttt{species} (which may be ``all''), relative to the panels they are bound to, which is equivalent to the \ttt{surface\_drift} statement. \ttt{state} needs to be a surface-bound state or \ttt{MSall}. The drift applies to panels of surface \ttt{surface} (which may be ``all'') that have shape \ttt{panelshape} (which may be \ttt{PSall}). \ttt{drift} has $dim-1$ values, in the coordinates of the panel, as described for the statement. In the Python \textit{species} version, \ttt{state} defaults to the species' state if it is surface-bound, and to ``all'' otherwise.
 
 
 \item[AddMolList]
