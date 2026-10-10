@@ -441,7 +441,8 @@ endif ()
 if (OPTION_PYTHON)
   # Find python before using pybind11. There is a possibility of version mismatch later.
   if(${SMOLDYN_PYTHON_VERSION} STREQUAL "Auto")
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    # The smoldyn package requires Python 3.10 or later (see pyproject.toml.in).
+    find_package(Python3 3.10 COMPONENTS Interpreter Development REQUIRED)
   else()
     find_package(Python3 ${SMOLDYN_PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
   endif()
