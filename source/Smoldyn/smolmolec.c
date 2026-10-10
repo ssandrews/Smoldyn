@@ -967,6 +967,11 @@ void molsetdisplaysize(simptr sim,int ident,int *index,enum MolecState ms,double
 			molsetdisplaysize(sim,index[PDMAX+j],NULL,ms,dsize);
 		return; }
 
+	if(ident<0) {																			// all species
+		for(j=1;j<sim->mols->nspecies;j++)
+			molsetdisplaysize(sim,j,NULL,ms,dsize);
+		return; }
+
 	if(ms==MSbsoln) ms=MSsoln;
 	else if(ms==MSnone) return;
 	if(ms!=MSall) mshi=(enum MolecState)((mslo=ms)+1);
@@ -986,6 +991,11 @@ void molsetcolor(simptr sim,int ident,int *index,enum MolecState ms,const double
 	if(index) {
 		for(j=0;j<index[PDnresults];j++)
 			molsetcolor(sim,index[PDMAX+j],NULL,ms,color);
+		return; }
+
+	if(ident<0) {																			// all species
+		for(j=1;j<sim->mols->nspecies;j++)
+			molsetcolor(sim,j,NULL,ms,color);
 		return; }
 
 	if(ms==MSbsoln) ms=MSsoln;

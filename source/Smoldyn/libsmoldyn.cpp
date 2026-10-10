@@ -2871,7 +2871,7 @@ extern CSTRING enum ErrorCode smolAddLattice(simptr sim,const char *lattice,cons
 	simlattice = NULL;
 	LCHECK(sim,funcname,ECmissing,"missing sim");
 	LCHECK(lattice,funcname,ECmissing,"missing lattice");
-	p=stringfind(sim->latticess->latticenames,sim->latticess->nlattice,lattice);
+	p=sim->latticess?stringfind(sim->latticess->latticenames,sim->latticess->nlattice,lattice):-1;
 	LCHECK(p<0,funcname,ECsame,"lattice name already exists");
 	er=latticeaddlattice(sim,&simlattice,lattice,min,max,dx,btype,LATTICEnsv);
 	LCHECK(er==0,funcname,ECerror,"error adding lattice");
