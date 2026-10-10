@@ -1259,6 +1259,96 @@ PYBIND11_MODULE(_smoldyn, m)
             return smolSetReactionIntersurface(sim.getSimPtr(), reaction, &rules[0]);
         })
 
+      // enum ErrorCode smolAddReactionRule(simptr sim, const char *rule,
+      //     const char *reactant1, enum MolecState rstate1, const char
+      //     *reactant2, enum MolecState rstate2, int nproduct, const char
+      //     **productspecies, enum MolecState *productstates, double rate,
+      //     const char *compartment, const char *surface);
+      .def("addReactionRule",
+        [](Simulation& sim,
+          const char* rule,
+          const char* reactant1,
+          MolecState rstate1,
+          const char* reactant2,
+          MolecState rstate2,
+          vector<string>& productSpeciesStr,
+          vector<MolecState>& productStates,
+          double rate,
+          const char* compartment,
+          const char* surface) {
+            size_t nprd = productStates.size();
+            if (nprd >= MAXPRODUCT || productSpeciesStr.size() != nprd) {
+                py::print("productSpecies and productStates need the same length, less than ", MAXPRODUCT);
+                return ErrorCode::ECbounds;
+            }
+            vector<const char*> productSpecies(nprd);
+            for (size_t i = 0; i < nprd; i++)
+                productSpecies[i] = productSpeciesStr[i].c_str();
+            return smolAddReactionRule(sim.getSimPtr(), rule, reactant1, rstate1,
+              reactant2, rstate2, (int)nprd, nprd ? &productSpecies[0] : nullptr,
+              nprd ? &productStates[0] : nullptr, rate, compartment, surface);
+        })
+
+      // enum ErrorCode smolSetReactionSimParams(simptr sim, const char
+      //     *reaction, const char *parameter, double value);
+      .def("setReactionSimParams",
+        [](Simulation& sim, const char* reaction, const char* parameter, double value) {
+            return smolSetReactionSimParams(sim.getSimPtr(), reaction, parameter, value);
+        })
+
+      // enum ErrorCode smolSetReactionPermit(simptr sim, const char
+      //     *reaction, enum MolecState *states, int permit);
+      .def("setReactionPermit",
+        [](Simulation& sim, const char* reaction, vector<MolecState>& states, bool permit) {
+            if (states.empty())
+                return ErrorCode::ECmissing;
+            return smolSetReactionPermit(sim.getSimPtr(), reaction, &states[0], permit ? 1 : 0);
+        })
+
+      // enum ErrorCode smolSetReactionSerialnum(simptr sim, const char
+      //     *reaction, const char **codes);
+      .def("setReactionSerialnum",
+        [](Simulation& sim, const char* reaction, vector<string>& codesStr) {
+            vector<const char*> codes(codesStr.size());
+            for (size_t i = 0; i < codesStr.size(); i++)
+                codes[i] = codesStr[i].c_str();
+            return smolSetReactionSerialnum(
+              sim.getSimPtr(), reaction, codes.empty() ? nullptr : &codes[0]);
+        })
+
+      // enum ErrorCode smolSetReactionRepresentation(simptr sim, const char
+      //     *reaction, const enum SpeciesRepresentation *rctrep, const enum
+      //     SpeciesRepresentation *prdrep);
+      .def("setReactionRepresentation",
+        [](Simulation& sim,
+          const char* reaction,
+          vector<SpeciesRepresentation>& rctrep,
+          vector<SpeciesRepresentation>& prdrep) {
+            return smolSetReactionRepresentation(sim.getSimPtr(), reaction,
+              rctrep.empty() ? nullptr : &rctrep[0],
+              prdrep.empty() ? nullptr : &prdrep[0]);
+        })
+
+      // enum ErrorCode smolSetReactionLog(simptr sim, const char *filename,
+      //     const char *reaction, int nserial, const long int *serialnums,
+      //     int turnon);
+      .def("setReactionLog",
+        [](Simulation& sim,
+          const char* filename,
+          const char* reaction,
+          vector<long int>& serialnums,
+          bool turnon) {
+            return smolSetReactionLog(sim.getSimPtr(), filename, reaction,
+              (int)serialnums.size(), serialnums.empty() ? nullptr : &serialnums[0],
+              turnon ? 1 : 0);
+        })
+
+      // enum ErrorCode smolExpandRules(simptr sim, int iterations);
+      .def("expandRules",
+        [](Simulation& sim, int iterations) {
+            return smolExpandRules(sim.getSimPtr(), iterations);
+        })
+
       /***********
        *  Ports  *
        ***********/

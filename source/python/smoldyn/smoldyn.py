@@ -22,6 +22,7 @@ __all__ = [
     "Partition",
     "Compartment",
     "Reaction",
+    "ReactionRule",
     "BidirectionalReaction",
 ]
 
@@ -1274,7 +1275,127 @@ class Compartment(object):
         assert k == _smoldyn.ErrorCode.ok
 
 
-class Reaction(object):
+class _ReactionCommon(object):
+    """Methods shared by :class:`Reaction` and :class:`ReactionRule`. When
+    called on a reaction rule, these settings apply to the rule and to any
+    reactions that have already been generated from it.
+    """
+
+    simulation: _smoldyn.Simulation
+    name: str
+
+    __simparams__ = (
+        "rate",
+        "multiplicity",
+        "confspread_radius",
+        "binding_radius",
+        "probability",
+        "chi",
+        "production",
+    )
+
+    def _check(self, k: _smoldyn.ErrorCode, what: str) -> None:
+        if k != _smoldyn.ErrorCode.ok:
+            raise RuntimeError(f"{what} failed for reaction '{self.name}': {k}")
+
+    def setSimParams(self, **params: float) -> None:
+        """Set one or more reaction parameters, given as keyword arguments,
+        e.g. ``rxn.setSimParams(multiplicity=2, chi=0.3)``.
+
+        Parameters
+        ----------
+        rate : float
+            Reaction rate constant (``reaction_rate`` statement).
+        multiplicity : int
+            Reaction multiplicity (``reaction_multiplicity``).
+        confspread_radius : float
+            Make this a conformational spread reaction with this radius
+            (``confspread_radius``).
+        binding_radius : float
+            Binding radius of a bimolecular reaction (``binding_radius``).
+        probability : float
+            Reaction probability, between 0 and 1 (``reaction_probability``).
+        chi : float
+            Diffusion-influenced chi value of a bimolecular reaction, between 0
+            and 1, or -1 to disable (``reaction_chi``).
+        production : float
+            Production probability of a zeroth order reaction
+            (``reaction_production``).
+        """
+        for param, value in params.items():
+            assert param in self.__simparams__, (
+                f"Unknown reaction parameter '{param}'. Allowed: {self.__simparams__}"
+            )
+            k = self.simulation.setReactionSimParams(self.name, param, value)
+            self._check(k, f"setSimParams({param}={value})")
+
+    def setSerialNum(self, codes: List[str]) -> None:
+        """Set rules for the serial numbers of the reaction products
+        (``reaction_serialnum`` statement).
+
+        Parameters
+        ----------
+        codes : List[str]
+            One code per product, such as ``"r1"``, ``"r2"``, ``"p1"``,
+            ``"new"``, or a two-part code such as ``"r1.new"``.
+        """
+        k = self.simulation.setReactionSerialnum(self.name, list(codes))
+        self._check(k, "setSerialNum")
+
+    def setRepresentation(
+        self,
+        rctrep: List[Union[str, _smoldyn.SpeciesRepresentation]],
+        prdrep: List[Union[str, _smoldyn.SpeciesRepresentation]],
+    ) -> None:
+        """Set whether reactants and products are represented as particles or
+        on a lattice (``reaction_representation`` statement).
+
+        Parameters
+        ----------
+        rctrep :
+            One entry per reactant: ``"particle"``, ``"lattice"``, or ``"both"``.
+        prdrep :
+            One entry per product: ``"particle"`` or ``"lattice"``.
+        """
+
+        def _toSR(x: Union[str, _smoldyn.SpeciesRepresentation]) -> _smoldyn.SpeciesRepresentation:
+            return _smoldyn.SpeciesRepresentation.__members__[x] if isinstance(x, str) else x
+
+        k = self.simulation.setReactionRepresentation(
+            self.name, [_toSR(x) for x in rctrep], [_toSR(x) for x in prdrep]
+        )
+        self._check(k, "setRepresentation")
+
+    def log(self, filename: str, serialnums: Optional[List[int]] = None) -> None:
+        """Log each occurrence of this reaction to the file `filename`
+        (``reaction_log`` statement). The file also needs to be declared as an
+        output file.
+
+        Parameters
+        ----------
+        filename : str
+            Output file name.
+        serialnums : List[int], optional
+            Only log reactions involving molecules with these serial numbers.
+            If ``None`` (default), log all occurrences.
+        """
+        k = self.simulation.setReactionLog(filename, self.name, list(serialnums or []), True)
+        self._check(k, "log")
+
+    def logOff(self, serialnums: Optional[List[int]] = None) -> None:
+        """Turn off reaction logging (``reaction_log_off`` statement).
+
+        Parameters
+        ----------
+        serialnums : List[int], optional
+            Stop logging only these serial numbers. If ``None`` (default),
+            turn off all logging for this reaction.
+        """
+        k = self.simulation.setReactionLog(None, self.name, list(serialnums or []), False)
+        self._check(k, "logOff")
+
+
+class Reaction(_ReactionCommon):
     __methoddict__ = dict(
         i="irrev",
         p="pgem",
@@ -1509,6 +1630,110 @@ class Reaction(object):
             assert pos, "pos is required"
         k = self.simulation.setReactionProducts(self.name, revType, param, product, pos)
         assert k == _smoldyn.ErrorCode.ok
+
+    def permit(self, states: List[SpeciesState]) -> None:
+        """Permit this reaction for the given reactant states
+        (``reaction_permit`` statement). Not allowed for zeroth order
+        reactions.
+
+        Parameters
+        ----------
+        states :
+            One state per reactant, e.g. ``["front", "all"]``.
+        """
+        assert len(states) == self.order, "Need one state per reactant"
+        k = self.simulation.setReactionPermit(self.name, [_toMS(x) for x in states], True)
+        self._check(k, "permit")
+
+    def forbid(self, states: List[SpeciesState]) -> None:
+        """Forbid this reaction for the given reactant states
+        (``reaction_forbid`` statement). Not allowed for zeroth order
+        reactions.
+
+        Parameters
+        ----------
+        states :
+            One state per reactant, e.g. ``["soln", "all"]``.
+        """
+        assert len(states) == self.order, "Need one state per reactant"
+        k = self.simulation.setReactionPermit(self.name, [_toMS(x) for x in states], False)
+        self._check(k, "forbid")
+
+
+# A species pattern for reaction rules: a pattern string or Species, optionally
+# with a state.
+SpeciesPattern: TypeAlias = Union[str, Species, Tuple[Union[str, Species], SpeciesState]]
+
+
+class ReactionRule(_ReactionCommon):
+    def __init__(
+        self,
+        simulation: _smoldyn.Simulation,
+        name: str,
+        subs: List[SpeciesPattern],
+        prds: List[SpeciesPattern],
+        *,
+        rate: float = -1.0,
+        compartment: None | Compartment = None,
+        surface: None | Surface = None,
+    ):
+        """Reaction rule (``reaction_rule`` statement), which generates
+        reactions for all species that match its patterns. Reactions are
+        generated when :py:meth:`Simulation.expandRules` is called.
+
+        Parameters
+        ----------
+        simulation: _smoldyn.Simulation
+            Simulation object
+        name: str
+            name of the rule.
+        subs : List[SpeciesPattern]
+            List of reactant patterns (at most two). Each is a pattern string
+            such as ``"A*"``, a Species, or a tuple of either with a state,
+            e.g. ``("A*", "front")``.
+        prds : List[SpeciesPattern]
+            List of product patterns, in the same format.
+        rate : float
+            rate of the generated reactions; negative to leave unset.
+        compartment: Compartment
+            If not ``None``, restrict the rule to this compartment.
+        surface: Surface
+            If not ``None``, restrict the rule to this surface.
+        """
+        self.simulation = simulation
+        self.name = name
+        self.subs = subs
+        self.prds = prds
+        assert len(subs) < 3, "At most two reactants are supported."
+        assert subs or prds, "Reaction rule needs reactants or products."
+
+        def _split(x: SpeciesPattern) -> Tuple[str, _smoldyn.MolecState]:
+            if isinstance(x, str):
+                return x, _toMS("soln")
+            if isinstance(x, Species):
+                return x.name, _toMS(x.state)
+            pat, state = x
+            return (pat if isinstance(pat, str) else pat.name), _toMS(state)
+
+        rcts = [_split(x) for x in subs] + [("", _toMS("none"))] * (2 - len(subs))
+        prdlist = [_split(x) for x in prds]
+        k = self.simulation.addReactionRule(
+            name,
+            rcts[0][0],
+            rcts[0][1],
+            rcts[1][0],
+            rcts[1][1],
+            [x[0] for x in prdlist],
+            [x[1] for x in prdlist],
+            rate,
+            compartment.name if compartment else None,
+            surface.name if surface else None,
+        )
+        self._check(k, "addReactionRule")
+
+    @property
+    def order(self) -> int:
+        return len(self.subs)
 
 
 class BidirectionalReaction(object):
@@ -2154,6 +2379,45 @@ class Simulation(_smoldyn.Simulation):  # type: ignore
             binding_radius=binding_radius,
             reaction_probability=reaction_probability,
         )
+
+    def addReactionRule(
+        self,
+        name: str,
+        subs: List[SpeciesPattern],
+        prds: List[SpeciesPattern],
+        *,
+        rate: float = -1.0,
+        compartment: Optional[Compartment] = None,
+        surface: Optional[Surface] = None,
+    ) -> ReactionRule:
+        """Add a reaction rule. See ReactionRule for details."""
+        return ReactionRule(
+            super(),
+            name,
+            subs,
+            prds,
+            rate=rate,
+            compartment=compartment,
+            surface=surface,
+        )
+
+    def expandRules(self, iterations: Union[int, str] = "all") -> None:
+        """Expand rules to generate species and reactions (``expand_rules``
+        statement).
+
+        Parameters
+        ----------
+        iterations : int or str
+            Number of expansion iterations, ``"all"`` (default) to expand
+            completely, or ``"otf"`` (``"on-the-fly"``) to expand during the
+            simulation as needed.
+        """
+        if isinstance(iterations, str):
+            iterations = {"all": -1, "otf": -2, "on-the-fly": -2}[iterations]
+        assert iterations >= 0 or iterations in (-1, -2), "Invalid iterations"
+        k = super().expandRules(iterations)
+        if k != _smoldyn.ErrorCode.ok:
+            raise RuntimeError(f"expandRules failed: {k}")
 
     def addPartition(self, name: str, value: float) -> Partition:
         """Sets the virtual partitions in the simulation volumne. Two

@@ -215,6 +215,34 @@ smolSetReactionProducts = smoldyn.smolSetReactionProducts
 smolSetReactionProducts.restype = c_int
 smolSetReactionProducts.argtypes = [c_void_p, c_char_p, c_int, c_double, c_char_p, c_void_p]
 
+smolAddReactionRule = smoldyn.smolAddReactionRule
+smolAddReactionRule.restype = c_int
+smolAddReactionRule.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_char_p, c_int, c_int, c_void_p, c_void_p, c_double, c_char_p, c_char_p]
+
+smolSetReactionSimParams = smoldyn.smolSetReactionSimParams
+smolSetReactionSimParams.restype = c_int
+smolSetReactionSimParams.argtypes = [c_void_p, c_char_p, c_char_p, c_double]
+
+smolSetReactionPermit = smoldyn.smolSetReactionPermit
+smolSetReactionPermit.restype = c_int
+smolSetReactionPermit.argtypes = [c_void_p, c_char_p, c_void_p, c_int]
+
+smolSetReactionSerialnum = smoldyn.smolSetReactionSerialnum
+smolSetReactionSerialnum.restype = c_int
+smolSetReactionSerialnum.argtypes = [c_void_p, c_char_p, c_void_p]
+
+smolSetReactionRepresentation = smoldyn.smolSetReactionRepresentation
+smolSetReactionRepresentation.restype = c_int
+smolSetReactionRepresentation.argtypes = [c_void_p, c_char_p, c_void_p, c_void_p]
+
+smolSetReactionLog = smoldyn.smolSetReactionLog
+smolSetReactionLog.restype = c_int
+smolSetReactionLog.argtypes = [c_void_p, c_char_p, c_char_p, c_int, c_void_p, c_int]
+
+smolExpandRules = smoldyn.smolExpandRules
+smolExpandRules.restype = c_int
+smolExpandRules.argtypes = [c_void_p, c_int]
+
 
 # Bit of test code
 smolGetVersion()
