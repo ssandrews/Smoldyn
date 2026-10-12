@@ -1,6 +1,5 @@
 # Plus-end elongation at a defined velocity.
 #
-#   plus_end              <back|front>  which end is the barbed end (default back)
 #   elongation_rate       <velocity>    plus-end growth speed, length/time (0 = off)
 #   elongation_max_length <length>      stop growing past this contour length (0 = unbounded)
 #
@@ -35,7 +34,6 @@ standard_angle 0            # 2D: single yaw value
 force_length 500
 force_angle 5               # 2D: single value
 mobility 1
-plus_end back               # the default; stated here for clarity
 elongation_rate 0.32        # um/s at 10 uM G-actin
 end_filament_type
 

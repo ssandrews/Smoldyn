@@ -793,7 +793,7 @@ typedef struct filmolstruct {					// Filament-molecule interactions structure
     surfaceptr surf;									// set if this only applies to a specific surface
     compartptr compart;								// set if this only applies to a specific compartment
 		// is molecule already adsorbed to filament?
-    // interaction location: side-interaction, face interaction, sequence interaction, front end, back end, both end
+    // interaction location: side-interaction, face interaction, sequence interaction, minus end, plus end, both end
     // actions: adsorb, desorb, react, excluded volume
     // force implications for filament
     // parameters: interaction rate, binding radius, unbinding radius, desoprtion rate, etc.
@@ -810,7 +810,7 @@ typedef struct filsurfstruct {				// Filament-surface interactions
 		enum PanelFace face;							// which surface face is involved
 		compartptr compart;								// set if this only applies to a specific compartment
 		// is filament already adsorbed to the surface?
-		// interaction location: side-interaction, face interaction, sequence interaction, front end, back end, both end
+		// interaction location: side-interaction, face interaction, sequence interaction, minus end, plus end, both end
 		// actions: adsorb, desorb, react, excluded volume
 		// force implications for filament
 		// force implications for surface
@@ -821,8 +821,8 @@ typedef struct filsurfstruct {				// Filament-surface interactions
 typedef struct segmentstruct {
     struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
-    double *xyzfront;                 // Coords. for segment front
-    double *xyzback;                  // Coords. for segment back
+    double *xyzminus;                 // Coords. for segment minus end
+    double *xyzplus;                  // Coords. for segment plus end
     double len;                       // segment length
     double thk;                       // thickness of segment
     double ypr[3];                    // relative ypr angles
@@ -856,8 +856,8 @@ typedef struct filamentstruct {
     double *roll;                       // segment roll values (nseg)
     double *nodemobility;               // extra node mobility (nseg+1)
     double seg0up[3];                   // segment 0 up vector
-    struct filamentstruct* frontend;    // what front attaches to
-    struct filamentstruct* backend;     // what back attaches to
+    struct filamentstruct* minusend;    // what minus end attaches to
+    struct filamentstruct* plusend;     // what plus end attaches to
     int maxbranch;                      // max branches off this filament
     int nbranch;                        // num branches off this filament
     int* branchspots;                   // segments where branches are
@@ -905,7 +905,6 @@ typedef struct filamenttypestruct
     surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
     double confineforce;               // confinement spring constant, energy/length^2; 0 = off
     enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
-    char plusend;                      // 'b' (default) or 'f': which end is the barbed/plus end
     double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
     double caprate;                    // plus-end capping rate, 1/time; 0 = off

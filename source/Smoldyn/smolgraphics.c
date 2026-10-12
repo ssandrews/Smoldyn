@@ -1096,7 +1096,7 @@ void RenderFilaments(simptr sim) {
 	filamenttypeptr filtype;
 	filamentptr fil;
 	int f,vtx,graphics,ft,seqi;
-	double *point,zmid,*pointback,vect[3],vect2[3],axis[3],theta,scale,pos[3];
+	double *point,zmid,*pointplus,vect[3],vect2[3],axis[3],theta,scale,pos[3];
 	enum DrawMode drawmode,dm;
 	GLfloat glfvect[4];
 	double blackcolor[4]={0,0,0,1};
@@ -1132,9 +1132,9 @@ void RenderFilaments(simptr sim) {
 					else if(dm==DMedge) glBegin(GL_LINE_STRIP);
 					fil=filtype->fillist[f];
 					for(vtx=0;vtx<fil->nseg;vtx++) {
-						point=fil->segments[vtx]->xyzfront;
+						point=fil->segments[vtx]->xyzminus;
 						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid); }
-					point=fil->segments[vtx-1]->xyzback;
+					point=fil->segments[vtx-1]->xyzplus;
 					glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),zmid);
 					glEnd(); }
 
@@ -1191,9 +1191,9 @@ void RenderFilaments(simptr sim) {
 						else if(dm==DMedge) glBegin(GL_LINE_STRIP);
 						fil=filtype->fillist[f];
 						for(vtx=0;vtx<fil->nseg;vtx++) {
-							point=fil->segments[vtx]->xyzfront;
+							point=fil->segments[vtx]->xyzminus;
 							glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2])); }
-						point=fil->segments[vtx-1]->xyzback;
+						point=fil->segments[vtx-1]->xyzplus;
 						glVertex3d((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
 						glEnd(); }}
 
@@ -1201,16 +1201,16 @@ void RenderFilaments(simptr sim) {
 					for(f=0;f<filtype->nfil;f++) {
 						fil=filtype->fillist[f];
 						for(vtx=0;vtx<fil->nseg;vtx++) {
-							point=fil->segments[vtx]->xyzfront;
+							point=fil->segments[vtx]->xyzminus;
 							glMatrixMode(GL_MODELVIEW);
 							glPushMatrix();
 							glTranslated((GLdouble)(point[0]),(GLdouble)(point[1]),(GLdouble)(point[2]));
-							pointback=fil->segments[vtx]->xyzback;
+							pointplus=fil->segments[vtx]->xyzplus;
 							vect[0]=vect[1]=0;
 							vect[2]=1;
-							vect2[0]=pointback[0]-point[0];
-							vect2[1]=pointback[1]-point[1];
-							vect2[2]=pointback[2]-point[2];
+							vect2[0]=pointplus[0]-point[0];
+							vect2[1]=pointplus[1]-point[1];
+							vect2[2]=pointplus[2]-point[2];
 							normalizeVD(vect2,3);
 							theta=gl2FindRotateD(vect,vect2,axis);
 							glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));

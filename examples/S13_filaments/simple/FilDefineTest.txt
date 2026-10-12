@@ -36,17 +36,17 @@ random_filament black:fil1 5  0 0 0  0 0 0
 
 start_filament black:fil2
 first_segment -3 0 0  1  0 0 0
-add_segment 1  1 0 0  2  back
-add_segment 1  0 1 0  2  back
-add_segment 1  1 0 0  2  front
+add_segment 1  1 0 0  2  plus
+add_segment 1  0 1 0  2  plus
+add_segment 1  1 0 0  2  minus
 copy_to fil3
 end_filament
 
 filament fil3 translate + 0 2 0
-filament fil3 remove_segment front
-filament fil3 remove_segment back
+filament fil3 remove_segment minus
+filament fil3 remove_segment plus
 
-filament fil2 modify_segment 2 angle + 1 0 0 back
+filament fil2 modify_segment 2 angle + 1 0 0 plus
 
 
 end_file

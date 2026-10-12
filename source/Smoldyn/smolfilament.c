@@ -72,7 +72,6 @@ int filtypeSetDrawmode(filamenttypeptr filtype,enum DrawMode dm);
 int filtypeSetDrawForceArrows(filamenttypeptr filtype,double scale,const double *rgba);
 int filtypeSetShiny(filamenttypeptr filtype,double shiny);
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd);
-int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar);
 int filtypeAddFace(filamenttypeptr filtype,const char* facename);
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname);
 
@@ -280,8 +279,8 @@ segmentptr filSegmentAlloc() {
 	CHECKMEM(segment=(segmentptr) malloc(sizeof(struct segmentstruct)));
 	segment->fil=NULL;
 	segment->index=0;
-	segment->xyzfront=NULL;
-	segment->xyzback=NULL;
+	segment->xyzminus=NULL;
+	segment->xyzplus=NULL;
 	segment->len=0;
 	segment->thk=1;
 	segment->ypr[0]=segment->ypr[1]=segment->ypr[2]=0;
@@ -461,8 +460,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->nodemobility=NULL;
 		fil->seg0up[0]=fil->seg0up[1]=0;
 		fil->seg0up[2]=1;
-		fil->frontend=NULL;
-		fil->backend=NULL;
+		fil->minusend=NULL;
+		fil->plusend=NULL;
 		fil->maxbranch=0;
 		fil->nbranch=0;
 		fil->branchspots=NULL;
@@ -504,8 +503,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 			CHECKMEM(newsegments[seg]=filSegmentAlloc());
 			newsegments[seg]->fil=fil;
 			newsegments[seg]->index=seg;
-			newsegments[seg]->xyzfront=newnodes[seg];
-			newsegments[seg]->xyzback=newnodes[seg+1];
+			newsegments[seg]->xyzminus=newnodes[seg];
+			newsegments[seg]->xyzplus=newnodes[seg+1];
 			newroll[seg]=0; }
 
 		free(fil->segments);
@@ -634,7 +633,6 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->confineforce=0;
 		filtype->confineface=PFfront;								// confine to the front side when on
 
-		filtype->plusend='b';												// back = barbed/plus, matching every existing convention
 		filtype->elongrate=0;												// elongation off by default
 		filtype->elongmaxlen=0;											// 0 => unbounded growth
 		filtype->caprate=0;													// capping off by default
@@ -804,29 +802,29 @@ void filOutput(const filamentptr fil) {
 	if(dim==2) {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
-			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g), rel. angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->ypr[0]);
-			simLog(sim,fil->nodemobility[seg]==1?1:2," front mobility=%g",fil->nodemobility[seg]);
-			simLog(sim,1,", back pos.=(%1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
+			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, minus pos.=(%1.3g %1.3g), rel. angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->ypr[0]);
+			simLog(sim,fil->nodemobility[seg]==1?1:2," minus mobility=%g",fil->nodemobility[seg]);
+			simLog(sim,1,", plus pos.=(%1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzplus[0],segment->xyzplus[1],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
 			simLog(sim,seg>5?1:2,"\n"); }
 		segment=fil->segments[fil->nseg-1];
-		simLog(sim,2,"     back pos.=(%1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1]);
-		simLog(sim,fil->nodemobility[seg]==1?1:2," back mobility=%g",fil->nodemobility[seg]);
+		simLog(sim,2,"     plus pos.=(%1.3g %1.3g)",segment->xyzplus[0],segment->xyzplus[1]);
+		simLog(sim,fil->nodemobility[seg]==1?1:2," plus mobility=%g",fil->nodemobility[seg]);
 		simLog(sim,2,"\n"); }
 	else {
 		for(seg=0;seg<fil->nseg;seg++) {
 			segment=fil->segments[seg];
-			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, front pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]);
-			simLog(sim,fil->nodemobility[seg]==1?1:2," front mobility=%g",fil->nodemobility[seg]);
-			simLog(sim,1,", back pos.=(%1.3g %1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
+			simLog(sim,seg>5?1:2,"    %i length=%1.3g, thick=%1.3g, minus pos.=(%1.3g %1.3g %1.3g), rel. angle=(%1.3g %1.3g %1.3g)",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->xyzminus[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]);
+			simLog(sim,fil->nodemobility[seg]==1?1:2," minus mobility=%g",fil->nodemobility[seg]);
+			simLog(sim,1,", plus pos.=(%1.3g %1.3g %1.3g), qrel=(%1.3g %1.3g %1.3g %1.3g), qabs=(%1.3g %1.3g %1.3g %1.3g)",segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2],segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3],segment->qabs[0],segment->qabs[1],segment->qabs[2],segment->qabs[3]);
 			simLog(sim,seg>5?1:2,"\n"); }
 		segment=fil->segments[fil->nseg-1];
-		simLog(sim,2,"     back pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzback[0],segment->xyzback[1],segment->xyzback[2]);
-		simLog(sim,fil->nodemobility[seg]==1?1:2," back mobility=%g",fil->nodemobility[seg]); }
+		simLog(sim,2,"     plus pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2]);
+		simLog(sim,fil->nodemobility[seg]==1?1:2," plus mobility=%g",fil->nodemobility[seg]); }
 
-	if(fil->frontend)
-		simLog(sim,2,"   front branched from: %s\n",fil->frontend->filname);
-	if(fil->backend)
-		simLog(sim,2,"   back branched from: %s\n",fil->backend->filname);
+	if(fil->minusend)
+		simLog(sim,2,"   minus end branched from: %s\n",fil->minusend->filname);
+	if(fil->plusend)
+		simLog(sim,2,"   plus end branched from: %s\n",fil->plusend->filname);
 
 	simLog(sim,fil->capped?2:1,"   plus end: %s\n",fil->capped?"capped":"free");
 	simLog(sim,fil->growbank>0?2:1,"   pending growth: %g|L\n",fil->growbank);
@@ -916,7 +914,6 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		if(filtype->kT>0)																// equipartition penetration depth the wall permits
 			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
 
-	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
 	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
 	if(filtype->elongrate>0 && filtype->elongmaxlen>0)
 		simLog(sim,2,"  elongation max length: %g|L\n",filtype->elongmaxlen);
@@ -1003,9 +1000,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s has elongation_rate>0 but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
 		if(filtype->treadrate!=0 && filtype->elongrate>0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net growth\n",filtype->ftname);}
-		if(filtype->branchrate>0 && filtype->plusend!='b') {		// filAddBranch always anchors a daughter by its front
-			error++;simLog(sim,9,"ERROR: filament type %s combines branch_rate with plus_end front; branching currently requires plus_end back\n",filtype->ftname);}
-		if(filtype->treadrate!=0 && filtype->caprate>0 && (filtype->treadrate>0)!=(filtype->plusend=='b')) {
+		if(filtype->treadrate<0 && filtype->caprate>0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
 		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
@@ -1245,14 +1240,6 @@ int filtypeSetShiny(filamenttypeptr filtype,double shiny) {
 /* filtypeSetDynamics */
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd) {
 	filtype->dynamics=fd;
-	return 0; }
-
-
-/* filtypeSetPlusEnd */
-int filtypeSetPlusEnd(filamenttypeptr filtype,char endchar) {
-	if(!filtype) return 1;
-	if(endchar!='b' && endchar!='f') return 2;
-	filtype->plusend=endchar;
 	return 0; }
 
 
@@ -1612,16 +1599,6 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"confineforce",0,f1);
 		filtype->confineface=pf; }
 
-	else if(!strcmp(word,"plus_end")) {				// plus_end: which geometric end is barbed
-		CHECKS(filtype,"need to enter filament type name before plus_end");
-		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"plus_end format: back or front");
-		if(nm1[0]=='B' || nm1[0]=='b') er=filtypeSetPlusEnd(filtype,'b');
-		else if(nm1[0]=='F' || nm1[0]=='f') er=filtypeSetPlusEnd(filtype,'f');
-		else er=2;
-		CHECKS(!er,"plus_end options: back, front");
-		CHECKS(!strnword(line2,2),"unexpected text following plus_end"); }
-
 	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: plus-end velocity, length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
 		itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
@@ -1772,7 +1749,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			else {CHECKM(itct==1,"first_segment format: x y z length yaw pitch roll [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }
-		er=filAddSegment(fil,fltv1,length,angle,thick,'b');
+		er=filAddSegment(fil,fltv1,length,angle,thick,'p');
 		CHECKS(er==0,"BUG: error in filAddsegment");
 		CHECKS(!line2,"unexpected text following first_segment"); }
 
@@ -1782,27 +1759,27 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|",varnames,varvalues,nvar,&length,&angle[0]);
 			angle[1]=angle[2]=0;
-			CHECKM(itct==2,"add_segment format: length angle0 [thickness [end]]. "); }
+			CHECKM(itct==2,"add_segment format: length angle0 [thickness [plus|minus]]. "); }
 		else {
 			itct=strmathsscanf(line2,"%mlg|L %mlg| %mlg| %mlg|",varnames,varvalues,nvar,&length,&angle[0],&angle[1],&angle[2]);
-			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [end]]. "); }
+			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [plus|minus]]. "); }
 		CHECKS(length>0,"length needs to be >0");
 		line2=strnword(line2,itct+1);
 		thick=1;
-		endchar='b';
+		endchar='p';
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [end]]. ");}
-			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [end]]. ");}
+			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [plus|minus]]. ");}
+			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus|minus]]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2);
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [end]]");}
-				else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [end]]");}
-				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-				else CHECKS(0,"end needs to be 'back' or 'front'");
+				if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [plus|minus]]");}
+				else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus|minus]]");}
+				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+				else CHECKS(0,"end needs to be 'plus' or 'minus'");
 				line2=strnword(line2,2); }}
 		er=filAddSegment(fil,NULL,length,angle,thick,endchar);
 		CHECKS(er==0,"BUG: error in filAddsegment");
@@ -1812,11 +1789,11 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil,"need to enter filament name before remove_segment");
 		CHECKS(fil->nseg>0,"filament has no segments to remove");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"remove_segment format: end");
-		endchar='b';
-		if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-		else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-		else CHECKS(0,"end needs to be 'back' or 'front'");
+		CHECKS(itct==1,"remove_segment format: plus|minus");
+		endchar='p';
+		if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+		else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+		else CHECKS(0,"end needs to be 'plus' or 'minus'");
 		er=filRemoveSegment(fil,endchar);
 		CHECKS(!er,"BUG: error in filRemovesegment");
 		CHECKS(!strnword(line2,2),"unexpected text following remove_segment"); }
@@ -1876,48 +1853,48 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	else if(!strcmp(word,"modify_segment")) {				// modify_segment
 		CHECKS(fil,"need to enter filament name before modify_segment");
 		itct=strmathsscanf(line2,"%mi| %s %c",varnames,varvalues,nvar,&seg,nm,&symbol);
-		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
 		CHECKS(seg>=0 && seg<fil->nseg,"segment number is not within filament");
 		line2=strnword(line2,4);
-		CHECKS(line2,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+		CHECKS(line2,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]");
 		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		if(!strcmp(nm,"length")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
-			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
 			line2=strnword(line2,2);
-			endchar='b';
+			endchar='p';
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]");
 				line2=strnword(line2,2);
-				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-				else CHECKS(0,"end needs to be 'back' or 'front'"); }
+				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+				else CHECKS(0,"end needs to be 'plus' or 'minus'"); }
 			er=filLengthenSegment(fil,seg,length,endchar,symbol);
 			CHECKS(!er,"Error while trying to change segment length - new length must be positive"); }
 		else if(!strcmp(nm,"angle")) {
 			angle[0]=angle[1]=angle[2]=0;
 			if(dim==2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&angle[0]);
-				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
 				line2=strnword(line2,2); }
 			else {
 				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
 				CHECKM(itct==3,"insufficient angle values. ");
 				line2=strnword(line2,4); }
-			endchar='b';
+			endchar='p';
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]");
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]");
 				line2=strnword(line2,2);
-				if(nm1[0]=='B' || nm1[0]=='b') endchar='b';
-				else if(nm1[0]=='F' || nm1[0]=='f') endchar='f';
-				else CHECKS(0,"end needs to be 'back' or 'front'"); }
+				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
+				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
+				else CHECKS(0,"end needs to be 'plus' or 'minus'"); }
 			filRotateVertex(fil,seg,angle,endchar,symbol); }
-		else if(!strcmp(nm,"front_position")) {
+		else if(!strcmp(nm,"minus_position")) {
 			pos[0]=pos[1]=pos[2]=0;
 			if(dim==2) {
-				itct=strmathsscanf(line2,"%mlg|L $mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1]);
+				itct=strmathsscanf(line2,"%mlg|L %mlg|L",varnames,varvalues,nvar,&pos[0],&pos[1]);
 				CHECKM(itct==2,"insufficient position values. ");
 				line2=strnword(line2,3); }
 			else {
@@ -1927,12 +1904,12 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			filTranslateNode(fil,seg,pos,symbol); }
 		else if(!strcmp(nm,"thickness")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness +/-/= value [end]. ");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
 			line2=strnword(line2,2);
 			er=filChangeThickness(fil,seg,thick,symbol);
 			CHECKS(!er,"Error while trying to change segment thickness - new value cannot be negative"); }
 		else
-			CHECKS(0,"modification option needs to be 'length', 'angle', or 'thickness'");
+			CHECKS(0,"modification option needs to be 'length', 'angle', 'minus_position', or 'thickness'");
 		CHECKS(!line2,"unexpected text following modify_segment"); }
 
 	else if(!strcmp(word,"copy_to")) {							// copy_to
@@ -2189,9 +2166,9 @@ double *filGetPositionOnFil(const filamentptr fil,double frac,double *pos) {
 
 	segment=fil->segments[seg>0?seg-1:0];
 	x=(newpath-fpath)/segment->len;						// interpolate within segment
-	pos[0]=x*segment->xyzfront[0]+(1-x)*segment->xyzback[0];
-	pos[1]=x*segment->xyzfront[1]+(1-x)*segment->xyzback[1];
-	pos[2]=x*segment->xyzfront[2]+(1-x)*segment->xyzback[2];
+	pos[0]=x*segment->xyzminus[0]+(1-x)*segment->xyzplus[0];
+	pos[1]=x*segment->xyzminus[1]+(1-x)*segment->xyzplus[1];
+	pos[2]=x*segment->xyzminus[2]+(1-x)*segment->xyzplus[2];
 	return pos; }
 
 
@@ -2299,8 +2276,8 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 		else aphim1=Sph_Qtn2Yaw(fil->segments[nodemin-1]->qabs);
 		for(seg=nodemin;seg<nodemax;seg++) {
 			segment=fil->segments[seg];
-			x[0]=segment->xyzback[0]-segment->xyzfront[0];
-			x[1]=segment->xyzback[1]-segment->xyzfront[1];
+			x[0]=segment->xyzplus[0]-segment->xyzminus[0];
+			x[1]=segment->xyzplus[1]-segment->xyzminus[1];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]);
 			segment->len=len;												// segment->len
 			aphi=atan2(x[1],x[0]);									// absolute yaw
@@ -2321,9 +2298,9 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 	else {																				// 3D
 		if(nodemin==0) {
 			segment=fil->segments[0];
-			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
-			x[1]=segment->xyzback[1]-segment->xyzfront[1];
-			x[2]=segment->xyzback[2]-segment->xyzfront[2];
+			x[0]=segment->xyzplus[0]-segment->xyzminus[0];			// displacement of segment
+			x[1]=segment->xyzplus[1]-segment->xyzminus[1];
+			x[2]=segment->xyzplus[2]-segment->xyzminus[2];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
 			segment->len=len;
 			Sph_XZ2Qtni(x,fil->seg0up,segment->qrel);
@@ -2334,9 +2311,9 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 			seg=nodemin; }
 		for(;seg<nodemax;seg++) {
 			segment=fil->segments[seg];
-			x[0]=segment->xyzback[0]-segment->xyzfront[0];			// displacement of segment
-			x[1]=segment->xyzback[1]-segment->xyzfront[1];
-			x[2]=segment->xyzback[2]-segment->xyzfront[2];
+			x[0]=segment->xyzplus[0]-segment->xyzminus[0];			// displacement of segment
+			x[1]=segment->xyzplus[1]-segment->xyzminus[1];
+			x[2]=segment->xyzplus[2]-segment->xyzminus[2];
 			len=sqrt(x[0]*x[0]+x[1]*x[1]+x[2]*x[2]);
 			segment->len=len;
 			Sph_QtnRotate(fil->segments[seg-1]->qabs,x,x);			// rotate x into prior segment reference frame
@@ -2533,8 +2510,8 @@ void filArrayShift(filamentptr fil,int shift) {
 			fil->nodes[i]=fil->nodes[i-shift];
 			fil->nodes[i-shift]=newnode; }
 		for(i=0;i<shift;i++) {
-			fil->segments[i]->xyzfront=fil->nodes[i];
-			fil->segments[i]->xyzback=fil->nodes[i+1]; }}
+			fil->segments[i]->xyzminus=fil->nodes[i];
+			fil->segments[i]->xyzplus=fil->nodes[i+1]; }}
 
 	else if(shift<0) {
 		shift=-shift;								// now shift is positive
@@ -2547,8 +2524,8 @@ void filArrayShift(filamentptr fil,int shift) {
 			fil->nodes[i]=fil->nodes[i+shift];
 			fil->nodes[i+shift]=newnode; }
 		for(i=fil->nseg-shift;i<fil->nseg;i++) {
-			fil->segments[i]->xyzfront=fil->nodes[i];
-			fil->segments[i]->xyzback=fil->nodes[i+1]; }
+			fil->segments[i]->xyzminus=fil->nodes[i];
+			fil->segments[i]->xyzplus=fil->nodes[i+1]; }
 		shift=-shift; }
 
 //?? The following code requires thought. Is it needed? Is it correct?
@@ -2556,17 +2533,17 @@ void filArrayShift(filamentptr fil,int shift) {
 		nbr=0;
 		for(br=0;br<fil->nbranch;br++) {
 			i=fil->branchspots[br]+shift;
-			if(i>=0 && i<fil->nseg) {								// keep the branch, on its renumbered segment
+			if(i>=0 && i<fil->nseg+shift) {								// keep the branch, on its renumbered segment
 				fil->branchspots[nbr]=i;
 				fil->branches[nbr]=fil->branches[br];
 				fil->branchazim0[nbr]=fil->branchazim0[br];
 				nbr++; }
 			else if(fil->branches[br]) {						// the branched segment is gone, so the junction is too
-				if(fil->branches[br]->frontend==fil) fil->branches[br]->frontend=NULL;
-				if(fil->branches[br]->backend==fil) fil->branches[br]->backend=NULL; }}
+				if(fil->branches[br]->minusend==fil) fil->branches[br]->minusend=NULL;
+				if(fil->branches[br]->plusend==fil) fil->branches[br]->plusend=NULL; }}
 		fil->nbranch=nbr; }
 
-	for(i=0;i<fil->nseg;i++)
+	for(i=0;i<fil->nseg+shift;i++)						// callers update nseg after this, so the new count is nseg+shift
 		fil->segments[i]->index=i;
 
 	return; }
@@ -2582,7 +2559,7 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		fil=filAlloc(fil,fil->maxseg*2+1,0,0);
 		if(!fil) return 1; }		// out of memory
 
-	if(endchar=='b') {
+	if(endchar=='p') {
 		seg=fil->nseg;
 		segment=fil->segments[seg];
 		segment->len=length;
@@ -2590,15 +2567,15 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		Sph_Ypr2Ypr(angle,segment->ypr);												// ypr = angle
 		Sph_Ypr2Qtn(angle,segment->qrel);												// a = Qtn(angle)
 		if(seg==0) {
-			segment->xyzfront[0]=x[0];														// x_i = input value
-			segment->xyzfront[1]=x[1];
-			segment->xyzfront[2]=x[2];
+			segment->xyzminus[0]=x[0];														// x_i = input value
+			segment->xyzminus[1]=x[1];
+			segment->xyzminus[2]=x[2];
 			Sph_Qtn2Qtn(segment->qrel,segment->qabs); 						// b = a
 			Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }		// rotate segment z to lab frame
 		else {
 			segmentm1=fil->segments[seg-1];
 			Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs);	}	// b_i = b_{i-1} . a_i
-		Sph_QtniRotateUnitx(segment->qabs,segment->xyzback,segment->xyzfront,segment->len);			// x_{i+1} = x_i + l_i * b.xhat.bT
+		Sph_QtniRotateUnitx(segment->qabs,segment->xyzplus,segment->xyzminus,segment->len);			// x_{i+1} = x_i + l_i * b.xhat.bT
 		fil->nseg++; }
 
 	else {
@@ -2609,9 +2586,9 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 		segment->thk=thickness;
 		if(fil->nseg==0) {
 			Sph_Ypr2Qtni(angle,segment->qabs);									// b_0
-			segment->xyzback[0]=x[0];														// back of segment = input value
-			segment->xyzback[1]=x[1];
-			segment->xyzback[2]=x[2]; }
+			segment->xyzplus[0]=x[0];														// plus end of segment = input value
+			segment->xyzplus[1]=x[1];
+			segment->xyzplus[2]=x[2]; }
 		else {
 			segmentp1=fil->segments[1];
 			Sph_Ypr2Ypr(angle,segmentp1->ypr);
@@ -2619,7 +2596,7 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 			Sph_QtnxQtni(segmentp1->qabs,segmentp1->qrel,segment->qabs); }		// b_i = b_{i+1} . a_{i+1}*
 		Sph_Qtn2Qtn(segment->qabs,segment->qrel);									// a_i = b_i
 		Sph_Qtn2Ypr(segment->qrel,segment->ypr);									// a_0 = Ypr(B_0)
-		Sph_QtniRotateUnitx(segment->qabs,segment->xyzfront,segment->xyzback,-segment->len);
+		Sph_QtniRotateUnitx(segment->qabs,segment->xyzminus,segment->xyzplus,-segment->len);
 		Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1);
 		fil->nseg++; }
 	return 0; }
@@ -2682,7 +2659,7 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 		if(fil->nseg>0) {
 			filRandomAngle(filtype,fil->nseg,thickness,1,angle);
 			if(dim==2) angle[1]=angle[2]=0; }
-		er=filAddSegment(fil,pos,len,angle,thickness,'b');
+		er=filAddSegment(fil,pos,len,angle,thickness,'p');
 		if(er) return er; }
 
 	return 0; }
@@ -2703,7 +2680,7 @@ int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thi
 	filRandomAngle(filtype,fil->nseg,thickness,1,angle);
 	er=filAddSegment(fil,x,len,angle,thickness,endchar);
 	if(er) return er;
-	segment=fil->segments[((endchar=='f')?0:fil->nseg-1)];
+	segment=fil->segments[((endchar=='m')?0:fil->nseg-1)];
 	if(constraints==0) tryagain=0;
 	for(iter=0;iter<FILMAXTRIES && tryagain;iter++) {
 		tryagain=0;
@@ -2729,9 +2706,9 @@ int filTreadmill(simptr sim,filamentptr fil,char endchar) {
 
 	er=0;
 	if(fil->nseg<1) return 2;
-	er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
+	er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='p')?fil->nseg-1:0]->thk,endchar,1);
 	if(!er)
-		filRemoveSegment(fil,(endchar=='b')?'f':'b');
+		filRemoveSegment(fil,(endchar=='p')?'m':'p');
 	return er; }
 
 
@@ -2744,10 +2721,10 @@ int filRemoveSegment(filamentptr fil,char endchar) {
 
 	if(fil->nseg==0) return -1;
 
-	if(endchar=='b')
+	if(endchar=='p')
 		fil->nseg--;
 	else {
-		seg=1;					// new front segment
+		seg=1;					// new minus-end segment
 		segment=fil->segments[seg];
 		Sph_Qtn2Qtn(segment->qabs,segment->qrel);
 		Sph_Qtn2Ypr(segment->qrel,segment->ypr);
@@ -2768,9 +2745,9 @@ void filTranslate(filamentptr fil,const double *vect,char func) {
 
 	if(func=='=') {
 		segment=fil->segments[0];
-		shift[0]=vect[0]-segment->xyzfront[0];
-		shift[1]=vect[1]-segment->xyzfront[1];
-		shift[2]=vect[2]-segment->xyzfront[2]; }
+		shift[0]=vect[0]-segment->xyzminus[0];
+		shift[1]=vect[1]-segment->xyzminus[1];
+		shift[2]=vect[2]-segment->xyzminus[2]; }
 	else if(func=='-') {
 		shift[0]=-vect[0];
 		shift[1]=-vect[1];
@@ -2831,7 +2808,7 @@ int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char f
 
 	Sph_QtniRotateUnitx(segment->qabs,xdelta,zero,lendelta);			// rotate to lab frame. Delta Delta x = Delta l * b_i xhat b_iT
 	nodes=fil->nodes;
-	if(endchar=='b') {
+	if(endchar=='p') {
 		for(i=seg+1;i<=fil->nseg;i++) {
 			nodes[i][0]+=xdelta[0];
 			nodes[i][1]+=xdelta[1];
@@ -2876,7 +2853,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 	else {
 		Sph_QtnxQtni(segment->qrel,qtndelta,segment->qrel); }
 
-	if(endchar=='b') {
+	if(endchar=='p') {
 		for(i=seg;i<fil->nseg;i++) {
 			segment=fil->segments[i];
 			if(i==0) {
@@ -2886,7 +2863,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 				segmentm1=fil->segments[i-1];
 				Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs); }			// b_i = b_{i-1} a_i
 			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
-			Sph_QtniRotateUnitx(segment->qabs,segment->xyzback,segment->xyzfront,segment->len);
+			Sph_QtniRotateUnitx(segment->qabs,segment->xyzplus,segment->xyzminus,segment->len);
 			}}
 	else {
 		for(i=seg;i>=0;i--) {
@@ -2896,7 +2873,7 @@ void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,ch
 				segmentp1=fil->segments[i+1];
 				Sph_QtnxQtni(segmentp1->qabs,segmentp1->qrel,segment->qabs); }		// b_i = b_i a_{i+1)T
 			Sph_Qtn2Ypr(segment->qrel,segment->ypr);
-			Sph_QtniRotateUnitx(segment->qabs,segment->xyzfront,segment->xyzback,-segment->len); }
+			Sph_QtniRotateUnitx(segment->qabs,segment->xyzminus,segment->xyzplus,-segment->len); }
 		Sph_QtniRotateUnitz(segment->qabs,fil->seg0up,zero,1); }
 
 	return; }
@@ -2919,14 +2896,14 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 
 	for(i=0;i<filfrom->nseg;i++) {
 		segmentfrom=filfrom->segments[i];
-		filAddSegment(filto,segmentfrom->xyzfront,segmentfrom->len,segmentfrom->ypr,segmentfrom->thk,'b'); }
+		filAddSegment(filto,segmentfrom->xyzminus,segmentfrom->len,segmentfrom->ypr,segmentfrom->thk,'p'); }
 
 	filto->seg0up[0]=filfrom->seg0up[0];
 	filto->seg0up[1]=filfrom->seg0up[1];
 	filto->seg0up[2]=filfrom->seg0up[2];
 
-	filto->frontend=filfrom->frontend;
-	filto->backend=filfrom->backend;
+	filto->minusend=filfrom->minusend;
+	filto->plusend=filfrom->plusend;
 
 	for(i=0;i<filfrom->nbranch;i++) {
 		filto->branchspots[i]=filfrom->branchspots[i];
@@ -2966,7 +2943,7 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 	fil=filtype->fillist[f];
 	fil->filtype=filtype;
 	fil->nseg=0;
-	fil->frontend=fil->backend=NULL;
+	fil->minusend=fil->plusend=NULL;
 	fil->nbranch=0;
 	fil->nsequence=0;
 	fil->growbank=0;																// reused list slots must not inherit growth state
@@ -3055,20 +3032,20 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	daughter=filAddFilament(mothertype,daughtername);		// daughters share the mother's type; auto-named if NULL
 	if(!daughter) return NULL;
 
-	mseg=mother->segments[seg];											// branch point = back node of chosen segment
-	branchpos[0]=mseg->xyzback[0];
-	branchpos[1]=mseg->xyzback[1];
-	branchpos[2]=mseg->xyzback[2];
+	mseg=mother->segments[seg];											// branch point = plus node of chosen segment
+	branchpos[0]=mseg->xyzplus[0];
+	branchpos[1]=mseg->xyzplus[1];
+	branchpos[2]=mseg->xyzplus[2];
 
 	Sph_Ypr2Qtn(angle,qbranch);											// branch rotation in mother's frame
 	Sph_QtnxQtn(mseg->qabs,qbranch,qdaughter);				// compose onto mother-segment absolute orientation
 	Sph_Qtn2Ypr(qdaughter,daughterypr);							// filAddSegment (seg 0) expects a lab-frame ypr
 
 	len=filRandomLength(mothertype,thickness,1);
-	if(filAddSegment(daughter,branchpos,len,daughterypr,thickness,'b')) return NULL;
+	if(filAddSegment(daughter,branchpos,len,daughterypr,thickness,'p')) return NULL;
 	for(s=1;s<nseg;s++) {													// extend the daughter straight from the branch
 		len=filRandomLength(mothertype,thickness,1);
-		if(filAddSegment(daughter,NULL,len,straight,thickness,'b')) return NULL; }
+		if(filAddSegment(daughter,NULL,len,straight,thickness,'p')) return NULL; }
 
 	if(mother->nbranch==mother->maxbranch) {					// grow the branch arrays if needed
 		mother=filAlloc(mother,0,mother->maxbranch*2+1,0);
@@ -3077,7 +3054,7 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	mother->branchspots[br]=seg;
 	mother->branches[br]=daughter;
 	mother->branchazim0[br]=filBranchAzimuth(mother,seg,daughter);	// realized birth azimuth, for branch_azimuth_fix
-	daughter->frontend=mother;											// filPinBranches anchors the daughter's front (node 0), which is its pointed end
+	daughter->minusend=mother;											// filPinBranches anchors the daughter's minus end (node 0), which is its pointed end
 
 	return daughter; }
 
@@ -3128,7 +3105,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 		nbr=poisrandD(ratedt*totallen);
 		for(i=0;i<nbr;i++) {
 			seg=intrand(fil->nseg);											// uniform random branch spot
-			if(!filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzback)) continue;		// interim location gate; accepts everything when no gate is set
+			if(!filBranchPointInRegion(sim,filtype,fil->segments[seg]->xyzplus)) continue;		// interim location gate; accepts everything when no gate is set
 
 			theta=filtype->branchangle;
 			if(filtype->branchspread>0)								// jitter the branch angle
@@ -3153,7 +3130,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 
 /* filPinBranches */
 // Constrain each daughter to its junction after the mechanical step. Always: translate
-// the daughter so its front node tracks the mother's (moving) branch point -- a
+// the daughter so its minus-end node tracks the mother's (moving) branch point -- a
 // position constraint, not a force. With branch_azimuth_fix on (3D): additionally
 // rotate the daughter rigidly about the mother segment's axis so its azimuth returns
 // to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch
@@ -3177,15 +3154,15 @@ void filPinBranches(filamentptr fil) {
 		seg=fil->branchspots[br];
 		if(seg<0 || seg>=fil->nseg) continue;						// mother may have shrunk (treadmilling)
 		mseg=fil->segments[seg];
-		branchpos[0]=mseg->xyzback[0];
-		branchpos[1]=mseg->xyzback[1];
-		branchpos[2]=mseg->xyzback[2];
-		filTranslate(daughter,branchpos,'=');						// move daughter so seg-0 front sits at branch point
+		branchpos[0]=mseg->xyzplus[0];
+		branchpos[1]=mseg->xyzplus[1];
+		branchpos[2]=mseg->xyzplus[2];
+		filTranslate(daughter,branchpos,'=');						// move daughter so its minus end sits at branch point
 
-		if(fil->filtype->branchazimuthfix && dim==3 && daughter->frontend==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
-			axis[0]=mseg->xyzback[0]-mseg->xyzfront[0];
-			axis[1]=mseg->xyzback[1]-mseg->xyzfront[1];
-			axis[2]=mseg->xyzback[2]-mseg->xyzfront[2];
+		if(fil->filtype->branchazimuthfix && dim==3 && daughter->minusend==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
+			axis[0]=mseg->xyzplus[0]-mseg->xyzminus[0];
+			axis[1]=mseg->xyzplus[1]-mseg->xyzminus[1];
+			axis[2]=mseg->xyzplus[2]-mseg->xyzminus[2];
 			if(axis[0]==0 && axis[1]==0 && axis[2]==0) continue;
 			for(node=1;node<=daughter->nseg;node++) {			// node 0 is the branch point, on the axis
 				vect[0]=daughter->nodes[node][0]-branchpos[0];
@@ -3207,10 +3184,9 @@ void filPinBranches(filamentptr fil) {
 
 
 /* filEndIsCapped */
-// Is geometric end 'b' or 'f' capped? The only place an end character is mapped onto the
-// capped bitmask, which is stored relative to polarity.
+// Is end 'p' (plus) or 'm' (minus) capped? Only the plus end can be capped.
 int filEndIsCapped(const filamentptr fil,char endchar) {
-	if(endchar==fil->filtype->plusend) return fil->capped;
+	if(endchar=='p') return fil->capped;
 	return 0; }
 
 
@@ -3239,7 +3215,7 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 
 	filtype=fil->filtype;
 	if(fil->nseg<1) return 0;												// nothing to grow from
-	endchar=filtype->plusend;
+	endchar='p';
 	if(filEndIsCapped(fil,endchar)) return 0;				// a capped plus end accepts no monomer
 	stdlen=filtype->stdlen;
 	if(stdlen<=0) return -1;												// filCheckParams errors on this; guard the loop anyway
@@ -3258,14 +3234,14 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 			if(fil->growbank>stdlen) fil->growbank=stdlen;
 			break; }
 
-		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
+		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='p')?fil->nseg-1:0]->thk,endchar,1);
 		if(er) {																						// blocked plus end
 			fil->growbank-=dlength;														// this step's growth did not happen
 			if(fil->growbank>stdlen) fil->growbank=stdlen;		// and never hold more than one segment in reserve
 			if(fil->growbank<0) fil->growbank=0;
 			break; }
 
-		newlen=fil->segments[(endchar=='b')?fil->nseg-1:0]->len;
+		newlen=fil->segments[(endchar=='p')?fil->nseg-1:0]->len;
 		fil->growbank-=newlen;														// pay for the segment actually emitted
 		curlen+=newlen;
 		nadd++; }
@@ -3328,8 +3304,8 @@ int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlpt
 	enum PanelShape ps;
 
 	if(!sim->srfss) return 0;
-	pt1=segment->xyzfront;
-	pt2=segment->xyzback;
+	pt1=segment->xyzminus;
+	pt2=segment->xyzplus;
 
 	cross=0;
 	for(s=0;s<sim->srfss->nsrf && !cross;s++) {
@@ -3345,15 +3321,15 @@ int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlpt
 /* filSegmentXFilament */
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr) {
 	int f,i,ft,cross;
-	double thk,*ptf,*ptb,dist;
+	double thk,*ptm,*ptp,dist;
 	filamentssptr filss;
 	filamenttypeptr filtype;
 	filamentptr fil,fil2;
 	segmentptr segmentm1,segmentp1,segment2;
 
 	fil=segment->fil;
-	ptf=segment->xyzfront;
-	ptb=segment->xyzback;
+	ptm=segment->xyzminus;
+	ptp=segment->xyzplus;
 	thk=segment->thk;
 	segmentm1=(segment->index==0) ? NULL:fil->segments[segment->index-1];
 	segmentp1=(segment->index==fil->nseg-1) ? NULL:fil->segments[segment->index+1];
@@ -3367,7 +3343,7 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 			for(i=0;i<fil2->nseg && !cross;i++) {
 				segment2=fil2->segments[i];
 				if(!(segment2==segment || segment2==segmentm1 || segment2==segmentp1)) {
-					dist=Geo_NearestSeg2SegDist(ptf,ptb,segment2->xyzfront,segment2->xyzback);
+					dist=Geo_NearestSeg2SegDist(ptm,ptp,segment2->xyzminus,segment2->xyzplus);
 					if(dist<thk+segment2->thk) cross=1; }}}}
 	if(cross && filptr)
 		*filptr=fil2;
@@ -3714,7 +3690,7 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 	mseg=mother->segments[spot];
 	lenm=0;
 	for(d=0;d<dim;d++) {
-		tm[d]=mseg->xyzback[d]-mseg->xyzfront[d];
+		tm[d]=mseg->xyzplus[d]-mseg->xyzminus[d];
 		lenm+=tm[d]*tm[d]; }
 	lend=0;
 	for(d=0;d<dim;d++) {
@@ -3778,7 +3754,7 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
-	mother=fil->frontend;														// daughter side: couples on own nodes 0 and 1
+	mother=fil->minusend;														// daughter side: couples on own nodes 0 and 1
 	if(mother && fil->nseg>=1 && nodemin<=1) {
 		brfound=-1;
 		for(br=0;br<mother->nbranch && brfound<0;br++)
@@ -3808,11 +3784,11 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 			daughter=fil->branches[br];
 			spot=fil->branchspots[br];
 			if(!daughter || daughter->nseg<1) continue;
-			if(daughter->frontend!=fil) continue;					// stale entry: the daughter belongs to another mother (copy_to, re-branch)
+			if(daughter->minusend!=fil) continue;					// stale entry: the daughter belongs to another mother (copy_to, re-branch)
 			if(spot<0 || spot>=fil->nseg) continue;
 			if(spot+1<nodemin || spot>nodemax) continue;	// junction outside the requested node window
 			if(!filJunctionGeometry(fil,spot,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
-			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_back = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
+			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_mother = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
 			for(d=0;d<dim;d++) {
 				fvect[d]=fscale*(td[d]-costh*tm[d]);
 				if(spot+1<=nodemax) forces[spot+1][d]+=fvect[d];
@@ -4209,10 +4185,10 @@ int filDynamics(simptr sim) {
 		if(filtype->treadrate!=0) {
 			for(f=0;f<filtype->nfil;f++) {
 				fil=filtype->fillist[f];
-				if(filEndIsCapped(fil,filtype->treadrate>0?'b':'f')) continue;	// capped end takes no monomer
+				if(filEndIsCapped(fil,filtype->treadrate>0?'p':'m')) continue;	// capped end takes no monomer
 				treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
 				for(i=0;i<treadnum;i++)
-					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }}
+					filTreadmill(sim,fil,filtype->treadrate>0?'p':'m'); }}
 
 		filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
 		filCappingDynamics(sim,filtype);								// before elongation: a filament capped now doesn't also grow now

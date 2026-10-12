@@ -3702,10 +3702,6 @@ If branching should only be allowed within a certain compartment, enter that com
 
 If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$. Afterward, there is an optional face entry. This only accepts ``front'' or ``back'' but should also accept ``both''.%??
 
-\item{\ttt{* plus\_end} $end$} %?? new
-
-Enter whether the front or the back of the filament is considered to be the plus end. Use full word ``back'' or ``front''.
-
 \item{\ttt{* elongation\_rate} $value$} %?? new
 
 This is the elongation rate at the plus end in units of length/time. This is usually not used in combination with treadmilling.
@@ -3733,7 +3729,7 @@ Relaxed length of a filament segment. It can change through stretching or compre
 \item{\ttt{* standard\_angle} $yaw$\\
 \ttt{* standard\_angle} $yaw$ $pitch$ $roll$}
 
-Relaxed angles between adjacent filament segments. When facing toward the filament's front end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
+Relaxed angles between adjacent filament segments. When looking along the filament from its minus end toward its plus end, yaw represents left-right bending, pitch represents up-down bending, and roll represents rotation about the filament axis. For 2D simulations, only enter a single bending angle.
 
 \item{\ttt{* force\_length} $value$}
 
@@ -3780,20 +3776,20 @@ Defines the first segment of a filament. Enter the starting location in $x$, $y$
 \item{\ttt{* add\_segment} $length$ $angle$ $[thickness\ [end]]$\\
 \ttt{* add\_segment} $length$ $yaw$ $pitch$ $roll$ $[thickness\ [end]]$}
 
-Add a segment to the filament, with the given length. The angles are relative angles from the prior segment using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are $front$ or $back$.
+Add a segment to the filament, with the given length. The angles are relative angles from the prior segment using yaw-pitch-roll values, and the thickness is optional. The segment can be added to either end, given in $end$, where the options are ``plus'' (the default) or ``minus''.
 
 \item{\ttt{* remove\_segment} $end$}
 
-Remove one segment from end $end$ of the filament (``front'' or ``back'').
+Remove one segment from end $end$ of the filament (``plus'' or ``minus'').
 
-\item{\ttt{* modify\_segment} $segment$ length/angle/thickness +/-/= $value(s)$ $end$}
+\item{\ttt{* modify\_segment} $segment$ length/angle/minus\_position/thickness +/-/= $value(s)$ $[end]$}
 
-This modifies the length, relative angle, position, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', ``front\_position'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For the angle option with 3D, enter 3 values for yaw, pitch, and roll. For the position option, enter two values for 2D and three values for 3D. Finally, for the length and angle options, enter $end$ as either ``front'' or ``back'' for which filament end gets moved in the process.
+This modifies the length, relative angle, position, or thickness parameters for the single segment number $segment$. After the segment number, enter one of ``length'', ``angle'', ``minus\_position'', or ``thickness''. Then, enter ``+'' to increase the current value by the given amount, ``-'' to decrease the current value by the given amount, or ``='' to set the value to the given amount, where the given amount is entered in $value$. For the angle option with 3D, enter 3 values for yaw, pitch, and roll. For the position option, enter two values for 2D and three values for 3D. Finally, for the length and angle options, optionally enter $end$ as either ``plus'' (the default) or ``minus'' for which filament end gets moved in the process.
 
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $\phi]$ $[thickness]$}
 \item{\ttt{* random\_segments} $number$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$}
 
-Add $number$ of random segments to the filament. If the filament doesn't have any segments yet, then enter the front position in $(x,y)$ for 2D or $(x,y,z)$ for 3D and also enter the front segment angle in $\phi$ for 2D and $(\phi,\theta,\psi)$ for 3D. These position and angle values can be `u' for uniform distributions. The thickness parameter is optional.
+Add $number$ of random segments to the filament. If the filament doesn't have any segments yet, then enter the minus end position in $(x,y)$ for 2D or $(x,y,z)$ for 3D and also enter the minus end segment angle in $\phi$ for 2D and $(\phi,\theta,\psi)$ for 3D. These position and angle values can be `u' for uniform distributions. The thickness parameter is optional.
 
 \item{\ttt{* translate} $symbol$ $x$ $y$ $z$}
 
@@ -3813,7 +3809,7 @@ Enter the sequence string for a filament.
 
 \item{\ttt{* node\_mobility} $node$ $mobility$}
 
-Sets a unitless node mobility factor, which is multiplied by the mobility that's defined in the filament type, to give the total node mobility value. Enter $node$ as the node number, where 0 is the front of the filament. Alternatively, enter $node$ as a negative value to count from the back of the filament, where $-1$ is the back end. The $mobility$ value has a default value of 1, and can be set to other values here. In particular, setting it to 0 means that the node is fixed in space.
+Sets a unitless node mobility factor, which is multiplied by the mobility that's defined in the filament type, to give the total node mobility value. Enter $node$ as the node number, where 0 is the minus end of the filament. Alternatively, enter $node$ as a negative value to count from the plus end of the filament, where $-1$ is the plus end. The $mobility$ value has a default value of 1, and can be set to other values here. In particular, setting it to 0 means that the node is fixed in space.
 
 \item{\ttt{* end\_filament}}
 

@@ -3150,9 +3150,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 			segment=fil->segments[seg];
 			if(strchr(code,'x')) {							// x is node positions, lengths, and angles
 				if(sim->dim==2)
-					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g)->(%1.3g,%1.3g) angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzback[0],segment->xyzback[1],segment->ypr[0]);
+					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g)->(%1.3g,%1.3g) angle=%1.3g",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->xyzplus[0],segment->xyzplus[1],segment->ypr[0]);
 				else
-					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzfront[0],segment->xyzfront[1],segment->xyzfront[2],segment->xyzback[0],segment->xyzback[1],segment->xyzback[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
+					scmdfprintf(cmd->cmds,fptr," %i len=%1.3g thick=%1.3g pos.=(%1.3g,%1.3g,%1.3g)->(%1.3g,%1.3g,%1.3g) angle=(%1.3g,%1.3g,%1.3g)",segment->index,segment->len,segment->thk,segment->xyzminus[0],segment->xyzminus[1],segment->xyzminus[2],segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2],segment->ypr[0],segment->ypr[1],segment->ypr[2]); }
 			if(strchr(code,'a')) {							// a is relative quaternions
 				scmdfprintf(cmd->cmds,fptr," a=(%1.3g,%1.3g,%1.3g,%1.3g)",segment->qrel[0],segment->qrel[1],segment->qrel[2],segment->qrel[3]); }
 			if(strchr(code,'b')) {							// b is absolute quaternions
@@ -3165,9 +3165,9 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 			scmdfprintf(cmd->cmds,fptr,"\n"); }
 		if(strchr(code,'f') && filwork) {
 			if(sim->dim==2)
-				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1]);
+				scmdfprintf(cmd->cmds,fptr," plus F=(%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1]);
 			else
-				scmdfprintf(cmd->cmds,fptr," back F=(%1.3g,%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }}
+				scmdfprintf(cmd->cmds,fptr," plus F=(%1.3g,%1.3g,%1.3g)\n",filwork->forces[seg][0],filwork->forces[seg][1],filwork->forces[seg][2]); }}
 	if(strpbrk(code,"m")) {
 		sparsePrintM(filwork->forcemat,1);	//?? This only prints to stdout and doesn't use scmdprintf function
 		}
@@ -3200,7 +3200,7 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
 			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s %i",sim->time,filtype->ftname,fil->filname,fil->nseg,
-				fil->frontend?fil->frontend->filname:(fil->backend?fil->backend->filname:"-"),
+				fil->minusend?fil->minusend->filname:(fil->plusend?fil->plusend->filname:"-"),
 				(fil->capped)?1:0);
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
@@ -4972,7 +4972,7 @@ enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
 	filamenttypeptr filtype;
 	filamentptr fil;
 	int er,node;
-	double meany,meanz,meanfact,*front,oldy,oldz,**nodes;
+	double meany,meanz,meanfact,*minus,oldy,oldz,**nodes;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
 	filtype=NULL;
@@ -4980,11 +4980,11 @@ enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(!er,"unable to read filament name");
 
 	nodes=fil->nodes;					//?? Should rewrite this function by first calling function to find COM.
-	front=nodes[0];						//?? Then rotate filament using filRotateVertex
+	minus=nodes[0];						//?? Then rotate filament using filRotateVertex
 	meany=meanz=0;
 	for(node=1;node<=fil->nseg;node++) {
-		meany+=nodes[node][1]-front[1];						// mean y and z positions of nodes
-		meanz+=nodes[node][2]-front[2]; }
+		meany+=nodes[node][1]-minus[1];						// mean y and z positions of nodes
+		meanz+=nodes[node][2]-minus[2]; }
 	meanfact=sqrt(meany*meany+meanz*meanz);
 	if(meanfact==0) return CMDok;
 	meanfact=1.0/meanfact;
@@ -4992,10 +4992,10 @@ enum CMDcode cmdRotateFilamentToY(simptr sim,cmdptr cmd,char *line2) {
 	meanz*=meanfact;
 
 	for(node=1;node<=fil->nseg;node++) {
-		oldy=nodes[node][1]-front[1];
-		oldz=nodes[node][2]-front[2];
-		nodes[node][1]=front[1]+meany*oldy+meanz*oldz;
-		nodes[node][2]=front[2]-meanz*oldy+meany*oldz; }
+		oldy=nodes[node][1]-minus[1];
+		oldz=nodes[node][2]-minus[2];
+		nodes[node][1]=minus[1]+meany*oldy+meanz*oldz;
+		nodes[node][2]=minus[2]-meanz*oldy+meany*oldz; }
 
 	return CMDok; }
 

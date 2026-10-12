@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 290
+#define SMOLHELP_NENTRY 289
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1144,10 +1144,6 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    here in surface and the force constant for that confinement in force.\n"
 		"    Afterward, there is an optional face entry. This only accepts \"front\" or\n"
 		"    \"back\" but should also accept \"both\"."},
-	{"statement","Statements about filaments",1,"plus_end",
-		"  * plus_end end",
-		"    Enter whether the front or the back of the filament is considered to be the\n"
-		"    plus end. Use full word \"back\" or \"front\"."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value",
 		"    This is the elongation rate at the plus end in units of length/time. This\n"
@@ -1174,10 +1170,11 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"standard_angle",
 		"  * standard_angle yaw\n"
 		"  * standard_angle yaw pitch roll",
-		"    Relaxed angles between adjacent filament segments. When facing toward the\n"
-		"    filament's front end, yaw represents left-right bending, pitch represents\n"
-		"    up-down bending, and roll represents rotation about the filament axis. For\n"
-		"    2D simulations, only enter a single bending angle."},
+		"    Relaxed angles between adjacent filament segments. When looking along the\n"
+		"    filament from its minus end toward its plus end, yaw represents left-right\n"
+		"    bending, pitch represents up-down bending, and roll represents rotation\n"
+		"    about the filament axis. For 2D simulations, only enter a single bending\n"
+		"    angle."},
 	{"statement","Statements about filaments",1,"force_length",
 		"  * force_length value",
 		"    Stretching force constant for filament segments."},
@@ -1229,28 +1226,28 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Add a segment to the filament, with the given length. The angles are\n"
 		"    relative angles from the prior segment using yaw-pitch-roll values, and the\n"
 		"    thickness is optional. The segment can be added to either end, given in\n"
-		"    end, where the options are front or back."},
+		"    end, where the options are \"plus\" (the default) or \"minus\"."},
 	{"statement","Statements about filaments",1,"remove_segment",
 		"  * remove_segment end",
-		"    Remove one segment from end end of the filament (\"front\" or \"back\")."},
+		"    Remove one segment from end end of the filament (\"plus\" or \"minus\")."},
 	{"statement","Statements about filaments",1,"modify_segment",
-		"  * modify_segment segment length/angle/thickness +/-/= value(s) end",
+		"  * modify_segment segment length/angle/minus_position/thickness +/-/= value(s) [end]",
 		"    This modifies the length, relative angle, position, or thickness parameters\n"
 		"    for the single segment number segment. After the segment number, enter one\n"
-		"    of \"length\", \"angle\", \"front_position\", or \"thickness\". Then, enter \"+\" to\n"
+		"    of \"length\", \"angle\", \"minus_position\", or \"thickness\". Then, enter \"+\" to\n"
 		"    increase the current value by the given amount, \"-\" to decrease the current\n"
 		"    value by the given amount, or \"=\" to set the value to the given amount,\n"
 		"    where the given amount is entered in value. For the angle option with 3D,\n"
 		"    enter 3 values for yaw, pitch, and roll. For the position option, enter two\n"
 		"    values for 2D and three values for 3D. Finally, for the length and angle\n"
-		"    options, enter end as either \"front\" or \"back\" for which filament end gets\n"
-		"    moved in the process."},
+		"    options, optionally enter end as either \"plus\" (the default) or \"minus\" for\n"
+		"    which filament end gets moved in the process."},
 	{"statement","Statements about filaments",1,"random_segments",
 		"  * random_segments number [x y phi] [thickness]\n"
 		"  * random_segments number [x y z phi theta psi] [thickness]",
 		"    Add number of random segments to the filament. If the filament doesn't have\n"
-		"    any segments yet, then enter the front position in (x,y) for 2D or (x,y,z)\n"
-		"    for 3D and also enter the front segment angle in phi for 2D and\n"
+		"    any segments yet, then enter the minus end position in (x,y) for 2D or\n"
+		"    (x,y,z) for 3D and also enter the minus end segment angle in phi for 2D and\n"
 		"    (phi,theta,psi) for 3D. These position and angle values can be `u' for\n"
 		"    uniform distributions. The thickness parameter is optional."},
 	{"statement","Statements about filaments",1,"translate",
@@ -1277,11 +1274,11 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  * node_mobility node mobility",
 		"    Sets a unitless node mobility factor, which is multiplied by the mobility\n"
 		"    that's defined in the filament type, to give the total node mobility value.\n"
-		"    Enter node as the node number, where 0 is the front of the filament.\n"
-		"    Alternatively, enter node as a negative value to count from the back of the\n"
-		"    filament, where -1 is the back end. The mobility value has a default value\n"
-		"    of 1, and can be set to other values here. In particular, setting it to 0\n"
-		"    means that the node is fixed in space."},
+		"    Enter node as the node number, where 0 is the minus end of the filament.\n"
+		"    Alternatively, enter node as a negative value to count from the plus end of\n"
+		"    the filament, where -1 is the plus end. The mobility value has a default\n"
+		"    value of 1, and can be set to other values here. In particular, setting it\n"
+		"    to 0 means that the node is fixed in space."},
 	{"statement","Statements about filaments",1,"end_filament",
 		"  * end_filament",
 		"    End of a block of filament definitions. Filament statements are no longer\n"
