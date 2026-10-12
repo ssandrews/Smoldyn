@@ -18,6 +18,7 @@
 
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
+#include "smolfilamentsteric.h"
 
 
 #define FILMAXTRIES 100
@@ -280,6 +281,7 @@ segmentptr filSegmentAlloc() {
 	CHECKMEM(segment=(segmentptr) malloc(sizeof(struct segmentstruct)));
 	segment->fil=NULL;
 	segment->index=0;
+	segment->stericindex=-1;
 	segment->xyzfront=NULL;
 	segment->xyzback=NULL;
 	segment->len=0;
@@ -433,6 +435,8 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 		free(filwork->forces); }
 
 	free(filwork->torques);
+	if(filwork->thermforce)
+		for(seg=0;seg<=maxseg;seg++) free(filwork->thermforce[seg]);
 	free(filwork->thermforce);
 	sparseFreeM(filwork->forcemat);
 	free(filwork);
@@ -451,6 +455,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
 		fil->filtype=NULL;
+		fil->filwork=NULL;
+		fil->stericnodeoffset=-1;
 		fil->filname=NULL;
 		fil->maxseg=0;
 		fil->nseg=0;
@@ -563,6 +569,7 @@ void filFree(filamentptr fil) {
 	int seg;
 
 	if(!fil) return;
+	filWorkFree(fil->filwork,fil->maxseg);
 	if(fil->segments) {
 		for(seg=0;seg<fil->maxseg;seg++)
 			filSegmentFree(fil->segments[seg]);
@@ -618,6 +625,11 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->treadrate=0;
 		filtype->mobility=1;
 		filtype->filradius=1;
+		filtype->stericradius=0;
+		filtype->sterick=0;
+		filtype->stericskin=0;
+		filtype->stericsubsteps=1;
+		filtype->stericgrowth=1;
 
 		filtype->branchrate=0;											// branching off by default
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
@@ -722,7 +734,8 @@ filamentssptr filssAlloc(filamentssptr filss,int maxtype) {
 		filss->maxtype=0;
 		filss->ntype=0;
 		filss->ftnames=NULL;
-		filss->filtypes=NULL; }
+		filss->filtypes=NULL;
+		filss->steric=NULL; }
 
 	if(maxtype>=filss->maxtype) {
 		CHECKMEM(newfiltypes=(filamenttypeptr*) calloc(maxtype,sizeof(filamenttypeptr)));
@@ -756,6 +769,7 @@ void filssFree(filamentssptr filss) {
 	int ft;
 
 	if(!filss) return;
+	filStericFree(filss);
 
 	if(filss->filtypes) {
 		for(ft=0;ft<filss->maxtype;ft++)
@@ -927,6 +941,10 @@ void filtypeOutput(const filamenttypeptr filtype) {
 
 	simLog(sim,2,"  mobility: %g\n",filtype->mobility);
 	simLog(sim,2,"  filament radius: %g\n",filtype->filradius);
+	if(filtype->stericradius>0)
+		simLog(sim,2,"  steric radius %g, stiffness %g, skin %g, mechanical substeps %i\n",filtype->stericradius,filtype->sterick,filtype->stericskin,filtype->stericsubsteps);
+	if(filtype->stericradius>0)
+		simLog(sim,2,"  steric growth overlap check: %s\n",filtype->stericgrowth?"on":"off");
 
 	if(filtype->nface>0) {
 		simLog(sim,2,"  %i faces with twist of %g:",filtype->nface,filtype->facetwist);
@@ -985,6 +1003,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 	char string[STRCHAR];
 
 	error=warn=0;
+	if(filStericValidate(sim)) error++;
 	dim=sim->dim;
 	filss=sim->filss;
 	if(!filss) {
@@ -1335,6 +1354,7 @@ int filEnableFilaments(simptr sim) {
 int filUpdateParams(simptr sim) {
 	int ft;
 	filamenttypeptr filtype;
+	if(filStericValidate(sim)) return 1;
 
 	for(ft=0;ft<sim->filss->ntype;ft++) {
 		filtype=sim->filss->filtypes[ft];
@@ -1420,6 +1440,33 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		er=filtypeSetColor(filtype,fltv1);
 		CHECKS(!er,"BUG: error in filtypeSetColor");
 		CHECKS(!line2,"unexpected text following color"); }
+
+	else if(!strcmp(word,"steric_radius") || !strcmp(word,"steric_stiffness") || !strcmp(word,"steric_skin")) {
+		CHECKS(filtype,"steric parameters require a filament type");
+		itct=strmathsscanf(line2,!strcmp(word,"steric_stiffness")?"%mlg|E/L2":"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"steric parameter requires one value");
+		CHECKS(isfinite(f1) && f1>=0,"steric parameter must be finite and >=0");
+		CHECKS(!strnword(line2,2),"unexpected text following steric parameter");
+		if(!strcmp(word,"steric_radius")) filtype->stericradius=f1;
+		else if(!strcmp(word,"steric_stiffness")) filtype->sterick=f1;
+		else filtype->stericskin=f1;
+		filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"steric_substeps")) {
+		CHECKS(filtype,"steric_substeps requires a filament type");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"steric_substeps requires an integer");
+		CHECKS(i1>=1 && i1<=10000,"steric_substeps must be between 1 and 10000");
+		CHECKS(!strnword(line2,2),"unexpected text following steric_substeps");
+		filtype->stericsubsteps=i1;filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"steric_growth_check")) {
+		CHECKS(filtype,"steric_growth_check requires a filament type");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"steric_growth_check requires 0 or 1");
+		CHECKS(i1==0 || i1==1,"steric_growth_check requires 0 or 1");
+		CHECKS(!strnword(line2,2),"unexpected text following steric_growth_check");
+		filtype->stericgrowth=i1;filSetCondition(filtype->filss,SCparams,0); }
 
 	else if(!strcmp(word,"thickness")) {				// thickness
 		CHECKS(filtype,"need to enter filament type name before thickness");
@@ -2730,6 +2777,12 @@ int filTreadmill(simptr sim,filamentptr fil,char endchar) {
 	er=0;
 	if(fil->nseg<1) return 2;
 	er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
+	if(!er && fil->filtype->stericgrowth && fil->filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
+		filRemoveSegment(fil,endchar);er=2;
+		if(!sim->filss->steric) filStericPrepare(sim);
+		if(sim->filss->steric) sim->filss->steric->blockedgrowth++; }
+	if(!er && !fil->filtype->stericgrowth && filStericRegisterSegment(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
+		filRemoveSegment(fil,endchar);er=2; }
 	if(!er)
 		filRemoveSegment(fil,(endchar=='b')?'f':'b');
 	return er; }
@@ -3050,6 +3103,9 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	if(!mother || mother->nseg==0) return NULL;						// need a real mother
 	if(seg<0 || seg>=mother->nseg) return NULL;						// branch spot must be a real segment
 	mothertype=mother->filtype;
+	/* A rejected birth must only roll back the new slot, never an existing
+	   named filament. Branch creation cannot append to an existing daughter. */
+	if(mothertype->stericradius>0 && daughtername && stringfind(mothertype->filnames,mothertype->nfil,daughtername)>=0) return NULL;
 	nseg=mothertype->branchsegments;							// daughter length in segments (parser enforces >=1)
 
 	daughter=filAddFilament(mothertype,daughtername);		// daughters share the mother's type; auto-named if NULL
@@ -3079,6 +3135,13 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *ang
 	mother->branchazim0[br]=filBranchAzimuth(mother,seg,daughter);	// realized birth azimuth, for branch_azimuth_fix
 	daughter->frontend=mother;											// filPinBranches anchors the daughter's front (node 0), which is its pointed end
 
+	if(mothertype->stericradius>0) {
+		for(s=0;s<daughter->nseg;s++) if(filStericSegmentBlocked(sim,daughter->segments[s])) break;
+		if(s<daughter->nseg) {
+			mother->nbranch--;daughter->frontend=NULL;daughter->nseg=0;mothertype->nfil--;
+			if(!sim->filss->steric) filStericPrepare(sim);
+			if(sim->filss->steric) sim->filss->steric->blockedbranches++;
+			return NULL; }}
 	return daughter; }
 
 
@@ -3259,6 +3322,12 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 			break; }
 
 		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='b')?fil->nseg-1:0]->thk,endchar,1);
+		if(!er && filtype->stericgrowth && filtype->stericradius>0 && filStericSegmentBlocked(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
+			filRemoveSegment(fil,endchar);er=2;
+			if(!sim->filss->steric) filStericPrepare(sim);
+			if(sim->filss->steric) sim->filss->steric->blockedgrowth++; }
+		if(!er && !filtype->stericgrowth && filStericRegisterSegment(sim,fil->segments[endchar=='b'?fil->nseg-1:0])) {
+			filRemoveSegment(fil,endchar);er=2; }
 		if(er) {																						// blocked plus end
 			fil->growbank-=dlength;														// this step's growth did not happen
 			if(fil->growbank>stdlen) fil->growbank=stdlen;		// and never hold more than one segment in reserve
@@ -3343,6 +3412,12 @@ int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlpt
 
 
 /* filSegmentXFilament */
+segmentptr filPointInFilament(simptr sim,const double *point,double *distance,segmentptr *nearest) {
+	return filStericQuery(sim,point,point,0,NULL,distance,nearest); }
+
+segmentptr filLineXFilament(simptr sim,const double *a,const double *b,double radius,double *distance,segmentptr *nearest) {
+	return filStericQuery(sim,a,b,radius,NULL,distance,nearest); }
+
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr) {
 	int f,i,ft,cross;
 	double thk,*ptf,*ptb,dist;
@@ -3350,6 +3425,11 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 	filamenttypeptr filtype;
 	filamentptr fil,fil2;
 	segmentptr segmentm1,segmentp1,segment2;
+	if(filptr) *filptr=NULL;
+	if(filStericEnabled(sim)) {
+		segmentptr hit=filStericQuery(sim,segment->xyzfront,segment->xyzback,segment->fil->filtype->stericradius,segment,NULL,NULL);
+		if(hit && filptr) *filptr=hit->fil;
+		return hit!=NULL; }
 
 	fil=segment->fil;
 	ptf=segment->xyzfront;
@@ -3377,6 +3457,12 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 /******************************************************************************/
 /**************************** Force computation *************************/
 /******************************************************************************/
+
+
+/* Add network-wide soft capsule forces once, after ordinary forces are cleared
+   and computed for every filament. Both contacting filaments receive a force. */
+int filAddFilamentForce(simptr sim) {
+	return filStericForces(sim); }
 
 
 /* filAddStretchForces */
@@ -3841,7 +3927,7 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 // panel, so a node behind M coplanar panels feels up to M contributions. Draws no
 // random numbers; returns immediately when off.
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,k,pnlpt[3],*nodept,*fnode;
+	double **forces,k,pnlpt[3],*nodept,*fnode,radius,dist,sign;
 	surfaceptr srf;
 	panelptr pnl;
 	enum PanelShape ps;
@@ -3856,12 +3942,18 @@ void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 	dim=fil->filtype->filss->sim->dim;
 	forces=fil->filwork->forces;
 	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
+	radius=fil->filtype->stericradius;
 
 	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 		for(p=0;p<srf->npanel[ps];p++) {
 			pnl=srf->panels[ps][p];											// panel-outer: fetch each panel once per node sweep
 			for(node=nodemin;node<=nodemax;node++) {
 				nodept=fil->nodes[node];
+				if(radius>0 && ps==PSrect) {
+					d=(int)pnl->front[1];sign=(badface==PFback?1:-1)*pnl->front[0];
+					dist=sign*(nodept[d]-pnl->point[0][d]);
+					if(dist<radius) forces[node][d]+=k*(radius-dist)*sign;
+					continue; }
 				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
 				closestpanelpt(pnl,dim,nodept,pnlpt,0);
 				fnode=forces[node];
@@ -4199,10 +4291,12 @@ int filDynamics(simptr sim) {
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
-	int f,ft,i,treadnum;
+	int f,ft,i,treadnum,steric;
 
 	filss=sim->filss;
 	if(!filss) return 0;
+	steric=filStericEnabled(sim);
+	if(steric && filStericChemistry(sim,1)) return 1;
 
 	for(ft=0;ft<filss->ntype;ft++) {
 		filtype=filss->filtypes[ft];
@@ -4218,6 +4312,7 @@ int filDynamics(simptr sim) {
 		filCappingDynamics(sim,filtype);								// before elongation: a filament capped now doesn't also grow now
 		filElongationDynamics(sim,filtype);							// before the integrator: a new segment relaxes this step
 
+		if(steric) continue;
 		if(filtype->dynamics==FDeuler)
 			filEulerDynamics(sim,filtype);
 		else if(filtype->dynamics==FDRK2)
@@ -4232,11 +4327,15 @@ int filDynamics(simptr sim) {
 			filImplicitOldDynamics(sim,filtype);
 			}
 
+	if(steric) {
+		if(filStericChemistry(sim,0)) return 1;
+		return filStericDynamics(sim); }
 	for(ft=0;ft<filss->ntype;ft++) {								// re-pin branches after all motion this step
 		filtype=filss->filtypes[ft];
 		for(f=0;f<filtype->nfil;f++)
 			filPinBranches(filtype->fillist[f]); }
 
+	if(sim->boxs && sim->boxs->blist) return boxesupdatesegments(sim);
 	return 0; }
 
 

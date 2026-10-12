@@ -49,6 +49,13 @@ using Smoldyn with SED-ML and COMBINE archives is available
 Information about the simulation algorithms employed by Smoldyn
 is available at [BioSimulators](https://biosimulators.org/simulators/smoldyn).
 
+### Filament excluded volume
+
+This branch supports optional capsule contact forces for filament segments.
+See [configuration and implementation details](FILAMENT_STERICS.md) and
+[numerical checks and timing measurements](FILAMENT_STERICS_VALIDATION.md).
+An example is in `examples/S13_filaments/sterics/capsule_contact.txt`.
+
 ## Smoldyn source code
 This is the official source code repository for Smoldyn. (Formerly this
 repository was called `Smoldyn-official`.) This repository is run by 

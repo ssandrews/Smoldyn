@@ -1,0 +1,35 @@
+# Two perpendicular actin-sized capsules, initially overlapping by 1 nm.
+# Zero temperature makes relaxation easy to inspect in the coordinate dump.
+graphics none
+dim 3
+boundaries x -0.1 0.1 r
+boundaries y -0.1 0.1 r
+boundaries z -0.1 0.1 r
+time_start 0
+time_stop 0.005
+time_step 0.00001
+random_seed 1
+output_files capsule_contact_frames.txt
+
+start_filament_type actin
+dynamics euler
+kT 0
+standard_length 0.01
+standard_angle 0 0 0
+force_length 10000
+force_angle 1 1 1
+mobility 1
+steric_radius 0.0035
+steric_stiffness 4000
+steric_skin 0.002
+steric_substeps 1
+end_filament_type
+
+start_filament actin:lower
+first_segment -0.005 0 0 0.01 0 0 0
+end_filament
+start_filament actin:upper
+first_segment 0 -0.005 0.006 0.01 1.5707963267948966 0 0
+end_filament
+cmd i 0 0.005 0.0005 printFilaments capsule_contact_frames.txt
+end_file

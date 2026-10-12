@@ -516,6 +516,7 @@ void writesim(simptr sim,FILE *fptr) {
 	fprintf(fptr,"accuracy %g\n",sim->accur);
 	if(sim->boxs->mpbox) fprintf(fptr,"molperbox %g\n",sim->boxs->mpbox);
 	else if(sim->boxs->boxsize) fprintf(fptr,"boxsize %g\n",sim->boxs->boxsize);
+	if(sim->filss && sim->filss->ntype) fprintf(fptr,"filament_box_density %g\n",sim->boxs->filamentdensity);
 	fprintf(fptr,"\n");
 	return; }
 
@@ -2208,6 +2209,15 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=3,"need to enter dim before molperbox");
 		CHECKS(!strnword(line2,2),"unexpected text following molperbox"); }
 
+	else if(!strcmp(word,"filament_box_density")) {
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
+		CHECKM(itct==1,"filament_box_density needs a number (segments per unit volume)");
+		er=boxsetsize(sim,"filament_box_density",flt1);
+		CHECKS(er!=1,"out of memory");
+		CHECKS(er!=2,"filament_box_density needs to be >0");
+		CHECKS(er!=3,"need to enter dim before filament_box_density");
+		CHECKS(!strnword(line2,2),"unexpected text following filament_box_density"); }
+
 	else if(!strcmp(word,"boxsize")) {						// boxsize
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKM(itct==1,"boxsize needs to be a number. ");
@@ -2713,6 +2723,7 @@ void endsimulate(simptr sim,int er) {
 	else if(er==13) simLog(sim,5,"Simulation terminated during reaction network expansion\n");
 	else simLog(sim,2,"Simulation stopped by user\n");
 	simLog(sim,2,"Current simulation time: %f\n",sim->time);
+	filStericReport(sim);
 
 	eventcount=sim->eventcount;
 	if(eventcount[ETwall]) simLog(sim,2,"%i wall interactions\n",eventcount[ETwall]);
@@ -2744,15 +2755,54 @@ void endsimulate(simptr sim,int er) {
 
 
 /* smolsimulate */
+/* Text-mode progress: at most about 100 updates per run, rather than one per
+ * timestep. The hot loop only checks a simulated-time threshold; no clock
+ * polling, allocation, or terminal I/O is needed between updates. */
+static void simshowprogress(simptr sim,double starttime) {
+	const int barwidth=40;
+	char bar[barwidth+1];
+	FILE *fptr;
+	double fraction,duration;
+	int fill,i;
+
+	duration=sim->tmax-starttime;
+	fraction=duration>0?(sim->time-starttime)/duration:1;
+	if(fraction<0) fraction=0;
+	if(fraction>1) fraction=1;
+	fill=(int)(fraction*barwidth);
+	for(i=0;i<barwidth;i++)
+		bar[i]=i<fill?'=':(i==fill && fraction<1?'>':' ');
+	bar[barwidth]='\0';
+
+	simLog(sim,2,"\r [%s] %6.2f%%  time %9.4g / %-9.4g|T",bar,100*fraction,sim->time,sim->tmax);
+	fptr=sim->logfile?sim->logfile:(LogFile?LogFile:stdout);
+	fflush(fptr);
+	return; }
+
+
 int smolsimulate(simptr sim) {
-	int er;
+	double progressinterval,progressstart,nextprogress;
+	int completed,er,progressenabled;
 
 	er=0;
 	simLog(sim,2,"Simulating\n");
 	sim->clockstt=time(NULL);
+	progressstart=sim->tmin;
+	progressinterval=(sim->tmax-progressstart)/100;
+	progressenabled=progressinterval>0 && !strchr(sim->flags,'q') && !strchr(sim->flags,'s');
+	completed=progressenabled?(int)((sim->time-progressstart)/progressinterval):0;
+	nextprogress=progressstart+(completed+1)*progressinterval;
 	er=simdocommands(sim);
-	if(!er)
-		while((er=simulatetimestep(sim))==0);
+	if(progressenabled) simshowprogress(sim,progressstart);
+	if(!er) {
+		do {
+			er=simulatetimestep(sim);
+			if(progressenabled && (sim->time>=nextprogress || er!=0)) {
+				simshowprogress(sim,progressstart);
+				completed=(int)((sim->time-progressstart)/progressinterval);
+				nextprogress=progressstart+(completed+1)*progressinterval; }
+		} while(er==0); }
+	if(progressenabled) simLog(sim,2,"\n");
 	if(er!=10) {
 		scmdpop(sim->cmds,sim->tmax);
 		scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);
