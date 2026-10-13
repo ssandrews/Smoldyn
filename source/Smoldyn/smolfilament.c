@@ -1598,22 +1598,22 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"confine_surface")) {		// confine_surface: harmonic confinement, surface name + spring constant (energy/length^2) + optional face
 		CHECKS(filtype,"need to enter filament type name before confine_surface");
-		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front/back]");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 		CHECKS(sim->srfss,"confine_surface requires that surfaces be defined first");
 		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
 		CHECKS(i1>=0,"confine_surface surface name not recognized (define the surface before the filament type)");
 		line2=strnword(line2,2);
-		CHECKS(line2,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKS(line2,"confine_surface format: surface_name force_constant [front/back]");
 		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
-		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
 		pf=filtype->confineface;										// default stands unless a face token overrides
 		line2=strnword(line2,2);
 		if(line2) {																	// optional face: which side nodes are confined to
 			itct=sscanf(line2,"%s",nm1);
-			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front|back]");
+			CHECKS(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 			pf=surfstring2face(nm1);
 			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
 			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
