@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 289
+#define SMOLHELP_NENTRY 290
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1116,6 +1116,17 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"branch_segments",
 		"  * branch_segments segs",
 		"    Length of initial daughter filament in segments."},
+	{"statement","Statements about filaments",1,"branch_end",
+		"  * branch_end end",
+		"    Which end of a daughter filament attaches to its mother, entered as \"minus\"\n"
+		"    (the default) or \"plus\". This applies to branches created by branch_rate\n"
+		"    and is the default for the branch statement. A daughter attached by its\n"
+		"    minus end has its minus end at the branch point and extends away from the\n"
+		"    mother toward its plus end. A daughter attached by its plus end has its\n"
+		"    plus end at the branch point, so its minus end is the free end. If such a\n"
+		"    daughter elongates, it does so by adding segments at the branch point,\n"
+		"    which pushes the rest of the daughter away from the mother (insertional\n"
+		"    growth)."},
 	{"statement","Statements about filaments",1,"branch_force_angle",
 		"  * branch_force_angle value",
 		"    Yaw spring constant at the branch point."},
@@ -1260,17 +1271,27 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Copy the current filament to filament, which is created here if it doesn't\n"
 		"    already exist; any prior data in filament is overwritten."},
 	{"statement","Statements about filaments",1,"branch",
-		"  * branch daughter node [yaw pitch roll]",
+		"  * branch daughter node [end] [length [yaw pitch roll]]",
 		"    Create a branch off of the current filament (the mother filament). Enter\n"
 		"    daughter as the name of the new branch filament (the daughter) and node as\n"
-		"    the node number on the mother where the branch attaches; segment 0 of the\n"
-		"    daughter starts at this node. The node needs to be from 1 to the number of\n"
-		"    mother segments, so a branch can attach at the mother's plus end but not at\n"
-		"    its minus end. The branch angles are measured relative to the mother\n"
-		"    segment that ends at this node. The yaw pitch roll angles are optional. If\n"
-		"    they are entered, they are the bending angle away from the mother filament.\n"
-		"    If they are not entered, then the standard bending angles are taken from\n"
-		"    the filament type definition (branch_angle)."},
+		"    the node number on the mother where the branch attaches. Optionally, enter\n"
+		"    end as \"minus\" or \"plus\" for which end of the daughter attaches at this\n"
+		"    node; the default is the filament type's branch_end value, which is \"minus\"\n"
+		"    unless it was set otherwise. Optionally, enter length as the length of the\n"
+		"    daughter's segment 0; if it is omitted, the length is chosen randomly from\n"
+		"    the filament type's length distribution, as for other new segments. For a\n"
+		"    daughter attached by its minus end, segment 0 is the segment at the branch\n"
+		"    point, and for a daughter attached by its plus end with more than one\n"
+		"    segment, segment 0 is the segment at the daughter's free minus end. The\n"
+		"    first number after node and end is always length, so the angles can only be\n"
+		"    entered after a length. The node needs to be from 1 to the number of mother\n"
+		"    segments, so a branch can attach at the mother's plus end but not at its\n"
+		"    minus end. The branch angles are measured relative to the mother segment\n"
+		"    that ends at this node, and they give the direction of the daughter away\n"
+		"    from the mother, whichever end attaches. The yaw pitch roll angles are\n"
+		"    optional. If they are entered, they are the bending angle away from the\n"
+		"    mother filament. If they are not entered, then the standard bending angles\n"
+		"    are taken from the filament type definition (branch_angle)."},
 	{"statement","Statements about filaments",1,"sequence",
 		"  * sequence sequence",
 		"    Enter the sequence string for a filament."},

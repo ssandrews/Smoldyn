@@ -3674,6 +3674,10 @@ Standard deviation of branching angle, entered in radians. Enter 0 for determini
 
 Length of initial daughter filament in segments.
 
+\item{\ttt{* branch\_end} $end$} %?? new
+
+Which end of a daughter filament attaches to its mother, entered as ``minus'' (the default) or ``plus''. This applies to branches created by \ttt{branch\_rate} and is the default for the \ttt{branch} statement. A daughter attached by its minus end has its minus end at the branch point and extends away from the mother toward its plus end. A daughter attached by its plus end has its plus end at the branch point, so its minus end is the free end. If such a daughter elongates, it does so by adding segments at the branch point, which pushes the rest of the daughter away from the mother (insertional growth).
+
 \item{\ttt{* branch\_force\_angle} $value$}%?? new
 
 Yaw spring constant at the branch point.
@@ -3799,9 +3803,9 @@ Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' fo
 
 Copy the current filament to $filament$, which is created here if it doesn't already exist; any prior data in $filament$ is overwritten.
 
-\item{\ttt{* branch} $daughter$ $node$ [$yaw$ $pitch$ $roll$]}
+\item{\ttt{* branch} $daughter$ $node$ [$end$] [$length$ [$yaw$ $pitch$ $roll$]]}
 
-Create a branch off of the current filament (the mother filament). Enter $daughter$ as the name of the new branch filament (the daughter) and $node$ as the node number on the mother where the branch attaches; segment 0 of the daughter starts at this node. The node needs to be from 1 to the number of mother segments, so a branch can attach at the mother's plus end but not at its minus end. The branch angles are measured relative to the mother segment that ends at this node. The $yaw pitch roll$ angles are optional. If they are entered, they are the bending angle away from the mother filament. If they are not entered, then the standard bending angles are taken from the filament type definition (branch\_angle).
+Create a branch off of the current filament (the mother filament). Enter $daughter$ as the name of the new branch filament (the daughter) and $node$ as the node number on the mother where the branch attaches. Optionally, enter $end$ as ``minus'' or ``plus'' for which end of the daughter attaches at this node; the default is the filament type's \ttt{branch\_end} value, which is ``minus'' unless it was set otherwise. Optionally, enter $length$ as the length of the daughter's segment 0; if it is omitted, the length is chosen randomly from the filament type's length distribution, as for other new segments. For a daughter attached by its minus end, segment 0 is the segment at the branch point, and for a daughter attached by its plus end with more than one segment, segment 0 is the segment at the daughter's free minus end. The first number after $node$ and $end$ is always $length$, so the angles can only be entered after a length. The node needs to be from 1 to the number of mother segments, so a branch can attach at the mother's plus end but not at its minus end. The branch angles are measured relative to the mother segment that ends at this node, and they give the direction of the daughter away from the mother, whichever end attaches. The $yaw pitch roll$ angles are optional. If they are entered, they are the bending angle away from the mother filament. If they are not entered, then the standard bending angles are taken from the filament type definition (branch\_angle).
 
 \item{\ttt{* sequence} $sequence$}
 

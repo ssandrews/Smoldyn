@@ -123,9 +123,11 @@ int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
 int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
-double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter);
+void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr);
+filamentptr filBranchEndMother(const filamentptr daughter,char end);
+double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter,char end);
 int filBranchDazim(const filamentptr mother,int br,double *dphiptr);
-filamentptr filAddBranch(simptr sim,filamentptr mother,int node,const double *angle,double thickness,const char *daughtername);
+filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername);
 int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinBranches(filamentptr fil);
@@ -147,7 +149,7 @@ void filAddStretchForceMat(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
-int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
+int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,char end,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
@@ -444,6 +446,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 	int seg,br,seqi;
 	segmentptr *newsegments;
 	int *newbranchnodes;
+	char *newbranchends;
 	filamentptr *newbranches;
 	char *newsequence;
 	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newbranchazim0;
@@ -466,6 +469,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->maxbranch=0;
 		fil->nbranch=0;
 		fil->branchnodes=NULL;
+		fil->branchends=NULL;
 		fil->branches=NULL;
 		fil->branchazim0=NULL;
 		fil->maxsequence=0;
@@ -524,18 +528,23 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 
 	if(maxbranch>fil->maxbranch) {
 		CHECKMEM(newbranchnodes=(int*) calloc(maxbranch,sizeof(int)));
+		CHECKMEM(newbranchends=(char*) calloc(maxbranch,sizeof(char)));
 		CHECKMEM(newbranches=(filamentptr*) calloc(maxbranch,sizeof(filamentptr)));
 		CHECKMEM(newbranchazim0=(double*) calloc(maxbranch,sizeof(double)));
 		for(br=0;br<fil->maxbranch;br++) {
 			newbranchnodes[br]=fil->branchnodes[br];
+			newbranchends[br]=fil->branchends[br];
 			newbranches[br]=fil->branches[br];
 			newbranchazim0[br]=fil->branchazim0[br]; }
 		for(;br<maxbranch;br++) {
 			newbranchnodes[br]=1;
+			newbranchends[br]='m';
 			newbranches[br]=NULL;
 			newbranchazim0[br]=-1; }
 		free(fil->branchnodes);
 		fil->branchnodes=newbranchnodes;
+		free(fil->branchends);
+		fil->branchends=newbranchends;
 		free(fil->branches);
 		fil->branches=newbranches;
 		free(fil->branchazim0);
@@ -579,6 +588,7 @@ void filFree(filamentptr fil) {
 	free(fil->roll);
 	free(fil->nodemobility);
 	free(fil->branchnodes);
+	free(fil->branchends);
 	free(fil->branches);
 	free(fil->branchazim0);
 	free(fil->sequence);
@@ -623,6 +633,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
 		filtype->branchspread=-1;										// negative = unset; every consumer is gated on >0, so unset behaves as deterministic until derived
 		filtype->branchsegments=1;									// daughters born as a single segment
+		filtype->branchend='m';											// daughters attach by their minus end by default
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
 		filtype->branchazimuthfix=0;								// azimuth free by default
@@ -833,7 +844,7 @@ void filOutput(const filamentptr fil) {
 	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
 	simLog(sim,fil->nbranch>0?2:1,"   number of branches: %i\n",fil->nbranch);
 	for(br=0;br<fil->nbranch;br++)
-		simLog(sim,2,"    %s at node %i\n",fil->branches[br]->filname,fil->branchnodes[br]);
+		simLog(sim,2,"    %s at node %i, by its %s end\n",fil->branches[br]->filname,fil->branchnodes[br],fil->branchends[br]=='p'?"plus":"minus");
 
 	simLog(sim,1,"   sequence codes: %i of %i allocated,",fil->nsequence,fil->maxsequence);
 	if(fil->nsequence) {
@@ -896,7 +907,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branch angle: %g rad\n",filtype->branchangle);
 		if(filtype->branchspread>=0) simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
 		else simLog(sim,1,"  branch spread: unset\n");
-		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments); }
+		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments);
+		simLog(sim,filtype->branchend=='p'?2:1,"  daughters attach by their %s end\n",filtype->branchend=='p'?"plus":"minus"); }
 	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
 	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
 		simLog(sim,2,"  branch junction equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceangle));
@@ -1510,6 +1522,15 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"branchsegments",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_segments"); }
 
+	else if(!strcmp(word,"branch_end")) {				// branch_end: which daughter end attaches to the mother
+		CHECKS(filtype,"need to enter filament type name before branch_end");
+		itct=sscanf(line2,"%s",nm1);
+		CHECKS(itct==1,"branch_end format: minus or plus");
+		if(!strcmp(nm1,"minus")) filtype->branchend='m';
+		else if(!strcmp(nm1,"plus")) filtype->branchend='p';
+		else CHECKS(0,"branch_end options: minus, plus");
+		CHECKS(!strnword(line2,2),"unexpected text following branch_end"); }
+
 	else if(!strcmp(word,"branch_force_angle")) {	// branch_force_angle: junction torsional spring constant, energy/rad^2
 		CHECKS(filtype,"need to enter filament type name before branch_force_angle");
 		itct=strmathsscanf(line2,"%mlg|E",varnames,varvalues,nvar,&f1);
@@ -1760,24 +1781,24 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		if(dim==2) {
 			itct=strmathsscanf(line2,"%mlg|L %mlg|",varnames,varvalues,nvar,&length,&angle[0]);
 			angle[1]=angle[2]=0;
-			CHECKM(itct==2,"add_segment format: length angle0 [thickness [plus|minus]]. "); }
+			CHECKM(itct==2,"add_segment format: length angle0 [thickness [plus/minus]]. "); }
 		else {
 			itct=strmathsscanf(line2,"%mlg|L %mlg| %mlg| %mlg|",varnames,varvalues,nvar,&length,&angle[0],&angle[1],&angle[2]);
-			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [plus|minus]]. "); }
+			CHECKM(itct==4,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]. "); }
 		CHECKS(length>0,"length needs to be >0");
 		line2=strnword(line2,itct+1);
 		thick=1;
 		endchar='p';
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [plus|minus]]. ");}
-			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus|minus]]. ");}
+			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [plus/minus]]. ");}
+			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2);
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [plus|minus]]");}
-				else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus|minus]]");}
+				if(dim==2) {CHECKS(itct==1,"add_segment format: length angle0 [thickness [plus/minus]]");}
+				else {CHECKS(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]");}
 				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
 				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
 				else CHECKS(0,"end needs to be 'plus' or 'minus'");
@@ -1790,7 +1811,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(fil,"need to enter filament name before remove_segment");
 		CHECKS(fil->nseg>0,"filament has no segments to remove");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"remove_segment format: plus|minus");
+		CHECKS(itct==1,"remove_segment format: plus/minus");
 		endchar='p';
 		if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
 		else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
@@ -1854,19 +1875,19 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	else if(!strcmp(word,"modify_segment")) {				// modify_segment
 		CHECKS(fil,"need to enter filament name before modify_segment");
 		itct=strmathsscanf(line2,"%mi| %s %c",varnames,varvalues,nvar,&seg,nm,&symbol);
-		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
+		CHECKM(itct==3,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 		CHECKS(seg>=0 && seg<fil->nseg,"segment number is not within filament");
 		line2=strnword(line2,4);
-		CHECKS(line2,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]");
+		CHECKS(line2,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]");
 		CHECKS(symbol=='=' || symbol=='+' || symbol=='-',"symbol needs to be '=', '+', or '-'");
 		if(!strcmp(nm,"length")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
-			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 			line2=strnword(line2,2);
 			endchar='p';
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]");
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]");
 				line2=strnword(line2,2);
 				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
 				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
@@ -1877,7 +1898,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			angle[0]=angle[1]=angle[2]=0;
 			if(dim==2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&angle[0]);
-				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
+				CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 				line2=strnword(line2,2); }
 			else {
 				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
@@ -1886,7 +1907,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			endchar='p';
 			if(line2) {
 				itct=sscanf(line2,"%s",nm1);
-				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]");
+				CHECKS(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]");
 				line2=strnword(line2,2);
 				if(nm1[0]=='P' || nm1[0]=='p') endchar='p';
 				else if(nm1[0]=='M' || nm1[0]=='m') endchar='m';
@@ -1905,7 +1926,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			filTranslateNode(fil,seg,pos,symbol); }
 		else if(!strcmp(nm,"thickness")) {
 			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
-			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus|minus]. ");
+			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 			line2=strnword(line2,2);
 			er=filChangeThickness(fil,seg,thick,symbol);
 			CHECKS(!er,"Error while trying to change segment thickness - new value cannot be negative"); }
@@ -1929,26 +1950,38 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filCopyFilament(fil2,fil,filtype2);
 		CHECKS(!strnword(line2,2),"unexpected text following copy_to"); }
 
-	else if(!strcmp(word,"branch")) {							// branch: daughtername node [yaw pitch roll]
+	else if(!strcmp(word,"branch")) {							// branch: daughtername node [minus/plus] [length [yaw pitch roll]]
 		CHECKS(fil,"need to enter filament name before branch");
 		CHECKS(fil->nseg>0,"mother filament has no segments to branch from");
 		itct=sscanf(line2,"%s",nm1);
-		CHECKS(itct==1,"branch format: daughter_name node [yaw pitch roll]");
+		CHECKS(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]");
 		line2=strnword(line2,2);
-		CHECKS(line2,"branch format: daughter_name node [yaw pitch roll]");
+		CHECKS(line2,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&node);
-		CHECKM(itct==1,"branch format: daughter_name node [yaw pitch roll]. ");
+		CHECKM(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]. ");
 		CHECKS(node>=1 && node<=fil->nseg,"branch node needs to be from 1 to the number of mother segments");
 		angle[0]=fil->filtype->branchangle;						// default to the filament type's branch angle
 		angle[1]=angle[2]=0;
 		line2=strnword(line2,2);
+		endchar=fil->filtype->branchend;							// default to the filament type's branch end
+		if(line2) {
+			sscanf(line2,"%s",nm);
+			if(!strcmp(nm,"minus") || !strcmp(nm,"plus")) {
+				endchar=nm[0];
+				line2=strnword(line2,2); }}
+		length=0;																			// 0 = random length for segment 0
+		if(line2) {
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&length);
+			CHECKM(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]. ");
+			CHECKS(length>0,"branch length needs to be >0");
+			line2=strnword(line2,2); }
 		if(line2) {
 			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&angle[0],&angle[1],&angle[2]);
 			CHECKM(itct==3 || itct==1,"branch angle needs 1 or 3 values. ");
 			if(dim==2) angle[1]=angle[2]=0;
 			line2=strnword(line2,itct+1); }
 		thick=fil->segments[node-1]->thk;
-		fil2=filAddBranch(sim,fil,node,angle,thick,nm1);
+		fil2=filAddBranch(sim,fil,node,endchar,length,angle,thick,nm1);
 		CHECKS(fil2,"failed to create branch");
 		CHECKS(!line2,"unexpected text following branch"); }
 
@@ -2549,12 +2582,13 @@ void filShiftBranchNodes(filamentptr fil,int shift,int nseg) {
 		node=fil->branchnodes[br]+shift;
 		if(node>=1 && node<=nseg) {								// keep the branch, on its renumbered node
 			fil->branchnodes[nbr]=node;
+			fil->branchends[nbr]=fil->branchends[br];
 			fil->branches[nbr]=fil->branches[br];
 			fil->branchazim0[nbr]=fil->branchazim0[br];
 			nbr++; }
 		else if(fil->branches[br]) {						// the branch node is gone, so the junction is too
-			if(fil->branches[br]->minusend==fil) fil->branches[br]->minusend=NULL;
-			if(fil->branches[br]->plusend==fil) fil->branches[br]->plusend=NULL; }}
+			if(fil->branchends[br]=='p' && fil->branches[br]->plusend==fil) fil->branches[br]->plusend=NULL;
+			else if(fil->branchends[br]!='p' && fil->branches[br]->minusend==fil) fil->branches[br]->minusend=NULL; }}
 	fil->nbranch=nbr;
 	return; }
 
@@ -2918,6 +2952,7 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 
 	for(i=0;i<filfrom->nbranch;i++) {
 		filto->branchnodes[i]=filfrom->branchnodes[i];
+		filto->branchends[i]=filfrom->branchends[i];
 		filto->branches[i]=filfrom->branches[i];
 		filto->branchazim0[i]=filfrom->branchazim0[i]; }
 	filto->nbranch=filfrom->nbranch;
@@ -2972,8 +3007,30 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 #define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
 #define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
 
+/* filBranchJunctionNodes */
+// Daughter nodes at a junction, for a daughter that attaches by its end end ('m' or
+// 'p'). *nearptr is the daughter end node that is pinned to the mother and *farptr is
+// the next node along the daughter, so nodes[far]-nodes[near] points away from the
+// mother. Using these nodes for both ends keeps the branch angle and azimuth defined
+// the same way whichever end attaches.
+void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr) {
+	if(end=='p') {
+		*nearptr=daughter->nseg;
+		*farptr=daughter->nseg-1; }
+	else {
+		*nearptr=0;
+		*farptr=1; }
+	return; }
+
+
+/* filBranchEndMother */
+// The filament that the end end ('m' or 'p') of daughter attaches to, or NULL if free.
+filamentptr filBranchEndMother(const filamentptr daughter,char end) {
+	return (end=='p')?daughter->plusend:daughter->minusend; }
+
+
 /* filBranchAzimuth */
-// Azimuth of a daughter about its mother: the angle of the daughter's first segment
+// Azimuth of a daughter about its mother: the angle of the daughter's junction segment
 // around the axis of the mother segment that ends at node, measured in that segment's material frame (from
 // the frame's y axis toward its z axis), in [0,2*PI). This is the quantity that
 // branch_azimuth_fix holds; it is recorded at birth by filAddBranch and re-measured
@@ -2985,16 +3042,18 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 // (tm x td)/(lend*sinth^2) restoring; both rely on Sph_QtnRotate being the lab-to-frame
 // map of a proper rotation. If either convention changes, the spring flips sign to
 // anti-restoring -- the T6 validation (azimuth drift on a pinned mother) catches it.
-double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter) {
+double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter,char end) {
 	double td[3],v[3],phi;
 	segmentptr mseg;
+	int jnear,jfar;
 
 	if(mother->filtype->filss->sim->dim!=3) return -1;
 	if(node<1 || node>mother->nseg || daughter->nseg<1) return -1;
 	mseg=mother->segments[node-1];
-	td[0]=daughter->nodes[1][0]-daughter->nodes[0][0];
-	td[1]=daughter->nodes[1][1]-daughter->nodes[0][1];
-	td[2]=daughter->nodes[1][2]-daughter->nodes[0][2];
+	filBranchJunctionNodes(daughter,end,&jnear,&jfar);
+	td[0]=daughter->nodes[jfar][0]-daughter->nodes[jnear][0];
+	td[1]=daughter->nodes[jfar][1]-daughter->nodes[jnear][1];
+	td[2]=daughter->nodes[jfar][2]-daughter->nodes[jnear][2];
 	Sph_QtnRotate(mseg->qabs,td,v);								// daughter direction in the mother segment frame; x is the mother axis
 	if(v[1]*v[1]+v[2]*v[2]<=FILJUNCTSINMIN*FILJUNCTSINMIN*(v[0]*v[0]+v[1]*v[1]+v[2]*v[2])) return -1;
 	phi=atan2(v[2],v[1]);
@@ -3015,7 +3074,7 @@ int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
 	phi0=mother->branchazim0[br];
 	daughter=mother->branches[br];
 	if(phi0<0 || !daughter) return 0;
-	dphi=filBranchAzimuth(mother,mother->branchnodes[br],daughter);
+	dphi=filBranchAzimuth(mother,mother->branchnodes[br],daughter,mother->branchends[br]);
 	if(dphi<0) return 0;
 	dphi-=phi0;
 	if(dphi>PI) dphi-=2*PI;
@@ -3025,14 +3084,17 @@ int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
 
 
 /* filAddBranch */
-// Nucleate a daughter filament off mother node node, which must be from 1 to nseg; the
-// daughter's segment 0 starts at that node. angle is the daughter's ypr relative to the
-// absolute frame of mother segment node-1, the segment that ends at node. Returns the daughter, or NULL on error.
-filamentptr filAddBranch(simptr sim,filamentptr mother,int node,const double *angle,double thickness,const char *daughtername) {
+// Nucleate a daughter filament off mother node node, which must be from 1 to nseg. The
+// daughter attaches by its end end: 'm' puts its minus end (node 0) at the mother node
+// and 'p' puts its plus end (node nseg) there. angle is the direction of the daughter
+// away from the mother, as ypr relative to the absolute frame of mother segment node-1,
+// the segment that ends at node. length0 is the length of the daughter's segment 0, or
+// <=0 for a random length. Returns the daughter, or NULL on error.
+filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername) {
 	filamenttypeptr mothertype;
 	filamentptr daughter;
 	segmentptr mseg;
-	double branchpos[3],qbranch[4],qdaughter[4],daughterypr[3],len,straight[3]={0,0,0};
+	double branchpos[3],qbranch[4],qdaughter[4],qflip[4],daughterypr[3],len,straight[3]={0,0,0},flip[3]={PI,0,0},shift[3];
 	int br,s,nseg;
 	(void) sim;
 
@@ -3051,22 +3113,32 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int node,const double *an
 
 	Sph_Ypr2Qtn(angle,qbranch);											// branch rotation in mother's frame
 	Sph_QtnxQtn(mseg->qabs,qbranch,qdaughter);				// compose onto mother-segment absolute orientation
+	if(end=='p') {																// segments point toward the mother, so turn the daughter around
+		Sph_Ypr2Qtn(flip,qflip);
+		Sph_QtnxQtn(qdaughter,qflip,qdaughter); }
 	Sph_Qtn2Ypr(qdaughter,daughterypr);							// filAddSegment (seg 0) expects a lab-frame ypr
 
-	len=filRandomLength(mothertype,thickness,1);
+	len=(length0>0)?length0:filRandomLength(mothertype,thickness,1);
 	if(filAddSegment(daughter,branchpos,len,daughterypr,thickness,'p')) return NULL;
 	for(s=1;s<nseg;s++) {													// extend the daughter straight from the branch
 		len=filRandomLength(mothertype,thickness,1);
 		if(filAddSegment(daughter,NULL,len,straight,thickness,'p')) return NULL; }
+	if(end=='p') {																// built from the branch point toward the mother; slide it out so its plus end is at the branch point
+		shift[0]=branchpos[0]-daughter->nodes[daughter->nseg][0];
+		shift[1]=branchpos[1]-daughter->nodes[daughter->nseg][1];
+		shift[2]=branchpos[2]-daughter->nodes[daughter->nseg][2];
+		filTranslate(daughter,shift,'+'); }
 
 	if(mother->nbranch==mother->maxbranch) {					// grow the branch arrays if needed
 		mother=filAlloc(mother,0,mother->maxbranch*2+1,0);
 		if(!mother) return NULL; }
 	br=mother->nbranch++;
 	mother->branchnodes[br]=node;
+	mother->branchends[br]=end;
 	mother->branches[br]=daughter;
-	mother->branchazim0[br]=filBranchAzimuth(mother,node,daughter);	// realized birth azimuth, for branch_azimuth_fix
-	daughter->minusend=mother;											// filPinBranches anchors the daughter's minus end (node 0), which is its pointed end
+	mother->branchazim0[br]=filBranchAzimuth(mother,node,daughter,end);	// realized birth azimuth, for branch_azimuth_fix
+	if(end=='p') daughter->plusend=mother;					// filPinBranches anchors this daughter end at the branch node
+	else daughter->minusend=mother;
 
 	return daughter; }
 
@@ -3135,14 +3207,14 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
 
 			thick=fil->segments[node-1]->thk;
-			filAddBranch(sim,fil,node,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
+			filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
 
 	return; }
 
 
 /* filPinBranches */
 // Constrain each daughter to its junction after the mechanical step. Always: translate
-// the daughter so its minus-end node tracks the mother's (moving) branch point -- a
+// the daughter so its attached end node tracks the mother's (moving) branch point -- a
 // position constraint, not a force. With branch_azimuth_fix on (3D): additionally
 // rotate the daughter rigidly about the mother segment's axis so its azimuth returns
 // to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch
@@ -3154,8 +3226,9 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 // are created mothers-first, so the caller's creation-order sweep settles branched
 // trees root-first.
 void filPinBranches(filamentptr fil) {
-	int br,bnode,node,dim;
-	double branchpos[3],axis[3],dphi,vect[3];
+	int br,bnode,node,dim,jnear,jfar;
+	double branchpos[3],axis[3],dphi,vect[3],shift[3];
+	char end;
 	filamentptr daughter;
 	segmentptr mseg;
 
@@ -3169,14 +3242,20 @@ void filPinBranches(filamentptr fil) {
 		branchpos[0]=fil->nodes[bnode][0];
 		branchpos[1]=fil->nodes[bnode][1];
 		branchpos[2]=fil->nodes[bnode][2];
-		filTranslate(daughter,branchpos,'=');						// move daughter so its minus end sits at branch point
+		end=fil->branchends[br];
+		filBranchJunctionNodes(daughter,end,&jnear,&jfar);
+		shift[0]=branchpos[0]-daughter->nodes[jnear][0];
+		shift[1]=branchpos[1]-daughter->nodes[jnear][1];
+		shift[2]=branchpos[2]-daughter->nodes[jnear][2];
+		filTranslate(daughter,shift,'+');								// move daughter so its attached end sits at branch point
 
-		if(fil->filtype->branchazimuthfix && dim==3 && daughter->minusend==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
+		if(fil->filtype->branchazimuthfix && dim==3 && filBranchEndMother(daughter,end)==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
 			axis[0]=mseg->xyzplus[0]-mseg->xyzminus[0];
 			axis[1]=mseg->xyzplus[1]-mseg->xyzminus[1];
 			axis[2]=mseg->xyzplus[2]-mseg->xyzminus[2];
 			if(axis[0]==0 && axis[1]==0 && axis[2]==0) continue;
-			for(node=1;node<=daughter->nseg;node++) {			// node 0 is the branch point, on the axis
+			for(node=0;node<=daughter->nseg;node++) {
+				if(node==jnear) continue;										// the attached node is the branch point, on the axis
 				vect[0]=daughter->nodes[node][0]-branchpos[0];
 				vect[1]=daughter->nodes[node][1]-branchpos[1];
 				vect[2]=daughter->nodes[node][2]-branchpos[2];
@@ -3690,23 +3769,25 @@ void filAddBendForceMat(filamentptr fil) {
 
 /* filJunctionGeometry */
 // Shared geometry for the junction spring: unit tangents of the mother segment that
-// ends at node and of the daughter's first segment, their cosine and sine, and the two
+// ends at node and of the daughter's junction segment (pointing away from the mother,
+// for a daughter attached by its end end), their cosine and sine, and the two
 // segment lengths. Returns 1 when the junction force is well defined, 0 when it is
 // degenerate (zero-length segment, or theta at 0 or pi where the angle plane is
 // undefined -- >5 sigma from any realistic branch angle, so skipping is safe).
-int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr) {
+int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,char end,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr) {
 	double lenm,lend,costh,sinth;
 	segmentptr mseg;
-	int d;
+	int d,jnear,jfar;
 
 	mseg=mother->segments[node-1];
 	lenm=0;
 	for(d=0;d<dim;d++) {
 		tm[d]=mseg->xyzplus[d]-mseg->xyzminus[d];
 		lenm+=tm[d]*tm[d]; }
+	filBranchJunctionNodes(daughter,end,&jnear,&jfar);
 	lend=0;
 	for(d=0;d<dim;d++) {
-		td[d]=daughter->nodes[1][d]-daughter->nodes[0][d];
+		td[d]=daughter->nodes[jfar][d]-daughter->nodes[jnear][d];
 		lend+=td[d]*td[d]; }
 	if(lenm<=0 || lend<=0) return 0;
 	lenm=sqrt(lenm);
@@ -3754,7 +3835,8 @@ int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daug
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3];
 	filamentptr mother,daughter;
-	int br,brfound,bnode,d,dim;
+	int br,brfound,bnode,d,dim,e,jnear,jfar;
+	char end;
 
 	kappa=fil->filtype->branchforceangle;
 	kaz=fil->filtype->branchforceazimuth;
@@ -3766,20 +3848,24 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
-	mother=fil->minusend;														// daughter side: couples on own nodes 0 and 1
-	if(mother && fil->nseg>=1 && nodemin<=1) {
+	for(e=0;e<2;e++) {															// daughter side: couples on own junction nodes, for each attached end
+		end=(e==0)?'m':'p';
+		mother=filBranchEndMother(fil,end);
+		if(!mother || fil->nseg<1) continue;
+		filBranchJunctionNodes(fil,end,&jnear,&jfar);
+		if((jnear<nodemin || jnear>nodemax) && (jfar<nodemin || jfar>nodemax)) continue;	// junction outside the requested node window
 		brfound=-1;
 		for(br=0;br<mother->nbranch && brfound<0;br++)
-			if(mother->branches[br]==fil)
+			if(mother->branches[br]==fil && mother->branchends[br]==end)
 				brfound=br;
 		bnode=(brfound>=0)?mother->branchnodes[brfound]:-1;
-		if(bnode>=1 && bnode<=mother->nseg && filJunctionGeometry(mother,bnode,fil,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
+		if(bnode>=1 && bnode<=mother->nseg && filJunctionGeometry(mother,bnode,fil,end,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
 			if(kappa>0) {
 				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth; |tm-costh*td| = sinth, so |F1| = k*|theta-theta0|/lend, bounded
 				for(d=0;d<dim;d++) {
 					fvect[d]=fscale*(tm[d]-costh*td[d]);
-					if(nodemax>=1) forces[1][d]+=fvect[d];
-					if(nodemin<=0) forces[0][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
+					if(jfar>=nodemin && jfar<=nodemax) forces[jfar][d]+=fvect[d];
+					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
 			if(kaz>0 && dim==3 && filBranchDazim(mother,brfound,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
 				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi -- this sign ties to the frame convention in filBranchAzimuth, see the contract comment there
 				cross[1]=tm[2]*td[0]-tm[0]*td[2];
@@ -3788,18 +3874,18 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 				fscale=-kaz*dphi/(lend*sinth*sinbound);
 				for(d=0;d<3;d++) {
 					fvect[d]=fscale*cross[d];
-					if(nodemax>=1) forces[1][d]+=fvect[d];
-					if(nodemin<=0) forces[0][d]-=fvect[d]; }}}}
+					if(jfar>=nodemin && jfar<=nodemax) forces[jfar][d]+=fvect[d];
+					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}}}
 
 	if(kappa>0)																			// mother side: reaction couple for the polar spring only (azimuth is one-way)
 		for(br=0;br<fil->nbranch;br++) {
 			daughter=fil->branches[br];
 			bnode=fil->branchnodes[br];
 			if(!daughter || daughter->nseg<1) continue;
-			if(daughter->minusend!=fil) continue;					// stale entry: the daughter belongs to another mother (copy_to, re-branch)
+			if(filBranchEndMother(daughter,fil->branchends[br])!=fil) continue;	// stale entry: the daughter belongs to another mother (copy_to, re-branch)
 			if(bnode<1 || bnode>fil->nseg) continue;
 			if(bnode<nodemin || bnode-1>nodemax) continue;	// junction outside the requested node window
-			if(!filJunctionGeometry(fil,bnode,daughter,dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
+			if(!filJunctionGeometry(fil,bnode,daughter,fil->branchends[br],dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
 			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_mother = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
 			for(d=0;d<dim;d++) {
 				fvect[d]=fscale*(td[d]-costh*tm[d]);

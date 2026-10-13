@@ -861,6 +861,7 @@ typedef struct filamentstruct {
     int maxbranch;                      // max branches off this filament
     int nbranch;                        // num branches off this filament
     int* branchnodes;                   // mother nodes where branches attach
+    char* branchends;                   // daughter end that attaches to each node: 'm' or 'p'
     struct filamentstruct** branches;   // list of branching filaments
     double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
     int maxsequence;                    // allocated sequence characters
@@ -895,6 +896,7 @@ typedef struct filamenttypestruct
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
     int branchsegments;                // number of segments a daughter is born with (>=1)
+    char branchend;                    // daughter end that attaches to the mother: 'm' (default) or 'p'
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
     int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
