@@ -860,7 +860,7 @@ typedef struct filamentstruct {
     struct filamentstruct* plusend;     // what plus end attaches to
     int maxbranch;                      // max branches off this filament
     int nbranch;                        // num branches off this filament
-    int* branchspots;                   // segments where branches are
+    int* branchnodes;                   // mother nodes where branches attach
     struct filamentstruct** branches;   // list of branching filaments
     double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
     int maxsequence;                    // allocated sequence characters

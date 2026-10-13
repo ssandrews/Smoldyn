@@ -4118,7 +4118,7 @@ typedef struct filamentstruct {
     struct filamentstruct* plusend;     // what plus end attaches to
     int maxbranch;                      // max branches off this filament
     int nbranch;                        // num branches off this filament
-    int* branchspots;                   // segments where branches are
+    int* branchnodes;                   // mother nodes where branches attach
     struct filamentstruct** branches;   // list of branching filaments
     double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
     int maxsequence;                    // allocated sequence characters
@@ -4135,7 +4135,7 @@ Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segme
 
 The \ttt{nodesx} vector contains node positions at the end of the previous time step, enabling determination of surface crossing or other events during the time step. The \ttt{roll} vector contains the roll values for individual segments. It is only here for convenience, and I'm not sure it's a good design, but it's here for now. It is redundant with the segment \ttt{ypr[2]} values, which are the definitive ones, so any function that writes to \ttt{roll} must also write to \ttt{ypr[2]} and any function that reads from \ttt{roll} must first make sure that it equals \ttt{ypr[2]}. The reason for redundant data is that it can be easier to work with either a list of roll values or lists of segment rotation values, depending on the situation. The \ttt{nodemobility} vector is a list of unitless mobility factors for each node, which are multiplied by the filament type mobility value to give the node's total mobility; this is useful for fixing particular nodes in space. The \ttt{seg0up} vector represents the unit ``up'' vector for segment 0 (which is perpendicular to the segment itself).
 
-Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{minusend} points to the filament that the minus end attaches to and/or \ttt{plusend} points to the filament that the plus end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments branch off at the locations listed in \ttt{branchspots}. For example if there's a branch at segment 3 which is attached by the branch's minus end, then that means that the minus end of the branch is at the plus end of the mother's segment 3. \ttt{branchazim0} is the birth azimuth for each branch, or -1 if undefined, where azimuth is the angle around the mother's axis. %?? branchazim0 seems redundant with the branch's ypr for segment 0.
+Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{minusend} points to the filament that the minus end attaches to and/or \ttt{plusend} points to the filament that the plus end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments attach at the mother node numbers listed in \ttt{branchnodes}, and segment 0 of each branch starts at that node. These node numbers are from 1 to \ttt{nseg}; node 0, the mother's minus end, cannot take a branch. For example if there's a branch at node 3, then the minus end of the branch is at the mother's node 3, which is the plus end of the mother's segment 2, and the branch angles are measured relative to segment 2. \ttt{branchazim0} is the birth azimuth for each branch, or -1 if undefined, where azimuth is the angle around the mother's axis. %?? branchazim0 seems redundant with the branch's ypr for segment 0.
 
 Along the length of each filament are equally spaced sequence codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxsequence} and \ttt{nsequence}, and then the list \ttt{sequence}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between sequence code and segments.
 
@@ -4422,11 +4422,11 @@ Adds a face name to the filament, enlarging the list of face names if required. 
 \hfill \\
 Adds a new filament type to the simulation, which is named \ttt{ftname}, returning a pointer to the new filament type. Both \ttt{sim} and \ttt{ftname} need to be defined. If there is already a filament type with this name, a pointer to it is returned. Returns a pointer to the new filament type or \ttt{NULL} for failure, meaning that memory could not be allocated.
 
-\item[\ttt{double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter)}] %?? New code. I don't like the fact that this returns an error code for daughter parallel to the mother. However, maybe that's okay, so long as it's used appropriately. Also, should it be using the reference frame of the spot segment or the prior one?
+\item[\ttt{double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter)}] %?? New code. I don't like the fact that this returns an error code for daughter parallel to the mother. However, maybe that's okay, so long as it's used appropriately. Also, should it be using the reference frame of the spot segment or the prior one?
 \hfill \\
 This computes and returns the azimuth of a daughter about its mother. If the daughter is very nearly parallel, so that the azimuth can't be computed accurately, then this returns -1. I don't really understand the AI-generated function description.
 
-Here, \ttt{td} is the displacement of the daughters first segment in absolute coordinates ($\Delta \bm{x}_0$). It gets rotated into the coordinates of the mother segment (\ttt{mother->segments[spot]}), putting the answer in \ttt{v}. If \ttt{v} is very nearly parallel to the mother segment (using the constant \ttt{FILJUNCTSINMIN}), then the function returns -1. Otherwise, the azimuth angle is computed as \ttt{atan2(v[2],v[1])} and returned.
+Here, \ttt{td} is the displacement of the daughters first segment in absolute coordinates ($\Delta \bm{x}_0$). It gets rotated into the coordinates of the mother segment that ends at the branch node (\ttt{mother->segments[node-1]}), putting the answer in \ttt{v}. If \ttt{v} is very nearly parallel to the mother segment (using the constant \ttt{FILJUNCTSINMIN}), then the function returns -1. Otherwise, the azimuth angle is computed as \ttt{atan2(v[2],v[1])} and returned.
 
 
 \item[\ttt{int filBranchDazim(const filamentptr mother,int br,double *dphiptr)}] %?? New code. I think this is good.
@@ -4437,9 +4437,9 @@ Computes and returns the difference between the current azimuth angle and the bi
 \item[\underline{Filament branching}]
 
 \item[\ttt{filamentptr}]
-\ttt{filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thickness,const char *daughtername)}
+\ttt{filAddBranch(simptr sim,filamentptr mother,int node,const double *angle,double thickness,const char *daughtername)}
 \hfill \\
-Nucleate a daughter filament off the side of an existing ``mother'' filament, at the plus end of mother segment index `seg'. `angle' is the daughter's orientation as ypr relative to the mother segment's absolute frame (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. The minus end of the daughter is attached to the mother.%?? New code. I think that the user should choose which end of the branch attaches to the mother, or maybe that's best left until it's needed.
+Nucleate a daughter filament off the side of an existing ``mother'' filament, at mother node `node', which needs to be from 1 to the number of mother segments; segment 0 of the daughter starts at this node. `angle' is the daughter's orientation as ypr relative to the absolute frame of mother segment `node-1', which is the segment that ends at this node (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. The minus end of the daughter is attached to the mother.%?? New code. I think that the user should choose which end of the branch attaches to the mother, or maybe that's best left until it's needed.
 
 \item[\ttt{int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)}] %?? New code. This seems a little odd to me because it doesn't differentiate whether the position is within a compartment or close to a surface.
 \hfill \\
@@ -4621,7 +4621,11 @@ Used for numerical implicit integration. This copies the force data in the \ttt{
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. This does not check to make sure that the shifted filaments will fit in the current array, so this needs to be ensured beforehand. %?? new code.
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. This does not check to make sure that the shifted filaments will fit in the current array, so this needs to be ensured beforehand. Callers change \ttt{nseg} after calling this function, so it treats \ttt{nseg+shift} as the new number of segments. It shifts the branch nodes with \ttt{filShiftBranchNodes} and renumbers the segment \ttt{index} elements. %?? new code.
+
+\item[\ttt{void filShiftBranchNodes(filamentptr fil, int shift, int nseg)}]
+\hfill \\
+Adds \ttt{shift} to each of the branch nodes of filament \ttt{fil} and then drops any branch whose node is no longer from 1 to \ttt{nseg}, where \ttt{nseg} is the filament's new number of segments. A dropped daughter has its \ttt{minusend} or \ttt{plusend} pointer to \ttt{fil} cleared. This is called by \ttt{filArrayShift} and by \ttt{filRemoveSegment}.
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
@@ -4664,7 +4668,7 @@ This performs one step of treadmilling for filament \ttt{fil} at the \ttt{endcha
 \hfill \\
 Removes one segment or one bead from either the minus or plus end of a filament. Specify the end in \ttt{endchar} with `m' for minus and `p' for plus. Returns 0 for success or -1 for a filament that already had no segments.
 
-Removing a segment from the plus end requires only shortening the filament by one segment. Removing one from the minus end requires copying the absolute dcm or quaternion into the relative dcm or quaternion for the new minus end segment, and then translating this into the ypr angles.
+Removing a segment from the plus end requires only shortening the filament by one segment and dropping any branch that was attached to the removed plus end node. Removing one from the minus end requires copying the absolute dcm or quaternion into the relative dcm or quaternion for the new minus end segment, and then translating this into the ypr angles.
 
 \item[\ttt{void filTranslate(filamentptr fil, const double *vect, char func)}]
 \hfill \\
@@ -4746,9 +4750,9 @@ As usual, enter \ttt{nodemin} as the starting node or $-1$ (or $\leq 0$) for the
 Computes filament bending forces due to ypr springs using the ypr values in \ttt{segment->ypr}, adding the forces to any prior forces in the \ttt{filwork->forcemat} matrix. These forces are computed from eq. \ref{eq:FilBendForceMat}. This matrix is technically correct but of minimal use because the equations are not linearized correctly and so it is not lead to stable implicit integration.
 
 \item[\ttt{int }] %?? New code. I think the inputs to this function could be cleaned up substantially.
-\ttt{filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr)}
+\ttt{filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr)}
 \hfill \\
-AI description. Shared geometry for the junction spring: unit tangents of the mother segment at spot and of the daughter's first segment, their cosine and sine, and the two segment lengths. Returns 1 when the junction force is well defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the angle plane is undefined -- $>5$ sigma from any realistic branch angle, so skipping is safe).
+AI description. Shared geometry for the junction spring: unit tangents of the mother segment that ends at \ttt{node} and of the daughter's first segment, their cosine and sine, and the two segment lengths. Returns 1 when the junction force is well defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the angle plane is undefined -- $>5$ sigma from any realistic branch angle, so skipping is safe).
 
 
 \item[\ttt{void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.

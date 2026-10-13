@@ -1260,13 +1260,17 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Copy the current filament to filament, which is created here if it doesn't\n"
 		"    already exist; any prior data in filament is overwritten."},
 	{"statement","Statements about filaments",1,"branch",
-		"  * branch daughter segment [yaw pitch roll]",
+		"  * branch daughter node [yaw pitch roll]",
 		"    Create a branch off of the current filament (the mother filament). Enter\n"
-		"    daughter as the name of the new branch filament (the daughter) and segment\n"
-		"    as the branching position off of the mother. The yaw pitch roll angles are\n"
-		"    optional. If they are entered, they are the bending angle away from the\n"
-		"    mother filament. If they are not entered, then the standard bending angles\n"
-		"    are taken from the filament type definition (branch_angle)."},
+		"    daughter as the name of the new branch filament (the daughter) and node as\n"
+		"    the node number on the mother where the branch attaches; segment 0 of the\n"
+		"    daughter starts at this node. The node needs to be from 1 to the number of\n"
+		"    mother segments, so a branch can attach at the mother's plus end but not at\n"
+		"    its minus end. The branch angles are measured relative to the mother\n"
+		"    segment that ends at this node. The yaw pitch roll angles are optional. If\n"
+		"    they are entered, they are the bending angle away from the mother filament.\n"
+		"    If they are not entered, then the standard bending angles are taken from\n"
+		"    the filament type definition (branch_angle)."},
 	{"statement","Statements about filaments",1,"sequence",
 		"  * sequence sequence",
 		"    Enter the sequence string for a filament."},

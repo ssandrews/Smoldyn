@@ -3799,9 +3799,9 @@ Translate the filament. Set $symbol$ to ``='' for absolute coordinates, ``+'' fo
 
 Copy the current filament to $filament$, which is created here if it doesn't already exist; any prior data in $filament$ is overwritten.
 
-\item{\ttt{* branch} $daughter$ $segment$ [$yaw$ $pitch$ $roll$]}
+\item{\ttt{* branch} $daughter$ $node$ [$yaw$ $pitch$ $roll$]}
 
-Create a branch off of the current filament (the mother filament). Enter $daughter$ as the name of the new branch filament (the daughter) and $segment$ as the branching position off of the mother. The $yaw pitch roll$ angles are optional. If they are entered, they are the bending angle away from the mother filament. If they are not entered, then the standard bending angles are taken from the filament type definition (branch\_angle).
+Create a branch off of the current filament (the mother filament). Enter $daughter$ as the name of the new branch filament (the daughter) and $node$ as the node number on the mother where the branch attaches; segment 0 of the daughter starts at this node. The node needs to be from 1 to the number of mother segments, so a branch can attach at the mother's plus end but not at its minus end. The branch angles are measured relative to the mother segment that ends at this node. The $yaw pitch roll$ angles are optional. If they are entered, they are the bending angle away from the mother filament. If they are not entered, then the standard bending angles are taken from the filament type definition (branch\_angle).
 
 \item{\ttt{* sequence} $sequence$}
 
