@@ -9,11 +9,6 @@ boundaries y -5 5 r
 boundaries z -5 5 r
 frame_color lightblue
 
-species red
-
-difc red 3
-
-color red red
 
 time_start 0
 time_stop 1000

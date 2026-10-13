@@ -1062,7 +1062,8 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"dynamics",
 		"  * dynamics dynamics",
 		"    Sets the dynamics for the filament type. Current options are: \"none\",\n"
-		"    \"Euler\". These are case-insensitive."},
+		"    \"Euler\", \"RK2\", \"RK4\", \"EulerMat\", \"Implicit\" and \"ImplicitOld\". These are\n"
+		"    case-insensitive."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"
@@ -1289,9 +1290,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    minus end. The branch angles are measured relative to the mother segment\n"
 		"    that ends at this node, and they give the direction of the daughter away\n"
 		"    from the mother, whichever end attaches. The yaw pitch roll angles are\n"
-		"    optional. If they are entered, they are the bending angle away from the\n"
-		"    mother filament. If they are not entered, then the standard bending angles\n"
-		"    are taken from the filament type definition (branch_angle)."},
+		"    optional (and only enter yaw for 2D). If they are entered, they are the\n"
+		"    bending angle away from the mother filament. If they are not entered, then\n"
+		"    the standard bending angles are taken from the filament type definition\n"
+		"    (branch_angle)."},
 	{"statement","Statements about filaments",1,"sequence",
 		"  * sequence sequence",
 		"    Enter the sequence string for a filament."},

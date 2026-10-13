@@ -1,0 +1,40 @@
+# Branched filament
+
+graphics opengl_good
+
+dim 3
+boundaries x 0 100 r
+boundaries y 0 100 r
+boundaries z 0 100 r
+
+time_start 0
+time_stop 100
+time_step 0.01
+
+
+
+start_filament_type mytype
+color blue
+thickness 2
+polygon ve
+dynamics none
+kT 1
+standard_length 2
+standard_angle 0 0 0        # 3D: yaw pitch roll
+force_length 10
+force_angle 5 5 0          # 3D: single value
+branch_angle 1.22          # ~70 degrees, in radians
+branch_spread 0.09         # ~5 degrees of angular noise
+mobility 1
+end_filament_type
+
+# mother filament (10 segments): random_filament type:name segs x y phi
+random_filament mytype:fil0 10  50 50 50  0 0 0
+
+filament mytype:fil0 branch br0 4 minus 3 -1 0 0
+filament mytype:br0 add_segment 1  0 0 0  2 plus
+
+filament mytype:fil0 branch br1 5 plus 3 0.2 0 0
+filament mytype:br1 add_segment 1  0.6 0 0  2 minus
+
+end_file

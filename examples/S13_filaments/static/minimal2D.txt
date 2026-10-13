@@ -1,0 +1,32 @@
+# Filaments
+
+#random_seed 4
+graphics opengl_good
+
+dim 2
+boundaries x -2 2 r
+boundaries y -2 2 r
+
+
+time_start 0
+time_stop 10
+time_step 0.02
+
+
+start_filament_type mytype
+color blue
+thickness 3
+polygon ve
+end_filament_type
+
+start_filament mytype:fil1
+first_segment 0 0  1 0
+add_segment 1 1
+add_segment 1 1
+end_filament
+
+
+end_file
+
+
+

@@ -9,19 +9,11 @@ dim 2
 boundaries x -100 100 r
 boundaries y -100 100 r
 
-#species red
-
-#difc red 3
-
-#color red red
-
 time_start 0
 time_stop 50000
 time_step 0.02
 
 #frame_thickness 1
-
-#mol 1 red u u
 
 start_filament_type Euler
 color blue

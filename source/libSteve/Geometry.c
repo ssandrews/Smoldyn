@@ -1234,7 +1234,7 @@ double Geo_LineXCyl2s(double *pt1,double *pt2,double *cp1,double *cp2,double *no
 	edge1[1]=cp2[1]-norm[1]*rad;
 	crossl=Geo_LineXLine(pt1,pt2,edge0,edge1,NULL);
 	nrpos=Geo_LineXLine(pt1,pt2,cp1,cp2,NULL);
-	if(!(nrpos>=0 || nrpos<0)) Geo_LineNormPos(cp1,cp2,pt1,2,&nrdist);
+	if(isnan(nrpos)) Geo_LineNormPos(cp1,cp2,pt1,2,&nrdist);
 	else nrdist=0;
 	if(nrdistptr) *nrdistptr=nrdist;
 	if(nrposptr) *nrposptr=nrpos;
