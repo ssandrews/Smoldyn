@@ -10,3 +10,8 @@ htmlcov/
 .idea/
 build-install.sh
 run.sh
+
+# reStructuredText versions of the LaTeX manuals
+docs/Smoldyn/SmoldynCodeDoc.rst
+docs/Smoldyn/SmoldynManual.rst
+docs/developer/SmoldynManual.rst

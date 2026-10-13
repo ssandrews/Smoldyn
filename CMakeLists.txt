@@ -442,7 +442,10 @@ if (OPTION_PYTHON)
   # Find python before using pybind11. There is a possibility of version mismatch later.
   if(${SMOLDYN_PYTHON_VERSION} STREQUAL "Auto")
     # The smoldyn package requires Python 3.10 or later (see pyproject.toml.in).
-    find_package(Python3 3.14 COMPONENTS Interpreter Development REQUIRED)
+    # This accepts any such version, using the first one found on the PATH (or
+    # an active virtual environment). To use a different one, configure with
+    # -DPython3_EXECUTABLE=/path/to/python3, or set SMOLDYN_PYTHON_VERSION.
+    find_package(Python3 3.10 COMPONENTS Interpreter Development REQUIRED)
   else()
     find_package(Python3 ${SMOLDYN_PYTHON_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
   endif()
