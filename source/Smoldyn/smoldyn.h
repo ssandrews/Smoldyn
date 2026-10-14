@@ -60,13 +60,7 @@ using std::string;
 #define VERYCLOSE 1.0e-12 // distance that's safe from round-off error
 #define VERYLARGE 1.0e+20 // distance that's large but safe from overflow error
 
-enum StructCond
-{
-    SCinit,
-    SClists,
-    SCparams,
-    SCok
-};
+enum StructCond {SCinit, SClists, SCparams, SCok};
 
 /****************************************************************************/
 /*************** Data structures for included libraries *********************/
@@ -115,17 +109,9 @@ typedef long long int Q_LONGLONG;
 #define Q_LLI "%lli"
 #endif
 
-enum Q_types
-{
-    Qusort,
-    Qvoid,
-    Qint,
-    Qdouble,
-    Qlong
-};
+enum Q_types {Qusort, Qvoid, Qint, Qdouble, Qlong};
 
-typedef struct qstruct
-{
+typedef struct qstruct {
     enum Q_types type;
     void** kv;
     int* ki;
@@ -145,15 +131,13 @@ typedef struct qstruct
 #ifndef __list_h
 #define __list_h
 
-typedef struct liststructli
-{
+typedef struct liststructli {
     int max;
     int n;
     long int* xs;
 } * listptrli;
 
-typedef struct liststructv
-{
+typedef struct liststructv {
     int max;
     int n;
     void** xs;
@@ -166,23 +150,10 @@ typedef struct liststructv
 #ifndef __SimCommand_h__
 #define __SimCommand_h__
 
-enum CMDcode
-{
-    CMDok,
-    CMDwarn,
-    CMDpause,
-    CMDstop,
-    CMDabort,
-    CMDnone,
-    CMDcontrol,
-    CMDobserve,
-    CMDmanipulate,
-    CMDctrlORobs,
-    CMDall
-};
+enum CMDcode {CMDok, CMDwarn, CMDpause, CMDstop, CMDabort, CMDnone,
+    CMDcontrol, CMDobserve, CMDmanipulate, CMDctrlORobs, CMDall };
 
-typedef struct cmdstruct
-{
+typedef struct cmdstruct {
     struct cmdsuperstruct* cmds;       // owning command superstructure
     double on;                         // first command run time
     double off;                        // last command run time
@@ -200,8 +171,7 @@ typedef struct cmdstruct
     void (*freefn)(struct cmdstruct*); // free command memory
 } * cmdptr;
 
-typedef struct cmdsuperstruct
-{
+typedef struct cmdsuperstruct {
     q_queue cmd;                                   // queue of normal run-time commands
     q_queue cmdi;                                  // queue of integer time commands
     enum CMDcode (*cmdfn)(void*, cmdptr, char*); // function that runs commands
@@ -248,37 +218,12 @@ typedef struct NextSubvolumeMethod NextSubvolumeMethod;
 
 #define MSMAX 5
 #define MSMAX1 6
-enum MolecState
-{
-    MSsoln,
-    MSfront,
-    MSback,
-    MSup,
-    MSdown,
-    MSbsoln,
-    MSall,
-    MSnone,
-    MSsome
-};
-enum MolListType
-{
-    MLTsystem,
-    MLTport,
-    MLTnone
-};
+enum MolecState {MSsoln, MSfront, MSback, MSup, MSdown, MSbsoln, MSall, MSnone, MSsome };
+enum MolListType {MLTsystem, MLTport, MLTnone };
 #define PDMAX 6
-enum PatternData
-{
-    PDalloc,
-    PDnresults,
-    PDnspecies,
-    PDmatch,
-    PDsubst,
-    PDrule
-};
+enum PatternData {PDalloc, PDnresults, PDnspecies, PDmatch, PDsubst, PDrule };
 
-typedef struct moleculestruct
-{
+typedef struct moleculestruct {
     unsigned long long serno; // serial number
     int list;                 // destination list number (ll)
     double* pos;              // dim dimensional vector for position [d]
@@ -292,8 +237,7 @@ typedef struct moleculestruct
     struct panelstruct* pnlx; // old panel that molecule was bound to if any
 } * moleculeptr;
 
-typedef struct molsuperstruct
-{
+typedef struct molsuperstruct {
     enum StructCond condition;  // structure condition
     struct simstruct* sim;      // simulation structure
     int maxspecies;             // maximum number of species
@@ -337,8 +281,7 @@ typedef struct molsuperstruct
 
 /*********************************** Walls **********************************/
 
-typedef struct wallstruct
-{
+typedef struct wallstruct {
     int wdim;               // dimension number of perpendicular to wall
     int side;               // low side of space (0) or high side (1)
     double pos;             // position of wall along dim axis
@@ -355,39 +298,17 @@ typedef struct wallstruct
 // see https://github.com/ssandrews/Smoldyn/issues/18 for details.
 #define MAXPRODUCT 256
 
-enum RevParam
-{
-    RPnone,
-    RPirrev,
-    RPconfspread,
-    RPbounce,
-    RPpgem,
-    RPpgemmax,
-    RPpgemmaxw,
-    RPratio,
-    RPunbindrad,
-    RPpgem2,
-    RPpgemmax2,
-    RPratio2,
-    RPoffset,
-    RPfixed
-};
-enum SpeciesRepresentation
-{
-    SRparticle,
-    SRlattice,
-    SRboth,
-    SRnone,
-    SRfree
-};
+enum RevParam {RPnone, RPirrev, RPconfspread, RPbounce, RPpgem, RPpgemmax,
+    RPpgemmaxw, RPratio, RPunbindrad, RPpgem2, RPpgemmax2, RPratio2, RPoffset,
+    RPfixed };
+enum SpeciesRepresentation {SRparticle, SRlattice, SRboth, SRnone, SRfree };
 
 #ifdef OPTION_VCELL
 class ValueProvider;
 typedef ValueProvider* valueproviderptr;
 #endif
 
-typedef struct rxnstruct
-{
+typedef struct rxnstruct {
     struct rxnsuperstruct* rxnss;       // pointer to superstructure
     char* rname;                        // pointer to name of reaction
     int* rctident;                      // list of reactant identities [rct]
@@ -420,8 +341,7 @@ typedef struct rxnstruct
     struct surfacestruct* srf;  // surface reaction on, or NULL
 } * rxnptr;
 
-typedef struct rxnsuperstruct
-{
+typedef struct rxnsuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int order;                 // order of reactions listed: 0, 1, or 2
@@ -438,24 +358,10 @@ typedef struct rxnsuperstruct
 
 /********************************** Rules ***********************************/
 
-enum RuleType
-{
-    RTreaction,
-    RTdifc,
-    RTdifm,
-    RTdrift,
-    RTsurfdrift,
-    RTmollist,
-    RTdispsize,
-    RTcolor,
-    RTsurfaction,
-    RTsurfrate,
-    RTsurfrateint,
-    RTnone
-};
+enum RuleType {RTreaction, RTdifc, RTdifm, RTdrift, RTsurfdrift, RTmollist,
+    RTdispsize, RTcolor, RTsurfaction, RTsurfrate, RTsurfrateint, RTnone };
 
-typedef struct rulestruct
-{
+typedef struct rulestruct {
     struct rulesuperstruct* ruless; // pointer to superstructure
     enum RuleType ruletype;         // type of rule
     char* rulename;                 // pointer to name of rule
@@ -467,8 +373,7 @@ typedef struct rulestruct
     rxnptr rulerxn;                 // template reaction for reaction rules
 } * ruleptr;
 
-typedef struct rulesuperstruct
-{
+typedef struct rulesuperstruct {
     struct simstruct* sim; // simulation structure
     int maxrule;           // allocated size of rule list
     int nrule;             // actual size of rule list
@@ -481,62 +386,16 @@ typedef struct rulesuperstruct
 
 #define PSMAX 6 // maximum number of panel shapes
 
-enum PanelFace
-{
-    PFfront,
-    PFback,
-    PFnone,
-    PFboth
-};
-enum PanelShape
-{
-    PSrect,
-    PStri,
-    PSsph,
-    PScyl,
-    PShemi,
-    PSdisk,
-    PSall,
-    PSnone
-};
+enum PanelFace {PFfront, PFback, PFnone, PFboth };
+enum PanelShape {PSrect, PStri, PSsph, PScyl, PShemi, PSdisk, PSall, PSnone };
 
-enum SrfAction
-{
-    SAreflect,
-    SAtrans,
-    SAabsorb,
-    SAjump,
-    SAport,
-    SAmult,
-    SAno,
-    SAnone,
-    SAadsorb,
-    SArevdes,
-    SAirrevdes,
-    SAflip
-};
-enum DrawMode
-{
-    DMno = 0,
-    DMvert = 1,
-    DMedge = 2,
-    DMve = 3,
-    DMface = 4,
-    DMvf = 5,
-    DMef = 6,
-    DMvef = 7,
-    DMnone
-};
-enum SMLflag
-{
-    SMLno = 0,
-    SMLdiffuse = 1,
-    SMLreact = 2,
-    SMLsrfbound = 4
-};
+enum SrfAction {SAreflect, SAtrans, SAabsorb, SAjump, SAport, SAmult, SAno,
+    SAnone, SAadsorb, SArevdes, SAirrevdes, SAflip };
+enum DrawMode {DMno = 0, DMvert = 1, DMedge = 2, DMve = 3, DMface = 4, DMvf = 5,
+    DMef = 6, DMvef = 7, DMnone};
+enum SMLflag {SMLno = 0, SMLdiffuse = 1, SMLreact = 2, SMLsrfbound = 4};
 
-typedef struct surfactionstruct
-{
+typedef struct surfactionstruct {
     int* srfnewspec; // surface convert mol. species [ms]
     double* srfrate; // surface action rate [ms]
 #ifdef OPTION_VCELL
@@ -549,8 +408,7 @@ typedef struct surfactionstruct
     double* srfrevprob; // probability of reverse action [ms]
 } * surfactionptr;
 
-typedef struct panelstruct
-{
+typedef struct panelstruct {
     char* pname;                  // panel name (reference, not owned)
     enum PanelShape ps;           // panel shape
     struct surfacestruct* srf;    // surface that owns this panel
@@ -567,8 +425,7 @@ typedef struct panelstruct
     double* emitterabsorb[2];     // absorption for emitters [face][i]
 } * panelptr;
 
-typedef struct surfacestruct
-{
+typedef struct surfacestruct {
     char* sname;                      // surface name (reference, not owned)
     struct surfacesuperstruct* srfss; // owning surface superstructure
     int selfindex;                    // index of self
@@ -603,8 +460,7 @@ typedef struct surfacestruct
     moleculeptr** mol;                // live molecules on the surface [ll][m]
 } * surfaceptr;
 
-typedef struct surfacesuperstruct
-{
+typedef struct surfacesuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int maxspecies;            // maximum number of molecular species
@@ -622,8 +478,7 @@ typedef struct surfacesuperstruct
 
 /*********************************** Boxes **********************************/
 
-typedef struct boxstruct
-{
+typedef struct boxstruct {
     int* indx;                // dim dimensional index of the box [d]
     int nneigh;               // number of neighbors in list
     int midneigh;             // logical middle of neighbor list
@@ -639,8 +494,7 @@ typedef struct boxstruct
     moleculeptr** mol;        // lists of live molecules in the box [ll][m]
 } * boxptr;
 
-typedef struct boxsuperstruct
-{
+typedef struct boxsuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int nlist;                 // copy of number of molecule lists
@@ -656,20 +510,9 @@ typedef struct boxsuperstruct
 
 /******************************* Compartments *******************************/
 
-enum CmptLogic
-{
-    CLequal,
-    CLequalnot,
-    CLand,
-    CLor,
-    CLxor,
-    CLandnot,
-    CLornot,
-    CLnone
-};
+enum CmptLogic {CLequal, CLequalnot, CLand, CLor, CLxor, CLandnot, CLornot, CLnone};
 
-typedef struct compartstruct
-{
+typedef struct compartstruct {
     struct compartsuperstruct* cmptss; // compartment superstructure
     char* cname;                       // compart. name (reference, not owned)
     int selfindex;                     // index of self	//?? needs documenting
@@ -688,8 +531,7 @@ typedef struct compartstruct
     double* cumboxvol;                 // cumulative cmpt. volume of boxes [b]
 } * compartptr;
 
-typedef struct compartsuperstruct
-{
+typedef struct compartsuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int maxcmpt;               // maximum number of compartments
@@ -700,8 +542,7 @@ typedef struct compartsuperstruct
 
 /*********************************** Ports **********************************/
 
-typedef struct portstruct
-{
+typedef struct portstruct {
     struct portsuperstruct* portss; // port superstructure
     char* portname;                 // port name (reference, not owned)
     surfaceptr srf;                 // porting surface (ref.)
@@ -709,8 +550,7 @@ typedef struct portstruct
     int llport;                     // live list number for buffer
 } * portptr;
 
-typedef struct portsuperstruct
-{
+typedef struct portsuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int maxport;               // maximum number of ports
@@ -721,15 +561,9 @@ typedef struct portsuperstruct
 
 /*********************************** lattice **********************************/
 
-enum LatticeType
-{
-    LATTICEnone,
-    LATTICEnsv,
-    LATTICEpde
-};
+enum LatticeType {LATTICEnone, LATTICEnsv, LATTICEpde};
 
-typedef struct latticestruct
-{
+typedef struct latticestruct {
     struct latticesuperstruct* latticess; // lattice superstructure
     char* latticename;                    // lattice name (reference, not owned)
     enum LatticeType type;                // type of lattice
@@ -761,8 +595,7 @@ typedef struct latticestruct
 #endif
 } * latticeptr;
 
-typedef struct latticesuperstruct
-{
+typedef struct latticesuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int maxlattice;            // maximum number of lattices
@@ -773,53 +606,13 @@ typedef struct latticesuperstruct
 
 /********************************* Filaments ********************************/
 
-enum FilamentDynamics
-{
-    FDnone,
-    FDeuler,
-    FDRK2,
-    FDRK4,
-    FDeulermat,
-		FDimplicitold,
-		FDimplicit
-};
-
+enum FilamentDynamics {FDnone, FDeuler, FDRK2, FDRK4, FDeulermat, FDimplicitold,
+		FDimplicit};
 enum FilEndState {FESopen,FEScapped,FESshrink,FESnone};
 #define FESMAX 3
 
-/*
-
-typedef struct filmolstruct {					// Filament-molecule interactions structure
-    filamenttypeptr *filtype;					// owning filament type structure
-    int species;											// which molecule species is involved
-    enum molstate state;							// which molecule state is involved
-    surfaceptr surf;									// set if this only applies to a specific surface
-    compartptr compart;								// set if this only applies to a specific compartment
-		// is molecule already adsorbed to filament?
-    // interaction location: side-interaction, face interaction, sequence interaction, minus end, plus end, both end
-    // actions: adsorb, desorb, react, excluded volume
-    // force implications for filament
-    // parameters: interaction rate, binding radius, unbinding radius, desoprtion rate, etc.
-
-} *filmolptr;
-
-
-typedef struct filfilstruct {
-}* filfilptr;
-
-typedef struct filsurfstruct {				// Filament-surface interactions
-		filamenttypeptr *filtype;					// owning filament type
-		surfaceptr surf;									// which surface is involved
-		enum PanelFace face;							// which surface face is involved
-		compartptr compart;								// set if this only applies to a specific compartment
-		// is filament already adsorbed to the surface?
-		// interaction location: side-interaction, face interaction, sequence interaction, minus end, plus end, both end
-		// actions: adsorb, desorb, react, excluded volume
-		// force implications for filament
-		// force implications for surface
-		// parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
-} *filsurfptr;
-*/
+enum FilamentPart {FPplus, FPminus, FPside, FPall, FPnone};
+#define FILPARTMAX 3									// number of distinct filament parts
 
 typedef struct segmentstruct {
     struct filamentstruct* fil;       // owning filament
@@ -874,8 +667,56 @@ typedef struct filamentstruct {
     double lenbank[2];                  // length change owed but not yet emitted as segments [end]
 } * filamentptr;
 
-typedef struct filamenttypestruct
-{
+enum FilMolAction {FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact,
+    FMAnone};
+enum FilFilAction {FFAadsorb, FFAdesorb, FFAbounce, FFAnone};
+enum FilSurfAction {FSAadsorb, FSAdesorb, FSAbounce, FSAnone};
+
+typedef struct filmolinteractstruct {		// Filament-molecule interactions structure
+    struct filamenttypestruct *filtype;	// owning filament type structure
+    surfaceptr selfsurf;								// set if this only applies if the filament is bound to a specific surface
+		int filpart[FILPARTMAX];						// which part of filament interacts: plus, minus, side
+    char sequence[STRCHAR];							// recognition sequence, if any
+    int filface;												// filament face, if any
+    int species;												// which molecule species is involved
+    enum MolecState mstate;							// which molecule state is involved
+    surfaceptr othersurf;								// set if this only applies to a molecule bound to a specific surface
+    struct filamenttypestruct *otherfiltype;	// set if this only applies to a molecule bound to another filament
+    compartptr compart;									// set if this only applies within a specific compartment
+    enum FilMolAction action;						// type of interaction: adsorb, desorb, insert, add to end, change end state, reaction, bounce
+    // parameters: interaction rate, binding radius, unbinding radius, desoprtion rate, etc.
+} *filmolinteractptr;
+
+typedef struct filfilinteractstruct {
+    struct filamenttypestruct *filtype;	// owning filament type structure
+    surfaceptr selfsurf;								// set if this only applies if the filament is bound to a specific surface
+		int selffilpart[FILPARTMAX];				// which part of filament interacts: plus, minus, side
+    char selfsequence[STRCHAR];					// recognition sequence, if any
+    int selffilface;										// filament face, if any
+    struct filamenttypestuct *otherfiltype;		// filament type this these filaments interact with
+    surfaceptr othersurf;								// set if this only applies to a filament bound to a specific surface
+    int otherfilface;										// interaction face of other filament, if any
+    char othersequence[STRCHAR];				// recognition sequence on other filament, if any
+    compartptr compart;									// set if this only happens within a specific compartment
+    enum FilFilAction action;						// type of interaction: end annealing, excluded volume, side adsorption, branch addition
+    // parameters
+}* filfilinteractptr;
+
+typedef struct filsurfinteractstruct {	// Filament-surface interaction; one structure per interaction
+    struct filamenttypestruct *filtype;	// owning filament type structure
+    surfaceptr selfsurf;								// set if this only applies if the filament is bound to a specific surface
+		int filpart[FILPARTMAX];						// which part of filament interacts: plus, minus, side
+    char sequence[STRCHAR];							// recognition sequence, if any
+    int filface;												// filament face, if any
+		surfaceptr othersurf;								// which surface is involved
+		enum PanelFace surfface;						// which surface face is involved: front, back, or both
+		compartptr compart;									// set if this interaction only applies to a specific compartment, or NULL
+		enum FilSurfAction action;					// type of interaction: adsorb, desorb, bounce, react
+		// parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
+} *filsurfinteractptr;
+
+
+typedef struct filamenttypestruct {
     struct filamentsuperstruct* filss; // filament superstructure
     char* ftname;                      // fil type name (ref, not owned)
     enum FilamentDynamics dynamics;    // dynamics for the filament
@@ -925,8 +766,7 @@ typedef struct filamenttypestruct
     char** filnames;                   // names of filaments
 } * filamenttypeptr;
 
-typedef struct filamentsuperstruct
-{
+typedef struct filamentsuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int maxtype;               // maximum number of filament types
@@ -938,8 +778,7 @@ typedef struct filamentsuperstruct
 
 /******************************** BioNetGen *********************************/
 
-typedef struct bngstruct
-{
+typedef struct bngstruct {
     struct bngsuperstruct* bngss; // bng superstructure
     char* bngname;                // bng name
     int bngindex;                 // index of this bng structure
@@ -985,8 +824,7 @@ typedef struct bngstruct
     rxnptr* brxn;        // pointer to this reaction [index]
 } * bngptr;
 
-typedef struct bngsuperstruct
-{
+typedef struct bngsuperstruct {
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     char* BNG2path;            // path and name of BNG2.pl executable
@@ -999,20 +837,10 @@ typedef struct bngsuperstruct
 /********************************* Graphics ********************************/
 
 #define MAXLIGHTS 8 // must be ? GL_MAX_LIGHTS
-enum LightParam
-{
-    LPambient,
-    LPdiffuse,
-    LPspecular,
-    LPposition,
-    LPon,
-    LPoff,
-    LPauto,
-    LPnone
-};
+enum LightParam {LPambient, LPdiffuse, LPspecular, LPposition, LPon,
+    LPoff, LPauto, LPnone};
 
-typedef struct graphicssuperstruct
-{
+typedef struct graphicssuperstruct {
     enum StructCond condition;             // structure condition
     struct simstruct* sim;                 // simulation structure
     int graphics;                          // graphics: 0=none, 1=opengl, 2=good opengl
@@ -1042,37 +870,10 @@ typedef struct graphicssuperstruct
 /******************************** Simulation *******************************/
 
 #define ETMAX 11
-enum SmolStruct
-{
-    SSmolec,
-    SSwall,
-    SSrxn,
-    SSrule,
-    SSsurf,
-    SSbox,
-    SScmpt,
-    SSport,
-    SSfilament,
-    SScmd,
-    SSsim,
-    SScheck,
-    SSall,
-    SSnone
-};
-enum EventType
-{
-    ETwall,
-    ETsurf,
-    ETdesorb,
-    ETrxn0,
-    ETrxn1,
-    ETrxn2intra,
-    ETrxn2inter,
-    ETrxn2wrap,
-    ETrxn2hybrid,
-    ETimport,
-    ETexport
-};
+enum SmolStruct {SSmolec, SSwall, SSrxn, SSrule, SSsurf, SSbox, SScmpt, SSport,
+    SSfilament, SScmd, SSsim, SScheck, SSall, SSnone };
+enum EventType {ETwall, ETsurf, ETdesorb, ETrxn0, ETrxn1, ETrxn2intra, ETrxn2inter,
+    ETrxn2wrap, ETrxn2hybrid, ETimport, ETexport };
 
 typedef void (*logfnptr)(struct simstruct *,int,const char*,...);
 typedef int (*diffusefnptr)(struct simstruct*);
@@ -1084,8 +885,7 @@ typedef int (*unimolreactfnptr)(struct simstruct*);
 typedef int (*bimolreactfnptr)(struct simstruct*, int);
 typedef int (*checkwallsfnptr)(struct simstruct*, int, int, boxptr);
 
-typedef struct simstruct
-{
+typedef struct simstruct {
     enum StructCond condition; // structure condition
     FILE* logfile;             // file to send output
     logfnptr logfn;            // function for logging output
@@ -1157,14 +957,12 @@ typedef struct simstruct
 
 #ifdef __cplusplus
 
-struct CompartmentIdentifierPair
-{
+struct CompartmentIdentifierPair {
     char name[128];
     unsigned char pixel; // the compartmentID
 };
 
-typedef struct VolumeSamples
-{
+typedef struct VolumeSamples {
     int num[3];                // number of mesh points in X, Y,Z
     double size[3];            // actual size in X, Y, Z (e.g. in micron)
     double origin[3];          // origin of the X, Y, Z
@@ -1176,8 +974,7 @@ typedef struct VolumeSamples
 class ValueProviderFactory;
 class AbstractMesh;
 
-class ValueProvider
-{
+class ValueProvider {
   public:
     virtual ~ValueProvider(){};
     virtual double getConstantValue() = 0;
@@ -1196,8 +993,7 @@ class ValueProvider
       char* panelName) = 0;
 };
 
-class ValueProviderFactory
-{
+class ValueProviderFactory {
   public:
     virtual ~ValueProviderFactory(){};
     virtual ValueProvider* createValueProvider(string& rateExp) = 0;
@@ -1208,8 +1004,7 @@ class ValueProviderFactory
     simptr sim;
 };
 
-class AbstractMesh
-{
+class AbstractMesh {
   public:
     virtual ~AbstractMesh(){};
     virtual void getCenterCoordinates(int volIndex, double* coords) = 0;
