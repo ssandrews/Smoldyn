@@ -405,6 +405,8 @@ int latticeruntimestep(simptr sim);
 /******************************** Filaments *******************************/
 
 // enumerated types
+char *filFES2string(enum FilEndState fes,char *string);
+enum FilEndState filstring2FES(const char *string);
 
 // low level utilities
 int filReadFilName(simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);

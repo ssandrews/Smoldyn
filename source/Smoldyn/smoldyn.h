@@ -784,6 +784,9 @@ enum FilamentDynamics
 		FDimplicit
 };
 
+enum FilEndState {FESopen,FEScapped,FESshrink,FESnone};
+#define FESMAX 3
+
 /*
 
 typedef struct filmolstruct {					// Filament-molecule interactions structure
@@ -867,8 +870,8 @@ typedef struct filamentstruct {
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
-    double growbank;                    // plus-end growth owed but not yet emitted as a segment
-    int capped;                         // bitmask of capped ends; see FILCAPPLUS
+    enum FilEndState endstate[2];       // state of each end [end], where 0 = minus and 1 = plus
+    double lenbank[2];                  // length change owed but not yet emitted as segments [end]
 } * filamentptr;
 
 typedef struct filamenttypestruct
@@ -907,10 +910,10 @@ typedef struct filamenttypestruct
     surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
     double confineforce;               // confinement spring constant, energy/length^2; 0 = off
     enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
-    double elongrate;                  // plus-end elongation velocity, length/time; 0 = off
+    double endrate[2][FESMAX];         // end velocity [end][state], length/time; >0 grows, <0 shrinks
+    double endtrans[2][FESMAX][FESMAX]; // end state transition rates [end][from][to], 1/time
+    enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
-    double caprate;                    // plus-end capping rate, 1/time; 0 = off
-    double uncaprate;                  // plus-end uncapping rate, 1/time; 0 = off
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names

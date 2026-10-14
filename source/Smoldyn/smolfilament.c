@@ -36,6 +36,8 @@
 // Enumerated types
 char *filFD2string(enum FilamentDynamics fd,char *string);
 enum FilamentDynamics filstring2FD(const char *string);
+int filstring2end(const char *string);
+char filend2char(int end);
 
 // Low level utilities
 int filReadFilName(const simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
@@ -133,11 +135,10 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinBranches(filamentptr fil);
 
 // Filament elongation and capping
-int filEndIsCapped(const filamentptr fil,char endchar);
 double filContourLength(const filamentptr fil);
-int filElongate(simptr sim,filamentptr fil,double dlength);
-void filElongationDynamics(simptr sim,filamenttypeptr filtype);
-void filCappingDynamics(simptr sim,filamenttypeptr filtype);
+int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength);
+void filEndTransitions(simptr sim,filamenttypeptr filtype);
+void filEndDynamics(simptr sim,filamenttypeptr filtype);
 
 // Filament interactions
 int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr);
@@ -196,6 +197,40 @@ enum FilamentDynamics filstring2FD(const char *string) {
 	else if(strbegin(string,"implicit",0)) ans=FDimplicit;
 	else ans=FDnone;
 	return ans; }
+
+
+/* filFES2string */
+char *filFES2string(enum FilEndState fes,char *string) {
+	if(fes==FESopen) strcpy(string,"open");
+	else if(fes==FEScapped) strcpy(string,"capped");
+	else if(fes==FESshrink) strcpy(string,"shrink");
+	else strcpy(string,"none");
+	return string; }
+
+
+/* filstring2FES */
+enum FilEndState filstring2FES(const char *string) {
+	enum FilEndState ans;
+
+	if(!strcmp(string,"open")) ans=FESopen;
+	else if(!strcmp(string,"capped")) ans=FEScapped;
+	else if(!strcmp(string,"shrink")) ans=FESshrink;
+	else ans=FESnone;
+	return ans; }
+
+
+/* filstring2end */
+// Filament end index for the word "minus" (0) or "plus" (1); -1 for anything else.
+int filstring2end(const char *string) {
+	if(!strcmp(string,"minus")) return 0;
+	if(!strcmp(string,"plus")) return 1;
+	return -1; }
+
+
+/* filend2char */
+// End character, 'm' or 'p', used by the segment functions for end index 0 or 1.
+char filend2char(int end) {
+	return end==1?'p':'m'; }
 
 
 /******************************************************************************/
@@ -475,8 +510,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->maxsequence=0;
 		fil->nsequence=0;
 		fil->sequence=NULL;
-		fil->growbank=0;
-		fil->capped=0; }
+		fil->endstate[0]=fil->endstate[1]=FESopen;
+		fil->lenbank[0]=fil->lenbank[1]=0; }
 
 	if(maxseg>fil->maxseg) {
 		CHECKMEM(newsegments=(segmentptr*) calloc(maxseg,sizeof(segmentptr)));
@@ -598,7 +633,7 @@ void filFree(filamentptr fil) {
 
 /* filamentTypeAlloc */
 filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface) {
-	int f,fc;
+	int f,fc,end,fes,fes2;
 	filamentptr *newfillist;
 	char **newfacename,**newfilnames;
 
@@ -645,10 +680,12 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->confineforce=0;
 		filtype->confineface=PFfront;								// confine to the front side when on
 
-		filtype->elongrate=0;												// elongation off by default
+		for(end=0;end<2;end++) {										// ends don't change length or state by default
+			filtype->endstate0[end]=FESopen;
+			for(fes=0;fes<FESMAX;fes++) {
+				filtype->endrate[end][fes]=0;
+				for(fes2=0;fes2<FESMAX;fes2++) filtype->endtrans[end][fes][fes2]=0; }}
 		filtype->elongmaxlen=0;											// 0 => unbounded growth
-		filtype->caprate=0;													// capping off by default
-		filtype->uncaprate=0;
 
 		filtype->maxface=0;
 		filtype->nface=0;
@@ -789,6 +826,7 @@ void filssFree(filamentssptr filss) {
 /* filOutput */
 void filOutput(const filamentptr fil) {
 	int seg,br,seqi,dim;
+	char string1[STRCHAR],string2[STRCHAR];
 	simptr sim;
 	segmentptr segment;
 
@@ -838,8 +876,8 @@ void filOutput(const filamentptr fil) {
 	if(fil->plusend)
 		simLog(sim,2,"   plus end branched from: %s\n",fil->plusend->filname);
 
-	simLog(sim,fil->capped?2:1,"   plus end: %s\n",fil->capped?"capped":"free");
-	simLog(sim,fil->growbank>0?2:1,"   pending growth: %g|L\n",fil->growbank);
+	simLog(sim,(fil->endstate[0]!=FESopen || fil->endstate[1]!=FESopen)?2:1,"   end states: minus %s, plus %s\n",filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
+	simLog(sim,(fil->lenbank[0]!=0 || fil->lenbank[1]!=0)?2:1,"   pending length change: minus %g|L, plus %g|L\n",fil->lenbank[0],fil->lenbank[1]);
 
 	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
 	simLog(sim,fil->nbranch>0?2:1,"   number of branches: %i\n",fil->nbranch);
@@ -863,8 +901,9 @@ void filOutput(const filamentptr fil) {
 
 /* filtypeOutput */
 void filtypeOutput(const filamenttypeptr filtype) {
-	char string[STRCHAR];
-	int fc,f,dim;
+	char string[STRCHAR],string2[STRCHAR];
+	int fc,f,dim,end,fes,fes2,active,grows;
+	double rtot;
 	simptr sim;
 
 	if(!filtype) {
@@ -927,13 +966,28 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		if(filtype->kT>0)																// equipartition penetration depth the wall permits
 			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
 
-	simLog(sim,filtype->elongrate>0?2:1,"  elongation rate: %g|L/T\n",filtype->elongrate);
-	if(filtype->elongrate>0 && filtype->elongmaxlen>0)
+	grows=0;
+	for(end=0;end<2;end++) {														// end dynamics
+		active=(filtype->endstate0[end]!=FESopen);
+		for(fes=0;fes<FESMAX;fes++) {
+			if(filtype->endrate[end][fes]!=0) active=1;
+			if(filtype->endrate[end][fes]>0) grows=1;
+			for(fes2=0;fes2<FESMAX;fes2++)
+				if(filtype->endtrans[end][fes][fes2]>0) active=1; }
+		simLog(sim,active?2:1,"  %s end: initial state %s\n",end?"plus":"minus",filFES2string(filtype->endstate0[end],string));
+		for(fes=0;fes<FESMAX;fes++)
+			if(filtype->endrate[end][fes]!=0)
+				simLog(sim,2,"   %s state velocity: %g|L/T\n",filFES2string((enum FilEndState)fes,string),filtype->endrate[end][fes]);
+		for(fes=0;fes<FESMAX;fes++)
+			for(fes2=0;fes2<FESMAX;fes2++)
+				if(filtype->endtrans[end][fes][fes2]>0)
+					simLog(sim,2,"   %s to %s transition rate: %g|/T\n",filFES2string((enum FilEndState)fes,string),filFES2string((enum FilEndState)fes2,string2),filtype->endtrans[end][fes][fes2]);
+		rtot=0;																						// the analytic target for a growth phase that ends by a transition
+		for(fes2=0;fes2<FESMAX;fes2++) rtot+=filtype->endtrans[end][FESopen][fes2];
+		if(filtype->endrate[end][FESopen]>0 && rtot>0)
+			simLog(sim,2,"   mean length added per open period: %g|L\n",filtype->endrate[end][FESopen]/rtot); }
+	if(grows && filtype->elongmaxlen>0)
 		simLog(sim,2,"  elongation max length: %g|L\n",filtype->elongmaxlen);
-	simLog(sim,filtype->caprate>0?2:1,"  capping rate: %g|/T\n",filtype->caprate);
-	simLog(sim,filtype->uncaprate>0?2:1,"  uncapping rate: %g|/T\n",filtype->uncaprate);
-	if(filtype->caprate>0)																					// the analytic target the pair is calibrated to
-		simLog(sim,2,"  mean length added before capping: %g|L\n",filtype->elongrate/filtype->caprate);
 
 	simLog(sim,2,"  mobility: %g\n",filtype->mobility);
 	simLog(sim,2,"  filament radius: %g\n",filtype->filradius);
@@ -985,7 +1039,7 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn,dim,f,seg,ft,pcount;
+	int error,warn,dim,f,seg,ft,pcount,end,fes,fes2,grows,changes,reach[FESMAX],more;
 	double fval;
 	enum PanelShape ps;
 	filamentssptr filss;
@@ -1009,12 +1063,29 @@ int filCheckParams(const simptr sim,int *warnptr) {
 	for(ft=0;ft<filss->ntype;ft++) {
 		filtype=filss->filtypes[ft];
 
-		if(filtype->elongrate>0 && filtype->stdlen<=0) {		// otherwise the banked-growth loop has a zero threshold
-			error++;simLog(sim,9,"ERROR: filament type %s has elongation_rate>0 but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
-		if(filtype->treadrate!=0 && filtype->elongrate>0) {
-			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net growth\n",filtype->ftname);}
-		if(filtype->treadrate<0 && filtype->caprate>0) {
-			warn++;simLog(sim,5,"WARNING: filament type %s treadmills at its minus end, so plus-end capping does not block treadmilling\n",filtype->ftname);}
+		grows=changes=0;
+		for(end=0;end<2;end++)
+			for(fes=0;fes<FESMAX;fes++) {
+				if(filtype->endrate[end][fes]>0) grows=1;
+				if(filtype->endrate[end][fes]!=0) changes=1; }
+		if(grows && filtype->stdlen<=0) {									// otherwise the banked-growth loop has a zero threshold
+			error++;simLog(sim,9,"ERROR: filament type %s has a positive elongation_rate but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
+		if(filtype->treadrate!=0 && changes) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has both treadmill_rate and elongation_rate set; these compose as turnover plus net length change\n",filtype->ftname);}
+		for(end=0;end<2;end++) {													// end states with velocities that are never reached
+			for(fes=0;fes<FESMAX;fes++) reach[fes]=0;
+			reach[filtype->endstate0[end]]=1;							// new filaments start here
+			for(f=0;f<filtype->nfil;f++)										// existing filaments may have been set to other states
+				reach[filtype->fillist[f]->endstate[end]]=1;
+			for(more=1;more;) {
+				more=0;
+				for(fes=0;fes<FESMAX;fes++)
+					if(reach[fes])
+						for(fes2=0;fes2<FESMAX;fes2++)
+							if(!reach[fes2] && filtype->endtrans[end][fes][fes2]>0) reach[fes2]=more=1; }
+			for(fes=0;fes<FESMAX;fes++)
+				if(!reach[fes] && filtype->endrate[end][fes]!=0) {
+					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));} }
 		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
 			if(filtype->branchspread==0) {
@@ -1160,21 +1231,22 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value<0) er=2;
 		else filtype->confineforce=value; }
 
-	else if(!strcmp(param,"elongrate")) {							// plus-end growth velocity, length/time
-		if(value<0) er=2;
-		else filtype->elongrate=value; }
+	else if(!strcmp(param,"endrate")) {								// end velocity, length/time; index = end*FESMAX+state
+		if(index<0 || index>=2*FESMAX) er=2;
+		else filtype->endrate[index/FESMAX][index%FESMAX]=value; }
+
+	else if(!strcmp(param,"endtrans")) {							// end state transition rate, 1/time; index = (end*FESMAX+from)*FESMAX+to
+		if(index<0 || index>=2*FESMAX*FESMAX || value<0) er=2;
+		else if(index/FESMAX%FESMAX==index%FESMAX) er=2;	// no transition from a state to itself
+		else filtype->endtrans[index/(FESMAX*FESMAX)][index/FESMAX%FESMAX][index%FESMAX]=value; }
+
+	else if(!strcmp(param,"endstate0")) {							// initial end state; index = end, value = state
+		if(index<0 || index>=2 || value<0 || value>=FESMAX) er=2;
+		else filtype->endstate0[index]=(enum FilEndState)(int)value; }
 
 	else if(!strcmp(param,"elongmaxlen")) {						// contour-length ceiling; 0 = unbounded
 		if(value<0) er=2;
 		else filtype->elongmaxlen=value; }
-
-	else if(!strcmp(param,"caprate")) {								// plus-end capping rate, 1/time
-		if(value<0) er=2;
-		else filtype->caprate=value; }
-
-	else if(!strcmp(param,"uncaprate")) {							// plus-end uncapping rate, 1/time
-		if(value<0) er=2;
-		else filtype->uncaprate=value; }
 
 	else if(!strcmp(param,"mobility")) {
 		if(value<=0) er=2;
@@ -1380,8 +1452,9 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	int nvar,dim;
 
 	int itct,er,i1,i2;
-	char nm[STRCHARLONG],nm1[STRCHARLONG];
+	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG];
 	double fltv1[9],f1;
+	enum FilEndState fes1,fes2;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
 	enum PanelFace pf;
@@ -1621,13 +1694,56 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"confineforce",0,f1);
 		filtype->confineface=pf; }
 
-	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: plus-end velocity, length/time
+	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
-		itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
-		CHECKM(itct==1,"elongation_rate format: value. ");
-		CHECKS(f1>=0,"elongation_rate value needs to be >=0");
-		filtypeSetParam(filtype,"elongrate",0,f1);
+		if(!strnword(line2,2)) {										// short form: plus end velocity in the open state
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"elongation_rate format: [end state] value. ");
+			CHECKS(f1>=0,"elongation_rate value needs to be >=0");
+			i1=1;
+			fes1=FESopen; }
+		else {
+			itct=sscanf(line2,"%s %s",nm,nm1);
+			CHECKS(itct==2,"elongation_rate format: [end state] value");
+			i1=filstring2end(nm);
+			CHECKS(i1>=0,"elongation_rate end needs to be minus or plus");
+			fes1=filstring2FES(nm1);
+			CHECKS(fes1!=FESnone,"elongation_rate state needs to be open, capped, or shrink");
+			line2=strnword(line2,3);
+			CHECKS(line2,"elongation_rate format: [end state] value");
+			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"elongation_rate format: [end state] value. "); }
+		filtypeSetParam(filtype,"endrate",i1*FESMAX+fes1,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following elongation_rate"); }
+
+	else if(!strcmp(word,"end_transition")) {		// end_transition: end from to rate, 1/time
+		CHECKS(filtype,"need to enter filament type name before end_transition");
+		itct=sscanf(line2,"%s %s %s",nm,nm1,nm2);
+		CHECKS(itct==3,"end_transition format: end from_state to_state rate");
+		i1=filstring2end(nm);
+		CHECKS(i1>=0,"end_transition end needs to be minus or plus");
+		fes1=filstring2FES(nm1);
+		fes2=filstring2FES(nm2);
+		CHECKS(fes1!=FESnone && fes2!=FESnone,"end_transition states need to be open, capped, or shrink");
+		CHECKS(fes1!=fes2,"end_transition states need to be different");
+		line2=strnword(line2,4);
+		CHECKS(line2,"end_transition format: end from_state to_state rate");
+		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"end_transition format: end from_state to_state rate. ");
+		CHECKS(f1>=0,"end_transition rate needs to be >=0");
+		filtypeSetParam(filtype,"endtrans",(i1*FESMAX+fes1)*FESMAX+fes2,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following end_transition"); }
+
+	else if(!strcmp(word,"end_state")) {				// end_state: end state, the initial state for new filaments
+		CHECKS(filtype,"need to enter filament type name before end_state");
+		itct=sscanf(line2,"%s %s",nm,nm1);
+		CHECKS(itct==2,"end_state format: end state");
+		i1=filstring2end(nm);
+		CHECKS(i1>=0,"end_state end needs to be minus or plus");
+		fes1=filstring2FES(nm1);
+		CHECKS(fes1!=FESnone,"end_state state needs to be open, capped, or shrink");
+		filtypeSetParam(filtype,"endstate0",i1,(double)fes1);
+		CHECKS(!strnword(line2,3),"unexpected text following end_state"); }
 
 	else if(!strcmp(word,"elongation_max_length")) {	// elongation_max_length: contour-length ceiling
 		CHECKS(filtype,"need to enter filament type name before elongation_max_length");
@@ -1637,20 +1753,20 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"elongmaxlen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following elongation_max_length"); }
 
-	else if(!strcmp(word,"capping_rate")) {		// capping_rate: plus-end capping, 1/time
+	else if(!strcmp(word,"capping_rate")) {		// capping_rate: plus end open to capped, 1/time
 		CHECKS(filtype,"need to enter filament type name before capping_rate");
 		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"capping_rate format: value. ");
 		CHECKS(f1>=0,"capping_rate value needs to be >=0");
-		filtypeSetParam(filtype,"caprate",0,f1);
+		filtypeSetParam(filtype,"endtrans",(1*FESMAX+FESopen)*FESMAX+FEScapped,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following capping_rate"); }
 
-	else if(!strcmp(word,"uncapping_rate")) {	// uncapping_rate: plus-end uncapping, 1/time
+	else if(!strcmp(word,"uncapping_rate")) {	// uncapping_rate: plus end capped to open, 1/time
 		CHECKS(filtype,"need to enter filament type name before uncapping_rate");
 		itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"uncapping_rate format: value. ");
 		CHECKS(f1>=0,"uncapping_rate value needs to be >=0");
-		filtypeSetParam(filtype,"uncaprate",0,f1);
+		filtypeSetParam(filtype,"endtrans",(1*FESMAX+FEScapped)*FESMAX+FESopen,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following uncapping_rate"); }
 
 	else if(!strcmp(word,"mobility")) {			// mobility
@@ -1727,6 +1843,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 	int itct,er,i1,seg,node;
 	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR],symbol;
 	double fltv1[9],length,angle[3],thick,f1,pos[3];
+	enum FilEndState fes;
 
 	dim=sim->dim;
 
@@ -2003,6 +2120,17 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filSetNodeMobility(fil,i1,f1);
 		CHECKS(!er,"error while trying to set node mobility");
 		CHECKS(!strnword(line2,3),"unexpected text following node_mobility"); }
+
+	else if(!strcmp(word,"end_state")) {				// end_state: end state
+		CHECKS(fil,"need to enter filament name before end_state");
+		itct=sscanf(line2,"%s %s",str1,str2);
+		CHECKS(itct==2,"end_state format: end state");
+		i1=filstring2end(str1);
+		CHECKS(i1>=0,"end_state end needs to be minus or plus");
+		fes=filstring2FES(str2);
+		CHECKS(fes!=FESnone,"end_state state needs to be open, capped, or shrink");
+		fil->endstate[i1]=fes;
+		CHECKS(!strnword(line2,3),"unexpected text following end_state"); }
 
 	else {																				// unknown word
 		CHECKS(0,"syntax error within filament block: statement not recognized"); }
@@ -2542,10 +2670,7 @@ void filArrayShift(filamentptr fil,int shift) {
 		for(i=fil->nseg+shift;i>=shift;i--) {
 			newnode = fil->nodes[i];
 			fil->nodes[i]=fil->nodes[i-shift];
-			fil->nodes[i-shift]=newnode; }
-		for(i=0;i<shift;i++) {
-			fil->segments[i]->xyzminus=fil->nodes[i];
-			fil->segments[i]->xyzplus=fil->nodes[i+1]; }}
+			fil->nodes[i-shift]=newnode; }}
 
 	else if(shift<0) {
 		shift=-shift;								// now shift is positive
@@ -2557,10 +2682,11 @@ void filArrayShift(filamentptr fil,int shift) {
 			newnode = fil->nodes[i];
 			fil->nodes[i]=fil->nodes[i+shift];
 			fil->nodes[i+shift]=newnode; }
-		for(i=fil->nseg-shift;i<fil->nseg;i++) {
-			fil->segments[i]->xyzminus=fil->nodes[i];
-			fil->segments[i]->xyzplus=fil->nodes[i+1]; }
 		shift=-shift; }
+
+	for(i=0;i<fil->maxseg;i++) {									// every segment, including spares past nseg, must point at its own nodes
+		fil->segments[i]->xyzminus=fil->nodes[i];
+		fil->segments[i]->xyzplus=fil->nodes[i+1]; }
 
 	filShiftBranchNodes(fil,shift,fil->nseg+shift);	// nodes were renumbered, so branch nodes move with them
 
@@ -2961,8 +3087,9 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 		filto->sequence[i]=filfrom->sequence[i];
 	filto->nsequence=filfrom->nsequence;
 
-	filto->growbank=filfrom->growbank;
-	filto->capped=filfrom->capped;
+	for(i=0;i<2;i++) {
+		filto->endstate[i]=filfrom->endstate[i];
+		filto->lenbank[i]=filfrom->lenbank[i]; }
 
 	return 0; }
 
@@ -2992,8 +3119,9 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 	fil->minusend=fil->plusend=NULL;
 	fil->nbranch=0;
 	fil->nsequence=0;
-	fil->growbank=0;																// reused list slots must not inherit growth state
-	fil->capped=0;
+	fil->endstate[0]=filtype->endstate0[0];				// new filaments start in the type's initial end states
+	fil->endstate[1]=filtype->endstate0[1];
+	fil->lenbank[0]=fil->lenbank[1]=0;							// reused list slots must not inherit length change state
 	filSetCondition(filtype->filss,SClists,0);
 
 	return fil; }
@@ -3270,15 +3398,8 @@ void filPinBranches(filamentptr fil) {
 
 
 /******************************************************************************/
-/************************ filament elongation and capping *********************/
+/************************ filament end dynamics *******************************/
 /******************************************************************************/
-
-
-/* filEndIsCapped */
-// Is end 'p' (plus) or 'm' (minus) capped? Only the plus end can be capped.
-int filEndIsCapped(const filamentptr fil,char endchar) {
-	if(endchar=='p') return fil->capped;
-	return 0; }
 
 
 /* filContourLength */
@@ -3292,13 +3413,18 @@ double filContourLength(const filamentptr fil) {
 	return total; }
 
 
-/* filElongate */
-// Grow the plus end by dlength of contour length. Segments are added whole, so growbank
-// carries the remainder forward; debiting the length actually drawn keeps total length
-// tracking rate*time with bounded rather than accumulating error. A blocked end drops the
-// growth it was denied rather than banking it, so it stalls at zero instead of surging
-// when it clears. Returns segments added, or -1 on a configuration error.
-int filElongate(simptr sim,filamentptr fil,double dlength) {
+/* filEndLengthChange */
+// Change the length of end end (0 = minus, 1 = plus) of fil by dlength of contour length:
+// grow for dlength>0 and shrink for dlength<0. Segments are added or removed whole, so
+// lenbank carries the remainder forward. Growth debits the length actually drawn, which
+// keeps total length tracking rate*time with bounded rather than accumulating error; a
+// blocked end drops the growth it was denied rather than banking it, so it stalls at zero
+// instead of surging when it clears. Shrinking removes the end segment once the bank
+// covers that segment's actual length, for the same exact accounting. A filament never
+// shrinks below one segment, and holds no pending shrinkage once it is down to one.
+// Returns the number of segments added (positive) or removed (negative), or -1000 for a
+// configuration error.
+int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength) {
 	filamenttypeptr filtype;
 	char endchar;
 	double stdlen,maxlen,newlen,curlen;
@@ -3306,77 +3432,104 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 
 	filtype=fil->filtype;
 	if(fil->nseg<1) return 0;												// nothing to grow from
-	endchar='p';
-	if(filEndIsCapped(fil,endchar)) return 0;				// a capped plus end accepts no monomer
+	endchar=filend2char(end);
+
+	if(dlength<0) {																	// shrinking
+		fil->lenbank[end]+=dlength;
+		nadd=0;
+		while(fil->nseg>1 && -fil->lenbank[end]>=fil->segments[(endchar=='p')?fil->nseg-1:0]->len) {
+			fil->lenbank[end]+=fil->segments[(endchar=='p')?fil->nseg-1:0]->len;
+			filRemoveSegment(fil,endchar);
+			nadd--; }
+		if(fil->nseg==1 && fil->lenbank[end]<0) fil->lenbank[end]=0;	// at the minimum length: nothing more to remove
+		return nadd; }
+
 	stdlen=filtype->stdlen;
-	if(stdlen<=0) return -1;												// filCheckParams errors on this; guard the loop anyway
+	if(stdlen<=0) return -1000;											// filCheckParams errors on this; guard the loop anyway
 
 	maxlen=filtype->elongmaxlen;
 	curlen=maxlen>0?filContourLength(fil):0;				// only needed to test the ceiling
 	if(maxlen>0 && curlen>=maxlen) return 0;				// at the ceiling: no growth, and nothing banked
 
-	fil->growbank+=dlength;
+	fil->lenbank[end]+=dlength;
 	nadd=0;
-	while(fil->growbank>=stdlen) {
+	while(fil->lenbank[end]>=stdlen) {
 		if(nadd>=FILMAXGROW) {
 			simLog(sim,5,"WARNING: filament %s hit the %i segment per step elongation limit; check elongation_rate against dt\n",fil->filname,FILMAXGROW);
 			break; }
 		if(maxlen>0 && curlen>=maxlen) {								// crossed the ceiling partway through this step
-			if(fil->growbank>stdlen) fil->growbank=stdlen;
+			if(fil->lenbank[end]>stdlen) fil->lenbank[end]=stdlen;
 			break; }
 
 		er=filAddOneRandomSegment(sim,fil,NULL,fil->segments[(endchar=='p')?fil->nseg-1:0]->thk,endchar,1);
-		if(er) {																						// blocked plus end
-			fil->growbank-=dlength;														// this step's growth did not happen
-			if(fil->growbank>stdlen) fil->growbank=stdlen;		// and never hold more than one segment in reserve
-			if(fil->growbank<0) fil->growbank=0;
+		if(er) {																						// blocked end
+			fil->lenbank[end]-=dlength;												// this step's growth did not happen
+			if(fil->lenbank[end]>stdlen) fil->lenbank[end]=stdlen;	// and never hold more than one segment in reserve
+			if(fil->lenbank[end]<0) fil->lenbank[end]=0;
 			break; }
 
 		newlen=fil->segments[(endchar=='p')?fil->nseg-1:0]->len;
-		fil->growbank-=newlen;														// pay for the segment actually emitted
+		fil->lenbank[end]-=newlen;												// pay for the segment actually emitted
 		curlen+=newlen;
 		nadd++; }
 
 	return nadd; }
 
 
-/* filElongationDynamics */
-// Plus-end elongation for one filament type: each filament grows by rate*dt of contour
-// length. Deterministic; the only length noise is the random segment length.
-void filElongationDynamics(simptr sim,filamenttypeptr filtype) {
-	int f;
-	double dlength;
-
-	if(filtype->elongrate<=0) return;
-	dlength=filtype->elongrate*sim->dt;
-
-	for(f=0;f<filtype->nfil;f++)
-		filElongate(sim,filtype->fillist[f],dlength);
-
-	return; }
-
-
-/* filCappingDynamics */
-// Stochastic plus-end capping and uncapping. The per-step probability is 1-exp(-rate*dt),
-// matching the unimolecular convention in smolreact.c rather than a linearized rate*dt,
-// which is what makes the measured rate independent of dt. Capping blocks monomer
-// addition; it does not shrink the filament, as there is no segment-removal path.
-void filCappingDynamics(simptr sim,filamenttypeptr filtype) {
-	int f;
-	double pcap,puncap;
+/* filEndTransitions */
+// Stochastic end state transitions for one filament type. An end in a state with total
+// exit rate R leaves it with per-step probability 1-exp(-R*dt), matching the unimolecular
+// convention in smolreact.c rather than a linearized R*dt, which is what makes the
+// measured rates independent of dt. The destination is chosen in proportion to the
+// individual rates. Random numbers are drawn only for ends that can leave their state,
+// and the destination is drawn only when there is more than one, so a type that only caps
+// and uncaps its plus end draws exactly the random numbers that capping alone did.
+void filEndTransitions(simptr sim,filamenttypeptr filtype) {
+	int f,end,fes2,ndest;
+	double rtot,r;
 	filamentptr fil;
-
-	if(filtype->caprate<=0 && filtype->uncaprate<=0) return;
-	pcap=filtype->caprate>0?1.0-exp(-filtype->caprate*sim->dt):0;
-	puncap=filtype->uncaprate>0?1.0-exp(-filtype->uncaprate*sim->dt):0;
+	enum FilEndState fes,dest;
 
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
 		if(fil->nseg<1) continue;
-		if(fil->capped) {
-			if(puncap>0 && coinrandD(puncap)) fil->capped=0; }
-		else {
-			if(pcap>0 && coinrandD(pcap)) fil->capped=1; }}
+		for(end=0;end<2;end++) {
+			fes=fil->endstate[end];
+			rtot=0;
+			ndest=0;
+			dest=fes;
+			for(fes2=0;fes2<FESMAX;fes2++)
+				if(filtype->endtrans[end][fes][fes2]>0) {
+					rtot+=filtype->endtrans[end][fes][fes2];
+					ndest++;
+					dest=(enum FilEndState)fes2; }
+			if(rtot<=0 || !coinrandD(1.0-exp(-rtot*sim->dt))) continue;
+			if(ndest>1) {																	// pick a destination in proportion to its rate
+				r=unirandCOD(0,rtot);
+				for(fes2=0;fes2<FESMAX;fes2++)
+					if(filtype->endtrans[end][fes][fes2]>0) {
+						dest=(enum FilEndState)fes2;
+						r-=filtype->endtrans[end][fes][fes2];
+						if(r<0) break; }}
+			fil->endstate[end]=dest; }}
+
+	return; }
+
+
+/* filEndDynamics */
+// Length changes at both ends of every filament of one filament type, minus end first,
+// each by its current state's velocity times dt. Deterministic; the only length noise is
+// the random segment length.
+void filEndDynamics(simptr sim,filamenttypeptr filtype) {
+	int f,end;
+	double v;
+	filamentptr fil;
+
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		for(end=0;end<2;end++) {
+			v=filtype->endrate[end][fil->endstate[end]];
+			if(v!=0) filEndLengthChange(sim,fil,end,v*sim->dt); }}
 
 	return; }
 
@@ -4283,14 +4436,14 @@ int filDynamics(simptr sim) {
 		if(filtype->treadrate!=0) {
 			for(f=0;f<filtype->nfil;f++) {
 				fil=filtype->fillist[f];
-				if(filEndIsCapped(fil,filtype->treadrate>0?'p':'m')) continue;	// capped end takes no monomer
+				if(fil->endstate[filtype->treadrate>0?1:0]!=FESopen) continue;	// only an open end takes a monomer
 				treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
 				for(i=0;i<treadnum;i++)
 					filTreadmill(sim,fil,filtype->treadrate>0?'p':'m'); }}
 
 		filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
-		filCappingDynamics(sim,filtype);								// before elongation: a filament capped now doesn't also grow now
-		filElongationDynamics(sim,filtype);							// before the integrator: a new segment relaxes this step
+		filEndTransitions(sim,filtype);									// before length changes: an end capped now doesn't also grow now
+		filEndDynamics(sim,filtype);										// before the integrator: a new segment relaxes this step
 
 		if(filtype->dynamics==FDeuler)
 			filEulerDynamics(sim,filtype);

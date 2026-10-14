@@ -3660,7 +3660,7 @@ Set the thermal energy value, equal to Boltzmann's constant times temperature. E
 
 \item{\ttt{* treadmill\_rate} $value$}
 
-Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here.
+Some filaments treadmill, in which they drop off monomers at one end and add them to the other end. Set the treadmilling rate here. A positive value adds segments at the plus end and removes them from the minus end, and a negative value does the reverse. Treadmilling only occurs while the end that gains segments is in the ``open'' state (see \ttt{end\_state}).
 
 \item{\ttt{* branch\_rate} $value$} %?? new
 
@@ -3711,8 +3711,9 @@ If branching should only be allowed within a certain compartment, enter that com
 If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$. Afterward, there is an optional face entry. This only accepts ``front'' or ``back'' but should also accept ``both''.%??
 
 \item{\ttt{* elongation\_rate} $value$} %?? new
+\item{\ttt{* elongation\_rate} $end$ $state$ $value$}
 
-This is the elongation rate at the plus end in units of length/time. This is usually not used in combination with treadmilling.
+The rate at which a filament end changes length, in units of length/time. Each end of a filament is in one of three states, ``open'', ``capped'', or ``shrink'' (see \ttt{end\_state} and \ttt{end\_transition}), and the end changes length at the rate given for its current state. In the second form, enter $end$ as ``minus'' or ``plus'', $state$ as ``open'', ``capped'', or ``shrink'', and $value$ as the rate for that end in that state, which is positive for elongation and negative for shrinking. All rates are 0 by default. The first form, with only a $value$, is the same as \ttt{elongation\_rate plus open} $value$ and requires a value $\geq 0$. The state names are labels, and the rates define what the states do; typically, ``open'' has a positive rate, ``capped'' has a rate of 0, and ``shrink'' has a negative rate. Ends grow and shrink by whole segments, keeping track of the remaining length so that the average length change equals the rate times the elapsed time. A growing end adds segments with random lengths and angles; it stops growing if it is blocked by a surface or reaches \ttt{elongation\_max\_length}. A shrinking end removes its end segment, but a filament never shrinks below one segment. Shrinking past a mother filament node where a branch attaches releases that branch. These rates are usually not used in combination with treadmilling.
 
 \item{\ttt{* elongation\_max\_length} $value$} %?? new
 
@@ -3720,11 +3721,19 @@ Maximum filament contour length when elongation can occur. Longer filaments don'
 
 \item{\ttt{* capping\_rate} $value$} %?? new
 
-Capping rate at the plus end. Units are inverse time. Capped filaments don't elongate.
+Capping rate at the plus end, in inverse time units. This is the same as \ttt{end\_transition plus open capped} $value$.
 
 \item{\ttt{* uncapping\_rate} $value$} %?? new
 
-Uncapping rate at the plus end. Units are inverse time. Uncapped filaments can elongate.
+Uncapping rate at the plus end, in inverse time units. This is the same as \ttt{end\_transition plus capped open} $value$.
+
+\item{\ttt{* end\_transition} $end$ $state1$ $state2$ $rate$}
+
+The rate, in inverse time units, at which filament end $end$ (``minus'' or ``plus'') changes from state $state1$ to state $state2$, where the states are ``open'', ``capped'', or ``shrink''. All transition rates are 0 by default. In each time step, an end leaves its current state with probability \ttt{1-exp(-R*dt)}, where \ttt{R} is the sum of the rates out of that state and \ttt{dt} is the time step, and goes to one of the other states with probability proportional to the individual rates. For example, dynamic instability at the plus end can be represented with \ttt{end\_transition plus open shrink} $k_{cat}$ and \ttt{end\_transition plus shrink open} $k_{res}$, for catastrophe and rescue rates, along with a positive \ttt{elongation\_rate plus open} and a negative \ttt{elongation\_rate plus shrink}.
+
+\item{\ttt{* end\_state} $end$ $state$}
+
+The state that end $end$ (``minus'' or ``plus'') of new filaments of this type starts in, which is ``open'', ``capped'', or ``shrink''. The default is ``open'' for both ends. This applies to filaments that are created after this statement, including branches, and does not change existing filaments. It can be changed during a simulation with the \ttt{set} command, for example \ttt{cmd @ 0.5 set filament\_type actin end\_state plus capped}, which affects filaments created after that time. The state of an individual filament's end can be set with the \ttt{end\_state} statement in a filament block, including during a simulation with a command such as \ttt{cmd @ 0.5 set filament actin:fil0 end\_state plus capped}.
 
 \item{\ttt{* mobility} $value$}
 
@@ -3818,6 +3827,10 @@ Enter the sequence string for a filament.
 \item{\ttt{* node\_mobility} $node$ $mobility$}
 
 Sets a unitless node mobility factor, which is multiplied by the mobility that's defined in the filament type, to give the total node mobility value. Enter $node$ as the node number, where 0 is the minus end of the filament. Alternatively, enter $node$ as a negative value to count from the plus end of the filament, where $-1$ is the plus end. The $mobility$ value has a default value of 1, and can be set to other values here. In particular, setting it to 0 means that the node is fixed in space.
+
+\item{\ttt{* end\_state} $end$ $state$}
+
+Sets the current state of end $end$ (``minus'' or ``plus'') of this filament to $state$, which is ``open'', ``capped'', or ``shrink''. See the \ttt{end\_state}, \ttt{elongation\_rate}, and \ttt{end\_transition} statements for filament types.
 
 \item{\ttt{* end\_filament}}
 
@@ -4198,7 +4211,7 @@ Prints information about the specified filament. The $code$ input should be a st
 
 \item{\ttt{printFilaments} $filename$}
 
-Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \ttt{FIL <time> <type>:<name> <nseg> <parent-or-"-"> x0 y0 [z0] x1 y1 [z1] ...}. Auto-named daughters are included, so this captures a whole branched network.
+Prints out every filament (all types) as a flat polyline of node coordinates, one line each: \ttt{FIL <time> <type>:<name> <nseg> <parent-or-"-"> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ...}, where the states are the end states (``open'', ``capped'', or ``shrink''). Auto-named daughters are included, so this captures a whole branched network.
 
 \item{\ttt{writeVTK} $filepath/filename$}
 

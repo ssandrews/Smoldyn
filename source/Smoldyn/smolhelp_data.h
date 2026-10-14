@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 290
+#define SMOLHELP_NENTRY 293
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1101,7 +1101,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"treadmill_rate",
 		"  * treadmill_rate value",
 		"    Some filaments treadmill, in which they drop off monomers at one end and\n"
-		"    add them to the other end. Set the treadmilling rate here."},
+		"    add them to the other end. Set the treadmilling rate here. A positive value\n"
+		"    adds segments at the plus end and removes them from the minus end, and a\n"
+		"    negative value does the reverse. Treadmilling only occurs while the end\n"
+		"    that gains segments is in the \"open\" state (see end_state)."},
 	{"statement","Statements about filaments",1,"branch_rate",
 		"  * branch_rate value",
 		"    Branching rate off of the mother filament, in units of per unit length per\n"
@@ -1157,21 +1160,63 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Afterward, there is an optional face entry. This only accepts \"front\" or\n"
 		"    \"back\" but should also accept \"both\"."},
 	{"statement","Statements about filaments",1,"elongation_rate",
-		"  * elongation_rate value",
-		"    This is the elongation rate at the plus end in units of length/time. This\n"
-		"    is usually not used in combination with treadmilling."},
+		"  * elongation_rate value\n"
+		"  * elongation_rate end state value",
+		"    The rate at which a filament end changes length, in units of length/time.\n"
+		"    Each end of a filament is in one of three states, \"open\", \"capped\", or\n"
+		"    \"shrink\" (see end_state and end_transition), and the end changes length at\n"
+		"    the rate given for its current state. In the second form, enter end as\n"
+		"    \"minus\" or \"plus\", state as \"open\", \"capped\", or \"shrink\", and value as the\n"
+		"    rate for that end in that state, which is positive for elongation and\n"
+		"    negative for shrinking. All rates are 0 by default. The first form, with\n"
+		"    only a value, is the same as elongation_rate plus open value and requires a\n"
+		"    value >=0. The state names are labels, and the rates define what the states\n"
+		"    do; typically, \"open\" has a positive rate, \"capped\" has a rate of 0, and\n"
+		"    \"shrink\" has a negative rate. Ends grow and shrink by whole segments,\n"
+		"    keeping track of the remaining length so that the average length change\n"
+		"    equals the rate times the elapsed time. A growing end adds segments with\n"
+		"    random lengths and angles; it stops growing if it is blocked by a surface\n"
+		"    or reaches elongation_max_length. A shrinking end removes its end segment,\n"
+		"    but a filament never shrinks below one segment. Shrinking past a mother\n"
+		"    filament node where a branch attaches releases that branch. These rates are\n"
+		"    usually not used in combination with treadmilling."},
 	{"statement","Statements about filaments",1,"elongation_max_length",
 		"  * elongation_max_length value",
 		"    Maximum filament contour length when elongation can occur. Longer filaments\n"
 		"    don't elongate."},
 	{"statement","Statements about filaments",1,"capping_rate",
 		"  * capping_rate value",
-		"    Capping rate at the plus end. Units are inverse time. Capped filaments\n"
-		"    don't elongate."},
+		"    Capping rate at the plus end, in inverse time units. This is the same as\n"
+		"    end_transition plus open capped value."},
 	{"statement","Statements about filaments",1,"uncapping_rate",
 		"  * uncapping_rate value",
-		"    Uncapping rate at the plus end. Units are inverse time. Uncapped filaments\n"
-		"    can elongate."},
+		"    Uncapping rate at the plus end, in inverse time units. This is the same as\n"
+		"    end_transition plus capped open value."},
+	{"statement","Statements about filaments",1,"end_transition",
+		"  * end_transition end state1 state2 rate",
+		"    The rate, in inverse time units, at which filament end end (\"minus\" or\n"
+		"    \"plus\") changes from state state1 to state state2, where the states are\n"
+		"    \"open\", \"capped\", or \"shrink\". All transition rates are 0 by default. In\n"
+		"    each time step, an end leaves its current state with probability\n"
+		"    1-exp(-R*dt), where R is the sum of the rates out of that state and dt is\n"
+		"    the time step, and goes to one of the other states with probability\n"
+		"    proportional to the individual rates. For example, dynamic instability at\n"
+		"    the plus end can be represented with end_transition plus open shrink k_cat\n"
+		"    and end_transition plus shrink open k_res, for catastrophe and rescue\n"
+		"    rates, along with a positive elongation_rate plus open and a negative\n"
+		"    elongation_rate plus shrink."},
+	{"statement","Statements about filaments",1,"end_state",
+		"  * end_state end state",
+		"    The state that end end (\"minus\" or \"plus\") of new filaments of this type\n"
+		"    starts in, which is \"open\", \"capped\", or \"shrink\". The default is \"open\"\n"
+		"    for both ends. This applies to filaments that are created after this\n"
+		"    statement, including branches, and does not change existing filaments. It\n"
+		"    can be changed during a simulation with the set command, for example cmd @\n"
+		"    0.5 set filament_type actin end_state plus capped, which affects filaments\n"
+		"    created after that time. The state of an individual filament's end can be\n"
+		"    set with the end_state statement in a filament block, including during a\n"
+		"    simulation with a command such as cmd @ 0.5 set filament actin:fil0\n"
+		"    end_state plus capped."},
 	{"statement","Statements about filaments",1,"mobility",
 		"  * mobility value",
 		"    Mobility of the nodes within the surrounding medium."},
@@ -1306,6 +1351,11 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    the filament, where -1 is the plus end. The mobility value has a default\n"
 		"    value of 1, and can be set to other values here. In particular, setting it\n"
 		"    to 0 means that the node is fixed in space."},
+	{"statement","Statements about filaments",1,"end_state",
+		"  * end_state end state",
+		"    Sets the current state of end end (\"minus\" or \"plus\") of this filament to\n"
+		"    state, which is \"open\", \"capped\", or \"shrink\". See the end_state,\n"
+		"    elongation_rate, and end_transition statements for filament types."},
 	{"statement","Statements about filaments",1,"end_filament",
 		"  * end_filament",
 		"    End of a block of filament definitions. Filament statements are no longer\n"
@@ -1937,8 +1987,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  printFilaments filename",
 		"    Prints out every filament (all types) as a flat polyline of node\n"
 		"    coordinates, one line each: FIL <time> <type>:<name> <nseg> <parent-or-\"-\">\n"
-		"    x0 y0 [z0] x1 y1 [z1] .... Auto-named daughters are included, so this\n"
-		"    captures a whole branched network."},
+		"    <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ..., where the states are\n"
+		"    the end states (\"open\", \"capped\", or \"shrink\"). Auto-named daughters are\n"
+		"    included, so this captures a whole branched network."},
 	{"command","System observation commands",0,"writeVTK",
 		"  writeVTK filepath/filename",
 		"    Outputs VTK format data for viewing with applications such as Visit or\n"
