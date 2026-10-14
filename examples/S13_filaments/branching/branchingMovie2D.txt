@@ -1,5 +1,5 @@
 # Time-lapse of Arp2/3-style dendritic branching.
-# Stiff, static mother filaments (no treadmilling) so the network grows in place
+# Stiff, static mother filaments (no treadmilling or elongation) so it grows in place
 # and every branch holds its 70-degree birth angle. A printFilaments snapshot is
 # written every 0.5 time units into one file; each line is tagged with its time.
 
@@ -18,7 +18,7 @@ frame_thickness 0
 start_filament_type actin
 color blue
 thickness 2
-polygon edge
+polygon ve
 dynamics none
 kT 0.001
 standard_length 4

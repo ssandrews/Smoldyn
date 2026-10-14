@@ -27,9 +27,9 @@ graphics opengl_good
 graphic_iter 100
 
 dim 3
-boundaries x -0.5 0.5 r
-boundaries y -0.5 0.5 r
-boundaries z -0.5 0.5 r
+boundaries x -0.1 0.1 r
+boundaries y -0.1 0.1 r
+boundaries z -0.1 0.1 r
 
 time_start 0
 time_stop 0.5
@@ -38,12 +38,12 @@ random_seed 1
 
 frame_thickness 0
 
-output_files branchingJunctionOut.txt
+#output_files branchingJunctionOut.txt
 
 start_filament_type actin
 color red
 thickness 2
-polygon edge
+polygon ve
 dynamics euler
 kT 0.001
 standard_length 0.01
@@ -63,6 +63,6 @@ random_filament actin:seed0 5  0.0 0.0 0.0  0 0 0
 random_filament actin:seed1 5  -0.05 0.05 0.0  1 0 0
 random_filament actin:seed2 5  0.05 -0.05 0.0  -1 0 0
 
-cmd @ 0.5 printFilaments branchingJunctionOut.txt
+#cmd @ 0.5 printFilaments branchingJunctionOut.txt
 
 end_file

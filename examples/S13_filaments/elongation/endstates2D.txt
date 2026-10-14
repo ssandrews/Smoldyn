@@ -1,0 +1,49 @@
+# Elongation and shrinking.
+#
+
+graphics opengl_good
+
+dim 2
+boundaries x -0.1 0.3 r
+boundaries y -0.2 0.2 r
+
+time_start 0
+time_stop 2
+time_step 0.001
+random_seed 1
+
+frame_thickness 0
+
+#output_files elongationOut.txt
+
+start_filament_type actin
+color blue
+thickness 2
+polygon ve
+dynamics none
+kT 0.001
+standard_length 0.005       # 5 nm segments
+standard_angle 0            # 2D: single yaw value
+force_length 500
+force_angle 5               # 2D: single value
+mobility 1
+end_state plus open
+end_state minus open
+elongation_rate plus open 0.32
+elongation_rate minus open 0.1
+elongation_rate plus capped 0
+elongation_rate minus capped 0
+elongation_rate plus shrink -0.2
+elongation_rate minus shrink -0.2
+end_filament_type
+
+# one filament, seeded as a single segment at the origin pointing along +x
+random_filament actin:fil0 1  0 0  0
+
+cmd @ 0.3 set filament actin:fil0 end_state plus capped
+cmd @ 0.5 set filament actin:fil0 end_state minus capped
+cmd @ 1 set filament actin:fil0 end_state plus shrink
+cmd @ 1.2 set filament actin:fil0 end_state minus shrink
+
+
+end_file
