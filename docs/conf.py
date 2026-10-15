@@ -61,9 +61,10 @@ release = "latest"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     "sphinx.ext.autodoc",
+    # napoleon must come before sphinx_autodoc_typehints
+    "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
     "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinxcontrib.programoutput",
@@ -91,6 +92,14 @@ autodoc_default_options = {
     "inherited-members": True,
 }
 
+# Optional dependencies of smoldyn.biosimulators that are not needed to
+# build the docs.
+autodoc_mock_imports = [
+    "biosimulators_utils",
+    "biosimulators_simularium",
+    "pandas",
+]
+
 autosummary_generate = True
 
 breathe_default_project = "smoldyn"
@@ -106,7 +115,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*.md"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "*.md", "*.txt"]
 
 
 # -- Options for HTML output -------------------------------------------------
