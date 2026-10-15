@@ -762,7 +762,7 @@ typedef struct filamenttypestruct {
     int maxfil;                        // maximum number of filaments
     int nfil;                          // actual number of filaments
     int autonamenum;                   // next number for autoname
-    filamentptr* fillist;              // list of filaments
+    filamentptr* fillist;              // list of filaments; entries nfil to maxfil-1 are unused, for reuse
     char** filnames;                   // names of filaments
 } * filamenttypeptr;
 

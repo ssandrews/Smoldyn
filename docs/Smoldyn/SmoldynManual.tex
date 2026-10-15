@@ -3713,7 +3713,7 @@ If the filament should be confined by a surface, enter that surface name here in
 \item{\ttt{* elongation\_rate} $value$} %?? new
 \item{\ttt{* elongation\_rate} $end$ $state$ $value$}
 
-The rate at which a filament end changes length, in units of length/time. Each end of a filament is in one of three states, ``open'', ``capped'', or ``shrink'' (see \ttt{end\_state} and \ttt{end\_transition}), and the end changes length at the rate given for its current state. In the second form, enter $end$ as ``minus'' or ``plus'', $state$ as ``open'', ``capped'', or ``shrink'', and $value$ as the rate for that end in that state, which is positive for elongation and negative for shrinking. All rates are 0 by default. The first form, with only a $value$, is the same as \ttt{elongation\_rate plus open} $value$ and requires a value $\geq 0$. The state names are labels, and the rates define what the states do; typically, ``open'' has a positive rate, ``capped'' has a rate of 0, and ``shrink'' has a negative rate. Ends grow and shrink by whole segments, keeping track of the remaining length so that the average length change equals the rate times the elapsed time. A growing end adds segments with random lengths and angles; it stops growing if it is blocked by a surface or reaches \ttt{elongation\_max\_length}. A shrinking end removes its end segment, but a filament never shrinks below one segment. Shrinking past a mother filament node where a branch attaches releases that branch. These rates are usually not used in combination with treadmilling.
+The rate at which a filament end changes length, in units of length/time. Each end of a filament is in one of three states, ``open'', ``capped'', or ``shrink'' (see \ttt{end\_state} and \ttt{end\_transition}), and the end changes length at the rate given for its current state. In the second form, enter $end$ as ``minus'' or ``plus'', $state$ as ``open'', ``capped'', or ``shrink'', and $value$ as the rate for that end in that state, which is positive for elongation and negative for shrinking. All rates are 0 by default. The first form, with only a $value$, is the same as \ttt{elongation\_rate plus open} $value$ and requires a value $\geq 0$. The state names are labels, and the rates define what the states do; typically, ``open'' has a positive rate, ``capped'' has a rate of 0, and ``shrink'' has a negative rate. Ends grow and shrink by whole segments, keeping track of the remaining length so that the average length change equals the rate times the elapsed time. A growing end adds segments with random lengths and angles; it stops growing if it is blocked by a surface or reaches \ttt{elongation\_max\_length}. A shrinking end removes its end segment. When a filament that is down to one segment shrinks by that segment's full length, the filament is removed from the simulation, as with \ttt{remove\_filament}. Shrinking past a mother filament node where a branch attaches releases that branch. These rates are usually not used in combination with treadmilling.
 
 \item{\ttt{* elongation\_max\_length} $value$} %?? new
 
@@ -3771,6 +3771,10 @@ Filaments can be entered either in a block or with the single \ttt{random\_filam
 \ttt{random\_filament} $type$:$name$ $segments$ $[x$ $y$ $z$ $\phi$ $\theta$ $\psi]$ $[thickness]$
 
 Create a new filament with random segments. It is named $name$, is of type $type$, has $segments$ number of segments, and, optionally, has its starting location at $(x,y,z)$ and initial yaw-pitch-roll angle $(\phi, \theta, \psi)$. For 2D, only enter $x,y$ and $\phi$. It also has optional thickness $thickness$.
+
+\item{\ttt{remove\_filament} $type$:$name$}
+
+Removes the filament named $name$, of type $type$, from the simulation. The type is optional if the filament name is unique. Any filaments that branch off of this one are released, so they continue as free filaments, and if this filament is a branch, it is removed from its mother's list of branches. A removed filament's name can be used again. Smoldyn keeps the memory of removed filaments and reuses it for filaments that are created later. This statement can be used during a simulation with the \ttt{set} command, for example \ttt{cmd @ 0.5 set remove\_filament actin:fil0}.
 
 \item{\ttt{start\_filament} $type$:$name$}
 
@@ -4195,7 +4199,7 @@ This function computes residence times of individual molecules of type $species$
 
 \item{\ttt{diagnostics} $type$}
 
-Displays diagnostics about various parts of the data structures to the screen. These are identical to those that are displayed at program initialization, but for later times. The options for the type word are: ``simulation'', ``wall'', ``molecule'', ``surface'', ``command'', ``box'', ``reaction'', ``compartment'', ``port'', ``check'', and ``all''.
+Displays diagnostics about various parts of the data structures to the screen. These are identical to those that are displayed at program initialization, but for later times. The options for the type word are: ``simulation'', ``wall'', ``molecule'', ``surface'', ``command'', ``box'', ``reaction'', ``compartment'', ``port'', ``filament'', ``check'', and ``all''.
 
 \item{\ttt{executiontime} $filename$}
 

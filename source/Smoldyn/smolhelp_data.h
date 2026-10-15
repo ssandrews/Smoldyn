@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 293
+#define SMOLHELP_NENTRY 294
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1176,10 +1176,12 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    keeping track of the remaining length so that the average length change\n"
 		"    equals the rate times the elapsed time. A growing end adds segments with\n"
 		"    random lengths and angles; it stops growing if it is blocked by a surface\n"
-		"    or reaches elongation_max_length. A shrinking end removes its end segment,\n"
-		"    but a filament never shrinks below one segment. Shrinking past a mother\n"
-		"    filament node where a branch attaches releases that branch. These rates are\n"
-		"    usually not used in combination with treadmilling."},
+		"    or reaches elongation_max_length. A shrinking end removes its end segment.\n"
+		"    When a filament that is down to one segment shrinks by that segment's full\n"
+		"    length, the filament is removed from the simulation, as with\n"
+		"    remove_filament. Shrinking past a mother filament node where a branch\n"
+		"    attaches releases that branch. These rates are usually not used in\n"
+		"    combination with treadmilling."},
 	{"statement","Statements about filaments",1,"elongation_max_length",
 		"  * elongation_max_length value",
 		"    Maximum filament contour length when elongation can occur. Longer filaments\n"
@@ -1250,6 +1252,16 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    type, has segments number of segments, and, optionally, has its starting\n"
 		"    location at (x,y,z) and initial yaw-pitch-roll angle (phi, theta, psi). For\n"
 		"    2D, only enter x,y and phi. It also has optional thickness thickness."},
+	{"statement","Statements about filaments",0,"remove_filament",
+		"  remove_filament type:name",
+		"    Removes the filament named name, of type type, from the simulation. The\n"
+		"    type is optional if the filament name is unique. Any filaments that branch\n"
+		"    off of this one are released, so they continue as free filaments, and if\n"
+		"    this filament is a branch, it is removed from its mother's list of\n"
+		"    branches. A removed filament's name can be used again. Smoldyn keeps the\n"
+		"    memory of removed filaments and reuses it for filaments that are created\n"
+		"    later. This statement can be used during a simulation with the set command,\n"
+		"    for example cmd @ 0.5 set remove_filament actin:fil0."},
 	{"statement","Statements about filaments",0,"start_filament",
 		"  start_filament type:name",
 		"    Start of filament definition block, for a filament of type type and named\n"
@@ -1967,7 +1979,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    screen. These are identical to those that are displayed at program\n"
 		"    initialization, but for later times. The options for the type word are:\n"
 		"    \"simulation\", \"wall\", \"molecule\", \"surface\", \"command\", \"box\", \"reaction\",\n"
-		"    \"compartment\", \"port\", \"check\", and \"all\"."},
+		"    \"compartment\", \"port\", \"filament\", \"check\", and \"all\"."},
 	{"command","System observation commands",0,"executiontime",
 		"  executiontime filename",
 		"    Prints a single line of text with the current simulation time and the\n"

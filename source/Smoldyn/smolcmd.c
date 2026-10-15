@@ -3075,6 +3075,7 @@ enum CMDcode cmddiagnostics(simptr sim,cmdptr cmd,char *line2) {
 	if(ss==SSrule || ss==SSall) ruleoutput(sim);
 	if(ss==SScmpt || ss==SSall) compartoutput(sim);
 	if(ss==SSport || ss==SSall) portoutput(sim);
+	if((ss==SSfilament || ss==SSall) && sim->filss) filssOutput(sim);
 	if(ss==SScheck || ss==SSall) checksimparams(sim);
 	return CMDok; }
 

@@ -4198,7 +4198,7 @@ typedef struct filamenttypestruct {
     int maxfil;                        // maximum number of filaments
     int nfil;                          // actual number of filaments
     int autonamenum;                   // next number for autoname
-    filamentptr* fillist;              // list of filaments
+    filamentptr* fillist;              // list of filaments; entries nfil to maxfil-1 are unused, for reuse
     char** filnames;                   // names of filaments
     } * filamenttypeptr;
 \end{lstlisting}
@@ -4219,7 +4219,7 @@ Next are the filament end dynamics. \ttt{endrate[end][state]} is the rate at whi
 
 Lengthwise faces aren't used yet but are set up here with \ttt{maxface} and \ttt{nface} for the maximum and actual number of filament faces. \ttt{facename} is a list of face names and \ttt{facetwist} is the spatial twisting rate of the faces (radians per unit length of filament).
 
-Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
+Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. All \ttt{maxfil} entries of \ttt{fillist} point to allocated filaments, and entries \ttt{nfil} to \ttt{maxfil-1} are unused. These include removed filaments, which \ttt{filRemoveFilament} moves to position \ttt{nfil-1} before decreasing \ttt{nfil}, so \ttt{filAddFilament} reuses them before allocating new memory. Active filaments are kept in creation order, which puts mothers before their daughters. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
 % I think that this filament type data structure is pretty good. However, it could use some re-ordering of the elements.
 
 \subsubsection{Filament superstructure}
@@ -4499,9 +4499,9 @@ Computes and returns the filament's contour length, meaning the sum of all segme
 
 \item[\ttt{int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength)}] %?? new code
 \hfill \\
-Changes the length of end \ttt{end} (0 for minus, 1 for plus) of filament \ttt{fil} by \ttt{dlength} of contour length, growing for positive values and shrinking for negative values. Segments are added or removed whole, so \ttt{lenbank[end]} carries the remainder forward. Growth debits the length actually drawn, which keeps the total length tracking rate*time with bounded rather than accumulating error. Shrinking removes the end segment once the bank covers that segment's actual length, for the same exact accounting. Returns the number of segments added (positive) or removed (negative), or -1000 for a configuration error (\ttt{stdlen}$\leq 0$ for growth).
+Changes the length of end \ttt{end} (0 for minus, 1 for plus) of filament \ttt{fil} by \ttt{dlength} of contour length, growing for positive values and shrinking for negative values. Segments are added or removed whole, so \ttt{lenbank[end]} carries the remainder forward. Growth debits the length actually drawn, which keeps the total length tracking rate*time with bounded rather than accumulating error. Shrinking removes the end segment once the bank covers that segment's actual length, for the same exact accounting. Returns the number of segments added (positive) or removed (negative), or -1000 for a configuration error (\ttt{stdlen}$\leq 0$ for growth). When the bank covers the length of a filament's only remaining segment, the filament has shrunk away; the function then returns \ttt{FILREMOVED} (-2000) without changing the filament, and the caller removes it.
 
-An end that cannot place a segment (a surface is in the way, as determined by filAddOneRandomSegment) does not bank the growth it was denied: the step's increment is undone and the bank is clamped to at most one segment, so a stalled end sits at zero velocity instead of storing up growth and discharging it in a burst once the obstruction clears. Growth also stops at \ttt{elongmaxlen}. A filament never shrinks below one segment, and its bank is set to 0 once it is down to one segment, so it holds no pending shrinkage. Removing segments uses \ttt{filRemoveSegment}, which drops branches that were attached to the removed nodes.
+An end that cannot place a segment (a surface is in the way, as determined by filAddOneRandomSegment) does not bank the growth it was denied: the step's increment is undone and the bank is clamped to at most one segment, so a stalled end sits at zero velocity instead of storing up growth and discharging it in a burst once the obstruction clears. Growth also stops at \ttt{elongmaxlen}. Removing segments uses \ttt{filRemoveSegment}, which drops branches that were attached to the removed nodes.
 
 \item[\ttt{void filEndTransitions(simptr sim,filamenttypeptr filtype)}] %?? new code
 \hfill \\
@@ -4509,7 +4509,7 @@ Stochastic end state transitions for all filaments of one filament type. An end 
 
 \item[\ttt{void filEndDynamics(simptr sim,filamenttypeptr filtype)}] %?? new code
 \hfill \\
-Length changes at both ends of every filament of one filament type, minus end first, each by its current state's rate times $\Delta t$, using \ttt{filEndLengthChange}. Deterministic; the only length noise is the random segment length.
+Length changes at both ends of every filament of one filament type, minus end first, each by its current state's rate times $\Delta t$, using \ttt{filEndLengthChange}. Deterministic; the only length noise is the random segment length. A filament that shrinks away is removed with \ttt{filRemoveFilament}; the loop then continues with the filament that moved into its position.
 
 \item[\underline{Filament superstructure}]
 (Superstructure is changed and/or lower levels are updated.)
@@ -4734,7 +4734,15 @@ This function copies nearly all of the values from \ttt{filfrom} to \ttt{filto},
 \item[\ttt{filamentptr}]
 \ttt{filAddFilament(filamenttypeptr filtype, const char *filname)}
 \hfill \\
-This adds a filament to the filament type \ttt{filtype}, expanding the list if needed. If there is already a filament with this name, a pointer to it is returned. If \ttt{filname} is \ttt{NULL}, this generates an automatic name for the new filament; otherwise, it names the new filament to \ttt{filname}. Returns a pointer to the new filament or \ttt{NULL} for failure, arising from failure to allocate memory.
+This adds a filament to the filament type \ttt{filtype}, expanding the list if needed. If there is already a filament with this name, a pointer to it is returned. If \ttt{filname} is \ttt{NULL}, this generates an automatic name for the new filament; otherwise, it names the new filament to \ttt{filname}. The new filament is the unused one at position \ttt{nfil} of \ttt{fillist}, which may be a removed filament, so this resets it with \ttt{filReset}. Returns a pointer to the new filament or \ttt{NULL} for failure, arising from failure to allocate memory.
+
+\item[\ttt{void filReset(filamentptr fil)}] %?? new code
+\hfill \\
+Returns filament \ttt{fil} to the state of a newly allocated filament, keeping its allocated memory, its filament type, and its name. It sets the number of segments, branches, and sequence characters to 0, clears the \ttt{minusend} and \ttt{plusend} pointers, resets the node mobility factors to 1, the roll values to 0, and \ttt{seg0up} to $(0,0,1)$, sets the end states to the filament type's initial end states, and clears \ttt{lenbank}. Segment and node values are not cleared, since they are set as segments are added. The working structure \ttt{filwork} only holds values that are recomputed in each time step, so it is not changed.
+
+\item[\ttt{int filRemoveFilament(filamentptr fil)}] %?? new code
+\hfill \\
+Removes filament \ttt{fil} from the simulation, keeping its memory for reuse. Because that memory will be reused for an unrelated filament, this first clears all branch links that involve \ttt{fil}: it removes every branch entry that points to \ttt{fil} from the other filaments of its type (its mother, along with any stale copies), clears the \ttt{minusend} and \ttt{plusend} pointers of filaments that are attached to \ttt{fil}, which releases its daughters, and clears \ttt{fil}'s own branch list and attachment pointers. Then it shifts the filaments after \ttt{fil} in \ttt{fillist}, along with their names in \ttt{filnames}, down by one position, which keeps creation order, and puts \ttt{fil} and its name string at position \ttt{nfil-1} before decreasing \ttt{nfil}. Returns 0 for success or 1 if \ttt{fil} is not in its filament type's list.
 
 
 \item[\underline{Filament interactions}]

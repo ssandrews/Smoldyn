@@ -22,6 +22,7 @@
 
 #define FILMAXTRIES 100
 #define FILMAXGROW 1000					// max segments one filament may gain in a single elongation step
+#define FILREMOVED -2000				// filEndLengthChange return value: the filament shrank away and should be removed
 
 
 /******************************************************************************/
@@ -124,7 +125,9 @@ int filLengthenSegment(filamentptr fil,int seg,double length,char endchar,char f
 int filChangeThickness(filamentptr fil,int seg,double thick,char func);
 void filRotateVertex(filamentptr fil,int seg,const double *angle,char endchar,char func);
 int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamenttypeptr filtype);
+void filReset(filamentptr fil);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
+int filRemoveFilament(filamentptr fil);
 void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr);
 filamentptr filBranchEndMother(const filamentptr daughter,char end);
 double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter,char end);
@@ -998,6 +1001,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 			simLog(sim,2," %s,",filtype->facename[fc]);
 		simLog(sim,2,"\n"); }
 
+	simLog(sim,1,"  allocated filaments: %i, of which %i are unused or removed\n",filtype->maxfil,filtype->maxfil-filtype->nfil);
 	simLog(sim,2,"  %i filaments:\n",filtype->nfil);
 	for(f=0;f<filtype->nfil;f++)
 		filOutput(filtype->fillist[f]);
@@ -3094,6 +3098,29 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 	return 0; }
 
 
+/* filReset */
+// Return fil to the state of a newly allocated filament, keeping its allocated memory, its
+// filament type, and its name. filAddFilament calls this because it may be reusing a
+// removed filament. Segment and node values are not cleared, since they are set as
+// segments are added; per-node mobility factors and roll values are, since they persist.
+void filReset(filamentptr fil) {
+	int seg;
+
+	fil->nseg=0;
+	if(fil->maxseg>0) {															// nothing is allocated yet for a never-used filament
+		for(seg=0;seg<=fil->maxseg;seg++) fil->nodemobility[seg]=1;
+		for(seg=0;seg<fil->maxseg;seg++) fil->roll[seg]=0; }
+	fil->seg0up[0]=fil->seg0up[1]=0;
+	fil->seg0up[2]=1;
+	fil->minusend=fil->plusend=NULL;
+	fil->nbranch=0;
+	fil->nsequence=0;
+	fil->endstate[0]=fil->filtype->endstate0[0];		// new filaments start in the type's initial end states
+	fil->endstate[1]=fil->filtype->endstate0[1];
+	fil->lenbank[0]=fil->lenbank[1]=0;
+	return; }
+
+
 /* filAddFilament */
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 	int f;
@@ -3115,16 +3142,58 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 	filtype->filnames[f][STRCHAR-1]='\0';
 	fil=filtype->fillist[f];
 	fil->filtype=filtype;
-	fil->nseg=0;
-	fil->minusend=fil->plusend=NULL;
-	fil->nbranch=0;
-	fil->nsequence=0;
-	fil->endstate[0]=filtype->endstate0[0];				// new filaments start in the type's initial end states
-	fil->endstate[1]=filtype->endstate0[1];
-	fil->lenbank[0]=fil->lenbank[1]=0;							// reused list slots must not inherit length change state
+	filReset(fil);																	// the slot may hold a removed filament
 	filSetCondition(filtype->filss,SClists,0);
 
 	return fil; }
+
+
+/* filRemoveFilament */
+// Remove filament fil from the simulation, keeping its memory for reuse. Branch links
+// that involve fil are cleared first, because its memory will be reused for an
+// unrelated filament: every branch entry that points to fil is removed from the other
+// filaments of its type (its mother, plus any stale copies), and every filament attached
+// to fil is released. Then the filaments after fil in fillist shift down one place,
+// which keeps creation order (mothers before daughters, which filPinBranches relies
+// on), and fil and its name string move to position nfil-1, at the front of the unused
+// filaments that filAddFilament takes next. Returns 0 for success or 1 if fil is not in
+// its type's list.
+int filRemoveFilament(filamentptr fil) {
+	filamenttypeptr filtype;
+	filamentptr fil2;
+	char *name;
+	int f,f2,br,nbr;
+
+	filtype=fil->filtype;
+	for(f=0;f<filtype->nfil && filtype->fillist[f]!=fil;f++);
+	if(f==filtype->nfil) return 1;
+
+	for(f2=0;f2<filtype->nfil;f2++) {							// clear branch links in both directions
+		fil2=filtype->fillist[f2];
+		if(fil2==fil) continue;
+		nbr=0;
+		for(br=0;br<fil2->nbranch;br++)
+			if(fil2->branches[br]!=fil) {
+				fil2->branchnodes[nbr]=fil2->branchnodes[br];
+				fil2->branchends[nbr]=fil2->branchends[br];
+				fil2->branches[nbr]=fil2->branches[br];
+				fil2->branchazim0[nbr]=fil2->branchazim0[br];
+				nbr++; }
+		fil2->nbranch=nbr;
+		if(fil2->minusend==fil) fil2->minusend=NULL;
+		if(fil2->plusend==fil) fil2->plusend=NULL; }
+	fil->minusend=fil->plusend=NULL;
+	fil->nbranch=0;
+
+	name=filtype->filnames[f];											// shift later filaments down, keeping creation order
+	for(f2=f;f2<filtype->nfil-1;f2++) {
+		filtype->fillist[f2]=filtype->fillist[f2+1];
+		filtype->filnames[f2]=filtype->filnames[f2+1]; }
+	filtype->fillist[f2]=fil;
+	filtype->filnames[f2]=name;
+	filtype->nfil--;
+	filSetCondition(filtype->filss,SClists,0);
+	return 0; }
 
 
 /******************************************************************************/
@@ -3420,10 +3489,11 @@ double filContourLength(const filamentptr fil) {
 // keeps total length tracking rate*time with bounded rather than accumulating error; a
 // blocked end drops the growth it was denied rather than banking it, so it stalls at zero
 // instead of surging when it clears. Shrinking removes the end segment once the bank
-// covers that segment's actual length, for the same exact accounting. A filament never
-// shrinks below one segment, and holds no pending shrinkage once it is down to one.
-// Returns the number of segments added (positive) or removed (negative), or -1000 for a
-// configuration error.
+// covers that segment's actual length, for the same exact accounting. When the bank
+// covers the length of a filament's only remaining segment, the filament has shrunk away;
+// this returns FILREMOVED without changing the filament, and the caller removes it.
+// Otherwise, returns the number of segments added (positive) or removed (negative), or
+// -1000 for a configuration error.
 int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength) {
 	filamenttypeptr filtype;
 	char endchar;
@@ -3437,11 +3507,11 @@ int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength) {
 	if(dlength<0) {																	// shrinking
 		fil->lenbank[end]+=dlength;
 		nadd=0;
-		while(fil->nseg>1 && -fil->lenbank[end]>=fil->segments[(endchar=='p')?fil->nseg-1:0]->len) {
+		while(-fil->lenbank[end]>=fil->segments[(endchar=='p')?fil->nseg-1:0]->len) {
+			if(fil->nseg==1) return FILREMOVED;						// the last segment is gone
 			fil->lenbank[end]+=fil->segments[(endchar=='p')?fil->nseg-1:0]->len;
 			filRemoveSegment(fil,endchar);
 			nadd--; }
-		if(fil->nseg==1 && fil->lenbank[end]<0) fil->lenbank[end]=0;	// at the minimum length: nothing more to remove
 		return nadd; }
 
 	stdlen=filtype->stdlen;
@@ -3519,7 +3589,7 @@ void filEndTransitions(simptr sim,filamenttypeptr filtype) {
 /* filEndDynamics */
 // Length changes at both ends of every filament of one filament type, minus end first,
 // each by its current state's velocity times dt. Deterministic; the only length noise is
-// the random segment length.
+// the random segment length. A filament that shrinks away is removed.
 void filEndDynamics(simptr sim,filamenttypeptr filtype) {
 	int f,end;
 	double v;
@@ -3529,7 +3599,10 @@ void filEndDynamics(simptr sim,filamenttypeptr filtype) {
 		fil=filtype->fillist[f];
 		for(end=0;end<2;end++) {
 			v=filtype->endrate[end][fil->endstate[end]];
-			if(v!=0) filEndLengthChange(sim,fil,end,v*sim->dt); }}
+			if(v!=0 && filEndLengthChange(sim,fil,end,v*sim->dt)==FILREMOVED) {
+				filRemoveFilament(fil);
+				f--;																					// the next filament has moved into position f
+				break; }}}
 
 	return; }
 

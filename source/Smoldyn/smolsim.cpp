@@ -1582,6 +1582,21 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(!fil) pfp=NULL;
 		CHECK(fil!=NULL); }
 
+	else if(!strcmp(word,"remove_filament")) {		// remove_filament
+		CHECKS(sim->filss,"need to enter a filament type before remove_filament");
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"remove_filament format: type:name");
+		filtype=NULL;
+		fil=NULL;
+		er=filReadFilName(sim,nm,&filtype,&fil,NULL);
+		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
+		CHECKS(er!=-2,"no filaments have been defined");
+		CHECKS(er!=-4,"unknown filament type");
+		CHECKS(er!=-5,"unknown filament name");
+		er=filRemoveFilament(fil);
+		CHECKS(!er,"BUG: filament is not in its type's list");
+		CHECKS(!strnword(line2,2),"unexpected text following remove_filament"); }
+
 	else if(!strcmp(word,"random_filament")) {		// random_filament
 		CHECKS(sim->filss,"need to enter a filament type before random_filament");
 		itct=sscanf(line2,"%s",nm);

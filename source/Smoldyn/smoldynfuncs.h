@@ -424,6 +424,7 @@ int filCheckParams(simptr sim,int *warnptr);
 // filament manipulation
 int filGetFilIndex(simptr sim,const char *name,int *ftptr);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
+int filRemoveFilament(filamentptr fil);
 int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *thtstr, const char* phistr,const char* chistr,double thickness);
 
 // structure set up
