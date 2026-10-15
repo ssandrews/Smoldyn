@@ -67,7 +67,6 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinxcontrib.programoutput",
-    "sphinxcontrib.inlinesyntaxhighlight",
     "sphinx.ext.autosectionlabel",
     "sphinx_rtd_theme",
     "recommonmark",
