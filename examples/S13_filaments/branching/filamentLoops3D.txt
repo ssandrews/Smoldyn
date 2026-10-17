@@ -1,0 +1,99 @@
+# Filament loops in 3D.
+#
+# Two networks with loops, using the "attach end target node" statement:
+#  - a ring: a 10-segment filament whose plus end attaches to its own minus end
+#    node (node 0). The join is an end-to-end join, so it bends with the same
+#    standard_angle and force_angle as the other nodes, and the ring relaxes to a
+#    regular decagon (each yaw is 2*pi/10 = 0.6283) that fluctuates thermally.
+#  - a bow: a daughter filament that branches off its mother at node 3 and whose
+#    plus end attaches back to the mother at node 7. The minus end attachment is
+#    rigid and the plus end attachment closes a loop, so it is held by a spring
+#    (junction_force). branch_force_angle holds both of the daughter's junctions
+#    near branch_angle. This file doesn't use branch_force_azimuth, because an
+#    azimuthal spring only acts on the attached filament, so in a loop it can make
+#    the whole loop rotate steadily (Smoldyn warns about this).
+#
+# smoldyn filamentLoops3D.txt
+
+graphics opengl_good
+graphic_iter 20
+
+dim 3
+boundaries x -10 10
+boundaries y -10 10
+boundaries z -10 10
+
+time_start 0
+time_stop 50
+time_step 0.001
+random_seed 1
+
+frame_thickness 0
+
+start_filament_type actin
+color red
+thickness 3
+polygon ve
+dynamics euler
+kT 0.01
+standard_length 1
+standard_angle 0 0 0
+force_length 100
+force_angle 10 10 10
+mobility 1
+branch_angle 1.2
+branch_force_angle 5
+end_filament_type
+
+start_filament_type ringtype
+color blue
+thickness 3
+polygon ve
+dynamics euler
+kT 0.01
+standard_length 1
+standard_angle 0.6283 0 0     # 2*pi/10, so 10 segments close a ring
+force_length 100
+force_angle 10 10 10
+mobility 1
+end_filament_type
+
+# the bow: a mother filament and a daughter with both ends attached to it
+start_filament actin:mother
+first_segment -6 -2 0  1  0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+branch daughter 3 minus 1 1.2 0.5 0
+end_filament
+
+start_filament actin:daughter
+add_segment 1 -0.5 0 0
+add_segment 1 -0.6 0 0
+attach plus actin:mother 7
+end_filament
+
+# the ring
+start_filament ringtype:ring
+first_segment 2 2 0  1  0 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+add_segment 1 0.6283 0 0
+attach plus ringtype:ring 0
+end_filament
+
+cmd b diagnostics filament
+
+end_file

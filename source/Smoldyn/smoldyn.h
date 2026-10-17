@@ -640,6 +640,16 @@ typedef struct filamentworkstruct {
     double **thermforce;              // thermal forces on nodes
 } *filamentworkptr;
 
+typedef struct filjunctionstruct {
+    struct filamentstruct* fil;         // filament whose end is attached
+    char end;                           // attached end of fil: 'm' or 'p'
+    struct filamentstruct* target;      // filament it attaches to; may be fil itself
+    int node;                           // target node where it attaches
+    int rigid;                          // 1 = held by translation (spanning tree edge); 0 = held by a spring (closes a loop)
+    int bend;                           // 1 = end-to-end join, angle held by bending spring; 0 = branch-angle spring
+    double azim0;                       // azimuth when attached (radians); -1 = undefined
+} * filjunctionptr;
+
 typedef struct filamentstruct {
     struct filamenttypestruct* filtype; // owning filament type
     char* filname;                      // filament name (ref, not owned)
@@ -652,14 +662,10 @@ typedef struct filamentstruct {
     double *roll;                       // segment roll values (nseg)
     double *nodemobility;               // extra node mobility (nseg+1)
     double seg0up[3];                   // segment 0 up vector
-    struct filamentstruct* minusend;    // what minus end attaches to
-    struct filamentstruct* plusend;     // what plus end attaches to
-    int maxbranch;                      // max branches off this filament
-    int nbranch;                        // num branches off this filament
-    int* branchnodes;                   // mother nodes where branches attach
-    char* branchends;                   // daughter end that attaches to each node: 'm' or 'p'
-    struct filamentstruct** branches;   // list of branching filaments
-    double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
+    filjunctionptr endjunct[2];         // attachment of each end [end], where 0 = minus and 1 = plus; NULL if free
+    int maxjunct;                       // allocated size of juncts
+    int njunct;                         // number of junctions attached to this filament's nodes
+    filjunctionptr* juncts;             // junctions attached to this filament's nodes, in creation order
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
@@ -741,6 +747,7 @@ typedef struct filamenttypestruct {
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
     int branchsegments;                // number of segments a daughter is born with (>=1)
     char branchend;                    // daughter end that attaches to the mother: 'm' (default) or 'p'
+    double junctforce;                 // spring constant for loop-closing junctions, energy/length^2; 0 = use klen
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
     int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
@@ -773,6 +780,10 @@ typedef struct filamentsuperstruct {
     int ntype;                 // actual number of filament types
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
+    int maxjunct;              // allocated junctions
+    int njunct;                // number of junctions in use
+    filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse
+    int nspring;               // number of junctions that close loops (not rigid)
 } * filamentssptr;
 
 

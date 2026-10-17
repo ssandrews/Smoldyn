@@ -1,0 +1,76 @@
+# A closed filament ring.
+#
+# The filament's plus end attaches to its own minus end node (node 0) with
+# "attach plus actin:ring 0", closing it into a circle. Because the filament
+# attaches to itself, the attachment closes a loop, so it is held by a spring
+# between the plus end node and node 0 (junction_force, which defaults to
+# force_length). An attachment at a target's end node is an end-to-end join, so
+# the join bends with the same standard_angle and force_angle as every other
+# node, and the ring has no special point.
+#
+# The ring is built slightly open (each turn is 0.22 instead of the standard
+# 2*pi/24 = 0.2618), so it starts as a spiral-shaped arc whose ends are pulled
+# together. The plus end node is moved onto node 0 when the attachment is made,
+# and the ring then relaxes to a circle and fluctuates thermally.
+#
+# smoldyn filamentRing2D.txt
+
+graphics opengl_good
+graphic_iter 20
+
+dim 2
+boundaries x -10 10
+boundaries y -10 10
+
+time_start 0
+time_stop 100
+time_step 0.001
+random_seed 1
+
+frame_thickness 0
+
+start_filament_type actin
+color blue
+thickness 3
+polygon ve
+dynamics euler
+kT 0.01
+standard_length 1
+standard_angle 0.2618         # 2*pi/24, so 24 segments close a circle
+force_length 100
+force_angle 10
+mobility 1
+end_filament_type
+
+start_filament actin:ring
+first_segment -0.5 -3.5 1 0
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+add_segment 1 0.22
+attach plus actin:ring 0
+end_filament
+
+cmd b diagnostics filament
+cmd @ 99.999 printFilaments stdout
+
+end_file

@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 294
+#define SMOLHELP_NENTRY 297
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1153,6 +1153,21 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  * branch_compartment compartment",
 		"    If branching should only be allowed within a certain compartment, enter\n"
 		"    that compartment name here."},
+	{"statement","Statements about filaments",1,"junction_force",
+		"  * junction_force value",
+		"    The spring constant, in the same units as force_length, for attachments\n"
+		"    that close a loop in a filament network (see attach). Such an attachment is\n"
+		"    held by the energy 0.5*k*d^2, where k is this value and d is the distance\n"
+		"    between the attached filament end and the node that it attaches to. The\n"
+		"    default is 0, which means that the force_length value is used, so the\n"
+		"    junction is as stiff as a segment. Larger values hold loops more tightly\n"
+		"    but require smaller time steps; Smoldyn warns if the time step times the\n"
+		"    mobility times this value is more than 0.5. The forces of these springs are\n"
+		"    passed on through the attachments that are held exactly, so in a network\n"
+		"    with many loops, such as a web, a filament can carry the springs of many\n"
+		"    attachments; Smoldyn also warns if the time step times the mobility times\n"
+		"    the sum of the spring constants that one attachment carries is more than\n"
+		"    0.5. The value of the attached filament's type is used."},
 	{"statement","Statements about filaments",1,"confine_surface",
 		"  * confine_surface surface force [face]",
 		"    If the filament should be confined by a surface, enter that surface name\n"
@@ -1255,13 +1270,13 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",0,"remove_filament",
 		"  remove_filament type:name",
 		"    Removes the filament named name, of type type, from the simulation. The\n"
-		"    type is optional if the filament name is unique. Any filaments that branch\n"
-		"    off of this one are released, so they continue as free filaments, and if\n"
-		"    this filament is a branch, it is removed from its mother's list of\n"
-		"    branches. A removed filament's name can be used again. Smoldyn keeps the\n"
-		"    memory of removed filaments and reuses it for filaments that are created\n"
-		"    later. This statement can be used during a simulation with the set command,\n"
-		"    for example cmd @ 0.5 set remove_filament actin:fil0."},
+		"    type is optional if the filament name is unique. All attachments that\n"
+		"    involve this filament are removed: any filament ends that attach to it are\n"
+		"    released, so they continue as free ends, and its own ends are detached. A\n"
+		"    removed filament's name can be used again. Smoldyn keeps the memory of\n"
+		"    removed filaments and reuses it for filaments that are created later. This\n"
+		"    statement can be used during a simulation with the set command, for example\n"
+		"    cmd @ 0.5 set remove_filament actin:fil0."},
 	{"statement","Statements about filaments",0,"start_filament",
 		"  start_filament type:name",
 		"    Start of filament definition block, for a filament of type type and named\n"
@@ -1342,15 +1357,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    point, and for a daughter attached by its plus end with more than one\n"
 		"    segment, segment 0 is the segment at the daughter's free minus end. The\n"
 		"    first number after node and end is always length, so the angles can only be\n"
-		"    entered after a length. The node needs to be from 1 to the number of mother\n"
-		"    segments, so a branch can attach at the mother's plus end but not at its\n"
-		"    minus end. The branch angles are measured relative to the mother segment\n"
-		"    that ends at this node, and they give the direction of the daughter away\n"
-		"    from the mother, whichever end attaches. The yaw pitch roll angles are\n"
-		"    optional (and only enter yaw for 2D). If they are entered, they are the\n"
-		"    bending angle away from the mother filament. If they are not entered, then\n"
-		"    the standard bending angles are taken from the filament type definition\n"
-		"    (branch_angle)."},
+		"    entered after a length. The node can be any node of the mother, from 0 (its\n"
+		"    minus end) to the number of mother segments (its plus end). The branch\n"
+		"    angles are measured relative to the mother segment that ends at this node,\n"
+		"    and they give the direction of the daughter away from the mother, whichever\n"
+		"    end attaches. The yaw pitch roll angles are optional (and only enter yaw\n"
+		"    for 2D). If they are entered, they are the bending angle away from the\n"
+		"    mother filament. If they are not entered, then the standard bending angles\n"
+		"    are taken from the filament type definition (branch_angle)."},
 	{"statement","Statements about filaments",1,"sequence",
 		"  * sequence sequence",
 		"    Enter the sequence string for a filament."},
@@ -1363,6 +1377,34 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    the filament, where -1 is the plus end. The mobility value has a default\n"
 		"    value of 1, and can be set to other values here. In particular, setting it\n"
 		"    to 0 means that the node is fixed in space."},
+	{"statement","Statements about filaments",1,"attach",
+		"  * attach end target node",
+		"    Attaches end end (\"minus\" or \"plus\") of this filament, which needs to be\n"
+		"    free, to node node of filament target. The target is entered as type:name,\n"
+		"    or just name if the name is unique, and can be this filament itself. The\n"
+		"    node is from 0 to the number of target segments. If this attachment adds to\n"
+		"    a tree of attachments, the filament is moved so that its end is at the\n"
+		"    target node, and later stays there exactly, along with the filaments\n"
+		"    attached to it. If it closes a loop, for example by attaching the second\n"
+		"    end of a filament, attaching a filament to itself, or connecting two\n"
+		"    filaments that are already connected, then only the end node of this\n"
+		"    filament is moved onto the target node, and a spring holds it there\n"
+		"    afterward (see junction_force). An attachment at the target's minus or plus\n"
+		"    end node is an end-to-end join, whose angle is held by the filament type's\n"
+		"    bending spring (standard_angle and force_angle), so the join bends like any\n"
+		"    other node; for example, attach plus type:name 0, for the filament's own\n"
+		"    name, closes it into a circle. An attachment at any other node is held at\n"
+		"    the branch angle, using branch_angle, branch_force_angle, and\n"
+		"    branch_force_azimuth. Attaching or detaching an end can change which other\n"
+		"    attachments are held exactly and which by springs. In 3D, avoid\n"
+		"    branch_force_azimuth for filaments in loops, because the azimuthal spring\n"
+		"    only acts on the attached filament, so it can make a loop rotate steadily;\n"
+		"    Smoldyn warns about this. This statement can be used during a simulation\n"
+		"    with the set command."},
+	{"statement","Statements about filaments",1,"detach",
+		"  * detach end",
+		"    Detaches end end (\"minus\" or \"plus\") of this filament, which leaves it\n"
+		"    free."},
 	{"statement","Statements about filaments",1,"end_state",
 		"  * end_state end state",
 		"    Sets the current state of end end (\"minus\" or \"plus\") of this filament to\n"
@@ -1998,10 +2040,12 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"command","System observation commands",0,"printFilaments",
 		"  printFilaments filename",
 		"    Prints out every filament (all types) as a flat polyline of node\n"
-		"    coordinates, one line each: FIL <time> <type>:<name> <nseg> <parent-or-\"-\">\n"
-		"    <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ..., where the states are\n"
-		"    the end states (\"open\", \"capped\", or \"shrink\"). Auto-named daughters are\n"
-		"    included, so this captures a whole branched network."},
+		"    coordinates, one line each: FIL <time> <type>:<name> <nseg> <minus-attach>\n"
+		"    <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ..., where\n"
+		"    the attachments are what each end is attached to, as type:name:node, or \"-\"\n"
+		"    for a free end, and the states are the end states (\"open\", \"capped\", or\n"
+		"    \"shrink\"). Auto-named daughters are included, so this captures a whole\n"
+		"    branched network."},
 	{"command","System observation commands",0,"writeVTK",
 		"  writeVTK filepath/filename",
 		"    Outputs VTK format data for viewing with applications such as Visit or\n"

@@ -18,7 +18,7 @@
 % settings for listings package
 \lstset{
 language=C, 
-basicstyle=\tiny\ttfamily, 
+basicstyle=\footnotesize\ttfamily, 
 keywordstyle=\bfseries, 
 tabsize=2, 
 breaklines=true, 
@@ -4011,19 +4011,28 @@ Filaments are 1-dimensional structures that are designed to represent cytoskelet
 
 The functions here are designed for filaments in either 2D or 3D space. However, the vectors and matrices are allocated and set up for 3D space, regardless of the actual space, with the $z$-coordinate set up so that the filament always stays within the $x,y$ plane; for example, a direction cosine matrix for 2D space is still 9 elements, but the elements involving $z$ coordinates are all set to either 0 or 1 as appropriate. Despite this, most code treats 2D and 3D separately.
 
+I wrote the initial portions of the code (unbranched filaments and their dynamics) by hand, and then I used the Claude-code AI tool for most of the newer portions. Claude also wrote many of the entries in both the user's and programmer's manuals.
+
 \subsection{Data structures declared in smoldyn.h}
 
-Filaments are defined in a heirarchical fashion. At the top level, there is one filament superstructure which contains a list of filament types that are used in the simulation. Below that are multiple filament type structures. For example, actin in the cytoplasm might be one type; another might be double-stranded DNA, and yet another is single-stranded DNA. Each filament type contains multiple individual filaments, which is the next level down, each of which looks and behaves identically. Each filament is composed of a list of segments. Segments can vary in lengths and thicknesses. Each filament also contains a data structure of ``working data'' that is used for dynamics integration.
+Filaments are defined in a heirarchical fashion. At the top level, there is one filament superstructure which contains a list of filament types that are used in the simulation. Below that are multiple filament type structures. For example, actin in the cytoplasm might be one type; another might be double-stranded DNA, and yet another is single-stranded DNA. Each filament type contains multiple individual filaments, which is the next level down, each of which looks and behaves identically. Each filament is composed of a list of segments. Segments can vary in lengths and thicknesses.
+
+There are also several additional data structures. The filament superstructure contains a list of junctions, which are filament-filament junctions, such as for filament branching. Also, each filament contains a data structure of ``working data'' that is used for dynamics integration. In addition, there are data structures for filament-molecule, filament-filament, and filament-surface interactions. See below for detailed data structure descriptions.
 
 \subsubsection{Constants}
 
 Defined in smolfilament.c:
 \begin{lstlisting}
+#define FILMAXTRIES 100
+#define FILMAXGROW 1000					// max segments one filament may gain in a single elongation step
+#define FILREMOVED -2000				// filEndLengthChange return value: the filament shrank away and should be removed
+#define FILJUNCTMINNODE 0				// lowest target node a junction may attach to
+
 #define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
 #define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
 \end{lstlisting}
 
-These are used in the functions \ttt{filBranchAzimuth} and \ttt{filFunctionGeometry}. I'm not sure what they're for, but they're probably useful.
+I'm not sure what these constants are used for beyond the comments given above.
 
 
 \subsubsection{Enumerations}
@@ -4031,9 +4040,7 @@ These are used in the functions \ttt{filBranchAzimuth} and \ttt{filFunctionGeome
 \begin{lstlisting}
 enum FilamentDynamics {FDnone, FDeuler, FDRK2, FDRK4, FDeulermat, FDimplicit};
 \end{lstlisting}
-
-The filament dynamics enumeration describes what algorithms to use for its dynamics. They are summarized below.
-
+The filament dynamics enumeration describes what algorithms to use for its dynamics. They are summarized in the following table.
 \begin{longtable}[c]{ll}
 Dynamics & Description\\
 \hline
@@ -4045,13 +4052,21 @@ EulerMat & Euler integration with matrix method \\
 ImplicitOld & Euler implicit integration with original method \\
 Implicit & Euler implicit integration
 \end{longtable}
+The `None', `Euler', `RK2', and `RK4' methods appear to be correct. I'm not sure about `EulerMat' or `ImplicitOld'. It seems like `Implicit' might need some work.
 
 \begin{lstlisting}
 enum FilEndState {FESopen,FEScapped,FESshrink,FESnone};
 #define FESMAX 3
 \end{lstlisting}
-
 The filament end state enumeration lists the states that each filament end can be in. The filament type gives each end a length change rate for each state (\ttt{endrate}) and transition rates between states (\ttt{endtrans}). The names are labels, and the rates define what the states do; typically, ``open'' grows, ``capped'' neither grows nor shrinks, and ``shrink'' shrinks. \ttt{FESnone} is returned for unrecognized state names. Arrays that are indexed by end use 0 for the minus end and 1 for the plus end.
+
+\begin{lstlisting}
+enum FilMolAction {FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact,
+    FMAnone};
+enum FilFilAction {FFAadsorb, FFAdesorb, FFAbounce, FFAnone};
+enum FilSurfAction {FSAadsorb, FSAdesorb, FSAbounce, FSAnone};
+\end{lstlisting}
+These are enumerations for the different types of filament interactions, whether with molecules, other filaments, or surfaces. These are just stubs at the moment because I haven't figured out what interactions should be possible yet and also no interaction code is written yet.
 
 \subsubsection{Segments}
 
@@ -4105,6 +4120,23 @@ Filament dynamics integration requires a substantial amount of working data, whi
 
 \ttt{thermtime} is the simulation time for the most recent calculation of thermal forces (they need to be computed only once per time step to avoid giving the integrators conflicting information) and \ttt{thermforce} is a list of thermal forces on the nodes.
 
+\subsubsection{Filament junctions}
+
+\begin{lstlisting}
+typedef struct filjunctionstruct {
+    struct filamentstruct* fil;         // filament whose end is attached
+    char end;                           // attached end of fil: 'm' or 'p'
+    struct filamentstruct* target;      // filament it attaches to; may be fil itself
+    int node;                           // target node where it attaches
+    int rigid;                          // 1 = held by translation (spanning tree edge); 0 = held by a spring (closes a loop)
+    int bend;                           // 1 = end-to-end join, angle held by bending spring; 0 = branch-angle spring
+    double azim0;                       // azimuth when attached (radians); -1 = undefined
+} * filjunctionptr;
+\end{lstlisting}
+
+Filament junctions are nodes that are shared by one filament and the end of another filament. They are branch points. Because filaments are able to connect with those of different types, filament junction structures are stored as a list within the filament superstructure. Filaments are faster to simulate if they have a tree-like structure, rather than having loops within them, so this allows for both options. The \ttt{rigid} element is set for trees but not for loops.
+
+A junction attaches end \ttt{end} of filament \ttt{fil} to node \ttt{node} of filament \ttt{target}, which can be any node from 0 to \ttt{target->nseg}, and can be on \ttt{fil} itself. This allows any network topology, including loops. The junctions are divided into two groups by \ttt{filClassifyJunctions}. Rigid junctions form a spanning forest of the network; each is held exactly by translating its attached filament so that its end sits on the target node (\ttt{filPinJunctions}), and a filament has at most one rigid junction, which makes it a child of its target in its tree. Every junction of a dendritic network is rigid. The other junctions close loops and are held by a stiff spring between the attached end node and the target node (\ttt{filAddJunctionForces}). \ttt{bend} is 1 for an end-to-end join, meaning a junction at the target's minus or plus end node that was created with the \ttt{attach} statement; its angle is held by the bending spring, so that the join bends like any other node. Otherwise, the angle is held by the branch-angle spring. \ttt{azim0} is the azimuth of the attached filament around the target's axis when it attached, or -1 if undefined, for the azimuthal spring and azimuth pin. I believe that \ttt{azim0} is redundant with the attached filament's ypr for segment 0, but it appears to be helpful for bending at these junctions.
 
 \subsubsection{Filaments}
 
@@ -4121,14 +4153,10 @@ typedef struct filamentstruct {
     double *roll;                       // segment roll values (nseg)
     double *nodemobility;               // extra node mobility (nseg+1)
     double seg0up[3];                   // segment 0 up vector
-    struct filamentstruct* minusend;    // what minus end attaches to
-    struct filamentstruct* plusend;     // what plus end attaches to
-    int maxbranch;                      // max branches off this filament
-    int nbranch;                        // num branches off this filament
-    int* branchnodes;                   // mother nodes where branches attach
-    char* branchends;                   // daughter end that attaches to each node: 'm' or 'p'
-    struct filamentstruct** branches;   // list of branching filaments
-    double* branchazim0;                // birth azimuth of each branch (radians); -1 = undefined
+    filjunctionptr endjunct[2];         // attachment of each end [end], where 0 = minus and 1 = plus; NULL if free
+    int maxjunct;                       // allocated size of juncts
+    int njunct;                         // number of junctions attached to this filament's nodes
+    filjunctionptr* juncts;             // junctions attached to this filament's nodes, in creation order
     int maxsequence;                    // allocated sequence characters
     int nsequence;                      // number of sequence characters
     char* sequence;                     // sequence code
@@ -4143,11 +4171,12 @@ Next, \ttt{maxseg} and \ttt{nseg} give the allocated and actual numbers of segme
 
 The \ttt{nodesx} vector contains node positions at the end of the previous time step, enabling determination of surface crossing or other events during the time step. The \ttt{roll} vector contains the roll values for individual segments. It is only here for convenience, and I'm not sure it's a good design, but it's here for now. It is redundant with the segment \ttt{ypr[2]} values, which are the definitive ones, so any function that writes to \ttt{roll} must also write to \ttt{ypr[2]} and any function that reads from \ttt{roll} must first make sure that it equals \ttt{ypr[2]}. The reason for redundant data is that it can be easier to work with either a list of roll values or lists of segment rotation values, depending on the situation. The \ttt{nodemobility} vector is a list of unitless mobility factors for each node, which are multiplied by the filament type mobility value to give the node's total mobility; this is useful for fixing particular nodes in space. The \ttt{seg0up} vector represents the unit ``up'' vector for segment 0 (which is perpendicular to the segment itself).
 
-Filaments are allowed to branch. If the current filament is a branch off another filament, then \ttt{minusend} points to the filament that the minus end attaches to and/or \ttt{plusend} points to the filament that the plus end attaches to; these are \ttt{NULL} if they are free ends. Additionally, this filament knows about the filaments that branch off this one, which are listed in \ttt{maxbranch}, \ttt{nbranch}, and \ttt{branches}. The branched filaments attach at the mother node numbers listed in \ttt{branchnodes}, by the daughter ends listed in \ttt{branchends}, which are `m' for the minus end (node 0 of the daughter) or `p' for the plus end (node \ttt{nseg} of the daughter). These node numbers are from 1 to \ttt{nseg}; node 0, the mother's minus end, cannot take a branch. For example if there's a branch at node 3 that attaches by its minus end, then the minus end of the branch is at the mother's node 3, which is the plus end of the mother's segment 2, and the branch angles are measured relative to segment 2. \ttt{branchazim0} is the birth azimuth for each branch, or -1 if undefined, where azimuth is the angle around the mother's axis. %?? branchazim0 seems redundant with the branch's ypr for segment 0.
+Filaments can be attached to each other, and to themselves, through junctions. \ttt{endjunct} gives the junction for each end of this filament, with index 0 for the minus end and 1 for the plus end, or \ttt{NULL} for a free end. \ttt{juncts}, which is allocated with \ttt{maxjunct} entries, lists the \ttt{njunct} junctions in which other filament ends, or this filament's own ends, attach to this filament's nodes, in creation order. Each junction is listed both in its attached filament's \ttt{endjunct} and in its target filament's \ttt{juncts}.
+
 
 Along the length of each filament are equally spaced sequence codes, which represent things like DNA sequence or modification state of proteins. They are stored in an array with parameters \ttt{maxsequence} and \ttt{nsequence}, and then the list \ttt{sequence}. This array is analogous to the segments array, but may be larger or smaller because there's no necessary correlation between sequence code and segments.
 
-\ttt{endstate} is the current state of each end, index 0 for the minus end and 1 for the plus end. \ttt{lenbank} is for changes in filament length; if an end wants to grow or shrink by a length that's a non-integer number of segments, the residual length goes into here, separately for each end, and is then used at the next time step. It is positive for pending growth and negative for pending shrinkage.\\ %??New code.
+\ttt{endstate} is the current state of each end, index 0 for the minus end and 1 for the plus end. \ttt{lenbank} is for changes in filament length; if an end wants to grow or shrink by a length that's a non-integer number of segments, the residual length goes into here, separately for each end, and is then used at the next time step. It is positive for pending growth and negative for pending shrinkage.\\
 
 \subsubsection{Filament types}
 
@@ -4177,6 +4206,7 @@ typedef struct filamenttypestruct {
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
     int branchsegments;                // number of segments a daughter is born with (>=1)
     char branchend;                    // daughter end that attaches to the mother: 'm' (default) or 'p'
+    double junctforce;                 // spring constant for loop-closing junctions, energy/length^2; 0 = use klen
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
     int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
@@ -4211,16 +4241,15 @@ In the graphical display parameters, \ttt{color} is the filament color, with red
 
 Filament mechanics information is in the next elements. \ttt{stdlen} is the standard segment length, meaning the segment length at minimum energy, where segments are neither stretched nor compressed. \ttt{stdypr} is the minimum energy relative ypr angle. \ttt{klen} is the stretching force constant. Its value is $< 0$ for an infinite force constant, meaning that the segment lengths are fixed. \ttt{kypr} is the bending force constant. For any element, its value is 0 for zero force constant, meaning a freely jointed chain, and $< 0$ for an infinite force constant, meaning a fixed bending angle. \ttt{kT} is the thermodynamic energy. This parameter isn't ideal here because it allows a different temperature for different components in the simulation, but it's here for now. \ttt{treadrate} is the treadmilling rate constant, with 0 for no treadmilling, a positive number for the plus end growing and a negative number for the minus end growing. \ttt{mobility} is the mobility of the nodes for computing dynamics. \ttt{filradius} is the radius of segments.
 
-The next sections were written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic and negative is not set. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament. \ttt{branchend} is the daughter end that attaches to the mother, `m' for minus or `p' for plus, for branches created by branch dynamics; it is also the default for the \ttt{branch} statement. \ttt{branchforceangle} is the torsional (yaw) spring constant for the branch. \ttt{branchazimuth} is the azimuth of the branch off of the mother, in the mother segment's frame of reference. \ttt{branchazimuthfix} is a Boolean variable that is equal to 1 if the branch azimuth should be fixed throughout a simulation. \ttt{branchforceazimuth} is the azimuthal spring constant, away from the filament \ttt{branchazim0} value.  % ?? new code. Note that branchangle and branchspread are only yaw but could have separate pitch values as well. I think this is fine. Again, azimuth stuff is redundant with ypr angles.
+The next sections were written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic and negative is not set. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament. \ttt{branchend} is the daughter end that attaches to the mother, `m' for minus or `p' for plus, for branches created by branch dynamics; it is also the default for the \ttt{branch} statement. \ttt{branchforceangle} is the torsional (yaw) spring constant for the branch. \ttt{branchazimuth} is the azimuth of the branch off of the mother, in the mother segment's frame of reference. \ttt{branchazimuthfix} is a Boolean variable that is equal to 1 if the branch azimuth should be fixed throughout a simulation. \ttt{branchforceazimuth} is the azimuthal spring constant, away from the filament \ttt{branchazim0} value.
 
 Next, \ttt{branchsrf} is a surface that can induce branching to occur, if the potential branch is within \ttt{branchsrfdist} distance of the surface. \ttt{branchcmpt} is a compartment where branching can occur. \ttt{confinesrf} is a surface where the harmonic confinement against it. This confinement uses spring constant \ttt{confineforce} and only occurs at the face of the surface that's given by \ttt{confineface}.%?? These elements could be moved to a separate filament-surface interaction data structure, or at least labeled as being for filament-surface interactions.
 
-Next are the filament end dynamics. \ttt{endrate[end][state]} is the rate at which end \ttt{end} (0 for minus, 1 for plus) changes length while it is in state \ttt{state}, in length/time; positive values are elongation and negative values are shrinking. \ttt{endtrans[end][from][to]} is the rate at which end \ttt{end} changes from state \ttt{from} to state \ttt{to}, in inverse time; the diagonal elements are unused. \ttt{endstate0} is the state that each end of a new filament starts in. All of these default to 0, or to the open state. \ttt{elongmaxlen} is the maximum contour length for elongation. % ?? new code
+Next are the filament end dynamics. \ttt{endrate[end][state]} is the rate at which end \ttt{end} (0 for minus, 1 for plus) changes length while it is in state \ttt{state}, in length/time; positive values are elongation and negative values are shrinking. \ttt{endtrans[end][from][to]} is the rate at which end \ttt{end} changes from state \ttt{from} to state \ttt{to}, in inverse time; the diagonal elements are unused. \ttt{endstate0} is the state that each end of a new filament starts in. All of these default to 0, or to the open state. \ttt{elongmaxlen} is the maximum contour length for elongation.
 
 Lengthwise faces aren't used yet but are set up here with \ttt{maxface} and \ttt{nface} for the maximum and actual number of filament faces. \ttt{facename} is a list of face names and \ttt{facetwist} is the spatial twisting rate of the faces (radians per unit length of filament).
 
 Next, \ttt{maxfil} and \ttt{nfil} give the number of allocated and actual filaments of this type, and they are listed in \ttt{fillist}. All \ttt{maxfil} entries of \ttt{fillist} point to allocated filaments, and entries \ttt{nfil} to \ttt{maxfil-1} are unused. These include removed filaments, which \ttt{filRemoveFilament} moves to position \ttt{nfil-1} before decreasing \ttt{nfil}, so \ttt{filAddFilament} reuses them before allocating new memory. Active filaments are kept in creation order, which puts mothers before their daughters. The filaments have names in \ttt{filnames}. Names can be assigned automatically, in which case they are named as the filament type name appended with an integer; this integer is found from \ttt{autonamenum}.\\
-% I think that this filament type data structure is pretty good. However, it could use some re-ordering of the elements.
 
 \subsubsection{Filament superstructure}
 
@@ -4232,10 +4261,16 @@ typedef struct filamentsuperstruct {
     int ntype;                 // actual number of filament types
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
+    int maxjunct;              // allocated junctions
+    int njunct;                // number of junctions in use
+    filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse
+    int nspring;               // number of junctions that close loops (not rigid)
     } * filamentssptr;
 \end{lstlisting}
 
-The superstructure contains a list of filament types. It starts with its condition element in \ttt{condition} and a pointer up the heirarchy to the simulation structure in \ttt{sim}. The list of filament types is allocated with \ttt{maxtype} entries, has \ttt{ntype} entries, and has list \ttt{ftnames} for the type names and \ttt{filtypes} is the actual list of types.\\
+The superstructure contains a list of filament types. It starts with its condition element in \ttt{condition} and a pointer up the heirarchy to the simulation structure in \ttt{sim}. The list of filament types is allocated with \ttt{maxtype} entries, has \ttt{ntype} entries, and has list \ttt{ftnames} for the type names and \ttt{filtypes} is the actual list of types.
+
+It also owns all junctions, in \ttt{junctlist}, which has \ttt{maxjunct} allocated junction structures, of which the first \ttt{njunct} are in use, in creation order. Removed junctions move to the unused end of the list and are reused. \ttt{nspring} is the number of junctions that close loops, which \ttt{filClassifyJunctions} counts; when it is 0, \ttt{filAddJunctionForces} skips transmitting loop spring forces through rigid junctions.
 
 % Filament math
 \subsection{Filament math}
@@ -4248,6 +4283,10 @@ All filament math is described in the document FilamentNotes.tex.
 Situation as of 5/22/25. It is possible to define basic filaments and to run their dynamics. Dynamics methods include Euler, RK2, RK4, an old version of implicit Euler that doesn't work, and a new version of implicit Euler that does work. The data structures allow for filament branching but this isn't implemented in the code yet. Thermal forces are ad hoc and not quantitatively correct. Implicit dynamics are functional but could be made more efficient (many more bending forces are evaluated than should be necessary when building the numerical matrix and also stretching forces and thermal forces should not be treated numerically since they can be done analytically). Also, dynamics need validation. A minor issue that needs fixing is that the implicit integration methods don't account for local mobility factors. The next major steps are to add filament branching and filament interactions. Also, it might be good to allow for non-uniform standard segment lengths.
 
 9/30/26. Junjie Sun has done a huge amount of good work with adding branching support and other actin-specific code. I'm still trying to figure out what all is here.
+
+10/16/26. The current plan is that Junjie will continue to work in the filament branch and I will continue to work in the main branch. I'm not sure if it will be possible to merge them again. However, the idea is that the filament branch is the exploratory branch, and I'm going to learn from Junjie's results, and write things in a more permanent way in the main branch.
+
+To-do items: (1) Review implicit integration. This is supposed to work well, but I'm not sure if it has ever been fully validated. Also, look into the Cytosim integration approach to see if there are ways to speed up what's being done here. (2) Filament interactions aren't done at all yet, with the sole exception of some surface interactions that are in the filament type data structure and that need to be removed from there. (3) The code in general needs to run faster; options include: variable time steps, GPU parallelization, implicit integration, model simplification, algorithm improvements. (4) I'm eager to write a paper on the filament math before I forget all of it.
 
 \subsection{Functions.}
 As much as possible, functions are declared locally rather than in the smoldynfuncs.h header file. This simplifies the code reading because it clarifies which functions might be called externally versus those that are only called internally. In practice, many functions are listed both places, but they shouldn't be.
@@ -4381,6 +4420,7 @@ Sets the unitless node mobility for node \ttt{node} to \ttt{value}. Enter \ttt{n
 \hfill \\
 Sets various filament type parameters. The parameter name is \ttt{param} and it is set to the value \ttt{value}. If this parameter has multiple inidices, enter the index to be changed in \ttt{index}, or enter \ttt{index} as -1 to set all of the indices at once to the same value. Returns 0 for success or 2 for out of bounds value.
 
+{\tiny
 \begin{longtable}[c]{llll}
 \ttt{param} & Description & \ttt{index} & Range\\
 \hline
@@ -4408,7 +4448,7 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{bundle} & bundle value & n/a & $(0,\infty)$\\
 \ttt{radius} & filament radius & n/a & $(0,\infty)$\\
 \ttt{facetwist} & face twist rate & n/a & $(-\infty,\infty)$
-\end{longtable}
+\end{longtable} }
 
 \item[\ttt{int filtypeSetColor(filamenttypeptr filtype, const double *rgba)}]
 \hfill \\
@@ -4447,34 +4487,60 @@ Adds a face name to the filament, enlarging the list of face names if required. 
 \hfill \\
 Adds a new filament type to the simulation, which is named \ttt{ftname}, returning a pointer to the new filament type. Both \ttt{sim} and \ttt{ftname} need to be defined. If there is already a filament type with this name, a pointer to it is returned. Returns a pointer to the new filament type or \ttt{NULL} for failure, meaning that memory could not be allocated.
 
+\item[\underline{Filament branching}]
+
 \item[\ttt{void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr)}] %?? new code
 \hfill \\
 Returns the daughter nodes at a junction, for a daughter that attaches by its end \ttt{end} (`m' or `p'). \ttt{nearptr} points to the daughter end node that is pinned to the mother (0 or \ttt{nseg}) and \ttt{farptr} points to the next node along the daughter (1 or \ttt{nseg-1}), so \ttt{nodes[far]-nodes[near]} points away from the mother. All junction code uses these nodes, so the branch angle and azimuth are defined the same way whichever end attaches.
 
-\item[\ttt{filamentptr filBranchEndMother(const filamentptr daughter,char end)}] %?? new code
+\item[\ttt{filjunctionptr filRigidParent(const filamentptr fil)}] %?? new code
 \hfill \\
-Returns the filament that end \ttt{end} (`m' or `p') of \ttt{daughter} attaches to, which is \ttt{daughter->minusend} or \ttt{daughter->plusend}, or \ttt{NULL} if that end is free.
+Returns the rigid junction of \ttt{fil}, which is its parent edge in the spanning forest of rigid junctions, or \ttt{NULL} if \ttt{fil} is the root of its tree.
 
-\item[\ttt{double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter,char end)}] %?? New code. I don't like the fact that this returns an error code for daughter parallel to the mother. However, maybe that's okay, so long as it's used appropriately. Also, should it be using the reference frame of the spot segment or the prior one?
+\item[\ttt{filamentptr filTreeRoot(filamentptr fil)}] %?? new code
 \hfill \\
-This computes and returns the azimuth of a daughter about its mother. If the daughter is very nearly parallel, so that the azimuth can't be computed accurately, then this returns -1. I don't really understand the AI-generated function description.
+Returns the root of the tree of rigid junctions that contains \ttt{fil}, found by following rigid parents.
 
-Here, \ttt{td} is the displacement of the daughter's junction segment in absolute coordinates, pointing away from the mother, where \ttt{end} is the daughter end that attaches (`m' or `p'; see \ttt{filBranchJunctionNodes}). It gets rotated into the coordinates of the mother segment that ends at the branch node (\ttt{mother->segments[node-1]}), putting the answer in \ttt{v}. If \ttt{v} is very nearly parallel to the mother segment (using the constant \ttt{FILJUNCTSINMIN}), then the function returns -1. Otherwise, the azimuth angle is computed as \ttt{atan2(v[2],v[1])} and returned.
-
-
-\item[\ttt{int filBranchDazim(const filamentptr mother,int br,double *dphiptr)}] %?? New code. I think this is good.
+\item[\ttt{int filInSubtree(filamentptr fil,const filamentptr top)}] %?? new code
 \hfill \\
-Computes and returns the difference between the current azimuth angle and the birth azimuth angle. \ttt{mother} is the mother filament and \ttt{br} is the branch number of the daughter. Returns 1 and sets \ttt{dphiptr} to the angle if successful, 0 when the birth azimuth was never recorded or the daughter and mother segments are too close to parallel to compute a valid azimuth.
+Returns 1 if \ttt{fil} is \ttt{top} or is attached to \ttt{top} through a chain of rigid junctions, so that it is in the subtree below \ttt{top}, and 0 otherwise. \ttt{filCheckParams} uses it to find the springs that a rigid junction transmits.
 
+\item[\ttt{void filClassifyJunctions(filamentssptr filss)}] %?? new code
+\hfill \\
+Decides which junctions are rigid, going through them in creation order. A junction is rigid if its filament doesn't already have a rigid junction at its other end and the target is not in its filament's own tree; otherwise it closes a loop and is held by a spring. Every junction of a dendritic network is rigid. Assigning greedily in creation order keeps the result deterministic and the rigid junctions acyclic, with at most one rigid parent per filament. This is called whenever a junction is added or removed, so removing a junction can make a loop-closing junction rigid.
 
-\item[\underline{Filament branching}]
+\item[\ttt{filjunctionptr filAddJunction(filamentptr fil,char end,filamentptr target,int node,int bend)}] %?? new code
+\hfill \\
+Records a junction that attaches end \ttt{end} (`m' or `p') of \ttt{fil} to node \ttt{node} of \ttt{target}, adds it to \ttt{fil->endjunct} and \ttt{target->juncts}, and classifies the junctions. It does not move any filament. \ttt{bend} is 1 for an end-to-end join. Returns the junction, or \ttt{NULL} if that end is already attached or memory could not be allocated.
+
+\item[\ttt{void filRemoveJunction(filjunctionptr junct)}] %?? new code
+\hfill \\
+Removes junction \ttt{junct}, which releases its attached filament end, keeps the order of the other junctions, moves the junction's memory to the unused end of the list, and reclassifies the junctions.
+
+\item[\ttt{void filRemoveFilJunctions(filamentptr fil)}] %?? new code
+\hfill \\
+Removes every junction that involves \ttt{fil}, either as the attached filament or as the target.
+
+\item[\ttt{int filAttachEnd(filamentptr fil,char end,filamentptr target,int node)}] %?? new code
+\hfill \\
+Attaches the free end \ttt{end} of \ttt{fil} to node \ttt{node} of \ttt{target}, as for the \ttt{attach} statement. A junction at an end node of the target is an end-to-end join. If the junction is rigid, \ttt{fil} is translated so that its end sits at the target node, and the rest of its tree is pinned after it; if it closes a loop, only \ttt{fil}'s end node is moved onto the target node, followed by \ttt{filNodes2Angles}. The current azimuth is recorded for the azimuthal spring. Returns 0 for success or 1 for failure.
+
+\item[\ttt{double filBranchAzimuth(const filjunctionptr junct)}] %?? New code.
+\hfill \\
+This computes and returns the azimuth of a junction's attached filament about its target. If the attached filament is very nearly parallel, so that the azimuth can't be computed accurately, then this returns -1.
+
+Here, \ttt{td} is the displacement of the attached filament's junction segment in absolute coordinates, pointing away from the target (see \ttt{filBranchJunctionNodes}). It gets rotated into the coordinates of the target's reference segment, which is the segment that ends at the junction node (\ttt{segments[node-1]}), or segment 0 for node 0, putting the answer in \ttt{v}. If \ttt{v} is very nearly parallel to that segment (using the constant \ttt{FILJUNCTSINMIN}), then the function returns -1. Otherwise, the azimuth angle is computed as \ttt{atan2(v[2],v[1])} and returned.
+
+\item[\ttt{int filBranchDazim(const filjunctionptr junct,double *dphiptr)}] %?? New code. I think this is good.
+\hfill \\
+Computes the difference between the current azimuth angle of junction \ttt{junct} and its recorded azimuth. Returns 1 and sets \ttt{dphiptr} to the angle if successful, 0 when the azimuth was never recorded or the filaments are too close to parallel to compute a valid azimuth.
 
 \item[\ttt{filamentptr}]
 \ttt{filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername)}
 \hfill \\
-Nucleate a daughter filament off the side of an existing ``mother'' filament, at mother node `node', which needs to be from 1 to the number of mother segments. The daughter attaches by its end `end', where `m' puts its minus end at the node and `p' puts its plus end at the node. `length0' is the length of the daughter's segment 0, or $\leq 0$ for a random length from \ttt{filRandomLength}. `angle' is the direction of the daughter away from the mother as ypr relative to the absolute frame of mother segment `node-1', which is the segment that ends at this node (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. For a plus-end attachment, the daughter is first built from the branch point toward the mother, with its orientation turned around by a relative yaw of $\pi$, and then translated so that its plus end is at the branch point.%?? New code. I think that the user should choose which end of the branch attaches to the mother, or maybe that's best left until it's needed.
+Nucleate a daughter filament off the side of an existing ``mother'' filament, at mother node `node', which needs to be from 0 to the number of mother segments. The daughter is attached with a rigid junction, since a new daughter is not yet attached to anything. The daughter attaches by its end `end', where `m' puts its minus end at the node and `p' puts its plus end at the node. `length0' is the length of the daughter's segment 0, or $\leq 0$ for a random length from \ttt{filRandomLength}. `angle' is the direction of the daughter away from the mother as ypr relative to the absolute frame of mother segment `node-1', which is the segment that ends at this node (yaw $\sim$ 70 deg for Arp2/3). Returns the new daughter filament, with the mother $\leftrightarrow$ daughter relationship recorded, or \ttt{NULL} on error. For a plus-end attachment, the daughter is first built from the branch point toward the mother, with its orientation turned around by a relative yaw of $\pi$, and then translated so that its plus end is at the branch point.%?? New code.
 
-\item[\ttt{int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)}] %?? New code. This seems a little odd to me because it doesn't differentiate whether the position is within a compartment or close to a surface.
+\item[\ttt{int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)}] %?? New code.
 \hfill \\
 Tests whether the position \ttt{pos} is within the compartment that's optionally listed in \ttt{filtype}, or is within the appropriate distance of the surface that's optionally listed in \ttt{filtype}.
 
@@ -4482,14 +4548,19 @@ AI summary of code. Location gate for branch nucleation: returns 1 if \ttt{pos} 
 
 \item[\ttt{void filBranchDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
-Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? New code. To be generalized.
+Stochastic Arp2/3-style nucleation for one filament type: each timestep, draw a Poisson number of new branches proportional to (branchrate * mother length * dt), and attach each at a uniformly random position along a mother filament. Mirrors the treadmilling block in filDynamics. This is a little too customized for actin. The branching angle effectively ignores the roll value in \ttt{branchangle}, but makes it random instead. Also, stochasticity is only added to the yaw value. Nevertheless, I'm leaving the function as it is for now. %?? New code.
 
-\item[\ttt{void filPinBranches(filamentptr fil)}]
+\item[\ttt{void filPinJunction(filjunctionptr junct)}]
 \hfill \\
-This function pins the branches to the mother filament, translating them back into place after the mother moves.
+Holds rigid junction \ttt{junct} by translating its attached filament so that its attached end node sits at the target node. This is a position constraint, not a force. With \ttt{branch\_azimuth\_fix} on (3D, and not for end-to-end joins), it also rotates the attached filament rigidly about the target's reference segment axis so that its azimuth returns to the recorded value; the rotation axis passes through the junction, so it preserves both the pinned position and the junction angle. The attached filament's \ttt{seg0up} vector co-rotates so its own material frame stays consistent.
 
-AI description. Constrain each daughter to its junction after the mechanical step. Always: translate the daughter so its attached end node (its minus or plus end, from \ttt{branchends}) tracks the mother's (moving) branch point -- a position constraint, not a force. With \ttt{branch\_azimuth\_fix} on (3D): additionally rotate the daughter rigidly about the mother segment's axis so its azimuth returns to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch direction around the mother is a constraint rather than a measured compliance. The rotation axis passes through the branch point, so the rotation preserves both the pinned position and the mother-daughter angle theta, composing cleanly with the \ttt{branch\_force\_angle} spring. The daughter's \ttt{seg0up} vector co-rotates so its own material frame stays consistent and grand-daughter junctions remain valid; filaments are created mothers-first, so the caller's creation-order sweep settles branched trees root-first.
-%?? New code. This doesn't consider treadmilling issues.
+\item[\ttt{void filPinTree(filamentptr fil)}]
+\hfill \\
+Pins every rigid junction in the tree below \ttt{fil}, parents before children, so that each filament is pinned to its parent's final position.
+
+\item[\ttt{void filPinJunctions(filamentssptr filss)}]
+\hfill \\
+Pins all rigid junctions after all motion in a time step, by calling \ttt{filPinTree} for the root of each tree, across all filament types. Unlike the earlier \ttt{filPinBranches}, this doesn't rely on mothers coming before their daughters in the filament list. %?? New code.
 
 \item[\underline{Filament end dynamics}]
 
@@ -4524,7 +4595,7 @@ Allocates a filament superstructure, adds it to the simulation structure, and se
 
 \item[\ttt{int filUpdateParams(simptr sim)}]
 \hfill \\
-This function computes any simulation parameters necessary from user parameters.%?? New code. I'm not sure about the simLog statement, but maybe.
+This function computes any simulation parameters necessary from user parameters.%?? New code.
 
 \item[\ttt{int filUpdateLists(simptr sim)}]
 \hfill \\
@@ -4650,11 +4721,11 @@ Used for numerical implicit integration. This copies the force data in the \ttt{
 
 \item[\ttt{void filArrayShift(filamentptr fil, int shift)}]
 \hfill \\
-Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. This does not check to make sure that the shifted filaments will fit in the current array, so this needs to be ensured beforehand. Callers change \ttt{nseg} after calling this function, so it treats \ttt{nseg+shift} as the new number of segments. It shifts the branch nodes with \ttt{filShiftBranchNodes} and renumbers the segment \ttt{index} elements. It also resets the \ttt{xyzminus} and \ttt{xyzplus} pointers of every allocated segment, including the unused ones past \ttt{nseg}, so that segment $i$ always points to nodes $i$ and $i+1$; without that, adding a segment at the plus end after adding one at the minus end used out-of-date node pointers. %?? new code.
+Shifts the segment and nodes lists in the filament either to higher indices or to lower indices (indices in the array, not the segment \ttt{index} element). Enter \ttt{shift} as a positive number to increase all the indices, as a negative number to decrease all the indices, and as 0 to not move at all. This does not check to make sure that the shifted filaments will fit in the current array, so this needs to be ensured beforehand. Callers change \ttt{nseg} after calling this function, so it treats \ttt{nseg+shift} as the new number of segments. It shifts the junction nodes with \ttt{filShiftJunctionNodes} and renumbers the segment \ttt{index} elements. It also resets the \ttt{xyzminus} and \ttt{xyzplus} pointers of every allocated segment, including the unused ones past \ttt{nseg}, so that segment $i$ always points to nodes $i$ and $i+1$; without that, adding a segment at the plus end after adding one at the minus end used out-of-date node pointers. %?? new code.
 
-\item[\ttt{void filShiftBranchNodes(filamentptr fil, int shift, int nseg)}]
+\item[\ttt{void filShiftJunctionNodes(filamentptr fil, int shift, int nseg)}]
 \hfill \\
-Adds \ttt{shift} to each of the branch nodes of filament \ttt{fil} and then drops any branch whose node is no longer from 1 to \ttt{nseg}, where \ttt{nseg} is the filament's new number of segments. A dropped daughter has its \ttt{minusend} or \ttt{plusend} pointer to \ttt{fil} cleared. This is called by \ttt{filArrayShift} and by \ttt{filRemoveSegment}.
+Adds \ttt{shift} to the node of each junction that attaches to filament \ttt{fil}, and removes any junction whose node is no longer from 0 to \ttt{nseg}, where \ttt{nseg} is the filament's new number of segments, which releases its attached filament end. This is called by \ttt{filArrayShift} and by \ttt{filRemoveSegment}.
 
 \item[\ttt{int}]
 \ttt{filAddSegment(filamentptr fil, const double *x, double length, const double *angle, double thickness, char endchar)}
@@ -4738,11 +4809,11 @@ This adds a filament to the filament type \ttt{filtype}, expanding the list if n
 
 \item[\ttt{void filReset(filamentptr fil)}] %?? new code
 \hfill \\
-Returns filament \ttt{fil} to the state of a newly allocated filament, keeping its allocated memory, its filament type, and its name. It sets the number of segments, branches, and sequence characters to 0, clears the \ttt{minusend} and \ttt{plusend} pointers, resets the node mobility factors to 1, the roll values to 0, and \ttt{seg0up} to $(0,0,1)$, sets the end states to the filament type's initial end states, and clears \ttt{lenbank}. Segment and node values are not cleared, since they are set as segments are added. The working structure \ttt{filwork} only holds values that are recomputed in each time step, so it is not changed.
+Returns filament \ttt{fil} to the state of a newly allocated filament, keeping its allocated memory, its filament type, and its name. It sets the number of segments and sequence characters to 0, clears the end junctions (\ttt{endjunct}) and the list of junctions to it (\ttt{njunct}), resets the node mobility factors to 1, the roll values to 0, and \ttt{seg0up} to $(0,0,1)$, sets the end states to the filament type's initial end states, and clears \ttt{lenbank}. Segment and node values are not cleared, since they are set as segments are added. The working structure \ttt{filwork} only holds values that are recomputed in each time step, so it is not changed.
 
 \item[\ttt{int filRemoveFilament(filamentptr fil)}] %?? new code
 \hfill \\
-Removes filament \ttt{fil} from the simulation, keeping its memory for reuse. Because that memory will be reused for an unrelated filament, this first clears all branch links that involve \ttt{fil}: it removes every branch entry that points to \ttt{fil} from the other filaments of its type (its mother, along with any stale copies), clears the \ttt{minusend} and \ttt{plusend} pointers of filaments that are attached to \ttt{fil}, which releases its daughters, and clears \ttt{fil}'s own branch list and attachment pointers. Then it shifts the filaments after \ttt{fil} in \ttt{fillist}, along with their names in \ttt{filnames}, down by one position, which keeps creation order, and puts \ttt{fil} and its name string at position \ttt{nfil-1} before decreasing \ttt{nfil}. Returns 0 for success or 1 if \ttt{fil} is not in its filament type's list.
+Removes filament \ttt{fil} from the simulation, keeping its memory for reuse. Because that memory will be reused for an unrelated filament, this first removes all junctions that involve \ttt{fil} with \ttt{filRemoveFilJunctions}, which detaches its own ends and releases every filament end attached to it. Then it shifts the filaments after \ttt{fil} in \ttt{fillist}, along with their names in \ttt{filnames}, down by one position, which keeps creation order, and puts \ttt{fil} and its name string at position \ttt{nfil-1} before decreasing \ttt{nfil}. Returns 0 for success or 1 if \ttt{fil} is not in its filament type's list.
 
 
 \item[\underline{Filament interactions}]
@@ -4786,16 +4857,24 @@ As usual, enter \ttt{nodemin} as the starting node or $-1$ (or $\leq 0$) for the
 \item[\ttt{void filAddBendForceMat(filamentptr fil)}]
 Computes filament bending forces due to ypr springs using the ypr values in \ttt{segment->ypr}, adding the forces to any prior forces in the \ttt{filwork->forcemat} matrix. These forces are computed from eq. \ref{eq:FilBendForceMat}. This matrix is technically correct but of minimal use because the equations are not linearized correctly and so it is not lead to stable implicit integration.
 
-\item[\ttt{int }] %?? New code. I think the inputs to this function could be cleaned up substantially.
-\ttt{filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,char end,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr)}
+\item[\ttt{void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr)}] %?? new code
 \hfill \\
-AI description. Shared geometry for the junction spring: unit tangents of the mother segment that ends at \ttt{node} and of the daughter's junction segment (pointing away from the mother, for a daughter attached by its end \ttt{end}), their cosine and sine, and the two segment lengths. Returns 1 when the junction force is well defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the angle plane is undefined -- $>5$ sigma from any realistic branch angle, so skipping is safe).
+Returns the spring parameters for junction \ttt{junct}, from its attached filament's type. For a branch-angle junction, \ttt{kappa} and \ttt{theta0} are \ttt{branchforceangle} and \ttt{branchangle}, and \ttt{kaz} is \ttt{branchforceazimuth}. For an end-to-end join, \ttt{kappa} is the yaw bending force constant \ttt{kypr[0]} (or 0 if it is negative) and \ttt{theta0} is the standard bend angle, which is $|$\ttt{stdypr[0]}$|$ in 2D and $\sqrt{\mathtt{stdypr[0]}^2+\mathtt{stdypr[1]}^2}$ in 3D, and there is no azimuthal spring. These are approximations of the filament's own bending energy, which isn't weighted by segment thickness here. \ttt{kj} is the spring constant for a loop-closing junction, which is \ttt{junctforce}, or \ttt{klen} if that is 0.
 
+\item[\ttt{int }] %?? New code. I think the inputs to this function could be cleaned up substantially.
+\ttt{filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr,int *maptr,int *mbptr)}
+\hfill \\
+AI description. Shared geometry for the junction angle springs. \ttt{tm} is the unit tangent of the target's reference segment, from its node \ttt{ma} to its node \ttt{mb}: for a branch-angle junction, this is the segment that ends at the junction node (segment 0 for node 0), pointing toward the plus end; for an end-to-end join, it is the target's end segment pointing into the junction, so that a straight join has $\theta=0$. \ttt{td} is the unit tangent of the attached filament's junction segment, pointing away from the junction. Also returns their cosine and sine and the two segment lengths. Returns 1 when the junction force is well defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the angle plane is undefined -- $>5$ sigma from any realistic branch angle, so skipping is safe).
+
+\item[\ttt{void filSubtreeSpringForce(filamentptr fil,int dim,double *sum)}] %?? new code
+\hfill \\
+Adds to \ttt{sum} the net force that the position springs of loop-closing junctions exert on \ttt{fil} and on all filaments that are rigidly attached to it, directly or through other filaments. A spring with both ends in this subtree contributes equal and opposite forces, which cancel. This recurses through rigid junctions, which are acyclic. \ttt{filAddJunctionForces} uses it to transmit these forces through the rigid junction that pins \ttt{fil}.
 
 \item[\ttt{void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.
 \hfill \\
-AI description. Torsional spring at the branch junction: energy $0.5*k*(theta-theta0)^2$, where theta is the angle between the mother segment holding the branch and the daughter's first segment, theta0 is the type's \ttt{branch\_angle}, and \ttt{k} is \ttt{branch\_force\_angle}. Each filament applies the exact gradient with respect to its OWN nodes during its own force evaluation, reading the partner's current geometry as an external field: a daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction couple on nodes spot and spot+1 for each of its branches. Both couples are pure torques about the branch point and sum to zero total torque at any one configuration (the sequential per-filament integrator sweep evaluates the two halves at states one substep apart, so cancellation over a step is O(dt)), so the pair potential enters both partners' dynamics and the junction angle equilibrates at Boltzmann -- a one-way version was measured to overheat the angle by (1 + mobility ratio) when the mother is free. The optional azimuthal spring (\ttt{branch\_force\_azimuth}) restores the daughter's azimuth about the mother axis toward its recorded birth value with energy $0.5*kaz*(phi-phi0)^2$, applied as a couple on daughter nodes 0 and 1 only (one-way: a clean mother-side gradient would require differentiating the material frame, and the bounded spring torque cannot pump energy the way the rigid azimuth pin can). No cross-filament force writes occur, per-filament force clearing stays safe, and integrators that differentiate forces numerically see everything automatically. Draws no random numbers; returns immediately when off.
+Adds the junction spring forces for every junction that involves \ttt{fil}, for nodes from \ttt{nodemin} to \ttt{nodemax}. There are three springs. The angle spring has energy $0.5\,k(\theta-\theta_0)^2$, where $\theta$ is the angle between the target's reference segment and the attached filament's junction segment (see \ttt{filJunctionGeometry} and \ttt{filJunctionParams}). The azimuthal spring, which is only for branch-angle junctions in 3D, has energy $0.5\,k_{az}(\phi-\phi_0)^2$, where $\phi$ is the azimuth of the attached filament about the target's axis. The position spring, which is only for loop-closing junctions, has energy $0.5\,k_j d^2$, where $d$ is the distance between the attached end node and the target node.
 
+AI description. Each filament applies the exact gradient with respect to its OWN nodes during its own force evaluation, reading the partner's current geometry as an external field: an attached filament applies a couple on its junction nodes, and a target applies the reaction couple on its reference segment nodes for each junction attached to it. Both couples are pure torques about the junction and sum to zero total torque at any one configuration (the sequential per-filament integrator sweep evaluates the two halves at states one substep apart, so cancellation over a step is O(dt)), so the pair potential enters both partners' dynamics and the junction angle equilibrates at Boltzmann -- a one-way version was measured to overheat the angle by (1 + mobility ratio) when the mother is free. The azimuthal spring is applied as a couple on the attached filament's junction nodes only (one-way: a clean mother-side gradient would require differentiating the material frame, and the bounded spring torque cannot pump energy the way the rigid azimuth pin can). For the position spring, each side applies $k_j$ times the separation to its own node. Pinning translates a rigidly attached filament back onto its junction node, which discards the net force on it, so a position spring within one tree would leave an unbalanced force and torque on the tree and propel and rotate it. To prevent this, each rigid junction transmits the net position spring force on its attached subtree (\ttt{filSubtreeSpringForce}) as a pair of joint forces: the target adds it at its junction node, and the attached filament subtracts it at its pinned node. The attached filament then has no net spring force, and the spring torque on it acts about the junction, while forces between trees act on both trees and forces within a tree cancel. The azimuthal spring has no such reaction, so a loop that includes an azimuthal spring can rotate steadily; \ttt{filCheckParams} warns about that. No cross-filament force writes occur, and per-filament force clearing stays safe. The implicit integrators only differentiate forces within a few neighboring nodes of the same filament, so the position spring is effectively explicit, which limits the time step; \ttt{filCheckParams} warns about that. A transmitted force moves the whole attached subtree by acting on a single target node, so the time step is also limited by the total spring constant of the springs that a rigid junction transmits, which are those with exactly one end in its subtree; \ttt{filCheckParams} warns if the time step times the mobility times this total is more than 0.5. Draws no random numbers.
 
 \item[\ttt{void filAddConfineForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.
 \hfill \\

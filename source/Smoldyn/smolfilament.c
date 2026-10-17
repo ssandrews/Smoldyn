@@ -23,6 +23,7 @@
 #define FILMAXTRIES 100
 #define FILMAXGROW 1000					// max segments one filament may gain in a single elongation step
 #define FILREMOVED -2000				// filEndLengthChange return value: the filament shrank away and should be removed
+#define FILJUNCTMINNODE 0				// lowest target node a junction may attach to
 
 
 /******************************************************************************/
@@ -49,7 +50,7 @@ segmentptr filSegmentAlloc();
 void filSegmentFree(segmentptr segment);
 filamentworkptr filWorkAlloc(filamentptr fil,int maxseg);
 void filWorkFree(filamentworkptr filwork,int maxseg);
-filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence);
+filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence);
 void filFree(filamentptr fil);
 filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface);
 void filamentTypeFree(filamenttypeptr filtype);
@@ -113,7 +114,7 @@ void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax);
 
 // Filament manipulation
 void filArrayShift(filamentptr fil,int shift);
-void filShiftBranchNodes(filamentptr fil,int shift,int nseg);
+void filShiftJunctionNodes(filamentptr fil,int shift,int nseg);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thickness,char endchar);
 int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char *ystr,const char *zstr,const char *phistr, const char* thtstr,const char* psistr,double thickness);
 int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints);
@@ -128,14 +129,25 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 void filReset(filamentptr fil);
 filamentptr filAddFilament(filamenttypeptr filtype,const char *filname);
 int filRemoveFilament(filamentptr fil);
+
+// Branching and crosslinking
 void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int *farptr);
-filamentptr filBranchEndMother(const filamentptr daughter,char end);
-double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter,char end);
-int filBranchDazim(const filamentptr mother,int br,double *dphiptr);
+filjunctionptr filRigidParent(const filamentptr fil);
+filamentptr filTreeRoot(filamentptr fil);
+int filInSubtree(filamentptr fil,const filamentptr top);
+void filClassifyJunctions(filamentssptr filss);
+filjunctionptr filAddJunction(filamentptr fil,char end,filamentptr target,int node,int bend);
+void filRemoveJunction(filjunctionptr junct);
+void filRemoveFilJunctions(filamentptr fil);
+int filAttachEnd(filamentptr fil,char end,filamentptr target,int node);
+double filBranchAzimuth(const filjunctionptr junct);
+int filBranchDazim(const filjunctionptr junct,double *dphiptr);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername);
 int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
-void filPinBranches(filamentptr fil);
+void filPinJunction(filjunctionptr junct);
+void filPinTree(filamentptr fil);
+void filPinJunctions(filamentssptr filss);
 
 // Filament elongation and capping
 double filContourLength(const filamentptr fil);
@@ -153,7 +165,9 @@ void filAddStretchForceMat(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
-int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,char end,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
+void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr);
+int filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr,int *maptr,int *mbptr);
+void filSubtreeSpringForce(filamentptr fil,int dim,double *sum);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
@@ -480,14 +494,12 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 
 
 /* filAlloc */
-filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
-	int seg,br,seqi;
+filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
+	int seg,j,seqi;
 	segmentptr *newsegments;
-	int *newbranchnodes;
-	char *newbranchends;
-	filamentptr *newbranches;
+	filjunctionptr *newjuncts;
 	char *newsequence;
-	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newbranchazim0;
+	double **newnodes,**newnodesx,*newroll,*newnodemobility;
 
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
@@ -502,14 +514,10 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 		fil->nodemobility=NULL;
 		fil->seg0up[0]=fil->seg0up[1]=0;
 		fil->seg0up[2]=1;
-		fil->minusend=NULL;
-		fil->plusend=NULL;
-		fil->maxbranch=0;
-		fil->nbranch=0;
-		fil->branchnodes=NULL;
-		fil->branchends=NULL;
-		fil->branches=NULL;
-		fil->branchazim0=NULL;
+		fil->endjunct[0]=fil->endjunct[1]=NULL;
+		fil->maxjunct=0;
+		fil->njunct=0;
+		fil->juncts=NULL;
 		fil->maxsequence=0;
 		fil->nsequence=0;
 		fil->sequence=NULL;
@@ -564,30 +572,15 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxbranch,int maxsequence) {
 			filWorkAlloc(fil,maxseg);
 		fil->maxseg=maxseg; }
 
-	if(maxbranch>fil->maxbranch) {
-		CHECKMEM(newbranchnodes=(int*) calloc(maxbranch,sizeof(int)));
-		CHECKMEM(newbranchends=(char*) calloc(maxbranch,sizeof(char)));
-		CHECKMEM(newbranches=(filamentptr*) calloc(maxbranch,sizeof(filamentptr)));
-		CHECKMEM(newbranchazim0=(double*) calloc(maxbranch,sizeof(double)));
-		for(br=0;br<fil->maxbranch;br++) {
-			newbranchnodes[br]=fil->branchnodes[br];
-			newbranchends[br]=fil->branchends[br];
-			newbranches[br]=fil->branches[br];
-			newbranchazim0[br]=fil->branchazim0[br]; }
-		for(;br<maxbranch;br++) {
-			newbranchnodes[br]=1;
-			newbranchends[br]='m';
-			newbranches[br]=NULL;
-			newbranchazim0[br]=-1; }
-		free(fil->branchnodes);
-		fil->branchnodes=newbranchnodes;
-		free(fil->branchends);
-		fil->branchends=newbranchends;
-		free(fil->branches);
-		fil->branches=newbranches;
-		free(fil->branchazim0);
-		fil->branchazim0=newbranchazim0;
-		fil->maxbranch=maxbranch;	}
+	if(maxjunct>fil->maxjunct) {
+		CHECKMEM(newjuncts=(filjunctionptr*) calloc(maxjunct,sizeof(filjunctionptr)));
+		for(j=0;j<fil->maxjunct;j++)
+			newjuncts[j]=fil->juncts[j];
+		for(;j<maxjunct;j++)
+			newjuncts[j]=NULL;
+		free(fil->juncts);
+		fil->juncts=newjuncts;
+		fil->maxjunct=maxjunct; }
 
 	if(maxsequence>fil->maxsequence) {
 		CHECKMEM(newsequence=(char*) calloc(maxsequence,sizeof(char)));
@@ -625,10 +618,7 @@ void filFree(filamentptr fil) {
 
 	free(fil->roll);
 	free(fil->nodemobility);
-	free(fil->branchnodes);
-	free(fil->branchends);
-	free(fil->branches);
-	free(fil->branchazim0);
+	free(fil->juncts);
 	free(fil->sequence);
 	free(fil);
 	return; }
@@ -672,6 +662,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchspread=-1;										// negative = unset; every consumer is gated on >0, so unset behaves as deterministic until derived
 		filtype->branchsegments=1;									// daughters born as a single segment
 		filtype->branchend='m';											// daughters attach by their minus end by default
+		filtype->junctforce=0;											// loop-closing junction spring defaults to force_length
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
 		filtype->branchazimuthfix=0;								// azimuth free by default
@@ -772,7 +763,11 @@ filamentssptr filssAlloc(filamentssptr filss,int maxtype) {
 		filss->maxtype=0;
 		filss->ntype=0;
 		filss->ftnames=NULL;
-		filss->filtypes=NULL; }
+		filss->filtypes=NULL;
+		filss->maxjunct=0;
+		filss->njunct=0;
+		filss->junctlist=NULL;
+		filss->nspring=0; }
 
 	if(maxtype>=filss->maxtype) {
 		CHECKMEM(newfiltypes=(filamenttypeptr*) calloc(maxtype,sizeof(filamenttypeptr)));
@@ -803,9 +798,14 @@ failure:
 
 /* filssFree */
 void filssFree(filamentssptr filss) {
-	int ft;
+	int ft,j;
 
 	if(!filss) return;
+
+	if(filss->junctlist) {
+		for(j=0;j<filss->maxjunct;j++)
+			free(filss->junctlist[j]);
+		free(filss->junctlist); }
 
 	if(filss->filtypes) {
 		for(ft=0;ft<filss->maxtype;ft++)
@@ -828,7 +828,7 @@ void filssFree(filamentssptr filss) {
 
 /* filOutput */
 void filOutput(const filamentptr fil) {
-	int seg,br,seqi,dim;
+	int seg,j,e,seqi,dim;
 	char string1[STRCHAR],string2[STRCHAR];
 	simptr sim;
 	segmentptr segment;
@@ -874,18 +874,17 @@ void filOutput(const filamentptr fil) {
 		simLog(sim,2,"     plus pos.=(%1.3g %1.3g %1.3g)\n",segment->xyzplus[0],segment->xyzplus[1],segment->xyzplus[2]);
 		simLog(sim,fil->nodemobility[seg]==1?1:2," plus mobility=%g",fil->nodemobility[seg]); }
 
-	if(fil->minusend)
-		simLog(sim,2,"   minus end branched from: %s\n",fil->minusend->filname);
-	if(fil->plusend)
-		simLog(sim,2,"   plus end branched from: %s\n",fil->plusend->filname);
+	for(e=0;e<2;e++)
+		if(fil->endjunct[e])
+			simLog(sim,2,"   %s end attached to: %s:%s node %i, %s\n",e?"plus":"minus",fil->endjunct[e]->target->filtype->ftname,fil->endjunct[e]->target->filname,fil->endjunct[e]->node,fil->endjunct[e]->rigid?"rigid":"spring (closes a loop)");
 
 	simLog(sim,(fil->endstate[0]!=FESopen || fil->endstate[1]!=FESopen)?2:1,"   end states: minus %s, plus %s\n",filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
 	simLog(sim,(fil->lenbank[0]!=0 || fil->lenbank[1]!=0)?2:1,"   pending length change: minus %g|L, plus %g|L\n",fil->lenbank[0],fil->lenbank[1]);
 
-	simLog(sim,1,"   allocated branches: %i\n",fil->maxbranch);
-	simLog(sim,fil->nbranch>0?2:1,"   number of branches: %i\n",fil->nbranch);
-	for(br=0;br<fil->nbranch;br++)
-		simLog(sim,2,"    %s at node %i, by its %s end\n",fil->branches[br]->filname,fil->branchnodes[br],fil->branchends[br]=='p'?"plus":"minus");
+	simLog(sim,1,"   allocated junctions: %i\n",fil->maxjunct);
+	simLog(sim,fil->njunct>0?2:1,"   number of filament ends attached here: %i\n",fil->njunct);
+	for(j=0;j<fil->njunct;j++)
+		simLog(sim,2,"    %s:%s %s end at node %i, %s\n",fil->juncts[j]->fil->filtype->ftname,fil->juncts[j]->fil->filname,fil->juncts[j]->end=='p'?"plus":"minus",fil->juncts[j]->node,fil->juncts[j]->rigid?"rigid":"spring (closes a loop)");
 
 	simLog(sim,1,"   sequence codes: %i of %i allocated,",fil->nsequence,fil->maxsequence);
 	if(fil->nsequence) {
@@ -952,6 +951,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments);
 		simLog(sim,filtype->branchend=='p'?2:1,"  daughters attach by their %s end\n",filtype->branchend=='p'?"plus":"minus"); }
 	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
+	if(filtype->junctforce>0) simLog(sim,2,"  loop-closing junction force constant: %g|E/L\n",filtype->junctforce);
+	else simLog(sim,1,"  loop-closing junction force constant: unset, so force_length is used\n");
 	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
 		simLog(sim,2,"  branch junction equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceangle));
 	if(filtype->branchazimuth>=0)
@@ -1043,8 +1044,10 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn,dim,f,seg,ft,pcount,end,fes,fes2,grows,changes,reach[FESMAX],more;
-	double fval;
+	int error,warn,dim,f,seg,ft,pcount,end,fes,fes2,grows,changes,reach[FESMAX],more,j,j2;
+	double kappa,theta0,kaz,kj;
+	filjunctionptr junct,junct2;
+	double fval,ksum,mobility;
 	enum PanelShape ps;
 	filamentssptr filss;
 	filamentptr fil;
@@ -1064,6 +1067,38 @@ int filCheckParams(const simptr sim,int *warnptr) {
 		simLog(sim,7," WARNING: filament structure %s\n",simsc2string(filss->condition,string)); }
 
 	if(filss->ntype==0) {warn++;simLog(sim,5,"WARNING: Filament superstructure is defined, but no filament types are defined\n");}
+	for(j=0;j<filss->njunct;j++) {										// loop-closing junctions
+		junct=filss->junctlist[j];
+		if(junct->rigid) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if(kj<=0) {
+			warn++;simLog(sim,5,"WARNING: the %s end of filament %s closes a loop, but nothing holds it in place; set junction_force or force_length for filament type %s\n",junct->end=='p'?"plus":"minus",junct->fil->filname,junct->fil->filtype->ftname);}
+		else if(junct->fil->filtype->dynamics==FDnone && junct->target->filtype->dynamics==FDnone) {
+			warn++;simLog(sim,5,"WARNING: the %s end of filament %s closes a loop between filaments with dynamics none, so the junction spring has no effect\n",junct->end=='p'?"plus":"minus",junct->fil->filname);}
+		else {
+			fval=sim->dt*kj*(junct->fil->filtype->mobility>junct->target->filtype->mobility?junct->fil->filtype->mobility:junct->target->filtype->mobility);
+			if(fval>0.5) {
+				warn++;simLog(sim,5,"WARNING: the loop-closing junction at the %s end of filament %s may be numerically unstable, because time_step * mobility * junction spring constant = %g, which should be well below 1; reduce time_step or junction_force\n",junct->end=='p'?"plus":"minus",junct->fil->filname,fval);}}
+		if(dim==3) {																	// azimuthal springs act on the attached filament only, so a loop can turn steadily
+			fval=kaz;
+			if(filRigidParent(junct->fil)) {
+				filJunctionParams(filRigidParent(junct->fil),dim,&kappa,&theta0,&kaz,&kj);
+				if(kaz>fval) fval=kaz; }
+			if(fval>0) {
+				warn++;simLog(sim,5,"WARNING: filament %s is in a loop and has a junction with an azimuthal spring (branch_force_azimuth), which can make the loop rotate steadily because the spring has no reaction on the filament it attaches to\n",junct->fil->filname);}}}
+	for(j=0;j<filss->njunct;j++) {										// rigid junctions that transmit loop-closing junction springs
+		junct=filss->junctlist[j];
+		if(!junct->rigid || filss->nspring==0) continue;
+		ksum=0;
+		for(j2=0;j2<filss->njunct;j2++) {
+			junct2=filss->junctlist[j2];
+			if(junct2->rigid || filInSubtree(junct2->fil,junct->fil)==filInSubtree(junct2->target,junct->fil)) continue;	// springs within or outside the subtree aren't transmitted
+			filJunctionParams(junct2,dim,&kappa,&theta0,&kaz,&kj);
+			ksum+=kj; }
+		mobility=junct->fil->filtype->mobility>junct->target->filtype->mobility?junct->fil->filtype->mobility:junct->target->filtype->mobility;
+		fval=sim->dt*mobility*ksum;
+		if(fval>0.5) {
+			warn++;simLog(sim,5,"WARNING: the %s end of filament %s is rigidly attached, and its attachment transmits the forces of loop-closing junction springs with a total spring constant of %g, so time_step * mobility * total = %g, which may be numerically unstable; reduce time_step or junction_force\n",junct->end=='p'?"plus":"minus",junct->fil->filname,ksum,fval);}}
 	for(ft=0;ft<filss->ntype;ft++) {
 		filtype=filss->filtypes[ft];
 
@@ -1182,6 +1217,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"klen")) {
 		filtype->klen=value; }
+
+	else if(!strcmp(param,"junctforce")) {						// loop-closing junction spring; 0 = use klen
+		if(value<0) er=2;
+		else filtype->junctforce=value; }
 
 	else if(!strcmp(param,"kypr")) {
 		if(index<0) filtype->kypr[0]=filtype->kypr[1]=filtype->kypr[2]=value;
@@ -1810,6 +1849,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"klen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following force_length"); }
 
+	else if(!strcmp(word,"junction_force")) {		// junction_force: spring for loop-closing junctions
+		CHECKS(filtype,"need to enter filament type name before junction_force");
+		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"junction_force format: value. ");
+		CHECKS(f1>=0,"junction_force value needs to be >=0");
+		filtypeSetParam(filtype,"junctforce",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following junction_force"); }
+
 	else if(!strcmp(word,"force_angle")) {		// force_angle
 		CHECKS(filtype,"need to enter filament type name before force_angle");
 		if(dim==2) {
@@ -2080,7 +2127,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		CHECKS(line2,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&node);
 		CHECKM(itct==1,"branch format: daughter_name node [minus/plus] [length [yaw pitch roll]]. ");
-		CHECKS(node>=1 && node<=fil->nseg,"branch node needs to be from 1 to the number of mother segments");
+		CHECKS(node>=0 && node<=fil->nseg,"branch node needs to be from 0 to the number of mother segments");
 		angle[0]=fil->filtype->branchangle;						// default to the filament type's branch angle
 		angle[1]=angle[2]=0;
 		line2=strnword(line2,2);
@@ -2101,7 +2148,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 			CHECKM(itct==3 || itct==1,"branch angle needs 1 or 3 values. ");
 			if(dim==2) angle[1]=angle[2]=0;
 			line2=strnword(line2,itct+1); }
-		thick=fil->segments[node-1]->thk;
+		thick=fil->segments[node>0?node-1:0]->thk;
 		fil2=filAddBranch(sim,fil,node,endchar,length,angle,thick,nm1);
 		CHECKS(fil2,"failed to create branch");
 		CHECKS(!line2,"unexpected text following branch"); }
@@ -2124,6 +2171,41 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filSetNodeMobility(fil,i1,f1);
 		CHECKS(!er,"error while trying to set node mobility");
 		CHECKS(!strnword(line2,3),"unexpected text following node_mobility"); }
+
+	else if(!strcmp(word,"attach")) {						// attach: end target node
+		CHECKS(fil,"need to enter filament name before attach");
+		CHECKS(fil->nseg>0,"filament has no segments to attach");
+		itct=sscanf(line2,"%s %s",str1,str2);
+		CHECKS(itct==2,"attach format: end target_filament node");
+		i1=filstring2end(str1);
+		CHECKS(i1>=0,"attach end needs to be minus or plus");
+		CHECKS(!fil->endjunct[i1],"this filament end is already attached; detach it first");
+		filtype2=NULL;
+		fil2=NULL;
+		er=filReadFilName(sim,str2,&filtype2,&fil2,NULL);
+		CHECKS(er!=-1 && er!=-3,"cannot read target filament name");
+		CHECKS(er!=-4,"unknown target filament type");
+		CHECKS(er!=-5,"unknown target filament name");
+		CHECKS(fil2->nseg>0,"target filament has no segments");
+		line2=strnword(line2,3);
+		CHECKS(line2,"attach format: end target_filament node");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&node);
+		CHECKM(itct==1,"attach format: end target_filament node. ");
+		CHECKS(node>=0 && node<=fil2->nseg,"attach node needs to be from 0 to the number of target filament segments");
+		CHECKS(!(fil2==fil && node==(i1?fil->nseg:0)),"a filament end cannot attach to itself");
+		er=filAttachEnd(fil,filend2char(i1),fil2,node);
+		CHECKS(!er,"failed to attach filament end");
+		CHECKS(!strnword(line2,2),"unexpected text following attach"); }
+
+	else if(!strcmp(word,"detach")) {						// detach: end
+		CHECKS(fil,"need to enter filament name before detach");
+		itct=sscanf(line2,"%s",str1);
+		CHECKS(itct==1,"detach format: end");
+		i1=filstring2end(str1);
+		CHECKS(i1>=0,"detach end needs to be minus or plus");
+		CHECKS(fil->endjunct[i1],"this filament end is not attached");
+		filRemoveJunction(fil->endjunct[i1]);
+		CHECKS(!strnword(line2,2),"unexpected text following detach"); }
 
 	else if(!strcmp(word,"end_state")) {				// end_state: end state
 		CHECKS(fil,"need to enter filament name before end_state");
@@ -2692,7 +2774,7 @@ void filArrayShift(filamentptr fil,int shift) {
 		fil->segments[i]->xyzminus=fil->nodes[i];
 		fil->segments[i]->xyzplus=fil->nodes[i+1]; }
 
-	filShiftBranchNodes(fil,shift,fil->nseg+shift);	// nodes were renumbered, so branch nodes move with them
+	filShiftJunctionNodes(fil,shift,fil->nseg+shift);	// nodes were renumbered, so junction nodes move with them
 
 	for(i=0;i<fil->nseg+shift;i++)						// callers update nseg after this, so the new count is nseg+shift
 		fil->segments[i]->index=i;
@@ -2700,26 +2782,19 @@ void filArrayShift(filamentptr fil,int shift) {
 	return; }
 
 
-/* filShiftBranchNodes */
-// Shift each branch node of fil by shift and drop any branch whose node is no longer
-// in 1 to nseg, where nseg is the filament's new segment count. A dropped daughter is
-// released from fil.
-void filShiftBranchNodes(filamentptr fil,int shift,int nseg) {
-	int br,nbr,node;
+/* filShiftJunctionNodes */
+// Shift the node of each junction that attaches to fil by shift, and remove any junction
+// whose node is no longer from FILJUNCTMINNODE to nseg, where nseg is the filament's new
+// segment count. The attached filament end is released.
+void filShiftJunctionNodes(filamentptr fil,int shift,int nseg) {
+	int j,node;
+	filjunctionptr junct;
 
-	nbr=0;
-	for(br=0;br<fil->nbranch;br++) {
-		node=fil->branchnodes[br]+shift;
-		if(node>=1 && node<=nseg) {								// keep the branch, on its renumbered node
-			fil->branchnodes[nbr]=node;
-			fil->branchends[nbr]=fil->branchends[br];
-			fil->branches[nbr]=fil->branches[br];
-			fil->branchazim0[nbr]=fil->branchazim0[br];
-			nbr++; }
-		else if(fil->branches[br]) {						// the branch node is gone, so the junction is too
-			if(fil->branchends[br]=='p' && fil->branches[br]->plusend==fil) fil->branches[br]->plusend=NULL;
-			else if(fil->branchends[br]!='p' && fil->branches[br]->minusend==fil) fil->branches[br]->minusend=NULL; }}
-	fil->nbranch=nbr;
+	for(j=fil->njunct-1;j>=0;j--) {									// backward, since a removal shifts later entries down
+		junct=fil->juncts[j];
+		node=junct->node+shift;
+		if(node>=FILJUNCTMINNODE && node<=nseg) junct->node=node;
+		else filRemoveJunction(junct); }
 	return; }
 
 
@@ -2897,7 +2972,7 @@ int filRemoveSegment(filamentptr fil,char endchar) {
 
 	if(endchar=='p') {
 		fil->nseg--;
-		filShiftBranchNodes(fil,0,fil->nseg); }			// drop any branch on the removed plus-end node
+		filShiftJunctionNodes(fil,0,fil->nseg); }		// drop any junction on the removed plus-end node
 	else {
 		seg=1;					// new minus-end segment
 		segment=fil->segments[seg];
@@ -3063,10 +3138,10 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 
 	filto->filtype=filtype?filtype:filfrom->filtype;
 
+	filRemoveFilJunctions(filto);										// the copy starts unattached
 	filto->nseg=0;
-	filto->nbranch=0;
 	filto->nsequence=0;
-	filto=filAlloc(filto,filfrom->nseg,filfrom->nbranch,filfrom->nsequence);
+	filto=filAlloc(filto,filfrom->nseg,0,filfrom->nsequence);
 	if(!filto) return 1;
 
 	for(i=0;i<filfrom->nseg;i++) {
@@ -3076,16 +3151,6 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 	filto->seg0up[0]=filfrom->seg0up[0];
 	filto->seg0up[1]=filfrom->seg0up[1];
 	filto->seg0up[2]=filfrom->seg0up[2];
-
-	filto->minusend=filfrom->minusend;
-	filto->plusend=filfrom->plusend;
-
-	for(i=0;i<filfrom->nbranch;i++) {
-		filto->branchnodes[i]=filfrom->branchnodes[i];
-		filto->branchends[i]=filfrom->branchends[i];
-		filto->branches[i]=filfrom->branches[i];
-		filto->branchazim0[i]=filfrom->branchazim0[i]; }
-	filto->nbranch=filfrom->nbranch;
 
 	for(i=0;i<filfrom->nsequence;i++)
 		filto->sequence[i]=filfrom->sequence[i];
@@ -3112,8 +3177,8 @@ void filReset(filamentptr fil) {
 		for(seg=0;seg<fil->maxseg;seg++) fil->roll[seg]=0; }
 	fil->seg0up[0]=fil->seg0up[1]=0;
 	fil->seg0up[2]=1;
-	fil->minusend=fil->plusend=NULL;
-	fil->nbranch=0;
+	fil->endjunct[0]=fil->endjunct[1]=NULL;
+	fil->njunct=0;
 	fil->nsequence=0;
 	fil->endstate[0]=fil->filtype->endstate0[0];		// new filaments start in the type's initial end states
 	fil->endstate[1]=fil->filtype->endstate0[1];
@@ -3149,41 +3214,23 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 
 
 /* filRemoveFilament */
-// Remove filament fil from the simulation, keeping its memory for reuse. Branch links
-// that involve fil are cleared first, because its memory will be reused for an
-// unrelated filament: every branch entry that points to fil is removed from the other
-// filaments of its type (its mother, plus any stale copies), and every filament attached
-// to fil is released. Then the filaments after fil in fillist shift down one place,
-// which keeps creation order (mothers before daughters, which filPinBranches relies
-// on), and fil and its name string move to position nfil-1, at the front of the unused
-// filaments that filAddFilament takes next. Returns 0 for success or 1 if fil is not in
-// its type's list.
+// Remove filament fil from the simulation, keeping its memory for reuse. All junctions
+// that involve fil are removed first, because its memory will be reused for an
+// unrelated filament: fil's own ends are detached, and every filament end attached to
+// fil is released. Then the filaments after fil in fillist shift down one place, which
+// keeps creation order, and fil and its name string move to position nfil-1, at the
+// front of the unused filaments that filAddFilament takes next. Returns 0 for success
+// or 1 if fil is not in its type's list.
 int filRemoveFilament(filamentptr fil) {
 	filamenttypeptr filtype;
-	filamentptr fil2;
 	char *name;
-	int f,f2,br,nbr;
+	int f,f2;
 
 	filtype=fil->filtype;
 	for(f=0;f<filtype->nfil && filtype->fillist[f]!=fil;f++);
 	if(f==filtype->nfil) return 1;
 
-	for(f2=0;f2<filtype->nfil;f2++) {							// clear branch links in both directions
-		fil2=filtype->fillist[f2];
-		if(fil2==fil) continue;
-		nbr=0;
-		for(br=0;br<fil2->nbranch;br++)
-			if(fil2->branches[br]!=fil) {
-				fil2->branchnodes[nbr]=fil2->branchnodes[br];
-				fil2->branchends[nbr]=fil2->branchends[br];
-				fil2->branches[nbr]=fil2->branches[br];
-				fil2->branchazim0[nbr]=fil2->branchazim0[br];
-				nbr++; }
-		fil2->nbranch=nbr;
-		if(fil2->minusend==fil) fil2->minusend=NULL;
-		if(fil2->plusend==fil) fil2->plusend=NULL; }
-	fil->minusend=fil->plusend=NULL;
-	fil->nbranch=0;
+	filRemoveFilJunctions(fil);
 
 	name=filtype->filnames[f];											// shift later filaments down, keeping creation order
 	for(f2=f;f2<filtype->nfil-1;f2++) {
@@ -3220,34 +3267,201 @@ void filBranchJunctionNodes(const filamentptr daughter,char end,int *nearptr,int
 	return; }
 
 
-/* filBranchEndMother */
-// The filament that the end end ('m' or 'p') of daughter attaches to, or NULL if free.
-filamentptr filBranchEndMother(const filamentptr daughter,char end) {
-	return (end=='p')?daughter->plusend:daughter->minusend; }
+/* filRigidParent */
+// The junction that rigidly pins fil, which is fil's parent edge in the spanning forest
+// of rigid junctions, or NULL if fil is the root of its tree. filClassifyJunctions
+// ensures that a filament has at most one.
+filjunctionptr filRigidParent(const filamentptr fil) {
+	if(fil->endjunct[0] && fil->endjunct[0]->rigid) return fil->endjunct[0];
+	if(fil->endjunct[1] && fil->endjunct[1]->rigid) return fil->endjunct[1];
+	return NULL; }
+
+
+/* filTreeRoot */
+// The root of the tree of rigid junctions that contains fil.
+filamentptr filTreeRoot(filamentptr fil) {
+	filjunctionptr junct;
+
+	while((junct=filRigidParent(fil))) fil=junct->target;
+	return fil; }
+
+
+/* filInSubtree */
+// Returns 1 if fil is top or is attached to top through a chain of rigid junctions, so
+// that it is in the subtree of rigid junctions below top, and 0 otherwise.
+int filInSubtree(filamentptr fil,const filamentptr top) {
+	filjunctionptr junct;
+
+	while(fil!=top && (junct=filRigidParent(fil))) fil=junct->target;
+	return fil==top; }
+
+
+/* filClassifyJunctions */
+// Decide which junctions are rigid, going through them in creation order. A junction is
+// rigid, meaning that it is an edge of the spanning forest and is held by translating its
+// filament, if its filament is not already rigidly pinned by its other end and the
+// target is not in its filament's own tree; otherwise it closes a loop and is held by a
+// spring. Every junction of a dendritic network is rigid. Assigning greedily in creation
+// order keeps the result deterministic and the rigid junctions acyclic, with at most one
+// rigid parent per filament. Called whenever a junction is added or removed.
+void filClassifyJunctions(filamentssptr filss) {
+	int j;
+	filjunctionptr junct;
+
+	for(j=0;j<filss->njunct;j++)
+		filss->junctlist[j]->rigid=0;
+	filss->nspring=0;
+	for(j=0;j<filss->njunct;j++) {
+		junct=filss->junctlist[j];
+		if(!filRigidParent(junct->fil) && filTreeRoot(junct->target)!=junct->fil)
+			junct->rigid=1;
+		else
+			filss->nspring++; }
+	return; }
+
+
+/* filAddJunction */
+// Attach end end ('m' or 'p') of filament fil to node node of filament target, which may
+// be fil itself. bend is 1 for an end-to-end join, whose angle is held by the bending
+// spring, and 0 for a junction whose angle is held by the branch-angle spring. This only
+// records the junction and classifies it as rigid or loop-closing; it does not move any
+// filament. Returns the junction, or NULL if that end is already attached or memory
+// could not be allocated.
+filjunctionptr filAddJunction(filamentptr fil,char end,filamentptr target,int node,int bend) {
+	filamentssptr filss;
+	filjunctionptr junct,*newlist;
+	int j,e,newmax;
+
+	filss=fil->filtype->filss;
+	e=(end=='p')?1:0;
+	if(fil->endjunct[e]) return NULL;
+
+	if(filss->njunct==filss->maxjunct) {						// grow the junction list
+		newmax=2*filss->maxjunct+1;
+		newlist=(filjunctionptr*) calloc(newmax,sizeof(filjunctionptr));
+		if(!newlist) return NULL;
+		for(j=0;j<filss->maxjunct;j++) newlist[j]=filss->junctlist[j];
+		for(;j<newmax;j++) {
+			newlist[j]=(filjunctionptr) malloc(sizeof(struct filjunctionstruct));
+			if(!newlist[j]) return NULL;
+			newlist[j]->fil=newlist[j]->target=NULL; }
+		free(filss->junctlist);
+		filss->junctlist=newlist;
+		filss->maxjunct=newmax; }
+
+	if(target->njunct==target->maxjunct)
+		if(!filAlloc(target,0,target->maxjunct*2+1,0)) return NULL;
+
+	junct=filss->junctlist[filss->njunct++];
+	junct->fil=fil;
+	junct->end=end;
+	junct->target=target;
+	junct->node=node;
+	junct->rigid=0;
+	junct->bend=bend;
+	junct->azim0=-1;
+	target->juncts[target->njunct++]=junct;
+	fil->endjunct[e]=junct;
+	filClassifyJunctions(filss);
+	return junct; }
+
+
+/* filRemoveJunction */
+// Remove junction junct, which releases the attached filament end. The other entries
+// keep their order, and the junction's memory moves to the unused end of the list for
+// reuse. Junctions are reclassified, so a loop-closing junction may become rigid.
+void filRemoveJunction(filjunctionptr junct) {
+	filamentssptr filss;
+	filamentptr target;
+	int j;
+
+	filss=junct->fil->filtype->filss;
+	target=junct->target;
+	for(j=0;j<target->njunct && target->juncts[j]!=junct;j++);
+	if(j<target->njunct) {
+		for(;j<target->njunct-1;j++) target->juncts[j]=target->juncts[j+1];
+		target->njunct--; }
+	if(junct->fil->endjunct[0]==junct) junct->fil->endjunct[0]=NULL;
+	if(junct->fil->endjunct[1]==junct) junct->fil->endjunct[1]=NULL;
+	for(j=0;j<filss->njunct && filss->junctlist[j]!=junct;j++);
+	if(j<filss->njunct) {
+		for(;j<filss->njunct-1;j++) filss->junctlist[j]=filss->junctlist[j+1];
+		filss->junctlist[j]=junct;
+		filss->njunct--; }
+	junct->fil=junct->target=NULL;
+	filClassifyJunctions(filss);
+	return; }
+
+
+/* filRemoveFilJunctions */
+// Remove every junction that involves fil, either as the attached filament or as the
+// target.
+void filRemoveFilJunctions(filamentptr fil) {
+	filamentssptr filss;
+	filjunctionptr junct;
+	int j;
+
+	filss=fil->filtype->filss;
+	if(!filss) return;
+	for(j=filss->njunct-1;j>=0;j--) {								// backward, since a removal shifts later entries down
+		junct=filss->junctlist[j];
+		if(junct->fil==fil || junct->target==fil) filRemoveJunction(junct); }
+	return; }
+
+
+/* filAttachEnd */
+// Attach end end ('m' or 'p') of fil, which needs to be free, to node node of target,
+// which may be fil itself. Attaching at an end node of the target is an end-to-end join,
+// whose angle is held by the bending spring; attaching elsewhere uses the branch-angle
+// spring. If the junction is rigid, fil is translated so its end sits at the target node,
+// and the rest of fil's tree follows; if it closes a loop, only fil's end node is moved
+// onto the target node, which stretches its end segment until the springs relax it.
+// The current azimuth is recorded for the azimuthal spring. Returns 0 for success or 1
+// if the end is already attached or memory could not be allocated.
+int filAttachEnd(filamentptr fil,char end,filamentptr target,int node) {
+	filjunctionptr junct;
+	int jnear,jfar,d;
+
+	junct=filAddJunction(fil,end,target,node,(node==0 || node==target->nseg)?1:0);
+	if(!junct) return 1;
+	if(junct->rigid) {
+		filPinJunction(junct);
+		filPinTree(fil); }
+	else {
+		filBranchJunctionNodes(fil,end,&jnear,&jfar);
+		for(d=0;d<3;d++) fil->nodes[jnear][d]=target->nodes[node][d];
+		filNodes2Angles(fil,-1,-1); }
+	if(!junct->bend) junct->azim0=filBranchAzimuth(junct);
+	return 0; }
 
 
 /* filBranchAzimuth */
-// Azimuth of a daughter about its mother: the angle of the daughter's junction segment
-// around the axis of the mother segment that ends at node, measured in that segment's material frame (from
-// the frame's y axis toward its z axis), in [0,2*PI). This is the quantity that
-// branch_azimuth_fix holds; it is recorded at birth by filAddBranch and re-measured
-// by filPinBranches, so the two are consistent by construction whatever the frame
-// conventions. Returns -1 where azimuth is undefined: 2D systems, an invalid branch
-// node, or a daughter parallel to its mother.
+// Azimuth of a junction's attached filament about its target: the angle of the attached
+// filament's junction segment around the axis of the target's reference segment (the one
+// that ends at the junction node, or segment 0 for node 0), measured in that segment's
+// material frame (from the frame's y axis toward its z axis), in [0,2*PI). This is the
+// quantity that branch_azimuth_fix holds; it is recorded at birth by filAddBranch and
+// re-measured by filPinJunction, so the two are consistent by construction whatever the
+// frame conventions. Returns -1 where azimuth is undefined: 2D systems, an invalid node,
+// or an attached filament parallel to the target.
 // SIGN CONTRACT: with this definition, rotating the daughter about +tm (right-handed)
 // raises phi, which is what makes filAddJunctionForces' azimuthal gradient
 // (tm x td)/(lend*sinth^2) restoring; both rely on Sph_QtnRotate being the lab-to-frame
 // map of a proper rotation. If either convention changes, the spring flips sign to
 // anti-restoring -- the T6 validation (azimuth drift on a pinned mother) catches it.
-double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daughter,char end) {
+double filBranchAzimuth(const filjunctionptr junct) {
 	double td[3],v[3],phi;
 	segmentptr mseg;
-	int jnear,jfar;
+	filamentptr mother,daughter;
+	int node,jnear,jfar;
 
+	mother=junct->target;
+	daughter=junct->fil;
+	node=junct->node;
 	if(mother->filtype->filss->sim->dim!=3) return -1;
-	if(node<1 || node>mother->nseg || daughter->nseg<1) return -1;
-	mseg=mother->segments[node-1];
-	filBranchJunctionNodes(daughter,end,&jnear,&jfar);
+	if(node<FILJUNCTMINNODE || node>mother->nseg || daughter->nseg<1) return -1;
+	mseg=mother->segments[node>0?node-1:0];
+	filBranchJunctionNodes(daughter,junct->end,&jnear,&jfar);
 	td[0]=daughter->nodes[jfar][0]-daughter->nodes[jnear][0];
 	td[1]=daughter->nodes[jfar][1]-daughter->nodes[jnear][1];
 	td[2]=daughter->nodes[jfar][2]-daughter->nodes[jnear][2];
@@ -3259,19 +3473,16 @@ double filBranchAzimuth(const filamentptr mother,int node,const filamentptr daug
 
 
 /* filBranchDazim */
-// Signed deviation of branch br of mother from its recorded birth azimuth, wrapped to
-// (-PI,PI]. Returns 1 and sets *dphiptr when defined; 0 when the birth azimuth was
-// never recorded or the current azimuth is undefined (2D, degenerate geometry). The
-// single definition of the sentinel and wrap conventions that the rigid azimuth pin
-// and the azimuthal spring share.
-int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
+// Signed deviation of a junction from its recorded azimuth, wrapped to (-PI,PI]. Returns
+// 1 and sets *dphiptr when defined; 0 when the azimuth was never recorded or the current
+// azimuth is undefined (2D, degenerate geometry). The single definition of the sentinel
+// and wrap conventions that the rigid azimuth pin and the azimuthal spring share.
+int filBranchDazim(const filjunctionptr junct,double *dphiptr) {
 	double phi0,dphi;
-	filamentptr daughter;
 
-	phi0=mother->branchazim0[br];
-	daughter=mother->branches[br];
-	if(phi0<0 || !daughter) return 0;
-	dphi=filBranchAzimuth(mother,mother->branchnodes[br],daughter,mother->branchends[br]);
+	phi0=junct->azim0;
+	if(phi0<0) return 0;
+	dphi=filBranchAzimuth(junct);
 	if(dphi<0) return 0;
 	dphi-=phi0;
 	if(dphi>PI) dphi-=2*PI;
@@ -3290,20 +3501,21 @@ int filBranchDazim(const filamentptr mother,int br,double *dphiptr) {
 filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername) {
 	filamenttypeptr mothertype;
 	filamentptr daughter;
+	filjunctionptr junct;
 	segmentptr mseg;
 	double branchpos[3],qbranch[4],qdaughter[4],qflip[4],daughterypr[3],len,straight[3]={0,0,0},flip[3]={PI,0,0},shift[3];
-	int br,s,nseg;
+	int s,nseg;
 	(void) sim;
 
 	if(!mother || mother->nseg==0) return NULL;						// need a real mother
-	if(node<1 || node>mother->nseg) return NULL;						// branch node must be at the plus end of a real segment
+	if(node<0 || node>mother->nseg) return NULL;						// branch node must be a real node
 	mothertype=mother->filtype;
 	nseg=mothertype->branchsegments;							// daughter length in segments (parser enforces >=1)
 
 	daughter=filAddFilament(mothertype,daughtername);		// daughters share the mother's type; auto-named if NULL
 	if(!daughter) return NULL;
 
-	mseg=mother->segments[node-1];									// reference frame = segment that ends at the branch node
+	mseg=mother->segments[node>0?node-1:0];					// reference frame = segment that ends at the branch node, or segment 0
 	branchpos[0]=mother->nodes[node][0];
 	branchpos[1]=mother->nodes[node][1];
 	branchpos[2]=mother->nodes[node][2];
@@ -3326,16 +3538,9 @@ filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double 
 		shift[2]=branchpos[2]-daughter->nodes[daughter->nseg][2];
 		filTranslate(daughter,shift,'+'); }
 
-	if(mother->nbranch==mother->maxbranch) {					// grow the branch arrays if needed
-		mother=filAlloc(mother,0,mother->maxbranch*2+1,0);
-		if(!mother) return NULL; }
-	br=mother->nbranch++;
-	mother->branchnodes[br]=node;
-	mother->branchends[br]=end;
-	mother->branches[br]=daughter;
-	mother->branchazim0[br]=filBranchAzimuth(mother,node,daughter,end);	// realized birth azimuth, for branch_azimuth_fix
-	if(end=='p') daughter->plusend=mother;					// filPinBranches anchors this daughter end at the branch node
-	else daughter->minusend=mother;
+	junct=filAddJunction(daughter,end,mother,node,0);	// a new daughter is unattached, so this is a rigid junction
+	if(!junct) return NULL;
+	junct->azim0=filBranchAzimuth(junct);						// realized birth azimuth, for branch_azimuth_fix
 
 	return daughter; }
 
@@ -3409,60 +3614,89 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 	return; }
 
 
-/* filPinBranches */
-// Constrain each daughter to its junction after the mechanical step. Always: translate
-// the daughter so its attached end node tracks the mother's (moving) branch point -- a
-// position constraint, not a force. With branch_azimuth_fix on (3D): additionally
-// rotate the daughter rigidly about the mother segment's axis so its azimuth returns
-// to the value recorded at birth; the Arp2/3 slot is stereospecific, so the branch
-// direction around the mother is a constraint rather than a measured compliance. The
-// rotation axis passes through the branch point, so the rotation preserves both the
-// pinned position and the mother-daughter angle theta, composing cleanly with the
-// branch_force_angle spring. The daughter's seg0up vector co-rotates so its own
-// material frame stays consistent and grand-daughter junctions remain valid; filaments
-// are created mothers-first, so the caller's creation-order sweep settles branched
-// trees root-first.
-void filPinBranches(filamentptr fil) {
-	int br,bnode,node,dim,jnear,jfar;
+/* filPinJunction */
+// Hold a rigid junction after the mechanical step by translating its attached filament
+// so that its attached end node sits at the target node -- a position constraint, not a
+// force. With branch_azimuth_fix on (3D, and not for end-to-end joins): additionally
+// rotate the attached filament rigidly about the target's reference segment axis so its
+// azimuth returns to the value recorded at birth; the Arp2/3 slot is stereospecific, so
+// the branch direction around the mother is a constraint rather than a measured
+// compliance. The rotation axis passes through the branch point, so the rotation
+// preserves both the pinned position and the mother-daughter angle theta, composing
+// cleanly with the branch_force_angle spring. The daughter's seg0up vector co-rotates so
+// its own material frame stays consistent and grand-daughter junctions remain valid.
+void filPinJunction(filjunctionptr junct) {
+	int bnode,node,dim,jnear,jfar;
 	double branchpos[3],axis[3],dphi,vect[3],shift[3];
-	char end;
-	filamentptr daughter;
+	filamentptr mother,daughter;
 	segmentptr mseg;
 
-	dim=fil->filtype->filss->sim->dim;
-	for(br=0;br<fil->nbranch;br++) {
-		daughter=fil->branches[br];
-		if(!daughter || daughter->nseg==0) continue;
-		bnode=fil->branchnodes[br];
-		if(bnode<1 || bnode>fil->nseg) continue;				// mother may have shrunk (treadmilling)
-		mseg=fil->segments[bnode-1];										// segment that ends at the branch node
-		branchpos[0]=fil->nodes[bnode][0];
-		branchpos[1]=fil->nodes[bnode][1];
-		branchpos[2]=fil->nodes[bnode][2];
-		end=fil->branchends[br];
-		filBranchJunctionNodes(daughter,end,&jnear,&jfar);
-		shift[0]=branchpos[0]-daughter->nodes[jnear][0];
-		shift[1]=branchpos[1]-daughter->nodes[jnear][1];
-		shift[2]=branchpos[2]-daughter->nodes[jnear][2];
-		filTranslate(daughter,shift,'+');								// move daughter so its attached end sits at branch point
+	mother=junct->target;
+	daughter=junct->fil;
+	dim=daughter->filtype->filss->sim->dim;
+	if(daughter->nseg==0) return;
+	bnode=junct->node;
+	if(bnode<FILJUNCTMINNODE || bnode>mother->nseg) return;	// mother may have shrunk (treadmilling)
+	mseg=mother->segments[bnode>0?bnode-1:0];				// reference segment
+	branchpos[0]=mother->nodes[bnode][0];
+	branchpos[1]=mother->nodes[bnode][1];
+	branchpos[2]=mother->nodes[bnode][2];
+	filBranchJunctionNodes(daughter,junct->end,&jnear,&jfar);
+	shift[0]=branchpos[0]-daughter->nodes[jnear][0];
+	shift[1]=branchpos[1]-daughter->nodes[jnear][1];
+	shift[2]=branchpos[2]-daughter->nodes[jnear][2];
+	filTranslate(daughter,shift,'+');								// move daughter so its attached end sits at branch point
 
-		if(fil->filtype->branchazimuthfix && dim==3 && filBranchEndMother(daughter,end)==fil && filBranchDazim(fil,br,&dphi) && dphi!=0) {	// restore the recorded birth azimuth; skip stale entries whose daughter belongs to another mother
-			axis[0]=mseg->xyzplus[0]-mseg->xyzminus[0];
-			axis[1]=mseg->xyzplus[1]-mseg->xyzminus[1];
-			axis[2]=mseg->xyzplus[2]-mseg->xyzminus[2];
-			if(axis[0]==0 && axis[1]==0 && axis[2]==0) continue;
-			for(node=0;node<=daughter->nseg;node++) {
-				if(node==jnear) continue;										// the attached node is the branch point, on the axis
-				vect[0]=daughter->nodes[node][0]-branchpos[0];
-				vect[1]=daughter->nodes[node][1]-branchpos[1];
-				vect[2]=daughter->nodes[node][2]-branchpos[2];
-				Sph_RotateVectorAxisAngle(vect,axis,-dphi,vect);
-				daughter->nodes[node][0]=branchpos[0]+vect[0];
-				daughter->nodes[node][1]=branchpos[1]+vect[1];
-				daughter->nodes[node][2]=branchpos[2]+vect[2]; }
-			Sph_RotateVectorAxisAngle(daughter->seg0up,axis,-dphi,daughter->seg0up);
-			filNodes2Angles(daughter,-1,-1); }}
+	if(daughter->filtype->branchazimuthfix && dim==3 && !junct->bend && filBranchDazim(junct,&dphi) && dphi!=0) {	// restore the recorded birth azimuth
+		axis[0]=mseg->xyzplus[0]-mseg->xyzminus[0];
+		axis[1]=mseg->xyzplus[1]-mseg->xyzminus[1];
+		axis[2]=mseg->xyzplus[2]-mseg->xyzminus[2];
+		if(axis[0]==0 && axis[1]==0 && axis[2]==0) return;
+		for(node=0;node<=daughter->nseg;node++) {
+			if(node==jnear) continue;										// the attached node is the branch point, on the axis
+			vect[0]=daughter->nodes[node][0]-branchpos[0];
+			vect[1]=daughter->nodes[node][1]-branchpos[1];
+			vect[2]=daughter->nodes[node][2]-branchpos[2];
+			Sph_RotateVectorAxisAngle(vect,axis,-dphi,vect);
+			daughter->nodes[node][0]=branchpos[0]+vect[0];
+			daughter->nodes[node][1]=branchpos[1]+vect[1];
+			daughter->nodes[node][2]=branchpos[2]+vect[2]; }
+		Sph_RotateVectorAxisAngle(daughter->seg0up,axis,-dphi,daughter->seg0up);
+		filNodes2Angles(daughter,-1,-1); }
 
+	return; }
+
+
+/* filPinTree */
+// Pin every rigid junction in the tree below fil, parents before children, so each
+// filament is pinned to its parent's final position.
+void filPinTree(filamentptr fil) {
+	int j;
+	filjunctionptr junct;
+
+	for(j=0;j<fil->njunct;j++) {
+		junct=fil->juncts[j];
+		if(junct->rigid) {
+			filPinJunction(junct);
+			filPinTree(junct->fil); }}
+	return; }
+
+
+/* filPinJunctions */
+// Pin all rigid junctions after all motion in a time step, starting from the root of
+// each tree, across all filament types. Loop-closing junctions are held by springs
+// instead (filAddJunctionForces).
+void filPinJunctions(filamentssptr filss) {
+	int ft,f;
+	filamenttypeptr filtype;
+	filamentptr fil;
+
+	if(filss->njunct==0) return;
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(!filRigidParent(fil)) filPinTree(fil); }}
 	return; }
 
 
@@ -3993,24 +4227,57 @@ void filAddBendForceMat(filamentptr fil) {
 	return; }
 
 
-/* filJunctionGeometry */
-// Shared geometry for the junction spring: unit tangents of the mother segment that
-// ends at node and of the daughter's junction segment (pointing away from the mother,
-// for a daughter attached by its end end), their cosine and sine, and the two
-// segment lengths. Returns 1 when the junction force is well defined, 0 when it is
-// degenerate (zero-length segment, or theta at 0 or pi where the angle plane is
-// undefined -- >5 sigma from any realistic branch angle, so skipping is safe).
-int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daughter,char end,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr) {
-	double lenm,lend,costh,sinth;
-	segmentptr mseg;
-	int d,jnear,jfar;
+/* filJunctionParams */
+// Spring parameters for junction junct, from the attached filament's type. For a
+// branch-angle junction: kappa and theta0 are branch_force_angle and branch_angle, and
+// kaz is branch_force_azimuth. For an end-to-end join (bend): kappa is the yaw bending
+// force constant and theta0 is the standard bending angle, so the join bends like any
+// other node, and there is no azimuthal spring. kj is the spring constant that holds a
+// loop-closing junction's two nodes together: junction_force, or force_length if that
+// is unset.
+void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr) {
+	filamenttypeptr jtype;
 
-	mseg=mother->segments[node-1];
+	jtype=junct->fil->filtype;
+	if(junct->bend) {
+		*kappaptr=jtype->kypr[0]>0?jtype->kypr[0]:0;
+		*theta0ptr=(dim==3)?sqrt(jtype->stdypr[0]*jtype->stdypr[0]+jtype->stdypr[1]*jtype->stdypr[1]):fabs(jtype->stdypr[0]);
+		*kazptr=0; }
+	else {
+		*kappaptr=jtype->branchforceangle;
+		*theta0ptr=jtype->branchangle;
+		*kazptr=jtype->branchforceazimuth; }
+	*kjptr=jtype->junctforce>0?jtype->junctforce:(jtype->klen>0?jtype->klen:0);
+	return; }
+
+
+/* filJunctionGeometry */
+// Shared geometry for the junction angle springs. tm is the unit tangent of the target's
+// reference segment, from its node ma to its node mb: for a branch-angle junction, this is
+// the segment that ends at the junction node (segment 0 for node 0), pointing toward the
+// plus end; for an end-to-end join, it is the target's end segment pointing into the
+// junction, so that a straight join has theta = 0. td is the unit tangent of the attached
+// filament's junction segment, pointing away from the junction. Also returns their
+// cosine and sine and the two segment lengths. Returns 1 when the junction force is well
+// defined, 0 when it is degenerate (zero-length segment, or theta at 0 or pi where the
+// angle plane is undefined -- >5 sigma from any realistic branch angle, so skipping is
+// safe).
+int filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr,int *maptr,int *mbptr) {
+	double lenm,lend,costh,sinth;
+	filamentptr mother,daughter;
+	int d,node,ma,mb,jnear,jfar;
+
+	mother=junct->target;
+	daughter=junct->fil;
+	node=junct->node;
+	if(junct->bend && node==0) {ma=1;mb=0;}
+	else if(node==0) {ma=0;mb=1;}
+	else {ma=node-1;mb=node;}
 	lenm=0;
 	for(d=0;d<dim;d++) {
-		tm[d]=mseg->xyzplus[d]-mseg->xyzminus[d];
+		tm[d]=mother->nodes[mb][d]-mother->nodes[ma][d];
 		lenm+=tm[d]*tm[d]; }
-	filBranchJunctionNodes(daughter,end,&jnear,&jfar);
+	filBranchJunctionNodes(daughter,junct->end,&jnear,&jfar);
 	lend=0;
 	for(d=0;d<dim;d++) {
 		td[d]=daughter->nodes[jfar][d]-daughter->nodes[jnear][d];
@@ -4033,66 +4300,105 @@ int filJunctionGeometry(const filamentptr mother,int node,const filamentptr daug
 	*lendptr=lend;
 	*costhptr=costh;
 	*sinthptr=sinth;
+	*maptr=ma;
+	*mbptr=mb;
 	return 1; }
 
 
-/* filAddJunctionForces */
-// Torsional spring at the branch junction: energy 0.5*k*(theta-theta0)^2, where theta
-// is the angle between the mother segment holding the branch and the daughter's first
-// segment, theta0 is the type's branch_angle, and k is branch_force_angle. Each
-// filament applies the exact gradient with respect to its OWN nodes during its own
-// force evaluation, reading the partner's current geometry as an external field: a
-// daughter applies a couple on its nodes 0 and 1, and a mother applies the reaction
-// couple on nodes bnode-1 and bnode for each of its branches. Both couples are pure
-// torques about the branch point and sum to zero total torque at any one
-// configuration (the sequential per-filament integrator sweep evaluates the two
-// halves at states one substep apart, so cancellation over a step is O(dt)), so the
-// pair potential enters both partners' dynamics and the junction angle equilibrates
-// at Boltzmann --
-// a one-way version was measured to overheat the angle by (1 + mobility ratio) when
-// the mother is free. The optional azimuthal spring (branch_force_azimuth) restores
-// the daughter's azimuth about the mother axis toward its recorded birth value with
-// energy 0.5*kaz*(phi-phi0)^2, applied as a couple on daughter nodes 0 and 1 only
-// (one-way: a clean mother-side gradient would require differentiating the material
-// frame, and the bounded spring torque cannot pump energy the way the rigid azimuth
-// pin can). No cross-filament force writes occur, per-filament force clearing stays
-// safe, and integrators that differentiate forces numerically see everything
-// automatically. Draws no random numbers; returns immediately when off.
-void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kappa,kaz,theta0,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3];
-	filamentptr mother,daughter;
-	int br,brfound,bnode,d,dim,e,jnear,jfar;
-	char end;
+/* filSubtreeSpringForce */
+// Adds to sum the net force that the springs of loop-closing junctions exert on fil and
+// on the filaments that are rigidly attached to it, directly or through others. A spring
+// with both ends in this subtree contributes equal and opposite forces, which cancel.
+// filAddJunctionForces transmits this sum through the rigid junction that pins fil.
+void filSubtreeSpringForce(filamentptr fil,int dim,double *sum) {
+	filjunctionptr junct;
+	filamentptr other;
+	double kappa,theta0,kaz,kj;
+	int e,j,d,jnear,jfar;
 
-	kappa=fil->filtype->branchforceangle;
-	kaz=fil->filtype->branchforceazimuth;
+	for(e=0;e<2;e++) {															// fil's own ends that close loops
+		junct=fil->endjunct[e];
+		if(!junct || junct->rigid || fil->nseg<1 || junct->node>junct->target->nseg) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if(kj<=0) continue;
+		filBranchJunctionNodes(fil,junct->end,&jnear,&jfar);
+		for(d=0;d<dim;d++)
+			sum[d]+=kj*(junct->target->nodes[junct->node][d]-fil->nodes[jnear][d]); }
+
+	for(j=0;j<fil->njunct;j++) {										// junctions attached to fil's nodes
+		junct=fil->juncts[j];
+		other=junct->fil;
+		if(junct->rigid) {
+			if(other!=fil) filSubtreeSpringForce(other,dim,sum); }	// rigid junctions are acyclic, so this recursion ends
+		else if(other->nseg>=1 && junct->node<=fil->nseg) {
+			filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+			if(kj<=0) continue;
+			filBranchJunctionNodes(other,junct->end,&jnear,&jfar);
+			for(d=0;d<dim;d++)
+				sum[d]+=kj*(other->nodes[jnear][d]-fil->nodes[junct->node][d]); }}
+	return; }
+
+
+/* filAddJunctionForces */
+// Junction springs, for every junction that involves fil.
+// Angle spring: energy 0.5*k*(theta-theta0)^2, where theta is the angle between the
+// target's reference segment and the attached filament's junction segment (see
+// filJunctionGeometry and filJunctionParams). Each filament applies the exact gradient
+// with respect to its OWN nodes during its own force evaluation, reading the partner's
+// current geometry as an external field: an attached filament applies a couple on its
+// junction nodes, and a target applies the reaction couple on its reference segment
+// nodes for each junction attached to it. Both couples are pure torques about the
+// junction and sum to zero total torque at any one configuration (the sequential
+// per-filament integrator sweep evaluates the two halves at states one substep apart,
+// so cancellation over a step is O(dt)), so the pair potential enters both partners'
+// dynamics and the junction angle equilibrates at Boltzmann -- a one-way version was
+// measured to overheat the angle by (1 + mobility ratio) when the mother is free.
+// Azimuthal spring (branch_force_azimuth): restores the attached filament's azimuth
+// about the target's axis toward its recorded value with energy 0.5*kaz*(phi-phi0)^2,
+// applied as a couple on the attached filament's junction nodes only (one-way: a clean
+// mother-side gradient would require differentiating the material frame, and the
+// bounded spring torque cannot pump energy the way the rigid azimuth pin can).
+// Position spring: a loop-closing junction, which is not held by translation, is held
+// by energy 0.5*kj*d^2, where d is the distance between the attached end node and the
+// target node; each side applies kj times the separation to its own node. A rigid
+// junction transmits the net force of these springs on the attached subtree
+// (filSubtreeSpringForce) as a pair of joint forces: the target receives it at its
+// junction node, and the attached filament receives the opposite force at its pinned
+// node. Without this, pinning would discard the force, and a spring within one tree would
+// propel and rotate the tree; with it, the attached filament has no net spring force and
+// the spring torque on it acts about the junction.
+// No cross-filament force writes occur, per-filament force clearing stays safe, and
+// integrators that differentiate forces numerically see everything within a filament
+// automatically. Draws no random numbers.
+void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,kappa,kaz,theta0,kj,tm[3],td[3],lenm,lend,costh,sinth,sinbound,fscale,fvect[3],dphi,cross[3],sum[3];
+	filamentptr other;
+	filjunctionptr junct;
+	int j,d,dim,e,jnear,jfar,ma,mb,node;
+
+	if(!fil->endjunct[0] && !fil->endjunct[1] && fil->njunct==0) return;
 	dim=fil->filtype->filss->sim->dim;
-	if(kappa<=0 && (kaz<=0 || dim!=3)) return;			// the azimuthal spring exists only in 3D
-	theta0=fil->filtype->branchangle;
 	forces=fil->filwork->forces;
 
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
-	for(e=0;e<2;e++) {															// daughter side: couples on own junction nodes, for each attached end
-		end=(e==0)?'m':'p';
-		mother=filBranchEndMother(fil,end);
-		if(!mother || fil->nseg<1) continue;
-		filBranchJunctionNodes(fil,end,&jnear,&jfar);
+	for(e=0;e<2;e++) {															// attached side: forces on own junction nodes, for each attached end
+		junct=fil->endjunct[e];
+		if(!junct || fil->nseg<1) continue;
+		filBranchJunctionNodes(fil,junct->end,&jnear,&jfar);
 		if((jnear<nodemin || jnear>nodemax) && (jfar<nodemin || jfar>nodemax)) continue;	// junction outside the requested node window
-		brfound=-1;
-		for(br=0;br<mother->nbranch && brfound<0;br++)
-			if(mother->branches[br]==fil && mother->branchends[br]==end)
-				brfound=br;
-		bnode=(brfound>=0)?mother->branchnodes[brfound]:-1;
-		if(bnode>=1 && bnode<=mother->nseg && filJunctionGeometry(mother,bnode,fil,end,dim,tm,td,&lenm,&lend,&costh,&sinth)) {
+		node=junct->node;
+		if(node<FILJUNCTMINNODE || node>junct->target->nseg) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if((kappa>0 || (kaz>0 && dim==3)) && filJunctionGeometry(junct,dim,tm,td,&lenm,&lend,&costh,&sinth,&ma,&mb)) {
 			if(kappa>0) {
 				fscale=kappa*(acos(costh)-theta0)/(lend*sinth);		// F1 = k*(theta-theta0)/lend * (tm-costh*td)/sinth; |tm-costh*td| = sinth, so |F1| = k*|theta-theta0|/lend, bounded
 				for(d=0;d<dim;d++) {
 					fvect[d]=fscale*(tm[d]-costh*td[d]);
 					if(jfar>=nodemin && jfar<=nodemax) forces[jfar][d]+=fvect[d];
 					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}		// couple: equal and opposite on the pinned node
-			if(kaz>0 && dim==3 && filBranchDazim(mother,brfound,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
+			if(kaz>0 && dim==3 && filBranchDazim(junct,&dphi)) {	// azimuthal spring toward the recorded birth azimuth
 				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi -- this sign ties to the frame convention in filBranchAzimuth, see the contract comment there
 				cross[1]=tm[2]*td[0]-tm[0]*td[2];
 				cross[2]=tm[0]*td[1]-tm[1]*td[0];
@@ -4101,22 +4407,38 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 				for(d=0;d<3;d++) {
 					fvect[d]=fscale*cross[d];
 					if(jfar>=nodemin && jfar<=nodemax) forces[jfar][d]+=fvect[d];
-					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}}}
+					if(jnear>=nodemin && jnear<=nodemax) forces[jnear][d]-=fvect[d]; }}}
+		if(!junct->rigid && kj>0 && jnear>=nodemin && jnear<=nodemax)	// position spring for a loop-closing junction
+			for(d=0;d<dim;d++)
+				forces[jnear][d]+=kj*(junct->target->nodes[node][d]-fil->nodes[jnear][d]);
+		if(junct->rigid && fil->filtype->filss->nspring>0 && jnear>=nodemin && jnear<=nodemax) {	// reaction at the pinned node to the net spring force on this subtree
+			sum[0]=sum[1]=sum[2]=0;
+			filSubtreeSpringForce(fil,dim,sum);
+			for(d=0;d<dim;d++)
+				forces[jnear][d]-=sum[d]; }}
 
-	if(kappa>0)																			// mother side: reaction couple for the polar spring only (azimuth is one-way)
-		for(br=0;br<fil->nbranch;br++) {
-			daughter=fil->branches[br];
-			bnode=fil->branchnodes[br];
-			if(!daughter || daughter->nseg<1) continue;
-			if(filBranchEndMother(daughter,fil->branchends[br])!=fil) continue;	// stale entry: the daughter belongs to another mother (copy_to, re-branch)
-			if(bnode<1 || bnode>fil->nseg) continue;
-			if(bnode<nodemin || bnode-1>nodemax) continue;	// junction outside the requested node window
-			if(!filJunctionGeometry(fil,bnode,daughter,fil->branchends[br],dim,tm,td,&lenm,&lend,&costh,&sinth)) continue;
-			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_mother = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the daughter side
+	for(j=0;j<fil->njunct;j++) {										// target side: reaction couple for the polar spring (azimuth is one-way), and the position spring
+		junct=fil->juncts[j];
+		other=junct->fil;
+		node=junct->node;
+		if(other->nseg<1) continue;
+		if(node<FILJUNCTMINNODE || node>fil->nseg) continue;
+		filJunctionParams(junct,dim,&kappa,&theta0,&kaz,&kj);
+		if(kappa>0 && filJunctionGeometry(junct,dim,tm,td,&lenm,&lend,&costh,&sinth,&ma,&mb) && !((ma<nodemin || ma>nodemax) && (mb<nodemin || mb>nodemax))) {
+			fscale=kappa*(acos(costh)-theta0)/(lenm*sinth);		// F_mother = k*(theta-theta0)/lenm * (td-costh*tm)/sinth, bounded like the attached side
 			for(d=0;d<dim;d++) {
 				fvect[d]=fscale*(td[d]-costh*tm[d]);
-				if(bnode<=nodemax) forces[bnode][d]+=fvect[d];
-				if(bnode-1>=nodemin) forces[bnode-1][d]-=fvect[d]; }}
+				if(mb>=nodemin && mb<=nodemax) forces[mb][d]+=fvect[d];
+				if(ma>=nodemin && ma<=nodemax) forces[ma][d]-=fvect[d]; }}
+		if(!junct->rigid && kj>0 && node>=nodemin && node<=nodemax) {
+			filBranchJunctionNodes(other,junct->end,&jnear,&jfar);
+			for(d=0;d<dim;d++)
+				forces[node][d]+=kj*(other->nodes[jnear][d]-fil->nodes[node][d]); }
+		if(junct->rigid && fil->filtype->filss->nspring>0 && node>=nodemin && node<=nodemax) {	// net spring force on the rigidly attached subtree acts here
+			sum[0]=sum[1]=sum[2]=0;
+			filSubtreeSpringForce(other,dim,sum);
+			for(d=0;d<dim;d++)
+				forces[node][d]+=sum[d]; }}
 
 	return; }
 
@@ -4532,10 +4854,7 @@ int filDynamics(simptr sim) {
 			filImplicitOldDynamics(sim,filtype);
 			}
 
-	for(ft=0;ft<filss->ntype;ft++) {								// re-pin branches after all motion this step
-		filtype=filss->filtypes[ft];
-		for(f=0;f<filtype->nfil;f++)
-			filPinBranches(filtype->fillist[f]); }
+	filPinJunctions(filss);													// re-pin rigid junctions after all motion this step
 
 	return 0; }
 

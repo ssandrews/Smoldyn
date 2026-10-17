@@ -3179,16 +3179,19 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 
 /* cmdprintFilaments */
 // Dump every filament (all types) as a flat polyline of node coordinates, one line each:
-//   FIL <time> <type>:<name> <nseg> <parent-or-"-"> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ...
+//   FIL <time> <type>:<name> <nseg> <minus-attach> <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ...
 // Auto-named daughters are included, so this captures a whole branched network.
-// <minus-state> and <plus-state> are the end states: open, capped, or shrink.
+// <minus-attach> and <plus-attach> are what each end attaches to, as type:name:node, or
+// "-" for a free end. <minus-state> and <plus-state> are the end states: open, capped, or
+// shrink.
 enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 	FILE *fptr;
 	filamentssptr filss;
 	filamenttypeptr filtype;
 	filamentptr fil;
-	int er,ft,f,nd,d,dim;
-	char string1[STRCHAR],string2[STRCHAR];
+	int er,ft,f,nd,d,dim,e;
+	char string1[STRCHAR],string2[STRCHAR],attach[2][STRCHARLONG];
+	filjunctionptr junct;
 
 	if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
 	SCMDCHECK(sim->filss,"No filaments defined");
@@ -3201,9 +3204,12 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 		filtype=filss->filtypes[ft];
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
-			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s %s %s",sim->time,filtype->ftname,fil->filname,fil->nseg,
-				fil->minusend?fil->minusend->filname:(fil->plusend?fil->plusend->filname:"-"),
-				filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
+			for(e=0;e<2;e++) {
+				junct=fil->endjunct[e];
+				if(junct) snprintf(attach[e],STRCHARLONG,"%s:%s:%i",junct->target->filtype->ftname,junct->target->filname,junct->node);
+				else strcpy(attach[e],"-"); }
+			scmdfprintf(cmd->cmds,fptr,"FIL %g %s:%s %i %s %s %s %s",sim->time,filtype->ftname,fil->filname,fil->nseg,
+				attach[0],attach[1],filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
 					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
