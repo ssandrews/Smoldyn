@@ -4109,6 +4109,7 @@ typedef struct filworkstruct {
     sparsematrix forcemat;            // force matrix for implicit int.
     double thermtime;                 // time for thermal forces
     double **thermforce;              // thermal forces on nodes
+    double *thermtorque;              // thermal torques on segments about their axes (3D)
 } *filworkptr
 \end{lstlisting}
 
@@ -4118,7 +4119,7 @@ Filament dynamics integration requires a substantial amount of working data, whi
 
 \ttt{forces} is used to store the cumulative forces on each node. Similarly, the \ttt{torques} element is used to store the roll torque acting on each segment (along its axis). \ttt{forcemat} is a flattened matrix of forces that is used for matrix-method Euler integration and implict integration.
 
-\ttt{thermtime} is the simulation time for the most recent calculation of thermal forces (they need to be computed only once per time step to avoid giving the integrators conflicting information) and \ttt{thermforce} is a list of thermal forces on the nodes.
+\ttt{thermtime} is the simulation time for the most recent calculation of thermal forces (they need to be computed only once per time step to avoid giving the integrators conflicting information) and \ttt{thermforce} is a list of thermal forces on the nodes. \ttt{thermtorque} is a list of thermal torques on the segments, about their own axes, which is only used in 3D.
 
 \subsubsection{Filament junctions}
 
@@ -4842,7 +4843,7 @@ Computes filament stretching (and compression) forces using the node positions i
 
 \item[\ttt{void filAddThermalForces(filamentptr fil,int nodemin,int nodemax)}] %?? Rewritten function. I haven't figured out the math yet.
 \hfill \\
-Computes thermal forces acting on filament nodes and adds them to any prior values in the \ttt{fil->forces} vector.
+Computes thermal forces acting on filament nodes and adds them to any prior values in the \ttt{fil->forces} vector. In 3D, this also computes thermal torques on the segments, about their own axes, and adds them to the \ttt{filwork->torques} vector for the segments from \ttt{nodemin} to \ttt{nodemax}$-1$. Each torque is Gaussian with rms $\sqrt{2kT/(\mu m_k \Delta t)}$, where $m_k$ is the segment's roll mobility factor, the average of its two nodes' mobility factors, which is the factor that \ttt{filStepDynamics} uses for roll, so twist samples the Boltzmann distribution: each relative roll has variance $kT/k_{roll}$ for a filament with no other constraints. The torques are stored in \ttt{filwork->thermtorque}, drawn after the node forces, once per time step.
 
 AI description for new code. Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped update x += dt*mobility*nodemobility*F used by \ttt{filStepDynamics}: each Cartesian component of each node's thermal force is Gaussian with rms sqrt(2*kT/(mobility*nodemobility*dt)), which samples the correct ensemble at temperature kT for any choice of dt, mobility, and discretization. Forces are drawn once per time step and reused across sub-step force evaluations (Runge-Kutta stages and Jacobian calls). Random numbers are always drawn and the amplitude multiplies the draw, so the draw sequence is independent of \ttt{kT} and mobility values; immobile nodes (\ttt{nodemobility} 0) correctly receive no thermal force.
 

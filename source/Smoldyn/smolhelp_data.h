@@ -1104,7 +1104,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Set the thermal energy value, equal to Boltzmann's constant times\n"
 		"    temperature. Enter this in energy units that are consistent with other\n"
 		"    units in the input file. This is only used for some of the dynamics\n"
-		"    options."},
+		"    options. Thermal forces act on the filament nodes, and in 3D, thermal\n"
+		"    torques also twist each segment about its own axis, so bending and twisting\n"
+		"    both fluctuate."},
 	{"statement","Statements about filaments",1,"treadmill_rate",
 		"  * treadmill_rate value",
 		"    Some filaments treadmill, in which they drop off monomers at one end and\n"

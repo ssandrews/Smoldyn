@@ -638,6 +638,7 @@ typedef struct filamentworkstruct {
     sparsematrix forcemat;            // force matrix for implicit int.
     double thermtime;                 // time for thermal forces
     double **thermforce;              // thermal forces on nodes
+    double *thermtorque;              // thermal torques on segments about their axes (3D)
 } *filamentworkptr;
 
 typedef struct filjunctionstruct {

@@ -379,6 +379,7 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filwork->forcemat=NULL;
 	filwork->thermtime=sim->time-sim->dt;
 	filwork->thermforce=NULL;
+	filwork->thermtorque=NULL;
 
 	CHECKMEM(filwork->wnodes=(double***) calloc(3,sizeof(double**)));
 	filwork->wnodes[0]=fil->nodes;
@@ -386,6 +387,7 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	CHECKMEM(filwork->wnodes[1]=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->wnodes[2]=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->thermforce=(double**) calloc(maxseg+1,sizeof(double*)));
+	CHECKMEM(filwork->thermtorque=(double*) calloc(maxseg,sizeof(double)));
 	for(seg=0;seg<=maxseg;seg++) {
 		CHECKMEM(filwork->wnodes[1][seg]=(double*) calloc(3,sizeof(double)));
 		filwork->wnodes[1][seg][0]=filwork->wnodes[1][seg][1]=filwork->wnodes[1][seg][2]=0;
@@ -488,6 +490,7 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 
 	free(filwork->torques);
 	free(filwork->thermforce);
+	free(filwork->thermtorque);
 	sparseFreeM(filwork->forcemat);
 	free(filwork);
 	return; }
@@ -4009,12 +4012,16 @@ void filAddStretchForceMat(filamentptr fil) {
 // once per time step and reused across sub-step force evaluations (Runge-Kutta stages
 // and Jacobian calls). Random numbers are always drawn and the amplitude multiplies
 // the draw, so the draw sequence is independent of kT and mobility values; immobile
-// nodes (nodemobility 0) correctly receive no thermal force.
+// nodes (nodemobility 0) correctly receive no thermal force. In 3D, each segment also
+// receives a thermal torque about its own axis, with rms sqrt(2*kT/(mobility*m*dt)),
+// where m is the segment's roll mobility factor, the average of its two nodes' factors
+// (see filStepDynamics), so that twist samples the same ensemble. These are drawn after
+// the node forces.
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kT,dt,mobility,famp,nodemob,frms;
+	double **forces,kT,dt,mobility,famp,nodemob,frms,*torques;
 	filamenttypeptr filtype;
 	filamentworkptr filwork;
-	int dim,node;
+	int dim,node,seg;
 	simptr sim;
 
 	filtype=fil->filtype;
@@ -4043,9 +4050,13 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD();
 				filwork->thermforce[node][2]=frms*gaussrandD(); }
+		if(dim==3)
+			for(seg=0;seg<fil->nseg;seg++) {
+				nodemob=0.5*(fil->nodemobility[seg]+fil->nodemobility[seg+1]);	// segment roll mobility factor
+				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
+				filwork->thermtorque[seg]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
 
-//??	torques=fil->torques;
 	forces=filwork->forces;										// report forces
 	if(dim==2)
 		for(node=nodemin;node<=nodemax;node++) {
@@ -4056,6 +4067,10 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 			forces[node][0]+=filwork->thermforce[node][0];
 			forces[node][1]+=filwork->thermforce[node][1];
 			forces[node][2]+=filwork->thermforce[node][2]; }
+	if(dim==3) {
+		torques=filwork->torques;
+		for(seg=nodemin;seg<nodemax;seg++)
+			torques[seg]+=filwork->thermtorque[seg]; }
 
 	return; }
 

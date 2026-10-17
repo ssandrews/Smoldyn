@@ -3656,7 +3656,7 @@ Shininess of the filament for drawing purposes. This value can range from 0 for 
 
 \item{\ttt{* kT} $value$}
 
-Set the thermal energy value, equal to Boltzmann's constant times temperature. Enter this in energy units that are consistent with other units in the input file. This is only used for some of the dynamics options.
+Set the thermal energy value, equal to Boltzmann's constant times temperature. Enter this in energy units that are consistent with other units in the input file. This is only used for some of the dynamics options. Thermal forces act on the filament nodes, and in 3D, thermal torques also twist each segment about its own axis, so bending and twisting both fluctuate.
 
 \item{\ttt{* treadmill\_rate} $value$}
 
