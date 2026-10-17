@@ -1063,7 +1063,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  * dynamics dynamics",
 		"    Sets the dynamics for the filament type. Current options are: \"none\",\n"
 		"    \"Euler\", \"RK2\", \"RK4\", \"EulerMat\", \"Implicit\" and \"ImplicitOld\". These are\n"
-		"    case-insensitive."},
+		"    case-insensitive. \"Euler\", \"RK2\", and \"RK4\" are explicit methods, which\n"
+		"    need short time steps for stiff filaments. \"Implicit\" is the implicit Euler\n"
+		"    method, which remains stable for much longer time steps, but ignores node\n"
+		"    mobility factors. \"EulerMat\" and \"ImplicitOld\" are matrix-based test\n"
+		"    methods, which ignore node mobility factors and only include stretching and\n"
+		"    bending forces. In 3D, all of these methods also rotate each segment about\n"
+		"    its own axis in response to twisting torques, so twist relaxes toward the\n"
+		"    standard roll angle."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"

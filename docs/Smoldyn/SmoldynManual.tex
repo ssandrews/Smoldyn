@@ -3632,7 +3632,7 @@ From within a filament type definition block, this switches to a new filament ty
 
 \item{\ttt{* dynamics} $dynamics$}
 
-Sets the dynamics for the filament type. Current options are: ``none'', ``Euler'', ``RK2'', ``RK4'', ``EulerMat'', ``Implicit'' and ``ImplicitOld''. These are case-insensitive.
+Sets the dynamics for the filament type. Current options are: ``none'', ``Euler'', ``RK2'', ``RK4'', ``EulerMat'', ``Implicit'' and ``ImplicitOld''. These are case-insensitive. ``Euler'', ``RK2'', and ``RK4'' are explicit methods, which need short time steps for stiff filaments. ``Implicit'' is the implicit Euler method, which remains stable for much longer time steps, but ignores node mobility factors. ``EulerMat'' and ``ImplicitOld'' are matrix-based test methods, which ignore node mobility factors and only include stretching and bending forces. In 3D, all of these methods also rotate each segment about its own axis in response to twisting torques, so twist relaxes toward the standard roll angle.
 
 \item{\ttt{* color} $color$}
 

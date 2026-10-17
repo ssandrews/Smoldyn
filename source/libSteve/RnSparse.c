@@ -177,7 +177,7 @@ void sparseMultiplyScalarM(sparsematrix sprs,double scalar) {
 
 void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tolerance) {
 	double *ax,*r,*rhat,rho,*p,*nu,alpha,*h,*s,*t,omega,rhop,beta,numer,denom,size;
-	int i,iter,nrows;
+	int i,iter,nrows,maxiter;
 
 	ax=sprs->BiC[0];
 	r=sprs->BiC[1];
@@ -197,19 +197,22 @@ void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tol
 		rhat[i]=r[i];										// 2. rhat = r
 		rho+=rhat[i]*r[i]; 							// 3. rho = (rhat,r)
 		p[i]=r[i]; }										// 4. p = r
+	if(rho<tolerance) return;					// x is already the solution, and continuing would divide 0 by 0
 
-	for(iter=0;iter<5;iter++) {				// 5. iterate
+	maxiter=nrows+10;									// exact arithmetic converges in at most nrows iterations
+	for(iter=0;iter<maxiter;iter++) {	// 5. iterate
 		sparseMultiplyMV(sprs,p,nu);		// 5.1 nu = A.p
 		denom=0;
 		for(i=0;i<nrows;i++)
 			denom+=rhat[i]*nu[i];
+		if(denom==0) break;							// breakdown
 		alpha=rho/denom; 								// 5.2 alpha = rho/(rhat,nu)
 		size=0;
 		for(i=0;i<nrows;i++) {
 			h[i]=x[i]+alpha*p[i];					// 5.3 h = x+alpha*p
 			s[i]=r[i]-alpha*nu[i];				// 5.4 s = r-alpha*nu
 			size+=s[i]*s[i]; }
-		if(iter>2 && size<tolerance) {	// 5.5 quit if s is small
+		if(size<tolerance) {						// 5.5 quit if s is small
 			for(i=0;i<nrows;i++)
 				x[i]=h[i];
 			break; }
@@ -218,6 +221,10 @@ void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tol
 		for(i=0;i<nrows;i++) {
 			numer+=t[i]*s[i];
 			denom+=t[i]*t[i]; }
+		if(denom==0) {									// breakdown, but h is an improvement
+			for(i=0;i<nrows;i++)
+				x[i]=h[i];
+			break; }
 		omega=numer/denom;							// 5.7 omega = (t,s)/(t,t)
 		rhop=0;
 		size=0;
@@ -226,7 +233,7 @@ void sparseBiCGSTAB(const sparsematrix sprs,const double *b,double *x,double tol
 			r[i]=s[i]-omega*t[i];					// 5.9 r = s-omega*t
 			size+=r[i]*r[i];
 			rhop+=rhat[i]*r[i]; }					// 5.11 rho' = (rhat,r)
-		if(iter>2 && size<tolerance)		// 5.10 quit if r is small
+		if(size<tolerance || rhop==0 || omega==0)	// 5.10 quit if r is small, or on breakdown
 			break;
 		beta=(rhop/rho)*(alpha/omega);	// 5.12 beta = (rho'/rho)*(alpha/omega)
 		rho=rhop;												// rho = rho'

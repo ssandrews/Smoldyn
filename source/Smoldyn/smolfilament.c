@@ -210,8 +210,8 @@ enum FilamentDynamics filstring2FD(const char *string) {
 	else if(strbegin(string,"RK2",0)) ans=FDRK2;
 	else if(strbegin(string,"RK4",0)) ans=FDRK4;
 	else if(strbegin(string,"eulermat",0)) ans=FDeulermat;
+	else if(strbegin(string,"implicit",0)) ans=FDimplicit;	// before implicitold, which "implicit" abbreviates
 	else if(strbegin(string,"implicitold",0)) ans=FDimplicitold;
-	else if(strbegin(string,"implicit",0)) ans=FDimplicit;
 	else ans=FDnone;
 	return ans; }
 
@@ -2658,7 +2658,7 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 			flatnodes[4*node+0]=nodes[node][0];
 			flatnodes[4*node+1]=nodes[node][1];
 			flatnodes[4*node+2]=nodes[node][2];
-			flatnodes[4*node+3]=roll[node]; }
+			flatnodes[4*node+3]=(node==0)?0:flatnodes[4*(node-1)+3]+roll[node]; }	// absolute roll, relative to segment 0 at the start of the step
 		flatnodes[4*node+0]=nodes[node][0];
 		flatnodes[4*node+1]=nodes[node][1];
 		flatnodes[4*node+2]=nodes[node][2]; }
@@ -2668,7 +2668,7 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 /* filUnflattenNodes */
 void filUnflattenNodes(filamentptr fil,int from,int to) {
 	int node,dim;
-	double **nodes,*flatnodes;
+	double **nodes,*flatnodes,*roll,axis[3],*seg0up;
 	filamentworkptr filwork;
 
 	filwork=fil->filwork;
@@ -2681,13 +2681,23 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 			nodes[node][0]=flatnodes[2*node];
 			nodes[node][1]=flatnodes[2*node+1]; }
 	else {
-		for(node=0;node<fil->nseg;node++) {				// roll values in flatnodes are ignored; see below
+		roll=filwork->wroll[to];
+		for(node=0;node<fil->nseg;node++) {
 			nodes[node][0]=flatnodes[4*node+0];
 			nodes[node][1]=flatnodes[4*node+1];
-			nodes[node][2]=flatnodes[4*node+2]; }
+			nodes[node][2]=flatnodes[4*node+2];
+			if(node>0) roll[node]=flatnodes[4*node+3]-flatnodes[4*(node-1)+3]; }	// relative roll from absolute roll
 		nodes[node][0]=flatnodes[4*node+0];
 		nodes[node][1]=flatnodes[4*node+1];
-		nodes[node][2]=flatnodes[4*node+2]; }		//?? The matrix integrators don't evolve roll yet: their force matrices don't model torques correctly, and using their roll values makes 3D filaments diverge, so roll and seg0up are left unchanged.
+		nodes[node][2]=flatnodes[4*node+2];
+
+		if(to==0) filCopyRollToYpr2(fil);
+
+		seg0up=filwork->wseg0up[to];								// segment 0 roll is held in seg0up; its absolute roll started the step at 0
+		axis[0]=nodes[1][0]-nodes[0][0];
+		axis[1]=nodes[1][1]-nodes[0][1];
+		axis[2]=nodes[1][2]-nodes[0][2];
+		Sph_RotateVectorAxisAngle(seg0up,axis,flatnodes[3],seg0up); }
 
 	return; }
 
@@ -4177,7 +4187,7 @@ void filAddBendForceMat(filamentptr fil) {
 			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2];			// length of segment i
 			len2inv=1.0/len2;
 			len=sqrt(len2);
-			bvecti[0]=len2inv*(bendtorqueip1[0]-bendtorquei[2]);
+			bvecti[0]=len2inv*(bendtorqueip1[0]-bendtorquei[0]);
 			bvecti[1]=len2inv*(bendtorqueip1[1]-bendtorquei[1]);
 			bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]);			// b_i
 			bpvecti[0]=bvecti[0]*len;
@@ -4529,10 +4539,11 @@ void filComputeForceMatrix(filamentptr fil) {
 
 
 /* filComputeDerivForceMat */
+#define FILDERIVDXMIN 1e-7			// smallest finite-difference perturbation, relative to standard_length for positions, in radians for rolls
 void filComputeDerivForceMat(filamentptr fil,double dtmu) {
-	int dim,node,node2,d,flatsize,node2first,node2last;
+	int dim,node,node2,d,flatsize,node2first,node2last,seg;
 	double **nodes,**flatnodes,**flatforces;
-	double dx,dxinv;
+	double dx,dxinv,dxmin,*ypr2save,seg0upsave[3],axis[3];
 	sparsematrix forcemat;
 
 	dim=fil->filtype->filss->sim->dim;
@@ -4553,44 +4564,61 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++) {
 			for(d=0;d<2;d++) {
-				dx=flatnodes[1][2*node+d];
-				if(dx==0) break;
+				dx=flatnodes[1][2*node+d];								// perturbation scaled to the step
+				if(fabs(dx)<FILDERIVDXMIN*fil->filtype->stdlen) dx=FILDERIVDXMIN*fil->filtype->stdlen;	// zero force still needs its column
 				dxinv=1.0/dx;
 				nodes[node][d]+=dx;
 				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);			// update for new change and fix prior change
-				filComputeForces(fil,node-2,node+2);
-				filFlattenForces(fil,1,node-2,node+2);								// flatforces[1] is modified forces
+				filComputeForces(fil,node-3,node+3);	// one node wider than the rows used, so that those rows have every contribution
+				filFlattenForces(fil,1,node-3,node+3);								// flatforces[1] is modified forces
 				nodes[node][d]=flatnodes[0][2*node+d];
 				node2first=(node<2)?0:node-2;
 				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
 				for(node2=node2first;node2<=node2last;node2++) {			// row block is node2, column block is node
 					sparseAddToM(forcemat,2*node2,2*node+d,dxinv*(flatforces[1][2*node2]-flatforces[0][2*node2]));
 					sparseAddToM(forcemat,2*node2+1,2*node+d,dxinv*(flatforces[1][2*node2+1]-flatforces[0][2*node2+1])); }}}}
-	else {
+	else {																				// 3D: columns are node positions and absolute segment rolls (see filFlattenNodes)
+		ypr2save=fil->filwork->wroll[2];							// scratch space, which the implicit integrator doesn't otherwise use
+		for(seg=0;seg<fil->nseg;seg++) ypr2save[seg]=fil->segments[seg]->ypr[2];
+		seg0upsave[0]=fil->seg0up[0];
+		seg0upsave[1]=fil->seg0up[1];
+		seg0upsave[2]=fil->seg0up[2];
 		for(node=0;node<=fil->nseg;node++) {
 			for(d=0;d<4;d++) {
 				if(node==fil->nseg && d==3) break;					// the plus end node has no segment, so no roll
-				dx=flatnodes[1][4*node+d];
-				if(dx==0) break;
+				dx=flatnodes[1][4*node+d];								// perturbation scaled to the step
+				dxmin=(d<3)?FILDERIVDXMIN*fil->filtype->stdlen:FILDERIVDXMIN;
+				if(fabs(dx)<dxmin) dx=dxmin;								// zero force still needs its column
 				dxinv=1.0/dx;
 				if(d<3) nodes[node][d]+=dx;
-				else fil->segments[node]->ypr[2]+=dx;
+				else if(node>0) fil->segments[node]->ypr[2]+=dx;	// with the window below, this rotates only this segment's frame
+				else {
+					axis[0]=nodes[1][0]-nodes[0][0];
+					axis[1]=nodes[1][1]-nodes[0][1];
+					axis[2]=nodes[1][2]-nodes[0][2];
+					Sph_RotateVectorAxisAngle(fil->seg0up,axis,dx,fil->seg0up); }
 				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);	// update for new change and fix prior change
 
-				filComputeForces(fil,node-2,node+2);
-				filFlattenForces(fil,1,node-2,node+2);						// flatforces[1] is modified forces
+				filComputeForces(fil,node-3,node+3);	// one node wider than the rows used, so that those rows have every contribution
+				filFlattenForces(fil,1,node-3,node+3);						// flatforces[1] is modified forces
 
-				if(d<3) nodes[node][d]=flatnodes[0][4*node+d];
-				else fil->segments[node]->ypr[2]=flatnodes[0][4*node+d];
+				if(d<3) nodes[node][d]=flatnodes[0][4*node+d];		// restore the state
+				fil->seg0up[0]=seg0upsave[0];
+				fil->seg0up[1]=seg0upsave[1];
+				fil->seg0up[2]=seg0upsave[2];
+				for(seg=(node<2?0:node-2);seg<fil->nseg && seg<=node+2;seg++)
+					fil->segments[seg]->ypr[2]=ypr2save[seg];
 				node2first=(node<2)?0:node-2;
 				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
 				for(node2=node2first;node2<=node2last;node2++) {		// row block is node2, column block is node
 					sparseAddToM(forcemat,4*node2+0,4*node+d,dxinv*(flatforces[1][4*node2+0]-flatforces[0][4*node2+0]));
 					sparseAddToM(forcemat,4*node2+1,4*node+d,dxinv*(flatforces[1][4*node2+1]-flatforces[0][4*node2+1]));
 					sparseAddToM(forcemat,4*node2+2,4*node+d,dxinv*(flatforces[1][4*node2+2]-flatforces[0][4*node2+2]));
-					sparseAddToM(forcemat,4*node2+3,4*node+d,dxinv*(flatforces[1][4*node2+3]-flatforces[0][4*node2+3])); }}}}
+					if(node2<fil->nseg)
+						sparseAddToM(forcemat,4*node2+3,4*node+d,dxinv*(flatforces[1][4*node2+3]-flatforces[0][4*node2+3])); }}}
+		filNodes2Angles(fil,-1,-1); }								// restore all angles
 
-	filNodes2Angles(fil,node-2,-1);
+	if(dim==2) filNodes2Angles(fil,node-2,-1);
 	sparseMultiplyMV(forcemat,flatnodes[0],flatforces[1]);						// flatforces[1] is F1.x
 	sumVD(1,flatforces[0],-1,flatforces[1],flatforces[1],flatsize);		// flatforces[1] is F0
 
@@ -4605,7 +4633,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 /* filStepDynamics */
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 	int node,seg,dim;
-	double axis[3],**nodesin,**nodesout,*seg0upin,*seg0upout,*rollin,*rollout;
+	double axis[3],**nodesin,**nodesout,*seg0upin,*seg0upout,*rollin,*rollout,dphi,dphim1;
 	double **forces,*nodemobility;
 	filamentworkptr filwork;
 
@@ -4631,9 +4659,12 @@ void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 		axis[0]=nodesin[1][0]-nodesin[0][0];					// process segment 0 torque
 		axis[1]=nodesin[1][1]-nodesin[0][1];
 		axis[2]=nodesin[1][2]-nodesin[0][2];
-		Sph_RotateVectorAxisAngle(seg0upin,axis,dtmu*nodemobility[0]*filwork->torques[0],seg0upout);
-		for(seg=1;seg<fil->nseg;seg++) {					// process other segment torques
-			rollout[seg]=rollin[seg]+dtmu*nodemobility[1]*filwork->torques[seg]; }
+		dphi=dtmu*0.5*(nodemobility[0]+nodemobility[1])*filwork->torques[0];	// absolute roll change of segment 0
+		Sph_RotateVectorAxisAngle(seg0upin,axis,dphi,seg0upout);
+		for(seg=1;seg<fil->nseg;seg++) {					// each torque rotates its own segment, so relative roll changes by the difference
+			dphim1=dphi;
+			dphi=dtmu*0.5*(nodemobility[seg]+nodemobility[seg+1])*filwork->torques[seg];
+			rollout[seg]=rollin[seg]+dphi-dphim1; }
 		for(node=0;node<=fil->nseg;node++) {			// process node forces
 			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
 			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1];

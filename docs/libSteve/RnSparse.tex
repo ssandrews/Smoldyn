@@ -237,7 +237,7 @@ Multiplies every element of sparse matrix \ttt{sprs} by \ttt{scalar} and puts th
 \item[\ttt{void}]
 \ttt{sparseBiCGSTAB(const sparsematrix sprs, const double *b, double *x, double \\ tolerance)}
 \hfill \\
-Solves the matrix equation $\bf{A}\cdot \bm{x} = \bm{b}$ for $\bm{x}$ with known $\bm{A}$, in \ttt{sprs}, and $\bm{b}$, in \ttt{bvect}. This requires an initial guess, $\bm{x}_0$, which is entered in \ttt{x}. The result is also returned in \ttt{x}. This function iterates until the error is less than \ttt{tolerance}.
+Solves the matrix equation $\bf{A}\cdot \bm{x} = \bm{b}$ for $\bm{x}$ with known $\bm{A}$, in \ttt{sprs}, and $\bm{b}$, in \ttt{bvect}. This requires an initial guess, $\bm{x}_0$, which is entered in \ttt{x}. The result is also returned in \ttt{x}. This function iterates until the squared norm of the residual is less than \ttt{tolerance}, for at most the number of rows plus 10 iterations. It returns immediately if the initial guess already meets the tolerance, and stops early if the method breaks down (a zero denominator).
 
 The math is from Wikipedia ``Biconjugate gradient stabilized method''. It is as follows.
 \begin{align*}

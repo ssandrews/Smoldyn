@@ -4705,11 +4705,11 @@ This is used for the RK2 and RK4 integration methods, and maybe elsewhere. It co
 
 \item[\ttt{void filFlattenNodes(filamentptr fil,int from,int to)}]
 \hfill \\
-This is used for matrix Euler integration and implicit integration. It copies the node position data in the \ttt{wnodes[from]} element of the filament working structure to the \ttt{flatnodes[to]} element of the working structure. For 3D, this also copies roll data from the \ttt{wroll[from]} element of the working structure to \ttt{flatnodes[to]}. See Section \ref{sect:FilMathBending}. If \ttt{from} is equal to 0 (and in 3D), then this also copies the \ttt{segment->ypr[2]} value, which is the segment roll value, into the \ttt{fil->roll} vector.
+This is used for matrix Euler integration and implicit integration. It copies the node position data in the \ttt{wnodes[from]} element of the filament working structure to the \ttt{flatnodes[to]} element of the working structure. For 3D, this also puts the absolute roll of each segment into \ttt{flatnodes[to]}, computed from the relative roll values in the \ttt{wroll[from]} element of the working structure as $\phi_0=0$ and $\phi_k=\phi_{k-1}+r_k$, so segment rolls are measured from segment 0's orientation at the start of the step. The integrators use absolute rolls because each segment's torque rotates that segment, and the corresponding rows of the force vector or matrix are these torques. See Section \ref{sect:FilMathBending}. If \ttt{from} is equal to 0 (and in 3D), then this also copies the \ttt{segment->ypr[2]} value, which is the segment roll value, into the \ttt{fil->roll} vector.
 
 \item[\ttt{void filUnflattenNodes(filamentptr fil,int from,int to)}]
 \hfill \\
-Used for matrix Euler integration and implicit integration. This copies the node position data in the \ttt{flatnodes[from]} element of the filament working structure to the \ttt{wnodes[to]} element of the working structure. See Section \ref{sect:FilMathBending}. For 3D, the flattened data also include roll values, but this function ignores them, leaving the roll values and \ttt{seg0up} unchanged, because the matrix integrators don't evolve roll correctly yet: their force matrices don't model torques correctly, and using their roll values makes 3D filaments diverge. This only became apparent once \ttt{filCopyRollToYpr2} and \ttt{filCopyYpr2ToRoll} were fixed; before then, roll values were reset at every time step. %?? matrix integrators should evolve roll
+Used for matrix Euler integration and implicit integration. This copies the node position data in the \ttt{flatnodes[from]} element of the filament working structure to the \ttt{wnodes[to]} element of the working structure. See Section \ref{sect:FilMathBending}. For 3D, it converts the absolute segment rolls in \ttt{flatnodes[from]} (see \ttt{filFlattenNodes}) back to relative rolls, $r_k=\phi_k-\phi_{k-1}$, in \ttt{wroll[to]}, and also into the segments' \ttt{ypr[2]} values if \ttt{to} is 0. Segment 0's orientation is held in \ttt{seg0up} rather than in a roll value, so this rotates \ttt{seg0up[to]} about segment 0's axis by $\phi_0$.
 
 \item[\ttt{void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax)}]
 \hfill \\
@@ -4892,12 +4892,16 @@ Enter \ttt{nodemin} as the starting node or $-1$ (or $\leq 0$) for the filament 
 \hfill \\
 Computes all forces and segment torques acting on filament \ttt{fil}, putting the results in the \ttt{filwork->forcemat} matrix.
 
+\item[\ttt{void filComputeDerivForceMat(filamentptr fil,double dtmu)}] %?? New code.
+\hfill \\
+Computes the Jacobian of the forces and segment torques on filament \ttt{fil} by finite differences, for \ttt{filImplicitDynamics}, putting it in \ttt{filwork->forcemat}. It also leaves the flattened state in \ttt{flatnodes[0]}, the forces at that state in \ttt{flatforces[0]}, the forward Euler step in \ttt{flatnodes[1]} (with step \ttt{dtmu/1000}), and $\bm{f}(\bm{x}_0)-\bm{J}\bm{x}_0$ in \ttt{flatforces[1]}. Each column comes from perturbing one coordinate, by the forward Euler step scaled by 1/1000 or by a minimum of \ttt{FILDERIVDXMIN} (times \ttt{standard\_length} for positions), and recomputing the forces near it. Perturbing node $i$ only changes the forces on nodes $i-2$ to $i+2$, so those are the rows that are computed, and the forces are computed one node wider than that so that those rows include every contribution. In 3D, the roll coordinates are absolute segment rolls, so a roll perturbation rotates only that segment: for segment 0 this rotates \ttt{seg0up}, and otherwise it changes the segment's relative roll while the next segment's orientation is recomputed from its unchanged absolute orientation. The roll values and \ttt{seg0up} are restored after each perturbation.
+
 
 \item[\underline{Dynamics functions}]
 
 \item[\ttt{void filStepDynamics(filamentptr fil,double dtmu,int in,int out)}]
 \hfill \\
-Computes one step for explicit dynamics simulations, which is essentially an Euler step but is also used for RK2 and RK4 functions. \ttt{fil} is the filament and \ttt{dtmu} is the time step times the mobility for this particular step; this is used as is for Euler and divided by various values for RK2 and RK4. This works with the \ttt{filwork} data structure and reads from the \ttt{in} node positions, and related data, and writes to the \ttt{out} node positions, and related data. This adds $\mu \Delta t \bm{F}$ to the input node positions. For 3D, this also uses the torque of the first segment to update its orientation, and uses the torques of other segments to update their orientations. See Section \ref{sect:FilamentSimulationApproach}.
+Computes one step for explicit dynamics simulations, which is essentially an Euler step but is also used for RK2 and RK4 functions. \ttt{fil} is the filament and \ttt{dtmu} is the time step times the mobility for this particular step; this is used as is for Euler and divided by various values for RK2 and RK4. This works with the \ttt{filwork} data structure and reads from the \ttt{in} node positions, and related data, and writes to the \ttt{out} node positions, and related data. This adds $\mu \Delta t \bm{F}$ to the input node positions. For 3D, this also rotates each segment about its own axis by $\mu \Delta t\, m_k \tau_k$, where $\tau_k$ is the torque on segment $k$ about its axis (\ttt{filwork->torques}) and $m_k$ is the average of the node mobility factors at the segment's two ends. This is done by rotating \ttt{seg0up} for segment 0, and by changing each relative roll by the difference between its segment's rotation and the prior segment's rotation, because rotating one segment changes the relative rolls at both of its ends. See Section \ref{sect:FilamentSimulationApproach}.
 
 \item[\ttt{void filEulerDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
@@ -4951,15 +4955,19 @@ RK4 \\
 
 \item[\ttt{void filEulerMatDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
-Integrates filament dynamics over one time step using the Euler method, but with matrix approach rather than a direct approach. This loops over all filaments of the filament type. This is supposed to return identical results to the \ttt{filEulerDynamics} function, but is used as a matrix test system for implicit integration.
+Integrates filament dynamics over one time step using the Euler method, but with matrix approach rather than a direct approach. This loops over all filaments of the filament type. This returns identical results to the \ttt{filEulerDynamics} function, apart from round-off error, when nodes have the default mobility (this ignores node mobility factors), and is used as a matrix test system for implicit integration. The force matrix from \ttt{filComputeForceMatrix} expresses forces and segment torques as linear functions of the node positions, with coefficients from the current bending torques.
 
 \item[\ttt{void filImplicitDynamics(simptr sim,filamenttypeptr filtype)}]
 \hfill \\
-Integrates filament dynamics over one time step using the implicit Euler method. This loops over all filaments of the filament type. This function works but doesn't yield stable results.
+Integrates filament dynamics over one time step using the linearized implicit Euler method. This loops over all filaments of the filament type. For each one, \ttt{filComputeDerivForceMat} computes the Jacobian of the forces and torques, $\bm{J}$, by finite differences, and the next state is the solution of $(\bm{I}-\mu\Delta t\bm{J})\bm{x}_1=\bm{x}_0+\mu\Delta t(\bm{f}(\bm{x}_0)-\bm{J}\bm{x}_0)$, found with \ttt{sparseBiCGSTAB}. In 3D, the state includes the absolute segment rolls (see \ttt{filFlattenNodes}). This is stable for time steps that are much longer than the explicit methods allow, although, as is usual for implicit Euler, it relaxes more slowly than the true dynamics at long time steps. This ignores node mobility factors.
+
+\item[\ttt{void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Integrates filament dynamics over one time step by solving $(\bm{I}-\mu\Delta t\bm{F})\bm{x}_1=\bm{x}_0$, where $\bm{F}$ is the force matrix from \ttt{filComputeForceMatrix}. This treats the factored forces as though they were linear, so it is only reliable for time steps that are about as short as the explicit methods need. In 3D, the rows of $\bm{F}$ for segment rolls only have node position entries, so rolls are effectively updated explicitly. This ignores node mobility factors.
 
 \item[\ttt{int filDynamics(simptr sim)}]
 \hfill \\
-Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, and EulerMat integration methods.
+Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, EulerMat, Implicit, and ImplicitOld integration methods.
 
 \end{description}
 
