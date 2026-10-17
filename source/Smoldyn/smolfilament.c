@@ -2580,20 +2580,22 @@ void filNodes2Angles(filamentptr fil,int nodemin,int nodemax) {
 
 
 /* filCopyRollToYpr2 */
+// Copies the working roll values into the segments' roll angles, ypr[2].
 void filCopyRollToYpr2(filamentptr fil) {
 	int seg;
 
 	for(seg=0;seg<fil->nseg;seg++)
-		fil->roll[seg]=fil->segments[seg]->ypr[2];
+		fil->segments[seg]->ypr[2]=fil->roll[seg];
 	return;	}
 
 
 /* filCopyYpr2ToRoll */
+// Copies the segments' roll angles, ypr[2], into the working roll values.
 void filCopyYpr2ToRoll(filamentptr fil) {
 	int seg;
 
 	for(seg=0;seg<fil->nseg;seg++)
-		fil->segments[seg]->ypr[2]=fil->roll[seg];
+		fil->roll[seg]=fil->segments[seg]->ypr[2];
 	return;	}
 
 
@@ -2666,7 +2668,7 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 /* filUnflattenNodes */
 void filUnflattenNodes(filamentptr fil,int from,int to) {
 	int node,dim;
-	double **nodes,*flatnodes,*roll,axis[3],*seg0upin,*seg0upout;
+	double **nodes,*flatnodes;
 	filamentworkptr filwork;
 
 	filwork=fil->filwork;
@@ -2679,24 +2681,13 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 			nodes[node][0]=flatnodes[2*node];
 			nodes[node][1]=flatnodes[2*node+1]; }
 	else {
-		roll=filwork->wroll[to];
-		for(node=0;node<fil->nseg;node++) {
+		for(node=0;node<fil->nseg;node++) {				// roll values in flatnodes are ignored; see below
 			nodes[node][0]=flatnodes[4*node+0];
 			nodes[node][1]=flatnodes[4*node+1];
-			nodes[node][2]=flatnodes[4*node+2];
-			roll[node]=flatnodes[4*node+3]; }
+			nodes[node][2]=flatnodes[4*node+2]; }
 		nodes[node][0]=flatnodes[4*node+0];
 		nodes[node][1]=flatnodes[4*node+1];
-		nodes[node][2]=flatnodes[4*node+2];
-
-		if(to==0) filCopyRollToYpr2(fil);
-
-		seg0upin=filwork->wseg0up[from];
-		seg0upout=filwork->wseg0up[to];
-		axis[0]=nodes[1][0]-nodes[0][0];					// process segment 0 torque
-		axis[1]=nodes[1][1]-nodes[0][1];
-		axis[2]=nodes[1][2]-nodes[0][2];
-		Sph_RotateVectorAxisAngle(seg0upin,axis,roll[0],seg0upout); }
+		nodes[node][2]=flatnodes[4*node+2]; }		//?? The matrix integrators don't evolve roll yet: their force matrices don't model torques correctly, and using their roll values makes 3D filaments diverge, so roll and seg0up are left unchanged.
 
 	return; }
 
@@ -4578,7 +4569,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 	else {
 		for(node=0;node<=fil->nseg;node++) {
 			for(d=0;d<4;d++) {
-				if(node==fil->nseg && d==4) break;
+				if(node==fil->nseg && d==3) break;					// the plus end node has no segment, so no roll
 				dx=flatnodes[1][4*node+d];
 				if(dx==0) break;
 				dxinv=1.0/dx;

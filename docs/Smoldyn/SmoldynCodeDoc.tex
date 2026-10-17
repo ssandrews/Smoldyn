@@ -4709,7 +4709,7 @@ This is used for matrix Euler integration and implicit integration. It copies th
 
 \item[\ttt{void filUnflattenNodes(filamentptr fil,int from,int to)}]
 \hfill \\
-Used for matrix Euler integration and implicit integration. This copies the node position and roll (for 3D) data in the \ttt{flatnodes[from]} element of the filament working structure to the \ttt{wnodes[to]} and \ttt{wroll[to]} elements of the working structure. See Section \ref{sect:FilMathBending}. For 3D, this also rotates the \ttt{seg0up[from]} vector using the segment 0 roll vector to create the new \ttt{seg0up[to]} vector.
+Used for matrix Euler integration and implicit integration. This copies the node position data in the \ttt{flatnodes[from]} element of the filament working structure to the \ttt{wnodes[to]} element of the working structure. See Section \ref{sect:FilMathBending}. For 3D, the flattened data also include roll values, but this function ignores them, leaving the roll values and \ttt{seg0up} unchanged, because the matrix integrators don't evolve roll correctly yet: their force matrices don't model torques correctly, and using their roll values makes 3D filaments diverge. This only became apparent once \ttt{filCopyRollToYpr2} and \ttt{filCopyYpr2ToRoll} were fixed; before then, roll values were reset at every time step. %?? matrix integrators should evolve roll
 
 \item[\ttt{void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax)}]
 \hfill \\
