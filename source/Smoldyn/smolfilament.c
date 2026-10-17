@@ -162,7 +162,9 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 // Force computation
 void filAddStretchForces(filamentptr fil,int nodemin,int nodemax);
 void filAddStretchForceMat(filamentptr fil);
+void filDrawThermalForces(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
+void filAddThermalStep(filamentptr fil,double dtmu,double *flatvect);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
 void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr);
@@ -4003,7 +4005,7 @@ void filAddStretchForceMat(filamentptr fil) {
 	return; }
 
 
-/* filAddThermalForces */
+/* filDrawThermalForces */
 // Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped
 // update x += dt*mobility*nodemobility*F used by filStepDynamics: each Cartesian
 // component of each node's thermal force is Gaussian with rms
@@ -4017,8 +4019,8 @@ void filAddStretchForceMat(filamentptr fil) {
 // where m is the segment's roll mobility factor, the average of its two nodes' factors
 // (see filStepDynamics), so that twist samples the same ensemble. These are drawn after
 // the node forces.
-void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kT,dt,mobility,famp,nodemob,frms,*torques;
+void filDrawThermalForces(filamentptr fil) {
+	double kT,dt,mobility,famp,nodemob,frms;
 	filamenttypeptr filtype;
 	filamentworkptr filwork;
 	int dim,node,seg;
@@ -4028,9 +4030,6 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 	filwork=fil->filwork;
 	sim=filtype->filss->sim;
 	dim=sim->dim;
-
-	if(nodemin<0) nodemin=0;
-	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
 	if(sim->time>filwork->thermtime) {				// compute random forces on each node
 		kT=filtype->kT;
@@ -4056,7 +4055,25 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermtorque[seg]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
+	return; }
 
+
+/* filAddThermalForces */
+// Adds the thermal forces, and in 3D the thermal torques, for this time step (see
+// filDrawThermalForces) to the filament's forces and torques, for nodes nodemin to
+// nodemax and the segments between them.
+void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces,*torques;
+	filamentworkptr filwork;
+	int dim,node,seg;
+
+	filwork=fil->filwork;
+	dim=fil->filtype->filss->sim->dim;
+
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+
+	filDrawThermalForces(fil);
 	forces=filwork->forces;										// report forces
 	if(dim==2)
 		for(node=nodemin;node<=nodemax;node++) {
@@ -4072,6 +4089,34 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 		for(seg=nodemin;seg<nodemax;seg++)
 			torques[seg]+=filwork->thermtorque[seg]; }
 
+	return; }
+
+
+/* filAddThermalStep */
+// Adds the thermal displacements for one time step to flattened state flatvect (see
+// filFlattenNodes), for the matrix integrators: dtmu times the node mobility factor
+// times the thermal force for each node coordinate, and in 3D, dtmu times the segment
+// roll mobility factor times the thermal torque for each absolute segment roll. These
+// are the same thermal displacements that filStepDynamics makes.
+void filAddThermalStep(filamentptr fil,double dtmu,double *flatvect) {
+	filamentworkptr filwork;
+	double nodemob;
+	int dim,node,d;
+
+	filwork=fil->filwork;
+	dim=fil->filtype->filss->sim->dim;
+	filDrawThermalForces(fil);
+	if(dim==2) {
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<2;d++)
+				flatvect[2*node+d]+=dtmu*fil->nodemobility[node]*filwork->thermforce[node][d]; }
+	else {
+		for(node=0;node<=fil->nseg;node++) {
+			for(d=0;d<3;d++)
+				flatvect[4*node+d]+=dtmu*fil->nodemobility[node]*filwork->thermforce[node][d];
+			if(node<fil->nseg) {
+				nodemob=0.5*(fil->nodemobility[node]+fil->nodemobility[node+1]);
+				flatvect[4*node+3]+=dtmu*nodemob*filwork->thermtorque[node]; }}}
 	return; }
 
 
@@ -4781,6 +4826,7 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 		sparseMultiplyScalarM(filwork->forcemat,dtmu);
 		sparseAddIdentityM(filwork->forcemat,1);
 		sparseMultiplyMV(filwork->forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);
+		filAddThermalStep(fil,dtmu,filwork->flatnodes[1]);
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
@@ -4790,7 +4836,7 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 /* filImplicitOldDynamics */
 void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
 	double dtmu;
-	int f;
+	int f,i,flatsize;
 	filamentptr fil;
 	filamentworkptr filwork;
 	sparsematrix forcemat;
@@ -4801,17 +4847,21 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 		forcemat=filwork->forcemat;
 		if(!forcemat->BiCGSTAB)
 			sparseAllocBandM(forcemat,-1,-1,1);
+		flatsize=(sim->dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1;
 
 		filComputeForceMatrix(fil);
 		filFlattenNodes(fil,0,0);													// flatnodes[0] is current state
 		dtmu=filtype->mobility*sim->dt;
 		sparseMultiplyScalarM(forcemat,dtmu);
 		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*force
-		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state
+		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state, without thermal forces
+		for(i=0;i<flatsize;i++) filwork->flatnodes[2][i]=filwork->flatnodes[0][i];
+		filAddThermalStep(fil,dtmu,filwork->flatnodes[2]);				// flatnodes[2] is current state plus thermal displacements
+		filAddThermalStep(fil,dtmu,filwork->flatnodes[1]);				// initial guess, with the same displacements
 
 		sparseMultiplyScalarM(forcemat,-1);
 		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*force
-		sparseBiCGSTAB(forcemat,filwork->flatnodes[0],filwork->flatnodes[1],1e-9);	// flatnodes[1] is backward Euler next state
+		sparseBiCGSTAB(forcemat,filwork->flatnodes[2],filwork->flatnodes[1],1e-9);	// flatnodes[1] is backward Euler next state
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
