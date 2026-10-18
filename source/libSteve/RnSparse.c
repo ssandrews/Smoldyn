@@ -140,14 +140,16 @@ void sparseClearM(sparsematrix sprs) {
 
 /* sparseMultiplyMV */
 void sparseMultiplyMV(const sparsematrix sprs,const double *vect,double *ans) {
-	int i,j,nrows,*col0,*col1;
+	int i,j,nrows,*col0,*col1,jmin,jmax;
 
 	nrows=sprs->nrows;
 	col0=sprs->col0;
 	col1=sprs->col1;
 	for(i=0;i<nrows;i++) {
 		ans[i]=0;
-		for(j=col0[i];j<col1[i];j++)
+		jmin=col0[i]<0?0:col0[i];						// a band can extend past the matrix edges
+		jmax=col1[i]>sprs->fcols?sprs->fcols:col1[i];
+		for(j=jmin;j<jmax;j++)
 			ans[i]+=sparseReadM(sprs,i,j)*vect[j]; }
 	return; }
 
@@ -164,14 +166,16 @@ void sparseAddIdentityM(sparsematrix sprs,double factor) {
 
 /* sparseMultiplyScalarM */
 void sparseMultiplyScalarM(sparsematrix sprs,double scalar) {
-	int i,j,nrows,*col0,*col1;
+	int i,j,nrows,*col0,*col1,jmin,jmax;
 
 	nrows=sprs->nrows;
 	col0=sprs->col0;
 	col1=sprs->col1;
-	for(i=0;i<nrows;i++)
-		for(j=col0[i];j<col1[i];j++)
-			sparseMultiplyBy(sprs,i,j,scalar);
+	for(i=0;i<nrows;i++) {
+		jmin=col0[i]<0?0:col0[i];						// a band can extend past the matrix edges
+		jmax=col1[i]>sprs->fcols?sprs->fcols:col1[i];
+		for(j=jmin;j<jmax;j++)
+			sparseMultiplyBy(sprs,i,j,scalar); }
 	return; }
 
 

@@ -1067,10 +1067,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    need short time steps for stiff filaments. \"Implicit\" is the implicit Euler\n"
 		"    method, which remains stable for much longer time steps, but ignores node\n"
 		"    mobility factors. \"EulerMat\" and \"ImplicitOld\" are matrix-based test\n"
-		"    methods, which only include stretching, bending, and thermal forces, and\n"
-		"    ignore node mobility factors except for thermal forces. In 3D, all of these\n"
-		"    methods also rotate each segment about its own axis in response to twisting\n"
-		"    torques, so twist relaxes toward the standard roll angle."},
+		"    methods, which ignore node mobility factors for stretching and bending\n"
+		"    forces; \"ImplicitOld\" can be unstable, and \"Implicit\" is better. In 3D, all\n"
+		"    of these methods also rotate each segment about its own axis in response to\n"
+		"    twisting torques, so twist relaxes toward the standard roll angle."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"

@@ -164,7 +164,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax);
 void filAddStretchForceMat(filamentptr fil);
 void filDrawThermalForces(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
-void filAddThermalStep(filamentptr fil,double dtmu,double *flatvect);
+void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
 void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr);
@@ -527,7 +527,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		fil->nsequence=0;
 		fil->sequence=NULL;
 		fil->endstate[0]=fil->endstate[1]=FESopen;
-		fil->lenbank[0]=fil->lenbank[1]=0; }
+		fil->lenbank[0]=fil->lenbank[1]=0;
+		fil->filwork=NULL; }
 
 	if(maxseg>fil->maxseg) {
 		CHECKMEM(newsegments=(segmentptr*) calloc(maxseg,sizeof(segmentptr)));
@@ -1164,8 +1165,6 @@ int filCheckParams(const simptr sim,int *warnptr) {
 				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
 			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
 				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5, before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
-		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0 || (filtype->confinesrf && filtype->confineforce>0)) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
-			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs or confinement with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); these forces will not be applied\n",filtype->ftname);}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -4092,31 +4091,41 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 	return; }
 
 
-/* filAddThermalStep */
-// Adds the thermal displacements for one time step to flattened state flatvect (see
-// filFlattenNodes), for the matrix integrators: dtmu times the node mobility factor
-// times the thermal force for each node coordinate, and in 3D, dtmu times the segment
-// roll mobility factor times the thermal torque for each absolute segment roll. These
-// are the same thermal displacements that filStepDynamics makes.
-void filAddThermalStep(filamentptr fil,double dtmu,double *flatvect) {
+/* filAddMatrixForceStep */
+// Adds the displacements for one time step from the forces that the matrix integrators'
+// force matrix doesn't include, which are the thermal, junction, and confinement forces,
+// to flattened state flatvect (see filFlattenNodes): dtmu times the node mobility factor
+// times the force for each node coordinate, and in 3D, dtmu times the segment roll
+// mobility factor times the torque for each absolute segment roll. These are the same
+// displacements that filStepDynamics makes for these forces. This overwrites the
+// filament's forces and torques.
+void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect) {
 	filamentworkptr filwork;
-	double nodemob;
+	double nodemob,**forces,*torques;
 	int dim,node,d;
 
 	filwork=fil->filwork;
+	forces=filwork->forces;
+	torques=filwork->torques;
 	dim=fil->filtype->filss->sim->dim;
-	filDrawThermalForces(fil);
+	for(node=0;node<=fil->nseg;node++)
+		forces[node][0]=forces[node][1]=forces[node][2]=0;
+	for(node=0;node<fil->nseg;node++)
+		torques[node]=0;
+	filAddThermalForces(fil,-1,-1);
+	filAddJunctionForces(fil,-1,-1);
+	filAddConfineForces(fil,-1,-1);
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++)
 			for(d=0;d<2;d++)
-				flatvect[2*node+d]+=dtmu*fil->nodemobility[node]*filwork->thermforce[node][d]; }
+				flatvect[2*node+d]+=dtmu*fil->nodemobility[node]*forces[node][d]; }
 	else {
 		for(node=0;node<=fil->nseg;node++) {
 			for(d=0;d<3;d++)
-				flatvect[4*node+d]+=dtmu*fil->nodemobility[node]*filwork->thermforce[node][d];
+				flatvect[4*node+d]+=dtmu*fil->nodemobility[node]*forces[node][d];
 			if(node<fil->nseg) {
 				nodemob=0.5*(fil->nodemobility[node]+fil->nodemobility[node+1]);
-				flatvect[4*node+3]+=dtmu*nodemob*filwork->thermtorque[node]; }}}
+				flatvect[4*node+3]+=dtmu*nodemob*torques[node]; }}}
 	return; }
 
 
@@ -4223,11 +4232,14 @@ void filAddBendForceMat(filamentptr fil) {
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++) {
 			filBendTorque(fil,node+1,bendtorqueip1);									// tau_{i+1}
-			xvect[0]=nodes[node+1][0]-nodes[node][0];									// Delta x_i
-			xvect[1]=nodes[node+1][1]-nodes[node][1];
-			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1];									// length of segment i
-			len2inv=1.0/len2;
-			bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]);			// b_i
+			if(node<fil->nseg) {
+				xvect[0]=nodes[node+1][0]-nodes[node][0];								// Delta x_i
+				xvect[1]=nodes[node+1][1]-nodes[node][1];
+				len2=xvect[0]*xvect[0]+xvect[1]*xvect[1];								// length of segment i
+				len2inv=1.0/len2;
+				bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]); }		// b_i
+			else
+				bvecti[2]=0;																						// there is no segment past the plus end node
 			if(node>0) {
 				sparseAddToM(forcemat,2*node+0,2*(node-1)+1,-bvectim1[2]);
 				sparseAddToM(forcemat,2*node+1,2*(node-1)+0,bvectim1[2]); }
@@ -4241,15 +4253,18 @@ void filAddBendForceMat(filamentptr fil) {
 	else {
 		for(node=0;node<=fil->nseg;node++) {
 			filBendTorque(fil,node+1,bendtorqueip1);									// tau_{i+1}
-			xvect[0]=nodes[node+1][0]-nodes[node][0];									// Delta x_i
-			xvect[1]=nodes[node+1][1]-nodes[node][1];
-			xvect[2]=nodes[node+1][2]-nodes[node][2];
-			len2=xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2];			// length of segment i
-			len2inv=1.0/len2;
-			len=sqrt(len2);
-			bvecti[0]=len2inv*(bendtorqueip1[0]-bendtorquei[0]);
-			bvecti[1]=len2inv*(bendtorqueip1[1]-bendtorquei[1]);
-			bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]);			// b_i
+			if(node<fil->nseg) {
+				xvect[0]=nodes[node+1][0]-nodes[node][0];								// Delta x_i
+				xvect[1]=nodes[node+1][1]-nodes[node][1];
+				xvect[2]=nodes[node+1][2]-nodes[node][2];
+				len2=xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2];		// length of segment i
+				len2inv=1.0/len2;
+				len=sqrt(len2);
+				bvecti[0]=len2inv*(bendtorqueip1[0]-bendtorquei[0]);
+				bvecti[1]=len2inv*(bendtorqueip1[1]-bendtorquei[1]);
+				bvecti[2]=len2inv*(bendtorqueip1[2]-bendtorquei[2]); }		// b_i
+			else
+				bvecti[0]=bvecti[1]=bvecti[2]=len=0;										// there is no segment past the plus end node
 			bpvecti[0]=bvecti[0]*len;
 			bpvecti[1]=bvecti[1]*len;
 			bpvecti[2]=bvecti[2]*len;
@@ -4826,7 +4841,7 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 		sparseMultiplyScalarM(filwork->forcemat,dtmu);
 		sparseAddIdentityM(filwork->forcemat,1);
 		sparseMultiplyMV(filwork->forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);
-		filAddThermalStep(fil,dtmu,filwork->flatnodes[1]);
+		filAddMatrixForceStep(fil,dtmu,filwork->flatnodes[1]);	// thermal, junction, and confinement forces
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
@@ -4856,8 +4871,8 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*force
 		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state, without thermal forces
 		for(i=0;i<flatsize;i++) filwork->flatnodes[2][i]=filwork->flatnodes[0][i];
-		filAddThermalStep(fil,dtmu,filwork->flatnodes[2]);				// flatnodes[2] is current state plus thermal displacements
-		filAddThermalStep(fil,dtmu,filwork->flatnodes[1]);				// initial guess, with the same displacements
+		filAddMatrixForceStep(fil,dtmu,filwork->flatnodes[2]);		// flatnodes[2] is current state plus displacements from thermal, junction, and confinement forces
+		for(i=0;i<flatsize;i++) filwork->flatnodes[1][i]+=filwork->flatnodes[2][i]-filwork->flatnodes[0][i];	// initial guess, with the same displacements
 
 		sparseMultiplyScalarM(forcemat,-1);
 		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*force
