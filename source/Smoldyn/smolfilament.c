@@ -24,6 +24,7 @@
 #define FILMAXGROW 1000					// max segments one filament may gain in a single elongation step
 #define FILREMOVED -2000				// filEndLengthChange return value: the filament shrank away and should be removed
 #define FILJUNCTMINNODE 0				// lowest target node a junction may attach to
+#define FILCOSPMIN 0.05					// smallest cos(pitch) for bending torques and their Jacobian, which diverge at gimbal lock
 
 
 /******************************************************************************/
@@ -2501,9 +2502,10 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 		deltaypr[1]=kypr[1]*(ypr[1]-stdypr[1]);
 		deltaypr[2]=kypr[2]*(ypr[2]-stdypr[2]);
 
-		reltorque[0]=-deltaypr[2]*ctht*cphi+deltaypr[1]*sphi;					// compute torque in segment reference frame
-		reltorque[1]=-deltaypr[1]*cphi-deltaypr[2]*sphi;
-		reltorque[2]=-deltaypr[0]+deltaypr[2]*cphi*stht;
+		if(ctht<FILCOSPMIN) ctht=FILCOSPMIN;										// bound the torque near gimbal lock, where yaw is undefined
+		reltorque[0]=-deltaypr[0]*stht/ctht*cphi+deltaypr[1]*sphi-deltaypr[2]*cphi/ctht;	// torque in segment reference frame: minus the gradient of the energy with respect to rotation
+		reltorque[1]=-deltaypr[0]*stht/ctht*sphi-deltaypr[1]*cphi-deltaypr[2]*sphi/ctht;
+		reltorque[2]=-deltaypr[0];
 
 		Sph_QtniRotate(fil->segments[node-1]->qabs,reltorque,torque); }	// convert torque to system reference frame
 	return; }
@@ -4622,12 +4624,11 @@ void filComputeForceMatrix(filamentptr fil) {
 // parts are computed by finite differences. It also leaves the flattened state in
 // flatnodes[0] and the forces at that state in flatforces[0].
 #define FILDERIVDXMIN 1e-7			// smallest finite-difference perturbation, relative to standard_length
-#define FILGNCOSPMIN 0.05				// smallest cos(pitch) for the yaw gradient
 void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 	int dim,stride,flatsize,node,seg,d,d2,a,i,j,ng,gidx[11],nmin,nmax,side,nrow;
 	double **nodes,**flatnodes,**flatforces,**forces,*extforce0;
 	double klen,stdlen,*kypr,k,len,u[3],kperp,blk,xm[3],xp[3],lm2,lp2,lm,lp,e[3][3],unit[3],cm[3],cp3[3],g[11];
-	double cy,sy,cp,sp,w[2][3];
+	double cy,sy,cp,sp,w[3][3];
 	double dx,dxinv,dxmin,col[2][15],colnorm[2];
 	filamenttypeptr filtype;
 	sparsematrix forcemat;
@@ -4703,10 +4704,11 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 			sy=sin(fil->segments[node]->ypr[0]);
 			cp=cos(fil->segments[node]->ypr[1]);
 			sp=sin(fil->segments[node]->ypr[1]);
-			if(cp<FILGNCOSPMIN) cp=FILGNCOSPMIN;										// bound the gradient near gimbal lock, where yaw is undefined
-			for(d=0;d<3;d++) {
-				w[0][d]=e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]);				// yaw changes by w[0].omega, for relative rotation omega
-				w[1][d]=-sy*e[0][d]+cy*e[1][d]; }											// pitch changes by w[1].omega
+			if(cp<FILCOSPMIN) cp=FILCOSPMIN;										// bound the gradient near gimbal lock, where yaw is undefined
+			for(d=0;d<3;d++) {																			// yaw, pitch, and roll change by w[a].omega, for relative rotation omega (inverse Euler-rate relations, as in filBendTorque)
+				w[0][d]=e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]);
+				w[1][d]=-sy*e[0][d]+cy*e[1][d];
+				w[2][d]=(cy*e[0][d]+sy*e[1][d])/cp; }
 			ng=11;
 			for(d=0;d<3;d++) {
 				gidx[d]=4*(node-1)+d;
@@ -4717,23 +4719,18 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 			for(a=0;a<3;a++) {
 				k=kypr[a];
 				if(k<=0) continue;
-				if(a<2) {																							// yaw or pitch: the rotation of segment node, less that of segment node-1, is (xp x dxp)/lp^2-(xm x dxm)/lm^2-um.dphim
-					cm[0]=(w[a][1]*xm[2]-w[a][2]*xm[1])/lm2;
-					cm[1]=(w[a][2]*xm[0]-w[a][0]*xm[2])/lm2;
-					cm[2]=(w[a][0]*xm[1]-w[a][1]*xm[0])/lm2;
-					cp3[0]=(w[a][1]*xp[2]-w[a][2]*xp[1])/lp2;
-					cp3[1]=(w[a][2]*xp[0]-w[a][0]*xp[2])/lp2;
-					cp3[2]=(w[a][0]*xp[1]-w[a][1]*xp[0])/lp2;
-					for(d=0;d<3;d++) {
-						g[d]=cm[d];
-						g[3+d]=-cm[d]-cp3[d];
-						g[6+d]=cp3[d]; }
-					g[9]=-(w[a][0]*xm[0]+w[a][1]*xm[1]+w[a][2]*xm[2])/lm;	// rolling segment node-1 turns its frame
-					g[10]=0; }																						// rolling segment node does not change its direction
-				else {																								// roll is the difference of the absolute rolls
-					for(d=0;d<9;d++) g[d]=0;
-					g[9]=-1;
-					g[10]=1; }
+				cm[0]=(w[a][1]*xm[2]-w[a][2]*xm[1])/lm2;								// relative rotation is (xp x dxp)/lp^2+up.dphip-(xm x dxm)/lm^2-um.dphim
+				cm[1]=(w[a][2]*xm[0]-w[a][0]*xm[2])/lm2;
+				cm[2]=(w[a][0]*xm[1]-w[a][1]*xm[0])/lm2;
+				cp3[0]=(w[a][1]*xp[2]-w[a][2]*xp[1])/lp2;
+				cp3[1]=(w[a][2]*xp[0]-w[a][0]*xp[2])/lp2;
+				cp3[2]=(w[a][0]*xp[1]-w[a][1]*xp[0])/lp2;
+				for(d=0;d<3;d++) {
+					g[d]=cm[d];
+					g[3+d]=-cm[d]-cp3[d];
+					g[6+d]=cp3[d]; }
+				g[9]=-(w[a][0]*xm[0]+w[a][1]*xm[1]+w[a][2]*xm[2])/lm;		// rolling segment node-1
+				g[10]=(w[a][0]*xp[0]+w[a][1]*xp[1]+w[a][2]*xp[2])/lp;		// rolling segment node, which only changes roll
 				for(i=0;i<ng;i++)
 					for(j=0;j<ng;j++)
 						sparseAddToM(forcemat,gidx[i],gidx[j],-k*g[i]*g[j]); }}}
