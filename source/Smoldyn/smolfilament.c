@@ -4615,88 +4615,165 @@ void filComputeForceMatrix(filamentptr fil) {
 
 
 /* filComputeDerivForceMat */
-#define FILDERIVDXMIN 1e-7			// smallest finite-difference perturbation, relative to standard_length for positions, in radians for rolls
+// Computes an approximate Jacobian of the forces and segment torques on filament fil, for
+// filImplicitDynamics, putting it in filwork->forcemat. The stretching, bending, and
+// twisting parts are computed analytically in Gauss-Newton form, which is symmetric and
+// negative semidefinite, so the implicit step stays stable; the junction and confinement
+// parts are computed by finite differences. It also leaves the flattened state in
+// flatnodes[0] and the forces at that state in flatforces[0].
+#define FILDERIVDXMIN 1e-7			// smallest finite-difference perturbation, relative to standard_length
+#define FILGNCOSPMIN 0.05				// smallest cos(pitch) for the yaw gradient
 void filComputeDerivForceMat(filamentptr fil,double dtmu) {
-	int dim,node,node2,d,flatsize,node2first,node2last,seg;
-	double **nodes,**flatnodes,**flatforces;
-	double dx,dxinv,dxmin,*ypr2save,seg0upsave[3],axis[3];
+	int dim,stride,flatsize,node,seg,d,d2,a,i,j,ng,gidx[11],nmin,nmax,side,nrow;
+	double **nodes,**flatnodes,**flatforces,**forces,*extforce0;
+	double klen,stdlen,*kypr,k,len,u[3],kperp,blk,xm[3],xp[3],lm2,lp2,lm,lp,e[3][3],unit[3],cm[3],cp3[3],g[11];
+	double cy,sy,cp,sp,w[2][3];
+	double dx,dxinv,dxmin,col[2][15],colnorm[2];
+	filamenttypeptr filtype;
 	sparsematrix forcemat;
 
-	dim=fil->filtype->filss->sim->dim;
+	filtype=fil->filtype;
+	dim=filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
 	flatsize= (dim==2) ? 2*(fil->nseg+1) : 4*(fil->nseg+1)-1;
 	forcemat=fil->filwork->forcemat;
 	sparseSetSizeM(forcemat,flatsize,flatsize);
 	sparseClearM(forcemat);
 
 	nodes=fil->nodes;
+	forces=fil->filwork->forces;
 	flatforces=fil->filwork->flatforces;
 	flatnodes=fil->filwork->flatnodes;
+	klen=filtype->klen;
+	stdlen=filtype->stdlen;
+	kypr=filtype->kypr;
 
 	filFlattenNodes(fil,0,0);																		// flatnodes[0] is original node positions
 	filComputeForces(fil,-1,-1);
-	filFlattenForces(fil,0,-1,-1);															// flatforces[0] is original forces.
-	multKVD(dtmu/1000,flatforces[0],flatnodes[1],flatsize);			// flatnodes[1] is 1/1000 of forward Euler step
+	filFlattenForces(fil,0,-1,-1);															// flatforces[0] is original forces
 
-	if(dim==2) {
-		for(node=0;node<=fil->nseg;node++) {
+	if(klen>0)																									// stretching: Hessian of 0.5*klen*(len-stdlen)^2, without its transverse part for a compressed segment, where that part is destabilizing
+		for(seg=0;seg<fil->nseg;seg++) {
+			len=0;
+			for(d=0;d<dim;d++) {
+				u[d]=nodes[seg+1][d]-nodes[seg][d];
+				len+=u[d]*u[d]; }
+			len=sqrt(len);
+			for(d=0;d<dim;d++) u[d]/=len;
+			kperp=(len>stdlen)?klen*(1-stdlen/len):0;
+			for(d=0;d<dim;d++)
+				for(d2=0;d2<dim;d2++) {
+					blk=(klen-kperp)*u[d]*u[d2]+(d==d2?kperp:0);
+					sparseAddToM(forcemat,stride*seg+d,stride*seg+d2,-blk);
+					sparseAddToM(forcemat,stride*(seg+1)+d,stride*(seg+1)+d2,-blk);
+					sparseAddToM(forcemat,stride*seg+d,stride*(seg+1)+d2,blk);
+					sparseAddToM(forcemat,stride*(seg+1)+d,stride*seg+d2,blk); }}
+
+	for(node=1;node<fil->nseg;node++) {													// bending and twisting: Gauss-Newton -k.g.g^T for each angle, with g its gradient
+		lm2=lp2=0;
+		for(d=0;d<dim;d++) {
+			xm[d]=nodes[node][d]-nodes[node-1][d];									// segment node-1
+			xp[d]=nodes[node+1][d]-nodes[node][d];									// segment node
+			lm2+=xm[d]*xm[d];
+			lp2+=xp[d]*xp[d]; }
+		if(dim==2) {
+			k=kypr[0];
+			if(k<=0) continue;
+			cm[0]=-xm[1]/lm2;																				// gradient of the bend angle with respect to node-1
+			cm[1]=xm[0]/lm2;
+			cp3[0]=-xp[1]/lp2;																				// gradient with respect to node+1
+			cp3[1]=xp[0]/lp2;
 			for(d=0;d<2;d++) {
-				dx=flatnodes[1][2*node+d];								// perturbation scaled to the step
-				if(fabs(dx)<FILDERIVDXMIN*fil->filtype->stdlen) dx=FILDERIVDXMIN*fil->filtype->stdlen;	// zero force still needs its column
-				dxinv=1.0/dx;
-				nodes[node][d]+=dx;
-				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);			// update for new change and fix prior change
-				filComputeForces(fil,node-3,node+3);	// one node wider than the rows used, so that those rows have every contribution
-				filFlattenForces(fil,1,node-3,node+3);								// flatforces[1] is modified forces
-				nodes[node][d]=flatnodes[0][2*node+d];
-				node2first=(node<2)?0:node-2;
-				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
-				for(node2=node2first;node2<=node2last;node2++) {			// row block is node2, column block is node
-					sparseAddToM(forcemat,2*node2,2*node+d,dxinv*(flatforces[1][2*node2]-flatforces[0][2*node2]));
-					sparseAddToM(forcemat,2*node2+1,2*node+d,dxinv*(flatforces[1][2*node2+1]-flatforces[0][2*node2+1])); }}}}
-	else {																				// 3D: columns are node positions and absolute segment rolls (see filFlattenNodes)
-		ypr2save=fil->filwork->wroll[2];							// scratch space, which the implicit integrator doesn't otherwise use
-		for(seg=0;seg<fil->nseg;seg++) ypr2save[seg]=fil->segments[seg]->ypr[2];
-		seg0upsave[0]=fil->seg0up[0];
-		seg0upsave[1]=fil->seg0up[1];
-		seg0upsave[2]=fil->seg0up[2];
+				g[d]=cm[d];
+				g[2+d]=-cm[d]-cp3[d];
+				g[4+d]=cp3[d]; }
+			ng=6;
+			for(i=0;i<ng;i++) gidx[i]=2*(node-1)+i;
+			for(i=0;i<ng;i++)
+				for(j=0;j<ng;j++)
+					sparseAddToM(forcemat,gidx[i],gidx[j],-k*g[i]*g[j]); }
+		else {																										// 3D: yaw, pitch, and roll of segment node relative to segment node-1
+			lm=sqrt(lm2);
+			lp=sqrt(lp2);
+			for(a=0;a<3;a++) {
+				unit[0]=unit[1]=unit[2]=0;
+				unit[a]=1;
+				Sph_QtniRotate(fil->segments[node-1]->qabs,unit,e[a]); }	// axes of segment node-1 in the system frame
+			cy=cos(fil->segments[node]->ypr[0]);
+			sy=sin(fil->segments[node]->ypr[0]);
+			cp=cos(fil->segments[node]->ypr[1]);
+			sp=sin(fil->segments[node]->ypr[1]);
+			if(cp<FILGNCOSPMIN) cp=FILGNCOSPMIN;										// bound the gradient near gimbal lock, where yaw is undefined
+			for(d=0;d<3;d++) {
+				w[0][d]=e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]);				// yaw changes by w[0].omega, for relative rotation omega
+				w[1][d]=-sy*e[0][d]+cy*e[1][d]; }											// pitch changes by w[1].omega
+			ng=11;
+			for(d=0;d<3;d++) {
+				gidx[d]=4*(node-1)+d;
+				gidx[3+d]=4*node+d;
+				gidx[6+d]=4*(node+1)+d; }
+			gidx[9]=4*(node-1)+3;																		// absolute roll of segment node-1
+			gidx[10]=4*node+3;																			// absolute roll of segment node
+			for(a=0;a<3;a++) {
+				k=kypr[a];
+				if(k<=0) continue;
+				if(a<2) {																							// yaw or pitch: the rotation of segment node, less that of segment node-1, is (xp x dxp)/lp^2-(xm x dxm)/lm^2-um.dphim
+					cm[0]=(w[a][1]*xm[2]-w[a][2]*xm[1])/lm2;
+					cm[1]=(w[a][2]*xm[0]-w[a][0]*xm[2])/lm2;
+					cm[2]=(w[a][0]*xm[1]-w[a][1]*xm[0])/lm2;
+					cp3[0]=(w[a][1]*xp[2]-w[a][2]*xp[1])/lp2;
+					cp3[1]=(w[a][2]*xp[0]-w[a][0]*xp[2])/lp2;
+					cp3[2]=(w[a][0]*xp[1]-w[a][1]*xp[0])/lp2;
+					for(d=0;d<3;d++) {
+						g[d]=cm[d];
+						g[3+d]=-cm[d]-cp3[d];
+						g[6+d]=cp3[d]; }
+					g[9]=-(w[a][0]*xm[0]+w[a][1]*xm[1]+w[a][2]*xm[2])/lm;	// rolling segment node-1 turns its frame
+					g[10]=0; }																						// rolling segment node does not change its direction
+				else {																								// roll is the difference of the absolute rolls
+					for(d=0;d<9;d++) g[d]=0;
+					g[9]=-1;
+					g[10]=1; }
+				for(i=0;i<ng;i++)
+					for(j=0;j<ng;j++)
+						sparseAddToM(forcemat,gidx[i],gidx[j],-k*g[i]*g[j]); }}}
+
+	if(fil->endjunct[0] || fil->endjunct[1] || fil->njunct>0 || (filtype->confinesrf && filtype->confineforce>0)) {	// junction and confinement forces: finite differences
+		extforce0=flatnodes[2];																		// scratch space, which filImplicitDynamics overwrites later
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<dim;d++) forces[node][d]=0;
+		filAddJunctionForces(fil,-1,-1);
+		filAddConfineForces(fil,-1,-1);
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<dim;d++) extforce0[stride*node+d]=forces[node][d];
 		for(node=0;node<=fil->nseg;node++) {
-			for(d=0;d<4;d++) {
-				if(node==fil->nseg && d==3) break;					// the plus end node has no segment, so no roll
-				dx=flatnodes[1][4*node+d];								// perturbation scaled to the step
-				dxmin=(d<3)?FILDERIVDXMIN*fil->filtype->stdlen:FILDERIVDXMIN;
-				if(fabs(dx)<dxmin) dx=dxmin;								// zero force still needs its column
-				dxinv=1.0/dx;
-				if(d<3) nodes[node][d]+=dx;
-				else if(node>0) fil->segments[node]->ypr[2]+=dx;	// with the window below, this rotates only this segment's frame
-				else {
-					axis[0]=nodes[1][0]-nodes[0][0];
-					axis[1]=nodes[1][1]-nodes[0][1];
-					axis[2]=nodes[1][2]-nodes[0][2];
-					Sph_RotateVectorAxisAngle(fil->seg0up,axis,dx,fil->seg0up); }
-				filNodes2Angles(fil,(d==0)?node-2:node-1,node+1);	// update for new change and fix prior change
-
-				filComputeForces(fil,node-3,node+3);	// one node wider than the rows used, so that those rows have every contribution
-				filFlattenForces(fil,1,node-3,node+3);						// flatforces[1] is modified forces
-
-				if(d<3) nodes[node][d]=flatnodes[0][4*node+d];		// restore the state
-				fil->seg0up[0]=seg0upsave[0];
-				fil->seg0up[1]=seg0upsave[1];
-				fil->seg0up[2]=seg0upsave[2];
-				for(seg=(node<2?0:node-2);seg<fil->nseg && seg<=node+2;seg++)
-					fil->segments[seg]->ypr[2]=ypr2save[seg];
-				node2first=(node<2)?0:node-2;
-				node2last=(node+2>fil->nseg)?fil->nseg:node+2;
-				for(node2=node2first;node2<=node2last;node2++) {		// row block is node2, column block is node
-					sparseAddToM(forcemat,4*node2+0,4*node+d,dxinv*(flatforces[1][4*node2+0]-flatforces[0][4*node2+0]));
-					sparseAddToM(forcemat,4*node2+1,4*node+d,dxinv*(flatforces[1][4*node2+1]-flatforces[0][4*node2+1]));
-					sparseAddToM(forcemat,4*node2+2,4*node+d,dxinv*(flatforces[1][4*node2+2]-flatforces[0][4*node2+2]));
-					if(node2<fil->nseg)
-						sparseAddToM(forcemat,4*node2+3,4*node+d,dxinv*(flatforces[1][4*node2+3]-flatforces[0][4*node2+3])); }}}
-		filNodes2Angles(fil,-1,-1); }								// restore all angles
-
-	if(dim==2) filNodes2Angles(fil,node-2,-1);
-	sparseMultiplyMV(forcemat,flatnodes[0],flatforces[1]);						// flatforces[1] is F1.x
-	sumVD(1,flatforces[0],-1,flatforces[1],flatforces[1],flatsize);		// flatforces[1] is F0
+			nmin=(node<2)?0:node-2;
+			nmax=(node+2>fil->nseg)?fil->nseg:node+2;
+			for(d=0;d<dim;d++) {
+				dx=dtmu/1000*flatforces[0][stride*node+d];					// perturbation scaled to the step
+				dxmin=FILDERIVDXMIN*stdlen;
+				if(fabs(dx)<dxmin) dx=dxmin;													// zero force still needs its column
+				for(side=0;side<2;side++) {														// forward and backward differences
+					dxinv=1.0/dx;
+					nodes[node][d]+=dx;
+					for(i=nmin;i<=nmax;i++)
+						for(d2=0;d2<dim;d2++) forces[i][d2]=0;
+					filAddJunctionForces(fil,nmin,nmax);
+					filAddConfineForces(fil,nmin,nmax);
+					nodes[node][d]=flatnodes[0][stride*node+d];
+					colnorm[side]=0;
+					nrow=0;
+					for(i=nmin;i<=nmax;i++)
+						for(d2=0;d2<dim;d2++) {
+							col[side][nrow]=dxinv*(forces[i][d2]-extforce0[stride*i+d2]);
+							colnorm[side]+=col[side][nrow]*col[side][nrow];
+							nrow++; }
+					dx=-dx; }
+				side=(colnorm[1]<colnorm[0])?1:0;										// a difference across a force discontinuity is the larger one
+				nrow=0;
+				for(i=nmin;i<=nmax;i++)
+					for(d2=0;d2<dim;d2++)
+						sparseAddToM(forcemat,stride*i+d2,stride*node+d,col[side][nrow++]); }}}
 
 	return; }
 
@@ -4887,8 +4964,8 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 
 /* filImplicitDynamics */
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
-	double dtmu,**flatnodes,**flatforces;
-	int f,flatsize,dim;
+	double dtmu,**flatnodes,**flatforces,bnorm2;
+	int f,flatsize,dim,i;
 	filamentptr fil;
 	filamentworkptr filwork;
 	sparsematrix forcemat;
@@ -4905,13 +4982,18 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 			sparseAllocBandM(forcemat,-1,-1,1);
 
 		dtmu=filtype->mobility*sim->dt;
-		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], F0 is in flatforces[1] and F1 is in forcemat
-		sumVD(1,flatnodes[0],dtmu,flatforces[0],flatnodes[1],flatsize);	// flatnodes[1] is forward Euler next state
-		sumVD(1,flatnodes[0],dtmu,flatforces[1],flatnodes[2],flatsize);	// flatnodes[2] is x(t)+dtmu*F0
-
-		sparseMultiplyScalarM(forcemat,-dtmu);
-		sparseAddIdentityM(forcemat,1);																	// forcemat is 1-dtmu*force
-		sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-9);				// flatnodes[1] is backward Euler next state
+		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], and J is in forcemat
+		bnorm2=0;
+		for(i=0;i<flatsize;i++) {
+			flatnodes[2][i]=dtmu*flatforces[0][i];												// flatnodes[2] is the forward Euler displacement
+			flatnodes[1][i]=flatnodes[2][i];															// which is the initial guess
+			bnorm2+=flatnodes[2][i]*flatnodes[2][i]; }
+		if(bnorm2>0) {
+			sparseMultiplyScalarM(forcemat,-dtmu);
+			sparseAddIdentityM(forcemat,1);																// forcemat is 1-dtmu*J
+			sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-20*bnorm2); }	// flatnodes[1] is the backward Euler displacement, to relative residual 1e-10
+		for(i=0;i<flatsize;i++)
+			flatnodes[1][i]+=flatnodes[0][i];															// flatnodes[1] is the next state
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
 
