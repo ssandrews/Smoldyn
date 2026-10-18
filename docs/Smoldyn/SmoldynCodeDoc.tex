@@ -4974,9 +4974,13 @@ Integrates filament dynamics over one time step using the linearized implicit Eu
 \hfill \\
 Integrates filament dynamics over one time step by solving $(\bm{I}-\mu\Delta t\bm{F})\bm{x}_1=\bm{x}_0+\Delta\bm{x}_T$, where $\bm{F}$ is the force matrix from \ttt{filComputeForceMatrix} and $\Delta\bm{x}_T$ is the displacement from thermal, junction, and confinement forces, from \ttt{filAddMatrixForceStep}. This treats the factored forces as though they were linear, using $\bm{F}$ from the start of the step in place of the Jacobian, which it is not, so it is only reliable for time steps that are about as short as the explicit methods need, and it can diverge even then: a 3D test with thermal forces on short, stiff segments (\ttt{standard\_length} 0.01, \ttt{force\_angle} 1, time step $10^{-5}$) was stable with the explicit methods but diverged with this method. In 3D, the rows of $\bm{F}$ for segment rolls only have node position entries, so rolls are effectively updated explicitly. This ignores node mobility factors.
 
+\item[\ttt{int filUnstable(simptr sim,filamenttypeptr filtype)}]
+\hfill \\
+Returns 1 if the mechanics of filament type \ttt{filtype} have become numerically unstable and 0 if not. It reports instability if any node coordinate is not finite, or if any segment is longer than 100 times the sum of the system diagonal and the standard length. If the filament type has a length spring (\ttt{klen}>0), it also reports instability if any segment is longer than $100(l_0+\sigma_l)$, where $l_0$ is the standard length and $\sigma_l=\sqrt{kT/(t\,k_l)}$ is the thermal standard deviation of the length of a segment with thickness $t$; this tighter limit catches filaments with short segments, for which the system diagonal is far too permissive. An explicit integrator with a time step that is too long for the force constants produces a zigzag that grows geometrically, so this catches it within a few time steps. This matters especially for branching filaments, because the number of branches nucleated per time step is proportional to the contour length, so a blown-up filament would otherwise create an unbounded number of daughters.
+
 \item[\ttt{int filDynamics(simptr sim)}]
 \hfill \\
-Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, EulerMat, Implicit, and ImplicitOld integration methods.
+Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, EulerMat, Implicit, and ImplicitOld integration methods. After each filament type's integration step, it calls \ttt{filUnstable}, and if the type has become unstable, it displays an error message and returns 1, which terminates the simulation. Otherwise it returns 0.
 
 \end{description}
 

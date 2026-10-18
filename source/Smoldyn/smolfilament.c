@@ -183,6 +183,7 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype);
 void filEulerMatDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype);
+int filUnstable(simptr sim,filamenttypeptr filtype);
 int filDynamics(simptr sim);
 
 
@@ -4918,6 +4919,40 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 
 
 
+/* filUnstable */
+// Returns 1 if the mechanics of filament type filtype have become numerically unstable
+// and 0 if not. It is unstable if some node coordinate is not finite or some segment is
+// longer than 100 times the system diagonal plus the standard length. With a length
+// spring, it is also unstable if some segment is longer than 100 times the standard
+// length plus the thermal spread of segment lengths. This stops a blown-up simulation
+// before branch nucleation, which scales with contour length, creates an unbounded
+// number of filaments.
+int filUnstable(simptr sim,filamenttypeptr filtype) {
+	int f,node,d,dim;
+	double maxlen,maxlen2,sprlen,seglen2,len2,dx;
+	filamentptr fil;
+
+	dim=sim->dim;
+	maxlen=100*(systemdiagonal(sim)+filtype->stdlen);
+	maxlen2=maxlen*maxlen;
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		for(node=0;node<=fil->nseg;node++) {
+			len2=0;
+			for(d=0;d<dim;d++) {
+				if(!isfinite(fil->nodes[node][d])) return 1;
+				if(node>0) {
+					dx=fil->nodes[node][d]-fil->nodes[node-1][d];
+					len2+=dx*dx; }}
+			if(node==0) continue;
+			seglen2=maxlen2;
+			if(filtype->klen>0) {
+				sprlen=100*(filtype->stdlen+sqrt(filtype->kT/(fil->segments[node-1]->thk*filtype->klen)));
+				if(sprlen*sprlen<seglen2) seglen2=sprlen*sprlen; }
+			if(!(len2<=seglen2)) return 1; }}
+	return 0; }
+
+
 /* filDynamics */
 int filDynamics(simptr sim) {
 	filamentssptr filss;
@@ -4954,7 +4989,10 @@ int filDynamics(simptr sim) {
 			filImplicitDynamics(sim,filtype);
 		else if(filtype->dynamics==FDimplicitold)
 			filImplicitOldDynamics(sim,filtype);
-			}
+
+		if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
+			simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
+			return 1; }}
 
 	filPinJunctions(filss);													// re-pin rigid junctions after all motion this step
 

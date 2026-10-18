@@ -1070,7 +1070,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    methods, which ignore node mobility factors for stretching and bending\n"
 		"    forces; \"ImplicitOld\" can be unstable, and \"Implicit\" is better. In 3D, all\n"
 		"    of these methods also rotate each segment about its own axis in response to\n"
-		"    twisting torques, so twist relaxes toward the standard roll angle."},
+		"    twisting torques, so twist relaxes toward the standard roll angle. If a\n"
+		"    filament becomes numerically unstable, usually because the time step is too\n"
+		"    long for an explicit method, Smoldyn displays an error message and stops\n"
+		"    the simulation."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"
