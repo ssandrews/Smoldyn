@@ -639,6 +639,7 @@ typedef struct filamentworkstruct {
     double thermtime;                 // time for thermal forces
     double **thermforce;              // thermal forces on nodes
     double *thermtorque;              // thermal torques on segments about their axes (3D)
+    double **wqabs;                   // working segment frames, as absolute quaternions (3,4*nseg) (3D)
 } *filamentworkptr;
 
 typedef struct filjunctionstruct {
