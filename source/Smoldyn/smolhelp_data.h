@@ -1263,11 +1263,13 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    angle."},
 	{"statement","Statements about filaments",1,"force_length",
 		"  * force_length value",
-		"    Stretching force constant for filament segments."},
+		"    Stretching force constant for filament segments. A negative value makes the\n"
+		"    segment lengths fixed at standard_length (see the Smoldyn User's Manual)."},
 	{"statement","Statements about filaments",1,"force_angle",
 		"  * force_angle yaw\n"
 		"  * force_angle yaw pitch roll",
-		"    Force constants for bending and torsion."},
+		"    Force constants for bending and torsion. A negative value makes that angle\n"
+		"    fixed at its standard_angle value (see the Smoldyn User's Manual)."},
 	{"statement","Statements about filaments",1,"end_filament_type",
 		"  * end_filament_type",
 		"    End of a block of filament type definitions. Filament type statements are\n"

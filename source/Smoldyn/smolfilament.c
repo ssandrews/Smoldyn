@@ -25,6 +25,8 @@
 #define FILREMOVED -2000				// filEndLengthChange return value: the filament shrank away and should be removed
 #define FILJUNCTMINNODE 0				// lowest target node a junction may attach to
 #define FILCOSPMIN 0.05					// smallest cos(pitch) for bending torques and their Jacobian, which diverge at gimbal lock
+#define FILCONSTRAINTITER 20			// maximum Newton iterations for projecting onto constraints
+#define FILCONSTRAINTTOL 1e-10			// constraint tolerance, relative to standard_length for lengths, and in radians for angles
 
 
 /******************************************************************************/
@@ -186,6 +188,10 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype);
 void filEulerMatDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype);
+int filConstrained(filamenttypeptr filtype);
+int filConstraintGrad(filamentptr fil,int c,int *idx,double *g,double *res);
+void filConstraintStart(filamentptr fil);
+int filProjectConstraints(filamentptr fil);
 int filUnstable(simptr sim,filamenttypeptr filtype);
 int filDynamics(simptr sim);
 
@@ -387,6 +393,9 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filwork->thermforce=NULL;
 	filwork->thermtorque=NULL;
 	filwork->wqabs=NULL;
+	filwork->cidx=NULL;
+	filwork->cng=NULL;
+	filwork->cg=NULL;
 
 	CHECKMEM(filwork->wnodes=(double***) calloc(3,sizeof(double**)));
 	filwork->wnodes[0]=fil->nodes;
@@ -415,6 +424,10 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filwork->wqabs[0]=filwork->wqabs[1]=filwork->wqabs[2]=NULL;
 	for(i=0;i<3;i++)
 		CHECKMEM(filwork->wqabs[i]=(double*) calloc(4*(maxseg>0?maxseg:1),sizeof(double)));
+
+	CHECKMEM(filwork->cidx=(int*) calloc(44*(maxseg>0?maxseg:1),sizeof(int)));		// up to 4 constraints per segment with up to 11 coordinates each
+	CHECKMEM(filwork->cng=(int*) calloc(4*(maxseg>0?maxseg:1),sizeof(int)));
+	CHECKMEM(filwork->cg=(double*) calloc(44*(maxseg>0?maxseg:1),sizeof(double)));
 
 	CHECKMEM(filwork->flatnodes=(double**) calloc(3,sizeof(double*)));
 	filwork->flatnodes[0]=filwork->flatnodes[1]=filwork->flatnodes[2]=NULL;
@@ -484,6 +497,10 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 		free(filwork->wqabs[1]);
 		free(filwork->wqabs[2]);
 		free(filwork->wqabs); }
+
+	free(filwork->cidx);
+	free(filwork->cng);
+	free(filwork->cg);
 
 	if(filwork->flatnodes) {
 		free(filwork->flatnodes[0]);
@@ -657,6 +674,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->filss=NULL;
 		filtype->ftname=NULL;
 		filtype->dynamics=FDnone;
+		filtype->constraintwarn=0;
 		filtype->bundlevalue=1;
 
 		filtype->color[0]=filtype->color[1]=filtype->color[2]=0;
@@ -2503,7 +2521,7 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 	dim=filtype->filss->sim->dim;
 
 	if(dim==2) {
-		deltaypr[0]=kypr[0]*(ypr[0]-stdypr[0]);
+		deltaypr[0]=(kypr[0]>0)?kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
 		torque[0]=torque[1]=0;
 		torque[2]=-deltaypr[0]; }
 	else {
@@ -2512,9 +2530,9 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 		ctht=cos(ypr[1]);
 		stht=sin(ypr[1]);
 
-		deltaypr[0]=kypr[0]*(ypr[0]-stdypr[0]);
-		deltaypr[1]=kypr[1]*(ypr[1]-stdypr[1]);
-		deltaypr[2]=kypr[2]*(ypr[2]-stdypr[2]);
+		deltaypr[0]=(kypr[0]>0)?kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
+		deltaypr[1]=(kypr[1]>0)?kypr[1]*(ypr[1]-stdypr[1]):0;
+		deltaypr[2]=(kypr[2]>0)?kypr[2]*(ypr[2]-stdypr[2]):0;
 
 		if(ctht<FILCOSPMIN) ctht=FILCOSPMIN;										// bound the torque near gimbal lock, where yaw is undefined
 		reltorque[0]=-deltaypr[0]*stht/ctht*cphi+deltaypr[1]*sphi-deltaypr[2]*cphi/ctht;	// torque in segment reference frame: minus the gradient of the energy with respect to rotation
@@ -4023,6 +4041,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
 
+	if(klen<=0) return;															// a negative constant is a constraint (filProjectConstraints)
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 
@@ -4068,6 +4087,7 @@ void filAddStretchForceMat(filamentptr fil) {
 	klen=fil->filtype->klen;
 	stdlen=fil->filtype->stdlen;
 	dim=fil->filtype->filss->sim->dim;
+	if(klen<=0) return;															// a negative constant is a constraint (filProjectConstraints)
 
 	if(dim==2) {
 		for(node=0;node<fil->nseg;node++) {
@@ -5095,6 +5115,256 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 
 
 
+/* filConstrained */
+// Returns 1 if filament type filtype has any constraints, meaning a negative length or
+// angle force constant, and 0 if not.
+int filConstrained(filamenttypeptr filtype) {
+	if(filtype->klen<0) return 1;
+	if(filtype->kypr[0]<0) return 1;
+	if(filtype->filss->sim->dim==3 && (filtype->kypr[1]<0 || filtype->kypr[2]<0)) return 1;
+	return 0; }
+
+
+/* filConstraintGrad */
+// Computes constraint number c of filament fil, for filProjectConstraints. Constraints
+// are numbered by node, with cstride of them per node (2 in 2D, 4 in 3D): number
+// cstride*node is the length of segment node, and the next ones are the yaw, pitch, and
+// roll of segment node relative to segment node-1. A length is constrained to the
+// standard length if the length force constant is negative, and an angle to its standard
+// angle if its force constant is negative. This returns 0 if constraint c doesn't apply.
+// Otherwise, it puts the constraint's deviation from its target value in res, and its
+// gradient with respect to the flattened coordinates (node positions and, in 3D, segment
+// rotations about their own axes) in g, with the coordinate indices in idx, and returns
+// the number of coordinates, which is at most 11. The angle gradients are the same as for
+// filComputeDerivForceMat.
+int filConstraintGrad(filamentptr fil,int c,int *idx,double *g,double *res) {
+	int dim,cstride,fs,node,a,d,unitdim;
+	double **nodes,u[3],len,r,xm[3],xp[3],lm2,lp2,lm,lp,cm[3],cp3[3],e[3][3],unit[3],w[3];
+	double cy,sy,cp,sp;
+	filamenttypeptr filtype;
+
+	filtype=fil->filtype;
+	dim=filtype->filss->sim->dim;
+	cstride=(dim==2)?2:4;
+	fs=(dim==2)?2:4;
+	nodes=fil->nodes;
+	node=c/cstride;
+	a=c%cstride-1;
+
+	if(a<0) {																					// length of segment node
+		if(filtype->klen>=0 || node>=fil->nseg) return 0;
+		len=0;
+		for(d=0;d<dim;d++) {
+			u[d]=nodes[node+1][d]-nodes[node][d];
+			len+=u[d]*u[d]; }
+		len=sqrt(len);
+		*res=len-filtype->stdlen;
+		for(d=0;d<dim;d++) {
+			idx[d]=fs*node+d;
+			g[d]=-u[d]/len;
+			idx[dim+d]=fs*(node+1)+d;
+			g[dim+d]=u[d]/len; }
+		return 2*dim; }
+
+	if(node<1 || node>=fil->nseg || filtype->kypr[a]>=0) return 0;
+	r=fil->segments[node]->ypr[a]-filtype->stdypr[a];
+	while(r>PI) r-=2*PI;
+	while(r<-PI) r+=2*PI;
+	*res=r;
+	lm2=lp2=0;
+	for(d=0;d<dim;d++) {
+		xm[d]=nodes[node][d]-nodes[node-1][d];
+		xp[d]=nodes[node+1][d]-nodes[node][d];
+		lm2+=xm[d]*xm[d];
+		lp2+=xp[d]*xp[d]; }
+	if(dim==2) {
+		cm[0]=-xm[1]/lm2;
+		cm[1]=xm[0]/lm2;
+		cp3[0]=-xp[1]/lp2;
+		cp3[1]=xp[0]/lp2;
+		for(d=0;d<2;d++) {
+			idx[d]=2*(node-1)+d;
+			g[d]=cm[d];
+			idx[2+d]=2*node+d;
+			g[2+d]=-cm[d]-cp3[d];
+			idx[4+d]=2*(node+1)+d;
+			g[4+d]=cp3[d]; }
+		return 6; }
+
+	lm=sqrt(lm2);
+	lp=sqrt(lp2);
+	for(unitdim=0;unitdim<3;unitdim++) {
+		unit[0]=unit[1]=unit[2]=0;
+		unit[unitdim]=1;
+		Sph_QtniRotate(fil->segments[node-1]->qabs,unit,e[unitdim]); }
+	cy=cos(fil->segments[node]->ypr[0]);
+	sy=sin(fil->segments[node]->ypr[0]);
+	cp=cos(fil->segments[node]->ypr[1]);
+	sp=sin(fil->segments[node]->ypr[1]);
+	if(cp<FILCOSPMIN) cp=FILCOSPMIN;
+	for(d=0;d<3;d++) {
+		if(a==0) w[d]=e[2][d]+sp/cp*(cy*e[0][d]+sy*e[1][d]);
+		else if(a==1) w[d]=-sy*e[0][d]+cy*e[1][d];
+		else w[d]=(cy*e[0][d]+sy*e[1][d])/cp; }
+	cm[0]=(w[1]*xm[2]-w[2]*xm[1])/lm2;
+	cm[1]=(w[2]*xm[0]-w[0]*xm[2])/lm2;
+	cm[2]=(w[0]*xm[1]-w[1]*xm[0])/lm2;
+	cp3[0]=(w[1]*xp[2]-w[2]*xp[1])/lp2;
+	cp3[1]=(w[2]*xp[0]-w[0]*xp[2])/lp2;
+	cp3[2]=(w[0]*xp[1]-w[1]*xp[0])/lp2;
+	for(d=0;d<3;d++) {
+		idx[d]=4*(node-1)+d;
+		g[d]=cm[d];
+		idx[3+d]=4*node+d;
+		g[3+d]=-cm[d]-cp3[d];
+		idx[6+d]=4*(node+1)+d;
+		g[6+d]=cp3[d]; }
+	idx[9]=4*(node-1)+3;
+	g[9]=-(w[0]*xm[0]+w[1]*xm[1]+w[2]*xm[2])/lm;
+	idx[10]=4*node+3;
+	g[10]=(w[0]*xp[0]+w[1]*xp[1]+w[2]*xp[2])/lp;
+	return 11; }
+
+
+/* filConstraintStart */
+// Stores the gradients of the constraints of filament fil (see filConstraintGrad) at the
+// current state, in filwork->cidx, cng, and cg, for filProjectConstraints. This is called
+// at the start of each dynamics step.
+void filConstraintStart(filamentptr fil) {
+	int c,nc;
+	double res;
+	filamentworkptr filwork;
+
+	filwork=fil->filwork;
+	nc=((fil->filtype->filss->sim->dim==2)?2:4)*fil->nseg;
+	for(c=0;c<nc;c++)
+		filwork->cng[c]=filConstraintGrad(fil,c,filwork->cidx+11*c,filwork->cg+11*c,&res);
+	return; }
+
+
+/* filProjectConstraints */
+// Moves filament fil onto its constraints (see filConstraintGrad), which are a fixed
+// length for each segment if the length force constant is negative and fixed relative
+// angles for each angle whose force constant is negative. This is done after each
+// dynamics step. The coordinates move by -W G0^T lambda, where G0 is the constraint
+// gradient matrix at the start of the step (from filConstraintStart) and W is the
+// diagonal matrix of mobility factors (node mobility factors for node positions, and
+// their averages for segment rotations), so nodes with mobility factor 0 don't move.
+// Projecting along the start-of-step gradients, as in SHAKE, makes the dynamics sample
+// the Boltzmann distribution of the rigidly constrained system; projecting along the
+// gradients at the projected point instead gives a bias that doesn't vanish with the
+// time step. Newton iterations find lambda by solving (G W G0^T) dlambda = r, where r is
+// the list of constraint deviations and G is the current gradient matrix. This matrix is
+// banded, so this uses the filament's force matrix and BiCGSTAB. Segment frames are moved with
+// filTransportFrames. Iterations stop when every length deviation is less than
+// FILCONSTRAINTTOL times the standard length and every angle deviation is less than
+// FILCONSTRAINTTOL. Returns 0 for success, 1 if the iterations did not converge, and 2 for
+// a memory allocation failure.
+int filProjectConstraints(filamentptr fil) {
+	int dim,cstride,fs,nc,flatsize,c,c2,i,k,l,iter,band,*idx,*ng,*idx0,*ng0,er,seg,node,d;
+	double *g,*g0,*res,*lambda,*delta,*segnew,*wt,sum,maxres,res2,dev;
+	filamentworkptr filwork;
+	sparsematrix forcemat;
+
+	if(fil->nseg<1) return 0;
+	filwork=fil->filwork;
+	forcemat=filwork->forcemat;
+	dim=fil->filtype->filss->sim->dim;
+	cstride=(dim==2)?2:4;
+	fs=(dim==2)?2:4;
+	band=(dim==2)?5:11;															// constraints that share a coordinate are at most this far apart
+	nc=cstride*fil->nseg;
+	flatsize=(dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1;
+	if(!forcemat->BiCGSTAB)
+		sparseAllocBandM(forcemat,-1,-1,1);
+
+	idx0=filwork->cidx;															// gradients at the start of the step
+	ng0=filwork->cng;
+	g0=filwork->cg;
+	res=filwork->flatforces[0];											// scratch space
+	lambda=filwork->flatforces[1];
+	delta=filwork->flatnodes[2];
+	segnew=filwork->flatnodes[1];
+	idx=(int*) malloc(11*nc*sizeof(int));
+	ng=(int*) malloc(nc*sizeof(int));
+	g=(double*) malloc(11*nc*sizeof(double));
+	wt=(double*) malloc(flatsize*sizeof(double));
+	if(!idx || !ng || !g || !wt) {
+		free(idx);
+		free(ng);
+		free(g);
+		free(wt);
+		return 2; }
+
+	for(node=0;node<=fil->nseg;node++)							// mobility weights
+		for(d=0;d<dim;d++) wt[fs*node+d]=fil->nodemobility[node];
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(fil->nodemobility[seg]+fil->nodemobility[seg+1]);
+
+	er=1;
+	for(iter=0;iter<FILCONSTRAINTITER;iter++) {
+		maxres=res2=0;
+		for(c=0;c<nc;c++) {													// deviations and gradients
+			ng[c]=filConstraintGrad(fil,c,idx+11*c,g+11*c,&res[c]);
+			if(ng[c]) {
+				sum=0;
+				for(k=0;k<ng[c];k++) sum+=g[11*c+k]*g[11*c+k]*wt[idx[11*c+k]];
+				if(sum<=0) ng[c]=0; }													// only immobile coordinates, so it can't be satisfied by moving
+			if(!ng[c]) res[c]=0;
+			dev=fabs(res[c]);
+			if(c%cstride==0) dev/=fil->filtype->stdlen;
+			if(dev>maxres) maxres=dev;
+			res2+=res[c]*res[c]; }
+		if(maxres<FILCONSTRAINTTOL) {
+			er=0;
+			break; }
+
+		sparseSetSizeM(forcemat,nc,nc);									// G W G0^T
+		sparseClearM(forcemat);
+		for(c=0;c<nc;c++) {
+			lambda[c]=0;
+			if(!ng[c] || !ng0[c]) {
+				sparseAddToM(forcemat,c,c,1);
+				res[c]=0;
+				continue; }
+			for(c2=(c-band<0?0:c-band);c2<=c+band && c2<nc;c2++) {
+				if(!ng[c2] || !ng0[c2]) continue;
+				sum=0;
+				for(k=0;k<ng[c];k++)
+					for(l=0;l<ng0[c2];l++)
+						if(idx[11*c+k]==idx0[11*c2+l]) sum+=g[11*c+k]*wt[idx[11*c+k]]*g0[11*c2+l];
+				if(sum!=0) sparseAddToM(forcemat,c,c2,sum); }}
+		sparseBiCGSTAB(forcemat,res,lambda,1e-24*res2);
+
+		for(i=0;i<flatsize;i++) delta[i]=0;							// delta = -W G0^T lambda
+		for(c=0;c<nc;c++)
+			if(ng[c])
+				for(k=0;k<ng0[c];k++)
+					delta[idx0[11*c+k]]-=wt[idx0[11*c+k]]*g0[11*c+k]*lambda[c];
+
+		if(dim==2)
+			for(node=0;node<=fil->nseg;node++) {
+				fil->nodes[node][0]+=delta[2*node];
+				fil->nodes[node][1]+=delta[2*node+1]; }
+		else {
+			filCopyYpr2ToRoll(fil);
+			filWorkFramesFromSegments(fil);
+			for(seg=0;seg<fil->nseg;seg++)
+				for(d=0;d<3;d++)
+					segnew[3*seg+d]=fil->nodes[seg+1][d]+delta[4*(seg+1)+d]-fil->nodes[seg][d]-delta[4*seg+d];
+			filTransportFrames(fil,fil->nodes,filwork->wqabs[0],segnew,delta+3,4,filwork->wqabs[0],fil->seg0up,fil->roll);
+			for(node=0;node<=fil->nseg;node++)
+				for(d=0;d<3;d++) fil->nodes[node][d]+=delta[4*node+d];
+			filCopyRollToYpr2(fil); }
+		filNodes2Angles(fil,-1,-1); }
+
+	free(idx);
+	free(ng);
+	free(g);
+	free(wt);
+	return er; }
+
+
 /* filUnstable */
 // Returns 1 if the mechanics of filament type filtype have become numerically unstable
 // and 0 if not. It is unstable if some node coordinate is not finite or some segment is
@@ -5153,6 +5423,9 @@ int filDynamics(simptr sim) {
 		filEndTransitions(sim,filtype);									// before length changes: an end capped now doesn't also grow now
 		filEndDynamics(sim,filtype);										// before the integrator: a new segment relaxes this step
 
+		if(filtype->dynamics!=FDnone && filConstrained(filtype))		// constraint gradients at the start of the step
+			for(f=0;f<filtype->nfil;f++)
+				filConstraintStart(filtype->fillist[f]);
 		if(filtype->dynamics==FDeuler)
 			filEulerDynamics(sim,filtype);
 		else if(filtype->dynamics==FDRK2)
@@ -5165,6 +5438,16 @@ int filDynamics(simptr sim) {
 			filImplicitDynamics(sim,filtype);
 		else if(filtype->dynamics==FDimplicitold)
 			filImplicitOldDynamics(sim,filtype);
+
+		if(filtype->dynamics!=FDnone && filConstrained(filtype))		// negative force constants are constraints
+			for(f=0;f<filtype->nfil;f++) {
+				i=filProjectConstraints(filtype->fillist[f]);
+				if(i==2) {
+					simLog(sim,10,"Out of memory projecting filaments onto constraints\n");
+					return 1; }
+				if(i==1 && !filtype->constraintwarn) {
+					simLog(sim,5,"WARNING: filament %s did not converge onto its constraints (negative force constants) at time %g; the time step may be too long\n",filtype->fillist[f]->filname,sim->time);
+					filtype->constraintwarn=1; }}
 
 		if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
 			simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);

@@ -2228,6 +2228,7 @@ There several ways to create individual filaments. The simplest is shown in \ttt
 
 % Section: filament dynamics integration
 \section{Filament dynamics integration}
+\label{sec:FilDynamicsIntegration}
 
 Filament mechanics are simulated with overdamped (Brownian) dynamics, in which velocity is proportional to force and there is no inertia. Each node of a filament moves according to
 $$\frac{d\bm{x}_i}{dt} = \mu m_i \bm{f}_i$$
@@ -2255,9 +2256,9 @@ for the displacement $\Delta \bm{x}$, and then sets $\bm{x}(t+\Delta t)=\bm{x}(t
 
 For the explicit methods (Euler, RK2, RK4, and EulerMat), the time step needs to be short enough that the stiffest motions in the filament are stable. Roughly, $\mu\Delta t\,k_l$ should be less than about 0.5 for stretching, and $\mu\Delta t\,k_a/l_0^2$ should be less than about 0.1 for bending and twisting, so short segments require much shorter time steps. Similar limits apply to stiff junction springs and confinement forces, which are integrated explicitly by all methods apart from Implicit, and Smoldyn warns about these when it checks the input parameters. Implicit avoids these limits for the filament's own forces, although junction forces that connect different filaments are effectively explicit in all methods.
 
-After each integration step, Smoldyn checks whether the filament mechanics have become numerically unstable, meaning that some node coordinate is not a finite number or some segment has become far longer than it should be (more than 100 times the system diagonal plus the standard length, or, with a stretching spring, more than 100 times the standard length plus its thermal spread). If so, Smoldyn displays an error message and stops the simulation, because a blown-up filament would otherwise produce meaningless results, and with branching, an unbounded number of daughter filaments. The usual remedies are to shorten the time step, to reduce the mobility or the force constants, or to use the Implicit method.
+After each integration step, Smoldyn checks whether the filament mechanics have become numerically unstable, meaning that some node coordinate is not a finite number or some segment has become far longer than it should be (more than 100 times the system diagonal plus the standard length, or, with a stretching spring, more than 100 times the standard length plus its thermal spread). If so, Smoldyn displays an error message and stops the simulation, because a blown-up filament would otherwise produce meaningless results, and with branching, an unbounded number of daughter filaments. The usual remedies are to shorten the time step, to reduce the mobility or the force constants, or to use the Implicit method. Fixed constraints (negative force constants, described next) remove the corresponding stiff motions, so they also allow longer time steps.
 
-Negative force constants mean that the corresponding length or angle is fixed when Smoldyn creates random filaments, but they are not treated as constraints during dynamics; there, they give forces that push away from the standard values, so avoid them in simulations with filament dynamics.
+A negative force constant makes the corresponding length or angle a fixed constraint, held exactly at its standard value: a negative \ttt{force\_length} fixes every segment's length at \ttt{standard\_length}, and a negative value in \ttt{force\_angle} fixes that angle (yaw, pitch, or roll) between each pair of adjacent segments at its \ttt{standard\_angle} value. For example, \ttt{force\_angle 5 -1 -1} in 3D gives a filament that bends freely within a plane but cannot leave it or twist, and negative values for all of the force constants give a rigid filament, which only diffuses and rotates as a whole. Smoldyn enforces constraints after each integration step by moving the filament back onto them, using the smallest move in proportion to the node mobilities (so nodes with mobility 0 don't move), and calculated along the constraint directions at the start of the step, as in the SHAKE algorithm. This works with all of the integration methods, and the constraints remain satisfied to high precision. With thermal forces, the remaining free motions follow the Boltzmann distribution of the rigidly constrained filament. This differs slightly from that of a filament with very stiff springs in place of the constraints, because rigid constraints remove some freedom of motion; for example, bending angles between fixed-length segments in 2D have variances that are larger than $kT/k$ by about 5\% for a filament with 2 segments and about 10\% for one with 10 segments. A filament whose initial lengths or angles differ from the standard values is moved onto the constraints at the first time step. If Smoldyn cannot satisfy the constraints, which can happen if the time step is very long, it displays a warning.
 
 
 % Hybrid simulation
@@ -3780,12 +3781,12 @@ Relaxed angles between adjacent filament segments. When looking along the filame
 
 \item{\ttt{* force\_length} $value$}
 
-Stretching force constant for filament segments.
+Stretching force constant for filament segments. A negative value makes the segment lengths fixed at \ttt{standard\_length} (see section \ref{sec:FilDynamicsIntegration}).
 
 \item{\ttt{* force\_angle} $yaw$\\
 \ttt{* force\_angle} $yaw$ $pitch$ $roll$}
 
-Force constants for bending and torsion.
+Force constants for bending and torsion. A negative value makes that angle fixed at its \ttt{standard\_angle} value (see section \ref{sec:FilDynamicsIntegration}).
 
 \item{\ttt{* end\_filament\_type}}
 

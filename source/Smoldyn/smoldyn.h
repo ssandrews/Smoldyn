@@ -640,6 +640,9 @@ typedef struct filamentworkstruct {
     double **thermforce;              // thermal forces on nodes
     double *thermtorque;              // thermal torques on segments about their axes (3D)
     double **wqabs;                   // working segment frames, as absolute quaternions (3,4*nseg) (3D)
+    int *cidx;                        // coordinate indices of constraint gradients at step start (11*4*nseg)
+    int *cng;                         // number of coordinates for each constraint (4*nseg)
+    double *cg;                       // constraint gradients at step start (11*4*nseg)
 } *filamentworkptr;
 
 typedef struct filjunctionstruct {
@@ -741,6 +744,7 @@ typedef struct filamenttypestruct {
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
+    int constraintwarn;                // 1 if a constraint convergence warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility
     double filradius;                  // segment radius
