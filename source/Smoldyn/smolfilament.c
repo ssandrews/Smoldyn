@@ -109,6 +109,7 @@ void filBendTorque(const filamentptr fil,int seg,double *torque);
 // Filament updating
 void filNodes2Angles(filamentptr fil,int nodemin,int nodemax);
 void filCopyWorkingNodes(filamentptr fil,int from,int to);
+void filTransportFrames(filamentptr fil,double **nodesold,const double *seg0upold,const double *rollold,const double *segnew,const double *dphi,int dphistride,double *seg0upnew,double *rollnew);
 void filFlattenNodes(filamentptr fil,int from,int to);
 void filUnflattenNodes(filamentptr fil,int from,int to);
 void filFlattenForces(filamentptr fil,int to,int nodemin,int nodemax);
@@ -2642,10 +2643,76 @@ void filCopyWorkingNodes(filamentptr fil,int from,int to) {
 	return; }
 
 
+/* filTransportFrames */
+// Moves the segment reference frames of filament fil from an old state to a new one, as
+// overdamped dynamics moves them. The old state has node positions nodesold, segment 0
+// up vector seg0upold, and relative rolls rollold. In the new state, segment seg has
+// displacement vector segnew[3*seg..3*seg+2] and is rotated about its own axis by
+// dphi[seg*dphistride]. Each segment's frame turns by the minimal rotation that takes
+// its old direction to its new one, and then about its new direction by its dphi value,
+// so the frame of one segment does not depend on how other segments move. This returns
+// the new frames as the segment 0 up vector seg0upnew and the relative rolls rollnew,
+// which filNodes2Angles uses with the new node positions to reconstruct these frames.
+// The old and new arrays may be the same, but nodesold needs to hold the old positions.
+void filTransportFrames(filamentptr fil,double **nodesold,const double *seg0upold,const double *rollold,const double *segnew,const double *dphi,int dphistride,double *seg0upnew,double *rollnew) {
+	int seg,d;
+	double qold[4],qoldm1[4],qnew[4],qnewm1[4],qrel[4],xold[3],xl[3],t[3],tn[3],axis[3],zold[3],z1[3],z2[3],ypr[3],unitz[3];
+	double len,lenn,sinang,cosang;
+
+	unitz[0]=unitz[1]=0;
+	unitz[2]=1;
+	for(seg=0;seg<fil->nseg;seg++) {
+		len=lenn=0;
+		for(d=0;d<3;d++) {
+			xold[d]=nodesold[seg+1][d]-nodesold[seg][d];
+			len+=xold[d]*xold[d];
+			lenn+=segnew[3*seg+d]*segnew[3*seg+d]; }
+		len=sqrt(len);
+		lenn=sqrt(lenn);
+		if(seg==0)																			// old frame, built as in filNodes2Angles
+			Sph_XZ2Qtni(xold,seg0upold,qold);
+		else {
+			Sph_QtnRotate(qoldm1,xold,xl);
+			ypr[0]=atan2(xl[1],xl[0]);
+			ypr[1]=-asin(xl[2]/len);
+			ypr[2]=rollold[seg];
+			Sph_Ypr2Qtn(ypr,qrel);
+			Sph_QtnxQtn(qoldm1,qrel,qold); }
+
+		for(d=0;d<3;d++) {
+			t[d]=xold[d]/len;
+			tn[d]=segnew[3*seg+d]/lenn; }
+		Sph_QtniRotate(qold,unitz,zold);									// old frame's z axis, in system coordinates
+		axis[0]=t[1]*tn[2]-t[2]*tn[1];
+		axis[1]=t[2]*tn[0]-t[0]*tn[2];
+		axis[2]=t[0]*tn[1]-t[1]*tn[0];
+		sinang=sqrt(axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2]);
+		cosang=t[0]*tn[0]+t[1]*tn[1]+t[2]*tn[2];
+		if(sinang>1e-12) {																// minimal rotation from old to new direction
+			for(d=0;d<3;d++) axis[d]/=sinang;
+			Sph_RotateVectorAxisAngle(zold,axis,atan2(sinang,cosang),z1); }
+		else																						// parallel needs no rotation; antiparallel rotates by pi about the z axis, which leaves it alone
+			for(d=0;d<3;d++) z1[d]=zold[d];
+		Sph_RotateVectorAxisAngle(z1,tn,dphi[seg*dphistride],z2);	// roll about the new direction
+		Sph_XZ2Qtni(tn,z2,qnew);
+
+		if(seg==0)
+			for(d=0;d<3;d++) seg0upnew[d]=z2[d];
+		else {
+			Sph_QtnixQtn(qnewm1,qnew,qrel);
+			Sph_Qtn2Ypr(qrel,ypr);
+			rollnew[seg]=ypr[2]; }
+		for(d=0;d<4;d++) {
+			qoldm1[d]=qold[d];
+			qnewm1[d]=qnew[d]; }}
+	if(fil->nseg>0) rollnew[0]=rollold[0];
+	return; }
+
+
 /* filFlattenNodes */
 void filFlattenNodes(filamentptr fil,int from,int to) {
 	int node,dim;
-	double **nodes,*flatnodes,*roll;
+	double **nodes,*flatnodes;
 	filamentworkptr filwork;
 
 	filwork=fil->filwork;
@@ -2658,14 +2725,11 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 			flatnodes[2*node+0]=nodes[node][0];
 			flatnodes[2*node+1]=nodes[node][1]; }}
 	else {
-		if(from==0) filCopyYpr2ToRoll(fil);
-
-		roll=filwork->wroll[from];
 		for(node=0;node<fil->nseg;node++) {
 			flatnodes[4*node+0]=nodes[node][0];
 			flatnodes[4*node+1]=nodes[node][1];
 			flatnodes[4*node+2]=nodes[node][2];
-			flatnodes[4*node+3]=(node==0)?0:flatnodes[4*(node-1)+3]+roll[node]; }	// absolute roll, relative to segment 0 at the start of the step
+			flatnodes[4*node+3]=0; }																// rotation of the segment about its own axis since the start of the step
 		flatnodes[4*node+0]=nodes[node][0];
 		flatnodes[4*node+1]=nodes[node][1];
 		flatnodes[4*node+2]=nodes[node][2]; }
@@ -2673,9 +2737,13 @@ void filFlattenNodes(filamentptr fil,int from,int to) {
 
 
 /* filUnflattenNodes */
+// Copies the flattened state flatnodes[from] to the working nodes wnodes[to]. In 3D, the
+// flattened roll of each segment is its rotation about its own axis since the state was
+// flattened, and the segment frames are moved from those of state to, which needs to be
+// the flattened state, with filTransportFrames.
 void filUnflattenNodes(filamentptr fil,int from,int to) {
-	int node,dim;
-	double **nodes,*flatnodes,*roll,axis[3],*seg0up;
+	int node,seg,d,dim;
+	double **nodes,*flatnodes,*segnew;
 	filamentworkptr filwork;
 
 	filwork=fil->filwork;
@@ -2688,23 +2756,17 @@ void filUnflattenNodes(filamentptr fil,int from,int to) {
 			nodes[node][0]=flatnodes[2*node];
 			nodes[node][1]=flatnodes[2*node+1]; }
 	else {
-		roll=filwork->wroll[to];
-		for(node=0;node<fil->nseg;node++) {
+		if(to==0) filCopyYpr2ToRoll(fil);
+		segnew=filwork->flatforces[1];								// scratch space
+		for(seg=0;seg<fil->nseg;seg++)
+			for(d=0;d<3;d++)
+				segnew[3*seg+d]=flatnodes[4*(seg+1)+d]-flatnodes[4*seg+d];
+		filTransportFrames(fil,nodes,filwork->wseg0up[to],filwork->wroll[to],segnew,flatnodes+3,4,filwork->wseg0up[to],filwork->wroll[to]);
+		for(node=0;node<=fil->nseg;node++) {
 			nodes[node][0]=flatnodes[4*node+0];
 			nodes[node][1]=flatnodes[4*node+1];
-			nodes[node][2]=flatnodes[4*node+2];
-			if(node>0) roll[node]=flatnodes[4*node+3]-flatnodes[4*(node-1)+3]; }	// relative roll from absolute roll
-		nodes[node][0]=flatnodes[4*node+0];
-		nodes[node][1]=flatnodes[4*node+1];
-		nodes[node][2]=flatnodes[4*node+2];
-
-		if(to==0) filCopyRollToYpr2(fil);
-
-		seg0up=filwork->wseg0up[to];								// segment 0 roll is held in seg0up; its absolute roll started the step at 0
-		axis[0]=nodes[1][0]-nodes[0][0];
-		axis[1]=nodes[1][1]-nodes[0][1];
-		axis[2]=nodes[1][2]-nodes[0][2];
-		Sph_RotateVectorAxisAngle(seg0up,axis,flatnodes[3],seg0up); }
+			nodes[node][2]=flatnodes[4*node+2]; }
+		if(to==0) filCopyRollToYpr2(fil); }
 
 	return; }
 
@@ -4782,8 +4844,8 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 
 /* filStepDynamics */
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
-	int node,seg,dim;
-	double axis[3],**nodesin,**nodesout,*seg0upin,*seg0upout,*rollin,*rollout,dphi,dphim1;
+	int node,seg,dim,d;
+	double **nodesin,**nodesout,*seg0upin,*seg0upout,*rollin,*rollout,*segnew,*dphi;
 	double **forces,*nodemobility;
 	filamentworkptr filwork;
 
@@ -4806,15 +4868,13 @@ void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1]; }}
 	else {
 		if(in==0) filCopyYpr2ToRoll(fil);
-		axis[0]=nodesin[1][0]-nodesin[0][0];					// process segment 0 torque
-		axis[1]=nodesin[1][1]-nodesin[0][1];
-		axis[2]=nodesin[1][2]-nodesin[0][2];
-		dphi=dtmu*0.5*(nodemobility[0]+nodemobility[1])*filwork->torques[0];	// absolute roll change of segment 0
-		Sph_RotateVectorAxisAngle(seg0upin,axis,dphi,seg0upout);
-		for(seg=1;seg<fil->nseg;seg++) {					// each torque rotates its own segment, so relative roll changes by the difference
-			dphim1=dphi;
-			dphi=dtmu*0.5*(nodemobility[seg]+nodemobility[seg+1])*filwork->torques[seg];
-			rollout[seg]=rollin[seg]+dphi-dphim1; }
+		segnew=filwork->flatnodes[2];							// scratch space
+		dphi=filwork->flatnodes[1];
+		for(seg=0;seg<fil->nseg;seg++) {					// new segment vectors, and each segment's rotation about its own axis from its torque
+			for(d=0;d<3;d++)
+				segnew[3*seg+d]=nodesin[seg+1][d]+dtmu*nodemobility[seg+1]*forces[seg+1][d]-nodesin[seg][d]-dtmu*nodemobility[seg]*forces[seg][d];
+			dphi[seg]=dtmu*0.5*(nodemobility[seg]+nodemobility[seg+1])*filwork->torques[seg]; }
+		filTransportFrames(fil,nodesin,seg0upin,rollin,segnew,dphi,1,seg0upout,rollout);
 		for(node=0;node<=fil->nseg;node++) {			// process node forces
 			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
 			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1];
