@@ -751,6 +751,7 @@ typedef struct filamenttypestruct {
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
+    int branchspreadderived;           // 1 if branchspread was derived from branch_force_angle, for thickness 1
     int branchsegments;                // number of segments a daughter is born with (>=1)
     char branchend;                    // daughter end that attaches to the mother: 'm' (default) or 'p'
     double junctforce;                 // spring constant for loop-closing junctions, energy/length^2; 0 = use klen

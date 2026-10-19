@@ -1128,7 +1128,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"branch_spread",
 		"  * branch_spread stddev",
 		"    Standard deviation of branching angle, entered in radians. Enter 0 for\n"
-		"    deterministic branching."},
+		"    deterministic branching. If this is not entered and branch_force_angle is\n"
+		"    positive, the spread is set to the equilibrium spread of that spring,\n"
+		"    sqrt(kT/k) for thickness 1, and each new branch uses sqrt(kT/(t*k)), where\n"
+		"    t is the branch's thickness."},
 	{"statement","Statements about filaments",1,"branch_segments",
 		"  * branch_segments segs",
 		"    Length of initial daughter filament in segments."},
@@ -1145,7 +1148,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    growth)."},
 	{"statement","Statements about filaments",1,"branch_force_angle",
 		"  * branch_force_angle value",
-		"    Yaw spring constant at the branch point."},
+		"    Yaw spring constant at the branch point. As for the bending force\n"
+		"    constants, the spring constant at each branch point is this value times the\n"
+		"    average thickness of the branch's first segment and the parent filament's\n"
+		"    segment at the branch point."},
 	{"statement","Statements about filaments",1,"branch_azimuth",
 		"  * branch_azimuth string",
 		"    Initial azimuth of the branch about the mother filament. Enter string as\n"
@@ -1156,7 +1162,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    vary."},
 	{"statement","Statements about filaments",1,"branch_force_azimuth",
 		"  * branch_force_azimuth value",
-		"    Azimuthal spring constant at the branch point."},
+		"    Azimuthal spring constant at the branch point. Like branch_force_angle, it\n"
+		"    is multiplied by the average thickness of the two segments at the branch\n"
+		"    point."},
 	{"statement","Statements about filaments",1,"branch_surface",
 		"  * branch_surface surface distance",
 		"    If branching should only be allowed close to a surface, enter the surface\n"

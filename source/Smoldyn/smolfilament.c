@@ -700,6 +700,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchrate=0;											// branching off by default
 		filtype->branchangle=70.0*PI/180.0;			// Arp2/3 ~70 deg
 		filtype->branchspread=-1;										// negative = unset; every consumer is gated on >0, so unset behaves as deterministic until derived
+		filtype->branchspreadderived=0;
 		filtype->branchsegments=1;									// daughters born as a single segment
 		filtype->branchend='m';											// daughters attach by their minus end by default
 		filtype->junctforce=0;											// loop-closing junction spring defaults to force_length
@@ -994,13 +995,13 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->junctforce>0) simLog(sim,2,"  loop-closing junction force constant: %g|E/L\n",filtype->junctforce);
 	else simLog(sim,1,"  loop-closing junction force constant: unset, so force_length is used\n");
 	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
-		simLog(sim,2,"  branch junction equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceangle));
+		simLog(sim,2,"  branch junction equilibrium spread: %g rad, for thickness 1\n",sqrt(filtype->kT/filtype->branchforceangle));
 	if(filtype->branchazimuth>=0)
 		simLog(sim,2,"  branch azimuth: %g rad\n",filtype->branchazimuth);
 	simLog(sim,filtype->branchazimuthfix?2:1,"  branch azimuth fixed: %s\n",filtype->branchazimuthfix?"yes":"no");
 	simLog(sim,filtype->branchforceazimuth>0?2:1,"  branch azimuth force constant: %g|E\n",filtype->branchforceazimuth);
 	if(filtype->branchforceazimuth>0 && filtype->kT>0)
-		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad\n",sqrt(filtype->kT/filtype->branchforceazimuth));
+		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad, for thickness 1\n",sqrt(filtype->kT/filtype->branchforceazimuth));
 	if(filtype->branchsrf)
 		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
 	if(filtype->branchcmpt)
@@ -1280,7 +1281,9 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"branchspread")) {					// angular spread of branch
 		if(value<0) er=2;
-		else filtype->branchspread=value; }
+		else {
+			filtype->branchspread=value;
+			filtype->branchspreadderived=0; }}
 
 	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
 		if(value<1) er=2;
@@ -1493,7 +1496,8 @@ int filUpdateParams(simptr sim) {
 		filtype=sim->filss->filtypes[ft];
 		if(filtype->branchspread<0 && filtype->branchforceangle>0 && filtype->kT>0) {
 			filtype->branchspread=sqrt(filtype->kT/filtype->branchforceangle);
-			simLog(sim,2,"branch_spread for filament type %s set to sqrt(kT/branch_force_angle) = %g\n",filtype->ftname,filtype->branchspread); }}
+			filtype->branchspreadderived=1;						// at birth, divided by the square root of the thickness, because the spring scales with thickness
+			simLog(sim,2,"branch_spread for filament type %s set to sqrt(kT/branch_force_angle) = %g, for thickness 1\n",filtype->ftname,filtype->branchspread); }}
 	return 0; }
 
 
@@ -3719,9 +3723,10 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 			node=intrand(fil->nseg)+1;									// uniform random branch node, from 1 to nseg
 			if(!filBranchPointInRegion(sim,filtype,fil->nodes[node])) continue;		// interim location gate; accepts everything when no gate is set
 
+			thick=fil->segments[node-1]->thk;					// the daughter has the thickness of the mother segment that ends at the branch node
 			theta=filtype->branchangle;
-			if(filtype->branchspread>0)								// jitter the branch angle
-				theta=gaussrandtruncOCD(theta,filtype->branchspread,-PI,PI);
+			if(filtype->branchspread>0)								// jitter the branch angle; a spread derived from the spring is its equilibrium spread for this thickness
+				theta=gaussrandtruncOCD(theta,filtype->branchspreadderived?filtype->branchspread/sqrt(thick):filtype->branchspread,-PI,PI);
 			if(dim==2) {															// in-plane +/- branch angle
 				angle[0]=theta*(coinrandD(0.5)?1:-1);
 				angle[1]=angle[2]=0; }
@@ -3734,7 +3739,6 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 				angle[1]=-asin(dvec[2]);
 				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
 
-			thick=fil->segments[node-1]->thk;
 			filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
 
 	return; }
@@ -4429,7 +4433,9 @@ void filAddBendForceMat(filamentptr fil) {
 /* filJunctionParams */
 // Spring parameters for junction junct, from the attached filament's type. For a
 // branch-angle junction: kappa and theta0 are branch_force_angle and branch_angle, and
-// kaz is branch_force_azimuth. For an end-to-end join (bend): kappa is the yaw bending
+// kaz is branch_force_azimuth, with kappa and kaz times the average thickness of the
+// attached filament's end segment and the target's reference segment (see
+// filJunctionGeometry). For an end-to-end join (bend): kappa is the yaw bending
 // force constant, times the average thickness of the two joined segments, and theta0 is
 // the standard bending angle, so the join bends like any other node, and there is no
 // azimuthal spring. kj is the spring constant that holds a loop-closing junction's two
@@ -4448,10 +4454,11 @@ void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,doubl
 		*kappaptr=jtype->kypr[0]>0?0.5*(thk+tthk)*jtype->kypr[0]:0;
 		*theta0ptr=(dim==3)?sqrt(jtype->stdypr[0]*jtype->stdypr[0]+jtype->stdypr[1]*jtype->stdypr[1]):fabs(jtype->stdypr[0]);
 		*kazptr=0; }
-	else {
-		*kappaptr=jtype->branchforceangle;
+	else {																					// branch springs scale with the average thickness of the attached segment and the target's reference segment
+		tthk=(junct->target->nseg>0)?junct->target->segments[junct->node>0?junct->node-1:0]->thk:1;
+		*kappaptr=0.5*(thk+tthk)*jtype->branchforceangle;
 		*theta0ptr=jtype->branchangle;
-		*kazptr=jtype->branchforceazimuth; }
+		*kazptr=0.5*(thk+tthk)*jtype->branchforceazimuth; }
 	*kjptr=thk*(jtype->junctforce>0?jtype->junctforce:(jtype->klen>0?jtype->klen:0));
 	return; }
 

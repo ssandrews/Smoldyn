@@ -3699,7 +3699,7 @@ Yaw angle for new branches off of the mother filament, which is given in radians
 
 \item{\ttt{* branch\_spread} $stddev$} %?? new
 
-Standard deviation of branching angle, entered in radians. Enter 0 for deterministic branching.
+Standard deviation of branching angle, entered in radians. Enter 0 for deterministic branching. If this is not entered and \ttt{branch\_force\_angle} is positive, the spread is set to the equilibrium spread of that spring, \ttt{sqrt(kT/k)} for thickness 1, and each new branch uses \ttt{sqrt(kT/(t*k))}, where \ttt{t} is the branch's thickness.
 
 \item{\ttt{* branch\_segments} $segs$} %?? new
 
@@ -3711,7 +3711,7 @@ Which end of a daughter filament attaches to its mother, entered as ``minus'' (t
 
 \item{\ttt{* branch\_force\_angle} $value$}%?? new
 
-Yaw spring constant at the branch point.
+Yaw spring constant at the branch point. As for the bending force constants, the spring constant at each branch point is this value times the average thickness of the branch's first segment and the parent filament's segment at the branch point.
 
 \item{\ttt{* branch\_azimuth} $string$}%?? new
 
@@ -3723,7 +3723,7 @@ Enter 1 to fix the branch azimuth at its initial value and 0 to allow it to vary
 
 \item{\ttt{* branch\_force\_azimuth} $value$}%?? new
 
-Azimuthal spring constant at the branch point.
+Azimuthal spring constant at the branch point. Like \ttt{branch\_force\_angle}, it is multiplied by the average thickness of the two segments at the branch point.
 
 \item{\ttt{* branch\_surface} $surface$ $distance$}%?? new
 
