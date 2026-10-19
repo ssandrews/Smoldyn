@@ -1172,14 +1172,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    held by the energy 0.5*k*d^2, where k is this value and d is the distance\n"
 		"    between the attached filament end and the node that it attaches to. The\n"
 		"    default is 0, which means that the force_length value is used, so the\n"
-		"    junction is as stiff as a segment. Larger values hold loops more tightly\n"
-		"    but require smaller time steps; Smoldyn warns if the time step times the\n"
-		"    mobility times this value is more than 0.5. The forces of these springs are\n"
-		"    passed on through the attachments that are held exactly, so in a network\n"
-		"    with many loops, such as a web, a filament can carry the springs of many\n"
-		"    attachments; Smoldyn also warns if the time step times the mobility times\n"
-		"    the sum of the spring constants that one attachment carries is more than\n"
-		"    0.5. The value of the attached filament's type is used."},
+		"    junction is as stiff as a segment of thickness 1. Larger values hold loops\n"
+		"    more tightly but require smaller time steps; Smoldyn warns if the time step\n"
+		"    times the mobility times this value is more than 0.5. The forces of these\n"
+		"    springs are passed on through the attachments that are held exactly, so in\n"
+		"    a network with many loops, such as a web, a filament can carry the springs\n"
+		"    of many attachments; Smoldyn also warns if the time step times the mobility\n"
+		"    times the sum of the spring constants that one attachment carries is more\n"
+		"    than 0.5. The value of the attached filament's type is used."},
 	{"statement","Statements about filaments",1,"confine_surface",
 		"  * confine_surface surface force [face]",
 		"    If the filament should be confined by a surface, enter that surface name\n"
@@ -1263,8 +1263,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    angle."},
 	{"statement","Statements about filaments",1,"force_length",
 		"  * force_length value",
-		"    Stretching force constant for filament segments. A negative value makes the\n"
-		"    segment lengths fixed at standard_length (see the Smoldyn User's Manual)."},
+		"    Stretching force constant for filament segments. The force constant of each\n"
+		"    segment is this value times the segment's thickness, which is 1 by default.\n"
+		"    A negative value makes the segment lengths fixed at standard_length (see\n"
+		"    the Smoldyn User's Manual)."},
 	{"statement","Statements about filaments",1,"force_angle",
 		"  * force_angle yaw\n"
 		"  * force_angle yaw pitch roll",

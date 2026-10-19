@@ -4050,7 +4050,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			fdx=sforce*xvect[0];
 			forces[node][0]-=fdx;
 			forces[node+1][0]+=fdx;
@@ -4063,7 +4063,7 @@ void filAddStretchForces(filamentptr fil,int nodemin,int nodemax) {
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			fdx=sforce*xvect[0];
 			forces[node][0]-=fdx;
 			forces[node+1][0]+=fdx;
@@ -4094,7 +4094,7 @@ void filAddStretchForceMat(filamentptr fil) {
 			xvect[0]=nodes[node+1][0]-nodes[node][0];
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			sparseAddToM(forcemat,2*node+0,2*node+0,sforce);
 			sparseAddToM(forcemat,2*node+1,2*node+1,sforce);
 			sparseAddToM(forcemat,2*node+0,2*(node+1)+0,-sforce);
@@ -4109,7 +4109,7 @@ void filAddStretchForceMat(filamentptr fil) {
 			xvect[1]=nodes[node+1][1]-nodes[node][1];
 			xvect[2]=nodes[node+1][2]-nodes[node][2];
 			len=sqrt(xvect[0]*xvect[0]+xvect[1]*xvect[1]+xvect[2]*xvect[2]);
-			sforce=-klen*(len-stdlen)/len;			// this is force/length
+			sforce=-fil->segments[node]->thk*klen*(len-stdlen)/len;			// this is force/length; the force constant scales with segment thickness
 			sparseAddToM(forcemat,4*node+0,4*node+0,sforce);
 			sparseAddToM(forcemat,4*node+1,4*node+1,sforce);
 			sparseAddToM(forcemat,4*node+2,4*node+2,sforce);
@@ -4771,7 +4771,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 	filComputeForces(fil,-1,-1);
 	filFlattenForces(fil,0,-1,-1);															// flatforces[0] is original forces
 
-	if(klen>0)																									// stretching: Hessian of 0.5*klen*(len-stdlen)^2, without its transverse part for a compressed segment, where that part is destabilizing
+	if(klen>0)																									// stretching: Hessian of 0.5*thk*klen*(len-stdlen)^2, without its transverse part for a compressed segment, where that part is destabilizing
 		for(seg=0;seg<fil->nseg;seg++) {
 			len=0;
 			for(d=0;d<dim;d++) {
@@ -4779,10 +4779,11 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 				len+=u[d]*u[d]; }
 			len=sqrt(len);
 			for(d=0;d<dim;d++) u[d]/=len;
-			kperp=(len>stdlen)?klen*(1-stdlen/len):0;
+			k=fil->segments[seg]->thk*klen;													// the force constant scales with segment thickness
+			kperp=(len>stdlen)?k*(1-stdlen/len):0;
 			for(d=0;d<dim;d++)
 				for(d2=0;d2<dim;d2++) {
-					blk=(klen-kperp)*u[d]*u[d2]+(d==d2?kperp:0);
+					blk=(k-kperp)*u[d]*u[d2]+(d==d2?kperp:0);
 					sparseAddToM(forcemat,stride*seg+d,stride*seg+d2,-blk);
 					sparseAddToM(forcemat,stride*(seg+1)+d,stride*(seg+1)+d2,-blk);
 					sparseAddToM(forcemat,stride*seg+d,stride*(seg+1)+d2,blk);
