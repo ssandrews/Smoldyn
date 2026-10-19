@@ -1193,9 +1193,12 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"confine_surface",
 		"  * confine_surface surface force [face]",
 		"    If the filament should be confined by a surface, enter that surface name\n"
-		"    here in surface and the force constant for that confinement in force.\n"
-		"    Afterward, there is an optional face entry. This only accepts \"front\" or\n"
-		"    \"back\" but should also accept \"both\"."},
+		"    here in surface and the force constant for that confinement in force. Each\n"
+		"    node on the wrong side of the surface is pushed back with force constant\n"
+		"    force times the node's thickness, which is the average thickness of its\n"
+		"    adjacent segments, as for the other filament force constants. Afterward,\n"
+		"    there is an optional face entry. This only accepts \"front\" or \"back\" but\n"
+		"    should also accept \"both\"."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
 		"  * elongation_rate end state value",

@@ -3739,7 +3739,7 @@ The spring constant, in the same units as \ttt{force\_length}, for attachments t
 
 \item{\ttt{* confine\_surface} $surface$ $force$ [$face$]}%?? new
 
-If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$. Afterward, there is an optional face entry. This only accepts ``front'' or ``back'' but should also accept ``both''.%??
+If the filament should be confined by a surface, enter that surface name here in $surface$ and the force constant for that confinement in $force$. Each node on the wrong side of the surface is pushed back with force constant $force$ times the node's thickness, which is the average thickness of its adjacent segments, as for the other filament force constants. Afterward, there is an optional face entry. This only accepts ``front'' or ``back'' but should also accept ``both''.%??
 
 \item{\ttt{* elongation\_rate} $value$} %?? new
 \item{\ttt{* elongation\_rate} $end$ $state$ $value$}

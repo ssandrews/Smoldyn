@@ -176,6 +176,7 @@ void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,doubl
 int filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr,int *maptr,int *mbptr);
 void filSubtreeSpringForce(filamentptr fil,int dim,double *sum);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
+double filNodeThickness(const filamentptr fil,int node);
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
@@ -1009,7 +1010,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->confinesrf && filtype->confineforce>0) {
 		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",surfface2string(filtype->confineface,string),filtype->confinesrf->sname,filtype->confineforce);
 		if(filtype->kT>0)																// equipartition penetration depth the wall permits
-			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
+			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L, for thickness 1\n",sqrt(filtype->kT/filtype->confineforce)); }
 
 	grows=0;
 	for(end=0;end<2;end++) {														// end dynamics
@@ -1198,8 +1199,12 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->confinesrf->npanel[ps];
 			if(pcount==0) {
 				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
-			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
-				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5, before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
+			fval=1;																				// thickest node, since the wall spring scales with node thickness
+			for(f=0;f<filtype->nfil;f++)
+				for(seg=0;seg<filtype->fillist[f]->nseg;seg++)
+					if(filtype->fillist[f]->segments[seg]->thk>fval) fval=filtype->fillist[f]->segments[seg]->thk;
+			if(filtype->mobility*filtype->confineforce*fval*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*thickness*dt = %g > 0.5, for the thickest node and before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*fval*sim->dt);}}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -4655,6 +4660,17 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 	return; }
 
 
+/* filNodeThickness */
+// Returns the thickness of node node of filament fil, which is the average thickness of
+// the segments on either side of it, or the thickness of the one segment for an end
+// node, or 1 if the filament has no segments.
+double filNodeThickness(const filamentptr fil,int node) {
+	if(fil->nseg<1) return 1;
+	if(node<=0) return fil->segments[0]->thk;
+	if(node>=fil->nseg) return fil->segments[fil->nseg-1]->thk;
+	return 0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk); }
+
+
 /* filAddConfineForces */
 // Harmonic surface confinement, in the spirit of Cytosim's per-model-point
 // "confine" stiffness: each node on the penalized side of the confining surface
@@ -4663,8 +4679,10 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 // the penetration depth d past that panel. Summing over violated panels makes box
 // corners behave (each wall pushes along its own normal). The constant is per NODE,
 // like the other per-element force constants, so refining standard_length stiffens
-// the wall per unit contour length; the equilibrium penetration depth of a
-// fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric
+// the wall per unit contour length, and it is confine_force times the node's thickness,
+// which is the average thickness of its adjacent segments, as for the other filament
+// force constants; the equilibrium penetration depth of a fluctuating node is the
+// half-Gaussian spread sqrt(kT/k). This is a soft steric
 // wall for filament mechanics only -- molecules do not see it, and richer
 // filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
 // remains future work. Two geometric caveats: the side test is panelside's, which
@@ -4675,7 +4693,7 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 // panel, so a node behind M coplanar panels feels up to M contributions. Draws no
 // random numbers; returns immediately when off.
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,k,pnlpt[3],*nodept,*fnode;
+	double **forces,k,kn,pnlpt[3],*nodept,*fnode;
 	surfaceptr srf;
 	panelptr pnl;
 	enum PanelShape ps;
@@ -4698,9 +4716,10 @@ void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 				nodept=fil->nodes[node];
 				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
 				closestpanelpt(pnl,dim,nodept,pnlpt,0);
+				kn=k*filNodeThickness(fil,node);
 				fnode=forces[node];
 				for(d=0;d<dim;d++)
-					fnode[d]+=k*(pnlpt[d]-nodept[d]); }}
+					fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}
 	return; }
 
 
