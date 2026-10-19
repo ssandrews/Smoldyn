@@ -187,6 +187,8 @@ void filStepDynamics(filamentptr fil,double dtmu,int in,int out);
 void filEulerDynamics(simptr sim,filamenttypeptr filtype);
 void filRK2Dynamics(simptr sim,filamenttypeptr filtype);
 void filRK4Dynamics(simptr sim,filamenttypeptr filtype);
+int filMobilityWeights(filamentptr fil,double *wt);
+void filScaleMatrixRows(sparsematrix sprs,const double *wt,int nrows);
 void filEulerMatDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype);
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype);
@@ -5079,10 +5081,38 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 	return; }
 
 
+/* filMobilityWeights */
+// Puts the effective mobility factor of each flattened coordinate of filament fil in wt:
+// filNodeMobility for node positions, and in 3D, the average of the two nodes' values for
+// segment rotations. Returns the number of flattened coordinates.
+int filMobilityWeights(filamentptr fil,double *wt) {
+	int dim,stride,node,seg,d;
+
+	dim=fil->filtype->filss->sim->dim;
+	stride=(dim==2)?2:4;
+	for(node=0;node<=fil->nseg;node++)
+		for(d=0;d<dim;d++) wt[stride*node+d]=filNodeMobility(fil,node);
+	if(dim==3)
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));
+	return (dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1; }
+
+
+/* filScaleMatrixRows */
+// Multiplies row i of banded matrix sprs by wt[i], for its first nrows rows.
+void filScaleMatrixRows(sparsematrix sprs,const double *wt,int nrows) {
+	int i,j,jmin,jmax;
+
+	for(i=0;i<nrows;i++) {
+		jmin=sprs->col0[i]<0?0:sprs->col0[i];
+		jmax=sprs->col1[i]>sprs->fcols?sprs->fcols:sprs->col1[i];
+		for(j=jmin;j<jmax;j++) sparseMultiplyBy(sprs,i,j,wt[i]); }
+	return; }
+
+
 /* filEulerMatDynamics */
-void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
+void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {
 	double dtmu;
-	int f;
+	int f,flatsize;
 	filamentptr fil;
 	filamentworkptr filwork;
 
@@ -5093,6 +5123,8 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 		filComputeForceMatrix(fil);
 		filFlattenNodes(fil,0,0);
 		dtmu=filtype->mobility*sim->dt;
+		flatsize=filMobilityWeights(fil,filwork->flatforces[1]);
+		filScaleMatrixRows(filwork->forcemat,filwork->flatforces[1],flatsize);	// forcemat is W F, with effective mobility factors W
 		sparseMultiplyScalarM(filwork->forcemat,dtmu);
 		sparseAddIdentityM(filwork->forcemat,1);
 		sparseMultiplyMV(filwork->forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);
@@ -5104,7 +5136,7 @@ void filEulerMatDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 
 
 /* filImplicitOldDynamics */
-void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
+void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {
 	double dtmu;
 	int f,i,flatsize;
 	filamentptr fil;
@@ -5122,15 +5154,17 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 		filComputeForceMatrix(fil);
 		filFlattenNodes(fil,0,0);													// flatnodes[0] is current state
 		dtmu=filtype->mobility*sim->dt;
+		filMobilityWeights(fil,filwork->flatforces[1]);
+		filScaleMatrixRows(forcemat,filwork->flatforces[1],flatsize);	// forcemat is W F, with effective mobility factors W
 		sparseMultiplyScalarM(forcemat,dtmu);
-		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*force
+		sparseAddIdentityM(forcemat,1);										// forcemat is 1+dtmu*W*force
 		sparseMultiplyMV(forcemat,filwork->flatnodes[0],filwork->flatnodes[1]);	// flatnodes[1] is forward Euler next state, without thermal forces
 		for(i=0;i<flatsize;i++) filwork->flatnodes[2][i]=filwork->flatnodes[0][i];
 		filAddMatrixForceStep(fil,dtmu,filwork->flatnodes[2]);		// flatnodes[2] is current state plus displacements from thermal, junction, and confinement forces
 		for(i=0;i<flatsize;i++) filwork->flatnodes[1][i]+=filwork->flatnodes[2][i]-filwork->flatnodes[0][i];	// initial guess, with the same displacements
 
 		sparseMultiplyScalarM(forcemat,-1);
-		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*force
+		sparseAddIdentityM(forcemat,2);										// forcemat is 1-dtmu*W*force
 		sparseBiCGSTAB(forcemat,filwork->flatnodes[2],filwork->flatnodes[1],1e-9);	// flatnodes[1] is backward Euler next state
 		filUnflattenNodes(fil,1,0);
 		filNodes2Angles(fil,-1,-1); }
@@ -5142,7 +5176,7 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 /* filImplicitDynamics */
 void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {
 	double dtmu,**flatnodes,**flatforces,bnorm2,*wt;
-	int f,flatsize,dim,i,j,jmin,jmax,node,seg,d,stride;
+	int f,flatsize,dim,i;
 	filamentptr fil;
 	filamentworkptr filwork;
 	sparsematrix forcemat;
@@ -5161,15 +5195,8 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {
 		dtmu=filtype->mobility*sim->dt;
 		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], and J is in forcemat
 		wt=flatforces[1];																								// effective mobility factors W (filNodeMobility), in scratch space
-		stride=(dim==2)?2:4;
-		for(node=0;node<=fil->nseg;node++)
-			for(d=0;d<dim;d++) wt[stride*node+d]=filNodeMobility(fil,node);
-		if(dim==3)
-			for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));
-		for(i=0;i<flatsize;i++) {																				// forcemat is W J
-			jmin=forcemat->col0[i]<0?0:forcemat->col0[i];
-			jmax=forcemat->col1[i]>forcemat->fcols?forcemat->fcols:forcemat->col1[i];
-			for(j=jmin;j<jmax;j++) sparseMultiplyBy(forcemat,i,j,wt[i]); }
+		filMobilityWeights(fil,wt);
+		filScaleMatrixRows(forcemat,wt,flatsize);												// forcemat is W J
 		bnorm2=0;
 		for(i=0;i<flatsize;i++) {
 			flatnodes[2][i]=dtmu*wt[i]*flatforces[0][i];									// flatnodes[2] is the forward Euler displacement
