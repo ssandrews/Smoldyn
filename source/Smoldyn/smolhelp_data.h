@@ -1270,8 +1270,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"force_angle",
 		"  * force_angle yaw\n"
 		"  * force_angle yaw pitch roll",
-		"    Force constants for bending and torsion. A negative value makes that angle\n"
-		"    fixed at its standard_angle value (see the Smoldyn User's Manual)."},
+		"    Force constants for bending and torsion. The force constants at each node\n"
+		"    between segments are these values times the average thickness of the two\n"
+		"    segments, which is 1 by default. A negative value makes that angle fixed at\n"
+		"    its standard_angle value (see the Smoldyn User's Manual)."},
 	{"statement","Statements about filaments",1,"end_filament_type",
 		"  * end_filament_type",
 		"    End of a block of filament type definitions. Filament type statements are\n"

@@ -2507,7 +2507,7 @@ double filBendEnergy(const filamentptr fil,int seg1,int seg2) {
 // filBendTorque
 void filBendTorque(const filamentptr fil,int node,double *torque) {
 	filamenttypeptr filtype;
-	double *kypr,*stdypr,*ypr,cphi,sphi,ctht,stht,deltaypr[3],reltorque[3];
+	double *kypr,*stdypr,*ypr,cphi,sphi,ctht,stht,deltaypr[3],reltorque[3],thk;
 	int dim;
 
 	if(node<=0 || node>=fil->nseg) {
@@ -2519,9 +2519,10 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 	stdypr=filtype->stdypr;
 	ypr=fil->segments[node]->ypr;
 	dim=filtype->filss->sim->dim;
+	thk=0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk);	// force constants scale with the average thickness of the two segments, as in filBendEnergy
 
 	if(dim==2) {
-		deltaypr[0]=(kypr[0]>0)?kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
+		deltaypr[0]=(kypr[0]>0)?thk*kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
 		torque[0]=torque[1]=0;
 		torque[2]=-deltaypr[0]; }
 	else {
@@ -2530,9 +2531,9 @@ void filBendTorque(const filamentptr fil,int node,double *torque) {
 		ctht=cos(ypr[1]);
 		stht=sin(ypr[1]);
 
-		deltaypr[0]=(kypr[0]>0)?kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
-		deltaypr[1]=(kypr[1]>0)?kypr[1]*(ypr[1]-stdypr[1]):0;
-		deltaypr[2]=(kypr[2]>0)?kypr[2]*(ypr[2]-stdypr[2]):0;
+		deltaypr[0]=(kypr[0]>0)?thk*kypr[0]*(ypr[0]-stdypr[0]):0;		// a negative constant is a constraint (filProjectConstraints)
+		deltaypr[1]=(kypr[1]>0)?thk*kypr[1]*(ypr[1]-stdypr[1]):0;
+		deltaypr[2]=(kypr[2]>0)?thk*kypr[2]*(ypr[2]-stdypr[2]):0;
 
 		if(ctht<FILCOSPMIN) ctht=FILCOSPMIN;										// bound the torque near gimbal lock, where yaw is undefined
 		reltorque[0]=-deltaypr[0]*stht/ctht*cphi+deltaypr[1]*sphi-deltaypr[2]*cphi/ctht;	// torque in segment reference frame: minus the gradient of the energy with respect to rotation
@@ -3030,7 +3031,7 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 	for(i=0;i<number;i++) {
 		len=filRandomLength(filtype,thickness,1);
 		if(fil->nseg>0) {
-			filRandomAngle(filtype,fil->nseg,thickness,1,angle);
+			filRandomAngle(filtype,fil->nseg,0.5*(thickness+fil->segments[fil->nseg-1]->thk),1,angle);	// the joint's stiffness uses the average thickness of its two segments
 			if(dim==2) angle[1]=angle[2]=0; }
 		er=filAddSegment(fil,pos,len,angle,thickness,'p');
 		if(er) return er; }
@@ -3042,15 +3043,16 @@ int filAddRandomSegments(filamentptr fil,int number,const char *xstr,const char 
 int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints) {
 	int er,iter,cross,tryagain;
 	filamenttypeptr filtype;
-	double len,angle[3];
+	double len,angle[3],jointthk;
 	panelptr pnl;
 	segmentptr segment;
 
 	filtype=fil->filtype;
 
 	tryagain=1;
+	jointthk=(fil->nseg>0)?0.5*(thickness+fil->segments[(endchar=='m')?0:fil->nseg-1]->thk):thickness;	// the joint's stiffness uses the average thickness of its two segments
 	len=filRandomLength(filtype,thickness,1);
-	filRandomAngle(filtype,fil->nseg,thickness,1,angle);
+	filRandomAngle(filtype,fil->nseg,jointthk,1,angle);
 	er=filAddSegment(fil,x,len,angle,thickness,endchar);
 	if(er) return er;
 	segment=fil->segments[((endchar=='m')?0:fil->nseg-1)];
@@ -3061,7 +3063,7 @@ int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thi
 			cross=filSegmentXSurface(sim,segment,&pnl);
 			if(cross) {
 				len=filRandomLength(filtype,thickness,1);
-				filRandomAngle(filtype,fil->nseg,thickness,1,angle);
+				filRandomAngle(filtype,fil->nseg,jointthk,1,angle);
 				filLengthenSegment(fil,segment->index,len,endchar,'=');
 				filRotateVertex(fil,segment->index,angle,endchar,'=');
 				tryagain=1; }}}
@@ -4746,7 +4748,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 	int dim,stride,flatsize,node,seg,d,d2,a,i,j,ng,gidx[11],nmin,nmax,side,nrow;
 	double **nodes,**flatnodes,**flatforces,**forces,*extforce0;
 	double klen,stdlen,*kypr,k,len,u[3],kperp,blk,xm[3],xp[3],lm2,lp2,lm,lp,e[3][3],unit[3],cm[3],cp3[3],g[11];
-	double cy,sy,cp,sp,w[3][3];
+	double cy,sy,cp,sp,w[3][3],thkavg;
 	double dx,dxinv,dxmin,col[2][15],colnorm[2];
 	filamenttypeptr filtype;
 	sparsematrix forcemat;
@@ -4796,8 +4798,9 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 			xp[d]=nodes[node+1][d]-nodes[node][d];									// segment node
 			lm2+=xm[d]*xm[d];
 			lp2+=xp[d]*xp[d]; }
+		thkavg=0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk);	// bending force constants scale with the average thickness of the two segments
 		if(dim==2) {
-			k=kypr[0];
+			k=thkavg*kypr[0];
 			if(k<=0) continue;
 			cm[0]=-xm[1]/lm2;																				// gradient of the bend angle with respect to node-1
 			cm[1]=xm[0]/lm2;
@@ -4836,7 +4839,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 			gidx[9]=4*(node-1)+3;																		// absolute roll of segment node-1
 			gidx[10]=4*node+3;																			// absolute roll of segment node
 			for(a=0;a<3;a++) {
-				k=kypr[a];
+				k=thkavg*kypr[a];
 				if(k<=0) continue;
 				cm[0]=(w[a][1]*xm[2]-w[a][2]*xm[1])/lm2;								// relative rotation is (xp x dxp)/lp^2+up.dphip-(xm x dxm)/lm^2-um.dphim
 				cm[1]=(w[a][2]*xm[0]-w[a][0]*xm[2])/lm2;
