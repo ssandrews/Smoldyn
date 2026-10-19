@@ -4430,23 +4430,29 @@ void filAddBendForceMat(filamentptr fil) {
 // Spring parameters for junction junct, from the attached filament's type. For a
 // branch-angle junction: kappa and theta0 are branch_force_angle and branch_angle, and
 // kaz is branch_force_azimuth. For an end-to-end join (bend): kappa is the yaw bending
-// force constant and theta0 is the standard bending angle, so the join bends like any
-// other node, and there is no azimuthal spring. kj is the spring constant that holds a
-// loop-closing junction's two nodes together: junction_force, or force_length if that
-// is unset.
+// force constant, times the average thickness of the two joined segments, and theta0 is
+// the standard bending angle, so the join bends like any other node, and there is no
+// azimuthal spring. kj is the spring constant that holds a loop-closing junction's two
+// nodes together: junction_force, or force_length if that is unset, times the thickness
+// of the attached filament's end segment, as for the segments' own force constants.
 void filJunctionParams(const filjunctionptr junct,int dim,double *kappaptr,double *theta0ptr,double *kazptr,double *kjptr) {
 	filamenttypeptr jtype;
+	filamentptr fil;
+	double thk,tthk;
 
 	jtype=junct->fil->filtype;
-	if(junct->bend) {
-		*kappaptr=jtype->kypr[0]>0?jtype->kypr[0]:0;
+	fil=junct->fil;
+	thk=(fil->nseg>0)?fil->segments[junct->end=='m'?0:fil->nseg-1]->thk:1;	// thickness of the attached filament's end segment
+	if(junct->bend) {																// like any other node, the force constant scales with the average thickness of the two segments
+		tthk=(junct->target->nseg>0)?junct->target->segments[junct->node==0?0:junct->target->nseg-1]->thk:1;
+		*kappaptr=jtype->kypr[0]>0?0.5*(thk+tthk)*jtype->kypr[0]:0;
 		*theta0ptr=(dim==3)?sqrt(jtype->stdypr[0]*jtype->stdypr[0]+jtype->stdypr[1]*jtype->stdypr[1]):fabs(jtype->stdypr[0]);
 		*kazptr=0; }
 	else {
 		*kappaptr=jtype->branchforceangle;
 		*theta0ptr=jtype->branchangle;
 		*kazptr=jtype->branchforceazimuth; }
-	*kjptr=jtype->junctforce>0?jtype->junctforce:(jtype->klen>0?jtype->klen:0);
+	*kjptr=thk*(jtype->junctforce>0?jtype->junctforce:(jtype->klen>0?jtype->klen:0));
 	return; }
 
 
