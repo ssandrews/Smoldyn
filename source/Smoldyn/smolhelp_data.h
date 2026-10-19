@@ -1066,12 +1066,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    case-insensitive. \"Euler\", \"RK2\", and \"RK4\" are explicit methods, which\n"
 		"    need short time steps for stiff filaments. \"Implicit\" is the implicit Euler\n"
 		"    method, which remains stable for much longer time steps. \"EulerMat\" and\n"
-		"    \"ImplicitOld\" are matrix-based test methods; \"ImplicitOld\" can be unstable,\n"
-		"    and \"Implicit\" is better. In 3D, all of these methods also rotate each\n"
-		"    segment about its own axis in response to twisting torques, so twist\n"
-		"    relaxes toward the standard roll angle. If a filament becomes numerically\n"
-		"    unstable, usually because the time step is too long for an explicit method,\n"
-		"    Smoldyn displays an error message and stops the simulation."},
+		"    \"ImplicitOld\" are matrix-based test methods, for which Smoldyn displays a\n"
+		"    warning; \"EulerMat\" gives the same results as \"Euler\" but more slowly, and\n"
+		"    \"ImplicitOld\" can be unstable, so \"Implicit\" is better. In 3D, all of these\n"
+		"    methods also rotate each segment about its own axis in response to twisting\n"
+		"    torques, so twist relaxes toward the standard roll angle. If a filament\n"
+		"    becomes numerically unstable, usually because the time step is too long for\n"
+		"    an explicit method, Smoldyn displays an error message and stops the\n"
+		"    simulation."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"

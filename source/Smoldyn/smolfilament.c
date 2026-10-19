@@ -1197,6 +1197,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 				warn++;simLog(sim,5,"WARNING: filament type %s branch_surface %s has no panels; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchsrf->sname);}}
 		if(filtype->branchcmpt && filtype->branchcmpt->npts==0 && filtype->branchcmpt->ncmptl==0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s branch_compartment %s has no inside-defining points; the gate is closed and no branching will occur\n",filtype->ftname,filtype->branchcmpt->cname);}
+		if(filtype->dynamics==FDeulermat) {					// test methods, not for production simulations
+			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics EulerMat, which is a test method; it gives the same results as Euler but more slowly, so use Euler, RK4, or Implicit for simulations\n",filtype->ftname);}
+		if(filtype->dynamics==FDimplicitold) {
+			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics ImplicitOld, which is a test method; it can be unstable even with short time steps, so use Implicit for simulations\n",filtype->ftname);}
 		if(filtype->confinesrf && filtype->confineforce>0) {
 			if(filtype->dynamics==FDnone) {
 				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
