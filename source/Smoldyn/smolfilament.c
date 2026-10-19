@@ -177,6 +177,7 @@ int filJunctionGeometry(const filjunctionptr junct,int dim,double *tm,double *td
 void filSubtreeSpringForce(filamentptr fil,int dim,double *sum);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 double filNodeThickness(const filamentptr fil,int node);
+double filNodeMobility(const filamentptr fil,int node);
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
@@ -708,6 +709,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
 		filtype->branchazimuthfix=0;								// azimuth free by default
+		filtype->thickdrag=1;												// thicker filaments have more drag by default
 		filtype->branchforceazimuth=0;							// azimuthal spring off by default
 		filtype->branchsrf=NULL;										// no location gate by default
 		filtype->branchsrfdist=0;
@@ -1000,6 +1002,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->branchazimuth>=0)
 		simLog(sim,2,"  branch azimuth: %g rad\n",filtype->branchazimuth);
 	simLog(sim,filtype->branchazimuthfix?2:1,"  branch azimuth fixed: %s\n",filtype->branchazimuthfix?"yes":"no");
+	simLog(sim,filtype->thickdrag?1:2,"  thickness affects drag: %s\n",filtype->thickdrag?"yes":"no");
 	simLog(sim,filtype->branchforceazimuth>0?2:1,"  branch azimuth force constant: %g|E\n",filtype->branchforceazimuth);
 	if(filtype->branchforceazimuth>0 && filtype->kT>0)
 		simLog(sim,2,"  branch azimuth equilibrium spread: %g rad, for thickness 1\n",sqrt(filtype->kT/filtype->branchforceazimuth));
@@ -1307,6 +1310,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchazimuthfix")) {			// hold azimuths at recorded birth values
 		if(value!=0 && value!=1) er=2;
 		else filtype->branchazimuthfix=(int)value; }
+
+	else if(!strcmp(param,"thickdrag")) {							// thickness divides node mobility factors
+		if(value!=0 && value!=1) er=2;
+		else filtype->thickdrag=(int)value; }
 
 	else if(!strcmp(param,"branchforceazimuth")) {		// azimuthal spring constant
 		if(value<0) er=2;
@@ -1722,6 +1729,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1==0 || i1==1,"branch_azimuth_fix value needs to be 0 or 1");
 		filtypeSetParam(filtype,"branchazimuthfix",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_azimuth_fix"); }
+
+	else if(!strcmp(word,"thickness_drag")) {				// thickness_drag: whether thickness divides node mobility
+		CHECKS(filtype,"need to enter filament type name before thickness_drag");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"thickness_drag format: 0 or 1. ");
+		CHECKS(i1==0 || i1==1,"thickness_drag value needs to be 0 or 1");
+		filtypeSetParam(filtype,"thickdrag",0,(double)i1);
+		CHECKS(!strnword(line2,2),"unexpected text following thickness_drag"); }
 
 	else if(!strcmp(word,"branch_force_azimuth")) {	// branch_force_azimuth: azimuthal spring constant, energy/rad^2
 		CHECKS(filtype,"need to enter filament type name before branch_force_azimuth");
@@ -4169,20 +4184,20 @@ void filDrawThermalForces(filamentptr fil) {
 		famp=(dt>0 && mobility>0)?2*kT/(mobility*dt):0;			// loop-invariant part; per-node frms = sqrt(famp/nodemobility)
 		if(dim==2)
 			for(node=0;node<=fil->nseg;node++) {
-				nodemob=fil->nodemobility[node];
+				nodemob=filNodeMobility(fil,node);
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD(); }
 		else
 			for(node=0;node<=fil->nseg;node++) {
-				nodemob=fil->nodemobility[node];
+				nodemob=filNodeMobility(fil,node);
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermforce[node][0]=frms*gaussrandD();
 				filwork->thermforce[node][1]=frms*gaussrandD();
 				filwork->thermforce[node][2]=frms*gaussrandD(); }
 		if(dim==3)
 			for(seg=0;seg<fil->nseg;seg++) {
-				nodemob=0.5*(fil->nodemobility[seg]+fil->nodemobility[seg+1]);	// segment roll mobility factor
+				nodemob=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));	// segment roll mobility factor
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermtorque[seg]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
@@ -4250,13 +4265,13 @@ void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect) {
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++)
 			for(d=0;d<2;d++)
-				flatvect[2*node+d]+=dtmu*fil->nodemobility[node]*forces[node][d]; }
+				flatvect[2*node+d]+=dtmu*filNodeMobility(fil,node)*forces[node][d]; }
 	else {
 		for(node=0;node<=fil->nseg;node++) {
 			for(d=0;d<3;d++)
-				flatvect[4*node+d]+=dtmu*fil->nodemobility[node]*forces[node][d];
+				flatvect[4*node+d]+=dtmu*filNodeMobility(fil,node)*forces[node][d];
 			if(node<fil->nseg) {
-				nodemob=0.5*(fil->nodemobility[node]+fil->nodemobility[node+1]);
+				nodemob=0.5*(filNodeMobility(fil,node)+filNodeMobility(fil,node+1));
 				flatvect[4*node+3]+=dtmu*nodemob*torques[node]; }}}
 	return; }
 
@@ -4671,6 +4686,17 @@ double filNodeThickness(const filamentptr fil,int node) {
 	return 0.5*(fil->segments[node-1]->thk+fil->segments[node]->thk); }
 
 
+/* filNodeMobility */
+// Returns the effective mobility factor of node node of filament fil, which is its node
+// mobility factor, divided by its thickness (filNodeThickness) if the filament type's
+// thickdrag value is 1, so that thicker filaments have proportionally more drag. The
+// mobility of node node is the filament type's mobility times this. Segment rotation
+// mobility factors are the averages of these for the segment's two nodes.
+double filNodeMobility(const filamentptr fil,int node) {
+	if(fil->filtype->thickdrag) return fil->nodemobility[node]/filNodeThickness(fil,node);
+	return fil->nodemobility[node]; }
+
+
 /* filAddConfineForces */
 // Harmonic surface confinement, in the spirit of Cytosim's per-model-point
 // "confine" stiffness: each node on the penalized side of the confining surface
@@ -4951,7 +4977,8 @@ void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 	rollout=filwork->wroll[out];
 	forces=filwork->forces;
 
-	nodemobility=fil->nodemobility;
+	nodemobility=filwork->flatforces[1];						// effective node mobility factors (filNodeMobility), in scratch space
+	for(node=0;node<=fil->nseg;node++) nodemobility[node]=filNodeMobility(fil,node);
 
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++) {
@@ -5113,9 +5140,9 @@ void filImplicitOldDynamics(simptr sim,filamenttypeptr filtype) {	//?? This igno
 
 
 /* filImplicitDynamics */
-void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores nodemobility
-	double dtmu,**flatnodes,**flatforces,bnorm2;
-	int f,flatsize,dim,i;
+void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {
+	double dtmu,**flatnodes,**flatforces,bnorm2,*wt;
+	int f,flatsize,dim,i,j,jmin,jmax,node,seg,d,stride;
 	filamentptr fil;
 	filamentworkptr filwork;
 	sparsematrix forcemat;
@@ -5133,14 +5160,24 @@ void filImplicitDynamics(simptr sim,filamenttypeptr filtype) {	//?? This ignores
 
 		dtmu=filtype->mobility*sim->dt;
 		filComputeDerivForceMat(fil,dtmu);															// nodes are in flatnodes[0], forces are in flatforces[0], and J is in forcemat
+		wt=flatforces[1];																								// effective mobility factors W (filNodeMobility), in scratch space
+		stride=(dim==2)?2:4;
+		for(node=0;node<=fil->nseg;node++)
+			for(d=0;d<dim;d++) wt[stride*node+d]=filNodeMobility(fil,node);
+		if(dim==3)
+			for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));
+		for(i=0;i<flatsize;i++) {																				// forcemat is W J
+			jmin=forcemat->col0[i]<0?0:forcemat->col0[i];
+			jmax=forcemat->col1[i]>forcemat->fcols?forcemat->fcols:forcemat->col1[i];
+			for(j=jmin;j<jmax;j++) sparseMultiplyBy(forcemat,i,j,wt[i]); }
 		bnorm2=0;
 		for(i=0;i<flatsize;i++) {
-			flatnodes[2][i]=dtmu*flatforces[0][i];												// flatnodes[2] is the forward Euler displacement
+			flatnodes[2][i]=dtmu*wt[i]*flatforces[0][i];									// flatnodes[2] is the forward Euler displacement
 			flatnodes[1][i]=flatnodes[2][i];															// which is the initial guess
 			bnorm2+=flatnodes[2][i]*flatnodes[2][i]; }
 		if(bnorm2>0) {
 			sparseMultiplyScalarM(forcemat,-dtmu);
-			sparseAddIdentityM(forcemat,1);																// forcemat is 1-dtmu*J
+			sparseAddIdentityM(forcemat,1);																// forcemat is 1-dtmu*W*J
 			sparseBiCGSTAB(forcemat,flatnodes[2],flatnodes[1],1e-20*bnorm2); }	// flatnodes[1] is the backward Euler displacement, to relative residual 1e-10
 		for(i=0;i<flatsize;i++)
 			flatnodes[1][i]+=flatnodes[0][i];															// flatnodes[1] is the next state
@@ -5333,9 +5370,9 @@ int filProjectConstraints(filamentptr fil) {
 		return 2; }
 
 	for(node=0;node<=fil->nseg;node++)							// mobility weights
-		for(d=0;d<dim;d++) wt[fs*node+d]=fil->nodemobility[node];
+		for(d=0;d<dim;d++) wt[fs*node+d]=filNodeMobility(fil,node);
 	if(dim==3)
-		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(fil->nodemobility[seg]+fil->nodemobility[seg+1]);
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));
 
 	er=1;
 	for(iter=0;iter<FILCONSTRAINTITER;iter++) {

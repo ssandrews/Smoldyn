@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 297
+#define SMOLHELP_NENTRY 298
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1065,15 +1065,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    \"Euler\", \"RK2\", \"RK4\", \"EulerMat\", \"Implicit\" and \"ImplicitOld\". These are\n"
 		"    case-insensitive. \"Euler\", \"RK2\", and \"RK4\" are explicit methods, which\n"
 		"    need short time steps for stiff filaments. \"Implicit\" is the implicit Euler\n"
-		"    method, which remains stable for much longer time steps, but ignores node\n"
-		"    mobility factors. \"EulerMat\" and \"ImplicitOld\" are matrix-based test\n"
-		"    methods, which ignore node mobility factors for stretching and bending\n"
-		"    forces; \"ImplicitOld\" can be unstable, and \"Implicit\" is better. In 3D, all\n"
-		"    of these methods also rotate each segment about its own axis in response to\n"
-		"    twisting torques, so twist relaxes toward the standard roll angle. If a\n"
-		"    filament becomes numerically unstable, usually because the time step is too\n"
-		"    long for an explicit method, Smoldyn displays an error message and stops\n"
-		"    the simulation."},
+		"    method, which remains stable for much longer time steps. \"EulerMat\" and\n"
+		"    \"ImplicitOld\" are matrix-based test methods, which ignore node mobility\n"
+		"    factors for stretching and bending forces; \"ImplicitOld\" can be unstable,\n"
+		"    and \"Implicit\" is better. In 3D, all of these methods also rotate each\n"
+		"    segment about its own axis in response to twisting torques, so twist\n"
+		"    relaxes toward the standard roll angle. If a filament becomes numerically\n"
+		"    unstable, usually because the time step is too long for an explicit method,\n"
+		"    Smoldyn displays an error message and stops the simulation."},
 	{"statement","Statements about filaments",1,"color",
 		"  * color color",
 		"    Sets the drawing color for the filament type. Enter the color as either a\n"
@@ -1262,6 +1261,16 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"mobility",
 		"  * mobility value",
 		"    Mobility of the nodes within the surrounding medium."},
+	{"statement","Statements about filaments",1,"thickness_drag",
+		"  * thickness_drag 0/1",
+		"    Whether the thickness of a filament affects its drag. With 1, which is the\n"
+		"    default, each node's mobility is divided by its thickness, which is the\n"
+		"    average thickness of the segments on either side of it, so a filament with\n"
+		"    thickness 3 moves and diffuses 3 times more slowly than one with thickness\n"
+		"    1, as for a bundle of 3 filaments. With 0, mobility does not depend on\n"
+		"    thickness. In either case, thickness also multiplies the force constants,\n"
+		"    and thermal forces are scaled to match the mobility, so equilibrium\n"
+		"    conformations are the same."},
 	{"statement","Statements about filaments",1,"standard_length",
 		"  * standard_length length",
 		"    Relaxed length of a filament segment. It can change through stretching or\n"
@@ -1402,8 +1411,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"node_mobility",
 		"  * node_mobility node mobility",
 		"    Sets a unitless node mobility factor, which is multiplied by the mobility\n"
-		"    that's defined in the filament type, to give the total node mobility value.\n"
-		"    Enter node as the node number, where 0 is the minus end of the filament.\n"
+		"    that's defined in the filament type, to give the total node mobility value\n"
+		"    (and is divided by the node's thickness unless thickness_drag is 0). Enter\n"
+		"    node as the node number, where 0 is the minus end of the filament.\n"
 		"    Alternatively, enter node as a negative value to count from the plus end of\n"
 		"    the filament, where -1 is the plus end. The mobility value has a default\n"
 		"    value of 1, and can be set to other values here. In particular, setting it\n"

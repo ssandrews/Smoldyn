@@ -758,6 +758,7 @@ typedef struct filamenttypestruct {
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random
     int branchazimuthfix;              // 1 = hold each branch azimuth rigidly at its birth value (3D; static networks)
+    int thickdrag;                     // 1 = node mobility factors are divided by node thickness (thicker filaments have more drag)
     double branchforceazimuth;         // azimuthal spring constant toward birth azimuth, energy/rad^2; 0 = off (3D)
     surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
     double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
