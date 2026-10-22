@@ -10,8 +10,11 @@
 #include "smolfilamentsteric.h"
 #include "Geometry.h"
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
+int filtypeSetParam(filamenttypeptr type,const char *param,int index,double value);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thick,char end);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thick,const char *name);
+void filCopyRollToYpr2(filamentptr fil);
+void filCopyYpr2ToRoll(filamentptr fil);
 void filComputeForces(filamentptr fil,int lo,int hi);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 int filElongate(simptr sim,filamentptr fil,double length);
@@ -350,6 +353,44 @@ static void walls_and_guards(void) {
  sim->wlist[0]->type='p';CHECK(filStericValidate(sim)!=0);sim->wlist[0]->type='r';
  simfree(sim);puts("PASS radius-aware floor/ceiling, unsafe contact guard, unsupported settings rejected");
 }
+static void rectangular_wall_normals(void) {
+ int dim,axis,sign,face,r,j,node,d;
+ /* Sample both sides of contact outside a finite panel's lateral extent.
+    The force must remain normal and continuous, including at radius zero. */
+ for(dim=2;dim<=3;dim++) for(axis=0;axis<dim;axis++) for(sign=-1;sign<=1;sign+=2) {
+  simptr sim=scene(dim);filamenttypeptr t=type(sim,"actin",0);surfaceptr wall=surfaddsurface(sim,"wall");
+  double panel[5]={0},a[3]={0},b[3]={0},inward,dist,expected;char normal[3];int tangent=(axis+1)%dim;
+  for(d=0;d<dim;d++) panel[d]=-0.5;
+  panel[axis]=0;for(d=dim;d<2*dim-1;d++) panel[d]=1;
+  sprintf(normal,"%c%d",sign>0?'+':'-',axis);CHECK(wall);CHECK(!surfaddpanel(wall,dim,PSrect,normal,panel,"panel"));
+  a[tangent]=0.500622;b[tangent]=0.510622;
+  {filamentptr f=rod(t,a,b);t->klen=0;t->confinesrf=wall;t->confineforce=400;
+   for(face=0;face<2;face++) for(r=0;r<2;r++) for(j=0;j<4;j++) {
+    t->confineface=face?PFback:PFfront;t->stericradius=r?0.0035:0;inward=sign*(face?-1:1);
+    dist=j==3?-0.002:t->stericradius+(1-j)*1e-9;
+    for(node=0;node<2;node++) f->nodes[node][axis]=inward*dist;
+    filNodes2Angles(f,-1,-1);filComputeForces(f,-1,-1);
+    expected=inward*400*fmax(t->stericradius-dist,0);
+    for(node=0;node<2;node++) for(d=0;d<dim;d++) NEAR(f->filwork->forces[node][d],d==axis?expected:0,1e-11);
+   }
+  }
+  simfree(sim);
+ }
+ /* Two simultaneous wall contacts have independent backward Euler solutions. */
+ {simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);surfaceptr wall=surfaddsurface(sim,"corner");
+  double floor[5]={-0.5,-0.5,0,1,1},side[5]={0.5,-0.5,0,1,1};
+  double a[3]={0.500622,0,-2.7e-7},b[3]={0.500622,0.01,-2.7e-7};filamentptr f=rod(t,a,b);
+  CHECK(wall);CHECK(!surfaddpanel(wall,3,PSrect,"+2",floor,"floor"));CHECK(!surfaddpanel(wall,3,PSrect,"-0",side,"side"));
+  t->stericradius=0;t->dynamics=FDimplicitnetwork;t->confinesrf=wall;t->confineforce=1e6;t->implicittol=1e-10;sim->dt=1e-4;
+  CHECK(!filDynamics(sim));
+  for(node=0;node<2;node++) {
+   NEAR(f->nodes[node][0],0.5+0.000622/101,2e-10);NEAR(f->nodes[node][2],-2.7e-7/101,2e-10);
+   NEAR(f->nodes[node][1],node?0.01:0,2e-10);
+  }
+  simfree(sim);
+ }
+ puts("PASS 2D/3D rectangular wall normals, both faces/radii, edge continuity and implicit corner relaxation");
+}
 static void convergence_and_2d(void) {
  int dim,level,i,steps;double previous=1,err;
  for(dim=2;dim<=3;dim++) for(level=0;level<3;level++) {
@@ -398,10 +439,205 @@ static void growth_benchmark(void) {
   CHECK(!filStericChemistry(sim,0));simfree(sim);
  }
 }
+static void brownian_switch(void) {
+ int dim,i,j,d;char off[]="0",on[]="1",invalid[]="0.5",extra[]="0 extra";
+ for(dim=2;dim<=3;dim++) {
+  simptr sim=scene(dim);filamenttypeptr t=type(sim,"actin",0);filamentptr fil;
+  double a[3]={0,0,0},b[3]={0.01,0,0},oldlength,noise=0;
+  CHECK(t->brownian==1);t->kT=0.001;t->branchspread=0.2;t->stericsubsteps=4;fil=rod(t,a,b);
+  CHECK(!filtypeReadString(sim,NULL,t,"brownian_motion",invalid));CHECK(t->brownian==1);
+  CHECK(!filtypeReadString(sim,NULL,t,"brownian_motion",extra));CHECK(t->brownian==1);
+  CHECK(filtypeReadString(sim,NULL,t,"brownian_motion",off)==t);CHECK(!t->brownian);
+  NEAR(t->kT,0.001,1e-15);NEAR(t->branchspread,0.2,1e-15);
+  for(i=0;i<20;i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}
+  for(j=0;j<2;j++) for(d=0;d<dim;d++) {
+   NEAR(fil->nodes[j][d],j?b[d]:a[d],1e-15);CHECK(fil->filwork->thermforce[j][d]==0);
+  }
+  /* Turning off thermal noise must leave elastic relaxation active. */
+  fil->nodes[1][0]+=0.002;filNodes2Angles(fil,-1,-1);oldlength=fil->segments[0]->len;
+  CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(fil->segments[0]->len<oldlength);
+  CHECK(filtypeReadString(sim,NULL,t,"brownian_motion",on)==t);filComputeForces(fil,-1,-1);
+  for(j=0;j<2;j++) for(d=0;d<dim;d++) noise+=fabs(fil->filwork->thermforce[j][d]);
+  CHECK(noise>0);
+  /* Runtime toggles invalidate cached noise even at unchanged simulation time. */
+  CHECK(!filtypeSetParam(t,"brownian",0,0));filComputeForces(fil,-1,-1);
+  for(j=0;j<2;j++) for(d=0;d<dim;d++) CHECK(fil->filwork->thermforce[j][d]==0);
+  simfree(sim);
+ }
+ puts("PASS 2D/3D Brownian motion switch, runtime cache invalidation, retained kT/spread and elastic relaxation");
+}
+static void movement_cache(void) {
+ simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);filamentptr mother,daughter;
+ double a[3]={0,0,0},b[3]={0.01,0,0},angle[3]={1,0,0};int i,root;unsigned long long rebuild;
+ struct filamentstericstruct *w;
+ mother=rod(t,a,b);CHECK(!filAddSegment(mother,NULL,0.01,angle,1,'b'));
+ t->stericradius=0;t->branchsegments=2;daughter=filAddBranch(sim,mother,0,angle,1,NULL);CHECK(daughter);t->stericradius=0.0035;
+ t->stericsubsteps=4;CHECK(!filDynamics(sim));sim->time+=sim->dt;
+ w=sim->filss->steric;rebuild=w->movementrebuilds;CHECK(rebuild==1);
+ for(i=0;i<8;i++) {CHECK(!filDynamics(sim));sim->time+=sim->dt;}CHECK(w->movementrebuilds==rebuild);
+ /* Mobility changes refresh the group drag, without rebuilding its identity. */
+ mother->nodemobility[1]=0;CHECK(!filDynamics(sim));sim->time+=sim->dt;
+ root=w->nodes[daughter->stericnodeoffset].parent;CHECK(w->nodes[root].fixed);
+ CHECK(w->movementrebuilds==rebuild);mother->nodemobility[1]=1;
+ CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(!w->nodes[root].fixed);
+ /* A same-count branch-spot edit must invalidate the cache. */
+ mother->branchspots[0]=1;memcpy(daughter->nodes[0],mother->nodes[2],3*sizeof(double));filNodes2Angles(daughter,-1,-1);
+ CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(w->movementrebuilds==++rebuild);
+ root=w->nodes[daughter->stericnodeoffset].parent;
+ CHECK(root==mother->stericnodeoffset+2);
+ CHECK(!filRemoveSegment(daughter,'b'));CHECK(!filDynamics(sim));sim->time+=sim->dt;
+ CHECK(w->movementrebuilds==++rebuild);
+ daughter->frontend=NULL;CHECK(!filDynamics(sim));sim->time+=sim->dt;CHECK(w->movementrebuilds==++rebuild);
+ CHECK(w->nodes[daughter->stericnodeoffset].parent==daughter->stericnodeoffset);
+ simfree(sim);puts("PASS movement topology reuse, mobility refresh, branch-spot edits, removal and detachment");
+}
+static simptr worker_scene(int workers) {
+ simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);int i,j;
+ double a[3],b[3],angle[3]={0.01,0.005,0};
+ t->sterick=1000;t->stericsubsteps=4;t->kypr[0]=t->kypr[1]=t->kypr[2]=0.02;
+ t->branchforceangle=0.018;t->branchforceazimuth=0.02;t->branchangle=1.0;t->branchsegments=2;t->stericradius=0;
+ CHECK(!filSetWorkers(sim,workers));
+ for(i=0;i<220;i++) {
+  filamentptr fil;a[0]=(i%10)*0.08;a[1]=(i/10)*0.012;a[2]=(i%2)*0.006;
+  memcpy(b,a,sizeof(b));b[0]+=0.01;fil=rod(t,a,b);
+  for(j=0;j<4;j++) CHECK(!filAddSegment(fil,NULL,0.01,angle,1,'b'));
+  if(i%20==0) {double branchangle[3]={1,0,0};CHECK(filAddBranch(sim,fil,2,branchangle,1,NULL));}
+ }
+ t->stericradius=0.0035;return sim;
+}
+static void workers(void) {
+ simptr serial,parallel;int i,f,j;filamenttypeptr a,b;
+ simptr probe=scene(3);char bad[]="-1",extra[]="2 extra",one[]="1",automatic[]="0";
+ CHECK(simreadstring(probe,NULL,"filament_workers",bad)!=0);
+ CHECK(simreadstring(probe,NULL,"filament_workers",extra)!=0);
+ CHECK(!simreadstring(probe,NULL,"filament_workers",one));CHECK(probe->filss->workers==1);
+ CHECK(!simreadstring(probe,NULL,"filament_workers",automatic));CHECK(probe->filss->workers==0);simfree(probe);
+ if(!filWorkersSupported()) {
+  probe=worker_scene(1);CHECK(filSetWorkers(probe,4)==2);CHECK(probe->filss->workers==1);
+  CHECK(!filSetWorkers(probe,0));CHECK(!filDynamics(probe));CHECK(probe->filss->steric->workersused==1);simfree(probe);
+  puts("PASS serial-only worker setting, automatic fallback and unavailable-worker rejection");return;
+ }
+ serial=worker_scene(1);parallel=worker_scene(4);a=serial->filss->filtypes[0];b=parallel->filss->filtypes[0];
+ for(i=0;i<20;i++) {
+  CHECK(!filDynamics(serial));CHECK(!filDynamics(parallel));serial->time+=serial->dt;parallel->time+=parallel->dt;
+  CHECK(a->nfil==b->nfil);
+  for(f=0;f<a->nfil;f++) {
+   filamentptr x=a->fillist[f],y=b->fillist[f];CHECK(x->nseg==y->nseg);
+   CHECK(!memcmp(x->seg0up,y->seg0up,3*sizeof(double)));
+   for(j=0;j<=x->nseg;j++) CHECK(!memcmp(x->nodes[j],y->nodes[j],3*sizeof(double)));
+   for(j=0;j<x->nseg;j++) {
+    CHECK(!memcmp(x->segments[j]->qabs,y->segments[j]->qabs,4*sizeof(double)));
+    CHECK(!memcmp(x->segments[j]->ypr,y->segments[j]->ypr,3*sizeof(double)));
+   }
+  }
+ }
+ CHECK(parallel->filss->steric->workersused==4);CHECK(serial->filss->steric->movementrebuilds==1);
+ CHECK(parallel->filss->steric->npair==serial->filss->steric->npair);
+ simfree(serial);simfree(parallel);puts("PASS exact 1/4-worker deterministic mechanics, material frames and branch geometry");
+}
+
+static void implicit_network(void) {
+ int dim,i,j,d;
+ /* Single spring: backward Euler has a known exact discrete solution even
+    when an explicit step would diverge. Test a stiffness/timestep sweep. */
+ for(dim=2;dim<=3;dim++) for(i=0;i<5;i++) {
+  simptr sim=scene(dim);filamenttypeptr t=type(sim,"actin",0);filamentptr fil;
+  double a[3]={0,0,0},b[3]={0.012,0,0},h=1e-4*pow(10,i),expected;
+  t->dynamics=FDimplicitnetwork;t->stericradius=0;sim->dt=h;
+  fil=rod(t,a,b);expected=0.01+0.002/(1+2*h*t->mobility*t->klen);
+  CHECK(!filDynamics(sim));NEAR(fil->segments[0]->len,expected,2e-8);
+  NEAR((fil->nodes[0][0]+fil->nodes[1][0])*0.5,0.006,1e-12);
+  simfree(sim);
+ }
+ /* Existing contacts and new contacts encountered by a Newton trial must
+    participate in the full coupled residual, including immobile obstacles. */
+ for(i=0;i<3;i++) {
+  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0),fixed=type(sim,"fixed",1);
+  double a[3]={0,0,0},b[3]={0.01,0,0},c[3]={0,0.006,0},e[3]={0.01,0.006,0};
+  filamentptr f=rod(t,a,b);filamentptr obstacle=rod(fixed,c,e);
+  t->dynamics=FDimplicitnetwork;sim->dt=1e-4*pow(10,i);
+  CHECK(!filDynamics(sim));
+  /* Fixed obstacle, force split evenly over both endpoints: rate k/2. */
+  NEAR(f->nodes[0][1],-0.001*(1-1/(1+sim->dt*t->sterick/2)),3e-8);
+  NEAR(obstacle->nodes[0][1],0.006,1e-15);CHECK(sim->filss->steric->contactbound>0.5 || i==0);
+  simfree(sim);
+ }
+ /* Shared branch coordinates stay exactly equal and fixed roots remain fixed.
+    A deliberately impossible nonlinear tolerance must report failure and restore. */
+ {
+  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);filamentptr mother,daughter;
+  double a[3]={0,0,0},b[3]={0.01,0,0},angle[3]={1,0.1,0.2},saved[3];
+  t->stericradius=0;t->branchsegments=2;mother=rod(t,a,b);
+  daughter=filAddBranch(sim,mother,0,angle,1,NULL);CHECK(daughter);
+  t->dynamics=FDimplicitnetwork;t->kypr[0]=t->kypr[1]=t->kypr[2]=0.02;
+  t->branchforceangle=0.02;t->branchangle=1.2;t->branchforceazimuth=0.03;
+  mother->nodemobility[1]=0;sim->dt=1e-4;
+  memcpy(saved,mother->nodes[1],sizeof(saved));CHECK(!filDynamics(sim));
+  for(d=0;d<3;d++) {NEAR(mother->nodes[1][d],saved[d],1e-15);NEAR(daughter->nodes[0][d],saved[d],1e-15);}
+  /* Nonlinear finite-difference roundoff prevents a 1e-30 residual. */
+  t->implicittol=1e-30;t->implicititerations=1;
+  for(j=0;j<=daughter->nseg;j++) memcpy(daughter->nodesx[j],daughter->nodes[j],3*sizeof(double));
+  CHECK(filDynamics(sim)!=0);
+  for(j=0;j<=daughter->nseg;j++) for(d=0;d<3;d++) NEAR(daughter->nodes[j][d],daughter->nodesx[j][d],1e-15);
+  simfree(sim);
+ }
+
+ /* Radius-aware wall relaxation also has a known backward Euler solution. */
+ {
+  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);surfaceptr wall=surfaddsurface(sim,"chamber");
+  double panel[5]={-1,-1,0,2,2},a[3]={0,0,0.0025},b[3]={0.01,0,0.0025};
+  filamentptr f=rod(t,a,b);CHECK(wall);CHECK(!surfaddpanel(wall,3,PSrect,"+2",panel,"floor"));
+  t->dynamics=FDimplicitnetwork;t->confinesrf=wall;t->confineforce=1e6;sim->dt=1e-4;
+  CHECK(!filDynamics(sim));NEAR(f->nodes[0][2],0.0035-0.001/101,2e-8);
+  simfree(sim);
+ }
+ /* Relative material roll is an implicit unknown, not an explicit after-step.
+    This uses the author's local torque/mobility convention. */
+ {
+  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);double a[3]={0,0,0},b[3]={0.01,0,0},angle[3]={0,0,0.4};
+  filamentptr f=rod(t,a,b);CHECK(!filAddSegment(f,NULL,0.01,angle,1,'b'));
+  filCopyYpr2ToRoll(f);NEAR(f->roll[1],0.4,1e-15);
+  f->roll[1]=0.3;filCopyRollToYpr2(f);NEAR(f->segments[1]->ypr[2],0.3,1e-15);
+  f->segments[1]->ypr[2]=0.4;filNodes2Angles(f,-1,-1);
+  t->stericradius=0;t->kypr[2]=2;sim->dt=0.01;
+  CHECK(!filDynamics(sim));NEAR(f->segments[1]->ypr[2],0.4*(1-0.02),2e-8);
+  f->segments[1]->ypr[2]=0.4;filNodes2Angles(f,-1,-1);
+  t->dynamics=FDimplicitnetwork;sim->dt=0.1;
+  CHECK(!filDynamics(sim));NEAR(f->segments[1]->ypr[2],0.4/1.2,2e-7);
+  NEAR(f->roll[1],f->segments[1]->ypr[2],1e-15);simfree(sim);
+ }
+ /* With no elastic forces, implicit Brownian displacement is exactly h*mu*F.
+    A stiff deterministic solve with noise disabled is covered above. */
+ for(dim=2;dim<=3;dim++) {
+  simptr sim=scene(dim);filamenttypeptr t=type(sim,"actin",0);double a[3]={0,0,0},b[3]={0.01,0,0};
+  filamentptr f=rod(t,a,b);t->dynamics=FDimplicitnetwork;t->stericradius=0;t->klen=0;t->kT=0.001;sim->dt=1e-4;
+  CHECK(!filDynamics(sim));
+  for(j=0;j<=1;j++) for(d=0;d<dim;d++)
+   NEAR(f->nodes[j][d]-(j?b[d]:a[d]),sim->dt*t->mobility*f->filwork->thermforce[j][d],2e-8);
+  simfree(sim);
+ }
+
+ if(filWorkersSupported()) {
+  simptr serial=worker_scene(1),parallel=worker_scene(4);
+  serial->filss->filtypes[0]->dynamics=parallel->filss->filtypes[0]->dynamics=FDimplicitnetwork;
+  for(i=0;i<3;i++) {
+   CHECK(!filDynamics(serial));CHECK(!filDynamics(parallel));serial->time+=serial->dt;parallel->time+=parallel->dt;
+   for(j=0;j<serial->filss->filtypes[0]->nfil;j++) {
+    filamentptr a=serial->filss->filtypes[0]->fillist[j],b=parallel->filss->filtypes[0]->fillist[j];int node;
+    CHECK(!memcmp(a->seg0up,b->seg0up,3*sizeof(double)));
+    for(node=0;node<=a->nseg;node++) CHECK(!memcmp(a->nodes[node],b->nodes[node],3*sizeof(double)));
+   }
+  }
+  simfree(serial);simfree(parallel);
+ }
+ puts("PASS coupled implicit 2D/3D analytic spring sweep, stiff contacts/walls, roll, Brownian increments, branch constraints, worker reproducibility and rollback");
+}
+
 int main(int argc,char **argv) {
  setvbuf(stdout,NULL,_IONBF,0);
+ if(argc>1 && !strcmp(argv[1],"--implicit")) {implicit_network();return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark")) {benchmark(0,0);benchmark(1,0);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-thermal")) {benchmark(0,1);benchmark(1,1);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-growth")) {growth_benchmark();return 0;}
- geometry();indexing();shared_grids();unified_boxes();queries();growth_switch();forces();branch();growth();growth_index();branch_rollback();diffusion();walls_and_guards();convergence_and_2d();puts("All filament steric checks passed.");return 0;
+ geometry();indexing();shared_grids();unified_boxes();queries();growth_switch();forces();branch();growth();growth_index();branch_rollback();diffusion();walls_and_guards();rectangular_wall_normals();convergence_and_2d();brownian_switch();movement_cache();workers();implicit_network();puts("All filament steric checks passed.");return 0;
 }

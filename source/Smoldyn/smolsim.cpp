@@ -32,6 +32,7 @@
 
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
+#include "smolprofile.h"
 #include "smoldynconfigure.h"
 
 #ifdef OPTION_VCELL
@@ -517,6 +518,7 @@ void writesim(simptr sim,FILE *fptr) {
 	if(sim->boxs->mpbox) fprintf(fptr,"molperbox %g\n",sim->boxs->mpbox);
 	else if(sim->boxs->boxsize) fprintf(fptr,"boxsize %g\n",sim->boxs->boxsize);
 	if(sim->filss && sim->filss->ntype) fprintf(fptr,"filament_box_density %g\n",sim->boxs->filamentdensity);
+	if(sim->filss) fprintf(fptr,"filament_workers %i\n",sim->filss->workers);
 	fprintf(fptr,"\n");
 	return; }
 
@@ -1544,6 +1546,15 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 
 	else if(!strcmp(word,"max_filament")) {				// max_filament
 		CHECKS(0,"max_filament has been deprecated"); }
+
+	else if(!strcmp(word,"filament_workers")) {
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"filament_workers needs an integer: 0 automatic, 1 serial, or a worker count");
+		CHECKS(i1>=0 && i1<=256,"filament_workers must be between 0 and 256");
+		CHECKS(!strnword(line2,2),"unexpected text following filament_workers");
+		er=filSetWorkers(sim,i1);
+		CHECKS(er!=1,"out of memory in filament_workers");
+		CHECKS(er!=2,"multiple filament workers require an OpenMP-enabled build"); }
 
 	else if(!strcmp(word,"new_filament")) {				// new_filament
 		fil=filReadString(sim,pfp,NULL,NULL,"name",line2);
@@ -2676,7 +2687,7 @@ int simulatetimestep(simptr sim) {
 	er=(*sim->assignmols2boxesfn)(sim,0,1);					// assign again (all, reborn)
 	if(er) return 2;
 
-	er=filDynamics(sim);
+	SMOL_PROFILE_RUN(SP_FILAMENT,er=filDynamics(sim));
 	if(er) return 11;
 
 #ifdef ENABLE_PYTHON_CALLBACK
@@ -2690,7 +2701,7 @@ int simulatetimestep(simptr sim) {
 #endif
 	sim->time+=sim->dt;													// --- end of time step ---
 	simsetvariable(sim,"time",sim->time);
-	er=simdocommands(sim);
+	SMOL_PROFILE_RUN(SP_COMMANDS,er=simdocommands(sim));
 	if(er) return er;
 
 

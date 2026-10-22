@@ -443,6 +443,8 @@ int filUpdate(simptr sim);
 // core simulation functions
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 int filDynamics(simptr sim);
+int filSetWorkers(simptr sim,int workers);
+int filWorkersSupported(void);
 void filStericReport(simptr sim);
 int filAddFilamentForce(simptr sim);
 /* Physical capsule queries. distance is signed surface clearance; nearest is

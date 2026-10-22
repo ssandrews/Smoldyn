@@ -55,6 +55,24 @@ A small deterministic example is in
 `examples/S13_filaments/sterics/capsule_contact.txt`. It starts two perpendicular
 capsules 6 nm apart and lets them relax toward their 7 nm contact separation.
 
+## Rectangular confinement walls
+
+`confine_surface` rectangles use a continuous penalty along each panel's inward
+normal: `force = k * max(radius - signed_distance, 0)`. This same formula applies
+at `steric_radius 0`; disabling filament contacts does not switch wall algorithms.
+The radius sets the centerline clearance, and `confine_face` selects the allowed
+side. At a chamber corner, each wall contributes only its normal component.
+
+Rectangular confinement acts on the panel's infinite supporting plane, including
+outside its lateral outline. It is appropriate for the half-spaces of a closed
+chamber; a partial rectangular patch is not a finite collision obstacle.
+Other panel shapes retain their existing force calculations. Coplanar panels
+contribute separately, so tessellating one wall can multiply its penalty.
+
+This fixes the zero-radius floor/sidewall edge discontinuity reproduced at
+8.3654 s in the standard experiment. Previously, the finite floor's nearest edge
+added a sideways force that switched off abruptly above the floor plane.
+
 ## Mechanics and neighbor search
 
 For closest centerline distance `d`, combined radius `R = ra + rb`, and overlap
@@ -156,7 +174,7 @@ make the local pair count large.
 
 ## Stability and limitations
 
-The integrator remains explicit overdamped Euler. Contact stiffness, mobility,
+For `dynamics euler`, integration is explicit overdamped Euler. Contact stiffness, mobility,
 node mobility factors, accumulated contacts, stretching, bending and junction
 springs all matter. Before moving nodes, a conservative row-sum estimate of the
 **normal contact stiffness** is multiplied by mobility and the mechanical
@@ -180,16 +198,18 @@ can pass through a thin obstacle between force evaluations. Growth insertion is
 checked along its complete new segment, but this does not solve tunneling during
 motion. Arbitrary initial overlaps are relaxed, not rejected automatically.
 
-Supported mechanics: 2D and 3D, `dynamics euler` or `none` on every filament type.
-Periodic domains, rigid `branch_azimuth_fix`, other filament integrators, and
+Supported mechanics: 2D and 3D, with all mobile types using either `dynamics euler`
+or `dynamics implicit_network`; fixed types use `none`. See `FILAMENT_IMPLICIT.md`
+for the coupled implicit alternative. Periodic domains, rigid `branch_azimuth_fix`,
+other filament integrators, and
 nonrectangular confinement panels are rejected with explicit errors. The existing
 one-way `branch_force_azimuth` approximation remains. Molecule–filament exclusion,
 NPF occupancy, monomer depletion and chemical rate calibration are not added.
 
 At termination, the log reports neighbor count, active contacts, maximum overlap,
 penalty energy, rebuilds and rejected births/growth. Contact values refer to the
-last force evaluation, just before the last mechanical move; they are not maxima
-over the run.
+last force evaluation (before the move for Euler, at the accepted new state for
+implicit); they are not maxima over the run.
 
 ## Grid and filament query APIs
 
@@ -275,3 +295,26 @@ exhaustive scans at the same three segment counts.
 
 Validation results and timing measurements are recorded in
 `FILAMENT_STERICS_VALIDATION.md`.
+
+## Optional mechanical workers and cached movement
+
+Inside a filament-type block, `brownian_motion 0` disables mechanical thermal
+noise and `brownian_motion 1` restores it (the default). This preserves `kT` for
+random seed/growth geometry and derived branch-angle spread. Elastic, contact
+and confinement forces remain active. Turning noise off does not remove the
+mechanical timestep or contact-stability requirements.
+
+`filament_workers 1` is the default global setting; `filament_workers 4` requests
+up to four mechanical CPU workers and `filament_workers 0` selects automatically.
+This applies to the coupled Euler and `implicit_network` paths. Small seed networks stay serial.
+The existing box system is shared, and chemistry/Brownian draws/contact sums
+retain their original order. Movement topology is cached between topology edits;
+the ordinary material update is reused without its discarded Cartesian step.
+See `FILAMENT_WORKERS.md` for configuration, implementation ownership, build
+support and verification.
+
+## Coupled implicit integration
+
+`dynamics implicit_network` supports coupled capsule contacts and branch constraints.
+See [FILAMENT_IMPLICIT.md](FILAMENT_IMPLICIT.md) for settings, mathematical limits,
+measured speed and tests. Existing Euler settings continue to select Euler.

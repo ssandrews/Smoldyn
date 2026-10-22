@@ -803,7 +803,8 @@ enum FilamentDynamics
     FDRK4,
     FDeulermat,
 		FDimplicitold,
-		FDimplicit
+		FDimplicit,
+    FDimplicitnetwork
 };
 
 typedef struct segmentstruct {
@@ -878,12 +879,16 @@ typedef struct filamenttypestruct
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
+    int brownian;                      // mechanical thermal noise, 0 off / 1 on (default)
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility
     double filradius;                  // segment radius
     double stericradius;               // physical capsule radius; 0 disables excluded volume
     double sterick;                    // repulsion stiffness, energy/length^2
     double stericskin;                 // neighbor-list displacement margin
+    double implicittol;                // backward Euler residual tolerance, length units
+    int implicititerations;            // maximum Newton iterations
+    int implicitkrylov;                // maximum GMRES iterations per Newton solve
     int stericsubsteps;                // mechanical steps per chemical timestep
     int stericgrowth;                  // reject overlapping elongation/treadmilling (default 1)
     double branchrate;                 // branch nucleation rate, per unit mother length per time
@@ -925,6 +930,7 @@ typedef struct filamentsuperstruct
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
     struct filamentstericstruct* steric; // contact workspace; spatial storage belongs to boxstruct
+    int workers;                       // mechanical workers: 1 serial (default), 0 automatic
 } * filamentssptr;
 
 

@@ -6,6 +6,7 @@
  of the Gnu Lesser General Public License (LGPL). */
 
 #include <stdio.h>
+#include <float.h>
 #include <math.h>
 #include <string.h>
 #include "Geometry.h"
@@ -19,6 +20,7 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "smolprofile.h"
 
 
 #define FILMAXTRIES 100
@@ -146,6 +148,7 @@ int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *f
 void filAddStretchForces(filamentptr fil,int nodemin,int nodemax);
 void filAddStretchForceMat(filamentptr fil);
 void filAddThermalForces(filamentptr fil,int nodemin,int nodemax);
+void filPrepareThermalForces(filamentptr fil);
 void filAddBendForces(filamentptr fil,int nodemin,int nodemax);
 void filAddBendForceMat(filamentptr fil);
 int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daughter,int dim,double *tm,double *td,double *lenmptr,double *lendptr,double *costhptr,double *sinthptr);
@@ -156,6 +159,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
 // Dynamics functions
 void filStepDynamics(filamentptr fil,double dtmu,int in,int out);
+void filStepMaterialFrame(filamentptr fil,double dtmu,int in,int out);
 void filEulerDynamics(simptr sim,filamenttypeptr filtype);
 void filRK2Dynamics(simptr sim,filamenttypeptr filtype);
 void filRK4Dynamics(simptr sim,filamenttypeptr filtype);
@@ -177,6 +181,7 @@ char *filFD2string(enum FilamentDynamics fd,char *string) {
 	else if(fd==FDRK4) strcpy(string,"RK4");
 	else if(fd==FDeulermat) strcpy(string,"EulerMat");
 	else if(fd==FDimplicitold) strcpy(string,"ImplicitOld");
+	else if(fd==FDimplicitnetwork) strcpy(string,"ImplicitNetwork");
 	else if(fd==FDimplicit) strcpy(string,"Implicit");
 	else strcpy(string,"none");
 	return string; }
@@ -192,6 +197,7 @@ enum FilamentDynamics filstring2FD(const char *string) {
 	else if(strbegin(string,"RK4",0)) ans=FDRK4;
 	else if(strbegin(string,"eulermat",0)) ans=FDeulermat;
 	else if(strbegin(string,"implicitold",0)) ans=FDimplicitold;
+	else if(!strcmp(string,"implicit_network")) ans=FDimplicitnetwork;
 	else if(strbegin(string,"implicit",0)) ans=FDimplicit;
 	else ans=FDnone;
 	return ans; }
@@ -622,6 +628,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->klen=1;
 		filtype->kypr[0]=filtype->kypr[1]=filtype->kypr[2]=1;
 		filtype->kT=1;
+		filtype->brownian=1;
 		filtype->treadrate=0;
 		filtype->mobility=1;
 		filtype->filradius=1;
@@ -629,6 +636,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->sterick=0;
 		filtype->stericskin=0;
 		filtype->stericsubsteps=1;
+		filtype->implicittol=1e-7;filtype->implicititerations=12;filtype->implicitkrylov=60;
 		filtype->stericgrowth=1;
 
 		filtype->branchrate=0;											// branching off by default
@@ -735,7 +743,8 @@ filamentssptr filssAlloc(filamentssptr filss,int maxtype) {
 		filss->ntype=0;
 		filss->ftnames=NULL;
 		filss->filtypes=NULL;
-		filss->steric=NULL; }
+		filss->steric=NULL;
+		filss->workers=1; }
 
 	if(maxtype>=filss->maxtype) {
 		CHECKMEM(newfiltypes=(filamenttypeptr*) calloc(maxtype,sizeof(filamenttypeptr)));
@@ -885,6 +894,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,2," Filament type: %s\n",filtype->ftname);
 	simLog(sim,1,"  superstructure: %s\n",filtype->filss?"assigned":"missing (assuming dim=3)");
 	simLog(sim,2,"  dynamics: %s\n",filFD2string(filtype->dynamics,string));
+	if(filtype->dynamics==FDimplicitnetwork)
+		simLog(sim,2,"  implicit tolerance %g (length), Newton limit %i, Krylov limit %i\n",filtype->implicittol,filtype->implicititerations,filtype->implicitkrylov);
 	simLog(sim,filtype->bundlevalue!=1?2:1,"  bundle value: %g\n",filtype->bundlevalue);
 
 	simLog(sim,2,"  color: %g %g %g %g\n",filtype->color[0],filtype->color[1],filtype->color[2],filtype->color[3]);
@@ -927,7 +938,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
 	if(filtype->confinesrf && filtype->confineforce>0) {
 		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",surfface2string(filtype->confineface,string),filtype->confinesrf->sname,filtype->confineforce);
-		if(filtype->kT>0)																// equipartition penetration depth the wall permits
+		if(filtype->brownian && filtype->kT>0)																// equipartition penetration depth the wall permits
 			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L\n",sqrt(filtype->kT/filtype->confineforce)); }
 
 	simLog(sim,(filtype->elongrate>0 || filtype->caprate>0)?2:1,"  plus end: %s\n",filtype->plusend=='f'?"front":"back");
@@ -939,6 +950,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(filtype->caprate>0)																					// the analytic target the pair is calibrated to
 		simLog(sim,2,"  mean length added before capping: %g|L\n",filtype->elongrate/filtype->caprate);
 
+	simLog(sim,2,"  mechanical Brownian motion: %s\n",filtype->brownian?"on":"off");
 	simLog(sim,2,"  mobility: %g\n",filtype->mobility);
 	simLog(sim,2,"  filament radius: %g\n",filtype->filradius);
 	if(filtype->stericradius>0)
@@ -972,6 +984,7 @@ void filssOutput(const simptr sim) {
 	simLog(sim,filss->condition<SCok?2:1," condition: %s\n",simsc2string(filss->condition,string));
 	simLog(sim,1," filament types allocated: %i,",filss->maxtype);
 	simLog(sim,2," filament types defined: %i\n",filss->ntype);
+	simLog(sim,2," mechanical workers requested: %i (0 automatic), parallel support: %s\n",filss->workers,filWorkersSupported()?"yes":"no");
 	for(ft=0;ft<filss->ntype;ft++)
 		filtypeOutput(filss->filtypes[ft]);
 
@@ -1014,6 +1027,8 @@ int filCheckParams(const simptr sim,int *warnptr) {
 		warn++;
 		simLog(sim,7," WARNING: filament structure %s\n",simsc2string(filss->condition,string)); }
 
+	if(filss->workers<0 || filss->workers>256 || (filss->workers>1 && !filWorkersSupported())) {
+		error++;simLog(sim,9,"ERROR: invalid or unavailable filament worker count\n"); }
 	if(filss->ntype==0) {warn++;simLog(sim,5,"WARNING: Filament superstructure is defined, but no filament types are defined\n");}
 	for(ft=0;ft<filss->ntype;ft++) {
 		filtype=filss->filtypes[ft];
@@ -1058,7 +1073,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->confinesrf->npanel[ps];
 			if(pcount==0) {
 				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
-			if(filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+			if(filtype->dynamics!=FDimplicitnetwork && filtype->mobility*filtype->confineforce*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
 				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*dt = %g > 0.5, before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*sim->dt);}}
 		if((filtype->branchforceangle>0 || filtype->branchforceazimuth>0 || (filtype->confinesrf && filtype->confineforce>0)) && (filtype->dynamics==FDeulermat || filtype->dynamics==FDimplicitold)) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses junction springs or confinement with dynamics eulermat or implicitold, which drive from the analytic force matrix (stretch and bend only); these forces will not be applied\n",filtype->ftname);}
@@ -1129,6 +1144,14 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"treadrate")) {
 		filtype->treadrate=value; }
+
+	else if(!strcmp(param,"brownian")) {
+		if(value!=0 && value!=1) er=2;
+		else {
+			int f;
+			filtype->brownian=(int)value;
+			for(f=0;f<filtype->nfil;f++) if(filtype->fillist[f]->filwork)
+				filtype->fillist[f]->filwork->thermtime=-DBL_MAX; }}
 
 	else if(!strcmp(param,"branchrate")) {						// branch nucleation rate
 		if(value<0) er=2;
@@ -1329,6 +1352,16 @@ void filSetCondition(filamentssptr filss,enum StructCond cond,int upgrade) {
 	return; }
 
 
+/* Superstructure setting, like other filEnable/filSet operations. No global
+   OpenMP settings are changed: separate simulations retain their own choices. */
+int filSetWorkers(simptr sim,int workers) {
+ if(!sim) return 1;
+ if(workers<0 || workers>256 || (workers>1 && !filWorkersSupported())) return 2;
+ if(!sim->filss && filEnableFilaments(sim)) return 1;
+ sim->filss->workers=workers;return 0;
+}
+
+
 /* filEnableFilaments */
 int filEnableFilaments(simptr sim) {
 	filamentssptr filss;
@@ -1452,6 +1485,24 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		else filtype->stericskin=f1;
 		filSetCondition(filtype->filss,SCparams,0); }
 
+	else if(!strcmp(word,"implicit_tolerance")) {
+		CHECKS(filtype,"implicit_tolerance requires a filament type");
+		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"implicit_tolerance requires a positive length");
+		CHECKS(isfinite(f1) && f1>0,"implicit_tolerance must be finite and positive");
+		CHECKS(!strnword(line2,2),"unexpected text following implicit_tolerance");
+		filtype->implicittol=f1;filSetCondition(filtype->filss,SCparams,0); }
+
+	else if(!strcmp(word,"implicit_iterations") || !strcmp(word,"implicit_krylov")) {
+		CHECKS(filtype,"implicit solver setting requires a filament type");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"implicit solver setting requires an integer");
+		CHECKS(i1>=1 && i1<=1000,"implicit iteration limit must be between 1 and 1000");
+		CHECKS(!strnword(line2,2),"unexpected text following implicit solver setting");
+		if(!strcmp(word,"implicit_iterations")) filtype->implicititerations=i1;
+		else filtype->implicitkrylov=i1;
+		filSetCondition(filtype->filss,SCparams,0); }
+
 	else if(!strcmp(word,"steric_substeps")) {
 		CHECKS(filtype,"steric_substeps requires a filament type");
 		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
@@ -1537,6 +1588,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKM(itct==1,"treadmill_rate format: value. ");
 		filtypeSetParam(filtype,"treadrate",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following treadmill_rate"); }
+
+	else if(!strcmp(word,"brownian_motion")) {
+		CHECKS(filtype,"need to enter filament type name before brownian_motion");
+		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"brownian_motion requires 0 or 1");
+		CHECKS(f1==0 || f1==1,"brownian_motion requires 0 or 1");
+		CHECKS(!strnword(line2,2),"unexpected text following brownian_motion");
+		filtypeSetParam(filtype,"brownian",0,f1); }
 
 	else if(!strcmp(word,"branch_rate")) {			// branch_rate (per unit length per time)
 		CHECKS(filtype,"need to enter filament type name before branch_rate");
@@ -2406,7 +2465,7 @@ void filCopyRollToYpr2(filamentptr fil) {
 	int seg;
 
 	for(seg=0;seg<fil->nseg;seg++)
-		fil->roll[seg]=fil->segments[seg]->ypr[2];
+		fil->segments[seg]->ypr[2]=fil->roll[seg];
 	return;	}
 
 
@@ -2415,7 +2474,7 @@ void filCopyYpr2ToRoll(filamentptr fil) {
 	int seg;
 
 	for(seg=0;seg<fil->nseg;seg++)
-		fil->segments[seg]->ypr[2]=fil->roll[seg];
+		fil->roll[seg]=fil->segments[seg]->ypr[2];
 	return;	}
 
 
@@ -3568,23 +3627,16 @@ void filAddStretchForceMat(filamentptr fil) {
 // and Jacobian calls). Random numbers are always drawn and the amplitude multiplies
 // the draw, so the draw sequence is independent of kT and mobility values; immobile
 // nodes (nodemobility 0) correctly receive no thermal force.
-void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,kT,dt,mobility,famp,nodemob,frms;
-	filamenttypeptr filtype;
-	filamentworkptr filwork;
-	int dim,node;
-	simptr sim;
-
-	filtype=fil->filtype;
-	filwork=fil->filwork;
-	sim=filtype->filss->sim;
-	dim=sim->dim;
-
-	if(nodemin<0) nodemin=0;
-	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
-
+/* Generate thermal noise in the original serial filament/node order before
+   a worker force pass. The existing Gaussian generator stays on one thread. */
+void filPrepareThermalForces(filamentptr fil) {
+	double kT,dt,mobility,famp,nodemob,frms;
+	filamenttypeptr filtype=fil->filtype;
+	filamentworkptr filwork=fil->filwork;
+	simptr sim=filtype->filss->sim;
+	int dim=sim->dim,node;
 	if(sim->time>filwork->thermtime) {				// compute random forces on each node
-		kT=filtype->kT;
+		kT=filtype->brownian?filtype->kT:0;
 		dt=sim->dt;
 		mobility=filtype->mobility;
 		famp=(dt>0 && mobility>0)?2*kT/(mobility*dt):0;			// loop-invariant part; per-node frms = sqrt(famp/nodemobility)
@@ -3602,6 +3654,16 @@ void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
 				filwork->thermforce[node][1]=frms*gaussrandD();
 				filwork->thermforce[node][2]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
+
+	return; }
+
+void filAddThermalForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces;
+	filamentworkptr filwork=fil->filwork;
+	int dim=fil->filtype->filss->sim->dim,node;
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+	filPrepareThermalForces(fil);
 
 //??	torques=fil->torques;
 	forces=filwork->forces;										// report forces
@@ -3910,22 +3972,24 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 /* filAddConfineForces */
 // Harmonic surface confinement, in the spirit of Cytosim's per-model-point
 // "confine" stiffness: each node on the penalized side of the confining surface
-// (the side opposite confine_face) feels the restoring force k*d toward the nearest
-// point of every panel it violates -- the gradient of a penalty energy 0.5*k*d^2 in
-// the penetration depth d past that panel. Summing over violated panels makes box
-// corners behave (each wall pushes along its own normal). The constant is per NODE,
+// (the side opposite confine_face) feels a restoring force from every violated
+// panel. Rectangles use their supporting planes: k*max(radius-distance,0) along
+// the inward normal, including radius zero. Each box wall then pushes only along
+// its own normal, continuously at contact. Using a finite rectangle's nearest
+// edge instead would switch a tangential force on/off at a floor-wall corner.
+// Other shapes retain the nearest-panel-point force. The constant is per NODE,
 // like the other per-element force constants, so refining standard_length stiffens
 // the wall per unit contour length; the equilibrium penetration depth of a
 // fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric
 // wall for filament mechanics only -- molecules do not see it, and richer
 // filament-surface interaction (hard collisions, Brownian-ratchet load feedback)
-// remains future work. Two geometric caveats: the side test is panelside's, which
-// for rect, tri, and disk panels classifies against the panel's INFINITE plane, so
-// a confining surface should span or enclose the region the filaments occupy -- a
-// partial patch also penalizes nodes laterally beyond it, pulling them toward the
-// patch edge; and coplanar tessellations stack, since the constant is per violated
-// panel, so a node behind M coplanar panels feels up to M contributions. Draws no
-// random numbers; returns immediately when off.
+// remains future work. Rectangular patches confine against their INFINITE plane,
+// even laterally beyond their edges; this is half-space confinement, not collision
+// with a finite obstacle. For tri and disk, panelside likewise uses the infinite
+// plane but the legacy nearest-point force can pull toward the patch edge.
+// Coplanar tessellations stack, since the constant is per violated panel, so a
+// node behind M coplanar panels feels up to M contributions. Draws no random
+// numbers; returns immediately when off.
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,k,pnlpt[3],*nodept,*fnode,radius,dist,sign;
 	surfaceptr srf;
@@ -3949,7 +4013,7 @@ void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 			pnl=srf->panels[ps][p];											// panel-outer: fetch each panel once per node sweep
 			for(node=nodemin;node<=nodemax;node++) {
 				nodept=fil->nodes[node];
-				if(radius>0 && ps==PSrect) {
+				if(ps==PSrect) {
 					d=(int)pnl->front[1];sign=(badface==PFback?1:-1)*pnl->front[0];
 					dist=sign*(nodept[d]-pnl->point[0][d]);
 					if(dist<radius) forces[node][d]+=k*(radius-dist)*sign;
@@ -3983,11 +4047,11 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 		for(node=0;node<fil->nseg;node++)								// clear all torques
 			torques[node]=0; }
 
-	filAddStretchForces(fil,nodemin,nodemax);
-	filAddBendForces(fil,nodemin-1,nodemax+1);
-	filAddThermalForces(fil,nodemin,nodemax);
-	filAddJunctionForces(fil,nodemin,nodemax);
-	filAddConfineForces(fil,nodemin,nodemax);
+	SMOL_PROFILE_FINE(SP_STRETCH,filAddStretchForces(fil,nodemin,nodemax));
+	SMOL_PROFILE_FINE(SP_BEND,filAddBendForces(fil,nodemin-1,nodemax+1));
+	SMOL_PROFILE_FINE(SP_THERMAL,filAddThermalForces(fil,nodemin,nodemax));
+	SMOL_PROFILE_FINE(SP_JUNCTION,filAddJunctionForces(fil,nodemin,nodemax));
+	SMOL_PROFILE_FINE(SP_CONFINE,filAddConfineForces(fil,nodemin,nodemax));
 	return; }
 
 
@@ -4081,43 +4145,33 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 /******************************************************************************/
 
 
-/* filStepDynamics */
-void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
-	int node,seg,dim;
-	double axis[3],**nodesin,**nodesout,*seg0upin,*seg0upout,*rollin,*rollout;
-	double **forces,*nodemobility;
-	filamentworkptr filwork;
-
-	dim=fil->filtype->filss->sim->dim;
-	filwork=fil->filwork;
-
-	nodesin=filwork->wnodes[in];
-	seg0upin=filwork->wseg0up[in];
-	rollin=filwork->wroll[in];
-	nodesout=filwork->wnodes[out];
-	seg0upout=filwork->wseg0up[out];
-	rollout=filwork->wroll[out];
-	forces=filwork->forces;
-
-	nodemobility=fil->nodemobility;
-
-	if(dim==2) {
-		for(node=0;node<=fil->nseg;node++) {
-			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
-			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1]; }}
-	else {
+/* Material part of an Euler step, evaluated on the old segment axis. This
+   retains the original roll convention without computing discarded positions. */
+void filStepMaterialFrame(filamentptr fil,double dtmu,int in,int out) {
+	int seg;
+	filamentworkptr filwork=fil->filwork;
+	double axis[3],**nodesin=filwork->wnodes[in];
+	double *seg0upin=filwork->wseg0up[in],*seg0upout=filwork->wseg0up[out];
+	double *rollin=filwork->wroll[in],*rollout=filwork->wroll[out],*nodemobility=fil->nodemobility;
+	if(fil->filtype->filss->sim->dim==3) {
 		if(in==0) filCopyYpr2ToRoll(fil);
-		axis[0]=nodesin[1][0]-nodesin[0][0];					// process segment 0 torque
+		axis[0]=nodesin[1][0]-nodesin[0][0];
 		axis[1]=nodesin[1][1]-nodesin[0][1];
 		axis[2]=nodesin[1][2]-nodesin[0][2];
 		Sph_RotateVectorAxisAngle(seg0upin,axis,dtmu*nodemobility[0]*filwork->torques[0],seg0upout);
-		for(seg=1;seg<fil->nseg;seg++) {					// process other segment torques
-			rollout[seg]=rollin[seg]+dtmu*nodemobility[1]*filwork->torques[seg]; }
-		for(node=0;node<=fil->nseg;node++) {			// process node forces
-			nodesout[node][0]=nodesin[node][0]+dtmu*nodemobility[node]*forces[node][0];
-			nodesout[node][1]=nodesin[node][1]+dtmu*nodemobility[node]*forces[node][1];
-			nodesout[node][2]=nodesin[node][2]+dtmu*nodemobility[node]*forces[node][2]; }
+		for(seg=1;seg<fil->nseg;seg++)
+			rollout[seg]=rollin[seg]+dtmu*nodemobility[1]*filwork->torques[seg];
 		if(out==0) filCopyRollToYpr2(fil); }
+	return; }
+
+/* filStepDynamics */
+void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
+	int node,d,dim=fil->filtype->filss->sim->dim;
+	filamentworkptr filwork=fil->filwork;
+	double **nodesin=filwork->wnodes[in],**nodesout=filwork->wnodes[out];
+	filStepMaterialFrame(fil,dtmu,in,out);
+	for(node=0;node<=fil->nseg;node++) for(d=0;d<dim;d++)
+		nodesout[node][d]=nodesin[node][d]+dtmu*fil->nodemobility[node]*filwork->forces[node][d];
 	return; }
 
 
@@ -4291,26 +4345,28 @@ int filDynamics(simptr sim) {
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
-	int f,ft,i,treadnum,steric;
+	int f,ft,i,treadnum,steric,profileerror;
 
 	filss=sim->filss;
 	if(!filss) return 0;
-	steric=filStericEnabled(sim);
-	if(steric && filStericChemistry(sim,1)) return 1;
+	steric=filStericEnabled(sim) || filImplicitEnabled(sim);
+	if(steric) {
+		SMOL_PROFILE_RUN(SP_CHEM_PREPARE,profileerror=filStericChemistry(sim,1));
+		if(profileerror) return 1; }
 
 	for(ft=0;ft<filss->ntype;ft++) {
 		filtype=filss->filtypes[ft];
 		if(filtype->treadrate!=0) {
-			for(f=0;f<filtype->nfil;f++) {
+			SMOL_PROFILE_RUN(SP_TREADMILL,for(f=0;f<filtype->nfil;f++) {
 				fil=filtype->fillist[f];
 				if(filEndIsCapped(fil,filtype->treadrate>0?'b':'f')) continue;	// capped end takes no monomer
 				treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
 				for(i=0;i<treadnum;i++)
-					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }}
+					filTreadmill(sim,fil,filtype->treadrate>0?'b':'f'); }); }
 
-		filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
-		filCappingDynamics(sim,filtype);								// before elongation: a filament capped now doesn't also grow now
-		filElongationDynamics(sim,filtype);							// before the integrator: a new segment relaxes this step
+		SMOL_PROFILE_RUN(SP_BRANCH,filBranchDynamics(sim,filtype));  // Arp2/3-style branch nucleation
+		SMOL_PROFILE_RUN(SP_CAP,filCappingDynamics(sim,filtype));    // cap before elongation
+		SMOL_PROFILE_RUN(SP_ELONGATE,filElongationDynamics(sim,filtype)); // relax new segments this step
 
 		if(steric) continue;
 		if(filtype->dynamics==FDeuler)
@@ -4329,7 +4385,8 @@ int filDynamics(simptr sim) {
 
 	if(steric) {
 		if(filStericChemistry(sim,0)) return 1;
-		return filStericDynamics(sim); }
+		SMOL_PROFILE_RUN(SP_MECHANICS,profileerror=filStericDynamics(sim));
+		return profileerror; }
 	for(ft=0;ft<filss->ntype;ft++) {								// re-pin branches after all motion this step
 		filtype=filss->filtypes[ft];
 		for(f=0;f<filtype->nfil;f++)

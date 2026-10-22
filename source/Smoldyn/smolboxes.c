@@ -17,6 +17,7 @@
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
+#include "smolprofile.h"
 #include "Zn.h"
 
 /* One grid for molecules, panels and filament segments. The grid view keeps
@@ -82,11 +83,12 @@ static int boxSegmentCompare(const void *va,const void *vb) {
  return (ax>bx)-(ax<bx);
 }
 int filBoxesBuild(simptr sim,struct filamentstericstruct *w) {
- int i,d,lo[3],hi[3],box,j,l,out,dim=sim->dim;
+ int i,d,lo[3],hi[3],box,j,l,out,dim=sim->dim,er;
  BoxGrid *g=&sim->boxs->grid;
  double extent,maxradius=0;
  w->npair=0;
- if(boxesupdatesegments(sim)) return 1;
+ SMOL_PROFILE_RUN(SP_BOX_MEMBERSHIP,er=boxesupdatesegments(sim));
+ if(er) return 1;
  for(i=0;i<w->nsegment;i++) {
   FilStericSegment *s=&w->segments[i];
   s->segment->stericindex=i;

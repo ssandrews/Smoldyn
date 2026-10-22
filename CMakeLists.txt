@@ -148,6 +148,7 @@ set(SRC_FILES
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentsteric.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentimplicit.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolhelp.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
@@ -411,12 +412,27 @@ set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
 
+# Optional filament loop parallelism; runtime defaults to one worker.
+option(OPTION_FILAMENT_WORKERS "Enable optional OpenMP filament mechanical workers" ON)
+if(OPTION_FILAMENT_WORKERS)
+  find_package(OpenMP QUIET COMPONENTS C CXX)
+  if(OpenMP_C_FOUND AND OpenMP_CXX_FOUND)
+    target_link_libraries(smoldyn_static PUBLIC OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+    message(STATUS "Optional filament workers: OpenMP available")
+  else()
+    message(STATUS "Optional filament workers: OpenMP unavailable, serial build")
+  endif()
+endif()
+
 if (OPTION_TARGET_LIBSMOLDYN)
   add_library(smoldyn_shared SHARED ${SRC_FILES}
         $<TARGET_OBJECTS:Steve>
         $<TARGET_OBJECTS:nsv>)
 
   target_link_libraries(smoldyn_shared PUBLIC ${DEP_LIBS})
+  if(OPTION_FILAMENT_WORKERS AND OpenMP_C_FOUND AND OpenMP_CXX_FOUND)
+    target_link_libraries(smoldyn_shared PUBLIC OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+  endif()
 
   if (APPLE_BUILD)
     set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
@@ -493,6 +509,13 @@ include(CPack)
 
 
 ######### Testing #############
+option(OPTION_FILAMENT_PROFILE "Build optional nested filament phase profiler" OFF)
+if(OPTION_FILAMENT_PROFILE)
+  target_sources(smoldyn_static PRIVATE source/Smoldyn/smolprofile.c)
+  target_compile_definitions(smoldyn_static PUBLIC SMOLDYN_PROFILE=1)
+  add_executable(profile_filaments tools/profile_filaments.c)
+  target_link_libraries(profile_filaments PRIVATE smoldyn_static)
+endif()
 enable_testing()
 option(OPTION_FILAMENT_STERIC_TESTS "Build native filament contact regression checks" OFF)
 if(OPTION_FILAMENT_STERIC_TESTS)
