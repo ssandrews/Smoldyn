@@ -754,6 +754,7 @@ typedef struct filamenttypestruct {
     int branchspreadderived;           // 1 if branchspread was derived from branch_force_angle, for thickness 1
     int branchsegments;                // number of segments a daughter is born with (>=1)
     char branchend;                    // daughter end that attaches to the mother: 'm' (default) or 'p'
+    double branchminspacing;           // minimum contour distance between branch points on a mother, length units; 0 = off
     double junctforce;                 // spring constant for loop-closing junctions, energy/length^2; 0 = use klen
     double branchforceangle;           // junction torsional spring constant, energy/rad^2; 0 = off
     double branchazimuth;              // birth azimuth about the mother axis, [0,2PI); negative = uniform random

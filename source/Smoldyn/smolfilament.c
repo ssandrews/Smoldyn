@@ -149,6 +149,7 @@ double filBranchAzimuth(const filjunctionptr junct);
 int filBranchDazim(const filjunctionptr junct,double *dphiptr);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername);
 int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
+int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const filjunctionptr skip);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinJunction(filjunctionptr junct);
 void filPinTree(filamentptr fil);
@@ -707,6 +708,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchspreadderived=0;
 		filtype->branchsegments=1;									// daughters born as a single segment
 		filtype->branchend='m';											// daughters attach by their minus end by default
+		filtype->branchminspacing=0;								// no minimum branch spacing by default
 		filtype->junctforce=0;											// loop-closing junction spring defaults to force_length
 		filtype->branchforceangle=0;								// junction torsional spring off by default
 		filtype->branchazimuth=-1;									// negative = uniform random birth azimuth
@@ -995,7 +997,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		if(filtype->branchspread>=0) simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
 		else simLog(sim,1,"  branch spread: unset\n");
 		simLog(sim,2,"  daughter segments at birth: %i\n",filtype->branchsegments);
-		simLog(sim,filtype->branchend=='p'?2:1,"  daughters attach by their %s end\n",filtype->branchend=='p'?"plus":"minus"); }
+		simLog(sim,filtype->branchend=='p'?2:1,"  daughters attach by their %s end\n",filtype->branchend=='p'?"plus":"minus");
+		if(filtype->branchminspacing>0) simLog(sim,2,"  minimum branch spacing: %g|L\n",filtype->branchminspacing); }
 	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
 	if(filtype->junctforce>0) simLog(sim,2,"  loop-closing junction force constant: %g|E/L\n",filtype->junctforce);
 	else simLog(sim,1,"  loop-closing junction force constant: unset, so force_length is used\n");
@@ -1190,6 +1193,15 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
 		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
+		if(filtype->branchminspacing>0 && filtype->branchrate<=0) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has branch_min_spacing but branch_rate is 0; the spacing only applies to branch nucleation\n",filtype->ftname);}
+		if(filtype->branchminspacing>0) {						// branches entered by the user are kept, but report ones that violate the spacing
+			pcount=0;
+			for(j=0;j<filss->njunct;j++) {
+				junct=filss->junctlist[j];
+				if(junct->target->filtype==filtype && !junct->bend && !filBranchNodeSpaced(junct->target,junct->node,filtype->branchminspacing,junct)) pcount++; }
+			if(pcount>0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has %i branches that are closer than branch_min_spacing to another branch; these are kept, and the spacing only applies to new branches from branch nucleation\n",filtype->ftname,pcount);}}
 		if(filtype->branchsrf) {													// a gate bound to empty geometry closes silently otherwise
 			pcount=0;
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->branchsrf->npanel[ps];
@@ -1302,6 +1314,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"branchsegments")) {				// segments per newborn daughter
 		if(value<1) er=2;
 		else filtype->branchsegments=(int)(value+0.5); }
+
+	else if(!strcmp(param,"branchminspacing")) {			// minimum contour distance between branch points
+		if(value<0) er=2;
+		else filtype->branchminspacing=value; }
 
 	else if(!strcmp(param,"branchforceangle")) {			// junction torsional spring constant
 		if(value<0) er=2;
@@ -1697,6 +1713,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1>=1,"branch_segments value needs to be >=1");
 		filtypeSetParam(filtype,"branchsegments",0,(double)i1);
 		CHECKS(!strnword(line2,2),"unexpected text following branch_segments"); }
+
+	else if(!strcmp(word,"branch_min_spacing")) {	// branch_min_spacing: minimum contour distance between branch points
+		CHECKS(filtype,"need to enter filament type name before branch_min_spacing");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"branch_min_spacing format: value. ");
+		CHECKS(f1>=0,"branch_min_spacing value needs to be >=0");
+		filtypeSetParam(filtype,"branchminspacing",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following branch_min_spacing"); }
 
 	else if(!strcmp(word,"branch_end")) {				// branch_end: which daughter end attaches to the mother
 		CHECKS(filtype,"need to enter filament type name before branch_end");
@@ -3719,6 +3743,32 @@ int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)
 	return dist>=0 && dist<=filtype->branchsrfdist; }		// -1 means a panel-less surface: gate closed
 
 
+/* filBranchNodeSpaced */
+// Spacing test for branch nucleation: returns 1 if no branch on mother is closer than
+// spacing to mother node node, measured along the mother's contour with its current
+// segment lengths, and 0 otherwise. Branches are the junctions that target mother other
+// than end-to-end joins, so this includes daughters made by branch dynamics, the branch
+// statement, and attach to an interior node; junction skip is ignored, or none if NULL.
+// Junctions whose node is no longer on the mother are ignored. Distances below spacing
+// fail, so any positive spacing keeps two branches off the same node.
+int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const filjunctionptr skip) {
+	int j,n,n1,n2;
+	double dist;
+	filjunctionptr junct;
+
+	if(spacing<=0) return 1;
+	for(j=0;j<mother->njunct;j++) {
+		junct=mother->juncts[j];
+		if(junct==skip || junct->bend) continue;
+		if(junct->node<FILJUNCTMINNODE || junct->node>mother->nseg) continue;
+		n1=(junct->node<node)?junct->node:node;
+		n2=(junct->node<node)?node:junct->node;
+		dist=0;
+		for(n=n1;n<n2 && dist<spacing;n++) dist+=mother->segments[n]->len;
+		if(dist<spacing) return 0; }
+	return 1; }
+
+
 /* filBranchDynamics */
 // Poisson branch nucleation for one filament type, at rate branchrate*length*dt, with
 // each daughter attached at the plus-end node of a uniformly random segment of its mother. If a location
@@ -3728,7 +3778,9 @@ int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos)
 // inside the region and zero outside (exact when segment lengths are equal, since the
 // node draw is uniform per segment -- the same sampling as the ungated draw). The
 // accept test draws no random numbers, so a rejected event consumes only its segment
-// draw.
+// draw. With branch_min_spacing, events are also thinned by the spacing test, so
+// branch_rate is the rate per unit of mother length that is far enough from existing
+// branches; this draws no random numbers either.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 	int f,nfil0,node,nbr,i,dim;
 	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
@@ -3748,6 +3800,7 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 		for(i=0;i<nbr;i++) {
 			node=intrand(fil->nseg)+1;									// uniform random branch node, from 1 to nseg
 			if(!filBranchPointInRegion(sim,filtype,fil->nodes[node])) continue;		// interim location gate; accepts everything when no gate is set
+			if(!filBranchNodeSpaced(fil,node,filtype->branchminspacing,NULL)) continue;	// too close to an existing branch, including ones born this step
 
 			thick=fil->segments[node-1]->thk;					// the daughter has the thickness of the mother segment that ends at the branch node
 			theta=filtype->branchangle;

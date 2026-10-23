@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 298
+#define SMOLHELP_NENTRY 299
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1135,6 +1135,25 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"branch_segments",
 		"  * branch_segments segs",
 		"    Length of initial daughter filament in segments."},
+	{"statement","Statements about filaments",1,"branch_min_spacing",
+		"  * branch_min_spacing distance",
+		"    Minimum distance between branch points on a mother filament, measured along\n"
+		"    the mother's contour. When branch_rate produces a new branch at a mother\n"
+		"    node that is closer than distance to an existing branch on the same mother,\n"
+		"    that branch is not created, so branch_rate becomes the branching rate per\n"
+		"    unit of mother length that is at least distance from existing branches.\n"
+		"    Existing branches include those made by branching, by the branch statement,\n"
+		"    and by attach to a node other than the target's end nodes, as well as\n"
+		"    branches made earlier in the same time step. The distance is computed from\n"
+		"    the current segment lengths at the time of the branching event. Branches\n"
+		"    form at mother nodes, so the spacing is realized to within one segment\n"
+		"    length; any positive value smaller than a segment length only prevents two\n"
+		"    branches from forming at the same node. Branches entered with the branch or\n"
+		"    attach statements are not affected, but Smoldyn warns if they are closer\n"
+		"    together than distance. Also, filament mechanics can stretch or compress a\n"
+		"    mother after its branches form, which can move existing branches slightly\n"
+		"    closer together than distance. The default is 0, which means that there is\n"
+		"    no minimum spacing and branches can form at the same node."},
 	{"statement","Statements about filaments",1,"branch_end",
 		"  * branch_end end",
 		"    Which end of a daughter filament attaches to its mother, entered as \"minus\"\n"
