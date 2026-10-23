@@ -3340,6 +3340,13 @@ typedef struct boxstruct {
 	int *maxmol;								// allocated size of live lists [ll]
 	int *nmol;									// number of molecules in live lists [ll]
 	moleculeptr **mol;					// lists of live molecules in the box [ll][m]
+	int maxfilseg;							// allocated size of filament segment list
+	int nfilseg;								// number of filament segments at least partly in the box
+	struct segmentstruct **filseg;		// filament segments in the box [s]
+	int maxfilend;							// allocated size of filament end lists
+	int nfilend;								// number of filament ends in the box
+	struct filamentstruct **filendfil;	// filament of each end in the box [e]
+	char *filendchar;						// which end of that filament: 'm' or 'p' [e]
 	} *boxptr;
 \end{lstlisting}
 
@@ -3355,6 +3362,8 @@ $<$9&all&yes\\
 \end{longtable}
 
 Boxes also have lists of molecules, allocated to size \ttt{maxmol[ll]} and filled from 0 to \ttt{nmol[ll]-1}) that correspond to the master molecule lists, and walls (\ttt{wlist}, allocated and filled with \ttt{nwall} pointers) within them. While the lists are owned by the box, the members of the lists are simply references, rather than implications of ownership. The same, of course, is true of the neighbor list, although the box owns the \ttt{wpneigh} list. If wall or neighbor lists are empty, the list is left as \ttt{NULL}, whereas the molecule list always has a few spaces in it.
+
+Boxes also list the filaments in them, so that filament interactions only need to look at nearby filaments. \ttt{filseg} lists the filament segments that are at least partly in the box, allocated to size \ttt{maxfilseg} and filled from 0 to \ttt{nfilseg-1}. A segment is listed in every box that its centerline passes through, and segment thickness is ignored. \ttt{filendfil} and \ttt{filendchar} are parallel lists of the filament ends that are in the box, allocated to size \ttt{maxfilend} and filled from 0 to \ttt{nfilend-1}, where \ttt{filendfil[e]} is the filament and \ttt{filendchar[e]} is `m' for its minus end or `p' for its plus end; both are needed because a filament with one segment has both of its ends on the same segment. As for panels, edge boxes extend to infinity, so filament parts outside the system are listed in edge boxes. These lists are only maintained when something needs them, which is set by the filament superstructure's \ttt{boxlists} element (see \ttt{filSetBoxLists}), because rebuilding them costs about as much per time step as the number of filament segments; nothing uses them yet, so they are normally empty. When they are maintained, they are rebuilt from scratch by \ttt{filBoxesUpdate} at the end of each time step and whenever the filaments are updated, so they describe the filaments at the end of the most recent time step; filament changes made by commands between time steps are not reflected until the next rebuild. They are empty when there are no filaments.
 Boxes are collected in a box superstructure.
 
 \begin{lstlisting}
@@ -3413,6 +3422,14 @@ Determines if any or all of the panel \ttt{pnl} is in the box \ttt{bptr} and ret
 \hfill \\
 Adds molecule \ttt{mptr}, which belongs in live list \ttt{ll}, to the box that is pointed to by \ttt{mptr->box}. Returns 0 for success and 1 if memory could not be allocated during box expansion.
 
+\item[\ttt{int boxaddfilseg(boxptr bptr, segmentptr segment)}] %?? new code
+\hfill \\
+Adds filament segment \ttt{segment} to the filament segment list of box \ttt{bptr}, expanding the list if needed with \ttt{expandboxfilsegs}. This doesn't check whether the segment is already listed. Returns 0 for success and 1 if memory could not be allocated.
+
+\item[\ttt{int boxaddfilend(boxptr bptr, filamentptr fil, char endchar)}] %?? new code
+\hfill \\
+Adds end \ttt{endchar} (`m' or `p') of filament \ttt{fil} to the filament end lists of box \ttt{bptr}, expanding the lists if needed with \ttt{expandboxfilends}. Returns 0 for success and 1 if memory could not be allocated.
+
 \item[\ttt{void boxremovemol(moleculeptr mptr, int ll)}]
 \hfill \\
 Removes molecule \ttt{mptr} from the live list \ttt{ll} of the box that is pointed to by \ttt{mptr->box}. Before returning, \ttt{mptr->box} is set to \ttt{NULL}. If the molecule is not in the box that's listed, then this doesn't try removing it; this result is fine if the molecule is actually in no box at all (which can happen) but is probably a bug if the molecule is in the wrong box.
@@ -3439,6 +3456,14 @@ Expands molecule list \ttt{ll} within box \ttt{bptr} by \ttt{n} spaces. If \ttt{
 \item[\ttt{int expandboxpanels(boxptr bptr, int n)}]
 \hfill \\
 Expands the list of panels in box \ttt{bptr} by \ttt{n} spaces. If \ttt{n} $\leq$ 0, this function ignores it, and does not shrink the box. This updates the \ttt{maxpanel} element. Returns 0 for success and 1 for insufficient memory.
+
+\item[\ttt{int expandboxfilsegs(boxptr bptr)}] %?? new code
+\hfill \\
+Local. Doubles the size of the filament segment list of box \ttt{bptr}, plus 1, keeping the current entries. Returns 0 for success and 1 for insufficient memory.
+
+\item[\ttt{int expandboxfilends(boxptr bptr)}] %?? new code
+\hfill \\
+Local. Doubles the size of the filament end lists of box \ttt{bptr}, plus 1, keeping the current entries. Returns 0 for success and 1 for insufficient memory.
 
 \item[\ttt{void boxfree(boxptr bptr, int nlist)}]
 \hfill \\
@@ -3472,7 +3497,7 @@ Displays statistics about the box superstructure, including total number of boxe
 
 \item[\ttt{int checkboxparams(simptr sim, int *warnptr)}]
 \hfill \\
-Checks and displays warning about various box parameters such as molecules per box, box sizes, and number of panels in each box.
+Checks and displays warning about various box parameters such as molecules per box, box sizes, and number of panels in each box. It also warns if filaments have surface interactions but there is only one box, which happens by default when there are no molecules.
 
 \item[\underline{structure set up}]
 
@@ -4339,12 +4364,13 @@ typedef struct filamentsuperstruct {
     int njunct;                // number of junctions in use
     filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse
     int nspring;               // number of junctions that close loops (not rigid)
+    int boxlists;              // 1 if filaments are listed in the virtual boxes, because something needs them
     } * filamentssptr;
 \end{lstlisting}
 
 The superstructure contains a list of filament types. It starts with its condition element in \ttt{condition} and a pointer up the heirarchy to the simulation structure in \ttt{sim}. The list of filament types is allocated with \ttt{maxtype} entries, has \ttt{ntype} entries, and has list \ttt{ftnames} for the type names and \ttt{filtypes} is the actual list of types.
 
-It also owns all junctions, in \ttt{junctlist}, which has \ttt{maxjunct} allocated junction structures, of which the first \ttt{njunct} are in use, in creation order. Removed junctions move to the unused end of the list and are reused. \ttt{nspring} is the number of junctions that close loops, which \ttt{filClassifyJunctions} counts; when it is 0, \ttt{filAddJunctionForces} skips transmitting loop spring forces through rigid junctions.
+It also owns all junctions, in \ttt{junctlist}, which has \ttt{maxjunct} allocated junction structures, of which the first \ttt{njunct} are in use, in creation order. Removed junctions move to the unused end of the list and are reused. \ttt{nspring} is the number of junctions that close loops, which \ttt{filClassifyJunctions} counts; when it is 0, \ttt{filAddJunctionForces} skips transmitting loop spring forces through rigid junctions. \ttt{boxlists} is 1 if the filaments are listed in the virtual boxes, which is only done when something needs those lists (see \ttt{filSetBoxLists}), and 0 otherwise, which is the default.
 
 % Filament math
 \subsection{Filament math}
@@ -4938,13 +4964,27 @@ Returns filament \ttt{fil} to the state of a newly allocated filament, keeping i
 Removes filament \ttt{fil} from the simulation, keeping its memory for reuse. Because that memory will be reused for an unrelated filament, this first removes all junctions that involve \ttt{fil} with \ttt{filRemoveFilJunctions}, which detaches its own ends and releases every filament end attached to it. Then it shifts the filaments after \ttt{fil} in \ttt{fillist}, along with their names in \ttt{filnames}, down by one position, which keeps creation order, and puts \ttt{fil} and its name string at position \ttt{nfil-1} before decreasing \ttt{nfil}. Returns 0 for success or 1 if \ttt{fil} is not in its filament type's list.
 
 
+\item[\underline{Filaments in boxes}]
+
+\item[\ttt{int filSetBoxLists(simptr sim, int on)}] %?? new code
+\hfill \\
+Local. Turns the filament lists of the virtual boxes on, with \ttt{on} equal to 1, or off, with \ttt{on} equal to 0, by setting \ttt{filss->boxlists}. Code that uses these lists, such as future filament-molecule or filament-filament interactions, should call this to turn them on, so that they aren't maintained when nothing needs them. Turning them on builds them right away with \ttt{filBoxesUpdate}, and turning them off empties them. Nothing calls this yet. Returns 0 for success or 1 for out of memory.
+
+\item[\ttt{int filBoxesUpdate(simptr sim)}] %?? new code
+\hfill \\
+Local. If the filament box lists are turned on (\ttt{filss->boxlists}), or always if Smoldyn is compiled with \ttt{FILBOXCHECK} defined, this rebuilds the filament segment and end lists of every virtual box (see the box structure). It clears the lists, then lists each segment in every box that its centerline passes through, found by starting at the box of its minus end, from \ttt{pos2box}, and walking toward its plus end with \ttt{line2nextbox}, and it lists each filament end in the box that contains its end node. Each node's box is found once with \ttt{pos2box}, the walk is only done when a segment's two nodes are in different boxes, and with a single box, everything is simply listed in it. The walk is limited to the number of boxes, as a guard. Filaments with no segments are skipped. This is called at the end of \ttt{filDynamics} and at the end of \ttt{filUpdate}, which runs after \ttt{boxesupdate} in \ttt{simupdate}, so the lists are refilled after the boxes are rebuilt. It draws no random numbers. When Smoldyn is compiled with \ttt{FILBOXCHECK} defined, it calls \ttt{filBoxesCheck} after each rebuild. Returns 0 for success or 1 for out of memory.
+
+\item[\ttt{int filBoxesCheck(simptr sim)}] %?? new code
+\hfill \\
+Local. Debugging check of the filament lists in the virtual boxes, which is slow because it compares every segment with every box. It checks that every listed segment belongs to a current filament and is listed at most once per box; that each segment is listed in every box whose interior it crosses and only in boxes that it touches, using \ttt{Geo\_LineXaabb} with each box shrunk or grown by \ttt{FILBOXEPS} times the box size and with edge boxes extended to infinity; and that each end of each filament is listed exactly once, in the box that contains its end node. Errors are written to the log as bugs. Returns the number of errors.
+
 \item[\underline{Filament interactions}]
 (Data structures are changed.)
 
 \item[\ttt{int}]
 \ttt{filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar)}
 \hfill \\
-Tests if a block interaction of the filament type stops segment \ttt{segment}, which was just added at end \ttt{endchar} (`m' or `p') of filament \ttt{fil}. Returns 1 if so and 0 if not. A block interaction applies if its \ttt{filpart} lists that end. It stops the segment if the segment crosses a panel of the interaction's surface from the interaction's face, meaning that the \ttt{face1} value from \ttt{lineXpanel}, for the line from the existing end node to the new end node, equals \ttt{surfface}, or if it crosses from either side when \ttt{surfface} is \ttt{PFboth}. Without block interactions, surfaces don't stop growing ends. \ttt{filAddOneRandomSegment} calls this when its \ttt{constraints} argument includes 1, which is the case for elongation and treadmilling. This replaces \ttt{filSegmentXSurface}, which tested for crossing any surface in the simulation. This function scans through the panels of each blocking surface and checks each with \ttt{lineXpanel}. THIS IS INEFFICIENT AND SHOULD USE BOXES.
+Tests if a block interaction of the filament type stops segment \ttt{segment}, which was just added at end \ttt{endchar} (`m' or `p') of filament \ttt{fil}. Returns 1 if so and 0 if not. A block interaction applies if its \ttt{filpart} lists that end. It stops the segment if the segment crosses a panel of the interaction's surface from the interaction's face, meaning that the \ttt{face1} value from \ttt{lineXpanel}, for the line from the existing end node to the new end node, equals \ttt{surfface}, or if it crosses from either side when \ttt{surfface} is \ttt{PFboth}. Without block interactions, surfaces don't stop growing ends. \ttt{filAddOneRandomSegment} calls this when its \ttt{constraints} argument includes 1, which is the case for elongation and treadmilling. This replaces \ttt{filSegmentXSurface}, which tested for crossing any surface in the simulation. This function walks through the virtual boxes that the new segment passes through, using \ttt{pos2box} and \ttt{line2nextbox}, and checks each panel of the blocking surface that is listed in those boxes with \ttt{lineXpanel}. This finds every crossing, because the crossing point is in one of those boxes and the panel is listed in that box. If the boxes aren't set up, it checks all panels of the blocking surface instead.
 
 \item[\ttt{int filSurfForceOn(const filamenttypeptr filtype)}] %?? new code
 \hfill \\

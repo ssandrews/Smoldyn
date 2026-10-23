@@ -1607,7 +1607,11 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Rather than using molperbox to specify the sizes of the virtual boxes,\n"
 		"    boxsize can be used to request the width of the boxes. The actual box\n"
 		"    volumes will be no larger than the volume calculated from the width given\n"
-		"    here."},
+		"    here. Virtual boxes are also used to find filament interactions more\n"
+		"    efficiently. The number of boxes is computed from the number of molecules,\n"
+		"    so a simulation without molecules has only one box unless boxsize is\n"
+		"    entered; Smoldyn warns if filaments have surface interactions and there is\n"
+		"    only one box."},
 	{"statement","Statements for simulation settings",0,"gauss_table_size",
 		"  gauss_table_size int",
 		"    This sets the size of a lookup table that is used to generate\n"

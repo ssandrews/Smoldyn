@@ -168,6 +168,11 @@ int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength);
 void filEndTransitions(simptr sim,filamenttypeptr filtype);
 void filEndDynamics(simptr sim,filamenttypeptr filtype);
 
+// Filaments in boxes
+int filSetBoxLists(simptr sim,int on);
+int filBoxesUpdate(simptr sim);
+int filBoxesCheck(simptr sim);
+
 // Filament interactions
 int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar);
 int filSurfForceOn(const filamenttypeptr filtype);
@@ -926,7 +931,8 @@ filamentssptr filssAlloc(filamentssptr filss,int maxtype) {
 		filss->maxjunct=0;
 		filss->njunct=0;
 		filss->junctlist=NULL;
-		filss->nspring=0; }
+		filss->nspring=0;
+		filss->boxlists=0; }
 
 	if(maxtype>=filss->maxtype) {
 		CHECKMEM(newfiltypes=(filamenttypeptr*) calloc(maxtype,sizeof(filamenttypeptr)));
@@ -1190,6 +1196,7 @@ void filssOutput(const simptr sim) {
 	simLog(sim,filss->condition<SCok?2:1," condition: %s\n",simsc2string(filss->condition,string));
 	simLog(sim,1," filament types allocated: %i,",filss->maxtype);
 	simLog(sim,2," filament types defined: %i\n",filss->ntype);
+	simLog(sim,filss->boxlists?2:1," filaments listed in virtual boxes: %s\n",filss->boxlists?"yes":"no");
 	for(ft=0;ft<filss->ntype;ft++)
 		filtypeOutput(filss->filtypes[ft]);
 
@@ -1711,7 +1718,8 @@ int filUpdate(simptr sim) {
 		if(filss->condition==SCparams) {
 			er=filUpdateParams(sim);
 			if(er) return er;
-			filSetCondition(filss,SCok,1); }}
+			filSetCondition(filss,SCok,1); }
+		if(filBoxesUpdate(sim)) return 1; }						// boxes may have been rebuilt
 	return 0; }
 
 
@@ -4235,6 +4243,194 @@ void filEndDynamics(simptr sim,filamenttypeptr filtype) {
 
 
 /******************************************************************************/
+/****************************** filaments in boxes ****************************/
+/******************************************************************************/
+
+
+#define FILBOXEPS 1e-9				// relative box margin for the geometric tests in filBoxesCheck
+
+/* filSetBoxLists */
+// Turns the filament lists of the virtual boxes on (on=1) or off (on=0). Code that
+// uses these lists, such as future filament-molecule or filament-filament
+// interactions, calls this to turn them on, so that they aren't maintained otherwise;
+// maintaining them costs about as much per time step as the number of segments. Turning
+// them on builds them right away, and turning them off empties them. Returns 0 for
+// success or 1 for out of memory.
+int filSetBoxLists(simptr sim,int on) {
+	boxssptr boxs;
+	int b;
+
+	if(!sim->filss) return 0;
+	sim->filss->boxlists=on?1:0;
+	if(on) return filBoxesUpdate(sim);
+	boxs=sim->boxs;
+	if(boxs && boxs->blist)
+		for(b=0;b<boxs->nbox;b++) {
+			boxs->blist[b]->nfilseg=0;
+			boxs->blist[b]->nfilend=0; }
+	return 0; }
+
+
+/* filBoxesUpdate */
+// Rebuilds the filament segment and end lists of every virtual box. Each segment is
+// listed in every box that its centerline passes through, found by walking from the
+// box of its minus end toward its plus end with line2nextbox when its two nodes are in
+// different boxes, and each filament end is listed in the box that contains its end
+// node. Each node's box is found once, and with a single box, everything is simply
+// listed in it. As for panels, edge boxes extend to
+// infinity, so filament parts outside the system are listed in the edge boxes.
+// Filament thickness is ignored. This only does anything if the lists are turned on
+// (filss->boxlists, see filSetBoxLists), or always when Smoldyn is compiled with
+// FILBOXCHECK defined. This is called at the end of filDynamics, so the lists describe
+// the filaments at the end of each time step, and at the end of filUpdate, so they are
+// refilled after the boxes are rebuilt. Returns 0 for success or 1 for out of memory.
+int filBoxesUpdate(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	segmentptr segment;
+	boxssptr boxs;
+	boxptr bptr,bminus,bplus,bnode0;
+	int b,ft,f,seg,nstep;
+
+	filss=sim->filss;
+	boxs=sim->boxs;
+	if(!filss || !boxs || !boxs->blist) return 0;
+#ifdef FILBOXCHECK
+	filss->boxlists=1;																	// always maintain the lists, to test them
+#endif
+	if(!filss->boxlists) return 0;
+
+	for(b=0;b<boxs->nbox;b++) {
+		boxs->blist[b]->nfilseg=0;
+		boxs->blist[b]->nfilend=0; }
+
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->nseg<1) continue;
+			if(boxs->nbox==1) {																// everything is in the one box
+				bptr=boxs->blist[0];
+				for(seg=0;seg<fil->nseg;seg++)
+					if(boxaddfilseg(bptr,fil->segments[seg])) return 1;
+				if(boxaddfilend(bptr,fil,'m') || boxaddfilend(bptr,fil,'p')) return 1;
+				continue; }
+			bnode0=bminus=pos2box(sim,fil->nodes[0]);
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				bplus=pos2box(sim,segment->xyzplus);					// each node's box is found once
+				if(bplus==bminus) {
+					if(boxaddfilseg(bminus,segment)) return 1; }
+				else {
+					bptr=bminus;
+					nstep=0;
+					while(bptr && nstep<=boxs->nbox) {							// a segment can't pass through more boxes than exist
+						if(boxaddfilseg(bptr,segment)) return 1;
+						bptr=line2nextbox(sim,segment->xyzminus,segment->xyzplus,bptr);
+						nstep++; }}
+				bminus=bplus; }
+			if(boxaddfilend(bnode0,fil,'m')) return 1;
+			if(boxaddfilend(bminus,fil,'p')) return 1; }}
+
+#ifdef FILBOXCHECK
+	if(filBoxesCheck(sim)) simLog(sim,10,"BUG: filament box lists are inconsistent at time %g\n",sim->time);
+#endif
+	return 0; }
+
+
+/* filBoxesCheck */
+// Debugging check of the filament lists in the virtual boxes, which is slow. For every
+// filament segment, it checks that the segment is listed in every box whose interior
+// (shrunk by FILBOXEPS of the box size) its centerline crosses, and is only listed in
+// boxes that its centerline touches (with the box grown by FILBOXEPS), at most once
+// per box. Edge boxes extend to infinity. It checks that every listed segment belongs
+// to a current filament, and that each end of each filament is listed exactly once, in
+// the box that contains its end node. Errors are written to the log. Returns the
+// number of errors, or 0 if the lists are consistent. This is called at the end of
+// filBoxesUpdate when Smoldyn is compiled with FILBOXCHECK defined.
+int filBoxesCheck(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	segmentptr segment;
+	boxssptr boxs;
+	boxptr bptr;
+	int b,ft,f,seg,i,j,d,dim,count,inner,outer,end,nerr,nsegtot,nendtot,nseglist,nendlist;
+	double lo[DIMMAX],hi[DIMMAX],lo2[DIMMAX],hi2[DIMMAX],eps;
+	char endchar;
+
+	filss=sim->filss;
+	boxs=sim->boxs;
+	if(!filss || !boxs || !boxs->blist || !filss->boxlists) return 0;
+	dim=sim->dim;
+	nerr=0;
+
+	nseglist=nendlist=0;
+	for(b=0;b<boxs->nbox;b++) {													// listed segments are current, with no duplicates
+		bptr=boxs->blist[b];
+		nseglist+=bptr->nfilseg;
+		nendlist+=bptr->nfilend;
+		for(i=0;i<bptr->nfilseg;i++) {
+			segment=bptr->filseg[i];
+			fil=segment->fil;
+			if(segment->index<0 || segment->index>=fil->nseg || fil->segments[segment->index]!=segment) {
+				nerr++;simLog(sim,10,"BUG: box %i lists a segment that isn't in its filament\n",b);}
+			for(j=0;j<i;j++)
+				if(bptr->filseg[j]==segment) {
+					nerr++;simLog(sim,10,"BUG: box %i lists segment %i of filament %s twice\n",b,segment->index,fil->filname);}}}
+
+	nsegtot=nendtot=0;
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->nseg<1) continue;
+			nsegtot+=fil->nseg;
+			nendtot+=2;
+			for(seg=0;seg<fil->nseg;seg++) {											// segments are listed where they should be
+				segment=fil->segments[seg];
+				for(b=0;b<boxs->nbox;b++) {
+					bptr=boxs->blist[b];
+					for(d=0;d<dim;d++) {
+						lo[d]=boxs->min[d]+bptr->indx[d]*boxs->size[d];
+						hi[d]=lo[d]+boxs->size[d];
+						eps=FILBOXEPS*boxs->size[d];
+						lo2[d]=(bptr->indx[d]==0)?-VERYLARGE:lo[d]-eps;
+						hi2[d]=(bptr->indx[d]==boxs->side[d]-1)?VERYLARGE:hi[d]+eps;
+						lo[d]=(bptr->indx[d]==0)?-VERYLARGE:lo[d]+eps;
+						hi[d]=(bptr->indx[d]==boxs->side[d]-1)?VERYLARGE:hi[d]-eps; }
+					inner=Geo_LineXaabb(segment->xyzminus,segment->xyzplus,lo,hi,dim,0);
+					outer=Geo_LineXaabb(segment->xyzminus,segment->xyzplus,lo2,hi2,dim,0);
+					count=0;
+					for(i=0;i<bptr->nfilseg;i++)
+						if(bptr->filseg[i]==segment) count++;
+					if(inner && !count) {
+						nerr++;simLog(sim,10,"BUG: segment %i of filament %s crosses box %i but isn't listed there\n",seg,fil->filname,b);}
+					if(count && !outer) {
+						nerr++;simLog(sim,10,"BUG: segment %i of filament %s is listed in box %i but doesn't touch it\n",seg,fil->filname,b);}}}
+
+			for(end=0;end<2;end++) {															// ends are listed once, in their box
+				endchar=filend2char(end);
+				bptr=pos2box(sim,fil->nodes[end?fil->nseg:0]);
+				count=0;
+				for(b=0;b<boxs->nbox;b++)
+					for(i=0;i<boxs->blist[b]->nfilend;i++)
+						if(boxs->blist[b]->filendfil[i]==fil && boxs->blist[b]->filendchar[i]==endchar) {
+							count++;
+							if(boxs->blist[b]!=bptr) {
+								nerr++;simLog(sim,10,"BUG: the %s end of filament %s is listed in box %i, which doesn't contain it\n",end?"plus":"minus",fil->filname,b);}}
+				if(count!=1) {
+					nerr++;simLog(sim,10,"BUG: the %s end of filament %s is listed %i times\n",end?"plus":"minus",fil->filname,count);}}}}
+
+	if(nendlist!=nendtot) {
+		nerr++;simLog(sim,10,"BUG: boxes list %i filament ends but filaments have %i\n",nendlist,nendtot);}
+	if(nseglist<nsegtot) {
+		nerr++;simLog(sim,10,"BUG: boxes list %i filament segments but filaments have %i\n",nseglist,nsegtot);}
+	return nerr; }
+
+
+/******************************************************************************/
 /**************************** filament interactions ***********************/
 /******************************************************************************/
 
@@ -4245,28 +4441,45 @@ void filEndDynamics(simptr sim,filamenttypeptr filtype) {
 // interaction applies if it lists that end. It stops the segment if the segment
 // crosses a panel of the interaction's surface from the interaction's face, meaning
 // that the existing end node is on that side of the panel, or from either side if the
-// face is both. Without block interactions, surfaces do not stop growing ends.
+// face is both. Without block interactions, surfaces do not stop growing ends. This
+// only tests the panels in the virtual boxes that the segment passes through, which
+// include every panel that it could cross, or all panels if boxes aren't set up yet.
 int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar) {
+	simptr sim;
 	filamenttypeptr filtype;
 	filsurfinteractptr fsi;
 	surfaceptr srf;
+	panelptr pnl;
+	boxptr bptr;
 	enum PanelShape ps;
 	enum PanelFace face1,face2;
 	double *pt1,*pt2,crosspt[3];
-	int i,p,part,dim;
+	int i,p,part,dim,useboxes,nstep;
 
 	filtype=fil->filtype;
-	dim=filtype->filss->sim->dim;
+	sim=filtype->filss->sim;
+	dim=sim->dim;
 	part=(endchar=='p')?FPplus:FPminus;
 	pt1=(endchar=='p')?segment->xyzminus:segment->xyzplus;		// existing end node
 	pt2=(endchar=='p')?segment->xyzplus:segment->xyzminus;		// new end node
+	useboxes=(sim->boxs && sim->boxs->blist);
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
 		if(fsi->action!=FSAblock || !fsi->filpart[part]) continue;
 		srf=fsi->othersurf;
-		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-			for(p=0;p<srf->npanel[ps];p++)
-				if(lineXpanel(pt1,pt2,srf->panels[ps][p],dim,crosspt,&face1,&face2,NULL,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface)) return 1; }
+		if(useboxes) {
+			bptr=pos2box(sim,pt1);
+			nstep=0;
+			while(bptr && nstep<=sim->boxs->nbox) {
+				for(p=0;p<bptr->npanel;p++) {
+					pnl=bptr->panel[p];
+					if(pnl->srf==srf && lineXpanel(pt1,pt2,pnl,dim,crosspt,&face1,&face2,NULL,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface)) return 1; }
+				bptr=line2nextbox(sim,pt1,pt2,bptr);
+				nstep++; }}
+		else {
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+				for(p=0;p<srf->npanel[ps];p++)
+					if(lineXpanel(pt1,pt2,srf->panels[ps][p],dim,crosspt,&face1,&face2,NULL,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface)) return 1; }}
 	return 0; }
 
 
@@ -5826,6 +6039,10 @@ int filDynamics(simptr sim) {
 			return 1; }}
 
 	filPinJunctions(filss);													// re-pin rigid junctions after all motion this step
+
+	if(filBoxesUpdate(sim)) {													// box lists describe the filaments at the end of the step
+		simLog(sim,10,"Out of memory assigning filaments to boxes\n");
+		return 1; }
 
 	return 0; }
 

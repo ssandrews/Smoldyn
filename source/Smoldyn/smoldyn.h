@@ -492,6 +492,13 @@ typedef struct boxstruct {
     int* maxmol;              // allocated size of live lists [ll]
     int* nmol;                // number of molecules in live lists [ll]
     moleculeptr** mol;        // lists of live molecules in the box [ll][m]
+    int maxfilseg;            // allocated size of filament segment list
+    int nfilseg;              // number of filament segments at least partly in the box
+    struct segmentstruct** filseg;    // filament segments in the box [s]
+    int maxfilend;            // allocated size of filament end lists
+    int nfilend;              // number of filament ends in the box
+    struct filamentstruct** filendfil; // filament of each end in the box [e]
+    char* filendchar;         // which end of that filament: 'm' or 'p' [e]
 } * boxptr;
 
 typedef struct boxsuperstruct {
@@ -799,6 +806,7 @@ typedef struct filamentsuperstruct {
     int njunct;                // number of junctions in use
     filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse
     int nspring;               // number of junctions that close loops (not rigid)
+    int boxlists;              // 1 if filaments are listed in the virtual boxes, because something needs them
 } * filamentssptr;
 
 

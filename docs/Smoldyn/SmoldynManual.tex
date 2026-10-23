@@ -3981,7 +3981,7 @@ Virtual boxes are set up initially so the average number of molecules per box is
 
 \item{\ttt{boxsize} $float$}
 
-Rather than using \ttt{molperbox} to specify the sizes of the virtual boxes, \ttt{boxsize} can be used to request the width of the boxes. The actual box volumes will be no larger than the volume calculated from the width given here.
+Rather than using \ttt{molperbox} to specify the sizes of the virtual boxes, \ttt{boxsize} can be used to request the width of the boxes. The actual box volumes will be no larger than the volume calculated from the width given here. Virtual boxes are also used to find filament interactions more efficiently. The number of boxes is computed from the number of molecules, so a simulation without molecules has only one box unless \ttt{boxsize} is entered; Smoldyn warns if filaments have surface interactions and there is only one box.
 
 \item{\ttt{gauss\_table\_size} $int$}
 

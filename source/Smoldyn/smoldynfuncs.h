@@ -300,6 +300,8 @@ boxptr pos2box(simptr sim,const double *pos);
 void boxrandpos(simptr sim,double *pos,boxptr bptr);
 int boxaddmol(moleculeptr mptr,int ll);
 void boxremovemol(moleculeptr mptr,int ll);
+int boxaddfilseg(boxptr bptr,segmentptr segment);
+int boxaddfilend(boxptr bptr,filamentptr fil,char endchar);
 boxptr boxscansphere(simptr sim,const double *pos,double radius,boxptr bptr,int *wrap);
 int boxdebug(simptr sim);
 

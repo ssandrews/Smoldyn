@@ -31,6 +31,8 @@ int panelinbox(simptr sim,panelptr pnl,boxptr bptr);
 boxptr boxalloc(int dim,int nlist);
 int expandbox(boxptr bptr,int n,int ll);
 int expandboxpanels(boxptr bptr,int n);
+int expandboxfilsegs(boxptr bptr);
+int expandboxfilends(boxptr bptr);
 void boxfree(boxptr bptr,int nlist);
 boxptr *boxesalloc(int nbox,int dim,int nlist);
 void boxesfree(boxptr *blist,int nbox,int nlist);
@@ -175,6 +177,28 @@ void boxremovemol(moleculeptr mptr,int ll) {
 	return; }
 
 
+/* boxaddfilseg */
+// Adds filament segment segment to the segment list of box bptr, expanding the list if
+// needed. This doesn't check whether the segment is already listed. Returns 0 for
+// success or 1 for out of memory.
+int boxaddfilseg(boxptr bptr,segmentptr segment) {
+	if(bptr->nfilseg==bptr->maxfilseg)
+		if(expandboxfilsegs(bptr)) return 1;
+	bptr->filseg[bptr->nfilseg++]=segment;
+	return 0; }
+
+
+/* boxaddfilend */
+// Adds end endchar ('m' or 'p') of filament fil to the end lists of box bptr, expanding
+// the lists if needed. Returns 0 for success or 1 for out of memory.
+int boxaddfilend(boxptr bptr,filamentptr fil,char endchar) {
+	if(bptr->nfilend==bptr->maxfilend)
+		if(expandboxfilends(bptr)) return 1;
+	bptr->filendfil[bptr->nfilend]=fil;
+	bptr->filendchar[bptr->nfilend++]=endchar;
+	return 0; }
+
+
 /* boxscansphere */
 boxptr boxscansphere(simptr sim,const double *pos,double radius,boxptr bptr,int *wrap) {
 	boxssptr boxs;
@@ -298,6 +322,13 @@ boxptr boxalloc(int dim,int nlist) {
 	bptr->maxmol=NULL;
 	bptr->nmol=NULL;
 	bptr->mol=NULL;
+	bptr->maxfilseg=0;
+	bptr->nfilseg=0;
+	bptr->filseg=NULL;
+	bptr->maxfilend=0;
+	bptr->nfilend=0;
+	bptr->filendfil=NULL;
+	bptr->filendchar=NULL;
 
 	CHECKMEM(bptr->indx=(int*) calloc(dim,sizeof(int)));
 	for(d=0;d<dim;d++) bptr->indx[d]=0;
@@ -357,6 +388,50 @@ int expandboxpanels(boxptr bptr,int n) {
 	return 0; }
 
 
+/* expandboxfilsegs */
+// Doubles the size of the filament segment list of box bptr, plus 1. Returns 0 for
+// success or 1 for out of memory.
+int expandboxfilsegs(boxptr bptr) {
+	int maxseg,s;
+	segmentptr *seglist;
+
+	maxseg=2*bptr->maxfilseg+1;
+	seglist=(segmentptr*) calloc(maxseg,sizeof(segmentptr));
+	if(!seglist) return 1;
+	for(s=0;s<bptr->nfilseg;s++) seglist[s]=bptr->filseg[s];
+	for(;s<maxseg;s++) seglist[s]=NULL;
+	free(bptr->filseg);
+	bptr->filseg=seglist;
+	bptr->maxfilseg=maxseg;
+	return 0; }
+
+
+/* expandboxfilends */
+// Doubles the size of the filament end lists of box bptr, plus 1. Returns 0 for success
+// or 1 for out of memory.
+int expandboxfilends(boxptr bptr) {
+	int maxend,e;
+	filamentptr *fillist;
+	char *endlist;
+
+	maxend=2*bptr->maxfilend+1;
+	fillist=(filamentptr*) calloc(maxend,sizeof(filamentptr));
+	endlist=(char*) calloc(maxend,sizeof(char));
+	if(!fillist || !endlist) {
+		free(fillist);
+		free(endlist);
+		return 1; }
+	for(e=0;e<bptr->nfilend;e++) {
+		fillist[e]=bptr->filendfil[e];
+		endlist[e]=bptr->filendchar[e]; }
+	free(bptr->filendfil);
+	free(bptr->filendchar);
+	bptr->filendfil=fillist;
+	bptr->filendchar=endlist;
+	bptr->maxfilend=maxend;
+	return 0; }
+
+
 /* boxfree */
 void boxfree(boxptr bptr,int nlist) {
 	int ll;
@@ -368,6 +443,9 @@ void boxfree(boxptr bptr,int nlist) {
 	free(bptr->mol);
 	free(bptr->nmol);
 	free(bptr->maxmol);
+	free(bptr->filseg);
+	free(bptr->filendfil);
+	free(bptr->filendchar);
 	free(bptr->panel);
 	free(bptr->wlist);
 	free(bptr->wpneigh);
@@ -491,6 +569,8 @@ void boxoutput(boxssptr boxs,int blo,int bhi,int dim) {
 				simLog(sim,2," %s",bptr->panel[p]->pname); }}
 		simLog(sim,2,"\n");
 
+		if(sim->filss) simLog(sim,2,"  %i filament segments, %i filament ends\n",bptr->nfilseg,bptr->nfilend);
+
 		simLog(sim,2,"  %i live lists:\n",boxs->nlist);
 		simLog(sim,2,"   max:");
 		for(ll=0;ll<boxs->nlist;ll++) simLog(sim,2," %i",bptr->maxmol[ll]);
@@ -547,7 +627,7 @@ void boxssoutput(simptr sim) {
 
 /* checkboxparams */
 int checkboxparams(simptr sim,int *warnptr) {
-	int error,warn,b,dim,nmolec,ll;
+	int error,warn,b,dim,nmolec,ll,ft,nsurfint;
 	boxssptr boxs;
 	double mpbox;
 	char string[STRCHAR];
@@ -586,6 +666,13 @@ int checkboxparams(simptr sim,int *warnptr) {
 		if(bptr->npanel>20) {
 			warn++;
 			simLog(sim,5," WARNING: box (%s) has %i panels in it, which is very high\n",Zn_vect2csvstring(bptr->indx,dim,string),bptr->npanel); }}
+
+	if(sim->filss && boxs->nbox==1) {										// filament interactions get no benefit from a single box
+		nsurfint=0;
+		for(ft=0;ft<sim->filss->ntype;ft++) nsurfint+=sim->filss->filtypes[ft]->nsurfint;
+		if(nsurfint>0) {
+			warn++;
+			simLog(sim,5," WARNING: filaments have surface interactions but there is only 1 virtual box; set boxsize to make interactions more efficient\n"); }}
 
 	if(warnptr) *warnptr=warn;
 	return error; }
