@@ -678,10 +678,9 @@ typedef struct filamentstruct {
     double lenbank[2];                  // length change owed but not yet emitted as segments [end]
 } * filamentptr;
 
-enum FilMolAction {FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact,
-    FMAnone};
-enum FilFilAction {FFAadsorb, FFAdesorb, FFAbounce, FFAnone};
-enum FilSurfAction {FSAadsorb, FSAdesorb, FSAbounce, FSAnone};
+enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
+enum FilFilAction {FFAnone, FFAforce, FFAblock, FFAadsorb, FFAdesorb};
+enum FilSurfAction {FSAnone, FSAforce, FSAblock, FSAadsorb, FSAdesorb};
 
 typedef struct filmolinteractstruct {		// Filament-molecule interactions structure
     struct filamenttypestruct *filtype;	// owning filament type structure
@@ -694,7 +693,7 @@ typedef struct filmolinteractstruct {		// Filament-molecule interactions structu
     surfaceptr othersurf;								// set if this only applies to a molecule bound to a specific surface
     struct filamenttypestruct *otherfiltype;	// set if this only applies to a molecule bound to another filament
     compartptr compart;									// set if this only applies within a specific compartment
-    enum FilMolAction action;						// type of interaction: adsorb, desorb, insert, add to end, change end state, reaction, bounce
+    enum FilMolAction action;						// type of interaction: adsorb, desorb, bounce, insert, add to end, change end state, reaction
     // parameters: interaction rate, binding radius, unbinding radius, desoprtion rate, etc.
 } *filmolinteractptr;
 
@@ -709,7 +708,7 @@ typedef struct filfilinteractstruct {
     int otherfilface;										// interaction face of other filament, if any
     char othersequence[STRCHAR];				// recognition sequence on other filament, if any
     compartptr compart;									// set if this only happens within a specific compartment
-    enum FilFilAction action;						// type of interaction: end annealing, excluded volume, side adsorption, branch addition
+    enum FilFilAction action;						// type of interaction: force, blocking, end annealing, side adsorption, branch addition
     // parameters
 }* filfilinteractptr;
 
@@ -722,7 +721,7 @@ typedef struct filsurfinteractstruct {	// Filament-surface interaction; one stru
 		surfaceptr othersurf;								// which surface is involved
 		enum PanelFace surfface;						// which surface face is involved: front, back, or both
 		compartptr compart;									// set if this interaction only applies to a specific compartment, or NULL
-		enum FilSurfAction action;					// type of interaction: adsorb, desorb, bounce, react
+		enum FilSurfAction action;					// type of interaction: force, block, adsorb, desorb
 		// parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
 } *filsurfinteractptr;
 
