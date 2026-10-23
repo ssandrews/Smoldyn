@@ -650,6 +650,7 @@ typedef struct filamentworkstruct {
     int *cidx;                        // coordinate indices of constraint gradients at step start (11*4*nseg)
     int *cng;                         // number of coordinates for each constraint (4*nseg)
     double *cg;                       // constraint gradients at step start (11*4*nseg)
+    double **startnodes;              // node positions before the integrator, for surface blocking (nseg+1,3)
 } *filamentworkptr;
 
 typedef struct filjunctionstruct {

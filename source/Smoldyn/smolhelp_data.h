@@ -1235,14 +1235,15 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    \"block\". For \"force\", the parameter is a force constant, and each node of\n"
 		"    these parts that is on the other side of the surface is pushed back toward\n"
 		"    the surface with this force constant times the node's thickness; the face\n"
-		"    needs to be \"front\" or \"back\". For \"block\", there are no parameters, and\n"
+		"    needs to be \"front\" or \"back\". For \"block\", there are no parameters,\n"
 		"    filament ends of these parts don't grow, from elongation or treadmilling,\n"
 		"    if the new segment would cross the surface from the given face, or from\n"
-		"    either face for \"both\"; the parts need to be ends, so \"all\" means both ends\n"
-		"    for blocking. Entering an interaction again with the same surface, face,\n"
-		"    parts, and action replaces its parameters. This statement can be entered\n"
-		"    more than once to add multiple interactions, and can be used during a\n"
-		"    simulation with the set command."},
+		"    either face for \"both\", and, for filaments with dynamics, nodes of these\n"
+		"    parts that move across the surface from that face are reflected back.\n"
+		"    Entering an interaction again with the same surface, face, parts, and\n"
+		"    action replaces its parameters. This statement can be entered more than\n"
+		"    once to add multiple interactions, and can be used during a simulation with\n"
+		"    the set command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
 		"  * elongation_rate end state value",

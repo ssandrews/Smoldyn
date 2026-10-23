@@ -2,16 +2,14 @@
 #
 # Filaments start just above a floor and elongate at their plus ends toward a
 # ceiling. Both filament types have a force interaction with the floor
-# (surface_interaction floor front all force 20), which pushes any node that goes
-# below the floor back up to it. Only the red filaments interact with the ceiling.
-# Their block interaction (surface_interaction ceiling front plus block) stops their
-# plus ends from growing through it, and their force interaction
-# (surface_interaction ceiling front all force 20) pushes back any node that the
-# filament mechanics move past it; a block interaction only affects growth, so a
-# filament with dynamics needs both for the surface to act as a wall. The blue
-# filaments have no interaction with the ceiling, so they grow through it. Surfaces
-# only affect filaments through the interactions that are listed for the filament
-# type.
+# (surface_interaction floor front all force 20), which is a soft wall that pushes
+# any node that goes below the floor back up toward it. Only the red filaments
+# interact with the ceiling, with a block interaction
+# (surface_interaction ceiling front all block), which is a hard wall. Their plus ends
+# can't grow through it, and any node that the filament mechanics move through it is
+# reflected back to the same distance below it. The blue filaments have no
+# interaction with the ceiling, so they grow through it. Surfaces only affect
+# filaments through the interactions that are listed for the filament type.
 #
 # smoldyn surfaceInteraction2D.txt
 
@@ -55,8 +53,7 @@ force_angle 10
 mobility 1
 elongation_rate 1
 surface_interaction floor front all force 20
-surface_interaction ceiling front plus block
-surface_interaction ceiling front all force 20
+surface_interaction ceiling front all block
 end_filament_type
 
 start_filament_type free

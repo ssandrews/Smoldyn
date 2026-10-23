@@ -282,6 +282,7 @@ void surfremovemol(moleculeptr mptr,int ll);
 enum PanelFace panelside(double* pt,panelptr pnl,int dim,double *distptr,int strict,int useoldpos);
 int lineXpanel(double *pt1,double *pt2,panelptr pnl,int dim,double *crsspt,enum PanelFace *face1ptr,enum PanelFace *face2ptr,double *crossptr,double *cross2ptr,int *veryclose,int useoldpos);
 int ptinpanel(double *pt,panelptr pnl,int dim);
+void getpanelnormal(double *pt,panelptr pnl,int dim,double *norm);
 enum SrfAction surfaction(surfaceptr srf,enum PanelFace face,int ident,enum MolecState ms,int *i2ptr,enum MolecState *ms2ptr);
 int rxnXsurface(simptr sim,moleculeptr mptr1,moleculeptr mptr2);
 void fixpt2panel(double *pt,panelptr pnl,int dim,enum PanelFace face,double epsilon);

@@ -175,6 +175,10 @@ int filBoxesCheck(simptr sim);
 
 // Filament interactions
 int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar);
+int filSurfBlockOn(const filamenttypeptr filtype);
+void filSaveStartNodes(filamentptr fil);
+panelptr filSurfBlockCrossing(const filamentptr fil,int part,double *pt1,double *pt2,const panelptr exclude,double *crsspt);
+int filSurfBlockNodes(filamentptr fil);
 int filSurfForceOn(const filamenttypeptr filtype);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
@@ -472,6 +476,7 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	filwork->cidx=NULL;
 	filwork->cng=NULL;
 	filwork->cg=NULL;
+	filwork->startnodes=NULL;
 
 	CHECKMEM(filwork->wnodes=(double***) calloc(3,sizeof(double**)));
 	filwork->wnodes[0]=fil->nodes;
@@ -480,13 +485,16 @@ filamentworkptr filWorkAlloc(filamentptr fil,int maxseg) {
 	CHECKMEM(filwork->wnodes[2]=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->thermforce=(double**) calloc(maxseg+1,sizeof(double*)));
 	CHECKMEM(filwork->thermtorque=(double*) calloc(maxseg,sizeof(double)));
+	CHECKMEM(filwork->startnodes=(double**) calloc(maxseg+1,sizeof(double*)));
 	for(seg=0;seg<=maxseg;seg++) {
 		CHECKMEM(filwork->wnodes[1][seg]=(double*) calloc(3,sizeof(double)));
 		filwork->wnodes[1][seg][0]=filwork->wnodes[1][seg][1]=filwork->wnodes[1][seg][2]=0;
 		CHECKMEM(filwork->wnodes[2][seg]=(double*) calloc(3,sizeof(double)));
 		filwork->wnodes[2][seg][0]=filwork->wnodes[2][seg][1]=filwork->wnodes[2][seg][2]=0;
 		CHECKMEM(filwork->thermforce[seg]=(double*) calloc(3,sizeof(double)));
-		filwork->thermforce[seg][0]=filwork->thermforce[seg][1]=filwork->thermforce[seg][2]=0; }
+		filwork->thermforce[seg][0]=filwork->thermforce[seg][1]=filwork->thermforce[seg][2]=0;
+		CHECKMEM(filwork->startnodes[seg]=(double*) calloc(3,sizeof(double)));
+		filwork->startnodes[seg][0]=filwork->startnodes[seg][1]=filwork->startnodes[seg][2]=0; }
 
 	CHECKMEM(filwork->wroll=(double**) calloc(3,sizeof(double*)));
 	filwork->wroll[0]=fil->roll;
@@ -598,6 +606,11 @@ void filWorkFree(filamentworkptr filwork,int maxseg) {
 		for(seg=0;seg<=maxseg;seg++)
 			free(filwork->forces[seg]);
 		free(filwork->forces); }
+
+	if(filwork->startnodes) {
+		for(seg=0;seg<=maxseg;seg++)
+			free(filwork->startnodes[seg]);
+		free(filwork->startnodes); }
 
 	free(filwork->torques);
 	free(filwork->thermforce);
@@ -2015,9 +2028,6 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			CHECKM(itct==1,"surface_interaction force format: surface_name face parts force force_constant");
 			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
 			line2=strnword(line2,2); }
-		else if(fsa==FSAblock) {
-			CHECKS(!filpart[FPside] || !strcmp(nm,"all"),"surface_interaction block only applies to filament ends, so its parts need to be plus, minus, or all");
-			filpart[FPside]=0; }												// all means both ends for blocking
 		CHECKS(!line2,"unexpected text following surface_interaction");
 		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fsa,f1),"out of memory adding surface_interaction"); }
 
@@ -4483,6 +4493,142 @@ int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char end
 	return 0; }
 
 
+#define FILBLOCKMAXITER 20		// maximum reflections of one node off blocking surfaces per time step
+
+/* filSurfBlockOn */
+// Returns 1 if filament type filtype has any block interactions with surfaces, and 0
+// if not.
+int filSurfBlockOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if(filtype->surfint[i]->action==FSAblock) return 1;
+	return 0; }
+
+
+/* filSaveStartNodes */
+// Copies the node positions of filament fil to its startnodes work array, so that
+// filSurfBlockNodes can find the paths that the nodes moved along.
+void filSaveStartNodes(filamentptr fil) {
+	int node;
+	double **startnodes;
+
+	startnodes=fil->filwork->startnodes;
+	for(node=0;node<=fil->nseg;node++) {
+		startnodes[node][0]=fil->nodes[node][0];
+		startnodes[node][1]=fil->nodes[node][1];
+		startnodes[node][2]=fil->nodes[node][2]; }
+	return; }
+
+
+/* filSurfBlockCrossing */
+// Finds the first place where the line from pt1 to pt2 crosses a panel that blocks
+// filament part part (FPplus, FPminus, or FPside) of filament fil, meaning a panel of
+// a surface that the filament type has a block interaction with, for that part, where
+// the line crosses from the interaction's face, or from either face if the face is
+// both. Panel exclude is ignored, or none if it is NULL. Returns the crossed panel
+// and puts the crossing point in crsspt, or returns NULL if the line doesn't cross a
+// blocking panel. This tests the panels in the virtual boxes that the line passes
+// through, or all panels of the blocking surfaces if boxes aren't set up yet.
+panelptr filSurfBlockCrossing(const filamentptr fil,int part,double *pt1,double *pt2,const panelptr exclude,double *crsspt) {
+	simptr sim;
+	filamenttypeptr filtype;
+	filsurfinteractptr fsi;
+	surfaceptr srf;
+	panelptr pnl,pnlbest;
+	boxptr bptr;
+	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	double testpt[3],cross,crossbest;
+	int i,p,d,dim,nstep;
+
+	filtype=fil->filtype;
+	sim=filtype->filss->sim;
+	dim=sim->dim;
+	pnlbest=NULL;
+	crossbest=2;
+	if(sim->boxs && sim->boxs->blist) {
+		bptr=pos2box(sim,pt1);
+		nstep=0;
+		while(bptr && nstep<=sim->boxs->nbox) {
+			for(p=0;p<bptr->npanel;p++) {
+				pnl=bptr->panel[p];
+				if(pnl==exclude) continue;
+				for(i=0;i<filtype->nsurfint;i++) {
+					fsi=filtype->surfint[i];
+					if(fsi->action!=FSAblock || !fsi->filpart[part] || fsi->othersurf!=pnl->srf) continue;
+					if(lineXpanel(pt1,pt2,pnl,dim,testpt,&face1,&face2,&cross,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface) && cross<crossbest) {
+						crossbest=cross;
+						pnlbest=pnl;
+						for(d=0;d<dim;d++) crsspt[d]=testpt[d]; }}}
+			bptr=line2nextbox(sim,pt1,pt2,bptr);
+			nstep++; }}
+	else {
+		for(i=0;i<filtype->nsurfint;i++) {
+			fsi=filtype->surfint[i];
+			if(fsi->action!=FSAblock || !fsi->filpart[part]) continue;
+			srf=fsi->othersurf;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+				for(p=0;p<srf->npanel[ps];p++) {
+					pnl=srf->panels[ps][p];
+					if(pnl==exclude) continue;
+					if(lineXpanel(pt1,pt2,pnl,dim,testpt,&face1,&face2,&cross,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface) && cross<crossbest) {
+						crossbest=cross;
+						pnlbest=pnl;
+						for(d=0;d<dim;d++) crsspt[d]=testpt[d]; }}}}
+	return pnlbest; }
+
+
+/* filSurfBlockNodes */
+// Makes surfaces that the filament type has block interactions with act as walls for
+// the filament mechanics. This is called after the integrator has moved the nodes of
+// filament fil, with the node positions from before the integrator in startnodes (see
+// filSaveStartNodes). If a node's path, from its start position to its new position,
+// crosses a blocking panel for that node's part (see filSurfBlockCrossing), then the
+// node is reflected back across the panel, so it ends up the same distance from the
+// panel as it had gone past it. Flat panels reflect across the panel plane, and
+// curved panels (spheres, hemispheres, and cylinders) reflect through the closest
+// point of the panel, because a reflection across the tangent plane at the crossing
+// point can leave the node outside a curved surface. The reflected path is tested again, ignoring the panel that it
+// was just reflected from, to handle corners where it crosses another panel. If this
+// doesn't settle after FILBLOCKMAXITER reflections, the node is put back at its start
+// position. The displaced nodes create forces in the filament that act in the next
+// time step. Returns the number of nodes that were moved, so that the caller can
+// update the segment lengths and angles. Only node positions are tested, so a segment
+// can still cut across the edge or corner of a surface while both of its nodes are on
+// the allowed side.
+int filSurfBlockNodes(filamentptr fil) {
+	double **startnodes,*nodept,pt1[3],crsspt[3],pnlpt[3],norm[3],dot;
+	panelptr pnl,exclude;
+	int node,part,d,dim,iter,nmoved;
+
+	dim=fil->filtype->filss->sim->dim;
+	startnodes=fil->filwork->startnodes;
+	nmoved=0;
+	for(node=0;node<=fil->nseg;node++) {
+		part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+		nodept=fil->nodes[node];
+		for(d=0;d<dim;d++) pt1[d]=startnodes[node][d];
+		exclude=NULL;
+		for(iter=0;iter<FILBLOCKMAXITER;iter++) {
+			pnl=filSurfBlockCrossing(fil,part,pt1,nodept,exclude,crsspt);
+			if(!pnl) break;
+			if(pnl->ps==PSsph || pnl->ps==PShemi || pnl->ps==PScyl) {		// curved panel: reflect through the closest panel point
+				closestpanelpt(pnl,dim,nodept,pnlpt,0);
+				for(d=0;d<dim;d++) nodept[d]=2*pnlpt[d]-nodept[d]; }
+			else {																					// flat panel: reflect across the panel plane
+				getpanelnormal(crsspt,pnl,dim,norm);
+				dot=0;
+				for(d=0;d<dim;d++) dot+=(nodept[d]-crsspt[d])*norm[d];
+				for(d=0;d<dim;d++) nodept[d]-=2*dot*norm[d]; }
+			for(d=0;d<dim;d++) pt1[d]=crsspt[d];
+			exclude=pnl; }
+		if(iter==FILBLOCKMAXITER)
+			for(d=0;d<dim;d++) nodept[d]=startnodes[node][d];
+		if(iter>0) nmoved++; }
+	return nmoved; }
+
+
 /* filSegmentXFilament */
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr) {
 	int f,i,ft,cross;
@@ -5989,7 +6135,7 @@ int filDynamics(simptr sim) {
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
-	int f,ft,i,treadnum;
+	int f,ft,i,treadnum,block;
 
 	filss=sim->filss;
 	if(!filss) return 0;
@@ -6011,6 +6157,10 @@ int filDynamics(simptr sim) {
 		if(filtype->dynamics!=FDnone && filConstrained(filtype))		// constraint gradients at the start of the step
 			for(f=0;f<filtype->nfil;f++)
 				filConstraintStart(filtype->fillist[f]);
+		block=(filtype->dynamics!=FDnone && filSurfBlockOn(filtype));
+		if(block)																			// node positions before the integrator, for blocking surfaces
+			for(f=0;f<filtype->nfil;f++)
+				filSaveStartNodes(filtype->fillist[f]);
 		if(filtype->dynamics==FDeuler)
 			filEulerDynamics(sim,filtype);
 		else if(filtype->dynamics==FDRK2)
@@ -6033,6 +6183,11 @@ int filDynamics(simptr sim) {
 				if(i==1 && !filtype->constraintwarn) {
 					simLog(sim,5,"WARNING: filament %s did not converge onto its constraints (negative force constants) at time %g; the time step may be too long\n",filtype->fillist[f]->filname,sim->time);
 					filtype->constraintwarn=1; }}
+
+		if(block)																			// blocking surfaces reflect nodes that crossed them
+			for(f=0;f<filtype->nfil;f++) {
+				fil=filtype->fillist[f];
+				if(filSurfBlockNodes(fil)) filNodes2Angles(fil,-1,-1); }
 
 		if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
 			simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
