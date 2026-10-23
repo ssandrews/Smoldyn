@@ -2,7 +2,7 @@
 
 #units nm us zJ
 
-#random_seed 2
+random_seed 2
 graphics opengl_good
 
 dim 2
@@ -11,7 +11,7 @@ boundaries y -100 100 r
 
 time_start 0
 time_stop 50000
-time_step 0.02
+time_step 0.03
 
 #frame_thickness 1
 
@@ -57,6 +57,20 @@ force_angle 2
 mobility 10
 end_filament_type
 
+start_filament_type implicit
+color blue
+thickness 2
+polygon ve
+force_arrows 1 red
+kT 1
+dynamics implicit
+standard_length 2
+standard_angle 0
+force_length 1
+force_angle 2
+mobility 10
+end_filament_type
+
 
 random_filament Euler:e1  10  -50 -50 u
 random_filament Euler:e2  20    0 -50 u
@@ -66,22 +80,30 @@ random_filament Euler:e3  30   50 -50 u
 filament e1 copy_to RK2:t1
 filament e2 copy_to RK2:t2
 filament e3 copy_to RK2:t3
-filament t1 translate + 0 50
-filament t2 translate + 0 50
-filament t3 translate + 0 50
+filament t1 translate + 0 30
+filament t2 translate + 0 30
+filament t3 translate + 0 30
 
 
 filament e1 copy_to RK4:f1
 filament e2 copy_to RK4:f2
 filament e3 copy_to RK4:f3
-filament f1 translate + 0 100
-filament f2 translate + 0 100
-filament f3 translate + 0 100
+filament f1 translate + 0 60
+filament f2 translate + 0 60
+filament f3 translate + 0 60
+
+filament e1 copy_to implicit:i1
+filament e2 copy_to implicit:i2
+filament e3 copy_to implicit:i3
+filament i1 translate + 0 90
+filament i2 translate + 0 90
+filament i3 translate + 0 90
 
 
 filament_type Euler kT 0
 filament_type RK2 kT 0
 filament_type RK4 kT 0
+filament_type implicit kT 0
 
 
 cmd B pause

@@ -12,7 +12,7 @@ boundaries y -20 20 r
 boundaries z -20 20 r
 
 time_start 0
-time_stop 45000
+time_stop 50000
 time_step 0.5
 
 #frame_thickness 0

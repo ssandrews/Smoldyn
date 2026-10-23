@@ -202,6 +202,20 @@ For Windows, I downloaded VTK from \url{https://vtk.org/download/}, getting the 
 
 \end{description}
 
+% Using a new Windows computer
+\subsection{Using a new Windows computer}
+
+This section describes the steps that I followed with a brand new (to me) Windows computer.
+\begin{itemize}
+\item \textit{Computer account.} The computer automatically logged me into an Admin account. I created a new account for myself, logged out of Admin, and logged back in as myself.
+\item \textit{Choose shell.} The computer wants to open PowerShell, but I changed the application settings so that it opens ``Command Prompt'' instead.
+\item \textit{Install Git.} \ttt{winget install --id Git.Git -e --source winget}
+\item \textit{Download Smoldyn.} \ttt{git clone https://github.com/ssandrews/Smoldyn.git}
+\item \textit{Install CMake.} \ttt{winget install Kitware.CMake}
+\item \textit{Install Visual Studio.} \ttt{winget install -e --id Microsoft.VisualStudio.Community}. I tried to install command line tools with \ttt{winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --wait"}. I'm not sure if this worked. After many more tries, I gave up and installed Claude-code. It sorted out the problems by running \ttt{vcvars64.bat} and maybe more stuff. It also added msbuild to my PATH.
+\item \textit{Install Python.} \ttt{winget install Python.Python.3.14}
+\end{itemize}
+The moral of the story is to let Claude-code do the debugging.
 
 % Help
 \subsection{Help}
