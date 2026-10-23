@@ -2609,8 +2609,8 @@ int filSetSequence(filamentptr fil,char *str) {
 	int len;
 
 	len=strlen(str);
-	if(len > fil->maxsequence) {
-		fil=filAlloc(fil,0,0,len);
+	if(len+1 > fil->maxsequence) {									// room for the terminating null
+		fil=filAlloc(fil,0,0,len+1);
 		if(!fil) return 1; }
 	strcpy(fil->sequence,str);
 	fil->nsequence=len;
