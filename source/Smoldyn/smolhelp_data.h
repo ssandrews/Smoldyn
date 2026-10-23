@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 299
+#define SMOLHELP_NENTRY 300
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1116,7 +1116,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    add them to the other end. Set the treadmilling rate here. A positive value\n"
 		"    adds segments at the plus end and removes them from the minus end, and a\n"
 		"    negative value does the reverse. Treadmilling only occurs while the end\n"
-		"    that gains segments is in the \"open\" state (see end_state)."},
+		"    that gains segments is in the \"open\" state (see end_state). Treadmilling\n"
+		"    stops while the end that gains segments is blocked by a surface that it has\n"
+		"    a block interaction with (see surface_interaction)."},
 	{"statement","Statements about filaments",1,"branch_rate",
 		"  * branch_rate value",
 		"    Branching rate off of the mother filament, in units of per unit length per\n"
@@ -1216,8 +1218,31 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    node on the wrong side of the surface is pushed back with force constant\n"
 		"    force times the node's thickness, which is the average thickness of its\n"
 		"    adjacent segments, as for the other filament force constants. Afterward,\n"
-		"    there is an optional face entry. This only accepts \"front\" or \"back\" but\n"
-		"    should also accept \"both\"."},
+		"    there is an optional face entry, which is \"front\" (the default) or \"back\",\n"
+		"    for the side of the surface that the filament is confined to. This\n"
+		"    statement is a shorthand for surface_interaction surface face all force\n"
+		"    force."},
+	{"statement","Statements about filaments",1,"surface_interaction",
+		"  * surface_interaction surface face parts action [parameters]",
+		"    Adds an interaction between filaments of this type and surface surface,\n"
+		"    which needs to be defined before this filament type. Filaments only\n"
+		"    interact with surfaces through these interactions, so without any,\n"
+		"    filaments pass through surfaces (see the Smoldyn User's Manual). Enter face\n"
+		"    as \"front\", \"back\", or \"both\", for the face of the surface that the\n"
+		"    filament is on. Enter parts as \"minus\", \"plus\", \"side\", or \"all\", or as a\n"
+		"    comma-separated list such as \"plus,side\", where \"minus\" and \"plus\" are the\n"
+		"    end nodes and \"side\" is all nodes between them. Enter action as \"force\" or\n"
+		"    \"block\". For \"force\", the parameter is a force constant, and each node of\n"
+		"    these parts that is on the other side of the surface is pushed back toward\n"
+		"    the surface with this force constant times the node's thickness; the face\n"
+		"    needs to be \"front\" or \"back\". For \"block\", there are no parameters, and\n"
+		"    filament ends of these parts don't grow, from elongation or treadmilling,\n"
+		"    if the new segment would cross the surface from the given face, or from\n"
+		"    either face for \"both\"; the parts need to be ends, so \"all\" means both ends\n"
+		"    for blocking. Entering an interaction again with the same surface, face,\n"
+		"    parts, and action replaces its parameters. This statement can be entered\n"
+		"    more than once to add multiple interactions, and can be used during a\n"
+		"    simulation with the set command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
 		"  * elongation_rate end state value",
@@ -1235,12 +1260,12 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    keeping track of the remaining length so that the average length change\n"
 		"    equals the rate times the elapsed time. A growing end adds segments with\n"
 		"    random lengths and angles; it stops growing if it is blocked by a surface\n"
-		"    or reaches elongation_max_length. A shrinking end removes its end segment.\n"
-		"    When a filament that is down to one segment shrinks by that segment's full\n"
-		"    length, the filament is removed from the simulation, as with\n"
-		"    remove_filament. Shrinking past a mother filament node where a branch\n"
-		"    attaches releases that branch. These rates are usually not used in\n"
-		"    combination with treadmilling."},
+		"    that it has a block interaction with (see surface_interaction) or reaches\n"
+		"    elongation_max_length. A shrinking end removes its end segment. When a\n"
+		"    filament that is down to one segment shrinks by that segment's full length,\n"
+		"    the filament is removed from the simulation, as with remove_filament.\n"
+		"    Shrinking past a mother filament node where a branch attaches releases that\n"
+		"    branch. These rates are usually not used in combination with treadmilling."},
 	{"statement","Statements about filaments",1,"elongation_max_length",
 		"  * elongation_max_length value",
 		"    Maximum filament contour length when elongation can occur. Longer filaments\n"

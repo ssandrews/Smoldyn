@@ -1,0 +1,87 @@
+# Filament-surface interactions.
+#
+# Filaments start just above a floor and elongate at their plus ends toward a
+# ceiling. Both filament types have a force interaction with the floor
+# (surface_interaction floor front all force 20), which pushes any node that goes
+# below the floor back up to it. Only the red filaments interact with the ceiling.
+# Their block interaction (surface_interaction ceiling front plus block) stops their
+# plus ends from growing through it, and their force interaction
+# (surface_interaction ceiling front all force 20) pushes back any node that the
+# filament mechanics move past it; a block interaction only affects growth, so a
+# filament with dynamics needs both for the surface to act as a wall. The blue
+# filaments have no interaction with the ceiling, so they grow through it. Surfaces
+# only affect filaments through the interactions that are listed for the filament
+# type.
+#
+# smoldyn surfaceInteraction2D.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 100 r
+boundaries y 0 100 r
+
+time_start 0
+time_stop 80
+time_step 0.01
+random_seed 1
+
+frame_thickness 0
+
+start_surface floor
+color both black
+polygon both edge
+thickness 2
+panel rect +1 0 10 100
+end_surface
+
+start_surface ceiling
+color both black
+polygon both edge
+thickness 2
+panel rect -1 0 60 100
+end_surface
+
+start_filament_type blocked
+color red
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+elongation_rate 1
+surface_interaction floor front all force 20
+surface_interaction ceiling front plus block
+surface_interaction ceiling front all force 20
+end_filament_type
+
+start_filament_type free
+color blue
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+elongation_rate 1
+surface_interaction floor front all force 20
+end_filament_type
+
+random_filament blocked:r1 3  10 11  1.571
+random_filament blocked:r2 3  25 11  1.371
+random_filament blocked:r3 3  40 11  1.771
+random_filament free:b1 3  60 11  1.571
+random_filament free:b2 3  75 11  1.371
+random_filament free:b3 3  90 11  1.771
+
+cmd B pause
+#cmd A printFilaments stdout
+
+end_file

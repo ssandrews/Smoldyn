@@ -43,6 +43,10 @@ char *filFD2string(enum FilamentDynamics fd,char *string);
 enum FilamentDynamics filstring2FD(const char *string);
 int filstring2end(const char *string);
 char filend2char(int end);
+char *filFSA2string(enum FilSurfAction fsa,char *string);
+enum FilSurfAction filstring2FSA(const char *string);
+int filstring2parts(const char *string,int *filpart);
+char *filparts2string(const int *filpart,char *string);
 
 // Low level utilities
 int filReadFilName(const simptr sim,const char *str,filamenttypeptr *filtypeptr,filamentptr *filptr,char *filname);
@@ -57,6 +61,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence);
 void filFree(filamentptr fil);
 filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface);
 void filamentTypeFree(filamenttypeptr filtype);
+filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype);
+void filSurfInteractFree(filsurfinteractptr fsi);
 filamentssptr filssAlloc(filamentssptr filss,int maxtype);
 void filssFree(filamentssptr filss);
 
@@ -80,6 +86,7 @@ int filtypeSetDrawForceArrows(filamenttypeptr filtype,double scale,const double 
 int filtypeSetShiny(filamenttypeptr filtype,double shiny);
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd);
 int filtypeAddFace(filamenttypeptr filtype,const char* facename);
+filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilSurfAction action,double kforce);
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname);
 
 // filament superstructure
@@ -162,7 +169,8 @@ void filEndTransitions(simptr sim,filamenttypeptr filtype);
 void filEndDynamics(simptr sim,filamenttypeptr filtype);
 
 // Filament interactions
-int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr);
+int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar);
+int filSurfForceOn(const filamenttypeptr filtype);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
 // Force computation
@@ -179,7 +187,7 @@ void filSubtreeSpringForce(filamentptr fil,int dim,double *sum);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 double filNodeThickness(const filamentptr fil,int node);
 double filNodeMobility(const filamentptr fil,int node);
-void filAddConfineForces(filamentptr fil,int nodemin,int nodemax);
+void filAddSurfForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
@@ -265,6 +273,64 @@ int filstring2end(const char *string) {
 // End character, 'm' or 'p', used by the segment functions for end index 0 or 1.
 char filend2char(int end) {
 	return end==1?'p':'m'; }
+
+
+/* filFSA2string */
+char *filFSA2string(enum FilSurfAction fsa,char *string) {
+	if(fsa==FSAforce) strcpy(string,"force");
+	else if(fsa==FSAblock) strcpy(string,"block");
+	else if(fsa==FSAadsorb) strcpy(string,"adsorb");
+	else if(fsa==FSAdesorb) strcpy(string,"desorb");
+	else strcpy(string,"none");
+	return string; }
+
+
+/* filstring2FSA */
+enum FilSurfAction filstring2FSA(const char *string) {
+	enum FilSurfAction ans;
+
+	if(!strcmp(string,"force")) ans=FSAforce;
+	else if(!strcmp(string,"block")) ans=FSAblock;
+	else if(!strcmp(string,"adsorb")) ans=FSAadsorb;
+	else if(!strcmp(string,"desorb")) ans=FSAdesorb;
+	else ans=FSAnone;
+	return ans; }
+
+
+/* filstring2parts */
+// Reads a comma-separated list of filament parts, from "plus", "minus", "side", and
+// "all", into filpart, which is indexed by FPplus, FPminus, and FPside and is set to 1
+// for each listed part and 0 for the others. Returns 0 for success or 1 for an
+// unrecognized or empty list.
+int filstring2parts(const char *string,int *filpart) {
+	char str[STRCHAR],*word;
+	int part,any;
+
+	for(part=0;part<FILPARTMAX;part++) filpart[part]=0;
+	strncpy(str,string,STRCHAR-1);
+	str[STRCHAR-1]='\0';
+	any=0;
+	for(word=strtok(str,",");word;word=strtok(NULL,",")) {
+		if(!strcmp(word,"plus")) filpart[FPplus]=1;
+		else if(!strcmp(word,"minus")) filpart[FPminus]=1;
+		else if(!strcmp(word,"side")) filpart[FPside]=1;
+		else if(!strcmp(word,"all")) filpart[FPplus]=filpart[FPminus]=filpart[FPside]=1;
+		else return 1;
+		any=1; }
+	return any?0:1; }
+
+
+/* filparts2string */
+// Writes the filament parts in filpart as a comma-separated list, or "all" or "none".
+char *filparts2string(const int *filpart,char *string) {
+	string[0]='\0';
+	if(filpart[FPplus] && filpart[FPminus] && filpart[FPside]) strcpy(string,"all");
+	else {
+		if(filpart[FPplus]) strcat(string,"plus");
+		if(filpart[FPminus]) strcat(string,string[0]?",minus":"minus");
+		if(filpart[FPside]) strcat(string,string[0]?",side":"side");
+		if(!string[0]) strcpy(string,"none"); }
+	return string; }
 
 
 /******************************************************************************/
@@ -718,9 +784,15 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->branchsrf=NULL;										// no location gate by default
 		filtype->branchsrfdist=0;
 		filtype->branchcmpt=NULL;										// no location gate by default
-		filtype->confinesrf=NULL;										// no confinement by default
-		filtype->confineforce=0;
-		filtype->confineface=PFfront;								// confine to the front side when on
+		filtype->maxsurfint=0;											// no interactions by default
+		filtype->nsurfint=0;
+		filtype->surfint=NULL;
+		filtype->maxmolint=0;
+		filtype->nmolint=0;
+		filtype->molint=NULL;
+		filtype->maxfilint=0;
+		filtype->nfilint=0;
+		filtype->filint=NULL;
 
 		for(end=0;end<2;end++) {										// ends don't change length or state by default
 			filtype->endstate0[end]=FESopen;
@@ -780,7 +852,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 /* filamentTypeFree */
 void filamentTypeFree(filamenttypeptr filtype) {
 	if(!filtype) return;
-	int f,fc;
+	int f,fc,i;
 
 	if(filtype->fillist && filtype->filnames) {
 		for(f=0;f<filtype->maxfil;f++) {
@@ -794,7 +866,46 @@ void filamentTypeFree(filamenttypeptr filtype) {
 			free(filtype->facename[fc]);
 		free(filtype->facename); }
 
+	for(i=0;i<filtype->nsurfint;i++)
+		filSurfInteractFree(filtype->surfint[i]);
+	free(filtype->surfint);
+	for(i=0;i<filtype->nmolint;i++)							// molecule and filament interactions are not implemented yet
+		free(filtype->molint[i]);
+	free(filtype->molint);
+	for(i=0;i<filtype->nfilint;i++)
+		free(filtype->filint[i]);
+	free(filtype->filint);
+
 	free(filtype);
+	return; }
+
+
+/* filSurfInteractAlloc */
+// Allocates and initializes a filament-surface interaction for filament type filtype,
+// with no surface, no filament parts, and no action. Returns it, or NULL if memory
+// could not be allocated.
+filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype) {
+	filsurfinteractptr fsi;
+	int part;
+
+	fsi=(filsurfinteractptr) malloc(sizeof(struct filsurfinteractstruct));
+	if(!fsi) return NULL;
+	fsi->filtype=filtype;
+	fsi->selfsurf=NULL;
+	for(part=0;part<FILPARTMAX;part++) fsi->filpart[part]=0;
+	fsi->sequence[0]='\0';
+	fsi->filface=-1;
+	fsi->othersurf=NULL;
+	fsi->surfface=PFfront;
+	fsi->compart=NULL;
+	fsi->action=FSAnone;
+	fsi->kforce=0;
+	return fsi; }
+
+
+/* filSurfInteractFree */
+void filSurfInteractFree(filsurfinteractptr fsi) {
+	free(fsi);
 	return; }
 
 
@@ -951,10 +1062,11 @@ void filOutput(const filamentptr fil) {
 
 /* filtypeOutput */
 void filtypeOutput(const filamenttypeptr filtype) {
-	char string[STRCHAR],string2[STRCHAR];
-	int fc,f,dim,end,fes,fes2,active,grows;
+	char string[STRCHAR],string2[STRCHAR],string3[STRCHAR];
+	int fc,f,dim,end,fes,fes2,active,grows,i;
 	double rtot;
 	simptr sim;
+	filsurfinteractptr fsi;
 
 	if(!filtype) {
 		simLog(NULL,2," NULL filament type\n");
@@ -1015,10 +1127,15 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
 	if(filtype->branchcmpt)
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
-	if(filtype->confinesrf && filtype->confineforce>0) {
-		simLog(sim,2,"  confined to %s side of surface %s, force constant %g\n",surfface2string(filtype->confineface,string),filtype->confinesrf->sname,filtype->confineforce);
-		if(filtype->kT>0)																// equipartition penetration depth the wall permits
-			simLog(sim,2,"  confinement equilibrium penetration spread: %g|L, for thickness 1\n",sqrt(filtype->kT/filtype->confineforce)); }
+	simLog(sim,filtype->nsurfint>0?2:1,"  surface interactions: %i\n",filtype->nsurfint);
+	for(i=0;i<filtype->nsurfint;i++) {
+		fsi=filtype->surfint[i];
+		simLog(sim,2,"   %s with %s face of surface %s, for filament parts %s",filFSA2string(fsi->action,string),surfface2string(fsi->surfface,string2),fsi->othersurf->sname,filparts2string(fsi->filpart,string3));
+		if(fsi->action==FSAforce) {
+			simLog(sim,2,", force constant %g|E/L\n",fsi->kforce);
+			if(fsi->kforce>0 && filtype->kT>0)						// equipartition penetration depth the wall permits
+				simLog(sim,2,"    equilibrium penetration spread: %g|L, for thickness 1\n",sqrt(filtype->kT/fsi->kforce)); }
+		else simLog(sim,2,"\n"); }
 
 	grows=0;
 	for(end=0;end<2;end++) {														// end dynamics
@@ -1094,7 +1211,8 @@ void filWrite(const simptr sim,FILE *fptr) {
 
 /* filCheckParams */
 int filCheckParams(const simptr sim,int *warnptr) {
-	int error,warn,dim,f,seg,ft,pcount,end,fes,fes2,grows,changes,reach[FESMAX],more,j,j2;
+	int error,warn,dim,f,seg,ft,pcount,end,fes,fes2,grows,changes,reach[FESMAX],more,j,j2,i;
+	filsurfinteractptr fsi;
 	double kappa,theta0,kaz,kj;
 	filjunctionptr junct,junct2;
 	double fval,ksum,mobility;
@@ -1213,19 +1331,21 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics EulerMat, which is a test method; it gives the same results as Euler but more slowly, so use Euler, RK4, or Implicit for simulations\n",filtype->ftname);}
 		if(filtype->dynamics==FDimplicitold) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics ImplicitOld, which is a test method; it can be unstable even with short time steps, so use Implicit for simulations\n",filtype->ftname);}
-		if(filtype->confinesrf && filtype->confineforce>0) {
-			if(filtype->dynamics==FDnone) {
-				warn++;simLog(sim,5,"WARNING: filament type %s sets confine_surface with dynamics none; the confinement force is never applied\n",filtype->ftname);}
+		for(i=0;i<filtype->nsurfint;i++) {						// filament-surface interactions
+			fsi=filtype->surfint[i];
 			pcount=0;
-			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=filtype->confinesrf->npanel[ps];
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=fsi->othersurf->npanel[ps];
 			if(pcount==0) {
-				warn++;simLog(sim,5,"WARNING: filament type %s confine_surface %s has no panels; confinement is inert\n",filtype->ftname,filtype->confinesrf->sname);}
-			fval=1;																				// thickest node, since the wall spring scales with node thickness
-			for(f=0;f<filtype->nfil;f++)
-				for(seg=0;seg<filtype->fillist[f]->nseg;seg++)
-					if(filtype->fillist[f]->segments[seg]->thk>fval) fval=filtype->fillist[f]->segments[seg]->thk;
-			if(filtype->mobility*filtype->confineforce*fval*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
-				warn++;simLog(sim,5,"WARNING: filament type %s confinement is stiff for this time step (mobility*force*thickness*dt = %g > 0.5, for the thickest node and before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,filtype->mobility*filtype->confineforce*fval*sim->dt);}}
+				warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s, which has no panels, so the interaction has no effect\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
+			if(fsi->action==FSAforce && fsi->kforce>0) {
+				if(filtype->dynamics==FDnone) {
+					warn++;simLog(sim,5,"WARNING: filament type %s has a force interaction with surface %s but dynamics none; the force is never applied\n",filtype->ftname,fsi->othersurf->sname);}
+				fval=1;																			// thickest node, since the wall spring scales with node thickness
+				for(f=0;f<filtype->nfil;f++)
+					for(seg=0;seg<filtype->fillist[f]->nseg;seg++)
+						if(filtype->fillist[f]->segments[seg]->thk>fval) fval=filtype->fillist[f]->segments[seg]->thk;
+				if(filtype->mobility*fsi->kforce*fval*sim->dt>0.5) {		// explicit relaxation of the wall spring must be resolved; per-node mobility factors multiply this further
+					warn++;simLog(sim,5,"WARNING: filament type %s force interaction with surface %s is stiff for this time step (mobility*force*thickness*dt = %g > 0.5, for the thickest node and before any node mobility factors); explicit integration may oscillate or blow up at the wall\n",filtype->ftname,fsi->othersurf->sname,filtype->mobility*fsi->kforce*fval*sim->dt);}}}
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
@@ -1345,10 +1465,6 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value<=0) er=2;
 		else filtype->branchsrfdist=value; }
 
-	else if(!strcmp(param,"confineforce")) {					// confinement spring constant
-		if(value<0) er=2;
-		else filtype->confineforce=value; }
-
 	else if(!strcmp(param,"endrate")) {								// end velocity, length/time; index = end*FESMAX+state
 		if(index<0 || index>=2*FESMAX) er=2;
 		else filtype->endrate[index/FESMAX][index%FESMAX]=value; }
@@ -1453,6 +1569,46 @@ int filtypeAddFace(filamenttypeptr filtype,const char* facename) {
 		if(!filtype) return -1; }
 	strcpy(filtype->facename[filtype->nface++],facename);
 	return 0; }
+
+
+/* filtypeAddSurfInteract */
+// Adds a filament-surface interaction to filament type filtype, between the filament
+// parts in filpart (indexed by FPplus, FPminus, and FPside) and face face of surface
+// srf, which is the side of the surface that the filament is on. action is the type
+// of interaction and kforce is its force constant, for FSAforce. If the type already
+// has an interaction with the same surface, face, parts, and action, then its
+// parameters are replaced instead, so that entering an interaction again changes it.
+// Returns the interaction, or NULL if memory could not be allocated.
+filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilSurfAction action,double kforce) {
+	filsurfinteractptr fsi,*newlist;
+	int i,part,newmax;
+
+	fsi=NULL;
+	for(i=0;i<filtype->nsurfint && !fsi;i++) {
+		fsi=filtype->surfint[i];
+		if(fsi->othersurf!=srf || fsi->surfface!=face || fsi->action!=action) fsi=NULL;
+		for(part=0;part<FILPARTMAX && fsi;part++)
+			if(fsi->filpart[part]!=filpart[part]) fsi=NULL; }
+
+	if(!fsi) {
+		if(filtype->nsurfint==filtype->maxsurfint) {
+			newmax=2*filtype->maxsurfint+1;
+			newlist=(filsurfinteractptr*) calloc(newmax,sizeof(filsurfinteractptr));
+			if(!newlist) return NULL;
+			for(i=0;i<filtype->nsurfint;i++) newlist[i]=filtype->surfint[i];
+			free(filtype->surfint);
+			filtype->surfint=newlist;
+			filtype->maxsurfint=newmax; }
+		fsi=filSurfInteractAlloc(filtype);
+		if(!fsi) return NULL;
+		fsi->othersurf=srf;
+		fsi->surfface=face;
+		for(part=0;part<FILPARTMAX;part++) fsi->filpart[part]=filpart[part];
+		fsi->action=action;
+		filtype->surfint[filtype->nsurfint++]=fsi; }
+
+	fsi->kforce=kforce;
+	return fsi; }
 
 
 /* filAddFilamentType */
@@ -1571,12 +1727,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	int nvar,dim;
 
 	int itct,er,i1,i2;
-	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG];
+	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG],nm3[STRCHARLONG];
 	double fltv1[9],f1;
 	enum FilEndState fes1,fes2;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
 	enum PanelFace pf;
+	enum FilSurfAction fsa;
+	int filpart[FILPARTMAX];
 
 //	printf("%s %s\n",word,line2);//?? debug
 	dim=sim->dim;
@@ -1817,7 +1975,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
-		pf=filtype->confineface;										// default stands unless a face token overrides
+		pf=PFfront;																	// default face
 		line2=strnword(line2,2);
 		if(line2) {																	// optional face: which side nodes are confined to
 			itct=sscanf(line2,"%s",nm1);
@@ -1825,9 +1983,35 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			pf=surfstring2face(nm1);
 			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
 			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
-		filtype->confinesrf=sim->srfss->srflist[i1];	// parse-time binding; committed only after full validation so a failed runtime set changes nothing
-		filtypeSetParam(filtype,"confineforce",0,f1);
-		filtype->confineface=pf; }
+		filpart[FPplus]=filpart[FPminus]=filpart[FPside]=1;	// shorthand for a force interaction on all parts; committed only after full validation so a failed runtime set changes nothing
+		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,FSAforce,f1),"out of memory adding confine_surface"); }
+
+	else if(!strcmp(word,"surface_interaction")) {	// surface_interaction: surface face parts action [parameters]
+		CHECKS(filtype,"need to enter filament type name before surface_interaction");
+		itct=sscanf(line2,"%s %s %s %s",nm1,nm2,nm,nm3);
+		CHECKS(itct==4,"surface_interaction format: surface_name face parts action [parameters]");
+		CHECKS(sim->srfss,"surface_interaction requires that surfaces be defined first");
+		i1=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm1);
+		CHECKS(i1>=0,"surface_interaction surface name not recognized (define the surface before the filament type)");
+		pf=surfstring2face(nm2);
+		CHECKS(pf==PFfront || pf==PFback || pf==PFboth,"surface_interaction face options: front, back, both");
+		CHECKS(!filstring2parts(nm,filpart),"surface_interaction parts need to be plus, minus, side, all, or a comma-separated list of them, such as plus,side");
+		fsa=filstring2FSA(nm3);
+		CHECKS(fsa==FSAforce || fsa==FSAblock,"surface_interaction action options: force, block");
+		line2=strnword(line2,5);
+		f1=0;
+		if(fsa==FSAforce) {
+			CHECKS(pf!=PFboth,"surface_interaction force needs a front or back face, which is the side that the filament is on");
+			CHECKS(line2,"surface_interaction force format: surface_name face parts force force_constant");
+			itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+			CHECKM(itct==1,"surface_interaction force format: surface_name face parts force force_constant");
+			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
+			line2=strnword(line2,2); }
+		else if(fsa==FSAblock) {
+			CHECKS(!filpart[FPside] || !strcmp(nm,"all"),"surface_interaction block only applies to filament ends, so its parts need to be plus, minus, or all");
+			filpart[FPside]=0; }												// all means both ends for blocking
+		CHECKS(!line2,"unexpected text following surface_interaction");
+		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fsa,f1),"out of memory adding surface_interaction"); }
 
 	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
@@ -3098,8 +3282,8 @@ int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thi
 	int er,iter,cross,tryagain;
 	filamenttypeptr filtype;
 	double len,angle[3],jointthk;
-	panelptr pnl;
 	segmentptr segment;
+	(void) sim;
 
 	filtype=fil->filtype;
 
@@ -3113,8 +3297,8 @@ int filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thi
 	if(constraints==0) tryagain=0;
 	for(iter=0;iter<FILMAXTRIES && tryagain;iter++) {
 		tryagain=0;
-		if(constraints & 1) {	// check for surface crossing
-			cross=filSegmentXSurface(sim,segment,&pnl);
+		if(constraints & 1) {	// check for blocking by surfaces
+			cross=filSurfBlocksSegment(fil,segment,endchar);
 			if(cross) {
 				len=filRandomLength(filtype,thickness,1);
 				filRandomAngle(filtype,fil->nseg,jointthk,1,angle);
@@ -4055,27 +4239,35 @@ void filEndDynamics(simptr sim,filamenttypeptr filtype) {
 /******************************************************************************/
 
 
-/* filSegmentXSurface */
-int filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr) {
-	int s,p,cross;
+/* filSurfBlocksSegment */
+// Returns 1 if a block interaction of the filament type stops segment segment, which
+// was just added at end endchar ('m' or 'p') of filament fil, and 0 if not. A block
+// interaction applies if it lists that end. It stops the segment if the segment
+// crosses a panel of the interaction's surface from the interaction's face, meaning
+// that the existing end node is on that side of the panel, or from either side if the
+// face is both. Without block interactions, surfaces do not stop growing ends.
+int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar) {
+	filamenttypeptr filtype;
+	filsurfinteractptr fsi;
 	surfaceptr srf;
-	panelptr pnl;
-	double *pt1,*pt2,crosspt[3];
 	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	double *pt1,*pt2,crosspt[3];
+	int i,p,part,dim;
 
-	if(!sim->srfss) return 0;
-	pt1=segment->xyzminus;
-	pt2=segment->xyzplus;
-
-	cross=0;
-	for(s=0;s<sim->srfss->nsrf && !cross;s++) {
-		srf=sim->srfss->srflist[s];
-		for(ps=(enum PanelShape)0;ps<PSMAX && !cross;ps=(enum PanelShape)(ps+1))
-			for(p=0;p<srf->npanel[ps] && !cross;p++) {
-				pnl=srf->panels[ps][p];
-				cross=lineXpanel(pt1,pt2,pnl,sim->dim,crosspt,NULL,NULL,NULL,NULL,NULL,0); }}
-	if(cross && pnlptr) *pnlptr=pnl;
-	return cross; }
+	filtype=fil->filtype;
+	dim=filtype->filss->sim->dim;
+	part=(endchar=='p')?FPplus:FPminus;
+	pt1=(endchar=='p')?segment->xyzminus:segment->xyzplus;		// existing end node
+	pt2=(endchar=='p')?segment->xyzplus:segment->xyzminus;		// new end node
+	for(i=0;i<filtype->nsurfint;i++) {
+		fsi=filtype->surfint[i];
+		if(fsi->action!=FSAblock || !fsi->filpart[part]) continue;
+		srf=fsi->othersurf;
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++)
+				if(lineXpanel(pt1,pt2,srf->panels[ps][p],dim,crosspt,&face1,&face2,NULL,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface)) return 1; }
+	return 0; }
 
 
 /* filSegmentXFilament */
@@ -4320,7 +4512,7 @@ void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect) {
 		torques[node]=0;
 	filAddThermalForces(fil,-1,-1);
 	filAddJunctionForces(fil,-1,-1);
-	filAddConfineForces(fil,-1,-1);
+	filAddSurfForces(fil,-1,-1);
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++)
 			for(d=0;d<2;d++)
@@ -4756,15 +4948,30 @@ double filNodeMobility(const filamentptr fil,int node) {
 	return fil->nodemobility[node]; }
 
 
-/* filAddConfineForces */
-// Harmonic surface confinement, in the spirit of Cytosim's per-model-point
-// "confine" stiffness: each node on the penalized side of the confining surface
-// (the side opposite confine_face) feels the restoring force k*d toward the nearest
+/* filSurfForceOn */
+// Returns 1 if filament type filtype has any force interactions with surfaces that have
+// positive force constants, and 0 if not.
+int filSurfForceOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if(filtype->surfint[i]->action==FSAforce && filtype->surfint[i]->kforce>0) return 1;
+	return 0; }
+
+
+/* filAddSurfForces */
+// Forces from the force interactions of the filament type with surfaces (see
+// surface_interaction and confine_surface), which are harmonic surface confinement,
+// in the spirit of Cytosim's per-model-point "confine" stiffness. Each interaction
+// applies to the filament parts that it lists, where the minus and plus parts are
+// nodes 0 and nseg and the side part is the interior nodes. Each such node on the
+// penalized side of the interaction's surface (the side opposite the interaction's
+// face, which is the side the filament is on) feels the restoring force k*d toward the nearest
 // point of every panel it violates -- the gradient of a penalty energy 0.5*k*d^2 in
 // the penetration depth d past that panel. Summing over violated panels makes box
 // corners behave (each wall pushes along its own normal). The constant is per NODE,
 // like the other per-element force constants, so refining standard_length stiffens
-// the wall per unit contour length, and it is confine_force times the node's thickness,
+// the wall per unit contour length, and it is the force constant times the node's thickness,
 // which is the average thickness of its adjacent segments, as for the other filament
 // force constants; the equilibrium penetration depth of a fluctuating node is the
 // half-Gaussian spread sqrt(kT/k). This is a soft steric
@@ -4777,34 +4984,42 @@ double filNodeMobility(const filamentptr fil,int node) {
 // patch edge; and coplanar tessellations stack, since the constant is per violated
 // panel, so a node behind M coplanar panels feels up to M contributions. Draws no
 // random numbers; returns immediately when off.
-void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
+void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
 	double **forces,k,kn,pnlpt[3],*nodept,*fnode;
+	filamenttypeptr filtype;
+	filsurfinteractptr fsi;
 	surfaceptr srf;
 	panelptr pnl;
 	enum PanelShape ps;
 	enum PanelFace badface;
-	int node,p,d,dim;
+	int i,node,p,d,dim,part;
 
-	k=fil->filtype->confineforce;
-	srf=fil->filtype->confinesrf;
-	if(k<=0 || !srf) return;
+	filtype=fil->filtype;
+	if(filtype->nsurfint==0 || fil->nseg<1) return;
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
-	dim=fil->filtype->filss->sim->dim;
+	dim=filtype->filss->sim->dim;
 	forces=fil->filwork->forces;
-	badface=(fil->filtype->confineface==PFfront)?PFback:PFfront;
 
-	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-		for(p=0;p<srf->npanel[ps];p++) {
-			pnl=srf->panels[ps][p];											// panel-outer: fetch each panel once per node sweep
-			for(node=nodemin;node<=nodemax;node++) {
-				nodept=fil->nodes[node];
-				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
-				closestpanelpt(pnl,dim,nodept,pnlpt,0);
-				kn=k*filNodeThickness(fil,node);
-				fnode=forces[node];
-				for(d=0;d<dim;d++)
-					fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}
+	for(i=0;i<filtype->nsurfint;i++) {
+		fsi=filtype->surfint[i];
+		k=fsi->kforce;
+		if(fsi->action!=FSAforce || k<=0) continue;
+		srf=fsi->othersurf;
+		badface=(fsi->surfface==PFfront)?PFback:PFfront;
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++) {
+				pnl=srf->panels[ps][p];										// panel-outer: fetch each panel once per node sweep
+				for(node=nodemin;node<=nodemax;node++) {
+					part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+					if(!fsi->filpart[part]) continue;
+					nodept=fil->nodes[node];
+					if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
+					closestpanelpt(pnl,dim,nodept,pnlpt,0);
+					kn=k*filNodeThickness(fil,node);
+					fnode=forces[node];
+					for(d=0;d<dim;d++)
+						fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}
 	return; }
 
 
@@ -4833,7 +5048,7 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	filAddBendForces(fil,nodemin-1,nodemax+1);
 	filAddThermalForces(fil,nodemin,nodemax);
 	filAddJunctionForces(fil,nodemin,nodemax);
-	filAddConfineForces(fil,nodemin,nodemax);
+	filAddSurfForces(fil,nodemin,nodemax);
 	return; }
 
 
@@ -4974,12 +5189,12 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 					for(j=0;j<ng;j++)
 						sparseAddToM(forcemat,gidx[i],gidx[j],-k*g[i]*g[j]); }}}
 
-	if(fil->endjunct[0] || fil->endjunct[1] || fil->njunct>0 || (filtype->confinesrf && filtype->confineforce>0)) {	// junction and confinement forces: finite differences
+	if(fil->endjunct[0] || fil->endjunct[1] || fil->njunct>0 || filSurfForceOn(filtype)) {	// junction and surface forces: finite differences
 		extforce0=flatnodes[2];																		// scratch space, which filImplicitDynamics overwrites later
 		for(node=0;node<=fil->nseg;node++)
 			for(d=0;d<dim;d++) forces[node][d]=0;
 		filAddJunctionForces(fil,-1,-1);
-		filAddConfineForces(fil,-1,-1);
+		filAddSurfForces(fil,-1,-1);
 		for(node=0;node<=fil->nseg;node++)
 			for(d=0;d<dim;d++) extforce0[stride*node+d]=forces[node][d];
 		for(node=0;node<=fil->nseg;node++) {
@@ -4995,7 +5210,7 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 					for(i=nmin;i<=nmax;i++)
 						for(d2=0;d2<dim;d2++) forces[i][d2]=0;
 					filAddJunctionForces(fil,nmin,nmax);
-					filAddConfineForces(fil,nmin,nmax);
+					filAddSurfForces(fil,nmin,nmax);
 					nodes[node][d]=flatnodes[0][stride*node+d];
 					colnorm[side]=0;
 					nrow=0;

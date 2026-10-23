@@ -4075,12 +4075,57 @@ enum FilEndState {FESopen,FEScapped,FESshrink,FESnone};
 The filament end state enumeration lists the states that each filament end can be in. The filament type gives each end a length change rate for each state (\ttt{endrate}) and transition rates between states (\ttt{endtrans}). The names are labels, and the rates define what the states do; typically, ``open'' grows, ``capped'' neither grows nor shrinks, and ``shrink'' shrinks. \ttt{FESnone} is returned for unrecognized state names. Arrays that are indexed by end use 0 for the minus end and 1 for the plus end.
 
 \begin{lstlisting}
-enum FilMolAction {FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact,
-    FMAnone};
-enum FilFilAction {FFAadsorb, FFAdesorb, FFAbounce, FFAnone};
-enum FilSurfAction {FSAadsorb, FSAdesorb, FSAbounce, FSAnone};
+enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
+enum FilFilAction {FFAnone, FFAforce, FFAblock, FFAadsorb, FFAdesorb};
+enum FilSurfAction {FSAnone, FSAforce, FSAblock, FSAadsorb, FSAdesorb};
+
+typedef struct filmolinteractstruct {        // Filament-molecule interactions structure
+    struct filamenttypestruct *filtype;    // owning filament type structure
+    surfaceptr selfsurf;                                // set if this only applies if the filament is bound to a specific surface
+        int filpart[FILPARTMAX];                        // which part of filament interacts: plus, minus, side
+    char sequence[STRCHAR];                            // recognition sequence, if any
+    int filface;                                                // filament face, if any
+    int species;                                                // which molecule species is involved
+    enum MolecState mstate;                            // which molecule state is involved
+    surfaceptr othersurf;                                // set if this only applies to a molecule bound to a specific surface
+    struct filamenttypestruct *otherfiltype;    // set if this only applies to a molecule bound to another filament
+    compartptr compart;                                    // set if this only applies within a specific compartment
+    enum FilMolAction action;                        // type of interaction: adsorb, desorb, bounce, insert, add to end, change end state, reaction
+    // parameters: interaction rate, binding radius, unbinding radius, desoprtion rate, etc.
+} *filmolinteractptr;
+
+typedef struct filfilinteractstruct {
+    struct filamenttypestruct *filtype;    // owning filament type structure
+    surfaceptr selfsurf;                                // set if this only applies if the filament is bound to a specific surface
+        int selffilpart[FILPARTMAX];                // which part of filament interacts: plus, minus, side
+    char selfsequence[STRCHAR];                    // recognition sequence, if any
+    int selffilface;                                        // filament face, if any
+    struct filamenttypestruct *otherfiltype;    // filament type that these filaments interact with
+    surfaceptr othersurf;                                // set if this only applies to a filament bound to a specific surface
+    int otherfilface;                                        // interaction face of other filament, if any
+    char othersequence[STRCHAR];                // recognition sequence on other filament, if any
+    compartptr compart;                                    // set if this only happens within a specific compartment
+    enum FilFilAction action;                        // type of interaction: force, blocking, end annealing, side adsorption, branch addition
+    // parameters
+}* filfilinteractptr;
+
+typedef struct filsurfinteractstruct {    // Filament-surface interaction; one structure per interaction
+    struct filamenttypestruct *filtype;    // owning filament type structure
+    surfaceptr selfsurf;                                // set if this only applies if the filament is bound to a specific surface
+        int filpart[FILPARTMAX];                        // 1 if this part interacts [FPplus, FPminus, FPside]; side = interior nodes
+    char sequence[STRCHAR];                            // recognition sequence, if any
+    int filface;                                                // filament face, if any
+        surfaceptr othersurf;                                // which surface is involved
+        enum PanelFace surfface;                        // surface face that the filament is on: front, back, or both
+        compartptr compart;                                    // set if this interaction only applies to a specific compartment, or NULL
+        enum FilSurfAction action;                    // type of interaction: force, block, adsorb, desorb
+        double kforce;                                            // FSAforce: spring constant pushing nodes back to the surface, energy/length^2
+        // future parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
+} *filsurfinteractptr;
 \end{lstlisting}
-These are enumerations for the different types of filament interactions, whether with molecules, other filaments, or surfaces. These are just stubs at the moment because I haven't figured out what interactions should be possible yet and also no interaction code is written yet.
+These structures and enumerations are for filament interactions, whether with molecules, other filaments, or surfaces. Each structure represents one interaction, and each filament type has a list of each kind of interaction structure (\ttt{surfint}, \ttt{molint}, and \ttt{filint}). The first several elements of each structure say what part of the filament interacts. \ttt{filpart} is indexed by the \ttt{FilamentPart} values \ttt{FPplus}, \ttt{FPminus}, and \ttt{FPside}, and each element is 1 if that part interacts and 0 if not, where the plus and minus parts are the end nodes and the side part is the interior nodes; the \ttt{FPall} and \ttt{FPnone} values are not indices but are available for input. \ttt{selfsurf}, \ttt{sequence}, and \ttt{filface} are for interactions that only apply to filaments that are bound to a surface, to a recognition sequence, or to a filament face; these are stubs for future work and are not used yet. The next elements say what the filament interacts with, and \ttt{action} says what type of interaction it is. The remaining elements are the interaction parameters.
+
+Only the filament-surface interactions are implemented so far, and only the \ttt{FSAforce} and \ttt{FSAblock} actions. For these, \ttt{othersurf} is the surface and \ttt{surfface} is the face of the surface that the filament is on, which is \ttt{PFfront} or \ttt{PFback} for forces and can also be \ttt{PFboth} for blocking. \ttt{compart} is a stub for interactions that only apply within a compartment and is not used yet. For \ttt{FSAforce}, \ttt{kforce} is the force constant, and nodes of the listed parts that are on the other side of the surface are pushed back to it (see \ttt{filAddSurfForces}). For \ttt{FSAblock}, the listed parts are the filament ends, and an end can't grow if the new segment crosses the surface from the given face (see \ttt{filSurfBlocksSegment}). Without interactions, filaments and surfaces don't interact at all. The filament-molecule and filament-filament structures are stubs; their lists are allocated and freed but are always empty for now.
 
 \subsubsection{Segments}
 
@@ -4237,9 +4282,15 @@ typedef struct filamenttypestruct {
     surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
     double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
     compartptr branchcmpt;             // if set, branch only inside this compartment; NULL = no gate
-    surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
-    double confineforce;               // confinement spring constant, energy/length^2; 0 = off
-    enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
+    int maxsurfint;                    // filament-surface interactions allocated
+    int nsurfint;                      // number of filament-surface interactions
+    filsurfinteractptr *surfint;       // list of filament-surface interactions
+    int maxmolint;                     // filament-molecule interactions allocated
+    int nmolint;                       // number of filament-molecule interactions
+    filmolinteractptr *molint;         // list of filament-molecule interactions
+    int maxfilint;                     // filament-filament interactions allocated
+    int nfilint;                       // number of filament-filament interactions
+    filfilinteractptr *filint;         // list of filament-filament interactions
     double endrate[2][FESMAX];         // end velocity [end][state], length/time; >0 grows, <0 shrinks
     double endtrans[2][FESMAX][FESMAX]; // end state transition rates [end][from][to], 1/time
     enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]
@@ -4266,7 +4317,7 @@ Filament mechanics information is in the next elements. \ttt{stdlen} is the stan
 
 The next sections were written by Junjie Sun for representing actin branching. \ttt{branchrate} is the branch nucleation rate, per unit of mother filament length, per time. \ttt{branchangle} is the mean orientation of the daughter filament as yaw angle, relative to the mother filament; its default value is 70\degree. \ttt{branchspread} is the standard deviation of the branch yaw angle in radians, where 0 implies deterministic and negative is not set. \ttt{branchsegments} is the number of segments that a daughter filament is born with, set $\geq 1$. Note that daughter filaments always have the same type as the mother filament. \ttt{branchend} is the daughter end that attaches to the mother, `m' for minus or `p' for plus, for branches created by branch dynamics; it is also the default for the \ttt{branch} statement. \ttt{branchminspacing} is the minimum distance along the mother's contour between a new branch from branch dynamics and any existing branch on the same mother, or 0 for no minimum. \ttt{branchforceangle} is the torsional (yaw) spring constant for the branch. \ttt{branchazimuth} is the azimuth of the branch off of the mother, in the mother segment's frame of reference. \ttt{branchazimuthfix} is a Boolean variable that is equal to 1 if the branch azimuth should be fixed throughout a simulation. \ttt{branchforceazimuth} is the azimuthal spring constant, away from the filament \ttt{branchazim0} value.
 
-Next, \ttt{branchsrf} is a surface that can induce branching to occur, if the potential branch is within \ttt{branchsrfdist} distance of the surface. \ttt{branchcmpt} is a compartment where branching can occur. \ttt{confinesrf} is a surface where the harmonic confinement against it. This confinement uses spring constant \ttt{confineforce} and only occurs at the face of the surface that's given by \ttt{confineface}.%?? These elements could be moved to a separate filament-surface interaction data structure, or at least labeled as being for filament-surface interactions.
+Next, \ttt{branchsrf} is a surface that can induce branching to occur, if the potential branch is within \ttt{branchsrfdist} distance of the surface. \ttt{branchcmpt} is a compartment where branching can occur. \ttt{surfint} is the list of filament-surface interactions, with \ttt{nsurfint} entries out of \ttt{maxsurfint} allocated; each entry is allocated when it is added. \ttt{molint} and \ttt{filint} are the corresponding lists of filament-molecule and filament-filament interactions, which are always empty for now. Surface confinement, which used to be stored in the filament type with \ttt{confinesrf}, \ttt{confineforce}, and \ttt{confineface}, is now a force interaction in \ttt{surfint}.
 
 Next are the filament end dynamics. \ttt{endrate[end][state]} is the rate at which end \ttt{end} (0 for minus, 1 for plus) changes length while it is in state \ttt{state}, in length/time; positive values are elongation and negative values are shrinking. \ttt{endtrans[end][from][to]} is the rate at which end \ttt{end} changes from state \ttt{from} to state \ttt{to}, in inverse time; the diagonal elements are unused. \ttt{endstate0} is the state that each end of a new filament starts in. All of these default to 0, or to the open state. \ttt{elongmaxlen} is the maximum contour length for elongation.
 
@@ -4343,6 +4394,22 @@ Local. Returns the filament end index for the string ``minus'' (0) or ``plus'' (
 \hfill \\
 Local. Returns the end character, `m' or `p', that the segment functions use, for end index 0 or 1.
 
+\item[\ttt{char *filFSA2string(enum FilSurfAction fsa,char *string)}] %?? new code
+\hfill \\
+Local. Writes the filament-surface action \ttt{fsa} to \ttt{string} as ``force'', ``block'', ``adsorb'', ``desorb'', or ``none'', and returns \ttt{string}.
+
+\item[\ttt{enum FilSurfAction filstring2FSA(const char *string)}] %?? new code
+\hfill \\
+Local. Converts the string ``force'', ``block'', ``adsorb'', or ``desorb'' to a filament-surface action. Returns \ttt{FSAnone} for unrecognized input.
+
+\item[\ttt{int filstring2parts(const char *string,int *filpart)}] %?? new code
+\hfill \\
+Local. Reads a comma-separated list of filament parts, from ``plus'', ``minus'', ``side'', and ``all'', into \ttt{filpart}, which is indexed by \ttt{FPplus}, \ttt{FPminus}, and \ttt{FPside}; each listed part is set to 1 and the others to 0. Returns 0 for success or 1 for an unrecognized or empty list.
+
+\item[\ttt{char *filparts2string(const int *filpart,char *string)}] %?? new code
+\hfill \\
+Local. Writes the filament parts in \ttt{filpart} to \ttt{string} as a comma-separated list, or as ``all'' or ``none'', and returns \ttt{string}.
+
 
 \item[\underline{Low level utilities}]
 (No changes to data structures; no math.)
@@ -4393,7 +4460,15 @@ Allocates or expands memory for a filament type structure and intilizes it. Retu
 
 \item[\ttt{void filamentTypeFree(filamenttypeptr filtype)}]
 \hfill \\
-Frees memory for a single filament type.
+Frees memory for a single filament type, including its interaction lists.
+
+\item[\ttt{filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype)}] %?? new code
+\hfill \\
+Allocates and initializes a filament-surface interaction for filament type \ttt{filtype}, with no surface, no filament parts, action \ttt{FSAnone}, and force constant 0. The stub elements are set to \ttt{NULL}, an empty string, or -1. Returns the interaction, or \ttt{NULL} if memory could not be allocated.
+
+\item[\ttt{void filSurfInteractFree(filsurfinteractptr fsi)}] %?? new code
+\hfill \\
+Frees a filament-surface interaction.
 
 \item[\ttt{filamentssptr filssAlloc(filamentssptr filss, int maxtype)}]
 \hfill \\
@@ -4463,7 +4538,6 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{branchazimuthfix} & hold azimuth at birth value & n/a & 0,1 \\
 \ttt{branchforceazimuth} & azimuthal spring constant & n/a & $[0,\infty)$ \\
 \ttt{branchsurfdist} & max distance for branch addition & n/a & $[0,\infty)$ \\
-\ttt{confineforce} & surface confinement spring constant & n/a & $[0,\infty)$ \\
 \ttt{endrate} & end length change rate & end*FESMAX+state & $(-\infty,\infty)$ \\
 \ttt{endtrans} & end state transition rate & (end*FESMAX+from)*FESMAX+to & $[0,\infty)$ \\
 \ttt{endstate0} & initial end state & end & 0,1,2 \\
@@ -4506,6 +4580,10 @@ Sets the dynamics for the filament type to \ttt{fd}.
 \item[\ttt{int filtypeAddFace(filamenttypeptr filtype, const char* facename)}]
 \hfill \\
 Adds a face name to the filament, enlarging the list of face names if required. Returns 0 for success and -1 for failure to allocate memory.
+
+\item[\ttt{filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilSurfAction action,double kforce)}] %?? new code
+\hfill \\
+Adds a filament-surface interaction to filament type \ttt{filtype}, between the filament parts in \ttt{filpart} and face \ttt{face} of surface \ttt{srf}, which is the side of the surface that the filament is on. \ttt{action} is the type of interaction and \ttt{kforce} is its force constant, which is used for \ttt{FSAforce}. If the filament type already has an interaction with the same surface, face, parts, and action, then this replaces its parameters instead of adding a new one, so entering an interaction again changes it. This enlarges the list if needed. Returns the interaction, or \ttt{NULL} if memory could not be allocated. The \ttt{surface\_interaction} and \ttt{confine\_surface} statements call this.
 
 \item[\ttt{filamenttypeptr filAddFilamentType(simptr sim, const char *ftname)}]
 \hfill \\
@@ -4600,7 +4678,7 @@ Computes and returns the filament's contour length, meaning the sum of all segme
 \hfill \\
 Changes the length of end \ttt{end} (0 for minus, 1 for plus) of filament \ttt{fil} by \ttt{dlength} of contour length, growing for positive values and shrinking for negative values. Segments are added or removed whole, so \ttt{lenbank[end]} carries the remainder forward. Growth debits the length actually drawn, which keeps the total length tracking rate*time with bounded rather than accumulating error. Shrinking removes the end segment once the bank covers that segment's actual length, for the same exact accounting. Returns the number of segments added (positive) or removed (negative), or -1000 for a configuration error (\ttt{stdlen}$\leq 0$ for growth). When the bank covers the length of a filament's only remaining segment, the filament has shrunk away; the function then returns \ttt{FILREMOVED} (-2000) without changing the filament, and the caller removes it.
 
-An end that cannot place a segment (a surface is in the way, as determined by filAddOneRandomSegment) does not bank the growth it was denied: the step's increment is undone and the bank is clamped to at most one segment, so a stalled end sits at zero velocity instead of storing up growth and discharging it in a burst once the obstruction clears. Growth also stops at \ttt{elongmaxlen}. Removing segments uses \ttt{filRemoveSegment}, which drops branches that were attached to the removed nodes.
+An end that cannot place a segment (a surface with a block interaction is in the way, as determined by \ttt{filAddOneRandomSegment}) does not bank the growth it was denied: the step's increment is undone and the bank is clamped to at most one segment, so a stalled end sits at zero velocity instead of storing up growth and discharging it in a burst once the obstruction clears. Growth also stops at \ttt{elongmaxlen}. Removing segments uses \ttt{filRemoveSegment}, which drops branches that were attached to the removed nodes.
 
 \item[\ttt{void filEndTransitions(simptr sim,filamenttypeptr filtype)}] %?? new code
 \hfill \\
@@ -4802,7 +4880,7 @@ Returns 0 for success, 2 for syntax error in position strings, or 3 for syntax e
 \item[\ttt{int}]
 \ttt{filAddOneRandomSegment(simptr sim,filamentptr fil,const double *x,double thickness,char endchar,int constraints)}
 \hfill \\
-Adds one segment to the \ttt{endchar} end of \ttt{fil} using a random length and bending angle. The \ttt{x} input is ignored unless the filament has 0 current segments. The new segment has thickness \ttt{thickness}. The \ttt{constraints} input is supposed to be a collection of flags for which constraints the addition needs to account for. For now, the only \ttt{constraints} options are 0 for no constraints at all, and 1 for the new segment should not cross any surface panel. If the addition is constrained, this function tries up to \ttt{FILMAXTRIES} times to add a segment that does not disobey the constraints. Returns 0 for success, 1 for out of memory, and 2 for failure to place a segment that obeys the constraints.
+Adds one segment to the \ttt{endchar} end of \ttt{fil} using a random length and bending angle. The \ttt{x} input is ignored unless the filament has 0 current segments. The new segment has thickness \ttt{thickness}. The \ttt{constraints} input is supposed to be a collection of flags for which constraints the addition needs to account for. For now, the only \ttt{constraints} options are 0 for no constraints at all, and 1 for the new segment should not be stopped by a surface that the filament type has a block interaction with (\ttt{filSurfBlocksSegment}). If the addition is constrained, this function tries up to \ttt{FILMAXTRIES} times to add a segment that does not disobey the constraints. Returns 0 for success, 1 for out of memory, and 2 for failure to place a segment that obeys the constraints.
 
 \item[\ttt{void filTreadmill(simptr sim, filamentptr fil, char endchar)}]
 \hfill \\
@@ -4864,9 +4942,13 @@ Removes filament \ttt{fil} from the simulation, keeping its memory for reuse. Be
 (Data structures are changed.)
 
 \item[\ttt{int}]
-\ttt{filSegmentXSurface(const simptr sim,const segmentptr segment,panelptr *pnlptr)}
+\ttt{filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char endchar)}
 \hfill \\
-Tests if segment \ttt{segment} crosses any surface in the simulation. Returns 0 if not and 1 if so. If so, then this returns a pointer to the panel that is crossed in \ttt{pnlptr}. Many more details about the crossing could be returned, such as where along the segment the crossing is, if there are multiple crossings with curved panels, etc., but these are not being returned at present. This function scans through the possible surface panels and checks each with \ttt{lineXpanel}. THIS IS VERY INEFFICIENT AND SHOULD USE BOXES.
+Tests if a block interaction of the filament type stops segment \ttt{segment}, which was just added at end \ttt{endchar} (`m' or `p') of filament \ttt{fil}. Returns 1 if so and 0 if not. A block interaction applies if its \ttt{filpart} lists that end. It stops the segment if the segment crosses a panel of the interaction's surface from the interaction's face, meaning that the \ttt{face1} value from \ttt{lineXpanel}, for the line from the existing end node to the new end node, equals \ttt{surfface}, or if it crosses from either side when \ttt{surfface} is \ttt{PFboth}. Without block interactions, surfaces don't stop growing ends. \ttt{filAddOneRandomSegment} calls this when its \ttt{constraints} argument includes 1, which is the case for elongation and treadmilling. This replaces \ttt{filSegmentXSurface}, which tested for crossing any surface in the simulation. This function scans through the panels of each blocking surface and checks each with \ttt{lineXpanel}. THIS IS INEFFICIENT AND SHOULD USE BOXES.
+
+\item[\ttt{int filSurfForceOn(const filamenttypeptr filtype)}] %?? new code
+\hfill \\
+Returns 1 if filament type \ttt{filtype} has any force interactions with surfaces that have positive force constants, and 0 if not. \ttt{filComputeDerivForceMat} uses this to decide whether to compute the finite difference part of the Jacobian.
 
 \item[\ttt{int}]
 \ttt{filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr)}
@@ -4894,7 +4976,7 @@ Computes thermal forces acting on filament nodes and adds them to any prior valu
 
 \item[\ttt{void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect)}] %?? New code.
 \hfill \\
-Adds the displacements for one time step from the forces that the force matrix of the matrix integrators \ttt{filEulerMatDynamics} and \ttt{filImplicitOldDynamics} doesn't include, which are the thermal, junction, and confinement forces, to the flattened state \ttt{flatvect}. This computes these forces with \ttt{filAddThermalForces}, \ttt{filAddJunctionForces}, and \ttt{filAddConfineForces}, overwriting the filament's force and torque vectors. Each node coordinate gets \ttt{dtmu} times the effective node mobility factor (\ttt{filNodeMobility}) times its force, and in 3D each segment's rotation about its own axis (see \ttt{filFlattenNodes}) gets \ttt{dtmu} times the segment roll mobility factor times its torque. These are the same displacements that \ttt{filStepDynamics} makes for these forces, so they are explicit in both matrix integrators.
+Adds the displacements for one time step from the forces that the force matrix of the matrix integrators \ttt{filEulerMatDynamics} and \ttt{filImplicitOldDynamics} doesn't include, which are the thermal, junction, and confinement forces, to the flattened state \ttt{flatvect}. This computes these forces with \ttt{filAddThermalForces}, \ttt{filAddJunctionForces}, and \ttt{filAddSurfForces}, overwriting the filament's force and torque vectors. Each node coordinate gets \ttt{dtmu} times the effective node mobility factor (\ttt{filNodeMobility}) times its force, and in 3D each segment's rotation about its own axis (see \ttt{filFlattenNodes}) gets \ttt{dtmu} times the segment roll mobility factor times its torque. These are the same displacements that \ttt{filStepDynamics} makes for these forces, so they are explicit in both matrix integrators.
 
 AI description for new code. Thermal force amplitude from the fluctuation-dissipation theorem for the overdamped update x += dt*mobility*nodemobility*F used by \ttt{filStepDynamics}: each Cartesian component of each node's thermal force is Gaussian with rms sqrt(2*kT/(mobility*nodemobility*dt)), which samples the correct ensemble at temperature kT for any choice of dt, mobility, and discretization. Forces are drawn once per time step and reused across sub-step force evaluations (Runge-Kutta stages and Jacobian calls). Random numbers are always drawn and the amplitude multiplies the draw, so the draw sequence is independent of \ttt{kT} and mobility values; immobile nodes (\ttt{nodemobility} 0) correctly receive no thermal force.
 
@@ -4936,9 +5018,11 @@ Returns the thickness of node \ttt{node} of filament \ttt{fil}, which is the ave
 \hfill \\
 Returns the effective mobility factor of node \ttt{node} of filament \ttt{fil}, which is its node mobility factor, \ttt{fil->nodemobility[node]}, divided by its thickness from \ttt{filNodeThickness} if the filament type's \ttt{thickdrag} value is 1 (the default), so thicker filaments have proportionally more drag. The node's mobility is the filament type's mobility times this. Segment rotation mobility factors are the averages of these for the segments' two nodes. Everything that uses node mobility uses this function: \ttt{filStepDynamics}, \ttt{filDrawThermalForces} (so the thermal force amplitude, $\sqrt{2kT/(\mu m\Delta t)}$, stays consistent with the mobility and equilibrium conformations don't depend on drag), \ttt{filAddMatrixForceStep}, \ttt{filImplicitDynamics}, and \ttt{filProjectConstraints}.
 
-\item[\ttt{void filAddConfineForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.
+\item[\ttt{void filAddSurfForces(filamentptr fil,int nodemin,int nodemax)}] %?? New code.
 \hfill \\
-AI description. Harmonic surface confinement, in the spirit of Cytosim's per-model-point ``confine'' stiffness: each node on the penalized side of the confining surface (the side opposite \ttt{confine\_face}) feels the restoring force k*d toward the nearest point of every panel it violates -- the gradient of a penalty energy $0.5*k*d^2$ in the penetration depth d past that panel. Summing over violated panels makes box corners behave (each wall pushes along its own normal). The constant is per NODE, like the other per-element force constants, so refining \ttt{standard\_length} stiffens the wall per unit contour length, and it is \ttt{confineforce} times the node's thickness from \ttt{filNodeThickness}, as for the other force constants; the equilibrium penetration depth of a fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric wall for filament mechanics only -- molecules do not see it, and richer filament-surface interaction (hard collisions, Brownian-ratchet load feedback) remains future work. Two geometric caveats: the side test is panelside's, which for rect, tri, and disk panels classifies against the panel's INFINITE plane, so a confining surface should span or enclose the region the filaments occupy -- a partial patch also penalizes nodes laterally beyond it, pulling them toward the patch edge; and coplanar tessellations stack, since the constant is per violated panel, so a node behind M coplanar panels feels up to M contributions. Draws no random numbers; returns immediately when off.
+Adds the forces from the force interactions of the filament type with surfaces (\ttt{FSAforce}) to the forces on nodes \ttt{nodemin} to \ttt{nodemax} of filament \ttt{fil}, where negative values mean all nodes. Each interaction only applies to the nodes of the parts that it lists, where node 0 is the minus part, node \ttt{nseg} is the plus part, and the other nodes are the side part. This replaces \ttt{filAddConfineForces}, and with one interaction on all parts, it gives identical results.
+
+AI description. Harmonic surface confinement, in the spirit of Cytosim's per-model-point ``confine'' stiffness: each node on the penalized side of an interaction's surface (the side opposite the interaction's \ttt{surfface}) feels the restoring force k*d toward the nearest point of every panel it violates -- the gradient of a penalty energy $0.5*k*d^2$ in the penetration depth d past that panel. Summing over violated panels makes box corners behave (each wall pushes along its own normal). The constant is per NODE, like the other per-element force constants, so refining \ttt{standard\_length} stiffens the wall per unit contour length, and it is the interaction's \ttt{kforce} times the node's thickness from \ttt{filNodeThickness}, as for the other force constants; the equilibrium penetration depth of a fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric wall for filament mechanics only -- molecules do not see it, and richer filament-surface interaction (hard collisions, Brownian-ratchet load feedback) remains future work. Two geometric caveats: the side test is panelside's, which for rect, tri, and disk panels classifies against the panel's INFINITE plane, so a confining surface should span or enclose the region the filaments occupy -- a partial patch also penalizes nodes laterally beyond it, pulling them toward the patch edge; and coplanar tessellations stack, since the constant is per violated panel, so a node behind M coplanar panels feels up to M contributions. Draws no random numbers; returns immediately when off.
 
 
 \item[\ttt{void filComputeForces(filamentptr fil,int nodemin,int nodemax)}]

@@ -703,7 +703,7 @@ typedef struct filfilinteractstruct {
 		int selffilpart[FILPARTMAX];				// which part of filament interacts: plus, minus, side
     char selfsequence[STRCHAR];					// recognition sequence, if any
     int selffilface;										// filament face, if any
-    struct filamenttypestuct *otherfiltype;		// filament type this these filaments interact with
+    struct filamenttypestruct *otherfiltype;	// filament type that these filaments interact with
     surfaceptr othersurf;								// set if this only applies to a filament bound to a specific surface
     int otherfilface;										// interaction face of other filament, if any
     char othersequence[STRCHAR];				// recognition sequence on other filament, if any
@@ -715,14 +715,15 @@ typedef struct filfilinteractstruct {
 typedef struct filsurfinteractstruct {	// Filament-surface interaction; one structure per interaction
     struct filamenttypestruct *filtype;	// owning filament type structure
     surfaceptr selfsurf;								// set if this only applies if the filament is bound to a specific surface
-		int filpart[FILPARTMAX];						// which part of filament interacts: plus, minus, side
+		int filpart[FILPARTMAX];						// 1 if this part interacts [FPplus, FPminus, FPside]; side = interior nodes
     char sequence[STRCHAR];							// recognition sequence, if any
     int filface;												// filament face, if any
 		surfaceptr othersurf;								// which surface is involved
-		enum PanelFace surfface;						// which surface face is involved: front, back, or both
+		enum PanelFace surfface;						// surface face that the filament is on: front, back, or both
 		compartptr compart;									// set if this interaction only applies to a specific compartment, or NULL
 		enum FilSurfAction action;					// type of interaction: force, block, adsorb, desorb
-		// parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
+		double kforce;											// FSAforce: spring constant pushing nodes back to the surface, energy/length^2
+		// future parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
 } *filsurfinteractptr;
 
 
@@ -763,9 +764,15 @@ typedef struct filamenttypestruct {
     surfaceptr branchsrf;              // if set, branch only within branchsrfdist of this surface; NULL = no gate
     double branchsrfdist;              // capture distance from branchsrf for branch nucleation, length units
     compartptr branchcmpt;             // if set, branch only inside this compartment; NULL = no gate
-    surfaceptr confinesrf;             // if set, harmonic confinement against this surface; NULL = off
-    double confineforce;               // confinement spring constant, energy/length^2; 0 = off
-    enum PanelFace confineface;        // side nodes are confined to (default front); the other side is penalized
+    int maxsurfint;                    // filament-surface interactions allocated
+    int nsurfint;                      // number of filament-surface interactions
+    filsurfinteractptr *surfint;       // list of filament-surface interactions
+    int maxmolint;                     // filament-molecule interactions allocated
+    int nmolint;                       // number of filament-molecule interactions
+    filmolinteractptr *molint;         // list of filament-molecule interactions
+    int maxfilint;                     // filament-filament interactions allocated
+    int nfilint;                       // number of filament-filament interactions
+    filfilinteractptr *filint;         // list of filament-filament interactions
     double endrate[2][FESMAX];         // end velocity [end][state], length/time; >0 grows, <0 shrinks
     double endtrans[2][FESMAX][FESMAX]; // end state transition rates [end][from][to], 1/time
     enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]

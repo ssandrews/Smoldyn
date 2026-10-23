@@ -21,6 +21,19 @@ time_step 0.01
 
 frame_thickness 0
 
+start_surface bounds
+action both all reflect
+polygon both edge
+thickness 1
+panel cyl 50 50 0 50 50 2 50 50 1
+#panel rect +0	0 0 0		100 2
+#panel rect -0	100 0 0		100 2
+#panel rect +1	0 0 0		100 2
+#panel rect -1	0 100 0		100 2
+#panel rect +2	0 0 0		100 100
+#panel rect -2	0 0 2		100 100
+end_surface
+
 start_filament_type tread
 color blue
 thickness 2
@@ -32,6 +45,7 @@ standard_length 2
 standard_angle 0.1 0 0
 force_length 10
 force_angle 5 -1 -1
+surface_interaction bounds both all block
 end_filament_type
 
 random_filament tread:fil0 10  30 30 1  -1 0 0
@@ -59,18 +73,6 @@ random_filament tread:fil18 10  10 40 1  -1 0 0
 random_filament tread:fil19 10  30 50 1  2 0 0
 
 
-start_surface bounds
-action both all reflect
-polygon both edge
-thickness 1
-panel cyl 50 50 0 50 50 2 50 50 1
-#panel rect +0	0 0 0		100 2
-#panel rect -0	100 0 0		100 2
-#panel rect +1	0 0 0		100 2
-#panel rect -1	0 100 0		100 2
-#panel rect +2	0 0 0		100 100
-#panel rect -2	0 0 2		100 100
-end_surface
 
 end_file
 

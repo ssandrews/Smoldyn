@@ -26,6 +26,10 @@
 # the network presses a shallow boundary layer (~0.1 segment rms) into the soft
 # wall. Without confinement, daughters born pointing at the membrane grow straight
 # through it (measured: half of all node samples ended up below the plane).
+# Growing ends are also blocked by the membrane
+# (surface_interaction membrane both all block), so a new segment that would cross
+# it is not added. This uses both faces, because the soft confinement lets end nodes
+# dip slightly below the membrane, and those ends shouldn't grow back through it.
 #
 # smoldyn branchZone3D.txt -t
 
@@ -70,6 +74,7 @@ branch_force_angle 0.076
 branch_force_azimuth 0.76
 branch_surface membrane 0.03
 confine_surface membrane 400
+surface_interaction membrane both all block
 end_filament_type
 
 random_filament actin:seed0 5  0.0 0.0 -0.08  0 0 0
