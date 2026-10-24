@@ -179,6 +179,7 @@ int filSurfBlockOn(const filamenttypeptr filtype);
 void filSaveStartNodes(filamentptr fil);
 panelptr filSurfBlockCrossing(const filamentptr fil,int part,double *pt1,double *pt2,const panelptr exclude,double *crsspt);
 int filSurfBlockNodes(filamentptr fil);
+int filSurfBlocksBranch(const filamentptr daughter,char end);
 int filSurfForceOn(const filamenttypeptr filtype);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
@@ -3984,12 +3985,13 @@ int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const f
 // branch_rate is the rate per unit of mother length that is far enough from existing
 // branches; this draws no random numbers either.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
-	int f,nfil0,node,nbr,i,dim;
+	int f,nfil0,node,nbr,i,dim,block,tries;
 	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
-	filamentptr fil;
+	filamentptr fil,daughter;
 
 	if(filtype->branchrate<=0) return;
 	dim=sim->dim;
+	block=filSurfBlockOn(filtype);
 	ratedt=filtype->branchrate*sim->dt;					// same for every filament this step
 	nfil0=filtype->nfil;												// snapshot: don't branch off daughters born this step
 
@@ -4005,22 +4007,26 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 			if(!filBranchNodeSpaced(fil,node,filtype->branchminspacing,NULL)) continue;	// too close to an existing branch, including ones born this step
 
 			thick=fil->segments[node-1]->thk;					// the daughter has the thickness of the mother segment that ends at the branch node
-			theta=filtype->branchangle;
-			if(filtype->branchspread>0)								// jitter the branch angle; a spread derived from the spring is its equilibrium spread for this thickness
-				theta=gaussrandtruncOCD(theta,filtype->branchspreadderived?filtype->branchspread/sqrt(thick):filtype->branchspread,-PI,PI);
-			if(dim==2) {															// in-plane +/- branch angle
-				angle[0]=theta*(coinrandD(0.5)?1:-1);
-				angle[1]=angle[2]=0; }
-			else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
-				phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
-				dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
-				dvec[1]=sin(theta)*cos(phi);
-				dvec[2]=sin(theta)*sin(phi);
-				angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
-				angle[1]=-asin(dvec[2]);
-				angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
+			for(tries=0;tries<(block?FILMAXTRIES:1);tries++) {	// a branch that a blocking surface stops is tried again with new random angles
+				theta=filtype->branchangle;
+				if(filtype->branchspread>0)								// jitter the branch angle; a spread derived from the spring is its equilibrium spread for this thickness
+					theta=gaussrandtruncOCD(theta,filtype->branchspreadderived?filtype->branchspread/sqrt(thick):filtype->branchspread,-PI,PI);
+				if(dim==2) {															// in-plane +/- branch angle
+					angle[0]=theta*(coinrandD(0.5)?1:-1);
+					angle[1]=angle[2]=0; }
+				else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
+					phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
+					dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
+					dvec[1]=sin(theta)*cos(phi);
+					dvec[2]=sin(theta)*sin(phi);
+					angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
+					angle[1]=-asin(dvec[2]);
+					angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
 
-			filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL); }}		// realloc-safe: fillist grows, fil ptrs stable
+				daughter=filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL);		// realloc-safe: fillist grows, fil ptrs stable
+				if(!block || !daughter || !filSurfBlocksBranch(daughter,filtype->branchend)) break;
+				filRemoveFilament(daughter);						// blocked: discard it and reuse its name
+				filtype->autonamenum--; }}}
 
 	return; }
 
@@ -4582,8 +4588,9 @@ panelptr filSurfBlockCrossing(const filamentptr fil,int part,double *pt1,double 
 /* filSurfBlockNodes */
 // Makes surfaces that the filament type has block interactions with act as walls for
 // the filament mechanics. This is called after the integrator has moved the nodes of
-// filament fil, with the node positions from before the integrator in startnodes (see
-// filSaveStartNodes). If a node's path, from its start position to its new position,
+// filament fil and the junctions have been re-pinned, which can also move daughters
+// across a surface, with the node positions from before the integrator in startnodes
+// (see filSaveStartNodes). If a node's path, from its start position to its new position,
 // crosses a blocking panel for that node's part (see filSurfBlockCrossing), then the
 // node is reflected back across the panel, so it ends up the same distance from the
 // panel as it had gone past it. Flat panels reflect across the panel plane, and
@@ -4627,6 +4634,25 @@ int filSurfBlockNodes(filamentptr fil) {
 			for(d=0;d<dim;d++) nodept[d]=startnodes[node][d];
 		if(iter>0) nmoved++; }
 	return nmoved; }
+
+
+/* filSurfBlocksBranch */
+// Returns 1 if a block interaction of the filament type stops the new branch
+// daughter, which attaches to its mother by its end end ('m' or 'p'), and 0 if not.
+// This walks along the daughter from the attached end node, which is on the mother,
+// and tests each segment for crossing a blocking panel for the part of the node that
+// the segment leads to (see filSurfBlockCrossing), so a side node is tested with the
+// interaction's side part and the free end node with its end part.
+int filSurfBlocksBranch(const filamentptr daughter,char end) {
+	double crsspt[3];
+	int node,next,step,part;
+
+	node=(end=='p')?daughter->nseg:0;
+	step=(end=='p')?-1:1;
+	for(next=node+step;next>=0 && next<=daughter->nseg;next+=step) {
+		part=(next==0)?FPminus:((next==daughter->nseg)?FPplus:FPside);
+		if(filSurfBlockCrossing(daughter,part,daughter->nodes[next-step],daughter->nodes[next],NULL,crsspt)) return 1; }
+	return 0; }
 
 
 /* filSegmentXFilament */
@@ -6184,16 +6210,18 @@ int filDynamics(simptr sim) {
 					simLog(sim,5,"WARNING: filament %s did not converge onto its constraints (negative force constants) at time %g; the time step may be too long\n",filtype->fillist[f]->filname,sim->time);
 					filtype->constraintwarn=1; }}
 
-		if(block)																			// blocking surfaces reflect nodes that crossed them
-			for(f=0;f<filtype->nfil;f++) {
-				fil=filtype->fillist[f];
-				if(filSurfBlockNodes(fil)) filNodes2Angles(fil,-1,-1); }
-
 		if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
 			simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
 			return 1; }}
 
 	filPinJunctions(filss);													// re-pin rigid junctions after all motion this step
+
+	for(ft=0;ft<filss->ntype;ft++) {								// blocking surfaces reflect nodes that crossed them; after pinning, which moves daughters
+		filtype=filss->filtypes[ft];
+		if(filtype->dynamics==FDnone || !filSurfBlockOn(filtype)) continue;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(filSurfBlockNodes(fil)) filNodes2Angles(fil,-1,-1); }}
 
 	if(filBoxesUpdate(sim)) {													// box lists describe the filaments at the end of the step
 		simLog(sim,10,"Out of memory assigning filaments to boxes\n");

@@ -27,10 +27,9 @@
 # wall. Without confinement, daughters born pointing at the membrane grow straight
 # through it (measured: half of all node samples ended up below the plane).
 # The membrane also blocks the filaments (surface_interaction membrane both all
-# block), so a new segment that would cross it is not added, and a node that the
-# filament mechanics move through it is reflected back. This uses both faces, because
-# a node can start below the membrane (a branch can be born there), and that node
-# shouldn't cross back up through it either.
+# block), so a new segment or branch that would cross it is not added, and a node
+# that the filament mechanics move through it is reflected back. This uses both
+# faces, so a node that starts below the membrane also stays below it.
 #
 # smoldyn branchZone3D.txt -t
 

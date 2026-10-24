@@ -1122,7 +1122,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"branch_rate",
 		"  * branch_rate value",
 		"    Branching rate off of the mother filament, in units of per unit length per\n"
-		"    time."},
+		"    time. If the filament type has a block interaction with a surface (see\n"
+		"    surface_interaction) and a new branch would cross that surface, then\n"
+		"    Smoldyn tries again with new random branch angles, and the branch isn't\n"
+		"    created if all of these cross the surface."},
 	{"statement","Statements about filaments",1,"branch_angle",
 		"  * branch_angle yaw",
 		"    Yaw angle for new branches off of the mother filament, which is given in\n"
@@ -1238,8 +1241,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    needs to be \"front\" or \"back\". For \"block\", there are no parameters,\n"
 		"    filament ends of these parts don't grow, from elongation or treadmilling,\n"
 		"    if the new segment would cross the surface from the given face, or from\n"
-		"    either face for \"both\", and, for filaments with dynamics, nodes of these\n"
-		"    parts that move across the surface from that face are reflected back.\n"
+		"    either face for \"both\", new branches from branch_rate aren't created if\n"
+		"    they would cross the surface, and, for filaments with dynamics, nodes of\n"
+		"    these parts that move across the surface from that face are reflected back.\n"
 		"    Entering an interaction again with the same surface, face, parts, and\n"
 		"    action replaces its parameters. This statement can be entered more than\n"
 		"    once to add multiple interactions, and can be used during a simulation with\n"
