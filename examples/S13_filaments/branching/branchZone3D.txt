@@ -45,6 +45,7 @@ time_start 0
 time_stop 0.5
 time_step 0.00001
 random_seed 1
+boxsize 0.25
 
 frame_thickness 0
 
