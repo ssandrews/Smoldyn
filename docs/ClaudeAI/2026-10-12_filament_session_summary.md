@@ -1,9 +1,9 @@
-# Claude Code session summary: Smoldyn filaments, October 12–20, 2026
+# Claude Code session summary: Smoldyn filaments, October 12–23, 2026
 
-This file summarizes a long Claude Code session (Claude Opus 5.5) with the
-Smoldyn maintainer. Most of the work was on the filament code in
+This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23 (parts 5–8). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
-`smoldyn.h`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
+`smoldyn.h`, `smolboxes.c`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
 (`docs/Smoldyn/SmoldynCodeDoc.tex`), the generated help
 (`source/Smoldyn/smolhelp_data.h`), and the `examples/S13_filaments` examples.
@@ -19,8 +19,10 @@ github.com/ssandrews/Smoldyn.
   edits were committed separately, and only when the user said to include
   them.
 - Generated files were never committed: `build/`, LaTeX `.aux`/`.log`
-  files, example output, `.so` files, doxygen output, `.rst` manuals, and
-  the rebuilt PDFs.
+  files, example output, `.so` files, doxygen output, and `.rst` manuals.
+  The manual PDF was regenerated and committed only when the user asked
+  (pdflatex, bibtex, then pdflatex twice, using `/Library/TeX/texbin/pdflatex`;
+  the MacPorts `pdflatex` that comes first in the PATH lacks `scrbook.cls`).
 - Every change updated the manual and the code documentation. The help text
   was regenerated with `python3 scripts/make_smolhelp.py`.
 - Verification:
@@ -29,8 +31,11 @@ github.com/ssandrews/Smoldyn.
   - AddressSanitizer sweeps over every example and integrator.
   - Targeted physics tests: energy dissipation, Boltzmann variances,
     diffusion ratios, and fixed nodes.
+  - Unseeded examples need a fixed seed before their outputs can be
+    compared. macOS has no `timeout`, so runs were limited with
+    `perl -e "alarm N; exec @ARGV"`.
 - `/usr/local/bin/smoldyn` can lag behind `build/` until `sudo make install`
-  is run.
+  is run. Examples were run with `build/smoldyn`.
 
 ## Part 1: naming, branching, end states, removal (Oct 12–15)
 
@@ -106,6 +111,70 @@ The roll and thermal fixes that followed:
 | 395b4a9 | EulerMat and ImplicitOld also honor node mobility. |
 | 18c98a1 | `filCheckParams` warns that EulerMat and ImplicitOld are test methods. EulerMat matches Euler but is slower. ImplicitOld can be unstable even at small time steps, because it uses the factored force matrix rather than the Jacobian. They are kept for teaching and testing. |
 
+## Part 5: minimum branch spacing (Oct 23)
+
+**b1b42e9.** New `branch_min_spacing` statement for filament types (the
+user preferred this name). A branch from `branch_rate` isn't created if it is
+closer than this distance, measured along the mother's contour, to an existing
+branch on the same mother (`filBranchNodeSpaced`). Branches from the `branch`
+statement and `attach` aren't affected, but Smoldyn warns if they are too
+close. New example: `branching/branchMinSpacing2D.txt`. The user's own
+changes were committed separately (a93d55d, 9097b8f) and the manual PDF was
+regenerated (b3a54a1).
+
+## Part 6: filament-surface interactions (Oct 23)
+
+**710c725.** The stub `filsurfinteractstruct` was completed, and filament
+types now hold lists of surface, molecule, and filament interactions
+(`surfint`, `molint`, `filint`; the molecule and filament lists are stubs that
+are always empty).
+
+- New statement: `surface_interaction surface face parts action [parameters]`.
+  - `face` is the side of the surface that the filament is on: front, back,
+    or both.
+  - `parts` is plus, minus, side, all, or a list such as `plus,side`.
+  - `action` is `force` (a soft harmonic wall with force constant k, so the
+    force is t·k·d) or `block`.
+- As the user asked, there's no backward compatibility: without listed
+  interactions, filaments and surfaces don't interact at all.
+  `confine_surface` remains as shorthand for a force interaction on all parts.
+  The old `confinesrf`, `confineforce`, and `confineface` fields were removed.
+- `filAddSurfForces` replaced `filAddConfineForces`, and
+  `filSurfBlocksSegment` replaced `filSegmentXSurface`.
+- New example: `elongation/surfaceInteraction2D.txt`. The treadmill and
+  `branchZone3D` examples gained block interactions, chosen so that their
+  results matched HEAD.
+
+## Part 7: filaments in virtual boxes (Oct 23)
+
+| Commit | Change |
+|---|---|
+| de70566 | Fixed an off-by-one heap overflow in `filSetSequence`, found by ASan in `sequence.txt`. |
+| 3446427 | Each virtual box can list the filament segments that pass through it and the filament ends in it (`boxaddfilseg`, `boxaddfilend`, `filBoxesUpdate`). The lists are only maintained when `filSetBoxLists` turns them on, which nothing does yet, because rebuilding them every step slowed simulations without dynamics by up to 4.6×. Compiling with `FILBOXCHECK` forces them on and checks them every step with `filBoxesCheck`. Blocking now walks the boxes along a new segment instead of testing every panel. Smoldyn warns if filaments have surface interactions and there is only one box. |
+
+The commit messages of de70566 and 3446427 lost their subject lines, because
+of a shell quoting mistake. The user chose to leave them as they are.
+
+## Part 8: block interactions as walls (Oct 23)
+
+| Commit | Change |
+|---|---|
+| b843d51 | Block interactions act as hard walls for filament dynamics, as the user designed. Node positions are saved before the integrator (`filSaveStartNodes`). Afterward, a node whose path crossed a blocking surface from the filament's side is reflected back to the same distance on the allowed side (`filSurfBlockNodes`, `filSurfBlockCrossing`). The resulting stretching and bending forces act in the next step. Flat panels reflect across the panel plane. Curved panels reflect through the closest panel point, because tangent-plane reflection let a few nodes stay outside spheres. Block interactions now accept the side part, and `all` means every node. `surfaceInteraction2D` uses only a block interaction for its ceiling. |
+| f8abade | New branches from `branch_rate` are tested with `filSurfBlocksBranch`. A blocked daughter is removed, its automatic name is reused, and the branch is retried with new random angles, up to `FILMAXTRIES` times. Node reflection was moved after `filPinJunctions`, because pinning moved daughters across the membrane in `branchZone3D`. |
+| 8b5f945 | `boxsize 0.25` added to `branchZone3D`, which removes the one-box warning without changing the results. |
+| c9fbbe3, 705511d | Manual PDF regenerated. |
+
+Tests:
+
+- Block-only walls with high kT: 0 of 141,146 node positions crossed.
+- Filaments inside and outside a sphere: none crossed.
+- Cube of six rectangles: the only nodes outside were ones that
+  `random_filament` placed outside at the start.
+- `branchZone3D` with 10 seeds: no nodes ended below the membrane, compared
+  with 2–28 before.
+- Branches off a mother just above a blocking floor: none crossed it, compared
+  with 3 of 12 without the block.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -116,6 +185,16 @@ The roll and thermal fixes that followed:
 - Loop-closing junctions have small gaps under load. These shrink as
   `junction_force` is increased.
 - Frame transport still has some `atan2` roll overhead.
+- Blocking only tests node paths. A segment can still cut across a surface's
+  edge or corner while both of its nodes stay on the allowed side.
+- A node that starts on the wrong side of a blocking surface isn't moved. With
+  face `both`, it stays on that side.
+- Branches from the `branch` statement, and filaments defined directly, aren't
+  checked against block interactions.
+- The force interaction's side test uses the infinite plane of flat panels, so
+  a surface with a force interaction should span or enclose the filaments.
+- Nothing uses the filament box lists yet. They are meant for future
+  filament-molecule and filament-filament interactions.
 
 ## Notable mistakes during the session
 
@@ -128,3 +207,9 @@ The roll and thermal fixes that followed:
   gradients.
 - The help generator does not render `\sqrt`, so the formulas in statement
   descriptions are written in plain text.
+- Claude first said that rebuilding the box lists every step would cost
+  little compared with the dynamics. That was wrong for simulations with
+  dynamics `none`, which is why the lists are now only built when needed.
+- A commit command chained several heredocs, and the shell ran two commit
+  subject lines as commands, so those commits have no subjects. Lesson:
+  write each commit message with its own command, or use `-m` arguments.
