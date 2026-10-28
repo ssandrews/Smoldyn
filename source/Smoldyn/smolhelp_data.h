@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 300
+#define SMOLHELP_NENTRY 302
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1472,6 +1472,24 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    the filament, where -1 is the plus end. The mobility value has a default\n"
 		"    value of 1, and can be set to other values here. In particular, setting it\n"
 		"    to 0 means that the node is fixed in space."},
+	{"statement","Statements about filaments",1,"adsorb_node",
+		"  * adsorb_node node surface [face [mobility]]",
+		"    Adsorbs node node of this filament to surface surface (see the Smoldyn\n"
+		"    User's Manual). Enter node as for node_mobility, where 0 is the minus end\n"
+		"    and negative values count from the plus end, so -1 is the plus end. The\n"
+		"    node is moved to the closest point of the surface, onto face face, which is\n"
+		"    \"front\" or \"back\"; if face is omitted, it is the side of the surface that\n"
+		"    the node was on. An adsorbed node stays on the surface, but can move within\n"
+		"    it with its usual mobility times the lateral mobility factor mobility,\n"
+		"    which is 1 by default and can be 0 to anchor the node in place. The end of\n"
+		"    a filament that is rigidly attached to its mother can't be adsorbed. This\n"
+		"    statement can be used during a simulation with the set command, for example\n"
+		"    cmd @ 10 set filament actin:fil0 adsorb_node 0 membrane front."},
+	{"statement","Statements about filaments",1,"desorb_node",
+		"  * desorb_node node",
+		"    Desorbs node node of this filament from its surface, if it is adsorbed, so\n"
+		"    that it can move freely again. Enter node as for adsorb_node. This\n"
+		"    statement can be used during a simulation with the set command."},
 	{"statement","Statements about filaments",1,"attach",
 		"  * attach end target node",
 		"    Attaches end end (\"minus\" or \"plus\") of this filament, which needs to be\n"

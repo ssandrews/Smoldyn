@@ -289,6 +289,7 @@ void fixpt2panel(double *pt,panelptr pnl,int dim,enum PanelFace face,double epsi
 int fixpt2panelnocross(simptr sim,double *pt,panelptr pnl,int dim,enum PanelFace face,double epsilon);
 int closestpanelpt(panelptr pnl,int dim,double *testpt,double *pnlpt,double neighdist);
 double closestsurfacept(surfaceptr srf,int dim,double *testpt,double *pnlpt,panelptr *pnlptr,boxptr bptr);
+void movept2closepanel(simptr sim,double *pos,const double *posx,panelptr pnlx,enum PanelFace face,double *via,panelptr *pnlptr);
 void movemol2closepanel(simptr sim,moleculeptr mptr);
 int checksurfaces1mol(simptr sim,moleculeptr mptr,double crossminimum);
 int checksurfaces(simptr sim,int ll,int reborn);

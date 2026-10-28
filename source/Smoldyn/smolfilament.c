@@ -75,6 +75,11 @@ int filCheckParams(const simptr sim,int *warnptr);
 
 // filaments
 int filSetNodeMobility(filamentptr fil,int node,double value);
+void filNodeStateClear(filamentptr fil,int node);
+void filNodeStateCopy(filamentptr fil,int to,int from);
+int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,double mobility);
+void filNodeDesorb(filamentptr fil,int node);
+int filNodesAdsorbed(const filamentptr fil);
 
 // filament type
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value);
@@ -180,6 +185,7 @@ void filSaveStartNodes(filamentptr fil);
 panelptr filSurfReflectCrossing(const filamentptr fil,int part,double *pt1,double *pt2,const panelptr exclude,double *crsspt);
 int filSurfReflectNodes(filamentptr fil);
 int filSurfBlocksBranch(const filamentptr daughter,char end);
+int filSurfAdsorbedNodes(filamentptr fil);
 int filSurfForceOn(const filamenttypeptr filtype);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
@@ -629,7 +635,9 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 	segmentptr *newsegments;
 	filjunctionptr *newjuncts;
 	char *newsequence;
-	double **newnodes,**newnodesx,*newroll,*newnodemobility;
+	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newnodesrfmob;
+	panelptr *newnodepnl;
+	enum PanelFace *newnodeface;
 
 	if(!fil) {
 		CHECKMEM(fil=(filamentptr) malloc(sizeof(struct filamentstruct)));
@@ -642,6 +650,9 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		fil->nodesx=NULL;
 		fil->roll=NULL;
 		fil->nodemobility=NULL;
+		fil->nodepnl=NULL;
+		fil->nodeface=NULL;
+		fil->nodesrfmob=NULL;
 		fil->seg0up[0]=fil->seg0up[1]=0;
 		fil->seg0up[2]=1;
 		fil->endjunct[0]=fil->endjunct[1]=NULL;
@@ -661,6 +672,9 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		CHECKMEM(newnodesx=(double**) calloc(maxseg+1,sizeof(double*)));
 		CHECKMEM(newroll=(double*) calloc(maxseg,sizeof(double)));
 		CHECKMEM(newnodemobility=(double*) calloc(maxseg+1,sizeof(double)));
+		CHECKMEM(newnodepnl=(panelptr*) calloc(maxseg+1,sizeof(panelptr)));
+		CHECKMEM(newnodeface=(enum PanelFace*) calloc(maxseg+1,sizeof(enum PanelFace)));
+		CHECKMEM(newnodesrfmob=(double*) calloc(maxseg+1,sizeof(double)));
 
 		for(seg=0;seg<=maxseg;seg++) newnodes[seg]=NULL;		// nodes
 		seg=0;
@@ -668,12 +682,18 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 			for(seg=0;seg<=fil->maxseg;seg++) {
 				newnodes[seg]=fil->nodes[seg];
 				newnodesx[seg]=fil->nodesx[seg];
-				newnodemobility[seg]=fil->nodemobility[seg]; }}
+				newnodemobility[seg]=fil->nodemobility[seg];
+				newnodepnl[seg]=fil->nodepnl[seg];
+				newnodeface[seg]=fil->nodeface[seg];
+				newnodesrfmob[seg]=fil->nodesrfmob[seg]; }}
 		for(;seg<=maxseg;seg++) {
 			CHECKMEM(newnodes[seg]=calloc(3,sizeof(double)));
 			CHECKMEM(newnodesx[seg]=calloc(3,sizeof(double)));
 			newnodes[seg][0]=newnodes[seg][1]=newnodes[seg][2]=0;
-			newnodemobility[seg]=1; }
+			newnodemobility[seg]=1;
+			newnodepnl[seg]=NULL;
+			newnodeface[seg]=PFnone;
+			newnodesrfmob[seg]=1; }
 
 		for(seg=0;seg<maxseg;seg++) {													// segments and torques
 			newsegments[seg]=NULL;
@@ -694,11 +714,17 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		free(fil->nodesx);
 		free(fil->roll);
 		free(fil->nodemobility);
+		free(fil->nodepnl);
+		free(fil->nodeface);
+		free(fil->nodesrfmob);
 		fil->segments=newsegments;
 		fil->nodes=newnodes;
 		fil->nodesx=newnodesx;
 		fil->roll=newroll;
 		fil->nodemobility=newnodemobility;
+		fil->nodepnl=newnodepnl;
+		fil->nodeface=newnodeface;
+		fil->nodesrfmob=newnodesrfmob;
 		if(fil->filtype && fil->filtype->dynamics!=FDnone)
 			filWorkAlloc(fil,maxseg);
 		fil->maxseg=maxseg; }
@@ -749,6 +775,9 @@ void filFree(filamentptr fil) {
 
 	free(fil->roll);
 	free(fil->nodemobility);
+	free(fil->nodepnl);
+	free(fil->nodeface);
+	free(fil->nodesrfmob);
 	free(fil->juncts);
 	free(fil->sequence);
 	free(fil);
@@ -1010,7 +1039,7 @@ void filssFree(filamentssptr filss) {
 
 /* filOutput */
 void filOutput(const filamentptr fil) {
-	int seg,j,e,seqi,dim;
+	int seg,j,e,seqi,dim,node;
 	char string1[STRCHAR],string2[STRCHAR];
 	simptr sim;
 	segmentptr segment;
@@ -1059,6 +1088,12 @@ void filOutput(const filamentptr fil) {
 	for(e=0;e<2;e++)
 		if(fil->endjunct[e])
 			simLog(sim,2,"   %s end attached to: %s:%s node %i, %s\n",e?"plus":"minus",fil->endjunct[e]->target->filtype->ftname,fil->endjunct[e]->target->filname,fil->endjunct[e]->node,fil->endjunct[e]->rigid?"rigid":"spring (closes a loop)");
+
+	if(fil->nodepnl && filNodesAdsorbed(fil)>0) {
+		simLog(sim,2,"   adsorbed nodes: %i\n",filNodesAdsorbed(fil));
+		for(node=0;node<=fil->nseg;node++)
+			if(fil->nodepnl[node])
+				simLog(sim,2,"    node %i on %s face of surface %s, panel %s, lateral mobility factor %g\n",node,surfface2string(fil->nodeface[node],string1),fil->nodepnl[node]->srf->sname,fil->nodepnl[node]->pname,fil->nodesrfmob[node]); }
 
 	simLog(sim,(fil->endstate[0]!=FESopen || fil->endstate[1]!=FESopen)?2:1,"   end states: minus %s, plus %s\n",filFES2string(fil->endstate[0],string1),filFES2string(fil->endstate[1],string2));
 	simLog(sim,(fil->lenbank[0]!=0 || fil->lenbank[1]!=0)?2:1,"   pending length change: minus %g|L, plus %g|L\n",fil->lenbank[0],fil->lenbank[1]);
@@ -1374,6 +1409,8 @@ int filCheckParams(const simptr sim,int *warnptr) {
 
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
+			if(filtype->dynamics!=FDnone && filConstrained(filtype) && filNodesAdsorbed(fil)>0) {
+				warn++;simLog(sim,5,"WARNING: filament %s has nodes adsorbed to surfaces and its type has rigid constraints (negative force constants); the constraints are enforced first, and then the adsorbed nodes are moved back onto their surfaces, so the constraints may not be met exactly\n",fil->filname);}
 			for(seg=0;seg<fil->nseg;seg++) {
 				segment=fil->segments[seg];
 				if(segment->len<=0) {error++;simLog(sim,9,"ERROR: filament %s segment %i has length %1/3g; it should be >=0",fil->filname,seg,segment->len);}
@@ -1402,6 +1439,85 @@ int filSetNodeMobility(filamentptr fil,int node,double value) {
 	if(i>fil->nseg) return 1;
 	fil->nodemobility[i]=value;
 	return 0; }
+
+
+/* filNodeStateClear */
+// Sets the per-node state of node node of filament fil to that of a new node: node
+// mobility factor 1 and not adsorbed to a surface.
+void filNodeStateClear(filamentptr fil,int node) {
+	fil->nodemobility[node]=1;
+	fil->nodepnl[node]=NULL;
+	fil->nodeface[node]=PFnone;
+	fil->nodesrfmob[node]=1;
+	return; }
+
+
+/* filNodeStateCopy */
+// Copies the per-node state (node mobility factor and surface adsorption) of node
+// from of filament fil to node to.
+void filNodeStateCopy(filamentptr fil,int to,int from) {
+	fil->nodemobility[to]=fil->nodemobility[from];
+	fil->nodepnl[to]=fil->nodepnl[from];
+	fil->nodeface[to]=fil->nodeface[from];
+	fil->nodesrfmob[to]=fil->nodesrfmob[from];
+	return; }
+
+
+/* filNodeAdsorb */
+// Adsorbs node node of filament fil to surface srf, on face face, with lateral mobility
+// factor mobility. The node moves to the closest point of the surface, and then onto
+// the face side of that panel. If face is PFboth or PFnone, the face is the side of
+// the panel that the node was on. A node that is the attached end of a filament that
+// is rigidly pinned to its mother can't be adsorbed, because the pin holds it at the
+// mother's node. Negative node numbers count back from the plus end, so -1 is the
+// plus end. Returns 0 for success, 1 if the node doesn't exist, 2 if the surface has
+// no panels, or 3 if the node is a rigidly pinned end.
+int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,double mobility) {
+	simptr sim;
+	panelptr pnl;
+	double pnlpt[3],*nodept;
+	int d,dim,e;
+
+	if(node<0) node=fil->nseg+1+node;
+	if(node<0 || node>fil->nseg || fil->nseg<1) return 1;
+	for(e=0;e<2;e++)
+		if(fil->endjunct[e] && fil->endjunct[e]->rigid && node==(e?fil->nseg:0)) return 3;
+	sim=fil->filtype->filss->sim;
+	dim=sim->dim;
+	nodept=fil->nodes[node];
+	if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) return 2;
+	if(face!=PFfront && face!=PFback)
+		face=panelside(nodept,pnl,dim,NULL,0,0);
+	for(d=0;d<dim;d++) nodept[d]=pnlpt[d];
+	fixpt2panel(nodept,pnl,dim,face,sim->srfss->epsilon);
+	fil->nodepnl[node]=pnl;
+	fil->nodeface[node]=face;
+	fil->nodesrfmob[node]=mobility;
+	filNodes2Angles(fil,-1,-1);
+	return 0; }
+
+
+/* filNodeDesorb */
+// Desorbs node node of filament fil from its surface, if it is adsorbed. Negative node
+// numbers count back from the plus end.
+void filNodeDesorb(filamentptr fil,int node) {
+	if(node<0) node=fil->nseg+1+node;
+	if(node<0 || node>fil->nseg) return;
+	fil->nodepnl[node]=NULL;
+	fil->nodeface[node]=PFnone;
+	fil->nodesrfmob[node]=1;
+	return; }
+
+
+/* filNodesAdsorbed */
+// Returns the number of nodes of filament fil that are adsorbed to surfaces.
+int filNodesAdsorbed(const filamentptr fil) {
+	int node,n;
+
+	n=0;
+	for(node=0;node<=fil->nseg;node++)
+		if(fil->nodepnl[node]) n++;
+	return n; }
 
 
 
@@ -2200,10 +2316,11 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 
 	filamentptr fil2;
 	filamenttypeptr filtype2;
-	int itct,er,i1,seg,node;
+	int itct,er,i1,i2,seg,node;
 	char nm[STRCHAR],nm1[STRCHAR],endchar,str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR],symbol;
 	double fltv1[9],length,angle[3],thick,f1,pos[3];
 	enum FilEndState fes;
+	enum PanelFace face;
 
 	dim=sim->dim;
 
@@ -2480,6 +2597,48 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filSetNodeMobility(fil,i1,f1);
 		CHECKS(!er,"error while trying to set node mobility");
 		CHECKS(!strnword(line2,3),"unexpected text following node_mobility"); }
+
+	else if(!strcmp(word,"adsorb_node")) {				// adsorb_node: node surface [face [mobility]]
+		CHECKS(fil,"need to enter filament name before adsorb_node");
+		CHECKS(fil->nseg>0,"filament has no segments");
+		CHECKS(sim->srfss,"adsorb_node requires that surfaces be defined first");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"adsorb_node format: node surface [face [mobility]]. ");
+		CHECKS(i1<=fil->nseg && i1>=-fil->nseg-1,"node number is outside of filament size");
+		line2=strnword(line2,2);
+		CHECKS(line2,"adsorb_node format: node surface [face [mobility]]");
+		itct=sscanf(line2,"%s",nm);
+		CHECKS(itct==1,"adsorb_node format: node surface [face [mobility]]");
+		er=stringfind(sim->srfss->snames,sim->srfss->nsrf,nm);
+		CHECKS(er>=0,"adsorb_node surface name not recognized");
+		i2=er;
+		face=PFnone;																// default: the side that the node is on
+		f1=1;																				// default lateral mobility factor
+		line2=strnword(line2,2);
+		if(line2) {
+			itct=sscanf(line2,"%s",nm1);
+			CHECKS(itct==1,"adsorb_node format: node surface [face [mobility]]");
+			face=surfstring2face(nm1);
+			CHECKS(face==PFfront || face==PFback,"adsorb_node face options: front, back");
+			line2=strnword(line2,2);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+				CHECKM(itct==1,"adsorb_node format: node surface [face [mobility]]. ");
+				CHECKS(f1>=0,"adsorb_node mobility needs to be >=0");
+				CHECKS(!strnword(line2,2),"unexpected text following adsorb_node"); }}
+		er=filNodeAdsorb(fil,i1,sim->srfss->srflist[i2],face,f1);
+		CHECKS(er!=1,"adsorb_node node number is outside of filament size");
+		CHECKS(er!=2,"adsorb_node surface has no panels");
+		CHECKS(er!=3,"adsorb_node can't adsorb a filament end that is rigidly attached to its mother"); }
+
+	else if(!strcmp(word,"desorb_node")) {				// desorb_node: node
+		CHECKS(fil,"need to enter filament name before desorb_node");
+		CHECKS(fil->nseg>0,"filament has no segments");
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"desorb_node format: node. ");
+		CHECKS(i1<=fil->nseg && i1>=-fil->nseg-1,"node number is outside of filament size");
+		filNodeDesorb(fil,i1);
+		CHECKS(!strnword(line2,2),"unexpected text following desorb_node"); }
 
 	else if(!strcmp(word,"attach")) {						// attach: end target node
 		CHECKS(fil,"need to enter filament name before attach");
@@ -3170,6 +3329,13 @@ void filArrayShift(filamentptr fil,int shift) {
 		fil->segments[i]->xyzminus=fil->nodes[i];
 		fil->segments[i]->xyzplus=fil->nodes[i+1]; }
 
+	if(shift>0) {																	// per-node state moves with the nodes; new nodes start cleared
+		for(i=fil->nseg+shift;i>=shift;i--) filNodeStateCopy(fil,i,i-shift);
+		for(i=0;i<shift;i++) filNodeStateClear(fil,i); }
+	else if(shift<0) {
+		for(i=0;i<=fil->nseg+shift;i++) filNodeStateCopy(fil,i,i-shift);
+		for(i=fil->nseg+shift+1;i<=fil->nseg;i++) filNodeStateClear(fil,i); }
+
 	filShiftJunctionNodes(fil,shift,fil->nseg+shift);	// nodes were renumbered, so junction nodes move with them
 
 	for(i=0;i<fil->nseg+shift;i++)						// callers update nseg after this, so the new count is nseg+shift
@@ -3221,6 +3387,7 @@ int filAddSegment(filamentptr fil,const double *x,double length,const double *an
 			segmentm1=fil->segments[seg-1];
 			Sph_QtnxQtn(segmentm1->qabs,segment->qrel,segment->qabs);	}	// b_i = b_{i-1} . a_i
 		Sph_QtniRotateUnitx(segment->qabs,segment->xyzplus,segment->xyzminus,segment->len);			// x_{i+1} = x_i + l_i * b.xhat.bT
+		filNodeStateClear(fil,seg+1);												// the new plus-end node starts free
 		fil->nseg++; }
 
 	else {
@@ -3369,6 +3536,7 @@ int filRemoveSegment(filamentptr fil,char endchar) {
 
 	if(endchar=='p') {
 		fil->nseg--;
+		filNodeStateClear(fil,fil->nseg+1);					// the removed plus-end node's slot may be reused
 		filShiftJunctionNodes(fil,0,fil->nseg); }		// drop any junction on the removed plus-end node
 	else {
 		seg=1;					// new minus-end segment
@@ -3564,13 +3732,14 @@ int filCopyFilament(filamentptr filto,const filamentptr filfrom,const filamentty
 // Return fil to the state of a newly allocated filament, keeping its allocated memory, its
 // filament type, and its name. filAddFilament calls this because it may be reusing a
 // removed filament. Segment and node values are not cleared, since they are set as
-// segments are added; per-node mobility factors and roll values are, since they persist.
+// segments are added; per-node mobility factors, adsorption states, and roll values are,
+// since they persist.
 void filReset(filamentptr fil) {
 	int seg;
 
 	fil->nseg=0;
 	if(fil->maxseg>0) {															// nothing is allocated yet for a never-used filament
-		for(seg=0;seg<=fil->maxseg;seg++) fil->nodemobility[seg]=1;
+		for(seg=0;seg<=fil->maxseg;seg++) filNodeStateClear(fil,seg);
 		for(seg=0;seg<fil->maxseg;seg++) fil->roll[seg]=0; }
 	fil->seg0up[0]=fil->seg0up[1]=0;
 	fil->seg0up[2]=1;
@@ -4627,6 +4796,7 @@ int filSurfReflectNodes(filamentptr fil) {
 	startnodes=fil->filwork->startnodes;
 	nmoved=0;
 	for(node=0;node<=fil->nseg;node++) {
+		if(fil->nodepnl[node]) continue;									// adsorbed nodes stay on their surfaces instead
 		part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
 		nodept=fil->nodes[node];
 		for(d=0;d<dim;d++) pt1[d]=startnodes[node][d];
@@ -4648,6 +4818,35 @@ int filSurfReflectNodes(filamentptr fil) {
 			for(d=0;d<dim;d++) nodept[d]=startnodes[node][d];
 		if(iter>0) nmoved++; }
 	return nmoved; }
+
+
+/* filSurfAdsorbedNodes */
+// Keeps the adsorbed nodes of filament fil on their surfaces after they have moved,
+// with their positions from before the move in the filament's startnodes work array
+// (see filSaveStartNodes). Each adsorbed node is moved back onto its surface, which
+// removes the part of its motion that is normal to the surface, and it walks across
+// panel edges onto neighboring panels, as for surface-bound molecules (see
+// movept2closepanel), which updates its panel. The new positions are copied to
+// startnodes, so that calling this again after other motion, such as re-pinning
+// junctions, starts from the projected positions. Returns the number of adsorbed
+// nodes, so that the caller can update the segment lengths and angles if it is
+// positive.
+int filSurfAdsorbedNodes(filamentptr fil) {
+	simptr sim;
+	double **startnodes,*nodept,via[3];
+	int node,d,dim,n;
+
+	sim=fil->filtype->filss->sim;
+	dim=sim->dim;
+	startnodes=fil->filwork->startnodes;
+	n=0;
+	for(node=0;node<=fil->nseg;node++) {
+		if(!fil->nodepnl[node]) continue;
+		nodept=fil->nodes[node];
+		movept2closepanel(sim,nodept,startnodes[node],fil->nodepnl[node],fil->nodeface[node],via,&fil->nodepnl[node]);
+		for(d=0;d<dim;d++) startnodes[node][d]=nodept[d];
+		n++; }
+	return n; }
 
 
 /* filSurfBlocksBranch */
@@ -5339,12 +5538,17 @@ double filNodeThickness(const filamentptr fil,int node) {
 /* filNodeMobility */
 // Returns the effective mobility factor of node node of filament fil, which is its node
 // mobility factor, divided by its thickness (filNodeThickness) if the filament type's
-// thickdrag value is 1, so that thicker filaments have proportionally more drag. The
+// thickdrag value is 1, so that thicker filaments have proportionally more drag, and
+// multiplied by its lateral mobility factor if it is adsorbed to a surface. The
 // mobility of node node is the filament type's mobility times this. Segment rotation
 // mobility factors are the averages of these for the segment's two nodes.
 double filNodeMobility(const filamentptr fil,int node) {
-	if(fil->filtype->thickdrag) return fil->nodemobility[node]/filNodeThickness(fil,node);
-	return fil->nodemobility[node]; }
+	double mob;
+
+	mob=fil->nodemobility[node];
+	if(fil->nodepnl[node]) mob*=fil->nodesrfmob[node];				// adsorbed node: lateral mobility factor
+	if(fil->filtype->thickdrag) return mob/filNodeThickness(fil,node);
+	return mob; }
 
 
 /* filSurfForceOn */
@@ -5418,6 +5622,7 @@ void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
 				for(node=nodemin;node<=nodemax;node++) {
 					part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
 					if(!fsi->filpart[part]) continue;
+					if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) continue;	// adsorbed to this surface
 					nodept=fil->nodes[node];
 					if(fsi->action==FSAsoftwall) {
 						if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
@@ -6211,9 +6416,10 @@ int filDynamics(simptr sim) {
 			for(f=0;f<filtype->nfil;f++)
 				filConstraintStart(filtype->fillist[f]);
 		reflect=(filtype->dynamics!=FDnone && filSurfReflectOn(filtype));
-		if(reflect)																			// node positions before the integrator, for reflecting surfaces
+		if(filtype->dynamics!=FDnone)										// node positions before the integrator, for reflecting surfaces and adsorbed nodes
 			for(f=0;f<filtype->nfil;f++)
-				filSaveStartNodes(filtype->fillist[f]);
+				if(reflect || filNodesAdsorbed(filtype->fillist[f]))
+					filSaveStartNodes(filtype->fillist[f]);
 		if(filtype->dynamics==FDeuler)
 			filEulerDynamics(sim,filtype);
 		else if(filtype->dynamics==FDRK2)
@@ -6241,7 +6447,22 @@ int filDynamics(simptr sim) {
 			simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
 			return 1; }}
 
+	for(ft=0;ft<filss->ntype;ft++) {								// adsorbed nodes stay on their surfaces
+		filtype=filss->filtypes[ft];
+		if(filtype->dynamics==FDnone) continue;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(filSurfAdsorbedNodes(fil)) filNodes2Angles(fil,-1,-1); }}
+
 	filPinJunctions(filss);													// re-pin rigid junctions after all motion this step
+
+	if(filss->njunct>0)															// pinning moves daughters, so put their adsorbed nodes back on their surfaces
+		for(ft=0;ft<filss->ntype;ft++) {
+			filtype=filss->filtypes[ft];
+			if(filtype->dynamics==FDnone) continue;
+			for(f=0;f<filtype->nfil;f++) {
+				fil=filtype->fillist[f];
+				if(filRigidParent(fil) && filSurfAdsorbedNodes(fil)) filNodes2Angles(fil,-1,-1); }}
 
 	for(ft=0;ft<filss->ntype;ft++) {								// reflecting surfaces reflect nodes that crossed them; after pinning, which moves daughters
 		filtype=filss->filtypes[ft];

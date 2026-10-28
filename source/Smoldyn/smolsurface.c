@@ -4722,45 +4722,45 @@ double closestsurfacept(surfaceptr srf,int dim,double *testpt,double *pnlpt,pane
 	return sqrt(dist2best); }
 
 
-/* movemol2closepanel */
-void movemol2closepanel(simptr sim,moleculeptr mptr) {
+/* movept2closepanel */
+// Moves point pos, which is supposed to be on panel pnlx (on its face face), onto
+// the closest panel of the surface, walking across panel edges onto neighboring
+// panels as needed, as for surface-bound diffusion. posx is the previous position,
+// which was on pnlx, and via is scratch space that ends at the last edge point that
+// the walk passed. The panel that pos ends up on is written to *pnlptr, except that
+// *pnlptr is left unchanged if the walk stops at its first edge, which preserves the
+// prior behavior for molecules. This is the core of movemol2closepanel, separated so
+// that filament nodes can use it too.
+void movept2closepanel(simptr sim,double *pos,const double *posx,panelptr pnlx,enum PanelFace face,double *via,panelptr *pnlptr) {
 	int dim,nn,p,d,er,exitside,iter,edgenum,newedge;
 	double pt[DIMMAX],newedgept[DIMMAX],pnledgept[DIMMAX],oldnormal[DIMMAX],newnormal[DIMMAX],newedgenormal[DIMMAX],newpos[DIMMAX];
 	double dot,dist2,len,epsilon,neighdist,margin;
 	int thetasign;
-	panelptr pnl,pnlx,newpnl;
-	enum PanelFace face;
-	enum MolecState ms;
+	panelptr pnl,newpnl;
 
 	dim=sim->dim;
 	epsilon=sim->srfss->epsilon;
 	neighdist=sim->srfss->neighdist;
 	margin=sim->srfss->margin;
 
-	ms=mptr->mstate;
-	if(ms==MSfront) face=PFfront;
-	else if(ms==MSback) face=PFback;
-	else face=PFnone;
-	pnlx=mptr->pnlx;
-
-	fixpt2panel(mptr->pos,pnlx,dim,face,epsilon);			// move mptr->pos to panel plane
-	if(ptinpanel(mptr->pos,pnlx,dim)) {
-		mptr->pnl=pnlx;
+	fixpt2panel(pos,pnlx,dim,face,epsilon);			// move pos to panel plane
+	if(ptinpanel(pos,pnlx,dim)) {
+		*pnlptr=pnlx;
 		return; }																					// nothing to worry about so return
 
-	if(ptinpanel(mptr->posx,pnlx,dim))								// set mptr->via to starting point that was in the panel
-		for(d=0;d<dim;d++) mptr->via[d]=mptr->posx[d];
+	if(ptinpanel((double*)posx,pnlx,dim))								// set via to starting point that was in the panel
+		for(d=0;d<dim;d++) via[d]=posx[d];
 	else
-		closestpanelpt(pnlx,dim,mptr->pos,mptr->via,0);
+		closestpanelpt(pnlx,dim,pos,via,0);
 
 	iter=0;
 	pnl=pnlx;
-	while(iter==0 || !ptinpanel(mptr->pos,pnl,dim)) {
+	while(iter==0 || !ptinpanel(pos,pnl,dim)) {
 		iter++;
-		er=lineexitpanel(mptr->via,mptr->pos,pnl,dim,pnledgept,&exitside);	// pnledgept is where it goes off the edge
+		er=lineexitpanel(via,pos,pnl,dim,pnledgept,&exitside);	// pnledgept is where it goes off the edge
 		if(er || iter>50) {
-			movept2panel(mptr->pos,pnl,dim,margin);
-			fixpt2panel(mptr->pos,pnl,dim,face,epsilon);
+			movept2panel(pos,pnl,dim,margin);
+			fixpt2panel(pos,pnl,dim,face,epsilon);
 			break; }
 		nn=0;																						// pick a random neighbor for this edge point
 		newpnl=NULL;
@@ -4778,41 +4778,52 @@ void movemol2closepanel(simptr sim,moleculeptr mptr) {
 
 		if(nn) {																					// rotate line to account for new normal vector
 			for(d=0;d<dim;d++)
-				mptr->pos[d]+=(newedgept[d]-pnledgept[d]);		// translate position to account for any edge mismatch
+				pos[d]+=(newedgept[d]-pnledgept[d]);		// translate position to account for any edge mismatch
 			if(dim==2) {
 				if(newedge) thetasign=1;
 				else thetasign=coinrandD(0.5)?1:-1;
 				paneledgenormal(newpnl,newedgept,dim,newedge,newedgenormal);
-				len=sqrt((mptr->pos[0]-newedgept[0])*(mptr->pos[0]-newedgept[0])+(mptr->pos[1]-newedgept[1])*(mptr->pos[1]-newedgept[1]));
-				mptr->pos[0]=newedgept[0]-thetasign*len*newedgenormal[0];
-				mptr->pos[1]=newedgept[1]-thetasign*len*newedgenormal[1]; }
+				len=sqrt((pos[0]-newedgept[0])*(pos[0]-newedgept[0])+(pos[1]-newedgept[1])*(pos[1]-newedgept[1]));
+				pos[0]=newedgept[0]-thetasign*len*newedgenormal[0];
+				pos[1]=newedgept[1]-thetasign*len*newedgenormal[1]; }
 			else {
 				panelnormal(newpnl,newedgept,face,dim,newnormal);
 				if(newedge) {																	// rotate for trajectory onto the panel edge
 					panelnormal(pnl,pnledgept,face,dim,oldnormal);
 					paneledgenormal(newpnl,newedgept,dim,newedge,newedgenormal);
-					dot=(mptr->pos[0]-newedgept[0])*newedgenormal[0]+(mptr->pos[1]-newedgept[1])*newedgenormal[1]+(mptr->pos[2]-newedgept[2])*newedgenormal[2];
+					dot=(pos[0]-newedgept[0])*newedgenormal[0]+(pos[1]-newedgept[1])*newedgenormal[1]+(pos[2]-newedgept[2])*newedgenormal[2];
 					thetasign=(dot>0)?-1:1;
-					Sph_RotateVectWithNormals3D(newedgept,mptr->pos,newpos,oldnormal,newnormal,thetasign);
+					Sph_RotateVectWithNormals3D(newedgept,pos,newpos,oldnormal,newnormal,thetasign);
 					if(fabs(dot)<0.01) {												// check result if there's any doubt
 						dot=(newpos[0]-newedgept[0])*newedgenormal[0]+(newpos[1]-newedgept[1])*newedgenormal[1]+(newpos[2]-newedgept[2])*newedgenormal[2];
 						if(dot>0)																	// rotated wrong way, so do it again
-							Sph_RotateVectWithNormals3D(newedgept,mptr->pos,newpos,oldnormal,newnormal,-thetasign); }
-					for(d=0;d<3;d++) mptr->pos[d]=newpos[d]; }
+							Sph_RotateVectWithNormals3D(newedgept,pos,newpos,oldnormal,newnormal,-thetasign); }
+					for(d=0;d<3;d++) pos[d]=newpos[d]; }
 				else																					// rotate for trajectory entering in middle of panel
-					Sph_RotateVectWithNormals3D(newedgept,mptr->pos,mptr->pos,NULL,newnormal,0); }
-			pnl=mptr->pnl=newpnl; }
+					Sph_RotateVectWithNormals3D(newedgept,pos,pos,NULL,newnormal,0); }
+			pnl=*pnlptr=newpnl; }
 		else {																						// no new panel so bounce off of the edge of current panel
 			paneledgenormal(pnl,pnledgept,dim,exitside,newnormal);
 			dot=0;
-			for(d=0;d<dim;d++) dot+=(mptr->pos[d]-pnledgept[d])*newnormal[d];
-			for(d=0;d<dim;d++) mptr->pos[d]-=2.0*newnormal[d]*dot;
+			for(d=0;d<dim;d++) dot+=(pos[d]-pnledgept[d])*newnormal[d];
+			for(d=0;d<dim;d++) pos[d]-=2.0*newnormal[d]*dot;
 			for(d=0;d<dim;d++) newedgept[d]=pnledgept[d]; }
 
-		fixpt2panel(mptr->pos,pnl,dim,face,epsilon);
-		for(d=0;d<dim;d++) mptr->via[d]=newedgept[d];
-		mptr->pnl=pnl; }
+		fixpt2panel(pos,pnl,dim,face,epsilon);
+		for(d=0;d<dim;d++) via[d]=newedgept[d];
+		*pnlptr=pnl; }
 
+	return; }
+
+
+/* movemol2closepanel */
+void movemol2closepanel(simptr sim,moleculeptr mptr) {
+	enum PanelFace face;
+
+	if(mptr->mstate==MSfront) face=PFfront;
+	else if(mptr->mstate==MSback) face=PFback;
+	else face=PFnone;
+	movept2closepanel(sim,mptr->pos,mptr->posx,mptr->pnlx,face,mptr->via,&mptr->pnl);
 	sim->mols->touch++;
 	return; }
 

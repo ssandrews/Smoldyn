@@ -1,0 +1,142 @@
+# Filament nodes adsorbed to a surface.
+#
+# A flat membrane lies at z = 0. The red filament lies on the membrane with all of its
+# nodes adsorbed (adsorb_node), so it moves and fluctuates within the membrane but
+# can't leave it. The green filament has only its first five nodes adsorbed, so that
+# part slides along the membrane while the rest of the filament fluctuates freely
+# above it. Its adsorbed nodes have lateral mobility factor 0.2, so they move more
+# slowly within the membrane than they would in solution. The blue filament has only
+# its minus end node adsorbed, with lateral mobility factor 0, so it's anchored in
+# place while the rest of the filament fluctuates. At time 50, the green filament's
+# nodes are desorbed with desorb_node, so it is then free to leave the membrane. All
+# three types have a reflect interaction with the membrane, which keeps their free
+# nodes above it; reflect interactions don't affect adsorbed nodes.
+#
+# smoldyn adsorbedNodes3D.txt
+
+graphics opengl_good
+
+dim 3
+boundaries x -15 15
+boundaries y -15 15
+boundaries z -5 15
+
+time_start 0
+time_stop 100
+time_step 0.001
+random_seed 1
+boxsize 5
+
+frame_thickness 0
+
+start_surface membrane
+color both 0.6 0.6 0.6
+polygon both edge
+panel rect +2 -15 -15 0 30 30
+end_surface
+
+start_filament_type lying
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 50
+force_angle 20 20 20
+mobility 1
+color red
+thickness 2
+polygon edge
+surface_interaction membrane front all reflect
+end_filament_type
+
+start_filament_type sliding
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 50
+force_angle 20 20 20
+mobility 1
+color green
+thickness 2
+polygon edge
+surface_interaction membrane front all reflect
+end_filament_type
+
+start_filament_type anchored
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 50
+force_angle 20 20 20
+mobility 1
+color blue
+thickness 2
+polygon edge
+surface_interaction membrane front all reflect
+end_filament_type
+
+
+start_filament lying:lying
+first_segment -5 -8 0 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+adsorb_node 0 membrane front
+adsorb_node 1 membrane front
+adsorb_node 2 membrane front
+adsorb_node 3 membrane front
+adsorb_node 4 membrane front
+adsorb_node 5 membrane front
+adsorb_node 6 membrane front
+adsorb_node 7 membrane front
+adsorb_node 8 membrane front
+adsorb_node 9 membrane front
+adsorb_node 10 membrane front
+end_filament
+
+start_filament sliding:sliding
+first_segment -5 0 0 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 -0.6 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+adsorb_node 0 membrane front 0.2
+adsorb_node 1 membrane front 0.2
+adsorb_node 2 membrane front 0.2
+adsorb_node 3 membrane front 0.2
+adsorb_node 4 membrane front 0.2
+end_filament
+
+start_filament anchored:anchored
+first_segment 0 8 0 1 0 -1.2 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+adsorb_node 0 membrane front 0
+end_filament
+
+cmd @ 50 set filament sliding:sliding desorb_node 0
+cmd @ 50 set filament sliding:sliding desorb_node 1
+cmd @ 50 set filament sliding:sliding desorb_node 2
+cmd @ 50 set filament sliding:sliding desorb_node 3
+cmd @ 50 set filament sliding:sliding desorb_node 4
+#cmd A printFilaments stdout
+
+end_file

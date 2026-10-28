@@ -676,6 +676,9 @@ typedef struct filamentstruct {
     double **nodesx;                    // old node locations (nseg+1)
     double *roll;                       // segment roll values (nseg)
     double *nodemobility;               // extra node mobility (nseg+1)
+    panelptr *nodepnl;                  // panel that each node is adsorbed to, or NULL if free (nseg+1)
+    enum PanelFace *nodeface;           // face of nodepnl that each adsorbed node is on (nseg+1)
+    double *nodesrfmob;                 // lateral mobility factor of each adsorbed node (nseg+1)
     double seg0up[3];                   // segment 0 up vector
     filjunctionptr endjunct[2];         // attachment of each end [end], where 0 = minus and 1 = plus; NULL if free
     int maxjunct;                       // allocated size of juncts
