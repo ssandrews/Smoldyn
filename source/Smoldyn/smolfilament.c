@@ -206,6 +206,8 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 double filNodeThickness(const filamentptr fil,int node);
 double filNodeMobility(const filamentptr fil,int node);
 void filAddSurfForces(filamentptr fil,int nodemin,int nodemax);
+void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction);
+void filSurfReactionForces(simptr sim);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
 
@@ -5715,6 +5717,18 @@ int filSurfForceOn(const filamenttypeptr filtype) {
 // stack, since the constant is per violated panel, so a node behind M coplanar panels
 // feels up to M contributions. Draws no random numbers; returns immediately when off.
 void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
+	filSurfInteractForces(fil,nodemin,nodemax,0);
+	return; }
+
+
+/* filSurfInteractForces */
+// Computes the forces of the softwall and repel interactions of the filament type with
+// surfaces, for nodes nodemin to nodemax of filament fil (negative values mean all
+// nodes), as described for filAddSurfForces. If reaction is 0, the forces are added
+// to the forces on the nodes, in fil->filwork->forces. If reaction is 1, the equal and
+// opposite forces are added to the force elements of the panels that exert them
+// instead, and the node forces aren't changed.
+void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction) {
 	double **forces,k,kn,pnlpt[3],*nodept,*fnode,r,dist,norm[3];
 	filamenttypeptr filtype;
 	filsurfinteractptr fsi;
@@ -5729,7 +5743,7 @@ void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 	dim=filtype->filss->sim->dim;
-	forces=fil->filwork->forces;
+	forces=reaction?NULL:fil->filwork->forces;
 
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
@@ -5757,9 +5771,55 @@ void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
 						getpanelnormal(pnlpt,pnl,dim,norm);		// front-facing normal
 						for(d=0;d<dim;d++) pnlpt[d]+=sign*r*norm[d]; }
 					kn=k*filNodeThickness(fil,node);
-					fnode=forces[node];
-					for(d=0;d<dim;d++)
-						fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}
+					if(reaction)
+						for(d=0;d<dim;d++)
+							pnl->force[d]-=kn*(pnlpt[d]-nodept[d]);		// equal and opposite force on the panel
+					else {
+						fnode=forces[node];
+						for(d=0;d<dim;d++)
+							fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}}
+	return; }
+
+
+/* filSurfReactionForces */
+// Sets the force elements of all panels and surfaces to the forces that filaments
+// exert on them, which are equal and opposite to the forces of the softwall and
+// repel interactions on the filaments, for the current node positions. Only filament
+// types with dynamics are included, since the forces on filaments without dynamics
+// aren't applied. Each surface's force element is the sum of its panels' force
+// elements. filDynamics calls this at the end of each time step, after all motion,
+// so these are the forces at the end of the step, which are also the forces that
+// act on the filaments at the start of the next step. Draws no random numbers.
+void filSurfReactionForces(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	surfaceptr srf;
+	panelptr pnl;
+	enum PanelShape ps;
+	int s,p,d,ft,f;
+
+	filss=sim->filss;
+	if(!filss || !sim->srfss) return;
+
+	for(s=0;s<sim->srfss->nsrf;s++) {								// clear the forces
+		srf=sim->srfss->srflist[s];
+		for(d=0;d<DIMMAX;d++) srf->force[d]=0;
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++)
+				for(d=0;d<DIMMAX;d++) srf->panels[ps][p]->force[d]=0; }
+
+	for(ft=0;ft<filss->ntype;ft++) {								// panel forces from the filaments
+		filtype=filss->filtypes[ft];
+		if(filtype->dynamics==FDnone || !filSurfForceOn(filtype)) continue;
+		for(f=0;f<filtype->nfil;f++)
+			filSurfInteractForces(filtype->fillist[f],-1,-1,1); }
+
+	for(s=0;s<sim->srfss->nsrf;s++) {								// surface forces are sums of panel forces
+		srf=sim->srfss->srflist[s];
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++) {
+				pnl=srf->panels[ps][p];
+				for(d=0;d<DIMMAX;d++) srf->force[d]+=pnl->force[d]; }}
 	return; }
 
 
@@ -6597,6 +6657,8 @@ int filDynamics(simptr sim) {
 	for(ft=0;ft<filss->ntype;ft++) {								// adsorption and desorption of nodes, after all motion this step
 		filtype=filss->filtypes[ft];
 		if(filSurfAdsorbOn(filtype)) filSurfAdsorbDesorb(sim,filtype); }
+
+	filSurfReactionForces(sim);											// forces that filaments exert on surfaces, at the end of the step
 
 	if(filBoxesUpdate(sim)) {													// box lists describe the filaments at the end of the step
 		simLog(sim,10,"Out of memory assigning filaments to boxes\n");

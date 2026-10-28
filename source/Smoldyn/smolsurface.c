@@ -885,6 +885,7 @@ int panelsalloc(surfaceptr srf,int dim,int maxpanel,int maxspecies,enum PanelSha
 		pnl->neigh=NULL;
 		pnl->emitterabsorb[PFfront]=NULL;
 		pnl->emitterabsorb[PFback]=NULL;
+		for(d=0;d<DIMMAX;d++) pnl->force[d]=0;
 
 		CHECKMEM(pnl->point=(double**) calloc(npts,sizeof(double*)));
 		for(pt=0;pt<npts;pt++) pnl->point[pt]=NULL;
@@ -1051,7 +1052,7 @@ int surfexpandmollist(surfaceptr srf,int newmax,int ll) {
 
 /* surfacealloc */
 surfaceptr surfacealloc(surfaceptr srf,int oldmaxspecies,int maxspecies,int dim) {
-	int i,freesrf;
+	int i,d,freesrf;
 	enum PanelShape ps;
 	enum MolecState ms;
 	enum SrfAction ***newaction;
@@ -1101,7 +1102,8 @@ surfaceptr surfacealloc(surfaceptr srf,int oldmaxspecies,int maxspecies,int dim)
 		srf->nmollist=0;
 		srf->maxmol=NULL;
 		srf->nmol=NULL;
-		srf->mol=NULL; }
+		srf->mol=NULL;
+		for(d=0;d<DIMMAX;d++) srf->force[d]=0; }
 
 	if(maxspecies) {
 		CHECKMEM(newaction=(enum SrfAction***) calloc(maxspecies,sizeof(enum SrfAction**)));
@@ -1359,6 +1361,11 @@ void surfaceoutput(simptr sim) {
 		simLog(sim,1,"  surface index: %i%s\n",srf->selfindex,(srf->selfindex==s)?"":" ERROR: actual index doesn't match selfindex");
 		if(srf->port[PFfront]) simLog(sim,2,"  The front of this surface is part of port %s\n",srf->port[PFfront]->portname);
 		if(srf->port[PFback]) simLog(sim,2,"  The back of this surface is part of port %s\n",srf->port[PFback]->portname);
+		for(d=0,none=1;d<dim;d++) if(srf->force[d]!=0) none=0;
+		if(!none) {
+			simLog(sim,2,"  force exerted by filaments: (%g",srf->force[0]);
+			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->force[d]);
+			simLog(sim,2,")\n"); }
 
 		if(sim->mols && srf->action) {
 			simLog(sim,2,"  actions for molecules:\n");
