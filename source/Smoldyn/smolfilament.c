@@ -5695,27 +5695,29 @@ int filSurfForceOn(const filamenttypeptr filtype) {
 // parts are nodes 0 and nseg and the side part is the interior nodes. For softwall,
 // each such node on the penalized side of the interaction's surface (the side
 // opposite the interaction's face, which is the side the filament is on) feels the
-// restoring force k*d toward the nearest point of every panel it violates -- the
-// gradient of a penalty energy 0.5*k*d^2 in the penetration depth d past that panel.
-// Repel is the same, except that the zero force point is moved by the repel distance
-// r away from the panel, toward the filament's side, along the panel normal at the
-// nearest panel point: a node whose signed distance from the panel (positive on the
-// filament's side, from panelside) is less than r is pushed toward that point, which
-// for a node over the panel is the force k*(r-s) away from the panel, from the energy
-// 0.5*k*(r-s)^2. With r=0, repel is the same as softwall. Summing over violated
-// panels makes box corners behave (each wall pushes along its own normal). The
+// restoring force k*d toward the nearest point of the surface, from the gradient of
+// a penalty energy 0.5*k*d^2 in the penetration depth d. Only the closest panel of
+// the surface acts on each node, and if the node isn't on that panel's penalized
+// side, the surface exerts no force on it, even if the node is on the penalized side
+// of other panels' planes; this keeps coplanar tessellations from stacking and keeps
+// the far faces of convex obstacles from pulling on nodes. Ties go to the first
+// panel in the surface's panel lists. Repel is the same, except that the zero force
+// point is moved by the repel distance r away from the panel, toward the filament's
+// side, along the panel normal at the nearest panel point: a node whose signed
+// distance from the closest panel (positive on the filament's side, from panelside)
+// is less than r is pushed toward that point, which for a node over the panel is the
+// force k*(r-s) away from the panel, from the energy 0.5*k*(r-s)^2. With r=0, repel
+// is the same as softwall. In a concave corner, a node only feels the nearer wall. The
 // constant is per NODE, like the other per-element force constants, so refining
 // standard_length stiffens the wall per unit contour length, and it is the force
 // constant times the node's thickness, which is the average thickness of its adjacent
 // segments, as for the other filament force constants; the equilibrium penetration
 // depth of a fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft
-// steric wall for filament mechanics only -- molecules do not see it. Two geometric
-// caveats: the side test is panelside's, which for rect, tri, and disk panels
-// classifies against the panel's INFINITE plane, so a confining surface should span
-// or enclose the region the filaments occupy -- a partial patch also penalizes nodes
-// laterally beyond it, pulling them toward the patch edge; and coplanar tessellations
-// stack, since the constant is per violated panel, so a node behind M coplanar panels
-// feels up to M contributions. Draws no random numbers; returns immediately when off.
+// steric wall for filament mechanics only -- molecules do not see it. One geometric
+// caveat: the side test is panelside's, which for rect, tri, and disk panels
+// classifies against the panel's INFINITE plane, so a node laterally beyond the edge
+// of a partial patch, and behind its plane, is pulled toward the patch edge. Draws no
+// random numbers; returns immediately when off.
 void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
 	filSurfInteractForces(fil,nodemin,nodemax,0);
 	return; }
@@ -5734,9 +5736,8 @@ void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction)
 	filsurfinteractptr fsi;
 	surfaceptr srf;
 	panelptr pnl;
-	enum PanelShape ps;
 	enum PanelFace badface;
-	int i,node,p,d,dim,part,sign;
+	int i,node,d,dim,part,sign;
 
 	filtype=fil->filtype;
 	if(filtype->nsurfint==0 || fil->nseg<1) return;
@@ -5753,31 +5754,27 @@ void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction)
 		badface=(fsi->surfface==PFfront)?PFback:PFfront;
 		r=(fsi->action==FSArepel)?fsi->repeldist:0;
 		sign=(fsi->surfface==PFfront)?1:-1;
-		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
-			for(p=0;p<srf->npanel[ps];p++) {
-				pnl=srf->panels[ps][p];										// panel-outer: fetch each panel once per node sweep
-				for(node=nodemin;node<=nodemax;node++) {
-					part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
-					if(!fsi->filpart[part]) continue;
-					if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) continue;	// adsorbed to this surface
-					nodept=fil->nodes[node];
-					if(fsi->action==FSAsoftwall) {
-						if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
-						closestpanelpt(pnl,dim,nodept,pnlpt,0); }
-					else {																	// repel: the zero force point is r from the panel, on the filament's side
-						panelside(nodept,pnl,dim,&dist,0,0);
-						if(sign*dist>=r) continue;
-						closestpanelpt(pnl,dim,nodept,pnlpt,0);
-						getpanelnormal(pnlpt,pnl,dim,norm);		// front-facing normal
-						for(d=0;d<dim;d++) pnlpt[d]+=sign*r*norm[d]; }
-					kn=k*filNodeThickness(fil,node);
-					if(reaction)
-						for(d=0;d<dim;d++)
-							pnl->force[d]-=kn*(pnlpt[d]-nodept[d]);		// equal and opposite force on the panel
-					else {
-						fnode=forces[node];
-						for(d=0;d<dim;d++)
-							fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}}
+		for(node=nodemin;node<=nodemax;node++) {
+			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+			if(!fsi->filpart[part]) continue;
+			if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) continue;	// adsorbed to this surface
+			nodept=fil->nodes[node];
+			if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) continue;	// only the closest panel of the surface acts
+			if(fsi->action==FSAsoftwall) {
+				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue; }
+			else {																			// repel: the zero force point is r from the panel, on the filament's side
+				panelside(nodept,pnl,dim,&dist,0,0);
+				if(sign*dist>=r) continue;
+				getpanelnormal(pnlpt,pnl,dim,norm);			// front-facing normal
+				for(d=0;d<dim;d++) pnlpt[d]+=sign*r*norm[d]; }
+			kn=k*filNodeThickness(fil,node);
+			if(reaction)
+				for(d=0;d<dim;d++)
+					pnl->force[d]-=kn*(pnlpt[d]-nodept[d]);			// equal and opposite force on the panel
+			else {
+				fnode=forces[node];
+				for(d=0;d<dim;d++)
+					fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}
 	return; }
 
 
