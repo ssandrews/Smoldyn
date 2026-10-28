@@ -35,7 +35,7 @@ static const char *names[SP_COUNT]={
  "capping","elongation","growth_collision_query","mechanics","ordinary_forces",
  "stretch_forces","bend_forces","thermal_forces","junction_forces","confinement_forces",
  "steric_forces","index_validation","index_rebuild","box_membership",
- "movement","roll_update","nodes_to_angles","commands","frame_output"
+ "movement","roll_update","nodes_to_angles","commands","frame_output","implicit_trial_geometry_forces"
 };
 
 double smolProfileClock(void) {

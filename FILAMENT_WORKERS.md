@@ -22,9 +22,9 @@ parallel overhead. Explicit counts are also bounded by the number of filaments.
 OpenMP runtime/environment limits may restrict the thread team further. The
 end-of-run report records the selected worker budget and topology rebuild count.
 
-This setting accelerates the existing **Euler mechanics with filament sterics
-enabled**. Chemistry, contacts and the other filament integrators retain their
-existing serial paths. The shared molecule/panel/filament box system is unchanged.
+This setting accelerates coupled Euler and `implicit_network` mechanics, plus
+eligible large capping/elongation loops. The shared molecule/panel/filament box
+system is unchanged. Other filament integrators retain their existing mechanics.
 Worker count does not change timestep, substeps, rates, mobility or forces.
 
 `brownian_motion 0` inside a filament-type block disables its mechanical thermal
@@ -94,7 +94,7 @@ Each mechanical substep follows this sequence:
 serial Brownian noise preparation in original filament/node order
 parallel ordinary forces, one filament owned by one worker
 serial contact preparation and contact-force accumulation
-serial shared-node force accumulation and common positions
+parallel ordered shared-node force gathers, then common positions
 parallel material update → apply common positions → reconstruct geometry
 ```
 
@@ -102,16 +102,64 @@ Junction helpers read neighboring positions but write only their own filament's
 force array. Worker force computation therefore uses a frozen geometric state.
 Parallel regions end before contacts or the next mechanical step begin.
 
-Filaments are assigned cyclically (`schedule(static,1)`) to spread older, longer
-filaments among workers. There are two parallel regions per mechanical substep;
-OpenMP reuses its worker pool. The serial path does not enter those regions.
-This is not a separate persistent team around the entire outer step.
+Ordinary-force work is assigned to static worker slots by a greedy estimate of
+segment and junction counts. The assignment is rebuilt after topology edits or
+worker-count changes. Work slots are dispatched through OpenMP worksharing, so
+an actual team smaller than requested still processes every slot. OpenMP reuses
+its worker pool; no OS threads or processes are created per filament.
 
 Brownian generation remains serial because the original Gaussian generator has
-shared state. Contact additions and shared-node sums remain serial to avoid
-competing writes and preserve floating-point accumulation order. Full-precision
-checks verify that worker choices preserve coordinates, material frames,
-growth/capping state and subsequent random draws.
+shared state. Contact additions retain their pair order; shared-node sums now
+use independent ordered gathers. Full-precision checks verify that worker choices
+preserve coordinates, material frames, growth/capping state and subsequent draws.
+
+## Additional parallel phases (2026-10-22)
+
+The existing `filament_workers` setting controls these paths. Grain thresholds
+avoid threading cheap small loops; they are performance choices, not physics
+parameters. Setting `filament_workers 1` selects the serial paths throughout.
+
+| Phase | Parallel work | Ordered work retained |
+|---|---|---|
+| Capping | Eligibility classification and application of actual cap/uncap events | Shared RNG draws in original eligible-filament order |
+| Elongation | Eligibility, optional contour-length ceiling check, and independent growth-bank advances | Segment creation, surface retries, and collision acceptance in original filament order |
+| Sterics | Closest-point geometry and force preparation, one output record per neighbor pair | Nodal force scatter, contact stiffness rows, energy and other diagnostics in original pair order |
+| Junctions | Each physical node gathers its own filament-node force contributions | Member order within each node's sum |
+| Implicit correction | Large pointwise vector updates and per-node residual construction | Dot-product summation, dependent GMRES/Newton iterations and line-search decisions |
+
+Capping starts threading at 32768 filaments, with approximately 16384 filaments
+per worker. Elongation starts at 4096 filaments, approximately 2048 per worker,
+and uses at most four workers. Contact preparation starts at 4096 neighbor pairs,
+with approximately 512 pairs per worker. Pointwise solver corrections start at
+65536 entries. These thresholds were chosen after local before/after timing;
+they do not guarantee a speedup on every machine or network.
+
+For nonsteric implicit residuals, one team performs geometry installation,
+ordinary forces, and shared-node residual gathering. Barriers between these
+loops are required because junction forces read neighboring geometry and gathers
+read completed force arrays. With sterics enabled, contacts are evaluated before
+the residual gathering pass. The profiler records the combined geometry/ordinary
+force phase as `implicit_trial_geometry_forces`.
+
+The contact workspace adds seven doubles per allocated neighbor pair. The
+chemistry workspace adds one byte per allocated filament slot. Shared-node
+membership adds two integers per stored filament node; scheduling adds a next
+slot per filament and 256 worker-head indices. These are shared allocations,
+not full workspace copies for every worker. Allocated contact/chemistry buffers
+are reused and freed with the existing filament workspace. Optional performance
+buffer allocation failures fall back to serial execution.
+
+Ordered segment creation is deliberate: a segment accepted earlier in the same
+chemical interval must block a later crossing growth attempt. No independent
+RNG streams, changed growth acceptance policy, altered forces, or new integrator
+are introduced. Parallel vector updates preserve the arithmetic order for each
+entry; dot products retain their existing summation order.
+
+Build `benchmark_filament_parallel` with `OPTION_FILAMENT_PROFILE=ON` to measure
+isolated capping, elongation, contact, and implicit workloads. Its usage is shown
+at the top of `tools/benchmark_filament_parallel.c`. Before/after scripts, raw
+timings, binary-state comparisons, and limitations are recorded in
+`../profiling/parallel_update_2026-10-22/`.
 
 ## Build support
 

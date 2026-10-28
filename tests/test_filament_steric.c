@@ -9,16 +9,20 @@
 #include "smoldynfuncs.h"
 #include "smolfilamentsteric.h"
 #include "Geometry.h"
+#include "random2.h"
 filamenttypeptr filAddFilamentType(simptr sim,const char *name);
 int filtypeSetParam(filamenttypeptr type,const char *param,int index,double value);
 int filAddSegment(filamentptr fil,const double *x,double length,const double *angle,double thick,char end);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int seg,const double *angle,double thick,const char *name);
+double filBranchAzimuth(const filamentptr mother,int spot,const filamentptr daughter);
 void filCopyRollToYpr2(filamentptr fil);
 void filCopyYpr2ToRoll(filamentptr fil);
 void filComputeForces(filamentptr fil,int lo,int hi);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
 int filElongate(simptr sim,filamentptr fil,double length);
 int filRemoveSegment(filamentptr fil,char end);
+void filCappingDynamics(simptr sim,filamenttypeptr filtype);
+void filElongationDynamics(simptr sim,filamenttypeptr filtype);
 #undef CHECK
 #define CHECK(c) do {if(!(c)) {fprintf(stderr,"FAIL line %i: %s\n",__LINE__,#c);exit(1);}} while(0)
 #define NEAR(a,b,tol) CHECK(fabs((a)-(b))<(tol))
@@ -272,6 +276,50 @@ static void branch(void) {
  CHECK(filStericGeometry(daughter->segments[0],mother->segments[0],&c[0],&c[1],d)==DBL_MAX);
  simfree(sim);puts("PASS contact load reaches mother, junction remains attached, local exemption");
 }
+static void branch_azimuth_poles(void) {
+ simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0);filamentptr mother,daughter;
+ double a[3]={0,0,0},b[3]={0.01,0,0},angle[3]={1.344,0,0};
+ double theta,phi,dphi,expected,norm,previous,eps,pi=acos(-1.0);int pole,side,i,d;
+ t->stericradius=0;t->klen=0;t->branchsegments=1;t->branchforceangle=0;t->branchforceazimuth=0.76;
+ mother=rod(t,a,b);daughter=filAddBranch(sim,mother,0,angle,1,NULL);CHECK(daughter);
+ /* Ordinary branch angles retain the original azimuthal spring. The two
+    guard-edge samples also check continuity at sin(theta)=0.1. */
+ for(i=0;i<3;i++) {
+  theta=i==0?1.344:asin(0.1)+(i==1?-1e-6:1e-6);
+  daughter->nodes[1][0]=0.01+0.01*cos(theta);
+  daughter->nodes[1][1]=0.01*sin(theta);daughter->nodes[1][2]=0;
+  filNodes2Angles(daughter,-1,-1);phi=filBranchAzimuth(mother,0,daughter);CHECK(phi>=0);
+  mother->branchazim0[0]=fmod(phi+0.4,2*pi);
+  filComputeForces(daughter,-1,-1);norm=0;
+  for(d=0;d<3;d++) {double force=daughter->filwork->forces[1][d];norm+=force*force;NEAR(force+daughter->filwork->forces[0][d],0,1e-12);}
+  norm=sqrt(norm);expected=t->branchforceazimuth*0.4/(0.01*sin(theta));
+  if(i==0) NEAR(norm,expected,1e-10);
+  else CHECK(fabs(norm/expected-1)<3e-5);
+ }
+ /* Approach both poles from opposite azimuths. The old bounded-magnitude
+    force stays nonzero across the pi azimuth flip; the regularized force
+    must decrease tenfold for each tenfold decrease in transverse distance. */
+ for(pole=-1;pole<=1;pole+=2) for(side=-1;side<=1;side+=2) {
+  previous=0;
+  for(i=0;i<6;i++) {
+   eps=pow(10.0,-2-i);
+   daughter->nodes[1][0]=0.01+pole*0.01*cos(eps);
+   daughter->nodes[1][1]=side*0.01*sin(eps);daughter->nodes[1][2]=0;
+   filNodes2Angles(daughter,-1,-1);phi=filBranchAzimuth(mother,0,daughter);CHECK(phi>=0);
+   dphi=phi-mother->branchazim0[0];if(dphi>pi) dphi-=2*pi;else if(dphi<-pi) dphi+=2*pi;
+   filComputeForces(daughter,-1,-1);norm=0;
+   for(d=0;d<3;d++) {double force=daughter->filwork->forces[1][d];CHECK(isfinite(force));norm+=force*force;NEAR(force+daughter->filwork->forces[0][d],0,1e-12);}
+   norm=sqrt(norm);expected=t->branchforceazimuth*fabs(dphi)*sin(eps)/(0.01*0.1*0.1);
+   CHECK(fabs(norm/expected-1)<1e-7);
+   if(i) CHECK(norm<0.101*previous);
+   previous=norm;
+  }
+  daughter->nodes[1][0]=0.01+pole*0.01;daughter->nodes[1][1]=daughter->nodes[1][2]=0;
+  filNodes2Angles(daughter,-1,-1);filComputeForces(daughter,-1,-1);
+  for(i=0;i<2;i++) for(d=0;d<3;d++) NEAR(daughter->filwork->forces[i][d],0,1e-15);
+ }
+ simfree(sim);puts("PASS branch azimuth: ordinary-angle force, guard continuity, and vanishing force on both sides of parallel/antiparallel poles");
+}
 static void growth(void) {
  simptr sim=scene(3);filamenttypeptr t=type(sim,"actin",0),ob=type(sim,"obstacle",1);
  double a[3]={0,0,0},b[3]={0.01,0,0},c[3]={0.015,-0.005,0},d[3]={0.015,0.005,0};filamentptr f=rod(t,a,b);rod(ob,c,d);
@@ -497,7 +545,7 @@ static simptr worker_scene(int workers) {
  t->sterick=1000;t->stericsubsteps=4;t->kypr[0]=t->kypr[1]=t->kypr[2]=0.02;
  t->branchforceangle=0.018;t->branchforceazimuth=0.02;t->branchangle=1.0;t->branchsegments=2;t->stericradius=0;
  CHECK(!filSetWorkers(sim,workers));
- for(i=0;i<220;i++) {
+ for(i=0;i<720;i++) {
   filamentptr fil;a[0]=(i%10)*0.08;a[1]=(i/10)*0.012;a[2]=(i%2)*0.006;
   memcpy(b,a,sizeof(b));b[0]+=0.01;fil=rod(t,a,b);
   for(j=0;j<4;j++) CHECK(!filAddSegment(fil,NULL,0.01,angle,1,'b'));
@@ -633,11 +681,101 @@ static void implicit_network(void) {
  puts("PASS coupled implicit 2D/3D analytic spring sweep, stiff contacts/walls, roll, Brownian increments, branch constraints, worker reproducibility and rollback");
 }
 
+/* Exercise the new paths beyond their grain thresholds. Small fixtures alone
+   would silently keep using the serial fallback. */
+static void parallel_phases(void) {
+ int f,i,j,d;simptr sim;filamenttypeptr t;
+ if(!filWorkersSupported()) {puts("PASS parallel phases unavailable; serial fallback covered by main suite");return;}
+ sim=scene(3);t=type(sim,"actin",0);sim->dt=0.1;t->stericradius=0;
+ t->caprate=0.36;t->uncaprate=0.1;t->klen=-1;t->kypr[0]=t->kypr[1]=t->kypr[2]=-1;
+ for(f=0;f<4096;f++) {
+  double a[3]={0,0.5+(f%50)*0.02,(f/50)*0.02},b[3]={0.01,0.5+(f%50)*0.02,(f/50)*0.02};
+  filamentptr fil=rod(t,a,b);fil->capped=f%3==0;
+ }
+ /* Empty slots also verify that ineligible filaments consume no RNG draws. */
+ while(t->nfil<32768) CHECK(filAddFilament(t,NULL));
+ {int expected[32768];unsigned long next[32];double pc=1-exp(-t->caprate*sim->dt),pu=1-exp(-t->uncaprate*sim->dt);
+  Simsetrandseed(sim,31);
+  for(f=0;f<t->nfil;f++) expected[f]=t->fillist[f]->nseg<1?t->fillist[f]->capped:t->fillist[f]->capped?!coinrandD(pu):coinrandD(pc);
+  for(i=0;i<32;i++) next[i]=randULI();
+  Simsetrandseed(sim,31);CHECK(!filSetWorkers(sim,4));filCappingDynamics(sim,t);
+  for(f=0;f<t->nfil;f++) CHECK(t->fillist[f]->capped==expected[f]);
+  for(i=0;i<32;i++) CHECK(randULI()==next[i]);
+ }
+ t->nfil=4096;
+ /* Bank-only updates, multiple births, length ceilings and capped ends. */
+ for(i=0;i<3;i++) {
+  double bank[4096];int count[4096];
+  t->elongrate=i==0?0.001:0.24;t->elongmaxlen=i==2?0.015:0;
+  for(f=0;f<t->nfil;f++) t->fillist[f]->growbank=(f%5)*0.0019;
+  CHECK(!filSetWorkers(sim,1));filElongationDynamics(sim,t);
+  for(f=0;f<t->nfil;f++) {filamentptr fil=t->fillist[f];bank[f]=fil->growbank;count[f]=fil->nseg;while(fil->nseg>1) CHECK(!filRemoveSegment(fil,'b'));fil->growbank=(f%5)*0.0019;}
+  CHECK(!filSetWorkers(sim,4));filElongationDynamics(sim,t);
+  for(f=0;f<t->nfil;f++) {filamentptr fil=t->fillist[f];CHECK(fil->nseg==count[f]);NEAR(fil->growbank,bank[f],1e-15);while(fil->nseg>1) CHECK(!filRemoveSegment(fil,'b'));}
+ }
+ /* Two proposals cross each other but neither crosses the old network.
+    The first accepted birth must block the second, just as in the serial path. */
+ t->elongmaxlen=0;t->elongrate=0.1;t->stericradius=0.0005;
+ for(f=0;f<t->nfil;f++) {t->fillist[f]->capped=1;t->fillist[f]->growbank=0;}
+ {filamentptr a=t->fillist[0],b=t->fillist[1];
+  a->capped=b->capped=0;
+  a->nodes[0][0]=-0.02;a->nodes[1][0]=-0.01;a->nodes[0][1]=a->nodes[1][1]=0;a->nodes[0][2]=a->nodes[1][2]=0;
+  b->nodes[0][0]=b->nodes[1][0]=-0.005;b->nodes[0][1]=-0.02;b->nodes[1][1]=-0.01;b->nodes[0][2]=b->nodes[1][2]=0;
+  filNodes2Angles(a,-1,-1);filNodes2Angles(b,-1,-1);
+  CHECK(!filStericChemistry(sim,1));filElongationDynamics(sim,t);CHECK(!filStericChemistry(sim,0));
+  CHECK(a->nseg==2 && b->nseg==1);CHECK(sim->filss->steric->blockedgrowth>0);
+ }
+ simfree(sim);
+ /* Dense contacts: the pair preparation must actually allocate/use its team
+    buffer. Compare every force and diagnostic with the serial scatter. */
+ for(d=2;d<=3;d++) {
+  double *saved=(double*)malloc(1200*sizeof(double)),energy=0;unsigned long long contacts=0;
+  CHECK(saved);sim=scene(d);t=type(sim,"actin",0);t->klen=0;
+  for(f=0;f<200;f++) {double a[3]={0,(f%20)*0.002,d==3?(f/20)*0.002:0},b[3]={0.01,(f%20)*0.002,d==3?(f/20)*0.002:0};rod(t,a,b);}
+  for(i=0;i<2;i++) {
+   CHECK(!filSetWorkers(sim,i?4:1));for(f=0;f<t->nfil;f++) filComputeForces(t->fillist[f],-1,-1);
+   CHECK(!filStericForces(sim));
+   for(f=0;f<t->nfil;f++) for(j=0;j<2;j++) for(int axis=0;axis<3;axis++) {
+    int at=6*f+3*j+axis;double value=t->fillist[f]->filwork->forces[j][axis];
+    if(!i) saved[at]=value;else CHECK(value==saved[at]);
+   }
+   if(!i) {energy=sim->filss->steric->energy;contacts=sim->filss->steric->contacts;}
+   else {CHECK(sim->filss->steric->maxcontact>0);CHECK(sim->filss->steric->energy==energy && sim->filss->steric->contacts==contacts);}
+  }
+  simfree(sim);free(saved);
+ }
+ /* >65536 implicit entries forces pointwise correction loops to take their
+    parallel branch. Axial strain gives a real Newton/Krylov solve. */
+ {simptr a=scene(3),b=scene(3);filamenttypeptr ta=type(a,"actin",0),tb=type(b,"actin",0);
+  for(i=0;i<2;i++) {simptr s=i?b:a;filamenttypeptr ft=i?tb:ta;
+   ft->dynamics=FDimplicitnetwork;ft->stericradius=0;s->dt=1e-4;CHECK(!filSetWorkers(s,i?4:1));
+   for(f=0;f<32;f++) {double x[3]={0,f*0.02,0},y[3]={0.0102,f*0.02,0},angle[3]={0};filamentptr fil=rod(ft,x,y);
+    for(j=1;j<512;j++) CHECK(!filAddSegment(fil,NULL,0.01,angle,1,'b'));
+   }
+   CHECK(!filDynamics(s));
+  }
+  for(f=0;f<ta->nfil;f++) for(j=0;j<=ta->fillist[f]->nseg;j++) CHECK(!memcmp(ta->fillist[f]->nodes[j],tb->fillist[f]->nodes[j],3*sizeof(double)));
+  /* Invalidate both ownership caches with elongation and a new junction,
+     then change the requested worker budget without changing the model. */
+  for(i=0;i<2;i++) {simptr s=i?b:a;filamenttypeptr ft=i?tb:ta;double straight[3]={0},angle[3]={1,0.2,0};
+   CHECK(!filAddSegment(ft->fillist[0],NULL,0.01,straight,1,'b'));
+   ft->branchsegments=1;CHECK(filAddBranch(s,ft->fillist[0],0,angle,1,NULL));
+   CHECK(!filSetWorkers(s,i?2:1));CHECK(!filDynamics(s));CHECK(s->filss->steric->movementrebuilds==2);
+  }
+  CHECK(ta->nfil==tb->nfil);
+  for(f=0;f<ta->nfil;f++) for(j=0;j<=ta->fillist[f]->nseg;j++) CHECK(!memcmp(ta->fillist[f]->nodes[j],tb->fillist[f]->nodes[j],3*sizeof(double)));
+  simfree(a);simfree(b);
+ }
+ puts("PASS parallel chemistry/RNG, ordered competing growth, dense 2D/3D contacts and large implicit corrections");
+}
+
 int main(int argc,char **argv) {
  setvbuf(stdout,NULL,_IONBF,0);
+ if(argc>1 && !strcmp(argv[1],"--parallel-phases")) {parallel_phases();return 0;}
+ if(argc>1 && !strcmp(argv[1],"--branch-azimuth")) {branch_azimuth_poles();return 0;}
  if(argc>1 && !strcmp(argv[1],"--implicit")) {implicit_network();return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark")) {benchmark(0,0);benchmark(1,0);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-thermal")) {benchmark(0,1);benchmark(1,1);return 0;}
  if(argc>1 && !strcmp(argv[1],"--benchmark-growth")) {growth_benchmark();return 0;}
- geometry();indexing();shared_grids();unified_boxes();queries();growth_switch();forces();branch();growth();growth_index();branch_rollback();diffusion();walls_and_guards();rectangular_wall_normals();convergence_and_2d();brownian_switch();movement_cache();workers();implicit_network();puts("All filament steric checks passed.");return 0;
+ geometry();indexing();shared_grids();unified_boxes();queries();growth_switch();forces();branch();branch_azimuth_poles();growth();growth_index();branch_rollback();diffusion();walls_and_guards();rectangular_wall_normals();convergence_and_2d();brownian_switch();movement_cache();workers();implicit_network();parallel_phases();puts("All filament steric checks passed.");return 0;
 }

@@ -69,7 +69,9 @@ void filStericFree(filamentssptr ss) {
  struct filamentstericstruct *w;
  if(!ss || !(w=ss->steric)) return;
  free(w->segments);free(w->pairs);free(w->nodes);free(w->pending);
- free(w->filaments);free(w->branches);filImplicitFree(w);free(w);ss->steric=NULL;
+ free(w->filaments);free(w->branches);free(w->contact);free(w->chemready);
+ free(w->memberfirst);free(w->membernext);
+ filImplicitFree(w);free(w);ss->steric=NULL;
 }
 
 int filStericExcluded(segmentptr a,segmentptr b) {
@@ -164,23 +166,43 @@ int filStericPrepare(simptr sim) {
  return 0;
 }
 
+/* Frozen geometry: pair calculations have disjoint outputs, so no atomics or
+   per-worker copies of all node forces are needed. */
+static void filContactEvaluate(struct filamentstericstruct *w,int p,FilStericContact *c) {
+ FilStericSegment *a=&w->segments[w->pairs[p].a],*b=&w->segments[w->pairs[p].b];
+ double dist=filStericGeometry(a->segment,b->segment,&c->s,&c->t,c->normal);
+ c->delta=a->radius+b->radius-dist;
+ c->k=c->delta>0?2/(1/a->stiffness+1/b->stiffness):0;
+}
+
 int filStericForces(simptr sim) {
- struct filamentstericstruct *w;int p,d,er;
+ struct filamentstericstruct *w;int p,d,er,workers;
  SMOL_PROFILE_RUN(SP_INDEX_VALIDATE,er=filStericPrepare(sim));
  if(er) return 1;
  w=sim->filss->steric;if(!w) return 0;
+ workers=w->npair>=4096?filWorkWorkers(sim,w->npair,512):1;
+ if(workers>1 && w->npair>w->maxcontact) {
+  FilStericContact *c=(FilStericContact*)realloc(w->contact,(size_t)w->npair*sizeof(*c));
+  if(c) {w->contact=c;w->maxcontact=w->npair;} else workers=1;
+ }
+ if(workers>1) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+  for(p=0;p<w->npair;p++) filContactEvaluate(w,p,&w->contact[p]);
+ }
  w->contacts=0;w->maxpenetration=w->energy=w->contactbound=0;
  for(p=0;p<w->nsegment;p++) w->segments[p].contactrow[0]=w->segments[p].contactrow[1]=0;
  for(p=0;p<w->npair;p++) {
   FilStericSegment *a=&w->segments[w->pairs[p].a],*b=&w->segments[w->pairs[p].b];
-  double s,t,normal[3],dist,delta,k,fa,fb;
-  dist=filStericGeometry(a->segment,b->segment,&s,&t,normal);
-  delta=a->radius+b->radius-dist;if(delta<=0) continue;
-  /* Harmonic mean: equal-type contacts retain the user stiffness. */
-  k=2/(1/a->stiffness+1/b->stiffness);
+  FilStericContact local,*c=workers>1?&w->contact[p]:&local;
+  double s,t,delta,k,fa,fb;
+  if(workers==1) filContactEvaluate(w,p,c);
+  delta=c->delta;if(delta<=0) continue;
+  s=c->s;t=c->t;k=c->k;
   w->contacts++;w->maxpenetration=fmax(w->maxpenetration,delta);w->energy+=0.5*k*delta*delta;
   for(d=0;d<sim->dim;d++) {
-   fa=k*delta*normal[d];fb=-fa;
+   fa=k*delta*c->normal[d];fb=-fa;
    if(a->fil->filtype->dynamics!=FDnone) {
     a->fil->filwork->forces[a->index][d]+=(1-s)*fa;a->fil->filwork->forces[a->index+1][d]+=s*fa;
    }
@@ -188,8 +210,6 @@ int filStericForces(simptr sim) {
     b->fil->filwork->forces[b->index][d]+=(1-t)*fb;b->fil->filwork->forces[b->index+1][d]+=t*fb;
    }
   }
-  /* Row-sum bound on normal contact stiffness, including accumulated contacts.
-     Internal elastic modes still require timestep convergence checks. */
   a->contactrow[0]+=2*k*(1-s);a->contactrow[1]+=2*k*s;
   b->contactrow[0]+=2*k*(1-t);b->contactrow[1]+=2*k*t;
  }
@@ -424,7 +444,17 @@ int filStericPrepareMovement(simptr sim) {
   }
   /* Flatten roots once. Movement never calls union/find in the hot loop. */
   for(i=0;i<n;i++) w->nodes[i].parent=filNodeRoot(w->nodes,i);
-  w->topologyvalid=1;w->movementrebuilds++;
+  /* Reverse insertion preserves ascending original node order in each group. */
+  if(n>w->maxmember) {
+   int *p=(int*)realloc(w->memberfirst,(size_t)n*sizeof(int));if(!p) return 1;w->memberfirst=p;
+   p=(int*)realloc(w->membernext,(size_t)n*sizeof(int));if(!p) return 1;w->membernext=p;w->maxmember=n;
+  }
+  for(i=0;i<n;i++) w->memberfirst[i]=-1;
+  for(i=n-1;i>=0;i--) {
+   root=w->nodes[i].parent;
+   w->membernext[i]=w->memberfirst[root];w->memberfirst[root]=i;
+  }
+  w->scheduleworkers=0;w->topologyvalid=1;w->movementrebuilds++;
  }
  /* Numerical properties can change without a topology edit. Keep the original
     node-order summation so cache use and worker count preserve roundoff. */
@@ -442,6 +472,60 @@ int filStericPrepareMovement(simptr sim) {
  return 0;
 }
 
+/* Grain limits keep cheap loops out of OpenMP until there is useful work.
+   This also serves chemistry before the movement topology has been refreshed. */
+int filWorkWorkers(simptr sim,int items,int grain) {
+ int workers=1;
+#ifndef _OPENMP
+ (void)sim;(void)items;(void)grain;
+#endif
+#ifdef _OPENMP
+ int available=items/grain;
+ if(available>1) {
+  workers=sim->filss->workers;
+  if(!workers) workers=omp_get_max_threads();
+  if(workers>available) workers=available;
+  if(workers<1) workers=1;
+ }
+#endif
+ return workers;
+}
+
+/* Performance workspace is optional: allocation failure uses the serial path. */
+unsigned char *filChemWork(simptr sim,int count) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ if(!w) {
+  w=(struct filamentstericstruct*)calloc(1,sizeof(*w));
+  if(!w) return NULL;
+  sim->filss->steric=w;
+ }
+ if(count>w->maxchemready) {
+  unsigned char *p=(unsigned char*)realloc(w->chemready,(size_t)count);
+  if(!p) return NULL;
+  w->chemready=p;w->maxchemready=count;
+ }
+ return w->chemready;
+}
+
+/* Greedy static ownership balances segment and junction work rather than
+   filament count. Rebuild only after a topology edit or worker-budget change.
+   Work slots, not OS thread IDs, also handle an OpenMP team smaller than asked. */
+void filWorkSchedule(simptr sim,int workers) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ double load[256]={0};int f,k,best;
+ if(w->scheduleworkers==workers) return;
+ for(k=0;k<workers;k++) w->workfirst[k]=-1;
+ for(f=0;f<w->nfilament;f++) {
+  FilStericFilament *r=&w->filaments[f];double cost;
+  r->worknext=-1;
+  if(r->nodeoffset<0) continue;
+  best=0;for(k=1;k<workers;k++) if(load[k]<load[best]) best=k;
+  cost=r->nseg+1+2*r->nbranch;load[best]+=cost;
+  r->worknext=w->workfirst[best];w->workfirst[best]=f;
+ }
+ w->scheduleworkers=workers;
+}
+
 /* Explicit choices are upper bounds; small seed networks use the serial path.
    Automatic mode provides at least about 1024 nodes per worker. OpenMP owns and
    reuses the thread pool; no OS threads or processes are created per filament. */
@@ -455,12 +539,13 @@ int filStericWorkers(simptr sim) {
   if(workers<1) workers=1;
  }
 #endif
- w->workersused=workers;return workers;
+ filWorkSchedule(sim,workers);w->workersused=workers;return workers;
 }
 
 void filStericOrdinaryForces(simptr sim,int workers,int freshnoise) {
- struct filamentstericstruct *w=sim->filss->steric;int f;
+ struct filamentstericstruct *w=sim->filss->steric;int f,slot;
  if(workers>1) {
+  filWorkSchedule(sim,workers);
   /* All RNG draws remain in precisely the old serial order. Force helpers
      then read cached thermal noise and write only their own filament arrays. */
   SMOL_PROFILE_RUN(SP_THERMAL,for(f=0;f<w->nfilament;f++) {
@@ -472,9 +557,9 @@ void filStericOrdinaryForces(simptr sim,int workers,int freshnoise) {
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(workers) schedule(static,1)
 #endif
-  for(f=0;f<w->nfilament;f++) {
-   filamentptr fil=w->filaments[f].fil;
-   if(fil->nseg && fil->filtype->dynamics!=FDnone) filComputeForces(fil,-1,-1);
+  for(slot=0;slot<workers;slot++) for(int next=w->workfirst[slot];next>=0;next=w->filaments[next].worknext) {
+   filamentptr fil=w->filaments[next].fil;
+   if(fil->filtype->dynamics!=FDnone) filComputeForces(fil,-1,-1);
   }
  } else for(f=0;f<w->nfilament;f++) {
   filamentptr fil=w->filaments[f].fil;
@@ -497,16 +582,25 @@ static void filStericApplyMovement(simptr sim,struct filamentstericstruct *w,int
   SMOL_PROFILE_FINE(SP_NODES_TO_ANGLES,filNodes2Angles(fil,-1,-1));
 }
 
-/* Shared-point forces are summed in the original node order. This phase and
-   the contact pass stay serial; independent material and geometry updates run
-   across filaments after the common positions are complete. */
+/* Shared-point roots gather contributions in the original node order.
+   Common positions are then formed before independent material/geometry updates. */
 static int filStericMove(simptr sim,int workers) {
  struct filamentstericstruct *w=sim->filss->steric;int i,root,d,f;
- for(i=0;i<w->nnode;i++) if(w->nodes[i].parent==i) for(d=0;d<sim->dim;d++) w->nodes[i].force[d]=0;
+ if(workers>1 && w->nnode>=4096) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+  for(i=0;i<w->nnode;i++) filStericNodeForce(sim,i,0);
+ } else {
+  for(i=0;i<w->nnode;i++) if(w->nodes[i].parent==i) for(d=0;d<sim->dim;d++) w->nodes[i].force[d]=0;
+  for(i=0;i<w->nnode;i++) {
+   FilStericNode *node=&w->nodes[i];root=node->parent;
+   if(node->fil->filtype->dynamics!=FDnone && node->fil->filtype->mobility*node->fil->nodemobility[node->node]>0)
+    for(d=0;d<sim->dim;d++) w->nodes[root].force[d]+=node->fil->filwork->forces[node->node][d];
+  }
+ }
  for(i=0;i<w->nnode;i++) {
   FilStericNode *node=&w->nodes[i];root=node->parent;
-  if(node->fil->filtype->dynamics!=FDnone && node->fil->filtype->mobility*node->fil->nodemobility[node->node]>0)
-   for(d=0;d<sim->dim;d++) w->nodes[root].force[d]+=node->fil->filwork->forces[node->node][d];
   if(root!=i) for(d=0;d<sim->dim;d++) if(fabs(node->fil->nodes[node->node][d]-w->nodes[root].fil->nodes[w->nodes[root].node][d])>1e-8) {
    simLog(sim,9,"ERROR: filament branch point is detached; repair initial geometry before steric dynamics\n");return 1;
   }
@@ -546,8 +640,10 @@ int filStericDynamics(simptr sim) {
   SMOL_PROFILE_RUN(SP_MOVE,er=filStericMove(sim,workers));
   if(er) break;
  }
+ if(!er && filImplicitEnabled(sim)) er=surfforceclampend(sim,1);
  if(er && filImplicitEnabled(sim)) {
   filImplicitSave(sim,1);
+  if(sim->srfss && sim->srfss->nforceclamp) simLog(sim,9,"  Force clamp could not satisfy the mechanical solve or travel bounds; panel geometry restored.\n");
   simLog(sim,9,"  Restored all mechanical substeps of the outer interval; chemistry is retained.\n");
  }
  sim->dt=dt;

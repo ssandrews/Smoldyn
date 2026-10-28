@@ -61,8 +61,11 @@ forces. It calls the original stretch, bend, junction, confinement and thermal
 force helpers, plus the existing capsule contact pass. Trial movement invalidates
 the existing neighbor cache when needed; pairs are rebuilt through the original
 Smoldyn boxes. No second spatial grid is introduced. Ordinary force and geometry
-passes reuse `filament_workers`; contact accumulation and Krylov reductions stay
-serial and deterministic.
+passes reuse `filament_workers`. Trial geometry, ordinary forces and nonsteric
+residual gathers share one worker team. Shared nodes gather ordered contributions
+independently. Contact-pair preparation and large pointwise solver corrections
+are also threaded; contact accumulation and Krylov dot products retain their
+original serial order. See `FILAMENT_WORKERS.md` for thresholds and ownership.
 
 A line search rejects corrections that do not reduce the residual. Invalid
 geometry, exhausted iterations, or failure to satisfy the residual tolerance
@@ -75,6 +78,24 @@ This follows the Newton/Krylov approach described in the primary
 [SUNDIALS mathematical documentation](https://sundials.readthedocs.io/en/develop/cvode/Mathematics_link.html).
 It is a small local implementation, not CVODE: there is no variable-order BDF,
 automatic timestep controller, or automatic local integration-error estimate.
+
+## Branch azimuth near parallel/antiparallel tangents
+
+The optional `branch_force_azimuth` couple uses
+`-kaz * dphi * (tm x td) / (daughter_length * max(sin(theta), 0.1)^2)`.
+For `sin(theta) >= 0.1` this is the original quadratic azimuthal spring force,
+including ordinary 70-77 degree branches. Within approximately 5.74 degrees of
+parallel or antiparallel tangents, the force fades to zero with the transverse
+daughter direction. Azimuth is undefined at either pole; retaining a nonzero
+force magnitude there created a discontinuity that could defeat Newton's line
+search. Exactly collinear junctions retain the existing degenerate-geometry skip.
+
+This numerical regularization changes the azimuthal force at extreme branch
+angles; it is not a calibrated Arp2/3 response or a complete conservative junction
+potential. The existing one-way daughter couple and polar-angle force are retained.
+No timestep, tolerance, iteration limit, chemical rate, or input keyword changes
+are required. Native checks verify the ordinary-angle force, continuity at the
+guard edge, and vanishing forces on both sides of both poles.
 
 ## Brownian forces
 

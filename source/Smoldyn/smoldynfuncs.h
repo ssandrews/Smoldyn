@@ -266,6 +266,12 @@ int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enu
 int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,double *params,const char *name);
 void surftransformpanel(panelptr pnl,int dim,double *translate,double *origin,double *expand); //?? not documented
 void surftranslatepanel(panelptr pnl,int dim,double *translate);
+int surfsetforceclamp(panelptr pnl,int enabled,double force,double tolerance,double minimum,double maximum);
+int surfforceclampvalidate(simptr sim);
+int surfforceclampbegin(simptr sim);
+int surfforceclampsolve(simptr sim);
+int surfforceclampend(simptr sim,int commit);
+void surfforceclampreaction(simptr sim,panelptr pnl,double position,double *force,double *stiffness,double *extent,double *maxk);
 void surfupdateoldpos(surfaceptr srf,int dim);
 void surftranslatesurf(surfaceptr srf,int dim,double *translate);
 int surfsetjumppanel(surfaceptr srf,panelptr pnl1,enum PanelFace face1,int bidirect,panelptr pnl2,enum PanelFace face2);
@@ -305,6 +311,7 @@ int boxGridFindPoint(const BoxGrid *grid,const double *pos,BoxGridCell *cell);
 int expandboxsegments(boxptr box,int n);
 int segmentinbox(simptr sim,segmentptr segment,boxptr box);
 int boxesupdatesegments(simptr sim);
+int boxesupdatepanel(simptr sim,panelptr pnl,double oldposition);
 boxptr pos2box(simptr sim,const double *pos);
 void boxrandpos(simptr sim,double *pos,boxptr bptr);
 int boxaddmol(moleculeptr mptr,int ll);

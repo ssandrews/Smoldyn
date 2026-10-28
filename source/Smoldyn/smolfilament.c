@@ -3094,7 +3094,7 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 
 
 #define FILJUNCTSINMIN 1e-9			// junctions with sin(theta) below this are degenerate; filBranchAzimuth and filJunctionGeometry must agree on it
-#define FILJUNCTSINBOUND 0.1		// floor on sin(theta) in the azimuthal force denominator, capping the 1/sin(theta) divergence near-parallel geometry
+#define FILJUNCTSINBOUND 0.1		// floor on each sin(theta) factor in the azimuthal denominator; force fades at parallel/antiparallel poles
 
 /* filBranchAzimuth */
 // Azimuth of a daughter about its mother: the angle of the daughter's first segment
@@ -3405,11 +3405,32 @@ int filElongate(simptr sim,filamentptr fil,double dlength) {
 // Plus-end elongation for one filament type: each filament grows by rate*dt of contour
 // length. Deterministic; the only length noise is the random segment length.
 void filElongationDynamics(simptr sim,filamenttypeptr filtype) {
-	int f;
+	int f,workers;
+	unsigned char *ready;
 	double dlength;
 
 	if(filtype->elongrate<=0) return;
 	dlength=filtype->elongrate*sim->dt;
+	workers=filWorkWorkers(sim,filtype->nfil,2048);
+	if(workers>4) workers=4;
+	ready=workers>1?filChemWork(sim,filtype->nfil):NULL;
+	if(ready) {
+		/* Most calls only advance a private contour-length bank. Segment births
+		   retain their original order: their RNG draws, surface retries and
+		   accepted growth must be visible to the next filament's collision test. */
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+		for(f=0;f<filtype->nfil;f++) {
+			filamentptr fil=filtype->fillist[f];
+			ready[f]=0;
+			if(fil->nseg<1 || filEndIsCapped(fil,filtype->plusend) || filtype->stdlen<=0) continue;
+			if(filtype->elongmaxlen>0 && filContourLength(fil)>=filtype->elongmaxlen) continue;
+			if(fil->growbank+dlength<filtype->stdlen) fil->growbank+=dlength;
+			else ready[f]=1;
+		}
+		for(f=0;f<filtype->nfil;f++) if(ready[f]) filElongate(sim,filtype->fillist[f],dlength);
+		return; }
 
 	for(f=0;f<filtype->nfil;f++)
 		filElongate(sim,filtype->fillist[f],dlength);
@@ -3423,13 +3444,38 @@ void filElongationDynamics(simptr sim,filamenttypeptr filtype) {
 // which is what makes the measured rate independent of dt. Capping blocks monomer
 // addition; it does not shrink the filament, as there is no segment-removal path.
 void filCappingDynamics(simptr sim,filamenttypeptr filtype) {
-	int f;
+	int f,workers;
+	unsigned char *decision;
 	double pcap,puncap;
 	filamentptr fil;
 
 	if(filtype->caprate<=0 && filtype->uncaprate<=0) return;
 	pcap=filtype->caprate>0?1.0-exp(-filtype->caprate*sim->dt):0;
 	puncap=filtype->uncaprate>0?1.0-exp(-filtype->uncaprate*sim->dt):0;
+	/* Capping is very cheap: smaller populations measured faster serially. */
+	workers=filWorkWorkers(sim,filtype->nfil,16384);
+	decision=workers>1?filChemWork(sim,filtype->nfil):NULL;
+	if(decision) {
+		/* Inspect scattered filament records in parallel, then consume RNG in
+		   the original order using only this compact eligibility array.
+		   Codes: 1 cap draw, 2 uncap draw, 3 cap event, 4 uncap event. */
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+		for(f=0;f<filtype->nfil;f++) {
+			filamentptr current=filtype->fillist[f];
+			decision[f]=current->nseg<1?0:(current->capped?(puncap>0?2:0):(pcap>0?1:0));
+		}
+		for(f=0;f<filtype->nfil;f++)
+			decision[f]=decision[f]==1?(coinrandD(pcap)?3:0):decision[f]==2?(coinrandD(puncap)?4:0):0;
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+		for(f=0;f<filtype->nfil;f++) {
+			if(decision[f]==3) filtype->fillist[f]->capped=1;
+			else if(decision[f]==4) filtype->fillist[f]->capped=0;
+		}
+		return; }
 
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
@@ -3905,7 +3951,9 @@ int filJunctionGeometry(const filamentptr mother,int spot,const filamentptr daug
 // a one-way version was measured to overheat the angle by (1 + mobility ratio) when
 // the mother is free. The optional azimuthal spring (branch_force_azimuth) restores
 // the daughter's azimuth about the mother axis toward its recorded birth value with
-// energy 0.5*kaz*(phi-phi0)^2, applied as a couple on daughter nodes 0 and 1 only
+// energy 0.5*kaz*(phi-phi0)^2 away from parallel/antiparallel tangents, with its
+// azimuthal couple faded to zero near these poles where phi is undefined. It is
+// applied on daughter nodes 0 and 1 only
 // (one-way: a clean mother-side gradient would require differentiating the material
 // frame, and the bounded spring torque cannot pump energy the way the rigid azimuth
 // pin can). No cross-filament force writes occur, per-filament force clearing stays
@@ -3944,8 +3992,11 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 				cross[0]=tm[1]*td[2]-tm[2]*td[1];							// dphi/dr1 = (tm x td)/(lend*sinth^2); rotating about +tm raises phi -- this sign ties to the frame convention in filBranchAzimuth, see the contract comment there
 				cross[1]=tm[2]*td[0]-tm[0]*td[2];
 				cross[2]=tm[0]*td[1]-tm[1]*td[0];
-				sinbound=(sinth>FILJUNCTSINBOUND)?sinth:FILJUNCTSINBOUND;	// |cross| = sinth, so |F| = kaz*|dphi|/(lend*sinbound): the true azimuthal gradient diverges as 1/sinth near-parallel geometry, where azimuth stops being meaningful; bounding it keeps a wandering junction from blowing up the integrator
-				fscale=-kaz*dphi/(lend*sinth*sinbound);
+				sinbound=(sinth>FILJUNCTSINBOUND)?sinth:FILJUNCTSINBOUND;
+				// |cross|=sinth: fade the force to zero where azimuth is undefined.
+				// Bounding only one factor leaves a finite force jump across either pole.
+				// For sinth>=FILJUNCTSINBOUND this is the original azimuthal gradient.
+				fscale=-kaz*dphi/(lend*sinbound*sinbound);
 				for(d=0;d<3;d++) {
 					fvect[d]=fscale*cross[d];
 					if(nodemax>=1) forces[1][d]+=fvect[d];
@@ -3991,12 +4042,12 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax) {
 // node behind M coplanar panels feels up to M contributions. Draws no random
 // numbers; returns immediately when off.
 void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
-	double **forces,k,pnlpt[3],*nodept,*fnode,radius,dist,sign;
+	double **forces,k,pnlpt[3],*nodept,*fnode,radius,dist,sign=0,wallposition=0;
 	surfaceptr srf;
 	panelptr pnl;
 	enum PanelShape ps;
 	enum PanelFace badface;
-	int node,p,d,dim;
+	int node,p,d=0,dim;
 
 	k=fil->filtype->confineforce;
 	srf=fil->filtype->confinesrf;
@@ -4010,12 +4061,16 @@ void filAddConfineForces(filamentptr fil,int nodemin,int nodemax) {
 
 	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 		for(p=0;p<srf->npanel[ps];p++) {
-			pnl=srf->panels[ps][p];											// panel-outer: fetch each panel once per node sweep
+			pnl=srf->panels[ps][p];
+            if(ps==PSrect) {
+                d=(int)pnl->front[1];sign=(badface==PFback?1:-1)*pnl->front[0];
+                wallposition=pnl->forceclamp && pnl->forceclamp->intrial?
+                    pnl->forceclamp->trialposition:pnl->point[0][d];
+            }											// panel-outer: fetch each panel once per node sweep
 			for(node=nodemin;node<=nodemax;node++) {
 				nodept=fil->nodes[node];
 				if(ps==PSrect) {
-					d=(int)pnl->front[1];sign=(badface==PFback?1:-1)*pnl->front[0];
-					dist=sign*(nodept[d]-pnl->point[0][d]);
+					dist=sign*(nodept[d]-wallposition);
 					if(dist<radius) forces[node][d]+=k*(radius-dist)*sign;
 					continue; }
 				if(panelside(nodept,pnl,dim,NULL,0,0)!=badface) continue;
@@ -4350,6 +4405,8 @@ int filDynamics(simptr sim) {
 	filss=sim->filss;
 	if(!filss) return 0;
 	steric=filStericEnabled(sim) || filImplicitEnabled(sim);
+	if(sim->srfss && sim->srfss->nforceclamp && !filImplicitEnabled(sim)) {
+		simLog(sim,9,"ERROR: force_clamp requires implicit_network; no panel was moved\n");return 1;}
 	if(steric) {
 		SMOL_PROFILE_RUN(SP_CHEM_PREPARE,profileerror=filStericChemistry(sim,1));
 		if(profileerror) return 1; }

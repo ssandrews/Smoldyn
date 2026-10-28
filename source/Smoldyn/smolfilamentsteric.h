@@ -14,6 +14,8 @@ typedef struct filstericsegment {
 } FilStericSegment;
 
 typedef struct filstericpair { int a,b; } FilStericPair;
+/* One writer per pair; accumulation retains the original pair order. */
+typedef struct filstericcontact {double s,t,normal[3],delta,k;} FilStericContact;
 
 typedef struct filstericnode {
   filamentptr fil;
@@ -24,7 +26,7 @@ typedef struct filstericnode {
 /* Borrowed topology snapshots; positions, forces and mobilities remain live. */
 typedef struct filstericfilament {
   filamentptr fil,frontend;
-  int nseg,nbranch,branchstart,nodeoffset;
+  int nseg,nbranch,branchstart,nodeoffset,worknext;
 } FilStericFilament;
 typedef struct filstericbranch {filamentptr daughter;int spot;} FilStericBranch;
 
@@ -43,6 +45,11 @@ struct filamentstericstruct {
   unsigned long long rebuilds,evaluations,contacts,blockedgrowth,blockedbranches;
   unsigned long long boxgeneration;
   unsigned long long movementrebuilds;
+  FilStericContact *contact;
+  unsigned char *chemready;
+  int maxcontact,maxchemready;
+  int workfirst[256],scheduleworkers;
+  int *memberfirst,*membernext,maxmember;
 };
 
 /* Segment pointers live in the original Smoldyn boxes; only contact pairs are cached. */
@@ -54,6 +61,22 @@ void filImplicitFree(struct filamentstericstruct *work);
 void filImplicitReport(simptr sim);
 int filStericPrepareMovement(simptr sim);
 int filStericWorkers(simptr sim);
+int filWorkWorkers(simptr sim,int items,int grain);
+void filWorkSchedule(simptr sim,int workers);
+unsigned char *filChemWork(simptr sim,int count);
+/* Each root owns its sum. Member lists are built once per topology change;
+   their order matches the old serial scatter exactly, even for nested branches. */
+static inline void filStericNodeForce(simptr sim,int i,int implicit) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ FilStericNode *root=&w->nodes[i];int j,d;
+ for(d=0;d<sim->dim;d++) root->force[d]=0;
+ if(root->parent!=i) return;
+ for(j=w->memberfirst[i];j>=0;j=w->membernext[j]) {
+  FilStericNode *node=&w->nodes[j];filamentptr fil=node->fil;
+  if(fil->filtype->dynamics!=FDnone && (implicit || fil->filtype->mobility*fil->nodemobility[node->node]>0))
+   for(d=0;d<sim->dim;d++) root->force[d]+=fil->filwork->forces[node->node][d];
+ }
+}
 void filStericOrdinaryForces(simptr sim,int workers,int freshnoise);
 int filStericEnabled(const simptr sim);
 int filStericValidate(const simptr sim);

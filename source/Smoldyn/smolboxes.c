@@ -547,7 +547,6 @@ int expandboxpanels(boxptr bptr,int n) {
 	for(;p<maxpanel;p++)
 		panel[p]=NULL;
 	free(bptr->panel);
-	free(bptr->segment);
 	bptr->panel=panel;
 	bptr->maxpanel=maxpanel;
 	return 0; }
@@ -565,6 +564,7 @@ void boxfree(boxptr bptr,int nlist) {
 	free(bptr->nmol);
 	free(bptr->maxmol);
 	free(bptr->panel);
+	free(bptr->segment);
 	free(bptr->wlist);
 	free(bptr->wpneigh);
 	free(bptr->neigh);
@@ -849,6 +849,57 @@ int boxsetsize(simptr sim,const char *info,double val) {
 	boxsetcondition(boxs,SClists,0);
 	return 0; }
 
+
+/* Preserve the original surface/shape/panel order when a moving panel enters
+   a box; molecule collision tie ordering must not depend on motion history. */
+static int boxPanelBefore(panelptr a,panelptr b) {
+ int p;
+ if(a->srf!=b->srf) return a->srf->selfindex<b->srf->selfindex;
+ if(a->ps!=b->ps) return a->ps<b->ps;
+ for(p=0;p<a->srf->npanel[a->ps];p++) {
+  if(a->srf->panels[a->ps][p]==a) return 1;
+  if(a->srf->panels[a->ps][p]==b) return 0;
+ }
+ return 0;
+}
+
+/* Incremental rect-panel translation, reusing box->panel and panelinbox.
+   Visit only the old/new swept AABB; keep both cells at exact grid boundaries.
+   Reserve all needed capacity before changing any membership. No new grid or
+   inverse panel-to-box lists, and no molecule/segment payload rebuild. */
+int boxesupdatepanel(simptr sim,panelptr pnl,double oldposition) {
+ boxssptr bs=sim->boxs;int d,pt,lo[3],hi[3],cell[3],axis,pass,i,hit,exists;
+ double a[3]={0,0,0},b[3]={0,0,0},delta,pad;
+ BoxGridCell found;
+ if(!bs || !bs->blist) return 0;
+ if(pnl->ps!=PSrect || bs->condition!=SCok) {boxsetcondition(bs,SCparams,0);return 0;}
+ axis=(int)pnl->front[1];delta=oldposition-pnl->point[0][axis];
+ for(d=0;d<sim->dim;d++) {
+  a[d]=b[d]=pnl->point[0][d];
+  for(pt=1;pt<pnl->npts;pt++) {a[d]=fmin(a[d],pnl->point[pt][d]);b[d]=fmax(b[d],pnl->point[pt][d]);}
+ }
+ a[axis]=fmin(a[axis],a[axis]+delta);b[axis]=fmax(b[axis],b[axis]+delta);
+ pad=64*DBL_EPSILON;
+ for(d=0;d<sim->dim;d++) pad=fmax(pad,64*DBL_EPSILON*fmax(fabs(a[d]),fabs(b[d])));
+ if(boxGridBounds(&bs->grid,a,b,pad,lo,hi)) return 1;
+ for(pass=0;pass<2;pass++)
+  for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
+   boxptr box;
+   if(!boxGridFindCell(&bs->grid,cell,&found)) return 1;
+   box=found.box;hit=panelinbox(sim,pnl,box);exists=-1;
+   for(i=0;i<box->npanel;i++) if(box->panel[i]==pnl) {exists=i;break;}
+   if(!pass) {
+    if(hit && exists<0 && box->npanel==box->maxpanel && expandboxpanels(box,box->maxpanel?box->maxpanel:4)) return 1;
+   } else if(hit && exists<0) {
+    for(i=0;i<box->npanel && boxPanelBefore(box->panel[i],pnl);i++);
+    memmove(box->panel+i+1,box->panel+i,(size_t)(box->npanel-i)*sizeof(panelptr));
+    box->panel[i]=pnl;box->npanel++;
+   } else if(!hit && exists>=0) {
+    memmove(box->panel+exists,box->panel+exists+1,(size_t)(box->npanel-exists-1)*sizeof(panelptr));box->npanel--;
+   }
+  }
+ return 0;
+}
 
 /* boxesupdateparams */
 int boxesupdateparams(simptr sim) {

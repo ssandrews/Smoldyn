@@ -549,6 +549,17 @@ typedef struct surfactionstruct
     double* srfrevprob; // probability of reverse action [ms]
 } * surfactionptr;
 
+/* Optional ideal load clamp, owned by one existing rectangular surface panel.
+   Trial geometry belongs to the mechanical solve; point/oldpoint remain the
+   accepted surface geometry until the whole outer interval succeeds. */
+typedef struct panelforceclampstruct
+{
+    double force, tolerance, min, max;
+    double trialposition, savedposition, reaction, stiffness;
+    int intrial, lastiterations;
+    unsigned long long evaluations, iterations;
+} * panelforceclampptr;
+
 typedef struct panelstruct
 {
     char* pname;                  // panel name (reference, not owned)
@@ -565,6 +576,7 @@ typedef struct panelstruct
     int nneigh;                   // number of neighbor panels
     struct panelstruct** neigh;   // list of neighbor panels [p]
     double* emitterabsorb[2];     // absorption for emitters [face][i]
+    panelforceclampptr forceclamp; // optional filament load clamp, owned
 } * panelptr;
 
 typedef struct surfacestruct
@@ -610,6 +622,7 @@ typedef struct surfacesuperstruct
     int maxspecies;            // maximum number of molecular species
     int maxsrf;                // maximum number of surfaces
     int nsrf;                  // number of surfaces
+    int nforceclamp;            // enabled panel clamps; zero-cost inactive gate
     double epsilon;            // max deviation of surface-point from surface
     double margin;             // panel margin away from edge
     double neighdist;          // neighbor distance value

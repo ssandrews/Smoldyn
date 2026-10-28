@@ -21,8 +21,21 @@
 filamentworkptr filWorkAlloc(filamentptr fil,int maxseg);
 void filPrepareThermalForces(filamentptr fil);
 void filNodes2Angles(filamentptr fil,int lo,int hi);
+void filComputeForces(filamentptr fil,int lo,int hi);
 
 #define FIL_GMRES_RESTART 20
+/* Avoid team overhead for small networks. Dot products retain serial summation
+   order; pointwise corrections/maxima can be distributed without roundoff drift. */
+#ifdef _OPENMP
+#define FIL_VECTOR_LOOP(body) do { \
+ if(p->workers>1 && p->n>=65536) { \
+  _Pragma("omp parallel for num_threads(p->workers) schedule(static)") \
+  for(i=0;i<p->n;i++) {body;} \
+ } else for(i=0;i<p->n;i++) {body;} \
+} while(0)
+#else
+#define FIL_VECTOR_LOOP(body) do {for(i=0;i<p->n;i++) {body;}} while(0)
+#endif
 struct filamentimplicitstruct {
  int capacity,n,workers;
  double *storage,*x,*r,*trial,*rt,*dx,*diag,*v,*jv,*b,*scratch;
@@ -103,19 +116,32 @@ static int filImplicitInstallFil(simptr sim,int f,const double *x) {
  return 0;
 }
 
-static int filImplicitResidual(simptr sim,const double *x,double *r) {
+/* Each node owns its residual entries and gathers its physical root force.
+   This can share a worker team with geometry/ordinary forces when contacts are off. */
+static void filImplicitNodeResidual(simptr sim,const double *x,double *r,int i) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ FilStericNode *node=&w->nodes[i];filamentptr fil=node->fil;filamenttypeptr t=fil->filtype;
+ int d,dim=sim->dim;
+ filStericNodeForce(sim,i,1);
+ for(d=0;d<dim;d++) {
+  r[dim*i+d]=x[dim*i+d];
+  if(node->parent==i && !node->fixed) r[dim*i+d]-=sim->dt*node->force[d]/node->drag;
+ }
+ if(dim==3) {
+  r[dim*w->nnode+i]=x[dim*w->nnode+i];
+  if(node->node<fil->nseg && t->dynamics!=FDnone) {
+   double mu=t->mobility*fil->nodemobility[node->node?1:0];
+   r[dim*w->nnode+i]-=sim->dt*t->stdlen*mu*fil->filwork->torques[node->node];
+  }
+ }
+}
+
+/* Retain the original contiguous scatter for one worker; a gather is useful
+   for ownership across workers, but adds pointer chasing to a serial pass. */
+static void filImplicitSerialResidual(simptr sim,const double *x,double *r) {
  struct filamentstericstruct *w=sim->filss->steric;
  struct filamentimplicitstruct *p=w->implicit;
- int f,i,d,root,er=0,dim=sim->dim;
- if(p->workers>1) {
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(p->workers) schedule(static,1) reduction(|:er)
-#endif
-  for(f=0;f<w->nfilament;f++) er|=filImplicitInstallFil(sim,f,x);
- } else for(f=0;f<w->nfilament;f++) er|=filImplicitInstallFil(sim,f,x);
- if(er) return 1;
- SMOL_PROFILE_RUN(SP_FORCES,filStericOrdinaryForces(sim,p->workers,0));
- if(filStericEnabled(sim)) {SMOL_PROFILE_RUN(SP_STERIC,er=filStericForces(sim));if(er) return 1;}
+ int i,d,root,dim=sim->dim;
  memcpy(r,x,(size_t)p->n*sizeof(double));
  for(i=0;i<w->nnode;i++) for(d=0;d<dim;d++) w->nodes[i].force[d]=0;
  for(i=0;i<w->nnode;i++) {
@@ -134,6 +160,65 @@ static int filImplicitResidual(simptr sim,const double *x,double *r) {
    r[dim*w->nnode+i]-=sim->dt*t->stdlen*mu*fil->filwork->torques[node->node];
   }
  }
+}
+
+/* Keep the same team across dependent worksharing loops. The barriers between
+   loops are required: junction forces read other filaments' installed geometry,
+   and shared-node gathers read their completed force arrays. */
+static int filImplicitTrial(simptr sim,const double *x,double *r,int steric) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ struct filamentimplicitstruct *p=w->implicit;
+ int f,er=0,hasclamp=sim->srfss && sim->srfss->nforceclamp;
+#ifdef _OPENMP
+ int i,slot;
+#endif
+ if(p->workers>1) {
+  filWorkSchedule(sim,p->workers);
+#ifdef _OPENMP
+#pragma omp parallel num_threads(p->workers) shared(er)
+  {
+#pragma omp for schedule(static,1) reduction(|:er)
+   for(slot=0;slot<p->workers;slot++) for(int next=w->workfirst[slot];next>=0;next=w->filaments[next].worknext)
+    er|=filImplicitInstallFil(sim,next,x);
+   if(hasclamp) {
+#pragma omp single
+    {if(!er) er=surfforceclampsolve(sim);}
+   }
+#pragma omp for schedule(static,1)
+   for(slot=0;slot<p->workers;slot++) for(int next=w->workfirst[slot];next>=0;next=w->filaments[next].worknext) {
+    filamentptr fil=w->filaments[next].fil;
+    if(!er && fil->nseg && fil->filtype->dynamics!=FDnone) filComputeForces(fil,-1,-1);
+   }
+   if(!steric) {
+#pragma omp for schedule(static)
+    for(i=0;i<w->nnode;i++) if(!er) filImplicitNodeResidual(sim,x,r,i);
+   }
+  }
+#endif
+ } else {
+  for(f=0;f<w->nfilament;f++) er|=filImplicitInstallFil(sim,f,x);
+  if(!er && hasclamp) er=surfforceclampsolve(sim);
+  if(!er) filStericOrdinaryForces(sim,1,0);
+  if(!er && !steric) filImplicitSerialResidual(sim,x,r);
+ }
+ return er;
+}
+
+static int filImplicitResidual(simptr sim,const double *x,double *r) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ struct filamentimplicitstruct *p=w->implicit;
+ int i,er=0,steric=filStericEnabled(sim);
+ SMOL_PROFILE_RUN(SP_IMPLICIT_TRIAL,er=filImplicitTrial(sim,x,r,steric));
+ if(er) return 1;
+ if(steric) {
+  SMOL_PROFILE_RUN(SP_STERIC,er=filStericForces(sim));if(er) return 1;
+  if(p->workers>1) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(p->workers) schedule(static)
+#endif
+   for(i=0;i<w->nnode;i++) filImplicitNodeResidual(sim,x,r,i);
+  } else filImplicitSerialResidual(sim,x,r);
+ }
  return filImplicitMax(r,p->n)==DBL_MAX;
 }
 
@@ -143,9 +228,9 @@ static int filImplicitProduct(simptr sim,const double *v,double *out) {
  if(vmax==0) {memset(out,0,(size_t)p->n*sizeof(double));return 0;}
  /* Perturb by approximately 1e-9 length units, above geometry roundoff. */
  epsilon=1e-9/vmax;
- for(i=0;i<p->n;i++) p->trial[i]=p->x[i]+epsilon*v[i];
+ FIL_VECTOR_LOOP(p->trial[i]=p->x[i]+epsilon*v[i]);
  if(filImplicitResidual(sim,p->trial,p->rt)) return 1;
- for(i=0;i<p->n;i++) out[i]=(p->rt[i]-p->r[i])/(epsilon*p->diag[i]);
+ FIL_VECTOR_LOOP(out[i]=(p->rt[i]-p->r[i])/(epsilon*p->diag[i]));
  return 0;
 }
 
@@ -155,15 +240,15 @@ static int filImplicitLinear(simptr sim,int limit) {
  struct filamentimplicitstruct *p=sim->filss->steric->implicit;
  int i,j,k,pass,total=0,m,n=p->n;double beta,initial,target,dot,c,s,a,b;
  memset(p->dx,0,(size_t)n*sizeof(double));
- for(i=0;i<n;i++) p->b[i]=-p->r[i]/p->diag[i];
+ FIL_VECTOR_LOOP(p->b[i]=-p->r[i]/p->diag[i]);
  initial=sqrt(filImplicitDot(p->b,p->b,n));target=fmax(1e-14,0.05*initial);
  while(total<limit) {
   if(total) {
    if(filImplicitProduct(sim,p->dx,p->jv)) return 1;
-   for(i=0;i<n;i++) p->b[i]=-p->r[i]/p->diag[i]-p->jv[i];
+   FIL_VECTOR_LOOP(p->b[i]=-p->r[i]/p->diag[i]-p->jv[i]);
   }
   beta=sqrt(filImplicitDot(p->b,p->b,n));if(beta<=target) return 0;
-  for(i=0;i<n;i++) p->v[i]=p->b[i]/beta;
+  FIL_VECTOR_LOOP(p->v[i]=p->b[i]/beta);
   memset(p->hess,0,sizeof(p->hess));memset(p->g,0,sizeof(p->g));p->g[0]=beta;
   m=0;
   for(j=0;j<FIL_GMRES_RESTART && total<limit;j++,total++) {
@@ -171,11 +256,12 @@ static int filImplicitLinear(simptr sim,int limit) {
    p->krylov++;
    for(pass=0;pass<2;pass++) for(k=0;k<=j;k++) {
     dot=filImplicitDot(p->jv,p->v+(size_t)k*n,n);p->hess[k][j]+=dot;
-    for(i=0;i<n;i++) p->jv[i]-=dot*p->v[(size_t)k*n+i];
+    FIL_VECTOR_LOOP(p->jv[i]-=dot*p->v[(size_t)k*n+i]);
    }
    p->hess[j+1][j]=sqrt(filImplicitDot(p->jv,p->jv,n));
-   if(p->hess[j+1][j]>1e-30)
-    for(i=0;i<n;i++) p->v[(size_t)(j+1)*n+i]=p->jv[i]/p->hess[j+1][j];
+   if(p->hess[j+1][j]>1e-30) {
+    FIL_VECTOR_LOOP(p->v[(size_t)(j+1)*n+i]=p->jv[i]/p->hess[j+1][j]);
+   }
    for(k=0;k<j;k++) {
     a=p->hess[k][j];b=p->hess[k+1][j];
     p->hess[k][j]=p->cs[k]*a+p->sn[k]*b;p->hess[k+1][j]=-p->sn[k]*a+p->cs[k]*b;
@@ -191,7 +277,9 @@ static int filImplicitLinear(simptr sim,int limit) {
    a=p->g[k];for(j=k+1;j<m;j++) a-=p->hess[k][j]*p->y[j];
    p->y[k]=a/p->hess[k][k];
   }
-  for(k=0;k<m;k++) for(i=0;i<n;i++) p->dx[i]+=p->y[k]*p->v[(size_t)k*n+i];
+  if(p->workers>1 && n>=65536) {
+   FIL_VECTOR_LOOP(int col;for(col=0;col<m;col++) p->dx[i]+=p->y[col]*p->v[(size_t)col*n+i]);
+  } else for(k=0;k<m;k++) for(i=0;i<n;i++) p->dx[i]+=p->y[k]*p->v[(size_t)k*n+i];
   if(fabs(p->g[m])<=target) return 0;
  }
  return 1;
@@ -202,7 +290,7 @@ int filImplicitStep(simptr sim,int workers) {
  struct filamentimplicitstruct *p;
  int f,i,j,d,n,iter,limit=1,krylov=1,er=0,dim=sim->dim;double norm,next,alpha;
  if(w->nnode>INT_MAX/(dim+1)) return 1;
- n=w->nnode*(dim==3?4:2);if(!n) return 0;
+ n=w->nnode*(dim==3?4:2);if(!n) return surfforceclampsolve(sim);
  if(filImplicitAlloc(w,n)) return 1;
  p=w->implicit;p->workers=workers;p->tolerance=DBL_MAX;
  for(f=0;f<w->nfilament;f++) {
@@ -238,7 +326,12 @@ int filImplicitStep(simptr sim,int workers) {
   if(dim==3) p->diag[dim*w->nnode+i]+=4*sim->dt*t->mobility*t->kypr[2];
   p->maxstretch=fmax(p->maxstretch,sim->dt*t->mobility*t->klen);
  }
- if(filImplicitResidual(sim,p->x,p->r)) er=1;
+ if(filImplicitResidual(sim,p->x,p->r)) {
+  /* An infeasible clamp or invalid geometry can fail before r is initialized. */
+  p->lastresidual=DBL_MAX;p->failures++;
+  simLog(sim,9,"ERROR: implicit_network could not evaluate its initial residual; check geometry and force-clamp load/travel bounds.\n");
+  return 1;
+ }
  for(iter=0;!er && iter<limit;iter++) {
   p->lastresidual=filImplicitMax(p->r,n);
   if(p->lastresidual<=p->tolerance) break;
@@ -246,7 +339,7 @@ int filImplicitStep(simptr sim,int workers) {
   if(filImplicitLinear(sim,krylov)) {er=1;break;}
   norm=filImplicitDot(p->r,p->r,n);alpha=1;
   for(j=0;j<12;j++,alpha*=0.5) {
-   for(i=0;i<n;i++) p->trial[i]=p->x[i]+alpha*p->dx[i];
+   FIL_VECTOR_LOOP(p->trial[i]=p->x[i]+alpha*p->dx[i]);
    if(filImplicitResidual(sim,p->trial,p->rt)) continue;
    next=filImplicitDot(p->rt,p->rt,n);
    if(next<=(1-1e-4*alpha)*norm || filImplicitMax(p->rt,n)<=p->tolerance) break;
@@ -274,6 +367,7 @@ int filImplicitStep(simptr sim,int workers) {
    rolled back together. No automatic retry/redraw of stochastic increments. */
 int filImplicitSave(simptr sim,int restore) {
  struct filamentstericstruct *w=sim->filss->steric;int f,j;
+ if(!restore && surfforceclampbegin(sim)) return 1;
  for(f=0;f<w->nfilament;f++) {
   filamentptr fil=w->filaments[f].fil;filamentworkptr fw;
   if(!fil->nseg || fil->filtype->dynamics==FDnone) continue;
@@ -289,6 +383,7 @@ int filImplicitSave(simptr sim,int restore) {
   if(restore) filNodes2Angles(fil,-1,-1);
  }
  if(restore) {
+  if(surfforceclampend(sim,0)) return 1;
   filStericOrdinaryForces(sim,w->workersused,0);
   if(filStericEnabled(sim)) return filStericForces(sim);
  }
@@ -300,4 +395,13 @@ void filImplicitReport(simptr sim) {
  if(!p) return;
  simLog(sim,2,"  implicit_network: %llu accepted steps, %llu Newton iterations, %llu Krylov iterations, %llu failures; last residual %g (length units)\n",p->steps,p->newton,p->krylov,p->failures,p->lastresidual);
  simLog(sim,2,"  largest accepted contact relaxation factor %g; largest attempted h*mobility*force_length %g\n",p->maxcontact,p->maxstretch);
+ if(sim->srfss && sim->srfss->nforceclamp) for(int s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(int j=0;j<surf->npanel[PSrect];j++) {
+   panelptr pnl=surf->panels[PSrect][j];panelforceclampptr c=pnl->forceclamp;
+   if(c) simLog(sim,2,"  force_clamp %s:%s position %g, target %g, reaction %g, error %g; %llu contact reductions\n",
+    surf->sname,pnl->pname,pnl->point[0][(int)pnl->front[1]],c->force,c->reaction,c->reaction-c->force,c->evaluations);
+  }
+ }
+
 }

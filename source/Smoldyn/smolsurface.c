@@ -880,6 +880,7 @@ int panelsalloc(surfaceptr srf,int dim,int maxpanel,int maxspecies,enum PanelSha
 		pnl->npts=npts;
 		pnl->point=NULL;
 		pnl->oldpoint=NULL;
+		pnl->forceclamp=NULL;
 		pnl->maxneigh=0;
 		pnl->nneigh=0;
 		pnl->neigh=NULL;
@@ -929,6 +930,7 @@ void panelfree(panelptr pnl) {
 	free(pnl->emitterabsorb[PFback]);
 	free(pnl->emitterabsorb[PFfront]);
 	free(pnl->neigh);
+	free(pnl->forceclamp);
 	if(pnl->npts && pnl->point) {
 		for(pt=0;pt<pnl->npts;pt++)
 			if(pnl->point[pt]) free(pnl->point[pt]);
@@ -1232,6 +1234,7 @@ surfacessptr surfacessalloc(surfacessptr srfss,int maxsurface,int maxspecies,int
 		srfss->maxspecies=maxspecies;
 		srfss->maxsrf=0;
 		srfss->nsrf=0;
+		srfss->nforceclamp=0;
 		srfss->epsilon=100*DBL_EPSILON;
 		srfss->margin=100*DBL_EPSILON;
 		srfss->neighdist=10*DBL_EPSILON;
@@ -1328,7 +1331,15 @@ void surfaceoutput(simptr sim) {
 	nspecies=sim->mols?sim->mols->nspecies:0;
 	if(!srfss) {
 		simLog(sim,2," No internal surfaces\n\n");
-		return; }
+	 for(s=0;s<srfss->nsrf;s++) {
+  srf=srfss->srflist[s];
+  for(p=0;p<srf->npanel[PSrect];p++) if(srf->panels[PSrect][p]->forceclamp) {
+   panelforceclampptr c=srf->panels[PSrect][p]->forceclamp;
+   simLog(sim,2," Force clamp %s:%s: load %g, force tolerance %g, travel [%g,%g]\n",
+          srf->sname,srf->panels[PSrect][p]->pname,c->force,c->tolerance,c->min,c->max);
+  }
+ }
+	return; }
 
 	simLog(sim,1," Allocated for %i species\n",srfss->maxspecies-1);
 
@@ -1741,7 +1752,9 @@ void writesurfaces(simptr sim,FILE *fptr) {
 					fprintf(fptr," %g",point[1][0]);
 					for(d=0;d<dim;d++) fprintf(fptr," %g",front[d]);
 					if(dim>2) fprintf(fptr," %g",point[1][1]); }
-				fprintf(fptr," %s\n",pnl->pname); }}
+				fprintf(fptr," %s\n",pnl->pname);
+                if(pnl->forceclamp) {panelforceclampptr c=pnl->forceclamp;fprintf(fptr,"force_clamp rect %s %.17g %.17g %.17g %.17g\n",pnl->pname,c->force,c->tolerance,c->min,c->max);}
+            }}
 
 		if(srf->action) {
 			for(i=1;i<nspecies;i++)
@@ -1783,6 +1796,7 @@ int checksurfaceparams(simptr sim,int *warnptr) {
 	surfactionptr actdetails;
 
 	error=warn=0;
+	error+=surfforceclampvalidate(sim);
 
 	dim=sim->dim;
 	nspecies=sim->mols?sim->mols->nspecies:0;
@@ -2859,6 +2873,148 @@ void surftransformpanel(panelptr pnl,int dim,double *translate,double *origin,do
 	return; }
 
 
+/* Optional ideal force clamp on an existing rect panel. Forces use the same
+   infinite supporting plane and per-node spring as filAddConfineForces.
+   Front is the filament-containing side; force is the positive outward reaction.
+   In outward coordinates q=-sign*position, overlap=max(a-q,0),
+   a=-sign*node[axis]+radius. For each trial network, eliminate q by the monotone
+   piecewise-linear force equation. No additional network vectors or spatial grid. */
+int surfsetforceclamp(panelptr pnl,int enabled,double force,double tolerance,double minimum,double maximum) {
+ panelforceclampptr c;surfacessptr ss;int axis;
+ if(!pnl || !pnl->srf || !(ss=pnl->srf->srfss)) return 1;
+ if(!enabled) {if(pnl->forceclamp) {free(pnl->forceclamp);pnl->forceclamp=NULL;ss->nforceclamp--;}return 0;}
+ if(pnl->ps!=PSrect || ss->sim->dim<2) return 1;
+ axis=(int)pnl->front[1];
+ if(!isfinite(force) || force<0 || !isfinite(tolerance) || tolerance<=0 ||
+    !isfinite(minimum) || !isfinite(maximum) || minimum>=maximum ||
+    pnl->point[0][axis]<minimum || pnl->point[0][axis]>maximum) return 1;
+ if(!pnl->forceclamp) {
+  pnl->forceclamp=(panelforceclampptr)calloc(1,sizeof(*c));
+  if(!pnl->forceclamp) return 2;
+  ss->nforceclamp++;
+ }
+ c=pnl->forceclamp;c->force=force;c->tolerance=tolerance;c->min=minimum;c->max=maximum;
+ c->trialposition=c->savedposition=pnl->point[0][axis];c->intrial=0;return 0;
+}
+
+int surfforceclampvalidate(simptr sim) {
+ int s,p,ft,implicit=0,errors=0;
+ if(!sim->srfss || !sim->srfss->nforceclamp) return 0;
+ if(sim->filss) for(ft=0;ft<sim->filss->ntype;ft++)
+  if(sim->filss->filtypes[ft]->dynamics==FDimplicitnetwork) implicit=1;
+ if(!implicit) {simLog(sim,10,"ERROR: force_clamp requires implicit_network filament dynamics\n");errors++;}
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) if(surf->panels[PSrect][p]->forceclamp) {
+   panelptr pnl=surf->panels[PSrect][p];int bound=0;
+   for(ft=0;sim->filss && ft<sim->filss->ntype;ft++) {
+    filamenttypeptr t=sim->filss->filtypes[ft];
+    if(t->confinesrf!=surf || t->confineforce<=0) continue;
+    bound=1;
+    if(t->confineface!=PFfront || (t->dynamics!=FDnone && t->dynamics!=FDimplicitnetwork)) {
+     simLog(sim,10,"ERROR: force_clamp %s:%s requires front-side confinement and implicit_network (or fixed) filaments\n",surf->sname,pnl->pname);errors++;
+    }
+   }
+   if(!bound) {simLog(sim,10,"ERROR: force_clamp %s:%s has no positive filament confine_surface stiffness\n",surf->sname,pnl->pname);errors++;}
+  }
+ }
+ return errors;
+}
+
+/* Read-only reduction: no atomics in the parallel filament force pass. Fixed
+   filaments also react against a panel, their support carrying the opposite force.
+   extent supplies a contact-seeking seed with at least the requested load. */
+void surfforceclampreaction(simptr sim,panelptr pnl,double position,double *force,double *stiffness,double *extent,double *maxk) {
+ int ft,f,j,axis=(int)pnl->front[1];double sign=pnl->front[0],q=-sign*position;
+ *force=*stiffness=*maxk=0;*extent=-DBL_MAX;
+ for(ft=0;sim->filss && ft<sim->filss->ntype;ft++) {
+  filamenttypeptr t=sim->filss->filtypes[ft];double k=t->confineforce;
+  if(t->confinesrf!=pnl->srf || k<=0 || t->confineface!=PFfront) continue;
+  for(f=0;f<t->nfil;f++) {
+   filamentptr fil=t->fillist[f];if(!fil->nseg) continue;
+   for(j=0;j<=fil->nseg;j++) {
+    double a=-sign*fil->nodes[j][axis]+t->stericradius,delta=a-q;
+    if(delta>0) {*force+=k*delta;*stiffness+=k;}
+    *extent=fmax(*extent,a-pnl->forceclamp->force/k);*maxk=fmax(*maxk,k);
+   }
+  }
+ }
+}
+
+int surfforceclampbegin(simptr sim) {
+ int s,p;if(!sim->srfss || !sim->srfss->nforceclamp) return 0;
+ if(surfforceclampvalidate(sim)) return 1;
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) {
+   panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;
+   if(c) {c->trialposition=c->savedposition=pnl->point[0][(int)pnl->front[1]];c->intrial=1;}
+  }
+ }
+ return 0;
+}
+
+int surfforceclampsolve(simptr sim) {
+ int s,p,it;if(!sim->srfss || !sim->srfss->nforceclamp) return 0;
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) {
+   panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;
+   double sign,q,lo,hi,force,k,seed,maxk,next;
+   if(!c || !c->intrial) continue;
+   sign=pnl->front[0];lo=fmin(-sign*c->min,-sign*c->max);hi=fmax(-sign*c->min,-sign*c->max);
+   q=fmax(lo,fmin(hi,-sign*(c->force==0?c->savedposition:c->trialposition)));
+   for(it=0;it<64;it++) {
+    surfforceclampreaction(sim,pnl,-sign*q,&force,&k,&seed,&maxk);c->evaluations++;
+    if(!isfinite(force) || !isfinite(k)) return 1;
+    if(fabs(force-c->force)<=c->tolerance) break;
+    if(k>0) next=q+(force-c->force)/k;
+    else {if(seed==-DBL_MAX) return 1;next=seed;}
+    next=fmax(lo,fmin(hi,next));
+    if(next==q) return 1; /* Cannot meet force within declared travel bounds. */
+    q=next;c->iterations++;
+   }
+   if(it==64) return 1;
+   c->trialposition=-sign*q;c->reaction=force;c->stiffness=k;c->lastiterations=it;
+  }
+ }
+ return 0;
+}
+
+/* Commit once per complete outer mechanical interval, using ordinary panel
+   translation and the original box payloads. Newton/Jacobian trials never touch
+   point/oldpoint, molecule indexes, compartments, or graphics geometry. */
+int surfforceclampend(simptr sim,int commit) {
+ int s,p,pt,d,axis,er=0,moved=0;
+ if(!sim->srfss || !sim->srfss->nforceclamp) return 0;
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) {
+   panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;double shift[3]={0,0,0},old;
+   if(!c || !c->intrial) continue;
+   axis=(int)pnl->front[1];old=pnl->point[0][axis];
+   shift[axis]=(commit?c->trialposition:c->savedposition)-old;
+   if(commit) for(pt=0;pt<pnl->npts;pt++) for(d=0;d<sim->dim;d++) pnl->oldpoint[pt][d]=pnl->point[pt][d];
+   if(shift[axis]!=0) {
+    surftranslatepanel(pnl,sim->dim,shift);moved=1;
+    if(boxesupdatepanel(sim,pnl,old)) er=1;
+   }
+  }
+ }
+ if(er && commit) {surfforceclampend(sim,0);return 1;}
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) {
+   panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;double seed,maxk;
+   if(!c || !c->intrial) continue;
+   c->intrial=0;c->trialposition=pnl->point[0][(int)pnl->front[1]];
+   surfforceclampreaction(sim,pnl,c->trialposition,&c->reaction,&c->stiffness,&seed,&maxk);
+  }
+ }
+ if(moved) compartsetcondition(sim->cmptss,SCparams,0);
+ return er;
+}
+
 /* surftranslatepanel */
 void surftranslatepanel(panelptr pnl,int dim,double *translate) {
 	int vert,nvert,d;
@@ -3531,6 +3687,29 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		CHECKS(er!=-1,"out of memory allocating panels");
 		CHECKS(!er,"BUG: error in surfsetmaxpanel");
 		CHECKS(!strnword(line2,3),"unexpected text following max_panels"); }
+
+ else if(!strcmp(word,"force_clamp")) {
+  CHECKS(srf,"need surface name before force_clamp");
+  itct=sscanf(line2,"%s %s %s",shapenm,nm,nm1);
+  CHECKS(itct==3,"force_clamp format: rect panel force tolerance min max, or rect panel off");
+  CHECKS(!strcmp(shapenm,"rect"),"force_clamp supports existing rectangular panels only");
+  pnl=NULL;for(p=0;p<srf->npanel[PSrect];p++) if(!strcmp(srf->panels[PSrect][p]->pname,nm)) pnl=srf->panels[PSrect][p];
+  CHECKS(pnl,"force_clamp panel must be defined first");
+  if(!strcmp(nm1,"off")) {
+   CHECKS(!strnword(line2,4),"unexpected text after force_clamp off");
+   er=surfsetforceclamp(pnl,0,0,0,0,0);
+  } else {
+   line2=strnword(line2,3);
+   for(d=0;d<4;d++) {
+    CHECKS(line2,"force_clamp needs force tolerance min max");
+    itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[d]);
+    CHECKS(itct==1,"unreadable force_clamp numeric parameter");line2=strnword(line2,2);
+   }
+   CHECKS(!line2,"unexpected text after force_clamp parameters");
+   er=surfsetforceclamp(pnl,1,fltv1[0],fltv1[1],fltv1[2],fltv1[3]);
+  }
+  CHECKS(!er,"invalid force_clamp: nonnegative load, positive force tolerance, finite min<max containing current panel required");
+ }
 
 	else if(!strcmp(word,"panel")) {							// panel
 		CHECKS(srf,"need to enter surface name before panel");
