@@ -186,6 +186,8 @@ panelptr filSurfReflectCrossing(const filamentptr fil,int part,double *pt1,doubl
 int filSurfReflectNodes(filamentptr fil);
 int filSurfBlocksBranch(const filamentptr daughter,char end);
 int filSurfAdsorbedNodes(filamentptr fil);
+int filSurfAdsorbOn(const filamenttypeptr filtype);
+int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype);
 int filSurfForceOn(const filamenttypeptr filtype);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
@@ -951,6 +953,10 @@ filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype) {
 	fsi->action=FSAnone;
 	fsi->kforce=0;
 	fsi->repeldist=0;
+	fsi->rate=0;
+	fsi->capdist=0;
+	fsi->srfmob=1;
+	fsi->offset=0;
 	return fsi; }
 
 
@@ -1194,6 +1200,10 @@ void filtypeOutput(const filamenttypeptr filtype) {
 			else simLog(sim,2,", force constant %g|E/L\n",fsi->kforce);
 			if(fsi->kforce>0 && filtype->kT>0)						// equipartition penetration depth the wall permits
 				simLog(sim,2,"    equilibrium penetration spread: %g|L, for thickness 1\n",sqrt(filtype->kT/fsi->kforce)); }
+		else if(fsi->action==FSAadsorb)
+			simLog(sim,2,", rate %g|/T, capture distance %g|L, lateral mobility factor %g\n",fsi->rate,fsi->capdist,fsi->srfmob);
+		else if(fsi->action==FSAdesorb)
+			simLog(sim,2,", rate %g|/T, offset %g|L\n",fsi->rate,fsi->offset);
 		else simLog(sim,2,"\n"); }
 
 	grows=0;
@@ -1397,6 +1407,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=fsi->othersurf->npanel[ps];
 			if(pcount==0) {
 				warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s, which has no panels, so the interaction has no effect\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
+			if((fsi->action==FSAadsorb || fsi->action==FSAdesorb) && fsi->rate*sim->dt>0.2) {
+				warn++;simLog(sim,5,"WARNING: filament type %s %s interaction with surface %s has a high rate for this time step (rate*dt = %g); the probability per time step is 1-exp(-rate*dt), but a shorter time step would resolve the kinetics better\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname,fsi->rate*sim->dt);}
+			if(fsi->action==FSAadsorb && fsi->rate>0 && fsi->capdist==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s adsorb interaction with surface %s has a capture distance of 0, so nodes essentially never adsorb\n",filtype->ftname,fsi->othersurf->sname);}
 			if((fsi->action==FSAsoftwall || fsi->action==FSArepel) && fsi->kforce>0) {
 				if(filtype->dynamics==FDnone) {
 					warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s but dynamics none; the force is never applied\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
@@ -1467,7 +1481,7 @@ void filNodeStateCopy(filamentptr fil,int to,int from) {
 // Adsorbs node node of filament fil to surface srf, on face face, with lateral mobility
 // factor mobility. The node moves to the closest point of the surface, and then onto
 // the face side of that panel. If face is PFboth or PFnone, the face is the side of
-// the panel that the node was on. A node that is the attached end of a filament that
+// the panel that the node was on, or the front if it was exactly on the panel. A node that is the attached end of a filament that
 // is rigidly pinned to its mother can't be adsorbed, because the pin holds it at the
 // mother's node. Negative node numbers count back from the plus end, so -1 is the
 // plus end. Returns 0 for success, 1 if the node doesn't exist, 2 if the surface has
@@ -1486,8 +1500,9 @@ int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,do
 	dim=sim->dim;
 	nodept=fil->nodes[node];
 	if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) return 2;
-	if(face!=PFfront && face!=PFback)
-		face=panelside(nodept,pnl,dim,NULL,0,0);
+	if(face!=PFfront && face!=PFback) {
+		face=panelside(nodept,pnl,dim,NULL,1,0);
+		if(face==PFnone) face=PFfront; }						// a node exactly on the panel goes to its front
 	for(d=0;d<dim;d++) nodept[d]=pnlpt[d];
 	fixpt2panel(nodept,pnl,dim,face,sim->srfss->epsilon);
 	fil->nodepnl[node]=pnl;
@@ -1878,6 +1893,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	enum FilamentDynamics fd;
 	enum PanelFace pf;
 	enum FilSurfAction fsa;
+	filsurfinteractptr fsi;
 	int filpart[FILPARTMAX];
 
 //	printf("%s %s\n",word,line2);//?? debug
@@ -2141,7 +2157,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(pf==PFfront || pf==PFback || pf==PFboth,"surface_interaction face options: front, back, both");
 		CHECKS(!filstring2parts(nm,filpart),"surface_interaction parts need to be plus, minus, side, all, or a comma-separated list of them, such as plus,side");
 		fsa=filstring2FSA(nm3);
-		CHECKS(fsa==FSAsoftwall || fsa==FSArepel || fsa==FSAreflect,"surface_interaction action options: softwall, repel, reflect");
+		CHECKS(fsa==FSAsoftwall || fsa==FSArepel || fsa==FSAreflect || fsa==FSAadsorb || fsa==FSAdesorb,"surface_interaction action options: softwall, repel, reflect, adsorb, desorb");
 		line2=strnword(line2,5);
 		f1=f2=0;
 		if(fsa==FSAsoftwall) {
@@ -2159,8 +2175,41 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
 			CHECKS(f2>=0,"surface_interaction repel distance needs to be >=0");
 			line2=strnword(line2,3); }
+		else if(fsa==FSAadsorb) {
+			CHECKS(line2,"surface_interaction adsorb format: surface_name face parts adsorb rate capture_distance [mobility]");
+			itct=strmathsscanf(line2,"%mlg|/T %mlg|L",varnames,varvalues,nvar,&fltv1[0],&fltv1[1]);
+			CHECKM(itct==2,"surface_interaction adsorb format: surface_name face parts adsorb rate capture_distance [mobility]");
+			CHECKS(fltv1[0]>=0,"surface_interaction adsorption rate needs to be >=0");
+			CHECKS(fltv1[1]>=0,"surface_interaction capture distance needs to be >=0");
+			fltv1[2]=1;																// default lateral mobility factor
+			line2=strnword(line2,3);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&fltv1[2]);
+				CHECKM(itct==1,"surface_interaction adsorb format: surface_name face parts adsorb rate capture_distance [mobility]");
+				CHECKS(fltv1[2]>=0,"surface_interaction lateral mobility factor needs to be >=0");
+				line2=strnword(line2,2); }}
+		else if(fsa==FSAdesorb) {
+			CHECKS(line2,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
+			itct=strmathsscanf(line2,"%mlg|/T",varnames,varvalues,nvar,&fltv1[0]);
+			CHECKM(itct==1,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
+			CHECKS(fltv1[0]>=0,"surface_interaction desorption rate needs to be >=0");
+			fltv1[1]=0;																// default offset
+			line2=strnword(line2,2);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&fltv1[1]);
+				CHECKM(itct==1,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
+				CHECKS(fltv1[1]>=0,"surface_interaction desorption offset needs to be >=0");
+				line2=strnword(line2,2); }}
 		CHECKS(!line2,"unexpected text following surface_interaction");
-		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fsa,f1,f2),"out of memory adding surface_interaction"); }
+		fsi=filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fsa,f1,f2);
+		CHECKS(fsi,"out of memory adding surface_interaction");
+		if(fsa==FSAadsorb) {
+			fsi->rate=fltv1[0];
+			fsi->capdist=fltv1[1];
+			fsi->srfmob=fltv1[2]; }
+		else if(fsa==FSAdesorb) {
+			fsi->rate=fltv1[0];
+			fsi->offset=fltv1[1]; }}
 
 	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
@@ -4849,6 +4898,80 @@ int filSurfAdsorbedNodes(filamentptr fil) {
 	return n; }
 
 
+/* filSurfAdsorbOn */
+// Returns 1 if filament type filtype has any adsorb or desorb interactions with
+// surfaces that have positive rates, and 0 if not.
+int filSurfAdsorbOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if((filtype->surfint[i]->action==FSAadsorb || filtype->surfint[i]->action==FSAdesorb) && filtype->surfint[i]->rate>0) return 1;
+	return 0; }
+
+
+/* filSurfAdsorbDesorb */
+// Adsorption and desorption of the nodes of filaments of type filtype, from the adsorb
+// and desorb interactions of the type with surfaces, for one time step. Each node of
+// the listed parts that is adsorbed to an interaction's surface, on the interaction's
+// face (or either face if the face is both), desorbs with probability 1-exp(-rate*dt),
+// and is then placed at distance offset from the surface on the side that it was on.
+// Each free node of the listed parts that is within the capture distance of an
+// interaction's surface, on the interaction's face (or either face for both),
+// adsorbs with probability 1-exp(-rate*dt), using filNodeAdsorb, with the
+// interaction's lateral mobility factor. A node that desorbs in this time step doesn't
+// also adsorb in it, and the attached end of a filament that is rigidly pinned to its
+// mother doesn't adsorb. Random numbers are only drawn for nodes that can adsorb or
+// desorb. Returns the number of nodes that changed state.
+int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype) {
+	filamentptr fil;
+	filsurfinteractptr fsi;
+	panelptr pnl;
+	enum PanelFace side;
+	double pnlpt[3],norm[3],*nodept,dist;
+	int f,node,part,i,d,dim,e,pinned,changed,nchanged;
+
+	dim=sim->dim;
+	nchanged=0;
+	for(f=0;f<filtype->nfil;f++) {
+		fil=filtype->fillist[f];
+		changed=0;
+		for(node=0;node<=fil->nseg && fil->nseg>0;node++) {
+			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+			nodept=fil->nodes[node];
+			pnl=fil->nodepnl[node];
+			if(pnl) {																			// adsorbed node: desorption
+				for(i=0;i<filtype->nsurfint;i++) {
+					fsi=filtype->surfint[i];
+					if(fsi->action!=FSAdesorb || fsi->rate<=0 || !fsi->filpart[part] || fsi->othersurf!=pnl->srf) continue;
+					if(fsi->surfface!=PFboth && fsi->surfface!=fil->nodeface[node]) continue;
+					if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
+					getpanelnormal(nodept,pnl,dim,norm);			// front-facing normal
+					for(d=0;d<dim;d++) nodept[d]+=(fil->nodeface[node]==PFback?-1:1)*fsi->offset*norm[d];
+					filNodeDesorb(fil,node);
+					changed=1;
+					nchanged++;
+					break; }
+				continue; }
+
+			pinned=0;																			// free node: adsorption
+			for(e=0;e<2;e++)
+				if(fil->endjunct[e] && fil->endjunct[e]->rigid && node==(e?fil->nseg:0)) pinned=1;
+			if(pinned) continue;
+			for(i=0;i<filtype->nsurfint;i++) {
+				fsi=filtype->surfint[i];
+				if(fsi->action!=FSAadsorb || fsi->rate<=0 || !fsi->filpart[part]) continue;
+				dist=closestsurfacept(fsi->othersurf,dim,nodept,pnlpt,&pnl,NULL);
+				if(dist<0 || dist>fsi->capdist) continue;
+				side=panelside(nodept,pnl,dim,NULL,1,0);
+				if(side==PFnone) side=(fsi->surfface==PFback)?PFback:PFfront;		// exactly on the panel
+				if(fsi->surfface!=PFboth && side!=fsi->surfface) continue;
+				if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
+				if(filNodeAdsorb(fil,node,fsi->othersurf,side,fsi->srfmob)==0) nchanged++;
+				break; }}
+		if(changed) filNodes2Angles(fil,-1,-1); }
+	return nchanged; }
+
+
 /* filSurfBlocksBranch */
 // Returns 1 if a reflect interaction of the filament type stops the new branch
 // daughter, which attaches to its mother by its end end ('m' or 'p'), and 0 if not.
@@ -6470,6 +6593,10 @@ int filDynamics(simptr sim) {
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
 			if(filSurfReflectNodes(fil)) filNodes2Angles(fil,-1,-1); }}
+
+	for(ft=0;ft<filss->ntype;ft++) {								// adsorption and desorption of nodes, after all motion this step
+		filtype=filss->filtypes[ft];
+		if(filSurfAdsorbOn(filtype)) filSurfAdsorbDesorb(sim,filtype); }
 
 	if(filBoxesUpdate(sim)) {													// box lists describe the filaments at the end of the step
 		simLog(sim,10,"Out of memory assigning filaments to boxes\n");

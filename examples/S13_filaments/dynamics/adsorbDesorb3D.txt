@@ -1,0 +1,151 @@
+# Filament nodes adsorbing to and desorbing from a surface.
+#
+# A flat membrane lies at z = 0, and filaments start above it, fluctuating. The red
+# filaments have adsorb and desorb interactions with the membrane for all of their
+# nodes (surface_interaction membrane front all adsorb 2 0.2 0.5, and
+# surface_interaction membrane front all desorb 0.2 0.1). A node that comes within
+# 0.2 of the membrane adsorbs at rate 2, and then moves within the membrane with
+# lateral mobility factor 0.5, until it desorbs at rate 0.2 and is placed 0.1 above
+# the membrane. Since nodes near adsorbed nodes are also held near the membrane, the
+# red filaments tend to zip down onto it. The blue filaments only adsorb by their
+# plus ends, and desorb faster, so they attach to the membrane by their tips and the
+# rest of each filament fluctuates above it. Their plus ends have a larger capture
+# distance (0.5) and faster adsorption (rate 10), so that they find the membrane. All filaments have a reflect interaction
+# with the membrane, which keeps their free nodes above it.
+#
+# smoldyn adsorbDesorb3D.txt
+
+graphics opengl_good
+
+dim 3
+boundaries x -20 20
+boundaries y -20 20
+boundaries z -5 15
+
+time_start 0
+time_stop 100
+time_step 0.001
+random_seed 1
+boxsize 5
+
+frame_thickness 0
+
+start_surface membrane
+color both 0.6 0.6 0.6
+polygon both edge
+panel rect +2 -50 -50 0 100 100
+end_surface
+
+start_filament_type sticky
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 50
+force_angle 10 10 10
+mobility 1
+color red
+thickness 2
+polygon edge
+surface_interaction membrane front all reflect
+surface_interaction membrane front all adsorb 2 0.2 0.5
+surface_interaction membrane front all desorb 0.2 0.1
+end_filament_type
+
+start_filament_type tips
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 50
+force_angle 10 10 10
+mobility 1
+color blue
+thickness 2
+polygon edge
+surface_interaction membrane front all reflect
+surface_interaction membrane front plus adsorb 10 0.5 0.5
+surface_interaction membrane front plus desorb 1 0.1
+end_filament_type
+
+start_filament sticky:r1
+first_segment -8 -8 2 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+end_filament
+
+start_filament sticky:r2
+first_segment -8 0 2 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+end_filament
+
+start_filament sticky:r3
+first_segment -8 8 2 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+end_filament
+
+start_filament tips:b1
+first_segment 4 -8 6 1 0 0.5 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+end_filament
+
+start_filament tips:b2
+first_segment 4 0 6 1 0 0.5 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+end_filament
+
+start_filament tips:b3
+first_segment 4 8 6 1 0 0.5 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+add_segment 1 0 0 0
+end_filament
+
+#cmd A printFilaments stdout
+
+end_file

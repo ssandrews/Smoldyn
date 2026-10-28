@@ -737,6 +737,10 @@ typedef struct filsurfinteractstruct {	// Filament-surface interaction; one stru
 		enum FilSurfAction action;					// type of interaction: softwall, repel, reflect, adsorb, desorb
 		double kforce;											// FSAsoftwall, FSArepel: spring constant pushing nodes away from the surface, energy/length^2
 		double repeldist;										// FSArepel: distance from the surface, on the filament's side, at which the force starts, length
+		double rate;												// FSAadsorb, FSAdesorb: adsorption or desorption rate, 1/time
+		double capdist;											// FSAadsorb: nodes closer than this to the surface can adsorb, length
+		double srfmob;											// FSAadsorb: lateral mobility factor of nodes that adsorb
+		double offset;											// FSAdesorb: distance from the surface at which desorbed nodes are placed, length
 		// future parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
 } *filsurfinteractptr;
 
