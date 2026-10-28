@@ -1,7 +1,7 @@
 # Claude Code session summary: Smoldyn filaments, October 12–28, 2026
 
 This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
-Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–28 (parts 5–11). Most of the work was on the filament code in
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–28 (parts 5–12). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
 `smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
@@ -262,6 +262,40 @@ t = 10 (predicted 665.6). Only listed parts adsorbed, pinned branch ends
 never did, desorbed nodes landed exactly at the offset, and face `both`
 adsorbed nodes to whichever face they were on.
 
+## Part 12: reaction forces on surfaces (Oct 28)
+
+**1275f10.** As the user asked, softwall and repel interactions now apply the
+equal and opposite force to the panel that pushes on the node, in the panel's
+`force` element, and each surface's `force` element is the sum of its panels'.
+
+- The force loop moved into `filSurfInteractForces(fil, nodemin, nodemax,
+  reaction)`, which adds forces to the nodes (reaction 0) or the opposite
+  forces to the panels (reaction 1). `filAddSurfForces` calls it with 0.
+- `filSurfReactionForces` clears all panel and surface forces, adds the
+  reaction forces of every filament whose type has dynamics, and sums each
+  surface's panels. `filDynamics` calls it once per step, at the end, from
+  the final node positions. It can't be done inside `filAddSurfForces`,
+  because RK2, RK4, and Implicit call that several times per step.
+- The `force` fields, which the user had added, were never initialized; they
+  are now zeroed in `panelsalloc` and `surfacealloc`.
+- `surfaceoutput` (for example, `diagnostics surface`) lists the force that
+  filaments exert on a surface when it isn't zero.
+
+**5f345ef.** A floor made of two coplanar rectangles exposed an older
+problem: each panel acted as an infinite plane, so a node behind the floor was
+pushed by both, and the panel it wasn't over pulled it sideways (a surface
+force of (17.3, 0, −10.5)). The user asked that each node interact only with
+the closest panel of each surface, and to fall back to the next panel if the
+closest one gives no force. Claude pointed out that the fallback would let the
+side faces of a convex obstacle pull on a node just outside it, and the user
+chose "closest panel decides": a node that's on the allowed side of its
+closest panel (from `closestsurfacept`) gets no force from that surface.
+
+Tests: a sphere with repel gave the same surface force as an independent
+calculation from the node positions. The two-tile floor now gives (0, 0,
+−7.217), the same as one panel of the same size, with identical filament
+output. All 37 seeded S13 examples matched HEAD, and ASan was clean.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -278,8 +312,11 @@ adsorbed nodes to whichever face they were on.
   face `both`, it stays on that side.
 - Branches from the `branch` statement, and filaments defined directly, aren't
   checked against reflect interactions.
-- The softwall and repel side tests use the infinite plane of flat panels, so
-  a surface with these interactions should span or enclose the filaments.
+- The softwall and repel side tests use the infinite plane of each node's
+  closest flat panel, so a node beyond the edge of a partial patch, and behind
+  its plane, is pulled toward the edge. In a concave corner, repel only pushes
+  a node away from the nearer wall.
+- Surfaces don't move in response to the reaction forces yet.
 - Nothing uses the filament box lists yet. They are meant for future
   filament-molecule and filament-filament interactions.
 - Free nodes can get past a finite surface by going around its edge, which
@@ -290,8 +327,7 @@ adsorbed nodes to whichever face they were on.
 - Adsorbed nodes and rigid constraints (negative force constants) can
   conflict. Smoldyn warns about this.
 - Adsorbed nodes don't move with surfaces that are translated, and they don't
-  yet exert reaction forces on surfaces (the new panel and surface `force`
-  fields are meant for this).
+  exert forces on surfaces. Only softwall and repel do.
 - The adsorb interaction checks all panels of its surface for each free node,
   rather than using the virtual boxes.
 - `filCopyFilament` doesn't copy node mobility factors or adsorption, and the
@@ -327,3 +363,11 @@ adsorbed nodes to whichever face they were on.
   filter silently did nothing. `grep -E` was used instead.
 - The adsorb test first found nodes below a membrane and looked like a reflect
   bug; the nodes had gone around the edge of the finite membrane.
+- A scripted edit of a comment block found its end marker at the function's
+  prototype, which comes before the comment. The slice came out empty, and
+  replacing an empty string inserted the new text between every character of
+  `smolfilament.c`. The file was restored with `git checkout`, since the
+  previous work was committed, and the edit was redone with asserts that each
+  match is unique and in order. This is the same lesson as the first mistake.
+- The code documentation has an older undefined reference,
+  `sect:FilMathBending`, in the `filFlatToWnodes` entry. It wasn't fixed.
