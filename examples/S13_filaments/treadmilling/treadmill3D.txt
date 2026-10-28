@@ -41,7 +41,7 @@ standard_length 2
 standard_angle 0.1 0 0
 force_length 10
 force_angle 5 10 10
-surface_interaction bounds both all block
+surface_interaction bounds both all reflect
 end_filament_type
 
 random_filament tread:fil1 20  10 50 1  0 0 0

@@ -1,13 +1,17 @@
 # Filament-surface interactions.
 #
 # Filaments start just above a floor and elongate at their plus ends toward a
-# ceiling. Both filament types have a force interaction with the floor
-# (surface_interaction floor front all force 20), which is a soft wall that pushes
-# any node that goes below the floor back up toward it. Only the red filaments
-# interact with the ceiling, with a block interaction
-# (surface_interaction ceiling front all block), which is a hard wall. Their plus ends
-# can't grow through it, and any node that the filament mechanics move through it is
-# reflected back to the same distance below it. The blue filaments have no
+# ceiling. All filament types have a softwall interaction with the floor
+# (surface_interaction floor front all softwall 20), which pushes any node that goes
+# below the floor back up toward it. The red filaments have a reflect interaction
+# with the ceiling (surface_interaction ceiling front all reflect), which is a hard
+# wall. Their plus ends can't grow through it, and any node that the filament
+# mechanics move through it is reflected back to the same distance below it. The
+# green filaments have a repel interaction with the ceiling
+# (surface_interaction ceiling front all repel 20 5), which is like a softwall
+# interaction except that the force starts 5 length units below the ceiling, so these
+# filaments are pushed back before they reach it. Repel interactions don't stop
+# growth, so the green filaments buckle as they grow. The blue filaments have no
 # interaction with the ceiling, so they grow through it. Surfaces only affect
 # filaments through the interactions that are listed for the filament type.
 #
@@ -23,6 +27,7 @@ time_start 0
 time_stop 80
 time_step 0.01
 random_seed 1
+boxsize 10
 
 frame_thickness 0
 
@@ -40,7 +45,7 @@ thickness 2
 panel rect -1 0 60 100
 end_surface
 
-start_filament_type blocked
+start_filament_type reflected
 color red
 thickness 2
 polygon edge
@@ -52,8 +57,24 @@ force_length 10
 force_angle 10
 mobility 1
 elongation_rate 1
-surface_interaction floor front all force 20
-surface_interaction ceiling front all block
+surface_interaction floor front all softwall 20
+surface_interaction ceiling front all reflect
+end_filament_type
+
+start_filament_type repelled
+color green
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction ceiling front all repel 20 5
 end_filament_type
 
 start_filament_type free
@@ -68,15 +89,15 @@ force_length 10
 force_angle 10
 mobility 1
 elongation_rate 1
-surface_interaction floor front all force 20
+surface_interaction floor front all softwall 20
 end_filament_type
 
-random_filament blocked:r1 3  10 11  1.571
-random_filament blocked:r2 3  25 11  1.371
-random_filament blocked:r3 3  40 11  1.771
-random_filament free:b1 3  60 11  1.571
-random_filament free:b2 3  75 11  1.371
-random_filament free:b3 3  90 11  1.771
+random_filament reflected:r1 3  10 11  1.571
+random_filament reflected:r2 3  25 11  1.371
+random_filament repelled:g1 3  42 11  1.571
+random_filament repelled:g2 3  57 11  1.371
+random_filament free:b1 3  75 11  1.571
+random_filament free:b2 3  90 11  1.771
 
 cmd B pause
 #cmd A printFilaments stdout

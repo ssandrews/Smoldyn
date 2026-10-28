@@ -26,8 +26,8 @@
 # the network presses a shallow boundary layer (~0.1 segment rms) into the soft
 # wall. Without confinement, daughters born pointing at the membrane grow straight
 # through it (measured: half of all node samples ended up below the plane).
-# The membrane also blocks the filaments (surface_interaction membrane both all
-# block), so a new segment or branch that would cross it is not added, and a node
+# The membrane also reflects the filaments (surface_interaction membrane both all
+# reflect), so a new segment or branch that would cross it is not added, and a node
 # that the filament mechanics move through it is reflected back. This uses both
 # faces, so a node that starts below the membrane also stays below it.
 #
@@ -75,7 +75,7 @@ branch_force_angle 0.076
 branch_force_azimuth 0.76
 branch_surface membrane 0.03
 confine_surface membrane 400
-surface_interaction membrane both all block
+surface_interaction membrane both all reflect
 end_filament_type
 
 random_filament actin:seed0 5  0.0 0.0 -0.08  0 0 0

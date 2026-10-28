@@ -423,6 +423,7 @@ typedef struct panelstruct {
     int nneigh;                   // number of neighbor panels
     struct panelstruct** neigh;   // list of neighbor panels [p]
     double* emitterabsorb[2];     // absorption for emitters [face][i]
+    double force[DIMMAX];         // force exerted on panel
 } * panelptr;
 
 typedef struct surfacestruct {
@@ -458,6 +459,7 @@ typedef struct surfacestruct {
     int* maxmol;                      // allocated size of live lists [ll]
     int* nmol;                        // number of molecules in live lists [ll]
     moleculeptr** mol;                // live molecules on the surface [ll][m]
+    double force[DIMMAX];             // force exerted on surface
 } * surfaceptr;
 
 typedef struct surfacesuperstruct {
@@ -650,7 +652,7 @@ typedef struct filamentworkstruct {
     int *cidx;                        // coordinate indices of constraint gradients at step start (11*4*nseg)
     int *cng;                         // number of coordinates for each constraint (4*nseg)
     double *cg;                       // constraint gradients at step start (11*4*nseg)
-    double **startnodes;              // node positions before the integrator, for surface blocking (nseg+1,3)
+    double **startnodes;              // node positions before the integrator, for reflecting surfaces (nseg+1,3)
 } *filamentworkptr;
 
 typedef struct filjunctionstruct {
@@ -688,7 +690,7 @@ typedef struct filamentstruct {
 
 enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
 enum FilFilAction {FFAnone, FFAforce, FFAblock, FFAadsorb, FFAdesorb};
-enum FilSurfAction {FSAnone, FSAforce, FSAblock, FSAadsorb, FSAdesorb};
+enum FilSurfAction {FSAnone, FSAsoftwall, FSArepel, FSAreflect, FSAadsorb, FSAdesorb};
 
 typedef struct filmolinteractstruct {		// Filament-molecule interactions structure
     struct filamenttypestruct *filtype;	// owning filament type structure
@@ -729,8 +731,9 @@ typedef struct filsurfinteractstruct {	// Filament-surface interaction; one stru
 		surfaceptr othersurf;								// which surface is involved
 		enum PanelFace surfface;						// surface face that the filament is on: front, back, or both
 		compartptr compart;									// set if this interaction only applies to a specific compartment, or NULL
-		enum FilSurfAction action;					// type of interaction: force, block, adsorb, desorb
-		double kforce;											// FSAforce: spring constant pushing nodes back to the surface, energy/length^2
+		enum FilSurfAction action;					// type of interaction: softwall, repel, reflect, adsorb, desorb
+		double kforce;											// FSAsoftwall, FSArepel: spring constant pushing nodes away from the surface, energy/length^2
+		double repeldist;										// FSArepel: distance from the surface, on the filament's side, at which the force starts, length
 		// future parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
 } *filsurfinteractptr;
 

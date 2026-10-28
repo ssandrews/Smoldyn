@@ -1118,11 +1118,11 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    negative value does the reverse. Treadmilling only occurs while the end\n"
 		"    that gains segments is in the \"open\" state (see end_state). Treadmilling\n"
 		"    stops while the end that gains segments is blocked by a surface that it has\n"
-		"    a block interaction with (see surface_interaction)."},
+		"    a reflect interaction with (see surface_interaction)."},
 	{"statement","Statements about filaments",1,"branch_rate",
 		"  * branch_rate value",
 		"    Branching rate off of the mother filament, in units of per unit length per\n"
-		"    time. If the filament type has a block interaction with a surface (see\n"
+		"    time. If the filament type has a reflect interaction with a surface (see\n"
 		"    surface_interaction) and a new branch would cross that surface, then\n"
 		"    Smoldyn tries again with new random branch angles, and the branch isn't\n"
 		"    created if all of these cross the surface."},
@@ -1223,7 +1223,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    adjacent segments, as for the other filament force constants. Afterward,\n"
 		"    there is an optional face entry, which is \"front\" (the default) or \"back\",\n"
 		"    for the side of the surface that the filament is confined to. This\n"
-		"    statement is a shorthand for surface_interaction surface face all force\n"
+		"    statement is a shorthand for surface_interaction surface face all softwall\n"
 		"    force."},
 	{"statement","Statements about filaments",1,"surface_interaction",
 		"  * surface_interaction surface face parts action [parameters]",
@@ -1234,20 +1234,24 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    as \"front\", \"back\", or \"both\", for the face of the surface that the\n"
 		"    filament is on. Enter parts as \"minus\", \"plus\", \"side\", or \"all\", or as a\n"
 		"    comma-separated list such as \"plus,side\", where \"minus\" and \"plus\" are the\n"
-		"    end nodes and \"side\" is all nodes between them. Enter action as \"force\" or\n"
-		"    \"block\". For \"force\", the parameter is a force constant, and each node of\n"
-		"    these parts that is on the other side of the surface is pushed back toward\n"
-		"    the surface with this force constant times the node's thickness; the face\n"
-		"    needs to be \"front\" or \"back\". For \"block\", there are no parameters,\n"
-		"    filament ends of these parts don't grow, from elongation or treadmilling,\n"
-		"    if the new segment would cross the surface from the given face, or from\n"
-		"    either face for \"both\", new branches from branch_rate aren't created if\n"
-		"    they would cross the surface, and, for filaments with dynamics, nodes of\n"
-		"    these parts that move across the surface from that face are reflected back.\n"
-		"    Entering an interaction again with the same surface, face, parts, and\n"
-		"    action replaces its parameters. This statement can be entered more than\n"
-		"    once to add multiple interactions, and can be used during a simulation with\n"
-		"    the set command."},
+		"    end nodes and \"side\" is all nodes between them. Enter action as \"softwall\",\n"
+		"    \"repel\", or \"reflect\". For \"softwall\", the parameter is a force constant,\n"
+		"    and each node of these parts that is on the other side of the surface is\n"
+		"    pushed back toward the surface with this force constant times the node's\n"
+		"    thickness; the face needs to be \"front\" or \"back\". For \"repel\", the\n"
+		"    parameters are a force constant and a repel distance, and the force is the\n"
+		"    same as for \"softwall\" except that it starts at the repel distance from the\n"
+		"    surface, on the filament's side, rather than at the surface; the face needs\n"
+		"    to be \"front\" or \"back\". For \"reflect\", there are no parameters, filament\n"
+		"    ends of these parts don't grow, from elongation or treadmilling, if the new\n"
+		"    segment would cross the surface from the given face, or from either face\n"
+		"    for \"both\", new branches from branch_rate aren't created if they would\n"
+		"    cross the surface, and, for filaments with dynamics, nodes of these parts\n"
+		"    that move across the surface from that face are reflected back. Entering an\n"
+		"    interaction again with the same surface, face, parts, and action replaces\n"
+		"    its parameters. This statement can be entered more than once to add\n"
+		"    multiple interactions, and can be used during a simulation with the set\n"
+		"    command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
 		"  * elongation_rate end state value",
@@ -1265,7 +1269,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    keeping track of the remaining length so that the average length change\n"
 		"    equals the rate times the elapsed time. A growing end adds segments with\n"
 		"    random lengths and angles; it stops growing if it is blocked by a surface\n"
-		"    that it has a block interaction with (see surface_interaction) or reaches\n"
+		"    that it has a reflect interaction with (see surface_interaction) or reaches\n"
 		"    elongation_max_length. A shrinking end removes its end segment. When a\n"
 		"    filament that is down to one segment shrinks by that segment's full length,\n"
 		"    the filament is removed from the simulation, as with remove_filament.\n"
