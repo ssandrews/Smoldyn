@@ -1,9 +1,9 @@
-# Claude Code session summary: Smoldyn filaments, October 12–23, 2026
+# Claude Code session summary: Smoldyn filaments, October 12–28, 2026
 
 This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
-Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23 (parts 5–8). Most of the work was on the filament code in
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–28 (parts 5–11). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
-`smoldyn.h`, `smolboxes.c`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
+`smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
 (`docs/Smoldyn/SmoldynCodeDoc.tex`), the generated help
 (`source/Smoldyn/smolhelp_data.h`), and the `examples/S13_filaments` examples.
@@ -20,7 +20,8 @@ github.com/ssandrews/Smoldyn.
   them.
 - Generated files were never committed: `build/`, LaTeX `.aux`/`.log`
   files, example output, `.so` files, doxygen output, and `.rst` manuals.
-  The manual PDF was regenerated and committed only when the user asked
+  The manual and code documentation PDFs were regenerated and committed only
+  when the user asked
   (pdflatex, bibtex, then pdflatex twice, using `/Library/TeX/texbin/pdflatex`;
   the MacPorts `pdflatex` that comes first in the PATH lacks `scrbook.cls`).
 - Every change updated the manual and the code documentation. The help text
@@ -31,6 +32,11 @@ github.com/ssandrews/Smoldyn.
   - AddressSanitizer sweeps over every example and integrator.
   - Targeted physics tests: energy dissipation, Boltzmann variances,
     diffusion ratios, and fixed nodes.
+  - Changes to molecule code were checked by running every example with
+    surface-bound molecules on both builds and comparing the full output,
+    with a molecule listing at the end of each run.
+  - The HEAD build has to be rebuilt after each commit, or the regression
+    compares against an old binary (see the mistakes section).
   - Unseeded examples need a fixed seed before their outputs can be
     compared. macOS has no `timeout`, so runs were limited with
     `perl -e "alarm N; exec @ARGV"`.
@@ -157,6 +163,9 @@ of a shell quoting mistake. The user chose to leave them as they are.
 
 ## Part 8: block interactions as walls (Oct 23)
 
+(In part 9, `block` was renamed `reflect` and `force` was renamed `softwall`,
+and the `filSurfBlock...` functions became `filSurfReflect...`.)
+
 | Commit | Change |
 |---|---|
 | b843d51 | Block interactions act as hard walls for filament dynamics, as the user designed. Node positions are saved before the integrator (`filSaveStartNodes`). Afterward, a node whose path crossed a blocking surface from the filament's side is reflected back to the same distance on the allowed side (`filSurfBlockNodes`, `filSurfBlockCrossing`). The resulting stretching and bending forces act in the next step. Flat panels reflect across the panel plane. Curved panels reflect through the closest panel point, because tangent-plane reflection let a few nodes stay outside spheres. Block interactions now accept the side part, and `all` means every node. `surfaceInteraction2D` uses only a block interaction for its ceiling. |
@@ -175,6 +184,84 @@ Tests:
 - Branches off a mother just above a blocking floor: none crossed it, compared
   with 3 of 12 without the block.
 
+## Part 9: renamed interactions and the repel interaction (Oct 28)
+
+**7dd5146.** As the user asked, the `force` interaction is now `softwall`
+(`FSAsoftwall`) and `block` is now `reflect` (`FSAreflect`), with no backward
+compatibility for the old keywords. The internal reflect functions were
+renamed to match, but `filSurfBlocksSegment` and `filSurfBlocksBranch` kept
+their names, since they test whether growth is blocked.
+
+- New `repel` interaction: `surface_interaction srf face parts repel k
+  repeldist`. It's a softwall whose zero-force point is moved `repeldist`
+  away from the surface, on the filament's side, so a node closer than that
+  feels t·k·(repeldist − s). With `repeldist` 0, its output is identical to
+  softwall.
+- `surfaceInteraction2D` gained a green type that is repelled from the
+  ceiling, so it shows all three interactions.
+- The commit also included the user's own documentation edits and new
+  `force` fields in the panel and surface structures, as the user asked.
+
+## Part 10: adsorbing filament nodes to surfaces (Oct 28)
+
+**2eb39e4.** Claude proposed the design and the user approved it.
+
+- New per-node arrays in the filament structure: `nodepnl` (the panel, or
+  NULL), `nodeface`, and `nodesrfmob` (the lateral mobility factor).
+- New statements: `adsorb_node node surface [face [mobility]]` and
+  `desorb_node node`, which also work at runtime with `set filament`.
+- An adsorbed node's mobility is multiplied by its lateral factor (in
+  `filNodeMobility`, so every integrator and the thermal noise use it).
+  After the step, `filSurfAdsorbedNodes` moves it back onto its surface,
+  which removes the normal part of its motion.
+- Crossing onto neighboring panels reuses the molecule code. The core of
+  `movemol2closepanel` was split out into the point-based
+  `movept2closepanel`. It writes the panel through a pointer only where the
+  original assigned `mptr->pnl`, which kept molecule results identical.
+- Softwall and repel with the same surface skip adsorbed nodes, and reflect
+  skips all adsorbed nodes. A rigidly pinned branch end can't be adsorbed.
+  Adsorbed daughter nodes are projected again after `filPinJunctions`.
+- Fixed a pre-existing bug: `filArrayShift` didn't shift node mobility
+  factors, so they stayed at their array index when the minus end grew or
+  shrank. Per-node state now moves with the nodes, and new or removed nodes
+  are reset with `filNodeStateClear`.
+- New example: `dynamics/adsorbedNodes3D.txt`.
+
+Tests:
+
+- 200 fully adsorbed filaments on a plane: the center-of-mass diffusion was
+  1.05 times the prediction kT·μ·f/N over 4 seeds. Nodes stayed on the plane
+  to 2×10⁻¹⁶.
+- A floor of 16 tiles with neighbors: nodes crossed tiles, and every
+  recorded panel matched the node's position.
+- On a sphere, radii stayed within 6.5×10⁻⁵ of the sphere's.
+- Adsorption followed nodes through minus-end growth and shrinking.
+- Molecule regression after the refactor: 67 completed examples identical.
+
+## Part 11: adsorb and desorb interactions (Oct 28)
+
+**5d46211.** New surface interactions:
+
+- `surface_interaction srf face parts adsorb rate capture_distance
+  [mobility]`: a free node within the capture distance, on the face, adsorbs
+  with probability 1−exp(−rate·dt) per step.
+- `surface_interaction srf face parts desorb rate [offset]`: an adsorbed node
+  desorbs with probability 1−exp(−rate·dt) and is placed `offset` from the
+  surface.
+- These run after the mechanics in each step (`filSurfAdsorbDesorb`), also
+  for filaments without dynamics. Random numbers are only drawn for nodes
+  that could change state.
+- Fixed: a node exactly on a surface was classified as being on its back
+  face by `panelside`, so `adsorb_node` without a face put it on the back.
+  It now goes to the front, or to the interaction's face.
+- New example: `dynamics/adsorbDesorb3D.txt`.
+
+Tests: with 1,000 static nodes, k_ads = 2 and k_des = 1, the mean adsorbed
+count over 7 seeds was 519.9 at t = 0.5 (predicted 518.6) and 667.6 at
+t = 10 (predicted 665.6). Only listed parts adsorbed, pinned branch ends
+never did, desorbed nodes landed exactly at the offset, and face `both`
+adsorbed nodes to whichever face they were on.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -185,16 +272,30 @@ Tests:
 - Loop-closing junctions have small gaps under load. These shrink as
   `junction_force` is increased.
 - Frame transport still has some `atan2` roll overhead.
-- Blocking only tests node paths. A segment can still cut across a surface's
+- Reflect only tests node paths. A segment can still cut across a surface's
   edge or corner while both of its nodes stay on the allowed side.
-- A node that starts on the wrong side of a blocking surface isn't moved. With
+- A node that starts on the wrong side of a reflecting surface isn't moved. With
   face `both`, it stays on that side.
 - Branches from the `branch` statement, and filaments defined directly, aren't
-  checked against block interactions.
-- The force interaction's side test uses the infinite plane of flat panels, so
-  a surface with a force interaction should span or enclose the filaments.
+  checked against reflect interactions.
+- The softwall and repel side tests use the infinite plane of flat panels, so
+  a surface with these interactions should span or enclose the filaments.
 - Nothing uses the filament box lists yet. They are meant for future
   filament-molecule and filament-filament interactions.
+- Free nodes can get past a finite surface by going around its edge, which
+  reflect correctly allows. Examples need surfaces larger than the region
+  the filaments can reach.
+- Adsorbed nodes aren't stopped by reflect interactions with other surfaces
+  as they move within their own surface.
+- Adsorbed nodes and rigid constraints (negative force constants) can
+  conflict. Smoldyn warns about this.
+- Adsorbed nodes don't move with surfaces that are translated, and they don't
+  yet exert reaction forces on surfaces (the new panel and surface `force`
+  fields are meant for this).
+- The adsorb interaction checks all panels of its surface for each free node,
+  rather than using the virtual boxes.
+- `filCopyFilament` doesn't copy node mobility factors or adsorption, and the
+  FIL lines from `printFilaments` don't show adsorption.
 
 ## Notable mistakes during the session
 
@@ -213,3 +314,16 @@ Tests:
 - A commit command chained several heredocs, and the shell ran two commit
   subject lines as commands, so those commits have no subjects. Lesson:
   write each commit message with its own command, or use `-m` arguments.
+- The HEAD build used for regression wasn't rebuilt after the rename commit,
+  so it couldn't read the new `reflect` keyword, and four examples showed false
+  differences. Lesson: rebuild the HEAD binary at the current commit before
+  each regression.
+- Midway through the session, many scratchpad files (scripts, test inputs,
+  and the HEAD and ASan builds) were deleted, and one regression run then
+  compared against a missing binary. Everything was rebuilt before results
+  were reported. Lesson: check that the binaries exist before trusting a
+  regression run.
+- A test filter used `\|` with macOS `sed`, which doesn't support it, so the
+  filter silently did nothing. `grep -E` was used instead.
+- The adsorb test first found nodes below a membrane and looked like a reflect
+  bug; the nodes had gone around the edge of the finite membrane.
