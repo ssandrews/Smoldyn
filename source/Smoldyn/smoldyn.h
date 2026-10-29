@@ -462,6 +462,7 @@ typedef struct surfacestruct {
     double force[DIMMAX];             // force exerted on surface
     double mobility;                  // surface mobility for motion from forces, length/(force*time)
     double displace[DIMMAX];          // total displacement from motion due to forces
+    double extforce[DIMMAX];          // force applied by commands, for the next time step
     int maxfil;                       // allocated size of filament list
     int nfil;                         // number of filaments in list
     struct filamentstruct** fillist;  // filaments that may have nodes adsorbed to the surface [f]

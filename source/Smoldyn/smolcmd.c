@@ -147,6 +147,7 @@ enum CMDcode cmdincludeecoli(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdsetreactionratemolcount(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdexpandsystem(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdapplysurfaceforce(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmddiffusecmpt(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdtranslatemol(simptr sim,cmdptr cmd,char *line2);
@@ -292,6 +293,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"setreactionratemolcount")) return cmdsetreactionratemolcount(sim,cmd,line2);
 	else if(!strcmp(word,"expandsystem")) return cmdexpandsystem(sim,cmd,line2);
 	else if(!strcmp(word,"translatecmpt")) return cmdtranslatecmpt(sim,cmd,line2);
+	else if(!strcmp(word,"applysurfaceforce")) return cmdapplysurfaceforce(sim,cmd,line2);
 	else if(!strcmp(word,"diffusecmpt")) return cmddiffusecmpt(sim,cmd,line2);
 	else if(!strcmp(word,"longrangeforce")) return cmdlongrangeforce(sim,cmd,line2);
 	else if(!strcmp(word,"translatemol")) return cmdtranslatemol(sim,cmd,line2);
@@ -4727,6 +4729,43 @@ enum CMDcode cmdtranslatecmpt(simptr sim,cmdptr cmd,char *line2) {
   SCMDCHECK(itct==dim && !strmatherror(ErrString,1),"cannot read translation values or wrong number of them. %s",ErrString);
 
 	comparttranslate(sim,cmpt,code,translate);
+
+	return CMDok; }
+
+
+/* cmdapplysurfaceforce */
+enum CMDcode cmdapplysurfaceforce(simptr sim,cmdptr cmd,char *line2) {
+	int itct,dim,s,d;
+	surfacessptr srfss;
+	char sname[STRCHAR];
+	double force[DIMMAX];
+
+	if(line2 && !strcmp(line2,"cmdtype")) return CMDmanipulate;
+
+	dim=sim->dim;
+	srfss=sim->srfss;
+	SCMDCHECK(srfss,"no surfaces defined");
+	SCMDCHECK(line2,"first argument should be surface name");
+	itct=sscanf(line2,"%s",sname);
+	SCMDCHECK(itct==1,"cannot read surface name");
+	if(!strcmp(sname,"all")) s=-1;
+	else {
+		s=stringfind(srfss->snames,srfss->nsrf,sname);
+		SCMDCHECK(s>=0,"surface name not recognized"); }
+
+	SCMDCHECK(line2=strnword(line2,2),"missing arguments for force values");
+	if(dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&force[0]);
+	else if(dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&force[0],&force[1]);
+	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&force[0],&force[1],&force[2]);
+	SCMDCHECK(itct==dim && !strmatherror(ErrString,1),"cannot read force values or wrong number of them. %s",ErrString);
+	SCMDCHECK(!strnword(line2,dim+1),"unexpected text following force values");
+	for(d=0;d<dim;d++)
+		SCMDCHECK(isfinite(force[d]),"force values need to be finite numbers");
+
+	if(s>=0) surfapplyforce(srfss->srflist[s],force,dim);
+	else
+		for(s=0;s<srfss->nsrf;s++)
+			surfapplyforce(srfss->srflist[s],force,dim);
 
 	return CMDok; }
 

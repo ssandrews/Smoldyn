@@ -262,6 +262,7 @@ int surfsetstipple(surfaceptr srf,int factor,int pattern);
 int surfsetdrawmode(surfaceptr srf,enum PanelFace face,enum DrawMode dm);
 int surfsetshiny(surfaceptr srf,enum PanelFace face,double shiny);
 int surfsetmobility(surfaceptr srf,double mobility);
+void surfapplyforce(surfaceptr srf,const double *force,int dim);
 int surfsetaction(surfaceptr srf,int i,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act,int newident);
 int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum MolecState ms1,enum MolecState ms2,int newident,double value,int which);
 int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,double *params,const char *name);

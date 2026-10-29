@@ -1,0 +1,134 @@
+# Growing filaments pushing against surfaces that carry different loads.
+#
+# The system is divided into three lanes. In each lane, three filaments grow upward
+# from the floor and push on a lid, which has a mobility (mobility 0.2), so it moves in
+# response to the force from the filaments. Each lane's filaments have their own
+# filament type, which has a repel interaction with only that lane's lid. The
+# applysurfaceforce command, run at every time step, pushes down on the lids with a
+# constant load: none for the left lid, 1.5 for the middle lid, and 3 for the right
+# lid. Before the filaments reach them, the loaded lids move down toward the
+# filaments. Afterward, the filaments elongate at a constant rate, so they push an
+# unloaded lid up at about that rate, but a heavier load makes them buckle, so the more
+# heavily loaded lids rise more slowly. This shows a force-velocity relationship.
+# Buckling is random, so the amounts that the lids rise vary from run to run. The
+# lids' forces and total displacements are listed at the end.
+#
+# smoldyn surfaceLoad2D.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 99
+boundaries y 0 100
+
+time_start 0
+time_stop 60
+time_step 0.01
+random_seed 2
+boxsize 10
+
+frame_thickness 0
+
+start_surface walls
+color both black
+thickness 1
+panel rect +0 0 0 100
+panel rect +0 33 0 100
+panel rect +0 66 0 100
+panel rect -0 99 0 100
+panel rect -1 0 100 99
+end_surface
+
+start_surface floor
+color both black
+thickness 2
+panel rect +1 0 10 99
+end_surface
+
+start_surface lid1
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 1 22 31
+end_surface
+
+start_surface lid2
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 34 22 31
+end_surface
+
+start_surface lid3
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 67 22 31
+end_surface
+
+start_filament_type pusher1
+color 0 0.6 0
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid1 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+start_filament_type pusher2
+color 0.9 0.6 0
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid2 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+start_filament_type pusher3
+color red
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid3 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+random_filament pusher1:a1 3   8.2 11  1.571
+random_filament pusher1:a2 3  16.5 11  1.571
+random_filament pusher1:a3 3  24.8 11  1.571
+random_filament pusher2:b1 3  41.2 11  1.571
+random_filament pusher2:b2 3  49.5 11  1.571
+random_filament pusher2:b3 3  57.8 11  1.571
+random_filament pusher3:c1 3  74.2 11  1.571
+random_filament pusher3:c2 3  82.5 11  1.571
+random_filament pusher3:c3 3  90.8 11  1.571
+
+cmd E applysurfaceforce lid2 0 -1.5
+cmd E applysurfaceforce lid3 0 -3
+cmd A diagnostics surface
+
+end_file

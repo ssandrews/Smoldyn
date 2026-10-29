@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 303
+#define SMOLHELP_NENTRY 304
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -727,10 +727,12 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    Mobility of the surface, which makes it move in response to the forces that\n"
 		"    filaments exert on it through softwall and repel interactions. In each time\n"
 		"    step, the surface is translated by its mobility times the force on it times\n"
-		"    the time step, without rotating. Its surface-bound molecules move with it,\n"
-		"    and solution-phase molecules that it runs into are pushed along with it.\n"
-		"    The default is 0, meaning that the surface doesn't move. See the section on\n"
-		"    filament-surface interactions."},
+		"    the time step, without rotating, where the force includes any force from\n"
+		"    the applysurfaceforce command. Its surface-bound molecules and adsorbed\n"
+		"    filament nodes move with it, and solution-phase molecules, and free\n"
+		"    filament nodes that have a reflect interaction with it, that it runs into\n"
+		"    are pushed along with it. The default is 0, meaning that the surface\n"
+		"    doesn't move. See the section on filament-surface interactions."},
 	{"statement","Statements about surfaces",1,"end_surface",
 		"  * end_surface",
 		"    End of a block of surface definitions. Surface statements are no longer\n"
@@ -2452,6 +2454,25 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    \"squeezed\", meaning that it gets bumped into by the moving compartment, but\n"
 		"    then gets bumped back due to some other surface, then that molecule will\n"
 		"    end up inside of the compartment."},
+	{"command","System manipulation commands",0,"applysurfaceforce",
+		"  applysurfaceforce surface F_x\n"
+		"  applysurfaceforce surface F_x F_y\n"
+		"  applysurfaceforce surface F_x F_y F_z",
+		"    Applies the force given by F_x, F_y, and F_z (with fewer values for lower\n"
+		"    dimensions) to the surface called surface, or to every surface if surface\n"
+		"    is \"all\". The force only affects surfaces that have a mobility (see the\n"
+		"    mobility statement), which move in response to it in the same way as to the\n"
+		"    forces from filaments, including carrying their surface-bound molecules and\n"
+		"    adsorbed filament nodes, and pushing molecules that they run into (see the\n"
+		"    section on filament-surface interactions). The force is added to the forces\n"
+		"    from filaments for the next time step only, so in that step the surface\n"
+		"    moves by its mobility times the force times the time step, and it is then\n"
+		"    cleared. Thus, to apply a constant force, run this command at every time\n"
+		"    step, as in cmd E applysurfaceforce membrane 0 0 -2; running it every n\n"
+		"    time steps applies the force for only one of those time steps. Running it\n"
+		"    more than once in a time step adds the forces together. The force values\n"
+		"    can be expressions that use variables. The output for the diagnostics\n"
+		"    surface command lists a force that has been applied but hasn't acted yet."},
 	{"command","System manipulation commands",0,"diffusecmpt",
 		"  diffusecmpt compartment code stddev_x [cmpt_bound radius nsample]\n"
 		"  diffusecmpt compartment code stddev_x stddev_y [cmpt_bound radius nsample]\n"

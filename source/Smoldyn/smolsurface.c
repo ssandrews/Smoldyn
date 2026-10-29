@@ -1106,6 +1106,7 @@ surfaceptr surfacealloc(surfaceptr srf,int oldmaxspecies,int maxspecies,int dim)
 		for(d=0;d<DIMMAX;d++) srf->force[d]=0;
 		srf->mobility=0;
 		for(d=0;d<DIMMAX;d++) srf->displace[d]=0;
+		for(d=0;d<DIMMAX;d++) srf->extforce[d]=0;
 		srf->maxfil=0;
 		srf->nfil=0;
 		srf->fillist=NULL; }
@@ -1371,6 +1372,11 @@ void surfaceoutput(simptr sim) {
 		if(!none) {
 			simLog(sim,2,"  force exerted by filaments: (%g",srf->force[0]);
 			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->force[d]);
+			simLog(sim,2,")\n"); }
+		for(d=0,none=1;d<dim;d++) if(srf->extforce[d]!=0) none=0;
+		if(!none) {
+			simLog(sim,2,"  force applied by commands, for the next time step: (%g",srf->extforce[0]);
+			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->extforce[d]);
 			simLog(sim,2,")\n"); }
 		if(srf->mobility>0) {
 			simLog(sim,2,"  mobility: %g, displacement from forces: (%g",srf->mobility,srf->displace[0]);
@@ -2206,6 +2212,18 @@ int surfsetmobility(surfaceptr srf,double mobility) {
 	if(mobility<0) return 2;
 	srf->mobility=mobility;
 	return 0; }
+
+
+/* surfapplyforce */
+// Adds force to the external force on surface srf, which acts on the surface in the
+// next time step along with the forces from filaments, if the surface has a mobility,
+// and is then cleared (see surfmovebyforces). Calling this every time step applies a
+// constant force. dim is the system dimensionality.
+void surfapplyforce(surfaceptr srf,const double *force,int dim) {
+	int d;
+
+	for(d=0;d<dim;d++) srf->extforce[d]+=force[d];
+	return; }
 
 
 /* surfsetaction */
@@ -5408,7 +5426,8 @@ int surfsweepmols(simptr sim,surfaceptr srf,double *translate) {
 
 /* surfmovebyforces */
 // Moves surfaces that have mobility in response to the forces on them, which filDynamics
-// computed at the end of the time step (see filSurfReactionForces). Each such surface is
+// computed at the end of the time step (see filSurfReactionForces), plus any force that
+// commands applied since the last time step (see surfapplyforce). Each such surface is
 // translated by mobility*force*dt, without rotation. Then its virtual box panel lists are
 // updated (boxesupdatesurface), its surface-bound molecules move with it
 // (surftranslatebound), the solution-phase molecules that it collides with are pushed
@@ -5416,8 +5435,8 @@ int surfsweepmols(simptr sim,surfaceptr srf,double *translate) {
 // while free nodes that it sweeps past a reflect interaction are pushed along (filSurfMove).
 // If any molecules moved, all molecules are reassigned to boxes, and if any filaments
 // moved, their junctions are re-pinned and their box lists updated (filSurfMoveDone). A compartment's inside-defining points move with its surfaces if all of them
-// moved by the same amount. Returns 0 for success or 1 for out of memory. Draws no
-// random numbers.
+// moved by the same amount. The forces applied by commands are then cleared for all
+// surfaces. Returns 0 for success or 1 for out of memory. Draws no random numbers.
 int surfmovebyforces(simptr sim) {
 	surfacessptr srfss;
 	surfaceptr srf;
@@ -5435,7 +5454,7 @@ int surfmovebyforces(simptr sim) {
 		srf=srfss->srflist[s];
 		if(srf->mobility<=0) continue;
 		for(d=0,zero=1;d<dim;d++) {
-			translate[d]=srf->mobility*srf->force[d]*sim->dt;
+			translate[d]=srf->mobility*(srf->force[d]+srf->extforce[d])*sim->dt;
 			if(translate[d]!=0) zero=0; }
 		if(zero) continue;
 		anymoved=1;
@@ -5451,10 +5470,9 @@ int surfmovebyforces(simptr sim) {
 			nmoved+=surfsweepmols(sim,srf,translate); }
 		if(sim->filss) nfilmoved+=filSurfMove(sim,srf,translate); }
 
-	if(!anymoved) return 0;
 	if(nfilmoved && filSurfMoveDone(sim)) return 1;
 
-	if(sim->cmptss)																		// compartment points move if all surfaces moved together
+	if(anymoved && sim->cmptss)												// compartment points move if all surfaces moved together
 		for(c=0;c<sim->cmptss->ncmpt;c++) {
 			cmpt=sim->cmptss->cmptlist[c];
 			if(cmpt->nsrf==0) continue;
@@ -5463,13 +5481,16 @@ int surfmovebyforces(simptr sim) {
 				srf=cmpt->surflist[s2];
 				if(srf->mobility<=0) same=0;
 				for(d=0;d<dim && same;d++) {
-					translate[d]=srf->mobility*srf->force[d]*sim->dt;
+					translate[d]=srf->mobility*(srf->force[d]+srf->extforce[d])*sim->dt;
 					if(s2==0) cmpttrans[d]=translate[d];
 					else if(translate[d]!=cmpttrans[d]) same=0; }}
 			if(same)
 				for(pt=0;pt<cmpt->npts;pt++)
 					for(d=0;d<dim;d++)
 						cmpt->points[pt][d]+=cmpttrans[d]; }
+
+	for(s=0;s<srfss->nsrf;s++)												// forces applied by commands only last one time step
+		for(d=0;d<dim;d++) srfss->srflist[s]->extforce[d]=0;
 
 	if(nmoved) {
 		if(sim->mols) sim->mols->touch++;
