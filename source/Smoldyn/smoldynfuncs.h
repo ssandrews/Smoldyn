@@ -261,6 +261,7 @@ int surfsetedgepts(surfaceptr srf,double value);
 int surfsetstipple(surfaceptr srf,int factor,int pattern);
 int surfsetdrawmode(surfaceptr srf,enum PanelFace face,enum DrawMode dm);
 int surfsetshiny(surfaceptr srf,enum PanelFace face,double shiny);
+int surfsetmobility(surfaceptr srf,double mobility);
 int surfsetaction(surfaceptr srf,int i,const int *index,enum MolecState ms,enum PanelFace face,enum SrfAction act,int newident);
 int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enum MolecState ms1,enum MolecState ms2,int newident,double value,int which);
 int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,double *params,const char *name);
@@ -268,6 +269,8 @@ void surftransformpanel(panelptr pnl,int dim,double *translate,double *origin,do
 void surftranslatepanel(panelptr pnl,int dim,double *translate);
 void surfupdateoldpos(surfaceptr srf,int dim);
 void surftranslatesurf(surfaceptr srf,int dim,double *translate);
+void surftranslatebound(simptr sim,surfaceptr srf,double *translate);
+void panelboundingbox(panelptr pnl,int dim,double *lo,double *hi);
 int surfsetjumppanel(surfaceptr srf,panelptr pnl1,enum PanelFace face1,int bidirect,panelptr pnl2,enum PanelFace face2);
 int surfsetneighhop(surfaceptr srf,int neighhop);
 int surfsetneighbors(panelptr pnl,panelptr *neighlist,int nneigh,int add);
@@ -294,6 +297,7 @@ void movemol2closepanel(simptr sim,moleculeptr mptr);
 int checksurfaces1mol(simptr sim,moleculeptr mptr,double crossminimum);
 int checksurfaces(simptr sim,int ll,int reborn);
 int checksurfacebound(simptr sim,int ll);
+int surfmovebyforces(simptr sim);
 
 /*********************************** Boxes **********************************/
 
@@ -319,6 +323,7 @@ int checkboxparams(simptr sim,int *warnptr);
 void boxsetcondition(boxssptr boxs,enum StructCond cond,int upgrade);
 int boxsetsize(simptr sim,const char *info,double val);
 int boxesupdate(simptr sim);
+int boxesupdatesurface(simptr sim,surfaceptr srf);
 
 // core simulation functions
 boxptr line2nextbox(simptr sim,double *pt1,double *pt2,boxptr bptr);

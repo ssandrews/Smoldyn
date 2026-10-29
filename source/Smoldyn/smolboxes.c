@@ -924,6 +924,58 @@ int boxesupdate(simptr sim) {
 	return 0; }
 
 
+/* boxesupdatesurface */
+// Updates the virtual box panel lists for the panels of surface srf, after the surface
+// has moved. This removes the surface's panels from all boxes and then adds each panel
+// to the boxes that it is in (from panelinbox), testing only the boxes that overlap the
+// panel's bounding box, plus one box on each side. This is much faster than updating
+// all boxes, which is what boxesupdateparams does. Returns 0 for success or 1 for out
+// of memory.
+int boxesupdatesurface(simptr sim,surfaceptr srf) {
+	boxssptr boxs;
+	boxptr bptr;
+	panelptr pnl;
+	enum PanelShape ps;
+	int b,p,p2,d,dim,lo[DIMMAX],hi[DIMMAX],indx[DIMMAX],done;
+	double ptlo[DIMMAX],pthi[DIMMAX];
+
+	boxs=sim->boxs;
+	if(!boxs || !boxs->blist) return 0;
+	dim=sim->dim;
+
+	for(b=0;b<boxs->nbox;b++) {											// remove the surface's panels from the boxes
+		bptr=boxs->blist[b];
+		for(p=p2=0;p<bptr->npanel;p++)
+			if(bptr->panel[p]->srf!=srf) bptr->panel[p2++]=bptr->panel[p];
+		for(p=p2;p<bptr->npanel;p++) bptr->panel[p]=NULL;
+		bptr->npanel=p2; }
+
+	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+		for(p=0;p<srf->npanel[ps];p++) {							// add them to the boxes they're in now
+			pnl=srf->panels[ps][p];
+			panelboundingbox(pnl,dim,ptlo,pthi);
+			for(d=0;d<dim;d++) {
+				lo[d]=(int)floor((ptlo[d]-boxs->min[d])/boxs->size[d])-1;
+				hi[d]=(int)floor((pthi[d]-boxs->min[d])/boxs->size[d])+1;
+				if(lo[d]<0) lo[d]=0;
+				else if(lo[d]>boxs->side[d]-1) lo[d]=boxs->side[d]-1;
+				if(hi[d]<0) hi[d]=0;
+				else if(hi[d]>boxs->side[d]-1) hi[d]=boxs->side[d]-1;
+				indx[d]=lo[d]; }
+			done=0;
+			while(!done) {
+				for(b=0,d=0;d<dim;d++) b=boxs->side[d]*b+indx[d];
+				bptr=boxs->blist[b];
+				if(panelinbox(sim,pnl,bptr)) {
+					if(bptr->npanel==bptr->maxpanel && expandboxpanels(bptr,bptr->maxpanel+1)) return 1;
+					bptr->panel[bptr->npanel++]=pnl; }
+				for(d=dim-1;d>=0;d--) {								// next box in the range
+					if(++indx[d]<=hi[d]) break;
+					indx[d]=lo[d]; }
+				if(d<0) done=1; }}
+	return 0; }
+
+
 /******************************************************************************/
 /*************************** core simulation functions ************************/
 /******************************************************************************/

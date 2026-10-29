@@ -1,0 +1,94 @@
+# A surface that moves in response to the forces that filaments exert on it.
+#
+# Filaments grow upward from a floor toward a lid, which has a repel interaction with
+# them (surface_interaction lid front all repel 20 2). The lid feels the equal and
+# opposite force, and since it has a mobility (mobility 0.2), the growing filaments
+# push it upward. Red molecules are bound to the underside of the lid and move with
+# it. Green molecules don't diffuse and start just above the lid, which pushes them
+# along as it moves. Blue molecules diffuse, and the lid keeps them on their own side.
+# Walls enclose the system, since the system boundaries don't affect molecules when
+# there are surfaces, and the filaments have a reflect interaction with them. The lid
+# is wider than the walls, so that sideways motion can't open a gap at its ends, and the
+# bound molecules are only on its middle panel, which is inside the walls. The lid's force and total displacement are listed at the end.
+#
+# smoldyn movingSurface2D.txt
+
+graphics opengl_good
+
+dim 2
+species bound pushed free
+boundaries x 0 100
+boundaries y 0 100
+
+time_start 0
+time_stop 60
+time_step 0.01
+random_seed 1
+boxsize 10
+
+frame_thickness 0
+
+difc pushed 0
+difc free 5
+color bound(all) red
+color pushed green
+color free blue
+display_size all(all) 3
+
+start_surface walls
+action all both reflect
+color both black
+thickness 1
+panel rect +0 0 0 100
+panel rect -0 100 0 100
+panel rect -1 0 100 100
+end_surface
+
+start_surface floor
+action all both reflect
+color both black
+thickness 2
+panel rect +1 0 10 100
+end_surface
+
+start_surface lid
+action all both reflect
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 -50 30 50 left
+panel rect -1 0 30 100 middle
+panel rect -1 100 30 50 right
+end_surface
+
+start_filament_type pusher
+color purple
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid front all repel 20 2
+surface_interaction walls front all reflect
+end_filament_type
+
+random_filament pusher:p1 3  15 11  1.571
+random_filament pusher:p2 3  32 11  1.571
+random_filament pusher:p3 3  50 11  1.571
+random_filament pusher:p4 3  68 11  1.571
+random_filament pusher:p5 3  85 11  1.571
+
+surface_mol 30 bound(front) lid rect middle
+mol 40 pushed u 30.5
+mol 100 free u 20
+mol 100 free u 65
+
+cmd A diagnostics surface
+
+end_file

@@ -1103,7 +1103,9 @@ surfaceptr surfacealloc(surfaceptr srf,int oldmaxspecies,int maxspecies,int dim)
 		srf->maxmol=NULL;
 		srf->nmol=NULL;
 		srf->mol=NULL;
-		for(d=0;d<DIMMAX;d++) srf->force[d]=0; }
+		for(d=0;d<DIMMAX;d++) srf->force[d]=0;
+		srf->mobility=0;
+		for(d=0;d<DIMMAX;d++) srf->displace[d]=0; }
 
 	if(maxspecies) {
 		CHECKMEM(newaction=(enum SrfAction***) calloc(maxspecies,sizeof(enum SrfAction**)));
@@ -1365,6 +1367,10 @@ void surfaceoutput(simptr sim) {
 		if(!none) {
 			simLog(sim,2,"  force exerted by filaments: (%g",srf->force[0]);
 			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->force[d]);
+			simLog(sim,2,")\n"); }
+		if(srf->mobility>0) {
+			simLog(sim,2,"  mobility: %g, displacement from forces: (%g",srf->mobility,srf->displace[0]);
+			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->displace[d]);
 			simLog(sim,2,")\n"); }
 
 		if(sim->mols && srf->action) {
@@ -1706,6 +1712,7 @@ void writesurfaces(simptr sim,FILE *fptr) {
 		if(srf->fshiny!=0) fprintf(fptr,"shininess front %g\n",srf->fshiny);
 		if(srf->bshiny!=0) fprintf(fptr,"shininess back %g\n",srf->bshiny);
 		fprintf(fptr,"thickness %g\n",srf->edgepts);
+		if(srf->mobility>0) fprintf(fptr,"mobility %g\n",srf->mobility);
 		if(srf->edgestipple[1]!=0xFFFF)
 			printf("   stipple %ui 0x%X\n",srf->edgestipple[0],srf->edgestipple[1]);
 		fprintf(fptr,"polygon front %s\n",surfdm2string(srf->fdrawmode,string));
@@ -1980,6 +1987,27 @@ int checksurfaceparams(simptr sim,int *warnptr) {
 									warn++;
 									simLog(sim,5," WARNING: surface '%s', panel %s, %s-side absorption probability for %s is zero, likely due to an unbounded emitter being either at or outside the panel\n",srf->sname,srf->panels[ps][p]->pname,surfface2string(face,string),sim->mols->spname[i]); }}}
 
+	for(s=0;s<srfss->nsrf;s++) {											// check mobile surfaces
+		srf=srfss->srflist[s];
+		if(srf->mobility<=0) continue;
+		fport=0;
+		for(face=PFfront;face<=PFback;face=(enum PanelFace)(face+1))
+			if(srf->nemitter[face])
+				for(i=1;i<nspecies;i++)
+					if(srf->nemitter[face][i]) fport=1;
+		if(fport) {
+			warn++;
+			simLog(sim,5," WARNING: surface '%s' is mobile, but its unbounded emitter absorption probabilities aren't updated as it moves\n",srf->sname); }
+		if(srf->port[PFfront] || srf->port[PFback]) {
+			warn++;
+			simLog(sim,5," WARNING: surface '%s' is mobile and is part of a port; ports aren't updated as surfaces move\n",srf->sname); }
+		if(sim->cmptss)
+			for(c=0;c<sim->cmptss->ncmpt;c++)
+				for(i=0;i<sim->cmptss->cmptlist[c]->nsrf;i++)
+					if(sim->cmptss->cmptlist[c]->surflist[i]==srf) {
+						warn++;
+						simLog(sim,5," WARNING: surface '%s' is mobile and bounds compartment '%s'; the compartment's inside-defining points only move if all of its surfaces move together, and its volume and box lists aren't updated\n",srf->sname,sim->cmptss->cmptlist[c]->cname); }}
+
 // check panels that normals are normal and normalized, with proper signs (error)
 // check that panels are at least partially inside system volume (warning)
 // check winding direction, if possible
@@ -2158,6 +2186,17 @@ int surfsetshiny(surfaceptr srf,enum PanelFace face,double shiny) {
 	if(shiny<0 || shiny>128) return 2;
 	if(face==PFfront || face==PFboth) srf->fshiny=shiny;
 	if(face==PFback || face==PFboth) srf->bshiny=shiny;
+	return 0; }
+
+
+/* surfsetmobility */
+// Sets the mobility of surface srf, which makes it move in response to the forces that
+// filaments exert on it (see surfmovebyforces); 0 means that it doesn't move. Returns 0
+// for success, 1 if srf is NULL, or 2 if mobility is negative.
+int surfsetmobility(surfaceptr srf,double mobility) {
+	if(!srf) return 1;
+	if(mobility<0) return 2;
+	srf->mobility=mobility;
 	return 0; }
 
 
@@ -3492,6 +3531,15 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		er=surfsetedgepts(srf,f1);
 		CHECKS(!er,"BUG: error in surfsetedgepts");
 		CHECKS(!strnword(line2,2),"unexpected text following thickness"); }
+
+	else if(!strcmp(word,"mobility")) {					// mobility
+		CHECKS(srf,"need to enter surface name before mobility");
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"mobility format: value. ");
+		CHECKS(f1>=0,"mobility value needs to be at least 0");
+		er=surfsetmobility(srf,f1);
+		CHECKS(!er,"BUG: error in surfsetmobility");
+		CHECKS(!strnword(line2,2),"unexpected text following mobility"); }
 
 	else if(!strcmp(word,"stipple")) {					// stipple
 		CHECKS(srf,"need to enter surface name before stipple");
@@ -5220,3 +5268,198 @@ int checksurfacebound(simptr sim,int ll) {
 
 
 
+
+
+/* surftranslatebound */
+// Moves the surface-bound molecules of surface srf by translate, and then puts each one
+// back on its panel with fixpt2panel, on the side that its state says. This is used for
+// moving surfaces, and by comparttranslate.
+void surftranslatebound(simptr sim,surfaceptr srf,double *translate) {
+	int ll,m,d,dim;
+	moleculeptr mptr;
+	enum MolecState ms;
+	enum PanelFace face;
+	double epsilon;
+
+	dim=sim->dim;
+	epsilon=sim->srfss->epsilon;
+	for(ll=0;ll<srf->nmollist;ll++)
+		for(m=0;m<srf->nmol[ll];m++) {
+			mptr=srf->mol[ll][m];
+			if(mptr->ident) {
+				for(d=0;d<dim;d++)
+					mptr->pos[d]+=translate[d];
+				ms=mptr->mstate;
+				if(ms==MSfront) face=PFfront;
+				else if(ms==MSback) face=PFback;
+				else face=PFnone;
+				fixpt2panel(mptr->pos,mptr->pnl,dim,face,epsilon); }}
+	return; }
+
+
+/* panelboundingbox */
+// Sets lo and hi to the low and high corners of a box that encloses panel pnl. For
+// curved panels, this is the box that encloses the full sphere or cylinder, so it can be
+// larger than needed.
+void panelboundingbox(panelptr pnl,int dim,double *lo,double *hi) {
+	int vert,nvert,d;
+	double **point,r;
+
+	point=pnl->point;
+	if(pnl->ps==PSrect || pnl->ps==PStri) {
+		nvert=(pnl->ps==PSrect && dim==3)?4:dim;
+		for(d=0;d<dim;d++) lo[d]=hi[d]=point[0][d];
+		for(vert=1;vert<nvert;vert++)
+			for(d=0;d<dim;d++) {
+				if(point[vert][d]<lo[d]) lo[d]=point[vert][d];
+				if(point[vert][d]>hi[d]) hi[d]=point[vert][d]; }}
+	else if(pnl->ps==PScyl) {
+		r=point[2][0];
+		for(d=0;d<dim;d++) {
+			lo[d]=(point[0][d]<point[1][d]?point[0][d]:point[1][d])-r;
+			hi[d]=(point[0][d]>point[1][d]?point[0][d]:point[1][d])+r; }}
+	else {																					// sphere, hemisphere, disk
+		r=point[1][0];
+		for(d=0;d<dim;d++) {
+			lo[d]=point[0][d]-r;
+			hi[d]=point[0][d]+r; }}
+	return; }
+
+
+#define SWEEPCROSSTOL 1.0e-6		// fraction of a swept molecule's move that is skipped past the moved panel
+
+/* surfsweepmols */
+// Moves the solution-phase molecules that surface srf collides with as it moves by
+// translate, as in comparttranslate. srf has already been moved, with its prior panel
+// positions in the panels' oldpoint elements. A molecule collides with the surface if the
+// line from its position to its position minus translate, which is its motion in the
+// surface's frame of reference, crosses a panel at its old position, from a face whose
+// action for the molecule isn't transmit. The molecule is then moved by translate, so it
+// stays the same distance in front of the panel, and checksurfaces1mol handles any other
+// panels that it crosses on the way. The crossing of the moved panel itself, which is
+// at fraction 1-cross along the molecule's move, is skipped by starting the check a
+// little past it (SWEEPCROSSTOL, as a fraction of the move), since round-off error in
+// small moves can otherwise put that crossing just past the starting fraction, so that
+// the molecule reflects off the panel and ends up behind it. Unlike comparttranslate, each molecule is moved at
+// most once, using the first panel that it collides with. Only molecules within the
+// bounding box of the surface's old and new panel positions are tested. Returns the
+// number of molecules that were moved.
+int surfsweepmols(simptr sim,surfaceptr srf,double *translate) {
+	molssptr mols;
+	moleculeptr mptr;
+	panelptr pnl;
+	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	int ll,m,d,dim,p,first,inside,nmoved,lxp;
+	double lo[DIMMAX],hi[DIMMAX],ptlo[DIMMAX],pthi[DIMMAX],newpos[DIMMAX],crsspt[DIMMAX],cross,crossbest;
+
+	mols=sim->mols;
+	if(!mols || !srf->action) return 0;
+	dim=sim->dim;
+
+	first=1;																					// bounding box of old and new positions
+	for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+		for(p=0;p<srf->npanel[ps];p++) {
+			panelboundingbox(srf->panels[ps][p],dim,ptlo,pthi);
+			for(d=0;d<dim;d++) {
+				if(first || ptlo[d]<lo[d]) lo[d]=ptlo[d];
+				if(first || pthi[d]>hi[d]) hi[d]=pthi[d]; }
+			first=0; }
+	if(first) return 0;
+	for(d=0;d<dim;d++) {
+		if(translate[d]>0) lo[d]-=translate[d];
+		else hi[d]-=translate[d]; }
+
+	nmoved=0;
+	for(ll=0;ll<mols->nlist;ll++)
+		for(m=0;m<mols->nl[ll];m++) {
+			mptr=mols->live[ll][m];
+			if(!mptr->ident || mptr->mstate!=MSsoln) continue;
+			if(srf->action[mptr->ident][MSsoln][PFfront]==SAtrans && srf->action[mptr->ident][MSsoln][PFback]==SAtrans) continue;
+			for(d=0,inside=1;d<dim && inside;d++)
+				if(mptr->pos[d]<lo[d] || mptr->pos[d]>hi[d]) inside=0;
+			if(!inside) continue;
+			for(d=0;d<dim;d++)
+				newpos[d]=mptr->pos[d]-translate[d];			// in frame of reference of moving surface
+			crossbest=2;
+			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+				for(p=0;p<srf->npanel[ps];p++) {
+					pnl=srf->panels[ps][p];
+					lxp=lineXpanel(mptr->pos,newpos,pnl,dim,crsspt,&face1,&face2,&cross,NULL,NULL,1);
+					if(lxp && srf->action[mptr->ident][MSsoln][face1]!=SAtrans && cross<crossbest)
+						crossbest=cross; }
+			if(crossbest<2) {
+				for(d=0;d<dim;d++) {
+					mptr->via[d]=mptr->pos[d];
+					mptr->pos[d]+=translate[d]; }
+				checksurfaces1mol(sim,mptr,1.0-crossbest+SWEEPCROSSTOL);
+				nmoved++; }}
+	if(nmoved) mols->touch++;
+	return nmoved; }
+
+
+/* surfmovebyforces */
+// Moves surfaces that have mobility in response to the forces on them, which filDynamics
+// computed at the end of the time step (see filSurfReactionForces). Each such surface is
+// translated by mobility*force*dt, without rotation. Then its virtual box panel lists are
+// updated (boxesupdatesurface), its surface-bound molecules move with it
+// (surftranslatebound), and the solution-phase molecules that it collides with are pushed
+// along with it (surfsweepmols). If any molecules moved, all molecules are reassigned to
+// boxes. A compartment's inside-defining points move with its surfaces if all of them
+// moved by the same amount. Returns 0 for success or 1 for out of memory. Draws no
+// random numbers.
+int surfmovebyforces(simptr sim) {
+	surfacessptr srfss;
+	surfaceptr srf;
+	compartptr cmpt;
+	enum PanelShape ps;
+	double translate[DIMMAX],cmpttrans[DIMMAX];
+	int s,s2,c,d,dim,p,ll,pt,nmoved,anymoved,same,zero;
+
+	srfss=sim->srfss;
+	if(!srfss) return 0;
+	dim=sim->dim;
+	nmoved=anymoved=0;
+
+	for(s=0;s<srfss->nsrf;s++) {
+		srf=srfss->srflist[s];
+		if(srf->mobility<=0) continue;
+		for(d=0,zero=1;d<dim;d++) {
+			translate[d]=srf->mobility*srf->force[d]*sim->dt;
+			if(translate[d]!=0) zero=0; }
+		if(zero) continue;
+		anymoved=1;
+		surfupdateoldpos(srf,dim);
+		for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+			for(p=0;p<srf->npanel[ps];p++)
+				surftranslatepanel(srf->panels[ps][p],dim,translate);
+		for(d=0;d<dim;d++) srf->displace[d]+=translate[d];
+		if(boxesupdatesurface(sim,srf)) return 1;
+		if(sim->mols) {
+			for(ll=0;ll<srf->nmollist;ll++) nmoved+=srf->nmol[ll];
+			surftranslatebound(sim,srf,translate);
+			nmoved+=surfsweepmols(sim,srf,translate); }}
+
+	if(!anymoved) return 0;
+
+	if(sim->cmptss)																		// compartment points move if all surfaces moved together
+		for(c=0;c<sim->cmptss->ncmpt;c++) {
+			cmpt=sim->cmptss->cmptlist[c];
+			if(cmpt->nsrf==0) continue;
+			same=1;
+			for(s2=0;s2<cmpt->nsrf && same;s2++) {
+				srf=cmpt->surflist[s2];
+				if(srf->mobility<=0) same=0;
+				for(d=0;d<dim && same;d++) {
+					translate[d]=srf->mobility*srf->force[d]*sim->dt;
+					if(s2==0) cmpttrans[d]=translate[d];
+					else if(translate[d]!=cmpttrans[d]) same=0; }}
+			if(same)
+				for(pt=0;pt<cmpt->npts;pt++)
+					for(d=0;d<dim;d++)
+						cmpt->points[pt][d]+=cmpttrans[d]; }
+
+	if(nmoved) {
+		if(sim->mols) sim->mols->touch++;
+		if((*sim->assignmols2boxesfn)(sim,0,0)) return 1; }
+	return 0; }

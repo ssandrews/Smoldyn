@@ -460,6 +460,8 @@ typedef struct surfacestruct {
     int* nmol;                        // number of molecules in live lists [ll]
     moleculeptr** mol;                // live molecules on the surface [ll][m]
     double force[DIMMAX];             // force exerted on surface
+    double mobility;                  // surface mobility for motion from forces, length/(force*time)
+    double displace[DIMMAX];          // total displacement from motion due to forces
 } * surfaceptr;
 
 typedef struct surfacesuperstruct {

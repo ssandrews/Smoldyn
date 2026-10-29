@@ -2684,6 +2684,9 @@ int simulatetimestep(simptr sim) {
 	er=filDynamics(sim);
 	if(er) return 11;
 
+	er=surfmovebyforces(sim);												// move mobile surfaces from the forces on them
+	if(er) return 10;
+
 #ifdef ENABLE_PYTHON_CALLBACK
         for(unsigned int i = 0; i < sim->ncallbacks; i++) {
             auto callback = sim->callbacks[i];
@@ -2723,6 +2726,7 @@ void endsimulate(simptr sim,int er) {
 	else if(er==7) simLog(sim,5,"Simulation stopped by a runtime command\n");
 	else if(er==8) simLog(sim,5,"Simulation terminated during simulation state updating\n  Out of memory\n");
 	else if(er==9) simLog(sim,5,"Simulation terminated during diffusion\n  Out of memory\n");
+	else if(er==10) simLog(sim,5,"Simulation terminated during surface motion\n  Out of memory\n");
 	else if(er==11) simLog(sim,5,"Simulation terminated during filament dynamics\n");
 	else if(er==12) simLog(sim,5,"Simulation terminated during lattice simulation\n");
 	else if(er==13) simLog(sim,5,"Simulation terminated during reaction network expansion\n");

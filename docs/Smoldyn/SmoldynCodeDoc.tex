@@ -2640,12 +2640,14 @@ typedef struct surfacestruct {
 	int *nmol;									// number of molecules in live lists [ll]
 	moleculeptr **mol;					// live molecules on the surface [ll][m]
 	double force[DIMMAX];				// force exerted on surface
+	double mobility;						// surface mobility for motion from forces
+	double displace[DIMMAX];		// total displacement from motion due to forces
 	 } *surfaceptr;
 \end{lstlisting}
 
 \ttt{selfindex} is the index of the surface in the surface structure; this is useful in case the surface is sent to a function using a pointer and the function needs to know which surface it is. \ttt{action} lists the the actions that happen to molecules for each state. It is allocated to size [maxspecies][MSMAX][3], which means that it does not allow the \ttt{MSbsoln} state and also that it allows \ttt{PFfront}, \ttt{PFback}, or \ttt{PFnone} panel faces. An action may be, for example, \ttt{SAreflect} or \ttt{SAno}, if these actions always happen and is \ttt{SAmult} if there are multiple possible actions that could happen at any particular time step. This vector has \ttt{maxident} elements times \ttt{MSMAX} elements to account for each molecule species and then each state. Only for those that have type \ttt{SAmult}, is the data pointed to by \ttt{actdetails} relevant. As described above, these details list the action rates, probabilities, and other values for transitions between states for each molecular species. \ttt{neighhop} tells whether surface-bound molecules should be allowed to hop to neighboring panels upon collision or whether they should stay on the originating panel.
 
-\ttt{fcolor} and \ttt{bcolor} are the colors of the front and back of the surface in the order: red, green, blue, alpha; each has a value between 0 and 1. \ttt{edgepts} is the thickness of edges in points for drawing, which applies to all drawing situations except for 3D and when the surface faces are rendered. \ttt{fdrawmode} and \ttt{bdrawmode} describe how the surface front and back should be drawn. Not all options apply to 1D and 2D simulations. \ttt{fshiny} and \ttt{bshiny} are shininess values for OpenGL surface rendering. \ttt{maxpanel} and \ttt{npanel} are the number of panels that are allocated or used, respectively, for each of the panel shapes. \ttt{panelname} lists a name for each panel. \ttt{panels} are lists of pointers to the panels for the possible shapes. Note that every panel within a surface has the same drawing scheme and the same interaction with molecules. \ttt{port} points to the port structure that applies to each face, if any. \ttt{force} is the total force that filaments exert on the surface, which is the sum of its panels' \ttt{force} elements (see \ttt{filSurfReactionForces}); \ttt{surfaceoutput} prints it when it isn't 0.
+\ttt{fcolor} and \ttt{bcolor} are the colors of the front and back of the surface in the order: red, green, blue, alpha; each has a value between 0 and 1. \ttt{edgepts} is the thickness of edges in points for drawing, which applies to all drawing situations except for 3D and when the surface faces are rendered. \ttt{fdrawmode} and \ttt{bdrawmode} describe how the surface front and back should be drawn. Not all options apply to 1D and 2D simulations. \ttt{fshiny} and \ttt{bshiny} are shininess values for OpenGL surface rendering. \ttt{maxpanel} and \ttt{npanel} are the number of panels that are allocated or used, respectively, for each of the panel shapes. \ttt{panelname} lists a name for each panel. \ttt{panels} are lists of pointers to the panels for the possible shapes. Note that every panel within a surface has the same drawing scheme and the same interaction with molecules. \ttt{port} points to the port structure that applies to each face, if any. \ttt{force} is the total force that filaments exert on the surface, which is the sum of its panels' \ttt{force} elements (see \ttt{filSurfReactionForces}); \ttt{surfaceoutput} prints it when it isn't 0. \ttt{mobility} is the surface's mobility, from the \ttt{mobility} statement, which is 0 by default; if it is positive, \ttt{surfmovebyforces} translates the surface by \ttt{mobility} times \ttt{force} times the time step in each time step. \ttt{displace} is the total displacement of the surface from this motion, which is reported by \ttt{surfaceoutput}; it doesn't include translations from commands such as \ttt{translatecmpt}.
 
 Considering all surface panels, the total surface area is \ttt{totarea} and there are \ttt{totpanel} panels. These panels are listed sequentially in the list \ttt{paneltable}, and their cumulative areas are listed in \ttt{areatable}. Thus, for example, \ttt{areatable[0]} is the area of the first panel and \ttt{areatable[totpanel-1]} is equal to \ttt{totarea}. These four elements are set up in \ttt{surfacesupdate}.
 
@@ -2707,6 +2709,8 @@ Following is a partial listing of what functions call what other functions. This
 \>\>\ttt{surfsetdrawmode}\\
 \>shininess\\
 \>\>\ttt{surfsetshiny}\\
+\>mobility\\
+\>\>\ttt{surfsetmobility}\\
 \>max\_panels (deprecated function)\\
 \>\>\ttt{surfsetmaxpanel}\\
 \>\>\>\ttt{panelsalloc}\\
@@ -3060,6 +3064,10 @@ Sets the surface drawing mode of face \ttt{face} of surface \ttt{srf} to \ttt{dm
 \hfill \\
 Sets the shininess of face \ttt{face} of surface \ttt{srf} to \ttt{shiny}. Any face value is allowed. The shininess needs to be between 0 and 128, inclusive. Returns 0 for success, 1 if the surface is undefined, or 2 if the shininess is out of range.
 
+\item[\ttt{int surfsetmobility(surfaceptr srf, double mobility)}]
+\hfill \\
+Sets the mobility of surface \ttt{srf}, which makes it move in response to the forces that filaments exert on it (see \ttt{surfmovebyforces}); 0 means that it doesn't move. Returns 0 for success, 1 if \ttt{srf} is NULL, or 2 if \ttt{mobility} is negative.
+
 \item[\ttt{int}]
 \ttt{surfsetaction(surfaceptr srf, int ident, const int *index, enum MolecState ms, enum PanelFace face, enum SrfAction act, int newident)}
 \hfill \\
@@ -3101,6 +3109,14 @@ Copies the contents of each panel \ttt{point} element to the panel \ttt{oldpoint
 \item[\ttt{void surftranslatesurf(surfaceptr srf, int dim, double *translate)}]
 \hfill \\
 Translates surface \ttt{srf} by amount given in \ttt{translate}. The box superstructure condition is downgraded to \ttt{SCparams}. This just calls \ttt{surftranslatepanel} for each panel. No molecules are moved.
+
+\item[\ttt{void surftranslatebound(simptr sim, surfaceptr srf, double *translate)}]
+\hfill \\
+Moves the surface-bound molecules of surface \ttt{srf}, which are listed in its \ttt{mol} lists, by \ttt{translate}, and then puts each one back on its panel with \ttt{fixpt2panel}, on the side that its state says. This is used by \ttt{surfmovebyforces} and by \ttt{comparttranslate}. It doesn't reassign the molecules to boxes.
+
+\item[\ttt{void panelboundingbox(panelptr pnl, int dim, double *lo, double *hi)}]
+\hfill \\
+Sets \ttt{lo} and \ttt{hi} to the low and high corners of a box that encloses panel \ttt{pnl}. For curved panels, this is the box that encloses the full sphere or cylinder, so it can be larger than needed.
 
 \item[\ttt{int surfsetemitterabsorption(simptr sim)}]
 \hfill \\
@@ -3325,6 +3341,14 @@ The other ``hack" is that this function looks for both the first and second surf
 \hfill \\
 Takes care of actions for surface-bound molecules, such as desorption, on-surface orientation flipping, etc. Returns error code of 0.
 
+\item[\ttt{int surfsweepmols(simptr sim, surfaceptr srf, double *translate)}]
+\hfill \\
+Moves the solution-phase molecules that surface \ttt{srf} collides with as it moves by \ttt{translate}, using the same method as \ttt{comparttranslate}. \ttt{srf} has already been moved, with its prior panel positions in the panels' \ttt{oldpoint} elements. A molecule collides with the surface if the line from its position to its position minus \ttt{translate}, which is its motion in the surface's frame of reference, crosses a panel at its old position, from a face whose action for the molecule isn't transmit. The molecule is then moved by \ttt{translate}, so it stays the same distance in front of the panel, and \ttt{checksurfaces1mol} handles any other panels that it crosses on the way. The crossing of the moved panel itself, at fraction 1-\ttt{cross} along the molecule's move, is skipped by passing a crossing minimum a little past it (\ttt{SWEEPCROSSTOL}, which is $10^{-6}$ of the move). Without this, round-off error in small moves can put that crossing just past the minimum, so the molecule reflects off the panel and ends up behind it; this happened in testing for nearly every swept molecule when moves were about $10^{-5}$. Unlike \ttt{comparttranslate}, each molecule is moved at most once per call, using the first panel that it collides with. Only molecules within the bounding box of the surface's old and new panel positions are tested. Returns the number of molecules that were moved.
+
+\item[\ttt{int surfmovebyforces(simptr sim)}]
+\hfill \\
+Moves surfaces that have mobility in response to the forces on them, which \ttt{filDynamics} computed at the end of the time step (see \ttt{filSurfReactionForces}). \ttt{simulatetimestep} calls this right after \ttt{filDynamics}. Each surface with positive mobility and nonzero force is translated by \ttt{mobility} times \ttt{force} times \ttt{dt}, without rotation, by calling \ttt{surftranslatepanel} for each panel after \ttt{surfupdateoldpos}; it doesn't call \ttt{surftranslatesurf}, because that would set the boxes to be fully updated at the next time step. Instead, \ttt{boxesupdatesurface} updates the box panel lists for just this surface. Then the surface-bound molecules move with it (\ttt{surftranslatebound}), and the solution-phase molecules that it collides with are pushed along with it (\ttt{surfsweepmols}). The surface's \ttt{displace} element accumulates its displacement. If any molecules moved, all molecules are reassigned to boxes, which also rebuilds the surfaces' molecule lists. A compartment's inside-defining points move with its surfaces if all of them moved by the same amount; compartment volumes and box lists aren't updated. Returns 0 for success or 1 for out of memory, which \ttt{simulatetimestep} reports as error 10. Draws no random numbers.
+
 \end{description}
 
 % Boxes (functions in smolboxes.c)
@@ -3529,6 +3553,10 @@ Sets up a superstructure of boxes, and puts some things in them boxes, including
 \hfill \\
 Sets up or updates box data structures.
 
+\item[\ttt{int boxesupdatesurface(simptr sim, surfaceptr srf)}]
+\hfill \\
+Updates the virtual box panel lists for the panels of surface \ttt{srf}, after the surface has moved. This removes the surface's panels from all boxes and then adds each panel to the boxes that it is in (from \ttt{panelinbox}), testing only the boxes that overlap the panel's bounding box (from \ttt{panelboundingbox}), plus one box on each side. This is much faster than \ttt{boxesupdateparams}, which tests every panel against every box. In testing, the result matched \ttt{panelinbox} for every box and panel, for a flat panel and a sphere moving through several boxes. Returns 0 for success or 1 for out of memory.
+
 \item[\underline{core simulation functions}]
 
 \item[\ttt{boxptr line2nextbox(simptr sim, double *pt1, double *pt2, boxptr bptr)}]
@@ -3712,9 +3740,9 @@ Sets up or updates all portions of compartment data structures.
 
 \item[\ttt{void comparttranslate(simptr sim, compartptr cmpt, int code, double *translate)}]
 \hfill \\
-Translates compartment \ttt{cmpt} by the displacement given in \ttt{translate}. The different bits of \ttt{code} tell which attributes of the compartment should be translated. If \ttt{code\&1}, then the bounding surfaces of the compartment (that are listed in the compartment definition, not including those that are implied through the logic statements) are translated. If \ttt{code\&2}, then the molecules that are bound to the bounding surfaces of the compartment (which are listed in the compartment definition) are translated. If \ttt{code\&4}, then the molecules that are inside the compartment are translated. If \ttt{code\&8}, then molecules that get bumped into by the moving surfaces get translated.
+Translates compartment \ttt{cmpt} by the displacement given in \ttt{translate}. The different bits of \ttt{code} tell which attributes of the compartment should be translated. If \ttt{code\&1}, then the bounding surfaces of the compartment (that are listed in the compartment definition, not including those that are implied through the logic statements) are translated. If \ttt{code\&2}, then the molecules that are bound to the bounding surfaces of the compartment (which are listed in the compartment definition) are translated, using \ttt{surftranslatebound}. If \ttt{code\&4}, then the molecules that are inside the compartment are translated. If \ttt{code\&8}, then molecules that get bumped into by the moving surfaces get translated.
 
-This has a number of flaws with the external molecules. The algorithm is that any molecule that would get bumped into gets translated by the same amount as the compartment, except if its surface action is ``transmit'' for both surface faces. After being translated, the function checks for its collisions with any surfaces, dealing with them as required. One problem is that this ignores most surface actions, except only for a slight check for transmit vs. anything else. Another problem is that molecules will end up on the wrong side of the moving surface if they get squeezed between the moving surface and a static surface. Here, what happens is the molecule is moved because of the moving surface, then it bounces off of the static surface back towards where it came from, and then the moving surface moves over it. In some ways, this is unavoidable because there is no good solution for what to do with squeezed molecules. However, it seems that it could be improved.
+This has a number of flaws with the external molecules. The algorithm is that any molecule that would get bumped into gets translated by the same amount as the compartment, except if its surface action is ``transmit'' for both surface faces. After being translated, the function checks for its collisions with any surfaces, dealing with them as required. One problem is that this ignores most surface actions, except only for a slight check for transmit vs. anything else. Another problem is that molecules will end up on the wrong side of the moving surface if they get squeezed between the moving surface and a static surface. Here, what happens is the molecule is moved because of the moving surface, then it bounces off of the static surface back towards where it came from, and then the moving surface moves over it. In some ways, this is unavoidable because there is no good solution for what to do with squeezed molecules. However, it seems that it could be improved. Also, for small translations, round-off error can make \ttt{checksurfaces1mol} detect the moved panel itself, so the molecule reflects off it and ends up behind it; \ttt{surfsweepmols} avoids this with \ttt{SWEEPCROSSTOL}, but this function wasn't changed.
 
 \end{description}
 

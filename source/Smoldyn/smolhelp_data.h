@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 302
+#define SMOLHELP_NENTRY 303
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -722,6 +722,15 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    system-dimensional position of the emitter. This statement is designed to\n"
 		"    be used with all emitters strictly inside a closed surface and all of them\n"
 		"    with positive amount values."},
+	{"statement","Statements about surfaces",1,"mobility",
+		"  * mobility float",
+		"    Mobility of the surface, which makes it move in response to the forces that\n"
+		"    filaments exert on it through softwall and repel interactions. In each time\n"
+		"    step, the surface is translated by its mobility times the force on it times\n"
+		"    the time step, without rotating. Its surface-bound molecules move with it,\n"
+		"    and solution-phase molecules that it runs into are pushed along with it.\n"
+		"    The default is 0, meaning that the surface doesn't move. See the section on\n"
+		"    filament-surface interactions."},
 	{"statement","Statements about surfaces",1,"end_surface",
 		"  * end_surface",
 		"    End of a block of surface definitions. Surface statements are no longer\n"
