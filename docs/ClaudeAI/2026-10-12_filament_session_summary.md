@@ -1,9 +1,9 @@
 # Claude Code session summary: Smoldyn filaments, October 12–28, 2026
 
 This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
-Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–28 (parts 5–12). Most of the work was on the filament code in
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–28 (parts 5–13). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
-`smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
+`smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcomparts.c`, `smolsim.cpp`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
 (`docs/Smoldyn/SmoldynCodeDoc.tex`), the generated help
 (`source/Smoldyn/smolhelp_data.h`), and the `examples/S13_filaments` examples.
@@ -296,6 +296,72 @@ calculation from the node positions. The two-tile floor now gives (0, 0,
 −7.217), the same as one panel of the same size, with identical filament
 output. All 37 seeded S13 examples matched HEAD, and ASan was clean.
 
+## Part 13: surfaces that move from filament forces (Oct 28)
+
+The user asked for surfaces to move in proportion to the applied forces with
+a mobility value, ignoring the dependence on cross-section for now, with
+adsorbed molecules and filaments moving with the surface, and with molecules
+that the surface collides with pushed along as in `comparttranslate`. The
+user suggested that surfaces might need a list of their adsorbed filaments.
+Claude proposed two phases, and the user said to go ahead.
+
+**61b1b93 (phase 1: surfaces and molecules).**
+
+- A new surface statement, `mobility μ`, sets `srf->mobility` (default 0).
+  `surfmovebyforces`, called in `simulatetimestep` right after `filDynamics`,
+  translates each mobile surface by μ·F·Δt using the force from
+  `filSurfReactionForces`. Surfaces only translate, with no rotation or
+  thermal motion. `srf->displace` accumulates the displacement, and
+  `diagnostics surface` lists it.
+- The code&2 block of `comparttranslate` became `surftranslatebound`, which
+  both use to carry surface-bound molecules.
+- `surfsweepmols` pushes solution molecules that the surface runs into,
+  using the code&8 method: the line from each molecule's position to its
+  position minus the move, tested against the panels at their old positions.
+  Each molecule is moved at most once, and only molecules inside the bounding
+  box of the old and new panel positions (`panelboundingbox`) are tested.
+- `boxesupdatesurface` (in `smolboxes.c`) updates the box panel lists for
+  just the moved surface, instead of `surftranslatesurf`, which would trigger
+  a full box rebuild. Molecules are reassigned to boxes only if some moved.
+- A compartment's inside-defining points move only if all of its surfaces
+  moved together. `checksurfaceparams` warns if a mobile surface has
+  unbounded emitters, is part of a port, or bounds a compartment.
+- New example `dynamics/movingSurface2D.txt`: filaments grow up from a floor
+  and push a lid, carrying bound molecules and pushing others.
+
+Tests: a lid pushed through several layers of boxes kept every diffusing
+molecule on its own side, bound molecules exactly on the lid, and pushed
+molecules just ahead of it. A temporary check against `panelinbox` found no
+box-list mismatches for a lid and for a sphere moving 4.3 through boxes of
+size 2. All 76 seeded molecule examples (including `translatecmpt` and
+`diffusecmpt`) and all 37 S13 examples matched HEAD, and ASan was clean.
+
+**46cd510 (phase 2: filaments).**
+
+- Each surface has a list of filaments that may have nodes adsorbed to it
+  (`maxfil`, `nfil`, `fillist`), managed by `surfaddfilament` and
+  `surfremovefilament`. Filaments are listed instead of nodes, because node
+  indices change when the minus end grows or shrinks. The list may include
+  filaments with no nodes left on the surface: `filNodeAdsorb` and
+  `filSurfAdsorbedNodes` (when a node walks onto another surface's panel) add
+  to it, `filNodeDesorb` removes a filament when its last node on the surface
+  desorbs, `filRemoveFilament` removes it from every surface, and
+  `filSurfMove` prunes the rest.
+- `filSurfMove` moves the adsorbed nodes with the surface, and pushes free
+  nodes of types with dynamics and a reflect interaction with the surface,
+  using the same sweep test as for molecules. `filSurfMoveDone` then re-pins
+  rigid junctions and updates the filament box lists.
+- New example `dynamics/movingSurfaceFilaments2D.txt`: blue filaments hang
+  from the lid by anchored adsorbed ends, and green filaments above the lid
+  are pushed up by it.
+
+Tests: adsorbed nodes stayed on the lid within 10⁻⁵ as it rose 14.6, a branch
+attached to a carried filament stayed on its node, a free filament above the
+lid never got behind it, and desorbing or removing filaments took them off
+the lid's list. A temporary every-step check that every adsorbed filament is
+listed passed on the new tests and on all S13 examples with surfaces. All 38
+seeded S13 examples matched HEAD, and ASan was clean.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -316,7 +382,16 @@ output. All 37 seeded S13 examples matched HEAD, and ASan was clean.
   closest flat panel, so a node beyond the edge of a partial patch, and behind
   its plane, is pulled toward the edge. In a concave corner, repel only pushes
   a node away from the nearer wall.
-- Surfaces don't move in response to the reaction forces yet.
+- Moving surfaces only translate, with a mobility that doesn't depend on
+  their size or shape, and no thermal motion. Their motion is explicit, so a
+  large mobility pushed by stiff interactions can overshoot and oscillate.
+- Moving surfaces don't update compartment volumes or box lists, emitter
+  absorption, or ports. Molecules and filament nodes squeezed between a
+  moving surface and another surface can end up on the wrong side of it;
+  pushed filament nodes aren't checked against other surfaces.
+- `comparttranslate` still has the round-off problem that `surfsweepmols`
+  fixes with `SWEEPCROSSTOL` (see the mistakes section); it was left unchanged
+  so `translatecmpt` results stay the same.
 - Nothing uses the filament box lists yet. They are meant for future
   filament-molecule and filament-filament interactions.
 - Free nodes can get past a finite surface by going around its edge, which
@@ -326,8 +401,9 @@ output. All 37 seeded S13 examples matched HEAD, and ASan was clean.
   as they move within their own surface.
 - Adsorbed nodes and rigid constraints (negative force constants) can
   conflict. Smoldyn warns about this.
-- Adsorbed nodes don't move with surfaces that are translated, and they don't
-  exert forces on surfaces. Only softwall and repel do.
+- Adsorbed nodes move with surfaces that move from forces, but not with
+  surfaces translated by commands such as `translatecmpt`. They don't exert
+  forces on surfaces; only softwall and repel do.
 - The adsorb interaction checks all panels of its surface for each free node,
   rather than using the virtual boxes.
 - `filCopyFilament` doesn't copy node mobility factors or adsorption, and the
@@ -371,3 +447,17 @@ output. All 37 seeded S13 examples matched HEAD, and ASan was clean.
   match is unique and in order. This is the same lesson as the first mistake.
 - The code documentation has an older undefined reference,
   `sect:FilMathBending`, in the `filFlatToWnodes` entry. It wasn't fixed.
+- In the first moving-lid tests with larger mobilities, nearly every
+  molecule the lid pushed ended up behind it. With moves of about 10⁻⁵,
+  round-off made `checksurfaces1mol` count the moved panel itself as a new
+  crossing, so the molecule reflected back through it. `surfsweepmols` now
+  starts that check `SWEEPCROSSTOL` (10⁻⁶ of the move) past the panel.
+- One regression run overlapped a rebuild of the binary it was testing, so
+  its results were thrown away and it was rerun. Lesson: don't rebuild while
+  a regression is running.
+- A test run was given Smoldyn's `-w` flag, which suppresses warnings, so it
+  briefly looked warning-free. It was rerun without the flag.
+- The first draft of `movingSurface2D` placed bound molecules along the whole
+  lid, which is wider than the system, giving 10 "outside system volume"
+  warnings. The lid was split into three panels and the molecules put on the
+  middle one.
