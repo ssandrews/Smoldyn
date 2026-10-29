@@ -1,0 +1,156 @@
+# Filaments that move with a surface that moves in response to filament forces.
+#
+# Red filaments grow upward from a floor toward a lid, which has a repel interaction
+# with them (surface_interaction lid front all repel 20 2). Since the lid has a
+# mobility (mobility 0.2), the growing filaments push it upward. Blue filaments hang
+# from the underside of the lid, with their minus ends adsorbed to it (adsorb_node 0
+# lid front 0), so they move up with it. The lateral mobility factor of 0 anchors these
+# nodes in place on the lid, while the rest of each blue filament swings freely below.
+# Green filaments start above the lid and have a reflect interaction with its upper
+# face (surface_interaction lid back all reflect), so the lid pushes them upward when it
+# reaches them, rather than passing through them. Walls enclose the system, since the
+# system boundaries don't affect filaments, and all filaments have a reflect
+# interaction with them. The lid is wider than the walls, so that sideways motion
+# can't open a gap at its ends. The lid's force and total displacement are listed at
+# the end, along with the filaments that have nodes adsorbed to it.
+#
+# smoldyn movingSurfaceFilaments2D.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+time_start 0
+time_stop 60
+time_step 0.01
+random_seed 1
+boxsize 10
+
+frame_thickness 0
+
+start_surface walls
+color both black
+thickness 1
+panel rect +0 0 0 100
+panel rect -0 100 0 100
+panel rect -1 0 100 100
+end_surface
+
+start_surface floor
+color both black
+thickness 2
+panel rect +1 0 10 100
+end_surface
+
+start_surface lid
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 -50 30 50 left
+panel rect -1 0 30 100 middle
+panel rect -1 100 30 50 right
+end_surface
+
+start_filament_type pusher
+color red
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid front all repel 20 2
+surface_interaction walls front all reflect
+end_filament_type
+
+start_filament_type hanging
+color blue
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 2
+mobility 1
+surface_interaction walls front all reflect
+end_filament_type
+
+start_filament_type rider
+color green
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+surface_interaction lid back all reflect
+surface_interaction walls front all reflect
+end_filament_type
+
+random_filament pusher:p1 3  15 11  1.571
+random_filament pusher:p2 3  40 11  1.571
+random_filament pusher:p3 3  60 11  1.571
+random_filament pusher:p4 3  85 11  1.571
+
+start_filament hanging:h1
+first_segment 27 29.9 1 -1.571
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+adsorb_node 0 lid front 0
+end_filament
+
+start_filament hanging:h2
+first_segment 73 29.9 1 -1.571
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+adsorb_node 0 lid front 0
+end_filament
+
+start_filament rider:r1
+first_segment 20 33 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+end_filament
+
+start_filament rider:r2
+first_segment 45 36 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+end_filament
+
+start_filament rider:r3
+first_segment 70 39 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+add_segment 1 0
+end_filament
+
+cmd A diagnostics surface
+
+end_file

@@ -188,6 +188,8 @@ int filSurfBlocksBranch(const filamentptr daughter,char end);
 int filSurfAdsorbedNodes(filamentptr fil);
 int filSurfAdsorbOn(const filamenttypeptr filtype);
 int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype);
+int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
+int filSurfMoveDone(simptr sim);
 int filSurfForceOn(const filamenttypeptr filtype);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
@@ -1486,8 +1488,9 @@ void filNodeStateCopy(filamentptr fil,int to,int from) {
 // the panel that the node was on, or the front if it was exactly on the panel. A node that is the attached end of a filament that
 // is rigidly pinned to its mother can't be adsorbed, because the pin holds it at the
 // mother's node. Negative node numbers count back from the plus end, so -1 is the
-// plus end. Returns 0 for success, 1 if the node doesn't exist, 2 if the surface has
-// no panels, or 3 if the node is a rigidly pinned end.
+// plus end. The filament is added to the surface's list of filaments with adsorbed
+// nodes. Returns 0 for success, 1 if the node doesn't exist, 2 if the surface has
+// no panels, 3 if the node is a rigidly pinned end, or 4 for out of memory.
 int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,double mobility) {
 	simptr sim;
 	panelptr pnl;
@@ -1502,6 +1505,7 @@ int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,do
 	dim=sim->dim;
 	nodept=fil->nodes[node];
 	if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) return 2;
+	if(surfaddfilament(srf,fil)) return 4;
 	if(face!=PFfront && face!=PFback) {
 		face=panelside(nodept,pnl,dim,NULL,1,0);
 		if(face==PFnone) face=PFfront; }						// a node exactly on the panel goes to its front
@@ -1516,13 +1520,20 @@ int filNodeAdsorb(filamentptr fil,int node,surfaceptr srf,enum PanelFace face,do
 
 /* filNodeDesorb */
 // Desorbs node node of filament fil from its surface, if it is adsorbed. Negative node
-// numbers count back from the plus end.
+// numbers count back from the plus end. If no other node of fil is adsorbed to that
+// surface, fil is removed from the surface's list of filaments with adsorbed nodes.
 void filNodeDesorb(filamentptr fil,int node) {
+	surfaceptr srf;
+	int n;
+
 	if(node<0) node=fil->nseg+1+node;
-	if(node<0 || node>fil->nseg) return;
+	if(node<0 || node>fil->nseg || !fil->nodepnl[node]) return;
+	srf=fil->nodepnl[node]->srf;
 	fil->nodepnl[node]=NULL;
 	fil->nodeface[node]=PFnone;
 	fil->nodesrfmob[node]=1;
+	for(n=0;n<=fil->nseg && !(fil->nodepnl[n] && fil->nodepnl[n]->srf==srf);n++);
+	if(n>fil->nseg) surfremovefilament(srf,fil);
 	return; }
 
 
@@ -2680,7 +2691,8 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		er=filNodeAdsorb(fil,i1,sim->srfss->srflist[i2],face,f1);
 		CHECKS(er!=1,"adsorb_node node number is outside of filament size");
 		CHECKS(er!=2,"adsorb_node surface has no panels");
-		CHECKS(er!=3,"adsorb_node can't adsorb a filament end that is rigidly attached to its mother"); }
+		CHECKS(er!=3,"adsorb_node can't adsorb a filament end that is rigidly attached to its mother");
+		CHECKS(er!=4,"out of memory in adsorb_node"); }
 
 	else if(!strcmp(word,"desorb_node")) {				// desorb_node: node
 		CHECKS(fil,"need to enter filament name before desorb_node");
@@ -3836,18 +3848,24 @@ filamentptr filAddFilament(filamenttypeptr filtype,const char *filname) {
 // unrelated filament: fil's own ends are detached, and every filament end attached to
 // fil is released. Then the filaments after fil in fillist shift down one place, which
 // keeps creation order, and fil and its name string move to position nfil-1, at the
-// front of the unused filaments that filAddFilament takes next. Returns 0 for success
-// or 1 if fil is not in its type's list.
+// front of the unused filaments that filAddFilament takes next. fil is also removed
+// from the surface lists of filaments with adsorbed nodes. Returns 0 for success or 1
+// if fil is not in its type's list.
 int filRemoveFilament(filamentptr fil) {
 	filamenttypeptr filtype;
+	surfacessptr srfss;
 	char *name;
-	int f,f2;
+	int f,f2,s;
 
 	filtype=fil->filtype;
 	for(f=0;f<filtype->nfil && filtype->fillist[f]!=fil;f++);
 	if(f==filtype->nfil) return 1;
 
 	filRemoveFilJunctions(fil);
+	srfss=filtype->filss->sim->srfss;
+	if(srfss)
+		for(s=0;s<srfss->nsrf;s++)
+			surfremovefilament(srfss->srflist[s],fil);
 
 	name=filtype->filnames[f];											// shift later filaments down, keeping creation order
 	for(f2=f;f2<filtype->nfil-1;f2++) {
@@ -4879,11 +4897,14 @@ int filSurfReflectNodes(filamentptr fil) {
 // panel edges onto neighboring panels, as for surface-bound molecules (see
 // movept2closepanel), which updates its panel. The new positions are copied to
 // startnodes, so that calling this again after other motion, such as re-pinning
-// junctions, starts from the projected positions. Returns the number of adsorbed
-// nodes, so that the caller can update the segment lengths and angles if it is
-// positive.
+// junctions, starts from the projected positions. A node that walks onto a panel of
+// a different surface adds the filament to that surface's list of filaments with
+// adsorbed nodes; if that runs out of memory, the node stays adsorbed but doesn't move
+// with that surface. Returns the number of adsorbed nodes, so that the caller can
+// update the segment lengths and angles if it is positive.
 int filSurfAdsorbedNodes(filamentptr fil) {
 	simptr sim;
+	surfaceptr srf;
 	double **startnodes,*nodept,via[3];
 	int node,d,dim,n;
 
@@ -4894,7 +4915,9 @@ int filSurfAdsorbedNodes(filamentptr fil) {
 	for(node=0;node<=fil->nseg;node++) {
 		if(!fil->nodepnl[node]) continue;
 		nodept=fil->nodes[node];
+		srf=fil->nodepnl[node]->srf;
 		movept2closepanel(sim,nodept,startnodes[node],fil->nodepnl[node],fil->nodeface[node],via,&fil->nodepnl[node]);
+		if(fil->nodepnl[node]->srf!=srf) surfaddfilament(fil->nodepnl[node]->srf,fil);
 		for(d=0;d<dim;d++) startnodes[node][d]=nodept[d];
 		n++; }
 	return n; }
@@ -4972,6 +4995,95 @@ int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype) {
 				break; }}
 		if(changed) filNodes2Angles(fil,-1,-1); }
 	return nchanged; }
+
+
+/* filSurfMove */
+// Moves filament nodes with surface srf, which has just been translated by translate,
+// with its prior panel positions in the panels' oldpoint elements (see surfmovebyforces).
+// Nodes that are adsorbed to srf move by translate, using the surface's list of
+// filaments with adsorbed nodes; filaments in the list that no longer have nodes
+// adsorbed to srf are removed from it. Free nodes of filament types that have
+// dynamics and a reflect interaction with srf are pushed along with it if it collides
+// with them, as surfsweepmols does for molecules: a node collides with srf if the line
+// from its position to its position minus translate, which is its motion in the
+// surface's frame of reference, crosses a panel of srf at its old position, from the
+// face of a reflect interaction for that node's part, and the node is then moved by
+// translate. Swept nodes aren't tested against other surfaces. Segment angles are
+// updated for each filament that changed. Call filSurfMoveDone after all surfaces have
+// moved if this returns a positive value. Returns the number of filaments that changed.
+int filSurfMove(simptr sim,surfaceptr srf,const double *translate) {
+	filamentssptr filss;
+	filamenttypeptr filtype;
+	filamentptr fil;
+	filsurfinteractptr fsi;
+	panelptr pnl;
+	enum PanelShape ps;
+	enum PanelFace face1,face2;
+	double newpt[3],crsspt[3],cross,*nodept;
+	int f,ft,i,node,d,dim,p,part,n,changed,nchanged,reflect,hit;
+
+	filss=sim->filss;
+	if(!filss) return 0;
+	dim=sim->dim;
+	nchanged=0;
+
+	for(f=srf->nfil-1;f>=0;f--) {										// adsorbed nodes move with the surface
+		fil=srf->fillist[f];
+		n=0;
+		for(node=0;node<=fil->nseg;node++)
+			if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) {
+				for(d=0;d<dim;d++) fil->nodes[node][d]+=translate[d];
+				n++; }
+		if(n) {
+			filNodes2Angles(fil,-1,-1);
+			nchanged++; }
+		else
+			surfremovefilament(srf,fil); }
+
+	for(ft=0;ft<filss->ntype;ft++) {								// free nodes are pushed by reflecting surfaces
+		filtype=filss->filtypes[ft];
+		if(filtype->dynamics==FDnone) continue;
+		for(i=0,reflect=0;i<filtype->nsurfint;i++)
+			if(filtype->surfint[i]->action==FSAreflect && filtype->surfint[i]->othersurf==srf) reflect=1;
+		if(!reflect) continue;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			changed=0;
+			for(node=0;node<=fil->nseg && fil->nseg>0;node++) {
+				if(fil->nodepnl[node]) continue;							// adsorbed nodes stay on their surfaces
+				part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+				nodept=fil->nodes[node];
+				for(d=0;d<dim;d++) newpt[d]=nodept[d]-translate[d];	// in frame of reference of moving surface
+				hit=0;
+				for(ps=(enum PanelShape)0;ps<PSMAX && !hit;ps=(enum PanelShape)(ps+1))
+					for(p=0;p<srf->npanel[ps] && !hit;p++) {
+						pnl=srf->panels[ps][p];
+						if(!lineXpanel(nodept,newpt,pnl,dim,crsspt,&face1,&face2,&cross,NULL,NULL,1)) continue;
+						for(i=0;i<filtype->nsurfint && !hit;i++) {
+							fsi=filtype->surfint[i];
+							if(fsi->action==FSAreflect && fsi->othersurf==srf && fsi->filpart[part] && (fsi->surfface==PFboth || face1==fsi->surfface)) hit=1; }}
+				if(hit) {
+					for(d=0;d<dim;d++) nodept[d]+=translate[d];
+					changed=1; }}
+			if(changed) {
+				filNodes2Angles(fil,-1,-1);
+				nchanged++; }}}
+
+	return nchanged; }
+
+
+/* filSurfMoveDone */
+// Finishes moving filaments with surfaces, after filSurfMove has moved the nodes of
+// some filaments for each moving surface. Rigid junctions are re-pinned, since nodes
+// that daughters attach to may have moved, and the filament box lists are updated.
+// Returns 0 for success or 1 for out of memory.
+int filSurfMoveDone(simptr sim) {
+	if(!sim->filss) return 0;
+	filPinJunctions(sim->filss);
+	if(filBoxesUpdate(sim)) {
+		simLog(sim,10,"Out of memory assigning filaments to boxes\n");
+		return 1; }
+	return 0; }
 
 
 /* filSurfBlocksBranch */

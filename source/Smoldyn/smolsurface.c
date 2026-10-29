@@ -1105,7 +1105,10 @@ surfaceptr surfacealloc(surfaceptr srf,int oldmaxspecies,int maxspecies,int dim)
 		srf->mol=NULL;
 		for(d=0;d<DIMMAX;d++) srf->force[d]=0;
 		srf->mobility=0;
-		for(d=0;d<DIMMAX;d++) srf->displace[d]=0; }
+		for(d=0;d<DIMMAX;d++) srf->displace[d]=0;
+		srf->maxfil=0;
+		srf->nfil=0;
+		srf->fillist=NULL; }
 
 	if(maxspecies) {
 		CHECKMEM(newaction=(enum SrfAction***) calloc(maxspecies,sizeof(enum SrfAction**)));
@@ -1210,6 +1213,7 @@ void surfacefree(surfaceptr srf,int maxspecies) {
 		free(srf->mol); }
 	free(srf->maxmol);
 	free(srf->nmol);
+	free(srf->fillist);
 
 	free(srf);
 	return; }
@@ -1315,7 +1319,7 @@ void surfacessfree(surfacessptr srfss) {
 
 /* surfaceoutput */
 void surfaceoutput(simptr sim) {
-	int s,p,i,dim,nspecies,jumpfrnt,jumpback,ll,p2,emit,d,same,none,newident,show;
+	int s,p,i,dim,nspecies,jumpfrnt,jumpback,ll,p2,emit,d,same,none,newident,show,f;
 	surfacessptr srfss;
 	surfaceptr srf;
 	double **point,*front,prob;
@@ -1372,6 +1376,10 @@ void surfaceoutput(simptr sim) {
 			simLog(sim,2,"  mobility: %g, displacement from forces: (%g",srf->mobility,srf->displace[0]);
 			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->displace[d]);
 			simLog(sim,2,")\n"); }
+		if(srf->nfil>0) {
+			simLog(sim,2,"  filaments that may have adsorbed nodes:");
+			for(f=0;f<srf->nfil;f++) simLog(sim,2," %s",srf->fillist[f]->filname);
+			simLog(sim,2,"\n"); }
 
 		if(sim->mols && srf->action) {
 			simLog(sim,2,"  actions for molecules:\n");
@@ -5403,9 +5411,11 @@ int surfsweepmols(simptr sim,surfaceptr srf,double *translate) {
 // computed at the end of the time step (see filSurfReactionForces). Each such surface is
 // translated by mobility*force*dt, without rotation. Then its virtual box panel lists are
 // updated (boxesupdatesurface), its surface-bound molecules move with it
-// (surftranslatebound), and the solution-phase molecules that it collides with are pushed
-// along with it (surfsweepmols). If any molecules moved, all molecules are reassigned to
-// boxes. A compartment's inside-defining points move with its surfaces if all of them
+// (surftranslatebound), the solution-phase molecules that it collides with are pushed
+// along with it (surfsweepmols), and filament nodes that are adsorbed to it move with it,
+// while free nodes that it sweeps past a reflect interaction are pushed along (filSurfMove).
+// If any molecules moved, all molecules are reassigned to boxes, and if any filaments
+// moved, their junctions are re-pinned and their box lists updated (filSurfMoveDone). A compartment's inside-defining points move with its surfaces if all of them
 // moved by the same amount. Returns 0 for success or 1 for out of memory. Draws no
 // random numbers.
 int surfmovebyforces(simptr sim) {
@@ -5414,12 +5424,12 @@ int surfmovebyforces(simptr sim) {
 	compartptr cmpt;
 	enum PanelShape ps;
 	double translate[DIMMAX],cmpttrans[DIMMAX];
-	int s,s2,c,d,dim,p,ll,pt,nmoved,anymoved,same,zero;
+	int s,s2,c,d,dim,p,ll,pt,nmoved,nfilmoved,anymoved,same,zero;
 
 	srfss=sim->srfss;
 	if(!srfss) return 0;
 	dim=sim->dim;
-	nmoved=anymoved=0;
+	nmoved=nfilmoved=anymoved=0;
 
 	for(s=0;s<srfss->nsrf;s++) {
 		srf=srfss->srflist[s];
@@ -5438,9 +5448,11 @@ int surfmovebyforces(simptr sim) {
 		if(sim->mols) {
 			for(ll=0;ll<srf->nmollist;ll++) nmoved+=srf->nmol[ll];
 			surftranslatebound(sim,srf,translate);
-			nmoved+=surfsweepmols(sim,srf,translate); }}
+			nmoved+=surfsweepmols(sim,srf,translate); }
+		if(sim->filss) nfilmoved+=filSurfMove(sim,srf,translate); }
 
 	if(!anymoved) return 0;
+	if(nfilmoved && filSurfMoveDone(sim)) return 1;
 
 	if(sim->cmptss)																		// compartment points move if all surfaces moved together
 		for(c=0;c<sim->cmptss->ncmpt;c++) {
@@ -5463,3 +5475,38 @@ int surfmovebyforces(simptr sim) {
 		if(sim->mols) sim->mols->touch++;
 		if((*sim->assignmols2boxesfn)(sim,0,0)) return 1; }
 	return 0; }
+
+
+/* surfaddfilament */
+// Adds filament fil to the list of filaments of surface srf that may have nodes adsorbed
+// to it, if it isn't already listed. The list can include filaments that no longer have
+// adsorbed nodes on the surface, since it isn't updated when adsorbed nodes are removed
+// from filaments; filSurfMove removes those. Returns 0 for success or 1 for out of
+// memory.
+int surfaddfilament(surfaceptr srf,filamentptr fil) {
+	int f,newmax;
+	filamentptr *newlist;
+
+	for(f=0;f<srf->nfil;f++)
+		if(srf->fillist[f]==fil) return 0;
+	if(srf->nfil==srf->maxfil) {
+		newmax=2*srf->maxfil+1;
+		newlist=(filamentptr*) realloc(srf->fillist,newmax*sizeof(filamentptr));
+		if(!newlist) return 1;
+		srf->fillist=newlist;
+		srf->maxfil=newmax; }
+	srf->fillist[srf->nfil++]=fil;
+	return 0; }
+
+
+/* surfremovefilament */
+// Removes filament fil from the list of filaments of surface srf that may have nodes
+// adsorbed to it, if it is listed, keeping the order of the others.
+void surfremovefilament(surfaceptr srf,filamentptr fil) {
+	int f;
+
+	for(f=0;f<srf->nfil && srf->fillist[f]!=fil;f++);
+	if(f==srf->nfil) return;
+	for(;f<srf->nfil-1;f++) srf->fillist[f]=srf->fillist[f+1];
+	srf->nfil--;
+	return; }

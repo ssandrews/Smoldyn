@@ -298,6 +298,8 @@ int checksurfaces1mol(simptr sim,moleculeptr mptr,double crossminimum);
 int checksurfaces(simptr sim,int ll,int reborn);
 int checksurfacebound(simptr sim,int ll);
 int surfmovebyforces(simptr sim);
+int surfaddfilament(surfaceptr srf,filamentptr fil);
+void surfremovefilament(surfaceptr srf,filamentptr fil);
 
 /*********************************** Boxes **********************************/
 
@@ -447,6 +449,8 @@ int filUpdate(simptr sim);
 // core simulation functions
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 int filDynamics(simptr sim);
+int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
+int filSurfMoveDone(simptr sim);
 
 /********************************* BioNetGen ********************************/
 
