@@ -4146,10 +4146,10 @@ Implicit & Euler implicit integration
 The `None', `Euler', `RK2', and `RK4' methods appear to be correct. I'm not sure about `EulerMat' or `ImplicitOld'. It seems like `Implicit' might need some work.
 
 \begin{lstlisting}
-enum FilEndState {FESopen,FEScapped,FESshrink,FESnone};
-#define FESMAX 3
+enum FilEndState {FESopen,FEScapped,FESshrink,FESbarbed,FESnone};
+#define FESMAX 4
 \end{lstlisting}
-The filament end state enumeration lists the states that each filament end can be in. The filament type gives each end a length change rate for each state (\ttt{endrate}) and transition rates between states (\ttt{endtrans}). The names are labels, and the rates define what the states do; typically, ``open'' grows, ``capped'' neither grows nor shrinks, and ``shrink'' shrinks. \ttt{FESnone} is returned for unrecognized state names. Arrays that are indexed by end use 0 for the minus end and 1 for the plus end.
+The filament end state enumeration lists the states that each filament end can be in. The filament type gives each end a length change rate for each state (\ttt{endrate}) and transition rates between states (\ttt{endtrans}). The names are labels, and the rates define what the states do; typically, ``open'' grows, ``capped'' neither grows nor shrinks, and ``shrink'' shrinks. ``barbed'' is the exception, because its length change rate also depends on the force against the end (see \ttt{filEndVelocity}). \ttt{FESnone} is returned for unrecognized state names. Arrays that are indexed by end use 0 for the minus end and 1 for the plus end.
 
 \begin{lstlisting}
 enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
@@ -4379,6 +4379,7 @@ typedef struct filamenttypestruct {
     filfilinteractptr *filint;         // list of filament-filament interactions
     double endrate[2][FESMAX];         // end velocity [end][state], length/time; >0 grows, <0 shrinks
     double endtrans[2][FESMAX][FESMAX]; // end state transition rates [end][from][to], 1/time
+    double barbedparameters[2];        // barbed end force response [a,k]: a in length/time, k in 1/force
     enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
     int maxface;                       // filament faces allocated
@@ -4405,7 +4406,7 @@ The next sections were written by Junjie Sun for representing actin branching. \
 
 Next, \ttt{branchsrf} is a surface that can induce branching to occur, if the potential branch is within \ttt{branchsrfdist} distance of the surface. \ttt{branchcmpt} is a compartment where branching can occur. \ttt{surfint} is the list of filament-surface interactions, with \ttt{nsurfint} entries out of \ttt{maxsurfint} allocated; each entry is allocated when it is added. \ttt{molint} and \ttt{filint} are the corresponding lists of filament-molecule and filament-filament interactions, which are always empty for now. Surface confinement, which used to be stored in the filament type with \ttt{confinesrf}, \ttt{confineforce}, and \ttt{confineface}, is now a force interaction in \ttt{surfint}.
 
-Next are the filament end dynamics. \ttt{endrate[end][state]} is the rate at which end \ttt{end} (0 for minus, 1 for plus) changes length while it is in state \ttt{state}, in length/time; positive values are elongation and negative values are shrinking. \ttt{endtrans[end][from][to]} is the rate at which end \ttt{end} changes from state \ttt{from} to state \ttt{to}, in inverse time; the diagonal elements are unused. \ttt{endstate0} is the state that each end of a new filament starts in. All of these default to 0, or to the open state. \ttt{elongmaxlen} is the maximum contour length for elongation.
+Next are the filament end dynamics. \ttt{barbedparameters} holds the $a$ and $k$ values of the barbed state's force response (see \ttt{filEndVelocity}), which are shared by both ends. \ttt{endrate[end][state]} is the rate at which end \ttt{end} (0 for minus, 1 for plus) changes length while it is in state \ttt{state}, in length/time; positive values are elongation and negative values are shrinking. \ttt{endtrans[end][from][to]} is the rate at which end \ttt{end} changes from state \ttt{from} to state \ttt{to}, in inverse time; the diagonal elements are unused. \ttt{endstate0} is the state that each end of a new filament starts in. All of these default to 0, or to the open state. \ttt{elongmaxlen} is the maximum contour length for elongation.
 
 Lengthwise faces aren't used yet but are set up here with \ttt{maxface} and \ttt{nface} for the maximum and actual number of filament faces. \ttt{facename} is a list of face names and \ttt{facetwist} is the spatial twisting rate of the faces (radians per unit length of filament).
 
@@ -4467,11 +4468,11 @@ Local. Converts filament dynamics string to enumerated dynamics type. Returns \t
 
 \item[\ttt{char *filFES2string(enum FilEndState fes,char *string)}] %?? new code
 \hfill \\
-Converts a filament end state to the string ``open'', ``capped'', or ``shrink'', or ``none'' for an unrecognized state. Writes the result to \ttt{string} and also returns it directly.
+Converts a filament end state to the string ``open'', ``capped'', ``shrink'', or ``barbed'', or ``none'' for an unrecognized state. Writes the result to \ttt{string} and also returns it directly.
 
 \item[\ttt{enum FilEndState filstring2FES(const char *string)}] %?? new code
 \hfill \\
-Converts the string ``open'', ``capped'', or ``shrink'' to a filament end state. Returns \ttt{FESnone} for unrecognized input.
+Converts the string ``open'', ``capped'', ``shrink'', or ``barbed'' to a filament end state. Returns \ttt{FESnone} for unrecognized input.
 
 \item[\ttt{int filstring2end(const char *string)}] %?? new code
 \hfill \\
@@ -4627,7 +4628,8 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{branchsurfdist} & max distance for branch addition & n/a & $[0,\infty)$ \\
 \ttt{endrate} & end length change rate & end*FESMAX+state & $(-\infty,\infty)$ \\
 \ttt{endtrans} & end state transition rate & (end*FESMAX+from)*FESMAX+to & $[0,\infty)$ \\
-\ttt{endstate0} & initial end state & end & 0,1,2 \\
+\ttt{barbedparameters} & barbed end $a$ and $k$ & 0 for $a$, 1 for $k$ & $[0,\infty)$ \\
+\ttt{endstate0} & initial end state & end & 0,1,2,3 \\
 \ttt{elongmaxlen} & max. length for elongation & n/a & $[0,\infty)$ \\ 
 \ttt{mobility} & filament node mobility & n/a & $(0,\infty)$\\
 \ttt{bundle} & bundle value & n/a & $(0,\infty)$\\
@@ -4771,9 +4773,17 @@ An end that cannot place a segment (a surface with a reflect interaction is in t
 \hfill \\
 Stochastic end state transitions for all filaments of one filament type. An end in a state with total exit rate $R$ leaves it with per-step probability $1-\exp(-R\,\Delta t)$, matching the unimolecular convention in smolreact.c rather than a linearized $R\,\Delta t$, which is what makes the measured rates independent of $\Delta t$. The destination is chosen in proportion to the individual rates. Random numbers are drawn only for ends that can leave their state, and the destination is drawn only when there is more than one, so a filament type that only caps and uncaps its plus end draws exactly the random numbers that the earlier capping code did.
 
+\item[\ttt{double filEndPushForce(const filamentptr fil,int end)}] %?? new code
+\hfill \\
+Returns the force that pushes against end \ttt{end} (0 for minus, 1 for plus) of filament \ttt{fil}, which is the component of the softwall and repel surface forces on the end node, from \ttt{filSurfInteractForces}, that is parallel to the end segment. It is positive if it pushes the node back toward the filament. Only surface forces are included because the dynamics are overdamped: the total force on a node that is pressed against a surface is close to zero, since the stretching force balances the surface force, and it also includes thermal noise. This doesn't use the filament's work space, so it also works for filaments without dynamics. Draws no random numbers.
+
+\item[\ttt{double filEndVelocity(const filamentptr fil,int end)}] %?? new code
+\hfill \\
+Returns the rate of length change of end \ttt{end} of filament \ttt{fil}. This is the \ttt{endrate} value for the end's state, except for the barbed state, where it is \ttt{r+a*(exp(-k*F)-1)}, with \ttt{r} from \ttt{endrate}, \ttt{a} and \ttt{k} from \ttt{barbedparameters}, and \ttt{F} from \ttt{filEndPushForce}. \ttt{filEndPushForce} is only called if \ttt{a} and \ttt{k} are positive. Draws no random numbers.
+
 \item[\ttt{void filEndDynamics(simptr sim,filamenttypeptr filtype)}] %?? new code
 \hfill \\
-Length changes at both ends of every filament of one filament type, minus end first, each by its current state's rate times $\Delta t$, using \ttt{filEndLengthChange}. Deterministic; the only length noise is the random segment length. A filament that shrinks away is removed with \ttt{filRemoveFilament}; the loop then continues with the filament that moved into its position.
+Length changes at both ends of every filament of one filament type, minus end first, each by its current rate from \ttt{filEndVelocity} times $\Delta t$, using \ttt{filEndLengthChange}. Deterministic; the only length noise is the random segment length. A filament that shrinks away is removed with \ttt{filRemoveFilament}; the loop then continues with the filament that moved into its position.
 
 \item[\underline{Filament superstructure}]
 (Superstructure is changed and/or lower levels are updated.)
@@ -5209,9 +5219,9 @@ Adds the forces from the softwall and repel interactions of the filament type wi
 AI description. Harmonic surface confinement, in the spirit of Cytosim's per-model-point ``confine'' stiffness: each node on the penalized side of an interaction's surface (the side opposite the interaction's \ttt{surfface}) feels the restoring force k*d toward the nearest point of the surface -- the gradient of a penalty energy $0.5*k*d^2$ in the penetration depth d. Only the closest panel of the surface (from \ttt{closestsurfacept}, with ties going to the first panel in the panel lists) acts on each node, and if the node isn't on that panel's penalized side, the surface exerts no force on it, even if it is on the penalized side of other panels' planes. This keeps coplanar tessellations from stacking and keeps the far faces of convex obstacles from pulling on nodes; in a concave corner, a node only feels the nearer wall. Repel interactions use the same closest panel. The constant is per NODE, like the other per-element force constants, so refining \ttt{standard\_length} stiffens the wall per unit contour length, and it is the interaction's \ttt{kforce} times the node's thickness from \ttt{filNodeThickness}, as for the other force constants; the equilibrium penetration depth of a fluctuating node is the half-Gaussian spread sqrt(kT/k). This is a soft steric wall for filament mechanics only -- molecules do not see it, and richer filament-surface interaction (hard collisions, Brownian-ratchet load feedback) remains future work. One geometric caveat: the side test is panelside's, which for rect, tri, and disk panels classifies against the panel's INFINITE plane, so a partial patch penalizes nodes laterally beyond it and behind its plane, pulling them toward the patch edge. Draws no random numbers; returns immediately when off.
 
 
-\item[\ttt{void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction)}] %?? new code
+\item[\ttt{void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,double *fsum)}] %?? new code
 \hfill \\
-Computes the forces of the softwall and repel interactions of the filament type with surfaces, for nodes \ttt{nodemin} to \ttt{nodemax} of filament \ttt{fil}, as described for \ttt{filAddSurfForces}, which calls this with \ttt{reaction} equal to 0 to add the forces to the node forces in \ttt{fil->filwork->forces}. With \ttt{reaction} equal to 1, it instead adds the equal and opposite forces to the \ttt{force} elements of the panels that exert them, and doesn't use \ttt{filwork}.
+Computes the forces of the softwall and repel interactions of the filament type with surfaces, for nodes \ttt{nodemin} to \ttt{nodemax} of filament \ttt{fil}, as described for \ttt{filAddSurfForces}, which calls this with \ttt{reaction} equal to 0 to add the forces to the node forces in \ttt{fil->filwork->forces}. With \ttt{reaction} equal to 1, it instead adds the equal and opposite forces to the \ttt{force} elements of the panels that exert them, and doesn't use \ttt{filwork}. If \ttt{reaction} is 0 and \ttt{fsum} isn't \ttt{NULL}, the forces are added to the vector \ttt{fsum} instead of to the node forces, without using \ttt{filwork}; \ttt{filEndPushForce} uses this.
 
 \item[\ttt{void filSurfReactionForces(simptr sim)}] %?? new code
 \hfill \\

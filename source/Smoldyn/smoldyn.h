@@ -623,8 +623,8 @@ typedef struct latticesuperstruct {
 
 enum FilamentDynamics {FDnone, FDeuler, FDRK2, FDRK4, FDeulermat, FDimplicitold,
 		FDimplicit};
-enum FilEndState {FESopen,FEScapped,FESshrink,FESnone};
-#define FESMAX 3
+enum FilEndState {FESopen,FEScapped,FESshrink,FESbarbed,FESnone};
+#define FESMAX 4
 
 enum FilamentPart {FPplus, FPminus, FPside, FPall, FPnone};
 #define FILPARTMAX 3									// number of distinct filament parts
@@ -799,6 +799,7 @@ typedef struct filamenttypestruct {
     filfilinteractptr *filint;         // list of filament-filament interactions
     double endrate[2][FESMAX];         // end velocity [end][state], length/time; >0 grows, <0 shrinks
     double endtrans[2][FESMAX][FESMAX]; // end state transition rates [end][from][to], 1/time
+    double barbedparameters[2];        // barbed end force response [a,k]: a in length/time, k in 1/force
     enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
     int maxface;                       // filament faces allocated

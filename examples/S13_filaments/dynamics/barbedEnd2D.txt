@@ -1,0 +1,108 @@
+# Barbed filament ends, which elongate more slowly when they are pushed against.
+#
+# The system is divided into two lanes. In each lane, three filaments grow upward from
+# the floor and push on a lid, which has a mobility (mobility 0.2), and the
+# applysurfaceforce command pushes down on both lids with the same constant load. The
+# filaments in the left lane have open plus ends, which always elongate at rate 1. The
+# filaments in the right lane have barbed plus ends (end_state plus barbed), which
+# elongate at rate v=r+a*(exp(-k*F)-1), entered with elongation_rate plus barbed r a k.
+# Here, r is 1, a is 1, k is 2, and F is the part of the surface force on the end node
+# that is parallel to the end segment and pushes against the end. Thus, barbed ends
+# elongate at rate 1 until they reach the lid, and then more slowly as the force on
+# them rises, while open ends keep elongating at rate 1, so the open filaments end up
+# much longer and more buckled than the barbed ones. Buckling is random, so the
+# amounts that the lids rise vary from run to run. The lids' forces and total
+# displacements are listed at the end.
+#
+# smoldyn barbedEnd2D.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 66
+boundaries y 0 100
+
+time_start 0
+time_stop 60
+time_step 0.01
+random_seed 1
+boxsize 10
+
+frame_thickness 0
+
+start_surface walls
+color both black
+thickness 1
+panel rect +0 0 0 100
+panel rect +0 33 0 100
+panel rect -0 66 0 100
+panel rect -1 0 100 66
+end_surface
+
+start_surface floor
+color both black
+thickness 2
+panel rect +1 0 10 66
+end_surface
+
+start_surface lid1
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 1 22 31
+end_surface
+
+start_surface lid2
+color both 0.5 0.5 0.5
+thickness 3
+mobility 0.2
+panel rect -1 34 22 31
+end_surface
+
+start_filament_type open
+color red
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate 1
+surface_interaction floor front all softwall 20
+surface_interaction lid1 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+start_filament_type barbed
+color blue
+thickness 2
+polygon edge
+dynamics implicit
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+elongation_rate plus barbed 1 1 2
+end_state plus barbed
+surface_interaction floor front all softwall 20
+surface_interaction lid2 front all repel 20 2
+surface_interaction walls both all reflect
+end_filament_type
+
+random_filament open:a1 3   8.2 11  1.571
+random_filament open:a2 3  16.5 11  1.571
+random_filament open:a3 3  24.8 11  1.571
+random_filament barbed:b1 3  41.2 11  1.571
+random_filament barbed:b2 3  49.5 11  1.571
+random_filament barbed:b3 3  57.8 11  1.571
+
+cmd E applysurfaceforce lid1 0 -1.5
+cmd E applysurfaceforce lid2 0 -1.5
+cmd A diagnostics surface
+
+end_file

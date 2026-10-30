@@ -1273,27 +1273,51 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    and can be used during a simulation with the set command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
-		"  * elongation_rate end state value",
+		"  * elongation_rate end state value\n"
+		"  * elongation_rate end barbed value a k",
 		"    The rate at which a filament end changes length, in units of length/time.\n"
-		"    Each end of a filament is in one of three states, \"open\", \"capped\", or\n"
-		"    \"shrink\" (see end_state and end_transition), and the end changes length at\n"
-		"    the rate given for its current state. In the second form, enter end as\n"
-		"    \"minus\" or \"plus\", state as \"open\", \"capped\", or \"shrink\", and value as the\n"
-		"    rate for that end in that state, which is positive for elongation and\n"
-		"    negative for shrinking. All rates are 0 by default. The first form, with\n"
-		"    only a value, is the same as elongation_rate plus open value and requires a\n"
-		"    value >=0. The state names are labels, and the rates define what the states\n"
-		"    do; typically, \"open\" has a positive rate, \"capped\" has a rate of 0, and\n"
-		"    \"shrink\" has a negative rate. Ends grow and shrink by whole segments,\n"
-		"    keeping track of the remaining length so that the average length change\n"
-		"    equals the rate times the elapsed time. A growing end adds segments with\n"
-		"    random lengths and angles; it stops growing if it is blocked by a surface\n"
-		"    that it has a reflect interaction with (see surface_interaction) or reaches\n"
-		"    elongation_max_length. A shrinking end removes its end segment. When a\n"
-		"    filament that is down to one segment shrinks by that segment's full length,\n"
-		"    the filament is removed from the simulation, as with remove_filament.\n"
-		"    Shrinking past a mother filament node where a branch attaches releases that\n"
-		"    branch. These rates are usually not used in combination with treadmilling."},
+		"    Each end of a filament is in one of four states, \"open\", \"capped\",\n"
+		"    \"shrink\", or \"barbed\" (see end_state and end_transition), and the end\n"
+		"    changes length at the rate given for its current state. In the second form,\n"
+		"    enter end as \"minus\" or \"plus\", state as \"open\", \"capped\", \"shrink\", or\n"
+		"    \"barbed\", and value as the rate for that end in that state, which is\n"
+		"    positive for elongation and negative for shrinking. All rates are 0 by\n"
+		"    default. The first form, with only a value, is the same as elongation_rate\n"
+		"    plus open value and requires a value >=0. The state names are labels, and\n"
+		"    the rates define what the states do; typically, \"open\" has a positive rate,\n"
+		"    \"capped\" has a rate of 0, and \"shrink\" has a negative rate. Ends grow and\n"
+		"    shrink by whole segments, keeping track of the remaining length so that the\n"
+		"    average length change equals the rate times the elapsed time. A growing end\n"
+		"    adds segments with random lengths and angles; it stops growing if it is\n"
+		"    blocked by a surface that it has a reflect interaction with (see\n"
+		"    surface_interaction) or reaches elongation_max_length. A shrinking end\n"
+		"    removes its end segment. When a filament that is down to one segment\n"
+		"    shrinks by that segment's full length, the filament is removed from the\n"
+		"    simulation, as with remove_filament. Shrinking past a mother filament node\n"
+		"    where a branch attaches releases that branch. These rates are usually not\n"
+		"    used in combination with treadmilling.\n"
+		"\n"
+		"    A barbed end elongates more slowly when something pushes against it. Its\n"
+		"    rate is v=r+a*(exp(-k*F)-1), where r is value, which is the rate with no\n"
+		"    force, a and k are the values entered in the third form, and F is the force\n"
+		"    pushing against the end node. As F increases, the rate decreases from r\n"
+		"    toward r-a, so the end stops at the force where these terms cancel if a>r,\n"
+		"    and beyond that it shrinks. a has units of length/time and k has units of\n"
+		"    inverse force, and both are 0 by default and need to be >=0. They belong to\n"
+		"    the filament type, so they apply to whichever ends are in the barbed state,\n"
+		"    and entering them again replaces them. F is the component along the end\n"
+		"    segment of the softwall and repel forces from surfaces on the end node (see\n"
+		"    surface_interaction), and it is positive if it pushes the end node back\n"
+		"    toward the filament. It is computed at the start of each time step. It\n"
+		"    doesn't include the filament's own stretching and bending forces or thermal\n"
+		"    forces. It doesn't include reflect interactions either, since these don't\n"
+		"    exert forces, so a barbed end needs softwall or repel interactions to\n"
+		"    respond to a surface, and Smoldyn warns if a filament type has neither. F\n"
+		"    can be negative, which increases the rate above r; this can happen when an\n"
+		"    end grows away from a repelling surface while it is still within the repel\n"
+		"    distance. The treadmill_rate statement only applies to open ends, so barbed\n"
+		"    ends don't treadmill. The S13_filaments/dynamics/barbedEnd2D.txt example\n"
+		"    shows barbed ends."},
 	{"statement","Statements about filaments",1,"elongation_max_length",
 		"  * elongation_max_length value",
 		"    Maximum filament contour length when elongation can occur. Longer filaments\n"
@@ -1310,20 +1334,20 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  * end_transition end state1 state2 rate",
 		"    The rate, in inverse time units, at which filament end end (\"minus\" or\n"
 		"    \"plus\") changes from state state1 to state state2, where the states are\n"
-		"    \"open\", \"capped\", or \"shrink\". All transition rates are 0 by default. In\n"
-		"    each time step, an end leaves its current state with probability\n"
-		"    1-exp(-R*dt), where R is the sum of the rates out of that state and dt is\n"
-		"    the time step, and goes to one of the other states with probability\n"
-		"    proportional to the individual rates. For example, dynamic instability at\n"
-		"    the plus end can be represented with end_transition plus open shrink k_cat\n"
-		"    and end_transition plus shrink open k_res, for catastrophe and rescue\n"
-		"    rates, along with a positive elongation_rate plus open and a negative\n"
-		"    elongation_rate plus shrink."},
+		"    \"open\", \"capped\", \"shrink\", or \"barbed\". All transition rates are 0 by\n"
+		"    default. In each time step, an end leaves its current state with\n"
+		"    probability 1-exp(-R*dt), where R is the sum of the rates out of that state\n"
+		"    and dt is the time step, and goes to one of the other states with\n"
+		"    probability proportional to the individual rates. For example, dynamic\n"
+		"    instability at the plus end can be represented with end_transition plus\n"
+		"    open shrink k_cat and end_transition plus shrink open k_res, for\n"
+		"    catastrophe and rescue rates, along with a positive elongation_rate plus\n"
+		"    open and a negative elongation_rate plus shrink."},
 	{"statement","Statements about filaments",1,"end_state",
 		"  * end_state end state",
 		"    The state that end end (\"minus\" or \"plus\") of new filaments of this type\n"
-		"    starts in, which is \"open\", \"capped\", or \"shrink\". The default is \"open\"\n"
-		"    for both ends. This applies to filaments that are created after this\n"
+		"    starts in, which is \"open\", \"capped\", \"shrink\", or \"barbed\". The default is\n"
+		"    \"open\" for both ends. This applies to filaments that are created after this\n"
 		"    statement, including branches, and does not change existing filaments. It\n"
 		"    can be changed during a simulation with the set command, for example cmd @\n"
 		"    0.5 set filament_type actin end_state plus capped, which affects filaments\n"
@@ -1541,7 +1565,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"end_state",
 		"  * end_state end state",
 		"    Sets the current state of end end (\"minus\" or \"plus\") of this filament to\n"
-		"    state, which is \"open\", \"capped\", or \"shrink\". See the end_state,\n"
+		"    state, which is \"open\", \"capped\", \"shrink\", or \"barbed\". See the end_state,\n"
 		"    elongation_rate, and end_transition statements for filament types."},
 	{"statement","Statements about filaments",1,"end_filament",
 		"  * end_filament",
@@ -2180,9 +2204,9 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    coordinates, one line each: FIL <time> <type>:<name> <nseg> <minus-attach>\n"
 		"    <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ..., where\n"
 		"    the attachments are what each end is attached to, as type:name:node, or \"-\"\n"
-		"    for a free end, and the states are the end states (\"open\", \"capped\", or\n"
-		"    \"shrink\"). Auto-named daughters are included, so this captures a whole\n"
-		"    branched network."},
+		"    for a free end, and the states are the end states (\"open\", \"capped\",\n"
+		"    \"shrink\", or \"barbed\"). Auto-named daughters are included, so this captures\n"
+		"    a whole branched network."},
 	{"command","System observation commands",0,"writeVTK",
 		"  writeVTK filepath/filename",
 		"    Outputs VTK format data for viewing with applications such as Visit or\n"

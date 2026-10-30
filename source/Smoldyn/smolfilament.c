@@ -171,6 +171,8 @@ void filPinJunctions(filamentssptr filss);
 double filContourLength(const filamentptr fil);
 int filEndLengthChange(simptr sim,filamentptr fil,int end,double dlength);
 void filEndTransitions(simptr sim,filamenttypeptr filtype);
+double filEndPushForce(const filamentptr fil,int end);
+double filEndVelocity(const filamentptr fil,int end);
 void filEndDynamics(simptr sim,filamenttypeptr filtype);
 
 // Filaments in boxes
@@ -208,7 +210,7 @@ void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 double filNodeThickness(const filamentptr fil,int node);
 double filNodeMobility(const filamentptr fil,int node);
 void filAddSurfForces(filamentptr fil,int nodemin,int nodemax);
-void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction);
+void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,double *fsum);
 void filSurfReactionForces(simptr sim);
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 void filComputeDerivForceMat(filamentptr fil,double dtmu);
@@ -268,6 +270,7 @@ char *filFES2string(enum FilEndState fes,char *string) {
 	if(fes==FESopen) strcpy(string,"open");
 	else if(fes==FEScapped) strcpy(string,"capped");
 	else if(fes==FESshrink) strcpy(string,"shrink");
+	else if(fes==FESbarbed) strcpy(string,"barbed");
 	else strcpy(string,"none");
 	return string; }
 
@@ -279,6 +282,7 @@ enum FilEndState filstring2FES(const char *string) {
 	if(!strcmp(string,"open")) ans=FESopen;
 	else if(!strcmp(string,"capped")) ans=FEScapped;
 	else if(!strcmp(string,"shrink")) ans=FESshrink;
+	else if(!strcmp(string,"barbed")) ans=FESbarbed;
 	else ans=FESnone;
 	return ans; }
 
@@ -855,6 +859,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 			for(fes=0;fes<FESMAX;fes++) {
 				filtype->endrate[end][fes]=0;
 				for(fes2=0;fes2<FESMAX;fes2++) filtype->endtrans[end][fes][fes2]=0; }}
+		filtype->barbedparameters[0]=filtype->barbedparameters[1]=0;
 		filtype->elongmaxlen=0;											// 0 => unbounded growth
 
 		filtype->maxface=0;
@@ -1222,6 +1227,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		for(fes=0;fes<FESMAX;fes++)
 			if(filtype->endrate[end][fes]!=0)
 				simLog(sim,2,"   %s state velocity: %g|L/T\n",filFES2string((enum FilEndState)fes,string),filtype->endrate[end][fes]);
+		if(filtype->endstate0[end]==FESbarbed || filtype->endrate[end][FESbarbed]!=0)
+			simLog(sim,2,"   barbed state force response: a=%g|L/T, k=%g\n",filtype->barbedparameters[0],filtype->barbedparameters[1]);
 		for(fes=0;fes<FESMAX;fes++)
 			for(fes2=0;fes2<FESMAX;fes2++)
 				if(filtype->endtrans[end][fes][fes2]>0)
@@ -1366,7 +1373,9 @@ int filCheckParams(const simptr sim,int *warnptr) {
 							if(!reach[fes2] && filtype->endtrans[end][fes][fes2]>0) reach[fes2]=more=1; }
 			for(fes=0;fes<FESMAX;fes++)
 				if(!reach[fes] && filtype->endrate[end][fes]!=0) {
-					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));} }
+					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));}
+			if(reach[FESbarbed] && filtype->barbedparameters[0]>0 && filtype->barbedparameters[1]>0 && !filSurfForceOn(filtype)) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has a barbed %s end, but no softwall or repel surface interactions, so its elongation rate won't depend on force\n",filtype->ftname,end?"plus":"minus");} }
 		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
 			if(filtype->branchspread==0) {
@@ -1637,6 +1646,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	else if(!strcmp(param,"endrate")) {								// end velocity, length/time; index = end*FESMAX+state
 		if(index<0 || index>=2*FESMAX) er=2;
 		else filtype->endrate[index/FESMAX][index%FESMAX]=value; }
+
+	else if(!strcmp(param,"barbedparameters")) {			// barbed end force response; index 0 = a, 1 = k
+		if(index<0 || index>=2 || value<0) er=2;
+		else filtype->barbedparameters[index]=value; }
 
 	else if(!strcmp(param,"endtrans")) {							// end state transition rate, 1/time; index = (end*FESMAX+from)*FESMAX+to
 		if(index<0 || index>=2*FESMAX*FESMAX || value<0) er=2;
@@ -2224,7 +2237,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			fsi->rate=fltv1[0];
 			fsi->offset=fltv1[1]; }}
 
-	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, length/time
+	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity [a k], length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
 		if(!strnword(line2,2)) {										// short form: plus end velocity in the open state
 			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
@@ -2238,13 +2251,21 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			i1=filstring2end(nm);
 			CHECKS(i1>=0,"elongation_rate end needs to be minus or plus");
 			fes1=filstring2FES(nm1);
-			CHECKS(fes1!=FESnone,"elongation_rate state needs to be open, capped, or shrink");
+			CHECKS(fes1!=FESnone,"elongation_rate state needs to be open, capped, shrink, or barbed");
 			line2=strnword(line2,3);
 			CHECKS(line2,"elongation_rate format: [end state] value");
 			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
 			CHECKM(itct==1,"elongation_rate format: [end state] value. "); }
 		filtypeSetParam(filtype,"endrate",i1*FESMAX+fes1,f1);
-		CHECKS(!strnword(line2,2),"unexpected text following elongation_rate"); }
+		line2=strnword(line2,2);
+		if(line2) {																	// barbed state: force response parameters
+			CHECKS(fes1==FESbarbed,"unexpected text following elongation_rate; only the barbed state has more parameters");
+			itct=strmathsscanf(line2,"%mlg|L/T %mlg|",varnames,varvalues,nvar,&f1,&f2);
+			CHECKM(itct==2,"elongation_rate format: end barbed value a k. ");
+			CHECKS(f1>=0 && f2>=0,"elongation_rate a and k values need to be >=0");
+			filtypeSetParam(filtype,"barbedparameters",0,f1);
+			filtypeSetParam(filtype,"barbedparameters",1,f2);
+			CHECKS(!strnword(line2,3),"unexpected text following elongation_rate"); }}
 
 	else if(!strcmp(word,"end_transition")) {		// end_transition: end from to rate, 1/time
 		CHECKS(filtype,"need to enter filament type name before end_transition");
@@ -2271,7 +2292,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		i1=filstring2end(nm);
 		CHECKS(i1>=0,"end_state end needs to be minus or plus");
 		fes1=filstring2FES(nm1);
-		CHECKS(fes1!=FESnone,"end_state state needs to be open, capped, or shrink");
+		CHECKS(fes1!=FESnone,"end_state state needs to be open, capped, shrink, or barbed");
 		filtypeSetParam(filtype,"endstate0",i1,(double)fes1);
 		CHECKS(!strnword(line2,3),"unexpected text following end_state"); }
 
@@ -2745,7 +2766,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		i1=filstring2end(str1);
 		CHECKS(i1>=0,"end_state end needs to be minus or plus");
 		fes=filstring2FES(str2);
-		CHECKS(fes!=FESnone,"end_state state needs to be open, capped, or shrink");
+		CHECKS(fes!=FESnone,"end_state state needs to be open, capped, shrink, or barbed");
 		fil->endstate[i1]=fes;
 		CHECKS(!strnword(line2,3),"unexpected text following end_state"); }
 
@@ -4489,6 +4510,51 @@ void filEndTransitions(simptr sim,filamenttypeptr filtype) {
 	return; }
 
 
+/* filEndPushForce */
+// Returns the force that pushes against end end (0 = minus, 1 = plus) of filament fil,
+// which is the component of the softwall and repel surface forces on the end node that
+// is parallel to the end segment. It is positive if the force pushes the end node back
+// toward the filament, and negative if it pulls the node outward. Only surface forces are
+// included because, in these overdamped dynamics, the total force on a node that is
+// pressed against a surface is close to zero, since the stretching force balances the
+// surface force, and because the total includes thermal noise. Draws no random numbers.
+double filEndPushForce(const filamentptr fil,int end) {
+	double fsum[3],seg[3],len,dot;
+	int node,node2,d,dim;
+
+	if(fil->nseg<1 || fil->filtype->nsurfint==0) return 0;
+	dim=fil->filtype->filss->sim->dim;
+	node=end?fil->nseg:0;
+	node2=end?fil->nseg-1:1;
+	fsum[0]=fsum[1]=fsum[2]=0;
+	filSurfInteractForces(fil,node,node,0,fsum);
+	len=dot=0;
+	for(d=0;d<dim;d++) {
+		seg[d]=fil->nodes[node][d]-fil->nodes[node2][d];		// outward along the end segment
+		len+=seg[d]*seg[d];
+		dot+=fsum[d]*seg[d]; }
+	if(len<=0) return 0;
+	return -dot/sqrt(len); }
+
+
+/* filEndVelocity */
+// Returns the rate of length change of end end (0 = minus, 1 = plus) of filament fil,
+// which is the type's endrate value for the end's current state. For the barbed state,
+// this is r+a*(exp(-k*F)-1), where r is the endrate value, a and k are the type's
+// barbedparameters values, and F is from filEndPushForce. Draws no random numbers.
+double filEndVelocity(const filamentptr fil,int end) {
+	filamenttypeptr filtype;
+	double v,a,k;
+
+	filtype=fil->filtype;
+	v=filtype->endrate[end][fil->endstate[end]];
+	if(fil->endstate[end]==FESbarbed) {
+		a=filtype->barbedparameters[0];
+		k=filtype->barbedparameters[1];
+		if(a>0 && k>0) v+=a*(exp(-k*filEndPushForce(fil,end))-1); }
+	return v; }
+
+
 /* filEndDynamics */
 // Length changes at both ends of every filament of one filament type, minus end first,
 // each by its current state's velocity times dt. Deterministic; the only length noise is
@@ -4501,7 +4567,7 @@ void filEndDynamics(simptr sim,filamenttypeptr filtype) {
 	for(f=0;f<filtype->nfil;f++) {
 		fil=filtype->fillist[f];
 		for(end=0;end<2;end++) {
-			v=filtype->endrate[end][fil->endstate[end]];
+			v=filEndVelocity(fil,end);
 			if(v!=0 && filEndLengthChange(sim,fil,end,v*sim->dt)==FILREMOVED) {
 				filRemoveFilament(fil);
 				f--;																					// the next filament has moved into position f
@@ -5831,7 +5897,7 @@ int filSurfForceOn(const filamenttypeptr filtype) {
 // of a partial patch, and behind its plane, is pulled toward the patch edge. Draws no
 // random numbers; returns immediately when off.
 void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
-	filSurfInteractForces(fil,nodemin,nodemax,0);
+	filSurfInteractForces(fil,nodemin,nodemax,0,NULL);
 	return; }
 
 
@@ -5841,8 +5907,10 @@ void filAddSurfForces(filamentptr fil,int nodemin,int nodemax) {
 // nodes), as described for filAddSurfForces. If reaction is 0, the forces are added
 // to the forces on the nodes, in fil->filwork->forces. If reaction is 1, the equal and
 // opposite forces are added to the force elements of the panels that exert them
-// instead, and the node forces aren't changed.
-void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction) {
+// instead, and the node forces aren't changed. If reaction is 0 and fsum isn't NULL, the
+// forces are added to the vector fsum instead, and neither the nodes nor the panels are
+// changed; this doesn't use the filament's work space.
+void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,double *fsum) {
 	double **forces,k,kn,pnlpt[3],*nodept,*fnode,r,dist,norm[3];
 	filamenttypeptr filtype;
 	filsurfinteractptr fsi;
@@ -5856,7 +5924,7 @@ void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction)
 	if(nodemin<0) nodemin=0;
 	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
 	dim=filtype->filss->sim->dim;
-	forces=reaction?NULL:fil->filwork->forces;
+	forces=(reaction || fsum)?NULL:fil->filwork->forces;
 
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
@@ -5884,7 +5952,7 @@ void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction)
 				for(d=0;d<dim;d++)
 					pnl->force[d]-=kn*(pnlpt[d]-nodept[d]);			// equal and opposite force on the panel
 			else {
-				fnode=forces[node];
+				fnode=fsum?fsum:forces[node];
 				for(d=0;d<dim;d++)
 					fnode[d]+=kn*(pnlpt[d]-nodept[d]); }}}
 	return; }
@@ -5921,7 +5989,7 @@ void filSurfReactionForces(simptr sim) {
 		filtype=filss->filtypes[ft];
 		if(filtype->dynamics==FDnone || !filSurfForceOn(filtype)) continue;
 		for(f=0;f<filtype->nfil;f++)
-			filSurfInteractForces(filtype->fillist[f],-1,-1,1); }
+			filSurfInteractForces(filtype->fillist[f],-1,-1,1,NULL); }
 
 	for(s=0;s<sim->srfss->nsrf;s++) {								// surface forces are sums of panel forces
 		srf=sim->srfss->srflist[s];
