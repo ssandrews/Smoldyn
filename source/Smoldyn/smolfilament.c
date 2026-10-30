@@ -5,6 +5,7 @@
  Copyright 2003-2016 by Steven Andrews.  This work is distributed under the terms
  of the Gnu Lesser General Public License (LGPL). */
 
+#include <float.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -92,6 +93,7 @@ int filtypeSetShiny(filamenttypeptr filtype,double shiny);
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd);
 int filtypeAddFace(filamenttypeptr filtype,const char* facename);
 filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilSurfAction action,double kforce,double repeldist);
+filfilinteractptr filtypeAddFilInteract(filamenttypeptr filtype,filamenttypeptr other,enum FilFilAction action,double kforce);
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname);
 
 // filament superstructure
@@ -193,6 +195,14 @@ int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype);
 int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
 int filSurfMoveDone(simptr sim);
 int filSurfForceOn(const filamenttypeptr filtype);
+double filContactKforce(const filamenttypeptr type1,const filamenttypeptr type2);
+int filContactTypeOn(const filamenttypeptr filtype);
+int filContactOn(const filamentssptr filss);
+double filContourPosition(const filamentptr fil,int seg,double frac);
+double filContactGap(const filamentptr fil1,int seg1,double frac1,const filamentptr fil2,int seg2,double frac2);
+void filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim);
+int filContactForces(simptr sim);
+void filAddContactForces(filamentptr fil,int nodemin,int nodemax);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 
 // Force computation
@@ -230,6 +240,8 @@ int filConstraintGrad(filamentptr fil,int c,int *idx,double *g,double *res);
 void filConstraintStart(filamentptr fil);
 int filProjectConstraints(filamentptr fil);
 int filUnstable(simptr sim,filamenttypeptr filtype);
+void filDynamicsEnds(simptr sim,filamenttypeptr filtype);
+int filDynamicsIntegrate(simptr sim,filamenttypeptr filtype);
 int filDynamics(simptr sim);
 
 
@@ -449,6 +461,8 @@ segmentptr filSegmentAlloc() {
 	segment->xyzplus=NULL;
 	segment->len=0;
 	segment->thk=1;
+	segment->contactid=0;
+	segment->contactmark=0;
 	segment->ypr[0]=segment->ypr[1]=segment->ypr[2]=0;
 	Sph_One2Qtn(segment->qrel);
 	Sph_One2Qtn(segment->qabs);
@@ -645,7 +659,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 	segmentptr *newsegments;
 	filjunctionptr *newjuncts;
 	char *newsequence;
-	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newnodesrfmob;
+	double **newnodes,**newnodesx,*newroll,*newnodemobility,*newnodesrfmob,*newcontactforce;
 	panelptr *newnodepnl;
 	enum PanelFace *newnodeface;
 
@@ -663,6 +677,9 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		fil->nodepnl=NULL;
 		fil->nodeface=NULL;
 		fil->nodesrfmob=NULL;
+		fil->contactforce=NULL;
+		for(seg=0;seg<2;seg++)
+			fil->endcontact[seg][0]=fil->endcontact[seg][1]=fil->endcontact[seg][2]=0;
 		fil->seg0up[0]=fil->seg0up[1]=0;
 		fil->seg0up[2]=1;
 		fil->endjunct[0]=fil->endjunct[1]=NULL;
@@ -685,6 +702,7 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		CHECKMEM(newnodepnl=(panelptr*) calloc(maxseg+1,sizeof(panelptr)));
 		CHECKMEM(newnodeface=(enum PanelFace*) calloc(maxseg+1,sizeof(enum PanelFace)));
 		CHECKMEM(newnodesrfmob=(double*) calloc(maxseg+1,sizeof(double)));
+		CHECKMEM(newcontactforce=(double*) calloc(3*(maxseg+1),sizeof(double)));	// recomputed each time step, so not copied
 
 		for(seg=0;seg<=maxseg;seg++) newnodes[seg]=NULL;		// nodes
 		seg=0;
@@ -727,6 +745,8 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		free(fil->nodepnl);
 		free(fil->nodeface);
 		free(fil->nodesrfmob);
+		free(fil->contactforce);
+		fil->contactforce=newcontactforce;
 		fil->segments=newsegments;
 		fil->nodes=newnodes;
 		fil->nodesx=newnodesx;
@@ -788,6 +808,7 @@ void filFree(filamentptr fil) {
 	free(fil->nodepnl);
 	free(fil->nodeface);
 	free(fil->nodesrfmob);
+	free(fil->contactforce);
 	free(fil->juncts);
 	free(fil->sequence);
 	free(fil);
@@ -993,7 +1014,8 @@ filamentssptr filssAlloc(filamentssptr filss,int maxtype) {
 		filss->njunct=0;
 		filss->junctlist=NULL;
 		filss->nspring=0;
-		filss->boxlists=0; }
+		filss->boxlists=0;
+		filss->contacton=0; }
 
 	if(maxtype>=filss->maxtype) {
 		CHECKMEM(newfiltypes=(filamenttypeptr*) calloc(maxtype,sizeof(filamenttypeptr)));
@@ -1200,6 +1222,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branching gated to within %g|L of surface %s\n",filtype->branchsrfdist,filtype->branchsrf->sname);
 	if(filtype->branchcmpt)
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
+	for(i=0;i<filtype->nfilint;i++)
+		if(filtype->filint[i]->action==FFAsoftwall)
+			simLog(sim,2,"  softwall contact interaction with filament type %s, force constant %g, contact distance %g|L\n",filtype->filint[i]->otherfiltype->ftname,filtype->filint[i]->kforce,filtype->filradius+filtype->filint[i]->otherfiltype->filradius);
 	simLog(sim,filtype->nsurfint>0?2:1,"  surface interactions: %i\n",filtype->nsurfint);
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
@@ -1374,8 +1399,8 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(fes=0;fes<FESMAX;fes++)
 				if(!reach[fes] && filtype->endrate[end][fes]!=0) {
 					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));}
-			if(reach[FESbarbed] && filtype->barbedparameters[0]>0 && filtype->barbedparameters[1]>0 && !filSurfForceOn(filtype)) {
-				warn++;simLog(sim,5,"WARNING: filament type %s has a barbed %s end, but no softwall or repel surface interactions, so its elongation rate won't depend on force\n",filtype->ftname,end?"plus":"minus");} }
+			if(reach[FESbarbed] && filtype->barbedparameters[0]>0 && filtype->barbedparameters[1]>0 && !filSurfForceOn(filtype) && !filContactTypeOn(filtype)) {
+				warn++;simLog(sim,5,"WARNING: filament type %s has a barbed %s end, but no softwall or repel surface interactions or filament contact interactions, so its elongation rate won't depend on force\n",filtype->ftname,end?"plus":"minus");} }
 		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
 			if(filtype->branchspread==0) {
@@ -1414,6 +1439,10 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics EulerMat, which is a test method; it gives the same results as Euler but more slowly, so use Euler, RK4, or Implicit for simulations\n",filtype->ftname);}
 		if(filtype->dynamics==FDimplicitold) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics ImplicitOld, which is a test method; it can be unstable even with short time steps, so use Implicit for simulations\n",filtype->ftname);}
+		for(i=0;i<filtype->nfilint;i++) {							// filament-filament interactions
+			fval=sim->dt*filtype->filint[i]->kforce*(filtype->mobility>filtype->filint[i]->otherfiltype->mobility?filtype->mobility:filtype->filint[i]->otherfiltype->mobility);
+			if(filtype->filint[i]->action==FFAsoftwall && fval>0.5) {
+				warn++;simLog(sim,5,"WARNING: the contact interaction between filament types %s and %s may be numerically unstable, for any dynamics method, because time_step * mobility * force constant = %g, which should be well below 1\n",filtype->ftname,filtype->filint[i]->otherfiltype->ftname,fval);} }
 		for(i=0;i<filtype->nsurfint;i++) {						// filament-surface interactions
 			fsi=filtype->surfint[i];
 			pcount=0;
@@ -1795,6 +1824,44 @@ filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf
 	return fsi; }
 
 
+/* filtypeAddFilInteract */
+// Adds an interaction with action action between filament types filtype and other, which
+// can be the same type, or sets the force constant of the existing one. These
+// interactions are symmetric, so an interaction that was entered from either type is the
+// same one, and is listed in only one type's filint list. Returns the interaction, or
+// NULL if memory could not be allocated.
+filfilinteractptr filtypeAddFilInteract(filamenttypeptr filtype,filamenttypeptr other,enum FilFilAction action,double kforce) {
+	filfilinteractptr ffi,*newlist;
+	int i,newmax;
+
+	ffi=NULL;
+	for(i=0;i<filtype->nfilint && !ffi;i++)
+		if(filtype->filint[i]->otherfiltype==other && filtype->filint[i]->action==action) ffi=filtype->filint[i];
+	for(i=0;i<other->nfilint && !ffi;i++)
+		if(other->filint[i]->otherfiltype==filtype && other->filint[i]->action==action) ffi=other->filint[i];
+
+	if(!ffi) {
+		if(filtype->nfilint==filtype->maxfilint) {
+			newmax=2*filtype->maxfilint+1;
+			newlist=(filfilinteractptr*) calloc(newmax,sizeof(filfilinteractptr));
+			if(!newlist) return NULL;
+			for(i=0;i<filtype->nfilint;i++) newlist[i]=filtype->filint[i];
+			free(filtype->filint);
+			filtype->filint=newlist;
+			filtype->maxfilint=newmax; }
+		ffi=(filfilinteractptr) calloc(1,sizeof(struct filfilinteractstruct));
+		if(!ffi) return NULL;
+		ffi->filtype=filtype;
+		ffi->selffilface=-1;
+		ffi->otherfiltype=other;
+		ffi->otherfilface=-1;
+		ffi->action=action;
+		filtype->filint[filtype->nfilint++]=ffi; }
+
+	ffi->kforce=kforce;
+	return ffi; }
+
+
 /* filAddFilamentType */
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname) {
 	int ft,er;
@@ -2171,6 +2238,29 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
 		filpart[FPplus]=filpart[FPminus]=filpart[FPside]=1;	// shorthand for a softwall interaction on all parts; committed only after full validation so a failed runtime set changes nothing
 		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,FSAsoftwall,f1,0),"out of memory adding confine_surface"); }
+
+	else if(!strcmp(word,"radius")) {						// radius: value, length
+		CHECKS(filtype,"need to enter filament type name before radius");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"radius format: value. ");
+		CHECKS(f1>0,"radius value needs to be >0");
+		filtypeSetParam(filtype,"radius",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following radius"); }
+
+	else if(!strcmp(word,"filament_interaction")) {	// filament_interaction: filament_type softwall force_constant
+		CHECKS(filtype,"need to enter filament type name before filament_interaction");
+		itct=sscanf(line2,"%s %s",nm1,nm2);
+		CHECKS(itct==2,"filament_interaction format: filament_type softwall force_constant");
+		i1=stringfind(sim->filss->ftnames,sim->filss->ntype,nm1);
+		CHECKS(i1>=0,"filament_interaction filament type not recognized (define it before this filament type)");
+		CHECKS(!strcmp(nm2,"softwall"),"filament_interaction action needs to be softwall");
+		line2=strnword(line2,3);
+		CHECKS(line2,"filament_interaction format: filament_type softwall force_constant");
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"filament_interaction format: filament_type softwall force_constant. ");
+		CHECKS(f1>=0,"filament_interaction force constant needs to be >=0");
+		CHECKMEM(filtypeAddFilInteract(filtype,sim->filss->filtypes[i1],FFAsoftwall,f1));
+		CHECKS(!strnword(line2,2),"unexpected text following filament_interaction"); }
 
 	else if(!strcmp(word,"surface_interaction")) {	// surface_interaction: surface face parts action [parameters]
 		CHECKS(filtype,"need to enter filament type name before surface_interaction");
@@ -3827,6 +3917,8 @@ void filReset(filamentptr fil) {
 		for(seg=0;seg<fil->maxseg;seg++) fil->roll[seg]=0; }
 	fil->seg0up[0]=fil->seg0up[1]=0;
 	fil->seg0up[2]=1;
+	for(seg=0;seg<2;seg++)
+		fil->endcontact[seg][0]=fil->endcontact[seg][1]=fil->endcontact[seg][2]=0;
 	fil->endjunct[0]=fil->endjunct[1]=NULL;
 	fil->njunct=0;
 	fil->nsequence=0;
@@ -4512,9 +4604,11 @@ void filEndTransitions(simptr sim,filamenttypeptr filtype) {
 
 /* filEndPushForce */
 // Returns the force that pushes against end end (0 = minus, 1 = plus) of filament fil,
-// which is the component of the softwall and repel surface forces on the end node that
-// is parallel to the end segment. It is positive if the force pushes the end node back
-// toward the filament, and negative if it pulls the node outward. Only surface forces are
+// which is the component of the softwall and repel surface forces on the end node, plus
+// the contact force from other filaments, that is parallel to the end segment. The
+// contact force is from the previous time step, because end dynamics come before the
+// contact force pass. It is positive if the force pushes the end node back
+// toward the filament, and negative if it pulls the node outward. Only these forces are
 // included because, in these overdamped dynamics, the total force on a node that is
 // pressed against a surface is close to zero, since the stretching force balances the
 // surface force, and because the total includes thermal noise. Draws no random numbers.
@@ -4522,11 +4616,11 @@ double filEndPushForce(const filamentptr fil,int end) {
 	double fsum[3],seg[3],len,dot;
 	int node,node2,d,dim;
 
-	if(fil->nseg<1 || fil->filtype->nsurfint==0) return 0;
+	if(fil->nseg<1) return 0;
 	dim=fil->filtype->filss->sim->dim;
 	node=end?fil->nseg:0;
 	node2=end?fil->nseg-1:1;
-	fsum[0]=fsum[1]=fsum[2]=0;
+	for(d=0;d<3;d++) fsum[d]=fil->endcontact[end][d];
 	filSurfInteractForces(fil,node,node,0,fsum);
 	len=dot=0;
 	for(d=0;d<dim;d++) {
@@ -5414,6 +5508,7 @@ void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect) {
 	filAddThermalForces(fil,-1,-1);
 	filAddJunctionForces(fil,-1,-1);
 	filAddSurfForces(fil,-1,-1);
+	filAddContactForces(fil,-1,-1);
 	if(dim==2) {
 		for(node=0;node<=fil->nseg;node++)
 			for(d=0;d<2;d++)
@@ -5958,6 +6053,264 @@ void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,
 	return; }
 
 
+/* filContactKforce */
+// Returns the force constant of the softwall contact interaction between filament types
+// type1 and type2, or 0 if they don't have one.
+double filContactKforce(const filamenttypeptr type1,const filamenttypeptr type2) {
+	int i;
+
+	for(i=0;i<type1->nfilint;i++)
+		if(type1->filint[i]->action==FFAsoftwall && type1->filint[i]->otherfiltype==type2) return type1->filint[i]->kforce;
+	for(i=0;i<type2->nfilint;i++)
+		if(type2->filint[i]->action==FFAsoftwall && type2->filint[i]->otherfiltype==type1) return type2->filint[i]->kforce;
+	return 0; }
+
+
+/* filContactTypeOn */
+// Returns 1 if filament type filtype has a contact interaction with a positive force
+// constant with any filament type, and 0 if not.
+int filContactTypeOn(const filamenttypeptr filtype) {
+	int ft;
+
+	for(ft=0;ft<filtype->filss->ntype;ft++)
+		if(filContactKforce(filtype,filtype->filss->filtypes[ft])>0) return 1;
+	return 0; }
+
+
+/* filContactOn */
+// Returns 1 if any filament types have a contact interaction with a positive force
+// constant, and 0 if not.
+int filContactOn(const filamentssptr filss) {
+	int ft,i;
+
+	for(ft=0;ft<filss->ntype;ft++)
+		for(i=0;i<filss->filtypes[ft]->nfilint;i++)
+			if(filss->filtypes[ft]->filint[i]->action==FFAsoftwall && filss->filtypes[ft]->filint[i]->kforce>0) return 1;
+	return 0; }
+
+
+/* filContourPosition */
+// Returns the contour distance from the minus end of filament fil to the point at
+// fraction frac along segment seg. Use seg equal to nseg and frac 0 for the plus end.
+double filContourPosition(const filamentptr fil,int seg,double frac) {
+	double pos;
+	int s;
+
+	pos=0;
+	for(s=0;s<seg;s++) pos+=fil->segments[s]->len;
+	if(seg<fil->nseg) pos+=frac*fil->segments[seg]->len;
+	return pos; }
+
+
+/* filContactGap */
+// Returns the shortest contour distance between a point on filament fil1, at fraction
+// frac1 along segment seg1, and a point on filament fil2, at fraction frac2 along
+// segment seg2, or DBL_MAX if the filaments aren't connected. Besides the distance along
+// a single filament, this follows paths through one junction, between an attached end
+// and its target, and through two junctions, between two ends with the same target.
+double filContactGap(const filamentptr fil1,int seg1,double frac1,const filamentptr fil2,int seg2,double frac2) {
+	filjunctionptr j1,j2;
+	double pos1,pos2,end1,end2,target1,target2,gap,g;
+	int e1,e2;
+
+	pos1=filContourPosition(fil1,seg1,frac1);
+	pos2=filContourPosition(fil2,seg2,frac2);
+	gap=(fil1==fil2)?fabs(pos1-pos2):DBL_MAX;
+	for(e1=0;e1<2;e1++) {
+		j1=fil1->endjunct[e1];
+		if(j1) {
+			end1=e1?filContourPosition(fil1,fil1->nseg,0):0;
+			if(j1->target==fil2) {
+				g=fabs(pos1-end1)+fabs(pos2-filContourPosition(fil2,j1->node,0));
+				if(g<gap) gap=g; }
+			for(e2=0;e2<2;e2++) {
+				j2=fil2->endjunct[e2];
+				if(j2 && j2->target==j1->target) {
+					end2=e2?filContourPosition(fil2,fil2->nseg,0):0;
+					target1=filContourPosition(j1->target,j1->node,0);
+					target2=filContourPosition(j1->target,j2->node,0);
+					g=fabs(pos1-end1)+fabs(target1-target2)+fabs(pos2-end2);
+					if(g<gap) gap=g; }}}
+		j2=fil2->endjunct[e1];
+		if(j2 && j2->target==fil1) {
+			end2=e1?filContourPosition(fil2,fil2->nseg,0):0;
+			g=fabs(pos2-end2)+fabs(pos1-filContourPosition(fil1,j2->node,0));
+			if(g<gap) gap=g; }}
+	return gap; }
+
+
+#define FILCONTACTMIN 1e-9			// centerlines closer than this, relative to the contact distance, are touching
+
+/* filContactPair */
+// Adds the softwall contact force between filament segments seg1 and seg2, if they are in
+// contact, to the contactforce arrays of their filaments. k is the force constant and
+// contact is the sum of their radii. The force comes from the energy
+// 0.5*keff*(contact-d)^2, where d is the distance between the closest points of the two
+// centerlines and keff is k times the harmonic mean of the segment thicknesses. It acts
+// along the line between the closest points, and is split between the two nodes of each
+// segment in proportion to how close the point is to them, which conserves force and
+// torque. There is no force for centerlines that touch, including crossed segments in
+// 2D, since the direction would only be from round-off error (see FILCONTACTMIN).
+// Pairs are skipped if they are closer along the filaments than a tight hairpin, with
+// contour distance pi/2*contact, since they aren't in contact in any real sense; this
+// keeps a filament from pushing on itself near each point. A contact that's at a node
+// that's shared by two segments is close to both of them, so a pair is also skipped if its
+// closest point is at such a node and the next segment along is closer, or equally
+// close for the lower numbered of the two, which gives one force per contact.
+void filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim) {
+	filamentptr fil1,fil2;
+	segmentptr next;
+	double frac1,frac2,fa,fb,dist,keff,f,vect[3],*cf1,*cf2;
+	int d,i1,i2;
+
+	dist=Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,seg2->xyzminus,seg2->xyzplus,&frac1,&frac2);
+	if(dist>=contact || dist<=FILCONTACTMIN*contact) return;
+	fil1=seg1->fil;
+	fil2=seg2->fil;
+	i1=seg1->index;
+	i2=seg2->index;
+	if(filContactGap(fil1,i1,frac1,fil2,i2,frac2)<PI/2*contact) return;
+
+	if(frac1>=1 && i1<fil1->nseg-1) {									// a contact at a shared node is counted once
+		next=fil1->segments[i1+1];
+		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<=dist) return; }
+	else if(frac1<=0 && i1>0) {
+		next=fil1->segments[i1-1];
+		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<dist) return; }
+	if(frac2>=1 && i2<fil2->nseg-1) {
+		next=fil2->segments[i2+1];
+		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<=dist) return; }
+	else if(frac2<=0 && i2>0) {
+		next=fil2->segments[i2-1];
+		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<dist) return; }
+
+	keff=k*2*seg1->thk*seg2->thk/(seg1->thk+seg2->thk);
+	f=keff*(contact-dist)/dist;
+	for(d=0;d<dim;d++)
+		vect[d]=f*(seg1->xyzminus[d]+frac1*(seg1->xyzplus[d]-seg1->xyzminus[d])-seg2->xyzminus[d]-frac2*(seg2->xyzplus[d]-seg2->xyzminus[d]));
+	cf1=fil1->contactforce;
+	cf2=fil2->contactforce;
+	for(d=0;d<dim;d++) {
+		cf1[3*i1+d]+=(1-frac1)*vect[d];
+		cf1[3*(i1+1)+d]+=frac1*vect[d];
+		cf2[3*i2+d]-=(1-frac2)*vect[d];
+		cf2[3*(i2+1)+d]-=frac2*vect[d]; }
+	return; }
+
+
+/* filContactForces */
+// Computes the contact forces between all filaments, including between a filament and
+// itself, for the current node positions, and saves them in the filaments' contactforce
+// and endcontact elements. filDynamics calls this once per time step, after end dynamics
+// and before the integrators, which all use these forces for the whole step (see
+// filAddContactForces). This way, forces are exactly equal and opposite and don't depend
+// on the order of the filaments, whereas computing them within the integrators wouldn't
+// allow either, because integrators step filaments one at a time and forces are cleared
+// one filament at a time. If there are no contact interactions, this just clears the
+// forces. Each segment tests the segments in the boxes that overlap its bounding box
+// plus its largest contact distance, which includes all that it could touch; each
+// pair is tested once, in order of contactid, with contactmark avoiding repeats of
+// segments that are in several boxes. Contacts aren't found across periodic boundaries.
+// Returns 0 for success or 1 for out of memory. Draws no random numbers.
+int filContactForces(simptr sim) {
+	filamentssptr filss;
+	filamenttypeptr filtype,filtype2;
+	filamentptr fil;
+	segmentptr segment,segment2;
+	boxssptr boxs;
+	boxptr bptr;
+	double reach,rmax,k,lo,hi;
+	int ft,ft2,f,seg,node,d,dim,on,id,b,s,indx[DIMMAX],low[DIMMAX],high[DIMMAX],carry;
+
+	filss=sim->filss;
+	boxs=sim->boxs;
+	dim=sim->dim;
+	on=filContactOn(filss) && boxs && boxs->blist;
+	id=0;
+	for(ft=0;ft<filss->ntype;ft++) {									// clear forces and number the segments
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			for(node=0;node<3*(fil->nseg+1) && fil->contactforce;node++) fil->contactforce[node]=0;
+			for(seg=0;seg<fil->nseg;seg++) {
+				fil->segments[seg]->contactid=++id;
+				fil->segments[seg]->contactmark=0; }
+			fil->endcontact[0][0]=fil->endcontact[0][1]=fil->endcontact[0][2]=0;
+			fil->endcontact[1][0]=fil->endcontact[1][1]=fil->endcontact[1][2]=0; }}
+	filss->contacton=on;
+	if(!on) return 0;
+
+	if(!filss->boxlists) {
+		if(filSetBoxLists(sim,1)) return 1; }
+	else if(filBoxesUpdate(sim)) return 1;
+
+	for(ft=0;ft<filss->ntype;ft++) {
+		filtype=filss->filtypes[ft];
+		rmax=-1;																				// largest radius that this type contacts
+		for(ft2=0;ft2<filss->ntype;ft2++) {
+			filtype2=filss->filtypes[ft2];
+			if(filtype2->filradius>rmax && filContactKforce(filtype,filtype2)>0) rmax=filtype2->filradius; }
+		if(rmax<0) continue;
+		reach=filtype->filradius+rmax;
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			for(seg=0;seg<fil->nseg;seg++) {
+				segment=fil->segments[seg];
+				for(d=0;d<dim;d++) {												// boxes that this segment could reach
+					lo=(segment->xyzminus[d]<segment->xyzplus[d]?segment->xyzminus[d]:segment->xyzplus[d])-reach;
+					hi=(segment->xyzminus[d]>segment->xyzplus[d]?segment->xyzminus[d]:segment->xyzplus[d])+reach;
+					low[d]=(int)floor((lo-boxs->min[d])/boxs->size[d]);
+					high[d]=(int)floor((hi-boxs->min[d])/boxs->size[d]);
+					if(low[d]<0) low[d]=0;
+					else if(low[d]>=boxs->side[d]) low[d]=boxs->side[d]-1;
+					if(high[d]<0) high[d]=0;
+					else if(high[d]>=boxs->side[d]) high[d]=boxs->side[d]-1;
+					indx[d]=low[d]; }
+				for(carry=0;!carry;) {
+					b=0;
+					for(d=0;d<dim;d++) b=boxs->side[d]*b+indx[d];
+					bptr=boxs->blist[b];
+					for(s=0;s<bptr->nfilseg;s++) {
+						segment2=bptr->filseg[s];
+						if(segment2->contactid<=segment->contactid || segment2->contactmark==segment->contactid) continue;
+						segment2->contactmark=segment->contactid;
+						filtype2=segment2->fil->filtype;
+						k=filContactKforce(filtype,filtype2);
+						if(k>0) filContactPair(segment,segment2,k,filtype->filradius+filtype2->filradius,dim); }
+					for(d=dim-1,carry=1;d>=0 && carry;d--) {		// next box in this range
+						if(++indx[d]>high[d]) indx[d]=low[d];
+						else carry=0; }}}}}
+
+	for(ft=0;ft<filss->ntype;ft++) {									// end forces, for barbed ends
+		filtype=filss->filtypes[ft];
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->nseg<1) continue;
+			for(d=0;d<3;d++) {
+				fil->endcontact[0][d]=fil->contactforce[d];
+				fil->endcontact[1][d]=fil->contactforce[3*fil->nseg+d]; }}}
+	return 0; }
+
+
+/* filAddContactForces */
+// Adds the contact forces from filContactForces to the forces on nodes nodemin to nodemax
+// of filament fil (negative values mean all nodes), in fil->filwork->forces. These stay
+// the same for all force evaluations in a time step. Draws no random numbers; returns
+// immediately when there aren't any contact forces.
+void filAddContactForces(filamentptr fil,int nodemin,int nodemax) {
+	double **forces;
+	int node,d;
+
+	if(!fil->filtype->filss->contacton) return;
+	if(nodemin<0) nodemin=0;
+	if(nodemax<0 || nodemax>fil->nseg) nodemax=fil->nseg;
+	forces=fil->filwork->forces;
+	for(node=nodemin;node<=nodemax;node++)
+		for(d=0;d<3;d++)
+			forces[node][d]+=fil->contactforce[3*node+d];
+	return; }
+
+
 /* filSurfReactionForces */
 // Sets the force elements of all panels and surfaces to the forces that filaments
 // exert on them, which are equal and opposite to the forces of the softwall and
@@ -6026,6 +6379,7 @@ void filComputeForces(filamentptr fil,int nodemin,int nodemax) {
 	filAddThermalForces(fil,nodemin,nodemax);
 	filAddJunctionForces(fil,nodemin,nodemax);
 	filAddSurfForces(fil,nodemin,nodemax);
+	filAddContactForces(fil,nodemin,nodemax);
 	return; }
 
 
@@ -6748,64 +7102,92 @@ int filUnstable(simptr sim,filamenttypeptr filtype) {
 	return 0; }
 
 
+/* filDynamicsEnds */
+// Treadmilling, branching, and end dynamics for filament type filtype, which are the parts
+// of a time step that change the filament structure.
+void filDynamicsEnds(simptr sim,filamenttypeptr filtype) {
+	filamentptr fil;
+	int f,i,treadnum;
+
+	if(filtype->treadrate!=0) {
+		for(f=0;f<filtype->nfil;f++) {
+			fil=filtype->fillist[f];
+			if(fil->endstate[filtype->treadrate>0?1:0]!=FESopen) continue;	// only an open end takes a monomer
+			treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
+			for(i=0;i<treadnum;i++)
+				filTreadmill(sim,fil,filtype->treadrate>0?'p':'m'); }}
+
+	filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
+	filEndTransitions(sim,filtype);									// before length changes: an end capped now doesn't also grow now
+	filEndDynamics(sim,filtype);										// before the integrator: a new segment relaxes this step
+	return; }
+
+
+/* filDynamicsIntegrate */
+// Moves the filaments of type filtype with its dynamics method, including constraints.
+// Returns 0 for success or 1 for an error.
+int filDynamicsIntegrate(simptr sim,filamenttypeptr filtype) {
+	int f,i,reflect;
+
+	if(filtype->dynamics!=FDnone && filConstrained(filtype))		// constraint gradients at the start of the step
+		for(f=0;f<filtype->nfil;f++)
+			filConstraintStart(filtype->fillist[f]);
+	reflect=(filtype->dynamics!=FDnone && filSurfReflectOn(filtype));
+	if(filtype->dynamics!=FDnone)										// node positions before the integrator, for reflecting surfaces and adsorbed nodes
+		for(f=0;f<filtype->nfil;f++)
+			if(reflect || filNodesAdsorbed(filtype->fillist[f]))
+				filSaveStartNodes(filtype->fillist[f]);
+	if(filtype->dynamics==FDeuler)
+		filEulerDynamics(sim,filtype);
+	else if(filtype->dynamics==FDRK2)
+		filRK2Dynamics(sim,filtype);
+	else if(filtype->dynamics==FDRK4)
+		filRK4Dynamics(sim,filtype);
+	else if(filtype->dynamics==FDeulermat)
+		filEulerMatDynamics(sim,filtype);
+	else if(filtype->dynamics==FDimplicit)
+		filImplicitDynamics(sim,filtype);
+	else if(filtype->dynamics==FDimplicitold)
+		filImplicitOldDynamics(sim,filtype);
+
+	if(filtype->dynamics!=FDnone && filConstrained(filtype))		// negative force constants are constraints
+		for(f=0;f<filtype->nfil;f++) {
+			i=filProjectConstraints(filtype->fillist[f]);
+			if(i==2) {
+				simLog(sim,10,"Out of memory projecting filaments onto constraints\n");
+				return 1; }
+			if(i==1 && !filtype->constraintwarn) {
+				simLog(sim,5,"WARNING: filament %s did not converge onto its constraints (negative force constants) at time %g; the time step may be too long\n",filtype->fillist[f]->filname,sim->time);
+				filtype->constraintwarn=1; }}
+
+	if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
+		simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
+		return 1; }
+	return 0; }
+
+
 /* filDynamics */
 int filDynamics(simptr sim) {
 	filamentssptr filss;
 	filamentptr fil;
 	filamenttypeptr filtype;
-	int f,ft,i,treadnum,reflect;
+	int f,ft;
 
 	filss=sim->filss;
 	if(!filss) return 0;
 
-	for(ft=0;ft<filss->ntype;ft++) {
-		filtype=filss->filtypes[ft];
-		if(filtype->treadrate!=0) {
-			for(f=0;f<filtype->nfil;f++) {
-				fil=filtype->fillist[f];
-				if(fil->endstate[filtype->treadrate>0?1:0]!=FESopen) continue;	// only an open end takes a monomer
-				treadnum=poisrandD(fabs(filtype->treadrate)*sim->dt);
-				for(i=0;i<treadnum;i++)
-					filTreadmill(sim,fil,filtype->treadrate>0?'p':'m'); }}
-
-		filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
-		filEndTransitions(sim,filtype);									// before length changes: an end capped now doesn't also grow now
-		filEndDynamics(sim,filtype);										// before the integrator: a new segment relaxes this step
-
-		if(filtype->dynamics!=FDnone && filConstrained(filtype))		// constraint gradients at the start of the step
-			for(f=0;f<filtype->nfil;f++)
-				filConstraintStart(filtype->fillist[f]);
-		reflect=(filtype->dynamics!=FDnone && filSurfReflectOn(filtype));
-		if(filtype->dynamics!=FDnone)										// node positions before the integrator, for reflecting surfaces and adsorbed nodes
-			for(f=0;f<filtype->nfil;f++)
-				if(reflect || filNodesAdsorbed(filtype->fillist[f]))
-					filSaveStartNodes(filtype->fillist[f]);
-		if(filtype->dynamics==FDeuler)
-			filEulerDynamics(sim,filtype);
-		else if(filtype->dynamics==FDRK2)
-			filRK2Dynamics(sim,filtype);
-		else if(filtype->dynamics==FDRK4)
-			filRK4Dynamics(sim,filtype);
-		else if(filtype->dynamics==FDeulermat)
-			filEulerMatDynamics(sim,filtype);
-		else if(filtype->dynamics==FDimplicit)
-			filImplicitDynamics(sim,filtype);
-		else if(filtype->dynamics==FDimplicitold)
-			filImplicitOldDynamics(sim,filtype);
-
-		if(filtype->dynamics!=FDnone && filConstrained(filtype))		// negative force constants are constraints
-			for(f=0;f<filtype->nfil;f++) {
-				i=filProjectConstraints(filtype->fillist[f]);
-				if(i==2) {
-					simLog(sim,10,"Out of memory projecting filaments onto constraints\n");
-					return 1; }
-				if(i==1 && !filtype->constraintwarn) {
-					simLog(sim,5,"WARNING: filament %s did not converge onto its constraints (negative force constants) at time %g; the time step may be too long\n",filtype->fillist[f]->filname,sim->time);
-					filtype->constraintwarn=1; }}
-
-		if(filtype->dynamics!=FDnone && filUnstable(sim,filtype)) {
-			simLog(sim,9,"ERROR: filament type %s became numerically unstable at time %g; reduce time_step, mobility, or force constants, or use dynamics implicit\n",filtype->ftname,sim->time);
-			return 1; }}
+	if(filContactOn(filss) || filss->contacton) {		// end changes for all types first, so contact forces see the final structure
+		for(ft=0;ft<filss->ntype;ft++)
+			filDynamicsEnds(sim,filss->filtypes[ft]);
+		if(filContactForces(sim)) {
+			simLog(sim,10,"Out of memory computing filament contact forces\n");
+			return 1; }
+		for(ft=0;ft<filss->ntype;ft++)
+			if(filDynamicsIntegrate(sim,filss->filtypes[ft])) return 1; }
+	else
+		for(ft=0;ft<filss->ntype;ft++) {
+			filDynamicsEnds(sim,filss->filtypes[ft]);
+			if(filDynamicsIntegrate(sim,filss->filtypes[ft])) return 1; }
 
 	for(ft=0;ft<filss->ntype;ft++) {								// adsorbed nodes stay on their surfaces
 		filtype=filss->filtypes[ft];

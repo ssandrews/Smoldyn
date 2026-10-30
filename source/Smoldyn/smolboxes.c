@@ -627,7 +627,7 @@ void boxssoutput(simptr sim) {
 
 /* checkboxparams */
 int checkboxparams(simptr sim,int *warnptr) {
-	int error,warn,b,dim,nmolec,ll,ft,nsurfint;
+	int error,warn,b,dim,nmolec,ll,ft,nsurfint,nfilint;
 	boxssptr boxs;
 	double mpbox;
 	char string[STRCHAR];
@@ -668,11 +668,15 @@ int checkboxparams(simptr sim,int *warnptr) {
 			simLog(sim,5," WARNING: box (%s) has %i panels in it, which is very high\n",Zn_vect2csvstring(bptr->indx,dim,string),bptr->npanel); }}
 
 	if(sim->filss && boxs->nbox==1) {										// filament interactions get no benefit from a single box
-		nsurfint=0;
+		nsurfint=nfilint=0;
 		for(ft=0;ft<sim->filss->ntype;ft++) nsurfint+=sim->filss->filtypes[ft]->nsurfint;
 		if(nsurfint>0) {
 			warn++;
-			simLog(sim,5," WARNING: filaments have surface interactions but there is only 1 virtual box; set boxsize to make interactions more efficient\n"); }}
+			simLog(sim,5," WARNING: filaments have surface interactions but there is only 1 virtual box; set boxsize to make interactions more efficient\n"); }
+		for(ft=0;ft<sim->filss->ntype;ft++) nfilint+=sim->filss->filtypes[ft]->nfilint;
+		if(nfilint>0) {
+			warn++;
+			simLog(sim,5," WARNING: filaments have filament interactions but there is only 1 virtual box, so all pairs of segments are tested; set boxsize to make interactions more efficient\n"); }}
 
 	if(warnptr) *warnptr=warn;
 	return error; }

@@ -4153,7 +4153,7 @@ The filament end state enumeration lists the states that each filament end can b
 
 \begin{lstlisting}
 enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
-enum FilFilAction {FFAnone, FFAforce, FFAblock, FFAadsorb, FFAdesorb};
+enum FilFilAction {FFAnone, FFAsoftwall, FFAblock, FFAadsorb, FFAdesorb};
 enum FilSurfAction {FSAnone, FSAsoftwall, FSArepel, FSAreflect, FSAadsorb, FSAdesorb};
 
 typedef struct filmolinteractstruct {        // Filament-molecule interactions structure
@@ -4182,8 +4182,8 @@ typedef struct filfilinteractstruct {
     int otherfilface;                                        // interaction face of other filament, if any
     char othersequence[STRCHAR];                // recognition sequence on other filament, if any
     compartptr compart;                                    // set if this only happens within a specific compartment
-    enum FilFilAction action;                        // type of interaction: force, blocking, end annealing, side adsorption, branch addition
-    // parameters
+    enum FilFilAction action;                        // type of interaction: softwall, blocking, end annealing, side adsorption, branch addition
+    double kforce;                                        // FFAsoftwall: spring constant of the contact force, energy/length^2
 }* filfilinteractptr;
 
 typedef struct filsurfinteractstruct {    // Filament-surface interaction; one structure per interaction
@@ -4205,7 +4205,7 @@ typedef struct filsurfinteractstruct {    // Filament-surface interaction; one s
         // future parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
 } *filsurfinteractptr;
 \end{lstlisting}
-These structures and enumerations are for filament interactions, whether with molecules, other filaments, or surfaces. Each structure represents one interaction, and each filament type has a list of each kind of interaction structure (\ttt{surfint}, \ttt{molint}, and \ttt{filint}). The first several elements of each structure say what part of the filament interacts. \ttt{filpart} is indexed by the \ttt{FilamentPart} values \ttt{FPplus}, \ttt{FPminus}, and \ttt{FPside}, and each element is 1 if that part interacts and 0 if not, where the plus and minus parts are the end nodes and the side part is the interior nodes; the \ttt{FPall} and \ttt{FPnone} values are not indices but are available for input. \ttt{selfsurf}, \ttt{sequence}, and \ttt{filface} are for interactions that only apply to filaments that are bound to a surface, to a recognition sequence, or to a filament face; these are stubs for future work and are not used yet. The next elements say what the filament interacts with, and \ttt{action} says what type of interaction it is. The remaining elements are the interaction parameters.
+These structures and enumerations are for filament interactions, whether with molecules, other filaments, or surfaces. For filament-filament interactions, only \ttt{FFAsoftwall} is used so far, with its force constant in \ttt{kforce}, and it acts between all parts of the filaments, so the \ttt{self} and \ttt{other} recognition fields are stubs (see \ttt{filContactForces}). Each structure represents one interaction, and each filament type has a list of each kind of interaction structure (\ttt{surfint}, \ttt{molint}, and \ttt{filint}). The first several elements of each structure say what part of the filament interacts. \ttt{filpart} is indexed by the \ttt{FilamentPart} values \ttt{FPplus}, \ttt{FPminus}, and \ttt{FPside}, and each element is 1 if that part interacts and 0 if not, where the plus and minus parts are the end nodes and the side part is the interior nodes; the \ttt{FPall} and \ttt{FPnone} values are not indices but are available for input. \ttt{selfsurf}, \ttt{sequence}, and \ttt{filface} are for interactions that only apply to filaments that are bound to a surface, to a recognition sequence, or to a filament face; these are stubs for future work and are not used yet. The next elements say what the filament interacts with, and \ttt{action} says what type of interaction it is. The remaining elements are the interaction parameters.
 
 Only the filament-surface interactions are implemented so far, and only the \ttt{FSAsoftwall}, \ttt{FSArepel}, \ttt{FSAreflect}, \ttt{FSAadsorb}, and \ttt{FSAdesorb} actions. For these, \ttt{othersurf} is the surface and \ttt{surfface} is the face of the surface that the filament is on, which is \ttt{PFfront} or \ttt{PFback} for softwall and repel and can also be \ttt{PFboth} for reflect. \ttt{compart} is a stub for interactions that only apply within a compartment and is not used yet. For \ttt{FSAsoftwall}, \ttt{kforce} is the force constant, and nodes of the listed parts that are on the other side of the surface are pushed back to it (see \ttt{filAddSurfForces}). \ttt{FSArepel} is the same, except that the force starts at distance \ttt{repeldist} from the surface, on the filament's side. For \ttt{FSAadsorb}, free nodes of the listed parts within \ttt{capdist} of the surface adsorb at rate \ttt{rate} with lateral mobility factor \ttt{srfmob}, and for \ttt{FSAdesorb}, adsorbed nodes of the listed parts desorb at rate \ttt{rate} and are placed \ttt{offset} from the surface (see \ttt{filSurfAdsorbDesorb}); for these, \ttt{surfface} can also be \ttt{PFboth}. The \ttt{surface\_interaction} statement sets \ttt{rate}, \ttt{capdist}, \ttt{srfmob}, and \ttt{offset} on the interaction that \ttt{filtypeAddSurfInteract} returns. For \ttt{FSAreflect}, a listed end can't grow if the new segment crosses the surface from the given face (see \ttt{filSurfBlocksSegment}), and for filaments with dynamics, nodes of the listed parts that move across the surface from that face are reflected back (see \ttt{filSurfReflectNodes}). Without interactions, filaments and surfaces don't interact at all. The filament-molecule and filament-filament structures are stubs; their lists are allocated and freed but are always empty for now.
 
@@ -4219,6 +4219,8 @@ typedef struct segmentstruct {
     double *xyzplus;                  // Coords. for segment plus end
     double len;                       // segment length
     double thk;                       // thickness of segment
+    int contactid;                    // number of this segment in the current contact force pass
+    int contactmark;                  // contactid of the last segment that tested this one
     double ypr[3];                    // relative ypr angles
     double qrel[4];                   // relative rotation quaternion
     double qabs[4];                   // absolute rotation quaternion
@@ -4302,6 +4304,8 @@ typedef struct filamentstruct {
     panelptr *nodepnl;                  // panel that each node is adsorbed to, or NULL if free (nseg+1)
     enum PanelFace *nodeface;           // face of nodepnl that each adsorbed node is on (nseg+1)
     double *nodesrfmob;                 // lateral mobility factor of each adsorbed node (nseg+1)
+    double *contactforce;               // contact force on each node for this time step, xyz (3*(nseg+1))
+    double endcontact[2][3];            // contact force on each end node, from the last contact pass [end][d]
     double seg0up[3];                   // segment 0 up vector
     filjunctionptr endjunct[2];         // attachment of each end [end], where 0 = minus and 1 = plus; NULL if free
     int maxjunct;                       // allocated size of juncts
@@ -4427,6 +4431,7 @@ typedef struct filamentsuperstruct {
     filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse
     int nspring;               // number of junctions that close loops (not rigid)
     int boxlists;              // 1 if filaments are listed in the virtual boxes, because something needs them
+    int contacton;             // 1 if the last time step had filament contact forces
     } * filamentssptr;
 \end{lstlisting}
 
@@ -4775,7 +4780,7 @@ Stochastic end state transitions for all filaments of one filament type. An end 
 
 \item[\ttt{double filEndPushForce(const filamentptr fil,int end)}] %?? new code
 \hfill \\
-Returns the force that pushes against end \ttt{end} (0 for minus, 1 for plus) of filament \ttt{fil}, which is the component of the softwall and repel surface forces on the end node, from \ttt{filSurfInteractForces}, that is parallel to the end segment. It is positive if it pushes the node back toward the filament. Only surface forces are included because the dynamics are overdamped: the total force on a node that is pressed against a surface is close to zero, since the stretching force balances the surface force, and it also includes thermal noise. This doesn't use the filament's work space, so it also works for filaments without dynamics. Draws no random numbers.
+Returns the force that pushes against end \ttt{end} (0 for minus, 1 for plus) of filament \ttt{fil}, which is the component of the softwall and repel surface forces on the end node, from \ttt{filSurfInteractForces}, plus the contact force in \ttt{endcontact}, which is from the previous time step, that is parallel to the end segment. It is positive if it pushes the node back toward the filament. Only surface forces are included because the dynamics are overdamped: the total force on a node that is pressed against a surface is close to zero, since the stretching force balances the surface force, and it also includes thermal noise. This doesn't use the filament's work space, so it also works for filaments without dynamics. Draws no random numbers.
 
 \item[\ttt{double filEndVelocity(const filamentptr fil,int end)}] %?? new code
 \hfill \\
@@ -5057,6 +5062,10 @@ Removes filament \ttt{fil} from the simulation, keeping its memory for reuse. Be
 
 \item[\underline{Filaments in boxes}]
 
+\item[\ttt{filfilinteractptr filtypeAddFilInteract(filamenttypeptr filtype,filamenttypeptr other,enum FilFilAction action,double kforce)}] %?? new code
+\hfill \\
+Adds an interaction between filament types \ttt{filtype} and \ttt{other}, which can be the same, or sets the force constant of the existing one. Interactions are symmetric, so one that was entered from either type is the same one, and it is listed only in the \ttt{filint} list of the type that it was first entered for. Returns the interaction, or \ttt{NULL} for out of memory.
+
 \item[\ttt{int filSetBoxLists(simptr sim, int on)}] %?? new code
 \hfill \\
 Local. Turns the filament lists of the virtual boxes on, with \ttt{on} equal to 1, or off, with \ttt{on} equal to 0, by setting \ttt{filss->boxlists}. Code that uses these lists, such as future filament-molecule or filament-filament interactions, should call this to turn them on, so that they aren't maintained when nothing needs them. Turning them on builds them right away with \ttt{filBoxesUpdate}, and turning them off empties them. Nothing calls this yet. Returns 0 for success or 1 for out of memory.
@@ -5223,6 +5232,38 @@ AI description. Harmonic surface confinement, in the spirit of Cytosim's per-mod
 \hfill \\
 Computes the forces of the softwall and repel interactions of the filament type with surfaces, for nodes \ttt{nodemin} to \ttt{nodemax} of filament \ttt{fil}, as described for \ttt{filAddSurfForces}, which calls this with \ttt{reaction} equal to 0 to add the forces to the node forces in \ttt{fil->filwork->forces}. With \ttt{reaction} equal to 1, it instead adds the equal and opposite forces to the \ttt{force} elements of the panels that exert them, and doesn't use \ttt{filwork}. If \ttt{reaction} is 0 and \ttt{fsum} isn't \ttt{NULL}, the forces are added to the vector \ttt{fsum} instead of to the node forces, without using \ttt{filwork}; \ttt{filEndPushForce} uses this.
 
+\item[\ttt{double filContactKforce(const filamenttypeptr type1,const filamenttypeptr type2)}] %?? new code
+\hfill \\
+Returns the force constant of the softwall contact interaction between the two filament types, which can be listed in either type's \ttt{filint} list, or 0 if there isn't one.
+
+\item[\ttt{int filContactTypeOn(const filamenttypeptr filtype)}] %?? new code
+\hfill \\
+Returns 1 if the filament type has a contact interaction with a positive force constant with any type, and 0 if not.
+
+\item[\ttt{int filContactOn(const filamentssptr filss)}] %?? new code
+\hfill \\
+Returns 1 if any filament types have a contact interaction with a positive force constant, and 0 if not.
+
+\item[\ttt{double filContourPosition(const filamentptr fil,int seg,double frac)}] %?? new code
+\hfill \\
+Returns the contour distance from the minus end of \ttt{fil} to the point at fraction \ttt{frac} along segment \ttt{seg}. With \ttt{seg} equal to a node number and \ttt{frac} equal to 0, this is the position of that node, including the plus end node.
+
+\item[\ttt{double filContactGap(const filamentptr fil1,int seg1,double frac1,const filamentptr fil2,int seg2,double frac2)}] %?? new code
+\hfill \\
+Returns the shortest contour distance between two points on filaments, or \ttt{DBL\_MAX} if the filaments aren't connected. This follows a single filament, one junction between an attached end and its target, or two junctions between two ends that have the same target. It doesn't follow longer paths through networks.
+
+\item[\ttt{void filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim)}] %?? new code
+\hfill \\
+Adds the softwall contact force between two segments to the \ttt{contactforce} arrays of their filaments, if they are in contact. \ttt{k} is the force constant and \ttt{contact} is the sum of the radii. It finds the closest points with \ttt{Geo\_NearestSeg2SegPts}, at distance $d$, and the force is $k_{eff}(contact-d)$, from the energy $k_{eff}(contact-d)^2/2$, where $k_{eff}$ is \ttt{k} times the harmonic mean of the thicknesses. It's split between each segment's two nodes in proportion to how close the point is to them, which conserves force and torque. There are three reasons for skipping a pair. First, if $d$ is at most \ttt{FILCONTACTMIN} ($10^{-9}$) times \ttt{contact}, the centerlines touch, including crossed segments in 2D, where $d$ is zero except for round-off error, so the direction would be random; before this test was added, this made results depend on the order of the additions, and so on the box size. Second, if \ttt{filContactGap} is less than $\pi/2$ times \ttt{contact}, which is the contour length of a hairpin with this separation, the two points are close along the filaments rather than being in contact. Third, a contact that is at a shared node is close to both segments, so a pair is skipped if its closest point is at such a node and the next segment along is closer, or is equally close for the lower numbered segment, which gives one force per contact. Draws no random numbers.
+
+\item[\ttt{int filContactForces(simptr sim)}] %?? new code
+\hfill \\
+Computes all contact forces, for the current node positions, and saves them in the filaments' \ttt{contactforce} and \ttt{endcontact} elements. \ttt{filDynamics} calls this once per time step, after end dynamics and before the integrators, which all use these forces for the whole time step through \ttt{filAddContactForces}. They aren't computed in the integrators because forces are cleared one filament at a time, so a filament can't write to another filament's forces, and because integrators step filaments one at a time, so later filaments would see earlier ones after they moved, making forces unequal and dependent on filament order. The arrays are in the filament structure instead of \ttt{filwork} because filaments without dynamics don't have \ttt{filwork}, and they act as fixed obstacles. If there are no contact interactions, this only clears the forces and \ttt{contacton}. Otherwise, it turns on the filament box lists (\ttt{filSetBoxLists}) or updates them (\ttt{filBoxesUpdate}), since end dynamics change the segments. Each segment then tests the segments in all boxes that overlap its bounding box, extended by the largest contact distance of its type. This doesn't use the boxes' \ttt{neigh} lists, which depend on the simulation accuracy and can be too short if boxes are smaller than the contact distance. Any segment within contact distance is in one of these boxes, because segments are listed in every box that their centerlines pass through. \ttt{contactid} numbers the segments in this pass, so each pair is tested once, from the lower numbered segment, and \ttt{contactmark} avoids testing a segment again if it's in several of the boxes. Contacts aren't found across periodic boundaries. \ttt{endcontact} saves the forces on the end nodes for \ttt{filEndPushForce}, because node numbers can change in end dynamics, before \ttt{contactforce} would be read. Returns 0 for success or 1 for out of memory. Draws no random numbers.
+
+\item[\ttt{void filAddContactForces(filamentptr fil,int nodemin,int nodemax)}] %?? new code
+\hfill \\
+Adds the contact forces from \ttt{filContactForces} to the node forces in \ttt{filwork->forces}, if \ttt{contacton} is set. \ttt{filComputeForces} and \ttt{filAddMatrixForceStep} call this. \ttt{filComputeDerivForceMat} doesn't, because these forces are constant during a time step, so they have no Jacobian, and the Implicit method doesn't stabilize them.
+
 \item[\ttt{void filSurfReactionForces(simptr sim)}] %?? new code
 \hfill \\
 Sets the \ttt{force} elements of all panels and surfaces to the forces that filaments exert on them. It clears them, adds the reaction forces of every filament of every filament type that has dynamics and softwall or repel interactions (\ttt{filSurfForceOn}) with \ttt{filSurfInteractForces}, and then sets each surface's \ttt{force} to the sum of its panels' \ttt{force} elements. Filament types without dynamics are left out, since the forces on them aren't applied. \ttt{filDynamics} calls this at the end of each time step, after all motion, so these are the forces at the end of the step, which are also the forces on the filaments at the start of the next step. These are computed once per time step, rather than in \ttt{filAddSurfForces}, because that function is called several times per time step by the RK2, RK4, and Implicit integrators. Each node's reaction force goes to the one panel that pushes on it, which is its closest panel of the surface. Draws no random numbers.
@@ -5341,9 +5382,17 @@ Projecting along the gradients at the start of the step, as in the SHAKE algorit
 \hfill \\
 Returns 1 if the mechanics of filament type \ttt{filtype} have become numerically unstable and 0 if not. It reports instability if any node coordinate is not finite, or if any segment is longer than 100 times the sum of the system diagonal and the standard length. If the filament type has a length spring (\ttt{klen}>0), it also reports instability if any segment is longer than $100(l_0+\sigma_l)$, where $l_0$ is the standard length and $\sigma_l=\sqrt{kT/(t\,k_l)}$ is the thermal standard deviation of the length of a segment with thickness $t$; this tighter limit catches filaments with short segments, for which the system diagonal is far too permissive. An explicit integrator with a time step that is too long for the force constants produces a zigzag that grows geometrically, so this catches it within a few time steps. This matters especially for branching filaments, because the number of branches nucleated per time step is proportional to the contour length, so a blown-up filament would otherwise create an unbounded number of daughters.
 
+\item[\ttt{void filDynamicsEnds(simptr sim,filamenttypeptr filtype)}] %?? new code
+\hfill \\
+Treadmilling, branching, end state transitions, and end dynamics for one filament type, which are the parts of a time step that change the filament structure.
+
+\item[\ttt{int filDynamicsIntegrate(simptr sim,filamenttypeptr filtype)}] %?? new code
+\hfill \\
+Moves the filaments of one type with its dynamics method, including constraints. Returns 0 for success or 1 for an error.
+
 \item[\ttt{int filDynamics(simptr sim)}]
 \hfill \\
-Runs all dynamics for filaments. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, EulerMat, Implicit, and ImplicitOld integration methods. For a filament type with constraints (\ttt{filConstrained}), it calls \ttt{filConstraintStart} for each filament before the integration step and \ttt{filProjectConstraints} after it, displaying a warning once per filament type if the projection doesn't converge. For a filament type with dynamics, it saves the node positions with \ttt{filSaveStartNodes} before the integration step, for each filament if the type has reflect interactions with surfaces (\ttt{filSurfReflectOn}) or the filament has adsorbed nodes. After all filament types have been integrated, it keeps adsorbed nodes on their surfaces with \ttt{filSurfAdsorbedNodes}, before and, for rigidly attached filaments, after \ttt{filPinJunctions}. After the reflection, it runs adsorption and desorption with \ttt{filSurfAdsorbDesorb} for each filament type that has adsorb or desorb interactions (\ttt{filSurfAdsorbOn}), including types without dynamics. Finally, it computes the forces that filaments exert on surfaces with \ttt{filSurfReactionForces}. After all filament types have been integrated and \ttt{filPinJunctions} has re-pinned the junctions, it reflects nodes that crossed a reflecting surface with \ttt{filSurfReflectNodes}. After each filament type's integration step, it calls \ttt{filUnstable}, and if the type has become unstable, it displays an error message and returns 1, which terminates the simulation. Otherwise it returns 0.
+Runs all dynamics for filaments. If there are contact interactions, or there were in the last time step, it runs \ttt{filDynamicsEnds} for all filament types, then \ttt{filContactForces}, and then \ttt{filDynamicsIntegrate} for all types, so contact forces see the final segments of all types. Otherwise, it runs \ttt{filDynamicsEnds} and \ttt{filDynamicsIntegrate} for each type in turn, which is the original order and gives the same random numbers as before. At present, this supports treadmilling and conformational dynamics using the Euler, RK2, RK4, EulerMat, Implicit, and ImplicitOld integration methods. For a filament type with constraints (\ttt{filConstrained}), it calls \ttt{filConstraintStart} for each filament before the integration step and \ttt{filProjectConstraints} after it, displaying a warning once per filament type if the projection doesn't converge. For a filament type with dynamics, it saves the node positions with \ttt{filSaveStartNodes} before the integration step, for each filament if the type has reflect interactions with surfaces (\ttt{filSurfReflectOn}) or the filament has adsorbed nodes. After all filament types have been integrated, it keeps adsorbed nodes on their surfaces with \ttt{filSurfAdsorbedNodes}, before and, for rigidly attached filaments, after \ttt{filPinJunctions}. After the reflection, it runs adsorption and desorption with \ttt{filSurfAdsorbDesorb} for each filament type that has adsorb or desorb interactions (\ttt{filSurfAdsorbOn}), including types without dynamics. Finally, it computes the forces that filaments exert on surfaces with \ttt{filSurfReactionForces}. After all filament types have been integrated and \ttt{filPinJunctions} has re-pinned the junctions, it reflects nodes that crossed a reflecting surface with \ttt{filSurfReflectNodes}. After each filament type's integration step, it calls \ttt{filUnstable}, and if the type has become unstable, it displays an error message and returns 1, which terminates the simulation. Otherwise it returns 0.
 
 \end{description}
 

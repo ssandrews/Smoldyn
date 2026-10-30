@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 304
+#define SMOLHELP_NENTRY 306
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -1236,6 +1236,24 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    for the side of the surface that the filament is confined to. This\n"
 		"    statement is a shorthand for surface_interaction surface face all softwall\n"
 		"    force."},
+	{"statement","Statements about filaments",1,"radius",
+		"  * radius value",
+		"    Radius of filaments of this type, which needs to be greater than 0. It is\n"
+		"    only used for filament contact forces (see filament_interaction), and it's\n"
+		"    separate from the thickness of filament segments, which affects filament\n"
+		"    stiffness and drag. The default is 1."},
+	{"statement","Statements about filaments",1,"filament_interaction",
+		"  * filament_interaction type softwall k",
+		"    Adds a contact force between filaments of this type and filaments of type\n"
+		"    type, which needs to be defined before this statement and can be this type.\n"
+		"    Two segments are pushed apart when their centerlines are closer than the\n"
+		"    sum of the filaments' radii, with force constant k times the harmonic mean\n"
+		"    of their thicknesses. A value of 0 turns the force off. The interaction is\n"
+		"    symmetric, so it only needs to be entered for one of the two types, and\n"
+		"    entering it again from either type replaces k. If type is this type, this\n"
+		"    also applies to different parts of a single filament. Filaments have no\n"
+		"    contact forces by default. See the Smoldyn User's Manual. This statement\n"
+		"    can be used during a simulation with the set command."},
 	{"statement","Statements about filaments",1,"surface_interaction",
 		"  * surface_interaction surface face parts action [parameters]",
 		"    Adds an interaction between filaments of this type and surface surface,\n"
@@ -1307,17 +1325,19 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    the filament type, so they apply to whichever ends are in the barbed state,\n"
 		"    and entering them again replaces them. F is the component along the end\n"
 		"    segment of the softwall and repel forces from surfaces on the end node (see\n"
-		"    surface_interaction), and it is positive if it pushes the end node back\n"
-		"    toward the filament. It is computed at the start of each time step. It\n"
-		"    doesn't include the filament's own stretching and bending forces or thermal\n"
-		"    forces. It doesn't include reflect interactions either, since these don't\n"
-		"    exert forces, so a barbed end needs softwall or repel interactions to\n"
-		"    respond to a surface, and Smoldyn warns if a filament type has neither. F\n"
-		"    can be negative, which increases the rate above r; this can happen when an\n"
-		"    end grows away from a repelling surface while it is still within the repel\n"
-		"    distance. The treadmill_rate statement only applies to open ends, so barbed\n"
-		"    ends don't treadmill. The S13_filaments/dynamics/barbedEnd2D.txt example\n"
-		"    shows barbed ends."},
+		"    surface_interaction) and of the contact force from other filaments, from\n"
+		"    the previous time step (see filament_interaction), and it is positive if it\n"
+		"    pushes the end node back toward the filament. It is computed at the start\n"
+		"    of each time step. It doesn't include the filament's own stretching and\n"
+		"    bending forces or thermal forces. It doesn't include reflect interactions\n"
+		"    either, since these don't exert forces, so a barbed end needs softwall or\n"
+		"    repel interactions to respond to a surface, and Smoldyn warns if a filament\n"
+		"    type has none of these or contact interactions. F can be negative, which\n"
+		"    increases the rate above r; this can happen when an end grows away from a\n"
+		"    repelling surface while it is still within the repel distance. The\n"
+		"    treadmill_rate statement only applies to open ends, so barbed ends don't\n"
+		"    treadmill. The S13_filaments/dynamics/barbedEnd2D.txt example shows barbed\n"
+		"    ends."},
 	{"statement","Statements about filaments",1,"elongation_max_length",
 		"  * elongation_max_length value",
 		"    Maximum filament contour length when elongation can occur. Longer filaments\n"

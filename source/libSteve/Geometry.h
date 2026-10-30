@@ -59,6 +59,7 @@ int Geo_NearestCylinderPt(double *pt1,double *pt2,double rad,int dim,double *poi
 int Geo_NearestDiskPt(double *cent,double *axis,double rad,int dim,double *point,double *ans,double margin);
 double Geo_NearestLine2LineDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2);
 double Geo_NearestSeg2SegDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2);
+double Geo_NearestSeg2SegPts(const double *ptA1,const double *ptA2,const double *ptB1,const double *ptB2,double *sptr,double *tptr);
 double Geo_NearestAabbPt(const double *bpt1,const double *bpt2,int dim,const double *point,double *ans);
 
 // To Rect

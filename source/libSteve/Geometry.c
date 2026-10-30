@@ -1031,6 +1031,67 @@ double Geo_NearestLine2LineDist(double *ptA1,double *ptA2,double *ptB1,double *p
 	return dist; }
 
 
+/* Geo_NearestSeg2SegPts */
+// Finds the closest points of the 3D line segments from ptA1 to ptA2 and from ptB1 to
+// ptB2, and returns the distance between them. The closest points are at fractions
+// *sptr along segment A and *tptr along segment B, each from 0 to 1. For parallel
+// segments, which have many closest pairs of points, this uses the middle of their
+// overlap, or the nearest ends if they don't overlap.
+double Geo_NearestSeg2SegPts(const double *ptA1,const double *ptA2,const double *ptB1,const double *ptB2,double *sptr,double *tptr) {
+	double a,b,c,d,e,denom,s,t,lo,hi,vect[3];
+	int i;
+
+	a=b=c=d=e=0;
+	for(i=0;i<3;i++) {
+		a+=(ptA2[i]-ptA1[i])*(ptA2[i]-ptA1[i]);
+		b+=(ptA2[i]-ptA1[i])*(ptB2[i]-ptB1[i]);
+		c+=(ptB2[i]-ptB1[i])*(ptB2[i]-ptB1[i]);
+		d+=(ptA2[i]-ptA1[i])*(ptA1[i]-ptB1[i]);
+		e+=(ptB2[i]-ptB1[i])*(ptA1[i]-ptB1[i]); }
+	denom=a*c-b*b;
+
+	if(a<=0 && c<=0) s=t=0;
+	else if(a<=0) {
+		s=0;
+		t=e/c;
+		t=t<0?0:(t>1?1:t); }
+	else if(c<=0) {
+		t=0;
+		s=-d/a;
+		s=s<0?0:(s>1?1:s); }
+	else {
+		if(denom>1e-12*a*c) {													// not parallel
+			s=(b*e-c*d)/denom;
+			s=s<0?0:(s>1?1:s);
+			t=(b*s+e)/c; }
+		else {																				// parallel: t values of the ends of A, on B
+			lo=e/c;
+			hi=(e+b)/c;
+			if(lo>hi) {
+				t=lo;
+				lo=hi;
+				hi=t; }
+			lo=lo<0?0:lo;
+			hi=hi>1?1:hi;
+			t=(lo<=hi)?(lo+hi)/2:(hi<0?0:1);
+			s=(b*t-d)/a;
+			s=s<0?0:(s>1?1:s); }
+		if(t<0) {
+			t=0;
+			s=-d/a;
+			s=s<0?0:(s>1?1:s); }
+		else if(t>1) {
+			t=1;
+			s=(b-d)/a;
+			s=s<0?0:(s>1?1:s); }}
+
+	for(i=0;i<3;i++)
+		vect[i]=ptA1[i]+s*(ptA2[i]-ptA1[i])-ptB1[i]-t*(ptB2[i]-ptB1[i]);
+	*sptr=s;
+	*tptr=t;
+	return sqrt(vect[0]*vect[0]+vect[1]*vect[1]+vect[2]*vect[2]); }
+
+
 double Geo_NearestSeg2SegDist(double *ptA1,double *ptA2,double *ptB1,double *ptB2) {
 	double a,b,c,d,e,denom,sc,tc,dist,vect[3];
 	double sn,tn,sd,td;

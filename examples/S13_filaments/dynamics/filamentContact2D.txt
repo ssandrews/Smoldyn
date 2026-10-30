@@ -1,0 +1,80 @@
+# Filaments that push on each other when they come into contact.
+#
+# Filaments grow upward from a floor to a ceiling, which makes them buckle sideways. In
+# the left lane, red filaments have a softwall contact interaction with each other
+# (filament_interaction contact softwall 20), and they have a radius of 0.75 (radius
+# 0.75). Thus, two segments push apart when their centerlines are closer than the sum
+# of their radii, which is 1.5, and the same applies to two parts of one filament. Blue
+# filaments in the right lane are the same, but without this interaction, so they pass
+# through each other. The contact force has a limit, so a strong enough push can still
+# force one filament through another, and filaments that have crossed in 2D stay crossed.
+#
+# smoldyn filamentContact2D.txt
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 80
+boundaries y 0 40
+
+time_start 0
+time_stop 40
+time_step 0.01
+random_seed 5
+boxsize 4
+
+frame_thickness 0
+
+start_surface walls
+color both black
+thickness 1
+panel rect +0 0 0 40
+panel rect +0 40 0 40
+panel rect -0 80 0 40
+panel rect -1 0 40 80
+panel rect +1 0 0 80
+end_surface
+
+start_filament_type contact
+color red
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+radius 0.75
+elongation_rate 1
+elongation_max_length 60
+filament_interaction contact softwall 20
+surface_interaction walls both all reflect
+end_filament_type
+
+start_filament_type plain
+color blue
+thickness 2
+polygon edge
+dynamics Euler
+kT 0.1
+standard_length 1
+standard_angle 0
+force_length 10
+force_angle 10
+mobility 1
+radius 0.75
+elongation_rate 1
+elongation_max_length 60
+surface_interaction walls both all reflect
+end_filament_type
+
+random_filament contact:c1 3  15 1  1.571
+random_filament contact:c2 3  20 1  1.571
+random_filament contact:c3 3  25 1  1.571
+random_filament plain:p1 3  55 1  1.571
+random_filament plain:p2 3  60 1  1.571
+random_filament plain:p3 3  65 1  1.571
+
+end_file

@@ -636,6 +636,8 @@ typedef struct segmentstruct {
     double *xyzplus;                  // Coords. for segment plus end
     double len;                       // segment length
     double thk;                       // thickness of segment
+    int contactid;                    // number of this segment in the current contact force pass
+    int contactmark;                  // contactid of the last segment that tested this one
     double ypr[3];                    // relative ypr angles
     double qrel[4];                   // relative rotation quaternion
     double qabs[4];                   // absolute rotation quaternion
@@ -685,6 +687,8 @@ typedef struct filamentstruct {
     panelptr *nodepnl;                  // panel that each node is adsorbed to, or NULL if free (nseg+1)
     enum PanelFace *nodeface;           // face of nodepnl that each adsorbed node is on (nseg+1)
     double *nodesrfmob;                 // lateral mobility factor of each adsorbed node (nseg+1)
+    double *contactforce;               // contact force on each node for this time step, xyz (3*(nseg+1))
+    double endcontact[2][3];            // contact force on each end node, from the last contact pass [end][d]
     double seg0up[3];                   // segment 0 up vector
     filjunctionptr endjunct[2];         // attachment of each end [end], where 0 = minus and 1 = plus; NULL if free
     int maxjunct;                       // allocated size of juncts
@@ -698,7 +702,7 @@ typedef struct filamentstruct {
 } * filamentptr;
 
 enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
-enum FilFilAction {FFAnone, FFAforce, FFAblock, FFAadsorb, FFAdesorb};
+enum FilFilAction {FFAnone, FFAsoftwall, FFAblock, FFAadsorb, FFAdesorb};
 enum FilSurfAction {FSAnone, FSAsoftwall, FSArepel, FSAreflect, FSAadsorb, FSAdesorb};
 
 typedef struct filmolinteractstruct {		// Filament-molecule interactions structure
@@ -727,8 +731,8 @@ typedef struct filfilinteractstruct {
     int otherfilface;										// interaction face of other filament, if any
     char othersequence[STRCHAR];				// recognition sequence on other filament, if any
     compartptr compart;									// set if this only happens within a specific compartment
-    enum FilFilAction action;						// type of interaction: force, blocking, end annealing, side adsorption, branch addition
-    // parameters
+    enum FilFilAction action;						// type of interaction: softwall, blocking, end annealing, side adsorption, branch addition
+    double kforce;											// FFAsoftwall: spring constant of the contact force, energy/length^2
 }* filfilinteractptr;
 
 typedef struct filsurfinteractstruct {	// Filament-surface interaction; one structure per interaction
@@ -825,6 +829,7 @@ typedef struct filamentsuperstruct {
     filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse
     int nspring;               // number of junctions that close loops (not rigid)
     int boxlists;              // 1 if filaments are listed in the virtual boxes, because something needs them
+    int contacton;             // 1 if the last time step had filament contact forces
 } * filamentssptr;
 
 
