@@ -1,7 +1,7 @@
-# Claude Code session summary: Smoldyn filaments, October 12–28, 2026
+# Claude Code session summary: Smoldyn filaments, October 12–30, 2026
 
 This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
-Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–28 (parts 5–13). Most of the work was on the filament code in
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–30 (parts 5–15). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
 `smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcomparts.c`, `smolsim.cpp`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
@@ -362,6 +362,71 @@ the lid's list. A temporary every-step check that every adsorbed filament is
 listed passed on the new tests and on all S13 examples with surfaces. All 38
 seeded S13 examples matched HEAD, and ASan was clean.
 
+## Part 14: the applysurfaceforce command (Oct 29)
+
+**0891948.** The user asked for a runtime command that applies a force to a
+surface. `applysurfaceforce surface Fx [Fy [Fz]]`, where the surface can be
+`all`, adds to a new surface element, `extforce`, through `surfapplyforce`.
+`surfmovebyforces` adds this to `force` and then clears it for all surfaces,
+so it lasts one time step, like `longrangeforce`, and `cmd E` gives a constant
+load. Claude chose this one-step behavior and told the user that a persistent
+force would be a small change. It's kept apart from `force` because
+`filSurfReactionForces` recomputes that each step, and only if there are
+filaments, so a force added to it would persist without filaments.
+
+An undefined name such as `x` was read as NaN with no error from
+`strmathsscanf`, so the command now requires finite values.
+
+The user asked to run "the example file", though there wasn't one, and chose
+a new one when asked. `dynamics/surfaceLoad2D.txt` has three lanes with lids
+under loads of 0, 1.5, and 3. The first version, with two long filaments in
+each lane, gave a smaller rise for the 0.5 load than for the 1.5 load, because
+buckling dominated. Three stiffer filaments with Implicit dynamics and a lid
+at y = 22 gave rises of 35.8, 16.6, and 8.7.
+
+Tests: a lid with mobility 0.5 and force 2 moved exactly 10.01 in 1001 steps,
+a force on every 10th step gave exactly 1/10 the motion, and a surface
+without mobility didn't move. All 39 S13 examples matched HEAD, and ASan was
+clean.
+
+## Part 15: barbed filament ends (Oct 30)
+
+**a988ef1.** The user asked for a new end state, `barbed`, for either end, with the
+elongation rate v = r + a(exp(−kF) − 1), where r is the existing `endrate`
+value, a and k are entered after the other values of `elongation_rate` and
+stored in a new filament type element, `barbedparameters`, shared by both ends,
+and F is the force pushing against the end node, parallel to the end segment.
+
+- `FESbarbed` was added to `enum FilEndState`, and `FESMAX` is now 4. The
+  statement is `elongation_rate end barbed r a k`.
+- **The choice of F.** The user's description didn't say which forces count.
+  `filEndPushForce` uses only the softwall and repel forces on the end node,
+  not the total force. These dynamics are overdamped, so the total on a node
+  pressed against a surface is close to zero (stretching balances the surface
+  force), and it includes thermal noise. F is positive when it pushes the node
+  back toward the filament. Reflect interactions exert no forces, so they
+  don't count, and Smoldyn warns if a barbed type has no softwall or repel
+  interactions.
+- `filSurfInteractForces` has a new `fsum` argument, which adds the forces to a
+  vector, without `filwork`, so barbed ends work for filaments without
+  dynamics. `filEndVelocity` computes the rate for `filEndDynamics`.
+- F isn't limited to positive values, as the formula was specified, so an end
+  growing away from a repelling surface, within the repel distance, can grow
+  much faster than r (about 14 times in one test).
+- Treadmilling still only applies to open ends.
+- New example `dynamics/barbedEnd2D.txt`: two lanes with equal loads, open and
+  barbed. At seed 1 the lids rose 30.8 and 12.9, with about 60 and 33 segments.
+  Claude's first header comment said that barbed lids rise steadily without
+  buckling, but runs at other seeds showed that this isn't reliable, so
+  the comment was reworded.
+
+Tests: a straight filament without dynamics or thermal noise, growing into a
+repelling wall, matched the integrated formula to within one segment (0.05)
+for approach to stall, growth past a weak force, starting beyond stall (where
+the end shrinks), and negative force, and the minus end mirrored the plus end.
+The 40 S13 examples that were in the previous commit matched it, and ASan was
+clean.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -461,3 +526,11 @@ seeded S13 examples matched HEAD, and ASan was clean.
   lid, which is wider than the system, giving 10 "outside system volume"
   warnings. The lid was split into three panels and the molecules put on the
   middle one.
+- The first `barbed` test compared with the formula using the default kT, which
+  gives new segments random lengths and angles, so the filament grew about 5
+  times too slowly in height. Setting `kT 0` fixed the test. The minus-end
+  comparison also had a sign error in the test script, not in Smoldyn.
+- One regression run stalled because stdin stayed open, so examples with `cmd B
+  pause` waited for Enter until their 120-second limits. Lesson: run these with
+  `</dev/null`, and check CPU use when a run seems slow. Earlier runs had
+  finished with status 0, so they were unaffected.
