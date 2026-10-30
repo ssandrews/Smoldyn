@@ -1,7 +1,7 @@
 # Claude Code session summary: Smoldyn filaments, October 12–30, 2026
 
 This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
-Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–30 (parts 5–16). Most of the work was on the filament code in
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–30 (parts 5–17). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
 `smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcomparts.c`, `smolsim.cpp`, `smolcmd.c`, `libSteve/RnSparse.c`, `libSteve/Geometry.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
@@ -470,6 +470,32 @@ sizes from 0.5 to 100 gave identical results. All 41 shared S13 examples
 matched HEAD, and ASan was clean. In the example, over seeds 1–8, contact
 filaments never crossed, and plain ones did in seven seeds.
 
+## Part 17: implicit contact forces (Oct 30)
+
+**a5a342c.** The user asked whether contact forces could work with implicit
+integration. They already ran with it, but as a fixed force, so Implicit gave no
+extra stability. Claude proposed a method that keeps the one-filament-at-a-time
+solve, and the user said to go ahead.
+
+- `filContactPair` saves each contact on filaments with Implicit dynamics, in
+  a new `contacts` list (`filContactAdd`).
+- `filComputeDerivForceMat` adds −k·wᵢwⱼ·nnᵀ between the segment's two nodes.
+  This is the Gauss-Newton form, and it fits in the matrix band even for
+  self-contact. The band can't hold the coupling between the two contact points,
+  so each filament is solved with the other held fixed.
+- With stiffness k_eff on both sides, each would close the whole gap and they'd
+  overshoot by a factor of 2. So the stiffness is k_eff(m₁ + m₂)/m_self, using
+  the mobilities of the contact points (`filContactMobility`), which has each
+  side close its share.
+- `filCheckParams` only warns for sides that use explicit methods.
+
+Tests: the gap of an isolated pair shrank by exactly 1/(1 + μkΔt) per step up to
+μkΔt = 1000, and against a fixed obstacle by 1/(1 + μkΔt/2). Mobilities of 1 and 3
+gave a 3:1 displacement ratio. A bundle of seven overlapping filaments stayed
+stable in 2D and 3D up to μkΔt = 1000, overshooting slightly at that extreme
+(9.8–9.95 against 9.6). All 42 shared S13 examples matched HEAD, and ASan was
+clean.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -500,8 +526,10 @@ filaments never crossed, and plain ones did in seven seeds.
 - `comparttranslate` still has the round-off problem that `surfsweepmols`
   fixes with `SWEEPCROSSTOL` (see the mistakes section); it was left unchanged
   so `translatecmpt` results stay the same.
-- Contact forces are explicit, so they're limited by mobility × k × time step
-  even with Implicit dynamics. Their maximum is k_eff times the contact
+- Contact forces are explicit except with Implicit dynamics, so other methods
+  are limited by mobility × k × time step. With Implicit, contacts that form
+  during a time step aren't in that step's Jacobian, and crowded filaments
+  overshoot slightly at extreme stiffness. Their maximum is k_eff times the contact
   distance, so a hard push can force one filament through another. Filaments
   crossed in 2D stay crossed, and contacts aren't found across periodic
   boundaries.
@@ -596,3 +624,6 @@ filaments never crossed, and plain ones did in seven seeds.
   didn't show the force. The filaments were moved closer together.
 - `SmoldynManual.pdf` showed as modified at 13:08 on Oct 30, after it had been
   committed, and the cause wasn't found. The next regeneration replaced it.
+- The implicit bundle test was compared with Euler, but those runs stopped as
+  unstable because the test's `force_length` was too stiff for Euler at that time
+  step, not because of contact forces, so that comparison isn't valid.
