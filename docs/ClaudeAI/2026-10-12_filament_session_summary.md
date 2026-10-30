@@ -1,9 +1,9 @@
 # Claude Code session summary: Smoldyn filaments, October 12–30, 2026
 
 This file summarizes two long Claude Code sessions (Claude Opus 5.5) with the
-Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–30 (parts 5–15). Most of the work was on the filament code in
+Smoldyn maintainer, on October 12–20 (parts 1–4) and October 23–30 (parts 5–16). Most of the work was on the filament code in
 `source/Smoldyn/smolfilament.c`. There were also small changes to
-`smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcomparts.c`, `smolsim.cpp`, `smolcmd.c`, `libSteve/RnSparse.c`, the user's manual
+`smoldyn.h`, `smolboxes.c`, `smolsurface.c`, `smolcomparts.c`, `smolsim.cpp`, `smolcmd.c`, `libSteve/RnSparse.c`, `libSteve/Geometry.c`, the user's manual
 (`docs/Smoldyn/SmoldynManual.tex`), the code documentation
 (`docs/Smoldyn/SmoldynCodeDoc.tex`), the generated help
 (`source/Smoldyn/smolhelp_data.h`), and the `examples/S13_filaments` examples.
@@ -427,6 +427,49 @@ the end shrinks), and negative force, and the minus end mirrored the plus end.
 The 40 S13 examples that were in the previous commit matched it, and ASan was
 clean.
 
+## Part 16: contact forces between filaments (Oct 30)
+
+**2dd415f.** The user asked for softwall repulsion between filaments, including
+a filament looping onto itself, turning on when segment centerlines are closer
+than the sum of the radii, and asked how Claude would do it. Claude proposed a
+design, and the user agreed to all of it, including its three suggestions:
+whole filaments with no `parts` option, barbed ends responding to contact
+forces, and a default radius of 1.
+
+- New statements: `filament_interaction type softwall k`, which is symmetric,
+  so one interaction is stored however it's entered, and `radius`, because
+  `filradius` could not be set before. `FFAforce` became `FFAsoftwall`.
+- The force is k_eff(D − d) between the closest points of two segments, from
+  the energy ½k_eff(D − d)², where k_eff is k times the harmonic mean of the
+  thicknesses. It's split between each segment's nodes, which conserves force
+  and torque. Ends need no separate code, since segments are finite.
+  `Geo_NearestSeg2SegPts` is new, and uses the middle of the overlap for
+  parallel segments.
+- `filContactPair` skips pairs in three cases: centerlines that touch; pairs
+  closer along the filaments than a hairpin, πD/2 (`filContactGap` also follows
+  junctions); and a contact at a shared node that a neighboring segment
+  counts instead, which gives one force per contact.
+- `filContactForces` runs once per step, after end dynamics and before the
+  integrators, and the forces stay fixed through the step. They can't be
+  computed in the integrators, because forces are cleared one filament at a time
+  and filaments are stepped one at a time. `filDynamics` was split into
+  `filDynamicsEnds` and `filDynamicsIntegrate`, and runs all end dynamics first
+  only when contacts exist, so other simulations draw the same random numbers.
+- This is the first use of the filament box lists. Each segment searches the
+  boxes that overlap its bounding box plus the contact distance, rather than
+  the `neigh` lists, which depend on simulation accuracy and fail for boxes
+  smaller than the contact distance.
+- New example `dynamics/filamentContact2D.txt`.
+
+Tests: two parallel segments followed the exact decay to within 0.0004; a
+head-on pair turned on between gaps of 2.02 and 1.98; the sum of node positions
+was conserved in a skew 3D pair; a straight filament felt no self-force;
+hairpin arms separated; a straight branch felt no force at its junction; a
+barbed end stalled against a static filament at 18.7 (predicted 18.69); and box
+sizes from 0.5 to 100 gave identical results. All 41 shared S13 examples
+matched HEAD, and ASan was clean. In the example, over seeds 1–8, contact
+filaments never crossed, and plain ones did in seven seeds.
+
 ## Known limitations (documented in the manual)
 
 - Rigid constraints give rigid-ensemble statistics. Bending variance is about
@@ -457,8 +500,11 @@ clean.
 - `comparttranslate` still has the round-off problem that `surfsweepmols`
   fixes with `SWEEPCROSSTOL` (see the mistakes section); it was left unchanged
   so `translatecmpt` results stay the same.
-- Nothing uses the filament box lists yet. They are meant for future
-  filament-molecule and filament-filament interactions.
+- Contact forces are explicit, so they're limited by mobility × k × time step
+  even with Implicit dynamics. Their maximum is k_eff times the contact
+  distance, so a hard push can force one filament through another. Filaments
+  crossed in 2D stay crossed, and contacts aren't found across periodic
+  boundaries.
 - Free nodes can get past a finite surface by going around its edge, which
   reflect correctly allows. Examples need surfaces larger than the region
   the filaments can reach.
@@ -534,3 +580,19 @@ clean.
   pause` waited for Enter until their 120-second limits. Lesson: run these with
   `</dev/null`, and check CPU use when a run seems slow. Earlier runs had
   finished with status 0, so they were unaffected.
+- The contact design put forces in `filwork`, which filaments without
+  dynamics don't have, though they need to act as obstacles. The forces moved
+  to the filament structure.
+- A long scripted edit stopped at an anchor that didn't match, after applying its
+  earlier edits. Saving the script to a file made the rest easy to apply.
+- Results at the two smallest box sizes differed in 2D. A temporary brute-force
+  check found no missed pairs. The cause was crossed segments, whose separation
+  is zero only up to round-off, so the `dist<=0` test missed them and they got
+  a full force in a random direction. `FILCONTACTMIN` fixed it. Lesson: don't
+  dismiss a difference as round-off without measuring it.
+- `cmd e` runs every step, not at the end, which printed about 600 lines of
+  test output. `cmd A` was the intended command.
+- The first `filamentContact2D` run never reached the contact distance, so it
+  didn't show the force. The filaments were moved closer together.
+- `SmoldynManual.pdf` showed as modified at 13:08 on Oct 30, after it had been
+  committed, and the cause wasn't found. The next regeneration replaced it.
