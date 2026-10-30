@@ -200,7 +200,9 @@ int filContactTypeOn(const filamenttypeptr filtype);
 int filContactOn(const filamentssptr filss);
 double filContourPosition(const filamentptr fil,int seg,double frac);
 double filContactGap(const filamentptr fil1,int seg1,double frac1,const filamentptr fil2,int seg2,double frac2);
-void filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim);
+double filContactMobility(const filamentptr fil,int seg,double frac);
+int filContactAdd(filamentptr fil,int seg,double frac,const double *norm,double kjac);
+int filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim);
 int filContactForces(simptr sim);
 void filAddContactForces(filamentptr fil,int nodemin,int nodemax);
 int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
@@ -678,6 +680,9 @@ filamentptr filAlloc(filamentptr fil,int maxseg,int maxjunct,int maxsequence) {
 		fil->nodeface=NULL;
 		fil->nodesrfmob=NULL;
 		fil->contactforce=NULL;
+		fil->maxcontact=0;
+		fil->ncontact=0;
+		fil->contacts=NULL;
 		for(seg=0;seg<2;seg++)
 			fil->endcontact[seg][0]=fil->endcontact[seg][1]=fil->endcontact[seg][2]=0;
 		fil->seg0up[0]=fil->seg0up[1]=0;
@@ -809,6 +814,7 @@ void filFree(filamentptr fil) {
 	free(fil->nodeface);
 	free(fil->nodesrfmob);
 	free(fil->contactforce);
+	free(fil->contacts);
 	free(fil->juncts);
 	free(fil->sequence);
 	free(fil);
@@ -1325,6 +1331,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 	enum PanelShape ps;
 	filamentssptr filss;
 	filamentptr fil;
+	filamenttypeptr filtype2;
 	filamenttypeptr filtype;
 	segmentptr segment;
 	char string[STRCHAR];
@@ -1440,9 +1447,12 @@ int filCheckParams(const simptr sim,int *warnptr) {
 		if(filtype->dynamics==FDimplicitold) {
 			warn++;simLog(sim,5,"WARNING: filament type %s uses dynamics ImplicitOld, which is a test method; it can be unstable even with short time steps, so use Implicit for simulations\n",filtype->ftname);}
 		for(i=0;i<filtype->nfilint;i++) {							// filament-filament interactions
-			fval=sim->dt*filtype->filint[i]->kforce*(filtype->mobility>filtype->filint[i]->otherfiltype->mobility?filtype->mobility:filtype->filint[i]->otherfiltype->mobility);
+			filtype2=filtype->filint[i]->otherfiltype;		// Implicit dynamics are stable for these, and fixed filaments don't move
+			mobility=(filtype->dynamics==FDnone || filtype->dynamics==FDimplicit)?0:filtype->mobility;
+			if(filtype2->dynamics!=FDnone && filtype2->dynamics!=FDimplicit && filtype2->mobility>mobility) mobility=filtype2->mobility;
+			fval=sim->dt*filtype->filint[i]->kforce*mobility;
 			if(filtype->filint[i]->action==FFAsoftwall && fval>0.5) {
-				warn++;simLog(sim,5,"WARNING: the contact interaction between filament types %s and %s may be numerically unstable, for any dynamics method, because time_step * mobility * force constant = %g, which should be well below 1\n",filtype->ftname,filtype->filint[i]->otherfiltype->ftname,fval);} }
+				warn++;simLog(sim,5,"WARNING: the contact interaction between filament types %s and %s may be numerically unstable, because time_step * mobility * force constant = %g, which should be well below 1 unless using dynamics Implicit\n",filtype->ftname,filtype2->ftname,fval);} }
 		for(i=0;i<filtype->nsurfint;i++) {						// filament-surface interactions
 			fsi=filtype->surfint[i];
 			pcount=0;
@@ -3919,6 +3929,7 @@ void filReset(filamentptr fil) {
 	fil->seg0up[2]=1;
 	for(seg=0;seg<2;seg++)
 		fil->endcontact[seg][0]=fil->endcontact[seg][1]=fil->endcontact[seg][2]=0;
+	fil->ncontact=0;
 	fil->endjunct[0]=fil->endjunct[1]=NULL;
 	fil->njunct=0;
 	fil->nsequence=0;
@@ -6141,6 +6152,40 @@ double filContactGap(const filamentptr fil1,int seg1,double frac1,const filament
 
 #define FILCONTACTMIN 1e-9			// centerlines closer than this, relative to the contact distance, are touching
 
+/* filContactMobility */
+// Returns the mobility of the point at fraction frac along segment seg of filament fil,
+// which is how fast that point moves per unit force on it, given that the force is split
+// between the segment's two nodes. Filaments without dynamics have mobility 0.
+double filContactMobility(const filamentptr fil,int seg,double frac) {
+	filamenttypeptr filtype;
+
+	filtype=fil->filtype;
+	if(filtype->dynamics==FDnone) return 0;
+	return filtype->mobility*((1-frac)*(1-frac)*filNodeMobility(fil,seg)+frac*frac*filNodeMobility(fil,seg+1)); }
+
+
+/* filContactAdd */
+// Adds a contact to the contacts list of filament fil, for filComputeDerivForceMat, at
+// fraction frac along segment seg, with unit normal norm and stiffness kjac. Returns 0
+// for success or 1 for out of memory.
+int filContactAdd(filamentptr fil,int seg,double frac,const double *norm,double kjac) {
+	filcontactptr newlist,con;
+	int newmax,d;
+
+	if(fil->ncontact==fil->maxcontact) {
+		newmax=2*fil->maxcontact+1;
+		newlist=(filcontactptr) realloc(fil->contacts,newmax*sizeof(struct filcontactstruct));
+		if(!newlist) return 1;
+		fil->contacts=newlist;
+		fil->maxcontact=newmax; }
+	con=&fil->contacts[fil->ncontact++];
+	con->seg=seg;
+	con->frac=frac;
+	for(d=0;d<3;d++) con->norm[d]=norm[d];
+	con->kjac=kjac;
+	return 0; }
+
+
 /* filContactPair */
 // Adds the softwall contact force between filament segments seg1 and seg2, if they are in
 // contact, to the contactforce arrays of their filaments. k is the force constant and
@@ -6156,33 +6201,39 @@ double filContactGap(const filamentptr fil1,int seg1,double frac1,const filament
 // keeps a filament from pushing on itself near each point. A contact that's at a node
 // that's shared by two segments is close to both of them, so a pair is also skipped if its
 // closest point is at such a node and the next segment along is closer, or equally
-// close for the lower numbered of the two, which gives one force per contact.
-void filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim) {
+// close for the lower numbered of the two, which gives one force per contact. For
+// filaments with Implicit dynamics, the contact is also saved for filComputeDerivForceMat.
+// Each filament is solved with the other one held fixed, so that filament's contact
+// stiffness is keff*(m1+m2)/m, where m1 and m2 are the mobilities of the contact points
+// and m is its own; this has each side close its share of the gap, whereas both would
+// close all of it, and overshoot, with stiffness keff. Returns 0 for success or 1 for out
+// of memory.
+int filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int dim) {
 	filamentptr fil1,fil2;
 	segmentptr next;
-	double frac1,frac2,fa,fb,dist,keff,f,vect[3],*cf1,*cf2;
+	double frac1,frac2,fa,fb,dist,keff,f,vect[3],*cf1,*cf2,norm[3],m1,m2;
 	int d,i1,i2;
 
 	dist=Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,seg2->xyzminus,seg2->xyzplus,&frac1,&frac2);
-	if(dist>=contact || dist<=FILCONTACTMIN*contact) return;
+	if(dist>=contact || dist<=FILCONTACTMIN*contact) return 0;
 	fil1=seg1->fil;
 	fil2=seg2->fil;
 	i1=seg1->index;
 	i2=seg2->index;
-	if(filContactGap(fil1,i1,frac1,fil2,i2,frac2)<PI/2*contact) return;
+	if(filContactGap(fil1,i1,frac1,fil2,i2,frac2)<PI/2*contact) return 0;
 
 	if(frac1>=1 && i1<fil1->nseg-1) {									// a contact at a shared node is counted once
 		next=fil1->segments[i1+1];
-		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<=dist) return; }
+		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<=dist) return 0; }
 	else if(frac1<=0 && i1>0) {
 		next=fil1->segments[i1-1];
-		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<dist) return; }
+		if(next!=seg2 && Geo_NearestSeg2SegPts(next->xyzminus,next->xyzplus,seg2->xyzminus,seg2->xyzplus,&fa,&fb)<dist) return 0; }
 	if(frac2>=1 && i2<fil2->nseg-1) {
 		next=fil2->segments[i2+1];
-		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<=dist) return; }
+		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<=dist) return 0; }
 	else if(frac2<=0 && i2>0) {
 		next=fil2->segments[i2-1];
-		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<dist) return; }
+		if(next!=seg1 && Geo_NearestSeg2SegPts(seg1->xyzminus,seg1->xyzplus,next->xyzminus,next->xyzplus,&fa,&fb)<dist) return 0; }
 
 	keff=k*2*seg1->thk*seg2->thk/(seg1->thk+seg2->thk);
 	f=keff*(contact-dist)/dist;
@@ -6195,7 +6246,15 @@ void filContactPair(segmentptr seg1,segmentptr seg2,double k,double contact,int 
 		cf1[3*(i1+1)+d]+=frac1*vect[d];
 		cf2[3*i2+d]-=(1-frac2)*vect[d];
 		cf2[3*(i2+1)+d]-=frac2*vect[d]; }
-	return; }
+
+	if(fil1->filtype->dynamics==FDimplicit || fil2->filtype->dynamics==FDimplicit) {
+		norm[0]=norm[1]=norm[2]=0;
+		for(d=0;d<dim;d++) norm[d]=vect[d]/(f*dist);
+		m1=filContactMobility(fil1,i1,frac1);
+		m2=filContactMobility(fil2,i2,frac2);
+		if(fil1->filtype->dynamics==FDimplicit && m1>0 && filContactAdd(fil1,i1,frac1,norm,keff*(m1+m2)/m1)) return 1;
+		if(fil2->filtype->dynamics==FDimplicit && m2>0 && filContactAdd(fil2,i2,frac2,norm,keff*(m1+m2)/m2)) return 1; }
+	return 0; }
 
 
 /* filContactForces */
@@ -6232,6 +6291,7 @@ int filContactForces(simptr sim) {
 		for(f=0;f<filtype->nfil;f++) {
 			fil=filtype->fillist[f];
 			for(node=0;node<3*(fil->nseg+1) && fil->contactforce;node++) fil->contactforce[node]=0;
+			fil->ncontact=0;
 			for(seg=0;seg<fil->nseg;seg++) {
 				fil->segments[seg]->contactid=++id;
 				fil->segments[seg]->contactmark=0; }
@@ -6276,7 +6336,7 @@ int filContactForces(simptr sim) {
 						segment2->contactmark=segment->contactid;
 						filtype2=segment2->fil->filtype;
 						k=filContactKforce(filtype,filtype2);
-						if(k>0) filContactPair(segment,segment2,k,filtype->filradius+filtype2->filradius,dim); }
+						if(k>0 && filContactPair(segment,segment2,k,filtype->filradius+filtype2->filradius,dim)) return 1; }
 					for(d=dim-1,carry=1;d>=0 && carry;d--) {		// next box in this range
 						if(++indx[d]>high[d]) indx[d]=low[d];
 						else carry=0; }}}}}
@@ -6411,7 +6471,8 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 	int dim,stride,flatsize,node,seg,d,d2,a,i,j,ng,gidx[11],nmin,nmax,side,nrow;
 	double **nodes,**flatnodes,**flatforces,**forces,*extforce0;
 	double klen,stdlen,*kypr,k,len,u[3],kperp,blk,xm[3],xp[3],lm2,lp2,lm,lp,e[3][3],unit[3],cm[3],cp3[3],g[11];
-	double cy,sy,cp,sp,w[3][3],thkavg;
+	double cy,sy,cp,sp,w[3][3],thkavg,wnode[2];
+	filcontactptr con;
 	double dx,dxinv,dxmin,col[2][15],colnorm[2];
 	filamenttypeptr filtype;
 	sparsematrix forcemat;
@@ -6556,6 +6617,16 @@ void filComputeDerivForceMat(filamentptr fil,double dtmu) {
 				for(i=nmin;i<=nmax;i++)
 					for(d2=0;d2<dim;d2++)
 						sparseAddToM(forcemat,stride*i+d2,stride*node+d,col[side][nrow++]); }}}
+
+	for(i=0;i<fil->ncontact;i++) {															// contact forces: stiffness along the contact normal
+		con=&fil->contacts[i];
+		wnode[0]=1-con->frac;
+		wnode[1]=con->frac;
+		for(a=0;a<2;a++)
+			for(j=0;j<2;j++)
+				for(d=0;d<dim;d++)
+					for(d2=0;d2<dim;d2++)
+						sparseAddToM(forcemat,stride*(con->seg+a)+d,stride*(con->seg+j)+d2,-con->kjac*wnode[a]*wnode[j]*con->norm[d]*con->norm[d2]); }
 
 	return; }
 

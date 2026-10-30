@@ -673,6 +673,13 @@ typedef struct filjunctionstruct {
     double azim0;                       // azimuth when attached (radians); -1 = undefined
 } * filjunctionptr;
 
+typedef struct filcontactstruct {       // One contact on a filament, for the Implicit Jacobian
+    int seg;                            // segment number
+    double frac;                        // fraction along the segment of the contact point
+    double norm[3];                     // unit normal along the contact force
+    double kjac;                        // stiffness of the contact for this filament, energy/length^2
+} * filcontactptr;
+
 typedef struct filamentstruct {
     struct filamenttypestruct* filtype; // owning filament type
     char* filname;                      // filament name (ref, not owned)
@@ -689,6 +696,9 @@ typedef struct filamentstruct {
     double *nodesrfmob;                 // lateral mobility factor of each adsorbed node (nseg+1)
     double *contactforce;               // contact force on each node for this time step, xyz (3*(nseg+1))
     double endcontact[2][3];            // contact force on each end node, from the last contact pass [end][d]
+    int maxcontact;                     // allocated size of contacts list
+    int ncontact;                       // number of contacts, kept for Implicit dynamics only
+    filcontactptr contacts;             // contacts for this time step [c]
     double seg0up[3];                   // segment 0 up vector
     filjunctionptr endjunct[2];         // attachment of each end [end], where 0 = minus and 1 = plus; NULL if free
     int maxjunct;                       // allocated size of juncts

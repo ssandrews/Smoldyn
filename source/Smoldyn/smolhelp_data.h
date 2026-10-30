@@ -1248,12 +1248,13 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    type, which needs to be defined before this statement and can be this type.\n"
 		"    Two segments are pushed apart when their centerlines are closer than the\n"
 		"    sum of the filaments' radii, with force constant k times the harmonic mean\n"
-		"    of their thicknesses. A value of 0 turns the force off. The interaction is\n"
-		"    symmetric, so it only needs to be entered for one of the two types, and\n"
-		"    entering it again from either type replaces k. If type is this type, this\n"
-		"    also applies to different parts of a single filament. Filaments have no\n"
-		"    contact forces by default. See the Smoldyn User's Manual. This statement\n"
-		"    can be used during a simulation with the set command."},
+		"    of their thicknesses. Large force constants need dynamics Implicit. A value\n"
+		"    of 0 turns the force off. The interaction is symmetric, so it only needs to\n"
+		"    be entered for one of the two types, and entering it again from either type\n"
+		"    replaces k. If type is this type, this also applies to different parts of a\n"
+		"    single filament. Filaments have no contact forces by default. See the\n"
+		"    Smoldyn User's Manual. This statement can be used during a simulation with\n"
+		"    the set command."},
 	{"statement","Statements about filaments",1,"surface_interaction",
 		"  * surface_interaction surface face parts action [parameters]",
 		"    Adds an interaction between filaments of this type and surface surface,\n"
