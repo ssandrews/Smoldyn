@@ -14,6 +14,7 @@
 #include "random2.h"
 #include "Rn.h"
 #include "Sphere.h"
+#include "Filaments.h"
 #include "string2.h"
 #include "RnSparse.h"
 
@@ -1165,7 +1166,7 @@ void filOutput(const filamentptr fil) {
 void filtypeOutput(const filamenttypeptr filtype) {
 	char string[STRCHAR],string2[STRCHAR],string3[STRCHAR],colorstr[STRCHAR];
 	int fc,f,dim,end,fes,fes2,active,grows,i;
-	double rtot;
+	double rtot,kphi,ktheta,persist;
 	simptr sim;
 	filsurfinteractptr fsi;
 
@@ -1203,6 +1204,15 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  bending force constants: %g|E, %g|E, %g|E\n",filtype->kypr[0],filtype->kypr[1],filtype->kypr[2]); }
 
 	simLog(sim,2,"  kT: %g|E\n",filtype->kT);
+	kphi=filtype->kypr[0];															// persistence length, ABC model
+	ktheta=dim==2?-1:filtype->kypr[1];									// 2D has no pitch, so treat it as fixed
+	if(filtype->kT<=0 || (kphi<0 && ktheta<0))
+		simLog(sim,2,"  persistence length: infinite\n");
+	else {
+		if(kphi<0) persist=2*filtype->stdlen*ktheta/filtype->kT;		// fixed angles don't bend
+		else if(ktheta<0) persist=2*filtype->stdlen*kphi/filtype->kT;
+		else persist=Fil_Statistics("ABC","Persist",filtype->kT,kphi,ktheta,filtype->stdlen);
+		simLog(sim,2,"  persistence length: %g|L, for thickness 1\n",persist); }
 	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g\n",filtype->treadrate);
 	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
 	if(filtype->branchrate>0) {

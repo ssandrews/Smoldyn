@@ -4590,7 +4590,7 @@ Fres a filament superstructure and all of the structures within it.
 Outputs all of the key information about a filament to the display, including essential information about each segment.
 
 \item[\ttt{void filtypeOutput(const filamenttypeptr filtype)}]
-Outputs all of the key information about a filament type to the display, along with information about each filament.
+Outputs all of the key information about a filament type to the display, along with information about each filament. This includes the persistence length, which is computed for the angle-biased chain model from the standard length, the yaw and pitch bending force constants, and \ttt{kT}, using \ttt{Fil\_Statistics} in the Filaments.c library. It is $L_p = 2 l k_\phi k_\theta/kT(k_\phi+k_\theta)$ in 3D and $L_p = 2 l k_\phi/kT$ in 2D, for segments with thickness 1. A fixed angle (negative force constant) doesn't bend, so it's treated as an infinite force constant, and the persistence length is listed as infinite if \ttt{kT} is 0 or if all bending angles are fixed.
 
 \item[\ttt{void filssOutput(const simptr sim)}]
 \hfill \\
@@ -8294,6 +8294,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Used Claude to overhaul filaments. See docs/2026-10-12\_filament\_session\_summary.md. Renamed filament ends from front/back to plus/minus, renamed \ttt{branchspots} to \ttt{branchnodes}, allowed branches to attach by either end. Generalized endstates to allow open, capped, and shrink states, all of which apply to either end. Added support for filament removal.
 \item More Claude filament work. Supported filament networks that aren't just tree-shaped, but arbitrary web-shaped. In the process, created junction data structure. This also supports loop-shaped filaments.
 \item More Claude filament work. Overhauled the numerical filament integration to correct errors in implicit integration and implement the Gauss-Newton Jacobian in implicit integration rather than the finite difference code that I wrote. Also, improved torque integration with implicit integration. A major issue that I was unaware of is that there was coupling between geometric twist and roll values that created spurious torques; this was fixed. Added support for negative force constants to imply constrained parameters. With these updates, integration is supposed to be very good at this point and highly stable for implicit integration (I think that junctions are still effectively explicit, but everything else is implicit).
+\item New library dependency: Filaments.c and Filaments.h, with documentation in Filaments.tex. These compute equilibrium filament statistics, such as persistence lengths. Added the persistence length to the filament type output (\ttt{filtypeOutput}).
 
 \end{itemize}
 
