@@ -8,6 +8,7 @@
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "Geometry.h"
 #include "math2.h"
@@ -51,6 +52,10 @@ int graphicsupdatelists(simptr sim);
 int graphicsupdateparams(simptr sim);
 
 // core simulation functions
+#ifdef __gl_h_
+static void RenderPanel3D(panelptr pnl,int graphics);
+static int translucentcompare(const void *a,const void *b);
+#endif
 void RenderSurfaces(simptr sim);
 void RenderMolecs(simptr sim);
 void RenderText(simptr sim);
@@ -802,19 +807,114 @@ int graphicsupdate(simptr sim) {
 /******************************************************************************/
 
 
+#ifdef __gl_h_
+
+/* RenderPanel3D */
+static void RenderPanel3D(panelptr pnl,int graphics) {
+	double **point,*front,theta,vect[3],vect2[3],axis[3],height;
+	GLdouble gldvect[3];
+	GLfloat glfvect[4];
+
+	point=pnl->point;
+	front=pnl->front;
+	glMatrixMode(GL_MODELVIEW);
+	if(pnl->ps==PSrect) {									// rectangle
+		glBegin(GL_QUADS);
+		if(graphics>=3) {
+			gldvect[0]=gldvect[1]=gldvect[2]=0;
+			gldvect[(int)front[1]]=(GLdouble)front[0];
+			glNormal3dv(gldvect); }
+		glVertex3d((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
+		glVertex3d((GLdouble)(point[1][0]),(GLdouble)(point[1][1]),(GLdouble)(point[1][2]));
+		glVertex3d((GLdouble)(point[2][0]),(GLdouble)(point[2][1]),(GLdouble)(point[2][2]));
+		glVertex3d((GLdouble)(point[3][0]),(GLdouble)(point[3][1]),(GLdouble)(point[3][2]));
+		glEnd(); }
+	else if(pnl->ps==PStri) {							// triangle
+		glBegin(GL_TRIANGLES);
+		if(graphics>=3) glNormal3fv(gl2Double2GLfloat(front,glfvect,3));
+		glVertex3d((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
+		glVertex3d((GLdouble)(point[1][0]),(GLdouble)(point[1][1]),(GLdouble)(point[1][2]));
+		glVertex3d((GLdouble)(point[2][0]),(GLdouble)(point[2][1]),(GLdouble)(point[2][2]));
+		glEnd(); }
+	else if(pnl->ps==PSsph) {							// sphere
+		glPushMatrix();
+		glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
+		gl2DrawSphere(point[1][0],(int)point[1][1],(int)point[1][2],front[0]>0?0:1,graphics>=3?1:0);
+		glPopMatrix(); }
+	else if(pnl->ps==PScyl) {							// cylinder
+		glPushMatrix();
+		glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
+		vect[0]=vect[1]=0;
+		vect[2]=1;
+		vect2[0]=point[1][0]-point[0][0];
+		vect2[1]=point[1][1]-point[0][1];
+		vect2[2]=point[1][2]-point[0][2];
+		height=sqrt(vect2[0]*vect2[0]+vect2[1]*vect2[1]+vect2[2]*vect2[2]);
+		normalizeVD(vect2,3);
+		theta=gl2FindRotateD(vect,vect2,axis);
+		glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
+		gl2DrawCylinder(point[2][0],point[2][0],height,(int)point[2][1],(int)point[2][2],front[0]>0?0:1,graphics>=3?1:0);
+		glPopMatrix(); }
+	else if(pnl->ps==PShemi) {						// hemisphere
+		glPushMatrix();
+		glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
+		vect[0]=vect[1]=0;
+		vect[2]=-1;
+		theta=gl2FindRotateD(vect,point[2],axis);
+		glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
+		gl2DrawHemisphere(point[1][0],(int)point[1][1],(int)point[1][2],front[0]>0?0:1,graphics>=3?1:0);
+		glPopMatrix(); }
+	else if(pnl->ps==PSdisk) {						// disk
+		glPushMatrix();
+		glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
+		vect[0]=vect[1]=0;
+		vect[2]=-1;
+		theta=gl2FindRotateD(vect,front,axis);
+		glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
+		vect2[0]=vect2[1]=vect2[2]=0;
+		gl2DrawCircleD(vect2,point[1][0],(int)point[1][1],'f',3);		//?? 'f' isn't right
+		glPopMatrix(); }
+	return; }
+
+
+/* Panel of a translucent surface, with its distance from the viewer, for
+ sorting translucent panels from back to front. */
+typedef struct translucentstruct {
+	surfaceptr srf;
+	panelptr pnl;
+	enum DrawMode fdm,bdm;
+	double depth;
+	} translucentitem;
+
+
+/* translucentcompare */
+static int translucentcompare(const void *a,const void *b) {
+	double da,db;
+
+	da=((const translucentitem*)a)->depth;
+	db=((const translucentitem*)b)->depth;
+	return (da<db)?-1:((da>db)?1:0); }
+
+#endif
+
+
 /* RenderSurfaces */
 void RenderSurfaces(simptr sim) {
 #ifdef __gl_h_
 	surfacessptr srfss;
 	surfaceptr srf;
-	int s,p,graphics,fdone,bdone,c;
+	panelptr pnl;
+	int s,p,graphics,fdone,bdone,c,i,j,npt,ntrans,translucent,firstpass;
 	double **point,*front;
 	double xlo,xhi,ylo,yhi,xpix,ypix,ymid,zmid;
-	double delta,deltax,deltay,theta,vect[3],vect2[3],axis[3],height;
+	double delta,deltax,deltay,theta,vect[3];
 	double flcolor[4],blcolor[4];
 	enum DrawMode fdrawmode,bdrawmode,fdm,bdm;
-	GLdouble gldvect[3];
+	enum PanelShape ps;
+	GLdouble mv[16];
+	GLenum outer,inner;
 	GLfloat glfvect[4];
+	translucentitem *tlist;
 
 	srfss=sim->srfss;
 	graphics=sim->graphss->graphics;
@@ -978,6 +1078,7 @@ void RenderSurfaces(simptr sim) {
 						if(bdrawmode&DMedge) gl2DrawArcD(point[0],point[1][0]+front[0]*deltax,theta,theta+PI,(int)point[1][1],'e',2); }}}}}
 	
 	else if(sim->dim==3) {
+		ntrans=0;
 		for(s=0;s<srfss->nsrf;s++) {
 			srf=srfss->srflist[s];
 			fdrawmode=srf->fdrawmode;
@@ -995,107 +1096,39 @@ void RenderSurfaces(simptr sim) {
 			else if(bdrawmode&DMvert) bdm=DMvert;
 			else bdm=DMno;
 
+			translucent=(fdm==DMface || bdm==DMface) && (srf->fcolor[3]<1 || srf->bcolor[3]<1);
+			if(translucent)															// faces are drawn later, sorted by depth
+				for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) ntrans+=srf->npanel[ps];
+
+			firstpass=1;
 			while(fdm || bdm) {
-				if(fdm==DMface) glPolygonMode(GL_FRONT,GL_FILL);
-				else if(fdm==DMedge) glPolygonMode(GL_FRONT,GL_LINE);
-				else if(fdm==DMvert) glPolygonMode(GL_FRONT,GL_POINT);
-				else glCullFace(GL_FRONT);
+				if(!(translucent && firstpass)) {
+					if(fdm==DMface) glPolygonMode(GL_FRONT,GL_FILL);
+					else if(fdm==DMedge) glPolygonMode(GL_FRONT,GL_LINE);
+					else if(fdm==DMvert) glPolygonMode(GL_FRONT,GL_POINT);
+					else glCullFace(GL_FRONT);
 
-				if(bdm==DMface) glPolygonMode(GL_BACK,GL_FILL);
-				else if(bdm==DMedge) glPolygonMode(GL_BACK,GL_LINE);
-				else if(bdm==DMvert) glPolygonMode(GL_BACK,GL_POINT);
-				else glCullFace(GL_BACK);
+					if(bdm==DMface) glPolygonMode(GL_BACK,GL_FILL);
+					else if(bdm==DMedge) glPolygonMode(GL_BACK,GL_LINE);
+					else if(bdm==DMvert) glPolygonMode(GL_BACK,GL_POINT);
+					else glCullFace(GL_BACK);
 
-				glColor4fv(gl2Double2GLfloat(flcolor,glfvect,4));
-				glLineWidth((GLfloat)srf->edgepts);
-				if(graphics>=2 && srf->edgestipple[1]!=0xFFFF) {
-					glEnable(GL_LINE_STIPPLE);
-					glLineStipple((GLint)srf->edgestipple[0],(GLushort)srf->edgestipple[1]); }
+					glColor4fv(gl2Double2GLfloat(flcolor,glfvect,4));
+					glLineWidth((GLfloat)srf->edgepts);
+					if(graphics>=2 && srf->edgestipple[1]!=0xFFFF) {
+						glEnable(GL_LINE_STIPPLE);
+						glLineStipple((GLint)srf->edgestipple[0],(GLushort)srf->edgestipple[1]); }
 
-				if(graphics>=3) {
-					glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(flcolor,glfvect,4));
-					glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(blcolor,glfvect,4));
-					glMateriali(GL_FRONT,GL_SHININESS,(GLint)srf->fshiny);
-					glMateriali(GL_BACK,GL_SHININESS,(GLint)srf->bshiny); }
+					if(graphics>=3) {
+						glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(flcolor,glfvect,4));
+						glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(blcolor,glfvect,4));
+						glMateriali(GL_FRONT,GL_SHININESS,(GLint)srf->fshiny);
+						glMateriali(GL_BACK,GL_SHININESS,(GLint)srf->bshiny); }
 
-				if(srf->npanel[PSrect]) {
-					glBegin(GL_QUADS);									// 3-D rectangles
-					for(p=0;p<srf->npanel[PSrect];p++) {
-						if(graphics>=3) {
-							gldvect[0]=gldvect[1]=gldvect[2]=0;
-							front=srf->panels[PSrect][p]->front;
-							gldvect[(int)front[1]]=(GLdouble)front[0];
-							glNormal3dv(gldvect); }
-						point=srf->panels[PSrect][p]->point;
-						glVertex3d((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
-						glVertex3d((GLdouble)(point[1][0]),(GLdouble)(point[1][1]),(GLdouble)(point[1][2]));
-						glVertex3d((GLdouble)(point[2][0]),(GLdouble)(point[2][1]),(GLdouble)(point[2][2]));
-						glVertex3d((GLdouble)(point[3][0]),(GLdouble)(point[3][1]),(GLdouble)(point[3][2])); }
-					glEnd(); }
-				
-				if(srf->npanel[PStri]) {
-					glBegin(GL_TRIANGLES);							// 3-D triangles
-					for(p=0;p<srf->npanel[PStri];p++) {
-						if(graphics>=3) glNormal3fv(gl2Double2GLfloat(srf->panels[PStri][p]->front,glfvect,4));
-						point=srf->panels[PStri][p]->point;
-						glVertex3d((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
-						glVertex3d((GLdouble)(point[1][0]),(GLdouble)(point[1][1]),(GLdouble)(point[1][2]));
-						glVertex3d((GLdouble)(point[2][0]),(GLdouble)(point[2][1]),(GLdouble)(point[2][2])); }
-					glEnd(); }
-				
-				for(p=0;p<srf->npanel[PSsph];p++) {		// 3-D spheres
-					point=srf->panels[PSsph][p]->point;
-					front=srf->panels[PSsph][p]->front;
-					glMatrixMode(GL_MODELVIEW);
-					glPushMatrix();
-					glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
-					gl2DrawSphere(point[1][0],(int)point[1][1],(int)point[1][2],front[0]>0?0:1,graphics>=3?1:0);
-					glPopMatrix(); }
-				
-				for(p=0;p<srf->npanel[PScyl];p++) {			// 3-D cylinders
-					point=srf->panels[PScyl][p]->point;
-					front=srf->panels[PScyl][p]->front;
-					glMatrixMode(GL_MODELVIEW);
-					glPushMatrix();
-					glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
-					vect[0]=vect[1]=0;
-					vect[2]=1;
-					vect2[0]=point[1][0]-point[0][0];
-					vect2[1]=point[1][1]-point[0][1];
-					vect2[2]=point[1][2]-point[0][2];
-					height=sqrt(vect2[0]*vect2[0]+vect2[1]*vect2[1]+vect2[2]*vect2[2]);
-					normalizeVD(vect2,3);
-					theta=gl2FindRotateD(vect,vect2,axis);
-					glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
-					gl2DrawCylinder(point[2][0],point[2][0],height,(int)point[2][1],(int)point[2][2],front[0]>0?0:1,graphics>=3?1:0);
-					glPopMatrix(); }
-				
-				for(p=0;p<srf->npanel[PShemi];p++) {			// 3-D hemispheres
-					point=srf->panels[PShemi][p]->point;
-					front=srf->panels[PShemi][p]->front;
-					glMatrixMode(GL_MODELVIEW);
-					glPushMatrix();
-					glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
-					vect[0]=vect[1]=0;
-					vect[2]=-1;
-					theta=gl2FindRotateD(vect,point[2],axis);
-					glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
-					gl2DrawHemisphere(point[1][0],(int)point[1][1],(int)point[1][2],front[0]>0?0:1,graphics>=3?1:0);
-					glPopMatrix(); }
-				
-				for(p=0;p<srf->npanel[PSdisk];p++) {			// 3-D disks
-					point=srf->panels[PSdisk][p]->point;
-					front=srf->panels[PSdisk][p]->front;
-					glMatrixMode(GL_MODELVIEW);
-					glPushMatrix();
-					glTranslated((GLdouble)(point[0][0]),(GLdouble)(point[0][1]),(GLdouble)(point[0][2]));
-					vect[0]=vect[1]=0;
-					vect[2]=-1;
-					theta=gl2FindRotateD(vect,front,axis);
-					glRotated((GLdouble)theta,(GLdouble)(axis[0]),(GLdouble)(axis[1]),(GLdouble)(axis[2]));
-					vect2[0]=vect2[1]=vect2[2]=0;
-					gl2DrawCircleD(vect2,point[1][0],(int)point[1][1],'f',3);		//?? 'f' isn't right
-					glPopMatrix(); }
+					for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+						for(p=0;p<srf->npanel[ps];p++)
+							RenderPanel3D(srf->panels[ps][p],graphics); }
+				firstpass=0;
 
 				fdone=0;
 				if(fdm==DMface && fdrawmode&DMedge) fdm=DMedge;
@@ -1113,7 +1146,73 @@ void RenderSurfaces(simptr sim) {
 					flcolor[3]=blcolor[3]=1; }}
 
 			if((fdrawmode || bdrawmode) && glIsEnabled(GL_LINE_STIPPLE))
-				glDisable(GL_LINE_STIPPLE); }}
+				glDisable(GL_LINE_STIPPLE); }
+
+		if(ntrans) {																// translucent surfaces
+			tlist=(translucentitem*) calloc(ntrans,sizeof(translucentitem));
+			if(!tlist) return;
+			glGetDoublev(GL_MODELVIEW_MATRIX,mv);
+			i=0;
+			for(s=0;s<srfss->nsrf;s++) {
+				srf=srfss->srflist[s];
+				if(srf->fdrawmode&DMface) fdm=DMface;
+				else if(srf->fdrawmode&DMedge) fdm=DMedge;
+				else if(srf->fdrawmode&DMvert) fdm=DMvert;
+				else fdm=DMno;
+				if(srf->bdrawmode&DMface) bdm=DMface;
+				else if(srf->bdrawmode&DMedge) bdm=DMedge;
+				else if(srf->bdrawmode&DMvert) bdm=DMvert;
+				else bdm=DMno;
+				if(!((fdm==DMface || bdm==DMface) && (srf->fcolor[3]<1 || srf->bcolor[3]<1))) continue;
+				for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
+					for(p=0;p<srf->npanel[ps];p++) {
+						pnl=srf->panels[ps][p];
+						point=pnl->point;
+						if(ps==PSrect) npt=4;							// center point of the panel
+						else if(ps==PStri) npt=3;
+						else if(ps==PScyl) npt=2;
+						else npt=1;
+						vect[0]=vect[1]=vect[2]=0;
+						for(j=0;j<npt;j++)
+							for(c=0;c<3;c++) vect[c]+=point[j][c]/npt;
+						tlist[i].srf=srf;
+						tlist[i].pnl=pnl;
+						tlist[i].fdm=fdm;
+						tlist[i].bdm=bdm;
+						tlist[i].depth=mv[2]*vect[0]+mv[6]*vect[1]+mv[10]*vect[2]+mv[14];	// eye z, more negative is farther
+						i++; }}
+			qsort(tlist,ntrans,sizeof(translucentitem),translucentcompare);
+
+			glDepthMask(GL_FALSE);
+			for(i=0;i<ntrans;i++) {
+				srf=tlist[i].srf;
+				pnl=tlist[i].pnl;
+				if(tlist[i].fdm==DMface) glPolygonMode(GL_FRONT,GL_FILL);
+				else if(tlist[i].fdm==DMedge) glPolygonMode(GL_FRONT,GL_LINE);
+				else if(tlist[i].fdm==DMvert) glPolygonMode(GL_FRONT,GL_POINT);
+				if(tlist[i].bdm==DMface) glPolygonMode(GL_BACK,GL_FILL);
+				else if(tlist[i].bdm==DMedge) glPolygonMode(GL_BACK,GL_LINE);
+				else if(tlist[i].bdm==DMvert) glPolygonMode(GL_BACK,GL_POINT);
+				glColor4fv(gl2Double2GLfloat(srf->fcolor,glfvect,4));
+				glLineWidth((GLfloat)srf->edgepts);
+				if(graphics>=3) {
+					glMaterialfv(GL_FRONT,GL_SPECULAR,gl2Double2GLfloat(srf->fcolor,glfvect,4));
+					glMaterialfv(GL_BACK,GL_SPECULAR,gl2Double2GLfloat(srf->bcolor,glfvect,4));
+					glMateriali(GL_FRONT,GL_SHININESS,(GLint)srf->fshiny);
+					glMateriali(GL_BACK,GL_SHININESS,(GLint)srf->bshiny); }
+				if(pnl->ps==PSsph || pnl->ps==PScyl || pnl->ps==PShemi) {
+					outer=pnl->front[0]>0?GL_FRONT:GL_BACK;		// OpenGL front side is the Smoldyn front side
+					inner=(outer==GL_FRONT)?GL_BACK:GL_FRONT;
+					glEnable(GL_CULL_FACE);
+					glCullFace(outer);												// far, inner side first
+					RenderPanel3D(pnl,graphics);
+					glCullFace(inner);												// then near, outer side
+					RenderPanel3D(pnl,graphics);
+					glDisable(GL_CULL_FACE); }
+				else
+					RenderPanel3D(pnl,graphics); }
+			glDepthMask(GL_TRUE);
+			free(tlist); }}
 #endif
 	return; }
 
@@ -1471,9 +1570,13 @@ void RenderSim(simptr sim,int swapbuffers) {
 
 	if(dim<3) RenderMolecs(sim);
 
+	if(dim==3) {																			// opaque objects before translucent surfaces
+		if(sim->filss) RenderFilaments(sim);
+		if(sim->latticess) RenderLattice(sim); }
 	if(sim->srfss) RenderSurfaces(sim);
-	if(sim->filss) RenderFilaments(sim);
-	if(sim->latticess) RenderLattice(sim);
+	if(dim<3) {
+		if(sim->filss) RenderFilaments(sim);
+		if(sim->latticess) RenderLattice(sim); }
 	if(graphss->ntextitems) RenderText(sim);
 
 	if(swapbuffers) glutSwapBuffers();

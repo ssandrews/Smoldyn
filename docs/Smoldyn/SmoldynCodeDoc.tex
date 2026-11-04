@@ -5882,9 +5882,19 @@ Updates the graphics superstructure and upgrades the graphics condition element.
 
 \item[\underline{core simulation functions}]
 
+\item[\ttt{static void RenderPanel3D(panelptr pnl, int graphics)}]
+\hfill \\
+Draws a single 3-D panel, of any shape, using OpenGL graphics. This sets the panel normals if \ttt{graphics} is 3 or more, but it does not set the polygon mode, color, or material properties; the calling function needs to do that. OpenGL considers a polygon to be front-facing if its vertices are listed counterclockwise as seen by the viewer; panels are drawn so that the OpenGL front side is the same as the Smoldyn front side. This is called by \ttt{RenderSurfaces}.
+
+\item[\ttt{static int translucentcompare(const void *a, const void *b)}]
+\hfill \\
+Comparison function for \ttt{qsort}, which sorts a list of \ttt{translucentitem} structures by their \ttt{depth} element, from most negative to most positive. A \ttt{translucentitem}, which is defined locally in smolgraphics.c, holds a surface, one of its panels, its front and back drawing modes, and the panel center's $z$ value in eye coordinates. More negative values are farther from the viewer.
+
 \item[\ttt{void RenderSurfaces(simptr sim)}]
 \hfill \\
 Draws all surfaces in the simulation using OpenGL graphics. The 3-D portion of this function needs some work, both to fix 3-D disk drawing, to improve 3-D drawing overall, and for overall cleanup.
+
+In 3-D, surfaces that are drawn with faces and that have alpha values less than 1, for either their front or back color, are translucent. These require special care because OpenGL blending only gives correct results if objects are drawn from back to front, and because a translucent object that writes to the depth buffer hides anything behind it that is drawn later. This function draws all opaque surfaces, along with the edges and vertices of translucent surfaces, first. Then, it makes a list of all panels of translucent surfaces, sorts them by the eye-coordinate depths of their center points, and draws them from back to front with depth buffer writing turned off; depth testing is still on, so opaque objects in front of translucent ones still hide them. Spheres, cylinders, and hemispheres are each drawn twice, using face culling, first to draw their inner sides, which are farther from the viewer, and then to draw their outer sides. This method is correct for non-overlapping convex objects but can still give small errors when translucent objects intersect or interpenetrate.
 
 \item[\ttt{void RenderMolecs(simptr sim)}]
 \hfill \\
@@ -5896,7 +5906,7 @@ Draws any requested text to the OpenGL graphics window.
 
 \item[\ttt{void RenderSim(simptr sim, int swapbuffers)}]
 \hfill \\
-Draws the entire graphical output using OpenGL graphics. This calls other functions for most of the work, although it draws the frame and the grid itself. Set the \ttt{swapbuffers} input to 0 for this function to not swap graphics buffers when it's done and 1 to swap the buffers. Using 1 is the standard practice but buffer swapping is asynchronous with the rest of the code and only happens on monitor vertical refreshes; thus, I've found that it needs to be set to 0 for recording the output at a specific simulation time to TIFF files.
+Draws the entire graphical output using OpenGL graphics. This calls other functions for most of the work, although it draws the frame and the grid itself. In 3-D, it draws the molecules, frame, grid, filaments, and lattices before the surfaces, so that they are visible through translucent surfaces (see \ttt{RenderSurfaces}). Set the \ttt{swapbuffers} input to 0 for this function to not swap graphics buffers when it's done and 1 to swap the buffers. Using 1 is the standard practice but buffer swapping is asynchronous with the rest of the code and only happens on monitor vertical refreshes; thus, I've found that it needs to be set to 0 for recording the output at a specific simulation time to TIFF files.
 
 For some reason, OpenGL calls this function more frequently than it needs to. For this reason, this function doesn't bother running if it's unnecessary, meaning that the simulation time hasn't changed and it was called less than 5 ms earlier.
 
