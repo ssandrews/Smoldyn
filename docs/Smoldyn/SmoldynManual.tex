@@ -867,7 +867,7 @@ The following table lists the available color names.
 \begin{longtable}[c]{llll}
 maroon & olive & royal & darkred\\
 red & green & sky & darkorange\\
-scarlet & chartrouse & aquamarine & darkyellow\\
+scarlet & chartreuse & aquamarine & darkyellow\\
 rose & khaki & violet & darkgreen\\
 brick & purple & mauve & darkblue\\
 pink & magenta & orchid & darkviolet\\
@@ -3315,9 +3315,10 @@ Initial suffix number of TIFF files that are saved. Default value is 1.
 
 Largest possible suffix number of TIFF files that are saved. Once this value has been reached, additional TIFFs cannot be saved. Default value is 999.
 
-\item{\ttt{light} $number\ parameter\ value_1\ value_2\ value_3\ [value_4]$}
+\item{\ttt{light} $number\ parameter\ value_1\ value_2\ value_3\ [value_4]$\\
+\ttt{light} $number\ parameter\ color\ [alpha]$}
 
-Set the parameters for a light source, for use with ``opengl\_better'' quality graphics. The light $number$ should be between 0 and 7 for which light is being set. It can also be either ``global'' or ``room'', which are the same thing and set the ambient room lights, which are non-directional; use the ``ambient'' parameter for the room light. The $parameter$ may be one of the strings: ``ambient'', ``diffuse'', ``specular'', ``position'', ``on'', ``off'', or ``auto''. For ``ambient'', ``diffuse'', and ``specular'', enter the color with the $value$ inputs for red, green, and blue color channels; optionally, end with alpha. Ambient light is non-directional and does not reflect off of a surface. Diffuse light is directional (from the light source) but lights the illuminated side of a surface evenly, as though it is a non-shiny surface. Specular light is also directional and reflects off of a surface as though it is shiny.
+Set the parameters for a light source, for use with ``opengl\_better'' quality graphics. The light $number$ should be between 0 and 7 for which light is being set. It can also be either ``global'' or ``room'', which are the same thing and set the ambient room lights, which are non-directional; use the ``ambient'' parameter for the room light. The $parameter$ may be one of the strings: ``ambient'', ``diffuse'', ``specular'', ``position'', ``on'', ``off'', or ``auto''. For ``ambient'', ``diffuse'', and ``specular'', enter the color with the $value$ inputs for red, green, and blue color channels, or as a single color name (see the \ttt{color} statement for the list of names); optionally, end with alpha. If a color name is the same as a defined variable name, it is interpreted as the color name. Ambient light is non-directional and does not reflect off of a surface. Diffuse light is directional (from the light source) but lights the illuminated side of a surface evenly, as though it is a non-shiny surface. Specular light is also directional and reflects off of a surface as though it is shiny.
 
 For parameter type ``position'', either enter the light's 3-dimensional position as $x$, $y$, and $z$ in the $value$s and then enter a value of 1 for the fourth value; or, enter the vector that the light points in using the $x$, $y$, and $z$ values, keeping each between 0 and 1, and then enter the fourth value as 0. Lights specified this way are automatically enabled (turned on). You can also turn a light on or off with parameter of ``on'' or ``off''. The ``auto'' parameter produces a low white light source; if used for the room, then this is ambient light and if used for a specific light, then this is a mix of diffuse and specular light.
 

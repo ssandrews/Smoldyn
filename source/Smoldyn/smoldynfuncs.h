@@ -481,6 +481,7 @@ enum LightParam graphicsstring2lp(char *string);
 
 // low level utilities
 int graphicsreadcolor(char **stringptr,double *rgba);
+char *graphicscolor2string(const double *rgba,char *string);
 
 // memory management
 void graphssfree(graphicsssptr graphss);

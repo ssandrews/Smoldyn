@@ -1324,7 +1324,7 @@ void surfaceoutput(simptr sim) {
 	surfacessptr srfss;
 	surfaceptr srf;
 	double **point,*front,prob;
-	char **pname,string[STRCHAR];
+	char **pname,string[STRCHAR],colorstr[STRCHAR];
 	panelptr pnl;
 	enum SrfAction act,***action;
 	enum MolecState ms,ms2,ms3,ms4,ms5;
@@ -1443,8 +1443,8 @@ void surfaceoutput(simptr sim) {
 		if(sim->mols) {
 			simLog(sim,2,"  surface-bound molecules %s hop between neighboring panels upon collision\n",srf->neighhop?"do":"do not"); }
 
-		simLog(sim,2,"  front color: %g %g %g %g\n",srf->fcolor[0],srf->fcolor[1],srf->fcolor[2],srf->fcolor[3]);
-		simLog(sim,2,"  back color: %g %g %g %g\n",srf->bcolor[0],srf->bcolor[1],srf->bcolor[2],srf->bcolor[3]);
+		simLog(sim,2,"  front color: %s\n",graphicscolor2string(srf->fcolor,colorstr));
+		simLog(sim,2,"  back color: %s\n",graphicscolor2string(srf->bcolor,colorstr));
 		simLog(sim,2,"  edge points: %g, polygon modes: %s %s\n",srf->edgepts,surfdm2string(srf->fdrawmode,string),surfdm2string(srf->bdrawmode,string));
 		if(srf->edgestipple[1]!=0xFFFF) simLog(sim,2,"   edge stippling: %ui %X\n",srf->edgestipple[0],srf->edgestipple[1]);
 		if(srf->fshiny!=0) simLog(sim,2,"  front shininess: %g\n",srf->fshiny);
@@ -1664,7 +1664,7 @@ void writesurfaces(simptr sim,FILE *fptr) {
 	surfaceptr srf;
 	enum MolecState ms1,ms2;
 	enum PanelFace face;
-	char string[STRCHAR];
+	char string[STRCHAR],colorstr[STRCHAR];
 	enum PanelShape ps;
 	panelptr pnl;
 	double **point,*front;
@@ -1721,8 +1721,8 @@ void writesurfaces(simptr sim,FILE *fptr) {
 		if(srf->neighhop) {
 			fprintf(fptr,"neighbor_action hop\n"); }
 
-		fprintf(fptr,"color front %g %g %g %g\n",srf->fcolor[0],srf->fcolor[1],srf->fcolor[2],srf->fcolor[3]);
-		fprintf(fptr,"color back %g %g %g %g\n",srf->bcolor[0],srf->bcolor[1],srf->bcolor[2],srf->bcolor[3]);
+		fprintf(fptr,"color front %s\n",graphicscolor2string(srf->fcolor,colorstr));
+		fprintf(fptr,"color back %s\n",graphicscolor2string(srf->bcolor,colorstr));
 		if(srf->fshiny!=0) fprintf(fptr,"shininess front %g\n",srf->fshiny);
 		if(srf->bshiny!=0) fprintf(fptr,"shininess back %g\n",srf->bshiny);
 		fprintf(fptr,"thickness %g\n",srf->edgepts);

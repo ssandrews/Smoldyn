@@ -626,7 +626,7 @@ int simsettime(simptr sim,double time,int code) {
 int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],shapenm[STRCHAR],ch,rname[STRCHAR],fname[STRCHAR],pattern[STRCHAR];
 	char str1[STRCHAR],str2[STRCHAR],str3[STRCHAR],str4[STRCHAR],str5[STRCHAR],str6[STRCHAR];
-	char errstr[STRCHARLONG];
+	char errstr[STRCHARLONG],*chptr;
 	int er,i,nmol,d,i1,s,c,ll,order,*index,ft;
 	int rulelist[MAXORDER+MAXPRODUCT],r,ord,rct,prd,itct,prt,lt,detailsi[8];
 	long int pserno,sernolist[MAXPRODUCT];
@@ -1240,7 +1240,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=4,"color name not recognized");
 		CHECKS(er!=6,"alpha values need to be between 0 and 1");
 		CHECKS(er==0,"format is either 3 numbers or color name, and then optional alpha value");
-		er=graphicssetbackcolor(sim,v2);
+		er=graphicssettextcolor(sim,v2);
 		CHECKS(er!=1,"out of memory enabling graphics");
 		CHECKS(er!=2,"BUG: missing parameter");
 		CHECKS(er!=3,"text_color values need to be between 0 and 1");
@@ -1274,10 +1274,16 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		if(ltparam==LPon || ltparam==LPoff || ltparam==LPauto) v2[0]=0;
 		else if(ltparam==LPambient || ltparam==LPdiffuse || ltparam==LPspecular) {
 			CHECKS(line2,"light format: light_number parameter values");
-			itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
-			CHECKM(itct==3,"light is missing one or more values. ");
+			itct=sscanf(line2,"%s",nm);
+			CHECKS(itct==1,"light is missing one or more values");
+			chptr=nm;
+			if(graphicsreadcolor(&chptr,v2)==0)				// color name
+				line2=strnword(line2,2);
+			else {																	// numbers
+				itct=strmathsscanf(line2,"%mlg| %mlg| %mlg|",varnames,varvalues,nvar,&v2[0],&v2[1],&v2[2]);
+				CHECKM(itct==3,"light is missing one or more values. ");
+				line2=strnword(line2,4); }
 			v2[3]=1;
-			line2=strnword(line2,4);
 			if(line2) {
 				itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&v2[3]);
 				CHECKM(itct==1,"failed to read alpha light value. ");

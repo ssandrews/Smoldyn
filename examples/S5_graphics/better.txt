@@ -9,18 +9,18 @@ boundaries z 0 100 r
 
 species red green
 
-light room ambient 0 0 0
+light room ambient black
 light 0 position -1 1 1 0
-light 0 diffuse 0.5 0.5 0.5
-light 0 ambient 0.5 0.5 0.5
-light 0 specular 0.5 0.5 0.5
+light 0 diffuse gray
+light 0 ambient gray
+light 0 specular gray
 
 frame_thickness 0
 
 display_size red 1
 display_size green(all) 2
-color red 0.8 0 0
-color green(all) 0 0.8 0
+color red red
+color green(all) lime
 
 difc red 3
 difc green 1
@@ -47,7 +47,7 @@ end_surface
 
 start_surface box
 action both all reflect
-color both 0.5 0.5 1
+color both lightblue
 shininess both 20
 polygon both face
 panel rect +0 40 40 40 20 20
@@ -60,7 +60,7 @@ end_surface
 
 start_surface shapes
 action both all transmit
-color both 0.5 0.5 0.5
+color both gray
 shininess both 50
 polygon both face
 panel sphere 70 70 20 10 20 20

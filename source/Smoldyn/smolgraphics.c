@@ -94,11 +94,78 @@ char *graphicslp2string(enum LightParam lp,char *string) {
 /****************************** low level utilities ***************************/
 /******************************************************************************/
 
+/* Named colors, used by graphicsreadcolor and graphicscolor2string.  When
+ several names have the same color, graphicscolor2string returns the first one
+ listed here. */
+static const struct {const char *name; double r,g,b;} graphicscolortable[]={
+	{"maroon",0.5,0,0},
+	{"red",1,0,0},
+	{"scarlet",1,0.14,0},
+	{"rose",1,0,0.5},
+	{"brick",0.7,0.13,0.13},
+	{"pink",1,0.08,0.58},
+	{"brown",0.54,0.27,0.07},
+	{"tan",0.86,0.58,0.44},
+	{"sienna",0.56,0.42,0.14},
+	{"orange",1,0.65,0},
+	{"salmon",0.91,0.59,0.48},
+	{"coral",0.94,0.42,0.31},
+	{"yellow",1,1,0},
+	{"gold",1,0.84,0},
+	{"olive",0.5,0.5,0},
+	{"green",0,0.5,0},
+	{"chartreuse",0.5,1,0},
+	{"chartrouse",0.5,1,0},		// misspelling, kept for backward compatibility
+	{"khaki",0.8,0.77,0.45},
+	{"purple",0.5,0,0.5},
+	{"magenta",1,0,1},
+	{"fuchsia",1,0,1},
+	{"lime",0,1,0},
+	{"teal",0,0.5,0.5},
+	{"cyan",0,1,1},
+	{"aqua",0,1,1},
+	{"blue",0,0,1},
+	{"navy",0,0,0.5},
+	{"turquoise",0.25,0.88,0.82},
+	{"royal",0,0.14,0.4},
+	{"sky",0.53,0.81,0.92},
+	{"aquamarine",0.5,1,0.83},
+	{"indigo",0.29,0,0.51},
+	{"violet",0.58,0,0.83},
+	{"mauve",0.88,0.69,1},
+	{"orchid",0.73,0.33,0.83},
+	{"plum",0.6,0.12,0.5},
+	{"azure",0,0.5,1},
+	{"black",0,0,0},
+	{"gray",0.5,0.5,0.5},
+	{"grey",0.5,0.5,0.5},
+	{"silver",0.75,0.75,0.75},
+	{"slate",0.44,0.5,0.56},
+	{"white",1,1,1},
+	{"darkred",0.55,0,0},
+	{"darkorange",1,0.55,0},
+	{"darkyellow",1,0.84,0},
+	{"darkgreen",0,0.39,0},
+	{"darkblue",0,0,0.55},
+	{"darkviolet",0.29,0,0.51},
+	{"darkgrey",0.25,0.25,0.25},
+	{"darkgray",0.25,0.25,0.25},
+	{"lightred",1,0.39,0.28},
+	{"lightorange",1,0.75,0.2},
+	{"lightyellow",1,1,0.5},
+	{"lightgreen",0.56,1,0.5},
+	{"lightblue",0.53,0.81,0.98},
+	{"lightviolet",0.68,0.1,1},
+	{"lightgrey",0.75,0.75,0.75},
+	{"lightgray",0.75,0.75,0.75},
+	{NULL,0,0,0}};
+
+
 /* graphicsreadcolor */
 int graphicsreadcolor(char **stringptr,double *rgba) {
 	char *string,name[STRCHAR];
 	double r,g,b,a;
-	int itct,er;
+	int itct,er,i;
 
 	if(!stringptr) return 1;
 	string=*stringptr;
@@ -116,67 +183,11 @@ int graphicsreadcolor(char **stringptr,double *rgba) {
 			if(r<0 || r>1 || g<0 ||g>1 || b<0 || b>1) er=3;
 			string=strnword(string,4); }}
 	else {																								// word
-		if(!strcmp(name,"maroon"))			{r=0.5;g=0;b=0;}
-		else if(!strcmp(name,"red"))		{r=1;g=0;b=0;}
-		else if(!strcmp(name,"scarlet")) {r=1;g=0.14;b=0;}
-		else if(!strcmp(name,"rose"))		{r=1;g=0;b=0.5;}
-		else if(!strcmp(name,"brick"))	{r=0.7;g=0.13;b=0.13;}
-		else if(!strcmp(name,"pink"))		{r=1;g=0.08;b=0.58;}
-		else if(!strcmp(name,"brown"))	{r=0.54;g=0.27;b=0.07;}
-		else if(!strcmp(name,"tan"))		{r=0.86;g=0.58;b=0.44;}
-		else if(!strcmp(name,"sienna"))	{r=0.56;g=0.42;b=0.14;}
-		else if(!strcmp(name,"orange")) {r=1;g=0.65;b=0;}
-		else if(!strcmp(name,"salmon")) {r=0.91;g=0.59;b=0.48;}
-		else if(!strcmp(name,"coral"))	{r=0.94;g=0.42;b=0.31;}
-		else if(!strcmp(name,"yellow")) {r=1;g=1;b=0;}
-		else if(!strcmp(name,"gold"))		{r=1;g=0.84;b=0;}
-		else if(!strcmp(name,"olive"))	{r=0.5;g=0.5;b=0;}
-		else if(!strcmp(name,"green"))	{r=0;g=0.5;b=0;}
-		else if(!strcmp(name,"chartrouse")) {r=0.5;g=1;b=0;}
-		else if(!strcmp(name,"khaki"))	{r=0.8;g=0.77;b=0.45;}
-		else if(!strcmp(name,"purple")) {r=0.5;g=0;b=0.5;}
-		else if(!strcmp(name,"magenta"))	{r=1;g=0;b=1;}
-		else if(!strcmp(name,"fuchsia"))	{r=1;g=0;b=1;}
-		else if(!strcmp(name,"lime"))		{r=0;g=1;b=0;}
-		else if(!strcmp(name,"teal"))		{r=0;g=0.5;b=0.5;}
-		else if(!strcmp(name,"aqua"))		{r=0;g=1;b=1;}
-		else if(!strcmp(name,"cyan"))		{r=0;g=1;b=1;}
-		else if(!strcmp(name,"blue"))		{r=0;g=0;b=1;}
-		else if(!strcmp(name,"navy"))		{r=0;g=0;b=0.5;}
-		else if(!strcmp(name,"turquoise")) {r=0.25;g=0.88;b=0.82;}
-		else if(!strcmp(name,"royal"))	{r=0;g=0.14;b=0.4;}
-		else if(!strcmp(name,"sky"))		{r=0.53;g=0.81;b=0.92;}
-		else if(!strcmp(name,"aquamarine")) {r=0.5;g=1;b=0.83;}
-		else if(!strcmp(name,"indigo"))	{r=0.29;g=0;b=0.51;}
-		else if(!strcmp(name,"violet"))	{r=0.58;g=0;b=0.83;}
-		else if(!strcmp(name,"mauve"))	{r=0.88;g=0.69;b=1;}
-		else if(!strcmp(name,"orchid")) {r=0.73;g=0.33;b=0.83;}
-		else if(!strcmp(name,"plum"))		{r=0.6;g=0.12;b=0.5;}
-		else if(!strcmp(name,"azure"))	{r=0;g=0.5;b=1;}
-		else if(!strcmp(name,"black"))	{r=0;g=0;b=0;}
-		else if(!strcmp(name,"gray"))		{r=0.5;g=0.5;b=0.5;}
-		else if(!strcmp(name,"grey"))		{r=0.5;g=0.5;b=0.5;}
-		else if(!strcmp(name,"silver")) {r=0.75;g=0.75;b=0.75;}
-		else if(!strcmp(name,"slate"))	{r=0.44;g=0.5;b=0.56;}
-		else if(!strcmp(name,"white"))	{r=1;g=1;b=1;}
-
-		else if(!strcmp(name,"darkred"))	{r=0.55;g=0;b=0;}
-		else if(!strcmp(name,"darkorange"))	{r=1;g=0.55;b=0;}
-		else if(!strcmp(name,"darkyellow"))	{r=1;g=0.84;b=0;}
-		else if(!strcmp(name,"darkgreen"))	{r=0;g=0.39;b=0;}
-		else if(!strcmp(name,"darkblue"))	{r=0;g=0;b=0.55;}
-		else if(!strcmp(name,"darkviolet"))	{r=0.29;g=0;b=0.51;}
-		else if(!strcmp(name,"darkgrey"))	{r=0.25;g=0.25;b=0.25;}
-		else if(!strcmp(name,"darkgray"))	{r=0.25;g=0.25;b=0.25;}
-		else if(!strcmp(name,"lightred"))	{r=1;g=0.39;b=0.28;}
-		else if(!strcmp(name,"lightorange"))	{r=1;g=0.75;b=0.2;}
-		else if(!strcmp(name,"lightyellow"))	{r=1;g=1;b=0.5;}
-		else if(!strcmp(name,"lightgreen"))	{r=0.56;g=1;b=0.5;}
-		else if(!strcmp(name,"lightblue"))	{r=0.53;g=0.81;b=0.98;}
-		else if(!strcmp(name,"lightviolet"))	{r=0.68;g=0.1;b=1;}
-		else if(!strcmp(name,"lightgrey"))	{r=0.75;g=0.75;b=0.75;}
-		else if(!strcmp(name,"lightgray"))	{r=0.75;g=0.75;b=0.75;}
-
+		for(i=0;graphicscolortable[i].name && strcmp(name,graphicscolortable[i].name);i++);
+		if(graphicscolortable[i].name) {
+			r=graphicscolortable[i].r;
+			g=graphicscolortable[i].g;
+			b=graphicscolortable[i].b; }
 		else er=4;
 		string=strnword(string,2); }
 
@@ -193,6 +204,24 @@ int graphicsreadcolor(char **stringptr,double *rgba) {
 		rgba[3]=a; }
 	*stringptr=string;
 	return er; }
+
+
+/* graphicscolor2string */
+char *graphicscolor2string(const double *rgba,char *string) {
+	const double tol=1e-6;
+	int i;
+
+	if(!string) return NULL;
+	if(!rgba) {
+		string[0]='\0';
+		return string; }
+
+	for(i=0;graphicscolortable[i].name;i++)
+		if(fabs(rgba[0]-graphicscolortable[i].r)<tol && fabs(rgba[1]-graphicscolortable[i].g)<tol && fabs(rgba[2]-graphicscolortable[i].b)<tol) break;
+	if(graphicscolortable[i].name) strcpy(string,graphicscolortable[i].name);
+	else sprintf(string,"%g %g %g",rgba[0],rgba[1],rgba[2]);
+	if(fabs(rgba[3]-1)>=tol) sprintf(string+strlen(string)," %g",rgba[3]);
+	return string; }
 
 
 /******************************************************************************/
@@ -290,26 +319,26 @@ void graphssoutput(simptr sim) {
 	simLog(sim,2," frame thickness: %g|L",graphss->framepts);
 	if(graphss->gridpts) simLog(sim,2,", grid thickness: %g|L",graphss->gridpts);
 	simLog(sim,2,"\n");
-	if(graphss->framepts) simLog(sim,2," frame color: %g,%g,%g,%g\n",graphss->framecolor[0],graphss->framecolor[1],graphss->framecolor[2],graphss->framecolor[3]);
-	if(graphss->gridpts) simLog(sim,2," grid color: %g,%g,%g,%g\n",graphss->gridcolor[0],graphss->gridcolor[1],graphss->gridcolor[2],graphss->gridcolor[3]);
-	simLog(sim,2," background color: %g,%g,%g,%g\n",graphss->backcolor[0],graphss->backcolor[1],graphss->backcolor[2],graphss->backcolor[3]);
+	if(graphss->framepts) simLog(sim,2," frame color: %s\n",graphicscolor2string(graphss->framecolor,string1));
+	if(graphss->gridpts) simLog(sim,2," grid color: %s\n",graphicscolor2string(graphss->gridcolor,string1));
+	simLog(sim,2," background color: %s\n",graphicscolor2string(graphss->backcolor,string1));
 
 	if(graphss->ntextitems) {
-		simLog(sim,2," text color: %g,%g,%g,%g\n",graphss->textcolor[0],graphss->textcolor[1],graphss->textcolor[2],graphss->textcolor[3]);
+		simLog(sim,2," text color: %s\n",graphicscolor2string(graphss->textcolor,string1));
 		simLog(sim,2," text items:");
 		for(i1=0;i1<graphss->ntextitems;i1++)
 			simLog(sim,2," %s",graphss->textitems[i1]);
 		simLog(sim,2,"\n"); }
 
 	if(graphss->graphics>=3)
-		simLog(sim,2," ambient light (%s): %g %g %g %g\n",graphicslp2string(graphss->roomstate,string1),graphss->ambiroom[0],graphss->ambiroom[1],graphss->ambiroom[2],graphss->ambiroom[3]);
+		simLog(sim,2," ambient light (%s): %s\n",graphicslp2string(graphss->roomstate,string1),graphicscolor2string(graphss->ambiroom,string2));
 	for(lt=0;lt<MAXLIGHTS;lt++)
 		if(graphss->lightstate[lt]!=LPauto) {
 			simLog(sim,2," light %i: %s\n",lt,graphicslp2string(graphss->lightstate[lt],string1));
 			simLog(sim,2,"  position: %g|L %g|L %g|L %g\n",graphss->lightpos[lt][0],graphss->lightpos[lt][1],graphss->lightpos[lt][2],graphss->lightpos[lt][3]);
-			simLog(sim,2,"  ambient: %g %g %g %g\n",graphss->ambilight[lt][0],graphss->ambilight[lt][1],graphss->ambilight[lt][2],graphss->ambilight[lt][3]);
-			simLog(sim,2,"  diffuse: %g %g %g %g\n",graphss->difflight[lt][0],graphss->difflight[lt][1],graphss->difflight[lt][2],graphss->difflight[lt][3]);
-			simLog(sim,2,"  specular: %g %g %g %g\n",graphss->speclight[lt][0],graphss->speclight[lt][1],graphss->speclight[lt][2],graphss->speclight[lt][3]); }
+			simLog(sim,2,"  ambient: %s\n",graphicscolor2string(graphss->ambilight[lt],string1));
+			simLog(sim,2,"  diffuse: %s\n",graphicscolor2string(graphss->difflight[lt],string1));
+			simLog(sim,2,"  specular: %s\n",graphicscolor2string(graphss->speclight[lt],string1)); }
 
 	gl2GetString("TiffName",string1);
 	gl2GetString("TiffNameDefault",string2);
@@ -345,24 +374,24 @@ void writegraphss(simptr sim,FILE *fptr) {
 	fprintf(fptr,"tiff_max %i\n",gl2SetOptionInt("TiffNumMax",-1));
 
 	fprintf(fptr,"frame_thickness %g\n",graphss->framepts);
-	fprintf(fptr,"frame_color %g %g %g %g\n",graphss->framecolor[0],graphss->framecolor[1],graphss->framecolor[2],graphss->framecolor[3]);
+	fprintf(fptr,"frame_color %s\n",graphicscolor2string(graphss->framecolor,string));
 	fprintf(fptr,"grid_thickness %g\n",graphss->gridpts);
-	fprintf(fptr,"grid_color %g %g %g %g\n",graphss->gridcolor[0],graphss->gridcolor[1],graphss->gridcolor[2],graphss->gridcolor[3]);
-	fprintf(fptr,"background_color %g %g %g %g\n",graphss->backcolor[0],graphss->backcolor[1],graphss->backcolor[2],graphss->backcolor[3]);
-	fprintf(fptr,"text_color %g %g %g %g\n",graphss->textcolor[0],graphss->textcolor[1],graphss->textcolor[2],graphss->textcolor[3]);
+	fprintf(fptr,"grid_color %s\n",graphicscolor2string(graphss->gridcolor,string));
+	fprintf(fptr,"background_color %s\n",graphicscolor2string(graphss->backcolor,string));
+	fprintf(fptr,"text_color %s\n",graphicscolor2string(graphss->textcolor,string));
 
 	for(item=0;item<graphss->ntextitems;item++)
 		fprintf(fptr,"text_display %s\n",graphss->textitems[item]);
 	
 	if(graphss->roomstate!=LPauto) {
-		fprintf(fptr,"light global ambient %g %g %g %g\n",graphss->ambiroom[0],graphss->ambiroom[1],graphss->ambiroom[2],graphss->ambiroom[3]);
+		fprintf(fptr,"light global ambient %s\n",graphicscolor2string(graphss->ambiroom,string));
 		fprintf(fptr,"light global %s\n",graphicslp2string(graphss->roomstate,string)); }
 	for(lt=0;lt<MAXLIGHTS;lt++)
 		if(graphss->lightstate[lt]!=LPauto) {
 			fprintf(fptr,"light %i position %g %g %g\n",lt,graphss->lightpos[lt][0],graphss->lightpos[lt][1],graphss->lightpos[lt][2]);
-			fprintf(fptr,"light %i ambient %g %g %g %g\n",lt,graphss->ambilight[lt][0],graphss->ambilight[lt][1],graphss->ambilight[lt][2],graphss->ambilight[lt][3]);
-			fprintf(fptr,"light %i diffuse %g %g %g %g\n",lt,graphss->difflight[lt][0],graphss->difflight[lt][1],graphss->difflight[lt][2],graphss->difflight[lt][3]);
-			fprintf(fptr,"light %i specular %g %g %g %g\n",lt,graphss->speclight[lt][0],graphss->speclight[lt][1],graphss->speclight[lt][2],graphss->speclight[lt][3]);
+			fprintf(fptr,"light %i ambient %s\n",lt,graphicscolor2string(graphss->ambilight[lt],string));
+			fprintf(fptr,"light %i diffuse %s\n",lt,graphicscolor2string(graphss->difflight[lt],string));
+			fprintf(fptr,"light %i specular %s\n",lt,graphicscolor2string(graphss->speclight[lt],string));
 			fprintf(fptr,"light %i %s\n",lt,graphicslp2string(graphss->lightstate[lt],string)); }
 
 	fprintf(fptr,"\n");

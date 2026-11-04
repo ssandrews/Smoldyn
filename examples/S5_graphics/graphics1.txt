@@ -11,10 +11,10 @@ species red green
 boxsize 10
 
 frame_thickness 10
-frame_color 1 0.7 0
+frame_color orange
 grid_thickness 1
-grid_color 0 0 0
-background_color 0.5 0.5 1
+grid_color black
+background_color lightblue
 
 tiff_name graphics1
 

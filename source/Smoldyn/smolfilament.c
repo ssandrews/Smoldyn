@@ -1163,7 +1163,7 @@ void filOutput(const filamentptr fil) {
 
 /* filtypeOutput */
 void filtypeOutput(const filamenttypeptr filtype) {
-	char string[STRCHAR],string2[STRCHAR],string3[STRCHAR];
+	char string[STRCHAR],string2[STRCHAR],string3[STRCHAR],colorstr[STRCHAR];
 	int fc,f,dim,end,fes,fes2,active,grows,i;
 	double rtot;
 	simptr sim;
@@ -1185,9 +1185,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	simLog(sim,2,"  dynamics: %s\n",filFD2string(filtype->dynamics,string));
 	simLog(sim,filtype->bundlevalue!=1?2:1,"  bundle value: %g\n",filtype->bundlevalue);
 
-	simLog(sim,2,"  color: %g %g %g %g\n",filtype->color[0],filtype->color[1],filtype->color[2],filtype->color[3]);
+	simLog(sim,2,"  color: %s\n",graphicscolor2string(filtype->color,colorstr));
 	if(filtype->drawforcescale!=0)
-		simLog(sim,2,"  force arrows scale: %g, color: %g %g %g %g\n",filtype->drawforcescale,filtype->drawforcecolor[0],filtype->drawforcecolor[1],filtype->drawforcecolor[2],filtype->drawforcecolor[3]);
+		simLog(sim,2,"  force arrows scale: %g, color: %s\n",filtype->drawforcescale,graphicscolor2string(filtype->drawforcecolor,colorstr));
 	simLog(sim,2,"  edge points: %g, polygon mode: %s\n",filtype->edgepts,surfdm2string(filtype->drawmode,string));
 	if(filtype->edgestipple[1]!=0xFFFF) simLog(sim,2,"  edge stippling: %ui %X\n",filtype->edgestipple[0],filtype->edgestipple[1]);
 	if(filtype->shiny!=0) simLog(sim,2,"  shininess: %g\n",filtype->shiny);
