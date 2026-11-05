@@ -787,7 +787,8 @@ typedef struct filamenttypestruct {
     int kpsiset;                       // 1 if the roll force constant was entered
     int constraintwarn;                // 1 if a constraint convergence warning was given
     double treadrate;                  // treadmilling rate constant
-    double mobility;                   // mobility
+    double mobility;                   // translational mobility, length^2/(energy*time)
+    double rotmobility;                // rotational mobility about segment axes, 1/(energy*time); negative = unset, so mobility/filradius^2
     double filradius;                  // segment radius
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)

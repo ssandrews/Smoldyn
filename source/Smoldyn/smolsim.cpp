@@ -1014,8 +1014,8 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			else {
 				itct=sscanf(line2,"%lg-%lg",&flt1,&flt2);
 				if(itct==2) {
-					poslo[d]=flt1;
-					poshi[d]=flt2; }
+					poslo[d]=strunits(NULL,"L",flt1,NULL,"convert");		// convert range from default to working units
+					poshi[d]=strunits(NULL,"L",flt2,NULL,"convert"); }
 				else {
 					itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 					CHECKM(itct==1,"cannot read position value for mol. ");
@@ -1644,7 +1644,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 			sprintf(str6,"%i",0); }
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			CHECKM(itct==1,"random_segments format: type:name number [x y z phi theta psi] [thickness]. ");
 			CHECKS(thick>0,"thickness needs to be >0");
 			line2=strnword(line2,2); }

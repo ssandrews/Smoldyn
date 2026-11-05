@@ -1372,16 +1372,16 @@ void surfaceoutput(simptr sim) {
 		if(!none) {
 			simLog(sim,2,"  force exerted by filaments: (%g",srf->force[0]);
 			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->force[d]);
-			simLog(sim,2,")\n"); }
+			simLog(sim,2,")|E/L\n"); }
 		for(d=0,none=1;d<dim;d++) if(srf->extforce[d]!=0) none=0;
 		if(!none) {
 			simLog(sim,2,"  force applied by commands, for the next time step: (%g",srf->extforce[0]);
 			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->extforce[d]);
-			simLog(sim,2,")\n"); }
+			simLog(sim,2,")|E/L\n"); }
 		if(srf->mobility>0) {
-			simLog(sim,2,"  mobility: %g, displacement from forces: (%g",srf->mobility,srf->displace[0]);
+			simLog(sim,2,"  mobility: %g|L2/E/T, displacement from forces: (%g",srf->mobility,srf->displace[0]);
 			for(d=1;d<dim;d++) simLog(sim,2,", %g",srf->displace[d]);
-			simLog(sim,2,")\n"); }
+			simLog(sim,2,")|L\n"); }
 		if(srf->nfil>0) {
 			simLog(sim,2,"  filaments that may have adsorbed nodes:");
 			for(f=0;f<srf->nfil;f++) simLog(sim,2," %s",srf->fillist[f]->filname);
@@ -1432,10 +1432,10 @@ void surfaceoutput(simptr sim) {
 								simLog(sim,show," %s",molms2string(ms5,string));
 								if(actdetails->srfnewspec[ms2]!=i) simLog(sim,show," (convert to %s)",sim->mols->spname[actdetails->srfnewspec[ms2]]);
 								if(actdetails->srfdatasrc[ms2]==1) {
-									if(actdetails->srfrate[ms2]>=0) simLog(sim,show,", requested rate=%g",actdetails->srfrate[ms2]);
+									if(actdetails->srfrate[ms2]>=0) simLog(sim,show,", requested rate=%g|%s",actdetails->srfrate[ms2],(ms4==MSsoln || ms4==MSbsoln)?"L/T":"/T");
 									else simLog(sim,show,", requested rate=Max"); }
 								else if(actdetails->srfdatasrc[ms2]==2) simLog(sim,show,", requested prob=%g",actdetails->srfprob[ms2]);
-								simLog(sim,show,", actual rate=%g, prob=%g",srfcalcrate(sim,srf,i,ms,face,ms2),prob);
+								simLog(sim,show,", actual rate=%g|%s, prob=%g",srfcalcrate(sim,srf,i,ms,face,ms2),(ms4==MSsoln || ms4==MSbsoln)?"L/T":"/T",prob);
 								simLog(sim,1,", cum. prob=%g, rev. prob=%g",actdetails->srfcumprob[ms2],actdetails->srfrevprob[ms2]);
 								simLog(sim,show,"\n"); }}
 			if(none) simLog(sim,2," no stochastic interactions\n"); }
@@ -1456,7 +1456,7 @@ void surfaceoutput(simptr sim) {
 					if(srf->nemitter[face][i]) {
 						simLog(sim,2,"  %i %s-side emitters defined, of %i allocated:\n",srf->nemitter[face][i],surfface2string(face,string),srf->maxemitter[face][i]);
 						for(emit=0;emit<srf->nemitter[face][i];emit++) {
-							simLog(sim,2,"   %g at (%g|L",srf->emitteramount[face][i][emit],srf->emitterpos[face][i][emit][0]);
+							simLog(sim,2,"   %g|/T at (%g|L",srf->emitteramount[face][i][emit],srf->emitterpos[face][i][emit][0]);
 							for(d=1;d<dim;d++)
 								simLog(sim,2,",%g|L",srf->emitterpos[face][i][emit][d]);
 							simLog(sim,2,")\n"); }}}
@@ -3300,6 +3300,29 @@ int surfaddemitter(surfaceptr srf,enum PanelFace face,int i,double amount,double
 
 
 
+/* surfreadratevalue */
+// Reads the species, state1, state2, and value entries of the rate, rate_internal,
+// rate_rule, and rate_internal_rule statements from line2, with units that depend on the
+// statement and on state1. Rate values for collisions, with state1 equal to fsoln or
+// bsoln, are rate coefficients with units of length/time, and those for transitions from
+// surface-bound states are rate constants with units of 1/time. Internal values are
+// probabilities, so they are unitless. A value of exactly -1, which means the maximum
+// rate, is not converted. Returns the number of items read, as for strmathsscanf.
+int surfreadratevalue(const char *word,char *line2,char **varnames,double *varvalues,int nvar,char *nm,char *nm1,char *nm2,double *valueptr) {
+	int itct;
+	enum MolecState ms1;
+	char valstr[STRCHAR];
+
+	itct=sscanf(line2,"%s %s %s %s",nm,nm1,nm2,valstr);
+	if(itct<4) return itct;
+	if(strstr(word,"internal") || !strcmp(valstr,"-1"))
+		return strmathsscanf(line2,"%s %s %s %mlg|",varnames,varvalues,nvar,nm,nm1,nm2,valueptr);
+	ms1=molstring2ms(nm1);
+	if(ms1==MSsoln || ms1==MSbsoln)
+		return strmathsscanf(line2,"%s %s %s %mlg|L/T",varnames,varvalues,nvar,nm,nm1,nm2,valueptr);
+	return strmathsscanf(line2,"%s %s %s %mlg|/T",varnames,varvalues,nvar,nm,nm1,nm2,valueptr); }
+
+
 /* surfreadstring */
 surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char *word,char *line2) {
 	char nm[STRCHAR],nm1[STRCHAR],nm2[STRCHAR],facenm[STRCHAR];
@@ -3419,7 +3442,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		else
 #endif
 		{
-			itct=strmathsscanf(line2,"%s %s %s %mlg",varnames,varvalues,nvar,nm,nm1,nm2,&f1);
+			itct=surfreadratevalue(word,line2,varnames,varvalues,nvar,nm,nm1,nm2,&f1);
 			CHECKM(itct==4,"format: species[(state)] state1 state2 value [new_species]. ");
 		}
 
@@ -3497,7 +3520,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 
 	else if(!strcmp(word,"rate_rule") || !strcmp(word,"rate_internal_rule")) { // rate_rule, rate_internal_rule
 		CHECKS(srf,"need to enter surface name first");
-		itct=strmathsscanf(line2,"%s %s %s %mlg",varnames,varvalues,nvar,nm,nm1,nm2,&f1);
+		itct=surfreadratevalue(word,line2,varnames,varvalues,nvar,nm,nm1,nm2,&f1);
 		CHECKM(itct==4,"format: species[(state)] state1 state2 value [new_species]. ");
 		i=molstring2pattern(nm,&ms,pattern,0);
 		CHECKS(i>=0,"molecule name not recognized");
@@ -3560,7 +3583,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 
 	else if(!strcmp(word,"mobility")) {					// mobility
 		CHECKS(srf,"need to enter surface name before mobility");
-		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|L2/E/T",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"mobility format: value. ");
 		CHECKS(f1>=0,"mobility value needs to be at least 0");
 		er=surfsetmobility(srf,f1);
@@ -3628,8 +3651,12 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 			line2=strnword(line2,2);
 			CHECKS(line2,"panel data missing"); }
 		i1=surfpanelparams(ps,dim);
+		if(ps==PSrect || ps==PStri) i2=i1;							// number of parameters that are lengths: points and dimensions
+		else if(ps==PScyl) i2=(dim==2)?5:7;							// start, end, radius
+		else i2=dim+1;																// sph, hemi, disk: center and radius
 		for(d=0;d<i1;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[d]);
+			if(d<i2) itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&fltv1[d]);
+			else itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&fltv1[d]);	// direction vectors and drawing slices and stacks
 			CHECKM(itct==1,"panel either has too few parameters or has unreadable parameters. ");
 			line2=strnword(line2,2); }
 		if(line2) {
@@ -3708,8 +3735,8 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 
 	else if(!strcmp(word,"unbounded_emitter")) {	// unbounded_emitter
 		CHECKS(srf,"need to enter surface name before unbounded_emitter");
-		itct=sscanf(line2,"%s %s %lf",facenm,nm,&f1);
-		CHECKS(itct==3,"format for unbounded_emitter: face species amount position");
+		itct=strmathsscanf(line2,"%s %s %mlg|/T",varnames,varvalues,nvar,facenm,nm,&f1);		// amount is a production rate
+		CHECKM(itct==3,"format for unbounded_emitter: face species amount position. ");
 		face=surfstring2face(facenm);
 		CHECKS(face==PFfront || face==PFback,"face must be 'front' or 'back'");
 		i=stringfind(sim->mols->spname,sim->mols->nspecies,nm);
@@ -3717,7 +3744,7 @@ surfaceptr surfreadstring(simptr sim,ParseFilePtr pfp,surfaceptr srf,const char 
 		line2=strnword(line2,4);
 		CHECKS(line2,"format for unbounded_emitter: face species amount position");
 		for(d=0;d<dim;d++) {
-			itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&fltv1[d]);
+			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&fltv1[d]);
 			CHECKM(itct==1,"format for unbounded_emitter: face species amount position. ");
 			line2=strnword(line2,2); }
 		er=surfaddemitter(srf,face,i,f1,fltv1,dim);

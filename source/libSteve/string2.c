@@ -1600,7 +1600,7 @@ int strmathsscanf(const char *str,const char *format,char **varnames,const doubl
 			if(barpos) *(barpos++)='\0';
 			value=strmatheval(expression,varnames,varvalues,nvar);
 			if(strmatherror(NULL,0)) break;
-			if(*(fmtpos2+4)=='|' && strlen(fmtpos2)>5)
+			if(*(fmtpos2+4)=='|' && strlen(fmtpos2)>5 && !isspace(*(fmtpos2+5)))	// "%mlg|" followed by a space is unitless
 				sscanf(fmtpos2+5,"%s",dimstr);
 			else
 				dimstr[0]='\0';

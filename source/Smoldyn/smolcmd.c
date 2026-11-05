@@ -4754,9 +4754,9 @@ enum CMDcode cmdapplysurfaceforce(simptr sim,cmdptr cmd,char *line2) {
 		SCMDCHECK(s>=0,"surface name not recognized"); }
 
 	SCMDCHECK(line2=strnword(line2,2),"missing arguments for force values");
-	if(dim==1) itct=strmathsscanf(line2,"%mlg",Varnames,Varvalues,Nvar,&force[0]);
-	else if(dim==2) itct=strmathsscanf(line2,"%mlg %mlg",Varnames,Varvalues,Nvar,&force[0],&force[1]);
-	else itct=strmathsscanf(line2,"%mlg %mlg %mlg",Varnames,Varvalues,Nvar,&force[0],&force[1],&force[2]);
+	if(dim==1) itct=strmathsscanf(line2,"%mlg|E/L",Varnames,Varvalues,Nvar,&force[0]);
+	else if(dim==2) itct=strmathsscanf(line2,"%mlg|E/L %mlg|E/L",Varnames,Varvalues,Nvar,&force[0],&force[1]);
+	else itct=strmathsscanf(line2,"%mlg|E/L %mlg|E/L %mlg|E/L",Varnames,Varvalues,Nvar,&force[0],&force[1],&force[2]);
 	SCMDCHECK(itct==dim && !strmatherror(ErrString,1),"cannot read force values or wrong number of them. %s",ErrString);
 	SCMDCHECK(!strnword(line2,dim+1),"unexpected text following force values");
 	for(d=0;d<dim;d++)
@@ -4874,7 +4874,7 @@ enum CMDcode cmdlongrangeforce(simptr sim,cmdptr cmd,char *line2) {
 	SCMDCHECK(i2!=-7,"error allocating memory");
 	line2=strnword(line2,2);
 	SCMDCHECK(line2,"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation");
-	itct=strmathsscanf(line2,"%mlg|L/T %mlg|L/T %mlg|L %mlg|L %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
+	itct=strmathsscanf(line2,"%mlg|L2/E/T %mlg|L2/E/T %mlg|L %mlg|L %s",Varnames,Varvalues,Nvar,&mobility1,&mobility2,&rmin,&rmax,eqstring);
 	SCMDCHECK(itct==5 && !strmatherror(ErrString,1),"longrangeforce format: species1(state) species2(state) mobility1 mobility2 r_min r_max equation. %s",ErrString);
 	SCMDCHECK(rmin>0,"minimum radius needs to be >0");
 	SCMDCHECK(rmax>=0,"maximum radius needs to be >=0");

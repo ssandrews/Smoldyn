@@ -223,6 +223,8 @@ void filSubtreeSpringForce(filamentptr fil,int dim,double *sum);
 void filAddJunctionForces(filamentptr fil,int nodemin,int nodemax);
 double filNodeThickness(const filamentptr fil,int node);
 double filNodeMobility(const filamentptr fil,int node);
+double filRotMobility(const filamenttypeptr filtype);
+double filSegRollMobility(const filamentptr fil,int seg);
 void filAddSurfForces(filamentptr fil,int nodemin,int nodemax);
 void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,double *fsum);
 void filSurfReactionForces(simptr sim);
@@ -858,6 +860,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->kpsiset=0;
 		filtype->treadrate=0;
 		filtype->mobility=1;
+		filtype->rotmobility=-1;
 		filtype->filradius=1;
 
 		filtype->branchrate=0;											// branching off by default
@@ -1192,13 +1195,15 @@ void filtypeOutput(const filamenttypeptr filtype) {
 
 	simLog(sim,2,"  color: %s\n",graphicscolor2string(filtype->color,colorstr));
 	if(filtype->drawforcescale!=0)
-		simLog(sim,2,"  force arrows scale: %g, color: %s\n",filtype->drawforcescale,graphicscolor2string(filtype->drawforcecolor,colorstr));
+		simLog(sim,2,"  force arrows scale: %g|L2/E, color: %s\n",filtype->drawforcescale,graphicscolor2string(filtype->drawforcecolor,colorstr));
 	simLog(sim,2,"  edge points: %g, polygon mode: %s\n",filtype->edgepts,surfdm2string(filtype->drawmode,string));
 	if(filtype->edgestipple[1]!=0xFFFF) simLog(sim,2,"  edge stippling: %ui %X\n",filtype->edgestipple[0],filtype->edgestipple[1]);
 	if(filtype->shiny!=0) simLog(sim,2,"  shininess: %g\n",filtype->shiny);
 
 	simLog(sim,2,"  %s length: %g|L\n",filtype->klen>=0?"standard":"fixed",filtype->stdlen);
-	if(filtype->klen>0) simLog(sim,2,"  length force constant: %g|E/L\n",filtype->klen);
+	if(filtype->klen>0) {
+		simLog(sim,2,"  length force constant: %g|E/L2\n",filtype->klen);
+		simLog(sim,2,"  length standard deviation: %g|L, for thickness 1\n",sqrt(filtype->kT/filtype->klen)); }	// equipartition, from 0.5*klen*(len-stdlen)^2
 
 	if(dim==2) {
 		simLog(sim,2,"  %s angle: %g\n",filtype->kypr[0]>=0?"standard":"fixed",filtype->stdypr[0]);
@@ -1223,8 +1228,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		else
 			simLog(sim,2,"  torsional persistence length: %g|L, for thickness 1%s\n",Fil_Statistics("ABC","TorsionPersist",filtype->kT,filtype->kypr[2],filtype->stdlen,0),
 				filtype->persisttwist>0?" (from persistence_length_twist)":(filtype->persist>0 && !filtype->kpsiset?" (3 times the persistence length)":"")); }
-	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g\n",filtype->treadrate);
-	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
+	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g|/T\n",filtype->treadrate);
+	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g|/L/T\n",filtype->branchrate);
 	if(filtype->branchrate>0) {
 		simLog(sim,2,"  branch angle: %g rad\n",filtype->branchangle);
 		if(filtype->branchspread>=0) simLog(sim,filtype->branchspread>0?2:1,"  branch spread: %g\n",filtype->branchspread);
@@ -1233,7 +1238,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,filtype->branchend=='p'?2:1,"  daughters attach by their %s end\n",filtype->branchend=='p'?"plus":"minus");
 		if(filtype->branchminspacing>0) simLog(sim,2,"  minimum branch spacing: %g|L\n",filtype->branchminspacing); }
 	simLog(sim,filtype->branchforceangle>0?2:1,"  branch junction force constant: %g|E\n",filtype->branchforceangle);
-	if(filtype->junctforce>0) simLog(sim,2,"  loop-closing junction force constant: %g|E/L\n",filtype->junctforce);
+	if(filtype->junctforce>0) simLog(sim,2,"  loop-closing junction force constant: %g|E/L2\n",filtype->junctforce);
 	else simLog(sim,1,"  loop-closing junction force constant: unset, so force_length is used\n");
 	if(filtype->branchforceangle>0 && filtype->kT>0)								// equipartition spread the spring maintains
 		simLog(sim,2,"  branch junction equilibrium spread: %g rad, for thickness 1\n",sqrt(filtype->kT/filtype->branchforceangle));
@@ -1250,14 +1255,14 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		simLog(sim,2,"  branching gated to inside compartment %s\n",filtype->branchcmpt->cname);
 	for(i=0;i<filtype->nfilint;i++)
 		if(filtype->filint[i]->action==FFAsoftwall)
-			simLog(sim,2,"  softwall contact interaction with filament type %s, force constant %g, contact distance %g|L\n",filtype->filint[i]->otherfiltype->ftname,filtype->filint[i]->kforce,filtype->filradius+filtype->filint[i]->otherfiltype->filradius);
+			simLog(sim,2,"  softwall contact interaction with filament type %s, force constant %g|E/L2, contact distance %g|L\n",filtype->filint[i]->otherfiltype->ftname,filtype->filint[i]->kforce,filtype->filradius+filtype->filint[i]->otherfiltype->filradius);
 	simLog(sim,filtype->nsurfint>0?2:1,"  surface interactions: %i\n",filtype->nsurfint);
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
 		simLog(sim,2,"   %s with %s face of surface %s, for filament parts %s",filFSA2string(fsi->action,string),surfface2string(fsi->surfface,string2),fsi->othersurf->sname,filparts2string(fsi->filpart,string3));
 		if(fsi->action==FSAsoftwall || fsi->action==FSArepel) {
-			if(fsi->action==FSArepel) simLog(sim,2,", force constant %g|E/L, repel distance %g|L\n",fsi->kforce,fsi->repeldist);
-			else simLog(sim,2,", force constant %g|E/L\n",fsi->kforce);
+			if(fsi->action==FSArepel) simLog(sim,2,", force constant %g|E/L2, repel distance %g|L\n",fsi->kforce,fsi->repeldist);
+			else simLog(sim,2,", force constant %g|E/L2\n",fsi->kforce);
 			if(fsi->kforce>0 && filtype->kT>0)						// equipartition penetration depth the wall permits
 				simLog(sim,2,"    equilibrium penetration spread: %g|L, for thickness 1\n",sqrt(filtype->kT/fsi->kforce)); }
 		else if(fsi->action==FSAadsorb)
@@ -1279,7 +1284,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 			if(filtype->endrate[end][fes]!=0)
 				simLog(sim,2,"   %s state velocity: %g|L/T\n",filFES2string((enum FilEndState)fes,string),filtype->endrate[end][fes]);
 		if(filtype->endstate0[end]==FESbarbed || filtype->endrate[end][FESbarbed]!=0)
-			simLog(sim,2,"   barbed state force response: a=%g|L/T, k=%g\n",filtype->barbedparameters[0],filtype->barbedparameters[1]);
+			simLog(sim,2,"   barbed state force response: a=%g|L/T, k=%g|L/E\n",filtype->barbedparameters[0],filtype->barbedparameters[1]);
 		for(fes=0;fes<FESMAX;fes++)
 			for(fes2=0;fes2<FESMAX;fes2++)
 				if(filtype->endtrans[end][fes][fes2]>0)
@@ -1291,8 +1296,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(grows && filtype->elongmaxlen>0)
 		simLog(sim,2,"  elongation max length: %g|L\n",filtype->elongmaxlen);
 
-	simLog(sim,2,"  mobility: %g\n",filtype->mobility);
-	simLog(sim,2,"  filament radius: %g\n",filtype->filradius);
+	simLog(sim,2,"  mobility: %g|L2/E/T\n",filtype->mobility);
+	if(dim==3) simLog(sim,2,"  rotational mobility: %g|/E/T%s\n",filRotMobility(filtype),filtype->rotmobility>0?"":" (mobility/radius^2)");
+	simLog(sim,2,"  filament radius: %g|L\n",filtype->filradius);
 
 	if(filtype->nface>0) {
 		simLog(sim,2,"  %i faces with twist of %g:",filtype->nface,filtype->facetwist);
@@ -1771,6 +1777,10 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value<=0) er=2;
 		else filtype->mobility=value; }
 
+	else if(!strcmp(param,"rotmobility")) {						// rotational mobility; negative = mobility/filradius^2
+		if(value==0) er=2;
+		else filtype->rotmobility=value<0?-1:value; }
+
 	else if(!strcmp(param,"bundle")) {
 		if(value<=0) er=2;
 		else filtype->bundlevalue=value; }
@@ -2138,7 +2148,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"force_arrows")) {			// force_arrows
 		CHECKS(filtype,"need to enter filament type name before force_arrows");
-		itct=strmathsscanf(line2,"%mlg",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|L2/E",varnames,varvalues,nvar,&f1);		// arrow length per force
 		CHECKM(itct==1,"force_arrows format: scale color. ");
 		er=filtypeSetDrawForceArrows(filtype,f1,NULL);
 		CHECKS(!er,"BUG: error in filtypeSetDrawForceArrows");
@@ -2299,7 +2309,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1>=0,"confine_surface surface name not recognized (define the surface before the filament type)");
 		line2=strnword(line2,2);
 		CHECKS(line2,"confine_surface format: surface_name force_constant [front/back]");
-		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"confine_surface format: surface_name force_constant [front/back]");
 		CHECKS(f1>=0,"confine_surface force constant needs to be >=0");
 		pf=PFfront;																	// default face
@@ -2330,7 +2340,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(!strcmp(nm2,"softwall"),"filament_interaction action needs to be softwall");
 		line2=strnword(line2,3);
 		CHECKS(line2,"filament_interaction format: filament_type softwall force_constant");
-		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"filament_interaction format: filament_type softwall force_constant. ");
 		CHECKS(f1>=0,"filament_interaction force constant needs to be >=0");
 		CHECKMEM(filtypeAddFilInteract(filtype,sim->filss->filtypes[i1],FFAsoftwall,f1));
@@ -2353,14 +2363,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		if(fsa==FSAsoftwall) {
 			CHECKS(pf!=PFboth,"surface_interaction softwall needs a front or back face, which is the side that the filament is on");
 			CHECKS(line2,"surface_interaction softwall format: surface_name face parts softwall force_constant");
-			itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+			itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
 			CHECKM(itct==1,"surface_interaction softwall format: surface_name face parts softwall force_constant");
 			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
 			line2=strnword(line2,2); }
 		else if(fsa==FSArepel) {
 			CHECKS(pf!=PFboth,"surface_interaction repel needs a front or back face, which is the side that the filament is on");
 			CHECKS(line2,"surface_interaction repel format: surface_name face parts repel force_constant repel_distance");
-			itct=strmathsscanf(line2,"%mlg|E/L %mlg|L",varnames,varvalues,nvar,&f1,&f2);
+			itct=strmathsscanf(line2,"%mlg|E/L2 %mlg|L",varnames,varvalues,nvar,&f1,&f2);
 			CHECKM(itct==2,"surface_interaction repel format: surface_name face parts repel force_constant repel_distance");
 			CHECKS(f1>=0,"surface_interaction force constant needs to be >=0");
 			CHECKS(f2>=0,"surface_interaction repel distance needs to be >=0");
@@ -2424,7 +2434,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		line2=strnword(line2,2);
 		if(line2) {																	// barbed state: force response parameters
 			CHECKS(fes1==FESbarbed,"unexpected text following elongation_rate; only the barbed state has more parameters");
-			itct=strmathsscanf(line2,"%mlg|L/T %mlg|",varnames,varvalues,nvar,&f1,&f2);
+			itct=strmathsscanf(line2,"%mlg|L/T %mlg|L/E",varnames,varvalues,nvar,&f1,&f2);
 			CHECKM(itct==2,"elongation_rate format: end barbed value a k. ");
 			CHECKS(f1>=0 && f2>=0,"elongation_rate a and k values need to be >=0");
 			filtypeSetParam(filtype,"barbedparameters",0,f1);
@@ -2484,9 +2494,17 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"endtrans",(1*FESMAX+FEScapped)*FESMAX+FESopen,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following uncapping_rate"); }
 
+	else if(!strcmp(word,"rotational_mobility")) {	// rotational_mobility
+		CHECKS(filtype,"need to enter filament type name before rotational_mobility");
+		itct=strmathsscanf(line2,"%mlg|/E/T",varnames,varvalues,nvar,&f1);			// roll rate per torque
+		CHECKM(itct==1,"rotational_mobility format: value. ");
+		CHECKS(f1>0,"rotational_mobility value needs to be greater than 0");
+		filtypeSetParam(filtype,"rotmobility",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following rotational_mobility"); }
+
 	else if(!strcmp(word,"mobility")) {			// mobility
 		CHECKS(filtype,"need to enter filament type name before mobility");
-		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&f1);				//?? Units are incorrect
+		itct=strmathsscanf(line2,"%mlg|L2/E/T",varnames,varvalues,nvar,&f1);		// velocity per force
 		CHECKM(itct==1,"mobility format: value. ");
 		CHECKS(f1>0,"mobility value needs to be greater than 0");
 		filtypeSetParam(filtype,"mobility",0,f1);
@@ -2516,14 +2534,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	else if(!strcmp(word,"force_length")) {		// force_length
 		CHECKS(filtype,"need to enter filament type name before force_length");
-		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"force_length format: value. ");
 		filtypeSetParam(filtype,"klen",0,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following force_length"); }
 
 	else if(!strcmp(word,"junction_force")) {		// junction_force: spring for loop-closing junctions
 		CHECKS(filtype,"need to enter filament type name before junction_force");
-		itct=strmathsscanf(line2,"%mlg|E/L",varnames,varvalues,nvar,&f1);
+		itct=strmathsscanf(line2,"%mlg|E/L2",varnames,varvalues,nvar,&f1);
 		CHECKM(itct==1,"junction_force format: value. ");
 		CHECKS(f1>=0,"junction_force value needs to be >=0");
 		filtypeSetParam(filtype,"junctforce",0,f1);
@@ -2624,7 +2642,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		line2=strnword(line2,itct+1);
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			if(dim==2) {CHECKM(itct==1,"first_segment format: x y length angle [thickness]. ");}
 			else {CHECKM(itct==1,"first_segment format: x y z length yaw pitch roll [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
@@ -2648,7 +2666,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 		thick=1;
 		endchar='p';
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			if(dim==2) {CHECKM(itct==1,"add_segment format: length angle0 [thickness [plus/minus]]. ");}
 			else {CHECKM(itct==1,"add_segment format: length angle0 angle1 angle2 [thickness [plus/minus]]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
@@ -2704,7 +2722,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 				line2=strnword(line2,7); }}
 		thick=1;
 		if(line2) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			if(dim==2) {CHECKM(itct==1,"random_segments format: number [x y phi] [thickness]. ");}
 			else {CHECKM(itct==1,"random_segments format: number [x y z phi theta psi] [thickness]. ");}
 			CHECKS(thick>0,"thickness needs to be >0");
@@ -2783,7 +2801,7 @@ filamentptr filReadString(simptr sim,ParseFilePtr pfp,filamentptr fil,filamentty
 				line2=strnword(line2,4); }
 			filTranslateNode(fil,seg,pos,symbol); }
 		else if(!strcmp(nm,"thickness")) {
-			itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&thick);
+			itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&thick);
 			CHECKM(itct==1,"modify_segment format: segment length/angle/thickness/minus_position +/-/= value [plus/minus]. ");
 			line2=strnword(line2,2);
 			er=filChangeThickness(fil,seg,thick,symbol);
@@ -5500,8 +5518,9 @@ void filAddStretchForceMat(filamentptr fil) {
 // the draw, so the draw sequence is independent of kT and mobility values; immobile
 // nodes (nodemobility 0) correctly receive no thermal force. In 3D, each segment also
 // receives a thermal torque about its own axis, with rms sqrt(2*kT/(mobility*m*dt)),
-// where m is the segment's roll mobility factor, the average of its two nodes' factors
-// (see filStepDynamics), so that twist samples the same ensemble. These are drawn after
+// where m is the segment's roll mobility factor relative to mobility (filSegRollMobility),
+// so this is sqrt(2*kT/(rotmobility*m'*dt)) for node factor average m', and twist samples
+// the same ensemble. These are drawn after
 // the node forces.
 void filDrawThermalForces(filamentptr fil) {
 	double kT,dt,mobility,famp,nodemob,frms;
@@ -5535,7 +5554,7 @@ void filDrawThermalForces(filamentptr fil) {
 				filwork->thermforce[node][2]=frms*gaussrandD(); }
 		if(dim==3)
 			for(seg=0;seg<fil->nseg;seg++) {
-				nodemob=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));	// segment roll mobility factor
+				nodemob=filSegRollMobility(fil,seg);		// segment roll mobility factor, relative to mobility, so rms torque is sqrt(2*kT/(rotmobility*m*dt))
 				frms=(famp>0 && nodemob>0)?sqrt(famp/nodemob):0;
 				filwork->thermtorque[seg]=frms*gaussrandD(); }
 		filwork->thermtime=sim->time; }
@@ -5610,7 +5629,7 @@ void filAddMatrixForceStep(filamentptr fil,double dtmu,double *flatvect) {
 			for(d=0;d<3;d++)
 				flatvect[4*node+d]+=dtmu*filNodeMobility(fil,node)*forces[node][d];
 			if(node<fil->nseg) {
-				nodemob=0.5*(filNodeMobility(fil,node)+filNodeMobility(fil,node+1));
+				nodemob=filSegRollMobility(fil,node);
 				flatvect[4*node+3]+=dtmu*nodemob*torques[node]; }}}
 	return; }
 
@@ -6030,8 +6049,8 @@ double filNodeThickness(const filamentptr fil,int node) {
 // mobility factor, divided by its thickness (filNodeThickness) if the filament type's
 // thickdrag value is 1, so that thicker filaments have proportionally more drag, and
 // multiplied by its lateral mobility factor if it is adsorbed to a surface. The
-// mobility of node node is the filament type's mobility times this. Segment rotation
-// mobility factors are the averages of these for the segment's two nodes.
+// mobility of node node is the filament type's mobility times this. Segment roll
+// mobility factors are from filSegRollMobility.
 double filNodeMobility(const filamentptr fil,int node) {
 	double mob;
 
@@ -6039,6 +6058,31 @@ double filNodeMobility(const filamentptr fil,int node) {
 	if(fil->nodepnl[node]) mob*=fil->nodesrfmob[node];				// adsorbed node: lateral mobility factor
 	if(fil->filtype->thickdrag) return mob/filNodeThickness(fil,node);
 	return mob; }
+
+
+/* filRotMobility */
+// Returns the rotational mobility of filament type filtype, for segment rotation about
+// its own axis, which is rotmobility if it was entered and otherwise mobility divided
+// by the square of the filament radius. For a rod, the rotational drag per length is
+// about the translational drag per length times the radius squared, so this is
+// roughly correct, and it equals mobility for the default radius of 1.
+double filRotMobility(const filamenttypeptr filtype) {
+	if(filtype->rotmobility>0) return filtype->rotmobility;
+	return filtype->mobility/(filtype->filradius*filtype->filradius); }
+
+
+/* filSegRollMobility */
+// Returns the effective roll mobility factor of segment seg of filament fil, relative to
+// the filament type's (translational) mobility. This is the average of the effective
+// mobility factors of the segment's two nodes (filNodeMobility), times the ratio of the
+// rotational mobility (filRotMobility) to the mobility, so that a segment's roll rate is
+// dt*mobility times this times its torque. The ratio makes rotation independent of the
+// translational mobility, which has different units.
+double filSegRollMobility(const filamentptr fil,int seg) {
+	filamenttypeptr filtype;
+
+	filtype=fil->filtype;
+	return 0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1))*filRotMobility(filtype)/filtype->mobility; }
 
 
 /* filSurfForceOn */
@@ -6748,7 +6792,7 @@ void filStepDynamics(filamentptr fil,double dtmu,int in,int out) {
 		for(seg=0;seg<fil->nseg;seg++) {					// new segment vectors, and each segment's rotation about its own axis from its torque
 			for(d=0;d<3;d++)
 				segnew[3*seg+d]=nodesin[seg+1][d]+dtmu*nodemobility[seg+1]*forces[seg+1][d]-nodesin[seg][d]-dtmu*nodemobility[seg]*forces[seg][d];
-			dphi[seg]=dtmu*0.5*(nodemobility[seg]+nodemobility[seg+1])*filwork->torques[seg]; }
+			dphi[seg]=dtmu*filSegRollMobility(fil,seg)*filwork->torques[seg]; }
 		if(in==0) filWorkFramesFromSegments(fil);
 		filTransportFrames(fil,nodesin,filwork->wqabs[in],segnew,dphi,1,filwork->wqabs[out],seg0upout,out==0?rollout:NULL);	// a working state other than 0 only needs its frames
 		if(fil->nseg>0) rollout[0]=rollin[0];			// segment 0's orientation is held in seg0up
@@ -6838,8 +6882,7 @@ void filRK4Dynamics(simptr sim,filamenttypeptr filtype) {
 
 /* filMobilityWeights */
 // Puts the effective mobility factor of each flattened coordinate of filament fil in wt:
-// filNodeMobility for node positions, and in 3D, the average of the two nodes' values for
-// segment rotations. Returns the number of flattened coordinates.
+// filNodeMobility for node positions, and in 3D, filSegRollMobility for segment rotations. Returns the number of flattened coordinates.
 int filMobilityWeights(filamentptr fil,double *wt) {
 	int dim,stride,node,seg,d;
 
@@ -6848,7 +6891,7 @@ int filMobilityWeights(filamentptr fil,double *wt) {
 	for(node=0;node<=fil->nseg;node++)
 		for(d=0;d<dim;d++) wt[stride*node+d]=filNodeMobility(fil,node);
 	if(dim==3)
-		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=filSegRollMobility(fil,seg);
 	return (dim==2)?2*(fil->nseg+1):4*(fil->nseg+1)-1; }
 
 
@@ -7154,7 +7197,7 @@ int filProjectConstraints(filamentptr fil) {
 	for(node=0;node<=fil->nseg;node++)							// mobility weights
 		for(d=0;d<dim;d++) wt[fs*node+d]=filNodeMobility(fil,node);
 	if(dim==3)
-		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=0.5*(filNodeMobility(fil,seg)+filNodeMobility(fil,seg+1));
+		for(seg=0;seg<fil->nseg;seg++) wt[4*seg+3]=filSegRollMobility(fil,seg);
 
 	er=1;
 	for(iter=0;iter<FILCONSTRAINTITER;iter++) {
