@@ -1,13 +1,18 @@
 # Persistence length of thermally fluctuating filaments in 3D.
 #
-# This simulates three filament types that differ only in their bending force
-# constants, and records all node positions so that persistence3D.py can measure
+# This simulates three filament types that differ only in their bending and
+# twisting force constants, and records all node positions so that persistence3D.py can measure
 # their persistence lengths. The measurements can be compared with the persistence
 # lengths that Smoldyn reports in its filament type output (run with -o, or look at
 # the diagnostics), which are computed for the angle-biased chain model as
 # Lp = 2 l kyaw kpitch / (kT (kyaw + kpitch)).
 #
-#   sym       force_angle 10 10 10    predicted Lp = 10
+# The sym type is entered with persistence_length instead of force_angle, so Smoldyn
+# computes its yaw and pitch force constants as kT Lp / l = 10. Its torsional
+# persistence length isn't entered, so it defaults to 3 Lp = 30, which gives a roll
+# force constant of kT Lt / 2l = 15.
+#
+#   sym       persistence_length 10   predicted Lp = 10
 #   asym      force_angle 10 40 10    predicted Lp = 16
 #   asymroll  force_angle 10 40 100   predicted Lp = 16
 #
@@ -45,7 +50,7 @@ kT 1
 standard_length 1
 standard_angle 0 0 0
 force_length 200
-force_angle 10 10 10
+persistence_length 10
 mobility 1
 thickness 1
 color red
