@@ -6,7 +6,7 @@ input and output, rendering of translucent 3-D surfaces, a new libSteve filament
 statistics library with persistence-length statements, and a review of
 measurement units across the input and output code. Everything below was
 committed and pushed to `master` on github.com/ssandrews/Smoldyn, in commits
-33c376d through b9a2b4d.
+33c376d through 4399b7f.
 
 ## Working conventions used
 
@@ -153,6 +153,43 @@ Smoldyn supports length (L), time (T), and energy (E) units.
   units.
 - **Older files:** no repository file used explicit unit suffixes on the
   changed inputs, so none needed edits.
+
+## Part 5: viscosity and a CI fix (commits e52705a, 4399b7f)
+
+- **Viscosity** (4399b7f): the new filament type statement `viscosity` (units
+  E·T/L3) sets the mobility and the rotational mobility when they aren't
+  entered.
+  - Each node is treated as carrying the drag of one segment: a cylinder with
+    length `standard_length`, radius `radius`, and viscosity η.
+  - Translational mobility: μ = (ln p + ν)/(3πηl), the orientation-averaged
+    mobility of a cylinder from Tirado and García de la Torre. Here p = l/2a,
+    with a minimum of 2, and ν = 0.312 + 0.565/p − 0.100/p².
+  - Rotational mobility about the segment axis: μr = 1/(4πηa²l).
+  - Entered values take precedence. The mobility is recomputed by
+    `filtypeApplyViscosity` when the viscosity, radius, or standard length
+    changes, so statement order doesn't matter.
+  - New fields: `viscosity` and `mobilityset`. New function:
+    `filViscousMobility`. `filRotMobility` now uses the viscosity if no
+    rotational mobility is entered. `filtypeOutput` labels values that came
+    from the viscosity.
+  - There's no pascal unit, so water's 1 mPa·s is entered as `1e-3|J.s/m3`,
+    which is 1 zJ·s/µm³. An actin-like test (radius 3.5 nm, 37 nm segments)
+    matched hand calculations, giving D ≈ 26 µm²/s.
+  - **Limitations:** this ignores hydrodynamic interactions between segments
+    and the anisotropy of drag. A filament with N segments has N+1 nodes, so
+    its total drag is (N+1)/N times too large.
+- **Unit output order** (4399b7f): `strunits` in `libSteve/string2.c` now
+  lists positive unit powers before negative ones in output strings. So
+  viscosity prints as `s.zJ/um3` instead of `/um3.s.zJ`, which read as
+  1/(µm³·s·zJ).
+- **CI fix** (e52705a): CTest runs every `examples/**/*.py` file as a test.
+  `persistence3D.py` analyzes the output of `smoldyn persistence3D.txt`, so on
+  GitHub it failed with "FileNotFoundError: ... 'persistence3Dout.txt'".
+  - It was added to the `NOT_PY_EXAMPLES_NAME_WE` exclusion list in
+    `examples/CMakeLists.txt`.
+  - The script now exits with a clear message if the output file is missing.
+  - Lesson: new `.py` files in `examples/` that aren't Smoldyn model scripts
+    need to go on that list.
 
 ## Left as is
 
