@@ -10,7 +10,7 @@ add_custom_target(pyexamples)
 file(GLOB_RECURSE PY_FILES "${CMAKE_CURRENT_SOURCE_DIR}/**.py")
 
 # ignore these scripts; they are not smoldyn script.
-set(NOT_PY_EXAMPLES_NAME_WE regression lines pyscript)
+set(NOT_PY_EXAMPLES_NAME_WE regression lines pyscript persistence3D)	# persistence3D.py analyzes output from smoldyn persistence3D.txt
 
 foreach(_example ${PY_FILES})
     get_filename_component(_ex_name ${_example} NAME_WE)

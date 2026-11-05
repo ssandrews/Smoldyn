@@ -8,7 +8,12 @@
 # samples into 10 blocks of time. This requires numpy.
 
 import math
+import os
+import sys
 import numpy as np
+
+if not os.path.exists("persistence3Dout.txt"):
+    sys.exit("persistence3Dout.txt not found; run 'smoldyn persistence3D.txt' first")
 
 predicted = {"sym": 10, "asym": 16, "asymroll": 16}  # from 2 l kyaw kpitch / (kT (kyaw + kpitch))
 nmax = 8
