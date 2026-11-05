@@ -84,6 +84,7 @@ void filNodeDesorb(filamentptr fil,int node);
 int filNodesAdsorbed(const filamentptr fil);
 
 // filament type
+void filtypeApplyPersistence(filamenttypeptr filtype);
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value);
 int filtypeSetColor(filamenttypeptr filtype,const double *rgba);
 int filtypeSetEdgePts(filamenttypeptr filtype,double value);
@@ -852,6 +853,9 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->klen=1;
 		filtype->kypr[0]=filtype->kypr[1]=filtype->kypr[2]=1;
 		filtype->kT=1;
+		filtype->persist=-1;
+		filtype->persisttwist=-1;
+		filtype->kpsiset=0;
 		filtype->treadrate=0;
 		filtype->mobility=1;
 		filtype->filradius=1;
@@ -1212,7 +1216,13 @@ void filtypeOutput(const filamenttypeptr filtype) {
 		if(kphi<0) persist=2*filtype->stdlen*ktheta/filtype->kT;		// fixed angles don't bend
 		else if(ktheta<0) persist=2*filtype->stdlen*kphi/filtype->kT;
 		else persist=Fil_Statistics("ABC","Persist",filtype->kT,kphi,ktheta,filtype->stdlen);
-		simLog(sim,2,"  persistence length: %g|L, for thickness 1\n",persist); }
+		simLog(sim,2,"  persistence length: %g|L, for thickness 1%s\n",persist,filtype->persist>0?" (from persistence_length)":""); }
+	if(dim==3) {																				// torsional persistence length
+		if(filtype->kT<=0 || filtype->kypr[2]<0)
+			simLog(sim,2,"  torsional persistence length: infinite\n");
+		else
+			simLog(sim,2,"  torsional persistence length: %g|L, for thickness 1%s\n",Fil_Statistics("ABC","TorsionPersist",filtype->kT,filtype->kypr[2],filtype->stdlen,0),
+				filtype->persisttwist>0?" (from persistence_length_twist)":(filtype->persist>0 && !filtype->kpsiset?" (3 times the persistence length)":"")); }
 	simLog(sim,filtype->treadrate!=0?2:1,"  treadmilling rate: %g\n",filtype->treadrate);
 	simLog(sim,filtype->branchrate>0?2:1,"  branch rate: %g\n",filtype->branchrate);
 	if(filtype->branchrate>0) {
@@ -1418,6 +1428,8 @@ int filCheckParams(const simptr sim,int *warnptr) {
 					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));}
 			if(reach[FESbarbed] && filtype->barbedparameters[0]>0 && filtype->barbedparameters[1]>0 && !filSurfForceOn(filtype) && !filContactTypeOn(filtype)) {
 				warn++;simLog(sim,5,"WARNING: filament type %s has a barbed %s end, but no softwall or repel surface interactions or filament contact interactions, so its elongation rate won't depend on force\n",filtype->ftname,end?"plus":"minus");} }
+		if((filtype->persist>0 || filtype->persisttwist>0) && (filtype->kT<=0 || filtype->stdlen<=0)) {
+			error++;simLog(sim,10,"ERROR: filament type %s has a persistence length entered, but force constants can only be computed from it if kT and standard_length are both positive\n",filtype->ftname);}
 		if(filtype->branchforceangle>0 && filtype->kT>0) {	// birth spread should match the spring's equilibrium spread (filUpdateParams derives it when unset)
 			fval=sqrt(filtype->kT/filtype->branchforceangle);
 			if(filtype->branchspread==0) {
@@ -1612,6 +1624,30 @@ int filNodesAdsorbed(const filamentptr fil) {
 /******************************************************************************/
 
 
+/* filtypeApplyPersistence */
+// Computes bending and twisting force constants from the persistence lengths, if they
+// were entered, for the ABC model with equal yaw and pitch force constants and
+// thickness 1. If the bending persistence length was entered but neither the roll
+// force constant nor the torsional persistence length was, then the torsional
+// persistence length is taken to be three times the bending one.
+void filtypeApplyPersistence(filamenttypeptr filtype) {
+	int dim;
+	double kT,len,twist;
+
+	kT=filtype->kT;
+	len=filtype->stdlen;
+	if(kT<=0 || len<=0) return;													// can't compute; filCheckParams reports it
+	dim=(filtype->filss && filtype->filss->sim)?filtype->filss->sim->dim:3;
+	if(filtype->persist>0) {
+		if(dim==2) filtype->kypr[0]=kT*filtype->persist/(2*len);		// 2D: Lp = 2 l k / kT
+		else filtype->kypr[0]=filtype->kypr[1]=Fil_Statistics("ABC","kBend_Persist",kT,filtype->persist,len,0); }
+	if(dim==3) {
+		twist=filtype->persisttwist;
+		if(twist<=0 && filtype->persist>0 && !filtype->kpsiset) twist=3*filtype->persist;
+		if(twist>0) filtype->kypr[2]=Fil_Statistics("ABC","kTwist_Persist",kT,twist,len,0); }
+	return; }
+
+
 /* filtypeSetParam */
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value) {
 	int er;
@@ -1619,7 +1655,9 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 	er=0;
 	if(!strcmp(param,"stdlen")) {
 		if(value<0) er=2;
-		else filtype->stdlen=value; }
+		else {
+			filtype->stdlen=value;
+			filtypeApplyPersistence(filtype); }}
 
 	else if(!strcmp(param,"stdypr")) {
 		if(value<-PI || value>PI) er=2;
@@ -1636,11 +1674,27 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"kypr")) {
 		if(index<0) filtype->kypr[0]=filtype->kypr[1]=filtype->kypr[2]=value;
-		else filtype->kypr[index]=value; }
+		else filtype->kypr[index]=value;
+		if(index<0 || index==2) filtype->kpsiset=1;
+		filtypeApplyPersistence(filtype); }						// persistence lengths take precedence
 
 	else if(!strcmp(param,"kT")) {
 		if(value<0) er=2;
-		else filtype->kT=value; }
+		else {
+			filtype->kT=value;
+			filtypeApplyPersistence(filtype); }}
+
+	else if(!strcmp(param,"persist")) {								// bending persistence length
+		if(value<=0) er=2;
+		else {
+			filtype->persist=value;
+			filtypeApplyPersistence(filtype); }}
+
+	else if(!strcmp(param,"persisttwist")) {					// torsional persistence length
+		if(value<=0) er=2;
+		else {
+			filtype->persisttwist=value;
+			filtypeApplyPersistence(filtype); }}
 
 	else if(!strcmp(param,"treadrate")) {
 		filtype->treadrate=value; }
@@ -2488,6 +2542,23 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		filtypeSetParam(filtype,"kypr",1,fltv1[1]);
 		filtypeSetParam(filtype,"kypr",2,fltv1[2]);
 		CHECKS(!strnword(line2,4),"unexpected text following force_angle"); }
+
+	else if(!strcmp(word,"persistence_length")) {		// persistence_length
+		CHECKS(filtype,"need to enter filament type name before persistence_length");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"persistence_length format: value. ");
+		CHECKS(f1>0,"persistence_length value needs to be >0");
+		filtypeSetParam(filtype,"persist",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following persistence_length"); }
+
+	else if(!strcmp(word,"persistence_length_twist")) {	// persistence_length_twist
+		CHECKS(filtype,"need to enter filament type name before persistence_length_twist");
+		CHECKS(dim==3,"persistence_length_twist is only used in 3D");
+		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"persistence_length_twist format: value. ");
+		CHECKS(f1>0,"persistence_length_twist value needs to be >0");
+		filtypeSetParam(filtype,"persisttwist",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following persistence_length_twist"); }
 
 //?? Need to add faces and facetwist
 

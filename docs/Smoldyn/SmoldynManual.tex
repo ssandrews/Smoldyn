@@ -3874,7 +3874,15 @@ Stretching force constant for filament segments. The force constant of each segm
 \item{\ttt{* force\_angle} $yaw$\\
 \ttt{* force\_angle} $yaw$ $pitch$ $roll$}
 
-Force constants for bending and torsion. The force constants at each node between segments are these values times the average thickness of the two segments, which is 1 by default. A negative value makes that angle fixed at its \ttt{standard\_angle} value (see section \ref{sec:FilForces}).
+Force constants for bending and torsion. The force constants at each node between segments are these values times the average thickness of the two segments, which is 1 by default. A negative value makes that angle fixed at its \ttt{standard\_angle} value (see section \ref{sec:FilForces}). Alternatively, the force constants can be computed from persistence lengths, using \ttt{persistence\_length} and \ttt{persistence\_length\_twist}.
+
+\item{\ttt{* persistence\_length} $length$}%?? new
+
+Persistence length for filament bending, for thickness 1, which Smoldyn uses to compute the yaw and pitch force constants, so \ttt{force\_angle} doesn't need to be entered. The persistence length, $L_p$, is defined by $\left< \bm{t}_0 \cdot \bm{t}_s \right> = e^{-s/L_p}$, where $\bm{t}_0$ and $\bm{t}_s$ are the directions of two segments separated by contour length $s$. In 3D, the yaw and pitch force constants are both set to $k_\phi=k_\theta=kT L_p/l$, where $l$ is the standard length; in 2D, the single bending force constant is set to $k_\phi=kT L_p/2l$. These are computed from the current \ttt{kT} and \ttt{standard\_length} values, regardless of the order in which the statements are entered, and both values need to be positive. In 3D, if neither the roll force constant (in \ttt{force\_angle}) nor \ttt{persistence\_length\_twist} is entered, then the torsional persistence length is set to 3 times the persistence length. The persistence length takes precedence over yaw and pitch force constants that are entered with \ttt{force\_angle}. Smoldyn lists the persistence length in its filament type output, whether it was entered or computed from \ttt{force\_angle}.
+
+\item{\ttt{* persistence\_length\_twist} $length$}%?? new
+
+Torsional persistence length, for thickness 1 and 3D simulations only, which Smoldyn uses to compute the roll force constant. The torsional persistence length, $L_t$, is defined by $\left< \cos \Delta \psi \right> = e^{-s/L_t}$, where $\Delta \psi$ is the total twist over contour length $s$, and the roll force constant is set to $k_\psi=kT L_t/2l$. Note that a common alternative definition, often used for DNA, is that the twist variance is $\left< \Delta\psi^2 \right> = s/L_t$, which gives values that are half as large as those here. This takes precedence over the roll force constant entered with \ttt{force\_angle}.
 
 \item{\ttt{* end\_filament\_type}}
 

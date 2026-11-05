@@ -782,6 +782,9 @@ typedef struct filamenttypestruct {
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
+    double persist;                    // persistence length for bending; >0 sets kypr[0] and kypr[1], negative = unset
+    double persisttwist;               // torsional persistence length; >0 sets kypr[2], negative = unset
+    int kpsiset;                       // 1 if the roll force constant was entered
     int constraintwarn;                // 1 if a constraint convergence warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility

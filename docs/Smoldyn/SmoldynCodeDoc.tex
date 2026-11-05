@@ -4362,6 +4362,9 @@ typedef struct filamenttypestruct {
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
+    double persist;                    // persistence length for bending; >0 sets kypr[0] and kypr[1], negative = unset
+    double persisttwist;               // torsional persistence length; >0 sets kypr[2], negative = unset
+    int kpsiset;                       // 1 if the roll force constant was entered
     int constraintwarn;                // 1 if a constraint convergence warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // mobility
@@ -4590,7 +4593,7 @@ Fres a filament superstructure and all of the structures within it.
 Outputs all of the key information about a filament to the display, including essential information about each segment.
 
 \item[\ttt{void filtypeOutput(const filamenttypeptr filtype)}]
-Outputs all of the key information about a filament type to the display, along with information about each filament. This includes the persistence length, which is computed for the angle-biased chain model from the standard length, the yaw and pitch bending force constants, and \ttt{kT}, using \ttt{Fil\_Statistics} in the Filaments.c library. It is $L_p = 2 l k_\phi k_\theta/kT(k_\phi+k_\theta)$ in 3D and $L_p = 2 l k_\phi/kT$ in 2D, for segments with thickness 1. A fixed angle (negative force constant) doesn't bend, so it's treated as an infinite force constant, and the persistence length is listed as infinite if \ttt{kT} is 0 or if all bending angles are fixed.
+Outputs all of the key information about a filament type to the display, along with information about each filament. This includes the persistence length, which is computed for the angle-biased chain model from the standard length, the yaw and pitch bending force constants, and \ttt{kT}, using \ttt{Fil\_Statistics} in the Filaments.c library. It is $L_p = 2 l k_\phi k_\theta/kT(k_\phi+k_\theta)$ in 3D and $L_p = 2 l k_\phi/kT$ in 2D, for segments with thickness 1. A fixed angle (negative force constant) doesn't bend, so it's treated as an infinite force constant, and the persistence length is listed as infinite if \ttt{kT} is 0 or if all bending angles are fixed. In 3D, this also outputs the torsional persistence length, $2 l k_\psi/kT$. Each is labeled if it came from the \ttt{persistence\_length} or \ttt{persistence\_length\_twist} statements, or from the default torsional persistence length of 3 times the persistence length.
 
 \item[\ttt{void filssOutput(const simptr sim)}]
 \hfill \\
@@ -4616,10 +4619,14 @@ Sets the unitless node mobility for node \ttt{node} to \ttt{value}. Enter \ttt{n
 \item[\underline{Filament type}]
 (Data structures are changed.)
 
+\item[\ttt{void filtypeApplyPersistence(filamenttypeptr filtype)}]
+\hfill \\
+Computes force constants from the persistence lengths in \ttt{filtype->persist} and \ttt{filtype->persisttwist}, if they were entered (they are negative if not), using the angle-biased chain model for thickness 1 and \ttt{Fil\_Statistics} in the Filaments.c library. If \ttt{persist} is positive, the yaw and pitch force constants are both set to $kT L_p/l$ in 3D, and the yaw force constant is set to $kT L_p/2l$ in 2D, where $l$ is the standard length. In 3D, the roll force constant is set to $kT L_t/2l$, where $L_t$ is \ttt{persisttwist} if it is positive, or $3L_p$ if \ttt{persist} is positive and the roll force constant was never entered (\ttt{filtype->kpsiset} is 0). This does nothing if \ttt{kT} or the standard length isn't positive; \ttt{filCheckParams} reports that as an error. \ttt{filtypeSetParam} calls this function whenever it sets \ttt{stdlen}, \ttt{kypr}, \ttt{kT}, \ttt{persist}, or \ttt{persisttwist}, so the force constants are always current, regardless of the order in which statements are entered, and are available for \ttt{random\_segments} during file parsing. The persistence lengths take precedence over force constants that are entered directly.
+
 \item[\ttt{int}]
 \ttt{filtypeSetParam(filamenttypeptr filtype, const char *param, int index, double value)}
 \hfill \\
-Sets various filament type parameters. The parameter name is \ttt{param} and it is set to the value \ttt{value}. If this parameter has multiple inidices, enter the index to be changed in \ttt{index}, or enter \ttt{index} as -1 to set all of the indices at once to the same value. Returns 0 for success or 2 for out of bounds value.
+Sets various filament type parameters. The parameter name is \ttt{param} and it is set to the value \ttt{value}. If this parameter has multiple inidices, enter the index to be changed in \ttt{index}, or enter \ttt{index} as -1 to set all of the indices at once to the same value. Returns 0 for success or 2 for out of bounds value. Setting \ttt{kypr} with \ttt{index} equal to 2 or -1 records that the roll force constant was entered, in \ttt{kpsiset}, and setting any of \ttt{stdlen}, \ttt{kypr}, \ttt{kT}, \ttt{persist}, or \ttt{persisttwist} calls \ttt{filtypeApplyPersistence}.
 
 {\tiny
 \begin{longtable}[c]{llll}
@@ -4630,6 +4637,8 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{klen} & stretching force constant & n/a & $-1,[0,\infty)$\\
 \ttt{kypr} & bending force constants & 0,1,2 & $-1,[0,\infty)$\\
 \ttt{kT} & thermodynamic temperature & n/a & $[0,\infty)$\\
+\ttt{persist} & persistence length & n/a & $(0,\infty)$\\
+\ttt{persisttwist} & torsional persistence length & n/a & $(0,\infty)$\\
 \ttt{treadrate} & treadmill rate constant & n/a & $(-\infty,\infty)$\\
 \ttt{branchrate} & branching rate constant & n/a & $[0,\infty)$\\
 \ttt{branchangle} & mean branch angle & 0,1,2 & $(-\infty,\infty)$\\
@@ -8295,6 +8304,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item More Claude filament work. Supported filament networks that aren't just tree-shaped, but arbitrary web-shaped. In the process, created junction data structure. This also supports loop-shaped filaments.
 \item More Claude filament work. Overhauled the numerical filament integration to correct errors in implicit integration and implement the Gauss-Newton Jacobian in implicit integration rather than the finite difference code that I wrote. Also, improved torque integration with implicit integration. A major issue that I was unaware of is that there was coupling between geometric twist and roll values that created spurious torques; this was fixed. Added support for negative force constants to imply constrained parameters. With these updates, integration is supposed to be very good at this point and highly stable for implicit integration (I think that junctions are still effectively explicit, but everything else is implicit).
 \item New library dependency: Filaments.c and Filaments.h, with documentation in Filaments.tex. These compute equilibrium filament statistics, such as persistence lengths. Added the persistence length to the filament type output (\ttt{filtypeOutput}).
+\item Added \ttt{persistence\_length} and \ttt{persistence\_length\_twist} filament type statements, which set the bending and twisting force constants from persistence lengths, with new filament type elements \ttt{persist}, \ttt{persisttwist}, and \ttt{kpsiset}, and new function \ttt{filtypeApplyPersistence}. If only \ttt{persistence\_length} is entered, the torsional persistence length defaults to 3 times the persistence length. Added the torsional persistence length to \ttt{filtypeOutput}.
 
 \end{itemize}
 

@@ -1,0 +1,264 @@
+# Persistence length of thermally fluctuating filaments in 3D.
+#
+# This simulates three filament types that differ only in their bending force
+# constants, and records all node positions so that persistence3D.py can measure
+# their persistence lengths. The measurements can be compared with the persistence
+# lengths that Smoldyn reports in its filament type output (run with -o, or look at
+# the diagnostics), which are computed for the angle-biased chain model as
+# Lp = 2 l kyaw kpitch / (kT (kyaw + kpitch)).
+#
+#   sym       force_angle 10 10 10    predicted Lp = 10
+#   asym      force_angle 10 40 10    predicted Lp = 16
+#   asymroll  force_angle 10 40 100   predicted Lp = 16
+#
+# The filaments start with random_segments, which draws the joint angles from their
+# Gaussian equilibrium distributions, so they start at equilibrium and the initial
+# printout can be compared with the later ones. The short time step is needed for
+# accurate statistics with Euler dynamics; with a time step of 0.001, the measured
+# correlations between neighboring segments are a few percent off.
+#
+# Typical results are Lp = 10.5, 16, and 15.5 for the three types, each with an
+# uncertainty of about 0.3, so they agree with the predictions to within about 5%.
+#
+# smoldyn persistence3D.txt
+# python3 persistence3D.py
+
+graphics none
+#graphics opengl
+
+dim 3
+boundaries x -20 20
+boundaries y -20 20
+boundaries z -20 20
+
+time_start 0
+time_stop 100
+time_step 0.00025
+random_seed 5
+
+output_files persistence3Dout.txt
+cmd i 0 100 0.1 printFilaments persistence3Dout.txt
+
+start_filament_type sym
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 200
+force_angle 10 10 10
+mobility 1
+thickness 1
+color red
+polygon edge
+end_filament_type
+
+start_filament sym:f0
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f1
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f2
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f3
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f4
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f5
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f6
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f7
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f8
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f9
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f10
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f11
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f12
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f13
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f14
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f15
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f16
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f17
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f18
+random_segments 10 u u u u u u
+end_filament
+start_filament sym:f19
+random_segments 10 u u u u u u
+end_filament
+
+start_filament_type asym
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 200
+force_angle 10 40 10
+mobility 1
+thickness 1
+color green
+polygon edge
+end_filament_type
+
+start_filament asym:f0
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f1
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f2
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f3
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f4
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f5
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f6
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f7
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f8
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f9
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f10
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f11
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f12
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f13
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f14
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f15
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f16
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f17
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f18
+random_segments 10 u u u u u u
+end_filament
+start_filament asym:f19
+random_segments 10 u u u u u u
+end_filament
+
+start_filament_type asymroll
+dynamics Euler
+kT 1
+standard_length 1
+standard_angle 0 0 0
+force_length 200
+force_angle 10 40 100
+mobility 1
+thickness 1
+color blue
+polygon edge
+end_filament_type
+
+start_filament asymroll:f0
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f1
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f2
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f3
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f4
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f5
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f6
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f7
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f8
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f9
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f10
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f11
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f12
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f13
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f14
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f15
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f16
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f17
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f18
+random_segments 10 u u u u u u
+end_filament
+start_filament asymroll:f19
+random_segments 10 u u u u u u
+end_filament
+
+end_file
