@@ -788,7 +788,9 @@ typedef struct filamenttypestruct {
     int constraintwarn;                // 1 if a constraint convergence warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // translational mobility, length^2/(energy*time)
-    double rotmobility;                // rotational mobility about segment axes, 1/(energy*time); negative = unset, so mobility/filradius^2
+    int mobilityset;                   // 1 if the mobility was entered, so it isn't computed from the viscosity
+    double rotmobility;                // rotational mobility about segment axes, 1/(energy*time); negative = unset, so from viscosity or mobility/filradius^2
+    double viscosity;                  // viscosity of the medium, energy*time/length^3; negative = unset
     double filradius;                  // segment radius
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)

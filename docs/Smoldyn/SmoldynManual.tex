@@ -2233,7 +2233,7 @@ There several ways to create individual filaments. The simplest is shown in \ttt
 
 Filament mechanics are simulated with overdamped (Brownian) dynamics, in which velocity is proportional to force and there is no inertia. Each node of a filament moves according to
 $$\frac{d\bm{x}_i}{dt} = \mu m_i \bm{f}_i$$
-where $\bm{x}_i$ is the position of node $i$, $\mu$ is the filament type's mobility (\ttt{mobility} statement), $m_i$ is the node's mobility factor, which is 1 by default and can be changed with \ttt{node\_mobility} (e.g. 0 to hold a node fixed), and $\bm{f}_i$ is the total force on the node. By default, $m_i$ is also divided by the node's thickness, which is the average thickness of its adjacent segments, so thicker filaments have proportionally more drag; turn this off with \ttt{thickness\_drag 0}. Thickness doesn't affect equilibrium conformations through drag, only how quickly filaments move. In 3D, each segment can also rotate about its own axis, which changes the filament twist; a segment's roll angle changes at the rate $\mu_r m_k \tau_k$, where $\mu_r$ is the filament type's rotational mobility (\ttt{rotational\_mobility} statement), $\tau_k$ is the torque on segment $k$ about its axis, and $m_k$ is the average of the mobility factors of its two nodes. The rotational mobility has different units from the mobility, inverse energy times time rather than length$^2$/(energy$\cdot$time). If it isn't entered, it is $\mu/r^2$, where $r$ is the filament radius (\ttt{radius}), which is about right for a rod and equals $\mu$ for the default radius of 1.
+where $\bm{x}_i$ is the position of node $i$, $\mu$ is the filament type's mobility (\ttt{mobility} statement), $m_i$ is the node's mobility factor, which is 1 by default and can be changed with \ttt{node\_mobility} (e.g. 0 to hold a node fixed), and $\bm{f}_i$ is the total force on the node. By default, $m_i$ is also divided by the node's thickness, which is the average thickness of its adjacent segments, so thicker filaments have proportionally more drag; turn this off with \ttt{thickness\_drag 0}. Thickness doesn't affect equilibrium conformations through drag, only how quickly filaments move. In 3D, each segment can also rotate about its own axis, which changes the filament twist; a segment's roll angle changes at the rate $\mu_r m_k \tau_k$, where $\mu_r$ is the filament type's rotational mobility (\ttt{rotational\_mobility} statement), $\tau_k$ is the torque on segment $k$ about its axis, and $m_k$ is the average of the mobility factors of its two nodes. The rotational mobility has different units from the mobility, inverse energy times time rather than length$^2$/(energy$\cdot$time). If it isn't entered, it is computed from the viscosity (\ttt{viscosity}) if that was entered, or else it is $\mu/r^2$, where $r$ is the filament radius (\ttt{radius}), which is about right for a rod and equals $\mu$ for the default radius of 1.
 
 The forces and torques come from several sources. Stretching forces arise from the stretching energy,
 $$E_{stretch} = \frac{1}{2} t\,k_l(l-l\degree)^2$$
@@ -3812,7 +3812,7 @@ If the filament should be confined by a surface, enter that surface name here in
 
 \item{\ttt{* radius} $value$}
 
-Radius of filaments of this type, which needs to be greater than 0. It is only used for filament contact forces (see \ttt{filament\_interaction}), and it's separate from the thickness of filament segments, which affects filament stiffness and drag. The default is 1.
+Radius of filaments of this type, which needs to be greater than 0. It is used for filament contact forces (see \ttt{filament\_interaction}), for computing mobilities from the \ttt{viscosity}, and for the default rotational mobility, and it's separate from the thickness of filament segments, which affects filament stiffness and drag. The default is 1.
 
 \item{\ttt{* filament\_interaction} $type$ \ttt{softwall} $k$}
 
@@ -3852,11 +3852,17 @@ The state that end $end$ (``minus'' or ``plus'') of new filaments of this type s
 
 \item{\ttt{* mobility} $value$}
 
-Mobility of the nodes within the surrounding medium, in units of length$^2$/(energy$\cdot$time), so that a node's velocity is its mobility times the force on it (see section \ref{sec:FilForces}).
+Mobility of the nodes within the surrounding medium, in units of length$^2$/(energy$\cdot$time), so that a node's velocity is its mobility times the force on it (see section \ref{sec:FilForces}). The default is 1, unless \ttt{viscosity} is entered, in which case the mobility is computed from it.
+
+\item{\ttt{* viscosity} $value$}%?? new
+
+Viscosity of the surrounding medium, in units of energy$\cdot$time/length$^3$ (for example, water's viscosity of 1 mPa$\cdot$s can be entered as \ttt{1e-3|J.s/m3}, which is 1 zJ$\cdot$s/$\upmu$m$^3$). If this is entered, then Smoldyn computes the mobility and the rotational mobility from it, unless they are entered directly, treating each node as carrying the drag of one segment, which is a cylinder with length $l$ equal to \ttt{standard\_length} and radius $a$ equal to \ttt{radius}, in viscosity $\eta$. The mobility is the orientation-averaged mobility of a cylinder, from Tirado and Garc\'{i}a de la Torre (\textit{J. Chem. Phys.} 71:2581, 1979, and 73:1986, 1980),
+$$\mu = \frac{\ln p + \nu}{3\pi\eta l}, \qquad \nu = 0.312+\frac{0.565}{p}-\frac{0.100}{p^2}$$
+where $p=l/2a$ is the aspect ratio, which is set to at least 2 because the expression is only accurate for $p$ from about 2 to 30. The rotational mobility about the segment axis is $\mu_r = 1/(4\pi\eta a^2 l)$, which is exact for a long cylinder. These values are for thickness 1; with \ttt{thickness\_drag}, thicker segments have proportionally more drag. These are approximations, because they ignore hydrodynamic interactions between segments and the anisotropy of drag along and across a filament.
 
 \item{\ttt{* rotational\_mobility} $value$}%?? new
 
-Rotational mobility of segments about their own axes, for 3D simulations, in units of 1/(energy$\cdot$time), so that a segment's roll rate is its rotational mobility times the torque on it about its axis. This affects how quickly filaments twist but not their equilibrium twist. If this isn't entered, it is the \ttt{mobility} value divided by the square of the filament \ttt{radius}, which is about right for a rod, since its rotational drag per unit length is roughly its translational drag per unit length times its radius squared. With the default radius of 1, this default equals the \ttt{mobility} value.
+Rotational mobility of segments about their own axes, for 3D simulations, in units of 1/(energy$\cdot$time), so that a segment's roll rate is its rotational mobility times the torque on it about its axis. This affects how quickly filaments twist but not their equilibrium twist. If this isn't entered, it is computed from the \ttt{viscosity} if that was entered, and otherwise it is the \ttt{mobility} value divided by the square of the filament \ttt{radius}, which is about right for a rod, since its rotational drag per unit length is roughly its translational drag per unit length times its radius squared. With the default radius of 1, this default equals the \ttt{mobility} value.
 
 \item{\ttt{* thickness\_drag} $0/1$}
 

@@ -85,6 +85,8 @@ int filNodesAdsorbed(const filamentptr fil);
 
 // filament type
 void filtypeApplyPersistence(filamenttypeptr filtype);
+double filViscousMobility(double visc,double len,double radius,char code);
+void filtypeApplyViscosity(filamenttypeptr filtype);
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value);
 int filtypeSetColor(filamenttypeptr filtype,const double *rgba);
 int filtypeSetEdgePts(filamenttypeptr filtype,double value);
@@ -860,7 +862,9 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 		filtype->kpsiset=0;
 		filtype->treadrate=0;
 		filtype->mobility=1;
+		filtype->mobilityset=0;
 		filtype->rotmobility=-1;
+		filtype->viscosity=-1;
 		filtype->filradius=1;
 
 		filtype->branchrate=0;											// branching off by default
@@ -1296,8 +1300,9 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	if(grows && filtype->elongmaxlen>0)
 		simLog(sim,2,"  elongation max length: %g|L\n",filtype->elongmaxlen);
 
-	simLog(sim,2,"  mobility: %g|L2/E/T\n",filtype->mobility);
-	if(dim==3) simLog(sim,2,"  rotational mobility: %g|/E/T%s\n",filRotMobility(filtype),filtype->rotmobility>0?"":" (mobility/radius^2)");
+	if(filtype->viscosity>0) simLog(sim,2,"  viscosity: %g|E.T/L3\n",filtype->viscosity);
+	simLog(sim,2,"  mobility: %g|L2/E/T%s\n",filtype->mobility,(filtype->viscosity>0 && !filtype->mobilityset)?" (from viscosity)":"");
+	if(dim==3) simLog(sim,2,"  rotational mobility: %g|/E/T%s\n",filRotMobility(filtype),filtype->rotmobility>0?"":(filtype->viscosity>0?" (from viscosity)":" (mobility/radius^2)"));
 	simLog(sim,2,"  filament radius: %g|L\n",filtype->filradius);
 
 	if(filtype->nface>0) {
@@ -1654,6 +1659,39 @@ void filtypeApplyPersistence(filamenttypeptr filtype) {
 	return; }
 
 
+/* filViscousMobility */
+// Returns the translational mobility (for code 't') or rotational mobility about the
+// segment axis (for code 'r') of a cylinder with length len and radius radius in a
+// medium with viscosity visc, or -1 if any input isn't positive. The translational
+// mobility is the orientation average, from Tirado and Garcia de la Torre (J. Chem.
+// Phys. 71:2581, 1979; 73:1986, 1980), mu = (ln p + nu)/(3 pi visc len), where p is the
+// aspect ratio len/(2 radius) and nu = 0.312 + 0.565/p - 0.100/p^2. This is for p from
+// about 2 to 30, so p is set to at least 2. The rotational mobility is for rotation
+// about the cylinder axis, mu_r = 1/(4 pi visc radius^2 len), which is exact for a long
+// cylinder.
+double filViscousMobility(double visc,double len,double radius,char code) {
+	double p;
+
+	if(visc<=0 || len<=0 || radius<=0) return -1;
+	if(code=='r') return 1.0/(4*PI*visc*radius*radius*len);
+	p=len/(2*radius);
+	if(p<2) p=2;
+	return (log(p)+0.312+0.565/p-0.100/(p*p))/(3*PI*visc*len); }
+
+
+/* filtypeApplyViscosity */
+// If the viscosity was entered and the mobility wasn't, this sets the mobility from the
+// viscosity, standard length, and radius, with filViscousMobility. Each node is treated
+// as carrying the drag of one segment.
+void filtypeApplyViscosity(filamenttypeptr filtype) {
+	double mob;
+
+	if(filtype->viscosity<=0 || filtype->mobilityset) return;
+	mob=filViscousMobility(filtype->viscosity,filtype->stdlen,filtype->filradius,'t');
+	if(mob>0) filtype->mobility=mob;
+	return; }
+
+
 /* filtypeSetParam */
 int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double value) {
 	int er;
@@ -1663,7 +1701,8 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value<0) er=2;
 		else {
 			filtype->stdlen=value;
-			filtypeApplyPersistence(filtype); }}
+			filtypeApplyPersistence(filtype);
+			filtypeApplyViscosity(filtype); }}
 
 	else if(!strcmp(param,"stdypr")) {
 		if(value<-PI || value>PI) er=2;
@@ -1773,13 +1812,24 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(value<0) er=2;
 		else filtype->elongmaxlen=value; }
 
-	else if(!strcmp(param,"mobility")) {
-		if(value<=0) er=2;
-		else filtype->mobility=value; }
+	else if(!strcmp(param,"mobility")) {							// negative = unset, so computed from the viscosity if it was entered
+		if(value==0) er=2;
+		else if(value<0) {
+			filtype->mobilityset=0;
+			filtypeApplyViscosity(filtype); }
+		else {
+			filtype->mobility=value;
+			filtype->mobilityset=1; }}
 
-	else if(!strcmp(param,"rotmobility")) {						// rotational mobility; negative = mobility/filradius^2
+	else if(!strcmp(param,"rotmobility")) {						// rotational mobility; negative = from viscosity or mobility/filradius^2
 		if(value==0) er=2;
 		else filtype->rotmobility=value<0?-1:value; }
+
+	else if(!strcmp(param,"viscosity")) {							// viscosity of the medium
+		if(value<=0) er=2;
+		else {
+			filtype->viscosity=value;
+			filtypeApplyViscosity(filtype); }}
 
 	else if(!strcmp(param,"bundle")) {
 		if(value<=0) er=2;
@@ -1787,7 +1837,9 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 
 	else if(!strcmp(param,"radius")) {
 		if(value<=0) er=2;
-		else filtype->filradius=value; }
+		else {
+			filtype->filradius=value;
+			filtypeApplyViscosity(filtype); }}
 
 	else if(!strcmp(param,"facetwist")) {
 		filtype->facetwist=value; }
@@ -2493,6 +2545,14 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(f1>=0,"uncapping_rate value needs to be >=0");
 		filtypeSetParam(filtype,"endtrans",(1*FESMAX+FEScapped)*FESMAX+FESopen,f1);
 		CHECKS(!strnword(line2,2),"unexpected text following uncapping_rate"); }
+
+	else if(!strcmp(word,"viscosity")) {				// viscosity
+		CHECKS(filtype,"need to enter filament type name before viscosity");
+		itct=strmathsscanf(line2,"%mlg|E.T/L3",varnames,varvalues,nvar,&f1);
+		CHECKM(itct==1,"viscosity format: value. ");
+		CHECKS(f1>0,"viscosity value needs to be greater than 0");
+		filtypeSetParam(filtype,"viscosity",0,f1);
+		CHECKS(!strnword(line2,2),"unexpected text following viscosity"); }
 
 	else if(!strcmp(word,"rotational_mobility")) {	// rotational_mobility
 		CHECKS(filtype,"need to enter filament type name before rotational_mobility");
@@ -6062,12 +6122,18 @@ double filNodeMobility(const filamentptr fil,int node) {
 
 /* filRotMobility */
 // Returns the rotational mobility of filament type filtype, for segment rotation about
-// its own axis, which is rotmobility if it was entered and otherwise mobility divided
-// by the square of the filament radius. For a rod, the rotational drag per length is
-// about the translational drag per length times the radius squared, so this is
+// its own axis. This is rotmobility if it was entered, or else it's computed from the
+// viscosity if that was entered (filViscousMobility), or else it's mobility divided by
+// the square of the filament radius. For a rod, the rotational drag per length is about
+// the translational drag per length times the radius squared, so this last case is
 // roughly correct, and it equals mobility for the default radius of 1.
 double filRotMobility(const filamenttypeptr filtype) {
+	double mob;
+
 	if(filtype->rotmobility>0) return filtype->rotmobility;
+	if(filtype->viscosity>0) {
+		mob=filViscousMobility(filtype->viscosity,filtype->stdlen,filtype->filradius,'r');
+		if(mob>0) return mob; }
 	return filtype->mobility/(filtype->filradius*filtype->filradius); }
 
 

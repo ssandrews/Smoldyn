@@ -4368,7 +4368,9 @@ typedef struct filamenttypestruct {
     int constraintwarn;                // 1 if a constraint convergence warning was given
     double treadrate;                  // treadmilling rate constant
     double mobility;                   // translational mobility, length^2/(energy*time)
-    double rotmobility;                // rotational mobility about segment axes, 1/(energy*time); negative = unset, so mobility/filradius^2
+    int mobilityset;                   // 1 if the mobility was entered, so it isn't computed from the viscosity
+    double rotmobility;                // rotational mobility about segment axes, 1/(energy*time); negative = unset, so from viscosity or mobility/filradius^2
+    double viscosity;                  // viscosity of the medium, energy*time/length^3; negative = unset
     double filradius;                  // segment radius
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
@@ -4639,6 +4641,7 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{kypr} & bending force constants & 0,1,2 & $-1,[0,\infty)$\\
 \ttt{kT} & thermodynamic temperature & n/a & $[0,\infty)$\\
 \ttt{rotmobility} & rotational mobility, negative for default & n/a & $(-\infty,0),(0,\infty)$\\
+\ttt{viscosity} & viscosity of medium & n/a & $(0,\infty)$\\
 \ttt{persist} & persistence length & n/a & $(0,\infty)$\\
 \ttt{persisttwist} & torsional persistence length & n/a & $(0,\infty)$\\
 \ttt{treadrate} & treadmill rate constant & n/a & $(-\infty,\infty)$\\
@@ -4657,7 +4660,7 @@ Sets various filament type parameters. The parameter name is \ttt{param} and it 
 \ttt{barbedparameters} & barbed end $a$ and $k$ & 0 for $a$, 1 for $k$ & $[0,\infty)$ \\
 \ttt{endstate0} & initial end state & end & 0,1,2,3 \\
 \ttt{elongmaxlen} & max. length for elongation & n/a & $[0,\infty)$ \\ 
-\ttt{mobility} & filament node mobility & n/a & $(0,\infty)$\\
+\ttt{mobility} & filament node mobility, negative for unset & n/a & $(-\infty,0),(0,\infty)$\\
 \ttt{bundle} & bundle value & n/a & $(0,\infty)$\\
 \ttt{radius} & filament radius & n/a & $(0,\infty)$\\
 \ttt{facetwist} & face twist rate & n/a & $(-\infty,\infty)$
@@ -5242,9 +5245,17 @@ Returns the thickness of node \ttt{node} of filament \ttt{fil}, which is the ave
 \hfill \\
 Returns the effective mobility factor of node \ttt{node} of filament \ttt{fil}, which is its node mobility factor, \ttt{fil->nodemobility[node]}, times its lateral mobility factor \ttt{fil->nodesrfmob[node]} if it is adsorbed to a surface, divided by its thickness from \ttt{filNodeThickness} if the filament type's \ttt{thickdrag} value is 1 (the default), so thicker filaments have proportionally more drag. The node's mobility is the filament type's mobility times this. Segment roll mobility factors are from \ttt{filSegRollMobility}. Everything that uses node mobility uses this function: \ttt{filStepDynamics}, \ttt{filDrawThermalForces} (so the thermal force amplitude, $\sqrt{2kT/(\mu m\Delta t)}$, stays consistent with the mobility and equilibrium conformations don't depend on drag), \ttt{filAddMatrixForceStep}, \ttt{filImplicitDynamics}, and \ttt{filProjectConstraints}.
 
+\item[\ttt{double filViscousMobility(double visc,double len,double radius,char code)}]
+\hfill \\
+Returns the translational mobility (\ttt{code} equal to `t') or the rotational mobility about the cylinder axis (\ttt{code} equal to `r') of a cylinder with length \ttt{len} and radius \ttt{radius} in a medium with viscosity \ttt{visc}, or $-1$ if any input isn't positive. The translational mobility is the orientation average from Tirado and Garc\'{i}a de la Torre, $\mu=(\ln p+\nu)/(3\pi\eta l)$, with aspect ratio $p=l/2a$, which is set to at least 2, and $\nu=0.312+0.565/p-0.100/p^2$. The rotational mobility is $1/(4\pi\eta a^2 l)$.
+
+\item[\ttt{void filtypeApplyViscosity(filamenttypeptr filtype)}]
+\hfill \\
+If the viscosity was entered (\ttt{filtype->viscosity} is positive) and the mobility wasn't (\ttt{filtype->mobilityset} is 0), this sets \ttt{filtype->mobility} from the viscosity, standard length, and radius, using \ttt{filViscousMobility}. \ttt{filtypeSetParam} calls it when it sets \ttt{viscosity}, \ttt{stdlen}, or \ttt{radius}, or sets \ttt{mobility} to a negative value, which means unset, so the mobility is current regardless of statement order.
+
 \item[\ttt{double filRotMobility(const filamenttypeptr filtype)}]
 \hfill \\
-Returns the rotational mobility of filament type \ttt{filtype}, for segment rotation about its own axis, in units of 1/(energy$\cdot$time). This is \ttt{filtype->rotmobility} if it was entered (it's positive), and otherwise \ttt{filtype->mobility} divided by the square of \ttt{filtype->filradius}. For a rod, the rotational drag per length is about the translational drag per length times the radius squared, so this default is roughly correct, and it equals the mobility for the default radius of 1, which was the behavior before the rotational mobility was added.
+Returns the rotational mobility of filament type \ttt{filtype}, for segment rotation about its own axis, in units of 1/(energy$\cdot$time). This is \ttt{filtype->rotmobility} if it was entered (it's positive), or else it's computed from \ttt{filtype->viscosity} with \ttt{filViscousMobility} if the viscosity was entered, or else it's \ttt{filtype->mobility} divided by the square of \ttt{filtype->filradius}. For a rod, the rotational drag per length is about the translational drag per length times the radius squared, so this default is roughly correct, and it equals the mobility for the default radius of 1, which was the behavior before the rotational mobility was added.
 
 \item[\ttt{double filSegRollMobility(const filamentptr fil,int seg)}]
 \hfill \\
@@ -8317,6 +8328,7 @@ In \ttt{strunits}, the \ttt{dimstring}, which is ``\ttt{L2/T}'' gets parsed firs
 \item Added \ttt{persistence\_length} and \ttt{persistence\_length\_twist} filament type statements, which set the bending and twisting force constants from persistence lengths, with new filament type elements \ttt{persist}, \ttt{persisttwist}, and \ttt{kpsiset}, and new function \ttt{filtypeApplyPersistence}. If only \ttt{persistence\_length} is entered, the torsional persistence length defaults to 3 times the persistence length. Added the torsional persistence length to \ttt{filtypeOutput}.
 \item Added the segment length standard deviation, $\sqrt{kT/k_{len}}$, to \ttt{filtypeOutput}.
 \item Added a rotational mobility, for segment roll about its own axis, with the \ttt{rotational\_mobility} statement, filament type element \ttt{rotmobility}, and functions \ttt{filRotMobility} and \ttt{filSegRollMobility}. Before, rolls used the translational mobility, which has different units. The default is the mobility divided by the radius squared, which gives the prior behavior for the default radius of 1. \ttt{filtypeOutput} lists it.
+\item Added a \ttt{viscosity} filament type statement, from which the mobility and rotational mobility are computed if they aren't entered, with new filament type elements \ttt{viscosity} and \ttt{mobilityset} and new functions \ttt{filViscousMobility} and \ttt{filtypeApplyViscosity}. Also changed \ttt{strunits} so that unit strings for output list positive powers before negative ones (e.g. ``s.zJ/um3'' rather than ``/um3.s.zJ'').
 \item Checked units of other inputs and outputs. Surface \ttt{rate} values (and \ttt{rate\_rule}) are now read with units of length/time for collisions (state1 is fsoln or bsoln) and 1/time otherwise, using the new function \ttt{surfreadratevalue}; a value of exactly $-1$ isn't converted, and \ttt{rate\_internal} values are unitless. Panel parameters are read as lengths, apart from direction vectors and drawing slices and stacks. \ttt{unbounded\_emitter} amounts are read as 1/time and its positions as lengths. \ttt{mol} position ranges (``low-high'') are converted from default to working units. \ttt{longrangeforce} mobilities are read as L2/E/T. Added units to the output of surface rates, surface forces and displacements, emitter amounts, and the activation-limited reaction rate.
 \item Checked units of filament inputs. Spring constants (\ttt{force\_length}, \ttt{junction\_force}, \ttt{confine\_surface}, softwall and repel surface interactions, and \ttt{filament\_interaction}) are now read as E/L2 rather than E/L or unitless; filament and surface mobilities as L2/E/T rather than unitless; the barbed end $k$ value as L/E; the \ttt{force\_arrows} scale as L2/E; and \ttt{applysurfaceforce} forces as E/L. Segment thicknesses are now unitless, rather than lengths, because they multiply force constants. Output lines show the matching units. Also fixed a bug in \ttt{strmathsscanf}, in string2.c, in which a unitless \ttt{\%mlg|} entry that was followed by another entry read the next format word as its units, so statements with several unitless values, such as \ttt{standard\_angle} and \ttt{first\_segment}, failed in files that defined units.
 
