@@ -1,12 +1,12 @@
-# Claude Code session summary: colors, translucency, persistence length, and units, November 4–5, 2026
+# Claude Code session summary: colors, translucency, persistence length, and units, November 4–6, 2026
 
 This file summarizes a Claude Code session (Claude Opus 5.5) with the Smoldyn
-maintainer on November 4–5, 2026. The work covered four areas: color names in
-input and output, rendering of translucent 3-D surfaces, a new libSteve filament
-statistics library with persistence-length statements, and a review of
-measurement units across the input and output code. Everything below was
-committed and pushed to `master` on github.com/ssandrews/Smoldyn, in commits
-33c376d through 4399b7f.
+maintainer on November 4–6, 2026. The work covered color names in input and
+output, rendering of translucent 3-D surfaces, a new libSteve filament
+statistics library with persistence-length statements, a review of measurement
+units across the input and output code, a filament viscosity parameter, and a
+new barbed-end elongation equation. Everything below was committed and pushed to
+`master` on github.com/ssandrews/Smoldyn, in commits 33c376d through 0681eab.
 
 ## Working conventions used
 
@@ -190,6 +190,46 @@ Smoldyn supports length (L), time (T), and energy (E) units.
   - The script now exits with a clear message if the output file is missing.
   - Lesson: new `.py` files in `examples/` that aren't Smoldyn model scripts
     need to go on that list.
+
+## Part 6: angle standard deviations and barbed-end elongation (commits acebe2f, 0681eab)
+
+- **Bending standard deviations:** `filtypeOutput` now lists the joint angle
+  standard deviations, sqrt(kT/k) in radians for thickness 1, after the
+  bending force constants. It shows "0 (fixed)" for negative force constants
+  and "unconstrained" for zero ones. The new helper is
+  `filAngleStdDevString`.
+- **Lid check:** the user asked why the lid in `actinLayer2D_2.txt` seemed to
+  stop halfway down. A run without graphics showed that it kept moving at
+  mobility × force = 1 µm/s, with no filament force on it. The apparent stop
+  was the simulation slowing down as branching added filaments. The code was
+  working correctly.
+- **Fast elongation:** after the user's next edit to that file, filaments
+  sometimes grew far too fast, from 3 to 38 segments in 5 s. The old barbed
+  rate was v = r + a(exp(−kF) − 1), with k = 20 µm/zJ. When a tip lay in the
+  floor's repel zone and pointed slightly down, F was negative, so exp(−kF)
+  blew up. That k was about 30,000 times larger than the Brownian ratchet
+  value δ/kT.
+- **New barbed-end equation:** at the user's request, barbed ends now elongate
+  at v = a·exp(−kF) − b, the Brownian ratchet form. The statement is
+  `elongation_rate end barbed a [k [b]]`, where a and b are L/T and k is L/E,
+  all ≥ 0. k and b default to 0.
+  - The free rate is a − b, and the end stalls at F = ln(a/b)/k.
+  - All three values are per end. `barbedparameters` became `[2][2]`, indexed
+    by end and then by k or b. Otherwise a b set for the plus end would also
+    have made a barbed minus end shrink.
+  - Output line: `barbed state velocity a*exp(-k*F)-b: a=..., k=..., b=...,
+    so ... with no force`.
+  - This isn't backward compatible. `barbedEnd2D.txt` changed from `1 1 2` to
+    `1 2 0`, which gives the same rate, and its lid displacements were
+    identical before and after.
+  - `smolhelp_data.h` was regenerated with `scripts/make_smolhelp.py`, which
+    also picked up earlier manual edits.
+- **`actinLayer2D_2.txt`:** set to `elongation_rate plus barbed 1.22 0.00063
+  0.0038`. Here k = 2.7 nm/kT and b = 1.4/s × 2.7 nm. Growth was then steady
+  at about 1.2 µm/s. With a realistic k, the lid's 5 fN load barely slows
+  growth. The file was committed at the user's request (0681eab).
+- A negative F can still make an end grow faster than a, but with a realistic
+  k this effect is tiny.
 
 ## Left as is
 
