@@ -749,6 +749,7 @@ typedef struct filsurfinteractstruct {	// Filament-surface interaction; one stru
     struct filamenttypestruct *filtype;	// owning filament type structure
     surfaceptr selfsurf;								// set if this only applies if the filament is bound to a specific surface
 		int filpart[FILPARTMAX];						// 1 if this part interacts [FPplus, FPminus, FPside]; side = interior nodes
+		enum FilEndState endstate;					// end state that end parts need to be in for this to apply, or FESnone for any
     char sequence[STRCHAR];							// recognition sequence, if any
     int filface;												// filament face, if any
 		surfaceptr othersurf;								// which surface is involved

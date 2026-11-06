@@ -97,7 +97,8 @@ int filtypeSetDrawForceArrows(filamenttypeptr filtype,double scale,const double 
 int filtypeSetShiny(filamenttypeptr filtype,double shiny);
 int filtypeSetDynamics(filamenttypeptr filtype,enum FilamentDynamics fd);
 int filtypeAddFace(filamenttypeptr filtype,const char* facename);
-filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilSurfAction action,double kforce,double repeldist);
+filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilEndState endstate,enum FilSurfAction action,double kforce,double repeldist);
+int filSurfInteractApplies(const filsurfinteractptr fsi,const filamentptr fil,int part);
 filfilinteractptr filtypeAddFilInteract(filamenttypeptr filtype,filamenttypeptr other,enum FilFilAction action,double kforce);
 filamenttypeptr filAddFilamentType(simptr sim,const char *ftname);
 
@@ -994,6 +995,7 @@ filsurfinteractptr filSurfInteractAlloc(filamenttypeptr filtype) {
 	fsi->filtype=filtype;
 	fsi->selfsurf=NULL;
 	for(part=0;part<FILPARTMAX;part++) fsi->filpart[part]=0;
+	fsi->endstate=FESnone;
 	fsi->sequence[0]='\0';
 	fsi->filface=-1;
 	fsi->othersurf=NULL;
@@ -1281,6 +1283,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
 		simLog(sim,2,"   %s with %s face of surface %s, for filament parts %s",filFSA2string(fsi->action,string),surfface2string(fsi->surfface,string2),fsi->othersurf->sname,filparts2string(fsi->filpart,string3));
+		if(fsi->endstate!=FESnone) simLog(sim,2," in the %s state",filFES2string(fsi->endstate,string3));
 		if(fsi->action==FSAsoftwall || fsi->action==FSArepel) {
 			if(fsi->action==FSArepel) simLog(sim,2,", force constant %g|E/L2, repel distance %g|L\n",fsi->kforce,fsi->repeldist);
 			else simLog(sim,2,", force constant %g|E/L2\n",fsi->kforce);
@@ -1939,20 +1942,22 @@ int filtypeAddFace(filamenttypeptr filtype,const char* facename) {
 /* filtypeAddSurfInteract */
 // Adds a filament-surface interaction to filament type filtype, between the filament
 // parts in filpart (indexed by FPplus, FPminus, and FPside) and face face of surface
-// srf, which is the side of the surface that the filament is on. action is the type
-// of interaction, kforce is its force constant, for FSAsoftwall and FSArepel, and
-// repeldist is the distance at which the force starts, for FSArepel. If the type already
-// has an interaction with the same surface, face, parts, and action, then its
-// parameters are replaced instead, so that entering an interaction again changes it.
-// Returns the interaction, or NULL if memory could not be allocated.
-filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilSurfAction action,double kforce,double repeldist) {
+// srf, which is the side of the surface that the filament is on. endstate is the state
+// that end parts need to be in for the interaction to apply, or FESnone for any state.
+// action is the type of interaction, kforce is its force constant, for FSAsoftwall and
+// FSArepel, and repeldist is the distance at which the force starts, for FSArepel. If
+// the type already has an interaction with the same surface, face, parts, end state,
+// and action, then its parameters are replaced instead, so that entering an
+// interaction again changes it. Returns the interaction, or NULL if memory could not
+// be allocated.
+filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf,enum PanelFace face,const int *filpart,enum FilEndState endstate,enum FilSurfAction action,double kforce,double repeldist) {
 	filsurfinteractptr fsi,*newlist;
 	int i,part,newmax;
 
 	fsi=NULL;
 	for(i=0;i<filtype->nsurfint && !fsi;i++) {
 		fsi=filtype->surfint[i];
-		if(fsi->othersurf!=srf || fsi->surfface!=face || fsi->action!=action) fsi=NULL;
+		if(fsi->othersurf!=srf || fsi->surfface!=face || fsi->endstate!=endstate || fsi->action!=action) fsi=NULL;
 		for(part=0;part<FILPARTMAX && fsi;part++)
 			if(fsi->filpart[part]!=filpart[part]) fsi=NULL; }
 
@@ -1970,12 +1975,24 @@ filsurfinteractptr filtypeAddSurfInteract(filamenttypeptr filtype,surfaceptr srf
 		fsi->othersurf=srf;
 		fsi->surfface=face;
 		for(part=0;part<FILPARTMAX;part++) fsi->filpart[part]=filpart[part];
+		fsi->endstate=endstate;
 		fsi->action=action;
 		filtype->surfint[filtype->nsurfint++]=fsi; }
 
 	fsi->kforce=kforce;
 	fsi->repeldist=repeldist;
 	return fsi; }
+
+
+/* filSurfInteractApplies */
+// Returns 1 if surface interaction fsi applies to part part (FPplus, FPminus, or
+// FPside) of filament fil, and 0 if not. It applies if the interaction lists that part
+// and, for the plus and minus parts, if the interaction has no end state or the end is
+// in that state. Side nodes don't have states.
+int filSurfInteractApplies(const filsurfinteractptr fsi,const filamentptr fil,int part) {
+	if(!fsi->filpart[part]) return 0;
+	if(fsi->endstate==FESnone || part==FPside) return 1;
+	return fil->endstate[part==FPplus?1:0]==fsi->endstate; }
 
 
 /* filtypeAddFilInteract */
@@ -2133,7 +2150,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 	int nvar,dim;
 
 	int itct,er,i1,i2;
-	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG],nm3[STRCHARLONG];
+	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG],nm3[STRCHARLONG],*chptr;
 	double fltv1[9],f1,f2,f3;
 	enum FilEndState fes1,fes2;
 	enum DrawMode dm;
@@ -2391,7 +2408,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			CHECKS(pf==PFfront || pf==PFback,"confine_surface face options: front, back");
 			CHECKS(!strnword(line2,2),"unexpected text following confine_surface"); }
 		filpart[FPplus]=filpart[FPminus]=filpart[FPside]=1;	// shorthand for a softwall interaction on all parts; committed only after full validation so a failed runtime set changes nothing
-		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,FSAsoftwall,f1,0),"out of memory adding confine_surface"); }
+		CHECKS(filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,FESnone,FSAsoftwall,f1,0),"out of memory adding confine_surface"); }
 
 	else if(!strcmp(word,"radius")) {						// radius: value, length
 		CHECKS(filtype,"need to enter filament type name before radius");
@@ -2416,7 +2433,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKMEM(filtypeAddFilInteract(filtype,sim->filss->filtypes[i1],FFAsoftwall,f1));
 		CHECKS(!strnword(line2,2),"unexpected text following filament_interaction"); }
 
-	else if(!strcmp(word,"surface_interaction")) {	// surface_interaction: surface face parts action [parameters]
+	else if(!strcmp(word,"surface_interaction")) {	// surface_interaction: surface face parts[(state)] action [parameters]
 		CHECKS(filtype,"need to enter filament type name before surface_interaction");
 		itct=sscanf(line2,"%s %s %s %s",nm1,nm2,nm,nm3);
 		CHECKS(itct==4,"surface_interaction format: surface_name face parts action [parameters]");
@@ -2425,7 +2442,16 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(i1>=0,"surface_interaction surface name not recognized (define the surface before the filament type)");
 		pf=surfstring2face(nm2);
 		CHECKS(pf==PFfront || pf==PFback || pf==PFboth,"surface_interaction face options: front, back, both");
+		fes1=FESnone;
+		chptr=strchr(nm,'(');
+		if(chptr) {																	// optional end state, as in plus(open)
+			CHECKS(nm[strlen(nm)-1]==')',"surface_interaction end state needs to be in parentheses, with no spaces, as in plus(open)");
+			nm[strlen(nm)-1]='\0';
+			*chptr='\0';
+			fes1=filstring2FES(chptr+1);
+			CHECKS(fes1!=FESnone,"surface_interaction end state needs to be open, capped, shrink, or barbed"); }
 		CHECKS(!filstring2parts(nm,filpart),"surface_interaction parts need to be plus, minus, side, all, or a comma-separated list of them, such as plus,side");
+		CHECKS(fes1==FESnone || !filpart[FPside],"surface_interaction end state can only be used with the plus and minus parts, since side nodes don't have states");
 		fsa=filstring2FSA(nm3);
 		CHECKS(fsa==FSAsoftwall || fsa==FSArepel || fsa==FSAreflect || fsa==FSAadsorb || fsa==FSAdesorb,"surface_interaction action options: softwall, repel, reflect, adsorb, desorb");
 		line2=strnword(line2,5);
@@ -2471,7 +2497,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 				CHECKS(fltv1[1]>=0,"surface_interaction desorption offset needs to be >=0");
 				line2=strnword(line2,2); }}
 		CHECKS(!line2,"unexpected text following surface_interaction");
-		fsi=filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fsa,f1,f2);
+		fsi=filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fes1,fsa,f1,f2);
 		CHECKS(fsi,"out of memory adding surface_interaction");
 		if(fsa==FSAadsorb) {
 			fsi->rate=fltv1[0];
@@ -5089,7 +5115,7 @@ int filSurfBlocksSegment(const filamentptr fil,const segmentptr segment,char end
 	useboxes=(sim->boxs && sim->boxs->blist);
 	for(i=0;i<filtype->nsurfint;i++) {
 		fsi=filtype->surfint[i];
-		if(fsi->action!=FSAreflect || !fsi->filpart[part]) continue;
+		if(fsi->action!=FSAreflect || !filSurfInteractApplies(fsi,fil,part)) continue;
 		srf=fsi->othersurf;
 		if(useboxes) {
 			bptr=pos2box(sim,pt1);
@@ -5170,7 +5196,7 @@ panelptr filSurfReflectCrossing(const filamentptr fil,int part,double *pt1,doubl
 				if(pnl==exclude) continue;
 				for(i=0;i<filtype->nsurfint;i++) {
 					fsi=filtype->surfint[i];
-					if(fsi->action!=FSAreflect || !fsi->filpart[part] || fsi->othersurf!=pnl->srf) continue;
+					if(fsi->action!=FSAreflect || !filSurfInteractApplies(fsi,fil,part) || fsi->othersurf!=pnl->srf) continue;
 					if(lineXpanel(pt1,pt2,pnl,dim,testpt,&face1,&face2,&cross,NULL,NULL,0) && (fsi->surfface==PFboth || face1==fsi->surfface) && cross<crossbest) {
 						crossbest=cross;
 						pnlbest=pnl;
@@ -5180,7 +5206,7 @@ panelptr filSurfReflectCrossing(const filamentptr fil,int part,double *pt1,doubl
 	else {
 		for(i=0;i<filtype->nsurfint;i++) {
 			fsi=filtype->surfint[i];
-			if(fsi->action!=FSAreflect || !fsi->filpart[part]) continue;
+			if(fsi->action!=FSAreflect || !filSurfInteractApplies(fsi,fil,part)) continue;
 			srf=fsi->othersurf;
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1))
 				for(p=0;p<srf->npanel[ps];p++) {
@@ -5323,7 +5349,7 @@ int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype) {
 			if(pnl) {																			// adsorbed node: desorption
 				for(i=0;i<filtype->nsurfint;i++) {
 					fsi=filtype->surfint[i];
-					if(fsi->action!=FSAdesorb || fsi->rate<=0 || !fsi->filpart[part] || fsi->othersurf!=pnl->srf) continue;
+					if(fsi->action!=FSAdesorb || fsi->rate<=0 || !filSurfInteractApplies(fsi,fil,part) || fsi->othersurf!=pnl->srf) continue;
 					if(fsi->surfface!=PFboth && fsi->surfface!=fil->nodeface[node]) continue;
 					if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
 					getpanelnormal(nodept,pnl,dim,norm);			// front-facing normal
@@ -5340,7 +5366,7 @@ int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype) {
 			if(pinned) continue;
 			for(i=0;i<filtype->nsurfint;i++) {
 				fsi=filtype->surfint[i];
-				if(fsi->action!=FSAadsorb || fsi->rate<=0 || !fsi->filpart[part]) continue;
+				if(fsi->action!=FSAadsorb || fsi->rate<=0 || !filSurfInteractApplies(fsi,fil,part)) continue;
 				dist=closestsurfacept(fsi->othersurf,dim,nodept,pnlpt,&pnl,NULL);
 				if(dist<0 || dist>fsi->capdist) continue;
 				side=panelside(nodept,pnl,dim,NULL,1,0);
@@ -5417,7 +5443,7 @@ int filSurfMove(simptr sim,surfaceptr srf,const double *translate) {
 						if(!lineXpanel(nodept,newpt,pnl,dim,crsspt,&face1,&face2,&cross,NULL,NULL,1)) continue;
 						for(i=0;i<filtype->nsurfint && !hit;i++) {
 							fsi=filtype->surfint[i];
-							if(fsi->action==FSAreflect && fsi->othersurf==srf && fsi->filpart[part] && (fsi->surfface==PFboth || face1==fsi->surfface)) hit=1; }}
+							if(fsi->action==FSAreflect && fsi->othersurf==srf && filSurfInteractApplies(fsi,fil,part) && (fsi->surfface==PFboth || face1==fsi->surfface)) hit=1; }}
 				if(hit) {
 					for(d=0;d<dim;d++) nodept[d]+=translate[d];
 					changed=1; }}
@@ -6259,7 +6285,7 @@ void filSurfInteractForces(filamentptr fil,int nodemin,int nodemax,int reaction,
 		sign=(fsi->surfface==PFfront)?1:-1;
 		for(node=nodemin;node<=nodemax;node++) {
 			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
-			if(!fsi->filpart[part]) continue;
+			if(!filSurfInteractApplies(fsi,fil,part)) continue;
 			if(fil->nodepnl[node] && fil->nodepnl[node]->srf==srf) continue;	// adsorbed to this surface
 			nodept=fil->nodes[node];
 			if(closestsurfacept(srf,dim,nodept,pnlpt,&pnl,NULL)<0) continue;	// only the closest panel of the surface acts

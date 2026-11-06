@@ -1263,7 +1263,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    have no contact forces by default. See the Smoldyn User's Manual. This\n"
 		"    statement can be used during a simulation with the set command."},
 	{"statement","Statements about filaments",1,"surface_interaction",
-		"  * surface_interaction surface face parts action [parameters]",
+		"  * surface_interaction surface face parts[(state)] action [parameters]",
 		"    Adds an interaction between filaments of this type and surface surface,\n"
 		"    which needs to be defined before this filament type. Filaments only\n"
 		"    interact with surfaces through these interactions, so without any,\n"
@@ -1271,7 +1271,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    as \"front\", \"back\", or \"both\", for the face of the surface that the\n"
 		"    filament is on. Enter parts as \"minus\", \"plus\", \"side\", or \"all\", or as a\n"
 		"    comma-separated list such as \"plus,side\", where \"minus\" and \"plus\" are the\n"
-		"    end nodes and \"side\" is all nodes between them. Enter action as \"softwall\",\n"
+		"    end nodes and \"side\" is all nodes between them. Optionally, follow parts\n"
+		"    with an end state in parentheses and without a space, such as plus(open),\n"
+		"    where the state is \"open\", \"capped\", \"shrink\", or \"barbed\" (see end_state);\n"
+		"    then the interaction only applies to a listed end while that end is in this\n"
+		"    state. For example, surface_interaction floor front plus(open) softwall 20\n"
+		"    only acts on plus ends that are open. A state can only be given if parts\n"
+		"    lists only ends, so not \"side\" or \"all\". Without a state, the interaction\n"
+		"    applies to the listed parts in every state. Enter action as \"softwall\",\n"
 		"    \"repel\", \"reflect\", \"adsorb\", or \"desorb\". For \"softwall\", the parameter is\n"
 		"    a force constant, in units of energy/length^2, and each node of these parts\n"
 		"    that is on the other side of the surface is pushed back toward the surface\n"
@@ -1295,9 +1302,10 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    given face or either face for \"both\", desorb at the desorption rate and are\n"
 		"    placed at the offset distance from the surface (see the Smoldyn User's\n"
 		"    Manual). Entering an interaction again with the same surface, face, parts,\n"
-		"    and action replaces its parameters. This statement can be entered more than\n"
-		"    once to add multiple interactions, and can be used during a simulation with\n"
-		"    the set command."},
+		"    state, and action replaces its parameters, so interactions for different\n"
+		"    states can have different parameters. This statement can be entered more\n"
+		"    than once to add multiple interactions, and can be used during a simulation\n"
+		"    with the set command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
 		"  * elongation_rate end state value\n"
