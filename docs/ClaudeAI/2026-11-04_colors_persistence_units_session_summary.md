@@ -4,9 +4,10 @@ This file summarizes a Claude Code session (Claude Opus 5.5) with the Smoldyn
 maintainer on November 4–6, 2026. The work covered color names in input and
 output, rendering of translucent 3-D surfaces, a new libSteve filament
 statistics library with persistence-length statements, a review of measurement
-units across the input and output code, a filament viscosity parameter, and a
-new barbed-end elongation equation. Everything below was committed and pushed to
-`master` on github.com/ssandrews/Smoldyn, in commits 33c376d through 0681eab.
+units across the input and output code, a filament viscosity parameter, a new
+barbed-end elongation equation, and surface interactions that depend on a
+filament end's state. Everything below was committed and pushed to `master` on
+github.com/ssandrews/Smoldyn, in commits 33c376d through d020af2.
 
 ## Working conventions used
 
@@ -230,6 +231,40 @@ Smoldyn supports length (L), time (T), and energy (E) units.
   growth. The file was committed at the user's request (0681eab).
 - A negative F can still make an end grow faster than a, but with a realistic
   k this effect is tiny.
+
+## Part 7: surface interactions that depend on end state (commit d020af2)
+
+- **New option:** the parts entry of `surface_interaction` can be followed by
+  an end state in parentheses, with no space. For example,
+  `surface_interaction floor front plus(open) softwall 20` only acts on plus
+  ends that are open. Without a state, an interaction applies in every state,
+  as before.
+  - The state can be open, capped, shrink, or barbed. It applies to the listed
+    ends, so `minus,plus(open)` works too.
+  - `all(open)` and any list with `side` are errors, because side nodes have
+    no state.
+  - The state is part of an interaction's identity. So `plus(open)` and
+    `plus(barbed)` can be separate interactions with different parameters,
+    and entering one again replaces only that one.
+  - The output adds "in the open state", for example, to the interaction's line.
+- **Code:** a new field, `endstate`, in `filsurfinteractstruct` holds the
+  state, with `FESnone` meaning any state. `filtypeAddSurfInteract` takes the
+  state as an argument; `confine_surface` passes `FESnone`. A new function,
+  `filSurfInteractApplies`, replaced every direct `filpart` test, so the
+  condition is checked against each end's current state every time step. It
+  covers:
+  - softwall and repel forces, including the push force on barbed ends
+  - reflection and growth blocking
+  - adsorption and desorption
+  - sweeping by moving surfaces
+- **Tests:** with a repel surface near a plus end, `plus(open)` pushed open ends
+  but not barbed ones, `plus(barbed)` did the reverse, and `plus` pushed both.
+  The error messages and the separate replacement of `plus(open)` and
+  `plus(barbed)` interactions were also checked.
+- **Docs:** the manual, the code documentation, the generated help text, and
+  both PDFs were updated. Claude's last two history items in the code
+  documentation had been placed out of date order, so they were moved to the
+  end of the list. Several older items in that list are still out of order.
 
 ## Left as is
 
