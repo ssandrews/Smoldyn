@@ -1,0 +1,75 @@
+# Growing filaments pushing against surfaces that carry different loads.
+
+units um s zJ
+graphics opengl_good
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+time_start 0
+time_stop 150
+time_step 0.001
+random_seed 2
+boxsize 10
+
+frame_thickness 0
+
+
+start_surface floor
+color both black
+thickness 2
+panel rect +y 0 10 100
+panel rect +x 0 10 90
+panel rect -x 100 10 90
+end_surface
+
+start_surface lid
+color both gray
+thickness 3
+mobility 0.2
+panel rect -y 0 90 100
+end_surface
+
+
+start_filament_type pusher1
+color red
+thickness 1			# Drawing thickness
+radius 0.005			# 10 nm diameter
+polygon ve
+dynamics implicit
+kT 4.28
+standard_length 1
+persistence_length 17
+force_length 400		# yields about 10% standard deviation
+viscosity 0.25			# 0.25 mPa s = 0.25 cP = 0.25 zJ s/um^3. Water is 1 cP.
+end_state plus barbed
+branch_rate 0.001
+branch_min_spacing 1		# google says that 1 branch per micron is typical
+branch_angle 1.22		# 70 degrees is 1.22 radians
+#capping_rate 0.05
+elongation_rate plus barbed 0.122 0.00063 0.0038	# a: 7.33 um/min; k: 2.7 nm/kT; b: 1.4/s * 2.7 nm
+surface_interaction floor front all repel 20 0.5	# 0.5 um
+surface_interaction lid front all repel 20 0.5		# 0.5 um
+filament_interaction pusher1 softwall 100
+end_filament_type
+
+
+random_filament pusher1:a1 5   20 10  1.571
+random_filament pusher1:a2 5   30 10  1.571
+random_filament pusher1:a3 5   40 10  1.571
+random_filament pusher1:a4 5   50 10  1.571
+random_filament pusher1:a5 5   60 10  1.571
+random_filament pusher1:a6 5   70 10  1.571
+random_filament pusher1:a7 5   80 10  1.571
+filament pusher1:a1 adsorb_node 0 floor
+filament pusher1:a2 adsorb_node 0 floor
+filament pusher1:a3 adsorb_node 0 floor
+filament pusher1:a4 adsorb_node 0 floor
+filament pusher1:a5 adsorb_node 0 floor
+filament pusher1:a6 adsorb_node 0 floor
+filament pusher1:a7 adsorb_node 0 floor
+
+cmd E applysurfaceforce lid 0 -5	# units are zJ/um = fN
+
+end_file
