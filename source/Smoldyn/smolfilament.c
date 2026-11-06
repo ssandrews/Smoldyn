@@ -70,6 +70,7 @@ void filssFree(filamentssptr filss);
 
 // data structure output
 void filOutput(const filamentptr fil);
+char *filAngleStdDevString(double k,double kT,char *string);
 void filtypeOutput(const filamenttypeptr filtype);
 void filssOutput(const simptr sim);
 void filWrite(const simptr sim,FILE *fptr);
@@ -898,7 +899,7 @@ filamenttypeptr filamentTypeAlloc(filamenttypeptr filtype,int maxfil,int maxface
 			for(fes=0;fes<FESMAX;fes++) {
 				filtype->endrate[end][fes]=0;
 				for(fes2=0;fes2<FESMAX;fes2++) filtype->endtrans[end][fes][fes2]=0; }}
-		filtype->barbedparameters[0]=filtype->barbedparameters[1]=0;
+		filtype->barbedparameters[0][0]=filtype->barbedparameters[0][1]=filtype->barbedparameters[1][0]=filtype->barbedparameters[1][1]=0;
 		filtype->elongmaxlen=0;											// 0 => unbounded growth
 
 		filtype->maxface=0;
@@ -1173,6 +1174,18 @@ void filOutput(const filamentptr fil) {
 	return; }
 
 
+/* filAngleStdDevString */
+// Writes the equilibrium standard deviation of a joint angle with force constant k at
+// thermal energy kT, sqrt(kT/k) for thickness 1, to string, which needs at least STRCHAR
+// characters, and returns string. A negative force constant is a fixed angle, so the
+// standard deviation is 0, and a force constant of 0 leaves the angle unconstrained.
+char *filAngleStdDevString(double k,double kT,char *string) {
+	if(k<0) strcpy(string,"0 (fixed)");
+	else if(k==0) strcpy(string,"unconstrained");
+	else snprintf(string,STRCHAR,"%g",kT>0?sqrt(kT/k):0);
+	return string; }
+
+
 /* filtypeOutput */
 void filtypeOutput(const filamenttypeptr filtype) {
 	char string[STRCHAR],string2[STRCHAR],string3[STRCHAR],colorstr[STRCHAR];
@@ -1211,10 +1224,14 @@ void filtypeOutput(const filamenttypeptr filtype) {
 
 	if(dim==2) {
 		simLog(sim,2,"  %s angle: %g\n",filtype->kypr[0]>=0?"standard":"fixed",filtype->stdypr[0]);
-		simLog(sim,2,"  bending force constant: %g|E\n",filtype->kypr[0]); }
+		simLog(sim,2,"  bending force constant: %g|E\n",filtype->kypr[0]);
+		simLog(sim,2,"  bending standard deviation: %s rad, for thickness 1\n",filAngleStdDevString(filtype->kypr[0],filtype->kT,string2)); }
 	else {
 		simLog(sim,2,"  standard angles: %g, %g, %g\n",filtype->stdypr[0],filtype->stdypr[1],filtype->stdypr[2]);
-		simLog(sim,2,"  bending force constants: %g|E, %g|E, %g|E\n",filtype->kypr[0],filtype->kypr[1],filtype->kypr[2]); }
+		simLog(sim,2,"  bending force constants: %g|E, %g|E, %g|E\n",filtype->kypr[0],filtype->kypr[1],filtype->kypr[2]);
+		filAngleStdDevString(filtype->kypr[0],filtype->kT,string2);
+		filAngleStdDevString(filtype->kypr[1],filtype->kT,string3);
+		simLog(sim,2,"  bending standard deviations: %s, %s, %s rad, for thickness 1\n",string2,string3,filAngleStdDevString(filtype->kypr[2],filtype->kT,colorstr)); }
 
 	simLog(sim,2,"  kT: %g|E\n",filtype->kT);
 	kphi=filtype->kypr[0];															// persistence length, ABC model
@@ -1285,10 +1302,10 @@ void filtypeOutput(const filamenttypeptr filtype) {
 				if(filtype->endtrans[end][fes][fes2]>0) active=1; }
 		simLog(sim,active?2:1,"  %s end: initial state %s\n",end?"plus":"minus",filFES2string(filtype->endstate0[end],string));
 		for(fes=0;fes<FESMAX;fes++)
-			if(filtype->endrate[end][fes]!=0)
+			if(filtype->endrate[end][fes]!=0 && fes!=FESbarbed)
 				simLog(sim,2,"   %s state velocity: %g|L/T\n",filFES2string((enum FilEndState)fes,string),filtype->endrate[end][fes]);
-		if(filtype->endstate0[end]==FESbarbed || filtype->endrate[end][FESbarbed]!=0)
-			simLog(sim,2,"   barbed state force response: a=%g|L/T, k=%g|L/E\n",filtype->barbedparameters[0],filtype->barbedparameters[1]);
+		if(filtype->endstate0[end]==FESbarbed || filtype->endrate[end][FESbarbed]!=0 || filtype->barbedparameters[end][1]!=0)
+			simLog(sim,2,"   barbed state velocity a*exp(-k*F)-b: a=%g|L/T, k=%g|L/E, b=%g|L/T, so %g|L/T with no force\n",filtype->endrate[end][FESbarbed],filtype->barbedparameters[end][0],filtype->barbedparameters[end][1],filtype->endrate[end][FESbarbed]-filtype->barbedparameters[end][1]);
 		for(fes=0;fes<FESMAX;fes++)
 			for(fes2=0;fes2<FESMAX;fes2++)
 				if(filtype->endtrans[end][fes][fes2]>0)
@@ -1419,6 +1436,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(fes=0;fes<FESMAX;fes++) {
 				if(filtype->endrate[end][fes]>0) grows=1;
 				if(filtype->endrate[end][fes]!=0) changes=1; }
+		if(filtype->barbedparameters[0][1]>0 || filtype->barbedparameters[1][1]>0) changes=1;
 		if(grows && filtype->stdlen<=0) {									// otherwise the banked-growth loop has a zero threshold
 			error++;simLog(sim,9,"ERROR: filament type %s has a positive elongation_rate but standard_length<=0; elongation needs a positive standard_length\n",filtype->ftname);}
 		if(filtype->treadrate!=0 && changes) {
@@ -1437,7 +1455,7 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(fes=0;fes<FESMAX;fes++)
 				if(!reach[fes] && filtype->endrate[end][fes]!=0) {
 					warn++;simLog(sim,5,"WARNING: filament type %s sets an elongation_rate for the %s end in the %s state, but no filament starts in that state and no transition reaches it\n",filtype->ftname,end?"plus":"minus",filFES2string((enum FilEndState)fes,string));}
-			if(reach[FESbarbed] && filtype->barbedparameters[0]>0 && filtype->barbedparameters[1]>0 && !filSurfForceOn(filtype) && !filContactTypeOn(filtype)) {
+			if(reach[FESbarbed] && filtype->endrate[end][FESbarbed]>0 && filtype->barbedparameters[end][0]>0 && !filSurfForceOn(filtype) && !filContactTypeOn(filtype)) {
 				warn++;simLog(sim,5,"WARNING: filament type %s has a barbed %s end, but no softwall or repel surface interactions or filament contact interactions, so its elongation rate won't depend on force\n",filtype->ftname,end?"plus":"minus");} }
 		if((filtype->persist>0 || filtype->persisttwist>0) && (filtype->kT<=0 || filtype->stdlen<=0)) {
 			error++;simLog(sim,10,"ERROR: filament type %s has a persistence length entered, but force constants can only be computed from it if kT and standard_length are both positive\n",filtype->ftname);}
@@ -1795,9 +1813,9 @@ int filtypeSetParam(filamenttypeptr filtype,const char *param,int index,double v
 		if(index<0 || index>=2*FESMAX) er=2;
 		else filtype->endrate[index/FESMAX][index%FESMAX]=value; }
 
-	else if(!strcmp(param,"barbedparameters")) {			// barbed end force response; index 0 = a, 1 = k
-		if(index<0 || index>=2 || value<0) er=2;
-		else filtype->barbedparameters[index]=value; }
+	else if(!strcmp(param,"barbedparameters")) {			// barbed end velocity parameters; index = end*2+i, where i is 0 for k and 1 for b
+		if(index<0 || index>=4 || value<0) er=2;
+		else filtype->barbedparameters[index/2][index%2]=value; }
 
 	else if(!strcmp(param,"endtrans")) {							// end state transition rate, 1/time; index = (end*FESMAX+from)*FESMAX+to
 		if(index<0 || index>=2*FESMAX*FESMAX || value<0) er=2;
@@ -2116,7 +2134,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 
 	int itct,er,i1,i2;
 	char nm[STRCHARLONG],nm1[STRCHARLONG],nm2[STRCHARLONG],nm3[STRCHARLONG];
-	double fltv1[9],f1,f2;
+	double fltv1[9],f1,f2,f3;
 	enum FilEndState fes1,fes2;
 	enum DrawMode dm;
 	enum FilamentDynamics fd;
@@ -2463,7 +2481,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			fsi->rate=fltv1[0];
 			fsi->offset=fltv1[1]; }}
 
-	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity [a k], length/time
+	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, or end barbed a [k [b]]; length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
 		if(!strnword(line2,2)) {										// short form: plus end velocity in the open state
 			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
@@ -2481,17 +2499,25 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			line2=strnword(line2,3);
 			CHECKS(line2,"elongation_rate format: [end state] value");
 			itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f1);
-			CHECKM(itct==1,"elongation_rate format: [end state] value. "); }
+			CHECKM(itct==1,"elongation_rate format: [end state] value. ");
+			CHECKS(fes1!=FESbarbed || f1>=0,"elongation_rate a value for the barbed state needs to be >=0"); }
 		filtypeSetParam(filtype,"endrate",i1*FESMAX+fes1,f1);
-		line2=strnword(line2,2);
-		if(line2) {																	// barbed state: force response parameters
-			CHECKS(fes1==FESbarbed,"unexpected text following elongation_rate; only the barbed state has more parameters");
-			itct=strmathsscanf(line2,"%mlg|L/T %mlg|L/E",varnames,varvalues,nvar,&f1,&f2);
-			CHECKM(itct==2,"elongation_rate format: end barbed value a k. ");
-			CHECKS(f1>=0 && f2>=0,"elongation_rate a and k values need to be >=0");
-			filtypeSetParam(filtype,"barbedparameters",0,f1);
-			filtypeSetParam(filtype,"barbedparameters",1,f2);
-			CHECKS(!strnword(line2,3),"unexpected text following elongation_rate"); }}
+		if(fes1==FESbarbed) {												// barbed state: v=a*exp(-k*F)-b
+			f2=f3=0;
+			line2=strnword(line2,2);
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|L/E",varnames,varvalues,nvar,&f2);
+				CHECKM(itct==1,"elongation_rate format: end barbed a [k [b]]. ");
+				line2=strnword(line2,2); }
+			if(line2) {
+				itct=strmathsscanf(line2,"%mlg|L/T",varnames,varvalues,nvar,&f3);
+				CHECKM(itct==1,"elongation_rate format: end barbed a [k [b]]. ");
+				CHECKS(!strnword(line2,2),"unexpected text following elongation_rate"); }
+			CHECKS(f2>=0 && f3>=0,"elongation_rate k and b values need to be >=0");
+			filtypeSetParam(filtype,"barbedparameters",i1*2,f2);
+			filtypeSetParam(filtype,"barbedparameters",i1*2+1,f3); }
+		else
+			CHECKS(!strnword(line2,2),"unexpected text following elongation_rate; only the barbed state has more parameters"); }
 
 	else if(!strcmp(word,"end_transition")) {		// end_transition: end from to rate, 1/time
 		CHECKS(filtype,"need to enter filament type name before end_transition");
@@ -4804,18 +4830,18 @@ double filEndPushForce(const filamentptr fil,int end) {
 /* filEndVelocity */
 // Returns the rate of length change of end end (0 = minus, 1 = plus) of filament fil,
 // which is the type's endrate value for the end's current state. For the barbed state,
-// this is r+a*(exp(-k*F)-1), where r is the endrate value, a and k are the type's
-// barbedparameters values, and F is from filEndPushForce. Draws no random numbers.
+// this is a*exp(-k*F)-b, where a is the endrate value, k and b are the type's
+// barbedparameters values for the end, and F is from filEndPushForce. Draws no random numbers.
 double filEndVelocity(const filamentptr fil,int end) {
 	filamenttypeptr filtype;
-	double v,a,k;
+	double v,k;
 
 	filtype=fil->filtype;
 	v=filtype->endrate[end][fil->endstate[end]];
 	if(fil->endstate[end]==FESbarbed) {
-		a=filtype->barbedparameters[0];
-		k=filtype->barbedparameters[1];
-		if(a>0 && k>0) v+=a*(exp(-k*filEndPushForce(fil,end))-1); }
+		k=filtype->barbedparameters[end][0];
+		if(v>0 && k>0) v*=exp(-k*filEndPushForce(fil,end));
+		v-=filtype->barbedparameters[end][1]; }
 	return v; }
 
 

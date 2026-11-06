@@ -5,8 +5,8 @@
 # applysurfaceforce command pushes down on both lids with the same constant load. The
 # filaments in the left lane have open plus ends, which always elongate at rate 1. The
 # filaments in the right lane have barbed plus ends (end_state plus barbed), which
-# elongate at rate v=r+a*(exp(-k*F)-1), entered with elongation_rate plus barbed r a k.
-# Here, r is 1, a is 1, k is 2, and F is the part of the surface force on the end node
+# elongate at rate v=a*exp(-k*F)-b, entered with elongation_rate plus barbed a k b.
+# Here, a is 1, k is 2, b is 0, and F is the part of the surface force on the end node
 # that is parallel to the end segment and pushes against the end. Thus, barbed ends
 # elongate at rate 1 until they reach the lid, and then more slowly as the force on
 # them rises, while open ends keep elongating at rate 1, so the open filaments end up
@@ -87,7 +87,7 @@ standard_angle 0
 force_length 10
 force_angle 30
 mobility 1
-elongation_rate plus barbed 1 1 2
+elongation_rate plus barbed 1 2 0
 end_state plus barbed
 surface_interaction floor front all softwall 20
 surface_interaction lid2 front all repel 20 2

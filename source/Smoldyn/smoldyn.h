@@ -819,7 +819,7 @@ typedef struct filamenttypestruct {
     filfilinteractptr *filint;         // list of filament-filament interactions
     double endrate[2][FESMAX];         // end velocity [end][state], length/time; >0 grows, <0 shrinks
     double endtrans[2][FESMAX][FESMAX]; // end state transition rates [end][from][to], 1/time
-    double barbedparameters[2];        // barbed end force response [a,k]: a in length/time, k in 1/force
+    double barbedparameters[2][2];     // barbed end velocity a*exp(-k*F)-b parameters [end][k,b]: k in length/energy, b in length/time
     enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
     int maxface;                       // filament faces allocated

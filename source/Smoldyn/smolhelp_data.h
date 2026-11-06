@@ -3,7 +3,7 @@
  docs/Smoldyn/SmoldynManual.tex. To update, edit the
  manual and rerun the script. */
 
-#define SMOLHELP_NENTRY 306
+#define SMOLHELP_NENTRY 310
 
 static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about the configuration file",0,"#",
@@ -372,7 +372,8 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    value has been reached, additional TIFFs cannot be saved. Default value is\n"
 		"    999."},
 	{"statement","Statements about graphics",0,"light",
-		"  light number parameter value_1 value_2 value_3 [value_4]",
+		"  light number parameter value_1 value_2 value_3 [value_4]\n"
+		"  light number parameter color [alpha]",
 		"    Set the parameters for a light source, for use with \"opengl_better\" quality\n"
 		"    graphics. The light number should be between 0 and 7 for which light is\n"
 		"    being set. It can also be either \"global\" or \"room\", which are the same\n"
@@ -380,12 +381,14 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    \"ambient\" parameter for the room light. The parameter may be one of the\n"
 		"    strings: \"ambient\", \"diffuse\", \"specular\", \"position\", \"on\", \"off\", or\n"
 		"    \"auto\". For \"ambient\", \"diffuse\", and \"specular\", enter the color with the\n"
-		"    value inputs for red, green, and blue color channels; optionally, end with\n"
-		"    alpha. Ambient light is non-directional and does not reflect off of a\n"
-		"    surface. Diffuse light is directional (from the light source) but lights\n"
-		"    the illuminated side of a surface evenly, as though it is a non-shiny\n"
-		"    surface. Specular light is also directional and reflects off of a surface\n"
-		"    as though it is shiny.\n"
+		"    value inputs for red, green, and blue color channels, or as a single color\n"
+		"    name (see the color statement for the list of names); optionally, end with\n"
+		"    alpha. If a color name is the same as a defined variable name, it is\n"
+		"    interpreted as the color name. Ambient light is non-directional and does\n"
+		"    not reflect off of a surface. Diffuse light is directional (from the light\n"
+		"    source) but lights the illuminated side of a surface evenly, as though it\n"
+		"    is a non-shiny surface. Specular light is also directional and reflects off\n"
+		"    of a surface as though it is shiny.\n"
 		"\n"
 		"    For parameter type \"position\", either enter the light's 3-dimensional\n"
 		"    position as x, y, and z in the values and then enter a value of 1 for the\n"
@@ -528,16 +531,18 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    omitted, but see below for where it is needed. state_1 and state_2 can be\n"
 		"    any of: fsoln, bsoln (in solution, hitting the front or back of the panel,\n"
 		"    respectively), front, back, up, or down. value is the rate constant or rate\n"
-		"    coefficient; enter it as -1 if you want the maximum possible value,\n"
-		"    typically meaning that the probability gets set to 1 (however, it may get\n"
-		"    set to a lower value if the rate of the reverse process is also set to -1,\n"
-		"    in which case both probabilities are chosen to maintain the appropriate\n"
-		"    equilibrium constant). If new_spec, which is an optional parameter, is\n"
-		"    entered, then molecules change to the listed species at the same time as\n"
-		"    changing states. If the rule form is used (generally with wildcard\n"
-		"    characters), then the statement is not applied immediately but is stored\n"
-		"    for use during rule expansion; during rule expansion, it is applied to all\n"
-		"    species that match the given species pattern.\n"
+		"    coefficient; it is a rate coefficient, with units of length/time, if\n"
+		"    state_1 is fsoln or bsoln, and otherwise a rate constant, with units of\n"
+		"    1/time; enter it as -1 if you want the maximum possible value, typically\n"
+		"    meaning that the probability gets set to 1 (however, it may get set to a\n"
+		"    lower value if the rate of the reverse process is also set to -1, in which\n"
+		"    case both probabilities are chosen to maintain the appropriate equilibrium\n"
+		"    constant). If new_spec, which is an optional parameter, is entered, then\n"
+		"    molecules change to the listed species at the same time as changing states.\n"
+		"    If the rule form is used (generally with wildcard characters), then the\n"
+		"    statement is not applied immediately but is stored for use during rule\n"
+		"    expansion; during rule expansion, it is applied to all species that match\n"
+		"    the given species pattern.\n"
 		"\n"
 		"    To specify interaction rates for molecules that collide with surface B,\n"
 		"    while diffusing along surface A, use the first state parameter. In this\n"
@@ -716,23 +721,24 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    the correct concentrations, assuming the emitter is created elsewhere (such\n"
 		"    as with a command or a zeroth order reaction). face is the side of the\n"
 		"    surface that faces the emitter, species is the emitted molecular species,\n"
-		"    amount is the emission rate (it only matters if there is more than one\n"
-		"    emitter for this surface and species, and then it is only the relative\n"
-		"    rates of the different emitters that matters), and pos is the\n"
+		"    amount is the emission rate, in units of 1/time (it only matters if there\n"
+		"    is more than one emitter for this surface and species, and then it is only\n"
+		"    the relative rates of the different emitters that matters), and pos is the\n"
 		"    system-dimensional position of the emitter. This statement is designed to\n"
 		"    be used with all emitters strictly inside a closed surface and all of them\n"
 		"    with positive amount values."},
 	{"statement","Statements about surfaces",1,"mobility",
 		"  * mobility float",
-		"    Mobility of the surface, which makes it move in response to the forces that\n"
-		"    filaments exert on it through softwall and repel interactions. In each time\n"
-		"    step, the surface is translated by its mobility times the force on it times\n"
-		"    the time step, without rotating, where the force includes any force from\n"
-		"    the applysurfaceforce command. Its surface-bound molecules and adsorbed\n"
-		"    filament nodes move with it, and solution-phase molecules, and free\n"
-		"    filament nodes that have a reflect interaction with it, that it runs into\n"
-		"    are pushed along with it. The default is 0, meaning that the surface\n"
-		"    doesn't move. See the section on filament-surface interactions."},
+		"    Mobility of the surface, in units of length^2/(energy*time), which makes it\n"
+		"    move in response to the forces that filaments exert on it through softwall\n"
+		"    and repel interactions. In each time step, the surface is translated by its\n"
+		"    mobility times the force on it times the time step, without rotating, where\n"
+		"    the force includes any force from the applysurfaceforce command. Its\n"
+		"    surface-bound molecules and adsorbed filament nodes move with it, and\n"
+		"    solution-phase molecules, and free filament nodes that have a reflect\n"
+		"    interaction with it, that it runs into are pushed along with it. The\n"
+		"    default is 0, meaning that the surface doesn't move. See the section on\n"
+		"    filament-surface interactions."},
 	{"statement","Statements about surfaces",1,"end_surface",
 		"  * end_surface",
 		"    End of a block of surface definitions. Surface statements are no longer\n"
@@ -1228,33 +1234,34 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 	{"statement","Statements about filaments",1,"confine_surface",
 		"  * confine_surface surface force [face]",
 		"    If the filament should be confined by a surface, enter that surface name\n"
-		"    here in surface and the force constant for that confinement in force. Each\n"
-		"    node on the wrong side of the surface is pushed back with force constant\n"
-		"    force times the node's thickness, which is the average thickness of its\n"
-		"    adjacent segments, as for the other filament force constants. Afterward,\n"
-		"    there is an optional face entry, which is \"front\" (the default) or \"back\",\n"
-		"    for the side of the surface that the filament is confined to. This\n"
-		"    statement is a shorthand for surface_interaction surface face all softwall\n"
-		"    force."},
+		"    here in surface and the force constant for that confinement in force, in\n"
+		"    units of energy/length^2. Each node on the wrong side of the surface is\n"
+		"    pushed back with force constant force times the node's thickness, which is\n"
+		"    the average thickness of its adjacent segments, as for the other filament\n"
+		"    force constants. Afterward, there is an optional face entry, which is\n"
+		"    \"front\" (the default) or \"back\", for the side of the surface that the\n"
+		"    filament is confined to. This statement is a shorthand for\n"
+		"    surface_interaction surface face all softwall force."},
 	{"statement","Statements about filaments",1,"radius",
 		"  * radius value",
 		"    Radius of filaments of this type, which needs to be greater than 0. It is\n"
-		"    only used for filament contact forces (see filament_interaction), and it's\n"
-		"    separate from the thickness of filament segments, which affects filament\n"
-		"    stiffness and drag. The default is 1."},
+		"    used for filament contact forces (see filament_interaction), for computing\n"
+		"    mobilities from the viscosity, and for the default rotational mobility, and\n"
+		"    it's separate from the thickness of filament segments, which affects\n"
+		"    filament stiffness and drag. The default is 1."},
 	{"statement","Statements about filaments",1,"filament_interaction",
 		"  * filament_interaction type softwall k",
 		"    Adds a contact force between filaments of this type and filaments of type\n"
 		"    type, which needs to be defined before this statement and can be this type.\n"
 		"    Two segments are pushed apart when their centerlines are closer than the\n"
-		"    sum of the filaments' radii, with force constant k times the harmonic mean\n"
-		"    of their thicknesses. Large force constants need dynamics Implicit. A value\n"
-		"    of 0 turns the force off. The interaction is symmetric, so it only needs to\n"
-		"    be entered for one of the two types, and entering it again from either type\n"
-		"    replaces k. If type is this type, this also applies to different parts of a\n"
-		"    single filament. Filaments have no contact forces by default. See the\n"
-		"    Smoldyn User's Manual. This statement can be used during a simulation with\n"
-		"    the set command."},
+		"    sum of the filaments' radii, with force constant k, in units of\n"
+		"    energy/length^2, times the harmonic mean of their thicknesses. Large force\n"
+		"    constants need dynamics Implicit. A value of 0 turns the force off. The\n"
+		"    interaction is symmetric, so it only needs to be entered for one of the two\n"
+		"    types, and entering it again from either type replaces k. If type is this\n"
+		"    type, this also applies to different parts of a single filament. Filaments\n"
+		"    have no contact forces by default. See the Smoldyn User's Manual. This\n"
+		"    statement can be used during a simulation with the set command."},
 	{"statement","Statements about filaments",1,"surface_interaction",
 		"  * surface_interaction surface face parts action [parameters]",
 		"    Adds an interaction between filaments of this type and surface surface,\n"
@@ -1266,34 +1273,35 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    comma-separated list such as \"plus,side\", where \"minus\" and \"plus\" are the\n"
 		"    end nodes and \"side\" is all nodes between them. Enter action as \"softwall\",\n"
 		"    \"repel\", \"reflect\", \"adsorb\", or \"desorb\". For \"softwall\", the parameter is\n"
-		"    a force constant, and each node of these parts that is on the other side of\n"
-		"    the surface is pushed back toward the surface with this force constant\n"
-		"    times the node's thickness; the face needs to be \"front\" or \"back\". For\n"
-		"    \"repel\", the parameters are a force constant and a repel distance, and the\n"
-		"    force is the same as for \"softwall\" except that it starts at the repel\n"
-		"    distance from the surface, on the filament's side, rather than at the\n"
-		"    surface; the face needs to be \"front\" or \"back\". For \"reflect\", there are\n"
-		"    no parameters, filament ends of these parts don't grow, from elongation or\n"
-		"    treadmilling, if the new segment would cross the surface from the given\n"
-		"    face, or from either face for \"both\", new branches from branch_rate aren't\n"
-		"    created if they would cross the surface, and, for filaments with dynamics,\n"
-		"    nodes of these parts that move across the surface from that face are\n"
-		"    reflected back. For \"adsorb\", the parameters are an adsorption rate, a\n"
-		"    capture distance, and optionally a lateral mobility factor, which is 1 by\n"
-		"    default, and free nodes of these parts that are within the capture distance\n"
-		"    of the surface, on the given face or either face for \"both\", adsorb at the\n"
-		"    adsorption rate. For \"desorb\", the parameters are a desorption rate and\n"
-		"    optionally an offset, which is 0 by default, and nodes of these parts that\n"
-		"    are adsorbed to the surface, on the given face or either face for \"both\",\n"
-		"    desorb at the desorption rate and are placed at the offset distance from\n"
-		"    the surface (see the Smoldyn User's Manual). Entering an interaction again\n"
-		"    with the same surface, face, parts, and action replaces its parameters.\n"
-		"    This statement can be entered more than once to add multiple interactions,\n"
-		"    and can be used during a simulation with the set command."},
+		"    a force constant, in units of energy/length^2, and each node of these parts\n"
+		"    that is on the other side of the surface is pushed back toward the surface\n"
+		"    with this force constant times the node's thickness; the face needs to be\n"
+		"    \"front\" or \"back\". For \"repel\", the parameters are a force constant and a\n"
+		"    repel distance, and the force is the same as for \"softwall\" except that it\n"
+		"    starts at the repel distance from the surface, on the filament's side,\n"
+		"    rather than at the surface; the face needs to be \"front\" or \"back\". For\n"
+		"    \"reflect\", there are no parameters, filament ends of these parts don't\n"
+		"    grow, from elongation or treadmilling, if the new segment would cross the\n"
+		"    surface from the given face, or from either face for \"both\", new branches\n"
+		"    from branch_rate aren't created if they would cross the surface, and, for\n"
+		"    filaments with dynamics, nodes of these parts that move across the surface\n"
+		"    from that face are reflected back. For \"adsorb\", the parameters are an\n"
+		"    adsorption rate, a capture distance, and optionally a lateral mobility\n"
+		"    factor, which is 1 by default, and free nodes of these parts that are\n"
+		"    within the capture distance of the surface, on the given face or either\n"
+		"    face for \"both\", adsorb at the adsorption rate. For \"desorb\", the\n"
+		"    parameters are a desorption rate and optionally an offset, which is 0 by\n"
+		"    default, and nodes of these parts that are adsorbed to the surface, on the\n"
+		"    given face or either face for \"both\", desorb at the desorption rate and are\n"
+		"    placed at the offset distance from the surface (see the Smoldyn User's\n"
+		"    Manual). Entering an interaction again with the same surface, face, parts,\n"
+		"    and action replaces its parameters. This statement can be entered more than\n"
+		"    once to add multiple interactions, and can be used during a simulation with\n"
+		"    the set command."},
 	{"statement","Statements about filaments",1,"elongation_rate",
 		"  * elongation_rate value\n"
 		"  * elongation_rate end state value\n"
-		"  * elongation_rate end barbed value a k",
+		"  * elongation_rate end barbed a [k [b]]",
 		"    The rate at which a filament end changes length, in units of length/time.\n"
 		"    Each end of a filament is in one of four states, \"open\", \"capped\",\n"
 		"    \"shrink\", or \"barbed\" (see end_state and end_transition), and the end\n"
@@ -1317,15 +1325,20 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    used in combination with treadmilling.\n"
 		"\n"
 		"    A barbed end elongates more slowly when something pushes against it. Its\n"
-		"    rate is v=r+a*(exp(-k*F)-1), where r is value, which is the rate with no\n"
-		"    force, a and k are the values entered in the third form, and F is the force\n"
-		"    pushing against the end node. As F increases, the rate decreases from r\n"
-		"    toward r-a, so the end stops at the force where these terms cancel if a>r,\n"
-		"    and beyond that it shrinks. a has units of length/time and k has units of\n"
-		"    inverse force, and both are 0 by default and need to be >=0. They belong to\n"
-		"    the filament type, so they apply to whichever ends are in the barbed state,\n"
-		"    and entering them again replaces them. F is the component along the end\n"
-		"    segment of the softwall and repel forces from surfaces on the end node (see\n"
+		"    rate is v=a*exp(-k*F)-b, where a is the polymerization rate with no force,\n"
+		"    k is the force sensitivity, b is the depolymerization rate, and F is the\n"
+		"    force pushing against the end node. This is the Brownian ratchet form, in\n"
+		"    which a is the monomer on-rate constant times the monomer concentration\n"
+		"    times the length that one monomer adds, k is that length divided by kT, or\n"
+		"    less if the load is shared among several filaments, and b is the monomer\n"
+		"    off-rate times the length that one monomer adds. The rate with no force is\n"
+		"    a-b. As F increases, the rate decreases toward -b, so the end stalls at the\n"
+		"    force F=ln(a/b)/k if b is positive, and beyond that it shrinks. a and b\n"
+		"    have units of length/time and k has units of length/energy, which is\n"
+		"    inverse force. All three values are for the given end, and entering them\n"
+		"    again replaces them. k and b are 0 if they aren't entered, and all three\n"
+		"    values need to be >=0. F is the component along the end segment of the\n"
+		"    softwall and repel forces from surfaces on the end node (see\n"
 		"    surface_interaction) and of the contact force from other filaments, from\n"
 		"    the previous time step (see filament_interaction), and it is positive if it\n"
 		"    pushes the end node back toward the filament. It is computed at the start\n"
@@ -1334,7 +1347,7 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    either, since these don't exert forces, so a barbed end needs softwall or\n"
 		"    repel interactions to respond to a surface, and Smoldyn warns if a filament\n"
 		"    type has none of these or contact interactions. F can be negative, which\n"
-		"    increases the rate above r; this can happen when an end grows away from a\n"
+		"    increases the rate above a-b; this can happen when an end grows away from a\n"
 		"    repelling surface while it is still within the repel distance. The\n"
 		"    treadmill_rate statement only applies to open ends, so barbed ends don't\n"
 		"    treadmill. The S13_filaments/dynamics/barbedEnd2D.txt example shows barbed\n"
@@ -1378,7 +1391,41 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    end_state plus capped."},
 	{"statement","Statements about filaments",1,"mobility",
 		"  * mobility value",
-		"    Mobility of the nodes within the surrounding medium."},
+		"    Mobility of the nodes within the surrounding medium, in units of\n"
+		"    length^2/(energy*time), so that a node's velocity is its mobility times the\n"
+		"    force on it (see the Smoldyn User's Manual). The default is 1, unless\n"
+		"    viscosity is entered, in which case the mobility is computed from it."},
+	{"statement","Statements about filaments",1,"viscosity",
+		"  * viscosity value",
+		"    Viscosity of the surrounding medium, in units of energy*time/length^3 (for\n"
+		"    example, water's viscosity of 1 mPa*s can be entered as 1e-3|J.s/m3, which\n"
+		"    is 1 zJ*s/upmum^3). If this is entered, then Smoldyn computes the mobility\n"
+		"    and the rotational mobility from it, unless they are entered directly,\n"
+		"    treating each node as carrying the drag of one segment, which is a cylinder\n"
+		"    with length l equal to standard_length and radius a equal to radius, in\n"
+		"    viscosity eta. The mobility is the orientation-averaged mobility of a\n"
+		"    cylinder, from Tirado and Garc\\'ia de la Torre (J. Chem. Phys. 71:2581,\n"
+		"    1979, and 73:1986, 1980), mu= fraclnp + nu3pietal, qquadnu=\n"
+		"    0.312+frac0.565p-frac0.100p^2 where p=l/2a is the aspect ratio, which is\n"
+		"    set to at least 2 because the expression is only accurate for p from about\n"
+		"    2 to 30. The rotational mobility about the segment axis is mu_r =\n"
+		"    1/(4pietaa^2 l), which is exact for a long cylinder. These values are for\n"
+		"    thickness 1; with thickness_drag, thicker segments have proportionally more\n"
+		"    drag. These are approximations, because they ignore hydrodynamic\n"
+		"    interactions between segments and the anisotropy of drag along and across a\n"
+		"    filament."},
+	{"statement","Statements about filaments",1,"rotational_mobility",
+		"  * rotational_mobility value",
+		"    Rotational mobility of segments about their own axes, for 3D simulations,\n"
+		"    in units of 1/(energy*time), so that a segment's roll rate is its\n"
+		"    rotational mobility times the torque on it about its axis. This affects how\n"
+		"    quickly filaments twist but not their equilibrium twist. If this isn't\n"
+		"    entered, it is computed from the viscosity if that was entered, and\n"
+		"    otherwise it is the mobility value divided by the square of the filament\n"
+		"    radius, which is about right for a rod, since its rotational drag per unit\n"
+		"    length is roughly its translational drag per unit length times its radius\n"
+		"    squared. With the default radius of 1, this default equals the mobility\n"
+		"    value."},
 	{"statement","Statements about filaments",1,"thickness_drag",
 		"  * thickness_drag 0/1",
 		"    Whether the thickness of a filament affects its drag. With 1, which is the\n"
@@ -1403,17 +1450,48 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    angle."},
 	{"statement","Statements about filaments",1,"force_length",
 		"  * force_length value",
-		"    Stretching force constant for filament segments. The force constant of each\n"
-		"    segment is this value times the segment's thickness, which is 1 by default.\n"
-		"    A negative value makes the segment lengths fixed at standard_length (see\n"
-		"    the Smoldyn User's Manual)."},
+		"    Stretching force constant for filament segments, in units of\n"
+		"    energy/length^2. The force constant of each segment is this value times the\n"
+		"    segment's thickness, which is 1 by default. A negative value makes the\n"
+		"    segment lengths fixed at standard_length (see the Smoldyn User's Manual)."},
 	{"statement","Statements about filaments",1,"force_angle",
 		"  * force_angle yaw\n"
 		"  * force_angle yaw pitch roll",
-		"    Force constants for bending and torsion. The force constants at each node\n"
-		"    between segments are these values times the average thickness of the two\n"
-		"    segments, which is 1 by default. A negative value makes that angle fixed at\n"
-		"    its standard_angle value (see the Smoldyn User's Manual)."},
+		"    Force constants for bending and torsion, in energy units (energy/radian^2).\n"
+		"    The force constants at each node between segments are these values times\n"
+		"    the average thickness of the two segments, which is 1 by default. A\n"
+		"    negative value makes that angle fixed at its standard_angle value (see the\n"
+		"    Smoldyn User's Manual). Alternatively, the force constants can be computed\n"
+		"    from persistence lengths, using persistence_length and\n"
+		"    persistence_length_twist."},
+	{"statement","Statements about filaments",1,"persistence_length",
+		"  * persistence_length length",
+		"    Persistence length for filament bending, for thickness 1, which Smoldyn\n"
+		"    uses to compute the yaw and pitch force constants, so force_angle doesn't\n"
+		"    need to be entered. The persistence length, L_p, is defined by left< bmt_0\n"
+		"    *bmt_s right> = e^(-s/L_p), where bmt_0 and bmt_s are the directions of two\n"
+		"    segments separated by contour length s. In 3D, the yaw and pitch force\n"
+		"    constants are both set to k_phi=k_theta=kT L_p/l, where l is the standard\n"
+		"    length; in 2D, the single bending force constant is set to k_phi=kT L_p/2l.\n"
+		"    These are computed from the current kT and standard_length values,\n"
+		"    regardless of the order in which the statements are entered, and both\n"
+		"    values need to be positive. In 3D, if neither the roll force constant (in\n"
+		"    force_angle) nor persistence_length_twist is entered, then the torsional\n"
+		"    persistence length is set to 3 times the persistence length. The\n"
+		"    persistence length takes precedence over yaw and pitch force constants that\n"
+		"    are entered with force_angle. Smoldyn lists the persistence length in its\n"
+		"    filament type output, whether it was entered or computed from force_angle."},
+	{"statement","Statements about filaments",1,"persistence_length_twist",
+		"  * persistence_length_twist length",
+		"    Torsional persistence length, for thickness 1 and 3D simulations only,\n"
+		"    which Smoldyn uses to compute the roll force constant. The torsional\n"
+		"    persistence length, L_t, is defined by left< cosdelta_psiright> =\n"
+		"    e^(-s/L_t), where delta_psi is the total twist over contour length s, and\n"
+		"    the roll force constant is set to k_psi=kT L_t/2l. Note that a common\n"
+		"    alternative definition, often used for DNA, is that the twist variance is\n"
+		"    left< delta_psi^2 right> = s/L_t, which gives values that are half as large\n"
+		"    as those here. This takes precedence over the roll force constant entered\n"
+		"    with force_angle."},
 	{"statement","Statements about filaments",1,"end_filament_type",
 		"  * end_filament_type",
 		"    End of a block of filament type definitions. Filament type statements are\n"
@@ -1461,14 +1539,17 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    y, and z, the segment length in length, and its absolute orientation with\n"
 		"    the angle values. For 2D, the angle is the angle from the x-axis and in 3D\n"
 		"    these values are the yaw-pitch-roll values away from the x-axis. The\n"
-		"    thickness value is optional."},
+		"    thickness value is optional; it is unitless, because it multiplies the\n"
+		"    force constants (and divides the node mobilities, see thickness_drag), and\n"
+		"    it is 1 by default."},
 	{"statement","Statements about filaments",1,"add_segment",
 		"  * add_segment length angle [thickness [end]]\n"
 		"  * add_segment length yaw pitch roll [thickness [end]]",
 		"    Add a segment to the filament, with the given length. The angles are\n"
 		"    relative angles from the prior segment using yaw-pitch-roll values, and the\n"
-		"    thickness is optional. The segment can be added to either end, given in\n"
-		"    end, where the options are \"plus\" (the default) or \"minus\"."},
+		"    thickness, which is unitless, is optional. The segment can be added to\n"
+		"    either end, given in end, where the options are \"plus\" (the default) or\n"
+		"    \"minus\"."},
 	{"statement","Statements about filaments",1,"remove_segment",
 		"  * remove_segment end",
 		"    Remove one segment from end end of the filament (\"plus\" or \"minus\")."},
@@ -2504,20 +2585,21 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"  applysurfaceforce surface F_x F_y\n"
 		"  applysurfaceforce surface F_x F_y F_z",
 		"    Applies the force given by F_x, F_y, and F_z (with fewer values for lower\n"
-		"    dimensions) to the surface called surface, or to every surface if surface\n"
-		"    is \"all\". The force only affects surfaces that have a mobility (see the\n"
-		"    mobility statement), which move in response to it in the same way as to the\n"
-		"    forces from filaments, including carrying their surface-bound molecules and\n"
-		"    adsorbed filament nodes, and pushing molecules that they run into (see the\n"
-		"    section on filament-surface interactions). The force is added to the forces\n"
-		"    from filaments for the next time step only, so in that step the surface\n"
-		"    moves by its mobility times the force times the time step, and it is then\n"
-		"    cleared. Thus, to apply a constant force, run this command at every time\n"
-		"    step, as in cmd E applysurfaceforce membrane 0 0 -2; running it every n\n"
-		"    time steps applies the force for only one of those time steps. Running it\n"
-		"    more than once in a time step adds the forces together. The force values\n"
-		"    can be expressions that use variables. The output for the diagnostics\n"
-		"    surface command lists a force that has been applied but hasn't acted yet."},
+		"    dimensions), in units of energy/length, to the surface called surface, or\n"
+		"    to every surface if surface is \"all\". The force only affects surfaces that\n"
+		"    have a mobility (see the mobility statement), which move in response to it\n"
+		"    in the same way as to the forces from filaments, including carrying their\n"
+		"    surface-bound molecules and adsorbed filament nodes, and pushing molecules\n"
+		"    that they run into (see the section on filament-surface interactions). The\n"
+		"    force is added to the forces from filaments for the next time step only, so\n"
+		"    in that step the surface moves by its mobility times the force times the\n"
+		"    time step, and it is then cleared. Thus, to apply a constant force, run\n"
+		"    this command at every time step, as in cmd E applysurfaceforce membrane 0 0\n"
+		"    -2; running it every n time steps applies the force for only one of those\n"
+		"    time steps. Running it more than once in a time step adds the forces\n"
+		"    together. The force values can be expressions that use variables. The\n"
+		"    output for the diagnostics surface command lists a force that has been\n"
+		"    applied but hasn't acted yet."},
 	{"command","System manipulation commands",0,"diffusecmpt",
 		"  diffusecmpt compartment code stddev_x [cmpt_bound radius nsample]\n"
 		"  diffusecmpt compartment code stddev_x stddev_y [cmpt_bound radius nsample]\n"
@@ -2549,15 +2631,16 @@ static const smolhelpentry SmolHelpData[SMOLHELP_NENTRY]={
 		"    probably be negative for most physically reasonable forces. This equation\n"
 		"    applies for all separations between rad_min and rad_max, and the force is\n"
 		"    zero elsewhere. For computational efficiency, it's a good idea to keep\n"
-		"    rad_max reasonably small. Molecules of species_1 move distance mobility_1\n"
-		"    delta_t times the force, while those of species_2 move mobility_2 delta_t\n"
-		"    times the force, where delta_t is the simulation time step. Except in very\n"
-		"    unusual circumstances, both mobilities should be positive values. Note that\n"
-		"    this accounts for the simulation time step, which is unusual for commands.\n"
-		"    However, it does not account for the command being run at wide intervals,\n"
-		"    such as every 2, 3, or 4 time steps. Instead, to be quantitatively\n"
-		"    accurate, it needs to run at every time step (or run it every n time steps,\n"
-		"    and multiply the force or mobility by n)."},
+		"    rad_max reasonably small. The mobilities have units of\n"
+		"    length^2/(energy*time) and the force is in energy/length units. Molecules\n"
+		"    of species_1 move distance mobility_1 delta_t times the force, while those\n"
+		"    of species_2 move mobility_2 delta_t times the force, where delta_t is the\n"
+		"    simulation time step. Except in very unusual circumstances, both mobilities\n"
+		"    should be positive values. Note that this accounts for the simulation time\n"
+		"    step, which is unusual for commands. However, it does not account for the\n"
+		"    command being run at wide intervals, such as every 2, 3, or 4 time steps.\n"
+		"    Instead, to be quantitatively accurate, it needs to run at every time step\n"
+		"    (or run it every n time steps, and multiply the force or mobility by n)."},
 	{"command","System manipulation commands",0,"translatemol",
 		"  translatemol species(state) equation_x\n"
 		"  translatemol species(state) equation_x equation_y\n"
