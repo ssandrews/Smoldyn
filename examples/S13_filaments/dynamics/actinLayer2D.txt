@@ -1,0 +1,63 @@
+# Growing filaments pushing against surfaces that carry different loads.
+
+graphics opengl_good
+
+dim 2
+boundaries x 0 100
+boundaries y 0 100
+
+time_start 0
+time_stop 150
+time_step 0.01
+random_seed 2
+boxsize 10
+
+frame_thickness 0
+
+
+start_surface floor
+color both black
+thickness 2
+panel rect +y 0 10 100
+panel rect +x 0 10 90
+panel rect -x 100 10 90
+end_surface
+
+start_surface lid
+color both gray
+thickness 3
+mobility 0.2
+panel rect -y 0 90 100
+end_surface
+
+
+start_filament_type pusher1
+color red
+thickness 2
+radius 0.5
+polygon ve
+dynamics implicit
+kT 0.1
+standard_length 2
+standard_angle 0
+force_length 10
+force_angle 30
+mobility 1
+branch_rate 0.005
+branch_min_spacing 5
+branch_angle 1
+#capping_rate 0.05
+elongation_rate 1
+surface_interaction floor front all repel 20 2
+surface_interaction lid front all repel 20 2
+filament_interaction pusher1 softwall 100
+end_filament_type
+
+
+random_filament pusher1:a1 3   50 10  1.571
+#random_filament pusher1:a2 3   60 10  1.571
+filament pusher1:a1 end_state plus barbed
+
+cmd E applysurfaceforce lid 0 -5
+
+end_file
