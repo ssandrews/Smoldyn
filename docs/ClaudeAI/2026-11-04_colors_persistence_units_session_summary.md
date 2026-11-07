@@ -8,7 +8,7 @@ units across the input and output code, a filament viscosity parameter, a new
 barbed-end elongation equation, surface interactions that depend on a
 filament end's state, and a surface interaction that causes branching.
 Everything below was committed and pushed to `master` on
-github.com/ssandrews/Smoldyn, in commits 33c376d through 8b76286.
+github.com/ssandrews/Smoldyn, in commits 33c376d through 0b6581e.
 
 ## Working conventions used
 
@@ -309,6 +309,20 @@ Smoldyn supports length (L), time (T), and energy (E) units.
 - **Docs:** the manual, the code documentation (new functions and history
   items), the generated help text, both PDFs, and the comment in
   `barbedEnd2D.txt` were updated.
+- **Not done:** Claude offered to make the cap an optional fourth value on
+  the `elongation_rate` statement. The user declined, so it stays fixed at 2.
+
+## Part 9: the user's example files (commits 5ebec76, 0b6581e)
+
+At the user's request, Claude committed example files that the user had
+edited, which had been kept out of earlier commits.
+
+- `actinLayer2D.txt` is a new example of growing filaments pushing against
+  surfaces that carry different loads (5ebec76).
+- `adsorbDesorb3D.txt` and `adsorbedNodes3D.txt` now draw the membrane as
+  faces instead of edges (0b6581e). The membrane in `adsorbDesorb3D.txt` was
+  also shrunk from 100 by 100 to 40 by 40. The commit message only mentions
+  the faces.
 
 ## Left as is
 
