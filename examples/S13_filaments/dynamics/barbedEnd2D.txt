@@ -5,7 +5,7 @@
 # applysurfaceforce command pushes down on both lids with the same constant load. The
 # filaments in the left lane have open plus ends, which always elongate at rate 1. The
 # filaments in the right lane have barbed plus ends (end_state plus barbed), which
-# elongate at rate v=a*exp(-k*F)-b, entered with elongation_rate plus barbed a k b.
+# elongate at rate v=a*min(exp(-k*F),2)-b, entered with elongation_rate plus barbed a k b.
 # Here, a is 1, k is 2, b is 0, and F is the part of the surface force on the end node
 # that is parallel to the end segment and pushes against the end. Thus, barbed ends
 # elongate at rate 1 until they reach the lid, and then more slowly as the force on

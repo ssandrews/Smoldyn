@@ -170,6 +170,7 @@ int filBranchDazim(const filjunctionptr junct,double *dphiptr);
 filamentptr filAddBranch(simptr sim,filamentptr mother,int node,char end,double length0,const double *angle,double thickness,const char *daughtername);
 int filBranchPointInRegion(simptr sim,const filamenttypeptr filtype,double *pos);
 int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const filjunctionptr skip);
+filamentptr filBranchAtNode(simptr sim,filamentptr fil,int node);
 void filBranchDynamics(simptr sim,filamenttypeptr filtype);
 void filPinJunction(filjunctionptr junct);
 void filPinTree(filamentptr fil);
@@ -198,6 +199,8 @@ int filSurfBlocksBranch(const filamentptr daughter,char end);
 int filSurfAdsorbedNodes(filamentptr fil);
 int filSurfAdsorbOn(const filamenttypeptr filtype);
 int filSurfAdsorbDesorb(simptr sim,filamenttypeptr filtype);
+int filSurfBranchOn(const filamenttypeptr filtype);
+int filSurfBranchDynamics(simptr sim,filamenttypeptr filtype);
 int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
 int filSurfMoveDone(simptr sim);
 int filSurfForceOn(const filamenttypeptr filtype);
@@ -330,6 +333,7 @@ char *filFSA2string(enum FilSurfAction fsa,char *string) {
 	else if(fsa==FSAreflect) strcpy(string,"reflect");
 	else if(fsa==FSAadsorb) strcpy(string,"adsorb");
 	else if(fsa==FSAdesorb) strcpy(string,"desorb");
+	else if(fsa==FSAbranch) strcpy(string,"branch");
 	else strcpy(string,"none");
 	return string; }
 
@@ -343,6 +347,7 @@ enum FilSurfAction filstring2FSA(const char *string) {
 	else if(!strcmp(string,"reflect")) ans=FSAreflect;
 	else if(!strcmp(string,"adsorb")) ans=FSAadsorb;
 	else if(!strcmp(string,"desorb")) ans=FSAdesorb;
+	else if(!strcmp(string,"branch")) ans=FSAbranch;
 	else ans=FSAnone;
 	return ans; }
 
@@ -1293,6 +1298,8 @@ void filtypeOutput(const filamenttypeptr filtype) {
 			simLog(sim,2,", rate %g|/T, capture distance %g|L, lateral mobility factor %g\n",fsi->rate,fsi->capdist,fsi->srfmob);
 		else if(fsi->action==FSAdesorb)
 			simLog(sim,2,", rate %g|/T, offset %g|L\n",fsi->rate,fsi->offset);
+		else if(fsi->action==FSAbranch)
+			simLog(sim,2,", distance %g|L, rate %g|/T\n",fsi->capdist,fsi->rate);
 		else simLog(sim,2,"\n"); }
 
 	grows=0;
@@ -1308,7 +1315,7 @@ void filtypeOutput(const filamenttypeptr filtype) {
 			if(filtype->endrate[end][fes]!=0 && fes!=FESbarbed)
 				simLog(sim,2,"   %s state velocity: %g|L/T\n",filFES2string((enum FilEndState)fes,string),filtype->endrate[end][fes]);
 		if(filtype->endstate0[end]==FESbarbed || filtype->endrate[end][FESbarbed]!=0 || filtype->barbedparameters[end][1]!=0)
-			simLog(sim,2,"   barbed state velocity a*exp(-k*F)-b: a=%g|L/T, k=%g|L/E, b=%g|L/T, so %g|L/T with no force\n",filtype->endrate[end][FESbarbed],filtype->barbedparameters[end][0],filtype->barbedparameters[end][1],filtype->endrate[end][FESbarbed]-filtype->barbedparameters[end][1]);
+			simLog(sim,2,"   barbed state velocity a*min(exp(-k*F),2)-b: a=%g|L/T, k=%g|L/E, b=%g|L/T, so %g|L/T with no force\n",filtype->endrate[end][FESbarbed],filtype->barbedparameters[end][0],filtype->barbedparameters[end][1],filtype->endrate[end][FESbarbed]-filtype->barbedparameters[end][1]);
 		for(fes=0;fes<FESMAX;fes++)
 			for(fes2=0;fes2<FESMAX;fes2++)
 				if(filtype->endtrans[end][fes][fes2]>0)
@@ -1480,8 +1487,8 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			error++;simLog(sim,9,"ERROR: filament type %s sets both branch_surface and branch_compartment; use a single location gate\n",filtype->ftname);}
 		if((filtype->branchsrf || filtype->branchcmpt) && filtype->branchrate<=0) {
 			warn++;simLog(sim,5,"WARNING: filament type %s has a branch location gate but branch_rate is 0, so no branching will occur\n",filtype->ftname);}
-		if(filtype->branchminspacing>0 && filtype->branchrate<=0) {
-			warn++;simLog(sim,5,"WARNING: filament type %s has branch_min_spacing but branch_rate is 0; the spacing only applies to branch nucleation\n",filtype->ftname);}
+		if(filtype->branchminspacing>0 && filtype->branchrate<=0 && !filSurfBranchOn(filtype)) {
+			warn++;simLog(sim,5,"WARNING: filament type %s has branch_min_spacing but branch_rate is 0 and there are no branch surface interactions; the spacing only applies to branch nucleation\n",filtype->ftname);}
 		if(filtype->branchminspacing>0) {						// branches entered by the user are kept, but report ones that violate the spacing
 			pcount=0;
 			for(j=0;j<filss->njunct;j++) {
@@ -1513,10 +1520,12 @@ int filCheckParams(const simptr sim,int *warnptr) {
 			for(ps=(enum PanelShape)0;ps<PSMAX;ps=(enum PanelShape)(ps+1)) pcount+=fsi->othersurf->npanel[ps];
 			if(pcount==0) {
 				warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s, which has no panels, so the interaction has no effect\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
-			if((fsi->action==FSAadsorb || fsi->action==FSAdesorb) && fsi->rate*sim->dt>0.2) {
+			if((fsi->action==FSAadsorb || fsi->action==FSAdesorb || fsi->action==FSAbranch) && fsi->rate*sim->dt>0.2) {
 				warn++;simLog(sim,5,"WARNING: filament type %s %s interaction with surface %s has a high rate for this time step (rate*dt = %g); the probability per time step is 1-exp(-rate*dt), but a shorter time step would resolve the kinetics better\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname,fsi->rate*sim->dt);}
 			if(fsi->action==FSAadsorb && fsi->rate>0 && fsi->capdist==0) {
 				warn++;simLog(sim,5,"WARNING: filament type %s adsorb interaction with surface %s has a capture distance of 0, so nodes essentially never adsorb\n",filtype->ftname,fsi->othersurf->sname);}
+			if(fsi->action==FSAbranch && fsi->rate>0 && fsi->capdist==0) {
+				warn++;simLog(sim,5,"WARNING: filament type %s branch interaction with surface %s has a distance of 0, so nodes essentially never branch\n",filtype->ftname,fsi->othersurf->sname);}
 			if((fsi->action==FSAsoftwall || fsi->action==FSArepel) && fsi->kforce>0) {
 				if(filtype->dynamics==FDnone) {
 					warn++;simLog(sim,5,"WARNING: filament type %s has a %s interaction with surface %s but dynamics none; the force is never applied\n",filtype->ftname,filFSA2string(fsi->action,string),fsi->othersurf->sname);}
@@ -2453,7 +2462,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 		CHECKS(!filstring2parts(nm,filpart),"surface_interaction parts need to be plus, minus, side, all, or a comma-separated list of them, such as plus,side");
 		CHECKS(fes1==FESnone || !filpart[FPside],"surface_interaction end state can only be used with the plus and minus parts, since side nodes don't have states");
 		fsa=filstring2FSA(nm3);
-		CHECKS(fsa==FSAsoftwall || fsa==FSArepel || fsa==FSAreflect || fsa==FSAadsorb || fsa==FSAdesorb,"surface_interaction action options: softwall, repel, reflect, adsorb, desorb");
+		CHECKS(fsa==FSAsoftwall || fsa==FSArepel || fsa==FSAreflect || fsa==FSAadsorb || fsa==FSAdesorb || fsa==FSAbranch,"surface_interaction action options: softwall, repel, reflect, adsorb, desorb, branch");
 		line2=strnword(line2,5);
 		f1=f2=0;
 		if(fsa==FSAsoftwall) {
@@ -2496,6 +2505,13 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 				CHECKM(itct==1,"surface_interaction desorb format: surface_name face parts desorb rate [offset]");
 				CHECKS(fltv1[1]>=0,"surface_interaction desorption offset needs to be >=0");
 				line2=strnword(line2,2); }}
+		else if(fsa==FSAbranch) {
+			CHECKS(line2,"surface_interaction branch format: surface_name face parts branch distance rate");
+			itct=strmathsscanf(line2,"%mlg|L %mlg|/T",varnames,varvalues,nvar,&fltv1[0],&fltv1[1]);
+			CHECKM(itct==2,"surface_interaction branch format: surface_name face parts branch distance rate");
+			CHECKS(fltv1[0]>=0,"surface_interaction branch distance needs to be >=0");
+			CHECKS(fltv1[1]>=0,"surface_interaction branch rate needs to be >=0");
+			line2=strnword(line2,3); }
 		CHECKS(!line2,"unexpected text following surface_interaction");
 		fsi=filtypeAddSurfInteract(filtype,sim->srfss->srflist[i1],pf,filpart,fes1,fsa,f1,f2);
 		CHECKS(fsi,"out of memory adding surface_interaction");
@@ -2505,7 +2521,10 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			fsi->srfmob=fltv1[2]; }
 		else if(fsa==FSAdesorb) {
 			fsi->rate=fltv1[0];
-			fsi->offset=fltv1[1]; }}
+			fsi->offset=fltv1[1]; }
+		else if(fsa==FSAbranch) {
+			fsi->capdist=fltv1[0];
+			fsi->rate=fltv1[1]; }}
 
 	else if(!strcmp(word,"elongation_rate")) {	// elongation_rate: [end state] velocity, or end barbed a [k [b]]; length/time
 		CHECKS(filtype,"need to enter filament type name before elongation_rate");
@@ -2528,7 +2547,7 @@ filamenttypeptr filtypeReadString(simptr sim,ParseFilePtr pfp,filamenttypeptr fi
 			CHECKM(itct==1,"elongation_rate format: [end state] value. ");
 			CHECKS(fes1!=FESbarbed || f1>=0,"elongation_rate a value for the barbed state needs to be >=0"); }
 		filtypeSetParam(filtype,"endrate",i1*FESMAX+fes1,f1);
-		if(fes1==FESbarbed) {												// barbed state: v=a*exp(-k*F)-b
+		if(fes1==FESbarbed) {												// barbed state: v=a*min(exp(-k*F),2)-b
 			f2=f3=0;
 			line2=strnword(line2,2);
 			if(line2) {
@@ -4559,6 +4578,51 @@ int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const f
 	return 1; }
 
 
+/* filBranchAtNode */
+// Creates a branch off node node of filament fil, using the filament type's branch
+// parameters: the daughter attaches by end branchend, has the thickness of the mother
+// segment that ends at the node (or segment 0 for node 0), and leaves at angle
+// branchangle, with jitter from branchspread, on a random side in 2D or at a random or
+// fixed azimuth in 3D. If the type has reflect interactions with surfaces and one of
+// them stops the new branch, the branch is removed and tried again with new random
+// angles, up to FILMAXTRIES times. Doesn't check the branch location gate or the
+// minimum spacing. Returns the daughter, or NULL if it couldn't be made or every try
+// was blocked.
+filamentptr filBranchAtNode(simptr sim,filamentptr fil,int node) {
+	filamenttypeptr filtype;
+	filamentptr daughter;
+	double angle[3],thick,theta,phi,dvec[3];
+	int dim,reflect,tries;
+
+	filtype=fil->filtype;
+	dim=sim->dim;
+	reflect=filSurfReflectOn(filtype);
+	daughter=NULL;
+	thick=fil->segments[node>0?node-1:0]->thk;		// the daughter has the thickness of the mother segment that ends at the branch node
+	for(tries=0;tries<(reflect?FILMAXTRIES:1);tries++) {	// a branch that a reflecting surface stops is tried again with new random angles
+		theta=filtype->branchangle;
+		if(filtype->branchspread>0)								// jitter the branch angle; a spread derived from the spring is its equilibrium spread for this thickness
+			theta=gaussrandtruncOCD(theta,filtype->branchspreadderived?filtype->branchspread/sqrt(thick):filtype->branchspread,-PI,PI);
+		if(dim==2) {															// in-plane +/- branch angle
+			angle[0]=theta*(coinrandD(0.5)?1:-1);
+			angle[1]=angle[2]=0; }
+		else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
+			phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
+			dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
+			dvec[1]=sin(theta)*cos(phi);
+			dvec[2]=sin(theta)*sin(phi);
+			angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
+			angle[1]=-asin(dvec[2]);
+			angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
+
+		daughter=filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL);		// realloc-safe: fillist grows, fil ptrs stable
+		if(!reflect || !daughter || !filSurfBlocksBranch(daughter,filtype->branchend)) break;
+		filRemoveFilament(daughter);						// blocked: discard it and reuse its name
+		filtype->autonamenum--;
+		daughter=NULL; }
+	return daughter; }
+
+
 /* filBranchDynamics */
 // Poisson branch nucleation for one filament type, at rate branchrate*length*dt, with
 // each daughter attached at the plus-end node of a uniformly random segment of its mother. If a location
@@ -4570,15 +4634,14 @@ int filBranchNodeSpaced(const filamentptr mother,int node,double spacing,const f
 // accept test draws no random numbers, so a rejected event consumes only its segment
 // draw. With branch_min_spacing, events are also thinned by the spacing test, so
 // branch_rate is the rate per unit of mother length that is far enough from existing
-// branches; this draws no random numbers either.
+// branches; this draws no random numbers either. The branches are made by
+// filBranchAtNode.
 void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
-	int f,nfil0,node,nbr,i,dim,reflect,tries;
-	double totallen,angle[3],thick,theta,ratedt,phi,dvec[3];
-	filamentptr fil,daughter;
+	int f,nfil0,node,nbr,i;
+	double totallen,ratedt;
+	filamentptr fil;
 
 	if(filtype->branchrate<=0) return;
-	dim=sim->dim;
-	reflect=filSurfReflectOn(filtype);
 	ratedt=filtype->branchrate*sim->dt;					// same for every filament this step
 	nfil0=filtype->nfil;												// snapshot: don't branch off daughters born this step
 
@@ -4592,30 +4655,63 @@ void filBranchDynamics(simptr sim,filamenttypeptr filtype) {
 			node=intrand(fil->nseg)+1;									// uniform random branch node, from 1 to nseg
 			if(!filBranchPointInRegion(sim,filtype,fil->nodes[node])) continue;		// interim location gate; accepts everything when no gate is set
 			if(!filBranchNodeSpaced(fil,node,filtype->branchminspacing,NULL)) continue;	// too close to an existing branch, including ones born this step
-
-			thick=fil->segments[node-1]->thk;					// the daughter has the thickness of the mother segment that ends at the branch node
-			for(tries=0;tries<(reflect?FILMAXTRIES:1);tries++) {	// a branch that a reflecting surface stops is tried again with new random angles
-				theta=filtype->branchangle;
-				if(filtype->branchspread>0)								// jitter the branch angle; a spread derived from the spring is its equilibrium spread for this thickness
-					theta=gaussrandtruncOCD(theta,filtype->branchspreadderived?filtype->branchspread/sqrt(thick):filtype->branchspread,-PI,PI);
-				if(dim==2) {															// in-plane +/- branch angle
-					angle[0]=theta*(coinrandD(0.5)?1:-1);
-					angle[1]=angle[2]=0; }
-				else {																		// 3D dendritic cone: fixed polar angle theta; uniform azimuth unless branch_azimuth is set
-					phi=(filtype->branchazimuth>=0)?filtype->branchazimuth:unirandCOD(0,2*PI);
-					dvec[0]=cos(theta);											// daughter direction in the mother segment frame; azimuth from +y toward +z, matching filBranchAzimuth
-					dvec[1]=sin(theta)*cos(phi);
-					dvec[2]=sin(theta)*sin(phi);
-					angle[0]=atan2(dvec[1],dvec[0]);				// yaw-pitch that realize dvec under the segment convention (cos y cos p, sin y cos p, -sin p); filNodes2Angles applies the same inverse
-					angle[1]=-asin(dvec[2]);
-					angle[2]=0; }														// roll 0: the daughter frame about its own axis is deterministic; anisotropic-bending or intrinsic-twist types get a fixed material-frame orientation per daughter where a random roll would decorrelate it
-
-				daughter=filAddBranch(sim,fil,node,filtype->branchend,0,angle,thick,NULL);		// realloc-safe: fillist grows, fil ptrs stable
-				if(!reflect || !daughter || !filSurfBlocksBranch(daughter,filtype->branchend)) break;
-				filRemoveFilament(daughter);						// blocked: discard it and reuse its name
-				filtype->autonamenum--; }}}
+			filBranchAtNode(sim,fil,node); }}
 
 	return; }
+
+
+/* filSurfBranchOn */
+// Returns 1 if filament type filtype has any branch interactions with surfaces that
+// have positive rates, and 0 if not.
+int filSurfBranchOn(const filamenttypeptr filtype) {
+	int i;
+
+	for(i=0;i<filtype->nsurfint;i++)
+		if(filtype->surfint[i]->action==FSAbranch && filtype->surfint[i]->rate>0) return 1;
+	return 0; }
+
+
+/* filSurfBranchDynamics */
+// Branching from the branch interactions of filament type filtype with surfaces, for
+// one time step. Each node of the listed parts, including end nodes, that is within
+// the interaction's distance (capdist) of its surface, on the interaction's face or
+// either face for both, branches with probability 1-exp(-rate*dt), using
+// filBranchAtNode. An end that is attached to another filament by a junction doesn't
+// branch, since it sits at the other filament's node, which can branch itself. Nodes
+// that are too close to an existing branch for branch_min_spacing don't branch, and
+// each node branches at most once per time step.
+// Daughters born in this time step don't branch until the next one. The branch_surface
+// and branch_compartment gates don't apply. Random numbers are only drawn for nodes
+// that can branch. Returns the number of branches made.
+int filSurfBranchDynamics(simptr sim,filamenttypeptr filtype) {
+	filamentptr fil;
+	filsurfinteractptr fsi;
+	panelptr pnl;
+	enum PanelFace side;
+	double pnlpt[3],dist;
+	int f,nfil0,node,part,i,dim,nbranch;
+
+	dim=sim->dim;
+	nbranch=0;
+	nfil0=filtype->nfil;												// snapshot: don't branch off daughters born this step
+	for(f=0;f<nfil0;f++) {
+		fil=filtype->fillist[f];
+		for(node=0;node<=fil->nseg && fil->nseg>0;node++) {
+			part=(node==0)?FPminus:((node==fil->nseg)?FPplus:FPside);
+			if((node==0 && fil->endjunct[0]) || (node==fil->nseg && fil->endjunct[1])) continue;	// attached end: the node it's attached to branches instead
+			for(i=0;i<filtype->nsurfint;i++) {
+				fsi=filtype->surfint[i];
+				if(fsi->action!=FSAbranch || fsi->rate<=0 || !filSurfInteractApplies(fsi,fil,part)) continue;
+				dist=closestsurfacept(fsi->othersurf,dim,fil->nodes[node],pnlpt,&pnl,NULL);
+				if(dist<0 || dist>fsi->capdist) continue;
+				side=panelside(fil->nodes[node],pnl,dim,NULL,1,0);
+				if(side==PFnone) side=(fsi->surfface==PFback)?PFback:PFfront;		// exactly on the panel
+				if(fsi->surfface!=PFboth && side!=fsi->surfface) continue;
+				if(!filBranchNodeSpaced(fil,node,filtype->branchminspacing,NULL)) break;
+				if(!coinrandD(1.0-exp(-fsi->rate*sim->dt))) continue;
+				if(filBranchAtNode(sim,fil,node)) nbranch++;
+				break; }}}
+	return nbranch; }
 
 
 /* filPinJunction */
@@ -4856,17 +4952,21 @@ double filEndPushForce(const filamentptr fil,int end) {
 /* filEndVelocity */
 // Returns the rate of length change of end end (0 = minus, 1 = plus) of filament fil,
 // which is the type's endrate value for the end's current state. For the barbed state,
-// this is a*exp(-k*F)-b, where a is the endrate value, k and b are the type's
-// barbedparameters values for the end, and F is from filEndPushForce. Draws no random numbers.
+// this is a*min(exp(-k*F),2)-b, where a is the endrate value, k and b are the type's
+// barbedparameters values for the end, and F is from filEndPushForce. The exponential
+// factor is capped at 2, so stretching forces can at most double a. Draws no random numbers.
 double filEndVelocity(const filamentptr fil,int end) {
 	filamenttypeptr filtype;
-	double v,k;
+	double v,k,factor;
 
 	filtype=fil->filtype;
 	v=filtype->endrate[end][fil->endstate[end]];
 	if(fil->endstate[end]==FESbarbed) {
 		k=filtype->barbedparameters[end][0];
-		if(v>0 && k>0) v*=exp(-k*filEndPushForce(fil,end));
+		if(v>0 && k>0) {
+			factor=exp(-k*filEndPushForce(fil,end));
+			if(factor>2) factor=2;
+			v*=factor; }
 		v-=filtype->barbedparameters[end][1]; }
 	return v; }
 
@@ -7431,6 +7531,7 @@ void filDynamicsEnds(simptr sim,filamenttypeptr filtype) {
 				filTreadmill(sim,fil,filtype->treadrate>0?'p':'m'); }}
 
 	filBranchDynamics(sim,filtype);									// Arp2/3-style branch nucleation
+	if(filSurfBranchOn(filtype)) filSurfBranchDynamics(sim,filtype);	// branching near surfaces
 	filEndTransitions(sim,filtype);									// before length changes: an end capped now doesn't also grow now
 	filEndDynamics(sim,filtype);										// before the integrator: a new segment relaxes this step
 	return; }

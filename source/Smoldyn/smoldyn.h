@@ -713,7 +713,7 @@ typedef struct filamentstruct {
 
 enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
 enum FilFilAction {FFAnone, FFAsoftwall, FFAblock, FFAadsorb, FFAdesorb};
-enum FilSurfAction {FSAnone, FSAsoftwall, FSArepel, FSAreflect, FSAadsorb, FSAdesorb};
+enum FilSurfAction {FSAnone, FSAsoftwall, FSArepel, FSAreflect, FSAadsorb, FSAdesorb, FSAbranch};
 
 typedef struct filmolinteractstruct {		// Filament-molecule interactions structure
     struct filamenttypestruct *filtype;	// owning filament type structure
@@ -755,11 +755,11 @@ typedef struct filsurfinteractstruct {	// Filament-surface interaction; one stru
 		surfaceptr othersurf;								// which surface is involved
 		enum PanelFace surfface;						// surface face that the filament is on: front, back, or both
 		compartptr compart;									// set if this interaction only applies to a specific compartment, or NULL
-		enum FilSurfAction action;					// type of interaction: softwall, repel, reflect, adsorb, desorb
+		enum FilSurfAction action;					// type of interaction: softwall, repel, reflect, adsorb, desorb, branch
 		double kforce;											// FSAsoftwall, FSArepel: spring constant pushing nodes away from the surface, energy/length^2
 		double repeldist;										// FSArepel: distance from the surface, on the filament's side, at which the force starts, length
-		double rate;												// FSAadsorb, FSAdesorb: adsorption or desorption rate, 1/time
-		double capdist;											// FSAadsorb: nodes closer than this to the surface can adsorb, length
+		double rate;												// FSAadsorb, FSAdesorb, FSAbranch: adsorption, desorption, or branching rate, 1/time
+		double capdist;											// FSAadsorb, FSAbranch: nodes closer than this to the surface can adsorb or branch, length
 		double srfmob;											// FSAadsorb: lateral mobility factor of nodes that adsorb
 		double offset;											// FSAdesorb: distance from the surface at which desorbed nodes are placed, length
 		// future parameters: interaction rate, binding radius, unbinding radius, desorption rate, etc.
