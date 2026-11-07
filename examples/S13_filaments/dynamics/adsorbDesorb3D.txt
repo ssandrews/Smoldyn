@@ -32,8 +32,8 @@ frame_thickness 0
 
 start_surface membrane
 color both 0.6 0.6 0.6
-polygon both edge
-panel rect +2 -50 -50 0 100 100
+polygon both face
+panel rect +2 -20 -20 0 40 40
 end_surface
 
 start_filament_type sticky

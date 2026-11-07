@@ -31,7 +31,7 @@ frame_thickness 0
 
 start_surface membrane
 color both 0.6 0.6 0.6
-polygon both edge
+polygon both face
 panel rect +2 -15 -15 0 30 30
 end_surface
 
