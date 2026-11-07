@@ -5,9 +5,10 @@ maintainer on November 4–6, 2026. The work covered color names in input and
 output, rendering of translucent 3-D surfaces, a new libSteve filament
 statistics library with persistence-length statements, a review of measurement
 units across the input and output code, a filament viscosity parameter, a new
-barbed-end elongation equation, and surface interactions that depend on a
-filament end's state. Everything below was committed and pushed to `master` on
-github.com/ssandrews/Smoldyn, in commits 33c376d through d020af2.
+barbed-end elongation equation, surface interactions that depend on a
+filament end's state, and a surface interaction that causes branching.
+Everything below was committed and pushed to `master` on
+github.com/ssandrews/Smoldyn, in commits 33c376d through 8b76286.
 
 ## Working conventions used
 
@@ -265,6 +266,49 @@ Smoldyn supports length (L), time (T), and energy (E) units.
   both PDFs were updated. Claude's last two history items in the code
   documentation had been placed out of date order, so they were moved to the
   end of the list. Several older items in that list are still out of order.
+
+## Part 8: branch surface interactions and a cap on the barbed-end factor (commit 8b76286)
+
+- **New action:** `surface_interaction srf face parts branch distance rate`.
+  Each time step, each node of the listed parts that is within `distance` of
+  the surface, on the given face, branches with probability
+  1 − exp(−rate·dt). The rate is per node, in inverse time, unlike
+  `branch_rate`, which is per length.
+  - Branching was already allowed at end nodes, so end nodes branch directly;
+    the "one node back" fallback wasn't needed.
+  - Ends attached to a mother filament are skipped. They sit exactly on the
+    mother's node, so otherwise that point would get two chances to branch.
+  - At most one branch forms per node per step.
+  - The end-state option works with it, as in `plus(barbed)`.
+  - New branches use the type's `branch_end`, `branch_angle`,
+    `branch_spread`, `branch_azimuth`, and `branch_segments` settings.
+    `branch_min_spacing` and reflect blocking apply, but `branch_rate` and the
+    `branch_surface` and `branch_compartment` gates don't.
+  - Daughters are the same type, so they branch too. Near a surface, that can
+    grow very fast: one plus end at rate 1 led to 1408 filaments in 10 s.
+  - Smoldyn warns if rate·dt > 0.2 or the distance is 0.
+- **Code:** `FSAbranch` was added; it stores the distance in `capdist` and
+  the rate in `rate`. Branch creation was split out of `filBranchDynamics` into
+  a new function, `filBranchAtNode`, which both kinds of branching use. New
+  functions `filSurfBranchOn` and `filSurfBranchDynamics` run after
+  `filBranchDynamics` in `filDynamicsEnds`.
+- **Tests:** an 11-node filament held 1 µm from a surface for 2 s gave mean
+  direct-daughter counts of 21.7 (all parts, rate 1, expected 22), 18.6
+  (`minus,side`, expected 20), and 9.93 (plus, rate 5, 100 seeds, expected
+  10). A distance of 0.5 and the back face each gave no branches, and
+  `branch_min_spacing` limited branching. Seven `branch_rate` examples gave
+  identical output with the previous build; `dendriticNetwork2D` was too slow
+  to compare.
+- **Barbed-end cap:** the elongation rate is now
+  v = a·min(exp(−kF), 2) − b, so stretching forces at most double `a`, and the
+  factor reaches 2 at a pulling force of ln(2)/k. Before this, a filament
+  growing away from a strongly repelling surface ran away: the previous build
+  made 65,001 segments in 10 s, while the new build grew at about 2 per second,
+  as expected. The input syntax didn't change, and pushing forces behave as
+  before. The cap of 2 is fixed in the code.
+- **Docs:** the manual, the code documentation (new functions and history
+  items), the generated help text, both PDFs, and the comment in
+  `barbedEnd2D.txt` were updated.
 
 ## Left as is
 
