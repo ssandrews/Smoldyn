@@ -17,6 +17,9 @@ extern "C" {
 #include <stdlib.h>
 #include <math.h>
 
+/* Reseeding must also discard the paired Gaussian saved by Box-Muller. */
+void randomResetGaussians(void);
+
 /* Definitions of basic random number generators */
 #ifdef SFMT_H
 
@@ -53,6 +56,7 @@ extern "C" {
 		return (unsigned long int) gen_rand32(); }
 
 	inline static long int randomize(long int seed) {
+		randomResetGaussians();
 		if(seed<0) seed=(long int) time(NULL);
 		init_gen_rand((uint32_t)seed);
 		return seed; }
@@ -99,6 +103,7 @@ extern "C" {
 
 	inline static long int randomize(long int seed) {
 		if(seed<0) seed=(unsigned int) time(NULL);
+		randomResetGaussians();
 		srand((unsigned int)seed);
 		return seed; }
 

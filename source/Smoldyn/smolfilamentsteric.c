@@ -1,0 +1,708 @@
+/* Finite-volume filament mechanics, LGPL as the surrounding Smoldyn sources. */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include "smoldyn.h"
+#include "smoldynfuncs.h"
+#include "smolfilamentsteric.h"
+#include "smolprofile.h"
+#include "Geometry.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+/* Existing filament helpers used by the coupled mechanical path. */
+void filComputeForces(filamentptr fil,int lo,int hi);
+void filStepMaterialFrame(filamentptr fil,double dtmu,int in,int out);
+void filPrepareThermalForces(filamentptr fil);
+void filNodes2Angles(filamentptr fil,int lo,int hi);
+
+int filWorkersSupported(void) {
+#ifdef _OPENMP
+ return 1;
+#else
+ return 0;
+#endif
+}
+
+
+int filStericEnabled(const simptr sim) {
+ int ft;
+ if(!sim || !sim->filss) return 0;
+ for(ft=0;ft<sim->filss->ntype;ft++) if(sim->filss->filtypes[ft]->stericradius>0) return 1;
+ return 0;
+}
+
+int filStericValidate(const simptr sim) {
+ int ft,d,ps,preconditioner=-1,method=-1,jacobian=-1;filamenttypeptr t;
+ if(!filStericEnabled(sim) && !filImplicitEnabled(sim) && !filLengthEnabled(sim)) {
+  /* Do not silently ignore a projected request on an uncoupled old method. */
+  if(sim->filss) for(ft=0;ft<sim->filss->ntype;ft++) if(sim->filss->filtypes[ft]->implicitmethod || sim->filss->filtypes[ft]->implicitjacobian) {
+   simLog(sim,9,"ERROR: projected or cached solver options require implicit_network dynamics\n");return 1;
+  }
+  return 0;
+ }
+ if(sim->dim!=2 && sim->dim!=3) return 1;
+ for(d=0;d<2*sim->dim;d++) if(sim->wlist[d]->type=='p') {
+  simLog(sim,9,"ERROR: filament sterics does not yet support periodic boundaries\n");return 1;
+ }
+ for(ft=0;ft<sim->filss->ntype;ft++) {
+  t=sim->filss->filtypes[ft];
+  if(t->implicitjacobian && t->dynamics!=FDimplicitnetwork) {
+   simLog(sim,9,"ERROR: implicit_jacobian cached requires implicit_network dynamics\n");return 1;
+  }
+  if(t->implicitmethod && (t->dynamics!=FDimplicitnetwork || t->klen>=0)) {
+   simLog(sim,9,"ERROR: implicit_method projected requires implicit_network with negative force_length on every mobile type\n");return 1;
+  }
+  if(t->klen<0 && t->dynamics!=FDnone && (t->dynamics!=FDimplicitnetwork ||
+      !(t->constrainttol>0 && t->constrainttol<1) || !isfinite(t->constrainttol) || t->constraintiterations<1 || t->constraintiterations>1000)) {
+   simLog(sim,9,"ERROR: negative force_length requires implicit_network and a finite constraint_tolerance between 0 and 1\n");return 1;
+  }
+  if(t->klen<0 && t->dynamics!=FDnone && (t->kypr[0]<0 || (sim->dim==3 && (t->kypr[1]<0 || t->kypr[2]<0)))) {
+   simLog(sim,9,"ERROR: coupled fixed-length mode supports length constraints only; fixed-angle constraints require an upstream integrator\n");return 1;
+  }
+  if(t->dynamics==FDimplicitnetwork) {
+   if(t->implicitjacobian<0 || t->implicitjacobian>1 || (jacobian>=0 && jacobian!=t->implicitjacobian)) {
+    simLog(sim,9,"ERROR: mobile implicit_network types must select the same implicit_jacobian (finite_difference or cached)\n");return 1;
+   }
+   jacobian=t->implicitjacobian;
+   if(t->implicitmethod<0 || t->implicitmethod>1 || (method>=0 && method!=t->implicitmethod) ||
+       !(t->projectedtol>0) || !isfinite(t->projectedtol)) {
+    simLog(sim,9,"ERROR: mobile implicit_network types must select the same implicit_method and finite positive projected_tolerance\n");return 1;
+   }
+   method=t->implicitmethod;
+   if(t->implicitpreconditioner<0 || t->implicitpreconditioner>1 ||
+       (preconditioner>=0 && preconditioner!=t->implicitpreconditioner)) {
+    simLog(sim,9,"ERROR: all mobile implicit_network types must select the same implicit_preconditioner (diagonal or banded)\n");return 1;
+   }
+   preconditioner=t->implicitpreconditioner;
+  }
+  if(t->dynamics!=FDnone && t->dynamics!=(filImplicitEnabled(sim)?FDimplicitnetwork:FDeuler)) {
+   simLog(sim,9,"ERROR: coupled filament dynamics requires all mobile types to use the same method (euler or implicit_network)\n");return 1;
+  }
+  if(t->dynamics==FDimplicitnetwork && (!(t->stdlen>0) || !isfinite(t->stdlen) || !(t->implicittol>0) || !isfinite(t->implicittol) || t->implicititerations<1 || t->implicititerations>1000 || t->implicitkrylov<1 || t->implicitkrylov>1000)) {
+   simLog(sim,9,"ERROR: implicit_network requires a positive standard_length/tolerance and iteration limits 1..1000\n");return 1;
+  }
+  if(t->branchazimuthfix) {
+   simLog(sim,9,"ERROR: filament sterics requires branch_azimuth_fix off (use branch_force_azimuth)\n");return 1;
+  }
+  if(filGrowthValidate(t)) return 1;
+  if(t->stericradius>0 && (!(t->sterick>0) || !(t->stericskin>0))) {
+   simLog(sim,9,"ERROR: filament steric_radius requires positive steric_stiffness and steric_skin\n");return 1;
+  }
+  if(t->stericradius>0 && t->confinesrf && t->confineforce>0)
+   for(ps=0;ps<PSMAX;ps++) if(ps!=PSrect && t->confinesrf->npanel[ps]) {
+    simLog(sim,9,"ERROR: radius-aware filament confinement currently requires rectangular panels\n");return 1;
+   }
+ }
+ return 0;
+}
+
+void filStericFree(filamentssptr ss) {
+ struct filamentstericstruct *w;
+ if(!ss || !(w=ss->steric)) return;
+ free(w->segments);free(w->pairs);free(w->nodes);free(w->pending);
+ free(w->filaments);free(w->branches);free(w->contact);free(w->chemready);
+ free(w->memberfirst);free(w->membernext);
+ filImplicitFree(w);free(w);ss->steric=NULL;
+}
+
+int filStericExcluded(segmentptr a,segmentptr b) {
+ return a==b || (a->fil==b->fil && abs(a->index-b->index)<=1);
+}
+
+/* Direct bonded pairs share volume only near their junction. Trim a bounded
+   daughter contour region only when the mother's segment is local in contour
+   distance; remote mother segments still contact the daughter's base. */
+void filStericTrimBounds(segmentptr daughter,segmentptr mother,double *lo,double *hi) {
+ filamentptr mf=mother->fil,df=daughter->fil;double reach=2*(df->filtype->stericradius+mf->filtype->stericradius);
+ *lo=0;*hi=1;
+ for(int end=0;end<2;end++) {
+  filjunctionptr joint=df->endjunct[end];double md=0,dd=0,cut;int i,node;
+  if(!joint || joint->target!=mf) continue;
+  node=joint->node;
+  if(mother->index<node) for(i=mother->index+1;i<node && md<=reach;i++) md+=mf->segments[i]->len;
+  else for(i=node;i<mother->index && md<=reach;i++) md+=mf->segments[i]->len;
+  if(md>reach) continue;
+  if(!end) for(i=0;i<daughter->index && dd<reach;i++) dd+=df->segments[i]->len;
+  else for(i=df->nseg-1;i>daughter->index && dd<reach;i--) dd+=df->segments[i]->len;
+  if(dd>=reach) continue;
+  cut=daughter->len>0?fmin(1,(reach-dd)/daughter->len):1;
+  if(end) *hi=fmin(*hi,1-cut);else *lo=fmax(*lo,cut);
+ }
+}
+double filStericTrim(segmentptr daughter,segmentptr mother) {
+ double lo,hi;filStericTrimBounds(daughter,mother,&lo,&hi);return lo>0?lo:hi-1;
+}
+
+double filStericGeometry(segmentptr a,segmentptr b,double *s,double *t,double *normal) {
+ double la,ha,lb,hb,a0[3],a1[3],b0[3],b1[3],dist;int d;
+ filStericTrimBounds(a,b,&la,&ha);filStericTrimBounds(b,a,&lb,&hb);
+ if(la>=ha || lb>=hb) return DBL_MAX;
+ for(d=0;d<3;d++) {
+  a0[d]=a->xyzminus[d]+la*(a->xyzplus[d]-a->xyzminus[d]);a1[d]=a->xyzminus[d]+ha*(a->xyzplus[d]-a->xyzminus[d]);
+  b0[d]=b->xyzminus[d]+lb*(b->xyzplus[d]-b->xyzminus[d]);b1[d]=b->xyzminus[d]+hb*(b->xyzplus[d]-b->xyzminus[d]);
+ }
+ dist=Geo_ClosestSeg2Seg(a0,a1,b0,b1,a->fil->filtype->filss->sim->dim,s,t,normal);
+ *s=la+(ha-la)*(*s);*t=lb+(hb-lb)*(*t);return dist;
+}
+
+int filStericPrepare(simptr sim) {
+ struct filamentstericstruct *w;int ft,f,i,n=0,j=0,d,rebuild=0,er;
+ double skin=DBL_MAX,move;
+ if(!filStericEnabled(sim)) {
+  if(filImplicitEnabled(sim) && !sim->filss->steric)
+   sim->filss->steric=(struct filamentstericstruct*)calloc(1,sizeof(*w));
+  return filImplicitEnabled(sim) && !sim->filss->steric;
+ }
+ if(!sim->boxs || !sim->boxs->blist) {if(boxesupdate(sim)) return 1;}
+ if(!sim->filss->steric) {
+  sim->filss->steric=(struct filamentstericstruct*)calloc(1,sizeof(*w));
+  if(!sim->filss->steric) return 1;
+ }
+ w=sim->filss->steric;
+ if(w->boxgeneration!=sim->boxs->segmentgeneration) rebuild=1;
+ for(ft=0;ft<sim->filss->ntype;ft++) {
+  filamenttypeptr t=sim->filss->filtypes[ft];
+  if(t->stericradius<=0) continue;
+  skin=fmin(skin,t->stericskin);
+  for(f=0;f<t->nfil;f++) n+=t->fillist[f]->nseg;
+ }
+ if(n>w->maxsegment) {
+  FilStericSegment *p;int cap=n+n/2+16;
+  p=(FilStericSegment*)realloc(w->segments,(size_t)cap*sizeof(*p));if(!p) return 1;
+  w->segments=p;w->maxsegment=cap;rebuild=1;
+ }
+ if(n!=w->nsegment || skin!=w->skin || !w->rebuilds) rebuild=1;
+ for(ft=0;ft<sim->filss->ntype;ft++) {
+  filamenttypeptr type=sim->filss->filtypes[ft];
+  if(type->stericradius<=0) continue;
+  for(f=0;f<type->nfil;f++) {
+   filamentptr fil=type->fillist[f];
+   for(i=0;i<fil->nseg;i++,j++) {
+    FilStericSegment *r=&w->segments[j];segmentptr seg=fil->segments[i];
+    if(!rebuild && (r->fil!=fil || r->segment!=seg || r->index!=i || r->radius!=type->stericradius || r->stiffness!=type->sterick)) rebuild=1;
+    if(!rebuild) {
+     double front=0,back=0;
+     for(d=0;d<sim->dim;d++) {move=seg->xyzminus[d]-r->reference[d];front+=move*move;move=seg->xyzplus[d]-r->reference[d+3];back+=move*move;}
+     if(fmax(front,back)>=skin*skin/4) rebuild=1;
+    }
+    r->fil=fil;r->segment=seg;r->index=i;r->radius=type->stericradius;r->stiffness=type->sterick;
+   }
+  }
+ }
+ w->nsegment=n;w->skin=skin;
+ if(rebuild) {
+  SMOL_PROFILE_RUN(SP_INDEX_REBUILD,er=filBoxesBuild(sim,w));
+  if(er) return 1;
+  for(j=0;j<n;j++) for(d=0;d<3;d++) {
+   w->segments[j].reference[d]=w->segments[j].segment->xyzminus[d];
+   w->segments[j].reference[d+3]=w->segments[j].segment->xyzplus[d];
+  }
+  w->rebuilds++;
+ }
+ return 0;
+}
+
+/* Frozen geometry: pair calculations have disjoint outputs, so no atomics or
+   per-worker copies of all node forces are needed. */
+static void filContactEvaluate(struct filamentstericstruct *w,int p,FilStericContact *c) {
+ FilStericSegment *a=&w->segments[w->pairs[p].a],*b=&w->segments[w->pairs[p].b];
+ double dist=filStericGeometry(a->segment,b->segment,&c->s,&c->t,c->normal);
+ c->delta=a->radius+b->radius-dist;
+ c->k=c->delta>0?2/(1/a->stiffness+1/b->stiffness):0;
+}
+
+int filStericForces(simptr sim) {
+ struct filamentstericstruct *w;int p,d,er,workers;
+ SMOL_PROFILE_RUN(SP_INDEX_VALIDATE,er=filStericPrepare(sim));
+ if(er) return 1;
+ w=sim->filss->steric;if(!w) return 0;
+ workers=w->npair>=4096?filWorkWorkers(sim,w->npair,512):1;
+ if(workers>1 && w->npair>w->maxcontact) {
+  FilStericContact *c=(FilStericContact*)realloc(w->contact,(size_t)w->npair*sizeof(*c));
+  if(c) {w->contact=c;w->maxcontact=w->npair;} else workers=1;
+ }
+ if(workers>1) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+  for(p=0;p<w->npair;p++) filContactEvaluate(w,p,&w->contact[p]);
+ }
+ if(!filContactOn(sim->filss)) for(int ft=0;ft<sim->filss->ntype;ft++) for(int f=0;f<sim->filss->filtypes[ft]->nfil;f++) memset(sim->filss->filtypes[ft]->fillist[f]->endcontact,0,6*sizeof(double));
+ w->contacts=0;w->maxpenetration=w->energy=w->contactbound=0;
+ for(p=0;p<w->nsegment;p++) w->segments[p].contactrow[0]=w->segments[p].contactrow[1]=0;
+ for(p=0;p<w->npair;p++) {
+  FilStericSegment *a=&w->segments[w->pairs[p].a],*b=&w->segments[w->pairs[p].b];
+  FilStericContact local,*c=workers>1?&w->contact[p]:&local;
+  double s,t,delta,k,fa,fb;
+  if(workers==1) filContactEvaluate(w,p,c);
+  delta=c->delta;if(delta<=0) continue;
+  s=c->s;t=c->t;k=c->k;
+  w->contacts++;w->maxpenetration=fmax(w->maxpenetration,delta);w->energy+=0.5*k*delta*delta;
+  for(d=0;d<sim->dim;d++) {
+   fa=k*delta*c->normal[d];fb=-fa;
+   if(a->index==0) a->fil->endcontact[0][d]+=(1-s)*fa;
+   if(a->index==a->fil->nseg-1) a->fil->endcontact[1][d]+=s*fa;
+   if(b->index==0) b->fil->endcontact[0][d]+=(1-t)*fb;
+   if(b->index==b->fil->nseg-1) b->fil->endcontact[1][d]+=t*fb;
+   if(a->fil->filtype->dynamics!=FDnone) {
+    a->fil->filwork->forces[a->index][d]+=(1-s)*fa;a->fil->filwork->forces[a->index+1][d]+=s*fa;
+   }
+   if(b->fil->filtype->dynamics!=FDnone) {
+    b->fil->filwork->forces[b->index][d]+=(1-t)*fb;b->fil->filwork->forces[b->index+1][d]+=t*fb;
+   }
+  }
+  a->contactrow[0]+=2*k*(1-s);a->contactrow[1]+=2*k*s;
+  b->contactrow[0]+=2*k*(1-t);b->contactrow[1]+=2*k*t;
+ }
+ for(p=0;p<w->nsegment;p++) {
+  FilStericSegment *a=&w->segments[p];double row=a->contactrow[0];
+  if(a->fil->filtype->dynamics==FDnone) continue;
+  if(p && w->segments[p-1].fil==a->fil && w->segments[p-1].index==a->index-1) row+=w->segments[p-1].contactrow[1];
+  w->contactbound=fmax(w->contactbound,sim->dt*a->fil->filtype->mobility*a->fil->nodemobility[a->index]*row);
+  if(a->index==a->fil->nseg-1) w->contactbound=fmax(w->contactbound,sim->dt*a->fil->filtype->mobility*a->fil->nodemobility[a->index+1]*a->contactrow[1]);
+ }
+ w->evaluations++;
+ return 0;
+}
+
+/* At chemistry entry the cached inflated boxes cover every existing capsule:
+   endpoints are at most skin/2 from their reference positions. Chemistry only
+   inserts/removes segments; accepted insertions go in a small pending list until
+   the mechanical phase rebuilds the index. No full-network scan per growth retry. */
+int filStericChemistry(simptr sim,int begin) {
+ struct filamentstericstruct *w;int er;
+ if(begin) {
+  SMOL_PROFILE_RUN(SP_INDEX_VALIDATE,er=filStericPrepare(sim));
+  if(er) return 1;
+  w=sim->filss->steric;w->npending=w->queryerror=0;w->inchemistry=1;
+ } else {w=sim->filss->steric;w->inchemistry=0;}
+ return w->queryerror;
+}
+
+static int filStericTrialContact(simptr sim,segmentptr trial,segmentptr other) {
+ int d;double extent,s,t,n[3];filamentptr f=other->fil;
+ /* Removed segments remain allocated and may appear in the old cache/pending
+    list. Only current members of the live segment array can obstruct growth. */
+ if(other->index<0 || other->index>=f->nseg || f->segments[other->index]!=other || filStericExcluded(trial,other)) return 0;
+ extent=trial->fil->filtype->stericradius+f->filtype->stericradius;
+ for(d=0;d<sim->dim;d++)
+  if(fmin(trial->xyzminus[d],trial->xyzplus[d])>fmax(other->xyzminus[d],other->xyzplus[d])+extent || fmin(other->xyzminus[d],other->xyzplus[d])>fmax(trial->xyzminus[d],trial->xyzplus[d])+extent) return 0;
+ return filStericGeometry(trial,other,&s,&t,n)+1e-12<extent;
+}
+
+/* Full trial capsule, including its shaft: an endpoint cannot jump through an
+   obstacle. Query sorted occupied cells, then newly accepted uncached segments. */
+#ifdef SMOLDYN_PROFILE
+static int filStericSegmentBlockedImpl(simptr sim,segmentptr trial) {
+#else
+int filStericSegmentBlocked(simptr sim,segmentptr trial) {
+#endif
+ struct filamentstericstruct *w;int lo[3],hi[3],cell[3],i;
+ BoxGridCell found;
+ double radius=trial->fil->filtype->stericradius;
+ if(radius<=0) return 0;
+ w=sim->filss->steric;
+ if(!w || !w->inchemistry) {if(filStericPrepare(sim)) return 1;w=sim->filss->steric;}
+ if(sim->boxs->grid.width[0]>0) {
+  if(boxGridBounds(&sim->boxs->grid,trial->xyzminus,trial->xyzplus,radius+w->maxradius+w->skin,lo,hi)) {w->queryerror=1;return 1;}
+  for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
+   if(!boxGridFindCell(&sim->boxs->grid,cell,&found)) continue;
+   for(i=0;i<found.box->nfilseg;i++) {
+    segmentptr other=found.box->filseg[i];FilStericSegment *s;
+    if(other->fil->filtype->stericradius<=0) continue;
+    if(other->stericindex<0 || other->stericindex>=w->nsegment) continue;
+    s=&w->segments[other->stericindex];
+    if(filStericTrialContact(sim,trial,s->segment)) return 1;
+   }
+  }
+ }
+ for(i=0;i<w->npending;i++) if(filStericTrialContact(sim,trial,w->pending[i])) return 1;
+ return filStericRegisterSegment(sim,trial);
+}
+
+#ifdef SMOLDYN_PROFILE
+int filStericSegmentBlocked(simptr sim,segmentptr trial) {
+ int result;
+ SMOL_PROFILE_RUN(SP_GROWTH_QUERY,result=filStericSegmentBlockedImpl(sim,trial));
+ return result;
+}
+#endif
+
+/* Also register accepted unchecked growth so other tips can see it immediately. */
+int filStericRegisterSegment(simptr sim,segmentptr trial) {
+ struct filamentstericstruct *w=sim->filss->steric;int i;
+ if(w && w->inchemistry && trial->fil->filtype->stericradius>0) {
+  for(i=0;i<w->npending && w->pending[i]!=trial;i++);
+  if(i==w->npending) {
+   if(w->npending==w->maxpending) {
+    int cap=w->maxpending?2*w->maxpending:32;segmentptr *p=(segmentptr*)realloc(w->pending,(size_t)cap*sizeof(*p));
+    if(!p) {w->queryerror=1;simLog(sim,9,"ERROR: cannot allocate filament growth contact workspace\n");return 1;}
+    w->pending=p;w->maxpending=cap;
+   }
+   w->pending[w->npending++]=trial;
+  }
+ }
+ return 0;
+}
+
+/* Exact capsule clearance, with an AABB lower bound to avoid unnecessary
+   closest-point calculations. Queries never insert into the chemistry cache. */
+static void filQueryCandidate(simptr sim,const double *a,const double *b,double radius,
+ segmentptr trial,segmentptr other,double *best,segmentptr *closest) {
+ int d;double bound2=0,clearance,s,t,n[3],extent;
+ filamentptr f=other->fil;
+ if(other->index<0 || other->index>=f->nseg || f->segments[other->index]!=other || f->filtype->stericradius<=0) return;
+ if(trial && filStericExcluded(trial,other)) return;
+ extent=radius+f->filtype->stericradius;
+ for(d=0;d<sim->dim;d++) {
+  double al=fmin(a[d],b[d]),ah=fmax(a[d],b[d]);
+  double bl=fmin(other->xyzminus[d],other->xyzplus[d]),bh=fmax(other->xyzminus[d],other->xyzplus[d]);
+  double gap=fmax(0,fmax(al-bh,bl-ah));bound2+=gap*gap;
+ }
+ if(*closest && sqrt(bound2)-extent>=*best) return;
+ clearance=(trial?filStericGeometry(trial,other,&s,&t,n):
+  Geo_ClosestSeg2Seg(a,b,other->xyzminus,other->xyzplus,sim->dim,&s,&t,n))-extent;
+ if(clearance<*best) {*best=clearance;*closest=other;}
+}
+
+segmentptr filStericQuery(simptr sim,const double *a,const double *b,double radius,
+ segmentptr trial,double *distance,segmentptr *nearest) {
+ struct filamentstericstruct *w;int lo[3],hi[3],cell[3],d,i,global=distance || nearest;
+ double best=DBL_MAX,cells=1;segmentptr closest=NULL;BoxGridCell found;
+ if(distance) *distance=DBL_MAX;
+ if(nearest) *nearest=NULL;
+ if(!sim || !a || !b || !isfinite(radius) || radius<0) goto invalid;
+ for(d=0;d<sim->dim;d++) if(!isfinite(a[d]) || !isfinite(b[d])) goto invalid;
+ if(!filStericEnabled(sim)) return NULL;
+ w=sim->filss->steric;
+ /* A chemistry snapshot includes a separate list of accepted new segments. */
+ if(!w || !w->inchemistry) {if(filStericPrepare(sim)) goto invalid;w=sim->filss->steric;}
+ if(sim->boxs->grid.width[0]>0) {
+  if(boxGridBounds(&sim->boxs->grid,a,b,radius+w->maxradius+w->skin,lo,hi)) goto invalid;
+  for(d=0;d<3;d++) cells*=1.0+(double)hi[d]-lo[d];
+  /* Large diagonal lines must not enumerate an enormous mostly empty AABB.
+     Global nearest queries also use a linear bounds pass with exact pruning. */
+  if(!global && cells<=4.0*fmax(1,w->nsegment)) {
+   for(cell[0]=lo[0];cell[0]<=hi[0];cell[0]++) for(cell[1]=lo[1];cell[1]<=hi[1];cell[1]++) for(cell[2]=lo[2];cell[2]<=hi[2];cell[2]++) {
+    if(!boxGridFindCell(&sim->boxs->grid,cell,&found)) continue;
+    for(i=0;i<found.box->nfilseg;i++) {
+     segmentptr other=found.box->filseg[i];FilStericSegment *s;
+     if(other->fil->filtype->stericradius<=0) continue;
+     if(other->stericindex<0 || other->stericindex>=w->nsegment) continue;
+     s=&w->segments[other->stericindex];
+     filQueryCandidate(sim,a,b,radius,trial,s->segment,&best,&closest);
+     if(closest && best<=0) return closest;
+    }
+   }
+  } else global=1;
+ }
+ if(global) for(i=0;i<w->nsegment;i++) filQueryCandidate(sim,a,b,radius,trial,w->segments[i].segment,&best,&closest);
+ for(i=0;i<w->npending;i++) {
+  filQueryCandidate(sim,a,b,radius,trial,w->pending[i],&best,&closest);
+  if(!global && closest && best<=0) return closest;
+ }
+ if(distance) *distance=best;
+ if(nearest) *nearest=closest;
+ return closest && best<=0?closest:NULL;
+invalid:
+ if(distance) *distance=NAN;
+ return NULL;
+}
+
+static int filNodeRoot(FilStericNode *nodes,int i) {
+ int root=i,next;
+ while(nodes[root].parent!=root) root=nodes[root].parent;
+ while(nodes[i].parent!=i) {next=nodes[i].parent;nodes[i].parent=root;i=next;}
+ return root;
+}
+static int filNodeOffset(struct filamentstericstruct *w,filamentptr f) {
+ int i=f->stericnodeoffset;
+ return i>=0 && i<w->nnode && w->nodes[i].fil==f?i:-1;
+}
+
+/* Cache only node identities and branch unions. Check the live filament and
+   branch lists once per outer step, including equal-count topology edits made
+   through native APIs. Positions and forces change every mechanical step;
+   mobility, fixed-state and temperature are refreshed at each outer step. */
+int filStericPrepareMovement(simptr sim) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ int ft,f,i=0,j,n=0,nb=0,nf=0,br,other,root,rebuild=!w->topologyvalid;
+ for(ft=0;ft<sim->filss->ntype;ft++) for(f=0;f<sim->filss->filtypes[ft]->nfil;f++,nf++) {
+  filamentptr fil=sim->filss->filtypes[ft]->fillist[f];
+  if(fil->nseg && n>INT_MAX-fil->nseg-1) return 1;
+  if(nb>INT_MAX-fil->njunct) return 1;
+  if(fil->nseg) n+=fil->nseg+1;
+  if(!rebuild) {
+   FilStericFilament *old;
+   if(nf>=w->nfilament) rebuild=1;
+   else {
+    old=&w->filaments[nf];
+    if(old->fil!=fil || old->nseg!=fil->nseg || old->nbranch!=fil->njunct || 0) rebuild=1;
+    else for(br=0;br<fil->njunct;br++) {
+     FilStericBranch *bond=&w->branches[old->branchstart+br];
+     if(bond->daughter!=fil->juncts[br]->fil || bond->spot!=fil->juncts[br]->node-1 || bond->end!=fil->juncts[br]->end || bond->rigid!=fil->juncts[br]->rigid || bond->bend!=fil->juncts[br]->bend) {rebuild=1;break;}
+    }
+   }
+  }
+  nb+=fil->njunct;
+ }
+ if(nf!=w->nfilament || n!=w->nnode || nb!=w->nbranch) rebuild=1;
+ if(rebuild) {
+  w->topologyvalid=0;
+  if(nf>w->maxfilament) {
+   FilStericFilament *p=(FilStericFilament*)realloc(w->filaments,(size_t)nf*sizeof(*p));if(!p) return 1;
+   w->filaments=p;w->maxfilament=nf;
+  }
+  if(nb>w->maxbranch) {
+   FilStericBranch *p=(FilStericBranch*)realloc(w->branches,(size_t)nb*sizeof(*p));if(!p) return 1;
+   w->branches=p;w->maxbranch=nb;
+  }
+  if(n>w->maxnode) {
+   FilStericNode *p=(FilStericNode*)realloc(w->nodes,(size_t)n*sizeof(*p));if(!p) return 1;
+   w->nodes=p;w->maxnode=n;
+  }
+  w->nfilament=nf;w->nnode=n;w->nbranch=nb;
+  for(ft=0,nf=0,nb=0;ft<sim->filss->ntype;ft++) for(f=0;f<sim->filss->filtypes[ft]->nfil;f++,nf++) {
+   filamentptr fil=sim->filss->filtypes[ft]->fillist[f];FilStericFilament *record=&w->filaments[nf];
+   record->fil=fil;record->nseg=fil->nseg;record->nbranch=fil->njunct;record->branchstart=nb;
+   record->nodeoffset=fil->nseg?i:-1;fil->stericnodeoffset=record->nodeoffset;
+   for(br=0;br<fil->njunct;br++,nb++) {w->branches[nb].daughter=fil->juncts[br]->fil;w->branches[nb].spot=fil->juncts[br]->node-1;w->branches[nb].end=fil->juncts[br]->end;w->branches[nb].rigid=fil->juncts[br]->rigid;w->branches[nb].bend=fil->juncts[br]->bend;}
+   if(!fil->nseg) continue;
+   for(j=0;j<=fil->nseg;j++,i++) {memset(&w->nodes[i],0,sizeof(w->nodes[i]));w->nodes[i].fil=fil;w->nodes[i].node=j;w->nodes[i].parent=i;}
+  }
+  for(f=0;f<w->nfilament;f++) {
+   FilStericFilament *record=&w->filaments[f];filamentptr mother=record->fil;
+   if(record->nodeoffset<0) continue;
+   for(br=0;br<mother->njunct;br++) {
+    filjunctionptr joint=mother->juncts[br];filamentptr daughter=joint->fil;int node=joint->node;
+    if(!joint->rigid || !daughter || node<0 || node>mother->nseg) continue;
+    other=filNodeOffset(w,daughter);if(other<0 || !daughter->nseg) continue;
+    root=filNodeRoot(w->nodes,record->nodeoffset+node);
+    if(joint->end=='p') other+=daughter->nseg;
+    w->nodes[filNodeRoot(w->nodes,other)].parent=root;
+   }
+  }
+  /* Flatten roots once. Movement never calls union/find in the hot loop. */
+  for(i=0;i<n;i++) w->nodes[i].parent=filNodeRoot(w->nodes,i);
+  /* Reverse insertion preserves ascending original node order in each group. */
+  if(n>w->maxmember) {
+   int *p=(int*)realloc(w->memberfirst,(size_t)n*sizeof(int));if(!p) return 1;w->memberfirst=p;
+   p=(int*)realloc(w->membernext,(size_t)n*sizeof(int));if(!p) return 1;w->membernext=p;w->maxmember=n;
+  }
+  for(i=0;i<n;i++) w->memberfirst[i]=-1;
+  for(i=n-1;i>=0;i--) {
+   root=w->nodes[i].parent;
+   w->membernext[i]=w->memberfirst[root];w->memberfirst[root]=i;
+  }
+  w->scheduleworkers=0;w->topologyvalid=1;w->movementrebuilds++;
+ }
+ /* Numerical properties can change without a topology edit. Keep the original
+    node-order summation so cache use and worker count preserve roundoff. */
+ for(i=0;i<n;i++) {w->nodes[i].drag=0;w->nodes[i].fixed=0;}
+ for(i=0;i<n;i++) {
+  FilStericNode *node=&w->nodes[i];filamentptr fil=node->fil;
+  double mu=fil->filtype->dynamics==FDnone?0:fil->filtype->mobility*filNodeMobility(fil,node->node);
+  root=node->parent;
+  if(node->fil->filtype->kT!=w->nodes[root].fil->filtype->kT ||
+      (filImplicitEnabled(sim) && node->fil->filtype->brownian!=w->nodes[root].fil->filtype->brownian)) {
+   simLog(sim,9,"ERROR: constrained filament branch points require matching kT and (for implicit_network) Brownian settings\n");return 1;
+  }
+  if(mu<=0) w->nodes[root].fixed=1;else w->nodes[root].drag+=1/mu;
+ }
+ return 0;
+}
+
+/* Grain limits keep cheap loops out of OpenMP until there is useful work.
+   This also serves chemistry before the movement topology has been refreshed. */
+int filWorkWorkers(simptr sim,int items,int grain) {
+ int workers=1;
+#ifndef _OPENMP
+ (void)sim;(void)items;(void)grain;
+#endif
+#ifdef _OPENMP
+ int available=items/grain;
+ if(available>1) {
+  workers=sim->filss->workers;
+  if(!workers) workers=omp_get_max_threads();
+  if(workers>available) workers=available;
+  if(workers<1) workers=1;
+ }
+#endif
+ return workers;
+}
+
+/* Performance workspace is optional: allocation failure uses the serial path. */
+unsigned char *filChemWork(simptr sim,int count) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ if(!w) {
+  w=(struct filamentstericstruct*)calloc(1,sizeof(*w));
+  if(!w) return NULL;
+  sim->filss->steric=w;
+ }
+ if(count>w->maxchemready) {
+  unsigned char *p=(unsigned char*)realloc(w->chemready,(size_t)count);
+  if(!p) return NULL;
+  w->chemready=p;w->maxchemready=count;
+ }
+ return w->chemready;
+}
+
+/* Greedy static ownership balances segment and junction work rather than
+   filament count. Rebuild only after a topology edit or worker-budget change.
+   Work slots, not OS thread IDs, also handle an OpenMP team smaller than asked. */
+void filWorkSchedule(simptr sim,int workers) {
+ struct filamentstericstruct *w=sim->filss->steric;
+ double load[256]={0};int f,k,best;
+ if(w->scheduleworkers==workers) return;
+ for(k=0;k<workers;k++) w->workfirst[k]=-1;
+ for(f=0;f<w->nfilament;f++) {
+  FilStericFilament *r=&w->filaments[f];double cost;
+  r->worknext=-1;
+  if(r->nodeoffset<0) continue;
+  best=0;for(k=1;k<workers;k++) if(load[k]<load[best]) best=k;
+  cost=r->nseg+1+2*r->nbranch;load[best]+=cost;
+  r->worknext=w->workfirst[best];w->workfirst[best]=f;
+ }
+ w->scheduleworkers=workers;
+}
+
+/* Explicit choices are upper bounds; small seed networks use the serial path.
+   Automatic mode provides at least about 1024 nodes per worker. OpenMP owns and
+   reuses the thread pool; no OS threads or processes are created per filament. */
+int filStericWorkers(simptr sim) {
+ struct filamentstericstruct *w=sim->filss->steric;int workers=1;
+#ifdef _OPENMP
+ if(w->nnode>=1024 && w->nfilament>=8) {
+  workers=sim->filss->workers;
+  if(!workers) {workers=w->nnode/1024;if(workers>omp_get_max_threads()) workers=omp_get_max_threads();}
+  if(workers>w->nfilament) workers=w->nfilament;
+  if(workers<1) workers=1;
+ }
+#endif
+ filWorkSchedule(sim,workers);w->workersused=workers;return workers;
+}
+
+void filStericOrdinaryForces(simptr sim,int workers,int freshnoise) {
+ struct filamentstericstruct *w=sim->filss->steric;int f,slot;
+ if(workers>1) {
+  filWorkSchedule(sim,workers);
+  /* All RNG draws remain in precisely the old serial order. Force helpers
+     then read cached thermal noise and write only their own filament arrays. */
+  SMOL_PROFILE_RUN(SP_THERMAL,for(f=0;f<w->nfilament;f++) {
+   filamentptr fil=w->filaments[f].fil;
+   if(!fil->nseg || fil->filtype->dynamics==FDnone) continue;
+   if(freshnoise) fil->filwork->thermtime=-DBL_MAX;
+    filPrepareThermalForces(fil);
+  });
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static,1)
+#endif
+  for(slot=0;slot<workers;slot++) for(int next=w->workfirst[slot];next>=0;next=w->filaments[next].worknext) {
+   filamentptr fil=w->filaments[next].fil;
+   if(fil->filtype->dynamics!=FDnone) filComputeForces(fil,-1,-1);
+  }
+ } else for(f=0;f<w->nfilament;f++) {
+  filamentptr fil=w->filaments[f].fil;
+  if(!fil->nseg || fil->filtype->dynamics==FDnone) continue;
+  if(freshnoise) fil->filwork->thermtime=-DBL_MAX;
+   filComputeForces(fil,-1,-1);
+ }
+}
+
+/* Apply each filament's material update and shared positions independently. */
+static void filStericApplyMovement(simptr sim,struct filamentstericstruct *w,int f) {
+  FilStericFilament *record=&w->filaments[f];filamentptr fil=record->fil;int j,axis;
+  if(record->nodeoffset<0) return;
+  if(fil->filtype->dynamics==FDeuler)
+   SMOL_PROFILE_FINE(SP_ROLL_UPDATE,filStepMaterialFrame(fil,sim->dt*fil->filtype->mobility,0,0));
+  for(j=0;j<=fil->nseg;j++) {
+   int parent=w->nodes[record->nodeoffset+j].parent;
+   for(axis=0;axis<sim->dim;axis++) fil->nodes[j][axis]=w->nodes[parent].position[axis];
+  }
+  SMOL_PROFILE_FINE(SP_NODES_TO_ANGLES,filNodes2Angles(fil,-1,-1));
+}
+
+/* Shared-point roots gather contributions in the original node order.
+   Common positions are then formed before independent material/geometry updates. */
+static int filStericMove(simptr sim,int workers) {
+ struct filamentstericstruct *w=sim->filss->steric;int i,root,d,f;
+ if(workers>1 && w->nnode>=4096) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static)
+#endif
+  for(i=0;i<w->nnode;i++) filStericNodeForce(sim,i,0);
+ } else {
+  for(i=0;i<w->nnode;i++) if(w->nodes[i].parent==i) for(d=0;d<sim->dim;d++) w->nodes[i].force[d]=0;
+  for(i=0;i<w->nnode;i++) {
+   FilStericNode *node=&w->nodes[i];root=node->parent;
+   if(node->fil->filtype->dynamics!=FDnone && node->fil->filtype->mobility*filNodeMobility(node->fil,node->node)>0)
+    for(d=0;d<sim->dim;d++) w->nodes[root].force[d]+=node->fil->filwork->forces[node->node][d];
+  }
+ }
+ for(i=0;i<w->nnode;i++) {
+  FilStericNode *node=&w->nodes[i];root=node->parent;
+  if(root!=i) for(d=0;d<sim->dim;d++) if(fabs(node->fil->nodes[node->node][d]-w->nodes[root].fil->nodes[w->nodes[root].node][d])>1e-8) {
+   simLog(sim,9,"ERROR: filament branch point is detached; repair initial geometry before steric dynamics\n");return 1;
+  }
+ }
+ for(i=0;i<w->nnode;i++) if(w->nodes[i].parent==i) for(d=0;d<sim->dim;d++) {
+  FilStericNode *node=&w->nodes[i];
+  node->position[d]=node->fil->nodes[node->node][d]+(node->fixed?0:sim->dt*node->force[d]/node->drag);
+  if(!isfinite(node->position[d])) {simLog(sim,9,"ERROR: nonfinite filament position; reduce timestep or increase steric_substeps\n");return 1;}
+ }
+ /* The pool is entered only for a real multiworker pass; tiny networks and
+    the default one-worker mode avoid serialized OpenMP region overhead. */
+ if(workers>1) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(workers) schedule(static,1)
+#endif
+  for(f=0;f<w->nfilament;f++) filStericApplyMovement(sim,w,f);
+ } else for(f=0;f<w->nfilament;f++) filStericApplyMovement(sim,w,f);
+ return 0;
+}
+
+int filStericDynamics(simptr sim) {
+ int step,steps=1,ft,workers,er=0;double dt=sim->dt;
+ if(filStericValidate(sim)) return 1;
+ if(filStericPrepare(sim) || filStericPrepareMovement(sim)) return 1;
+ workers=filStericWorkers(sim);
+ if(filImplicitEnabled(sim) && filImplicitSave(sim,0)) return 1;
+ for(ft=0;ft<sim->filss->ntype;ft++) if(sim->filss->filtypes[ft]->stericsubsteps>steps) steps=sim->filss->filtypes[ft]->stericsubsteps;
+ sim->dt=dt/steps;
+ for(step=0;step<steps;step++) {
+  if(filImplicitEnabled(sim)) {er=filImplicitStep(sim,workers);if(er) break;continue;}
+  if(filContactOn(sim->filss)) {er=filContactForces(sim);if(er) break;}
+  SMOL_PROFILE_RUN(SP_FORCES,filStericOrdinaryForces(sim,workers,1));
+  SMOL_PROFILE_RUN(SP_STERIC,er=filAddFilamentForce(sim));
+  if(er) break;
+  if(sim->filss->steric->contactbound>0.5) {
+   simLog(sim,9,"ERROR: contact relaxation factor %g exceeds 0.5; reduce time_step or increase steric_substeps\n",sim->filss->steric->contactbound);er=1;break;
+  }
+  SMOL_PROFILE_RUN(SP_MOVE,er=filStericMove(sim,workers));
+  if(er) break;
+ }
+ if(!er && filImplicitEnabled(sim)) er=surfforceclampend(sim,1);
+ if(er && filImplicitEnabled(sim)) {
+  filImplicitSave(sim,1);
+  if(sim->srfss && sim->srfss->nforceclamp) simLog(sim,9,"  Force clamp could not satisfy the mechanical solve or travel bounds; panel geometry restored.\n");
+  simLog(sim,9,"  Restored all mechanical substeps of the outer interval; chemistry is retained.\n");
+ }
+ sim->dt=dt;
+ if(!er && filImplicitEnabled(sim) && !filStericEnabled(sim) && sim->boxs && sim->boxs->blist) er=boxesupdatesegments(sim);
+ return er;
+}
+
+void filStericReport(simptr sim) {
+ struct filamentstericstruct *w;
+ if(!sim->filss || !(w=sim->filss->steric)) return;
+ simLog(sim,2,"Filament sterics (last force evaluation): %i segments, %i neighbor pairs, %llu contacts, max penetration %g, energy %g\n",w->nsegment,w->npair,w->contacts,w->maxpenetration,w->energy);
+ simLog(sim,2,"  %llu neighbor rebuilds, %llu force evaluations, %llu blocked growth segments, %llu blocked branches\n",w->rebuilds,w->evaluations,w->blockedgrowth,w->blockedbranches);
+ filImplicitReport(sim);
+ filGrowthReport(sim);
+ simLog(sim,2,"  %llu movement topology rebuilds, mechanical workers selected %i (requested %i)\n",w->movementrebuilds,w->workersused,sim->filss->workers);
+}

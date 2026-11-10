@@ -111,6 +111,7 @@ enum CMDcode cmdprintdata(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintLattice(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2);
 enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2);
+enum CMDcode cmdprintForceClamps(simptr sim,cmdptr cmd,char *line2);
 
 // system manipulation
 enum CMDcode cmdset(simptr sim,cmdptr cmd,char *line2);
@@ -256,6 +257,7 @@ enum CMDcode docommand(void *simvd,cmdptr cmd,char *line) {
 	else if(!strcmp(word,"printLattice")) return cmdprintLattice(sim,cmd,line2);
 	else if(!strcmp(word,"printFilament")) return cmdprintFilament(sim,cmd,line2);
 	else if(!strcmp(word,"printFilaments")) return cmdprintFilaments(sim,cmd,line2);
+	else if(!strcmp(word,"printForceClamps")) return cmdprintForceClamps(sim,cmd,line2);
 	else if(!strcmp(word,"printdata")) return cmdprintdata(sim,cmd,line2);
 
 	// system manipulation
@@ -3179,6 +3181,29 @@ enum CMDcode cmdprintFilament(simptr sim,cmdptr cmd,char *line2) {
 	return CMDok; }
 
 
+/* CLAMP time surface:panel axis position target reaction error contact_stiffness.
+   Force is total positive outward filament reaction, in the model's force units.
+   This observer never moves a surface or modifies the solver's accepted state. */
+enum CMDcode cmdprintForceClamps(simptr sim,cmdptr cmd,char *line2) {
+ FILE *fptr;int er,s,p,axis;double reaction,k,seed,maxk;
+ if(line2 && !strcmp(line2,"cmdtype")) return CMDobserve;
+ SCMDCHECK(sim->srfss,"No surfaces defined");
+ er=scmdgetfptr(sim->cmds,line2,1,&fptr,NULL);
+ SCMDCHECK(er!=-1,"file name not recognized");
+ for(s=0;s<sim->srfss->nsrf;s++) {
+  surfaceptr surf=sim->srfss->srflist[s];
+  for(p=0;p<surf->npanel[PSrect];p++) {
+   panelptr pnl=surf->panels[PSrect][p];panelforceclampptr c=pnl->forceclamp;
+   if(!c) continue;
+   axis=(int)pnl->front[1];
+   surfforceclampreaction(sim,pnl,pnl->point[0][axis],&reaction,&k,&seed,&maxk);
+   scmdfprintf(cmd->cmds,fptr,"CLAMP %g %s:%s %i %g %g %g %g %g\n",sim->time,
+    surf->sname,pnl->pname,axis,pnl->point[0][axis],c->force,reaction,reaction-c->force,k);
+  }
+ }
+ scmdflush(fptr);return CMDok;
+}
+
 /* cmdprintFilaments */
 // Dump every filament (all types) as a flat polyline of node coordinates, one line each:
 //   FIL <time> <type>:<name> <nseg> <minus-attach> <plus-attach> <minus-state> <plus-state> x0 y0 [z0] x1 y1 [z1] ...
@@ -3215,7 +3240,8 @@ enum CMDcode cmdprintFilaments(simptr sim,cmdptr cmd,char *line2) {
 			for(nd=0;nd<=fil->nseg;nd++)
 				for(d=0;d<dim;d++)
 					scmdfprintf(cmd->cmds,fptr," %g",fil->nodes[nd][d]);
-			scmdfprintf(cmd->cmds,fptr,"\n"); }}
+			scmdfprintf(cmd->cmds,fptr,"\n");
+			if(filtype->elongmodel) scmdfprintf(cmd->cmds,fptr,"LENGTH %g %s:%s %.17g\n",sim->time,filtype->ftname,fil->filname,filNominalLength(fil)); }}
 
 	scmdflush(fptr);
 	return CMDok; }

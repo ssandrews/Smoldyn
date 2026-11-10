@@ -147,6 +147,13 @@ set(SRC_FILES
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcmd.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolcomparts.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilament.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentparallel.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentgrowth.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentsteric.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentimplicit.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentprecond.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentconstraint.c
+ ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolfilamentoperator.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolhelp.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolgraphics.c
  ${CMAKE_SOURCE_DIR}/source/Smoldyn/smolmolec.c
@@ -410,12 +417,27 @@ set_property(TARGET smoldyn_static PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(smoldyn_static PUBLIC ${DEP_LIBS})
 set_target_properties(smoldyn_static PROPERTIES PREFIX "lib")
 
+# Optional filament loop parallelism; runtime defaults to one worker.
+option(OPTION_FILAMENT_WORKERS "Enable optional OpenMP filament mechanical workers" ON)
+if(OPTION_FILAMENT_WORKERS)
+  find_package(OpenMP QUIET COMPONENTS C CXX)
+  if(OpenMP_C_FOUND AND OpenMP_CXX_FOUND)
+    target_link_libraries(smoldyn_static PUBLIC OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+    message(STATUS "Optional filament workers: OpenMP available")
+  else()
+    message(STATUS "Optional filament workers: OpenMP unavailable, serial build")
+  endif()
+endif()
+
 if (OPTION_TARGET_LIBSMOLDYN)
   add_library(smoldyn_shared SHARED ${SRC_FILES}
         $<TARGET_OBJECTS:Steve>
         $<TARGET_OBJECTS:nsv>)
 
   target_link_libraries(smoldyn_shared PUBLIC ${DEP_LIBS})
+  if(OPTION_FILAMENT_WORKERS AND OpenMP_C_FOUND AND OpenMP_CXX_FOUND)
+    target_link_libraries(smoldyn_shared PUBLIC OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+  endif()
 
   if (APPLE_BUILD)
     set_target_properties(smoldyn_shared PROPERTIES LINK_FLAGS "-framework Glut -framework OpenGL")
@@ -496,7 +518,48 @@ include(CPack)
 
 
 ######### Testing #############
+option(OPTION_FILAMENT_PROFILE "Build optional nested filament phase profiler" OFF)
+if(OPTION_FILAMENT_PROFILE)
+  target_sources(smoldyn_static PRIVATE source/Smoldyn/smolprofile.c)
+  target_compile_definitions(smoldyn_static PUBLIC SMOLDYN_PROFILE=1)
+  add_executable(profile_filaments tools/profile_filaments.c)
+  target_link_libraries(profile_filaments PRIVATE smoldyn_static)
+  add_executable(benchmark_filament_parallel tools/benchmark_filament_parallel.c)
+  target_link_libraries(benchmark_filament_parallel PRIVATE smoldyn_static)
+endif()
 enable_testing()
+option(OPTION_FILAMENT_STERIC_TESTS "Build native filament contact regression checks" OFF)
+if(OPTION_FILAMENT_STERIC_TESTS)
+  add_executable(test_filament_upstream tests/test_filament_upstream.c)
+  target_link_libraries(test_filament_upstream PRIVATE smoldyn_static)
+  add_test(NAME filament_upstream_compatibility COMMAND test_filament_upstream)
+  add_executable(test_filament_growth tests/test_filament_growth.c)
+  target_link_libraries(test_filament_growth PRIVATE smoldyn_static)
+  add_test(NAME filament_growth COMMAND test_filament_growth)
+  add_executable(test_filament_steric tests/test_filament_steric.c)
+  target_link_libraries(test_filament_steric PRIVATE smoldyn_static)
+  add_test(NAME filament_steric COMMAND test_filament_steric)
+  add_executable(test_force_clamp tests/test_force_clamp.c)
+  target_link_libraries(test_force_clamp PRIVATE smoldyn_static)
+  add_test(NAME force_clamp COMMAND test_force_clamp)
+  add_executable(test_filament_preconditioner tests/test_filament_preconditioner.c)
+  target_link_libraries(test_filament_preconditioner PRIVATE smoldyn_static)
+  add_test(NAME filament_preconditioner COMMAND test_filament_preconditioner)
+  add_test(NAME filament_implicit_banded COMMAND test_filament_steric --implicit-banded)
+  add_test(NAME force_clamp_banded COMMAND test_force_clamp --banded)
+  add_executable(test_filament_constraint tests/test_filament_constraint.c)
+  target_link_libraries(test_filament_constraint PRIVATE smoldyn_static)
+  add_test(NAME filament_constraint COMMAND test_filament_constraint)
+  add_test(NAME force_clamp_fixed_length COMMAND test_force_clamp --fixed-length)
+  add_test(NAME filament_projected COMMAND test_filament_constraint --projected)
+  add_test(NAME force_clamp_projected COMMAND test_force_clamp --projected)
+  add_executable(test_filament_operator tests/test_filament_operator.c)
+  target_link_libraries(test_filament_operator PRIVATE smoldyn_static)
+  add_test(NAME filament_operator COMMAND test_filament_operator)
+  add_test(NAME filament_constraint_cached COMMAND test_filament_constraint --cached)
+  add_test(NAME filament_projected_cached COMMAND test_filament_constraint --cached-projected)
+  add_test(NAME force_clamp_cached COMMAND test_force_clamp --cached)
+endif()
 if (OPTION_TARGET_LIBSMOLDYN AND OPTION_EXAMPLES)
   add_subdirectory(examples)
 endif ()

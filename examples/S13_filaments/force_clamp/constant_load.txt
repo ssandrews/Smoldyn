@@ -1,0 +1,45 @@
+# Ideal force clamp demonstration: load is in model force units.
+# Run from a private output directory; output files are written beside this input.
+graphics none
+dim 3
+boundaries x -1 1 r
+boundaries y -1 1 r
+boundaries z -1 1 r
+time_start 0
+time_stop 0.01
+time_step 0.0001
+random_seed 1
+output_files clamp_frames.txt clamp_load.txt
+filament_workers 4
+start_surface chamber
+color both lightblue
+panel rect +2 -0.5 -0.5 -0.5 1 1 floor
+panel rect -2 -0.5 -0.5 0.8 1 1 ceiling
+# shape panel total_load force_tolerance min_coordinate max_coordinate
+force_clamp rect ceiling 0.1 1e-8 -0.45 0.9
+end_surface
+start_filament_type actin
+color red
+thickness 2
+polygon edge
+dynamics implicit_network
+implicit_tolerance 1e-10
+implicit_iterations 20
+implicit_krylov 80
+standard_length 0.01
+standard_angle 0 0 0
+force_length 10000
+force_angle 1 1 1
+mobility 1
+kT 0
+brownian_motion 0
+steric_radius 0.0035
+steric_stiffness 4000
+steric_skin 0.002
+steric_substeps 1
+confine_surface chamber 400
+end_filament_type
+random_filament actin:seed0 5 0 0 0.2 0 0 0
+cmd i 0 0.01 0.001 printFilaments clamp_frames.txt
+cmd i 0 0.01 0.001 printForceClamps clamp_load.txt
+end_file

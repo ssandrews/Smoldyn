@@ -268,6 +268,14 @@ int surfsetrate(surfaceptr srf,int ident,const int *index,enum MolecState ms,enu
 int surfaddpanel(surfaceptr srf,int dim,enum PanelShape ps,const char *string,double *params,const char *name);
 void surftransformpanel(panelptr pnl,int dim,double *translate,double *origin,double *expand); //?? not documented
 void surftranslatepanel(panelptr pnl,int dim,double *translate);
+int surfsetforceclamp(panelptr pnl,int enabled,double force,double tolerance,double minimum,double maximum);
+int surfsetforceclampapproach(panelptr pnl,double speed,int engaged);
+int surfforceclampvalidate(simptr sim);
+int surfforceclampbegin(simptr sim);
+int surfforceclampstep(simptr sim);
+int surfforceclampsolve(simptr sim);
+int surfforceclampend(simptr sim,int commit);
+void surfforceclampreaction(simptr sim,panelptr pnl,double position,double *force,double *stiffness,double *extent,double *maxk);
 void surfupdateoldpos(surfaceptr srf,int dim);
 void surftranslatesurf(surfaceptr srf,int dim,double *translate);
 void surftranslatebound(simptr sim,surfaceptr srf,double *translate);
@@ -305,6 +313,17 @@ void surfremovefilament(surfaceptr srf,filamentptr fil);
 /*********************************** Boxes **********************************/
 
 // low level utilities
+boxptr pos2boxInGrid(boxssptr boxs,int dim,const double *pos);
+void box2posInGrid(boxssptr boxs,int dim,boxptr box,double *lo,double *hi);
+void boxGridSetDense(BoxGrid *grid,boxssptr boxes,int dim);
+int boxGridCellCoords(const BoxGrid *grid,const double *pos,int *index);
+int boxGridBounds(const BoxGrid *grid,const double *a,const double *b,double padding,int *lo,int *hi);
+int boxGridFindCell(const BoxGrid *grid,const int *index,BoxGridCell *cell);
+int boxGridFindPoint(const BoxGrid *grid,const double *pos,BoxGridCell *cell);
+int expandboxsegments(boxptr box,int n);
+int segmentinbox(simptr sim,segmentptr segment,boxptr box);
+int boxesupdatesegments(simptr sim);
+int boxesupdatepanel(simptr sim,panelptr pnl,double oldposition);
 boxptr pos2box(simptr sim,const double *pos);
 void boxrandpos(simptr sim,double *pos,boxptr bptr);
 int boxaddmol(moleculeptr mptr,int ll);
@@ -450,6 +469,25 @@ int filUpdate(simptr sim);
 // core simulation functions
 void filComputeForces(filamentptr fil,int nodemin,int nodemax);
 int filDynamics(simptr sim);
+int filStericEnabled(const simptr sim);
+int filImplicitEnabled(const simptr sim);
+double filSegmentRestLength(const filamentptr fil,int seg);
+double filSegmentStiffness(const filamentptr fil,int seg);
+int filSegmentIsConstrained(const filamentptr fil,int seg);
+double filNominalLength(const filamentptr fil);
+int filGrowthValidate(const filamenttypeptr type);
+int filMechanochemicalElongate(simptr sim,filamentptr fil,double length);
+void filGrowthReport(simptr sim);
+int filSetWorkers(simptr sim,int workers);
+int filWorkersSupported(void);
+void filStericReport(simptr sim);
+int filAddFilamentForce(simptr sim);
+/* Physical capsule queries. distance is signed surface clearance; nearest is
+   optional and returned even without a hit. A distance/nearest request performs
+   an exact global nearest search, not just a single-cell search. */
+segmentptr filPointInFilament(simptr sim,const double *point,double *distance,segmentptr *nearest);
+segmentptr filLineXFilament(simptr sim,const double *a,const double *b,double radius,double *distance,segmentptr *nearest);
+int filSegmentXFilament(const simptr sim,const segmentptr segment,filamentptr *filptr);
 int filSurfMove(simptr sim,surfaceptr srf,const double *translate);
 int filSurfMoveDone(simptr sim);
 

@@ -8,6 +8,11 @@ of the Gnu Lesser General Public License (LGPL). */
 #include "random2.h"
 #include "math2.h"
 
+static int gaussianDSet=0,gaussianFSet=0;
+static double gaussianDSaved;
+static float gaussianFSaved;
+void randomResetGaussians(void) {gaussianDSet=gaussianFSet=0;}
+
 
 double unirandsumCCD(int n,double m,double s) {
 	double x=0;
@@ -160,43 +165,39 @@ float binomialrandF(float p,int n) {
 
 
 double gaussrandD() {
-	static int iset=0;
-	static double gset;
 	double fac,r,v1,v2;
 
-	if(!iset) {
+	if(!gaussianDSet) {
 		do {
 			v1=2.0*randCOD()-1.0;
 			v2=2.0*randCOD()-1.0;
 			r=v1*v1+v2*v2; }
 			while(r>=1||r==0);
 		fac=sqrt(-2.0*log(r)/r);
-		gset=v1*fac;
-		iset=1;
+		gaussianDSaved=v1*fac;
+		gaussianDSet=1;
 		return v2*fac; }
 	else {
-		iset=0;
-		return gset; }}
+		gaussianDSet=0;
+		return gaussianDSaved; }}
 
 
 float gaussrandF() {
-	static int iset=0;
-	static float gset;
 	float fac,r,v1,v2;
 
-	if(!iset) {
+	if(!gaussianFSet) {
 		do {
 			v1=2.0*randCOF()-1.0;
 			v2=2.0*randCOF()-1.0;
 			r=v1*v1+v2*v2; }
 			while(r>=1||r==0);
 		fac=sqrt(-2.0*log(r)/r);
-		gset=v1*fac;
-		iset=1;
+		gaussianFSaved=v1*fac;
+		gaussianFSet=1;
 		return v2*fac; }
 	else {
-		iset=0;
-		return gset; }}
+		gaussianFSet=0;
+		return gaussianFSaved; }}
 
 
 double gaussrandtruncOCD(double mean,double stddev,double low, double high) {

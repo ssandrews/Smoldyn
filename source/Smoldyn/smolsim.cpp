@@ -32,6 +32,7 @@
 
 #include "smoldyn.h"
 #include "smoldynfuncs.h"
+#include "smolprofile.h"
 #include "smoldynconfigure.h"
 
 #ifdef OPTION_VCELL
@@ -516,6 +517,8 @@ void writesim(simptr sim,FILE *fptr) {
 	fprintf(fptr,"accuracy %g\n",sim->accur);
 	if(sim->boxs->mpbox) fprintf(fptr,"molperbox %g\n",sim->boxs->mpbox);
 	else if(sim->boxs->boxsize) fprintf(fptr,"boxsize %g\n",sim->boxs->boxsize);
+	if(sim->filss && sim->filss->ntype && (sim->boxs->filamentdensityset || filStericEnabled(sim) || filImplicitEnabled(sim))) fprintf(fptr,"filament_box_density %g\n",sim->boxs->filamentdensity);
+	if(sim->filss) fprintf(fptr,"filament_workers %i\n",sim->filss->workers);
 	fprintf(fptr,"\n");
 	return; }
 
@@ -1550,6 +1553,15 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 	else if(!strcmp(word,"max_filament")) {				// max_filament
 		CHECKS(0,"max_filament has been deprecated"); }
 
+	else if(!strcmp(word,"filament_workers")) {
+		itct=strmathsscanf(line2,"%mi",varnames,varvalues,nvar,&i1);
+		CHECKM(itct==1,"filament_workers needs an integer: 0 automatic, 1 serial, or a worker count");
+		CHECKS(i1>=0 && i1<=256,"filament_workers must be between 0 and 256");
+		CHECKS(!strnword(line2,2),"unexpected text following filament_workers");
+		er=filSetWorkers(sim,i1);
+		CHECKS(er!=1,"out of memory in filament_workers");
+		CHECKS(er!=2,"multiple filament workers require an OpenMP-enabled build"); }
+
 	else if(!strcmp(word,"new_filament")) {				// new_filament
 		fil=filReadString(sim,pfp,NULL,NULL,"name",line2);
 		if(!fil) pfp=NULL;
@@ -1612,7 +1624,7 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=-1 && er!=-3,"cannot read filament name");
 		CHECKS(er!=-4,"unknonwn filament type");
 		CHECKS(filtype,"missing filament type. Format: type:name segments [x y z phi theta psi] [thickness]");
-		CHECKS(filtype->klen==-1 || filtype->klen>0,"cannot compute random segments because the filament type has length force constant equals 0");
+		CHECKS(filtype->klen!=0,"cannot compute random segments because the filament type has length force constant equals 0");
 		fil=filAddFilament(filtype,nm1);
 		CHECKS(fil,"unable to add filament to simulation");
 		line2=strnword(line2,2);
@@ -2229,6 +2241,15 @@ int simreadstring(simptr sim,ParseFilePtr pfp,const char *word,char *line2) {
 		CHECKS(er!=3,"need to enter dim before molperbox");
 		CHECKS(!strnword(line2,2),"unexpected text following molperbox"); }
 
+	else if(!strcmp(word,"filament_box_density")) {
+		itct=strmathsscanf(line2,"%mlg|",varnames,varvalues,nvar,&flt1);
+		CHECKM(itct==1,"filament_box_density needs a number (segments per unit volume)");
+		er=boxsetsize(sim,"filament_box_density",flt1);
+		CHECKS(er!=1,"out of memory");
+		CHECKS(er!=2,"filament_box_density needs to be >0");
+		CHECKS(er!=3,"need to enter dim before filament_box_density");
+		CHECKS(!strnword(line2,2),"unexpected text following filament_box_density"); }
+
 	else if(!strcmp(word,"boxsize")) {						// boxsize
 		itct=strmathsscanf(line2,"%mlg|L",varnames,varvalues,nvar,&flt1);
 		CHECKM(itct==1,"boxsize needs to be a number. ");
@@ -2687,7 +2708,7 @@ int simulatetimestep(simptr sim) {
 	er=(*sim->assignmols2boxesfn)(sim,0,1);					// assign again (all, reborn)
 	if(er) return 2;
 
-	er=filDynamics(sim);
+	SMOL_PROFILE_RUN(SP_FILAMENT,er=filDynamics(sim));
 	if(er) return 11;
 
 	er=surfmovebyforces(sim);												// move mobile surfaces from the forces on them
@@ -2704,7 +2725,7 @@ int simulatetimestep(simptr sim) {
 #endif
 	sim->time+=sim->dt;													// --- end of time step ---
 	simsetvariable(sim,"time",sim->time);
-	er=simdocommands(sim);
+	SMOL_PROFILE_RUN(SP_COMMANDS,er=simdocommands(sim));
 	if(er) return er;
 
 
@@ -2738,6 +2759,7 @@ void endsimulate(simptr sim,int er) {
 	else if(er==13) simLog(sim,5,"Simulation terminated during reaction network expansion\n");
 	else simLog(sim,2,"Simulation stopped by user\n");
 	simLog(sim,2,"Current simulation time: %f\n",sim->time);
+	filStericReport(sim);
 
 	eventcount=sim->eventcount;
 	if(eventcount[ETwall]) simLog(sim,2,"%i wall interactions\n",eventcount[ETwall]);
@@ -2769,15 +2791,54 @@ void endsimulate(simptr sim,int er) {
 
 
 /* smolsimulate */
+/* Text-mode progress: at most about 100 updates per run, rather than one per
+ * timestep. The hot loop only checks a simulated-time threshold; no clock
+ * polling, allocation, or terminal I/O is needed between updates. */
+static void simshowprogress(simptr sim,double starttime) {
+	const int barwidth=40;
+	char bar[barwidth+1];
+	FILE *fptr;
+	double fraction,duration;
+	int fill,i;
+
+	duration=sim->tmax-starttime;
+	fraction=duration>0?(sim->time-starttime)/duration:1;
+	if(fraction<0) fraction=0;
+	if(fraction>1) fraction=1;
+	fill=(int)(fraction*barwidth);
+	for(i=0;i<barwidth;i++)
+		bar[i]=i<fill?'=':(i==fill && fraction<1?'>':' ');
+	bar[barwidth]='\0';
+
+	simLog(sim,2,"\r [%s] %6.2f%%  time %9.4g / %-9.4g|T",bar,100*fraction,sim->time,sim->tmax);
+	fptr=sim->logfile?sim->logfile:(LogFile?LogFile:stdout);
+	fflush(fptr);
+	return; }
+
+
 int smolsimulate(simptr sim) {
-	int er;
+	double progressinterval,progressstart,nextprogress;
+	int completed,er,progressenabled;
 
 	er=0;
 	simLog(sim,2,"Simulating\n");
 	sim->clockstt=time(NULL);
+	progressstart=sim->tmin;
+	progressinterval=(sim->tmax-progressstart)/100;
+	progressenabled=progressinterval>0 && !strchr(sim->flags,'q') && !strchr(sim->flags,'s');
+	completed=progressenabled?(int)((sim->time-progressstart)/progressinterval):0;
+	nextprogress=progressstart+(completed+1)*progressinterval;
 	er=simdocommands(sim);
-	if(!er)
-		while((er=simulatetimestep(sim))==0);
+	if(progressenabled) simshowprogress(sim,progressstart);
+	if(!er) {
+		do {
+			er=simulatetimestep(sim);
+			if(progressenabled && (sim->time>=nextprogress || er!=0)) {
+				simshowprogress(sim,progressstart);
+				completed=(int)((sim->time-progressstart)/progressinterval);
+				nextprogress=progressstart+(completed+1)*progressinterval; }
+		} while(er==0); }
+	if(progressenabled) simLog(sim,2,"\n");
 	if(er!=10) {
 		scmdpop(sim->cmds,sim->tmax);
 		scmdexecute(sim->cmds,sim->time,sim->dt,-1,1);

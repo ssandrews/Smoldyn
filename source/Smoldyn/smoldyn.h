@@ -408,7 +408,21 @@ typedef struct surfactionstruct {
     double* srfrevprob; // probability of reverse action [ms]
 } * surfactionptr;
 
-typedef struct panelstruct {
+/* Optional ideal load clamp, owned by one existing rectangular surface panel.
+   Trial geometry belongs to the mechanical solve; point/oldpoint remain the
+   accepted surface geometry until the whole outer interval succeeds. */
+typedef struct panelforceclampstruct
+{
+    double force, tolerance, min, max;
+    double trialposition, savedposition, reaction, stiffness;
+    double approachspeed, approachposition; /* optional inward approach, length/time */
+    int engaged, savedengaged, trialengaged, approaching, atstop;
+    int intrial, lastiterations;
+    unsigned long long evaluations, iterations;
+} * panelforceclampptr;
+
+typedef struct panelstruct
+{
     char* pname;                  // panel name (reference, not owned)
     enum PanelShape ps;           // panel shape
     struct surfacestruct* srf;    // surface that owns this panel
@@ -423,6 +437,7 @@ typedef struct panelstruct {
     int nneigh;                   // number of neighbor panels
     struct panelstruct** neigh;   // list of neighbor panels [p]
     double* emitterabsorb[2];     // absorption for emitters [face][i]
+    panelforceclampptr forceclamp; // optional filament load clamp, owned
     double force[DIMMAX];         // force exerted on panel
 } * panelptr;
 
@@ -474,6 +489,7 @@ typedef struct surfacesuperstruct {
     int maxspecies;            // maximum number of molecular species
     int maxsrf;                // maximum number of surfaces
     int nsrf;                  // number of surfaces
+    int nforceclamp;            // enabled panel clamps; zero-cost inactive gate
     double epsilon;            // max deviation of surface-point from surface
     double margin;             // panel margin away from edge
     double neighdist;          // neighbor distance value
@@ -486,7 +502,20 @@ typedef struct surfacesuperstruct {
 
 /*********************************** Boxes **********************************/
 
-typedef struct boxstruct {
+/* Coordinate view of the original Smoldyn boxes. Each box owns molecule,
+   panel and segment payloads; there is no second filament grid. */
+typedef struct boxgridstruct {
+    int dim;
+    double origin[3], width[3];
+    struct boxsuperstruct *dense;       // borrowed original Smoldyn boxes
+} BoxGrid;
+typedef struct boxgridcell {
+    int index[3];
+    struct boxstruct *box;
+} BoxGridCell;
+
+typedef struct boxstruct
+{
     int* indx;                // dim dimensional index of the box [d]
     int nneigh;               // number of neighbors in list
     int midneigh;             // logical middle of neighbor list
@@ -509,12 +538,21 @@ typedef struct boxstruct {
     char* filendchar;         // which end of that filament: 'm' or 'p' [e]
 } * boxptr;
 
-typedef struct boxsuperstruct {
+typedef struct boxsuperstruct
+{
+    BoxGrid grid;             // view of this single molecule/surface/filament grid
     enum StructCond condition; // structure condition
     struct simstruct* sim;     // simulation structure
     int nlist;                 // copy of number of molecule lists
     double mpbox;              // requested number of molecules per box
     double boxsize;            // requested box width
+    int explicitresolution;    // user supplied boxsize or molperbox
+    int resolutiondirty;       // initialization/explicit settings resize the grid
+    double filamentdensity;    // anticipated segments per unit volume, at initialization
+    int filamentdensityset;    // explicit density request; native simulations keep upstream automatic sizing
+    int nsegmentbox, maxsegmentbox;
+    boxptr* segmentbox;        // occupied boxes, for O(occupied) segment updates
+    unsigned long long segmentgeneration; // invalidates filament neighbor cache
     double boxvol;             // actual box volumes
     int nbox;                  // total number of boxes
     int* side;                 // number of boxes on each side of space
@@ -622,7 +660,7 @@ typedef struct latticesuperstruct {
 /********************************* Filaments ********************************/
 
 enum FilamentDynamics {FDnone, FDeuler, FDRK2, FDRK4, FDeulermat, FDimplicitold,
-		FDimplicit};
+		FDimplicit, FDimplicitnetwork};
 enum FilEndState {FESopen,FEScapped,FESshrink,FESbarbed,FESnone};
 #define FESMAX 4
 
@@ -632,6 +670,7 @@ enum FilamentPart {FPplus, FPminus, FPside, FPall, FPnone};
 typedef struct segmentstruct {
     struct filamentstruct* fil;       // owning filament
     int index;                        // self index along filament
+    int stericindex; // transient optional contact-workspace index
     double *xyzminus;                 // Coords. for segment minus end
     double *xyzplus;                  // Coords. for segment plus end
     double len;                       // segment length
@@ -709,6 +748,7 @@ typedef struct filamentstruct {
     char* sequence;                     // sequence code
     enum FilEndState endstate[2];       // state of each end [end], where 0 = minus and 1 = plus
     double lenbank[2];                  // length change owed but not yet emitted as segments [end]
+    int stericnodeoffset; // transient coupled-node index
 } * filamentptr;
 
 enum FilMolAction {FMAnone, FMAadsorb, FMAdesorb, FMAbounce, FMAinsert, FMAadd2end, FMAendstate, FMAreact};
@@ -783,6 +823,7 @@ typedef struct filamenttypestruct {
     double klen;                       // force constant for length
     double kypr[3];                    // force constant for angle
     double kT;                         // thermodynamic temp, [0,inf)
+    int brownian;                      // mechanical thermal noise, 0 off / 1 on (default)
     double persist;                    // persistence length for bending; >0 sets kypr[0] and kypr[1], negative = unset
     double persisttwist;               // torsional persistence length; >0 sets kypr[2], negative = unset
     int kpsiset;                       // 1 if the roll force constant was entered
@@ -793,6 +834,20 @@ typedef struct filamenttypestruct {
     double rotmobility;                // rotational mobility about segment axes, 1/(energy*time); negative = unset, so from viscosity or mobility/filradius^2
     double viscosity;                  // viscosity of the medium, energy*time/length^3; negative = unset
     double filradius;                  // segment radius
+    double stericradius;               // physical capsule radius; 0 disables excluded volume
+    double sterick;                    // repulsion stiffness, energy/length^2
+    double stericskin;                 // neighbor-list displacement margin
+    double implicittol;                // backward Euler residual tolerance, length units
+    int implicititerations;            // maximum Newton iterations
+    int implicitkrylov;                // maximum GMRES iterations per Newton solve
+    int implicitpreconditioner;        // 0 diagonal (default), 1 overlapping banded filaments
+    int implicitmethod;                // 0 full Newton (default), 1 projected semi-implicit predictor
+    int implicitjacobian;              // 0 residual differences (default), 1 cached local force derivatives
+    double projectedtol;               // accepted predictor defect, length units; otherwise Newton fallback
+    double constrainttol;              // relative length tolerance when klen<0 (upstream convention)
+    int constraintiterations;          // SHAKE geometric corrections per trial, default 20
+    int stericsubsteps;                // mechanical steps per chemical timestep
+    int stericgrowth;                  // reject overlapping elongation/treadmilling (default 1)
     double branchrate;                 // branch nucleation rate, per unit mother length per time
     double branchangle;                // mean daughter angle off the mother, radians (e.g. 70 deg)
     double branchspread;               // std dev added to branch angle (radians); 0 = deterministic; negative = unset, derived from branch_force_angle when that spring is on
@@ -823,6 +878,17 @@ typedef struct filamenttypestruct {
     double barbedparameters[2][2];     // barbed end velocity a*exp(-k*F)-b parameters [end][k,b]: k in length/energy, b in length/time
     enum FilEndState endstate0[2];     // initial state of each end of new filaments [end]
     double elongmaxlen;                // stop growing past this contour length; 0 = unbounded
+    surfaceptr confinesrf; // compatibility penalty for project confine_surface inputs
+    double confineforce;
+    enum PanelFace confineface;
+    char plusend; // end selected by legacy short-form input, m/p; endstate/endrate remain canonical
+    int elongmodel;                    // 0 whole-segment legacy; 1 continuous mechanochemical rest-length growth
+    int elongoverlap;                  // geometric elongation may enter occupied capsules/panels; mechanics resolves overlaps
+    double elongstep;                  // polymerization reaction length, independent of node spacing
+    double elongenergy;                // chemical free energy per reaction, model energy units
+    double elongstiffness;             // compliant growing-tip stiffness when completed segments use klen<0
+    double elongattempted,elongaccepted,elongwork; // requested length, incorporated length, elastic work
+    unsigned long long elongstalled,elongremesh; // finite-energy stalls and geometry-preserving refinements
     int maxface;                       // filament faces allocated
     int nface;                         // number of filament faces
     char** facename;                   // list of face names
@@ -841,6 +907,8 @@ typedef struct filamentsuperstruct {
     int ntype;                 // actual number of filament types
     char** ftnames;            // filament type names
     filamenttypeptr* filtypes; // list of filament types
+    struct filamentstericstruct* steric; // contact workspace; spatial storage belongs to boxstruct
+    int workers;                       // mechanical workers: 1 serial (default), 0 automatic
     int maxjunct;              // allocated junctions
     int njunct;                // number of junctions in use
     filjunctionptr* junctlist; // all junctions, in creation order; entries njunct to maxjunct-1 are unused, for reuse

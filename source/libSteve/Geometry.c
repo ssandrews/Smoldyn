@@ -1031,6 +1031,38 @@ double Geo_NearestLine2LineDist(double *ptA1,double *ptA2,double *ptB1,double *p
 	return dist; }
 
 
+/* Closest points on finite segments. Relative tolerances retain accuracy for nm
+   geometry in micrometre units. Handles point segments and parallel segments. */
+double Geo_ClosestSeg2Seg(const double *a0,const double *a1,const double *b0,const double *b1,int dim,double *s,double *t,double *normal) {
+ double u[3]={0,0,0},v[3]={0,0,0},w[3]={0,0,0};
+ double aa=0,den,x=0,y=0,d2=0;
+ int d;
+ for(d=0;d<dim;d++) {u[d]=a1[d]-a0[d];v[d]=b1[d]-b0[d];w[d]=a0[d]-b0[d];aa+=u[d]*u[d];}
+ if(dim==2) {
+  double aa0[3]={a0[0],a0[1],0},aa1[3]={a1[0],a1[1],0};
+  double bb0[3]={b0[0],b0[1],0},bb1[3]={b1[0],b1[1],0};
+  Geo_NearestSeg2SegPts(aa0,aa1,bb0,bb1,&x,&y);
+ } else Geo_NearestSeg2SegPts(a0,a1,b0,b1,&x,&y);
+ for(d=0;d<3;d++) {normal[d]=w[d]+x*u[d]-y*v[d];d2+=normal[d]*normal[d];}
+ *s=x;*t=y;
+ if(d2>0) for(d=0;d<3;d++) normal[d]/=sqrt(d2);
+ else {
+  /* A crossing has no unique normal: deterministic perpendicular, no RNG. */
+  if(dim==2) {normal[0]=-u[1];normal[1]=u[0];normal[2]=0;}
+  else {normal[0]=u[1]*v[2]-u[2]*v[1];normal[1]=u[2]*v[0]-u[0]*v[2];normal[2]=u[0]*v[1]-u[1]*v[0];}
+  den=normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2];
+  if(den==0 && dim==3 && aa>0) {
+   int axis=fabs(u[0])<fabs(u[1])?0:1;
+   if(fabs(u[2])<fabs(u[axis])) axis=2;
+   normal[0]=normal[1]=normal[2]=0;normal[axis]=1;
+   for(d=0;d<3;d++) normal[d]-=u[d]*u[axis]/aa;
+   den=normal[0]*normal[0]+normal[1]*normal[1]+normal[2]*normal[2];
+  }
+  if(den==0) {normal[0]=1;normal[1]=normal[2]=0;}
+  else for(d=0;d<3;d++) normal[d]/=sqrt(den);
+ }
+ return sqrt(d2);
+}
 /* Geo_NearestSeg2SegPts */
 // Finds the closest points of the 3D line segments from ptA1 to ptA2 and from ptB1 to
 // ptB2, and returns the distance between them. The closest points are at fractions
